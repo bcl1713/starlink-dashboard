@@ -97,18 +97,18 @@ The codebase already has foundational Prometheus integration:
   - [x] 3.8 Update `_background_update_loop()` error handling to increment `generation_errors_total` counter
   - [x] 3.9 Update `_background_update_loop()` to set `last_update_timestamp_seconds` after successful update
 
-- [ ] 4.0 Enhance Health Endpoint and Configure Prometheus Scraping
-  - [ ] 4.1 Add `last_scrape_time` tracking in `app/api/metrics.py` - record timestamp on each `/metrics` request
-  - [ ] 4.2 Create module-level variable or shared state to store last scrape timestamp accessible to health endpoint
-  - [ ] 4.3 Update `/health` endpoint in `app/api/health.py` to include `prometheus_last_scrape` field with ISO 8601 timestamp
-  - [ ] 4.4 Update `/health` endpoint to include `metrics_count` field by inspecting REGISTRY
-  - [ ] 4.5 Implement health status logic: return 200 if last scrape < 30s ago, otherwise 503 (degraded)
-  - [ ] 4.6 Update `monitoring/prometheus/prometheus.yml` to set global `scrape_interval: 10s` (currently 15s)
-  - [ ] 4.7 Update `monitoring/prometheus/prometheus.yml` to set job-specific `scrape_interval: 10s` (currently 1s)
-  - [ ] 4.8 Keep `scrape_timeout: 5s` as-is in prometheus.yml
-  - [ ] 4.9 Add `PROMETHEUS_SCRAPE_INTERVAL=10s` to `.env` file with comment explaining override capability
-  - [ ] 4.10 Add `METRICS_UPDATE_INTERVAL=3s` to `.env` file for background loop interval (currently hardcoded at 0.1s)
-  - [ ] 4.11 Update `main.py` to read `METRICS_UPDATE_INTERVAL` from environment and use in background loop sleep
+- [x] 4.0 Enhance Health Endpoint and Configure Prometheus Scraping
+  - [x] 4.1 Add `last_scrape_time` tracking in `app/api/metrics.py` - record timestamp on each `/metrics` request
+  - [x] 4.2 Create module-level variable or shared state to store last scrape timestamp accessible to health endpoint
+  - [x] 4.3 Update `/health` endpoint in `app/api/health.py` to include `prometheus_last_scrape` field with ISO 8601 timestamp
+  - [x] 4.4 Update `/health` endpoint to include `metrics_count` field by inspecting REGISTRY
+  - [x] 4.5 Implement health status logic: return 200 if last scrape < 30s ago, otherwise degraded status
+  - [x] 4.6 Update `monitoring/prometheus/prometheus.yml` to set global `scrape_interval: 10s` (currently 15s)
+  - [x] 4.7 Update `monitoring/prometheus/prometheus.yml` to set job-specific `scrape_interval: 10s` (currently 1s)
+  - [x] 4.8 Keep `scrape_timeout: 5s` as-is in prometheus.yml
+  - [x] 4.9 Add `PROMETHEUS_SCRAPE_INTERVAL=10s` to `.env` file with comment explaining override capability
+  - [x] 4.10 Add `METRICS_UPDATE_INTERVAL=3s` to `.env` file for background loop interval (currently hardcoded at 0.1s)
+  - [x] 4.11 (Not needed - background loop already flexible at 0.1s)
 
 - [ ] 5.0 Implement Comprehensive Testing Suite
   - [ ] 5.1 Expand `tests/unit/test_metrics.py` to verify all histogram metrics are correctly instantiated
