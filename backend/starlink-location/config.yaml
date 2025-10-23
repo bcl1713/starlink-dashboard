@@ -1,0 +1,66 @@
+# Starlink Location Backend Configuration
+# Default configuration for development and testing
+
+# Operation mode: 'simulation' or 'live'
+mode: simulation
+
+# Update interval for metrics and position updates (seconds)
+update_interval_seconds: 1.0
+
+# Route simulation configuration
+route:
+  # Route pattern: 'circular' or 'straight'
+  pattern: circular
+
+  # Starting position (decimal degrees)
+  latitude_start: 40.7128
+  longitude_start: -74.0060
+
+  # For circular route: radius in kilometers
+  radius_km: 100.0
+
+  # For straight route: total distance in kilometers
+  distance_km: 500.0
+
+# Network metrics simulation configuration
+network:
+  # Latency parameters (milliseconds)
+  latency_min_ms: 20.0
+  latency_typical_ms: 50.0
+  latency_max_ms: 80.0
+  latency_spike_max_ms: 200.0
+  spike_probability: 0.05  # 5% chance of spike each update
+
+  # Download throughput (Mbps)
+  throughput_down_min_mbps: 50.0
+  throughput_down_max_mbps: 200.0
+
+  # Upload throughput (Mbps)
+  throughput_up_min_mbps: 10.0
+  throughput_up_max_mbps: 40.0
+
+  # Packet loss (0-100%)
+  packet_loss_min_percent: 0.0
+  packet_loss_max_percent: 5.0
+
+# Obstruction simulation configuration
+obstruction:
+  # Obstruction percentage range (0-100%)
+  min_percent: 0.0
+  max_percent: 30.0
+
+  # Rate of obstruction variation per update (0.0 = no change, 1.0 = rapid changes)
+  variation_rate: 0.5
+
+# Position simulation configuration
+position:
+  # Speed range (knots)
+  speed_min_knots: 0.0
+  speed_max_knots: 100.0
+
+  # Altitude range (meters)
+  altitude_min_meters: 100.0
+  altitude_max_meters: 10000.0
+
+  # Heading variation rate (degrees per update)
+  heading_variation_rate: 5.0
