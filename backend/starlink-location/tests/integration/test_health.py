@@ -35,6 +35,9 @@ async def test_health_status_is_ok(test_client):
     """Test that health status is 'ok'."""
     await asyncio.sleep(0.1)
 
+    # First, trigger a metrics scrape to register the scrape time
+    test_client.get("/metrics")
+
     response = test_client.get("/health")
     data = response.json()
     assert data["status"] == "ok"
