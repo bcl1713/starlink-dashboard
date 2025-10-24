@@ -228,7 +228,12 @@
         },
         "location": {},
         "marker": {
-          "displayMode": "image"
+          "displayMode": "circle",
+          "size": 8,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "dark-red"
+          }
         },
         "hideEmpty": false,
         "noData": ""
