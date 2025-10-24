@@ -22,21 +22,33 @@ from app.models.telemetry import (
 class TestStarlinkClientInitialization:
     """Test StarlinkClient initialization and configuration."""
 
-    def test_init_default_target(self):
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_init_default_target(self, mock_context_class):
         """Test initialization with default target."""
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+
         client = StarlinkClient()
         assert client.target == "192.168.100.1:9200"
         assert client.timeout == 5.0
-        assert client.context is None
-        assert client.is_connected is False
+        assert client.context is mock_context
+        assert client.is_connected is True
 
-    def test_init_custom_target(self):
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_init_custom_target(self, mock_context_class):
         """Test initialization with custom target."""
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+
         client = StarlinkClient(target="192.168.1.100:9200")
         assert client.target == "192.168.1.100:9200"
 
-    def test_init_custom_timeout(self):
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_init_custom_timeout(self, mock_context_class):
         """Test initialization with custom timeout."""
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+
         client = StarlinkClient(timeout=10.0)
         assert client.timeout == 10.0
 

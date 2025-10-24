@@ -58,9 +58,9 @@ starlink_dish_longitude_degrees = Gauge(
     registry=REGISTRY
 )
 
-starlink_dish_altitude_meters = Gauge(
-    'starlink_dish_altitude_meters',
-    'Dish altitude in meters above sea level',
+starlink_dish_altitude_feet = Gauge(
+    'starlink_dish_altitude_feet',
+    'Dish altitude in feet above sea level',
     registry=REGISTRY
 )
 
@@ -304,7 +304,7 @@ def update_metrics_from_telemetry(telemetry, config=None):
     # Also set individual metrics for backward compatibility
     starlink_dish_latitude_degrees.set(telemetry.position.latitude)
     starlink_dish_longitude_degrees.set(telemetry.position.longitude)
-    starlink_dish_altitude_meters.set(telemetry.position.altitude)
+    starlink_dish_altitude_feet.set(telemetry.position.altitude)
     starlink_dish_speed_knots.set(telemetry.position.speed)
     starlink_dish_heading_degrees.set(telemetry.position.heading)
 

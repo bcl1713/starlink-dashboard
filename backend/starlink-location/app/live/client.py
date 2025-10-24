@@ -50,6 +50,7 @@ class StarlinkClient:
 
         Raises:
             ValueError: If target or timeout are invalid
+            RpcError: If connection to dish fails
         """
         # Use provided target or get from environment variables
         if target is None:
@@ -65,6 +66,9 @@ class StarlinkClient:
         self.context: Optional[starlink_grpc.ChannelContext] = None
         self._connected = False
         self.logger = logger
+
+        # Immediately connect to validate dish is reachable during initialization
+        self.connect()
 
     def is_connected(self) -> bool:
         """Check if currently connected to Starlink dish.
@@ -260,10 +264,13 @@ class StarlinkClient:
                 lat = lat or 0.0
                 lon = lon or 0.0
 
+            # Convert altitude from meters to feet (1 meter = 3.28084 feet)
+            alt_feet = float(alt) * 3.28084 if alt else 0.0
+
             position = PositionData(
                 latitude=float(lat),
                 longitude=float(lon),
-                altitude=float(alt),
+                altitude=alt_feet,
                 speed=0.0,  # Not available from Starlink API
                 heading=0.0,  # Will be populated by HeadingTracker
             )

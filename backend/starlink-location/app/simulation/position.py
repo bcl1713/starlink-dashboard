@@ -41,8 +41,8 @@ class PositionSimulator:
         self.progress = 0.0  # 0.0 to 1.0 along route
         self.current_speed = 0.0  # knots
         self.current_altitude = (
-            position_config.altitude_min_meters +
-            position_config.altitude_max_meters
+            position_config.altitude_min_feet +
+            position_config.altitude_max_feet
         ) / 2.0
 
         # Initialize heading tracker (simulates live mode behavior)
@@ -137,14 +137,14 @@ class PositionSimulator:
         """Update altitude with slight variation."""
         config = self.position_config
 
-        # Small random variation in altitude
-        altitude_change = random.uniform(-100.0, 100.0)
+        # Small random variation in altitude (in feet)
+        altitude_change = random.uniform(-328.0, 328.0)
         self.current_altitude += altitude_change
 
         # Clamp to valid range
         self.current_altitude = max(
-            config.altitude_min_meters,
-            min(config.altitude_max_meters, self.current_altitude)
+            config.altitude_min_feet,
+            min(config.altitude_max_feet, self.current_altitude)
         )
 
     def set_progress(self, progress: float) -> None:
@@ -161,7 +161,7 @@ class PositionSimulator:
         self.progress = 0.0
         self.current_speed = 0.0
         self.current_altitude = (
-            self.position_config.altitude_min_meters +
-            self.position_config.altitude_max_meters
+            self.position_config.altitude_min_feet +
+            self.position_config.altitude_max_feet
         ) / 2.0
         self.heading_tracker.reset()

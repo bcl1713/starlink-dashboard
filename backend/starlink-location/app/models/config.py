@@ -140,13 +140,13 @@ class PositionConfig(BaseModel):
         default=100.0,
         description="Maximum speed (knots)"
     )
-    altitude_min_meters: float = Field(
-        default=100.0,
-        description="Minimum altitude (meters)"
+    altitude_min_feet: float = Field(
+        default=328.0,
+        description="Minimum altitude in feet (default ~100 meters)"
     )
-    altitude_max_meters: float = Field(
-        default=10000.0,
-        description="Maximum altitude (meters)"
+    altitude_max_feet: float = Field(
+        default=32808.0,
+        description="Maximum altitude in feet (default ~10000 meters)"
     )
     heading_variation_rate: float = Field(
         default=5.0,

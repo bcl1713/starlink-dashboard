@@ -22,31 +22,15 @@
   "links": [
     {
       "asDropdown": false,
-      "icon": "dashboard",
+      "icon": "home",
       "includeVars": false,
       "keepTime": false,
-      "tags": [
-        "starlink"
-      ],
+      "tags": [],
       "targetBlank": false,
-      "title": "Overview",
+      "title": "All Dashboards",
       "tooltip": "",
       "type": "dashboards",
-      "url": "/d/starlink-overview/starlink-overview"
-    },
-    {
-      "asDropdown": false,
-      "icon": "dashboard",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [
-        "starlink"
-      ],
-      "targetBlank": false,
-      "title": "Network Metrics",
-      "tooltip": "",
-      "type": "dashboards",
-      "url": "/d/starlink-network/starlink-network"
+      "url": ""
     }
   ],
   "liveNow": false,
@@ -58,6 +42,9 @@
       },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "hideFrom": {
               "legend": false,
@@ -65,36 +52,77 @@
               "viz": false
             }
           },
-          "mappings": [],
-          "max": 180,
-          "min": 0,
-          "unit": "degrees"
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "\ud83d\udfe2 LIVE MODE ACTIVE",
+                  "color": "green"
+                },
+                "0": {
+                  "text": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+                  "color": "orange"
+                }
+              }
+            },
+            {
+              "type": "default",
+              "options": {
+                "text": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+                "color": "orange"
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 1,
+        "h": 2,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "id": 100,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "fields": "",
+          "calcs": [
+            "lastNotNull"
+          ]
         },
-        "pieType": "pie",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "text": {},
+        "textMode": "auto"
       },
       "pluginVersion": "11.1.0",
-      "targets": [],
-      "title": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+      "targets": [
+        {
+          "expr": "starlink_mode_info{mode=\"live\"}",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "Mode",
+          "refId": "A"
+        }
+      ],
+      "title": "Mode Status",
       "type": "stat"
     },
     {
@@ -104,7 +132,7 @@
         "h": 2,
         "w": 6,
         "x": 0,
-        "y": 1
+        "y": 2
       },
       "id": 200,
       "options": {
@@ -126,7 +154,7 @@
         "h": 2,
         "w": 6,
         "x": 6,
-        "y": 1
+        "y": 2
       },
       "id": 201,
       "options": {
@@ -148,7 +176,7 @@
         "h": 2,
         "w": 6,
         "x": 12,
-        "y": 1
+        "y": 2
       },
       "id": 202,
       "options": {
@@ -170,7 +198,7 @@
         "h": 2,
         "w": 6,
         "x": 18,
-        "y": 1
+        "y": 2
       },
       "id": 203,
       "options": {
@@ -246,7 +274,7 @@
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 10
       },
       "id": 1,
       "options": {
@@ -370,7 +398,7 @@
           "refId": "B"
         },
         {
-          "expr": "starlink_dish_altitude_meters",
+          "expr": "starlink_dish_altitude_feet",
           "instant": true,
           "intervalFactor": 2,
           "legendFormat": "altitude",
@@ -398,7 +426,7 @@
           "refId": "F"
         },
         {
-          "expr": "starlink_dish_altitude_meters",
+          "expr": "starlink_dish_altitude_feet",
           "instant": false,
           "intervalFactor": 2,
           "legendFormat": "alt_history",
@@ -432,272 +460,12 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 0,
-        "y": 23
-      },
-      "id": 2,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "11.1.0",
-      "targets": [
-        {
-          "expr": "starlink_dish_latitude_degrees",
-          "intervalFactor": 2,
-          "legendFormat": "Latitude",
-          "refId": "A"
-        }
-      ],
-      "title": "Current Latitude",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 6,
-        "y": 23
-      },
-      "id": 3,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "11.1.0",
-      "targets": [
-        {
-          "expr": "starlink_dish_longitude_degrees",
-          "intervalFactor": 2,
-          "legendFormat": "Longitude",
-          "refId": "A"
-        }
-      ],
-      "title": "Current Longitude",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "m"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 12,
-        "y": 23
-      },
-      "id": 4,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "11.1.0",
-      "targets": [
-        {
-          "expr": "starlink_dish_altitude_meters",
-          "intervalFactor": 2,
-          "legendFormat": "Altitude",
-          "refId": "A"
-        }
-      ],
-      "title": "Current Altitude",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "knots"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 18,
-        "y": 23
-      },
-      "id": 5,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": {
-          "values": false,
-          "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "text": {},
-        "textMode": "auto"
-      },
-      "pluginVersion": "11.1.0",
-      "targets": [
-        {
-          "expr": "starlink_dish_speed_knots",
-          "intervalFactor": 2,
-          "legendFormat": "Speed",
-          "refId": "A"
-        }
-      ],
-      "title": "Current Speed",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
             "mode": "palette-classic"
           },
           "custom": {
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Altitude (m)",
+            "axisLabel": "Altitude (ft)",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -734,7 +502,7 @@
               }
             ]
           },
-          "unit": "m"
+          "unit": "ft"
         },
         "overrides": []
       },
@@ -742,7 +510,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 29
       },
       "id": 6,
       "options": {
@@ -765,7 +533,7 @@
       "pluginVersion": "11.1.0",
       "targets": [
         {
-          "expr": "starlink_dish_altitude_meters",
+          "expr": "starlink_dish_altitude_feet",
           "intervalFactor": 2,
           "legendFormat": "Altitude",
           "refId": "A"
@@ -834,7 +602,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 29
       },
       "id": 7,
       "options": {
@@ -864,98 +632,6 @@
         }
       ],
       "title": "Speed Over Time",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Heading (degrees)",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "max": 360,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "degrees"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 36
-      },
-      "id": 8,
-      "options": {
-        "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "min",
-            "mean"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.1.0",
-      "targets": [
-        {
-          "expr": "starlink_dish_heading_degrees",
-          "intervalFactor": 2,
-          "legendFormat": "Heading",
-          "refId": "A"
-        }
-      ],
-      "title": "Heading Over Time (0=N, 90=E, 180=S, 270=W)",
       "type": "timeseries"
     }
   ],

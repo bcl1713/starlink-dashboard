@@ -48,7 +48,7 @@ async def test_metrics_contain_position_metrics(test_client):
 
     assert "starlink_dish_latitude_degrees" in text
     assert "starlink_dish_longitude_degrees" in text
-    assert "starlink_dish_altitude_meters" in text
+    assert "starlink_dish_altitude_feet" in text
     assert "starlink_dish_speed_knots" in text
     assert "starlink_dish_heading_degrees" in text
 

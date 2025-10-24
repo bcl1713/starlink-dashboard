@@ -99,7 +99,7 @@ class TestMetricsFormatting:
         # Position metrics should be present
         assert 'starlink_dish_latitude_degrees' in output
         assert 'starlink_dish_longitude_degrees' in output
-        assert 'starlink_dish_altitude_meters' in output
+        assert 'starlink_dish_altitude_feet' in output
         assert 'starlink_dish_speed_knots' in output
         assert 'starlink_dish_heading_degrees' in output
 

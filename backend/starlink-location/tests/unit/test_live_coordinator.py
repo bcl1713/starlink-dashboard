@@ -21,6 +21,7 @@ from app.models.telemetry import (
     PositionData,
     TelemetryData,
 )
+from tests.conftest import default_mock_telemetry
 
 
 class TestLiveCoordinatorInitialization:
@@ -31,6 +32,7 @@ class TestLiveCoordinatorInitialization:
         """Test successful initialization."""
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
+        mock_client.get_telemetry.return_value = default_mock_telemetry()
 
         with patch("app.live.coordinator.time.time", return_value=1000.0):
             config = SimulationConfig()
@@ -42,12 +44,14 @@ class TestLiveCoordinatorInitialization:
         assert coordinator.heading_tracker is not None
         assert coordinator.heading_tracker.min_distance_meters == 10.0
         assert coordinator.heading_tracker.max_age_seconds == 30.0
+        assert coordinator._last_valid_telemetry is not None
 
     @patch("app.live.coordinator.StarlinkClient")
     def test_init_with_custom_heading_config(self, mock_client_class):
         """Test initialization with custom heading tracker config."""
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
+        mock_client.get_telemetry.return_value = default_mock_telemetry()
 
         config = SimulationConfig(
             heading_tracker=HeadingTrackerConfig(
@@ -67,16 +71,15 @@ class TestLiveCoordinatorInitialization:
 
     @patch("app.live.coordinator.StarlinkClient")
     def test_init_with_failed_initial_telemetry(self, mock_client_class):
-        """Test initialization handles failed initial telemetry collection."""
+        """Test initialization fails if initial telemetry collection fails."""
         mock_client = MagicMock()
         mock_client.get_telemetry.side_effect = Exception("API error")
         mock_client_class.return_value = mock_client
 
-        # Should not raise, just log warning
+        # Should raise to trigger fallback in startup code
         config = SimulationConfig()
-        coordinator = LiveCoordinator(config)
-
-        assert coordinator._last_valid_telemetry is None
+        with pytest.raises(Exception, match="API error"):
+            LiveCoordinator(config)
 
 
 class TestLiveCoordinatorUpdate:
@@ -89,24 +92,7 @@ class TestLiveCoordinatorUpdate:
         mock_client_class.return_value = mock_client
 
         # Create mock telemetry response
-        mock_telemetry = TelemetryData(
-            timestamp=datetime.now(),
-            position=PositionData(
-                latitude=40.7128,
-                longitude=-74.0060,
-                altitude=100.0,
-                speed=0.0,
-                heading=0.0,
-            ),
-            network=NetworkData(
-                latency_ms=50.0,
-                throughput_down_mbps=100.0,
-                throughput_up_mbps=20.0,
-                packet_loss_percent=1.0,
-            ),
-            obstruction=ObstructionData(obstruction_percent=15.0),
-            environmental=EnvironmentalData(),
-        )
+        mock_telemetry = default_mock_telemetry()
         mock_client.get_telemetry.return_value = mock_telemetry
 
         config = SimulationConfig()
@@ -127,24 +113,7 @@ class TestLiveCoordinatorUpdate:
         mock_client_class.return_value = mock_client
 
         # Create mock telemetry with movement
-        mock_telemetry = TelemetryData(
-            timestamp=datetime.now(),
-            position=PositionData(
-                latitude=40.7128,
-                longitude=-74.0060,
-                altitude=100.0,
-                speed=10.0,
-                heading=0.0,
-            ),
-            network=NetworkData(
-                latency_ms=50.0,
-                throughput_down_mbps=100.0,
-                throughput_up_mbps=20.0,
-                packet_loss_percent=1.0,
-            ),
-            obstruction=ObstructionData(obstruction_percent=15.0),
-            environmental=EnvironmentalData(),
-        )
+        mock_telemetry = default_mock_telemetry()
 
         # First call returns initial position
         mock_client.get_telemetry.side_effect = [
@@ -186,24 +155,7 @@ class TestLiveCoordinatorUpdate:
         mock_client_class.return_value = mock_client
 
         # First call succeeds
-        good_telemetry = TelemetryData(
-            timestamp=datetime.now(),
-            position=PositionData(
-                latitude=40.7128,
-                longitude=-74.0060,
-                altitude=100.0,
-                speed=0.0,
-                heading=0.0,
-            ),
-            network=NetworkData(
-                latency_ms=50.0,
-                throughput_down_mbps=100.0,
-                throughput_up_mbps=20.0,
-                packet_loss_percent=1.0,
-            ),
-            obstruction=ObstructionData(obstruction_percent=15.0),
-            environmental=EnvironmentalData(uptime_seconds=100.0),
-        )
+        good_telemetry = default_mock_telemetry()
         mock_client.get_telemetry.side_effect = [
             good_telemetry,
             Exception("API error"),
@@ -247,24 +199,7 @@ class TestLiveCoordinatorGetCurrentTelemetry:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
 
-        mock_telemetry = TelemetryData(
-            timestamp=datetime.now(),
-            position=PositionData(
-                latitude=40.7128,
-                longitude=-74.0060,
-                altitude=100.0,
-                speed=0.0,
-                heading=0.0,
-            ),
-            network=NetworkData(
-                latency_ms=50.0,
-                throughput_down_mbps=100.0,
-                throughput_up_mbps=20.0,
-                packet_loss_percent=1.0,
-            ),
-            obstruction=ObstructionData(obstruction_percent=15.0),
-            environmental=EnvironmentalData(),
-        )
+        mock_telemetry = default_mock_telemetry()
         mock_client.get_telemetry.return_value = mock_telemetry
 
         config = SimulationConfig()
@@ -299,24 +234,7 @@ class TestLiveCoordinatorReset:
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
 
-        mock_telemetry = TelemetryData(
-            timestamp=datetime.now(),
-            position=PositionData(
-                latitude=40.7128,
-                longitude=-74.0060,
-                altitude=100.0,
-                speed=0.0,
-                heading=0.0,
-            ),
-            network=NetworkData(
-                latency_ms=50.0,
-                throughput_down_mbps=100.0,
-                throughput_up_mbps=20.0,
-                packet_loss_percent=1.0,
-            ),
-            obstruction=ObstructionData(obstruction_percent=15.0),
-            environmental=EnvironmentalData(),
-        )
+        mock_telemetry = default_mock_telemetry()
         mock_client.get_telemetry.return_value = mock_telemetry
 
         with patch("app.live.coordinator.time.time", side_effect=[1000.0, 1100.0]):
@@ -474,24 +392,7 @@ class TestLiveCoordinatorInterface:
         from app.simulation.coordinator import SimulationCoordinator
 
         mock_client = MagicMock()
-        mock_telemetry = TelemetryData(
-            timestamp=datetime.now(),
-            position=PositionData(
-                latitude=40.7128,
-                longitude=-74.0060,
-                altitude=100.0,
-                speed=0.0,
-                heading=0.0,
-            ),
-            network=NetworkData(
-                latency_ms=50.0,
-                throughput_down_mbps=100.0,
-                throughput_up_mbps=20.0,
-                packet_loss_percent=1.0,
-            ),
-            obstruction=ObstructionData(obstruction_percent=15.0),
-            environmental=EnvironmentalData(),
-        )
+        mock_telemetry = default_mock_telemetry()
         mock_client.get_telemetry.return_value = mock_telemetry
         mock_client_class.return_value = mock_client
 

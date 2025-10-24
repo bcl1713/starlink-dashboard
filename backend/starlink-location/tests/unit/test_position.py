@@ -27,7 +27,7 @@ class TestPositionSimulator:
         position = simulator.update()
 
         assert config.speed_min_knots <= position.speed <= config.speed_max_knots
-        assert config.altitude_min_meters <= position.altitude <= config.altitude_max_meters
+        assert config.altitude_min_feet <= position.altitude <= config.altitude_max_feet
         assert 0 <= position.heading <= 360
         assert -90 <= position.latitude <= 90
         assert -180 <= position.longitude <= 180
@@ -84,7 +84,7 @@ class TestPositionSimulator:
         for _ in range(10):
             pos = simulator.update()
             altitudes.append(pos.altitude)
-            assert config.altitude_min_meters <= pos.altitude <= config.altitude_max_meters
+            assert config.altitude_min_feet <= pos.altitude <= config.altitude_max_feet
 
         # Should have variation
         assert len(set([int(a) for a in altitudes])) > 1
@@ -119,7 +119,7 @@ class TestPositionSimulator:
         # Altitude should be reset to middle value
         config = simulator.position_config
         expected_altitude = (
-            config.altitude_min_meters + config.altitude_max_meters
+            config.altitude_min_feet + config.altitude_max_feet
         ) / 2.0
         assert simulator.current_altitude == expected_altitude
 

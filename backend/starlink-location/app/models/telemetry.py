@@ -19,7 +19,7 @@ class PositionData(BaseModel):
     )
     altitude: float = Field(
         ...,
-        description="Altitude in meters above sea level"
+        description="Altitude in feet above sea level"
     )
     speed: float = Field(
         default=0.0,

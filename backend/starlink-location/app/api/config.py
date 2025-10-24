@@ -59,8 +59,8 @@ async def get_config():
         "position": {
             "speed_min_knots": 0.0,
             "speed_max_knots": 100.0,
-            "altitude_min_meters": 100.0,
-            "altitude_max_meters": 10000.0,
+            "altitude_min_feet": 328.0,
+            "altitude_max_feet": 32808.0,
             "heading_variation_rate": 5.0
         }
     }

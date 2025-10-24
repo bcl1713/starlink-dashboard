@@ -55,15 +55,10 @@ class LiveCoordinator:
             f"max_age={heading_config.max_age_seconds}s"
         )
 
-        # Get initial telemetry
-        try:
-            self._last_valid_telemetry = self._collect_telemetry()
-            logger.info("Initial telemetry collected from Starlink dish")
-        except Exception as e:
-            logger.warning(
-                f"Failed to collect initial telemetry: {e}. "
-                "Will attempt on first update()."
-            )
+        # Get initial telemetry to verify connection is working
+        # If this fails, raise exception so startup code can trigger fallback
+        self._last_valid_telemetry = self._collect_telemetry()
+        logger.info("Initial telemetry collected from Starlink dish")
 
     def update(self) -> TelemetryData:
         """

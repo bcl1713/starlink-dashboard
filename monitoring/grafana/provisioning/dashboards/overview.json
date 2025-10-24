@@ -22,31 +22,15 @@
   "links": [
     {
       "asDropdown": false,
-      "icon": "dashboard",
+      "icon": "home",
       "includeVars": false,
       "keepTime": false,
-      "tags": [
-        "starlink"
-      ],
+      "tags": [],
       "targetBlank": false,
-      "title": "Network Metrics",
+      "title": "All Dashboards",
       "tooltip": "",
       "type": "dashboards",
-      "url": "/d/starlink-network/starlink-network"
-    },
-    {
-      "asDropdown": false,
-      "icon": "dashboard",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [
-        "starlink"
-      ],
-      "targetBlank": false,
-      "title": "Position & Movement",
-      "tooltip": "",
-      "type": "dashboards",
-      "url": "/d/starlink-position/starlink-position"
+      "url": ""
     }
   ],
   "liveNow": false,
@@ -58,6 +42,9 @@
       },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
           "custom": {
             "hideFrom": {
               "legend": false,
@@ -65,36 +52,77 @@
               "viz": false
             }
           },
-          "mappings": [],
-          "max": 180,
-          "min": 0,
-          "unit": "degrees"
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "\ud83d\udfe2 LIVE MODE ACTIVE",
+                  "color": "green"
+                },
+                "0": {
+                  "text": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+                  "color": "orange"
+                }
+              }
+            },
+            {
+              "type": "default",
+              "options": {
+                "text": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+                "color": "orange"
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 1,
+        "h": 2,
         "w": 24,
         "x": 0,
         "y": 0
       },
       "id": 100,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "fields": "",
+          "calcs": [
+            "lastNotNull"
+          ]
         },
-        "pieType": "pie",
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
+        "text": {},
+        "textMode": "auto"
       },
       "pluginVersion": "11.1.0",
-      "targets": [],
-      "title": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+      "targets": [
+        {
+          "expr": "starlink_mode_info{mode=\"live\"}",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "Mode",
+          "refId": "A"
+        }
+      ],
+      "title": "Mode Status",
       "type": "stat"
     },
     {
@@ -104,7 +132,7 @@
         "h": 2,
         "w": 6,
         "x": 0,
-        "y": 1
+        "y": 2
       },
       "id": 200,
       "options": {
@@ -126,7 +154,7 @@
         "h": 2,
         "w": 6,
         "x": 6,
-        "y": 1
+        "y": 2
       },
       "id": 201,
       "options": {
@@ -148,7 +176,7 @@
         "h": 2,
         "w": 6,
         "x": 12,
-        "y": 1
+        "y": 2
       },
       "id": 202,
       "options": {
@@ -170,7 +198,7 @@
         "h": 2,
         "w": 6,
         "x": 18,
-        "y": 1
+        "y": 2
       },
       "id": 203,
       "options": {
@@ -246,7 +274,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 4
       },
       "id": 1,
       "options": {
@@ -370,7 +398,7 @@
           "refId": "B"
         },
         {
-          "expr": "starlink_dish_altitude_meters",
+          "expr": "starlink_dish_altitude_feet",
           "instant": true,
           "intervalFactor": 2,
           "legendFormat": "altitude",
@@ -398,7 +426,7 @@
           "refId": "F"
         },
         {
-          "expr": "starlink_dish_altitude_meters",
+          "expr": "starlink_dish_altitude_feet",
           "instant": false,
           "intervalFactor": 2,
           "legendFormat": "alt_history",
@@ -491,7 +519,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 4
       },
       "id": 2,
       "options": {
@@ -576,7 +604,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 17
+        "y": 12
       },
       "id": 3,
       "options": {
@@ -641,7 +669,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 17
+        "y": 12
       },
       "id": 4,
       "options": {
@@ -759,7 +787,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 17
+        "y": 12
       },
       "id": 5,
       "options": {
@@ -830,7 +858,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 25
+        "y": 20
       },
       "id": 6,
       "options": {
@@ -895,7 +923,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 25
+        "y": 20
       },
       "id": 7,
       "options": {
@@ -952,7 +980,7 @@
               }
             ]
           },
-          "unit": "m"
+          "unit": "ft"
         },
         "overrides": []
       },
@@ -960,7 +988,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 25
+        "y": 20
       },
       "id": 8,
       "options": {
@@ -981,7 +1009,7 @@
       "pluginVersion": "11.1.0",
       "targets": [
         {
-          "expr": "starlink_dish_altitude_meters",
+          "expr": "starlink_dish_altitude_feet",
           "intervalFactor": 2,
           "legendFormat": "Altitude",
           "refId": "A"
@@ -1040,7 +1068,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 25
+        "y": 20
       },
       "id": 9,
       "options": {
