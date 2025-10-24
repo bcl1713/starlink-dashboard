@@ -79,4 +79,10 @@ async def get_metrics() -> str:
     # Generate and return metrics in OpenMetrics format
     from prometheus_client import generate_latest
 
-    return generate_latest(REGISTRY).decode("utf-8")
+    metrics_output = generate_latest(REGISTRY).decode("utf-8")
+
+    # Ensure OpenMetrics format compliance with EOF marker
+    if not metrics_output.endswith("# EOF\n"):
+        metrics_output = metrics_output.rstrip() + "\n# EOF\n"
+
+    return metrics_output

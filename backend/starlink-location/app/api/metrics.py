@@ -49,7 +49,14 @@ async def metrics():
     # Record scrape time for health endpoint monitoring
     set_last_scrape_time(time.time())
 
+    # Generate metrics and ensure OpenMetrics EOF marker is present
+    metrics_output = generate_latest(REGISTRY)
+
+    # Ensure OpenMetrics format compliance with EOF marker
+    if not metrics_output.endswith(b"# EOF\n"):
+        metrics_output = metrics_output.rstrip() + b"\n# EOF\n"
+
     return Response(
-        content=generate_latest(REGISTRY),
+        content=metrics_output,
         media_type="application/openmetrics-text; version=1.0.0; charset=utf-8"
     )
