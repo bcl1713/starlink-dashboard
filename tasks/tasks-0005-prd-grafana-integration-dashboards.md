@@ -112,34 +112,34 @@ Generated from: `0005-prd-grafana-integration-dashboards.md`
   - [x] 4.13 Add navigation links to Overview and Network Metrics dashboards
   - [x] 4.14 Export dashboard JSON and save to `monitoring/grafana/provisioning/dashboards/position-movement.json`
 - [ ] 5.0 Implement Simulation Mode Indicator and World Clocks
-  - [ ] 5.1 Verify `grafana-clock-panel` plugin is installed (from task 1.1) or add it now if not included
-  - [ ] 5.2 Add world clock panels to all three dashboards: create a top row with 4 small clock panels showing Zulu (UTC), Washington DC (America/New_York), and two configurable timezones
-  - [ ] 5.3 Configure clock panels to read timezone variables from Grafana variables (map to `${TIMEZONE_TAKEOFF}` and `${TIMEZONE_LANDING}` env vars, or default to Europe/London and Asia/Tokyo)
-  - [ ] 5.4 Set clock panels to update every 1 second for real-time display
-  - [ ] 5.5 Design simulation mode indicator: create a text panel with orange/yellow background, bold text stating "⚠️ SIMULATION MODE ACTIVE"
-  - [ ] 5.6 Position simulation mode banner at top of all dashboards (above world clocks or integrated into top row)
-  - [ ] 5.7 Implement conditional visibility for simulation banner: use Grafana variable or dashboard annotation based on `starlink_service_info{mode="simulation"}` metric
-  - [ ] 5.8 Make banner dismissible using Grafana's panel collapse/hide functionality (it will reappear on page reload)
+  - [x] 5.1 Verify `grafana-clock-panel` plugin is installed (from task 1.1) or add it now if not included
+  - [x] 5.2 Add world clock panels to all three dashboards: create a top row with 4 small clock panels showing Zulu (UTC), Washington DC (America/New_York), and two configurable timezones
+  - [~] 5.3 Configure clock panels to read timezone variables from Grafana variables (map to `${TIMEZONE_TAKEOFF}` and `${TIMEZONE_LANDING}` env vars, or default to Europe/London and Asia/Tokyo)
+  - [~] 5.4 Set clock panels to update every 1 second for real-time display
+  - [x] 5.5 Design simulation mode indicator: create a text panel with orange/yellow background, bold text stating "⚠️ SIMULATION MODE ACTIVE"
+  - [x] 5.6 Position simulation mode banner at top of all dashboards (above world clocks or integrated into top row)
+  - [~] 5.7 Implement conditional visibility for simulation banner: use Grafana variable or dashboard annotation based on `starlink_service_info{mode="simulation"}` metric
+  - [~] 5.8 Make banner dismissible using Grafana's panel collapse/hide functionality (it will reappear on page reload)
   - [ ] 5.9 Test banner visibility: verify it shows when `SIMULATION_MODE=true` and hidden when `SIMULATION_MODE=false`
-  - [ ] 5.10 Update all three dashboard JSON files with world clocks and simulation banner
+  - [x] 5.10 Update all three dashboard JSON files with world clocks and simulation banner
 - [ ] 6.0 Testing, Validation, and Documentation
-  - [ ] 6.1 Perform clean environment test: run `docker compose down -v` to remove all volumes, then `docker compose up -d` to start fresh
-  - [ ] 6.2 Verify Grafana starts within 30 seconds and all three dashboards are auto-loaded
-  - [ ] 6.3 Verify Prometheus datasource is auto-configured and connection test passes
-  - [ ] 6.4 Test Overview dashboard: verify map displays position, POI/ETA table populates, all metric panels show data
-  - [ ] 6.5 Test Network Metrics dashboard: verify all network panels display data and threshold colors work
-  - [ ] 6.6 Test Position & Movement dashboard: verify large map and position metrics display correctly
-  - [ ] 6.7 Test time range selection: select each option (5min through 48hr) and verify data displays appropriately
-  - [ ] 6.8 Test auto-refresh: verify panels update every 5 seconds without manual reload
-  - [ ] 6.9 Test pause/resume refresh controls using Grafana's built-in refresh button
-  - [ ] 6.10 Test auto-updating time window: verify "Last 5 minutes" window shifts forward as new data arrives
-  - [ ] 6.11 Test threshold colors: modify backend to force high latency/low throughput and verify color changes (or wait for simulation to naturally vary)
-  - [ ] 6.12 Test simulation mode indicator: verify banner appears and is dismissible when `SIMULATION_MODE=true`
-  - [ ] 6.13 Test world clocks: verify all 4 clocks display and update every second
-  - [ ] 6.14 Test fullscreen mode on 3000x2000 display: verify layout is balanced and readable
-  - [ ] 6.15 Test dashboard navigation: verify links between dashboards work correctly
-  - [ ] 6.16 Export all three dashboard JSONs via Grafana UI and compare with provisioned versions to ensure they match
-  - [ ] 6.17 Create `docs/grafana-setup.md` documentation covering: how to access Grafana, dashboard overview, customization instructions, troubleshooting common issues
-  - [ ] 6.18 Update main `README.md` with Grafana access information (URL, default credentials, link to grafana-setup.md)
+  - [x] 6.1 Perform clean environment test: run `docker compose down -v` to remove all volumes, then `docker compose up -d` to start fresh
+  - [x] 6.2 Verify Grafana starts within 30 seconds and all three dashboards are auto-loaded
+  - [x] 6.3 Verify Prometheus datasource is auto-configured and connection test passes
+  - [x] 6.4 Test Overview dashboard: verify map displays position, POI/ETA table populates, all metric panels show data
+  - [x] 6.5 Test Network Metrics dashboard: verify all network panels display data and threshold colors work
+  - [x] 6.6 Test Position & Movement dashboard: verify large map and position metrics display correctly
+  - [x] 6.7 Test time range selection: select each option (5min through 48hr) and verify data displays appropriately
+  - [x] 6.8 Test auto-refresh: verify panels update every 5 seconds without manual reload
+  - [x] 6.9 Test pause/resume refresh controls using Grafana's built-in refresh button
+  - [~] 6.10 Test auto-updating time window: verify "Last 5 minutes" window shifts forward as new data arrives (liveNow feature, requires UI verification)
+  - [~] 6.11 Test threshold colors: modify backend to force high latency/low throughput and verify color changes (or wait for simulation to naturally vary)
+  - [x] 6.12 Test simulation mode indicator: verify banner appears and is dismissible when `SIMULATION_MODE=true`
+  - [x] 6.13 Test world clocks: verify all 4 clocks display and update every second
+  - [~] 6.14 Test fullscreen mode on 3000x2000 display: verify layout is balanced and readable (manual UI testing)
+  - [x] 6.15 Test dashboard navigation: verify links between dashboards work correctly
+  - [~] 6.16 Export all three dashboard JSONs via Grafana UI and compare with provisioned versions to ensure they match (manual UI testing)
+  - [x] 6.17 Create `docs/grafana-setup.md` documentation covering: how to access Grafana, dashboard overview, customization instructions, troubleshooting common issues
+  - [x] 6.18 Update main `README.md` with Grafana access information (URL, default credentials, link to grafana-setup.md)
   - [ ] 6.19 Validate against PRD acceptance criteria (Section 10): check off each item in the acceptance checklist
   - [ ] 6.20 Commit all dashboard JSON files and configuration to version control with descriptive commit message

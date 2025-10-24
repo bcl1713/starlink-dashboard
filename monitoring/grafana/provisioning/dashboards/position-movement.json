@@ -25,7 +25,9 @@
       "icon": "dashboard",
       "includeVars": false,
       "keepTime": false,
-      "tags": ["starlink"],
+      "tags": [
+        "starlink"
+      ],
       "targetBlank": false,
       "title": "Overview",
       "tooltip": "",
@@ -37,7 +39,9 @@
       "icon": "dashboard",
       "includeVars": false,
       "keepTime": false,
-      "tags": ["starlink"],
+      "tags": [
+        "starlink"
+      ],
       "targetBlank": false,
       "title": "Network Metrics",
       "tooltip": "",
@@ -91,6 +95,94 @@
       "type": "stat"
     },
     {
+      "type": "grafana-clock-panel",
+      "title": "\ud83c\udf0d UTC (Zulu)",
+      "gridPos": {
+        "h": 1,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 200,
+      "options": {
+        "timezone": "UTC",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "grafana-clock-panel",
+      "title": "\ud83d\uddfd Washington DC",
+      "gridPos": {
+        "h": 1,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 201,
+      "options": {
+        "timezone": "America/New_York",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "grafana-clock-panel",
+      "title": "\ud83c\uddec\ud83c\udde7 London",
+      "gridPos": {
+        "h": 1,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 202,
+      "options": {
+        "timezone": "Europe/London",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "grafana-clock-panel",
+      "title": "\ud83d\uddfe Tokyo",
+      "gridPos": {
+        "h": 1,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 203,
+      "options": {
+        "timezone": "Asia/Tokyo",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
@@ -109,7 +201,7 @@
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 1
+        "y": 2
       },
       "id": 1,
       "options": {
@@ -198,7 +290,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 15
+        "y": 16
       },
       "id": 2,
       "options": {
@@ -263,7 +355,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 15
+        "y": 16
       },
       "id": 3,
       "options": {
@@ -328,7 +420,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 15
+        "y": 16
       },
       "id": 4,
       "options": {
@@ -393,7 +485,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 15
+        "y": 16
       },
       "id": 5,
       "options": {
@@ -481,7 +573,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 20
+        "y": 21
       },
       "id": 6,
       "options": {
@@ -573,7 +665,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 20
+        "y": 21
       },
       "id": 7,
       "options": {
@@ -665,7 +757,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 29
       },
       "id": 8,
       "options": {
@@ -730,5 +822,5 @@
   "timezone": "utc",
   "title": "Position & Movement",
   "uid": "starlink-position",
-  "version": 1
+  "version": 2
 }

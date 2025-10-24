@@ -33,9 +33,24 @@ A Docker-based monitoring system for Starlink terminals with real-time metrics v
 Once services are running, access them at:
 
 - **Grafana Dashboard:** http://localhost:3000 (default credentials: admin/admin)
+  - **Starlink Overview:** http://localhost:3000/d/starlink-overview
+  - **Network Metrics:** http://localhost:3000/d/starlink-network
+  - **Position & Movement:** http://localhost:3000/d/starlink-position
 - **Prometheus Metrics:** http://localhost:9090
 - **Backend Health:** http://localhost:8000/health
 - **Backend Metrics:** http://localhost:8000/metrics
+
+### Grafana Dashboards
+
+Three pre-configured dashboards are automatically available:
+
+| Dashboard | Purpose | Key Metrics |
+|-----------|---------|-------------|
+| **Starlink Overview** | Main monitoring dashboard | Position map, POI ETA, latency, throughput, obstruction |
+| **Network Metrics** | Detailed network analysis | Latency min/max/avg, download/upload, packet loss, signal quality |
+| **Position & Movement** | Location tracking | Live map, coordinates, altitude, speed, heading over time |
+
+For comprehensive dashboard documentation, see [docs/grafana-setup.md](docs/grafana-setup.md)
 
 ## Configuration
 
