@@ -66,7 +66,9 @@
             }
           },
           "mappings": [],
-          "unit": "m"
+          "max": 180,
+          "min": 0,
+          "unit": "degrees"
         },
         "overrides": []
       },
@@ -84,6 +86,7 @@
           "placement": "bottom",
           "showLegend": true
         },
+        "pieType": "pie",
         "tooltip": {
           "mode": "single",
           "sort": "none"
@@ -91,14 +94,14 @@
       },
       "pluginVersion": "11.1.0",
       "targets": [],
-      "title": "Position & Movement Tracking",
+      "title": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
       "type": "stat"
     },
     {
       "type": "grafana-clock-panel",
       "title": "\ud83c\udf0d UTC (Zulu)",
       "gridPos": {
-        "h": 1,
+        "h": 2,
         "w": 6,
         "x": 0,
         "y": 1
@@ -120,7 +123,7 @@
       "type": "grafana-clock-panel",
       "title": "\ud83d\uddfd Washington DC",
       "gridPos": {
-        "h": 1,
+        "h": 2,
         "w": 6,
         "x": 6,
         "y": 1
@@ -142,7 +145,7 @@
       "type": "grafana-clock-panel",
       "title": "\ud83c\uddec\ud83c\udde7 London",
       "gridPos": {
-        "h": 1,
+        "h": 2,
         "w": 6,
         "x": 12,
         "y": 1
@@ -164,7 +167,7 @@
       "type": "grafana-clock-panel",
       "title": "\ud83d\uddfe Tokyo",
       "gridPos": {
-        "h": 1,
+        "h": 2,
         "w": 6,
         "x": 18,
         "y": 1
@@ -201,7 +204,7 @@
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 2
+        "y": 3
       },
       "id": 1,
       "options": {
@@ -290,7 +293,7 @@
         "h": 5,
         "w": 6,
         "x": 0,
-        "y": 16
+        "y": 17
       },
       "id": 2,
       "options": {
@@ -355,7 +358,7 @@
         "h": 5,
         "w": 6,
         "x": 6,
-        "y": 16
+        "y": 17
       },
       "id": 3,
       "options": {
@@ -420,7 +423,7 @@
         "h": 5,
         "w": 6,
         "x": 12,
-        "y": 16
+        "y": 17
       },
       "id": 4,
       "options": {
@@ -485,7 +488,7 @@
         "h": 5,
         "w": 6,
         "x": 18,
-        "y": 16
+        "y": 17
       },
       "id": 5,
       "options": {
@@ -573,7 +576,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 21
+        "y": 22
       },
       "id": 6,
       "options": {
@@ -665,7 +668,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 21
+        "y": 22
       },
       "id": 7,
       "options": {
@@ -757,7 +760,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 29
+        "y": 30
       },
       "id": 8,
       "options": {
@@ -822,5 +825,5 @@
   "timezone": "utc",
   "title": "Position & Movement",
   "uid": "starlink-position",
-  "version": 3
+  "version": 4
 }
