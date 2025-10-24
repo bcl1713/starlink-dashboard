@@ -14,6 +14,7 @@ from app.api import config, geojson, health, metrics, status
 from app.core.config import ConfigManager
 from app.core.logging import setup_logging, get_logger
 from app.core.metrics import set_service_info
+from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
 
 # Configure structured logging
@@ -50,13 +51,46 @@ async def startup_event():
             }
         )
 
-        # Initialize simulator
-        logger.info_json("Initializing simulation coordinator")
-        _coordinator = SimulationCoordinator(_simulation_config)
+        # Initialize coordinator based on configured mode
+        active_mode = _simulation_config.mode
+
+        if _simulation_config.mode == "live":
+            # Try to initialize LiveCoordinator for real terminal data
+            logger.info_json("Attempting to initialize LiveCoordinator for live mode")
+            try:
+                _coordinator = LiveCoordinator(_simulation_config)
+                logger.info_json("LiveCoordinator initialized successfully")
+                # Set service info with live mode
+                set_service_info(version="0.2.0", mode="live")
+            except Exception as e:
+                # Fallback to simulation mode if live mode fails
+                logger.warning_json(
+                    "Failed to connect to Starlink dish, falling back to simulation mode",
+                    extra_fields={
+                        "error_type": type(e).__name__,
+                        "error": str(e),
+                        "dish_address": "192.168.100.1:9200"
+                    }
+                )
+                logger.info_json("Initializing SimulationCoordinator as fallback")
+                _coordinator = SimulationCoordinator(_simulation_config)
+                # Set service info with simulation mode (fallback)
+                set_service_info(version="0.2.0", mode="simulation")
+                active_mode = "simulation"
+        else:
+            # Initialize SimulationCoordinator for simulation mode
+            logger.info_json("Initializing SimulationCoordinator for simulation mode")
+            _coordinator = SimulationCoordinator(_simulation_config)
+            logger.info_json("SimulationCoordinator initialized successfully")
+            # Set service info with simulation mode
+            set_service_info(version="0.2.0", mode="simulation")
+
         logger.info_json(
-            "Simulation coordinator initialized",
+            f"Coordinator initialized",
             extra_fields={
-                "uptime_seconds": _coordinator.get_uptime_seconds()
+                "uptime_seconds": _coordinator.get_uptime_seconds(),
+                "coordinator_type": type(_coordinator).__name__,
+                "active_mode": active_mode
             }
         )
 
@@ -65,15 +99,14 @@ async def startup_event():
         status.set_coordinator(_coordinator)
         config.set_coordinator(_coordinator)
 
-        # Set service info metric
-        set_service_info(version="0.2.0", mode=_simulation_config.mode)
-
         # Log active mode prominently
+        mode_description = "Real Starlink terminal data" if active_mode == "live" else "Simulated telemetry"
         logger.info_json(
-            f"Starlink Location Backend operating in {_simulation_config.mode.upper()} mode",
+            f"Starlink Location Backend operating in {active_mode.upper()} mode",
             extra_fields={
-                "mode": _simulation_config.mode,
-                "mode_description": "Real Starlink terminal data" if _simulation_config.mode == "live" else "Simulated telemetry"
+                "mode": active_mode,
+                "mode_description": mode_description,
+                "coordinator_type": type(_coordinator).__name__
             }
         )
 

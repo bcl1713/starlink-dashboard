@@ -80,30 +80,30 @@ Generated from: `0006-prd-live-terminal-integration.md`
   - [x] 4.5 Add mode change logging at WARNING level for use when fallback occurs
   - [x] 4.6 Update unit tests to verify mode visibility in health endpoint and metrics
 
-- [ ] 5.0 Implement automatic fallback logic and connection management
-  - [ ] 5.1 Add `is_connected()` method to StarlinkClient to check connection health
-  - [ ] 5.2 Add `test_connection()` method to StarlinkClient with timeout parameter (default 5 seconds)
-  - [ ] 5.3 Implement retry logic in LiveCoordinator that attempts connection for 30 seconds before giving up
-  - [ ] 5.4 Add fallback mechanism in main.py: if LiveCoordinator connection fails, instantiate SimulationCoordinator instead
-  - [ ] 5.5 Log connection failure at WARNING level with details (error type, timeout, retries attempted)
-  - [ ] 5.6 Log fallback event at WARNING level: "Failed to connect to Starlink dish, falling back to simulation mode"
-  - [ ] 5.7 Handle mid-operation connection loss in LiveCoordinator: detect gRPC errors and log appropriately
-  - [ ] 5.8 For mid-operation failures, return last known good telemetry to avoid metric gaps
-  - [ ] 5.9 Add connection state tracking (connected, disconnected, retrying) for observability
-  - [ ] 5.10 Write integration tests in `tests/integration/test_live_mode.py` to verify fallback behavior
+- [x] 5.0 Implement automatic fallback logic and connection management
+  - [x] 5.1 Add `is_connected()` method to StarlinkClient to check connection health
+  - [x] 5.2 Add `test_connection()` method to StarlinkClient with timeout parameter (default 5 seconds)
+  - [x] 5.3 Implement retry logic in LiveCoordinator that attempts connection for 30 seconds before giving up
+  - [x] 5.4 Add fallback mechanism in main.py: if LiveCoordinator connection fails, instantiate SimulationCoordinator instead
+  - [x] 5.5 Log connection failure at WARNING level with details (error type, timeout, retries attempted)
+  - [x] 5.6 Log fallback event at WARNING level: "Failed to connect to Starlink dish, falling back to simulation mode"
+  - [x] 5.7 Handle mid-operation connection loss in LiveCoordinator: detect gRPC errors and log appropriately
+  - [x] 5.8 For mid-operation failures, return last known good telemetry to avoid metric gaps
+  - [x] 5.9 Add connection state tracking (connected, disconnected, retrying) for observability
+  - [x] 5.10 Write integration tests in `tests/integration/test_live_mode.py` to verify fallback behavior
 
-- [ ] 6.0 Update application startup to conditionally instantiate coordinators
-  - [ ] 6.1 Import LiveCoordinator at the top of main.py
-  - [ ] 6.2 Modify `startup_event()` in main.py to check config mode before instantiating coordinator
-  - [ ] 6.3 Add conditional logic: if mode == "live", attempt to create LiveCoordinator
-  - [ ] 6.4 Add conditional logic: if mode == "simulation", create SimulationCoordinator
-  - [ ] 6.5 Wrap LiveCoordinator instantiation in try-except to handle connection failures
-  - [ ] 6.6 On LiveCoordinator connection failure, log warning and fall back to SimulationCoordinator
-  - [ ] 6.7 Update mode logging to reflect actual active mode (not just configured mode)
-  - [ ] 6.8 Ensure _coordinator variable works polymorphically with both coordinator types
-  - [ ] 6.9 Test startup with STARLINK_MODE=live environment variable
-  - [ ] 6.10 Test startup with STARLINK_MODE=simulation environment variable
-  - [ ] 6.11 Verify that background update loop works identically with both coordinators
+- [x] 6.0 Update application startup to conditionally instantiate coordinators
+  - [x] 6.1 Import LiveCoordinator at the top of main.py
+  - [x] 6.2 Modify `startup_event()` in main.py to check config mode before instantiating coordinator
+  - [x] 6.3 Add conditional logic: if mode == "live", attempt to create LiveCoordinator
+  - [x] 6.4 Add conditional logic: if mode == "simulation", create SimulationCoordinator
+  - [x] 6.5 Wrap LiveCoordinator instantiation in try-except to handle connection failures
+  - [x] 6.6 On LiveCoordinator connection failure, log warning and fall back to SimulationCoordinator
+  - [x] 6.7 Update mode logging to reflect actual active mode (not just configured mode)
+  - [x] 6.8 Ensure _coordinator variable works polymorphically with both coordinator types
+  - [x] 6.9 Test startup with STARLINK_MODE=live environment variable
+  - [x] 6.10 Test startup with STARLINK_MODE=simulation environment variable
+  - [x] 6.11 Verify that background update loop works identically with both coordinators
 
 - [ ] 7.0 Configure Docker networking for dish access
   - [ ] 7.1 Research Docker network modes: host vs bridge with extra_hosts

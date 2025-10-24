@@ -47,8 +47,16 @@ class StarlinkClient:
         self.target = target
         self.timeout = timeout
         self.context: Optional[starlink_grpc.ChannelContext] = None
-        self.is_connected = False
+        self._connected = False
         self.logger = logger
+
+    def is_connected(self) -> bool:
+        """Check if currently connected to Starlink dish.
+
+        Returns:
+            True if connected, False otherwise
+        """
+        return self._connected
 
     def connect(self) -> bool:
         """Establish gRPC connection to Starlink dish.
@@ -60,7 +68,7 @@ class StarlinkClient:
             starlink_grpc.GrpcError: If gRPC error occurs
             RpcError: If low-level gRPC error occurs
         """
-        if self.is_connected and self.context:
+        if self._connected and self.context:
             return True
 
         try:
@@ -69,7 +77,7 @@ class StarlinkClient:
                 username=None,  # No auth required
                 password=None,
             )
-            self.is_connected = True
+            self._connected = True
             self.logger.info(
                 f"Connected to Starlink dish at {self.target}"
             )
@@ -78,7 +86,7 @@ class StarlinkClient:
             self.logger.error(
                 f"Failed to connect to Starlink dish at {self.target}: {e}"
             )
-            self.is_connected = False
+            self._connected = False
             self.context = None
             raise
 
@@ -92,7 +100,7 @@ class StarlinkClient:
                 self.logger.warning(f"Error closing connection: {e}")
             finally:
                 self.context = None
-                self.is_connected = False
+                self._connected = False
 
     def test_connection(self) -> bool:
         """Test connection to Starlink dish.
@@ -116,7 +124,7 @@ class StarlinkClient:
             self.logger.warning(
                 f"Connection test failed: {type(e).__name__}: {e}"
             )
-            self.is_connected = False
+            self._connected = False
             return False
         except Exception as e:
             self.logger.error(
