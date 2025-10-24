@@ -19,8 +19,10 @@ Generated from: `0006-prd-live-terminal-integration.md`
 - `backend/starlink-location/app/models/config.py` - Add HeadingTrackerConfig model ✓ MODIFIED
 - `backend/starlink-location/app/core/config.py` - Load heading tracker configuration ✓ MODIFIED
 - `backend/starlink-location/tests/unit/test_config.py` - Unit tests for HeadingTrackerConfig ✓ MODIFIED
-- `backend/starlink-location/app/core/metrics.py` - Add mode visibility metric (starlink_mode_info)
-- `backend/starlink-location/app/api/health.py` - Include current mode in health endpoint response
+- `backend/starlink-location/app/core/metrics.py` - Add mode visibility metric (starlink_mode_info) ✓ MODIFIED
+- `backend/starlink-location/app/api/health.py` - Include current mode in health endpoint response ✓ MODIFIED
+- `backend/starlink-location/main.py` - Add startup logging for active mode ✓ MODIFIED
+- `backend/starlink-location/tests/unit/test_metrics.py` - Unit tests for mode visibility ✓ MODIFIED
 - `backend/starlink-location/main.py` - Conditional coordinator instantiation based on mode
 - `docker-compose.yml` - Add network configuration for dish access
 - `.env` - Document STARLINK_MODE environment variable
@@ -70,13 +72,13 @@ Generated from: `0006-prd-live-terminal-integration.md`
   - [x] 3.14 Add error handling with graceful degradation (return last known good telemetry on transient errors)
   - [x] 3.15 Write unit tests in `tests/unit/test_live_coordinator.py` using mocked StarlinkClient
 
-- [ ] 4.0 Add mode visibility features (metrics, health endpoint, logging)
-  - [ ] 4.1 Create `starlink_mode_info` Gauge metric in `app/core/metrics.py` with mode label
-  - [ ] 4.2 Update `set_service_info()` in metrics.py to set starlink_mode_info metric
-  - [ ] 4.3 Modify `app/api/health.py` to include current mode in JSON response (e.g., {"status": "healthy", "mode": "live"})
-  - [ ] 4.4 Update startup logging in main.py to prominently log active mode with INFO level
-  - [ ] 4.5 Add mode change logging at WARNING level for use when fallback occurs
-  - [ ] 4.6 Update unit tests to verify mode visibility in health endpoint and metrics
+- [x] 4.0 Add mode visibility features (metrics, health endpoint, logging)
+  - [x] 4.1 Create `starlink_mode_info` Gauge metric in `app/core/metrics.py` with mode label
+  - [x] 4.2 Update `set_service_info()` in metrics.py to set starlink_mode_info metric
+  - [x] 4.3 Modify `app/api/health.py` to include current mode in JSON response (e.g., {"status": "healthy", "mode": "live"})
+  - [x] 4.4 Update startup logging in main.py to prominently log active mode with INFO level
+  - [x] 4.5 Add mode change logging at WARNING level for use when fallback occurs
+  - [x] 4.6 Update unit tests to verify mode visibility in health endpoint and metrics
 
 - [ ] 5.0 Implement automatic fallback logic and connection management
   - [ ] 5.1 Add `is_connected()` method to StarlinkClient to check connection health

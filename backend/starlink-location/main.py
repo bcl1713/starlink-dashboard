@@ -68,6 +68,15 @@ async def startup_event():
         # Set service info metric
         set_service_info(version="0.2.0", mode=_simulation_config.mode)
 
+        # Log active mode prominently
+        logger.info_json(
+            f"Starlink Location Backend operating in {_simulation_config.mode.upper()} mode",
+            extra_fields={
+                "mode": _simulation_config.mode,
+                "mode_description": "Real Starlink terminal data" if _simulation_config.mode == "live" else "Simulated telemetry"
+            }
+        )
+
         # Start background update task
         logger.info_json("Starting background update task")
         _background_task = asyncio.create_task(_background_update_loop())

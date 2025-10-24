@@ -117,6 +117,7 @@ async def health():
             "status": "ok" if is_scraping else "degraded",
             "uptime_seconds": uptime,
             "mode": config.mode,
+            "mode_description": "Real Starlink terminal data" if config.mode == "live" else "Simulated telemetry",
             "version": "0.2.0",
             "timestamp": datetime.now().isoformat(),
             "prometheus_last_scrape": scrape_iso_time,

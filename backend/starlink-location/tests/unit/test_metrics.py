@@ -10,6 +10,8 @@ from app.core.metrics import (
     starlink_dish_latitude_degrees,
     starlink_dish_longitude_degrees,
     starlink_network_latency_ms,
+    starlink_mode_info,
+    starlink_service_info,
 )
 
 
@@ -135,3 +137,46 @@ class TestMetricsFormatting:
         # Status metrics should be present
         assert 'starlink_uptime_seconds' in output
         assert 'simulation_updates_total' in output
+
+    def test_mode_info_metric_present(self):
+        """Test that starlink_mode_info metric is present."""
+        output = generate_latest(REGISTRY).decode('utf-8')
+        assert 'starlink_mode_info' in output
+
+    def test_set_service_info_with_simulation_mode(self):
+        """Test setting service info with simulation mode."""
+        set_service_info(version="0.2.0", mode="simulation")
+
+        output = generate_latest(REGISTRY).decode('utf-8')
+
+        # Should contain both service info and mode info metrics
+        assert 'starlink_service_info' in output
+        assert 'mode="simulation"' in output
+        assert 'starlink_mode_info' in output
+
+    def test_set_service_info_with_live_mode(self):
+        """Test setting service info with live mode."""
+        set_service_info(version="0.2.0", mode="live")
+
+        output = generate_latest(REGISTRY).decode('utf-8')
+
+        # Should contain both service info and mode info metrics
+        assert 'starlink_service_info' in output
+        assert 'mode="live"' in output
+        assert 'starlink_mode_info' in output
+        # Mode info should have live=1 and simulation=0
+        assert 'mode="live"' in output
+
+    def test_mode_info_labels(self):
+        """Test that mode_info metric has correct labels."""
+        set_service_info(version="0.2.0", mode="simulation")
+
+        output = generate_latest(REGISTRY).decode('utf-8')
+
+        # Check for mode labels in the output
+        lines = output.split('\n')
+        mode_lines = [l for l in lines if 'starlink_mode_info' in l and not l.startswith('#')]
+
+        # Should have entries for each mode
+        assert any('mode="simulation"' in l for l in mode_lines)
+        assert any('mode="live"' in l for l in mode_lines)

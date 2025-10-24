@@ -164,6 +164,13 @@ starlink_service_info = Gauge(
     registry=REGISTRY
 )
 
+starlink_mode_info = Gauge(
+    'starlink_mode_info',
+    'Starlink operating mode indicator',
+    labelnames=['mode'],
+    registry=REGISTRY
+)
+
 starlink_uptime_seconds = Gauge(
     'starlink_uptime_seconds',
     'Service uptime in seconds',
@@ -345,10 +352,22 @@ def update_metrics_from_telemetry(telemetry, config=None):
 
 def set_service_info(version: str, mode: str):
     """
-    Set service info metric.
+    Set service info metrics.
+
+    Sets both the composite starlink_service_info metric and the individual
+    starlink_mode_info metric for better filtering and observability.
 
     Args:
         version: Service version string
         mode: Operating mode (simulation or live)
     """
+    # Set composite service info metric with version and mode labels
     starlink_service_info.labels(version=version, mode=mode).set(1)
+
+    # Set mode indicator metric - only the active mode will be set to 1
+    # This allows easy filtering by mode in Prometheus queries
+    for possible_mode in ['simulation', 'live']:
+        if possible_mode == mode:
+            starlink_mode_info.labels(mode=possible_mode).set(1)
+        else:
+            starlink_mode_info.labels(mode=possible_mode).set(0)
