@@ -8,8 +8,8 @@ Generated from: `0006-prd-live-terminal-integration.md`
 
 - `backend/starlink-location/app/live/__init__.py` - Live mode module initialization ✓ CREATED
 - `backend/starlink-location/app/live/client.py` - Starlink gRPC client wrapper ✓ CREATED
-- `backend/starlink-location/app/live/coordinator.py` - LiveCoordinator class implementation
-- `backend/starlink-location/tests/unit/test_live_coordinator.py` - Unit tests for LiveCoordinator
+- `backend/starlink-location/app/live/coordinator.py` - LiveCoordinator class implementation ✓ CREATED
+- `backend/starlink-location/tests/unit/test_live_coordinator.py` - Unit tests for LiveCoordinator ✓ CREATED
 - `backend/starlink-location/tests/unit/test_starlink_client.py` - Unit tests for Starlink client ✓ CREATED
 - `backend/starlink-location/tests/integration/test_live_mode.py` - Integration tests for live mode
 
@@ -53,22 +53,22 @@ Generated from: `0006-prd-live-terminal-integration.md`
   - [x] 2.3 Update `app/core/config.py` to load heading tracker config from YAML and environment variables
   - [x] 2.4 Write unit tests for HeadingTrackerConfig in existing config test files
 
-- [ ] 3.0 Create LiveCoordinator class for real terminal data collection
-  - [ ] 3.1 Create `app/live/coordinator.py` file
-  - [ ] 3.2 Define LiveCoordinator class that mirrors SimulationCoordinator interface (same public methods)
-  - [ ] 3.3 Add `__init__` method that accepts SimulationConfig and initializes StarlinkClient
-  - [ ] 3.4 Initialize HeadingTracker service in LiveCoordinator with configurable parameters from config
-  - [ ] 3.5 Implement `update()` method that polls gRPC API and returns TelemetryData
-  - [ ] 3.6 Extract GPS position (latitude, longitude, altitude) from Starlink API response
-  - [ ] 3.7 Extract network metrics (latency, throughput up/down) from API response
-  - [ ] 3.8 Extract obstruction percentage and other status data from API response
-  - [ ] 3.9 Call HeadingTracker.update() with GPS position to calculate heading
-  - [ ] 3.10 Build and return TelemetryData object with all collected metrics
-  - [ ] 3.11 Implement `get_current_telemetry()` method to return last telemetry without updating
-  - [ ] 3.12 Implement `reset()` method to reset heading tracker and connection state
-  - [ ] 3.13 Implement `get_uptime_seconds()` method tracking time since LiveCoordinator started
-  - [ ] 3.14 Add error handling with graceful degradation (return last known good telemetry on transient errors)
-  - [ ] 3.15 Write unit tests in `tests/unit/test_live_coordinator.py` using mocked StarlinkClient
+- [x] 3.0 Create LiveCoordinator class for real terminal data collection
+  - [x] 3.1 Create `app/live/coordinator.py` file
+  - [x] 3.2 Define LiveCoordinator class that mirrors SimulationCoordinator interface (same public methods)
+  - [x] 3.3 Add `__init__` method that accepts SimulationConfig and initializes StarlinkClient
+  - [x] 3.4 Initialize HeadingTracker service in LiveCoordinator with configurable parameters from config
+  - [x] 3.5 Implement `update()` method that polls gRPC API and returns TelemetryData
+  - [x] 3.6 Extract GPS position (latitude, longitude, altitude) from Starlink API response
+  - [x] 3.7 Extract network metrics (latency, throughput up/down) from API response
+  - [x] 3.8 Extract obstruction percentage and other status data from API response
+  - [x] 3.9 Call HeadingTracker.update() with GPS position to calculate heading
+  - [x] 3.10 Build and return TelemetryData object with all collected metrics
+  - [x] 3.11 Implement `get_current_telemetry()` method to return last telemetry without updating
+  - [x] 3.12 Implement `reset()` method to reset heading tracker and connection state
+  - [x] 3.13 Implement `get_uptime_seconds()` method tracking time since LiveCoordinator started
+  - [x] 3.14 Add error handling with graceful degradation (return last known good telemetry on transient errors)
+  - [x] 3.15 Write unit tests in `tests/unit/test_live_coordinator.py` using mocked StarlinkClient
 
 - [ ] 4.0 Add mode visibility features (metrics, health endpoint, logging)
   - [ ] 4.1 Create `starlink_mode_info` Gauge metric in `app/core/metrics.py` with mode label
