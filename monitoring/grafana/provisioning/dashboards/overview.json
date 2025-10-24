@@ -112,7 +112,9 @@
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
-        "showSeconds": true
+        "showSeconds": true,
+        "fontSize": 27,
+        "fontWeight": "bold"
       },
       "fieldConfig": {
         "defaults": {},
@@ -134,7 +136,9 @@
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
-        "showSeconds": true
+        "showSeconds": true,
+        "fontSize": 27,
+        "fontWeight": "bold"
       },
       "fieldConfig": {
         "defaults": {},
@@ -156,7 +160,9 @@
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
-        "showSeconds": true
+        "showSeconds": true,
+        "fontSize": 27,
+        "fontWeight": "bold"
       },
       "fieldConfig": {
         "defaults": {},
@@ -178,7 +184,9 @@
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
-        "showSeconds": true
+        "showSeconds": true,
+        "fontSize": 27,
+        "fontWeight": "bold"
       },
       "fieldConfig": {
         "defaults": {},
@@ -971,5 +979,5 @@
   "timezone": "utc",
   "title": "Starlink Overview",
   "uid": "starlink-overview",
-  "version": 4
+  "version": 5
 }
