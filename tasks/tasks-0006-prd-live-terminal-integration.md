@@ -16,8 +16,9 @@ Generated from: `0006-prd-live-terminal-integration.md`
 ### Existing Files to Modify
 
 - `backend/starlink-location/requirements.txt` - Add gRPC and Starlink client dependencies ✓ MODIFIED
-- `backend/starlink-location/app/models/config.py` - Add HeadingTrackerConfig model
-- `backend/starlink-location/app/core/config.py` - Load heading tracker configuration
+- `backend/starlink-location/app/models/config.py` - Add HeadingTrackerConfig model ✓ MODIFIED
+- `backend/starlink-location/app/core/config.py` - Load heading tracker configuration ✓ MODIFIED
+- `backend/starlink-location/tests/unit/test_config.py` - Unit tests for HeadingTrackerConfig ✓ MODIFIED
 - `backend/starlink-location/app/core/metrics.py` - Add mode visibility metric (starlink_mode_info)
 - `backend/starlink-location/app/api/health.py` - Include current mode in health endpoint response
 - `backend/starlink-location/main.py` - Conditional coordinator instantiation based on mode
@@ -46,11 +47,11 @@ Generated from: `0006-prd-live-terminal-integration.md`
   - [x] 1.8 Implement basic connection test method in StarlinkClient to verify dish reachability
   - [x] 1.9 Write unit tests for StarlinkClient in `tests/unit/test_starlink_client.py` using mocked gRPC responses
 
-- [ ] 2.0 Add heading tracker configuration to config models
-  - [ ] 2.1 Add HeadingTrackerConfig model to `app/models/config.py` with min_distance_meters and max_age_seconds fields
-  - [ ] 2.2 Add heading_tracker field to SimulationConfig model with HeadingTrackerConfig default
-  - [ ] 2.3 Update `app/core/config.py` to load heading tracker config from YAML and environment variables
-  - [ ] 2.4 Write unit tests for HeadingTrackerConfig in existing config test files
+- [x] 2.0 Add heading tracker configuration to config models
+  - [x] 2.1 Add HeadingTrackerConfig model to `app/models/config.py` with min_distance_meters and max_age_seconds fields
+  - [x] 2.2 Add heading_tracker field to SimulationConfig model with HeadingTrackerConfig default
+  - [x] 2.3 Update `app/core/config.py` to load heading tracker config from YAML and environment variables
+  - [x] 2.4 Write unit tests for HeadingTrackerConfig in existing config test files
 
 - [ ] 3.0 Create LiveCoordinator class for real terminal data collection
   - [ ] 3.1 Create `app/live/coordinator.py` file

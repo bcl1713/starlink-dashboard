@@ -162,6 +162,31 @@ class PositionConfig(BaseModel):
         return v
 
 
+class HeadingTrackerConfig(BaseModel):
+    """Configuration for heading tracker service.
+
+    The heading tracker calculates direction of movement based on GPS
+    position changes over time.
+    """
+
+    min_distance_meters: float = Field(
+        default=10.0,
+        description="Minimum distance traveled to calculate heading (meters)"
+    )
+    max_age_seconds: float = Field(
+        default=30.0,
+        description="Maximum age of previous position for heading calculation (seconds)"
+    )
+
+    @field_validator("min_distance_meters", "max_age_seconds")
+    @classmethod
+    def validate_positive(cls, v: float) -> float:
+        """Ensure configuration values are positive."""
+        if v <= 0:
+            raise ValueError("Configuration values must be positive")
+        return v
+
+
 class SimulationConfig(BaseModel):
     """Main simulation configuration."""
 
@@ -188,6 +213,10 @@ class SimulationConfig(BaseModel):
     position: PositionConfig = Field(
         default_factory=PositionConfig,
         description="Position simulation configuration"
+    )
+    heading_tracker: HeadingTrackerConfig = Field(
+        default_factory=HeadingTrackerConfig,
+        description="Heading tracker configuration"
     )
 
     @field_validator("update_interval_seconds")

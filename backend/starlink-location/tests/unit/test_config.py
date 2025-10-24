@@ -7,7 +7,7 @@ import yaml
 from pathlib import Path
 
 from app.core.config import ConfigManager, _override_from_env, _convert_env_value
-from app.models.config import SimulationConfig
+from app.models.config import SimulationConfig, HeadingTrackerConfig
 
 
 class TestEnvValueConversion:
@@ -180,3 +180,120 @@ class TestConfigManager:
 
         # Different instances
         assert manager1 is not manager2
+
+
+class TestHeadingTrackerConfig:
+    """Test HeadingTrackerConfig model."""
+
+    def test_default_values(self):
+        """Test default values for HeadingTrackerConfig."""
+        config = HeadingTrackerConfig()
+        assert config.min_distance_meters == 10.0
+        assert config.max_age_seconds == 30.0
+
+    def test_custom_values(self):
+        """Test creating HeadingTrackerConfig with custom values."""
+        config = HeadingTrackerConfig(
+            min_distance_meters=25.0,
+            max_age_seconds=60.0
+        )
+        assert config.min_distance_meters == 25.0
+        assert config.max_age_seconds == 60.0
+
+    def test_invalid_negative_distance(self):
+        """Test that negative distance raises validation error."""
+        with pytest.raises(Exception):  # ValidationError
+            HeadingTrackerConfig(min_distance_meters=-10.0)
+
+    def test_invalid_zero_distance(self):
+        """Test that zero distance raises validation error."""
+        with pytest.raises(Exception):  # ValidationError
+            HeadingTrackerConfig(min_distance_meters=0.0)
+
+    def test_invalid_negative_age(self):
+        """Test that negative max age raises validation error."""
+        with pytest.raises(Exception):  # ValidationError
+            HeadingTrackerConfig(max_age_seconds=-5.0)
+
+    def test_invalid_zero_age(self):
+        """Test that zero max age raises validation error."""
+        with pytest.raises(Exception):  # ValidationError
+            HeadingTrackerConfig(max_age_seconds=0.0)
+
+    def test_heading_tracker_in_simulation_config(self):
+        """Test that SimulationConfig includes heading_tracker."""
+        config = SimulationConfig()
+        assert hasattr(config, 'heading_tracker')
+        assert isinstance(config.heading_tracker, HeadingTrackerConfig)
+        assert config.heading_tracker.min_distance_meters == 10.0
+        assert config.heading_tracker.max_age_seconds == 30.0
+
+    def test_heading_tracker_custom_in_simulation_config(self):
+        """Test SimulationConfig with custom heading tracker."""
+        config = SimulationConfig(
+            heading_tracker={
+                "min_distance_meters": 50.0,
+                "max_age_seconds": 120.0
+            }
+        )
+        assert config.heading_tracker.min_distance_meters == 50.0
+        assert config.heading_tracker.max_age_seconds == 120.0
+
+    def test_heading_tracker_from_env_override(self):
+        """Test loading heading tracker config from environment variables."""
+        os.environ["STARLINK_HEADING_TRACKER_MIN_DISTANCE_METERS"] = "15.5"
+        os.environ["STARLINK_HEADING_TRACKER_MAX_AGE_SECONDS"] = "45.0"
+
+        try:
+            config = ConfigManager.load_from_dict({})
+            assert config.heading_tracker.min_distance_meters == 15.5
+            assert config.heading_tracker.max_age_seconds == 45.0
+        finally:
+            del os.environ["STARLINK_HEADING_TRACKER_MIN_DISTANCE_METERS"]
+            del os.environ["STARLINK_HEADING_TRACKER_MAX_AGE_SECONDS"]
+
+    def test_heading_tracker_from_yaml(self):
+        """Test loading heading tracker config from YAML file."""
+        config_data = {
+            "mode": "simulation",
+            "heading_tracker": {
+                "min_distance_meters": 20.0,
+                "max_age_seconds": 90.0
+            }
+        }
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            yaml.dump(config_data, f)
+            temp_path = Path(f.name)
+
+        try:
+            config = ConfigManager.load_from_file(temp_path)
+            assert config.heading_tracker.min_distance_meters == 20.0
+            assert config.heading_tracker.max_age_seconds == 90.0
+        finally:
+            temp_path.unlink()
+
+    def test_heading_tracker_yaml_with_env_override(self):
+        """Test YAML config with environment variable override."""
+        config_data = {
+            "heading_tracker": {
+                "min_distance_meters": 10.0,
+                "max_age_seconds": 30.0
+            }
+        }
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+            yaml.dump(config_data, f)
+            temp_path = Path(f.name)
+
+        os.environ["STARLINK_HEADING_TRACKER_MIN_DISTANCE_METERS"] = "25.0"
+
+        try:
+            config = ConfigManager.load_from_file(temp_path)
+            # Environment override should take precedence
+            assert config.heading_tracker.min_distance_meters == 25.0
+            # YAML value should be used for max_age_seconds
+            assert config.heading_tracker.max_age_seconds == 30.0
+        finally:
+            temp_path.unlink()
+            del os.environ["STARLINK_HEADING_TRACKER_MIN_DISTANCE_METERS"]
