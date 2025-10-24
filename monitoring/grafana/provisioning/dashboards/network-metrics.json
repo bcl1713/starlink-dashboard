@@ -84,25 +84,18 @@
       "type": "stat"
     },
     {
-      "type": "grafana-clock-panel",
-      "title": "\ud83c\udf0d UTC (Zulu)",
+      "type": "text",
+      "title": "\ud83c\udf0d Zulu / UTC",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
         "y": 1
       },
-      "id": 200,
+      "id": 300,
       "options": {
-        "timezone": "\ud83c\udf0d UTC (Zulu)",
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true,
-        "fontSize": 27,
-        "fontWeight": "bold",
-        "size": "large",
-        "timeFormat": "HH:mm:ss"
+        "content": "<div style=\"display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; font-family: 'Courier New', monospace; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 20px; border-radius: 8px;\">\n  <div id=\"clock\" style=\"font-size: 72px; font-weight: bold; color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); letter-spacing: 4px; font-family: 'Courier New', monospace;\">00:00:00</div>\n  <div style=\"font-size: 16px; color: #90EE90; margin-top: 12px; font-weight: 500;\">Zulu / UTC</div>\n  <div style=\"font-size: 12px; color: #B0E0E6; margin-top: 4px;\">UTC+0</div>\n</div>\n<script>\nfunction updateClock() {\n  const now = new Date();\n  const formatter = new Intl.DateTimeFormat('en-US', {\n    timeZone: 'UTC',\n    hour12: false,\n    hour: '2-digit',\n    minute: '2-digit',\n    second: '2-digit'\n  });\n  const timeStr = formatter.format(now);\n  const clockDiv = document.getElementById('clock');\n  if (clockDiv) {\n    clockDiv.textContent = timeStr;\n  }\n}\nupdateClock();\nsetInterval(updateClock, 100);  // Update 10 times per second for smoothness\n</script>",
+        "mode": "html"
       },
       "fieldConfig": {
         "defaults": {},
@@ -110,7 +103,7 @@
       }
     },
     {
-      "type": "grafana-clock-panel",
+      "type": "text",
       "title": "\ud83d\uddfd Washington DC",
       "gridPos": {
         "h": 4,
@@ -118,17 +111,10 @@
         "x": 6,
         "y": 1
       },
-      "id": 201,
+      "id": 301,
       "options": {
-        "timezone": "\ud83d\uddfd Washington DC",
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true,
-        "fontSize": 27,
-        "fontWeight": "bold",
-        "size": "large",
-        "timeFormat": "HH:mm:ss"
+        "content": "<div style=\"display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; font-family: 'Courier New', monospace; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 20px; border-radius: 8px;\">\n  <div id=\"clock\" style=\"font-size: 72px; font-weight: bold; color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); letter-spacing: 4px; font-family: 'Courier New', monospace;\">00:00:00</div>\n  <div style=\"font-size: 16px; color: #90EE90; margin-top: 12px; font-weight: 500;\">Washington DC</div>\n  <div style=\"font-size: 12px; color: #B0E0E6; margin-top: 4px;\">EDT/EST</div>\n</div>\n<script>\nfunction updateClock() {\n  const now = new Date();\n  const formatter = new Intl.DateTimeFormat('en-US', {\n    timeZone: 'America/New_York',\n    hour12: false,\n    hour: '2-digit',\n    minute: '2-digit',\n    second: '2-digit'\n  });\n  const timeStr = formatter.format(now);\n  const clockDiv = document.getElementById('clock');\n  if (clockDiv) {\n    clockDiv.textContent = timeStr;\n  }\n}\nupdateClock();\nsetInterval(updateClock, 100);  // Update 10 times per second for smoothness\n</script>",
+        "mode": "html"
       },
       "fieldConfig": {
         "defaults": {},
@@ -136,7 +122,7 @@
       }
     },
     {
-      "type": "grafana-clock-panel",
+      "type": "text",
       "title": "\ud83c\uddec\ud83c\udde7 London",
       "gridPos": {
         "h": 4,
@@ -144,17 +130,10 @@
         "x": 12,
         "y": 1
       },
-      "id": 202,
+      "id": 302,
       "options": {
-        "timezone": "\ud83c\uddec\ud83c\udde7 London",
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true,
-        "fontSize": 27,
-        "fontWeight": "bold",
-        "size": "large",
-        "timeFormat": "HH:mm:ss"
+        "content": "<div style=\"display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; font-family: 'Courier New', monospace; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 20px; border-radius: 8px;\">\n  <div id=\"clock\" style=\"font-size: 72px; font-weight: bold; color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); letter-spacing: 4px; font-family: 'Courier New', monospace;\">00:00:00</div>\n  <div style=\"font-size: 16px; color: #90EE90; margin-top: 12px; font-weight: 500;\">London</div>\n  <div style=\"font-size: 12px; color: #B0E0E6; margin-top: 4px;\">BST/GMT</div>\n</div>\n<script>\nfunction updateClock() {\n  const now = new Date();\n  const formatter = new Intl.DateTimeFormat('en-US', {\n    timeZone: 'Europe/London',\n    hour12: false,\n    hour: '2-digit',\n    minute: '2-digit',\n    second: '2-digit'\n  });\n  const timeStr = formatter.format(now);\n  const clockDiv = document.getElementById('clock');\n  if (clockDiv) {\n    clockDiv.textContent = timeStr;\n  }\n}\nupdateClock();\nsetInterval(updateClock, 100);  // Update 10 times per second for smoothness\n</script>",
+        "mode": "html"
       },
       "fieldConfig": {
         "defaults": {},
@@ -162,7 +141,7 @@
       }
     },
     {
-      "type": "grafana-clock-panel",
+      "type": "text",
       "title": "\ud83d\uddfe Tokyo",
       "gridPos": {
         "h": 4,
@@ -170,17 +149,10 @@
         "x": 18,
         "y": 1
       },
-      "id": 203,
+      "id": 303,
       "options": {
-        "timezone": "\ud83d\uddfe Tokyo",
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true,
-        "fontSize": 27,
-        "fontWeight": "bold",
-        "size": "large",
-        "timeFormat": "HH:mm:ss"
+        "content": "<div style=\"display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; font-family: 'Courier New', monospace; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 20px; border-radius: 8px;\">\n  <div id=\"clock\" style=\"font-size: 72px; font-weight: bold; color: #00ff00; text-shadow: 0 0 10px rgba(0,255,0,0.5); letter-spacing: 4px; font-family: 'Courier New', monospace;\">00:00:00</div>\n  <div style=\"font-size: 16px; color: #90EE90; margin-top: 12px; font-weight: 500;\">Tokyo</div>\n  <div style=\"font-size: 12px; color: #B0E0E6; margin-top: 4px;\">JST</div>\n</div>\n<script>\nfunction updateClock() {\n  const now = new Date();\n  const formatter = new Intl.DateTimeFormat('en-US', {\n    timeZone: 'Asia/Tokyo',\n    hour12: false,\n    hour: '2-digit',\n    minute: '2-digit',\n    second: '2-digit'\n  });\n  const timeStr = formatter.format(now);\n  const clockDiv = document.getElementById('clock');\n  if (clockDiv) {\n    clockDiv.textContent = timeStr;\n  }\n}\nupdateClock();\nsetInterval(updateClock, 100);  // Update 10 times per second for smoothness\n</script>",
+        "mode": "html"
       },
       "fieldConfig": {
         "defaults": {},
@@ -1153,5 +1125,5 @@
   "timezone": "utc",
   "title": "Network Metrics",
   "uid": "starlink-network",
-  "version": 6
+  "version": 7
 }
