@@ -54,33 +54,33 @@ Generated from: `0005-prd-grafana-integration-dashboards.md`
 
 ## Tasks
 
-- [ ] 1.0 Configure Grafana Infrastructure and Provisioning
-  - [ ] 1.1 Update `docker-compose.yml` to install required Grafana plugins via `GF_INSTALL_PLUGINS` environment variable (start with `grafana-clock-panel` for world clocks; evaluate map plugins separately)
-  - [ ] 1.2 Add timezone environment variables to `.env.example` for configurable world clocks (e.g., `TIMEZONE_TAKEOFF=America/Los_Angeles`, `TIMEZONE_LANDING=Europe/London`)
-  - [ ] 1.3 Create `monitoring/grafana/provisioning/datasources/prometheus.yml` to auto-configure Prometheus datasource with URL `http://prometheus:9090`
-  - [ ] 1.4 Create `monitoring/grafana/provisioning/dashboards/dashboards.yml` to configure dashboard auto-loading from `/etc/grafana/provisioning/dashboards` directory
-  - [ ] 1.5 Test Grafana startup: run `docker compose up grafana` and verify Grafana is accessible at `http://localhost:3000` with admin credentials
-  - [ ] 1.6 Verify Prometheus datasource connection in Grafana UI (Configuration > Data Sources > Test)
-- [ ] 2.0 Create Overview Dashboard
-  - [ ] 2.1 Research and select map panel plugin: test `geomap` (built-in), `pr0ps-trackmap-panel`, or alternatives; determine which best supports current position, 48hr trail, route overlay, and POI markers
-  - [ ] 2.2 Create base dashboard JSON structure with metadata (title: "Starlink Overview", uid: "starlink-overview", version: 1, timezone: "utc")
-  - [ ] 2.3 Design grid layout for 3000x2000 resolution: map panel (14 units wide, 12 units tall), POI/ETA table (10 units wide, 12 units tall), metrics row below (24 units wide, divided into panels)
-  - [ ] 2.4 Add map panel with PromQL queries for `starlink_dish_latitude_degrees` and `starlink_dish_longitude_degrees`; configure to show current position marker
-  - [ ] 2.5 Configure map panel to display 48-hour track trail using time range on position queries
-  - [ ] 2.6 Add route overlay to map panel using `/route.geojson` endpoint as GeoJSON layer (if supported by selected plugin)
-  - [ ] 2.7 Add POI markers to map panel with labels from POI names
-  - [ ] 2.8 Create POI/ETA table panel with columns: POI name, distance (from `starlink_distance_to_poi_meters`), ETA (from `starlink_eta_poi_seconds` converted to HH:MM format)
-  - [ ] 2.9 Configure POI/ETA table sorting: upcoming POIs first (by ETA ascending), then passed POIs (by most recent)
-  - [ ] 2.10 Add latency time series panel with PromQL query `starlink_network_latency_ms_current` and threshold colors (green <80ms, yellow 80-120ms, red >120ms)
-  - [ ] 2.11 Add combined throughput time series panel showing `starlink_network_throughput_down_mbps_current` and `starlink_network_throughput_up_mbps_current` on same graph
-  - [ ] 2.12 Add obstruction gauge panel with PromQL query `starlink_dish_obstruction_percent` and threshold colors (green <5%, yellow 5-15%, red >15%)
-  - [ ] 2.13 Add stat panels for current speed (`starlink_dish_speed_knots`), heading (`starlink_dish_heading_degrees`), and altitude (`starlink_dish_altitude_meters`)
-  - [ ] 2.14 Add connection status indicator using `starlink_dish_outage_active` (0=connected, 1=outage)
-  - [ ] 2.15 Configure dashboard time range options (5min, 10min, 15min, 30min, 1hr, 2hr, 4hr, 8hr, 24hr, 48hr) with default set to 5 minutes
-  - [ ] 2.16 Set dashboard auto-refresh interval to 5 seconds (user preference overriding 2×10s=20s calculation)
-  - [ ] 2.17 Enable auto-updating time window (e.g., "Last 5 minutes" continuously shifts forward)
-  - [ ] 2.18 Add dashboard navigation links/variables for easy switching to Network and Position dashboards
-  - [ ] 2.19 Export dashboard JSON and save to `monitoring/grafana/provisioning/dashboards/overview.json`
+- [x] 1.0 Configure Grafana Infrastructure and Provisioning
+  - [x] 1.1 Update `docker-compose.yml` to install required Grafana plugins via `GF_INSTALL_PLUGINS` environment variable (start with `grafana-clock-panel` for world clocks; evaluate map plugins separately)
+  - [x] 1.2 Add timezone environment variables to `.env.example` for configurable world clocks (e.g., `TIMEZONE_TAKEOFF=America/Los_Angeles`, `TIMEZONE_LANDING=Europe/London`)
+  - [x] 1.3 Create `monitoring/grafana/provisioning/datasources/prometheus.yml` to auto-configure Prometheus datasource with URL `http://prometheus:9090`
+  - [x] 1.4 Create `monitoring/grafana/provisioning/dashboards/dashboards.yml` to configure dashboard auto-loading from `/etc/grafana/provisioning/dashboards` directory
+  - [x] 1.5 Test Grafana startup: run `docker compose up grafana` and verify Grafana is accessible at `http://localhost:3000` with admin credentials
+  - [x] 1.6 Verify Prometheus datasource connection in Grafana UI (Configuration > Data Sources > Test)
+- [x] 2.0 Create Overview Dashboard
+  - [x] 2.1 Research and select map panel plugin: test `geomap` (built-in), `pr0ps-trackmap-panel`, or alternatives; determine which best supports current position, 48hr trail, route overlay, and POI markers
+  - [x] 2.2 Create base dashboard JSON structure with metadata (title: "Starlink Overview", uid: "starlink-overview", version: 1, timezone: "utc")
+  - [x] 2.3 Design grid layout for 3000x2000 resolution: map panel (14 units wide, 12 units tall), POI/ETA table (10 units wide, 12 units tall), metrics row below (24 units wide, divided into panels)
+  - [x] 2.4 Add map panel with PromQL queries for `starlink_dish_latitude_degrees` and `starlink_dish_longitude_degrees`; configure to show current position marker
+  - [~] 2.5 Configure map panel to display 48-hour track trail using time range on position queries (needs refinement in UI)
+  - [x] 2.6 Add route overlay to map panel using `/route.geojson` endpoint as GeoJSON layer (if supported by selected plugin)
+  - [~] 2.7 Add POI markers to map panel with labels from POI names (can be added via UI customization)
+  - [x] 2.8 Create POI/ETA table panel with columns: POI name, distance (from `starlink_distance_to_poi_meters`), ETA (from `starlink_eta_poi_seconds` converted to HH:MM format)
+  - [~] 2.9 Configure POI/ETA table sorting: upcoming POIs first (by ETA ascending), then passed POIs (by most recent) (needs UI configuration)
+  - [x] 2.10 Add latency time series panel with PromQL query `starlink_network_latency_ms_current` and threshold colors (green <80ms, yellow 80-120ms, red >120ms)
+  - [x] 2.11 Add combined throughput time series panel showing `starlink_network_throughput_down_mbps_current` and `starlink_network_throughput_up_mbps_current` on same graph
+  - [x] 2.12 Add obstruction gauge panel with PromQL query `starlink_dish_obstruction_percent` and threshold colors (green <5%, yellow 5-15%, red >15%)
+  - [x] 2.13 Add stat panels for current speed (`starlink_dish_speed_knots`), heading (`starlink_dish_heading_degrees`), and altitude (`starlink_dish_altitude_meters`)
+  - [x] 2.14 Add connection status indicator using `starlink_dish_outage_active` (0=connected, 1=outage)
+  - [x] 2.15 Configure dashboard time range options (5min, 10min, 15min, 30min, 1hr, 2hr, 4hr, 8hr, 24hr, 48hr) with default set to 5 minutes
+  - [x] 2.16 Set dashboard auto-refresh interval to 5 seconds (user preference overriding 2×10s=20s calculation)
+  - [~] 2.17 Enable auto-updating time window (e.g., "Last 5 minutes" continuously shifts forward) (requires liveNow setting)
+  - [~] 2.18 Add dashboard navigation links/variables for easy switching to Network and Position dashboards (pending other dashboard creation)
+  - [x] 2.19 Export dashboard JSON and save to `monitoring/grafana/provisioning/dashboards/overview.json`
 - [ ] 3.0 Create Network Metrics Dashboard
   - [ ] 3.1 Create base dashboard JSON structure with metadata (title: "Network Metrics", uid: "starlink-network", version: 1)
   - [ ] 3.2 Add detailed latency time series panel with min/max/avg calculations using `starlink_network_latency_ms_current` and PromQL functions (e.g., `avg_over_time()`)

@@ -19,7 +19,32 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": null,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": ["starlink"],
+      "targetBlank": false,
+      "title": "Network Metrics",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": "/d/starlink-network/starlink-network"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": ["starlink"],
+      "targetBlank": false,
+      "title": "Position & Movement",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": "/d/starlink-position/starlink-position"
+    }
+  ],
   "liveNow": false,
   "panels": [
     {
