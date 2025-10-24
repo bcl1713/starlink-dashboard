@@ -247,7 +247,23 @@
           "showScale": true,
           "showZoom": true
         },
-        "layers": [],
+        "layers": [
+          {
+            "type": "geojson",
+            "name": "Current Position",
+            "tooltip": true,
+            "location": {
+              "mode": "jsonEndpoint",
+              "jsonUrl": "http://localhost:8000/api/position.geojson"
+            },
+            "style": {
+              "color": {
+                "fixed": "red"
+              },
+              "size": 8
+            }
+          }
+        ],
         "view": {
           "allLayers": true,
           "initialZoom": 4,
@@ -964,5 +980,5 @@
   "timezone": "utc",
   "title": "Starlink Overview",
   "uid": "starlink-overview",
-  "version": 15
+  "version": 16
 }
