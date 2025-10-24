@@ -1,0 +1,310 @@
+"""Starlink gRPC client wrapper for live terminal data collection."""
+
+import logging
+from datetime import datetime
+from typing import Dict, Optional, Tuple
+
+import starlink_grpc
+from grpc import RpcError
+
+from app.models.telemetry import (
+    EnvironmentalData,
+    NetworkData,
+    ObstructionData,
+    PositionData,
+    TelemetryData,
+)
+
+logger = logging.getLogger(__name__)
+
+
+class StarlinkClient:
+    """Wrapper for starlink-grpc-tools library for real-time dish communication.
+
+    Handles connection management, telemetry collection, and error handling
+    for Starlink dish gRPC API.
+    """
+
+    def __init__(
+        self,
+        target: str = "192.168.100.1:9200",
+        timeout: float = 5.0,
+    ):
+        """Initialize Starlink client.
+
+        Args:
+            target: gRPC endpoint address and port (default: 192.168.100.1:9200)
+            timeout: Connection timeout in seconds (default: 5.0)
+
+        Raises:
+            ValueError: If target or timeout are invalid
+        """
+        if not target or ":" not in target:
+            raise ValueError(f"Invalid target format: {target}")
+        if timeout <= 0:
+            raise ValueError(f"Timeout must be positive: {timeout}")
+
+        self.target = target
+        self.timeout = timeout
+        self.context: Optional[starlink_grpc.ChannelContext] = None
+        self.is_connected = False
+        self.logger = logger
+
+    def connect(self) -> bool:
+        """Establish gRPC connection to Starlink dish.
+
+        Returns:
+            True if connection successful, False otherwise
+
+        Raises:
+            starlink_grpc.GrpcError: If gRPC error occurs
+            RpcError: If low-level gRPC error occurs
+        """
+        if self.is_connected and self.context:
+            return True
+
+        try:
+            self.context = starlink_grpc.ChannelContext(
+                target=self.target,
+                username=None,  # No auth required
+                password=None,
+            )
+            self.is_connected = True
+            self.logger.info(
+                f"Connected to Starlink dish at {self.target}"
+            )
+            return True
+        except (starlink_grpc.GrpcError, RpcError) as e:
+            self.logger.error(
+                f"Failed to connect to Starlink dish at {self.target}: {e}"
+            )
+            self.is_connected = False
+            self.context = None
+            raise
+
+    def disconnect(self) -> None:
+        """Close gRPC connection to Starlink dish."""
+        if self.context:
+            try:
+                self.context.close()
+                self.logger.info("Disconnected from Starlink dish")
+            except Exception as e:
+                self.logger.warning(f"Error closing connection: {e}")
+            finally:
+                self.context = None
+                self.is_connected = False
+
+    def test_connection(self) -> bool:
+        """Test connection to Starlink dish.
+
+        This method attempts to retrieve basic status data to verify
+        connectivity and dish reachability.
+
+        Returns:
+            True if connection is healthy, False otherwise
+        """
+        try:
+            if not self.context:
+                self.connect()
+
+            # Try to get status data as a simple health check
+            starlink_grpc.status_data(context=self.context)
+            self.logger.debug("Connection test successful")
+            return True
+
+        except (starlink_grpc.GrpcError, RpcError) as e:
+            self.logger.warning(
+                f"Connection test failed: {type(e).__name__}: {e}"
+            )
+            self.is_connected = False
+            return False
+        except Exception as e:
+            self.logger.error(
+                f"Unexpected error during connection test: {type(e).__name__}: {e}"
+            )
+            return False
+
+    def get_status_data(self) -> Tuple[Dict, Dict, Dict]:
+        """Get device status, obstruction, and alerts from Starlink dish.
+
+        Returns:
+            Tuple of (status_dict, obstruction_dict, alert_dict)
+
+        Raises:
+            starlink_grpc.GrpcError: If gRPC error occurs
+            RpcError: If low-level gRPC error occurs
+        """
+        if not self.context:
+            self.connect()
+
+        try:
+            status, obstruction, alerts = starlink_grpc.status_data(
+                context=self.context
+            )
+            return status, obstruction, alerts
+        except (starlink_grpc.GrpcError, RpcError) as e:
+            self.logger.error(f"Failed to get status data: {e}")
+            raise
+
+    def get_location_data(self) -> Dict:
+        """Get GPS location data from Starlink dish.
+
+        Returns:
+            Dictionary with latitude, longitude, altitude keys
+
+        Raises:
+            starlink_grpc.GrpcError: If gRPC error occurs
+            RpcError: If low-level gRPC error occurs
+        """
+        if not self.context:
+            self.connect()
+
+        try:
+            location = starlink_grpc.location_data(context=self.context)
+            return location
+        except (starlink_grpc.GrpcError, RpcError) as e:
+            self.logger.error(f"Failed to get location data: {e}")
+            raise
+
+    def get_history_stats(
+        self, parse_samples: int = -1
+    ) -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict, Dict]:
+        """Get historical statistics from Starlink dish.
+
+        Args:
+            parse_samples: Number of samples to parse (-1 for all)
+
+        Returns:
+            Tuple of 7 dictionaries:
+            (general_dict, ping_drop_dict, ping_run_length_dict,
+             ping_latency_dict, loaded_ping_latency_dict, usage_dict, power_dict)
+
+        Raises:
+            starlink_grpc.GrpcError: If gRPC error occurs
+            RpcError: If low-level gRPC error occurs
+        """
+        if not self.context:
+            self.connect()
+
+        try:
+            general, drop, run, latency, loaded, usage, power = (
+                starlink_grpc.history_stats(
+                    parse_samples=parse_samples,
+                    context=self.context,
+                )
+            )
+            return general, drop, run, latency, loaded, usage, power
+        except (starlink_grpc.GrpcError, RpcError) as e:
+            self.logger.error(f"Failed to get history stats: {e}")
+            raise
+
+    def get_telemetry(self) -> TelemetryData:
+        """Get comprehensive telemetry data from Starlink dish.
+
+        Collects position, network metrics, and obstruction data and
+        packages them into a TelemetryData object.
+
+        Returns:
+            TelemetryData object with all available metrics
+
+        Raises:
+            starlink_grpc.GrpcError: If gRPC error occurs
+            RpcError: If low-level gRPC error occurs
+            KeyError: If expected keys are missing from API responses
+        """
+        if not self.context:
+            self.connect()
+
+        try:
+            # Get all required data
+            status, obstruction, alerts = self.get_status_data()
+            location = self.get_location_data()
+            general, drop, run, latency, loaded, usage, power = (
+                self.get_history_stats(parse_samples=10)
+            )
+
+            # Extract position data
+            lat = location.get("latitude")
+            lon = location.get("longitude")
+            alt = location.get("altitude", 0.0)
+
+            # Handle missing GPS data
+            if lat is None or lon is None:
+                self.logger.warning(
+                    "GPS location data not available from dish"
+                )
+                lat = lat or 0.0
+                lon = lon or 0.0
+
+            position = PositionData(
+                latitude=float(lat),
+                longitude=float(lon),
+                altitude=float(alt),
+                speed=0.0,  # Not available from Starlink API
+                heading=0.0,  # Will be populated by HeadingTracker
+            )
+
+            # Extract network metrics
+            latency_ms = status.get("pop_ping_latency_ms", 0.0)
+            downlink_bps = status.get("downlink_throughput_bps", 0.0)
+            uplink_bps = status.get("uplink_throughput_bps", 0.0)
+            packet_loss = (
+                status.get("pop_ping_drop_rate", 0.0) * 100
+            )  # Convert to percentage
+
+            network = NetworkData(
+                latency_ms=float(latency_ms),
+                throughput_down_mbps=float(downlink_bps / 1e6),
+                throughput_up_mbps=float(uplink_bps / 1e6),
+                packet_loss_percent=float(packet_loss),
+            )
+
+            # Extract obstruction data
+            obstruction_fraction = obstruction.get(
+                "fraction_obstructed", 0.0
+            )
+            obstruction_pct = ObstructionData(
+                obstruction_percent=float(obstruction_fraction * 100)
+            )
+
+            # Extract environmental data
+            uptime = status.get("uptime", 0.0)
+            temp = status.get("temperature_c")  # May not be available
+
+            environmental = EnvironmentalData(
+                signal_quality_percent=100.0,  # Not directly available
+                uptime_seconds=float(uptime),
+                temperature_celsius=float(temp) if temp else None,
+            )
+
+            return TelemetryData(
+                timestamp=datetime.now(),
+                position=position,
+                network=network,
+                obstruction=obstruction_pct,
+                environmental=environmental,
+            )
+
+        except (starlink_grpc.GrpcError, RpcError) as e:
+            self.logger.error(f"Failed to get telemetry: {e}")
+            raise
+        except (KeyError, TypeError, ValueError) as e:
+            self.logger.error(f"Error parsing telemetry data: {e}")
+            raise
+
+    def __enter__(self):
+        """Context manager entry."""
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit."""
+        self.disconnect()
+        return False
+
+    def __del__(self):
+        """Ensure connection is closed on garbage collection."""
+        try:
+            self.disconnect()
+        except Exception:
+            pass
