@@ -240,6 +240,16 @@
           "allLayers": true,
           "initialZoom": 3,
           "lastZoom": 3
+        },
+        "location": {
+          "mode": "auto"
+        },
+        "marker": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "rgba(255, 0, 0, 0.7)"
+          },
+          "size": 8
         }
       },
       "pluginVersion": "11.1.0",
@@ -247,12 +257,14 @@
         {
           "expr": "starlink_dish_latitude_degrees",
           "instant": true,
-          "refId": "A"
+          "refId": "lat",
+          "format": "table"
         },
         {
           "expr": "starlink_dish_longitude_degrees",
           "instant": true,
-          "refId": "B"
+          "refId": "lon",
+          "format": "table"
         }
       ],
       "title": "Live Position Map (Large)",
@@ -825,5 +837,5 @@
   "timezone": "utc",
   "title": "Position & Movement",
   "uid": "starlink-position",
-  "version": 12
+  "version": 13
 }
