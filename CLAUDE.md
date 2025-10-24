@@ -31,9 +31,16 @@ docker compose build           # Build images (use --no-cache to force rebuild)
 
 Environment variables in `.env`:
 ```bash
-SIMULATION_MODE=true              # Enable simulation (default for development)
+# Operating mode: 'simulation' for development, 'live' for real Starlink dish
+STARLINK_MODE=simulation
+
+# Starlink dish network configuration (for live mode)
+STARLINK_DISH_HOST=192.168.100.1  # IP address of Starlink dish
+STARLINK_DISH_PORT=9200           # gRPC port for Starlink communication
+
+# Other settings
 PROMETHEUS_RETENTION=15d          # Metrics retention period
-GRAFANA_ADMIN_PASSWORD=admin      # Grafana admin password
+GRAFANA_ADMIN_PASSWORD=admin      # Grafana admin password (change in production!)
 ```
 
 ## Key Implementation Paths
@@ -44,9 +51,51 @@ GRAFANA_ADMIN_PASSWORD=admin      # Grafana admin password
 
 **Data volumes:** `/data/routes/` for KML files, `/data/sim_routes/` for simulator routes
 
-## Simulation Mode
+## Operating Modes
 
-Default mode for development. Generates realistic Starlink telemetry (position, speed, latency, throughput, obstructions). Refer to `docs/design-document.md` section 3 for detailed behavior and optional API controls.
+### Simulation Mode (Default)
+
+Default mode for development. Generates realistic Starlink telemetry (position, speed, latency, throughput, obstructions).
+- Set `STARLINK_MODE=simulation` in `.env`
+- No hardware required
+- Useful for UI development and testing
+- Refer to `docs/design-document.md` section 3 for detailed behavior
+
+### Live Mode
+
+Connect to a real Starlink terminal to get actual telemetry data.
+
+**Requirements:**
+- Starlink terminal on local network at `192.168.100.1` (default) or configured IP
+- Network access from Docker container to terminal
+- Set `STARLINK_MODE=live` in `.env`
+
+**Configuration:**
+```bash
+STARLINK_MODE=live
+STARLINK_DISH_HOST=192.168.100.1  # Your terminal's IP address
+STARLINK_DISH_PORT=9200           # Standard gRPC port
+```
+
+**Docker Networking:**
+- **Bridge mode (default, cross-platform):** Uses `extra_hosts` to route dish.starlink hostname
+- **Host mode (Linux only):** Uncomment `network_mode: host` in docker-compose.yml for direct access
+
+**Automatic Fallback:**
+If the system fails to connect to the dish on startup, it automatically falls back to simulation mode. This allows the system to continue running even if hardware is temporarily unavailable. Check logs for fallback status.
+
+**Testing Connection:**
+```bash
+# Once running, check health endpoint to see actual mode
+curl http://localhost:8000/health
+
+# Should show:
+# {
+#   "mode": "live",
+#   "mode_description": "Real Starlink terminal data",
+#   ...
+# }
+```
 
 ## Core Metrics
 

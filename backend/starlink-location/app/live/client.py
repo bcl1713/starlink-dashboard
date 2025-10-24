@@ -1,6 +1,7 @@
 """Starlink gRPC client wrapper for live terminal data collection."""
 
 import logging
+import os
 from datetime import datetime
 from typing import Dict, Optional, Tuple
 
@@ -18,6 +19,17 @@ from app.models.telemetry import (
 logger = logging.getLogger(__name__)
 
 
+def _get_dish_target() -> str:
+    """Get Starlink dish gRPC target from environment variables.
+
+    Returns:
+        Target string in format "host:port"
+    """
+    host = os.getenv("STARLINK_DISH_HOST", "192.168.100.1")
+    port = os.getenv("STARLINK_DISH_PORT", "9200")
+    return f"{host}:{port}"
+
+
 class StarlinkClient:
     """Wrapper for starlink-grpc-tools library for real-time dish communication.
 
@@ -27,18 +39,22 @@ class StarlinkClient:
 
     def __init__(
         self,
-        target: str = "192.168.100.1:9200",
+        target: Optional[str] = None,
         timeout: float = 5.0,
     ):
         """Initialize Starlink client.
 
         Args:
-            target: gRPC endpoint address and port (default: 192.168.100.1:9200)
+            target: gRPC endpoint address and port (default: from STARLINK_DISH_HOST and STARLINK_DISH_PORT env vars)
             timeout: Connection timeout in seconds (default: 5.0)
 
         Raises:
             ValueError: If target or timeout are invalid
         """
+        # Use provided target or get from environment variables
+        if target is None:
+            target = _get_dish_target()
+
         if not target or ":" not in target:
             raise ValueError(f"Invalid target format: {target}")
         if timeout <= 0:

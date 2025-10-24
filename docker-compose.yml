@@ -12,6 +12,19 @@ services:
       timeout: 2s
       retries: 2
       start_period: 2s
+    # Network configuration for Starlink dish access
+    # For live mode, the container needs to reach the Starlink dish at 192.168.100.1:9200
+    #
+    # Option 1: host network mode (Linux only, best performance)
+    # Uncomment 'network_mode: host' and comment out 'networks' section below
+    # This allows container to access the host network directly
+    # network_mode: host
+    #
+    # Option 2: Bridge network with extra_hosts (cross-platform, Docker Desktop compatible)
+    # Uses extra_hosts to add the dish IP, allowing container to reach 192.168.100.1
+    # This is the default and works on Windows, Mac, and Linux
+    extra_hosts:
+      - "dish.starlink:${STARLINK_DISH_HOST:-192.168.100.1}"
     volumes:
       - route_data:/data/routes
       - sim_route_data:/data/sim_routes

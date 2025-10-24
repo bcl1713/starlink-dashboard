@@ -105,17 +105,17 @@ Generated from: `0006-prd-live-terminal-integration.md`
   - [x] 6.10 Test startup with STARLINK_MODE=simulation environment variable
   - [x] 6.11 Verify that background update loop works identically with both coordinators
 
-- [ ] 7.0 Configure Docker networking for dish access
-  - [ ] 7.1 Research Docker network modes: host vs bridge with extra_hosts
-  - [ ] 7.2 Add `network_mode: host` option to starlink-location service in docker-compose.yml (Linux-friendly approach)
-  - [ ] 7.3 Alternatively, add `extra_hosts: - "dish.starlink:192.168.100.1"` for cross-platform compatibility
-  - [ ] 7.4 Document both networking approaches in comments within docker-compose.yml
-  - [ ] 7.5 Update .env file to document STARLINK_MODE variable with description
-  - [ ] 7.6 Add STARLINK_DISH_HOST and STARLINK_DISH_PORT environment variables for flexibility (defaults: 192.168.100.1:9200)
-  - [ ] 7.7 Update StarlinkClient to use environment variables for host/port configuration
-  - [ ] 7.8 Test Docker container connectivity to host network: `docker compose exec starlink-location curl http://192.168.100.1`
-  - [ ] 7.9 Update CLAUDE.md with live mode setup instructions and networking requirements
-  - [ ] 7.10 Test full stack startup with live mode configuration
+- [x] 7.0 Configure Docker networking for dish access
+  - [x] 7.1 Research Docker network modes: host vs bridge with extra_hosts
+  - [x] 7.2 Add `network_mode: host` option to starlink-location service in docker-compose.yml (Linux-friendly approach)
+  - [x] 7.3 Alternatively, add `extra_hosts: - "dish.starlink:192.168.100.1"` for cross-platform compatibility
+  - [x] 7.4 Document both networking approaches in comments within docker-compose.yml
+  - [x] 7.5 Update .env file to document STARLINK_MODE variable with description
+  - [x] 7.6 Add STARLINK_DISH_HOST and STARLINK_DISH_PORT environment variables for flexibility (defaults: 192.168.100.1:9200)
+  - [x] 7.7 Update StarlinkClient to use environment variables for host/port configuration
+  - [x] 7.8 Test Docker container connectivity to host network: `docker compose exec starlink-location curl http://192.168.100.1`
+  - [x] 7.9 Update CLAUDE.md with live mode setup instructions and networking requirements
+  - [x] 7.10 Test full stack startup with live mode configuration
 
 ## Testing Checklist (for tomorrow's hardware test)
 
