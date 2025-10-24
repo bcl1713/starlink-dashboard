@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import config, health, metrics, status
+from app.api import config, geojson, health, metrics, status
 from app.core.config import ConfigManager
 from app.core.logging import setup_logging, get_logger
 from app.core.metrics import set_service_info
@@ -242,6 +242,7 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])
+app.include_router(geojson.router, tags=["GeoJSON"])
 
 
 @app.get("/")
@@ -259,6 +260,10 @@ async def root():
             "health": "/health",
             "metrics": "/metrics",
             "status": "/api/status",
-            "config": "/api/config"
+            "config": "/api/config",
+            "position.geojson": "/api/position.geojson",
+            "route.geojson": "/api/route.geojson",
+            "pois.geojson": "/api/pois.geojson",
+            "route.json": "/api/route.json"
         }
     }
