@@ -31,8 +31,14 @@ docker compose build           # Build images (use --no-cache to force rebuild)
 
 Environment variables in `.env`:
 ```bash
-# Operating mode: 'simulation' for development, 'live' for real Starlink dish
-STARLINK_MODE=simulation
+# Operating mode: Two approaches (STARLINK_MODE is recommended)
+# Approach 1: STARLINK_MODE (explicit, recommended)
+STARLINK_MODE=simulation          # or 'live' for real Starlink terminal
+
+# Approach 2: SIMULATION_MODE (backward compatible)
+# SIMULATION_MODE=true             # Equivalent to STARLINK_MODE=simulation
+# SIMULATION_MODE=false            # Equivalent to STARLINK_MODE=live
+# (If both are set, STARLINK_MODE takes precedence)
 
 # Starlink dish network configuration (for live mode)
 STARLINK_DISH_HOST=192.168.100.1  # IP address of Starlink dish

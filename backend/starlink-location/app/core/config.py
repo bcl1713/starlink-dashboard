@@ -20,8 +20,21 @@ def _override_from_env(config_dict: dict) -> dict:
         STARLINK_UPDATE_INTERVAL_SECONDS=2.0
         STARLINK_ROUTE_LATITUDE_START=51.5074
         STARLINK_NETWORK_LATENCY_MIN_MS=15.0
+
+    Backward Compatibility:
+        SIMULATION_MODE=false is equivalent to STARLINK_MODE=live
+        SIMULATION_MODE=true is equivalent to STARLINK_MODE=simulation
     """
     env_prefix = "STARLINK_"
+
+    # Handle SIMULATION_MODE for backward compatibility
+    # This takes precedence if STARLINK_MODE is not explicitly set
+    simulation_mode = os.getenv("SIMULATION_MODE", "").lower()
+    if simulation_mode and "STARLINK_MODE" not in os.environ:
+        if simulation_mode in ("false", "0", "no", "off"):
+            config_dict["mode"] = "live"
+        elif simulation_mode in ("true", "1", "yes", "on"):
+            config_dict["mode"] = "simulation"
 
     for env_key, env_value in os.environ.items():
         if not env_key.startswith(env_prefix):
