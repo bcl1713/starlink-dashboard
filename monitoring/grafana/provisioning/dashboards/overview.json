@@ -247,24 +247,7 @@
           "showScale": true,
           "showZoom": true
         },
-        "layers": [
-          {
-            "type": "geojson",
-            "name": "Route",
-            "tooltip": true,
-            "location": {
-              "mode": "jsonEndpoint",
-              "jsonUrl": "http://localhost:8000/route.geojson"
-            },
-            "style": {
-              "color": {
-                "fixed": "blue"
-              },
-              "opacity": 0.8,
-              "strokeWidth": 2
-            }
-          }
-        ],
+        "layers": [],
         "view": {
           "allLayers": true,
           "initialZoom": 4,
@@ -272,7 +255,7 @@
           "shared": true
         },
         "location": {
-          "mode": "auto"
+          "mode": "geohash"
         },
         "marker": {
           "color": {
@@ -286,16 +269,16 @@
       "targets": [
         {
           "expr": "starlink_dish_latitude_degrees",
-          "format": "table",
+          "format": "heatmap",
           "intervalFactor": 2,
-          "legendFormat": "Current Position",
+          "legendFormat": "Latitude",
           "refId": "lat"
         },
         {
           "expr": "starlink_dish_longitude_degrees",
-          "format": "table",
+          "format": "heatmap",
           "intervalFactor": 2,
-          "legendFormat": "Current Position",
+          "legendFormat": "Longitude",
           "refId": "lon"
         }
       ],
@@ -981,5 +964,5 @@
   "timezone": "utc",
   "title": "Starlink Overview",
   "uid": "starlink-overview",
-  "version": 13
+  "version": 15
 }

@@ -218,31 +218,14 @@
           "showScale": true,
           "showZoom": true
         },
-        "layers": [
-          {
-            "type": "geojson",
-            "name": "Route",
-            "tooltip": true,
-            "location": {
-              "mode": "jsonEndpoint",
-              "jsonUrl": "http://localhost:8000/route.geojson"
-            },
-            "style": {
-              "color": {
-                "fixed": "blue"
-              },
-              "opacity": 0.8,
-              "strokeWidth": 2
-            }
-          }
-        ],
+        "layers": [],
         "view": {
           "allLayers": true,
           "initialZoom": 3,
           "lastZoom": 3
         },
         "location": {
-          "mode": "auto"
+          "mode": "geohash"
         },
         "marker": {
           "color": {
@@ -258,13 +241,15 @@
           "expr": "starlink_dish_latitude_degrees",
           "instant": true,
           "refId": "lat",
-          "format": "table"
+          "format": "heatmap",
+          "legendFormat": "Latitude"
         },
         {
           "expr": "starlink_dish_longitude_degrees",
           "instant": true,
           "refId": "lon",
-          "format": "table"
+          "format": "heatmap",
+          "legendFormat": "Longitude"
         }
       ],
       "title": "Live Position Map (Large)",
@@ -837,5 +822,5 @@
   "timezone": "utc",
   "title": "Position & Movement",
   "uid": "starlink-position",
-  "version": 13
+  "version": 15
 }
