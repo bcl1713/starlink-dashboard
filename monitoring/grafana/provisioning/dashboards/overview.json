@@ -300,7 +300,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "value"
+            "mode": "thresholds"
           },
           "custom": {
             "align": "auto",
@@ -672,7 +672,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "value"
+            "mode": "thresholds"
           },
           "custom": {
             "align": "auto",
@@ -736,7 +736,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "value"
+            "mode": "thresholds"
           },
           "custom": {
             "align": "auto",
@@ -801,7 +801,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "value"
+            "mode": "thresholds"
           },
           "custom": {
             "align": "auto",
@@ -866,7 +866,7 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "value"
+            "mode": "thresholds"
           },
           "custom": {
             "align": "auto",
@@ -971,5 +971,5 @@
   "timezone": "utc",
   "title": "Starlink Overview",
   "uid": "starlink-overview",
-  "version": 2
+  "version": 3
 }
