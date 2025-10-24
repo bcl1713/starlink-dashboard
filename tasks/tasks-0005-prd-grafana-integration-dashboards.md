@@ -81,36 +81,36 @@ Generated from: `0005-prd-grafana-integration-dashboards.md`
   - [~] 2.17 Enable auto-updating time window (e.g., "Last 5 minutes" continuously shifts forward) (requires liveNow setting)
   - [~] 2.18 Add dashboard navigation links/variables for easy switching to Network and Position dashboards (pending other dashboard creation)
   - [x] 2.19 Export dashboard JSON and save to `monitoring/grafana/provisioning/dashboards/overview.json`
-- [ ] 3.0 Create Network Metrics Dashboard
-  - [ ] 3.1 Create base dashboard JSON structure with metadata (title: "Network Metrics", uid: "starlink-network", version: 1)
-  - [ ] 3.2 Add detailed latency time series panel with min/max/avg calculations using `starlink_network_latency_ms_current` and PromQL functions (e.g., `avg_over_time()`)
-  - [ ] 3.3 Configure latency panel with threshold reference lines (80ms, 120ms) and colored regions
-  - [ ] 3.4 Add download throughput time series panel with PromQL query `starlink_network_throughput_down_mbps_current` and thresholds (red <50, yellow 50-100, green >100)
-  - [ ] 3.5 Add upload throughput time series panel with PromQL query `starlink_network_throughput_up_mbps_current` and thresholds (red <10, yellow 10-20, green >20)
-  - [ ] 3.6 Add combined download/upload comparison panel showing both metrics on same axes for easy comparison
-  - [ ] 3.7 Add packet loss time series panel using `starlink_network_packet_loss_percent` with threshold warnings
-  - [ ] 3.8 Add obstruction statistics panel with time series and stat summary using `starlink_dish_obstruction_percent`
-  - [ ] 3.9 Add outage events panel using `starlink_dish_outage_active` to visualize connection disruptions over time
-  - [ ] 3.10 Add signal quality panel using `starlink_signal_quality_percent`
-  - [ ] 3.11 Ensure all panels use appropriate units (ms, Mbps, %) and consistent color schemes (download=blue, upload=green)
-  - [ ] 3.12 Configure time ranges and refresh interval (same as Overview: 5min default, 5s refresh)
-  - [ ] 3.13 Add navigation links back to Overview and to Position & Movement dashboard
-  - [ ] 3.14 Export dashboard JSON and save to `monitoring/grafana/provisioning/dashboards/network-metrics.json`
-- [ ] 4.0 Create Position & Movement Dashboard
-  - [ ] 4.1 Create base dashboard JSON structure with metadata (title: "Position & Movement", uid: "starlink-position", version: 1)
-  - [ ] 4.2 Add large map panel (24 units wide, 14 units tall) at top of dashboard
-  - [ ] 4.3 Configure map to display current position, 48hr track trail, route overlay, and POI markers (reuse configuration from Overview map)
-  - [ ] 4.4 Add stat panels for current coordinates: latitude (`starlink_dish_latitude_degrees` with 6 decimal places), longitude (`starlink_dish_longitude_degrees` with 6 decimal places)
-  - [ ] 4.5 Add stat panel for current altitude with unit selector (meters/feet) using `starlink_dish_altitude_meters`
-  - [ ] 4.6 Add gauge or stat panel for current speed using `starlink_dish_speed_knots` with optional unit conversion to km/h
-  - [ ] 4.7 Add gauge or compass visualization for current heading using `starlink_dish_heading_degrees` (0=North, 90=East)
-  - [ ] 4.8 Add altitude time series graph showing `starlink_dish_altitude_meters` over selected time range
-  - [ ] 4.9 Add speed time series graph showing `starlink_dish_speed_knots` over time
-  - [ ] 4.10 Add heading/bearing time series graph showing `starlink_dish_heading_degrees` over time
-  - [ ] 4.11 Consider adding compass rose or heading indicator visualization for better orientation awareness
-  - [ ] 4.12 Configure time ranges and refresh interval (same as other dashboards)
-  - [ ] 4.13 Add navigation links to Overview and Network Metrics dashboards
-  - [ ] 4.14 Export dashboard JSON and save to `monitoring/grafana/provisioning/dashboards/position-movement.json`
+- [x] 3.0 Create Network Metrics Dashboard
+  - [x] 3.1 Create base dashboard JSON structure with metadata (title: "Network Metrics", uid: "starlink-network", version: 1)
+  - [x] 3.2 Add detailed latency time series panel with min/max/avg calculations using `starlink_network_latency_ms_current` and PromQL functions (e.g., `avg_over_time()`)
+  - [x] 3.3 Configure latency panel with threshold reference lines (80ms, 120ms) and colored regions
+  - [x] 3.4 Add download throughput time series panel with PromQL query `starlink_network_throughput_down_mbps_current` and thresholds (red <50, yellow 50-100, green >100)
+  - [x] 3.5 Add upload throughput time series panel with PromQL query `starlink_network_throughput_up_mbps_current` and thresholds (red <10, yellow 10-20, green >20)
+  - [x] 3.6 Add combined download/upload comparison panel showing both metrics on same axes for easy comparison
+  - [x] 3.7 Add packet loss time series panel using `starlink_network_packet_loss_percent` with threshold warnings
+  - [x] 3.8 Add obstruction statistics panel with time series and stat summary using `starlink_dish_obstruction_percent`
+  - [x] 3.9 Add outage events panel using `starlink_dish_outage_active` to visualize connection disruptions over time
+  - [x] 3.10 Add signal quality panel using `starlink_signal_quality_percent`
+  - [x] 3.11 Ensure all panels use appropriate units (ms, Mbps, %) and consistent color schemes (download=blue, upload=green)
+  - [x] 3.12 Configure time ranges and refresh interval (same as Overview: 5min default, 5s refresh)
+  - [x] 3.13 Add navigation links back to Overview and to Position & Movement dashboard
+  - [x] 3.14 Export dashboard JSON and save to `monitoring/grafana/provisioning/dashboards/network-metrics.json`
+- [x] 4.0 Create Position & Movement Dashboard
+  - [x] 4.1 Create base dashboard JSON structure with metadata (title: "Position & Movement", uid: "starlink-position", version: 1)
+  - [x] 4.2 Add large map panel (24 units wide, 14 units tall) at top of dashboard
+  - [x] 4.3 Configure map to display current position, 48hr track trail, route overlay, and POI markers (reuse configuration from Overview map)
+  - [x] 4.4 Add stat panels for current coordinates: latitude (`starlink_dish_latitude_degrees` with 6 decimal places), longitude (`starlink_dish_longitude_degrees` with 6 decimal places)
+  - [x] 4.5 Add stat panel for current altitude with unit selector (meters/feet) using `starlink_dish_altitude_meters`
+  - [x] 4.6 Add gauge or stat panel for current speed using `starlink_dish_speed_knots` with optional unit conversion to km/h
+  - [x] 4.7 Add gauge or compass visualization for current heading using `starlink_dish_heading_degrees` (0=North, 90=East)
+  - [x] 4.8 Add altitude time series graph showing `starlink_dish_altitude_meters` over selected time range
+  - [x] 4.9 Add speed time series graph showing `starlink_dish_speed_knots` over time
+  - [x] 4.10 Add heading/bearing time series graph showing `starlink_dish_heading_degrees` over time
+  - [~] 4.11 Consider adding compass rose or heading indicator visualization for better orientation awareness (can be added via UI customization)
+  - [x] 4.12 Configure time ranges and refresh interval (same as other dashboards)
+  - [x] 4.13 Add navigation links to Overview and Network Metrics dashboards
+  - [x] 4.14 Export dashboard JSON and save to `monitoring/grafana/provisioning/dashboards/position-movement.json`
 - [ ] 5.0 Implement Simulation Mode Indicator and World Clocks
   - [ ] 5.1 Verify `grafana-clock-panel` plugin is installed (from task 1.1) or add it now if not included
   - [ ] 5.2 Add world clock panels to all three dashboards: create a top row with 4 small clock panels showing Zulu (UTC), Washington DC (America/New_York), and two configurable timezones
