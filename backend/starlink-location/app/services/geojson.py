@@ -111,11 +111,6 @@ class GeoJSONBuilder:
             "properties": {
                 "type": "current_position",
                 "name": "Current Position",
-                "latitude": position.latitude,
-                "longitude": position.longitude,
-                "altitude": position.altitude,
-                "speed_knots": position.speed,
-                "heading_degrees": position.heading,
                 "timestamp": datetime.utcnow().isoformat(),
             },
         }
@@ -157,13 +152,6 @@ class GeoJSONBuilder:
         feature_collection = {
             "type": "FeatureCollection",
             "features": features,
-            "properties": {
-                "generated_at": datetime.utcnow().isoformat(),
-                "feature_count": len(features),
-                "has_route": route is not None,
-                "has_pois": bool(pois and len(pois) > 0),
-                "has_position": current_position is not None,
-            },
         }
 
         return feature_collection

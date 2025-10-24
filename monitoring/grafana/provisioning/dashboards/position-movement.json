@@ -186,18 +186,8 @@
       }
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
       "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "unit": "short"
-        },
+        "defaults": {},
         "overrides": []
       },
       "gridPos": {
@@ -214,9 +204,10 @@
         "controls": {
           "showAttribution": true,
           "showDebug": false,
-          "showMeasure": true,
+          "showMeasure": false,
           "showScale": true,
-          "showZoom": true
+          "showZoom": true,
+          "mouseWheelZoom": true
         },
         "layers": [
           {
@@ -226,48 +217,24 @@
             "location": {
               "mode": "jsonEndpoint",
               "jsonUrl": "http://localhost:8000/api/position.geojson"
-            },
-            "style": {
-              "color": {
-                "fixed": "red"
-              },
-              "size": 8
             }
           }
         ],
         "view": {
-          "allLayers": true,
+          "allLayers": false,
           "initialZoom": 3,
-          "lastZoom": 3
+          "shared": false,
+          "fit": true
         },
-        "location": {
-          "mode": "geohash"
-        },
+        "location": {},
         "marker": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "rgba(255, 0, 0, 0.7)"
-          },
-          "size": 8
-        }
+          "displayMode": "image"
+        },
+        "hideEmpty": false,
+        "noData": ""
       },
       "pluginVersion": "11.1.0",
-      "targets": [
-        {
-          "expr": "starlink_dish_latitude_degrees",
-          "instant": true,
-          "refId": "lat",
-          "format": "heatmap",
-          "legendFormat": "Latitude"
-        },
-        {
-          "expr": "starlink_dish_longitude_degrees",
-          "instant": true,
-          "refId": "lon",
-          "format": "heatmap",
-          "legendFormat": "Longitude"
-        }
-      ],
+      "targets": [],
       "title": "Live Position Map (Large)",
       "type": "geomap"
     },

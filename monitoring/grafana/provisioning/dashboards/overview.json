@@ -186,47 +186,8 @@
       }
     },
     {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
       "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "1": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "OUTAGE"
-                },
-                "0": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "CONNECTED"
-                }
-              }
-            }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 0.5
-              }
-            ]
-          },
-          "unit": "short"
-        },
+        "defaults": {},
         "overrides": []
       },
       "gridPos": {
@@ -243,9 +204,10 @@
         "controls": {
           "showAttribution": true,
           "showDebug": false,
-          "showMeasure": true,
+          "showMeasure": false,
           "showScale": true,
-          "showZoom": true
+          "showZoom": true,
+          "mouseWheelZoom": true
         },
         "layers": [
           {
@@ -255,49 +217,24 @@
             "location": {
               "mode": "jsonEndpoint",
               "jsonUrl": "http://localhost:8000/api/position.geojson"
-            },
-            "style": {
-              "color": {
-                "fixed": "red"
-              },
-              "size": 8
             }
           }
         ],
         "view": {
-          "allLayers": true,
+          "allLayers": false,
           "initialZoom": 4,
-          "lastZoom": 4,
-          "shared": true
+          "shared": false,
+          "fit": true
         },
-        "location": {
-          "mode": "geohash"
-        },
+        "location": {},
         "marker": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "rgba(255, 0, 0, 0.7)"
-          },
-          "size": 8
-        }
+          "displayMode": "image"
+        },
+        "hideEmpty": false,
+        "noData": ""
       },
       "pluginVersion": "11.1.0",
-      "targets": [
-        {
-          "expr": "starlink_dish_latitude_degrees",
-          "format": "heatmap",
-          "intervalFactor": 2,
-          "legendFormat": "Latitude",
-          "refId": "lat"
-        },
-        {
-          "expr": "starlink_dish_longitude_degrees",
-          "format": "heatmap",
-          "intervalFactor": 2,
-          "legendFormat": "Longitude",
-          "refId": "lon"
-        }
-      ],
+      "targets": [],
       "title": "Live Position Map",
       "type": "geomap"
     },
