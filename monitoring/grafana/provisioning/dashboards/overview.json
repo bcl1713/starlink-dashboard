@@ -101,20 +101,22 @@
       "type": "grafana-clock-panel",
       "title": "\ud83c\udf0d UTC (Zulu)",
       "gridPos": {
-        "h": 2,
+        "h": 4,
         "w": 6,
         "x": 0,
         "y": 1
       },
       "id": 200,
       "options": {
-        "timezone": "UTC",
+        "timezone": "\ud83c\udf0d UTC (Zulu)",
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
         "showSeconds": true,
         "fontSize": 27,
-        "fontWeight": "bold"
+        "fontWeight": "bold",
+        "size": "large",
+        "timeFormat": "HH:mm:ss"
       },
       "fieldConfig": {
         "defaults": {},
@@ -125,20 +127,22 @@
       "type": "grafana-clock-panel",
       "title": "\ud83d\uddfd Washington DC",
       "gridPos": {
-        "h": 2,
+        "h": 4,
         "w": 6,
         "x": 6,
         "y": 1
       },
       "id": 201,
       "options": {
-        "timezone": "America/New_York",
+        "timezone": "\ud83d\uddfd Washington DC",
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
         "showSeconds": true,
         "fontSize": 27,
-        "fontWeight": "bold"
+        "fontWeight": "bold",
+        "size": "large",
+        "timeFormat": "HH:mm:ss"
       },
       "fieldConfig": {
         "defaults": {},
@@ -149,20 +153,22 @@
       "type": "grafana-clock-panel",
       "title": "\ud83c\uddec\ud83c\udde7 London",
       "gridPos": {
-        "h": 2,
+        "h": 4,
         "w": 6,
         "x": 12,
         "y": 1
       },
       "id": 202,
       "options": {
-        "timezone": "Europe/London",
+        "timezone": "\ud83c\uddec\ud83c\udde7 London",
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
         "showSeconds": true,
         "fontSize": 27,
-        "fontWeight": "bold"
+        "fontWeight": "bold",
+        "size": "large",
+        "timeFormat": "HH:mm:ss"
       },
       "fieldConfig": {
         "defaults": {},
@@ -173,20 +179,22 @@
       "type": "grafana-clock-panel",
       "title": "\ud83d\uddfe Tokyo",
       "gridPos": {
-        "h": 2,
+        "h": 4,
         "w": 6,
         "x": 18,
         "y": 1
       },
       "id": 203,
       "options": {
-        "timezone": "Asia/Tokyo",
+        "timezone": "\ud83d\uddfe Tokyo",
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
         "showSeconds": true,
         "fontSize": 27,
-        "fontWeight": "bold"
+        "fontWeight": "bold",
+        "size": "large",
+        "timeFormat": "HH:mm:ss"
       },
       "fieldConfig": {
         "defaults": {},
@@ -241,7 +249,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 3
+        "y": 11
       },
       "id": 1,
       "options": {
@@ -367,7 +375,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 3
+        "y": 11
       },
       "id": 2,
       "options": {
@@ -452,7 +460,7 @@
         "h": 8,
         "w": 6,
         "x": 0,
-        "y": 11
+        "y": 19
       },
       "id": 3,
       "options": {
@@ -517,7 +525,7 @@
         "h": 8,
         "w": 6,
         "x": 6,
-        "y": 11
+        "y": 19
       },
       "id": 4,
       "options": {
@@ -635,7 +643,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 11
+        "y": 19
       },
       "id": 5,
       "options": {
@@ -706,7 +714,7 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 19
+        "y": 27
       },
       "id": 6,
       "options": {
@@ -771,7 +779,7 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 19
+        "y": 27
       },
       "id": 7,
       "options": {
@@ -836,7 +844,7 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 19
+        "y": 27
       },
       "id": 8,
       "options": {
@@ -916,7 +924,7 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 19
+        "y": 27
       },
       "id": 9,
       "options": {
@@ -979,5 +987,5 @@
   "timezone": "utc",
   "title": "Starlink Overview",
   "uid": "starlink-overview",
-  "version": 5
+  "version": 7
 }
