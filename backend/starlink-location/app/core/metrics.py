@@ -1,13 +1,51 @@
 """Prometheus metrics registry and definitions."""
 
-from prometheus_client import CollectorRegistry, Gauge, Counter, Histogram
+from prometheus_client import CollectorRegistry, Gauge, Counter, Histogram, CollectorRegistry as PrometheusCollectorRegistry
+from prometheus_client.core import GaugeMetricFamily
 
 # Create a dedicated registry for our metrics
 REGISTRY = CollectorRegistry()
 
+# Current position data for custom collector
+_current_position = {
+    'latitude': 0.0,
+    'longitude': 0.0,
+    'altitude': 0.0,
+}
+
+class PositionCollector:
+    """Custom collector that exports position as a single metric with all values."""
+
+    def collect(self):
+        # Create a gauge metric with the position data
+        position_metric = GaugeMetricFamily(
+            'starlink_aircraft_position',
+            'Current aircraft position with latitude, longitude, and altitude',
+            labels=['dimension']
+        )
+
+        position_metric.add_metric(['latitude'], _current_position['latitude'])
+        position_metric.add_metric(['longitude'], _current_position['longitude'])
+        position_metric.add_metric(['altitude'], _current_position['altitude'])
+
+        yield position_metric
+
+# Register the custom collector
+REGISTRY.register(PositionCollector())
+
 # ============================================================================
 # Position metrics
 # ============================================================================
+# Composite location metric for Grafana geomap compatibility
+# This single metric with latitude/longitude as labels is what Grafana
+# expects for rendering geographic positions
+starlink_device_location = Gauge(
+    'starlink_device_location',
+    'Device location with latitude and longitude as labels',
+    labelnames=['lat', 'lon', 'altitude'],
+    registry=REGISTRY
+)
+
 starlink_dish_latitude_degrees = Gauge(
     'starlink_dish_latitude_degrees',
     'Dish latitude in decimal degrees',
@@ -250,6 +288,13 @@ def update_metrics_from_telemetry(telemetry, config=None):
     )
 
     # Position metrics
+    # Update custom collector's position data
+    global _current_position
+    _current_position['latitude'] = telemetry.position.latitude
+    _current_position['longitude'] = telemetry.position.longitude
+    _current_position['altitude'] = telemetry.position.altitude
+
+    # Also set individual metrics for backward compatibility
     starlink_dish_latitude_degrees.set(telemetry.position.latitude)
     starlink_dish_longitude_degrees.set(telemetry.position.longitude)
     starlink_dish_altitude_meters.set(telemetry.position.altitude)

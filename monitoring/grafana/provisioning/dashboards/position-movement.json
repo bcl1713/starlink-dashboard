@@ -186,9 +186,61 @@
       }
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
       "fieldConfig": {
-        "defaults": {},
-        "overrides": []
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "dark-red"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lat"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.hidden",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lon"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.hidden",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 14,
@@ -211,13 +263,68 @@
         },
         "layers": [
           {
-            "type": "geojson",
-            "name": "Current Position",
-            "tooltip": true,
+            "type": "route",
+            "name": "Historical Route",
+            "config": {
+              "style": {
+                "color": {
+                  "fixed": "green"
+                },
+                "opacity": 0.6,
+                "lineWidth": 3
+              },
+              "showLegend": true
+            },
             "location": {
-              "mode": "jsonEndpoint",
-              "jsonUrl": "http://localhost:8000/api/position.geojson"
-            }
+              "mode": "auto"
+            },
+            "tooltip": false
+          },
+          {
+            "type": "markers",
+            "name": "Current Position",
+            "config": {
+              "style": {
+                "color": {
+                  "fixed": "green"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "field": "heading",
+                  "fixed": 0,
+                  "max": 360,
+                  "min": 0,
+                  "mode": "field"
+                },
+                "size": {
+                  "fixed": 12,
+                  "max": 15,
+                  "min": 2,
+                  "mode": "fixed"
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/plane.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "field": "",
+                  "fixed": "",
+                  "mode": "fixed"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              },
+              "showLegend": true
+            },
+            "location": {
+              "mode": "auto"
+            },
+            "tooltip": true
           }
         ],
         "view": {
@@ -226,21 +333,95 @@
           "shared": false,
           "fit": true
         },
-        "location": {},
+        "location": {
+          "mode": "table",
+          "latitudeField": "latitude",
+          "longitudeField": "longitude"
+        },
         "marker": {
           "displayMode": "circle",
           "size": 8,
           "color": {
             "mode": "fixed",
-            "fixedColor": "dark-red"
-          }
+            "fixedColor": "red"
+          },
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "details"
         },
         "hideEmpty": false,
         "noData": ""
       },
-      "pluginVersion": "11.1.0",
-      "targets": [],
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "expr": "starlink_dish_latitude_degrees",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "latitude",
+          "refId": "A"
+        },
+        {
+          "expr": "starlink_dish_longitude_degrees",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "longitude",
+          "refId": "B"
+        },
+        {
+          "expr": "starlink_dish_altitude_meters",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "altitude",
+          "refId": "C"
+        },
+        {
+          "expr": "starlink_dish_heading_degrees",
+          "instant": true,
+          "intervalFactor": 2,
+          "legendFormat": "heading",
+          "refId": "D"
+        },
+        {
+          "expr": "starlink_dish_latitude_degrees",
+          "instant": false,
+          "intervalFactor": 2,
+          "legendFormat": "lat_history",
+          "refId": "E"
+        },
+        {
+          "expr": "starlink_dish_longitude_degrees",
+          "instant": false,
+          "intervalFactor": 2,
+          "legendFormat": "lon_history",
+          "refId": "F"
+        },
+        {
+          "expr": "starlink_dish_altitude_meters",
+          "instant": false,
+          "intervalFactor": 2,
+          "legendFormat": "alt_history",
+          "refId": "G"
+        },
+        {
+          "expr": "starlink_dish_heading_degrees",
+          "instant": false,
+          "intervalFactor": 2,
+          "legendFormat": "heading_history",
+          "refId": "H"
+        }
+      ],
       "title": "Live Position Map (Large)",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "outer"
+          }
+        }
+      ],
       "type": "geomap"
     },
     {

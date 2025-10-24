@@ -16,6 +16,54 @@ def radians_to_degrees(radians: float) -> float:
     return radians * (180.0 / math.pi)
 
 
+def calculate_bearing(
+    lat1: float,
+    lon1: float,
+    lat2: float,
+    lon2: float
+) -> float:
+    """
+    Calculate bearing (heading) from point 1 to point 2.
+
+    This is the initial bearing (forward azimuth) that would take you from
+    point 1 to point 2 along a great-circle arc.
+
+    Args:
+        lat1: Starting latitude in decimal degrees
+        lon1: Starting longitude in decimal degrees
+        lat2: Ending latitude in decimal degrees
+        lon2: Ending longitude in decimal degrees
+
+    Returns:
+        Bearing in degrees (0-360, where 0=North, 90=East, 180=South, 270=West)
+
+    Formula:
+        θ = atan2(sin(Δλ) * cos(φ2), cos(φ1) * sin(φ2) - sin(φ1) * cos(φ2) * cos(Δλ))
+
+    Example:
+        >>> calculate_bearing(41.5, -74.0, 41.6, -73.9)  # Moving northeast
+        44.8  # degrees
+    """
+    # Convert to radians
+    lat1_rad = degrees_to_radians(lat1)
+    lon1_rad = degrees_to_radians(lon1)
+    lat2_rad = degrees_to_radians(lat2)
+    lon2_rad = degrees_to_radians(lon2)
+
+    # Calculate bearing
+    dlon = lon2_rad - lon1_rad
+
+    y = math.sin(dlon) * math.cos(lat2_rad)
+    x = (math.cos(lat1_rad) * math.sin(lat2_rad) -
+         math.sin(lat1_rad) * math.cos(lat2_rad) * math.cos(dlon))
+
+    bearing_rad = math.atan2(y, x)
+    bearing_deg = radians_to_degrees(bearing_rad)
+
+    # Normalize to 0-360 range
+    return (bearing_deg + 360.0) % 360.0
+
+
 def calculate_destination(
     start_lat: float,
     start_lon: float,
@@ -85,14 +133,22 @@ class CircularRoute:
         self.points = []
 
         for i in range(self.num_points):
-            bearing = (360.0 * i) / self.num_points
+            # Bearing from center to point (radial direction)
+            bearing_from_center = (360.0 * i) / self.num_points
+
+            # Calculate point position
             lat, lon = calculate_destination(
                 self.center_lat,
                 self.center_lon,
-                bearing,
+                bearing_from_center,
                 self.radius_km
             )
-            self.points.append((lat, lon, bearing))
+
+            # Heading is tangent to circle (perpendicular to radius)
+            # For clockwise motion: heading = radial_bearing + 90°
+            heading = (bearing_from_center + 90.0) % 360.0
+
+            self.points.append((lat, lon, heading))
 
     def get_point(self, progress: float) -> Tuple[float, float, float]:
         """

@@ -2,10 +2,10 @@
 
 import time
 from fastapi import APIRouter
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from prometheus_client import generate_latest
 
-from app.core.metrics import REGISTRY
+from app.core.metrics import REGISTRY, _current_position
 
 router = APIRouter()
 
@@ -60,3 +60,49 @@ async def metrics():
         content=metrics_output,
         media_type="application/openmetrics-text; version=1.0.0; charset=utf-8"
     )
+
+
+@router.get("/position-table")
+async def position_table():
+    """
+    Position data as a simple table for Grafana.
+
+    Returns the current position as a JSON array suitable for Grafana's JSON API
+    data source or TestData data source format.
+
+    Example request:
+    ```
+    curl http://localhost:8000/position-table
+    ```
+
+    Example response:
+    ```json
+    {
+      "columns": [
+        {"text": "aircraft_id", "type": "string"},
+        {"text": "latitude", "type": "number"},
+        {"text": "longitude", "type": "number"},
+        {"text": "altitude", "type": "number"}
+      ],
+      "rows": [
+        ["starlink-dish", 41.612122, -74.006000, 5134.94]
+      ]
+    }
+    ```
+    """
+    return JSONResponse({
+        "columns": [
+            {"text": "aircraft_id", "type": "string"},
+            {"text": "latitude", "type": "number"},
+            {"text": "longitude", "type": "number"},
+            {"text": "altitude", "type": "number"}
+        ],
+        "rows": [
+            [
+                "starlink-dish",
+                _current_position['latitude'],
+                _current_position['longitude'],
+                _current_position['altitude']
+            ]
+        ]
+    })

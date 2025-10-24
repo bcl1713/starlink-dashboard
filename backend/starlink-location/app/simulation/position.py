@@ -1,10 +1,12 @@
 """Position simulator for realistic movement along a route."""
 
 import random
+from datetime import datetime
 from typing import Tuple
 
 from app.models.config import PositionConfig, RouteConfig
 from app.models.telemetry import PositionData
+from app.services.heading_tracker import HeadingTracker
 from app.simulation.route import create_route
 
 
@@ -38,11 +40,16 @@ class PositionSimulator:
         # Initialize state
         self.progress = 0.0  # 0.0 to 1.0 along route
         self.current_speed = 0.0  # knots
-        self.current_heading = 0.0  # degrees
         self.current_altitude = (
             position_config.altitude_min_meters +
             position_config.altitude_max_meters
         ) / 2.0
+
+        # Initialize heading tracker (simulates live mode behavior)
+        self.heading_tracker = HeadingTracker(
+            min_distance_meters=5.0,   # Lower threshold for simulation
+            max_age_seconds=30.0
+        )
 
     def update(self) -> PositionData:
         """
@@ -57,21 +64,26 @@ class PositionSimulator:
         # Assuming 1 second update interval
         self._update_progress()
 
-        # Update heading with slight variation
-        self._update_heading()
-
         # Update altitude with slight variation
         self._update_altitude()
 
         # Get position from route
         lat, lon, route_heading = self.route.get_segment(self.progress)
 
+        # Calculate heading from movement using HeadingTracker
+        # This simulates how heading will be calculated in live mode!
+        calculated_heading = self.heading_tracker.update(
+            latitude=lat,
+            longitude=lon,
+            timestamp=datetime.now()
+        )
+
         return PositionData(
             latitude=lat,
             longitude=lon,
             altitude=self.current_altitude,
             speed=self.current_speed,
-            heading=self.current_heading
+            heading=calculated_heading  # ✅ Using movement-based heading calculation!
         )
 
     def _update_progress(self) -> None:
@@ -148,8 +160,8 @@ class PositionSimulator:
         """Reset simulator to initial state."""
         self.progress = 0.0
         self.current_speed = 0.0
-        self.current_heading = 0.0
         self.current_altitude = (
             self.position_config.altitude_min_meters +
             self.position_config.altitude_max_meters
         ) / 2.0
+        self.heading_tracker.reset()

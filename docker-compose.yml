@@ -51,6 +51,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/custom-icons/chevron-up.svg:/usr/share/grafana/public/img/icons/marker/chevron-up.svg:ro
     depends_on:
       - prometheus
     networks:
