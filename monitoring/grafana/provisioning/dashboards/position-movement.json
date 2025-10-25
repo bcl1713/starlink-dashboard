@@ -304,22 +304,15 @@
                 "color": {
                   "fixed": "green"
                 },
-                "size": {
-                  "fixed": 3,
-                  "max": 15,
-                  "min": 2
-                },
-                "opacity": 1.0,
+                "opacity": 0.6,
                 "lineWidth": 3
               },
               "showLegend": true
             },
             "location": {
-              "mode": "coords",
-              "latitude": "lat_history",
-              "longitude": "lon_history"
+              "mode": "auto"
             },
-            "tooltip": true
+            "tooltip": false
           },
           {
             "type": "markers",
