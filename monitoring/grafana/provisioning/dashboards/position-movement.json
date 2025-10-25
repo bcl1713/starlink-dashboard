@@ -332,7 +332,7 @@
                 },
                 "opacity": 1,
                 "rotation": {
-                  "field": "heading",
+                  "field": "head_marker",
                   "fixed": 0,
                   "max": 360,
                   "min": 0,
@@ -364,7 +364,9 @@
               "showLegend": true
             },
             "location": {
-              "mode": "auto"
+              "mode": "coords",
+              "latitude": "lat_marker",
+              "longitude": "lon_marker"
             },
             "tooltip": true
           }
@@ -565,6 +567,10 @@
             "excludeByName": {},
             "indexByName": {},
             "renameByName": {
+              "latitude": "lat_marker",
+              "longitude": "lon_marker",
+              "altitude": "alt_marker",
+              "heading": "head_marker",
               "Value #E": "latitude",
               "Value #F": "longitude",
               "Value #G": "altitude",
@@ -581,6 +587,22 @@
           "id": "convertFieldType",
           "options": {
             "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "lat_marker"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "lon_marker"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "alt_marker"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "head_marker"
+              },
               {
                 "destinationType": "number",
                 "targetField": "latitude"
@@ -641,6 +663,18 @@
             ],
             "type": "include",
             "match": "all"
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "field": "Time",
+                "desc": true
+              }
+            ]
           }
         }
       ],
