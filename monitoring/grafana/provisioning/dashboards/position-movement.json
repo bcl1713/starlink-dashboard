@@ -310,9 +310,11 @@
               "showLegend": true
             },
             "location": {
-              "mode": "auto"
+              "mode": "coords",
+              "latitude": "lat_history",
+              "longitude": "lon_history"
             },
-            "tooltip": false
+            "tooltip": true
           },
           {
             "type": "markers",
