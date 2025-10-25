@@ -92,11 +92,7 @@ class StarlinkClient:
             return True
 
         try:
-            self.context = starlink_grpc.ChannelContext(
-                target=self.target,
-                username=None,  # No auth required
-                password=None,
-            )
+            self.context = starlink_grpc.ChannelContext(target=self.target)
             self._connected = True
             self.logger.info(
                 f"Connected to Starlink dish at {self.target}"

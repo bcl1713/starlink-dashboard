@@ -116,10 +116,11 @@
       "targets": [
         {
           "expr": "starlink_mode_info{mode=\"live\"}",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "Mode",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Mode Status",
@@ -385,59 +386,67 @@
       "targets": [
         {
           "expr": "starlink_dish_latitude_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "latitude",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_longitude_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "longitude",
-          "refId": "B"
+          "refId": "B",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_altitude_feet",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "altitude",
-          "refId": "C"
+          "refId": "C",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_heading_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "heading",
-          "refId": "D"
+          "refId": "D",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_latitude_degrees",
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "lat_history",
-          "refId": "E"
+          "refId": "E",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_longitude_degrees",
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "lon_history",
-          "refId": "F"
+          "refId": "F",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_altitude_feet",
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "alt_history",
-          "refId": "G"
+          "refId": "G",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_heading_degrees",
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "heading_history",
-          "refId": "H"
+          "refId": "H",
+          "interval": "1s"
         }
       ],
       "title": "Live Position Map (Large)",
@@ -534,9 +543,10 @@
       "targets": [
         {
           "expr": "starlink_dish_altitude_feet",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Altitude",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Altitude Over Time",
@@ -626,16 +636,17 @@
       "targets": [
         {
           "expr": "starlink_dish_speed_knots",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Speed",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Speed Over Time",
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
+  "refresh": "1s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
@@ -702,6 +713,7 @@
   },
   "timepicker": {
     "refresh_intervals": [
+      "1s",
       "5s",
       "10s",
       "30s",

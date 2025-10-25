@@ -139,59 +139,67 @@
       "targets": [
         {
           "expr": "starlink_dish_latitude_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "latitude",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_longitude_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "longitude",
-          "refId": "B"
+          "refId": "B",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_altitude_feet",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "altitude",
-          "refId": "C"
+          "refId": "C",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_heading_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "heading",
-          "refId": "D"
+          "refId": "D",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_latitude_degrees",
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "lat_history",
-          "refId": "E"
+          "refId": "E",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_longitude_degrees",
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "lon_history",
-          "refId": "F"
+          "refId": "F",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_altitude_feet",
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "alt_history",
-          "refId": "G"
+          "refId": "G",
+          "interval": "1s"
         },
         {
           "expr": "starlink_dish_heading_degrees",
           "instant": false,
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "heading_history",
-          "refId": "H"
+          "refId": "H",
+          "interval": "1s"
         }
       ],
       "title": "Current Position",
@@ -237,7 +245,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -326,10 +334,10 @@
       "options": {
         "legend": {
           "calcs": [
+            "lastNotNull",
             "min",
             "max",
-            "mean",
-            "last"
+            "mean"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -344,27 +352,31 @@
       "targets": [
         {
           "expr": "starlink_network_latency_ms_current",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Current",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         },
         {
           "expr": "min_over_time(starlink_network_latency_ms_current[5m])",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Min (5m)",
-          "refId": "B"
+          "refId": "B",
+          "interval": "1s"
         },
         {
           "expr": "avg_over_time(starlink_network_latency_ms_current[5m])",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Avg (5m)",
-          "refId": "C"
+          "refId": "C",
+          "interval": "1s"
         },
         {
           "expr": "max_over_time(starlink_network_latency_ms_current[5m])",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Max (5m)",
-          "refId": "D"
+          "refId": "D",
+          "interval": "1s"
         }
       ],
       "title": "Network Latency",
@@ -401,7 +413,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -411,8 +423,6 @@
             }
           },
           "mappings": [],
-          "max": 300,
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -467,7 +477,7 @@
       "options": {
         "legend": {
           "calcs": [
-            "last",
+            "lastNotNull",
             "max",
             "min",
             "mean"
@@ -484,16 +494,18 @@
       "pluginVersion": "11.1.0",
       "targets": [
         {
-          "expr": "starlink_network_throughput_down_mbps_current",
-          "intervalFactor": 2,
-          "legendFormat": "Download",
-          "refId": "A"
+          "expr": "starlink_network_throughput_up_mbps_current",
+          "intervalFactor": 1,
+          "legendFormat": "Upload",
+          "refId": "A",
+          "interval": "1s"
         },
         {
-          "expr": "starlink_network_throughput_up_mbps_current",
-          "intervalFactor": 2,
-          "legendFormat": "Upload",
-          "refId": "B"
+          "expr": "starlink_network_throughput_down_mbps_current",
+          "intervalFactor": 1,
+          "legendFormat": "Download",
+          "refId": "B",
+          "interval": "1s"
         }
       ],
       "title": "Download/Upload Throughput",
@@ -530,7 +542,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -573,7 +585,7 @@
       "options": {
         "legend": {
           "calcs": [
-            "last",
+            "lastNotNull",
             "max",
             "mean"
           ],
@@ -590,9 +602,10 @@
       "targets": [
         {
           "expr": "starlink_network_packet_loss_percent",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Packet Loss",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Packet Loss",
@@ -629,7 +642,7 @@
               "type": "linear"
             },
             "showPoints": "never",
-            "spanNulls": false,
+            "spanNulls": true,
             "stacking": {
               "group": "A",
               "mode": "none"
@@ -684,7 +697,7 @@
       "options": {
         "legend": {
           "calcs": [
-            "last"
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -699,16 +712,17 @@
       "targets": [
         {
           "expr": "starlink_dish_outage_active",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Outage Active",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Connection Outages",
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
+  "refresh": "1s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
@@ -725,6 +739,7 @@
   },
   "timepicker": {
     "refresh_intervals": [
+      "1s",
       "5s",
       "10s",
       "30s",

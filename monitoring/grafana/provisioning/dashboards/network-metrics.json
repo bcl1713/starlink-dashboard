@@ -116,10 +116,11 @@
       "targets": [
         {
           "expr": "starlink_mode_info{mode=\"live\"}",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "Mode",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Mode Status",
@@ -351,27 +352,31 @@
       "targets": [
         {
           "expr": "starlink_network_latency_ms_current",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Current",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         },
         {
           "expr": "min_over_time(starlink_network_latency_ms_current[5m])",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Min (5m)",
-          "refId": "B"
+          "refId": "B",
+          "interval": "1s"
         },
         {
           "expr": "avg_over_time(starlink_network_latency_ms_current[5m])",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Avg (5m)",
-          "refId": "C"
+          "refId": "C",
+          "interval": "1s"
         },
         {
           "expr": "max_over_time(starlink_network_latency_ms_current[5m])",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Max (5m)",
-          "refId": "D"
+          "refId": "D",
+          "interval": "1s"
         }
       ],
       "title": "Network Latency (with Min/Max/Avg)",
@@ -468,9 +473,10 @@
       "targets": [
         {
           "expr": "starlink_network_packet_loss_percent",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Packet Loss",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Packet Loss %",
@@ -517,8 +523,6 @@
             }
           },
           "mappings": [],
-          "max": 300,
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -591,15 +595,17 @@
       "targets": [
         {
           "expr": "starlink_network_throughput_down_mbps_current",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Download",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         },
         {
           "expr": "starlink_network_throughput_up_mbps_current",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Upload",
-          "refId": "B"
+          "refId": "B",
+          "interval": "1s"
         }
       ],
       "title": "Download/Upload Throughput (Combined)",
@@ -646,8 +652,6 @@
             }
           },
           "mappings": [],
-          "max": 300,
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -713,9 +717,10 @@
       "targets": [
         {
           "expr": "starlink_network_throughput_down_mbps_current",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Download",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Download Throughput (Detailed)",
@@ -829,9 +834,10 @@
       "targets": [
         {
           "expr": "starlink_network_throughput_up_mbps_current",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Upload",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Upload Throughput (Detailed)",
@@ -929,9 +935,10 @@
       "targets": [
         {
           "expr": "starlink_dish_obstruction_percent",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Obstruction",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Dish Obstruction Statistics",
@@ -1038,9 +1045,10 @@
       "targets": [
         {
           "expr": "starlink_dish_outage_active",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Outage Active",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Connection Outages",
@@ -1138,16 +1146,17 @@
       "targets": [
         {
           "expr": "starlink_signal_quality_percent",
-          "intervalFactor": 2,
+          "intervalFactor": 1,
           "legendFormat": "Signal Quality",
-          "refId": "A"
+          "refId": "A",
+          "interval": "1s"
         }
       ],
       "title": "Signal Quality %",
       "type": "timeseries"
     }
   ],
-  "refresh": "5s",
+  "refresh": "1s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
@@ -1164,6 +1173,7 @@
   },
   "timepicker": {
     "refresh_intervals": [
+      "1s",
       "5s",
       "10s",
       "30s",
