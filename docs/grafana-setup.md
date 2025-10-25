@@ -90,12 +90,34 @@ Comprehensive position and movement tracking:
 - **Altitude:** Current elevation in meters
 - **Speed:** Current velocity in knots
 
+#### Position History Route
+- **Historical Route with Altitude Coloring:** The "Position History Route" layer displays the terminal's complete movement path with altitude-based color coding
+- Route colors indicate elevation: cool colors (green) for low altitude, warm colors (red) for high altitude
+- Hover over any point on the route to see detailed telemetry data:
+  - **Position:** Latitude, longitude at that point in time
+  - **Altitude:** Elevation in meters
+  - **Speed:** Velocity in knots at that moment
+  - **Heading:** Direction (0°=North, 90°=East, 180°=South, 270°=West)
+  - **Network Metrics:** Latency (ms) and upload/download throughput (Mbps) at that time
+  - **Obstructions:** Percentage of dish obstruction at that point
+- Use the "History Window" dropdown (top-left of dashboard) to select different time ranges:
+  - 6 hours, 12 hours, 24 hours (default), 3 days, 7 days, 15 days (maximum)
+- The route automatically updates when you change the time window
+- Current position marker (plane icon) always appears on top of the historical route
+
 #### Movement History
 - **Altitude Over Time:** Graph showing altitude variations during flight
 - **Speed Over Time:** Graph showing velocity changes
 - **Heading Over Time:** Graph showing direction changes (0-360°)
 
 All time series include min/max/mean/last statistics for analysis.
+
+**Position History Features:**
+- Data is sampled at 10-second intervals for optimal performance and to balance detail with responsiveness
+- All historical points are connected as a single continuous route
+- Data gaps (e.g., when terminal is offline) are interpolated with straight lines
+- Color gradient auto-scales based on the altitude range in the current dataset
+- For example, if your dataset has altitudes from 0-100m, the scale adjusts to show that range; if it's 500-800m, the scale adjusts accordingly
 
 ## Configuration and Customization
 

@@ -221,15 +221,21 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "fixed",
-            "fixedColor": "dark-red"
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-red",
+                "color": "green",
                 "value": null
               }
             ]
@@ -292,21 +298,29 @@
         "layers": [
           {
             "type": "route",
-            "name": "Historical Route",
+            "name": "Position History Route",
             "config": {
               "style": {
                 "color": {
-                  "fixed": "green"
+                  "field": "altitude",
+                  "fixed": "dark-green"
                 },
-                "opacity": 0.6,
+                "size": {
+                  "fixed": 3,
+                  "max": 15,
+                  "min": 2
+                },
+                "opacity": 1.0,
                 "lineWidth": 3
               },
               "showLegend": true
             },
             "location": {
-              "mode": "auto"
+              "mode": "coords",
+              "latitude": "latitude",
+              "longitude": "longitude"
             },
-            "tooltip": false
+            "tooltip": true
           },
           {
             "type": "markers",
@@ -384,6 +398,10 @@
       "pluginVersion": "12.2.1",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_latitude_degrees",
           "instant": true,
           "intervalFactor": 2,
@@ -391,6 +409,10 @@
           "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_longitude_degrees",
           "instant": true,
           "intervalFactor": 2,
@@ -398,6 +420,10 @@
           "refId": "B"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_altitude_feet",
           "instant": true,
           "intervalFactor": 2,
@@ -405,6 +431,10 @@
           "refId": "C"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_heading_degrees",
           "instant": true,
           "intervalFactor": 2,
@@ -412,32 +442,112 @@
           "refId": "D"
         },
         {
-          "expr": "starlink_dish_latitude_degrees",
-          "instant": false,
-          "intervalFactor": 2,
-          "legendFormat": "lat_history",
-          "refId": "E"
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_dish_latitude_degrees[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "latitude",
+          "refId": "E",
+          "step": 10
         },
         {
-          "expr": "starlink_dish_longitude_degrees",
-          "instant": false,
-          "intervalFactor": 2,
-          "legendFormat": "lon_history",
-          "refId": "F"
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_dish_longitude_degrees[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "longitude",
+          "refId": "F",
+          "step": 10
         },
         {
-          "expr": "starlink_dish_altitude_feet",
-          "instant": false,
-          "intervalFactor": 2,
-          "legendFormat": "alt_history",
-          "refId": "G"
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_dish_altitude_meters[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "altitude",
+          "refId": "G",
+          "step": 10
         },
         {
-          "expr": "starlink_dish_heading_degrees",
-          "instant": false,
-          "intervalFactor": 2,
-          "legendFormat": "heading_history",
-          "refId": "H"
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_dish_heading_degrees[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "heading",
+          "refId": "H",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_dish_speed_knots[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "speed",
+          "refId": "I",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_network_latency_ms[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "latency",
+          "refId": "J",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_network_throughput_down_mbps[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "throughput_down",
+          "refId": "K",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_network_throughput_up_mbps[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "throughput_up",
+          "refId": "L",
+          "step": 10
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "avg_over_time(starlink_dish_obstruction_percent[10s])",
+          "interval": "",
+          "intervalFactor": 1,
+          "legendFormat": "obstructions",
+          "refId": "M",
+          "step": 10
         }
       ],
       "title": "Live Position Map (Large)",
@@ -447,6 +557,90 @@
           "options": {
             "byField": "Time",
             "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Value #E": "latitude",
+              "Value #F": "longitude",
+              "Value #G": "altitude",
+              "Value #H": "heading",
+              "Value #I": "speed",
+              "Value #J": "latency",
+              "Value #K": "throughput_down",
+              "Value #L": "throughput_up",
+              "Value #M": "obstructions"
+            }
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "number",
+                "targetField": "latitude"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "longitude"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "altitude"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "heading"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "speed"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "latency"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "throughput_down"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "throughput_up"
+              },
+              {
+                "destinationType": "number",
+                "targetField": "obstructions"
+              }
+            ]
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "fieldName": "latitude",
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                }
+              },
+              {
+                "fieldName": "longitude",
+                "config": {
+                  "id": "isNotNull",
+                  "options": {}
+                }
+              }
+            ],
+            "type": "include",
+            "match": "all"
           }
         }
       ],
@@ -644,7 +838,57 @@
     "position"
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "Last 24 hours",
+          "value": "24h"
+        },
+        "description": "Time range for position history display",
+        "hide": 0,
+        "includeAll": false,
+        "label": "History Window",
+        "multi": false,
+        "name": "history_time_window",
+        "options": [
+          {
+            "selected": false,
+            "text": "Last 6 hours",
+            "value": "6h"
+          },
+          {
+            "selected": false,
+            "text": "Last 12 hours",
+            "value": "12h"
+          },
+          {
+            "selected": true,
+            "text": "Last 24 hours",
+            "value": "24h"
+          },
+          {
+            "selected": false,
+            "text": "Last 3 days",
+            "value": "3d"
+          },
+          {
+            "selected": false,
+            "text": "Last 7 days",
+            "value": "7d"
+          },
+          {
+            "selected": false,
+            "text": "Last 15 days",
+            "value": "15d"
+          }
+        ],
+        "query": "6h,12h,24h,3d,7d,15d",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-5m",

@@ -111,6 +111,36 @@ The backend exposes Prometheus metrics including:
 - Status: `starlink_dish_obstruction_percent`, `starlink_dish_speed_knots`, `starlink_dish_heading_degrees`
 - POI/ETA: `starlink_eta_poi_seconds{name="..."}`, `starlink_distance_to_poi_meters{name="..."}`
 
+## Dashboard Features
+
+### Position History Layer
+
+The Position & Movement dashboard includes a position history layer that visualizes the terminal's movement over time.
+
+**Features:**
+- Displays a colored route line showing position history over configurable time windows (6h to 15 days)
+- Route color indicates altitude: cool colors (green) for low altitude, warm colors (red) for high altitude
+- Hover over any point on the route to see detailed telemetry:
+  - Timestamp, position (lat/lon), altitude
+  - Speed, heading
+  - Network metrics (latency, upload/download throughput)
+  - Obstruction percentage
+- Use the "History Window" dropdown at the top of the dashboard to change the time range
+- Data is sampled at 10-second intervals for optimal performance
+
+**Usage:**
+1. Navigate to the "Position & Movement" dashboard
+2. The position history route is displayed by default on the map
+3. Use the "History Window" selector to change the time range (6h, 12h, 24h, 3d, 7d, 15d)
+4. Hover over the route to see detailed information at any point in time
+5. The current position marker (plane icon) is always shown on top of the historical route
+
+**Known Limitations:**
+- Data gaps (e.g., when terminal is offline) are interpolated with straight lines
+- Dashed line styling is not supported for gaps due to Grafana limitations
+- All historical points are connected as a single continuous route
+- Color gradient auto-scales based on the altitude range in the current dataset
+
 ## Code Formatting
 
 Use Prettier with settings in `.prettierrc` (print width: 80, prose wrap: always, auto line endings).
