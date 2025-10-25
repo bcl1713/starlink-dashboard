@@ -302,7 +302,7 @@
             "config": {
               "style": {
                 "color": {
-                  "field": "altitude",
+                  "field": "alt_history",
                   "fixed": "dark-green"
                 },
                 "size": {
@@ -317,8 +317,8 @@
             },
             "location": {
               "mode": "coords",
-              "latitude": "latitude",
-              "longitude": "longitude"
+              "latitude": "lat_history",
+              "longitude": "lon_history"
             },
             "tooltip": true
           },
@@ -330,7 +330,7 @@
                 "color": {
                   "fixed": "green"
                 },
-                "opacity": 0.3,
+                "opacity": 1,
                 "rotation": {
                   "field": "heading",
                   "fixed": 0,
@@ -339,7 +339,7 @@
                   "mode": "field"
                 },
                 "size": {
-                  "fixed": 2,
+                  "fixed": 12,
                   "max": 15,
                   "min": 2,
                   "mode": "fixed"
@@ -364,9 +364,7 @@
               "showLegend": true
             },
             "location": {
-              "mode": "coords",
-              "latitude": "latitude",
-              "longitude": "longitude"
+              "mode": "auto"
             },
             "tooltip": true
           }
@@ -405,8 +403,8 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "starlink_dish_latitude_degrees",
-          "instant": false,
-          "intervalFactor": 1,
+          "instant": true,
+          "intervalFactor": 2,
           "legendFormat": "latitude",
           "refId": "A"
         },
@@ -416,8 +414,8 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "starlink_dish_longitude_degrees",
-          "instant": false,
-          "intervalFactor": 1,
+          "instant": true,
+          "intervalFactor": 2,
           "legendFormat": "longitude",
           "refId": "B"
         },
@@ -427,8 +425,8 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "starlink_dish_altitude_meters",
-          "instant": false,
-          "intervalFactor": 1,
+          "instant": true,
+          "intervalFactor": 2,
           "legendFormat": "altitude",
           "refId": "C"
         },
@@ -438,10 +436,54 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "starlink_dish_heading_degrees",
-          "instant": false,
-          "intervalFactor": 1,
+          "instant": true,
+          "intervalFactor": 2,
           "legendFormat": "heading",
           "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_dish_latitude_degrees",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "lat_history",
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_dish_longitude_degrees",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "lon_history",
+          "refId": "F"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_dish_altitude_meters",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "alt_history",
+          "refId": "G"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_dish_heading_degrees",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "head_history",
+          "refId": "H"
         },
         {
           "datasource": {
@@ -452,7 +494,7 @@
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "speed",
-          "refId": "E"
+          "refId": "I"
         },
         {
           "datasource": {
@@ -463,7 +505,7 @@
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "latency",
-          "refId": "F"
+          "refId": "J"
         },
         {
           "datasource": {
@@ -474,7 +516,7 @@
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "throughput_down",
-          "refId": "G"
+          "refId": "K"
         },
         {
           "datasource": {
@@ -485,7 +527,7 @@
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "throughput_up",
-          "refId": "H"
+          "refId": "L"
         },
         {
           "datasource": {
@@ -496,14 +538,17 @@
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "obstructions",
-          "refId": "I"
+          "refId": "M"
         }
       ],
       "title": "Live Position Map (Large)",
       "transformations": [
         {
-          "id": "merge",
-          "options": {}
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "outer"
+          }
         }
       ],
       "type": "geomap"
