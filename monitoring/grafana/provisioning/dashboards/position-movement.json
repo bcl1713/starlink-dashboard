@@ -423,7 +423,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "starlink_dish_altitude_meters",
+          "expr": "starlink_dish_altitude_feet",
           "instant": true,
           "intervalFactor": 2,
           "legendFormat": "altitude",
@@ -467,7 +467,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "starlink_dish_altitude_meters",
+          "expr": "starlink_dish_altitude_feet",
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "alt_history",
