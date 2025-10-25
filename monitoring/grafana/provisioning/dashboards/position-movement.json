@@ -302,8 +302,7 @@
             "config": {
               "style": {
                 "color": {
-                  "field": "alt_history",
-                  "fixed": "dark-green"
+                  "fixed": "green"
                 },
                 "size": {
                   "fixed": 3,
