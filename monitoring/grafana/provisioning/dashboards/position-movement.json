@@ -330,16 +330,16 @@
                 "color": {
                   "fixed": "green"
                 },
-                "opacity": 1,
+                "opacity": 0.3,
                 "rotation": {
-                  "field": "head_marker",
+                  "field": "heading",
                   "fixed": 0,
                   "max": 360,
                   "min": 0,
                   "mode": "field"
                 },
                 "size": {
-                  "fixed": 12,
+                  "fixed": 2,
                   "max": 15,
                   "min": 2,
                   "mode": "fixed"
@@ -365,8 +365,8 @@
             },
             "location": {
               "mode": "coords",
-              "latitude": "lat_marker",
-              "longitude": "lon_marker"
+              "latitude": "latitude",
+              "longitude": "longitude"
             },
             "tooltip": true
           }
@@ -405,8 +405,8 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "starlink_dish_latitude_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "latitude",
           "refId": "A"
         },
@@ -416,8 +416,8 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "starlink_dish_longitude_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "longitude",
           "refId": "B"
         },
@@ -426,9 +426,9 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "starlink_dish_altitude_feet",
-          "instant": true,
-          "intervalFactor": 2,
+          "expr": "starlink_dish_altitude_meters",
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "altitude",
           "refId": "C"
         },
@@ -438,8 +438,8 @@
             "uid": "PBFA97CFB590B2093"
           },
           "expr": "starlink_dish_heading_degrees",
-          "instant": true,
-          "intervalFactor": 2,
+          "instant": false,
+          "intervalFactor": 1,
           "legendFormat": "heading",
           "refId": "D"
         },
@@ -448,234 +448,62 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "avg_over_time(starlink_dish_latitude_degrees[10s])",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "latitude",
-          "refId": "E",
-          "step": 10
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "avg_over_time(starlink_dish_longitude_degrees[10s])",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "longitude",
-          "refId": "F",
-          "step": 10
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "avg_over_time(starlink_dish_altitude_meters[10s])",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "altitude",
-          "refId": "G",
-          "step": 10
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "avg_over_time(starlink_dish_heading_degrees[10s])",
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "heading",
-          "refId": "H",
-          "step": 10
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "expr": "avg_over_time(starlink_dish_speed_knots[10s])",
-          "interval": "",
+          "expr": "starlink_dish_speed_knots",
+          "instant": false,
           "intervalFactor": 1,
           "legendFormat": "speed",
-          "refId": "I",
-          "step": 10
+          "refId": "E"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "avg_over_time(starlink_network_latency_ms[10s])",
-          "interval": "",
+          "expr": "starlink_network_latency_ms",
+          "instant": false,
           "intervalFactor": 1,
           "legendFormat": "latency",
-          "refId": "J",
-          "step": 10
+          "refId": "F"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "avg_over_time(starlink_network_throughput_down_mbps[10s])",
-          "interval": "",
+          "expr": "starlink_network_throughput_down_mbps",
+          "instant": false,
           "intervalFactor": 1,
           "legendFormat": "throughput_down",
-          "refId": "K",
-          "step": 10
+          "refId": "G"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "avg_over_time(starlink_network_throughput_up_mbps[10s])",
-          "interval": "",
+          "expr": "starlink_network_throughput_up_mbps",
+          "instant": false,
           "intervalFactor": 1,
           "legendFormat": "throughput_up",
-          "refId": "L",
-          "step": 10
+          "refId": "H"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "avg_over_time(starlink_dish_obstruction_percent[10s])",
-          "interval": "",
+          "expr": "starlink_dish_obstruction_percent",
+          "instant": false,
           "intervalFactor": 1,
           "legendFormat": "obstructions",
-          "refId": "M",
-          "step": 10
+          "refId": "I"
         }
       ],
       "title": "Live Position Map (Large)",
       "transformations": [
         {
-          "id": "joinByField",
-          "options": {
-            "byField": "Time",
-            "mode": "outer"
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "indexByName": {},
-            "renameByName": {
-              "latitude": "lat_marker",
-              "longitude": "lon_marker",
-              "altitude": "alt_marker",
-              "heading": "head_marker",
-              "Value #E": "latitude",
-              "Value #F": "longitude",
-              "Value #G": "altitude",
-              "Value #H": "heading",
-              "Value #I": "speed",
-              "Value #J": "latency",
-              "Value #K": "throughput_down",
-              "Value #L": "throughput_up",
-              "Value #M": "obstructions"
-            }
-          }
-        },
-        {
-          "id": "convertFieldType",
-          "options": {
-            "conversions": [
-              {
-                "destinationType": "number",
-                "targetField": "lat_marker"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "lon_marker"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "alt_marker"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "head_marker"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "latitude"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "longitude"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "altitude"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "heading"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "speed"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "latency"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "throughput_down"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "throughput_up"
-              },
-              {
-                "destinationType": "number",
-                "targetField": "obstructions"
-              }
-            ]
-          }
-        },
-        {
-          "id": "filterByValue",
-          "options": {
-            "filters": [
-              {
-                "fieldName": "latitude",
-                "config": {
-                  "id": "isNotNull",
-                  "options": {}
-                }
-              },
-              {
-                "fieldName": "longitude",
-                "config": {
-                  "id": "isNotNull",
-                  "options": {}
-                }
-              }
-            ],
-            "type": "include",
-            "match": "all"
-          }
-        },
-        {
-          "id": "sortBy",
-          "options": {
-            "fields": {},
-            "sort": [
-              {
-                "field": "Time",
-                "desc": true
-              }
-            ]
-          }
+          "id": "merge",
+          "options": {}
         }
       ],
       "type": "geomap"
