@@ -36,6 +36,60 @@
   "liveNow": false,
   "panels": [
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "\ud83d\udfe2 LIVE MODE ACTIVE",
+                  "color": "green"
+                },
+                "0": {
+                  "text": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+                  "color": "orange"
+                }
+              }
+            },
+            {
+              "type": "default",
+              "options": {
+                "text": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+                "color": "orange"
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
       "gridPos": {
         "h": 2,
         "w": 24,
@@ -43,14 +97,38 @@
         "y": 0
       },
       "id": 100,
-      "libraryPanel": {
-        "name": "Mode Status",
-        "uid": "starlink-mode-status"
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "fields": "",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "text": {},
+        "textMode": "auto"
       },
+      "pluginVersion": "11.1.0",
+      "targets": [
+        {
+          "expr": "starlink_mode_info{mode=\"live\"}",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "Mode",
+          "refId": "A",
+          "interval": "1s"
+        }
+      ],
       "title": "Mode Status",
       "type": "stat"
     },
     {
+      "type": "grafana-clock-panel",
+      "title": "\ud83c\udf0d UTC (Zulu)",
       "gridPos": {
         "h": 2,
         "w": 6,
@@ -58,14 +136,21 @@
         "y": 2
       },
       "id": 200,
-      "libraryPanel": {
-        "name": "Clock - UTC",
-        "uid": "starlink-clock-utc"
+      "options": {
+        "timezone": "UTC",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
       },
-      "title": "\ud83c\udf0d UTC (Zulu)",
-      "type": "grafana-clock-panel"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     },
     {
+      "type": "grafana-clock-panel",
+      "title": "\ud83d\uddfd Washington DC",
       "gridPos": {
         "h": 2,
         "w": 6,
@@ -73,14 +158,21 @@
         "y": 2
       },
       "id": 201,
-      "libraryPanel": {
-        "name": "Clock - Washington DC",
-        "uid": "starlink-clock-washington"
+      "options": {
+        "timezone": "America/New_York",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
       },
-      "title": "\ud83d\uddfd Washington DC",
-      "type": "grafana-clock-panel"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     },
     {
+      "type": "grafana-clock-panel",
+      "title": "\ud83c\uddec\ud83c\udde7 London",
       "gridPos": {
         "h": 2,
         "w": 6,
@@ -88,14 +180,21 @@
         "y": 2
       },
       "id": 202,
-      "libraryPanel": {
-        "name": "Clock - London",
-        "uid": "starlink-clock-london"
+      "options": {
+        "timezone": "Europe/London",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
       },
-      "title": "\ud83c\uddec\ud83c\udde7 London",
-      "type": "grafana-clock-panel"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     },
     {
+      "type": "grafana-clock-panel",
+      "title": "\ud83d\uddfe Tokyo",
       "gridPos": {
         "h": 2,
         "w": 6,
@@ -103,14 +202,75 @@
         "y": 2
       },
       "id": 203,
-      "libraryPanel": {
-        "name": "Clock - Tokyo",
-        "uid": "starlink-clock-tokyo"
+      "options": {
+        "timezone": "Asia/Tokyo",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
       },
-      "title": "\ud83d\uddfe Tokyo",
-      "type": "grafana-clock-panel"
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
     },
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "dark-red"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "dark-red",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lat"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.hidden",
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lon"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.hidden",
+                "value": false
+              }
+            ]
+          }
+        ]
+      },
       "gridPos": {
         "h": 14,
         "w": 24,
@@ -118,11 +278,191 @@
         "y": 10
       },
       "id": 1,
-      "libraryPanel": {
-        "name": "Live Position Map (Large)",
-        "uid": "starlink-live-position-map-large"
+      "options": {
+        "basemap": {
+          "name": "OpenStreetMap"
+        },
+        "controls": {
+          "showAttribution": true,
+          "showDebug": false,
+          "showMeasure": false,
+          "showScale": true,
+          "showZoom": true,
+          "mouseWheelZoom": true
+        },
+        "layers": [
+          {
+            "type": "route",
+            "name": "Historical Route",
+            "config": {
+              "style": {
+                "color": {
+                  "fixed": "green"
+                },
+                "opacity": 0.6,
+                "lineWidth": 3
+              },
+              "showLegend": true
+            },
+            "location": {
+              "mode": "coords",
+              "latitude": "lat_history",
+              "longitude": "lon_history"
+            },
+            "tooltip": false
+          },
+          {
+            "type": "markers",
+            "name": "Current Position",
+            "config": {
+              "style": {
+                "color": {
+                  "fixed": "green"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "field": "heading",
+                  "fixed": 0,
+                  "max": 360,
+                  "min": 0,
+                  "mode": "field"
+                },
+                "size": {
+                  "fixed": 12,
+                  "max": 15,
+                  "min": 2,
+                  "mode": "fixed"
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/plane.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "field": "",
+                  "fixed": "",
+                  "mode": "fixed"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              },
+              "showLegend": true
+            },
+            "location": {
+              "mode": "coords",
+              "latitude": "latitude",
+              "longitude": "longitude"
+            },
+            "tooltip": true
+          }
+        ],
+        "view": {
+          "allLayers": false,
+          "initialZoom": 3,
+          "shared": false,
+          "fit": true
+        },
+        "location": {
+          "mode": "table",
+          "latitudeField": "latitude",
+          "longitudeField": "longitude"
+        },
+        "marker": {
+          "displayMode": "circle",
+          "size": 8,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "details"
+        },
+        "hideEmpty": false,
+        "noData": ""
       },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "expr": "starlink_dish_latitude_degrees",
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "latitude",
+          "refId": "A",
+          "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_longitude_degrees",
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "longitude",
+          "refId": "B",
+          "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_altitude_feet",
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "altitude",
+          "refId": "C",
+          "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_heading_degrees",
+          "instant": true,
+          "intervalFactor": 1,
+          "legendFormat": "heading",
+          "refId": "D",
+          "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_latitude_degrees",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "lat_history",
+          "refId": "E",
+          "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_longitude_degrees",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "lon_history",
+          "refId": "F",
+          "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_altitude_feet",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "alt_history",
+          "refId": "G",
+          "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_heading_degrees",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "heading_history",
+          "refId": "H",
+          "interval": "1s"
+        }
+      ],
       "title": "Live Position Map (Large)",
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "outer"
+          }
+        }
+      ],
       "type": "geomap"
     },
     {
