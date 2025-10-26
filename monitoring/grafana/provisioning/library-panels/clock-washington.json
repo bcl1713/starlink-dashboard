@@ -1,0 +1,28 @@
+{
+  "name": "Clock - Washington DC",
+  "uid": "starlink-clock-washington",
+  "type": "grafana-clock-panel",
+  "title": "🗽 Washington DC",
+  "description": "Shared Washington DC clock for dashboards",
+  "tags": [
+    "starlink",
+    "shared",
+    "clock"
+  ],
+  "model": {
+    "id": 0,
+    "type": "grafana-clock-panel",
+    "title": "🗽 Washington DC",
+    "options": {
+      "timezone": "America/New_York",
+      "showDate": false,
+      "dateFormat": "YYYY-MM-DD",
+      "clockType": "24 hour",
+      "showSeconds": true
+    },
+    "fieldConfig": {
+      "defaults": {},
+      "overrides": []
+    }
+  }
+}

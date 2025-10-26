@@ -1,0 +1,96 @@
+{
+  "name": "Mode Status",
+  "uid": "starlink-mode-status",
+  "type": "stat",
+  "title": "Mode Status",
+  "description": "Shared status indicator for live vs simulation mode",
+  "tags": [
+    "starlink",
+    "shared"
+  ],
+  "model": {
+    "datasource": {
+      "type": "prometheus",
+      "uid": "$__dashboardDatasource"
+    },
+    "fieldConfig": {
+      "defaults": {
+        "color": {
+          "mode": "thresholds"
+        },
+        "custom": {
+          "hideFrom": {
+            "legend": false,
+            "tooltip": false,
+            "viz": false
+          }
+        },
+        "mappings": [
+          {
+            "type": "value",
+            "options": {
+              "1": {
+                "text": "🟢 LIVE MODE ACTIVE",
+                "color": "green"
+              },
+              "0": {
+                "text": "⚠️ SIMULATION MODE ACTIVE",
+                "color": "orange"
+              }
+            }
+          },
+          {
+            "type": "default",
+            "options": {
+              "text": "⚠️ SIMULATION MODE ACTIVE",
+              "color": "orange"
+            }
+          }
+        ],
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            {
+              "color": "orange",
+              "value": null
+            },
+            {
+              "color": "green",
+              "value": 1
+            }
+          ]
+        }
+      },
+      "overrides": []
+    },
+    "id": 0,
+    "options": {
+      "colorMode": "background",
+      "graphMode": "none",
+      "justifyMode": "center",
+      "orientation": "auto",
+      "reduceOptions": {
+        "values": false,
+        "fields": "",
+        "calcs": [
+          "lastNotNull"
+        ]
+      },
+      "text": {},
+      "textMode": "auto"
+    },
+    "pluginVersion": "11.1.0",
+    "targets": [
+      {
+        "expr": "starlink_mode_info{mode=\"live\"}",
+        "instant": false,
+        "interval": "1s",
+        "intervalFactor": 1,
+        "legendFormat": "Mode",
+        "refId": "A"
+      }
+    ],
+    "title": "Mode Status",
+    "type": "stat"
+  }
+}

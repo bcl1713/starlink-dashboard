@@ -1,0 +1,28 @@
+{
+  "name": "Clock - Tokyo",
+  "uid": "starlink-clock-tokyo",
+  "type": "grafana-clock-panel",
+  "title": "🗾 Tokyo",
+  "description": "Shared Tokyo clock for dashboards",
+  "tags": [
+    "starlink",
+    "shared",
+    "clock"
+  ],
+  "model": {
+    "id": 0,
+    "type": "grafana-clock-panel",
+    "title": "🗾 Tokyo",
+    "options": {
+      "timezone": "Asia/Tokyo",
+      "showDate": false,
+      "dateFormat": "YYYY-MM-DD",
+      "clockType": "24 hour",
+      "showSeconds": true
+    },
+    "fieldConfig": {
+      "defaults": {},
+      "overrides": []
+    }
+  }
+}

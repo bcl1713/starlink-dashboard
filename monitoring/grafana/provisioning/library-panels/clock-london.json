@@ -1,0 +1,28 @@
+{
+  "name": "Clock - London",
+  "uid": "starlink-clock-london",
+  "type": "grafana-clock-panel",
+  "title": "🇬🇧 London",
+  "description": "Shared London clock for dashboards",
+  "tags": [
+    "starlink",
+    "shared",
+    "clock"
+  ],
+  "model": {
+    "id": 0,
+    "type": "grafana-clock-panel",
+    "title": "🇬🇧 London",
+    "options": {
+      "timezone": "Europe/London",
+      "showDate": false,
+      "dateFormat": "YYYY-MM-DD",
+      "clockType": "24 hour",
+      "showSeconds": true
+    },
+    "fieldConfig": {
+      "defaults": {},
+      "overrides": []
+    }
+  }
+}
