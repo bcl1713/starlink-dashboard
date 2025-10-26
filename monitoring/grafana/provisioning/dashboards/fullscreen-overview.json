@@ -35,6 +35,94 @@
   "liveNow": true,
   "panels": [
     {
+      "type": "grafana-clock-panel",
+      "title": "🌍 UTC (Zulu)",
+      "gridPos": {
+        "h": 2,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "id": 200,
+      "options": {
+        "timezone": "UTC",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "grafana-clock-panel",
+      "title": "🗽 Washington DC",
+      "gridPos": {
+        "h": 2,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "id": 201,
+      "options": {
+        "timezone": "America/New_York",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "grafana-clock-panel",
+      "title": "🇬🇧 London",
+      "gridPos": {
+        "h": 2,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 202,
+      "options": {
+        "timezone": "Europe/London",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "grafana-clock-panel",
+      "title": "🗾 Tokyo",
+      "gridPos": {
+        "h": 2,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "id": 203,
+      "options": {
+        "timezone": "Asia/Tokyo",
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
       "datasource": {
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
@@ -62,7 +150,7 @@
         "h": 22,
         "w": 16,
         "x": 0,
-        "y": 0
+        "y": 2
       },
       "id": 1,
       "options": {
@@ -120,7 +208,9 @@
               "showLegend": true
             },
             "location": {
-              "mode": "auto"
+              "mode": "coords",
+              "latitude": "latitude",
+              "longitude": "longitude"
             },
             "tooltip": true
           }
@@ -139,7 +229,7 @@
       "targets": [
         {
           "expr": "starlink_dish_latitude_degrees",
-          "instant": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "latitude",
           "refId": "A",
@@ -147,7 +237,7 @@
         },
         {
           "expr": "starlink_dish_longitude_degrees",
-          "instant": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "longitude",
           "refId": "B",
@@ -155,7 +245,7 @@
         },
         {
           "expr": "starlink_dish_altitude_feet",
-          "instant": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "altitude",
           "refId": "C",
@@ -163,7 +253,7 @@
         },
         {
           "expr": "starlink_dish_heading_degrees",
-          "instant": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "heading",
           "refId": "D",
@@ -328,7 +418,7 @@
         "h": 11,
         "w": 8,
         "x": 16,
-        "y": 0
+        "y": 2
       },
       "id": 2,
       "options": {
@@ -471,7 +561,7 @@
         "h": 11,
         "w": 8,
         "x": 16,
-        "y": 11
+        "y": 13
       },
       "id": 3,
       "options": {
@@ -576,10 +666,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 6,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 24
       },
       "id": 4,
       "options": {
@@ -688,10 +778,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 6,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 24
       },
       "id": 5,
       "options": {

@@ -305,7 +305,9 @@
               "showLegend": true
             },
             "location": {
-              "mode": "auto"
+              "mode": "coords",
+              "latitude": "lat_history",
+              "longitude": "lon_history"
             },
             "tooltip": false
           },
@@ -351,7 +353,9 @@
               "showLegend": true
             },
             "location": {
-              "mode": "auto"
+              "mode": "coords",
+              "latitude": "latitude",
+              "longitude": "longitude"
             },
             "tooltip": true
           }
@@ -386,7 +390,7 @@
       "targets": [
         {
           "expr": "starlink_dish_latitude_degrees",
-          "instant": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "latitude",
           "refId": "A",
@@ -394,7 +398,7 @@
         },
         {
           "expr": "starlink_dish_longitude_degrees",
-          "instant": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "longitude",
           "refId": "B",
@@ -402,7 +406,7 @@
         },
         {
           "expr": "starlink_dish_altitude_feet",
-          "instant": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "altitude",
           "refId": "C",
@@ -410,7 +414,7 @@
         },
         {
           "expr": "starlink_dish_heading_degrees",
-          "instant": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "heading",
           "refId": "D",
