@@ -1,9 +1,7 @@
 {
   "name": "Clock - UTC",
   "uid": "starlink-clock-utc",
-  "type": "grafana-clock-panel",
-  "title": "\ud83c\udf0d UTC (Zulu)",
-  "description": "Shared UTC clock for dashboards",
+  "type": "panel",
   "tags": [
     "starlink",
     "shared",
@@ -25,7 +23,9 @@
       "overrides": []
     }
   },
-  "kind": "library-panel",
+  "kind": 1,
   "version": 1,
-  "schemaVersion": 1
+  "schemaVersion": 1,
+  "folderUid": "",
+  "folderName": "Starlink Shared"
 }

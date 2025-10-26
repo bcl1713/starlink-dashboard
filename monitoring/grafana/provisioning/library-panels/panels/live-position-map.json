@@ -1,9 +1,7 @@
 {
   "name": "Live Position Map",
   "uid": "starlink-live-position-map",
-  "type": "geomap",
-  "title": "Live Position Map",
-  "description": "Shared geomap showing current and historical Starlink dish position",
+  "type": "panel",
   "tags": [
     "starlink",
     "shared"
@@ -253,7 +251,9 @@
     ],
     "type": "geomap"
   },
-  "kind": "library-panel",
+  "kind": 1,
   "version": 1,
-  "schemaVersion": 1
+  "schemaVersion": 1,
+  "folderUid": "",
+  "folderName": "Starlink Shared"
 }
