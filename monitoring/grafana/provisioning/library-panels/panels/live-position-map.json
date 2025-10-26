@@ -252,5 +252,8 @@
       }
     ],
     "type": "geomap"
-  }
+  },
+  "kind": "library-panel",
+  "version": 1,
+  "schemaVersion": 1
 }

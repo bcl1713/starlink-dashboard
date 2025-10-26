@@ -2,7 +2,7 @@
   "name": "Clock - London",
   "uid": "starlink-clock-london",
   "type": "grafana-clock-panel",
-  "title": "🇬🇧 London",
+  "title": "\ud83c\uddec\ud83c\udde7 London",
   "description": "Shared London clock for dashboards",
   "tags": [
     "starlink",
@@ -12,7 +12,7 @@
   "model": {
     "id": 0,
     "type": "grafana-clock-panel",
-    "title": "🇬🇧 London",
+    "title": "\ud83c\uddec\ud83c\udde7 London",
     "options": {
       "timezone": "Europe/London",
       "showDate": false,
@@ -24,5 +24,8 @@
       "defaults": {},
       "overrides": []
     }
-  }
+  },
+  "kind": "library-panel",
+  "version": 1,
+  "schemaVersion": 1
 }
