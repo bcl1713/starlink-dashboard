@@ -1,7 +1,9 @@
 {
   "name": "Clock - Washington DC",
   "uid": "starlink-clock-washington",
-  "type": "panel",
+  "type": "grafana-clock-panel",
+  "title": "\ud83d\uddfd Washington DC",
+  "description": "Shared Washington DC clock for dashboards",
   "tags": [
     "starlink",
     "shared",
@@ -23,9 +25,7 @@
       "overrides": []
     }
   },
-  "kind": 1,
+  "kind": "library-panel",
   "version": 1,
-  "schemaVersion": 1,
-  "folderUid": "",
-  "folderName": "Starlink Shared"
+  "schemaVersion": 1
 }

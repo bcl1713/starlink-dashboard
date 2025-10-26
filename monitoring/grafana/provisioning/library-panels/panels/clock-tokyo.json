@@ -1,7 +1,9 @@
 {
   "name": "Clock - Tokyo",
   "uid": "starlink-clock-tokyo",
-  "type": "panel",
+  "type": "grafana-clock-panel",
+  "title": "\ud83d\uddfe Tokyo",
+  "description": "Shared Tokyo clock for dashboards",
   "tags": [
     "starlink",
     "shared",
@@ -23,9 +25,7 @@
       "overrides": []
     }
   },
-  "kind": 1,
+  "kind": "library-panel",
   "version": 1,
-  "schemaVersion": 1,
-  "folderUid": "",
-  "folderName": "Starlink Shared"
+  "schemaVersion": 1
 }

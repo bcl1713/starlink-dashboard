@@ -1,7 +1,9 @@
 {
   "name": "Clock - London",
   "uid": "starlink-clock-london",
-  "type": "panel",
+  "type": "grafana-clock-panel",
+  "title": "\ud83c\uddec\ud83c\udde7 London",
+  "description": "Shared London clock for dashboards",
   "tags": [
     "starlink",
     "shared",
@@ -23,9 +25,7 @@
       "overrides": []
     }
   },
-  "kind": 1,
+  "kind": "library-panel",
   "version": 1,
-  "schemaVersion": 1,
-  "folderUid": "",
-  "folderName": "Starlink Shared"
+  "schemaVersion": 1
 }

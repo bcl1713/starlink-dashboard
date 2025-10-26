@@ -1,8 +1,9 @@
 {
-  "uid": "starlink-mode-status",
   "name": "Mode Status",
-  "type": "panel",
-  "kind": 1,
+  "uid": "starlink-mode-status",
+  "type": "stat",
+  "title": "Mode Status",
+  "description": "Shared status indicator for live vs simulation mode",
   "tags": [
     "starlink",
     "shared"
@@ -92,8 +93,7 @@
     "title": "Mode Status",
     "type": "stat"
   },
-  "folderUid": "",
-  "folderName": "Starlink Shared",
+  "kind": "library-panel",
   "version": 1,
-  "schemaVersion": 0
+  "schemaVersion": 1
 }
