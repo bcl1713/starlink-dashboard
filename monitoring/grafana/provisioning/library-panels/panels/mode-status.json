@@ -30,11 +30,11 @@
             "type": "value",
             "options": {
               "1": {
-                "text": "\ud83d\udfe2 LIVE MODE ACTIVE",
+                "text": "🟢 LIVE MODE ACTIVE",
                 "color": "green"
               },
               "0": {
-                "text": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+                "text": "⚠️ SIMULATION MODE ACTIVE",
                 "color": "orange"
               }
             }
@@ -42,7 +42,7 @@
           {
             "type": "default",
             "options": {
-              "text": "\u26a0\ufe0f SIMULATION MODE ACTIVE",
+              "text": "⚠️ SIMULATION MODE ACTIVE",
               "color": "orange"
             }
           }
@@ -92,8 +92,5 @@
     ],
     "title": "Mode Status",
     "type": "stat"
-  },
-  "kind": "library-panel",
-  "version": 1,
-  "schemaVersion": 1
+  }
 }
