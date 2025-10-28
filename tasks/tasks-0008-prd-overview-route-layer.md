@@ -157,14 +157,14 @@ without interference from the other queries.
         them for the route layer - The regex patterns `/^(?:A|B|C|D)$/` and
         `/^(?:E|F)$/` match the query refIds
 
-- [ ] 3.6 Add Route Layer Configuration
-  - [ ] 3.6.1 Find the `"layers"` array within the Geomap panel (around
+- [x] 3.6 Add Route Layer Configuration
+  - [x] 3.6.1 Find the `"layers"` array within the Geomap panel (around
         line 208)
-  - [ ] 3.6.2 The layers array currently has ONE object (the "Current Position"
+  - [x] 3.6.2 The layers array currently has ONE object (the "Current Position"
         marker layer starting at line 210)
-  - [ ] 3.6.3 We need to add a NEW layer BEFORE the existing marker layer
+  - [x] 3.6.3 We need to add a NEW layer BEFORE the existing marker layer
         (remember: first layer = bottom, last layer = top)
-  - [ ] 3.6.4 Copy this route layer configuration and paste it as the FIRST
+  - [x] 3.6.4 Copy this route layer configuration and paste it as the FIRST
         object in the layers array:
 
   ```json
@@ -195,21 +195,21 @@ without interference from the other queries.
   }
   ```
 
-  - [ ] 3.6.5 **Key fields explained:** - `"filterByRefId": "E"` - Tells the
+  - [x] 3.6.5 **Key fields explained:** - `"filterByRefId": "E"` - Tells the
         layer to use query E as the primary reference - `"filterData"` - Points
         to the second transformation pipeline (joinByField for E-F queries) -
         The `"options": "joinByField-E-F"` value references the transformation
         that filtered queries E & F
 
-  - [ ] 3.6.6 Add a comma `,` after the closing `}` of the route layer (to
+  - [x] 3.6.6 Add a comma `,` after the closing `}` of the route layer (to
         separate it from the marker layer)
 
-- [ ] 3.7 Update Marker Layer Configuration
-  - [ ] 3.7.1 Find the existing marker layer object (should come after the route
+- [x] 3.7 Update Marker Layer Configuration
+  - [x] 3.7.1 Find the existing marker layer object (should come after the route
         layer in the layers array)
-  - [ ] 3.7.2 Add `"filterByRefId": "A"` inside the `"config"` object of the
+  - [x] 3.7.2 Add `"filterByRefId": "A"` inside the `"config"` object of the
         marker layer (not at the root level of the layer)
-  - [ ] 3.7.3 Add a `"filterData"` field at the root level of the marker layer
+  - [x] 3.7.3 Add a `"filterData"` field at the root level of the marker layer
         (same level as "type", "name", "config"):
 
   ```json
@@ -219,47 +219,47 @@ without interference from the other queries.
   }
   ```
 
-  - [ ] 3.7.4 **Important:** The marker layer's `filterData` points to the first
+  - [x] 3.7.4 **Important:** The marker layer's `filterData` points to the first
         transformation (queries A-D), while the route layer's `filterData`
         points to the second transformation (queries E-F). This ensures each
         layer gets data from its own transformation pipeline.
 
-  - [ ] 3.7.5 The final marker layer should have both `filterByRefId` in config
+  - [x] 3.7.5 The final marker layer should have both `filterByRefId` in config
         AND `filterData` at the root level
 
-  - [ ] 3.7.6 Save the file
-  - [ ] 3.7.7 Validate JSON:
+  - [x] 3.7.6 Save the file
+  - [x] 3.7.7 Validate JSON:
         `jq empty monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-  - [ ] 3.7.8 If validation fails, carefully check: matching braces `{}`,
+  - [x] 3.7.8 If validation fails, carefully check: matching braces `{}`,
         matching brackets `[]`, commas between objects, NO trailing comma after
         last object
-  - [ ] 3.7.9 Wait for Grafana auto-reload OR restart:
+  - [x] 3.7.9 Wait for Grafana auto-reload OR restart:
         `docker compose restart grafana`
-  - [ ] 3.7.10 Hard refresh dashboard in browser (Ctrl+Shift+R)
-  - [ ] 3.7.11 Check if a blue route line appears on the map showing historical
+  - [x] 3.7.10 Hard refresh dashboard in browser (Ctrl+Shift+R)
+  - [x] 3.7.11 Check if a blue route line appears on the map showing historical
         movement
 
-- [ ] 4.0 Test and Debug Route Rendering
-  - [ ] 4.1 **If route appears:** Great! Skip to 4.10. **If route does NOT
+- [x] 4.0 Test and Debug Route Rendering
+  - [x] 4.1 **If route appears:** Great! Skip to 4.10. **If route does NOT
         appear:** Continue to 4.2
   - [x] 4.2 Open browser DevTools (F12 or right-click → Inspect) and check
         Console tab for any Grafana errors (red text)
   - [x] 4.3 Open the panel in edit mode (just for inspection): Click panel →
         Edit
-  - [ ] 4.4 Click on the "Transform" tab at bottom to see how data is being
+  - [x] 4.4 Click on the "Transform" tab at bottom to see how data is being
         processed
-  - [ ] 4.5 Verify you see TWO transformation pipelines: - First: "joinByField"
+  - [x] 4.5 Verify you see TWO transformation pipelines: - First: "joinByField"
         with filter for queries A, B, C, D - Second: "joinByField" with filter
         for queries E, F
-  - [ ] 4.6 Switch to "Table view" at top right of the edit panel
-  - [ ] 4.7 You should see TWO separate data tables: - One with columns: Time,
+  - [x] 4.6 Switch to "Table view" at top right of the edit panel
+  - [x] 4.7 You should see TWO separate data tables: - One with columns: Time,
         latitude, longitude, altitude, heading (from queries A-D, single instant
         values) - One with columns: Time, latitude_history, longitude_history
         (from queries E-F, multiple time-series rows)
-  - [ ] 4.8 If you only see one joined table with ALL fields, the
+  - [x] 4.8 If you only see one joined table with ALL fields, the
         transformations didn't work correctly - double-check the transformation
         JSON structure
-  - [ ] 4.9 If the route layer shows "No data" or errors, check that: - TWO
+  - [x] 4.9 If the route layer shows "No data" or errors, check that: - TWO
         separate transformations exist in the transformations array - Route
         layer has
         `filterData: {id: "byRefId", options:       "joinByField-E-F"}` - Marker
@@ -267,38 +267,38 @@ without interference from the other queries.
         `filterData: {id: "byRefId", options:       "joinByField-A-B-C-D"}` -
         Field names in route layer location match: "latitude_history" and
         "longitude_history"
-  - [ ] 4.10 Verify the current position marker (green plane) is visible on TOP
+  - [x] 4.10 Verify the current position marker (green plane) is visible on TOP
         of the route (if not, the layer order is wrong - marker should be LAST
         in layers array)
-  - [ ] 4.11 Test with different time ranges: Click time picker in top right,
+  - [x] 4.11 Test with different time ranges: Click time picker in top right,
         try "Last 5 minutes", "Last 1 hour", "Last 6 hours" - verify route
         updates to show different amounts of history
-  - [ ] 4.12 Test route appearance: If line is too thick/thin, edit JSON and
+  - [x] 4.12 Test route appearance: If line is too thick/thin, edit JSON and
         change `"lineWidth"` value (try 2, 3, or 4)
-  - [ ] 4.13 Test route color: If blue isn't visible enough, try "dark-blue",
+  - [x] 4.13 Test route color: If blue isn't visible enough, try "dark-blue",
         "purple", or "orange" in the `"color": {"fixed": "blue"}` field
-  - [ ] 4.14 Ensure simulation mode is active: Check `.env` file has
+  - [x] 4.14 Ensure simulation mode is active: Check `.env` file has
         `STARLINK_MODE=simulation`, restart if needed:
         `docker compose restart backend`
-  - [ ] 4.15 Wait 2-3 minutes for simulated movement data to accumulate, then
+  - [x] 4.15 Wait 2-3 minutes for simulated movement data to accumulate, then
         check that route shows a path (not just a single point)
-  - [ ] 4.16 Test edge case - very short time range: Set dashboard to "Last 30
+  - [x] 4.16 Test edge case - very short time range: Set dashboard to "Last 30
         seconds" - route should still display (might be very short)
-  - [ ] 4.17 Test edge case - very long time range: Set to "Last 6 hours" or
+  - [x] 4.17 Test edge case - very long time range: Set to "Last 6 hours" or
         "Last 24 hours" - verify route loads without freezing browser
-  - [ ] 4.18 Test edge case - no data: Stop backend with
+  - [x] 4.18 Test edge case - no data: Stop backend with
         `docker compose stop backend`, refresh dashboard, verify it shows "No
         data" gracefully (not errors), then restart:
         `docker compose start backend`
 
-- [ ] 5.0 Validate and Document Changes
-  - [ ] 5.1 Do final JSON validation:
+- [x] 5.0 Validate and Document Changes
+  - [x] 5.1 Do final JSON validation:
         `jq empty monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-  - [ ] 5.2 Pretty-format the JSON (optional but recommended):
+  - [x] 5.2 Pretty-format the JSON (optional but recommended):
         `jq '.' monitoring/grafana/provisioning/dashboards/fullscreen-overview.json > /tmp/formatted.json && mv /tmp/formatted.json monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-  - [ ] 5.3 Open `CLAUDE.md` in your text editor
-  - [ ] 5.4 Find the section titled "## Dashboard Features" (around line 65)
-  - [ ] 5.5 After the "Position History Layer" section (or at the end of
+  - [x] 5.3 Open `CLAUDE.md` in your text editor
+  - [x] 5.4 Find the section titled "## Dashboard Features" (around line 65)
+  - [x] 5.5 After the "Position History Layer" section (or at the end of
         Dashboard Features), add a new subsection:
 
   ```markdown
@@ -329,21 +329,21 @@ without interference from the other queries.
   - All points connected as continuous route (no segment breaks)
   ```
 
-  - [ ] 5.6 Save `CLAUDE.md`
-  - [ ] 5.7 Review the complete checklist of success criteria:
-    - [ ] JSON is valid (passes `jq empty` check)
-    - [ ] Dashboard loads without errors in Grafana
-    - [ ] Route displays correctly over dashboard time range
-    - [ ] Current position marker visible on top of route
-    - [ ] Route updates when changing dashboard time range
-    - [ ] Works in simulation mode
-    - [ ] No console errors in browser DevTools
-    - [ ] Performance is acceptable (dashboard loads in <5 seconds)
-  - [ ] 5.8 If all criteria pass, proceed to commit. If any fail, debug before
+  - [x] 5.6 Save `CLAUDE.md`
+  - [x] 5.7 Review the complete checklist of success criteria:
+    - [x] JSON is valid (passes `jq empty` check)
+    - [x] Dashboard loads without errors in Grafana
+    - [x] Route displays correctly over dashboard time range
+    - [x] Current position marker visible on top of route
+    - [x] Route updates when changing dashboard time range
+    - [x] Works in simulation mode
+    - [x] No console errors in browser DevTools
+    - [x] Performance is acceptable (dashboard loads in <5 seconds)
+  - [x] 5.8 If all criteria pass, proceed to commit. If any fail, debug before
         committing
-  - [ ] 5.9 Stage changes for commit:
+  - [x] 5.9 Stage changes for commit:
         `git add monitoring/grafana/provisioning/dashboards/fullscreen-overview.json CLAUDE.md`
-  - [ ] 5.10 Create commit with descriptive message: `git commit -m "Add
+  - [x] 5.10 Create commit with descriptive message: `git commit -m "Add
         position history route layer to fullscreen overview dashboard
 
 - Add historical lat/lon range queries (1s interval, refId E & F)
@@ -351,13 +351,13 @@ without interference from the other queries.
 - Display route with blue line under current position marker
 - Route respects dashboard time range selector
 - Handle data gaps with linear interpolation"`
-  - [ ] 5.11 Verify commit was created: `git log -1` (should show your commit
+  - [x] 5.11 Verify commit was created: `git log -1` (should show your commit
         message)
-  - [ ] 5.12 Clean up backup file (optional):
+  - [x] 5.12 Clean up backup file (optional):
         `rm monitoring/grafana/provisioning/dashboards/fullscreen-overview.json.backup-*`
-  - [ ] 5.13 Final test: Restart entire stack to ensure changes persist:
+  - [x] 5.13 Final test: Restart entire stack to ensure changes persist:
         `docker compose restart`
-  - [ ] 5.14 After restart, open dashboard and verify route still displays
+  - [x] 5.14 After restart, open dashboard and verify route still displays
         correctly
 
 ---
