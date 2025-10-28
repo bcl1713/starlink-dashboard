@@ -38,14 +38,24 @@
       "type": "grafana-clock-panel",
       "title": "UTC (Zulu)",
       "gridPos": {
-        "h": 2,
+        "h": 3,
         "w": 6,
         "x": 0,
         "y": 0
       },
       "id": 200,
       "options": {
+        "timeSettings": {
+          "fontSize": "24px",
+          "fontWeight": "bold"
+        },
         "timezone": "UTC",
+        "timezoneSettings": {
+          "fontSize": "12px",
+          "fontWeight": "normal",
+          "showTimezone": true,
+          "zoneFormat": "offset"
+        },
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
@@ -60,14 +70,56 @@
       "type": "grafana-clock-panel",
       "title": "Washington DC",
       "gridPos": {
-        "h": 2,
+        "h": 3,
         "w": 6,
         "x": 6,
         "y": 0
       },
       "id": 201,
       "options": {
+        "timeSettings": {
+          "fontSize": "24px",
+          "fontWeight": "bold"
+        },
         "timezone": "America/New_York",
+        "timezoneSettings": {
+          "fontSize": "12px",
+          "fontWeight": "normal",
+          "showTimezone": true,
+          "zoneFormat": "offset"
+        },
+        "showDate": false,
+        "dateFormat": "YYYY-MM-DD",
+        "clockType": "24 hour",
+        "showSeconds": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "type": "grafana-clock-panel",
+      "title": "Tokyo",
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 203,
+      "options": {
+        "timeSettings": {
+          "fontSize": "24px",
+          "fontWeight": "bold"
+        },
+        "timezone": "Asia/Tokyo",
+        "timezoneSettings": {
+          "fontSize": "12px",
+          "fontWeight": "normal",
+          "showTimezone": true,
+          "zoneFormat": "offset"
+        },
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
@@ -82,36 +134,24 @@
       "type": "grafana-clock-panel",
       "title": "Kuala Lumpur",
       "gridPos": {
-        "h": 2,
-        "w": 6,
-        "x": 12,
-        "y": 0
-      },
-      "id": 202,
-      "options": {
-        "timezone": "Asia/Kuala_Lumpur",
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true
-      },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      }
-    },
-    {
-      "type": "grafana-clock-panel",
-      "title": "🗾 Tokyo",
-      "gridPos": {
-        "h": 2,
+        "h": 3,
         "w": 6,
         "x": 18,
         "y": 0
       },
-      "id": 203,
+      "id": 202,
       "options": {
-        "timezone": "Asia/Tokyo",
+        "timeSettings": {
+          "fontSize": "24px",
+          "fontWeight": "bold"
+        },
+        "timezone": "Asia/Kuala_Lumpur",
+        "timezoneSettings": {
+          "fontSize": "12px",
+          "fontWeight": "normal",
+          "showTimezone": true,
+          "zoneFormat": "offset"
+        },
         "showDate": false,
         "dateFormat": "YYYY-MM-DD",
         "clockType": "24 hour",
@@ -257,38 +297,6 @@
           "intervalFactor": 1,
           "legendFormat": "heading",
           "refId": "D",
-          "interval": "1s"
-        },
-        {
-          "expr": "starlink_dish_latitude_degrees",
-          "instant": false,
-          "intervalFactor": 1,
-          "legendFormat": "lat_history",
-          "refId": "E",
-          "interval": "1s"
-        },
-        {
-          "expr": "starlink_dish_longitude_degrees",
-          "instant": false,
-          "intervalFactor": 1,
-          "legendFormat": "lon_history",
-          "refId": "F",
-          "interval": "1s"
-        },
-        {
-          "expr": "starlink_dish_altitude_feet",
-          "instant": false,
-          "intervalFactor": 1,
-          "legendFormat": "alt_history",
-          "refId": "G",
-          "interval": "1s"
-        },
-        {
-          "expr": "starlink_dish_heading_degrees",
-          "instant": false,
-          "intervalFactor": 1,
-          "legendFormat": "heading_history",
-          "refId": "H",
           "interval": "1s"
         }
       ],
@@ -573,7 +581,7 @@
       "pluginVersion": "11.1.0",
       "targets": [
         {
-          "expr": "starlink_network_throughput_up_mbps_current",
+          "expr": "starlink_network_throughput_up_mbps_current * -1",
           "intervalFactor": 1,
           "legendFormat": "Upload",
           "refId": "A",
@@ -786,13 +794,13 @@
         {
           "expr": "starlink_dish_outage_active",
           "intervalFactor": 1,
-          "legendFormat": "Outage Active",
+          "legendFormat": "Connection State",
           "refId": "A",
           "interval": "1s"
         }
       ],
-      "title": "Connection Outages",
-      "type": "timeseries"
+      "title": "Connection State",
+      "type": "state-timeline"
     }
   ],
   "refresh": "1s",
