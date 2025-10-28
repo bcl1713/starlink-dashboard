@@ -220,6 +220,10 @@
               "showLegend": false
             },
             "filterByRefId": "E",
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-E-F"
+            },
             "location": {
               "mode": "coords",
               "latitude": "latitude_history",
@@ -269,6 +273,10 @@
               "showLegend": true
             },
             "filterByRefId": "A",
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-A-B-C-D"
+            },
             "location": {
               "mode": "coords",
               "latitude": "latitude",
@@ -360,8 +368,8 @@
           },
           "id": "joinByField",
           "options": {
-            "byField": "Time",
-            "mode": "inner"
+            "mode": "inner",
+            "byField": "Time"
           }
         }
       ],
