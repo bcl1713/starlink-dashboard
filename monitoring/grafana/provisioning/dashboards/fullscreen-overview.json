@@ -345,7 +345,6 @@
             }
           },
           "mappings": [],
-          "max": 200,
           "min": 0,
           "thresholds": {
             "mode": "absolute",
