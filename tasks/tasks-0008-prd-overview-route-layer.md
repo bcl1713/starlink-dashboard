@@ -32,21 +32,22 @@ required)
 ### Key Technical Approach: Dual Transformation Pipelines
 
 **Problem:** The Geomap panel needs to display both a route (time-series data
-from queries E & F) and a current position marker (instant data from queries A-D).
-By default, a single transformation joins ALL queries into one dataset, which
-prevents the route from rendering correctly.
+from queries E & F) and a current position marker (instant data from queries
+A-D). By default, a single transformation joins ALL queries into one dataset,
+which prevents the route from rendering correctly.
 
 **Solution:** Create TWO separate transformation pipelines:
 
 1. **Pipeline 1 (Marker):** Filter queries A-D → Join by Time → Output instant
    position data
-2. **Pipeline 2 (Route):** Filter queries E-F → Join by Time → Output time-series
-   position history
+2. **Pipeline 2 (Route):** Filter queries E-F → Join by Time → Output
+   time-series position history
 
 Each layer then references its specific pipeline via the `filterData` field:
 
 - Route layer: `"filterData": {"id": "byRefId", "options": "joinByField-E-F"}`
-- Marker layer: `"filterData": {"id": "byRefId", "options": "joinByField-A-B-C-D"}`
+- Marker layer:
+  `"filterData": {"id": "byRefId", "options": "joinByField-A-B-C-D"}`
 
 This ensures each layer gets data in the correct format (instant vs time-series)
 without interference from the other queries.
@@ -112,7 +113,7 @@ without interference from the other queries.
   - [x] 2.16 Close the edit mode without saving (click the "X" or "Back to
         dashboard")
 
-- [ ] 3.0 Update Transformations to Separate Data Streams
+- [x] 3.0 Update Transformations to Separate Data Streams
   - [x] 3.1 Open
         `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` in
         your text editor again
@@ -120,7 +121,7 @@ without interference from the other queries.
         line 342)
   - [x] 3.3 The transformations array currently has ONE transformation object
         (joinByField with mode: outer)
-  - [ ] 3.4 **Replace the entire transformations array** with this new structure
+  - [x] 3.4 **Replace the entire transformations array** with this new structure
         that creates two separate data pipelines:
 
   ```json
@@ -149,18 +150,16 @@ without interference from the other queries.
   ]
   ```
 
-  - [ ] 3.5 **Explanation:** This creates TWO separate joinByField
-        transformations:
-        - First transformation: Filters to queries A-D (instant values) and
-          joins them by Time field for the marker layer
-        - Second transformation: Filters to queries E-F (time-series values) and
-          joins them for the route layer
-        - The regex patterns `/^(?:A|B|C|D)$/` and `/^(?:E|F)$/` match the
-          query refIds
+  - [x] 3.5 **Explanation:** This creates TWO separate joinByField
+        transformations: - First transformation: Filters to queries A-D (instant
+        values) and joins them by Time field for the marker layer - Second
+        transformation: Filters to queries E-F (time-series values) and joins
+        them for the route layer - The regex patterns `/^(?:A|B|C|D)$/` and
+        `/^(?:E|F)$/` match the query refIds
 
 - [ ] 3.6 Add Route Layer Configuration
-  - [ ] 3.6.1 Find the `"layers"` array within the Geomap panel (around line
-        208)
+  - [ ] 3.6.1 Find the `"layers"` array within the Geomap panel (around
+        line 208)
   - [ ] 3.6.2 The layers array currently has ONE object (the "Current Position"
         marker layer starting at line 210)
   - [ ] 3.6.3 We need to add a NEW layer BEFORE the existing marker layer
@@ -196,13 +195,11 @@ without interference from the other queries.
   }
   ```
 
-  - [ ] 3.6.5 **Key fields explained:**
-        - `"filterByRefId": "E"` - Tells the layer to use query E as the primary
-          reference
-        - `"filterData"` - Points to the second transformation pipeline
-          (joinByField for E-F queries)
-        - The `"options": "joinByField-E-F"` value references the transformation
-          that filtered queries E & F
+  - [ ] 3.6.5 **Key fields explained:** - `"filterByRefId": "E"` - Tells the
+        layer to use query E as the primary reference - `"filterData"` - Points
+        to the second transformation pipeline (joinByField for E-F queries) -
+        The `"options": "joinByField-E-F"` value references the transformation
+        that filtered queries E & F
 
   - [ ] 3.6.6 Add a comma `,` after the closing `}` of the route layer (to
         separate it from the marker layer)
@@ -251,31 +248,31 @@ without interference from the other queries.
         Edit
   - [ ] 4.4 Click on the "Transform" tab at bottom to see how data is being
         processed
-  - [ ] 4.5 Verify you see TWO transformation pipelines:
-        - First: "joinByField" with filter for queries A, B, C, D
-        - Second: "joinByField" with filter for queries E, F
+  - [ ] 4.5 Verify you see TWO transformation pipelines: - First: "joinByField"
+        with filter for queries A, B, C, D - Second: "joinByField" with filter
+        for queries E, F
   - [ ] 4.6 Switch to "Table view" at top right of the edit panel
-  - [ ] 4.7 You should see TWO separate data tables:
-        - One with columns: Time, latitude, longitude, altitude, heading (from
-          queries A-D, single instant values)
-        - One with columns: Time, latitude_history, longitude_history (from
-          queries E-F, multiple time-series rows)
-  - [ ] 4.8 If you only see one joined table with ALL fields, the transformations
-        didn't work correctly - double-check the transformation JSON structure
-  - [ ] 4.9 If the route layer shows "No data" or errors, check that:
-        - TWO separate transformations exist in the transformations array
-        - Route layer has `filterData: {id: "byRefId", options:
-          "joinByField-E-F"}`
-        - Marker layer has `filterData: {id: "byRefId", options:
-          "joinByField-A-B-C-D"}`
-        - Field names in route layer location match: "latitude_history" and
-          "longitude_history"
+  - [ ] 4.7 You should see TWO separate data tables: - One with columns: Time,
+        latitude, longitude, altitude, heading (from queries A-D, single instant
+        values) - One with columns: Time, latitude_history, longitude_history
+        (from queries E-F, multiple time-series rows)
+  - [ ] 4.8 If you only see one joined table with ALL fields, the
+        transformations didn't work correctly - double-check the transformation
+        JSON structure
+  - [ ] 4.9 If the route layer shows "No data" or errors, check that: - TWO
+        separate transformations exist in the transformations array - Route
+        layer has
+        `filterData: {id: "byRefId", options:       "joinByField-E-F"}` - Marker
+        layer has
+        `filterData: {id: "byRefId", options:       "joinByField-A-B-C-D"}` -
+        Field names in route layer location match: "latitude_history" and
+        "longitude_history"
   - [ ] 4.10 Verify the current position marker (green plane) is visible on TOP
         of the route (if not, the layer order is wrong - marker should be LAST
         in layers array)
-  - [ ] 4.11 Test with different time ranges: Click time picker in top right, try
-        "Last 5 minutes", "Last 1 hour", "Last 6 hours" - verify route updates
-        to show different amounts of history
+  - [ ] 4.11 Test with different time ranges: Click time picker in top right,
+        try "Last 5 minutes", "Last 1 hour", "Last 6 hours" - verify route
+        updates to show different amounts of history
   - [ ] 4.12 Test route appearance: If line is too thick/thin, edit JSON and
         change `"lineWidth"` value (try 2, 3, or 4)
   - [ ] 4.13 Test route color: If blue isn't visible enough, try "dark-blue",

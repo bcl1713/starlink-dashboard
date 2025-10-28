@@ -207,31 +207,6 @@
         },
         "layers": [
           {
-            "type": "route",
-            "name": "Position History",
-            "config": {
-              "style": {
-                "color": {
-                  "fixed": "blue"
-                },
-                "opacity": 0.7,
-                "lineWidth": 3
-              },
-              "showLegend": false
-            },
-            "filterByRefId": "E",
-            "filterData": {
-              "id": "byRefId",
-              "options": "joinByField-E-F"
-            },
-            "location": {
-              "mode": "coords",
-              "latitude": "latitude_history",
-              "longitude": "longitude_history"
-            },
-            "tooltip": false
-          },
-          {
             "type": "markers",
             "name": "Current Position",
             "config": {
@@ -271,11 +246,6 @@
                 }
               },
               "showLegend": true
-            },
-            "filterByRefId": "A",
-            "filterData": {
-              "id": "byRefId",
-              "options": "joinByField-A-B-C-D"
             },
             "location": {
               "mode": "coords",
@@ -328,47 +298,15 @@
           "legendFormat": "heading",
           "refId": "D",
           "interval": "1s"
-        },
-        {
-          "expr": "starlink_dish_latitude_degrees",
-          "instant": false,
-          "range": true,
-          "intervalFactor": 1,
-          "legendFormat": "latitude_history",
-          "refId": "E",
-          "interval": "1s"
-        },
-        {
-          "expr": "starlink_dish_longitude_degrees",
-          "instant": false,
-          "range": true,
-          "intervalFactor": 1,
-          "legendFormat": "longitude_history",
-          "refId": "F",
-          "interval": "1s"
         }
       ],
       "title": "Current Position",
       "transformations": [
         {
-          "filter": {
-            "id": "byRefId",
-            "options": "/^(?:A|B|C|D)$/"
-          },
           "id": "joinByField",
           "options": {
             "byField": "Time",
-            "mode": "inner"
-          }
-        },
-        {
-          "filter": {
-            "id": "byRefId",
-            "options": "/^(?:E|F)$/"
-          },
-          "id": "joinByField",
-          "options": {
-            "mode": "inner"
+            "mode": "outer"
           }
         }
       ],
