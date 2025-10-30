@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+import starlink_grpc
+from grpc import RpcError
 
 from app.live.coordinator import LiveCoordinator
 from app.models.config import (
@@ -75,7 +77,7 @@ class TestLiveCoordinatorInitialization:
         mock_client = MagicMock()
         mock_client.connect.return_value = False  # Connection fails
         mock_client.test_connection.return_value = False  # Connection test also fails
-        mock_client.get_telemetry.side_effect = Exception("API error")
+        mock_client.get_telemetry.side_effect = starlink_grpc.GrpcError("API error")
         mock_client_class.return_value = mock_client
 
         # Should succeed despite connection failure
@@ -96,6 +98,7 @@ class TestLiveCoordinatorInitialization:
         """Test update returns None when disconnected to prevent publishing invalid data."""
         mock_client = MagicMock()
         mock_client.connect.return_value = False  # Connection fails
+        mock_client.get_telemetry.side_effect = starlink_grpc.GrpcError("Not connected")
         mock_client_class.return_value = mock_client
 
         config = SimulationConfig()
@@ -188,7 +191,7 @@ class TestLiveCoordinatorUpdate:
         mock_client.get_telemetry.side_effect = [
             good_telemetry,  # For init
             good_telemetry,  # For first update
-            Exception("API error"),  # For second update
+            starlink_grpc.GrpcError("API error"),  # For second update
         ]
 
         config = SimulationConfig()
@@ -211,7 +214,7 @@ class TestLiveCoordinatorUpdate:
     def test_update_returns_none_without_fallback(self, mock_client_class):
         """Test update returns None when no valid telemetry is available."""
         mock_client = MagicMock()
-        mock_client.get_telemetry.side_effect = Exception("API error")
+        mock_client.get_telemetry.side_effect = starlink_grpc.GrpcError("API error")
         mock_client_class.return_value = mock_client
 
         config = SimulationConfig()
@@ -248,7 +251,7 @@ class TestLiveCoordinatorGetCurrentTelemetry:
     def test_get_current_telemetry_without_update(self, mock_client_class):
         """Test get_current_telemetry raises when no data available."""
         mock_client = MagicMock()
-        mock_client.get_telemetry.side_effect = Exception("API error")
+        mock_client.get_telemetry.side_effect = starlink_grpc.GrpcError("API error")
         mock_client_class.return_value = mock_client
 
         config = SimulationConfig()
@@ -292,6 +295,7 @@ class TestLiveCoordinatorUptime:
     def test_get_uptime_seconds(self, mock_client_class):
         """Test uptime tracking."""
         mock_client = MagicMock()
+        mock_client.connect.return_value = False  # Skip initial connection
         mock_client_class.return_value = mock_client
 
         with patch("app.live.coordinator.time.time", side_effect=[1000.0, 1050.0]):
@@ -310,6 +314,7 @@ class TestLiveCoordinatorConfiguration:
     def test_get_config(self, mock_client_class):
         """Test retrieving configuration."""
         mock_client = MagicMock()
+        mock_client.connect.return_value = False  # Skip initial connection
         mock_client_class.return_value = mock_client
 
         config = SimulationConfig(mode="live")
@@ -322,6 +327,7 @@ class TestLiveCoordinatorConfiguration:
     def test_update_config(self, mock_client_class):
         """Test updating configuration."""
         mock_client = MagicMock()
+        mock_client.connect.return_value = False  # Skip initial connection
         mock_client_class.return_value = mock_client
 
         config1 = SimulationConfig(
@@ -367,6 +373,7 @@ class TestLiveCoordinatorConnection:
     def test_is_connected_failure(self, mock_client_class):
         """Test checking connection status when disconnected."""
         mock_client = MagicMock()
+        mock_client.connect.return_value = False  # Skip initial connection
         mock_client.test_connection.return_value = False
         mock_client_class.return_value = mock_client
 
@@ -379,6 +386,7 @@ class TestLiveCoordinatorConnection:
     def test_shutdown(self, mock_client_class):
         """Test coordinator shutdown."""
         mock_client = MagicMock()
+        mock_client.connect.return_value = False  # Skip initial connection
         mock_client_class.return_value = mock_client
 
         config = SimulationConfig()
@@ -392,7 +400,8 @@ class TestLiveCoordinatorConnection:
     def test_shutdown_with_error(self, mock_client_class):
         """Test shutdown handles disconnect errors gracefully."""
         mock_client = MagicMock()
-        mock_client.disconnect.side_effect = Exception("Disconnect failed")
+        mock_client.connect.return_value = False  # Skip initial connection
+        mock_client.disconnect.side_effect = starlink_grpc.GrpcError("Disconnect failed")
         mock_client_class.return_value = mock_client
 
         config = SimulationConfig()
@@ -409,6 +418,7 @@ class TestLiveCoordinatorInterface:
     def test_has_required_methods(self, mock_client_class):
         """Test that LiveCoordinator has all required methods."""
         mock_client = MagicMock()
+        mock_client.connect.return_value = False  # Skip initial connection
         mock_client_class.return_value = mock_client
 
         config = SimulationConfig()

@@ -5,6 +5,9 @@ import time
 from datetime import datetime
 from typing import Optional
 
+import starlink_grpc
+from grpc import RpcError
+
 from app.live.client import StarlinkClient
 from app.models.config import SimulationConfig
 from app.models.telemetry import TelemetryData
@@ -68,9 +71,9 @@ class LiveCoordinator:
                     "but service will continue with graceful degradation"
                 )
                 self._connection_status = False
-        except Exception as e:
+        except (starlink_grpc.GrpcError, RpcError) as e:
             logger.warning(
-                f"Error during initial connection attempt: {type(e).__name__}: {e}, "
+                f"gRPC error during initial connection attempt: {type(e).__name__}: {e}, "
                 "but service will continue with graceful degradation"
             )
             self._connection_status = False
@@ -84,18 +87,15 @@ class LiveCoordinator:
 
         Returns:
             TelemetryData with current metrics from dish, or None if disconnected
-
-        Raises:
-            Exception: Only on first connection attempt if it fails
         """
         try:
             telemetry = self._collect_telemetry()
             self._last_valid_telemetry = telemetry
             self._connection_status = True
             return telemetry
-        except Exception as e:
+        except (starlink_grpc.GrpcError, RpcError) as e:
             logger.warning(
-                f"Failed to collect telemetry: {type(e).__name__}: {e}"
+                f"gRPC error while collecting telemetry: {type(e).__name__}: {e}"
             )
             self._connection_status = False
 
