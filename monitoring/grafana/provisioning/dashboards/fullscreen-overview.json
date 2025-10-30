@@ -164,8 +164,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "datasource",
+        "uid": "-- Mixed --"
       },
       "fieldConfig": {
         "defaults": {
@@ -367,6 +367,10 @@
       "pluginVersion": "12.2.1",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_latitude_degrees",
           "instant": true,
           "intervalFactor": 1,
@@ -375,6 +379,10 @@
           "interval": "1s"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_longitude_degrees",
           "instant": true,
           "intervalFactor": 1,
@@ -383,6 +391,10 @@
           "interval": "1s"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_altitude_feet",
           "instant": true,
           "intervalFactor": 1,
@@ -391,6 +403,10 @@
           "interval": "1s"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_heading_degrees",
           "instant": true,
           "intervalFactor": 1,
@@ -399,6 +415,10 @@
           "interval": "1s"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_latitude_degrees",
           "instant": false,
           "range": true,
@@ -408,6 +428,10 @@
           "interval": "1s"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_longitude_degrees",
           "instant": false,
           "range": true,
@@ -418,8 +442,11 @@
         },
         {
           "refId": "G",
-          "datasourceUid": "-100",
-          "url": "api/pois/etas",
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "PB63CD044D3341156"
+          },
+          "url": "/api/pois/etas",
           "urlOptions": {
             "params": [
               {
@@ -436,10 +463,12 @@
               }
             ]
           },
-          "data": "pois",
           "format": "table",
           "cacheDurationSeconds": 30,
-          "source": "url"
+          "source": "url",
+          "filterExpression": "",
+          "parser": "json",
+          "root_selector": "pois"
         }
       ],
       "title": "Current Position",

@@ -1,14 +1,45 @@
 # POI Interactive Management - Context Document
 
-**Last Updated:** 2025-10-30
+**Last Updated:** 2025-10-30 (Session 3 - POI Visualization on Geomap)
 
 **Feature Branch:** `feature/poi-interactive-management`
+
+**Current Phase:** Phase 3 - Interactive ETA Tooltips (IN PROGRESS)
 
 ---
 
 ## Overview
 
 This document provides essential context for implementing the POI Interactive Management feature. It serves as a quick reference for developers working on this feature, highlighting key files, architectural decisions, dependencies, and integration points.
+
+## Session 3 Progress (Geomap POI Visualization)
+
+**Status:** ✅ POI markers now appearing on Grafana geomap
+
+**What Was Accomplished:**
+1. Fixed Grafana dashboard datasource configuration for mixed datasources (Prometheus + Infinity)
+2. Added proper datasource objects to all queries (not just datasourceUid)
+3. Configured Infinity plugin to use `/api/pois/etas` endpoint with root_selector
+4. POI "Test Airport" marker now visible on map at (40.6413, -73.7781)
+
+**Key Fixes Applied:**
+- Changed panel datasource from Prometheus to "Mixed" (datasource type with uid: "-- Mixed --")
+- Added explicit `datasource` objects to Prometheus queries A-F with type and uid
+- Added `datasource` object to Infinity query G with type "yesoreyeram-infinity-datasource"
+- Used `root_selector: "pois"` in Infinity config to extract pois array from nested JSON response
+- Fixed URL from `/api/pois/etas` (missing leading slash) that was causing URL concatenation errors
+
+**Current Issue (Not Blocking):**
+- POI data shows: `eta_seconds: -1`, `distance_meters: 0`, `bearing_degrees: null`
+- Root cause: Query G parameters not receiving values from queries A-B (latitude/longitude)
+- The `$__data.fields[latitude].values[0]` references aren't resolving to actual data
+- **Workaround:** POI marker displays correctly even with null/zero values; can be fixed by ensuring query parameter references are correct
+
+**Files Modified This Session:**
+- `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` - Complete dashboard query refactoring
+  - Panel datasource changed to mixed
+  - All queries now have explicit datasource objects with proper type and uid
+  - Query G now uses root_selector for Infinity plugin
 
 ---
 

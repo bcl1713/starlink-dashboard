@@ -1361,3 +1361,60 @@ Phase 3 focuses on **Interactive ETA Tooltips**:
 
 **Status:** ✅ READY FOR DOCKER TESTING AND VISUAL VERIFICATION
 
+
+---
+
+## Session 3 - POI Markers on Geomap (2025-10-30)
+
+### Summary
+Successfully resolved Grafana datasource configuration issues and got POI markers displaying on the geomap. The "Test Airport" POI is now visible at coordinates (40.6413, -73.7781).
+
+### Major Achievements
+1. ✅ POI markers visible on Grafana geomap
+2. ✅ Mixed datasources working (Prometheus + Infinity in same panel)
+3. ✅ Dashboard query refactoring complete
+4. ✅ Infinity plugin properly configured with root_selector
+
+### Key Technical Insights
+- **Datasource Configuration:** Each query needs a `datasource` object with type and uid, not just `datasourceUid`
+- **Mixed Mode:** Panel datasource must be `{"type": "datasource", "uid": "-- Mixed --"}` to allow different query datasources
+- **Infinity Plugin:** Requires `root_selector: "pois"` to extract the pois array from nested JSON response
+- **URL Path:** Must start with `/` when using relative URLs in Infinity plugin (`/api/pois/etas` not `api/pois/etas`)
+
+### Issue Remaining (Not Blocking)
+POI data parameters not being populated:
+- `eta_seconds: -1` (should be positive)
+- `distance_meters: 0` (should be calculated)
+- `bearing_degrees: null` (should be numeric)
+
+Root cause: Query G parameters `$__data.fields[latitude].values[0]` not resolving to actual latitude/longitude values from queries A-B.
+
+This is a display issue - the markers show up correctly, just without calculated ETA data. Can be fixed in next session by ensuring parameter references resolve properly.
+
+### Files Modified
+- `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` - Complete refactoring
+
+### Commands for Next Session
+```bash
+# Verify POI marker is still visible
+curl http://localhost:3000/d/starlink-fullscreen/fullscreen-overview
+
+# Test the ETA endpoint directly
+curl "http://localhost:8000/api/pois/etas?latitude=40.7128&longitude=-74.0060&speed_knots=150"
+
+# Next task: Fix query parameter resolution for ETA data
+# Look at how Grafana variables work with Infinity plugin
+```
+
+### Lessons Learned
+1. Grafana datasource objects need full type specification for mixed panels
+2. The UI showing "mixed" for all queries was misleading - actually needed proper datasource objects
+3. Infinity plugin documentation is sparse; had to use skill docs and trial-and-error
+4. POI visualization working proves the architecture is sound; just need to fix data flow
+
+### Next Steps for Phase 3
+1. Fix query parameter resolution (eta_seconds, distance, bearing)
+2. Add interactive tooltips on marker hover
+3. Format tooltip with POI name, ETA, distance, bearing
+4. Add course status indicators
+5. Test with multiple POIs
