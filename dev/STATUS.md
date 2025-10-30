@@ -37,6 +37,13 @@
 - Phase 2: 5/5 complete ✅
 - Phase 3: 0/6 ready to start
 
+**Critical Bug Fixed (Post-Phase 2):**
+- ✅ Fixed FastAPI route ordering issue in pois.py
+- ✅ Moved specific routes (/etas, /count/total) before generic /{poi_id}
+- ✅ All Phase 1 endpoints now working correctly
+- ✅ Docker networking issue resolved (DNS configuration)
+- ✅ ETA endpoint verified with live data
+
 **Session 3 Accomplishments (2025-10-30):**
 Phase 1 (Backend ETA Integration):
 - ✅ Reviewed current ETA calculation logic in ETACalculator

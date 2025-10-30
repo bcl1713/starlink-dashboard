@@ -301,5 +301,52 @@ All code is committed, tested syntactically, and ready for Phase 3 implementatio
 
 ---
 
-**Generated:** 2025-10-30
-**Status:** ✅ READY FOR CONTEXT RESET AND PHASE 3 CONTINUATION
+---
+
+## Critical Bug Fix (Post-Phase 2)
+
+**Issue:** Route ordering bug in `backend/starlink-location/app/api/pois.py`
+
+**Problem:** FastAPI routes are matched in order. The generic `GET /{poi_id}` route was matching `/etas` before the specific `GET /etas` route could handle it, resulting in 404 errors.
+
+**Solution:** Moved specific routes (`/etas`, `/count/total`) BEFORE generic `/{poi_id}` route.
+
+**Correct Route Order:**
+1. `GET /api/pois` - list all POIs
+2. `GET /api/pois/etas` - ETA endpoint (SPECIFIC)
+3. `GET /api/pois/count/total` - count endpoint (SPECIFIC)
+4. `GET /api/pois/{poi_id}` - get POI by ID (GENERIC)
+5. `POST /api/pois` - create POI
+6. `PUT /api/pois/{poi_id}` - update POI
+7. `DELETE /api/pois/{poi_id}` - delete POI
+
+**Commit:** `3e8a53b` - "fix: Fix route ordering for POI endpoints"
+
+**Status:** ✅ VERIFIED WORKING
+- ETA endpoint returns correct data
+- Prometheus metrics updating
+- Docker networking fixed (DNS issue resolved)
+- All Phase 1 functionality working
+
+---
+
+## Session 3 Complete Summary
+
+**What Was Done:**
+- Phase 1: Backend ETA Integration (6/6 tasks) ✅
+- Phase 2: Grafana POI Markers Layer (5/5 tasks) ✅
+- Docker networking issue diagnosis and fix
+- Route ordering bug fix and verification
+
+**Total Commits This Session:**
+- 8 feature/fix commits
+- 4 documentation commits
+- ~600 lines of new code
+
+**Critical Discovery:**
+- FastAPI route matching is order-dependent
+- Must place specific routes before generic routes
+- This is a common gotcha for REST API frameworks
+
+**Generated:** 2025-10-30 (Final Update)
+**Status:** ✅ FULLY VERIFIED AND READY FOR PHASE 3
