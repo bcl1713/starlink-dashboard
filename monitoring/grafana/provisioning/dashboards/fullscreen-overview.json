@@ -283,6 +283,75 @@
               "longitude": "longitude"
             },
             "tooltip": true
+          },
+          {
+            "type": "markers",
+            "name": "Points of Interest",
+            "config": {
+              "style": {
+                "color": {
+                  "field": "eta_seconds",
+                  "mode": "thresholds",
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "red",
+                        "value": 0
+                      },
+                      {
+                        "color": "orange",
+                        "value": 300
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 900
+                      },
+                      {
+                        "color": "blue",
+                        "value": 3600
+                      }
+                    ]
+                  }
+                },
+                "opacity": 0.9,
+                "size": {
+                  "fixed": 12,
+                  "mode": "fixed"
+                },
+                "symbol": {
+                  "field": "icon",
+                  "mode": "field",
+                  "fixed": "marker"
+                },
+                "text": {
+                  "field": "name",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 10,
+                  "offsetX": 0,
+                  "offsetY": 15,
+                  "textAlign": "center",
+                  "textBaseline": "top"
+                }
+              },
+              "showLegend": true
+            },
+            "filterByRefId": "G",
+            "filterData": {
+              "id": "byRefId",
+              "options": "G"
+            },
+            "location": {
+              "mode": "coords",
+              "latitude": "latitude",
+              "longitude": "longitude"
+            },
+            "tooltip": {
+              "mode": "details"
+            }
           }
         ],
         "view": {
@@ -346,6 +415,31 @@
           "legendFormat": "longitude_history",
           "refId": "F",
           "interval": "1s"
+        },
+        {
+          "refId": "G",
+          "datasourceUid": "-100",
+          "url": "api/pois/etas",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "latitude",
+                "value": "$__data.fields[latitude].values[0]"
+              },
+              {
+                "name": "longitude",
+                "value": "$__data.fields[longitude].values[0]"
+              },
+              {
+                "name": "speed_knots",
+                "value": "$__data.fields[speed].values[0]"
+              }
+            ]
+          },
+          "data": "pois",
+          "format": "table",
+          "cacheDurationSeconds": 30,
+          "source": "url"
         }
       ],
       "title": "Current Position",
@@ -493,7 +587,12 @@
       "id": 2,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "min", "max", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -631,7 +730,12 @@
       "id": 3,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "max", "min", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "min",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -734,7 +838,11 @@
       "id": 4,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "max", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -842,7 +950,9 @@
       "id": 5,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -869,7 +979,11 @@
   "refresh": "1s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["starlink", "fullscreen", "overview"],
+  "tags": [
+    "starlink",
+    "fullscreen",
+    "overview"
+  ],
   "templating": {
     "list": []
   },
@@ -878,7 +992,14 @@
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["1s", "5s", "10s", "30s", "1m", "5m"]
+    "refresh_intervals": [
+      "1s",
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ]
   },
   "timezone": "utc",
   "title": "Fullscreen Overview",
