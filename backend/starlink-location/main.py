@@ -12,10 +12,12 @@ from fastapi.responses import JSONResponse
 
 from app.api import config, geojson, health, metrics, pois, status
 from app.core.config import ConfigManager
+from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
 from app.core.metrics import set_service_info
 from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
+from app.services.poi_manager import POIManager
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -83,6 +85,19 @@ async def startup_event():
         status.set_coordinator(_coordinator)
         config.set_coordinator(_coordinator)
 
+        # Initialize ETA service for POI calculations
+        logger.info_json("Initializing ETA service")
+        try:
+            poi_manager = POIManager()
+            initialize_eta_service(poi_manager)
+            logger.info_json("ETA service initialized successfully")
+        except Exception as e:
+            logger.warning_json(
+                "Failed to initialize ETA service",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
+
         # Log active mode prominently
         mode_description = "Real Starlink terminal data" if active_mode == "live" else "Simulated telemetry"
         logger.info_json(
@@ -122,6 +137,10 @@ async def shutdown_event():
                 await _background_task
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
+
+        # Shutdown ETA service
+        logger.info_json("Shutting down ETA service")
+        shutdown_eta_service()
 
         logger.info_json("Shutdown complete")
     except Exception as e:

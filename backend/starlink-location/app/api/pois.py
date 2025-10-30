@@ -1,10 +1,18 @@
 """POI CRUD API endpoints for managing points of interest."""
 
+import math
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
 
-from app.models.poi import POICreate, POIListResponse, POIResponse, POIUpdate
+from app.models.poi import (
+    POICreate,
+    POIETAListResponse,
+    POIListResponse,
+    POIResponse,
+    POIUpdate,
+    POIWithETA,
+)
 from app.services.poi_manager import POIManager
 
 # Initialize POI manager
@@ -12,6 +20,34 @@ poi_manager = POIManager()
 
 # Create API router
 router = APIRouter(prefix="/api/pois", tags=["pois"])
+
+
+def calculate_bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate bearing from point 1 to point 2 in degrees (0=North, 90=East).
+
+    Args:
+        lat1: Starting latitude in decimal degrees
+        lon1: Starting longitude in decimal degrees
+        lat2: Ending latitude in decimal degrees
+        lon2: Ending longitude in decimal degrees
+
+    Returns:
+        Bearing in degrees (0-360)
+    """
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    dlon = math.radians(lon2 - lon1)
+
+    x = math.sin(dlon) * math.cos(lat2_rad)
+    y = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(
+        lat2_rad
+    ) * math.cos(dlon)
+
+    bearing_rad = math.atan2(x, y)
+    bearing_deg = math.degrees(bearing_rad)
+
+    # Normalize to 0-360 range
+    return (bearing_deg + 360) % 360
 
 
 @router.get("", response_model=POIListResponse, summary="List all POIs")
@@ -206,3 +242,92 @@ async def count_pois(route_id: Optional[str] = Query(None, description="Filter b
     """
     count = poi_manager.count_pois(route_id=route_id)
     return {"count": count, "route_id": route_id}
+
+
+@router.get("/etas", response_model=POIETAListResponse, summary="Get all POIs with real-time ETA data")
+async def get_pois_with_etas(
+    route_id: Optional[str] = Query(None, description="Filter by route ID"),
+    latitude: Optional[float] = Query(None, description="Current latitude (decimal degrees)"),
+    longitude: Optional[float] = Query(None, description="Current longitude (decimal degrees)"),
+    speed_knots: Optional[float] = Query(0, description="Current speed in knots"),
+) -> POIETAListResponse:
+    """
+    Get all POIs with real-time ETA and distance data.
+
+    This endpoint calculates ETA and distance for all POIs based on current position and speed.
+    If current position is not provided, returns all POIs without ETA data.
+
+    Query Parameters:
+    - route_id: Optional route ID to filter by
+    - latitude: Current latitude (required for ETA calculation)
+    - longitude: Current longitude (required for ETA calculation)
+    - speed_knots: Current speed in knots (default: 0, means stationary)
+
+    Returns:
+    - JSON object with list of POIs with ETA data and timestamp
+
+    Raises:
+    - 400: Missing required position data or invalid values
+    """
+    try:
+        pois = poi_manager.list_pois(route_id=route_id)
+
+        # If position not provided, return POIs without ETA
+        if latitude is None or longitude is None:
+            pois_with_eta = [
+                POIWithETA(
+                    poi_id=poi.id,
+                    name=poi.name,
+                    latitude=poi.latitude,
+                    longitude=poi.longitude,
+                    category=poi.category,
+                    icon=poi.icon,
+                    eta_seconds=-1,
+                    distance_meters=0,
+                    bearing_degrees=None,
+                )
+                for poi in pois
+            ]
+        else:
+            # Calculate ETA and distance for each POI
+            from app.core.eta_service import get_eta_calculator
+
+            eta_calc = get_eta_calculator()
+
+            pois_with_eta = []
+            for poi in pois:
+                # Calculate distance using Haversine formula
+                distance = eta_calc.calculate_distance(
+                    latitude, longitude, poi.latitude, poi.longitude
+                )
+
+                # Calculate ETA
+                eta_seconds = eta_calc.calculate_eta(distance, speed_knots)
+
+                # Calculate bearing
+                bearing = calculate_bearing(latitude, longitude, poi.latitude, poi.longitude)
+
+                pois_with_eta.append(
+                    POIWithETA(
+                        poi_id=poi.id,
+                        name=poi.name,
+                        latitude=poi.latitude,
+                        longitude=poi.longitude,
+                        category=poi.category,
+                        icon=poi.icon,
+                        eta_seconds=eta_seconds,
+                        distance_meters=distance,
+                        bearing_degrees=bearing,
+                    )
+                )
+
+            # Sort by ETA (ascending) so closest POIs appear first
+            pois_with_eta.sort(key=lambda p: p.eta_seconds if p.eta_seconds >= 0 else float('inf'))
+
+        return POIETAListResponse(pois=pois_with_eta, total=len(pois_with_eta))
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to calculate ETA: {str(e)}",
+        )

@@ -129,3 +129,51 @@ class POIListResponse(BaseModel):
             }
         }
     }
+
+
+class POIWithETA(BaseModel):
+    """POI data with real-time ETA information."""
+
+    poi_id: str = Field(..., description="POI identifier")
+    name: str = Field(..., description="POI name")
+    latitude: float = Field(..., description="POI latitude in decimal degrees")
+    longitude: float = Field(..., description="POI longitude in decimal degrees")
+    category: Optional[str] = Field(default=None, description="POI category")
+    icon: str = Field(default="marker", description="Icon identifier")
+    eta_seconds: float = Field(..., description="Estimated time to arrival in seconds (-1 if no speed)")
+    distance_meters: float = Field(..., description="Distance to POI in meters")
+    bearing_degrees: Optional[float] = Field(default=None, description="Bearing to POI in degrees (0=North)")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "poi_id": "jfk-airport",
+                "name": "JFK Airport",
+                "latitude": 40.6413,
+                "longitude": -73.7781,
+                "category": "airport",
+                "icon": "airport",
+                "eta_seconds": 1080.0,
+                "distance_meters": 45000.0,
+                "bearing_degrees": 125.0,
+            }
+        }
+    }
+
+
+class POIETAListResponse(BaseModel):
+    """Response model for POI ETA list endpoint."""
+
+    pois: list[POIWithETA] = Field(default_factory=list, description="List of POIs with ETA data")
+    total: int = Field(default=0, description="Total number of POIs")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When this data was calculated")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "pois": [],
+                "total": 0,
+                "timestamp": "2025-10-30T10:00:00",
+            }
+        }
+    }
