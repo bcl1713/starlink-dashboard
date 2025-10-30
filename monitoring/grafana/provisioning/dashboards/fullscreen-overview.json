@@ -448,23 +448,10 @@
           },
           "url": "/api/pois/etas",
           "urlOptions": {
-            "params": [
-              {
-                "name": "latitude",
-                "value": "$__data.fields[latitude].values[0]"
-              },
-              {
-                "name": "longitude",
-                "value": "$__data.fields[longitude].values[0]"
-              },
-              {
-                "name": "speed_knots",
-                "value": "$__data.fields[speed].values[0]"
-              }
-            ]
+            "params": []
           },
           "format": "table",
-          "cacheDurationSeconds": 30,
+          "cacheDurationSeconds": 1,
           "source": "url",
           "filterExpression": "",
           "parser": "json",

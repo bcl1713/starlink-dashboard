@@ -84,6 +84,7 @@ async def startup_event():
         health.set_coordinator(_coordinator)
         status.set_coordinator(_coordinator)
         config.set_coordinator(_coordinator)
+        pois.set_coordinator(_coordinator)
 
         # Initialize ETA service for POI calculations
         logger.info_json("Initializing ETA service")
