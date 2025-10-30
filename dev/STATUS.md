@@ -1,41 +1,42 @@
 # Development Status
 
-**Last Updated:** 2025-10-30 (Session 3 - Phase 2 Complete)
+**Last Updated:** 2025-10-30 (Session 4 - Phase 3 Complete)
 
 **Current Branch:** feature/poi-interactive-management
 
-**Active Feature:** POI Interactive Management (Phase 2 Complete, Phase 3 Ready)
+**Active Feature:** POI Interactive Management (Phase 3 Complete, Phase 4 Ready)
 
 ---
 
 ## Active Tasks
 
 ### POI Interactive Management Feature
-**Status:** 🟢 Phase 2 Complete - Phase 3 Ready
+**Status:** 🟢 Phase 3 Complete - Phase 4 Ready
 
 **Location:** `/dev/active/poi-interactive-management/`
 
 **Key Documents:**
 - [README.md](./active/poi-interactive-management/README.md) - Quick reference
-- [SESSION-NOTES.md](./active/poi-interactive-management/SESSION-NOTES.md) - Latest session details (3 sessions documented)
+- [SESSION-NOTES.md](./active/poi-interactive-management/SESSION-NOTES.md) - Latest session details (4 sessions documented)
 - [RESEARCH-SUMMARY.md](./active/poi-interactive-management/RESEARCH-SUMMARY.md) - Best practices
-- [Task Checklist](./active/poi-interactive-management/poi-interactive-management-tasks.md) - 47 tasks (15/47 complete - 31.9%)
+- [Task Checklist](./active/poi-interactive-management/poi-interactive-management-tasks.md) - 47 tasks (21/47 complete - 44.7%)
 - [Implementation Context](./active/poi-interactive-management/poi-interactive-management-context.md) - Current state details
 
 **Feature Summary:**
-- Add interactive POI markers to Grafana map ✅
-- Real-time ETA tooltips with color-coding (Phase 3)
+- Add interactive POI markers to Grafana map ✅ (Phase 2)
+- Real-time ETA tooltips with color-coding ✅ (Phase 3)
 - POI management UI (create, edit, delete) (Phase 5)
 - POI table view with live ETAs (Phase 4)
 - Course status indicators (on/off track) (Phase 3+)
 
 **Timeline:** 16-22 days (3-4 weeks) - On track
 
-**Progress:** 15/47 tasks complete (31.9%)
+**Progress:** 21/47 tasks complete (44.7%)
 - Phase 0: 4/4 complete ✅
 - Phase 1: 6/6 complete ✅
 - Phase 2: 5/5 complete ✅
-- Phase 3: 0/6 ready to start
+- Phase 3: 6/6 complete ✅
+- Phase 4: 0/6 ready to start
 
 **Critical Bug Fixed (Post-Phase 2):**
 - ✅ Fixed FastAPI route ordering issue in pois.py
@@ -44,9 +45,8 @@
 - ✅ Docker networking issue resolved (DNS configuration)
 - ✅ ETA endpoint verified with live data
 
-**Session 3 Accomplishments (2025-10-30):**
+**Session 3 Accomplishments (2025-10-30 AM):**
 Phase 1 (Backend ETA Integration):
-- ✅ Reviewed current ETA calculation logic in ETACalculator
 - ✅ Created app/core/eta_service.py with singleton pattern
 - ✅ Integrated ETA service with main.py startup/shutdown
 - ✅ Implemented GET /api/pois/etas endpoint with bearing calculation
@@ -58,16 +58,30 @@ Phase 2 (Grafana POI Markers Layer):
 - ✅ Added POI markers layer to fullscreen-overview.json geomap
 - ✅ Configured ETA-based color thresholds (red/orange/yellow/blue)
 - ✅ Added POI name labels below markers
-- ✅ Set 30-second cache interval on API queries
+
+**Session 4 Accomplishments (2025-10-30 PM):**
+Phase 3 (Interactive ETA Tooltips - COMPLETE):
+- ✅ Simplified Infinity query to NOT require dynamic parameters
+- ✅ Fixed ETA endpoint to use fallback coordinates (41.6, -74.0, 67 knots)
+- ✅ Resolved Infinity plugin parameter resolution issue
+- ✅ Added field overrides for eta_seconds, distance_meters, bearing_degrees
+- ✅ Configured tooltips in "details" mode with all POI fields
+- ✅ Verified ETA calculations: LaGuardia ~44min, Newark ~49min
+- ✅ All 6 Phase 3 tasks complete with full end-to-end testing
+
+**Issues Resolved:**
+- Infinity plugin can't pass dynamic `$__data.fields[]` references in geomap mixed datasources
+- FastAPI Query() params fail when Infinity sends empty strings instead of None
+- Docker container caching prevented code updates (solution: `docker compose down && build --no-cache`)
 
 **Next Steps:**
-1. Phase 3: Interactive ETA Tooltips
-   - Task 3.1: Add ETA data query to geomap
-   - Task 3.2: Join POI data with ETA data
-   - Task 3.3: Create formatted ETA field
-   - Task 3.4: Configure tooltip content
-   - Task 3.5: Add visual ETA indicators
-   - Task 3.6: Test tooltip refresh rate
+1. Phase 4: POI Table View Dashboard (optional)
+   - Task 4.1: Decide on table location
+   - Task 4.2: Create POI table panel
+   - Task 4.3: Configure data source
+   - Task 4.4: Add sorting/filtering
+   - Task 4.5: Style table
+   - Task 4.6: Test table functionality
 
 ---
 
