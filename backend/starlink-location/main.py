@@ -55,28 +55,12 @@ async def startup_event():
         active_mode = _simulation_config.mode
 
         if _simulation_config.mode == "live":
-            # Try to initialize LiveCoordinator for real terminal data
-            logger.info_json("Attempting to initialize LiveCoordinator for live mode")
-            try:
-                _coordinator = LiveCoordinator(_simulation_config)
-                logger.info_json("LiveCoordinator initialized successfully")
-                # Set service info with live mode
-                set_service_info(version="0.2.0", mode="live")
-            except Exception as e:
-                # Fallback to simulation mode if live mode fails
-                logger.warning_json(
-                    "Failed to connect to Starlink dish, falling back to simulation mode",
-                    extra_fields={
-                        "error_type": type(e).__name__,
-                        "error": str(e),
-                        "dish_address": "192.168.100.1:9200"
-                    }
-                )
-                logger.info_json("Initializing SimulationCoordinator as fallback")
-                _coordinator = SimulationCoordinator(_simulation_config)
-                # Set service info with simulation mode (fallback)
-                set_service_info(version="0.2.0", mode="simulation")
-                active_mode = "simulation"
+            # Initialize LiveCoordinator for real terminal data
+            logger.info_json("Initializing LiveCoordinator for live mode")
+            _coordinator = LiveCoordinator(_simulation_config)
+            logger.info_json("LiveCoordinator initialized successfully")
+            # Set service info with live mode
+            set_service_info(version="0.2.0", mode="live")
         else:
             # Initialize SimulationCoordinator for simulation mode
             logger.info_json("Initializing SimulationCoordinator for simulation mode")
@@ -164,42 +148,60 @@ async def _background_update_loop():
                     telemetry = _coordinator.update()
                     update_count += 1
 
-                    # Track metric collection duration
-                    from app.core.metrics import (
-                        update_metrics_from_telemetry,
-                        starlink_metrics_scrape_duration_seconds,
-                        starlink_metrics_last_update_timestamp_seconds,
-                        starlink_metrics_generation_errors_total
-                    )
-
-                    scrape_start = time.time()
-                    try:
-                        update_metrics_from_telemetry(telemetry, _simulation_config)
-                        scrape_duration = time.time() - scrape_start
-                        starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
-                        starlink_metrics_last_update_timestamp_seconds.set(time.time())
-                    except Exception as metric_error:
-                        starlink_metrics_generation_errors_total.inc()
-                        logger.warning_json(
-                            "Error updating metrics",
-                            extra_fields={"error": str(metric_error)},
-                            exc_info=True
+                    # Only update metrics if telemetry is available
+                    # In live mode, telemetry will be None when disconnected
+                    if telemetry is not None:
+                        # Track metric collection duration
+                        from app.core.metrics import (
+                            update_metrics_from_telemetry,
+                            starlink_metrics_scrape_duration_seconds,
+                            starlink_metrics_last_update_timestamp_seconds,
+                            starlink_metrics_generation_errors_total
                         )
 
-                    # Log periodic updates (every 60 seconds)
-                    if update_count % 600 == 0:
-                        logger.info_json(
-                            "Background updates running",
-                            extra_fields={
-                                "total_updates": update_count,
-                                "total_errors": error_count,
-                                "position": {
-                                    "lat": telemetry.position.latitude,
-                                    "lon": telemetry.position.longitude
-                                },
-                                "network_latency_ms": telemetry.network.latency_ms
-                            }
-                        )
+                        scrape_start = time.time()
+                        try:
+                            update_metrics_from_telemetry(telemetry, _simulation_config)
+                            scrape_duration = time.time() - scrape_start
+                            starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
+                            starlink_metrics_last_update_timestamp_seconds.set(time.time())
+                        except Exception as metric_error:
+                            starlink_metrics_generation_errors_total.inc()
+                            logger.warning_json(
+                                "Error updating metrics",
+                                extra_fields={"error": str(metric_error)},
+                                exc_info=True
+                            )
+
+                        # Log periodic updates (every 60 seconds)
+                        if update_count % 600 == 0:
+                            logger.info_json(
+                                "Background updates running",
+                                extra_fields={
+                                    "total_updates": update_count,
+                                    "total_errors": error_count,
+                                    "position": {
+                                        "lat": telemetry.position.latitude,
+                                        "lon": telemetry.position.longitude
+                                    },
+                                    "network_latency_ms": telemetry.network.latency_ms
+                                }
+                            )
+                    else:
+                        # Clear metrics when disconnected to prevent stale data
+                        # This sets all telemetry metrics to NaN, which Prometheus won't store
+                        from app.core.metrics import clear_telemetry_metrics
+                        clear_telemetry_metrics()
+
+                        # Log when disconnected (less frequently to avoid spam)
+                        if update_count % 600 == 0:
+                            logger.info_json(
+                                "Live mode: waiting for dish connection",
+                                extra_fields={
+                                    "total_updates": update_count,
+                                    "total_errors": error_count
+                                }
+                            )
 
                 # Sleep for update interval (0.1 seconds = 10 Hz)
                 await asyncio.sleep(0.1)

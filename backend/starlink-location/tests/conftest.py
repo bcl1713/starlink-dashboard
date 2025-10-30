@@ -2,7 +2,48 @@
 
 import asyncio
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import MagicMock, patch
+import sys
+
+# Ensure /data directories exist for RouteManager
+Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)
+Path("/tmp/test_data/sim_routes").mkdir(parents=True, exist_ok=True)
+
+# Monkey-patch RouteManager and POIManager before any imports
+import app.services.route_manager as route_manager_module
+original_route_init = route_manager_module.RouteManager.__init__
+
+def patched_route_init(self, routes_dir="/tmp/test_data/routes"):
+    self.routes_dir = Path(routes_dir)
+    self.routes_dir.mkdir(parents=True, exist_ok=True)
+    self._routes = {}
+    self._active_route_id = None
+    self._observer = None
+    self._errors = {}
+
+route_manager_module.RouteManager.__init__ = patched_route_init
+
+import app.services.poi_manager as poi_manager_module
+import json
+
+original_poi_init = poi_manager_module.POIManager.__init__
+
+def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
+    self.pois_file = Path(pois_file)
+    self.pois_file.parent.mkdir(parents=True, exist_ok=True)
+    self._pois = {}
+    self._logger = poi_manager_module.logger
+
+    # Ensure file exists with initial structure
+    if not self.pois_file.exists():
+        with open(self.pois_file, "w") as f:
+            json.dump({"pois": {}, "routes": {}}, f, indent=2)
+
+    # Call the original _load_pois to properly load from the file
+    self._load_pois()
+
+poi_manager_module.POIManager.__init__ = patched_poi_init
 
 import pytest
 from fastapi.testclient import TestClient

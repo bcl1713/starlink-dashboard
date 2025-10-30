@@ -113,21 +113,33 @@ async def health():
             detail = "Prometheus has not scraped metrics yet"
             status_code = 503
 
-        # Determine actual operating mode based on coordinator type
-        coordinator_type = type(_coordinator).__name__
-        actual_mode = "live" if coordinator_type == "LiveCoordinator" else "simulation"
-        mode_description = "Real Starlink terminal data" if actual_mode == "live" else "Simulated telemetry"
+        # Get actual operating mode from coordinator property
+        actual_mode = _coordinator.mode
+
+        # Determine message based on mode and connection status
+        if actual_mode == "live":
+            dish_connected = _coordinator.is_connected()
+            if dish_connected:
+                message = "Live mode: connected to dish"
+            else:
+                message = "Live mode: waiting for dish connection"
+        else:
+            message = "Simulation mode: generating test data"
 
         response = {
             "status": "ok" if is_scraping else "degraded",
             "uptime_seconds": uptime,
             "mode": actual_mode,
-            "mode_description": mode_description,
+            "message": message,
             "version": "0.2.0",
             "timestamp": datetime.now().isoformat(),
             "prometheus_last_scrape": scrape_iso_time,
             "metrics_count": metrics_count
         }
+
+        # Add dish_connected field for live mode
+        if actual_mode == "live":
+            response["dish_connected"] = dish_connected
 
         if detail:
             response["detail"] = detail

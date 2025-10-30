@@ -147,6 +147,16 @@ class SimulationCoordinator:
         """
         return time.time() - self.start_time
 
+    @property
+    def mode(self) -> str:
+        """
+        Get the operating mode of this coordinator.
+
+        Returns:
+            String "simulation" indicating this is a simulation coordinator
+        """
+        return "simulation"
+
     def get_config(self) -> SimulationConfig:
         """
         Get current simulation configuration.

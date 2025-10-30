@@ -1,5 +1,7 @@
 """Prometheus metrics registry and definitions."""
 
+import math
+
 from prometheus_client import CollectorRegistry, Gauge, Counter, Histogram, CollectorRegistry as PrometheusCollectorRegistry
 from prometheus_client.core import GaugeMetricFamily
 
@@ -282,9 +284,17 @@ def update_metrics_from_telemetry(telemetry, config=None):
     Update all Prometheus metrics from telemetry data.
 
     Args:
-        telemetry: TelemetryData instance
+        telemetry: TelemetryData instance or None
         config: Optional ConfigManager instance for label computation
+
+    Returns:
+        None. Does nothing if telemetry is None (prevents publishing invalid data).
     """
+    # Defensive check: do not publish metrics if telemetry is None
+    # This prevents pollution of Prometheus with zero/invalid values
+    if telemetry is None:
+        return
+
     from app.core.labels import get_mode_label, get_status_label
 
     # Compute labels if config provided
@@ -348,6 +358,46 @@ def update_metrics_from_telemetry(telemetry, config=None):
 
     # Increment update counter
     simulation_updates_total.inc()
+
+
+def clear_telemetry_metrics():
+    """
+    Clear all telemetry metrics by setting them to NaN.
+
+    This is used when the dish is disconnected in live mode to prevent
+    publishing stale or zero values to Prometheus. NaN values are not
+    stored by Prometheus, effectively removing the metrics from the database.
+
+    Note: Service info, uptime, and counter metrics are NOT cleared as they
+    represent the backend service state, not dish telemetry.
+    """
+    # Position metrics
+    starlink_dish_latitude_degrees.set(math.nan)
+    starlink_dish_longitude_degrees.set(math.nan)
+    starlink_dish_altitude_feet.set(math.nan)
+    starlink_dish_speed_knots.set(math.nan)
+    starlink_dish_heading_degrees.set(math.nan)
+
+    # Network metrics (current values)
+    starlink_network_latency_ms_current.set(math.nan)
+    starlink_network_throughput_down_mbps_current.set(math.nan)
+    starlink_network_throughput_up_mbps_current.set(math.nan)
+    starlink_network_packet_loss_percent.set(math.nan)
+
+    # Obstruction and signal metrics
+    starlink_dish_obstruction_percent.set(math.nan)
+    starlink_signal_quality_percent.set(math.nan)
+
+    # Dish status metrics
+    starlink_dish_uptime_seconds.set(math.nan)
+    starlink_dish_thermal_throttle.set(math.nan)
+    starlink_dish_outage_active.set(math.nan)
+
+    # Clear custom position collector data
+    global _current_position
+    _current_position['latitude'] = math.nan
+    _current_position['longitude'] = math.nan
+    _current_position['altitude'] = math.nan
 
 
 def set_service_info(version: str, mode: str):

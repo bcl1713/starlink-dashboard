@@ -5,6 +5,9 @@ import time
 from datetime import datetime
 from typing import Optional
 
+import starlink_grpc
+from grpc import RpcError
+
 from app.live.client import StarlinkClient
 from app.models.config import SimulationConfig
 from app.models.telemetry import TelemetryData
@@ -36,8 +39,8 @@ class LiveCoordinator:
         self.config = config
         self.start_time = time.time()
 
-        # Initialize Starlink client
-        self.client = StarlinkClient()
+        # Initialize Starlink client with deferred connection
+        self.client = StarlinkClient(connect_immediately=False)
 
         # Initialize heading tracker with config values
         heading_config = config.heading_tracker
@@ -48,6 +51,7 @@ class LiveCoordinator:
 
         # Last known good state for graceful degradation
         self._last_valid_telemetry: Optional[TelemetryData] = None
+        self._connection_status: bool = False
 
         logger.info(
             "LiveCoordinator initialized with heading tracker config: "
@@ -55,46 +59,49 @@ class LiveCoordinator:
             f"max_age={heading_config.max_age_seconds}s"
         )
 
-        # Get initial telemetry to verify connection is working
-        # If this fails, raise exception so startup code can trigger fallback
-        self._last_valid_telemetry = self._collect_telemetry()
-        logger.info("Initial telemetry collected from Starlink dish")
+        # Try to get initial telemetry to verify connection
+        try:
+            if self.client.connect():
+                self._last_valid_telemetry = self._collect_telemetry()
+                self._connection_status = True
+                logger.info("Initial telemetry collected from Starlink dish")
+            else:
+                logger.warning(
+                    "Failed to connect to Starlink dish during initialization, "
+                    "but service will continue with graceful degradation"
+                )
+                self._connection_status = False
+        except (starlink_grpc.GrpcError, RpcError) as e:
+            logger.warning(
+                f"gRPC error during initial connection attempt: {type(e).__name__}: {e}, "
+                "but service will continue with graceful degradation"
+            )
+            self._connection_status = False
 
-    def update(self) -> TelemetryData:
+    def update(self) -> Optional[TelemetryData]:
         """
         Update telemetry from Starlink dish.
 
-        Polls the gRPC API and returns current telemetry. Uses graceful
-        degradation: returns last known good values on errors.
+        Polls the gRPC API and returns current telemetry. Returns None when
+        disconnected to prevent publishing invalid data to Prometheus.
 
         Returns:
-            TelemetryData with current metrics from dish
-
-        Raises:
-            Exception: If gRPC communication fails and no fallback is available
+            TelemetryData with current metrics from dish, or None if disconnected
         """
         try:
             telemetry = self._collect_telemetry()
             self._last_valid_telemetry = telemetry
+            self._connection_status = True
             return telemetry
-        except Exception as e:
+        except (starlink_grpc.GrpcError, RpcError) as e:
             logger.warning(
-                f"Failed to collect telemetry: {type(e).__name__}: {e}"
+                f"gRPC error while collecting telemetry: {type(e).__name__}: {e}"
             )
+            self._connection_status = False
 
-            # Graceful degradation: return last known good state
-            if self._last_valid_telemetry:
-                # Update timestamp but return old data
-                return TelemetryData(
-                    timestamp=datetime.now(),
-                    position=self._last_valid_telemetry.position,
-                    network=self._last_valid_telemetry.network,
-                    obstruction=self._last_valid_telemetry.obstruction,
-                    environmental=self._last_valid_telemetry.environmental,
-                )
-            else:
-                # Re-raise if no fallback available
-                raise
+            # Return None when disconnected to prevent publishing stale/invalid data
+            # This ensures Prometheus doesn't get polluted with zeros or old values
+            return None
 
     def _collect_telemetry(self) -> TelemetryData:
         """
@@ -171,6 +178,16 @@ class LiveCoordinator:
         """
         return time.time() - self.start_time
 
+    @property
+    def mode(self) -> str:
+        """
+        Get the operating mode of this coordinator.
+
+        Returns:
+            String "live" indicating this is a live coordinator
+        """
+        return "live"
+
     def get_config(self) -> SimulationConfig:
         """
         Get current configuration.
@@ -208,10 +225,15 @@ class LiveCoordinator:
         """
         Check if connected to Starlink dish.
 
+        Returns cached connection status updated by the background update loop.
+        This is fast and non-blocking, suitable for health checks.
+
         Returns:
             True if connection is healthy, False otherwise
         """
-        return self.client.test_connection()
+        # Return cached status - updated by background update() calls
+        # Don't call test_connection() here as it can block for ~10 seconds
+        return self._connection_status
 
     def shutdown(self) -> None:
         """Shutdown coordinator and close connections.

@@ -122,17 +122,6 @@ class PositionSimulator:
             min(config.speed_max_knots, self.current_speed)
         )
 
-    def _update_heading(self) -> None:
-        """Update heading with variation."""
-        config = self.position_config
-
-        # Smooth heading changes
-        heading_change = random.uniform(
-            -config.heading_variation_rate,
-            config.heading_variation_rate
-        )
-        self.current_heading = (self.current_heading + heading_change) % 360.0
-
     def _update_altitude(self) -> None:
         """Update altitude with slight variation."""
         config = self.position_config

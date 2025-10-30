@@ -41,16 +41,18 @@ class StarlinkClient:
         self,
         target: Optional[str] = None,
         timeout: float = 5.0,
+        connect_immediately: bool = False,
     ):
         """Initialize Starlink client.
 
         Args:
             target: gRPC endpoint address and port (default: from STARLINK_DISH_HOST and STARLINK_DISH_PORT env vars)
             timeout: Connection timeout in seconds (default: 5.0)
+            connect_immediately: If True, immediately connect and raise on failure (default: False)
 
         Raises:
             ValueError: If target or timeout are invalid
-            RpcError: If connection to dish fails
+            RpcError: If connection to dish fails and connect_immediately is True
         """
         # Use provided target or get from environment variables
         if target is None:
@@ -66,9 +68,11 @@ class StarlinkClient:
         self.context: Optional[starlink_grpc.ChannelContext] = None
         self._connected = False
         self.logger = logger
+        self.connect_immediately = connect_immediately
 
-        # Immediately connect to validate dish is reachable during initialization
-        self.connect()
+        # Connect immediately if requested (will raise on failure)
+        if connect_immediately:
+            self.connect()
 
     def is_connected(self) -> bool:
         """Check if currently connected to Starlink dish.
@@ -85,8 +89,8 @@ class StarlinkClient:
             True if connection successful, False otherwise
 
         Raises:
-            starlink_grpc.GrpcError: If gRPC error occurs
-            RpcError: If low-level gRPC error occurs
+            starlink_grpc.GrpcError: If gRPC error occurs and connect_immediately is True
+            RpcError: If low-level gRPC error occurs and connect_immediately is True
         """
         if self._connected and self.context:
             return True
@@ -104,7 +108,10 @@ class StarlinkClient:
             )
             self._connected = False
             self.context = None
-            raise
+            # Only raise if immediate connection was required
+            if self.connect_immediately:
+                raise
+            return False
 
     def disconnect(self) -> None:
         """Close gRPC connection to Starlink dish."""
