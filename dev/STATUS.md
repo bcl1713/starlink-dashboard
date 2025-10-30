@@ -1,49 +1,66 @@
 # Development Status
 
-**Last Updated:** 2025-10-30
+**Last Updated:** 2025-10-30 (Session 3 - Phase 2 Complete)
 
-**Current Branch:** dev
+**Current Branch:** feature/poi-interactive-management
 
-**Active Feature:** POI Interactive Management (Planning Complete)
+**Active Feature:** POI Interactive Management (Phase 2 Complete, Phase 3 Ready)
 
 ---
 
 ## Active Tasks
 
 ### POI Interactive Management Feature
-**Status:** 🟡 Phase 0 Complete - Phase 1 Starting
+**Status:** 🟢 Phase 2 Complete - Phase 3 Ready
 
 **Location:** `/dev/active/poi-interactive-management/`
 
 **Key Documents:**
 - [README.md](./active/poi-interactive-management/README.md) - Quick reference
-- [SESSION-NOTES.md](./active/poi-interactive-management/SESSION-NOTES.md) - Latest session details (2 sessions documented)
+- [SESSION-NOTES.md](./active/poi-interactive-management/SESSION-NOTES.md) - Latest session details (3 sessions documented)
 - [RESEARCH-SUMMARY.md](./active/poi-interactive-management/RESEARCH-SUMMARY.md) - Best practices
-- [Task Checklist](./active/poi-interactive-management/poi-interactive-management-tasks.md) - 47 tasks (4/47 complete)
+- [Task Checklist](./active/poi-interactive-management/poi-interactive-management-tasks.md) - 47 tasks (15/47 complete - 31.9%)
+- [Implementation Context](./active/poi-interactive-management/poi-interactive-management-context.md) - Current state details
 
 **Feature Summary:**
-- Add interactive POI markers to Grafana map
-- Real-time ETA tooltips with color-coding
-- POI management UI (create, edit, delete)
-- POI table view with live ETAs
-- Course status indicators (on/off track)
+- Add interactive POI markers to Grafana map ✅
+- Real-time ETA tooltips with color-coding (Phase 3)
+- POI management UI (create, edit, delete) (Phase 5)
+- POI table view with live ETAs (Phase 4)
+- Course status indicators (on/off track) (Phase 3+)
 
-**Timeline:** 16-22 days (3-4 weeks)
+**Timeline:** 16-22 days (3-4 weeks) - On track
 
-**Progress:** 4/47 tasks complete (Phase 0 done - 8.5%)
+**Progress:** 15/47 tasks complete (31.9%)
+- Phase 0: 4/4 complete ✅
+- Phase 1: 6/6 complete ✅
+- Phase 2: 5/5 complete ✅
+- Phase 3: 0/6 ready to start
 
-**Session 2 Accomplishments (2025-10-30):**
-- ✅ Created feature branch: `feature/poi-interactive-management`
-- ✅ Fixed POI router registration in main.py (was missing)
-- ✅ Resolved Docker volume permission issues
-- ✅ Installed Grafana Infinity plugin v3.6.0
-- ✅ Verified POI CRUD API operations working
+**Session 3 Accomplishments (2025-10-30):**
+Phase 1 (Backend ETA Integration):
+- ✅ Reviewed current ETA calculation logic in ETACalculator
+- ✅ Created app/core/eta_service.py with singleton pattern
+- ✅ Integrated ETA service with main.py startup/shutdown
+- ✅ Implemented GET /api/pois/etas endpoint with bearing calculation
+- ✅ Added file locking (filelock>=3.12.0) for concurrent access safety
+- ✅ Real-time ETA metrics updating every 0.1s via background loop
+
+Phase 2 (Grafana POI Markers Layer):
+- ✅ Created monitoring/grafana/provisioning/datasources/infinity.yml
+- ✅ Added POI markers layer to fullscreen-overview.json geomap
+- ✅ Configured ETA-based color thresholds (red/orange/yellow/blue)
+- ✅ Added POI name labels below markers
+- ✅ Set 30-second cache interval on API queries
 
 **Next Steps:**
-1. Phase 1: Backend ETA Integration
-   - Task 1.1: Review ETA calculation logic (~1 hour)
-   - Task 1.2: Implement real-time ETA metric updates (~2-3 hours)
-   - Task 1.3: Create ETA aggregation endpoint (~2 hours)
+1. Phase 3: Interactive ETA Tooltips
+   - Task 3.1: Add ETA data query to geomap
+   - Task 3.2: Join POI data with ETA data
+   - Task 3.3: Create formatted ETA field
+   - Task 3.4: Configure tooltip content
+   - Task 3.5: Add visual ETA indicators
+   - Task 3.6: Test tooltip refresh rate
 
 ---
 
