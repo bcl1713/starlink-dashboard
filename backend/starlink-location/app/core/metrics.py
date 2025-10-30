@@ -1,5 +1,7 @@
 """Prometheus metrics registry and definitions."""
 
+import math
+
 from prometheus_client import CollectorRegistry, Gauge, Counter, Histogram, CollectorRegistry as PrometheusCollectorRegistry
 from prometheus_client.core import GaugeMetricFamily
 
@@ -369,8 +371,6 @@ def clear_telemetry_metrics():
     Note: Service info, uptime, and counter metrics are NOT cleared as they
     represent the backend service state, not dish telemetry.
     """
-    import math
-
     # Position metrics
     starlink_dish_latitude_degrees.set(math.nan)
     starlink_dish_longitude_degrees.set(math.nan)
