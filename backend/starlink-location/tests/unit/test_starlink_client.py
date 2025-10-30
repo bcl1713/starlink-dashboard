@@ -30,7 +30,7 @@ class TestStarlinkClientInitialization:
 
         client = StarlinkClient(connect_immediately=True)
         assert client.target == "192.168.100.1:9200"
-        assert client.timeout == 5.0
+        assert client.timeout == pytest.approx(5.0)
         assert client.context is mock_context
         assert client.is_connected() is True
 
@@ -50,7 +50,7 @@ class TestStarlinkClientInitialization:
         mock_context_class.return_value = mock_context
 
         client = StarlinkClient(timeout=10.0)
-        assert client.timeout == 10.0
+        assert client.timeout == pytest.approx(10.0)
 
     def test_init_invalid_target_no_port(self):
         """Test initialization fails with invalid target format."""
@@ -401,17 +401,17 @@ class TestStarlinkClientTelemetry:
         telemetry = client.get_telemetry()
 
         assert isinstance(telemetry, TelemetryData)
-        assert telemetry.position.latitude == 40.7128
-        assert telemetry.position.longitude == -74.0060
+        assert telemetry.position.latitude == pytest.approx(40.7128)
+        assert telemetry.position.longitude == pytest.approx(-74.0060)
         # Altitude is converted from meters to feet (100m * 3.28084 = 328.084 ft)
-        assert telemetry.position.altitude == 328.084
-        assert telemetry.network.latency_ms == 50.0
-        assert telemetry.network.throughput_down_mbps == 100.0
-        assert telemetry.network.throughput_up_mbps == 20.0
-        assert telemetry.network.packet_loss_percent == 1.0
-        assert telemetry.obstruction.obstruction_percent == 15.0
-        assert telemetry.environmental.uptime_seconds == 3600.0
-        assert telemetry.environmental.temperature_celsius == 35.0
+        assert telemetry.position.altitude == pytest.approx(328.084)
+        assert telemetry.network.latency_ms == pytest.approx(50.0)
+        assert telemetry.network.throughput_down_mbps == pytest.approx(100.0)
+        assert telemetry.network.throughput_up_mbps == pytest.approx(20.0)
+        assert telemetry.network.packet_loss_percent == pytest.approx(1.0)
+        assert telemetry.obstruction.obstruction_percent == pytest.approx(15.0)
+        assert telemetry.environmental.uptime_seconds == pytest.approx(3600.0)
+        assert telemetry.environmental.temperature_celsius == pytest.approx(35.0)
 
     @patch("app.live.client.starlink_grpc.history_stats")
     @patch("app.live.client.starlink_grpc.location_data")
@@ -446,8 +446,8 @@ class TestStarlinkClientTelemetry:
         client = StarlinkClient()
         telemetry = client.get_telemetry()
 
-        assert telemetry.position.latitude == 0.0
-        assert telemetry.position.longitude == 0.0
+        assert telemetry.position.latitude == pytest.approx(0.0)
+        assert telemetry.position.longitude == pytest.approx(0.0)
 
     @patch("app.live.client.starlink_grpc.history_stats")
     @patch("app.live.client.starlink_grpc.location_data")
@@ -501,8 +501,8 @@ class TestStarlinkClientTelemetry:
         telemetry = client.get_telemetry()
 
         # Should use defaults when keys are missing
-        assert telemetry.network.latency_ms == 0.0
-        assert telemetry.network.throughput_down_mbps == 0.0
+        assert telemetry.network.latency_ms == pytest.approx(0.0)
+        assert telemetry.network.throughput_down_mbps == pytest.approx(0.0)
 
 
 class TestStarlinkClientContextManager:
