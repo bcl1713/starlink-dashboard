@@ -27,6 +27,10 @@ COPY app/ ./app/
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+
+# Create /data directory for POI storage with proper permissions
+RUN mkdir -p /data && chown -R appuser:appuser /data
+
 USER appuser
 
 # Set PATH to include user's local bin

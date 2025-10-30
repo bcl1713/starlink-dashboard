@@ -40,6 +40,7 @@ class PositionSimulator:
         # Initialize state
         self.progress = 0.0  # 0.0 to 1.0 along route
         self.current_speed = 0.0  # knots
+        self.current_heading = 0.0  # degrees (0-360)
         self.current_altitude = (
             position_config.altitude_min_feet +
             position_config.altitude_max_feet
@@ -67,23 +68,28 @@ class PositionSimulator:
         # Update altitude with slight variation
         self._update_altitude()
 
+        # Update heading with slight variation
+        self._update_heading()
+
         # Get position from route
         lat, lon, route_heading = self.route.get_segment(self.progress)
 
-        # Calculate heading from movement using HeadingTracker
-        # This simulates how heading will be calculated in live mode!
-        calculated_heading = self.heading_tracker.update(
+        # Use simulated heading which includes variation
+        # The HeadingTracker.update() is still called for consistency with live mode
+        # but we rely on _update_heading() to provide the variation for simulation
+        self.heading_tracker.update(
             latitude=lat,
             longitude=lon,
             timestamp=datetime.now()
         )
+        final_heading = self.current_heading
 
         return PositionData(
             latitude=lat,
             longitude=lon,
             altitude=self.current_altitude,
             speed=self.current_speed,
-            heading=calculated_heading  # ✅ Using movement-based heading calculation!
+            heading=final_heading
         )
 
     def _update_progress(self) -> None:
@@ -160,6 +166,7 @@ class PositionSimulator:
         """Reset simulator to initial state."""
         self.progress = 0.0
         self.current_speed = 0.0
+        self.current_heading = 0.0
         self.current_altitude = (
             self.position_config.altitude_min_feet +
             self.position_config.altitude_max_feet

@@ -28,11 +28,11 @@ class TestStarlinkClientInitialization:
         mock_context = MagicMock()
         mock_context_class.return_value = mock_context
 
-        client = StarlinkClient()
+        client = StarlinkClient(connect_immediately=True)
         assert client.target == "192.168.100.1:9200"
         assert client.timeout == 5.0
         assert client.context is mock_context
-        assert client.is_connected is True
+        assert client.is_connected() is True
 
     @patch("app.live.client.starlink_grpc.ChannelContext")
     def test_init_custom_target(self, mock_context_class):
@@ -86,7 +86,7 @@ class TestStarlinkClientConnection:
         result = client.connect()
 
         assert result is True
-        assert client.is_connected is True
+        assert client.is_connected() is True
         assert client.context is mock_context
         mock_context_class.assert_called_once()
 
@@ -115,11 +115,17 @@ class TestStarlinkClientConnection:
             "Connection failed"
         )
 
-        client = StarlinkClient()
+        # With connect_immediately=True, error is raised during init
         with pytest.raises(starlink_grpc.GrpcError):
-            client.connect()
+            client = StarlinkClient(connect_immediately=True)
 
-        assert client.is_connected is False
+        # With connect_immediately=False, error is raised during connect()
+        mock_context_class.side_effect = starlink_grpc.GrpcError("Connection failed")
+        client = StarlinkClient(connect_immediately=False)
+        result = client.connect()
+
+        assert result is False
+        assert client.is_connected() is False
         assert client.context is None
 
     @patch("app.live.client.starlink_grpc.ChannelContext")
@@ -132,7 +138,7 @@ class TestStarlinkClientConnection:
         client.connect()
         client.disconnect()
 
-        assert client.is_connected is False
+        assert client.is_connected() is False
         assert client.context is None
         mock_context.close.assert_called_once()
 
@@ -143,7 +149,7 @@ class TestStarlinkClientConnection:
         # Should not raise exception
         client.disconnect()
 
-        assert client.is_connected is False
+        assert client.is_connected() is False
         assert client.context is None
 
     @patch("app.live.client.starlink_grpc.ChannelContext")
@@ -158,7 +164,7 @@ class TestStarlinkClientConnection:
         # Should not raise exception
         client.disconnect()
 
-        assert client.is_connected is False
+        assert client.is_connected() is False
         assert client.context is None
 
 
@@ -193,7 +199,7 @@ class TestStarlinkClientConnectionTest:
         result = client.test_connection()
 
         assert result is False
-        assert client.is_connected is False
+        assert client.is_connected() is False
 
     @patch("app.live.client.starlink_grpc.status_data")
     @patch("app.live.client.starlink_grpc.ChannelContext")
@@ -397,7 +403,8 @@ class TestStarlinkClientTelemetry:
         assert isinstance(telemetry, TelemetryData)
         assert telemetry.position.latitude == 40.7128
         assert telemetry.position.longitude == -74.0060
-        assert telemetry.position.altitude == 100.0
+        # Altitude is converted from meters to feet (100m * 3.28084 = 328.084 ft)
+        assert telemetry.position.altitude == 328.084
         assert telemetry.network.latency_ms == 50.0
         assert telemetry.network.throughput_down_mbps == 100.0
         assert telemetry.network.throughput_up_mbps == 20.0
@@ -508,9 +515,9 @@ class TestStarlinkClientContextManager:
         mock_context_class.return_value = mock_context
 
         with StarlinkClient() as client:
-            assert client.is_connected is True
+            assert client.is_connected() is True
 
-        assert client.is_connected is False
+        assert client.is_connected() is False
         mock_context.close.assert_called_once()
 
     @patch("app.live.client.starlink_grpc.ChannelContext")
@@ -521,10 +528,10 @@ class TestStarlinkClientContextManager:
 
         try:
             with StarlinkClient() as client:
-                assert client.is_connected is True
+                assert client.is_connected() is True
                 raise ValueError("Test error")
         except ValueError:
             pass
 
-        assert client.is_connected is False
+        assert client.is_connected() is False
         mock_context.close.assert_called_once()

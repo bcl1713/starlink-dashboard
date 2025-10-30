@@ -91,3 +91,46 @@ async def test_health_timestamp_is_iso8601(test_client):
     # ISO 8601 timestamps contain 'T' and have colons
     assert "T" in data["timestamp"]
     assert ":" in data["timestamp"]
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_includes_message(test_client):
+    """Test that health response includes message field."""
+    await asyncio.sleep(0.1)
+
+    response = test_client.get("/health")
+    data = response.json()
+
+    assert "message" in data
+    assert len(data["message"]) > 0
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_with_simulation_mode(test_client):
+    """Test health endpoint message for simulation mode."""
+    await asyncio.sleep(0.1)
+
+    response = test_client.get("/health")
+    data = response.json()
+
+    if data["mode"] == "simulation":
+        assert data["message"] == "Simulation mode: generating test data"
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_live_mode_includes_dish_connected(test_client):
+    """Test that health response includes dish_connected field for live mode."""
+    await asyncio.sleep(0.1)
+
+    response = test_client.get("/health")
+    data = response.json()
+
+    if data["mode"] == "live":
+        assert "dish_connected" in data
+        assert isinstance(data["dish_connected"], bool)
+
+        # Verify message matches connection status
+        if data["dish_connected"]:
+            assert "connected to dish" in data["message"]
+        else:
+            assert "waiting for dish connection" in data["message"]

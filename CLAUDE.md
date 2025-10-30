@@ -51,7 +51,7 @@ STARLINK_DISH_HOST=192.168.100.1  # IP address of Starlink dish
 STARLINK_DISH_PORT=9200           # gRPC port for Starlink communication
 
 # Other settings
-PROMETHEUS_RETENTION=15d          # Metrics retention period
+PROMETHEUS_RETENTION=1y           # Metrics retention period (1 year, ~2.4 GB storage)
 GRAFANA_ADMIN_PASSWORD=admin      # Grafana admin password (change in production!)
 ```
 
@@ -102,21 +102,33 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 - **Host mode (Linux only):** Uncomment `network_mode: host` in
   docker-compose.yml for direct access
 
-**Automatic Fallback:** If the system fails to connect to the dish on startup,
-it automatically falls back to simulation mode. This allows the system to
-continue running even if hardware is temporarily unavailable. Check logs for
-fallback status.
+**Connection Behavior:** If the system fails to connect to the dish on startup,
+it initializes successfully but begins serving without metrics. The service
+remains in live mode and attempts to reconnect on each update cycle. This
+allows the system to continue running and be ready when the dish becomes
+available. Check the `/health` endpoint to see current connection status.
 
 **Testing Connection:**
 
 ```bash
-# Once running, check health endpoint to see actual mode
+# Once running, check health endpoint to see actual mode and connection status
 curl http://localhost:8000/health
 
-# Should show:
+# Example response (connected):
 # {
+#   "status": "ok",
 #   "mode": "live",
-#   "mode_description": "Real Starlink terminal data",
+#   "message": "Live mode: connected to dish",
+#   "dish_connected": true,
+#   ...
+# }
+
+# Example response (disconnected but waiting):
+# {
+#   "status": "ok",
+#   "mode": "live",
+#   "message": "Live mode: waiting for dish connection",
+#   "dish_connected": false,
 #   ...
 # }
 ```
@@ -133,6 +145,29 @@ The backend exposes Prometheus metrics including:
   `starlink_dish_heading_degrees`
 - POI/ETA: `starlink_eta_poi_seconds{name="..."}`,
   `starlink_distance_to_poi_meters{name="..."}`
+
+## Storage Requirements
+
+With the default 1-year retention period, Prometheus will store approximately **2.4 GB** of telemetry data.
+
+**Storage Calculation:**
+- **Number of unique metrics:** 45 (collected from live backend)
+- **Scrape interval:** 1 second
+- **Retention period:** 1 year (31,536,000 seconds)
+- **Estimated size per sample:** ~1.5 bytes (with compression)
+- **Compression overhead:** ~1.2x
+
+**Formula:**
+```
+Storage_GB = (45 metrics × 31,536,000 seconds × 1.5 bytes × 1.2 overhead) / 1,073,741,824
+Storage_GB ≈ 2.4 GB
+```
+
+**To adjust retention**, modify `PROMETHEUS_RETENTION` in `.env`:
+- `1y` - 1 year (~2.4 GB) - default for long-term analysis
+- `90d` - 90 days (~600 MB)
+- `30d` - 30 days (~200 MB)
+- `15d` - 15 days (~100 MB)
 
 ## Dashboard Features
 
