@@ -990,6 +990,193 @@
       ],
       "title": "Connection State",
       "type": "state-timeline"
+    },
+    {
+      "type": "table",
+      "title": "POI Quick Reference (Top 5)",
+      "gridPos": {
+        "h": 22,
+        "w": 8,
+        "x": 16,
+        "y": 2
+      },
+      "id": 204,
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "refId": "A",
+          "url": "/api/pois/etas",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "latitude",
+                "value": "41.6"
+              },
+              {
+                "name": "longitude",
+                "value": "-74.0"
+              },
+              {
+                "name": "speed_knots",
+                "value": "67"
+              }
+            ]
+          },
+          "pagination": {
+            "enabled": false
+          },
+          "resultFormat": "json",
+          "format": "table",
+          "cacheDurationSeconds": 1,
+          "source": "url",
+          "filterExpression": "",
+          "parser": "json",
+          "root_selector": "pois"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "poi_id": true,
+              "latitude": true,
+              "longitude": true,
+              "bearing_degrees": true,
+              "icon": true,
+              "distance_meters": true
+            },
+            "indexByName": {
+              "name": 0,
+              "category": 1,
+              "eta_seconds": 2
+            },
+            "renameByName": {
+              "name": "POI",
+              "category": "Type",
+              "eta_seconds": "ETA (s)"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "filterable": false,
+            "sortable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA (s)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 0
+                    },
+                    {
+                      "color": "orange",
+                      "value": 300
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 900
+                    },
+                    {
+                      "color": "blue",
+                      "value": 3600
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "POI"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [],
+        "filterByRefId": "A"
+      },
+      "pluginVersion": "11.1.0"
     }
   ],
   "refresh": "1s",

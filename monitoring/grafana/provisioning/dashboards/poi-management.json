@@ -1,0 +1,717 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Back to Fullscreen Overview",
+      "tooltip": "Return to main map view",
+      "type": "link",
+      "url": "/d/starlink-fullscreen/fullscreen-overview"
+    },
+    {
+      "asDropdown": false,
+      "icon": "home",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": false,
+      "title": "All Dashboards",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
+  "liveNow": true,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "\ud83d\udccd Total POI Count",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "refId": "A",
+          "url": "/api/pois",
+          "urlOptions": {
+            "params": []
+          },
+          "rootSelector": "pois",
+          "pagination": {
+            "enabled": false
+          },
+          "format": "table",
+          "cacheDurationSeconds": 1,
+          "source": "url",
+          "filterExpression": "",
+          "parser": "json",
+          "root_selector": "pois"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "values": false,
+            "fields": "",
+            "calcs": [
+              "count"
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "type": "stat",
+      "title": "\ud83c\udfaf Next Destination (Closest POI)",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 4,
+        "y": 0
+      },
+      "id": 101,
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "refId": "A",
+          "url": "/api/pois/etas",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "latitude",
+                "value": "41.6"
+              },
+              {
+                "name": "longitude",
+                "value": "-74.0"
+              },
+              {
+                "name": "speed_knots",
+                "value": "67"
+              }
+            ]
+          },
+          "rootSelector": "pois",
+          "pagination": {
+            "enabled": false
+          },
+          "format": "table",
+          "cacheDurationSeconds": 1,
+          "source": "url",
+          "filterExpression": "",
+          "parser": "json",
+          "root_selector": "pois"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 1,
+            "limitValue": 1
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "name"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Destination"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "type": "stat",
+      "title": "\u23f1\ufe0f Time to Next Arrival",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "id": 102,
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "refId": "A",
+          "url": "/api/pois/etas",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "latitude",
+                "value": "41.6"
+              },
+              {
+                "name": "longitude",
+                "value": "-74.0"
+              },
+              {
+                "name": "speed_knots",
+                "value": "67"
+              }
+            ]
+          },
+          "rootSelector": "pois",
+          "pagination": {
+            "enabled": false
+          },
+          "format": "table",
+          "cacheDurationSeconds": 1,
+          "source": "url",
+          "filterExpression": "",
+          "parser": "json",
+          "root_selector": "pois"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 1,
+            "limitValue": 1
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "orange",
+                "value": 300
+              },
+              {
+                "color": "yellow",
+                "value": 900
+              },
+              {
+                "color": "blue",
+                "value": 3600
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "eta_seconds"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "ETA"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "type": "stat",
+      "title": "\ud83d\udea8 Approaching POIs (< 30 min)",
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 4
+      },
+      "id": 103,
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "refId": "A",
+          "url": "/api/pois/etas",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "latitude",
+                "value": "41.6"
+              },
+              {
+                "name": "longitude",
+                "value": "-74.0"
+              },
+              {
+                "name": "speed_knots",
+                "value": "67"
+              }
+            ]
+          },
+          "rootSelector": "pois",
+          "pagination": {
+            "enabled": false
+          },
+          "format": "table",
+          "cacheDurationSeconds": 1,
+          "source": "url",
+          "filterExpression": "",
+          "parser": "json",
+          "root_selector": "pois"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "values": false,
+            "fields": "",
+            "calcs": [
+              "count"
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "auto",
+        "wideLayout": true
+      }
+    },
+    {
+      "type": "table",
+      "title": "Points of Interest - ETA Table",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 104,
+      "targets": [
+        {
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "refId": "A",
+          "url": "/api/pois/etas",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "latitude",
+                "value": "41.6"
+              },
+              {
+                "name": "longitude",
+                "value": "-74.0"
+              },
+              {
+                "name": "speed_knots",
+                "value": "67"
+              }
+            ]
+          },
+          "pagination": {
+            "enabled": false
+          },
+          "resultFormat": "json",
+          "format": "table",
+          "cacheDurationSeconds": 1,
+          "source": "url",
+          "filterExpression": "",
+          "parser": "json",
+          "root_selector": "pois"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "name": 0,
+              "category": 1,
+              "distance_meters": 2,
+              "eta_seconds": 3,
+              "bearing_degrees": 4,
+              "latitude": 5,
+              "longitude": 6,
+              "icon": 7
+            },
+            "renameByName": {
+              "name": "POI Name",
+              "category": "Category",
+              "distance_meters": "Distance (m)",
+              "eta_seconds": "ETA (sec)",
+              "bearing_degrees": "Bearing (\u00b0)",
+              "latitude": "Latitude",
+              "longitude": "Longitude",
+              "icon": "Icon"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false,
+            "filterable": true,
+            "sortable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA (sec)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 0
+                    },
+                    {
+                      "color": "orange",
+                      "value": 300
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 900
+                    },
+                    {
+                      "color": "blue",
+                      "value": 3600
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Distance"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "m"
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Category"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Bearing (\u00b0)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "POI Name"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Latitude"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "decimals",
+                "value": 5
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Longitude"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "decimals",
+                "value": 5
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Icon"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 60
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "ETA (sec)",
+            "desc": false
+          }
+        ],
+        "filterByRefId": "A"
+      },
+      "pluginVersion": "11.1.0"
+    }
+  ],
+  "refresh": "1s",
+  "schemaVersion": 39,
+  "tags": [
+    "starlink",
+    "poi",
+    "points-of-interest"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-5m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "POI Management",
+  "uid": "starlink-poi-management",
+  "version": 1
+}
