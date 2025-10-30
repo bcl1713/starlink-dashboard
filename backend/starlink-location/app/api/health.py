@@ -113,9 +113,8 @@ async def health():
             detail = "Prometheus has not scraped metrics yet"
             status_code = 503
 
-        # Determine actual operating mode based on coordinator type
-        coordinator_type = type(_coordinator).__name__
-        actual_mode = "live" if coordinator_type == "LiveCoordinator" else "simulation"
+        # Get actual operating mode from coordinator property
+        actual_mode = _coordinator.mode
 
         # Determine message based on mode and connection status
         if actual_mode == "live":

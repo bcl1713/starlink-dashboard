@@ -178,6 +178,16 @@ class LiveCoordinator:
         """
         return time.time() - self.start_time
 
+    @property
+    def mode(self) -> str:
+        """
+        Get the operating mode of this coordinator.
+
+        Returns:
+            String "live" indicating this is a live coordinator
+        """
+        return "live"
+
     def get_config(self) -> SimulationConfig:
         """
         Get current configuration.
