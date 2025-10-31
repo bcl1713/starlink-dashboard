@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class POI(BaseModel):
@@ -40,12 +40,28 @@ class POICreate(BaseModel):
     """Request model for creating a new POI."""
 
     name: str = Field(..., description="Name of the POI", min_length=1)
-    latitude: float = Field(..., description="Latitude in decimal degrees")
-    longitude: float = Field(..., description="Longitude in decimal degrees")
+    latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
+    longitude: float = Field(..., description="Longitude in decimal degrees (-180 to 180)")
     icon: str = Field(default="marker", description="Icon identifier")
     category: Optional[str] = Field(default=None, description="POI category")
     description: Optional[str] = Field(default=None, description="POI description")
     route_id: Optional[str] = Field(default=None, description="Associated route ID")
+
+    @field_validator("latitude")
+    @classmethod
+    def validate_latitude(cls, v):
+        """Validate latitude is in valid range (-90 to 90)."""
+        if not -90 <= v <= 90:
+            raise ValueError("Latitude must be between -90 and 90 degrees")
+        return v
+
+    @field_validator("longitude")
+    @classmethod
+    def validate_longitude(cls, v):
+        """Validate longitude is in valid range (-180 to 180)."""
+        if not -180 <= v <= 180:
+            raise ValueError("Longitude must be between -180 and 180 degrees")
+        return v
 
     model_config = {
         "json_schema_extra": {
@@ -65,11 +81,27 @@ class POIUpdate(BaseModel):
     """Request model for updating a POI."""
 
     name: Optional[str] = Field(default=None, description="Name of the POI")
-    latitude: Optional[float] = Field(default=None, description="Latitude")
-    longitude: Optional[float] = Field(default=None, description="Longitude")
+    latitude: Optional[float] = Field(default=None, description="Latitude (-90 to 90)")
+    longitude: Optional[float] = Field(default=None, description="Longitude (-180 to 180)")
     icon: Optional[str] = Field(default=None, description="Icon identifier")
     category: Optional[str] = Field(default=None, description="POI category")
     description: Optional[str] = Field(default=None, description="POI description")
+
+    @field_validator("latitude")
+    @classmethod
+    def validate_latitude(cls, v):
+        """Validate latitude is in valid range (-90 to 90)."""
+        if v is not None and not -90 <= v <= 90:
+            raise ValueError("Latitude must be between -90 and 90 degrees")
+        return v
+
+    @field_validator("longitude")
+    @classmethod
+    def validate_longitude(cls, v):
+        """Validate longitude is in valid range (-180 to 180)."""
+        if v is not None and not -180 <= v <= 180:
+            raise ValueError("Longitude must be between -180 and 180 degrees")
+        return v
 
     model_config = {
         "json_schema_extra": {
