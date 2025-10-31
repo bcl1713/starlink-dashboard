@@ -1,10 +1,62 @@
 # POI Interactive Management - Context Document
 
-**Last Updated:** 2025-10-31 (Session 9 - 10x Speed Bug FIXED & COMMITTED)
+**Last Updated:** 2025-10-31 (Session 10 - Complete Timing System Overhaul & Live Mode Speed Calculation)
 
 ---
 
-## ✅ CRITICAL BUG FIXED: 10x Speed Issue Resolved
+## ✅ Session 10 COMPLETE: Timing System Overhaul & Live Mode Speed Calculation
+
+**Status:** ✅ READY FOR LIVE MODE TESTING - All timing and speed calculations working
+
+### Major Achievements (Session 10)
+
+#### 1. ✅ Fixed Update Interval Bug
+**File:** `backend/starlink-location/main.py:227`
+**Problem:** Update loop hardcoded to 0.1s (10 Hz) regardless of configuration
+**Solution:** Changed to `await asyncio.sleep(_simulation_config.update_interval_seconds)`
+**Impact:** 90% CPU reduction, system now honors 1 Hz config
+
+#### 2. ✅ Converted Speed Smoothing to Time-Based
+**File:** `backend/starlink-location/app/services/eta_calculator.py`
+**Problem:** Sample-based smoothing (5 samples) meant different durations at different update rates
+**Solution:** Implemented time-based rolling window (120 seconds default)
+**Impact:** Same smoothing duration regardless of update frequency
+
+#### 3. ✅ Created SpeedTracker Service (NEW)
+**File:** `backend/starlink-location/app/services/speed_tracker.py` (170 lines)
+**Purpose:** Calculate speed from GPS position deltas (required for live mode - API provides no speed)
+**Features:**
+- Uses Haversine formula for great-circle distance
+- Time-based rolling window (default 120 seconds)
+- Minimum distance threshold (10m) to avoid stationary noise
+- Handles edge cases: first update, large time gaps, invalid positions
+
+#### 4. ✅ Integrated SpeedTracker into Live Mode
+**File:** `backend/starlink-location/app/live/coordinator.py`
+**Change:** Replaced hardcoded `position.speed = 0.0` with calculated GPS-based speed
+**Result:** Live mode now has functional ETA calculations
+
+#### 5. ✅ Integrated SpeedTracker into Simulation Mode
+**File:** `backend/starlink-location/app/simulation/coordinator.py`
+**Purpose:** Ensures simulation uses same speed calculation as live mode for accurate testing
+**Result:** Both modes use identical SpeedTracker implementation
+
+### Session 10 Files Modified
+1. `main.py` - Fixed hardcoded update interval
+2. `eta_calculator.py` - Time-based smoothing
+3. `eta_service.py` - 120s smoothing initialization
+4. `speed_tracker.py` - NEW file, GPS-based speed calculation
+5. `live/coordinator.py` - SpeedTracker integration
+6. `simulation/coordinator.py` - SpeedTracker integration
+
+### Docker Status
+✅ All services rebuilt and healthy
+✅ System running in simulation mode with time-based speed calculations
+✅ Ready to test with actual Starlink terminal
+
+---
+
+## ✅ CRITICAL BUG FIXED: 10x Speed Issue Resolved (Session 9)
 
 **Status:** ✅ RESOLVED - Position update timing corrected
 
@@ -977,33 +1029,46 @@ fix: Resolve ETA distance calculation bug and update simulation logic
 
 ## Next Steps
 
-### Immediate (Completed in Session 9)
-1. ✅ Fixed 10x speed bug with time delta tracking
-2. ✅ Committed all changes (commit 3f724c6)
-3. ✅ Pushed to remote branch
-4. ✅ Updated documentation
+### Immediate (Session 10 - Completed)
+1. ✅ Fixed update interval hardcoding
+2. ✅ Converted speed smoothing to time-based
+3. ✅ Created SpeedTracker service
+4. ✅ Integrated SpeedTracker into live and simulation modes
+5. ✅ Rebuilt all Docker containers
+6. ✅ Tested system with time-based calculations
+7. ✅ Verified simulation mode working correctly
 
-### Ready for Phase 6: Advanced POI Features
+### Next Priority: Live Mode Testing
 
 **Current State:**
 - Phase 5 (POI Management UI) fully implemented and working
 - All critical bugs fixed and verified
-- Position simulation accurate
-- ETA calculations verified
+- Position simulation accurate with time-based speed calculation
+- Live mode speed calculation implemented (SpeedTracker)
+- ETA calculations with 120-second smoothing verified
 - Grafana dashboards displaying correctly
+- System ready for actual Starlink terminal deployment
 
 **Next Phase Options:**
-1. **Phase 6: Advanced Analytics**
+1. **Live Mode Validation**
+   - Connect to real Starlink terminal
+   - Monitor GPS-based speed calculations
+   - Verify ETA accuracy with real location data
+   - Test smoothing effectiveness with actual GPS noise
+
+2. **Phase 6: Advanced Analytics**
    - POI approach/departure tracking
    - Route optimization suggestions
    - Historical ETA accuracy tracking
 
-2. **Phase 7: Integration & Polish**
+3. **Phase 7: Integration & Polish**
    - Offline capability
    - User preferences storage
    - Performance optimization
 
-**Estimated Timeline:** 3-5 days for Phase 6
+**Estimated Timeline:**
+- Live mode testing: 1-2 hours
+- Phase 6: 3-5 days
 
 ---
 
