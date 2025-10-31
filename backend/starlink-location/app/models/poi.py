@@ -143,6 +143,10 @@ class POIWithETA(BaseModel):
     eta_seconds: float = Field(..., description="Estimated time to arrival in seconds (-1 if no speed)")
     distance_meters: float = Field(..., description="Distance to POI in meters")
     bearing_degrees: Optional[float] = Field(default=None, description="Bearing to POI in degrees (0=North)")
+    course_status: Optional[str] = Field(
+        default=None,
+        description="Course status relative to heading: 'on_course' (<45°), 'slightly_off' (45-90°), 'off_track' (90-135°), 'behind' (>135°)"
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -156,6 +160,7 @@ class POIWithETA(BaseModel):
                 "eta_seconds": 1080.0,
                 "distance_meters": 45000.0,
                 "bearing_degrees": 125.0,
+                "course_status": "on_course",
             }
         }
     }

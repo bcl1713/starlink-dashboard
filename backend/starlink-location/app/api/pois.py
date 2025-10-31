@@ -59,6 +59,36 @@ def calculate_bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> flo
     return (bearing_deg + 360) % 360
 
 
+def calculate_course_status(heading: float, bearing: float) -> str:
+    """
+    Determine course status relative to vessel heading.
+
+    Calculates the shortest angular difference between current heading
+    and bearing to POI, then categorizes as one of four statuses.
+
+    Args:
+        heading: Current vessel heading in degrees (0=North)
+        bearing: Bearing to POI in degrees (0=North)
+
+    Returns:
+        Course status string: 'on_course', 'slightly_off', 'off_track', or 'behind'
+    """
+    # Calculate shortest angular difference
+    course_diff = abs(heading - bearing)
+    if course_diff > 180:
+        course_diff = 360 - course_diff
+
+    # Categorize based on angle thresholds
+    if course_diff < 45:
+        return "on_course"
+    elif course_diff < 90:
+        return "slightly_off"
+    elif course_diff < 135:
+        return "off_track"
+    else:
+        return "behind"
+
+
 @router.get("", response_model=POIListResponse, summary="List all POIs")
 async def list_pois(route_id: Optional[str] = Query(None, description="Filter by route ID")) -> POIListResponse:
     """
@@ -96,6 +126,7 @@ async def get_pois_with_etas(
     latitude: Optional[str] = Query(None, description="Current latitude (decimal degrees)"),
     longitude: Optional[str] = Query(None, description="Current longitude (decimal degrees)"),
     speed_knots: Optional[str] = Query(None, description="Current speed in knots"),
+    status: Optional[str] = Query(None, description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)"),
 ) -> POIETAListResponse:
     """
     Get all POIs with real-time ETA and distance data.
@@ -108,6 +139,7 @@ async def get_pois_with_etas(
     - latitude: Current latitude (optional, uses coordinator if available)
     - longitude: Current longitude (optional, uses coordinator if available)
     - speed_knots: Current speed in knots (optional, uses coordinator if available)
+    - status: Optional course status filter (comma-separated list of: on_course, slightly_off, off_track, behind)
 
     Returns:
     - JSON object with list of POIs with ETA data and timestamp
@@ -117,12 +149,14 @@ async def get_pois_with_etas(
     """
     try:
         # Get current position from coordinator if available
+        heading = 0.0  # Default heading
         if _coordinator:
             try:
                 telemetry = _coordinator.get_current_telemetry()
                 latitude = telemetry.position.latitude
                 longitude = telemetry.position.longitude
                 speed_knots = telemetry.position.speed
+                heading = telemetry.position.heading
             except Exception as e:
                 # Fall back to query parameters if coordinator fails
                 latitude = None
@@ -154,6 +188,11 @@ async def get_pois_with_etas(
             except (ValueError, TypeError):
                 speed_knots = 67.0 if _coordinator is None else speed_knots
 
+        # Parse status filter if provided
+        status_filter = set()
+        if status:
+            status_filter = set(s.strip() for s in status.split(",") if s.strip())
+
         pois = poi_manager.list_pois(route_id=route_id)
 
         # Calculate ETA and distance for each POI
@@ -174,6 +213,13 @@ async def get_pois_with_etas(
             # Calculate bearing
             bearing = calculate_bearing(latitude, longitude, poi.latitude, poi.longitude)
 
+            # Calculate course status
+            course_status = calculate_course_status(heading, bearing)
+
+            # Apply status filter if specified
+            if status_filter and course_status not in status_filter:
+                continue
+
             pois_with_eta.append(
                 POIWithETA(
                     poi_id=poi.id,
@@ -185,11 +231,12 @@ async def get_pois_with_etas(
                     eta_seconds=eta_seconds,
                     distance_meters=distance,
                     bearing_degrees=bearing,
+                    course_status=course_status,
                 )
             )
 
-            # Sort by ETA (ascending) so closest POIs appear first
-            pois_with_eta.sort(key=lambda p: p.eta_seconds if p.eta_seconds >= 0 else float('inf'))
+        # Sort by ETA (ascending) so closest POIs appear first
+        pois_with_eta.sort(key=lambda p: p.eta_seconds if p.eta_seconds >= 0 else float('inf'))
 
         return POIETAListResponse(pois=pois_with_eta, total=len(pois_with_eta))
 
