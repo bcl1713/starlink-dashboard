@@ -79,11 +79,11 @@ def calculate_course_status(heading: float, bearing: float) -> str:
         course_diff = 360 - course_diff
 
     # Categorize based on angle thresholds
-    if course_diff < 45:
+    if course_diff < 15:
         return "on_course"
-    elif course_diff < 90:
+    elif course_diff < 45:
         return "slightly_off"
-    elif course_diff < 135:
+    elif course_diff < 90:
         return "off_track"
     else:
         return "behind"

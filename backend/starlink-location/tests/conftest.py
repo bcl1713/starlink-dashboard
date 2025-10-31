@@ -99,8 +99,8 @@ def default_config():
             variation_rate=0.5
         ),
         position=PositionConfig(
-            speed_min_knots=0.0,
-            speed_max_knots=100.0,
+            speed_min_knots=300.0,
+            speed_max_knots=350.0,
             altitude_min_feet=328.0,
             altitude_max_feet=32808.0,
             heading_variation_rate=5.0
