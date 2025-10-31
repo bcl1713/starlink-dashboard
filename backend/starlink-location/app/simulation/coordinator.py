@@ -9,6 +9,7 @@ from app.models.telemetry import (
     EnvironmentalData,
     TelemetryData,
 )
+from app.services.speed_tracker import SpeedTracker
 from app.simulation.network import NetworkSimulator
 from app.simulation.obstructions import ObstructionSimulator
 from app.simulation.position import PositionSimulator
@@ -37,6 +38,10 @@ class SimulationCoordinator:
             config.obstruction,
             config.network
         )
+
+        # Initialize speed tracker for GPS-based speed calculation
+        # Uses 120-second smoothing window to match ETA calculator
+        self.speed_tracker = SpeedTracker(smoothing_duration_seconds=120.0)
 
         # Last known good state for graceful degradation
         self._last_valid_telemetry: Optional[TelemetryData] = None
@@ -82,6 +87,14 @@ class SimulationCoordinator:
         # Update position
         position_data = self.position_sim.update()
 
+        # Update speed tracker with current position (GPS-based speed calculation)
+        # This replaces the generated speed from position simulator
+        speed = self.speed_tracker.update(
+            latitude=position_data.latitude,
+            longitude=position_data.longitude,
+            timestamp=time.time(),
+        )
+
         # Update network
         network_data = self.network_sim.update()
 
@@ -101,6 +114,9 @@ class SimulationCoordinator:
             uptime_seconds=uptime_seconds,
             temperature_celsius=None  # Could be added to config
         )
+
+        # Update position with calculated speed (instead of generated speed)
+        position_data.speed = speed
 
         return TelemetryData(
             timestamp=datetime.now(),
@@ -127,6 +143,7 @@ class SimulationCoordinator:
         self.position_sim.reset()
         self.network_sim.reset()
         self.obstruction_sim.reset()
+        self.speed_tracker.reset()
         self._last_valid_telemetry = self._generate_telemetry()
 
     def set_position_progress(self, progress: float) -> None:

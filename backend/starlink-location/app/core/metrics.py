@@ -356,6 +356,30 @@ def update_metrics_from_telemetry(telemetry, config=None):
     # Status metrics
     starlink_uptime_seconds.set(telemetry.environmental.uptime_seconds)
 
+    # Update POI/ETA metrics
+    try:
+        from app.core.eta_service import update_eta_metrics
+
+        eta_metrics = update_eta_metrics(
+            telemetry.position.latitude,
+            telemetry.position.longitude,
+            telemetry.position.speed
+        )
+
+        # Update Prometheus gauges with ETA data
+        for poi_id, metrics_data in eta_metrics.items():
+            poi_name = metrics_data.get("poi_name", "unknown")
+            eta_seconds = metrics_data.get("eta_seconds", -1)
+            distance_meters = metrics_data.get("distance_meters", 0)
+
+            # Only set valid ETA values (skip -1 which means no speed)
+            if eta_seconds >= 0:
+                starlink_eta_poi_seconds.labels(name=poi_name).set(eta_seconds)
+            starlink_distance_to_poi_meters.labels(name=poi_name).set(distance_meters)
+
+    except Exception as e:
+        logger.warning(f"Error updating POI/ETA metrics: {e}")
+
     # Increment update counter
     simulation_updates_total.inc()
 
