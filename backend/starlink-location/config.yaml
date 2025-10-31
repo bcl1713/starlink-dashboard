@@ -55,12 +55,12 @@ obstruction:
 # Position simulation configuration
 position:
   # Speed range (knots)
-  speed_min_knots: 300.0
-  speed_max_knots: 350.0
+  speed_min_knots: 0.0
+  speed_max_knots: 100.0
 
-  # Altitude range (feet)
-  altitude_min_feet: 328.0
-  altitude_max_feet: 32808.0
+  # Altitude range (meters)
+  altitude_min_meters: 100.0
+  altitude_max_meters: 10000.0
 
   # Heading variation rate (degrees per update)
   heading_variation_rate: 5.0

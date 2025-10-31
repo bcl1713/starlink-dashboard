@@ -40,7 +40,7 @@ class PositionSimulator:
 
         # Initialize state
         self.progress = 0.0  # 0.0 to 1.0 along route
-        self.current_speed = 300.0  # knots
+        self.current_speed = 0.0  # knots
         self.current_altitude = (
             position_config.altitude_min_feet +
             position_config.altitude_max_feet
@@ -131,7 +131,7 @@ class PositionSimulator:
         # If first update or speed is zero, pick a cruising speed
         if self.current_speed < 1.0:
             # Choose a realistic cruising speed (e.g., 45-75 knots for typical aircraft)
-            self.current_speed = random.uniform(300.0, 350.0)
+            self.current_speed = random.uniform(45.0, 75.0)
         else:
             # Very small drift (±0.2 knots per update)
             # This is 100x smoother than the original ±1.0 knot changes

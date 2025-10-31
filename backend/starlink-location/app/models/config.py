@@ -133,11 +133,11 @@ class PositionConfig(BaseModel):
     """Configuration for position simulation."""
 
     speed_min_knots: float = Field(
-        default=300.0,
+        default=0.0,
         description="Minimum speed (knots)"
     )
     speed_max_knots: float = Field(
-        default=350.0,
+        default=100.0,
         description="Maximum speed (knots)"
     )
     altitude_min_feet: float = Field(
