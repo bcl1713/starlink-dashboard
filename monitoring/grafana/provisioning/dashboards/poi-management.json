@@ -13,6 +13,18 @@
       "includeVars": false,
       "keepTime": false,
       "tags": [],
+      "targetBlank": true,
+      "title": "Open POI UI in New Tab",
+      "tooltip": "Open full POI management interface",
+      "type": "link",
+      "url": "/ui/pois"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
       "targetBlank": false,
       "title": "Back to Fullscreen Overview",
       "tooltip": "Return to main map view",
@@ -36,88 +48,11 @@
   "panels": [
     {
       "type": "stat",
-      "title": "\ud83d\udccd Total POI Count",
+      "title": "Next Destination",
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 12,
         "x": 0,
-        "y": 0
-      },
-      "id": 100,
-      "targets": [
-        {
-          "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "infinity"
-          },
-          "refId": "A",
-          "url": "/api/pois",
-          "urlOptions": {
-            "params": []
-          },
-          "rootSelector": "pois",
-          "pagination": {
-            "enabled": false
-          },
-          "format": "table",
-          "cacheDurationSeconds": 1,
-          "source": "url",
-          "filterExpression": "",
-          "parser": "json",
-          "root_selector": "pois"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "reduce",
-          "options": {
-            "values": false,
-            "fields": "",
-            "calcs": [
-              "count"
-            ]
-          }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "blue",
-                "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "textMode": "auto",
-        "wideLayout": true
-      }
-    },
-    {
-      "type": "stat",
-      "title": "\ud83c\udfaf Next Destination (Closest POI)",
-      "gridPos": {
-        "h": 4,
-        "w": 8,
-        "x": 4,
         "y": 0
       },
       "id": 101,
@@ -128,24 +63,10 @@
             "uid": "infinity"
           },
           "refId": "A",
-          "url": "/api/pois/etas",
+          "url": "/api/pois/stats/next-destination",
           "urlOptions": {
-            "params": [
-              {
-                "name": "latitude",
-                "value": "41.6"
-              },
-              {
-                "name": "longitude",
-                "value": "-74.0"
-              },
-              {
-                "name": "speed_knots",
-                "value": "67"
-              }
-            ]
+            "params": []
           },
-          "rootSelector": "pois",
           "pagination": {
             "enabled": false
           },
@@ -153,19 +74,10 @@
           "cacheDurationSeconds": 1,
           "source": "url",
           "filterExpression": "",
-          "parser": "json",
-          "root_selector": "pois"
+          "parser": "json"
         }
       ],
-      "transformations": [
-        {
-          "id": "limit",
-          "options": {
-            "limitField": 1,
-            "limitValue": 1
-          }
-        }
-      ],
+      "transformations": [],
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -177,24 +89,11 @@
           },
           "color": {
             "mode": "fixed",
-            "fixedColor": "green"
+            "fixedColor": "gray"
           },
           "mappings": []
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "name"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "Destination"
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
         "colorMode": "background",
@@ -202,15 +101,22 @@
         "justifyMode": "center",
         "orientation": "auto",
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": true,
+        "reduceOptions": {
+          "values": false,
+          "fields": "name",
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
       "type": "stat",
-      "title": "\u23f1\ufe0f Time to Next Arrival",
+      "title": "Time to Next Arrival",
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 12,
         "x": 12,
         "y": 0
       },
@@ -222,24 +128,10 @@
             "uid": "infinity"
           },
           "refId": "A",
-          "url": "/api/pois/etas",
+          "url": "/api/pois/stats/next-eta",
           "urlOptions": {
-            "params": [
-              {
-                "name": "latitude",
-                "value": "41.6"
-              },
-              {
-                "name": "longitude",
-                "value": "-74.0"
-              },
-              {
-                "name": "speed_knots",
-                "value": "67"
-              }
-            ]
+            "params": []
           },
-          "rootSelector": "pois",
           "pagination": {
             "enabled": false
           },
@@ -247,19 +139,10 @@
           "cacheDurationSeconds": 1,
           "source": "url",
           "filterExpression": "",
-          "parser": "json",
-          "root_selector": "pois"
+          "parser": "json"
         }
       ],
-      "transformations": [
-        {
-          "id": "limit",
-          "options": {
-            "limitField": 1,
-            "limitValue": 1
-          }
-        }
-      ],
+      "transformations": [],
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -293,117 +176,6 @@
           },
           "unit": "s"
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "eta_seconds"
-            },
-            "properties": [
-              {
-                "id": "displayName",
-                "value": "ETA"
-              },
-              {
-                "id": "unit",
-                "value": "s"
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "textMode": "auto",
-        "wideLayout": true
-      }
-    },
-    {
-      "type": "stat",
-      "title": "\ud83d\udea8 Approaching POIs (< 30 min)",
-      "gridPos": {
-        "h": 4,
-        "w": 24,
-        "x": 0,
-        "y": 4
-      },
-      "id": 103,
-      "targets": [
-        {
-          "datasource": {
-            "type": "yesoreyeram-infinity-datasource",
-            "uid": "infinity"
-          },
-          "refId": "A",
-          "url": "/api/pois/etas",
-          "urlOptions": {
-            "params": [
-              {
-                "name": "latitude",
-                "value": "41.6"
-              },
-              {
-                "name": "longitude",
-                "value": "-74.0"
-              },
-              {
-                "name": "speed_knots",
-                "value": "67"
-              }
-            ]
-          },
-          "rootSelector": "pois",
-          "pagination": {
-            "enabled": false
-          },
-          "format": "table",
-          "cacheDurationSeconds": 1,
-          "source": "url",
-          "filterExpression": "",
-          "parser": "json",
-          "root_selector": "pois"
-        }
-      ],
-      "transformations": [
-        {
-          "id": "reduce",
-          "options": {
-            "values": false,
-            "fields": "",
-            "calcs": [
-              "count"
-            ]
-          }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "yellow",
-                "value": 0
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "short"
-        },
         "overrides": []
       },
       "options": {
@@ -412,7 +184,14 @@
         "justifyMode": "center",
         "orientation": "auto",
         "textMode": "auto",
-        "wideLayout": true
+        "wideLayout": true,
+        "reduceOptions": {
+          "values": false,
+          "fields": "eta_seconds",
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
@@ -422,7 +201,7 @@
         "h": 12,
         "w": 24,
         "x": 0,
-        "y": 8
+        "y": 4
       },
       "id": 104,
       "targets": [
@@ -693,6 +472,21 @@
         "filterByRefId": "A"
       },
       "pluginVersion": "11.1.0"
+    },
+    {
+      "type": "text",
+      "title": "POI Management",
+      "gridPos": {
+        "h": 20,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "id": 105,
+      "options": {
+        "content": "<div style=\"padding: 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white;\">\n<h2 style=\"margin: 0 0 20px 0; font-size: 28px;\">🗺️ POI Management Interface</h2>\n<p style=\"margin: 0 0 25px 0; font-size: 16px; opacity: 0.9;\">Manage your Points of Interest with an interactive map and form</p>\n<a href=\"http://localhost:8000/ui/pois\" target=\"_blank\" style=\"display: inline-block; padding: 15px 40px; background: white; color: #667eea; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);\">Open POI Management in Full Window</a>\n<div style=\"margin-top: 25px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 6px;\">\n<p style=\"margin: 0; font-size: 14px;\">✨ Full-featured interface with:</p>\n<ul style=\"margin: 10px 0 0 0; text-align: left; display: inline-block; padding: 0;\">\n<li>✅ Create new POIs with interactive map</li>\n<li>✏️ Edit existing POIs</li>\n<li>🗑️ Delete POIs with confirmation</li>\n<li>📍 Click-to-place coordinates on map</li>\n<li>🔄 Real-time sync with dashboard</li>\n</ul>\n</div>\n</div>",
+        "mode": "html"
+      }
     }
   ],
   "refresh": "1s",

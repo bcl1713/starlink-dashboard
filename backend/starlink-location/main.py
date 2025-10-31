@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import config, geojson, health, metrics, pois, status
+from app.api import config, geojson, health, metrics, pois, status, ui
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
@@ -308,6 +308,7 @@ app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
+app.include_router(ui.router, tags=["UI"])
 
 
 @app.get("/")

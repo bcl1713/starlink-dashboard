@@ -204,6 +204,136 @@ async def count_pois(route_id: Optional[str] = Query(None, description="Filter b
     return {"count": count, "route_id": route_id}
 
 
+@router.get("/stats/next-destination", response_model=dict, summary="Get next destination (closest POI name)")
+async def get_next_destination(
+    latitude: Optional[str] = Query(None),
+    longitude: Optional[str] = Query(None),
+    speed_knots: Optional[str] = Query(None),
+) -> dict:
+    """
+    Get the name of the closest POI (next destination).
+
+    Query Parameters:
+    - latitude: Current latitude (falls back to 41.6)
+    - longitude: Current longitude (falls back to -74.0)
+    - speed_knots: Current speed in knots (falls back to 67)
+
+    Returns:
+    - JSON object with 'name' field containing the closest POI name
+    """
+    try:
+        # Use fallback coordinates
+        lat = float(latitude) if latitude else 41.6
+        lon = float(longitude) if longitude else -74.0
+        speed = float(speed_knots) if speed_knots else 67.0
+    except (ValueError, TypeError):
+        lat, lon, speed = 41.6, -74.0, 67.0
+
+    pois = poi_manager.list_pois()
+    if not pois:
+        return {"name": "No POIs available"}
+
+    from app.core.eta_service import get_eta_calculator
+    eta_calc = get_eta_calculator()
+
+    closest = None
+    closest_eta = float('inf')
+
+    for poi in pois:
+        distance = eta_calc.calculate_distance(lat, lon, poi.latitude, poi.longitude)
+        eta_seconds = eta_calc.calculate_eta(distance, speed)
+        if eta_seconds < closest_eta:
+            closest_eta = eta_seconds
+            closest = poi
+
+    return {"name": closest.name if closest else "No POIs available"}
+
+
+@router.get("/stats/next-eta", response_model=dict, summary="Get time to next arrival (closest POI ETA)")
+async def get_next_eta(
+    latitude: Optional[str] = Query(None),
+    longitude: Optional[str] = Query(None),
+    speed_knots: Optional[str] = Query(None),
+) -> dict:
+    """
+    Get the ETA in seconds to the closest POI.
+
+    Query Parameters:
+    - latitude: Current latitude (falls back to 41.6)
+    - longitude: Current longitude (falls back to -74.0)
+    - speed_knots: Current speed in knots (falls back to 67)
+
+    Returns:
+    - JSON object with 'eta_seconds' field containing ETA in seconds
+    """
+    try:
+        lat = float(latitude) if latitude else 41.6
+        lon = float(longitude) if longitude else -74.0
+        speed = float(speed_knots) if speed_knots else 67.0
+    except (ValueError, TypeError):
+        lat, lon, speed = 41.6, -74.0, 67.0
+
+    pois = poi_manager.list_pois()
+    if not pois:
+        return {"eta_seconds": -1}
+
+    from app.core.eta_service import get_eta_calculator
+    eta_calc = get_eta_calculator()
+
+    closest_eta = float('inf')
+
+    for poi in pois:
+        distance = eta_calc.calculate_distance(lat, lon, poi.latitude, poi.longitude)
+        eta_seconds = eta_calc.calculate_eta(distance, speed)
+        if eta_seconds < closest_eta:
+            closest_eta = eta_seconds
+
+    return {"eta_seconds": max(0, closest_eta) if closest_eta != float('inf') else -1}
+
+
+@router.get("/stats/approaching", response_model=dict, summary="Get count of approaching POIs (< 30 min)")
+async def get_approaching_pois(
+    latitude: Optional[str] = Query(None),
+    longitude: Optional[str] = Query(None),
+    speed_knots: Optional[str] = Query(None),
+) -> dict:
+    """
+    Get count of POIs that will be reached within 30 minutes.
+
+    Query Parameters:
+    - latitude: Current latitude (falls back to 41.6)
+    - longitude: Current longitude (falls back to -74.0)
+    - speed_knots: Current speed in knots (falls back to 67)
+
+    Returns:
+    - JSON object with 'count' field containing number of approaching POIs
+    """
+    try:
+        lat = float(latitude) if latitude else 41.6
+        lon = float(longitude) if longitude else -74.0
+        speed = float(speed_knots) if speed_knots else 67.0
+    except (ValueError, TypeError):
+        lat, lon, speed = 41.6, -74.0, 67.0
+
+    pois = poi_manager.list_pois()
+    if not pois:
+        return {"count": 0}
+
+    from app.core.eta_service import get_eta_calculator
+    eta_calc = get_eta_calculator()
+
+    approaching_count = 0
+    threshold_seconds = 1800  # 30 minutes
+
+    for poi in pois:
+        distance = eta_calc.calculate_distance(lat, lon, poi.latitude, poi.longitude)
+        eta_seconds = eta_calc.calculate_eta(distance, speed)
+        if 0 <= eta_seconds < threshold_seconds:
+            approaching_count += 1
+
+    return {"count": approaching_count}
+
+
 @router.get("/{poi_id}", response_model=POIResponse, summary="Get a specific POI")
 async def get_poi(poi_id: str) -> POIResponse:
     """
