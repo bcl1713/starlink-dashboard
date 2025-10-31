@@ -1,17 +1,17 @@
 # Development Status
 
-**Last Updated:** 2025-10-31 (Session 7 - Phase 5 Complete)
+**Last Updated:** 2025-10-31 (Session 8 - ETA Bug Investigation)
 
 **Current Branch:** feature/poi-interactive-management
 
-**Active Feature:** POI Interactive Management (Phase 5 Complete, Phase 6 Ready)
+**Active Feature:** POI Interactive Management (Phase 5 Complete, Phase 6 BLOCKED - ETA calculation bug)
 
 ---
 
 ## Active Tasks
 
 ### POI Interactive Management Feature
-**Status:** 🟢 Phase 5 Complete - Phase 6 Ready
+**Status:** 🔴 Phase 5 Complete - Phase 6 BLOCKED on ETA calculation bug
 
 **Location:** `/dev/active/poi-interactive-management/`
 

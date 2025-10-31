@@ -101,47 +101,58 @@ async def get_pois_with_etas(
     Get all POIs with real-time ETA and distance data.
 
     This endpoint calculates ETA and distance for all POIs based on current position and speed.
-    If current position is not provided, returns all POIs without ETA data.
+    Uses coordinator telemetry if available, otherwise uses query parameters or fallback values.
 
     Query Parameters:
     - route_id: Optional route ID to filter by
-    - latitude: Current latitude (required for ETA calculation)
-    - longitude: Current longitude (required for ETA calculation)
-    - speed_knots: Current speed in knots (default: 0, means stationary)
+    - latitude: Current latitude (optional, uses coordinator if available)
+    - longitude: Current longitude (optional, uses coordinator if available)
+    - speed_knots: Current speed in knots (optional, uses coordinator if available)
 
     Returns:
     - JSON object with list of POIs with ETA data and timestamp
 
     Raises:
-    - 400: Missing required position data or invalid values
+    - 400: Failed to calculate ETA
     """
     try:
-        # Always use fallback coordinates for now
-        # TODO: Fix coordinator integration for dynamic current position
-        # Hardcoded fallback to 41.6, -74.0 with 67 knots speed
-        if latitude is None or not latitude:
-            latitude = 41.6
+        # Get current position from coordinator if available
+        if _coordinator:
+            try:
+                telemetry = _coordinator.get_current_telemetry()
+                latitude = telemetry.position.latitude
+                longitude = telemetry.position.longitude
+                speed_knots = telemetry.position.speed
+            except Exception as e:
+                # Fall back to query parameters if coordinator fails
+                latitude = None
+                longitude = None
+                speed_knots = None
+
+        # Use query parameters if provided (override coordinator)
+        if latitude is None or latitude == "":
+            latitude = 41.6 if _coordinator is None else latitude
         else:
             try:
                 latitude = float(latitude)
             except (ValueError, TypeError):
-                latitude = 41.6
+                latitude = 41.6 if _coordinator is None else latitude
 
-        if longitude is None or not longitude:
-            longitude = -74.0
+        if longitude is None or longitude == "":
+            longitude = -74.0 if _coordinator is None else longitude
         else:
             try:
                 longitude = float(longitude)
             except (ValueError, TypeError):
-                longitude = -74.0
+                longitude = -74.0 if _coordinator is None else longitude
 
-        if speed_knots is None or not speed_knots:
-            speed_knots = 67.0
+        if speed_knots is None or speed_knots == "":
+            speed_knots = 67.0 if _coordinator is None else speed_knots
         else:
             try:
                 speed_knots = float(speed_knots)
             except (ValueError, TypeError):
-                speed_knots = 67.0
+                speed_knots = 67.0 if _coordinator is None else speed_knots
 
         pois = poi_manager.list_pois(route_id=route_id)
 
@@ -213,19 +224,34 @@ async def get_next_destination(
     """
     Get the name of the closest POI (next destination).
 
+    Uses coordinator telemetry if available, otherwise uses query parameters or fallback values.
+
     Query Parameters:
-    - latitude: Current latitude (falls back to 41.6)
-    - longitude: Current longitude (falls back to -74.0)
-    - speed_knots: Current speed in knots (falls back to 67)
+    - latitude: Current latitude (optional, uses coordinator if available)
+    - longitude: Current longitude (optional, uses coordinator if available)
+    - speed_knots: Current speed in knots (optional, uses coordinator if available)
 
     Returns:
     - JSON object with 'name' field containing the closest POI name
     """
     try:
-        # Use fallback coordinates
-        lat = float(latitude) if latitude else 41.6
-        lon = float(longitude) if longitude else -74.0
-        speed = float(speed_knots) if speed_knots else 67.0
+        # Get current position from coordinator if available
+        if _coordinator:
+            try:
+                telemetry = _coordinator.get_current_telemetry()
+                lat = telemetry.position.latitude
+                lon = telemetry.position.longitude
+                speed = telemetry.position.speed
+            except Exception:
+                # Fall back to query parameters or defaults
+                lat = float(latitude) if latitude else 41.6
+                lon = float(longitude) if longitude else -74.0
+                speed = float(speed_knots) if speed_knots else 67.0
+        else:
+            # Use fallback coordinates when no coordinator available
+            lat = float(latitude) if latitude else 41.6
+            lon = float(longitude) if longitude else -74.0
+            speed = float(speed_knots) if speed_knots else 67.0
     except (ValueError, TypeError):
         lat, lon, speed = 41.6, -74.0, 67.0
 
@@ -258,18 +284,34 @@ async def get_next_eta(
     """
     Get the ETA in seconds to the closest POI.
 
+    Uses coordinator telemetry if available, otherwise uses query parameters or fallback values.
+
     Query Parameters:
-    - latitude: Current latitude (falls back to 41.6)
-    - longitude: Current longitude (falls back to -74.0)
-    - speed_knots: Current speed in knots (falls back to 67)
+    - latitude: Current latitude (optional, uses coordinator if available)
+    - longitude: Current longitude (optional, uses coordinator if available)
+    - speed_knots: Current speed in knots (optional, uses coordinator if available)
 
     Returns:
     - JSON object with 'eta_seconds' field containing ETA in seconds
     """
     try:
-        lat = float(latitude) if latitude else 41.6
-        lon = float(longitude) if longitude else -74.0
-        speed = float(speed_knots) if speed_knots else 67.0
+        # Get current position from coordinator if available
+        if _coordinator:
+            try:
+                telemetry = _coordinator.get_current_telemetry()
+                lat = telemetry.position.latitude
+                lon = telemetry.position.longitude
+                speed = telemetry.position.speed
+            except Exception:
+                # Fall back to query parameters or defaults
+                lat = float(latitude) if latitude else 41.6
+                lon = float(longitude) if longitude else -74.0
+                speed = float(speed_knots) if speed_knots else 67.0
+        else:
+            # Use fallback coordinates when no coordinator available
+            lat = float(latitude) if latitude else 41.6
+            lon = float(longitude) if longitude else -74.0
+            speed = float(speed_knots) if speed_knots else 67.0
     except (ValueError, TypeError):
         lat, lon, speed = 41.6, -74.0, 67.0
 
@@ -300,18 +342,34 @@ async def get_approaching_pois(
     """
     Get count of POIs that will be reached within 30 minutes.
 
+    Uses coordinator telemetry if available, otherwise uses query parameters or fallback values.
+
     Query Parameters:
-    - latitude: Current latitude (falls back to 41.6)
-    - longitude: Current longitude (falls back to -74.0)
-    - speed_knots: Current speed in knots (falls back to 67)
+    - latitude: Current latitude (optional, uses coordinator if available)
+    - longitude: Current longitude (optional, uses coordinator if available)
+    - speed_knots: Current speed in knots (optional, uses coordinator if available)
 
     Returns:
     - JSON object with 'count' field containing number of approaching POIs
     """
     try:
-        lat = float(latitude) if latitude else 41.6
-        lon = float(longitude) if longitude else -74.0
-        speed = float(speed_knots) if speed_knots else 67.0
+        # Get current position from coordinator if available
+        if _coordinator:
+            try:
+                telemetry = _coordinator.get_current_telemetry()
+                lat = telemetry.position.latitude
+                lon = telemetry.position.longitude
+                speed = telemetry.position.speed
+            except Exception:
+                # Fall back to query parameters or defaults
+                lat = float(latitude) if latitude else 41.6
+                lon = float(longitude) if longitude else -74.0
+                speed = float(speed_knots) if speed_knots else 67.0
+        else:
+            # Use fallback coordinates when no coordinator available
+            lat = float(latitude) if latitude else 41.6
+            lon = float(longitude) if longitude else -74.0
+            speed = float(speed_knots) if speed_knots else 67.0
     except (ValueError, TypeError):
         lat, lon, speed = 41.6, -74.0, 67.0
 

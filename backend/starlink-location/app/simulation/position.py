@@ -1,6 +1,7 @@
 """Position simulator for realistic movement along a route."""
 
 import random
+import time
 from datetime import datetime
 from typing import Tuple
 
@@ -45,6 +46,9 @@ class PositionSimulator:
             position_config.altitude_max_feet
         ) / 2.0
 
+        # Time tracking for accurate delta calculation
+        self.last_update_time = time.time()
+
         # Initialize heading tracker (simulates live mode behavior)
         self.heading_tracker = HeadingTracker(
             min_distance_meters=5.0,   # Lower threshold for simulation
@@ -88,12 +92,20 @@ class PositionSimulator:
 
     def _update_progress(self) -> None:
         """Update progress along the route based on current speed."""
+        # Calculate actual time delta since last update
+        current_time = time.time()
+        time_delta_seconds = current_time - self.last_update_time
+        self.last_update_time = current_time
+
         # Update speed with some randomness
         self._update_speed()
 
         # Convert speed (knots) to distance per second
         # 1 knot = 1.852 km/h = 1.852 / 3600 km/s = 0.000514 km/s
         km_per_second = self.current_speed * 1.852 / 3600.0
+
+        # Calculate actual distance traveled based on time delta
+        km_traveled = km_per_second * time_delta_seconds
 
         # Estimate route circumference/length for progress calculation
         # For circular route: 2 * pi * radius
@@ -105,16 +117,32 @@ class PositionSimulator:
             # Straight route
             route_length_km = self.route.distance_km
 
-        # Update progress (1 second per update)
-        self.progress += km_per_second / route_length_km
+        # Update progress based on actual distance traveled
+        self.progress += km_traveled / route_length_km
 
     def _update_speed(self) -> None:
         """Update speed with realistic acceleration/deceleration."""
         config = self.position_config
 
-        # Random walk for speed (tends to stay similar but drifts)
-        speed_change = random.uniform(-1.0, 1.0)  # knots per update
-        self.current_speed += speed_change
+        # For Starlink terminal movement simulation:
+        # Use a stable cruising speed with very small variations
+        # This simulates realistic aircraft movement where speed is relatively constant
+
+        # If first update or speed is zero, pick a cruising speed
+        if self.current_speed < 1.0:
+            # Choose a realistic cruising speed (e.g., 45-75 knots for typical aircraft)
+            self.current_speed = random.uniform(45.0, 75.0)
+        else:
+            # Very small drift (±0.2 knots per update)
+            # This is 100x smoother than the original ±1.0 knot changes
+            speed_change = random.uniform(-0.2, 0.2)
+            self.current_speed += speed_change
+
+            # Occasionally simulate minor speed adjustments (1% chance per update)
+            if random.random() < 0.01:
+                # Small adjustment: ±2 knots
+                speed_change = random.uniform(-2.0, 2.0)
+                self.current_speed += speed_change
 
         # Clamp to valid range
         self.current_speed = max(
@@ -153,4 +181,5 @@ class PositionSimulator:
             self.position_config.altitude_min_feet +
             self.position_config.altitude_max_feet
         ) / 2.0
+        self.last_update_time = time.time()
         self.heading_tracker.reset()

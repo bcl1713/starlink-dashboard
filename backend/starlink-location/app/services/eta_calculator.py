@@ -114,8 +114,10 @@ class ETACalculator:
         """
         speed = speed_knots if speed_knots is not None else self._smoothed_speed
 
-        # Handle zero or no speed
-        if speed <= 0:
+        # Handle zero or very small speed (below 0.5 knots is effectively stationary)
+        # This prevents division by near-zero values and extreme ETA estimates
+        # At less than 0.5 knots, meaningful ETA predictions are unreliable
+        if speed < 0.5:
             return -1.0
 
         # Convert distance to nautical miles

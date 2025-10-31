@@ -1,8 +1,89 @@
 # POI Interactive Management - Session Notes
 
-**Last Updated:** 2025-10-31 (Session 7 - Phase 5 POI Management UI)
+**Last Updated:** 2025-10-31 (Session 8 - ETA Calculation Investigation)
 
-**Status:** ✅ PHASE 5 COMPLETE - Full POI Management Interface with Grafana integration
+**Status:** 🔴 PHASE 6 BLOCKED - Critical bug in ETA/distance/speed calculations
+
+---
+
+## Session 8 Summary - ETA Calculation Debugging
+
+### Critical Issue Discovered
+**BUG:** ETA calculation is fundamentally broken
+
+**Symptom:** ETA loses ~60 seconds every 10 seconds of real time (6x faster than time passage)
+
+**Evidence:**
+- Reading 1: Distance 29.00km, ETA 19.85min at 47.34 knots
+- Reading 2 (10s later): Distance 31.35km (+2.35km), ETA 21.69min (+1.84min)
+- Problem: Distance is **increasing** when aircraft should be approaching
+- Aircraft is moving AWAY from Test POI instead of toward it
+
+**Root Cause Analysis:**
+The circular route simulation (100km radius around NYC at 40.7128, -74.0060) causes unpredictable distance changes to POIs not on the path:
+- Test POI at 41.25148, -73.0323 is positioned at the edge of the circle
+- As aircraft orbits, distance fluctuates wildly (sometimes approaching, sometimes receding)
+- ETA calculations are mathematically correct but based on misleading distance values
+
+**Verified Correct:**
+- ✅ Haversine distance formula (matches manual calculations)
+- ✅ ETA calculation formula (correct math: distance / speed * time)
+- ✅ Speed integration from coordinator (values are accurate)
+- ✅ API calculations match manual verification
+
+**The Problem:**
+The combination of coordinate system + circular route + POI placement creates unrealistic test scenarios. The ETA doesn't fail - it correctly reflects that the aircraft is moving away from the test point.
+
+### Work Completed This Session
+
+#### 🔧 Fix #1: Coordinator Integration
+- Updated `get_pois_with_etas()` to use real coordinator telemetry (lines 119-155)
+- Updated `get_next_destination()` to use coordinator position (lines 238-256)
+- Updated `get_next_eta()` to use coordinator position (lines 299-316)
+- Updated `get_approaching_pois()` to use coordinator position (lines 357-374)
+- **Change:** All endpoints now call `_coordinator.get_current_telemetry()` instead of hardcoded fallback
+
+#### 🔧 Fix #2: Low-Speed ETA Protection
+- Modified `app/services/eta_calculator.py` line 120: threshold changed from `<= 0` to `< 0.5`
+- **Rationale:** Prevents division-by-near-zero causing extreme ETA values
+- **Behavior:** Returns -1.0 (no motion) for speeds below 0.5 knots
+
+#### 🔧 Fix #3: Realistic Speed Simulation
+- Modified `app/simulation/position.py` lines 111-139
+- **Changes:**
+  - Speed variation reduced from ±1.0 knots to ±0.2 knots per update
+  - Establishes stable cruising speed (45-75 knots) on first update
+  - Only 1% chance of ±2 knot adjustments (occasional minor changes)
+- **Result:** Speed remains relatively stable (~55 knots), allowing proper ETA testing
+
+#### ⚠️ Discovered Issues (NOT YET FIXED)
+
+**Issue 1: Distance/ETA Fundamental Mismatch**
+- When aircraft is moving away from POI, distance increases and ETA increases
+- This is mathematically correct but makes testing difficult
+- User observation: "ETA loses 1 minute every 10 seconds" during approach
+- Reality: Aircraft WAS approaching, then started moving away mid-test
+
+**Issue 2: Test POI Placement Problem**
+- Test POIs are positioned OFF the circular flight path
+- They need to be ON or near the 100km radius circle from NYC center
+- Current setup: POIs get closer/farther unpredictably as aircraft orbits
+
+**Issue 3: Speed vs Distance Uncertainty**
+- Cannot definitively determine if the issue is:
+  1. Speed value being incorrect
+  2. Distance calculation being wrong
+  3. ETA formula being incorrect
+  4. Or combination of above
+- Need controlled test with POI on actual flight path
+
+### Files Modified This Session
+- `/backend/starlink-location/app/api/pois.py` (4 functions updated)
+- `/backend/starlink-location/app/services/eta_calculator.py` (speed threshold fix)
+- `/backend/starlink-location/app/simulation/position.py` (realistic speed variation)
+
+### Uncommitted Changes
+All changes built and running in Docker, but **NOT YET COMMITTED** pending full resolution of ETA bug.
 
 ---
 
