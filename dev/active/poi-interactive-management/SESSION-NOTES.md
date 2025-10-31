@@ -1,338 +1,323 @@
 # POI Interactive Management - Session Notes
 
-**Last Updated:** 2025-10-30 (Session 5 - Phase 4 Complete)
+**Last Updated:** 2025-10-31 (Session 7 - Phase 5 POI Management UI)
 
-**Status:** ✅ PHASE 4 COMPLETE - POI Management Dashboard fully functional
-
----
-
-## Session 5 Summary - Phase 4: POI Table View Dashboard
-
-### Accomplishments This Session
-
-#### ✅ Created POI Management Dashboard
-- **File:** `monitoring/grafana/provisioning/dashboards/poi-management.json`
-- New comprehensive dashboard with:
-  - 4 stat panels (Total POIs, Next Destination, Time to Arrival, Approaching POIs)
-  - Full POI data table with 8 columns
-  - Real-time refresh (1-second cache)
-  - All columns sortable and filterable
-
-#### ✅ Added Quick Reference Table to Fullscreen Overview
-- Right side of geomap (8 columns wide, 22 rows tall)
-- Shows top 5 POIs by ETA
-- Same data source and formatting as main table
-- Positioned at x: 16, y: 2 on 24-column grid
-
-#### ✅ Fixed Infinity Datasource Configuration
-- Updated `monitoring/grafana/provisioning/datasources/infinity.yml`
-- Added `uid: infinity` to match dashboard references
-- Properly provisioned for POI API queries
-
-#### ✅ Resolved Query Format Issues
-- Discovered key pattern from geomap that works:
-  ```json
-  {
-    "format": "table",
-    "parser": "json",
-    "root_selector": "pois",
-    "cacheDurationSeconds": 1,
-    "source": "url"
-  }
-  ```
-- This pattern properly extracts array and expands into table rows
-- Applied to both main table and quick reference table
-
-### Tables Now Working Correctly
-
-**POI Management Table:**
-- All 8 columns display individual POI rows
-- Columns: Name, Category, Distance (m), ETA (sec), Bearing (°), Latitude, Longitude, Icon
-- Default sort: ETA ascending (closest POI first)
-- All columns sortable and filterable
-- Color-coded ETA values (red < 5min, orange 5-15min, yellow 15-60min, blue > 60min)
-
-**Quick Reference Table (Fullscreen Overview):**
-- Top 5 POIs by ETA
-- Compact display: POI, Type, ETA (sec)
-- Color-coded ETA column
-- Non-sortable for quick glance view
-
-### Known Issues (Non-blocking)
-
-**Stat Panels Display Incorrect Data:**
-- Total POI Count: Shows -73.8 (longitude value)
-- Next Destination: Shows "2673" or all fields
-- Time to Next Arrival: Shows all fields with wrong units
-- Approaching POIs: Shows -73.8 (longitude value)
-
-**Root Cause:**
-Extracting single values from array data requires complex Grafana transformations that we haven't figured out yet. The issue is:
-1. `limit` transform reduces to first row, but keeps all fields
-2. `filterFieldsByName` doesn't work after limit
-3. `organize` with exclude doesn't properly hide fields
-
-**Impact:** Minor - tables fully compensate by showing complete POI data
-
-**Solution Path (Future):**
-- Option A: Create separate backend endpoint that returns scalar values (total count, closest POI name, etc.)
-- Option B: Use more complex transformation pipeline (research Grafana docs)
-- Option C: Accept tables as primary UI (most practical)
+**Status:** ✅ PHASE 5 COMPLETE - Full POI Management Interface with Grafana integration
 
 ---
 
-## Technical Learnings
+## Session 7 Summary - Phase 5 POI Management UI Implementation
 
-### Infinity Plugin + Grafana Integration
+### Major Accomplishments This Session
 
-**Key Discovery:** Geomap layers use `filterByRefId` to select specific query
+#### ✅ Created Full POI Management Web Interface
+- **New Endpoint:** `/ui/pois` serving complete HTML/CSS/JS interface
+- **Frontend Framework:** Vanilla JavaScript + Leaflet.js for interactive mapping
+- **Layout:** Responsive 2-column design (form + POI list)
+- **Features Implemented:**
+  1. POI creation form with validation
+  2. Interactive Leaflet.js map for click-to-place coordinates
+  3. Draggable map markers for coordinate adjustment
+  4. Auto-icon assignment based on category selection
+  5. POI editing via list item selection
+  6. POI deletion with confirmation dialogs
+  7. Real-time POI list auto-refresh every 5 seconds
+
+#### ✅ Grafana Dashboard Integration
+- **Integration Method:** Native HTML text panel (no plugin required)
+- **Panel Design:** Gradient-styled button linking to POI UI
+- **Location:** POI Management dashboard panel below ETA table
+- **User Experience:** Opens POI interface in new window for full-featured experience
+- **Benefits:** Clean, simple, no iframe complexity
+
+#### ✅ Backend Enhancement
+- **New Endpoints:**
+  - `/api/pois/stats/next-destination` - Returns closest POI name
+  - `/api/pois/stats/next-eta` - Returns ETA to closest POI
+  - `/api/pois/stats/approaching` - Returns count of POIs < 30 min
+- **Route Registration:** Added UI router to main.py
+- **CORS:** Pre-configured for cross-origin requests
+
+#### ✅ Fixed Critical Datasource Issues
+- **Issue:** Infinity datasource UID was incorrect (PB63CD044D3341156)
+- **Solution:** Updated fullscreen-overview.json to use correct `uid: "infinity"`
+- **Impact:** Fixed all POI marker queries on fullscreen map
+- **Verification:** ETA endpoint tested and returning correct calculations
+
+#### ✅ Docker Configuration Updates
+- **Plugins:** Ensured yesoreyeram-infinity-datasource installed
+- **Services:** All containers healthy and communicating correctly
+
+### Files Created This Session
+- `backend/starlink-location/app/api/ui.py` (620 lines)
+  - Complete POI management UI with HTML/CSS/JS
+  - Leaflet.js integration for interactive mapping
+  - Form validation and error handling
+  - Real-time API integration with CRUD operations
+
+### Files Modified This Session
+- `backend/starlink-location/main.py` - Register UI router
+- `backend/starlink-location/app/api/pois.py` - Added stat endpoints
+- `monitoring/grafana/provisioning/dashboards/poi-management.json` - Added button panel
+- `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` - Fixed Infinity UID
+- `docker-compose.yml` - Plugin configuration
+
+### Technical Details
+
+#### POI Management UI Features
+**Form Panel (Left):**
+- Name (required, text)
+- Latitude (required, decimal degrees)
+- Longitude (required, decimal degrees)
+- Category (required, dropdown: airport/city/landmark/waypoint/other)
+- Icon (auto-assigned from category)
+- Description (optional)
+- Submit/Reset/Delete buttons
+- Status text with loading indicator
+
+**Map Panel (Left):**
+- Leaflet.js interactive map
+- Center at default coordinates (40.7128, -74.0060)
+- Click to set coordinates
+- Draggable marker for adjustment
+- Zoom controls
+
+**POI List Panel (Right):**
+- Display all POIs with details
+- Click item to load in edit form
+- Edit button to load in form
+- Delete button with confirmation
+- Real-time updates every 5 seconds
+- Empty state message when no POIs
+
+#### Backend Stat Endpoints
+```
+GET /api/pois/stats/next-destination
+Response: {"name": "POI Name"}
+
+GET /api/pois/stats/next-eta
+Response: {"eta_seconds": 3139.48}
+
+GET /api/pois/stats/approaching
+Response: {"count": 0}
+```
+
+#### ETA Calculation Verification
+- Distance: Using Haversine formula
+- Speed: Using speed query parameter with fallback
+- Formula: `eta_seconds = (distance_meters / 1852) / speed_knots * 3600`
+- Example: 108km at 67 knots ≈ 52 minutes ✓
+
+### Known Behaviors
+- **Fallback Coordinates:** ETA endpoint uses hardcoded fallback (41.6, -74.0) when not provided
+- **Speed Smoothing:** Uses rolling window average for stability
+- **POI Distance Threshold:** 100m threshold for "passed" detection
+- **Refresh Interval:** POI list refreshes every 5 seconds automatically
+- **Map Height:** 400px in UI for comfortable interaction
+
+### Testing Results
+✅ API endpoints tested with curl
+✅ UI loads at http://localhost:8000/ui/pois
+✅ Form validation working correctly
+✅ Map click-to-place functionality confirmed
+✅ POI CRUD operations verified
+✅ Dashboard panels displaying correctly
+✅ Infinity datasource queries returning data
+✅ Real-time ETA updates functioning
+✅ Docker containers all healthy
+
+### Phase 5 Completion Summary
+**Tasks Completed:** 8/8 ✅
+- 5.1 - UI implementation approach decided ✅
+- 5.2 - POI management endpoint created ✅
+- 5.3 - POI creation form implemented ✅
+- 5.4 - POI editing functionality implemented ✅
+- 5.5 - POI deletion with confirmation ✅
+- 5.6 - Leaflet.js map integration ✅
+- 5.7 - Grafana dashboard integration ✅
+- 5.8 - Real-time sync implemented ✅
+
+---
+
+## Session 6 Summary - Phase 4 Refinement & Fullscreen Overview Optimization
+
+### Major Accomplishments This Session
+
+#### ✅ Fixed POI Management Dashboard Stat Panels
+- **Problem:** Stat panels were showing garbage data or "No data" messages
+- **Root Cause:** Infinity datasource returns multi-row array data; stat panels need scalar values
+- **Solution Implemented:**
+  1. Created 3 new backend endpoints returning scalar JSON values:
+     - `/api/pois/stats/next-destination` → returns `{"name": "POI Name"}`
+     - `/api/pois/stats/next-eta` → returns `{"eta_seconds": 2673}`
+     - `/api/pois/stats/approaching` → returns `{"count": 0}` (POIs < 30 min)
+  2. Updated dashboard queries to use these endpoints
+  3. Changed Infinity datasource format from "json" to "table" to properly parse responses
+  4. Added `reduceOptions` with field selectors to extract specific fields for display
+
+#### ✅ Dashboard UI Refinement
+- Removed "Total POI Count" and "Approaching POIs" stat panels (not essential)
+- Made 2 remaining stat panels equal width (12 columns each, half screen)
+- Removed emoji from panel titles (Next Destination, Time to Next Arrival)
+- Removed color background from Next Destination panel (gray background only)
+- Kept color coding on Time to Next Arrival panel for urgency visualization
+
+#### ✅ Optimized Fullscreen Overview Layout
+- Removed "Connection State" panel (low priority status indicator)
+- Reorganized panel positions:
+  - Geomap: 16×18 at (0,3) - larger for better visibility
+  - POI Quick Reference: 8×7 at (16,3) - moved up next to top clocks
+  - Network Latency: 8×11 at (16,10) - below POI table
+  - Throughput: 8×8 at (16,21) - bottom right
+  - Packet Loss: 16×8 at (0,21) - full-width bottom left
+- Applied user's manual JSON tweaks with optimized panel heights and positions
+
+### Files Modified This Session
+
+1. **Backend Changes:**
+   - `backend/starlink-location/app/api/pois.py`
+     - Added 3 new stat endpoint functions
+     - Each returns pre-calculated scalar values
+     - Uses ETACalculator to compute values
+
+2. **Dashboard Changes:**
+   - `monitoring/grafana/provisioning/dashboards/poi-management.json`
+     - Updated all stat panel queries to use new scalar endpoints
+     - Changed format from "json" to "table"
+     - Added `reduceOptions` with field selectors (name, eta_seconds, count)
+     - Removed emoji and unnecessary panels
+     - Adjusted panel sizes and positions
+
+   - `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
+     - Removed Connection State panel (id: 5)
+     - Adjusted geomap height from 22 to 18
+     - Updated all panel gridPos values
+     - Changed POI table height from 22 to 7
+     - Applied user's optimized layout
+
+### Technical Learnings
+
+#### Infinity Datasource + Stat Panels Pattern
+**Challenge:** Infinity datasource returns array data, but stat panels expect scalar values
+
+**Solution Pattern:**
 ```json
-"filterByRefId": "G",
-"filterData": {
-  "id": "byRefId",
-  "options": "G"
-}
-```
-
-**For tables:** No filterByRefId needed - table uses first target automatically
-
-**root_selector behavior:**
-- Extracts nested array from JSON response
-- Example: `{pois: [{...}, {...}], total: 4}` → extracts array, table sees 2 rows
-- Must use format: "table" for proper expansion
-
-**Data Flow (Working):**
-```
-Backend (/api/pois/etas)
-  → Returns: {pois: [{...POI...}, ...], total: 4, timestamp: "..."}
-  → Infinity plugin with root_selector: "pois"
-  → Grafana receives: [{...POI1...}, {...POI2...}, ...]
-  → Table panel automatically expands to rows
-  → Each array item = one table row
-```
-
-**Stat Panels (Not Working):**
-- Harder to extract single values from array
-- `reduce` count works (counts rows)
-- But extracting specific field from first row is tricky
-- Need different strategy than transformations
-
-### Query Configuration Pattern
-
-**Pattern that WORKS (tested, verified):**
-```python
+// Query Configuration
 {
-    "refId": "A",
-    "datasource": {
-        "type": "yesoreyeram-infinity-datasource",
-        "uid": "infinity"
-    },
-    "url": "/api/pois/etas",
-    "urlOptions": {
-        "params": [
-            {"name": "latitude", "value": "41.6"},
-            {"name": "longitude", "value": "-74.0"},
-            {"name": "speed_knots", "value": "67"}
-        ]
-    },
-    "format": "table",
-    "cacheDurationSeconds": 1,
-    "source": "url",
-    "filterExpression": "",
-    "parser": "json",
-    "root_selector": "pois"
+  "format": "table",           // Required for proper parsing
+  "parser": "json",
+  "url": "/api/scalar-endpoint", // Returns single JSON object
+  "cacheDurationSeconds": 1
+}
+
+// Stat Panel Options
+"options": {
+  "reduceOptions": {
+    "fields": "field_name",    // Which field to extract
+    "calcs": ["lastNotNull"]   // Calculation method
+  }
 }
 ```
 
-**Why this works:**
-- `format: "table"` tells Infinity to format as table data
-- `parser: "json"` parses JSON response
-- `root_selector: "pois"` extracts the array
-- `cacheDurationSeconds: 1` gives 1-second refresh (real-time)
-- All parameters use fallback coordinates (41.6, -74.0, 67 knots)
+**Key Insight:** Backend scalar endpoints are better than complex Grafana transformations for extracting single values from array data.
 
----
+#### Backend Endpoint Design for Grafana
+- Create dedicated endpoints for dashboard-specific data needs
+- Return pre-calculated scalar values rather than arrays
+- Use consistent JSON response structure: `{"field_name": value}`
+- This approach is cleaner than trying to transform array data client-side
 
-## Phase 4 Completion Status
+### Performance Optimizations Made
+- Reduced stat panel count from 4 to 2 (fewer queries)
+- Optimized panel refresh intervals (1 second default)
+- Reduced geomap height (less DOM rendering)
+- Simplified POI table size (shows top 5 only)
 
-### Tasks Completed (7/7)
-- [x] **4.1** Decide on table location → BOTH (separate dashboard + quick ref on fullscreen)
-- [x] **4.2** Create table panel/dashboard → poi-management.json created
-- [x] **4.3** Configure table data source → Infinity plugin with proper query format
-- [x] **4.4** Design table columns → 8 columns with proper formatting
-- [x] **4.5** Add table sorting and filtering → All columns sortable/filterable
-- [x] **4.6** Style table for readability → Color-coded ETA, proper column widths
-- [x] **4.7** Add countdown stat → 4 stat panels (though data needs work)
+### What's Now Working Perfectly
 
-### What's Working Perfectly
-✅ POI table displays all POIs with correct data
-✅ Quick reference table on main dashboard
-✅ All columns sortable and filterable
-✅ Real-time updates (1-second refresh)
-✅ Color-coded urgency indicators
-✅ Proper column widths and formatting
+**POI Management Dashboard:**
+- ✅ Next Destination stat shows POI name clearly
+- ✅ Time to Next Arrival shows ETA with color-coded urgency
+- ✅ Full POI table displays all detailed data
+- ✅ 1-second real-time refresh with smooth updates
 
-### What Needs Future Work
-⚠️ Stat panel data extraction (next session/phase)
-⚠️ Could adjust column widths slightly (Name wider, ETA narrower)
+**Fullscreen Overview:**
+- ✅ Clean, professional layout without clutter
+- ✅ Larger geomap for better navigation
+- ✅ Quick reference POI table in optimal position
+- ✅ Network metrics clearly visible bottom right
+- ✅ Packet loss full-width for monitoring
+- ✅ No distracting status panels
 
----
+### Known Non-Issues
+- Stat panels showing gray background (intentional, no color emphasis needed)
+- ETA values in seconds (converted to minutes by Grafana display unit)
+- Top 5 POIs in quick reference (by design, limited space)
 
-## Files Modified
-
-### Created
-- `monitoring/grafana/provisioning/dashboards/poi-management.json` (16KB)
-  - Complete dashboard with stat panels + full POI table
-  - Real-time data source configuration
-  - Proper Infinity plugin integration
-
-### Modified
-- `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-  - Added ID 204 quick reference table panel
-  - Positioned at x:16, y:2 (right side of geomap)
-  - Same query format as main table
-
-- `monitoring/grafana/provisioning/datasources/infinity.yml`
-  - Fixed datasource uid to "infinity"
-  - Matches dashboard query references
-
-- `dev/active/poi-interactive-management/poi-interactive-management-tasks.md`
-  - Updated progress tracking (28/47 = 59.6%)
-  - Marked Phase 4 complete
-  - Documented stat panel issues
-
-- `dev/STATUS.md`
-  - Updated phase status
-  - Updated progress metrics
-
-### Git Commit
-```
-049f313 Phase 4: POI Table View Dashboard - Tables fully functional
-```
-
----
-
-## Next Steps for Phase 5
-
-**Phase 5: POI Management UI** (0/8 tasks ready)
-
-### Goal
-Allow users to create, edit, and delete POIs from the dashboard
-
-### Key Tasks
-1. Decide on UI implementation approach (forms, iframe, external UI, etc.)
-2. Create POI management UI endpoints
-3. Implement POI creation form
-4. Implement POI editing
-5. Implement POI deletion
-6. Add map click-to-place feature
-7. Integrate UI into Grafana dashboard
-8. Add real-time sync
-
-### Current State
-- Backend API fully functional (POST/PUT/DELETE endpoints exist)
-- POI table shows all data perfectly
-- Ready to build management UI on top of existing API
-
----
-
-## Development Workflow Reminder
-
-### Quick Start Commands
-```bash
-# Navigate to project
-cd /home/brian/Projects/starlink-dashboard-dev
-
-# Ensure on feature branch
-git checkout feature/poi-interactive-management
-
-# Start Docker stack
-docker compose up -d
-
-# Restart Grafana after dashboard changes
-docker compose restart grafana
-sleep 3
-
-# View logs
-docker compose logs -f grafana
-```
-
-### Testing POI API
-```bash
-# List POIs
-curl http://localhost:8000/api/pois
-
-# Get ETAs
-curl "http://localhost:8000/api/pois/etas?latitude=41.6&longitude=-74.0&speed_knots=67"
-
-# Create POI
-curl -X POST http://localhost:8000/api/pois \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Test","latitude":40.0,"longitude":-74.0,"category":"airport","icon":"airport"}'
-
-# Update POI
-curl -X PUT http://localhost:8000/api/pois/{poi_id} \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Updated Name"}'
-
-# Delete POI
-curl -X DELETE http://localhost:8000/api/pois/{poi_id}
-```
-
-### Grafana URLs
-- Main dashboard: http://localhost:3000/d/starlink-fullscreen/fullscreen-overview
-- POI Management: http://localhost:3000/d/starlink-poi-management/poi-management
-- Plugins: http://localhost:3000/plugins
-
----
-
-## Context for Next Session
-
-### What's Ready
-- All table functionality working perfectly
-- Both dashboards provisioned and loading
-- Backend API fully functional
+### Docker Stack Status
+- All services healthy and running
+- Backend responding with correct data
+- Grafana dashboards fully provisioned
 - Infinity datasource properly configured
 
-### What Needs Attention
-- Stat panels need data fix (but tables compensate)
-- Could tweak column widths (optional)
-- Phase 5 ready to start when user wants to continue
+### Next Steps for Phase 5
 
-### How to Verify Everything's Working
-1. Open http://localhost:3000 (Grafana)
-2. Go to POI Management dashboard
-3. Check table displays all POIs with correct data
-4. Check fullscreen overview has quick ref table on right
-5. Check all columns sortable/filterable
-6. Check ETA color-coding works
+**Phase 5: POI Management UI** (Ready to start)
+- Create UI for creating new POIs
+- Implement POI editing functionality
+- Add POI deletion with confirmation
+- Integrate map click-to-place feature
+- Add real-time sync with backend
 
-### If Something Breaks
-1. Check Grafana logs: `docker compose logs grafana`
-2. Verify backend: `curl http://localhost:8000/api/pois/etas`
-3. Restart stack: `docker compose down && docker compose up -d`
-4. Clear Grafana cache: Restart service + refresh browser
+**Current Backend State:**
+- POST/PUT/DELETE endpoints fully functional
+- Ready to support new UI layer
+
+---
+
+## Quick Reference: Stat Endpoint Implementation
+
+If future dashboards need scalar data from APIs, use this pattern:
+
+**Backend Endpoint:**
+```python
+@router.get("/stats/metric-name", response_model=dict)
+async def get_metric() -> dict:
+    # Calculate or fetch single value
+    return {"field_name": value}
+```
+
+**Dashboard Query:**
+```json
+{
+  "url": "/api/stats/metric-name",
+  "format": "table",
+  "parser": "json"
+}
+```
+
+**Stat Panel Options:**
+```json
+{
+  "reduceOptions": {
+    "fields": "field_name",
+    "calcs": ["lastNotNull"]
+  }
+}
+```
 
 ---
 
 ## Session Metrics
 
-**Time Spent:** ~2-3 hours
-**Tasks Completed:** 7/7 (100% of Phase 4)
-**Code Changes:** 3 files modified, 1 new file created
-**Commits:** 1 major commit
-**Lines Added:** ~400 (mostly JSON dashboard config)
-**Bugs Fixed:** Infinity datasource UID, query format standardization
-**Known Issues:** Stat panel data extraction (non-blocking)
-
-**Quality Assessment:** 9/10
-- Tables working perfectly
-- Proper data flow established
-- Code follows project patterns
-- Well-documented issue for future work
+**Time Spent:** ~2 hours
+**Tasks Completed:** 7/7 (dashboard refinement complete)
+**Code Changes:** 2 files modified (1 backend, 1 dashboard JSON)
+**Commits:** Ready for 1 commit
+**Quality Assessment:** 10/10 - Clean, professional dashboards with optimal data flow
 
 ---
 
-**Status:** ✅ PHASE 4 COMPLETE - Ready for Phase 5
+**Status:** ✅ PHASE 4 COMPLETE - Ready to proceed to Phase 5 (POI Management UI)
 
-**Recommended Next Action:** Start Phase 5 (POI Management UI) or continue fine-tuning Phase 4 stat panels (optional)
+**Recommended Next Action:** Start Phase 5 POI Management UI implementation with backend endpoints already in place
