@@ -223,8 +223,8 @@ async def _background_update_loop():
                                 }
                             )
 
-                # Sleep for update interval (0.1 seconds = 10 Hz)
-                await asyncio.sleep(0.1)
+                # Sleep for configured update interval
+                await asyncio.sleep(_simulation_config.update_interval_seconds)
 
             except Exception as e:
                 error_count += 1

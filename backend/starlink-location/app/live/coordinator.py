@@ -12,6 +12,7 @@ from app.live.client import StarlinkClient
 from app.models.config import SimulationConfig
 from app.models.telemetry import TelemetryData
 from app.services.heading_tracker import HeadingTracker
+from app.services.speed_tracker import SpeedTracker
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,10 @@ class LiveCoordinator:
             max_age_seconds=heading_config.max_age_seconds,
         )
 
+        # Initialize speed tracker for GPS-based speed calculation
+        # Uses 120-second smoothing window to match ETA calculator
+        self.speed_tracker = SpeedTracker(smoothing_duration_seconds=120.0)
+
         # Last known good state for graceful degradation
         self._last_valid_telemetry: Optional[TelemetryData] = None
         self._connection_status: bool = False
@@ -56,7 +61,8 @@ class LiveCoordinator:
         logger.info(
             "LiveCoordinator initialized with heading tracker config: "
             f"min_distance={heading_config.min_distance_meters}m, "
-            f"max_age={heading_config.max_age_seconds}s"
+            f"max_age={heading_config.max_age_seconds}s, "
+            f"speed tracker: 120s smoothing window"
         )
 
         # Try to get initial telemetry to verify connection
@@ -127,14 +133,24 @@ class LiveCoordinator:
             timestamp=telemetry.timestamp,
         )
 
-        # Update position with calculated heading
+        # Update speed tracker with current position (GPS-based speed calculation)
+        # This replaces the hardcoded 0.0 speed from the API
+        speed = self.speed_tracker.update(
+            latitude=telemetry.position.latitude,
+            longitude=telemetry.position.longitude,
+            timestamp=telemetry.timestamp.timestamp() if hasattr(telemetry.timestamp, 'timestamp') else time.time(),
+        )
+
+        # Update position with calculated heading and speed
         telemetry.position.heading = heading
+        telemetry.position.speed = speed
 
         logger.debug(
             f"Telemetry collected: "
             f"lat={telemetry.position.latitude:.4f}, "
             f"lon={telemetry.position.longitude:.4f}, "
             f"heading={heading:.1f}°, "
+            f"speed={speed:.2f}kn (GPS-calculated), "
             f"latency={telemetry.network.latency_ms:.1f}ms, "
             f"obstruction={telemetry.obstruction.obstruction_percent:.1f}%"
         )
@@ -160,11 +176,12 @@ class LiveCoordinator:
     def reset(self) -> None:
         """Reset coordinator to initial state.
 
-        Resets heading tracker and timestamps, but maintains connection
+        Resets heading tracker, speed tracker, and timestamps, but maintains connection
         to Starlink dish.
         """
         self.start_time = time.time()
         self.heading_tracker.reset()
+        self.speed_tracker.reset()
         self._last_valid_telemetry = None
 
         logger.info("LiveCoordinator reset to initial state")

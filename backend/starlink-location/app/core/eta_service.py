@@ -29,8 +29,8 @@ def initialize_eta_service(poi_manager: Optional[POIManager] = None) -> None:
 
     try:
         _poi_manager = poi_manager or POIManager()
-        _eta_calculator = ETACalculator()
-        logger.info("ETA service initialized successfully")
+        _eta_calculator = ETACalculator(smoothing_duration_seconds=120.0)
+        logger.info("ETA service initialized successfully (120s speed smoothing)")
     except Exception as e:
         logger.error(f"Failed to initialize ETA service: {e}")
         raise
