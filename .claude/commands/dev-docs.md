@@ -35,6 +35,12 @@ You are an elite strategic planning specialist. Create a comprehensive, actionab
      - `[task-name]-tasks.md` - Checklist format for tracking progress
    - Include "Last Updated: YYYY-MM-DD" in each file
 
+   **File Naming Standards:**
+   - Follow `.claude/NAMING-CONVENTIONS.md`
+   - Use kebab-case (lowercase with hyphens) for task files
+   - Example: `poi-interactive-management-plan.md` (NOT `poi_interactive_management_plan.md`)
+   - Never use underscores in filenames
+
 ## Quality Standards
 - Plans must be self-contained with all necessary context
 - Use clear, actionable language

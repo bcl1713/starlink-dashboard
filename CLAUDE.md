@@ -202,6 +202,16 @@ historical route.
 Use Prettier with settings in `.prettierrc` (print width: 80, prose wrap:
 always, auto line endings).
 
+## File Naming Conventions
+
+When creating documentation or task management files, follow these naming standards:
+
+- **Status/session files:** ALL CAPS with hyphens (SESSION-NOTES.md, CONTEXT-HANDOFF.md)
+- **Task planning files:** kebab-case (poi-management-plan.md, feature-context.md)
+- **Never use underscores** for multi-word filenames (use hyphens instead)
+
+See `.claude/NAMING-CONVENTIONS.md` for complete guidelines.
+
 ## Project Status
 
 Currently in **Phase 0** (planning/documentation complete). Follow the phased
