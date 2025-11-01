@@ -380,19 +380,48 @@ def _partition_placemarks(
 def _identify_primary_waypoints(
     route_name: Optional[str], waypoints: list[WaypointData]
 ) -> tuple[Optional[WaypointData], Optional[WaypointData]]:
-    """Identify likely departure and arrival waypoints based on metadata."""
+    """
+    Identify departure and arrival waypoints from route name.
+
+    Parses route name in format "DEPARTURE-ARRIVAL" (e.g., "RKSO-KADW").
+    Falls back to first/last waypoint with #destWaypointIcon style if parsing fails.
+
+    Returns:
+        Tuple of (departure_wp, arrival_wp)
+    """
     departure_code: Optional[str] = None
     arrival_code: Optional[str] = None
 
+    # Extract airport codes from route name (e.g., "RKSO-KADW" → RKSO, KADW)
     if route_name:
         route_name_upper = route_name.upper()
         match = re.search(r"\b([A-Z0-9]{3,5})[-→]+([A-Z0-9]{3,5})\b", route_name_upper)
         if match:
             departure_code, arrival_code = match.group(1), match.group(2)
+            logger.info(
+                "Parsed route name: %s → %s", departure_code, arrival_code
+            )
 
+    # Try to match waypoints by code
     departure_wp = _match_waypoint_by_code(waypoints, departure_code, prefer_last=False)
     arrival_wp = _match_waypoint_by_code(waypoints, arrival_code, prefer_last=True)
 
+    # Fallback: find first/last waypoint with #destWaypointIcon style
+    if departure_wp is None:
+        departure_wp = next(
+            (wp for wp in waypoints if wp.coordinate is not None and
+             wp.style_url and "dest" in wp.style_url.lower()),
+            None
+        )
+
+    if arrival_wp is None:
+        arrival_wp = next(
+            (wp for wp in reversed(waypoints) if wp.coordinate is not None and
+             wp.style_url and "dest" in wp.style_url.lower()),
+            None
+        )
+
+    # Final fallback: use first/last waypoint with any coordinate
     if departure_wp is None:
         departure_wp = next((wp for wp in waypoints if wp.coordinate is not None), None)
 
@@ -467,13 +496,71 @@ def _build_route_waypoints(
     return route_waypoints
 
 
+def _filter_segments_by_style(
+    segments: list[RouteSegmentData],
+) -> list[RouteSegmentData]:
+    """
+    Filter route segments to only include the main route (exclude alternates).
+
+    Flight planning software (like ForeFlight/RocketRoute) exports routes with:
+    - Main route segments: color ffddad05 (orange/gold)
+    - Alternate segments: color ffb3b3b3 (gray)
+
+    This function filters to keep only the main route segments.
+
+    Args:
+        segments: All route segments extracted from KML file
+
+    Returns:
+        Filtered list containing only main route segments, or all segments if no color match
+    """
+    # Main route color from ForeFlight/RocketRoute export format
+    main_route_color = "ffddad05"
+
+    # Debug: log all colors found
+    color_counts = {}
+    for seg in segments:
+        if seg.style and seg.style.color:
+            color = seg.style.color.lower()
+            color_counts[color] = color_counts.get(color, 0) + 1
+        else:
+            color_counts["(no color)"] = color_counts.get("(no color)", 0) + 1
+
+    if color_counts:
+        logger.debug("Segment colors: %s", color_counts)
+
+    main_segments = [
+        seg for seg in segments
+        if seg.style and seg.style.color and
+           seg.style.color.lower() == main_route_color.lower()
+    ]
+
+    if main_segments:
+        logger.info(
+            "Filtered segments by style: %d main route (ffddad05) from %d total",
+            len(main_segments),
+            len(segments),
+        )
+        return main_segments
+
+    # Fallback: if no colored segments found, return all segments
+    logger.warning(
+        "No main route segments (ffddad05) found in %d segments; returning all",
+        len(segments),
+    )
+    return segments
+
+
 def _build_primary_route(
     route_segments: list[RouteSegmentData],
     start_coord: Optional[CoordinateTriple],
     end_coord: Optional[CoordinateTriple],
 ) -> list[CoordinateTriple]:
     """Construct the primary coordinate chain from the available segments."""
-    segments_remaining = [seg for seg in route_segments if seg.coordinates]
+    # Filter segments to only include the main route (by color/style)
+    filtered_segments = _filter_segments_by_style(route_segments)
+
+    segments_remaining = [seg for seg in filtered_segments if seg.coordinates]
     if not segments_remaining:
         return []
 
@@ -494,7 +581,15 @@ def _build_primary_route(
     while segments_remaining and safety_counter <= max_iterations:
         idx, reverse_needed = _find_next_segment_index(segments_remaining, current)
         if idx is None:
-            break
+            # Color-filtered segments don't connect properly. Return empty to
+            # trigger legacy fallback, which will use all segments regardless of color
+            logger.debug(
+                "Color-filtered segments did not chain properly; "
+                "%d segments remaining, current=%s",
+                len(segments_remaining),
+                f"({current.latitude:.6f},{current.longitude:.6f})" if current else "None",
+            )
+            return []
 
         segment = segments_remaining.pop(idx)
         coords_sequence = segment.coordinates
@@ -515,9 +610,6 @@ def _build_primary_route(
     deduped_path = _deduplicate_coordinates(path)
 
     if len(deduped_path) < 2:
-        return []
-
-    if end_coord and not _coordinates_match(deduped_path[-1], end_coord):
         return []
 
     return deduped_path
@@ -550,16 +642,31 @@ def _find_next_segment_index(
 def _coordinates_match(
     coord_a: Optional[CoordinateTriple],
     coord_b: Optional[CoordinateTriple],
-    tolerance: float = 1e-6,
+    tolerance: float = 1e-4,
 ) -> bool:
-    """Check if two coordinates refer to the same location within tolerance."""
+    """Check if two coordinates refer to the same location within tolerance.
+
+    Tolerance of 1e-4 degrees (~10 meters at equator) allows for coordinate
+    variations in KML segment boundaries while still being geographically precise.
+
+    Handles International Dateline crossing: when comparing longitudes that wrap
+    around ±180°, calculates shortest distance across the dateline.
+    """
     if coord_a is None or coord_b is None:
         return False
 
-    return (
-        abs(coord_a.latitude - coord_b.latitude) <= tolerance
-        and abs(coord_a.longitude - coord_b.longitude) <= tolerance
-    )
+    # Check latitude
+    lat_diff = abs(coord_a.latitude - coord_b.latitude)
+    if lat_diff > tolerance:
+        return False
+
+    # Check longitude with dateline wraparound handling
+    lon_diff = abs(coord_a.longitude - coord_b.longitude)
+    # If difference is > 180°, it's shorter to cross the dateline
+    if lon_diff > 180:
+        lon_diff = 360 - lon_diff
+
+    return lon_diff <= tolerance
 
 
 def _deduplicate_coordinates(
