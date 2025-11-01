@@ -439,6 +439,29 @@
           },
           {
             "config": {
+              "showLegend": true,
+              "style": {
+                "color": {
+                  "fixed": "dark-orange"
+                },
+                "lineWidth": 2,
+                "opacity": 0.9
+              }
+            },
+            "filterByRefId": "H",
+            "filterData": {
+              "id": "byRefId",
+              "options": "H"
+            },
+            "location": {
+              "mode": "geohash"
+            },
+            "name": "Planned Route (KML)",
+            "tooltip": false,
+            "type": "route"
+          },
+          {
+            "config": {
               "showLegend": false,
               "style": {
                 "color": {
@@ -620,6 +643,22 @@
           "root_selector": "pois",
           "source": "url",
           "url": "/api/pois/etas",
+          "urlOptions": {
+            "params": []
+          }
+        },
+        {
+          "cacheDurationSeconds": 5,
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "format": "geojson",
+          "parser": "json",
+          "refId": "H",
+          "source": "url",
+          "url": "/api/route.geojson?include_pois=false&include_position=false",
           "urlOptions": {
             "params": []
           }

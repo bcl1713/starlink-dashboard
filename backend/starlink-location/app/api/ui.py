@@ -1215,7 +1215,7 @@ async def route_management_ui():
                                 <td class="route-distance" id="distance-${route.id}">Loading...</td>
                                 <td>
                                     ${route.is_active ?
-                                        '<span class="badge">ACTIVE</span>' :
+                                        '<button class="btn-secondary btn-small" onclick="deactivateRoute()">Deactivate</button>' :
                                         '<button class="btn-secondary btn-small" onclick="activateRoute(\\'${route.id}\\')">Activate</button>'
                                     }
                                 </td>
@@ -1322,6 +1322,25 @@ async def route_management_ui():
                     }
 
                     showAlert('Route activated successfully', 'success');
+                    await loadRoutes();
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                }
+            }
+
+            // Deactivate active route
+            async function deactivateRoute() {
+                try {
+                    const response = await fetch('/api/routes/deactivate', {
+                        method: 'POST'
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Deactivation failed');
+                    }
+
+                    showAlert('Route deactivated successfully', 'success');
                     await loadRoutes();
                 } catch (error) {
                     showAlert('Error: ' + error.message, 'error');
