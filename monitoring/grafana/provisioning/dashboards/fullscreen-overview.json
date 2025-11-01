@@ -653,6 +653,10 @@
       "type": "geomap"
     },
     {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "infinity"
+      },
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -725,6 +729,7 @@
               {
                 "id": "custom.cellOptions",
                 "value": {
+                  "applyToRow": false,
                   "mode": "gradient",
                   "type": "color-background"
                 }
@@ -898,7 +903,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "fixedColor": "blue",
+            "mode": "fixed",
+            "seriesBy": "last"
           },
           "custom": {
             "axisBorderShow": false,
@@ -909,7 +916,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
@@ -918,6 +925,9 @@
             },
             "insertNulls": false,
             "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
@@ -934,22 +944,22 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "blue",
                 "value": 0
               },
               {
-                "color": "yellow",
-                "value": 80
+                "color": "#EAB839",
+                "value": 100
               },
               {
                 "color": "red",
-                "value": 120
+                "value": 200
               }
             ]
           },
@@ -980,7 +990,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "orange",
+                  "fixedColor": "super-light-orange",
                   "mode": "fixed"
                 }
               }
@@ -1147,7 +1157,7 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 6,
         "x": 18,
         "y": 21
@@ -1255,7 +1265,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 5,
         "w": 18,
         "x": 0,
         "y": 25
@@ -1305,5 +1315,5 @@
   "timezone": "utc",
   "title": "Fullscreen Overview",
   "uid": "starlink-fullscreen",
-  "version": 15
+  "version": 18
 }
