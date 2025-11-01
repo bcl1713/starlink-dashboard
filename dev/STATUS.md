@@ -1,16 +1,59 @@
 # Development Status
 
-**Last Updated:** 2025-10-31 (POI Interactive Management Archived - Complete)
+**Last Updated:** 2025-10-31
 
-**Current Branch:** dev
+**Current Branch:** feature/kml-route-import
 
-**Status:** Ready for Next Phase
+**Status:** Planning Phase Complete - Ready for Implementation
+
+---
+
+## Active Tasks
+
+### KML Route Import and Management Feature (Phase 4)
+**Status:** 🔄 IN PROGRESS - Planning Complete
+
+**Location:** `/dev/active/kml-route-import/`
+
+**Feature Branch:** `feature/kml-route-import`
+
+**Key Documents:**
+- [Strategic Plan](./active/kml-route-import/kml-route-import-plan.md) - 7-phase implementation plan
+- [Technical Context](./active/kml-route-import/kml-route-import-context.md) - Integration points and existing infrastructure
+- [Task Checklist](./active/kml-route-import/kml-route-import-tasks.md) - 94 tasks across 7 phases
+
+**Feature Summary:**
+- Web UI for uploading KML route files
+- REST API endpoints for route CRUD operations
+- Grafana visualization of active routes on map
+- Route-POI integration with cascade deletion
+- Simulation mode route following
+- Route management (activate, deactivate, delete, download)
+
+**Timeline:** 18-25 days (3.5-5 weeks estimated)
+
+**Progress:** 0/94 tasks complete (0%)
+- Phase 1: Backend Route Upload API (0/10) - NEXT
+- Phase 2: Route Management Web UI (0/9)
+- Phase 3: Grafana Route Visualization (0/6)
+- Phase 4: Route-POI Integration (0/6)
+- Phase 5: Simulation Mode Integration (0/5)
+- Phase 6: Testing & Documentation (0/7)
+- Phase 7: Feature Branch & Deployment (0/5)
+
+**Next Steps:**
+1. Begin Phase 1: Backend Route Upload API
+2. Create `app/api/routes.py` module
+3. Implement route upload endpoint
+4. Test with sample KML files
+
+**GitHub PR:** https://github.com/bcl1713/starlink-dashboard/pull/new/feature/kml-route-import
 
 ---
 
 ## Recently Completed Tasks
 
-### POI Interactive Management Feature
+### POI Interactive Management Feature (Phase 3)
 **Status:** ✅ COMPLETE - Archived 2025-10-31
 
 **Location:** `/dev/completed/poi-interactive-management/` (archived)
@@ -23,82 +66,26 @@
 - [Implementation Context](./completed/poi-interactive-management/poi-interactive-management-context.md) - Final implementation details
 
 **Feature Summary:**
-- Add interactive POI markers to Grafana map ✅ (Phase 2)
-- Real-time ETA tooltips with color-coding ✅ (Phase 3)
-- POI management UI (create, edit, delete) (Phase 5)
-- POI table view with live ETAs (Phase 4)
-- Course status indicators (on/off track) (Phase 3+)
+- Interactive POI markers on Grafana map ✅
+- Real-time ETA tooltips with color-coding ✅
+- POI management UI (create, edit, delete) ✅
+- POI table view with live ETAs ✅
+- Course status indicators (on/off track) ✅
 
-**Timeline:** 16-22 days (3-4 weeks) - On track
+**Timeline:** Completed on schedule
 
 **Progress:** 47/47 tasks complete (100%)
-- Phase 0: 4/4 complete ✅
-- Phase 1: 6/6 complete ✅
-- Phase 2: 5/5 complete ✅
-- Phase 3: 6/6 complete ✅
-- Phase 4: 7/7 complete ✅
-- Phase 5: 8/8 complete ✅
-- Phase 6: 6/6 complete ✅
-- Phase 7: 5/5 complete ✅
+- All 7 phases completed successfully
+- Full CRUD API with ETA calculations
+- Web UI with Leaflet.js map integration
+- Grafana dashboard integration complete
 
-**Critical Bug Fixed (Post-Phase 2):**
-- ✅ Fixed FastAPI route ordering issue in pois.py
-- ✅ Moved specific routes (/etas, /count/total) before generic /{poi_id}
-- ✅ All Phase 1 endpoints now working correctly
-- ✅ Docker networking issue resolved (DNS configuration)
-- ✅ ETA endpoint verified with live data
-
-**Session 3 Accomplishments (2025-10-30 AM):**
-Phase 1 (Backend ETA Integration):
-- ✅ Created app/core/eta_service.py with singleton pattern
-- ✅ Integrated ETA service with main.py startup/shutdown
-- ✅ Implemented GET /api/pois/etas endpoint with bearing calculation
-- ✅ Added file locking (filelock>=3.12.0) for concurrent access safety
-- ✅ Real-time ETA metrics updating every 0.1s via background loop
-
-Phase 2 (Grafana POI Markers Layer):
-- ✅ Created monitoring/grafana/provisioning/datasources/infinity.yml
-- ✅ Added POI markers layer to fullscreen-overview.json geomap
-- ✅ Configured ETA-based color thresholds (red/orange/yellow/blue)
-- ✅ Added POI name labels below markers
-
-**Session 7 Accomplishments (2025-10-31):**
-Phase 5 (POI Management UI - COMPLETE):
-- ✅ Created `/ui/pois` endpoint with full HTML/CSS/JS POI management interface
-- ✅ Implemented Leaflet.js interactive map for click-to-place coordinates
-- ✅ Built responsive 2-column layout (form + POI list)
-- ✅ Implemented complete CRUD form with validation
-- ✅ Added POI creation, editing, and deletion with confirmations
-- ✅ Created real-time POI list auto-refresh (5-second intervals)
-- ✅ Integrated with Grafana using native HTML text panel
-- ✅ Fixed Infinity datasource UID (was: PB63CD044D3341156, now: infinity)
-- ✅ Added backend stat endpoints for dashboard panels
-- ✅ Verified ETA calculations with Haversine formula
-- ✅ All 8 Phase 5 tasks complete with full testing
-
-**Session 4 Accomplishments (2025-10-30 PM):**
-Phase 3 (Interactive ETA Tooltips - COMPLETE):
-- ✅ Simplified Infinity query to NOT require dynamic parameters
-- ✅ Fixed ETA endpoint to use fallback coordinates (41.6, -74.0, 67 knots)
-- ✅ Resolved Infinity plugin parameter resolution issue
-- ✅ Added field overrides for eta_seconds, distance_meters, bearing_degrees
-- ✅ Configured tooltips in "details" mode with all POI fields
-- ✅ Verified ETA calculations: LaGuardia ~44min, Newark ~49min
-- ✅ All 6 Phase 3 tasks complete with full end-to-end testing
-
-**Issues Resolved:**
-- Infinity plugin can't pass dynamic `$__data.fields[]` references in geomap mixed datasources
-- FastAPI Query() params fail when Infinity sends empty strings instead of None
-- Docker container caching prevented code updates (solution: `docker compose down && build --no-cache`)
-
-**Next Steps:**
-1. Phase 4: POI Table View Dashboard (optional)
-   - Task 4.1: Decide on table location
-   - Task 4.2: Create POI table panel
-   - Task 4.3: Configure data source
-   - Task 4.4: Add sorting/filtering
-   - Task 4.5: Style table
-   - Task 4.6: Test table functionality
+**Key Accomplishments:**
+- ✅ Fixed FastAPI route ordering issue
+- ✅ Resolved Docker networking DNS configuration
+- ✅ Implemented bearing and course status calculations
+- ✅ Created file locking for concurrent access safety
+- ✅ Built responsive UI with real-time updates
 
 ---
 
@@ -117,9 +104,9 @@ Phase 3 (Interactive ETA Tooltips - COMPLETE):
 - Live mode with Starlink terminal connection
 
 **Documentation:**
-- [IMPLEMENTATION_SUMMARY.md](../IMPLEMENTATION_SUMMARY.md)
-- [FINAL_VERIFICATION_REPORT.md](../FINAL_VERIFICATION_REPORT.md)
 - [Design Document](../docs/design-document.md)
+- [Phased Development Plan](../docs/phased-development-plan.md)
+- [CLAUDE.md](../CLAUDE.md) - Development configuration
 
 ---
 
@@ -131,8 +118,13 @@ Phase 3 (Interactive ETA Tooltips - COMPLETE):
 
 **Technical Debt:**
 - No automated testing framework
-- JSON file storage needs locking for concurrent access (identified for POI feature)
+- Should add pytest integration tests
 - No CI/CD pipeline
+
+**Infrastructure:**
+- POI system: File-based with locking ✅
+- Route system: File-based with watchdog ✅
+- All services containerized ✅
 
 ---
 
@@ -143,17 +135,18 @@ Phase 3 (Interactive ETA Tooltips - COMPLETE):
 1. **Create Feature Branch**
    ```bash
    git checkout dev
-   git pull
+   git pull origin dev
    git checkout -b feature/your-feature-name
    ```
 
 2. **Make Changes**
    - Update code in `backend/` or `monitoring/`
    - Update documentation in `docs/` or task folder
+   - Follow CONTRIBUTING.md guidelines
 
 3. **Test Locally**
    ```bash
-   docker compose build
+   docker compose build --no-cache
    docker compose up -d
    docker compose logs -f
    # Test in browser: http://localhost:3000
@@ -163,21 +156,24 @@ Phase 3 (Interactive ETA Tooltips - COMPLETE):
    ```bash
    git add .
    git commit -m "type: description"
+   # Follow conventional commit format
    ```
 
-5. **Create Pull Request**
-   - Merge to `dev` branch
-   - Test in dev environment
-   - Merge to `main` when stable
+5. **Push and Create PR**
+   ```bash
+   git push -u origin feature/your-feature-name
+   # Create PR on GitHub
+   # Target: dev branch
+   ```
 
 ### Commit Message Format
 
 ```
 type: brief description
 
-Longer explanation if needed.
+Longer explanation if needed. Explain the "why" not just the "what".
 
-Co-Authored-By: Claude <noreply@anthropic.com>
+References: #123
 ```
 
 **Types:** feat, fix, docs, refactor, test, chore
@@ -202,6 +198,7 @@ docker compose up -d
 - **Prometheus:** http://localhost:9090
 - **Backend API:** http://localhost:8000
 - **API Docs:** http://localhost:8000/docs
+- **POI Management:** http://localhost:8000/ui/pois
 
 ---
 
@@ -211,19 +208,23 @@ docker compose up -d
 All active development tasks are tracked in `/dev/active/[task-name]/`
 
 Each task folder contains:
-- `README.md` - Overview and quick reference
-- `[task-name]-plan.md` - Strategic plan
-- `[task-name]-context.md` - Implementation context
+- `[task-name]-plan.md` - Strategic implementation plan
+- `[task-name]-context.md` - Technical context and integration points
 - `[task-name]-tasks.md` - Detailed task checklist
-- `SESSION-NOTES.md` - Latest session information
+- `SESSION-NOTES.md` - Session information (added as work progresses)
 
 ### Task Lifecycle
 
 1. **Planning** - Research and document in `/dev/active/[task-name]/`
+   - Create comprehensive plan with phases
+   - Document current state and integration points
+   - Create detailed task checklist
 2. **Implementation** - Work through tasks, update checklist
+   - Mark tasks complete as they're finished
+   - Update session notes with progress
 3. **Testing** - Validate against acceptance criteria
 4. **Review** - Code review and documentation check
-5. **Complete** - Merge to dev, archive task folder
+5. **Complete** - Merge to dev, move to `/dev/completed/`
 
 ---
 
@@ -254,21 +255,22 @@ When approaching context limits, ensure:
 ### After Context Reset
 
 1. Read `/dev/STATUS.md` (this file) for overview
-2. Check `/dev/active/[task-name]/SESSION-NOTES.md` for latest
+2. Check `/dev/active/[task-name]/SESSION-NOTES.md` for latest (if exists)
 3. Review task checklist for progress
-4. Continue from "Next Steps" in session notes
+4. Read planning documents for context
+5. Continue from "Next Steps" in active task
 
 ---
 
 ## Quick Reference
 
 ### Current Sprint Focus
-**POI Interactive Management** - Adding point of interest markers with real-time ETAs
+**KML Route Import and Management** - Phase 4 implementation
 
-### Critical Files for Next Session
-- `/dev/active/poi-interactive-management/SESSION-NOTES.md`
-- `/dev/active/poi-interactive-management/poi-interactive-management-tasks.md`
-- `/dev/active/poi-interactive-management/RESEARCH-SUMMARY.md`
+### Critical Files for Current Task
+- `/dev/active/kml-route-import/kml-route-import-plan.md`
+- `/dev/active/kml-route-import/kml-route-import-context.md`
+- `/dev/active/kml-route-import/kml-route-import-tasks.md`
 
 ### Most Important Commands
 ```bash
@@ -277,7 +279,7 @@ cd /home/brian/Projects/starlink-dashboard-dev
 docker compose up -d
 
 # Rebuild after changes
-docker compose build starlink-location
+docker compose build --no-cache starlink-location
 docker compose restart starlink-location
 
 # View logs
@@ -285,9 +287,21 @@ docker compose logs -f starlink-location
 
 # Test backend
 curl http://localhost:8000/health
+curl http://localhost:8000/api/routes
 curl http://localhost:8000/api/pois
+```
+
+### Current Feature Branch
+```bash
+# Verify you're on feature branch
+git branch --show-current
+# Should show: feature/kml-route-import
+
+# Pull latest from dev
+git fetch origin
+git rebase origin/dev
 ```
 
 ---
 
-**Status File Last Updated:** 2025-10-30
+**Status File Last Updated:** 2025-10-31
