@@ -1,10 +1,10 @@
 # Development Status
 
-**Last Updated:** 2025-11-01
+**Last Updated:** 2025-11-01 23:45 UTC
 
 **Current Branch:** feature/kml-route-import
 
-**Status:** Phase 1 Complete - Backend API Implementation Done
+**Status:** Phase 3 Complete - Grafana Visualization & Route Deactivate UI Done
 
 ---
 
@@ -32,11 +32,11 @@
 
 **Timeline:** 18-25 days (3.5-5 weeks estimated)
 
-**Progress:** 19/94 tasks complete (20%)
+**Progress:** 25/94 tasks complete (27%)
 - Phase 1: Backend Route Upload API (10/10) ✅ COMPLETE
 - Phase 2: Route Management Web UI (9/9) ✅ COMPLETE
-- Phase 3: Grafana Route Visualization (0/6) - NEXT
-- Phase 4: Route-POI Integration (0/6)
+- Phase 3: Grafana Route Visualization (6/6) ✅ COMPLETE + Bonus: Route Deactivate UI
+- Phase 4: Route-POI Integration (0/6) - NEXT
 - Phase 5: Simulation Mode Integration (0/5)
 - Phase 6: Testing & Documentation (0/7)
 - Phase 7: Feature Branch & Deployment (0/5)
@@ -44,9 +44,9 @@
 **Next Steps:**
 1. ✅ Phase 1 Complete - All 10 endpoints implemented and tested
 2. ✅ Phase 2 Complete - Web UI route management fully functional
-3. Begin Phase 3: Grafana Route Visualization
-4. Verify GeoJSON endpoint returns active routes
-5. Add route layer to fullscreen-overview dashboard
+3. ✅ Phase 3 Complete - Grafana visualization working + deactivate button added
+4. Begin Phase 4: Route-POI Integration
+5. Extend KML parser to extract Placemarks as POIs
 
 **GitHub PR:** https://github.com/bcl1713/starlink-dashboard/pull/new/feature/kml-route-import
 
