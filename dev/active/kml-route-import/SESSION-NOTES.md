@@ -1,5 +1,104 @@
 # KML Route Import - Session Notes
 
+## Session 11
+
+**Date:** 2025-11-02 (Session 11)
+**Session Focus:** Phase 5 Planning & Documentation - Simulation Mode Route Following
+**Status:** ✅ Complete - Phase 5 documentation created, branch restructured
+**Branch:** feature/kml-route-import (merged dev into it)
+**Context Used:** ~80k tokens / 200k budget
+
+### Session 11 Accomplishments
+
+**Merge & Cleanup:**
+- ✅ Merged `feature/kml-route-import` into dev branch
+- ✅ Dev branch now has all Phase 1-4 code
+- ✅ Rebased `feature/kml-route-import` on top of merged dev
+- ✅ Deleted temporary Phase 5 task folders (created in wrong location)
+
+**Phase 5 Documentation Created:**
+- ✅ PHASE-5-README.md - Quick overview and getting started guide
+- ✅ PHASE-5-PLAN.md - Detailed implementation plan with 5 sub-phases (7-8 hours total)
+- ✅ PHASE-5-CONTEXT.md - Technical context and integration points
+- ✅ PHASE-5-TASKS.md - Complete task checklist with success criteria
+
+**Documentation Structure:**
+All Phase 5 files stored in `dev/active/kml-route-import/` alongside other phase documentation:
+- Phases 1-4: Already in dev (merged from feature/kml-route-import)
+- Phase 5: New documentation files, ready to implement
+- Test routes: All 6 Leg KML files available in same directory
+
+### Phase 5 Overview
+
+**What Phase 5 Does:**
+When simulation mode is active AND a route is active, the simulated position follows the route's waypoints with:
+- Real-time progress metrics (starlink_route_progress_percent)
+- Configurable completion behavior (loop/stop/reverse)
+- Full backward compatibility (works with or without active route)
+
+**Phase 5 Breakdown:**
+1. **5.1** Review route following (1-2h) - Understand existing RouteFollower and SimulationCoordinator
+2. **5.2** Integrate with simulator (2-3h) - Connect SimulationCoordinator to active route
+3. **5.3** Progress metrics (1h) - Expose route progress to Prometheus
+4. **5.4** Completion behavior (1h) - Configurable end-of-route handling
+5. **5.5** Integration testing (2h) - Test all 6 routes, verify backward compatibility
+
+**Estimated Total:** 7-8 hours across 1-2 development sessions
+
+### Branch Status
+
+**feature/kml-route-import branch:**
+- ✅ Merged latest from dev (has all Phase 1-4 code)
+- ✅ Rebased on dev (clean history)
+- ✅ Phase 5 documentation added
+- ✅ Ready to begin Phase 5 implementation
+
+**dev branch:**
+- ✅ Now contains all Phase 1-4 completed code
+- ✅ All 6 test routes available
+- ✅ Ready for production (can be pulled to main)
+- ✅ Phase 5 work will continue on feature/kml-route-import branch
+
+### Key Files for Phase 5
+
+**To Review (understand before coding):**
+- `backend/starlink-location/app/simulation/coordinator.py` (~200 lines) - Main simulator
+- `backend/starlink-location/app/simulation/kml_follower.py` (~300 lines) - Route following logic
+- `backend/starlink-location/main.py` (~100 lines) - Dependency injection setup
+
+**To Modify (Phase 5 implementation):**
+- `backend/starlink-location/app/simulation/coordinator.py` - Add route checking and RouteFollower
+- `backend/starlink-location/app/core/metrics.py` - Add progress metrics
+- `backend/starlink-location/config.yaml` - Add completion behavior config
+- `backend/starlink-location/main.py` - Inject RouteManager into simulator
+
+**To Reference (no changes needed):**
+- `backend/starlink-location/app/services/route_manager.py` - Route data access
+- `backend/starlink-location/app/models/route.py` - Route data models
+
+### Next Steps for Phase 5.1
+
+1. **Read kml_follower.py:**
+   - Understand RouteFollower class API
+   - Check what methods are available
+   - See how it calculates position along route
+
+2. **Read coordinator.py:**
+   - Understand update() cycle
+   - Find where position is updated
+   - Identify metric update calls
+
+3. **Review main.py startup:**
+   - See how ETA service is injected (pattern to follow)
+   - Understand dependency injection setup
+
+4. **Document findings:**
+   - Create integration plan
+   - Note any edge cases
+   - Identify required parameter changes
+
+---
+
 ## Session 10
 
 **Date:** 2025-11-02 (Session 10)
