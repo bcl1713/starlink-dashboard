@@ -13,9 +13,8 @@ route:
   pattern: circular
 
   # Starting position (decimal degrees)
-  # Starting just west of IDL at equator
-  latitude_start: 0.0
-  longitude_start: 179.5
+  latitude_start: 70.0
+  longitude_start: 179.95
 
   # For circular route: radius in kilometers
   radius_km: 100.0
@@ -57,8 +56,8 @@ obstruction:
 # Position simulation configuration
 position:
   # Speed range (knots)
-  speed_min_knots: 300.0
-  speed_max_knots: 350.0
+  speed_min_knots: 1600.0
+  speed_max_knots: 1650.0
 
   # Altitude range (meters)
   altitude_min_meters: 100.0
