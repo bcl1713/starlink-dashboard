@@ -23,6 +23,12 @@ route:
   # ~60 km covers -179° to +179° at equator in ~60 seconds at 60 knots
   distance_km: 60.0
 
+  # KML route completion behavior when active route is being followed
+  # 'loop': Route restarts from beginning when completed (default)
+  # 'stop': Position stays at last waypoint when completed
+  # 'reverse': Route reverses direction when completed (alternates forward/backward)
+  completion_behavior: loop
+
 # Network metrics simulation configuration
 network:
   # Latency parameters (milliseconds)
