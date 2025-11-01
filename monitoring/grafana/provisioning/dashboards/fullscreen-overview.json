@@ -458,7 +458,32 @@
               "longitude": "longitude",
               "mode": "coords"
             },
-            "name": "Planned Route (KML)",
+            "name": "Planned Route (KML) - Western Hemisphere",
+            "tooltip": false,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "dark-orange"
+                },
+                "lineWidth": 2,
+                "opacity": 0.9
+              }
+            },
+            "filterByRefId": "H_EAST",
+            "filterData": {
+              "id": "byRefId",
+              "options": "H_EAST"
+            },
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Planned Route (KML) - Eastern Hemisphere",
             "tooltip": false,
             "type": "route"
           },
@@ -483,7 +508,32 @@
               "longitude": "longitude_history",
               "mode": "coords"
             },
-            "name": "Position History",
+            "name": "Position History - Western Hemisphere",
+            "tooltip": false,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "blue"
+                },
+                "lineWidth": 3,
+                "opacity": 0.7
+              }
+            },
+            "filterByRefId": "E_EAST",
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-E_EAST-F_EAST"
+            },
+            "location": {
+              "latitude": "latitude_history",
+              "longitude": "longitude_history",
+              "mode": "coords"
+            },
+            "name": "Position History - Eastern Hemisphere",
             "tooltip": false,
             "type": "route"
           },
@@ -675,10 +725,53 @@
           "refId": "H",
           "root_selector": "coordinates",
           "source": "url",
-          "url": "/api/route/coordinates",
+          "url": "/api/route/coordinates/west",
           "urlOptions": {
             "params": []
           }
+        },
+        {
+          "cacheDurationSeconds": 5,
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "format": "table",
+          "parser": "json",
+          "refId": "H_EAST",
+          "root_selector": "coordinates",
+          "source": "url",
+          "url": "/api/route/coordinates/east",
+          "urlOptions": {
+            "params": []
+          }
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_dish_latitude_degrees",
+          "instant": false,
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "latitude_history",
+          "range": true,
+          "refId": "E_EAST"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_dish_longitude_degrees",
+          "instant": false,
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "longitude_history",
+          "range": true,
+          "refId": "F_EAST"
         }
       ],
       "title": "Current Position",
@@ -698,6 +791,17 @@
           "filter": {
             "id": "byRefId",
             "options": "/^(?:E|F)$/"
+          },
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "inner"
+          }
+        },
+        {
+          "filter": {
+            "id": "byRefId",
+            "options": "/^(?:E_EAST|F_EAST)$/"
           },
           "id": "joinByField",
           "options": {
@@ -1428,5 +1532,5 @@
   "timezone": "utc",
   "title": "Fullscreen Overview",
   "uid": "starlink-fullscreen",
-  "version": 14
+  "version": 15
 }

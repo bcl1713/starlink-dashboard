@@ -100,27 +100,18 @@ async def get_route_geojson(
     return feature_collection
 
 
-@router.get("/route/coordinates", response_model=dict, summary="Get route coordinates as tabular data")
-async def get_route_coordinates(
-    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+def _get_route_coordinates_filtered(
+    route_id: Optional[str], hemisphere: Optional[str] = None
 ) -> dict[str, Any]:
     """
-    Get active route coordinates in tabular format for Grafana geomap route layer.
+    Helper function to get route coordinates, optionally filtered by hemisphere.
 
-    This endpoint returns route data in a tabular format that Grafana can directly
-    consume for route layer visualization. Unlike the GeoJSON endpoint, this returns
-    a flat array with explicit latitude/longitude fields, making it compatible with
-    Grafana's route layer location mapping.
-
-    Query Parameters:
-    - route_id: Use specific route ID instead of active route
+    Args:
+        route_id: Route ID or None for active route
+        hemisphere: "west" (lon < 0), "east" (lon >= 0), or None for all
 
     Returns:
-    - JSON object with:
-      - coordinates: Array of coordinate objects with lat/lon/sequence/altitude
-      - total: Total number of coordinates
-      - route_id: Route identifier
-      - route_name: Route name
+        Dictionary with coordinates, total, route_id, route_name
     """
     if not _route_manager:
         return {
@@ -149,6 +140,12 @@ async def get_route_coordinates(
     # Convert route points to tabular format
     coordinates = []
     for point in route.points:
+        # Apply hemisphere filtering if specified
+        if hemisphere == "west" and point.longitude >= 0:
+            continue
+        if hemisphere == "east" and point.longitude < 0:
+            continue
+
         coordinates.append({
             "latitude": point.latitude,
             "longitude": point.longitude,
@@ -165,6 +162,71 @@ async def get_route_coordinates(
         "route_id": route_id_str,
         "route_name": route.metadata.name,
     }
+
+
+@router.get("/route/coordinates", response_model=dict, summary="Get route coordinates as tabular data")
+async def get_route_coordinates(
+    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+) -> dict[str, Any]:
+    """
+    Get active route coordinates in tabular format for Grafana geomap route layer.
+
+    This endpoint returns route data in a tabular format that Grafana can directly
+    consume for route layer visualization. Unlike the GeoJSON endpoint, this returns
+    a flat array with explicit latitude/longitude fields, making it compatible with
+    Grafana's route layer location mapping.
+
+    Query Parameters:
+    - route_id: Use specific route ID instead of active route
+
+    Returns:
+    - JSON object with:
+      - coordinates: Array of coordinate objects with lat/lon/sequence/altitude
+      - total: Total number of coordinates
+      - route_id: Route identifier
+      - route_name: Route name
+    """
+    return _get_route_coordinates_filtered(route_id, hemisphere=None)
+
+
+@router.get("/route/coordinates/west", response_model=dict, summary="Get route coordinates in western hemisphere (IDL-safe)")
+async def get_route_coordinates_west(
+    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+) -> dict[str, Any]:
+    """
+    Get active route coordinates in western hemisphere (longitude < 0) for Grafana geomap.
+
+    This endpoint is designed to handle International Date Line (IDL) crossings by splitting
+    routes into hemisphere-specific segments. Use in combination with the /east endpoint
+    for routes that cross the IDL.
+
+    Query Parameters:
+    - route_id: Use specific route ID instead of active route
+
+    Returns:
+    - JSON object with coordinates in western hemisphere only (lon < 0)
+    """
+    return _get_route_coordinates_filtered(route_id, hemisphere="west")
+
+
+@router.get("/route/coordinates/east", response_model=dict, summary="Get route coordinates in eastern hemisphere (IDL-safe)")
+async def get_route_coordinates_east(
+    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+) -> dict[str, Any]:
+    """
+    Get active route coordinates in eastern hemisphere (longitude >= 0) for Grafana geomap.
+
+    This endpoint is designed to handle International Date Line (IDL) crossings by splitting
+    routes into hemisphere-specific segments. Use in combination with the /west endpoint
+    for routes that cross the IDL.
+
+    Query Parameters:
+    - route_id: Use specific route ID instead of active route
+
+    Returns:
+    - JSON object with coordinates in eastern hemisphere only (lon >= 0)
+    """
+    return _get_route_coordinates_filtered(route_id, hemisphere="east")
 
 
 @router.get("/route.json", response_model=dict, summary="Get route as JSON")
