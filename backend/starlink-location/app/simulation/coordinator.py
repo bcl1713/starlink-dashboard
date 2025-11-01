@@ -1,5 +1,6 @@
 """Simulation coordinator for orchestrating all simulators."""
 
+import logging
 import time
 from datetime import datetime
 from typing import Optional
@@ -13,6 +14,9 @@ from app.services.speed_tracker import SpeedTracker
 from app.simulation.network import NetworkSimulator
 from app.simulation.obstructions import ObstructionSimulator
 from app.simulation.position import PositionSimulator
+from app.simulation.kml_follower import KMLRouteFollower
+
+logger = logging.getLogger(__name__)
 
 
 class SimulationCoordinator:
@@ -46,6 +50,10 @@ class SimulationCoordinator:
         # Last known good state for graceful degradation
         self._last_valid_telemetry: Optional[TelemetryData] = None
 
+        # Route Manager for KML route integration (Phase 5 feature)
+        self.route_manager = None
+        self._previous_active_route_id = None  # Track route changes
+
         # Get initial telemetry
         self._last_valid_telemetry = self._generate_telemetry()
 
@@ -59,6 +67,9 @@ class SimulationCoordinator:
             TelemetryData with current simulated metrics
         """
         try:
+            # Check if route has changed (for KML route following)
+            self._update_route_following()
+
             telemetry = self._generate_telemetry()
             self._last_valid_telemetry = telemetry
             return telemetry
@@ -76,6 +87,35 @@ class SimulationCoordinator:
             else:
                 # Re-raise if no fallback available
                 raise
+
+    def _update_route_following(self) -> None:
+        """
+        Check for active route and update position simulator accordingly.
+
+        This is called each update cycle to check if the active route has changed.
+        """
+        if not self.route_manager:
+            return
+
+        active_route = self.route_manager.get_active_route()
+        current_route_id = active_route.metadata.file_path if active_route else None
+
+        # Check if route has changed
+        if current_route_id != self._previous_active_route_id:
+            if active_route:
+                # New route activated
+                logger.info(f"Route activated in simulator: {active_route.metadata.name}")
+                follower = KMLRouteFollower(active_route)
+                completion_behavior = getattr(
+                    self.config, "route_completion_behavior", "loop"
+                )
+                self.position_sim.set_route_follower(follower, completion_behavior)
+                self._previous_active_route_id = current_route_id
+            else:
+                # Route deactivated
+                logger.info("Route deactivated in simulator")
+                self.position_sim.set_route_follower(None)
+                self._previous_active_route_id = None
 
     def _generate_telemetry(self) -> TelemetryData:
         """
@@ -206,3 +246,15 @@ class SimulationCoordinator:
         # Reset start time
         self.start_time = time.time()
         self._last_valid_telemetry = self._generate_telemetry()
+
+    def set_route_manager(self, manager) -> None:
+        """
+        Set the RouteManager instance for KML route following.
+
+        Args:
+            manager: RouteManager instance for accessing active routes
+        """
+        self.route_manager = manager
+        logger.info("RouteManager injected into SimulationCoordinator")
+        # Update route following if manager is set and route is active
+        self._update_route_following()

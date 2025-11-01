@@ -1,14 +1,17 @@
 """Position simulator for realistic movement along a route."""
 
+import logging
 import random
 import time
 from datetime import datetime
-from typing import Tuple
+from typing import Optional, Tuple
 
 from app.models.config import PositionConfig, RouteConfig
 from app.models.telemetry import PositionData
 from app.services.heading_tracker import HeadingTracker
 from app.simulation.route import create_route
+
+logger = logging.getLogger(__name__)
 
 
 class PositionSimulator:
@@ -55,12 +58,75 @@ class PositionSimulator:
             max_age_seconds=30.0
         )
 
+        # Route following support (Phase 5 feature)
+        self.route_follower = None
+        self.route_completion_behavior = "loop"  # loop, stop, or reverse
+        self._previous_route_name = None  # Track route changes
+
     def update(self) -> PositionData:
         """
         Update position simulator and return current position.
 
         Returns:
             PositionData with current coordinates and movement info
+        """
+        # Check if we should follow a KML route
+        if self.route_follower:
+            return self._update_with_route_following()
+        else:
+            return self._update_with_default_route()
+
+    def _update_with_route_following(self) -> PositionData:
+        """
+        Update position by following a KML route.
+
+        Returns:
+            PositionData following the KML route
+        """
+        # Update progress (speed-based movement)
+        self._update_progress()
+
+        # Get position from KML route follower
+        position_dict = self.route_follower.get_position(self.progress)
+
+        # Extract position data
+        lat = position_dict["latitude"]
+        lon = position_dict["longitude"]
+        alt = position_dict["altitude"] or self.current_altitude  # Fallback if no altitude
+        heading = position_dict["heading"]
+
+        # Handle route completion behavior
+        if self.progress >= 1.0:
+            if self.route_completion_behavior == "loop":
+                logger.info(
+                    f"Route loop completed, restarting: {self.route_follower.get_route_name()}"
+                )
+                self.progress = 0.0
+            elif self.route_completion_behavior == "stop":
+                logger.info(
+                    f"Route completed, stopping: {self.route_follower.get_route_name()}"
+                )
+                self.progress = 0.999999  # Stay near end, just before completion
+            elif self.route_completion_behavior == "reverse":
+                logger.info(
+                    f"Route completed, reversing: {self.route_follower.get_route_name()}"
+                )
+                self.progress = 0.0  # For now, same as loop (reverse implementation in Phase 5.4)
+
+        return PositionData(
+            latitude=lat,
+            longitude=lon,
+            altitude=alt,
+            speed=self.current_speed,
+            heading=heading  # Use calculated heading from route
+        )
+
+    def _update_with_default_route(self) -> PositionData:
+        """
+        Update position using default simulated route (original behavior).
+
+        Returns:
+            PositionData with default simulated movement
         """
         # Update progress (speed-based movement)
         # Convert knots to km/h: 1 knot = 1.852 km/h
@@ -173,6 +239,27 @@ class PositionSimulator:
         """
         self.progress = progress % 1.0
 
+    def set_route_follower(self, follower, completion_behavior: str = "loop") -> None:
+        """
+        Set a KML route follower for this simulator.
+
+        Args:
+            follower: KMLRouteFollower instance or None to disable
+            completion_behavior: How to handle route completion ("loop", "stop", or "reverse")
+        """
+        if follower is None:
+            logger.info("Route following disabled")
+            self.route_follower = None
+        else:
+            logger.info(
+                f"Route following enabled for: {follower.get_route_name()}, "
+                f"completion_behavior: {completion_behavior}"
+            )
+            self.route_follower = follower
+            self.route_completion_behavior = completion_behavior
+            self.progress = 0.0  # Reset progress when new route set
+            self._previous_route_name = follower.get_route_name()
+
     def reset(self) -> None:
         """Reset simulator to initial state."""
         self.progress = 0.0
@@ -183,3 +270,5 @@ class PositionSimulator:
         ) / 2.0
         self.last_update_time = time.time()
         self.heading_tracker.reset()
+        if self.route_follower:
+            self.route_follower.reset()
