@@ -175,6 +175,7 @@ class ETACalculator:
 
             metrics[poi.id] = {
                 "poi_name": poi.name,
+                "poi_category": poi.category or "",  # Use empty string for null categories
                 "distance_meters": distance,
                 "eta_seconds": eta,
                 "passed": passed,

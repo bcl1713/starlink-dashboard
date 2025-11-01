@@ -133,6 +133,7 @@ async def get_pois_with_etas(
     longitude: Optional[str] = Query(None, description="Current longitude (decimal degrees)"),
     speed_knots: Optional[str] = Query(None, description="Current speed in knots"),
     status: Optional[str] = Query(None, description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)"),
+    category: Optional[str] = Query(None, description="Filter by POI category (comma-separated: departure,arrival,waypoint,alternate)"),
 ) -> POIETAListResponse:
     """
     Get all POIs with real-time ETA and distance data.
@@ -146,6 +147,7 @@ async def get_pois_with_etas(
     - longitude: Current longitude (optional, uses coordinator if available)
     - speed_knots: Current speed in knots (optional, uses coordinator if available)
     - status: Optional course status filter (comma-separated list of: on_course, slightly_off, off_track, behind)
+    - category: Optional POI category filter (comma-separated list of: departure, arrival, waypoint, alternate)
 
     Returns:
     - JSON object with list of POIs with ETA data and timestamp
@@ -199,6 +201,11 @@ async def get_pois_with_etas(
         if status:
             status_filter = set(s.strip() for s in status.split(",") if s.strip())
 
+        # Parse category filter if provided
+        category_filter = set()
+        if category:
+            category_filter = set(c.strip() for c in category.split(",") if c.strip())
+
         pois = poi_manager.list_pois(route_id=route_id)
 
         # Calculate ETA and distance for each POI
@@ -225,6 +232,12 @@ async def get_pois_with_etas(
             # Apply status filter if specified
             if status_filter and course_status not in status_filter:
                 continue
+
+            # Apply category filter if specified
+            # Include POIs with null category (manually created) always
+            if category_filter and poi.category:
+                if poi.category not in category_filter:
+                    continue
 
             pois_with_eta.append(
                 POIWithETA(

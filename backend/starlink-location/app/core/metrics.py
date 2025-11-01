@@ -230,14 +230,14 @@ starlink_thermal_events_total = Counter(
 starlink_eta_poi_seconds = Gauge(
     'starlink_eta_poi_seconds',
     'Estimated time of arrival to point of interest in seconds',
-    labelnames=['name'],
+    labelnames=['name', 'category'],
     registry=REGISTRY
 )
 
 starlink_distance_to_poi_meters = Gauge(
     'starlink_distance_to_poi_meters',
     'Distance to point of interest in meters',
-    labelnames=['name'],
+    labelnames=['name', 'category'],
     registry=REGISTRY
 )
 
@@ -369,13 +369,14 @@ def update_metrics_from_telemetry(telemetry, config=None):
         # Update Prometheus gauges with ETA data
         for poi_id, metrics_data in eta_metrics.items():
             poi_name = metrics_data.get("poi_name", "unknown")
+            poi_category = metrics_data.get("poi_category", "")
             eta_seconds = metrics_data.get("eta_seconds", -1)
             distance_meters = metrics_data.get("distance_meters", 0)
 
             # Only set valid ETA values (skip -1 which means no speed)
             if eta_seconds >= 0:
-                starlink_eta_poi_seconds.labels(name=poi_name).set(eta_seconds)
-            starlink_distance_to_poi_meters.labels(name=poi_name).set(distance_meters)
+                starlink_eta_poi_seconds.labels(name=poi_name, category=poi_category).set(eta_seconds)
+            starlink_distance_to_poi_meters.labels(name=poi_name, category=poi_category).set(distance_meters)
 
     except Exception as e:
         logger.warning(f"Error updating POI/ETA metrics: {e}")

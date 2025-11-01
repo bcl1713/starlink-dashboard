@@ -634,18 +634,32 @@
         },
         {
           "cacheDurationSeconds": 1,
+          "columns": [],
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
             "uid": "infinity"
           },
           "filterExpression": "",
+          "filters": [],
           "format": "table",
+          "global_query_id": "",
           "parser": "json",
           "refId": "G",
           "root_selector": "pois",
           "source": "url",
-          "url": "/api/pois/etas",
+          "type": "json",
+          "url": "/api/pois/etas?category=${poi_category}",
           "urlOptions": {
+            "params": [
+              {
+                "name": "category",
+                "value": "${poi_category}"
+              }
+            ]
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
             "params": []
           }
         },
@@ -841,12 +855,15 @@
       "targets": [
         {
           "cacheDurationSeconds": 1,
+          "columns": [],
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
             "uid": "infinity"
           },
           "filterExpression": "",
+          "filters": [],
           "format": "table",
+          "global_query_id": "",
           "pagination": {
             "enabled": false
           },
@@ -855,7 +872,8 @@
           "resultFormat": "json",
           "root_selector": "pois",
           "source": "url",
-          "url": "/api/pois/etas",
+          "type": "json",
+          "url": "/api/pois/etas?category=${poi_category}",
           "urlOptions": {
             "params": [
               {
@@ -869,8 +887,16 @@
               {
                 "name": "speed_knots",
                 "value": "67"
+              },
+              {
+                "name": "category",
+                "value": "${poi_category}"
               }
             ]
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET"
           }
         }
       ],
@@ -1345,7 +1371,52 @@
   "schemaVersion": 42,
   "tags": ["starlink", "fullscreen", "overview"],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "text": "Departure & Arrival",
+          "value": "departure,arrival"
+        },
+        "description": "Filter POIs by category",
+        "includeAll": false,
+        "label": "POI Category",
+        "name": "poi_category",
+        "options": [
+          {
+            "selected": true,
+            "text": "Departure & Arrival",
+            "value": "departure,arrival"
+          },
+          {
+            "selected": false,
+            "text": "All POIs",
+            "value": ""
+          },
+          {
+            "selected": false,
+            "text": "Departure Only",
+            "value": "departure"
+          },
+          {
+            "selected": false,
+            "text": "Arrival Only",
+            "value": "arrival"
+          },
+          {
+            "selected": false,
+            "text": "Waypoints Only",
+            "value": "waypoint"
+          },
+          {
+            "selected": false,
+            "text": "Alternates Only",
+            "value": "alternate"
+          }
+        ],
+        "query": "Departure & Arrival : departure\\,arrival, All POIs :  , Departure Only : departure, Arrival Only : arrival, Waypoints Only : waypoint, Alternates Only : alternate",
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-30m",
@@ -1357,5 +1428,5 @@
   "timezone": "utc",
   "title": "Fullscreen Overview",
   "uid": "starlink-fullscreen",
-  "version": 18
+  "version": 13
 }

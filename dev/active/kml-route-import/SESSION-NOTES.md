@@ -1,5 +1,106 @@
 # KML Route Import - Session Notes
 
+## Session 7
+
+**Date:** 2025-11-02 (Session 7)
+**Session Focus:** POI Category Filtering - Grafana Dashboard Implementation
+**Status:** ✅ Complete – All filter options working (single and combined)
+**Branch:** feature/kml-route-import
+
+### Feature Implemented: POI Category Filtering
+
+Added Grafana dashboard variable and filtering for Points of Interest by category type:
+- **Departure & Arrival** (default) - Shows only departure and arrival points
+- **All POIs** - Shows all POI categories
+- **Single Category Options** - Departure Only, Arrival Only, Waypoints Only, Alternates Only
+
+### Backend Implementation
+
+**Files Modified:**
+1. `app/core/metrics.py` (lines 230-242, 369-379)
+   - Added `category` label to Prometheus POI metrics
+   - `starlink_eta_poi_seconds{name="...", category="..."}`
+   - `starlink_distance_to_poi_meters{name="...", category="..."}`
+
+2. `app/core/eta_service.py` (line 178)
+   - Updated `calculate_poi_metrics()` to return `poi_category` field
+   - Uses empty string for null categories (manually created POIs)
+
+3. `app/api/pois.py` (lines 129-240)
+   - Added `category` query parameter to `/api/pois/etas` endpoint
+   - Filtering logic: accepts comma-separated values, always includes manually created POIs
+
+### Grafana Dashboard Implementation
+
+**File:** `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
+
+1. **Custom Variable Added (lines 1348-1410)**
+   - Variable name: `poi_category`
+   - Type: `custom` with predefined dropdown options
+   - Critical fix: Used backslash escaping for comma-separated values
+     - `Departure & Arrival : departure\,arrival` (prevents split)
+   - Default: "Departure & Arrival"
+
+2. **Both POI Queries Updated**
+   - Query G (Map panel): Added category parameter
+   - Query A (POI Quick Reference): Added category parameter
+   - URL format: `/api/pois/etas?category=${poi_category}` (direct string interpolation)
+
+### Issues Encountered & Solutions
+
+**Issue 1: Dashboard Not Reloading**
+- Problem: Grafana cached old dashboard version
+- Solution: Incremented version 18→19→20→21, set `allowUiUpdates: false`
+- Restart required: `docker compose restart grafana`
+
+**Issue 2: Variable Dropdown Empty**
+- Problem: Grafana Custom variables need options in `query` field, not `options` array
+- Solution: Populated query field with `text : value` pairs separated by commas
+
+**Issue 3: Combined Filters Not Working**
+- Problem: Single filters worked, but "Departure & Arrival" and "All POIs" failed
+- Root cause: Grafana's Infinity datasource URL params don't handle comma-separated values correctly
+- Solution: Changed to direct URL string: `/api/pois/etas?category=${poi_category}`
+
+**Issue 4: Dropdown Splitting Comma Values**
+- Problem: "Departure & Arrival : departure,arrival" was split into multiple options
+- Solution: Escaped comma with backslash: `departure\,arrival` (double backslash in JSON)
+- Grafana 6.0+ supports escape sequences in custom variable query field
+
+### Testing Results
+
+**✅ API Validation:**
+- Single category: `?category=departure` → 1 POI
+- Combined: `?category=departure,arrival` → 2 POIs
+- Empty string: `?category=` → All POIs
+
+**✅ Grafana Dashboard:**
+- Dropdown displays 6 options correctly (no splitting)
+- Default selection: "Departure & Arrival"
+- Filter applied to both map and POI Quick Reference table
+- Variable interpolation working correctly
+- User manually applied changes and confirmed working
+
+### Files Modified This Session
+
+| File | Changes |
+|------|---------|
+| `app/core/metrics.py` | Added category label to POI metrics |
+| `app/core/eta_service.py` | Return poi_category in metrics data |
+| `app/api/pois.py` | Add category parameter and filtering |
+| `fullscreen-overview.json` | Add custom variable, update queries, increment version |
+| `dashboards.yml` | Set allowUiUpdates: false |
+
+### Key Lessons Learned
+
+1. **Grafana Custom Variables:** Require proper escaping of special characters in query field
+2. **Infinity Datasource:** Direct URL interpolation more reliable than URL parameter arrays
+3. **Dashboard Provisioning:** Version bumping and `allowUiUpdates: false` needed for reload
+4. **Comma Handling:** Must escape with backslash in Grafana variable query field
+5. **API Design:** Backend comma-separated support is good, frontend variable formatting critical
+
+---
+
 ## Session 6
 
 **Date:** 2025-11-02 (Session 6)

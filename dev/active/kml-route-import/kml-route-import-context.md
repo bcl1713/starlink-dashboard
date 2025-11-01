@@ -1,6 +1,6 @@
 # KML Route Import - Implementation Context
 
-**Last Updated:** 2025-11-02 - Phase 4 Complete, Phase 5 Prep
+**Last Updated:** 2025-11-02 - Phase 4 Complete, POI Filtering Feature Complete
 
 **Feature Branch:** `feature/kml-route-import`
 
@@ -18,6 +18,7 @@ This document provides quick-reference context for implementing the KML route im
 - **Phase 2 (Route UI)** ✅ Complete — web UI at `/ui/routes` supports upload, activation, download, delete, and detail modals.
 - **Phase 3 (Grafana Visualization)** ✅ Complete — dashboard displays the active route via `/api/route/coordinates`, with deactivate controls in UI.
 - **Phase 4 (Route-POI Integration)** ✅ Complete — route uploads can auto-import waypoint placemarks as POIs, API responses include import metrics, and UI surfaces route-scoped POIs with filters.
+- **POI Category Filtering** ✅ Complete — Grafana dashboard variable for filtering POIs by category (departure, arrival, waypoint, alternate). Backend API supports category parameter. Dashboard filters applied to both map and table panels.
 
 ---
 
