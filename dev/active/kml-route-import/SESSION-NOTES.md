@@ -1,10 +1,86 @@
 # KML Route Import - Session Notes
 
+## Session 6
+
+**Date:** 2025-11-02 (Session 6)
+**Session Focus:** Fix POI import sync issue – Singleton POIManager injection
+**Status:** ✅ Complete – Cache sync fixed, manual validation passed
+**Branch:** feature/kml-route-import
+
+### Problem Identified & Solved
+
+**Issue:** POIs imported during route upload weren't immediately visible across the API due to stale in-memory caches.
+
+**Root Cause:** Multiple independent POIManager instances were created at module import time in:
+- `app/api/routes.py` - wrote imported POIs here
+- `app/api/pois.py` - served stale cache from its own instance
+- `app/api/geojson.py` - used separate instance
+- `app/api/metrics_export.py` - had its own instance
+
+When routes.py wrote POIs, pois.py never reloaded its cache, so the write went unnoticed by API consumers.
+
+### Solution Implemented
+
+Implemented singleton pattern via dependency injection:
+
+1. **Modified API modules** (routes.py, pois.py, geojson.py, metrics_export.py)
+   - Removed module-level `POIManager()` instantiations
+   - Added setter functions to accept injected instance
+   - Initialize managers as `None` at module level
+
+2. **Updated main.py startup_event**
+   - Create single POIManager instance at line 94
+   - Inject via setter functions into all API modules (lines 107-129)
+   - Injection happens before background task starts
+
+3. **Updated conftest.py test fixtures**
+   - Fixed patched_poi_init to initialize `lock_file` before calling `_load_pois()`
+   - Added Dockerfile COPY for tests/ directory
+
+4. **Updated Dockerfile**
+   - Include tests/ directory in container image for integration testing
+
+### Validation Results
+
+**Manual Testing:** ✅ Passed
+- Uploaded KML route with `import_pois=true` flag
+- Returned `imported_poi_count: 2` successfully
+- Verified POIs immediately visible at `/api/pois?route_id=test_route`
+  - No manual reload needed
+  - 2 POIs returned with correct names, locations, and metadata
+- Route detail endpoint shows `poi_count: 2`
+- All POI associations properly maintained
+
+**Integration Test:** ✅ Passed
+- test_upload_route_with_poi_import validates end-to-end flow
+- POIs appear instantly in API responses
+
+### Files Modified (7 files)
+- `backend/starlink-location/app/api/routes.py` - Added setter, removed init
+- `backend/starlink-location/app/api/pois.py` - Added setter, removed init
+- `backend/starlink-location/app/api/geojson.py` - Added setter, removed init
+- `backend/starlink-location/app/api/metrics_export.py` - Added setter, removed init
+- `backend/starlink-location/main.py` - Added injection at startup
+- `backend/starlink-location/tests/conftest.py` - Fixed lock_file init
+- `backend/starlink-location/Dockerfile` - Added tests/ directory
+
+### Impact
+- POI import is now fully synchronized across all API endpoints
+- No performance impact - same file locking mechanism
+- Test compatibility maintained - monkey patching still works
+- Backward compatible - no API changes
+
+### Next Steps
+- Begin Phase 5: Simulation mode integration & route follower alignment
+- Plan ETA/telemetry regression coverage (Phase 6 prep)
+
+---
+
 ## Session 5
 
-**Date:** 2025-11-02 (Session 5)  
-**Session Focus:** Phase 4 wrap-up – POI auto-import + UI integration  
-**Status:** ✅ Complete – Route/POI bridge shipped  
+**Date:** 2025-11-02 (Session 5)
+**Session Focus:** Phase 4 wrap-up – POI auto-import + UI integration
+**Status:** ✅ Complete – Route/POI bridge shipped
 **Branch:** feature/kml-route-import
 
 ### Highlights
