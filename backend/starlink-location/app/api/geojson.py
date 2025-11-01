@@ -12,14 +12,19 @@ from app.services.route_manager import RouteManager
 
 # Initialize services
 config_manager = ConfigManager()
-route_manager = RouteManager()
 poi_manager = POIManager()
 
-# Start watching for route changes
-route_manager.start_watching()
+# Global route manager instance (set by main.py)
+_route_manager: Optional[RouteManager] = None
 
 # Create API router
 router = APIRouter(prefix="/api", tags=["geojson"])
+
+
+def set_route_manager(route_manager: RouteManager) -> None:
+    """Set the route manager instance (called by main.py during startup)."""
+    global _route_manager
+    _route_manager = route_manager
 
 
 @router.get("/route.geojson", response_model=dict, summary="Get route as GeoJSON")
@@ -57,9 +62,9 @@ async def get_route_geojson(
 
     # Get route (specified or active)
     if route_id:
-        route = route_manager.get_route(route_id)
+        route = _route_manager.get_route(route_id)
     else:
-        route = route_manager.get_active_route()
+        route = _route_manager.get_active_route()
 
     # Get POIs if requested
     if include_pois:
@@ -89,6 +94,73 @@ async def get_route_geojson(
     return feature_collection
 
 
+@router.get("/route/coordinates", response_model=dict, summary="Get route coordinates as tabular data")
+async def get_route_coordinates(
+    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+) -> dict[str, Any]:
+    """
+    Get active route coordinates in tabular format for Grafana geomap route layer.
+
+    This endpoint returns route data in a tabular format that Grafana can directly
+    consume for route layer visualization. Unlike the GeoJSON endpoint, this returns
+    a flat array with explicit latitude/longitude fields, making it compatible with
+    Grafana's route layer location mapping.
+
+    Query Parameters:
+    - route_id: Use specific route ID instead of active route
+
+    Returns:
+    - JSON object with:
+      - coordinates: Array of coordinate objects with lat/lon/sequence/altitude
+      - total: Total number of coordinates
+      - route_id: Route identifier
+      - route_name: Route name
+    """
+    if not _route_manager:
+        return {
+            "coordinates": [],
+            "total": 0,
+            "route_id": None,
+            "route_name": None,
+        }
+
+    route = None
+
+    # Get route (specified or active)
+    if route_id:
+        route = _route_manager.get_route(route_id)
+    else:
+        route = _route_manager.get_active_route()
+
+    if not route:
+        return {
+            "coordinates": [],
+            "total": 0,
+            "route_id": None,
+            "route_name": None,
+        }
+
+    # Convert route points to tabular format
+    coordinates = []
+    for point in route.points:
+        coordinates.append({
+            "latitude": point.latitude,
+            "longitude": point.longitude,
+            "altitude": point.altitude,
+            "sequence": point.sequence,
+        })
+
+    # Extract route ID from file path (e.g., "test_fix.kml" -> "test_fix")
+    route_id_str = route.metadata.file_path.split("/")[-1].split(".")[0]
+
+    return {
+        "coordinates": coordinates,
+        "total": len(coordinates),
+        "route_id": route_id_str,
+        "route_name": route.metadata.name,
+    }
+
+
 @router.get("/route.json", response_model=dict, summary="Get route as JSON")
 async def get_route_json(
     route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
@@ -113,14 +185,14 @@ async def get_route_json(
 
     # Get route (specified or active)
     if route_id:
-        route = route_manager.get_route(route_id)
+        route = _route_manager.get_route(route_id)
     else:
-        route = route_manager.get_active_route()
+        route = _route_manager.get_active_route()
 
     if not route:
         return {
             "error": "No active route",
-            "available_routes": list(route_manager.list_routes().keys()),
+            "available_routes": list(_route_manager.list_routes().keys()),
         }
 
     bounds = route.get_bounds()

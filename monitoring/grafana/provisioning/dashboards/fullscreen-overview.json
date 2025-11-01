@@ -454,7 +454,9 @@
               "options": "H"
             },
             "location": {
-              "mode": "geohash"
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
             },
             "name": "Planned Route (KML)",
             "tooltip": false,
@@ -654,11 +656,12 @@
             "uid": "infinity"
           },
           "filterExpression": "",
-          "format": "geojson",
+          "format": "table",
           "parser": "json",
           "refId": "H",
+          "root_selector": "coordinates",
           "source": "url",
-          "url": "/api/route.geojson?include_pois=false&include_position=false",
+          "url": "/api/route/coordinates",
           "urlOptions": {
             "params": []
           }

@@ -1216,13 +1216,13 @@ async def route_management_ui():
                                 <td>
                                     ${route.is_active ?
                                         '<button class="btn-secondary btn-small" onclick="deactivateRoute()">Deactivate</button>' :
-                                        '<button class="btn-secondary btn-small" onclick="activateRoute(\\'${route.id}\\')">Activate</button>'
+                                        `<button class="btn-secondary btn-small" onclick="activateRoute('${route.id}')">Activate</button>`
                                     }
                                 </td>
                                 <td class="route-actions">
-                                    <button class="btn-secondary btn-small" onclick="showDetails(\\'${route.id}\\')">Details</button>
-                                    <button class="btn-secondary btn-small" onclick="downloadRoute(\\'${route.id}\\')">Download</button>
-                                    <button class="btn-danger btn-small" onclick="confirmDeleteRoute(\\'${route.id}\\')">Delete</button>
+                                    <button class="btn-secondary btn-small" onclick="showDetails('${route.id}')">Details</button>
+                                    <button class="btn-secondary btn-small" onclick="downloadRoute('${route.id}')">Download</button>
+                                    <button class="btn-danger btn-small" onclick="confirmDeleteRoute('${route.id}')">Delete</button>
                                 </td>
                             </tr>
                         `).join('');
