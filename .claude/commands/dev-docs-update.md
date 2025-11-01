@@ -5,6 +5,15 @@ argument-hint: Optional - specific context or tasks to focus on (leave empty for
 
 We're approaching context limits. Please update the development documentation to ensure seamless continuation after context reset.
 
+## File Naming Standards
+
+When creating session files, use ALL CAPS with hyphens:
+- `SESSION-NOTES.md` (NOT `session_notes.md` or `SESSION_NOTES.md`)
+- `CONTEXT-HANDOFF.md` (NOT `context_handoff.md`)
+- `PHASE-N-SUMMARY.md` (where N is the phase number)
+
+Follow `.claude/NAMING-CONVENTIONS.md` for all file creation.
+
 ## Required Updates
 
 ### 1. Update Active Task Documentation
