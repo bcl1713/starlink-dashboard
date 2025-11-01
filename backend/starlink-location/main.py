@@ -101,6 +101,21 @@ async def startup_event():
                 exc_info=True
             )
 
+        # Inject POIManager singleton into all API modules
+        logger.info_json("Injecting POIManager into API modules")
+        try:
+            pois.set_poi_manager(poi_manager)
+            routes.set_poi_manager(poi_manager)
+            geojson.set_poi_manager(poi_manager)
+            # Note: metrics_export also gets POIManager but via route_manager injection below
+            logger.info_json("POIManager injected successfully")
+        except Exception as e:
+            logger.warning_json(
+                "Failed to inject POIManager",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
+
         # Initialize Route Manager for KML route handling
         logger.info_json("Initializing Route Manager")
         try:
@@ -108,6 +123,10 @@ async def startup_event():
             _route_manager.start_watching()
             geojson.set_route_manager(_route_manager)
             routes.set_route_manager(_route_manager)
+            # Inject into metrics_export as well
+            from app.api import metrics_export
+            metrics_export.set_route_manager(_route_manager)
+            metrics_export.set_poi_manager(poi_manager)
             logger.info_json("Route Manager initialized successfully")
         except Exception as e:
             logger.error_json(

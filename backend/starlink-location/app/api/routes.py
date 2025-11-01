@@ -24,7 +24,7 @@ logger = get_logger(__name__)
 
 # Global route manager instance (set by main.py)
 _route_manager: Optional[RouteManager] = None
-_poi_manager = POIManager()
+_poi_manager: Optional[POIManager] = None
 
 # Create API router
 router = APIRouter(prefix="/api/routes", tags=["routes"])
@@ -34,6 +34,12 @@ def set_route_manager(route_manager: RouteManager) -> None:
     """Set the route manager instance (called by main.py during startup)."""
     global _route_manager
     _route_manager = route_manager
+
+
+def set_poi_manager(poi_manager: POIManager) -> None:
+    """Set the POI manager instance (called by main.py during startup)."""
+    global _poi_manager
+    _poi_manager = poi_manager
 
 
 def _resolve_waypoint_metadata(

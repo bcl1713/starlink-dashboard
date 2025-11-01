@@ -12,13 +12,19 @@ from app.services.route_manager import RouteManager
 
 # Initialize services
 config_manager = ConfigManager()
-poi_manager = POIManager()
 
-# Global route manager instance (set by main.py)
+# Global manager instances (set by main.py)
+poi_manager: Optional[POIManager] = None
 _route_manager: Optional[RouteManager] = None
 
 # Create API router
 router = APIRouter(prefix="/api", tags=["geojson"])
+
+
+def set_poi_manager(manager: POIManager) -> None:
+    """Set the POI manager instance (called by main.py during startup)."""
+    global poi_manager
+    poi_manager = manager
 
 
 def set_route_manager(route_manager: RouteManager) -> None:

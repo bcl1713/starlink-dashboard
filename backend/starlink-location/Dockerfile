@@ -24,6 +24,7 @@ COPY --from=builder /root/.local /home/appuser/.local
 COPY main.py .
 COPY config.yaml .
 COPY app/ ./app/
+COPY tests/ ./tests/
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app

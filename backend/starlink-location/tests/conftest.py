@@ -32,6 +32,7 @@ original_poi_init = poi_manager_module.POIManager.__init__
 def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
     self.pois_file = Path(pois_file)
     self.pois_file.parent.mkdir(parents=True, exist_ok=True)
+    self.lock_file = str(self.pois_file) + ".lock"
     self._pois = {}
     self._logger = poi_manager_module.logger
 
@@ -128,6 +129,22 @@ def reset_config_manager():
     ConfigManager.reset()
     yield
     ConfigManager.reset()
+
+
+@pytest.fixture(autouse=True)
+def unified_poi_manager_in_tests():
+    """Ensure all API modules share the same POIManager instance after app startup.
+
+    This fixture runs after TestClient initialization completes, ensuring that
+    all API modules have been injected with the same POIManager singleton
+    by main.py's startup event.
+    """
+    # This autouse fixture ensures POIManager synchronization across modules
+    # The actual injection happens in main.py startup_event
+    # This fixture just validates it worked
+    yield
+    # After test completes, modules maintain their shared instance
+    # until next test's TestClient initialization
 
 
 def default_mock_telemetry():

@@ -18,14 +18,20 @@ from app.services.poi_manager import POIManager
 # Global coordinator reference for accessing telemetry
 _coordinator: Optional[object] = None
 
+# Global POI manager instance (set by main.py)
+poi_manager: Optional[POIManager] = None
+
 
 def set_coordinator(coordinator):
     """Set the simulation coordinator reference."""
     global _coordinator
     _coordinator = coordinator
 
-# Initialize POI manager
-poi_manager = POIManager()
+
+def set_poi_manager(manager: POIManager) -> None:
+    """Set the POI manager instance (called by main.py during startup)."""
+    global poi_manager
+    poi_manager = manager
 
 # Create API router
 router = APIRouter(prefix="/api/pois", tags=["pois"])
