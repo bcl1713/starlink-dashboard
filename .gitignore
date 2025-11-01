@@ -27,9 +27,6 @@ wheels/
 data/
 volumes/
 
-# Claude Hooks Cache
-.claude/tsc-cache
-
 # IDE
 .vscode/
 .idea/
