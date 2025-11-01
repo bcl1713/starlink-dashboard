@@ -242,6 +242,23 @@ starlink_distance_to_poi_meters = Gauge(
 )
 
 # ============================================================================
+# Route following metrics (Phase 5 - Simulation mode route following)
+# ============================================================================
+starlink_route_progress_percent = Gauge(
+    'starlink_route_progress_percent',
+    'Current progress along active KML route (0-100%)',
+    labelnames=['route_name'],
+    registry=REGISTRY
+)
+
+starlink_current_waypoint_index = Gauge(
+    'starlink_current_waypoint_index',
+    'Index of current waypoint in active route (0-indexed)',
+    labelnames=['route_name'],
+    registry=REGISTRY
+)
+
+# ============================================================================
 # Meta-metrics for monitoring the monitoring system
 # ============================================================================
 starlink_metrics_scrape_duration_seconds = Histogram(
@@ -417,6 +434,9 @@ def clear_telemetry_metrics():
     starlink_dish_uptime_seconds.set(math.nan)
     starlink_dish_thermal_throttle.set(math.nan)
     starlink_dish_outage_active.set(math.nan)
+
+    # Clear route metrics when no active route (handled separately by simulator)
+    # Route metrics are only cleared when route is deactivated
 
     # Clear custom position collector data
     global _current_position

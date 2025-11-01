@@ -15,6 +15,10 @@ from app.simulation.network import NetworkSimulator
 from app.simulation.obstructions import ObstructionSimulator
 from app.simulation.position import PositionSimulator
 from app.simulation.kml_follower import KMLRouteFollower
+from app.core.metrics import (
+    starlink_route_progress_percent,
+    starlink_current_waypoint_index,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +121,34 @@ class SimulationCoordinator:
                 self.position_sim.set_route_follower(None)
                 self._previous_active_route_id = None
 
+    def _update_route_metrics(self) -> None:
+        """
+        Update route progress metrics in Prometheus.
+
+        Called each cycle if route following is active.
+        """
+        if not self.position_sim.route_follower:
+            # No active route, clear metrics
+            return
+
+        # Get active route info
+        route_name = self.position_sim.route_follower.get_route_name()
+        progress = self.position_sim.progress
+        progress_percent = progress * 100.0
+
+        # Update metrics with route name label
+        starlink_route_progress_percent.labels(route_name=route_name).set(
+            progress_percent
+        )
+
+        # Get waypoint index from the route (based on progress and number of points)
+        total_points = self.position_sim.route_follower.get_point_count()
+        waypoint_index = min(int(progress * (total_points - 1)), total_points - 1)
+
+        starlink_current_waypoint_index.labels(route_name=route_name).set(
+            waypoint_index
+        )
+
     def _generate_telemetry(self) -> TelemetryData:
         """
         Generate complete telemetry data from all simulators.
@@ -157,6 +189,9 @@ class SimulationCoordinator:
 
         # Update position with calculated speed (instead of generated speed)
         position_data.speed = speed
+
+        # Update route progress metrics if route following is active
+        self._update_route_metrics()
 
         return TelemetryData(
             timestamp=datetime.now(),
