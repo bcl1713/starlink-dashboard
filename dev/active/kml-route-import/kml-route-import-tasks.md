@@ -1,6 +1,6 @@
 # KML Route Import - Task Checklist
 
-**Last Updated:** 2025-10-31
+**Last Updated:** 2025-11-01
 
 **Feature Branch:** `feature/kml-route-import`
 
@@ -8,146 +8,151 @@
 
 ## Phase 1: Backend Route Upload API
 
-### 1.1 Create Route API Module
-- [ ] Create `backend/starlink-location/app/api/routes.py`
-- [ ] Add FastAPI router with prefix `/api/routes`
-- [ ] Register router in `main.py`
-- [ ] Test router accessible at `/api/routes`
+### 1.1 Create Route API Module ✅
+- [x] Create `backend/starlink-location/app/api/routes.py`
+- [x] Add FastAPI router with prefix `/api/routes`
+- [x] Register router in `main.py`
+- [x] Test router accessible at `/api/routes`
 
-### 1.2 Implement Route Upload Endpoint
-- [ ] Add `POST /api/routes/upload` endpoint
-- [ ] Accept multipart/form-data with KML file
-- [ ] Validate file type (.kml extension)
-- [ ] Save file to `/data/routes/` directory
-- [ ] Handle filename conflicts (auto-rename if exists)
-- [ ] Trigger route manager reload
-- [ ] Return route metadata in response
-- [ ] Test with sample KML file
+### 1.2 Implement Route Upload Endpoint ✅
+- [x] Add `POST /api/routes/upload` endpoint
+- [x] Accept multipart/form-data with KML file
+- [x] Validate file type (.kml extension)
+- [x] Save file to `/data/routes/` directory
+- [x] Handle filename conflicts (auto-rename if exists)
+- [x] Trigger route manager reload
+- [x] Return route metadata in response
+- [x] Test with sample KML file
 
-### 1.3 Implement Route List Endpoint
-- [ ] Add `GET /api/routes` endpoint
-- [ ] Fetch routes from route_manager.list_routes()
-- [ ] Return RouteListResponse model
-- [ ] Support `active=true` query parameter
-- [ ] Test returns all routes
+### 1.3 Implement Route List Endpoint ✅
+- [x] Add `GET /api/routes` endpoint
+- [x] Fetch routes from route_manager.list_routes()
+- [x] Return RouteListResponse model
+- [x] Support `active=true` query parameter
+- [x] Test returns all routes
 
-### 1.4 Implement Route Detail Endpoint
-- [ ] Add `GET /api/routes/{route_id}` endpoint
-- [ ] Fetch from route_manager.get_route()
-- [ ] Include full route points
-- [ ] Calculate and include stats (distance, bounds)
-- [ ] Return 404 if not found
-- [ ] Test with valid and invalid route IDs
+### 1.4 Implement Route Detail Endpoint ✅
+- [x] Add `GET /api/routes/{route_id}` endpoint
+- [x] Fetch from route_manager.get_route()
+- [x] Include full route points
+- [x] Calculate and include stats (distance, bounds)
+- [x] Return 404 if not found
+- [x] Test with valid and invalid route IDs
 
-### 1.5 Implement Route Activation Endpoint
-- [ ] Add `POST /api/routes/{route_id}/activate` endpoint
-- [ ] Call route_manager.activate_route()
-- [ ] Return success response
-- [ ] Return 404 if route not found
-- [ ] Test activation switches active route
+### 1.5 Implement Route Activation Endpoint ✅
+- [x] Add `POST /api/routes/{route_id}/activate` endpoint
+- [x] Call route_manager.activate_route()
+- [x] Return success response
+- [x] Return 404 if route not found
+- [x] Test activation switches active route
 
-### 1.6 Implement Route Deactivation Endpoint
-- [ ] Add `POST /api/routes/deactivate` endpoint
-- [ ] Call route_manager.deactivate_route()
-- [ ] Return success response
-- [ ] Test clears active route
+### 1.6 Implement Route Deactivation Endpoint ✅
+- [x] Add `POST /api/routes/deactivate` endpoint
+- [x] Call route_manager.deactivate_route()
+- [x] Return success response
+- [x] Test clears active route
 
-### 1.7 Implement Route Deletion Endpoint
-- [ ] Add `DELETE /api/routes/{route_id}` endpoint
-- [ ] Delete KML file from `/data/routes/`
-- [ ] Delete associated POIs via poi_manager
-- [ ] Return 404 if not found
-- [ ] Return 204 No Content on success
-- [ ] Test deletes file and removes from cache
+### 1.7 Implement Route Deletion Endpoint ✅
+- [x] Add `DELETE /api/routes/{route_id}` endpoint
+- [x] Delete KML file from `/data/routes/`
+- [x] Delete associated POIs via poi_manager
+- [x] Return 404 if not found
+- [x] Return 204 No Content on success
+- [x] Test deletes file and removes from cache
 
-### 1.8 Implement Route Download Endpoint
-- [ ] Add `GET /api/routes/{route_id}/download` endpoint
-- [ ] Stream KML file as download
-- [ ] Set Content-Type: application/vnd.google-earth.kml+xml
-- [ ] Set Content-Disposition with filename
-- [ ] Return 404 if not found
-- [ ] Test downloads original KML file
+### 1.8 Implement Route Download Endpoint ✅
+- [x] Add `GET /api/routes/{route_id}/download` endpoint
+- [x] Stream KML file as download
+- [x] Set Content-Type: application/vnd.google-earth.kml+xml
+- [x] Set Content-Disposition with filename
+- [x] Return 404 if not found
+- [x] Test downloads original KML file
 
-### 1.9 Implement Route Statistics Endpoint
-- [ ] Add `GET /api/routes/{route_id}/stats` endpoint
-- [ ] Return distance, point_count, bounds
-- [ ] Calculate duration estimate (optional)
-- [ ] Test returns accurate statistics
+### 1.9 Implement Route Statistics Endpoint ✅
+- [x] Add `GET /api/routes/{route_id}/stats` endpoint
+- [x] Return distance, point_count, bounds
+- [x] Calculate duration estimate (optional)
+- [x] Test returns accurate statistics
 
-### 1.10 Integrate Route Manager with Main App
-- [ ] Add route_manager global instance in main.py
-- [ ] Initialize in startup_event()
-- [ ] Call start_watching()
+### 1.10 Integrate Route Manager with Main App ✅
+- [x] Add route_manager global instance in main.py
+- [x] Initialize in startup_event()
+- [x] Call start_watching()
 - [ ] Register with API modules
 - [ ] Test route manager starts on app startup
 
 ---
 
-## Phase 2: Route Management Web UI
+## Phase 2: Route Management Web UI ✅
 
-### 2.1 Create HTML Template
-- [ ] Create `backend/starlink-location/app/templates/` directory
-- [ ] Create `routes.html` template
-- [ ] Add Bootstrap or Tailwind CSS
-- [ ] Design layout: header, table, upload form, modals
-- [ ] Test template renders
+### 2.1 Create HTML Template ✅
+- [x] Created inline HTML in `app/api/ui.py` (no separate template directory needed)
+- [x] Added custom CSS matching POI UI design
+- [x] Designed layout: header, upload form, route table, modals
+- [x] Responsive design with responsive grid layout
 
-### 2.2 Create Route UI Endpoint
-- [ ] Extend `app/api/ui.py`
-- [ ] Add `GET /ui/routes` endpoint
-- [ ] Serve routes.html template
-- [ ] Test page accessible
+### 2.2 Create Route UI Endpoint ✅
+- [x] Extended `app/api/ui.py` with `GET /ui/routes` endpoint
+- [x] Returns inline HTML with embedded CSS/JS
+- [x] Page accessible at http://localhost:8000/ui/routes
+- [x] Following POI UI pattern for consistency
 
-### 2.3 Implement Route List Display
-- [ ] Add JavaScript to fetch `/api/routes`
-- [ ] Populate table with route data
-- [ ] Show: name, file, points, distance, status, actions
-- [ ] Highlight active route
-- [ ] Add manual refresh button
-- [ ] Test table displays routes
+### 2.3 Implement Route List Display ✅
+- [x] JavaScript fetches `/api/routes` on page load
+- [x] Populated table with: name, points, distance, status, actions
+- [x] Highlights active route with blue background
+- [x] Auto-refresh every 5 seconds
+- [x] Empty state when no routes
+- [x] Tested with sample KML file
 
-### 2.4 Implement File Upload Form
-- [ ] Add file input with accept=".kml"
-- [ ] Add upload button
-- [ ] Implement POST to `/api/routes/upload`
-- [ ] Show upload progress indicator
-- [ ] Display success/error messages
-- [ ] Refresh route list on success
-- [ ] Test file upload works
+### 2.4 Implement File Upload Form ✅
+- [x] File input with accept=".kml" validation
+- [x] Custom styled file button matching UI
+- [x] POST to `/api/routes/upload` with FormData
+- [x] Loading spinner during upload
+- [x] Success/error alert messages
+- [x] Auto-refresh on upload success
+- [x] Client-side file type validation
+- [x] Tested upload functionality
 
-### 2.5 Implement Route Activation
-- [ ] Add "Activate" button for inactive routes
-- [ ] Add "Active" badge for active route
-- [ ] Implement POST to `/api/routes/{id}/activate`
-- [ ] Update UI on activation
-- [ ] Test activation updates display
+### 2.5 Implement Route Activation ✅
+- [x] "Activate" button for inactive routes
+- [x] Green "ACTIVE" badge for active route
+- [x] POST to `/api/routes/{id}/activate`
+- [x] UI updates immediately after activation
+- [x] Table row highlights when active
+- [x] Tested activation updates display
 
-### 2.6 Implement Route Deletion
-- [ ] Add "Delete" button for each route
-- [ ] Show confirmation dialog
-- [ ] Display POI count in warning
-- [ ] Implement DELETE to `/api/routes/{id}`
-- [ ] Refresh list on success
-- [ ] Test deletion with confirmation
+### 2.6 Implement Route Deletion ✅
+- [x] "Delete" button with danger styling
+- [x] Confirmation modal with route name
+- [x] Warning about POI cascade deletion
+- [x] DELETE to `/api/routes/{id}`
+- [x] List refreshes after deletion
+- [x] Tested with confirmation dialog
 
-### 2.7 Implement Route Download
-- [ ] Add "Download" button for each route
-- [ ] Trigger GET to `/api/routes/{id}/download`
-- [ ] Test file downloads correctly
+### 2.7 Implement Route Download ✅
+- [x] "Download" button for each route
+- [x] Triggers GET to `/api/routes/{id}/download`
+- [x] Browser downloads KML file with proper name
+- [x] Tested file download
 
-### 2.8 Add Route Details View
-- [ ] Implement expandable row or modal
-- [ ] Display full route metadata
-- [ ] Show bounds, distance, point count
-- [ ] Optional: Add mini-map preview
-- [ ] Test details view
+### 2.8 Add Route Details View ✅
+- [x] Modal popup with route details
+- [x] Displays route ID, name, waypoints, distance, bounds, status
+- [x] Fetches full details from `/api/routes/{id}` and `/api/routes/{id}/stats`
+- [x] Shows bounds in latitude/longitude format
+- [x] Shows distance in km and meters
+- [x] Modal closes on outside click or close button
+- [x] Tested details modal
 
-### 2.9 Add Error Handling
-- [ ] Display upload errors clearly
-- [ ] Show loading states
-- [ ] Handle network errors
-- [ ] Validate file type client-side
-- [ ] Test all error scenarios
+### 2.9 Add Error Handling ✅
+- [x] Upload error messages from server
+- [x] Network error handling with try/catch
+- [x] Loading states with spinner animation
+- [x] File type validation (client-side)
+- [x] API error response parsing
+- [x] Tested all error scenarios
 
 ---
 
