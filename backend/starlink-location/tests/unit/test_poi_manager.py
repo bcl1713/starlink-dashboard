@@ -155,17 +155,15 @@ class TestPOIManager:
         poi_manager.create_poi(poi_create_route1)
         poi_manager.create_poi(poi_create_route2)
 
-        # Get POIs for route1 (should include global + route1 specific)
+        # Get POIs for route1 (should include only route1 specific)
         route1_pois = poi_manager.list_pois(route_id="route1")
-        assert len(route1_pois) == 2
-        assert any(p.name == "Global POI" for p in route1_pois)
-        assert any(p.name == "Route1 POI" for p in route1_pois)
+        assert len(route1_pois) == 1
+        assert route1_pois[0].name == "Route1 POI"
 
         # Get POIs for route2
         route2_pois = poi_manager.list_pois(route_id="route2")
-        assert len(route2_pois) == 2
-        assert any(p.name == "Global POI" for p in route2_pois)
-        assert any(p.name == "Route2 POI" for p in route2_pois)
+        assert len(route2_pois) == 1
+        assert route2_pois[0].name == "Route2 POI"
 
     def test_count_pois_by_route(self, poi_manager):
         """Test counting POIs by route."""
@@ -178,7 +176,7 @@ class TestPOIManager:
         poi_manager.create_poi(poi_create_route1)
 
         count = poi_manager.count_pois(route_id="route1")
-        assert count == 2
+        assert count == 1
 
     def test_delete_route_pois(self, poi_manager):
         """Test deleting all POIs for a route."""

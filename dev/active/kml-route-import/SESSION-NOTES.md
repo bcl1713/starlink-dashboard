@@ -1,5 +1,49 @@
 # KML Route Import - Session Notes
 
+## Session 5
+
+**Date:** 2025-11-02 (Session 5)  
+**Session Focus:** Phase 4 wrap-up – POI auto-import + UI integration  
+**Status:** ✅ Complete – Route/POI bridge shipped  
+**Branch:** feature/kml-route-import
+
+### Highlights
+- Added `import_pois` toggle to the route upload endpoint, converting KML waypoint placemarks into persisted POIs with route associations and returning import metrics in the API response.
+- Tightened `POIManager` filtering semantics so route-scoped queries exclude global entries and surfaced associated POI counts in route detail/delete flows.
+- Refreshed POI management UI with route selection on create/edit, per-route filtering, and badges that show whether a POI is global or linked to a route.
+- Extended route details modal and delete confirmation copy to surface POI counts; added new regression + integration tests covering waypoint parsing and POI import.
+
+### Testing / Notes
+- Added `test_parse_waypoints_from_kml` (unit) and API-level upload/import coverage; full suite not executed locally because `pytest` is unavailable in the current environment.
+
+### Next Focus
+1. Kick off Phase 5: plug the active route into the simulation follower and expose progress metrics.
+2. Plan ETA/telemetry regression coverage for the new POI import path (Phase 6 prep).
+3. Identify UI validation for bulk POI scenarios before moving into testing/documentation pass.
+
+---
+
+## Session 4
+
+**Date:** 2025-11-02 (Session 4)  
+**Session Focus:** Phase 4 - Parser Refactor & Primary Route Extraction  
+**Status:** ⏳ In Progress – Parser scaffolding & primary path heuristics implemented  
+**Branch:** feature/kml-route-import
+
+### Highlights
+- Added structured KML placemark parsing in `kml_parser.py` using intermediate dataclasses for coordinates, styles, and document order.
+- Classified waypoint vs. route segment placemarks and introduced heuristics to detect departure/arrival waypoints (parsed from route name or fallback to first/last waypoint).
+- Built primary path assembly that chains connected segments starting at the departure coordinate and halts at the arrival coordinate; falls back to legacy flattening if the main chain cannot be resolved.
+- Surfaced normalized `RouteWaypoint` data (with roles and styles) so Phase 4 POI integration can consume parser output without re-reading the XML.
+- Validated against `realworld.kml` (35 route points from WMSA → VVNB) using a temporary `pydantic` stub due to missing dependency in the sandbox.
+
+### Next Focus
+1. Feed parser-generated waypoints into POI creation workflow (Phase 4 integration task).
+2. Add regression tests for complex KML files (real-world sample + synthetic cases).
+3. Expand error handling/logging to surface parser decisions through the Routes API.
+
+---
+
 **Date:** 2025-11-01 (Session 3)
 **Session Focus:** Phase 3 - Grafana Route Visualization + Bug Fixes
 **Status:** ✅ Phase 3 Complete + Route Deactivate UI + Critical Grafana Data Fix

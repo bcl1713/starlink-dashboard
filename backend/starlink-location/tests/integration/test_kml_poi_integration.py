@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -209,10 +210,9 @@ class TestKMLPOIIntegration:
         # Get POIs for route
         route_pois = poi_manager_instance.list_pois(route_id=route_id)
 
-        # Should include both route-specific and global POIs
-        assert len(route_pois) == 2
-        assert any(p.name == "Route POI" for p in route_pois)
-        assert any(p.name == "Global POI" for p in route_pois)
+        # Only route-specific POIs should be returned when filtering by route
+        assert len(route_pois) == 1
+        assert route_pois[0].name == "Route POI"
 
     def test_geojson_serialization(self, sample_kml_file, poi_manager_instance):
         """Test that generated GeoJSON is JSON-serializable."""
@@ -264,6 +264,81 @@ class TestKMLPOIIntegration:
         # Validate structure
         assert feature["geometry"]["coordinates"][0] == pos["longitude"]
         assert feature["geometry"]["coordinates"][1] == pos["latitude"]
+
+    def test_upload_route_with_poi_import(self, test_client):
+        """Verify uploading a route with import_pois creates POIs from waypoints."""
+        routes_dir = Path("/tmp/test_data/routes")
+        for existing in routes_dir.glob("*.kml"):
+            existing.unlink()
+
+        pois_file = Path("/tmp/test_data/pois.json")
+        pois_file.write_text(json.dumps({"pois": {}, "routes": {}}, indent=2))
+
+        kml_content = textwrap.dedent(
+            """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <kml xmlns="http://www.opengis.net/kml/2.2">
+              <Document>
+                <name>KSEA-KLAX Demo</name>
+                <Placemark>
+                  <name>KSEA</name>
+                  <Point>
+                    <coordinates>-122.3088,47.4502,128</coordinates>
+                  </Point>
+                </Placemark>
+                <Placemark>
+                  <name>Leg One</name>
+                  <LineString>
+                    <coordinates>
+                      -122.3088,47.4502,128
+                      -121.0000,45.5000,150
+                    </coordinates>
+                  </LineString>
+                </Placemark>
+                <Placemark>
+                  <name>Leg Two</name>
+                  <LineString>
+                    <coordinates>
+                      -121.0000,45.5000,150
+                      -118.4085,33.9416,62
+                    </coordinates>
+                  </LineString>
+                </Placemark>
+                <Placemark>
+                  <name>KLAX</name>
+                  <Point>
+                    <coordinates>-118.4085,33.9416,62</coordinates>
+                  </Point>
+                </Placemark>
+              </Document>
+            </kml>
+            """
+        ).strip()
+
+        files = {"file": ("ksea-klax.kml", kml_content, "application/vnd.google-earth.kml+xml")}
+
+        response = test_client.post("/api/routes/upload?import_pois=true", files=files)
+        assert response.status_code == 201
+
+        payload = response.json()
+        assert payload["imported_poi_count"] == 2
+        assert payload["skipped_poi_count"] == 0
+
+        route_id = payload["id"]
+
+        poi_response = test_client.get(f"/api/pois?route_id={route_id}")
+        assert poi_response.status_code == 200
+
+        poi_payload = poi_response.json()
+        assert poi_payload["total"] == 2
+        names = {poi["name"] for poi in poi_payload["pois"]}
+        assert names == {"KSEA", "KLAX"}
+
+        detail_response = test_client.get(f"/api/routes/{route_id}")
+        assert detail_response.status_code == 200
+        detail_payload = detail_response.json()
+        assert detail_payload["poi_count"] == 2
+        assert len(detail_payload["waypoints"]) == 2
 
     def test_complete_workflow_simulation(self, sample_kml_file, poi_manager_instance, route_manager_instance):
         """Test complete workflow: KML load -> Route follow -> POI proximity."""

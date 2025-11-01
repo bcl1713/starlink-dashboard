@@ -96,6 +96,58 @@ async def poi_management_ui():
                 flex-direction: column;
             }
 
+            .help-text {
+                font-size: 0.85em;
+                color: #666;
+                margin-top: 6px;
+            }
+
+            .inline-checkbox {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .inline-checkbox input[type="checkbox"] {
+                width: auto;
+                margin-top: 2px;
+            }
+
+            .inline-checkbox label {
+                margin-bottom: 0;
+                font-weight: 600;
+                color: #333;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .help-text {
+                font-size: 0.85em;
+                color: #666;
+                margin-top: 6px;
+            }
+
+            .inline-checkbox {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .inline-checkbox input[type="checkbox"] {
+                width: auto;
+                margin-top: 2px;
+            }
+
+            .inline-checkbox label {
+                margin-bottom: 0;
+                font-weight: 600;
+                color: #333;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
             label {
                 font-weight: 600;
                 color: #333;
@@ -262,6 +314,21 @@ async def poi_management_ui():
                 flex: 0;
             }
 
+            .filter-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 15px;
+            }
+
+            .filter-row select {
+                padding: 6px 12px;
+                border: 1px solid #d9dde5;
+                border-radius: 6px;
+                background: white;
+                font-size: 0.95em;
+            }
+
             .badge {
                 display: inline-block;
                 background: #667eea;
@@ -271,6 +338,10 @@ async def poi_management_ui():
                 font-size: 0.75em;
                 font-weight: 600;
                 margin-top: 5px;
+            }
+
+            .route-badge {
+                background: #2dce89;
             }
 
             .empty-state {
@@ -369,6 +440,9 @@ async def poi_management_ui():
                                     <option value="city">City</option>
                                     <option value="landmark">Landmark</option>
                                     <option value="waypoint">Waypoint</option>
+                                    <option value="departure">Departure</option>
+                                    <option value="arrival">Arrival</option>
+                                    <option value="alternate">Alternate</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>
@@ -381,6 +455,14 @@ async def poi_management_ui():
                         <div class="form-group">
                             <label for="poiDescription">Description</label>
                             <textarea id="poiDescription" placeholder="Optional description..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="poiRoute">Route Association</label>
+                            <select id="poiRoute">
+                                <option value="">Global (no route)</option>
+                            </select>
+                            <p class="help-text">Imported route POIs only display when their route is active.</p>
                         </div>
 
                         <div class="form-group">
@@ -403,6 +485,13 @@ async def poi_management_ui():
                 <!-- POI List Section -->
                 <div class="section">
                     <h2>POIs (<span id="poiCount">0</span>)</h2>
+                    <div class="filter-row">
+                        <label for="poiRouteFilter">Filter</label>
+                        <select id="poiRouteFilter">
+                            <option value="all">All routes</option>
+                            <option value="global">Global only</option>
+                        </select>
+                    </div>
                     <div class="poi-list" id="poiList">
                         <div class="empty-state">
                             <p>No POIs yet</p>
@@ -419,6 +508,9 @@ async def poi_management_ui():
             let mapMarker = null;
             let currentEditId = null;
             let poiData = [];
+            let routeOptions = [];
+            const routeLookup = new Map();
+            let currentPOIRouteFilter = 'all';
 
             // Map initialization
             function initMap() {
@@ -464,19 +556,108 @@ async def poi_management_ui():
                     'city': 'city',
                     'landmark': 'landmark',
                     'waypoint': 'waypoint',
-                    'other': 'star'
+                    'other': 'star',
+                    'departure': 'airport',
+                    'arrival': 'flag',
+                    'alternate': 'star'
                 };
                 document.getElementById('poiIcon').value = iconMap[e.target.value] || 'star';
             });
 
+            async function loadRoutesForPoiForm(preserveSelection = true) {
+                try {
+                    const response = await fetch('/api/routes');
+                    if (!response.ok) throw new Error('Failed to load routes');
+
+                    const data = await response.json();
+                    routeOptions = data.routes || [];
+                    const routeSelect = document.getElementById('poiRoute');
+                    const filterSelect = document.getElementById('poiRouteFilter');
+                    const previousRouteValue = preserveSelection && routeSelect ? routeSelect.value : '';
+                    const previousRouteLabel = preserveSelection && routeSelect && previousRouteValue
+                        ? (Array.from(routeSelect.options).find(option => option.value === previousRouteValue)?.textContent || previousRouteValue)
+                        : '';
+                    const previousFilterValue = preserveSelection && filterSelect ? filterSelect.value : currentPOIRouteFilter;
+
+                    routeLookup.clear();
+                    for (const route of routeOptions) {
+                        routeLookup.set(route.id, route.name || route.id);
+                    }
+
+                    if (routeSelect) {
+                        const routeOptionsHtml = [
+                            '<option value="">Global (no route)</option>',
+                            ...routeOptions.map(route => `<option value="${route.id}">${route.name || route.id}</option>`)
+                        ];
+                        routeSelect.innerHTML = routeOptionsHtml.join('');
+                        if (previousRouteValue) {
+                            if (!routeLookup.has(previousRouteValue) && previousRouteLabel) {
+                                const fallbackOption = document.createElement('option');
+                                fallbackOption.value = previousRouteValue;
+                                fallbackOption.textContent = previousRouteLabel;
+                                routeSelect.appendChild(fallbackOption);
+                                routeLookup.set(previousRouteValue, previousRouteLabel);
+                            }
+                            if (routeLookup.has(previousRouteValue)) {
+                                routeSelect.value = previousRouteValue;
+                            } else {
+                                routeSelect.value = '';
+                            }
+                        } else {
+                            routeSelect.value = '';
+                        }
+                    }
+
+                    if (filterSelect) {
+                        const filterOptionsHtml = [
+                            '<option value="all">All routes</option>',
+                            '<option value="global">Global only</option>',
+                            ...routeOptions.map(route => `<option value="${route.id}">${route.name || route.id}</option>`)
+                        ];
+                        filterSelect.innerHTML = filterOptionsHtml.join('');
+                        if (
+                            previousFilterValue === 'all' ||
+                            previousFilterValue === 'global' ||
+                            routeLookup.has(previousFilterValue)
+                        ) {
+                            filterSelect.value = previousFilterValue;
+                        } else {
+                            filterSelect.value = 'all';
+                            currentPOIRouteFilter = 'all';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Failed to load routes for POI form:', error);
+                }
+            }
+
             // Load POIs
             async function loadPOIs() {
+                await loadRoutesForPoiForm(true);
                 try {
-                    const response = await fetch('/api/pois');
+                    let requestUrl = '/api/pois';
+                    let filterGlobals = false;
+
+                    if (currentPOIRouteFilter === 'global') {
+                        filterGlobals = true;
+                    } else if (currentPOIRouteFilter !== 'all') {
+                        requestUrl = `/api/pois?route_id=${encodeURIComponent(currentPOIRouteFilter)}`;
+                    }
+
+                    const response = await fetch(requestUrl);
                     if (!response.ok) throw new Error('Failed to load POIs');
 
                     const data = await response.json();
-                    poiData = data.pois || [];
+                    let pois = data.pois || [];
+
+                    if (filterGlobals) {
+                        pois = pois.filter(poi => !poi.route_id);
+                    }
+
+                    poiData = pois.map(poi => {
+                        const routeLabel = poi.route_id ? (routeLookup.get(poi.route_id) || poi.route_id) : 'Global';
+                        return { ...poi, routeLabel };
+                    });
 
                     document.getElementById('poiCount').textContent = poiData.length;
 
@@ -495,6 +676,7 @@ async def poi_management_ui():
                                     <h3>${poi.name}</h3>
                                     <div class="poi-details">
                                         <span class="badge">${poi.category}</span>
+                                        <span class="badge route-badge">${poi.routeLabel}</span>
                                         <div class="poi-coords">
                                             ${poi.latitude.toFixed(4)}, ${poi.longitude.toFixed(4)}
                                         </div>
@@ -524,6 +706,19 @@ async def poi_management_ui():
                 document.getElementById('poiCategory').value = poi.category;
                 document.getElementById('poiIcon').value = poi.icon;
                 document.getElementById('poiDescription').value = poi.description || '';
+                const routeSelect = document.getElementById('poiRoute');
+                if (poi.route_id) {
+                    if (!routeLookup.has(poi.route_id)) {
+                        const option = document.createElement('option');
+                        option.value = poi.route_id;
+                        option.textContent = poi.routeLabel || poi.route_id;
+                        routeSelect.appendChild(option);
+                        routeLookup.set(poi.route_id, option.textContent);
+                    }
+                    routeSelect.value = poi.route_id;
+                } else {
+                    routeSelect.value = '';
+                }
 
                 updateMapMarker(poi.latitude, poi.longitude);
 
@@ -561,16 +756,28 @@ async def poi_management_ui():
                 submitBtn.innerHTML = '<span class="loading"></span>';
 
                 try {
-                    const poiData = {
-                        name: document.getElementById('poiName').value,
-                        latitude: parseFloat(document.getElementById('poiLatitude').value),
-                        longitude: parseFloat(document.getElementById('poiLongitude').value),
-                        category: document.getElementById('poiCategory').value,
+                    const nameValue = document.getElementById('poiName').value.trim();
+                    const latitudeValue = parseFloat(document.getElementById('poiLatitude').value);
+                    const longitudeValue = parseFloat(document.getElementById('poiLongitude').value);
+                    const categoryValue = document.getElementById('poiCategory').value;
+                    const routeValue = document.getElementById('poiRoute').value;
+
+                    const poiPayload = {
+                        name: nameValue,
+                        latitude: latitudeValue,
+                        longitude: longitudeValue,
+                        category: categoryValue,
                         icon: document.getElementById('poiIcon').value,
-                        description: document.getElementById('poiDescription').value || null
+                        description: document.getElementById('poiDescription').value || null,
+                        route_id: routeValue ? routeValue : null
                     };
 
-                    if (!poiData.name || !poiData.latitude || !poiData.longitude || !poiData.category) {
+                    if (
+                        !poiPayload.name ||
+                        !Number.isFinite(poiPayload.latitude) ||
+                        !Number.isFinite(poiPayload.longitude) ||
+                        !poiPayload.category
+                    ) {
                         throw new Error('Please fill in all required fields');
                     }
 
@@ -580,7 +787,7 @@ async def poi_management_ui():
                     const response = await fetch(url, {
                         method,
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(poiData)
+                        body: JSON.stringify(poiPayload)
                     });
 
                     if (!response.ok) {
@@ -589,13 +796,14 @@ async def poi_management_ui():
                     }
 
                     const action = currentEditId ? 'updated' : 'created';
-                    showAlert(`POI "${poiData.name}" ${action} successfully`, 'success');
+                    showAlert(`POI "${poiPayload.name}" ${action} successfully`, 'success');
 
                     // Reset form
                     document.getElementById('poiForm').reset();
                     currentEditId = null;
                     document.getElementById('submitBtn').textContent = 'Create POI';
                     document.getElementById('deleteBtn').style.display = 'none';
+                    document.getElementById('poiRoute').value = '';
                     if (mapMarker) {
                         map.removeLayer(mapMarker);
                         mapMarker = null;
@@ -618,6 +826,11 @@ async def poi_management_ui():
                 }
             });
 
+            document.getElementById('poiRouteFilter').addEventListener('change', async (e) => {
+                currentPOIRouteFilter = e.target.value;
+                await loadPOIs();
+            });
+
             // Show alert
             function showAlert(message, type = 'info') {
                 const alertsDiv = document.getElementById('alerts');
@@ -630,9 +843,10 @@ async def poi_management_ui():
             }
 
             // Initialize on load
-            document.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('DOMContentLoaded', async () => {
                 initMap();
-                loadPOIs();
+                await loadRoutesForPoiForm(false);
+                await loadPOIs();
 
                 // Refresh POI list every 5 seconds
                 setInterval(loadPOIs, 5000);
@@ -1111,6 +1325,14 @@ async def route_management_ui():
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <div class="inline-checkbox">
+                                <input type="checkbox" id="importPoisCheckbox" checked>
+                                <label for="importPoisCheckbox">Import POIs from KML placemarks</label>
+                            </div>
+                            <p class="help-text">Automatically create route-specific POIs from Point placemarks during upload.</p>
+                        </div>
+
                         <div class="button-group">
                             <button type="submit" class="btn-primary" id="uploadBtn">Upload Route</button>
                             <button type="reset" class="btn-secondary">Clear</button>
@@ -1270,6 +1492,7 @@ async def route_management_ui():
                     return;
                 }
 
+                const importPois = document.getElementById('importPoisCheckbox').checked;
                 const uploadBtn = document.getElementById('uploadBtn');
                 const originalText = uploadBtn.textContent;
                 uploadBtn.disabled = true;
@@ -1279,7 +1502,9 @@ async def route_management_ui():
                     const formData = new FormData();
                     formData.append('file', file);
 
-                    const response = await fetch('/api/routes/upload', {
+                    const uploadUrl = importPois ? '/api/routes/upload?import_pois=true' : '/api/routes/upload';
+
+                    const response = await fetch(uploadUrl, {
                         method: 'POST',
                         body: formData
                     });
@@ -1290,7 +1515,14 @@ async def route_management_ui():
                     }
 
                     const result = await response.json();
-                    showAlert(`Route "${result.name || result.id}" uploaded successfully`, 'success');
+                    let successMessage = `Route "${result.name || result.id}" uploaded successfully.`;
+                    if (importPois && typeof result.imported_poi_count === 'number') {
+                        successMessage += ` Imported ${result.imported_poi_count} POI${result.imported_poi_count === 1 ? '' : 's'}.`;
+                        if (typeof result.skipped_poi_count === 'number' && result.skipped_poi_count > 0) {
+                            successMessage += ` Skipped ${result.skipped_poi_count} placemark${result.skipped_poi_count === 1 ? '' : 's'} without coordinates.`;
+                        }
+                    }
+                    showAlert(successMessage, 'success');
 
                     // Reset form
                     document.getElementById('uploadForm').reset();
@@ -1382,6 +1614,28 @@ async def route_management_ui():
                         `;
                     }
 
+                    const poiCount = route.poi_count || 0;
+                    const poiHtml = `
+                        <div class="detail-item">
+                            <div class="detail-label">Associated POIs</div>
+                            <div class="detail-value">${poiCount} ${poiCount === 1 ? 'POI' : 'POIs'}</div>
+                        </div>
+                    `;
+
+                    let waypointHtml = '';
+                    if (route.waypoints && route.waypoints.length) {
+                        const waypointPreview = route.waypoints
+                            .slice(0, 5)
+                            .map(wp => wp.name || `Waypoint ${wp.order + 1}`)
+                            .join(', ');
+                        waypointHtml = `
+                            <div class="detail-item">
+                                <div class="detail-label">Waypoints (${route.waypoints.length})</div>
+                                <div class="detail-value">${waypointPreview}${route.waypoints.length > 5 ? ' …' : ''}</div>
+                            </div>
+                        `;
+                    }
+
                     detailsBody.innerHTML = `
                         <div class="detail-item">
                             <div class="detail-label">Route ID</div>
@@ -1398,6 +1652,8 @@ async def route_management_ui():
                             </div>
                         ` : ''}
                         ${boundsHtml}
+                        ${poiHtml}
+                        ${waypointHtml}
                         <div class="detail-item">
                             <div class="detail-label">Status</div>
                             <div class="detail-value">${route.is_active ? '🟢 Active' : '⚪ Inactive'}</div>
@@ -1416,14 +1672,32 @@ async def route_management_ui():
             }
 
             // Confirm delete route
-            function confirmDeleteRoute(routeId) {
-                const route = routeData.find(r => r.id === routeId);
+            async function confirmDeleteRoute(routeId) {
+                const summary = routeData.find(r => r.id === routeId);
                 pendingDeleteId = routeId;
+
+                let routeName = summary ? (summary.name || summary.id) : routeId;
+                let poiCount = 0;
+
+                try {
+                    const response = await fetch(`/api/routes/${routeId}`);
+                    if (response.ok) {
+                        const detail = await response.json();
+                        routeName = detail.name || detail.id || routeName;
+                        poiCount = detail.poi_count || 0;
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch route details for deletion prompt:', error);
+                }
+
+                const poiWarning = poiCount > 0
+                    ? `<p style="margin-top: 15px; color: #d9534f;"><strong>⚠️ Warning:</strong> This will also delete ${poiCount} associated POI${poiCount === 1 ? '' : 's'}.</p>`
+                    : '<p style="margin-top: 15px;">No associated POIs detected for this route.</p>';
 
                 const confirmMessage = document.getElementById('confirmMessage');
                 confirmMessage.innerHTML = `
-                    <p>Are you sure you want to delete the route <strong>"${route.name || route.id}"</strong>?</p>
-                    <p style="margin-top: 15px; color: #d9534f;"><strong>⚠️ Warning:</strong> This will also delete all POIs associated with this route.</p>
+                    <p>Are you sure you want to delete the route <strong>"${routeName}"</strong>?</p>
+                    ${poiWarning}
                 `;
 
                 document.getElementById('confirmModal').classList.add('show');

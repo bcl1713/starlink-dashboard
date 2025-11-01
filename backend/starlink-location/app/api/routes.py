@@ -8,11 +8,14 @@ from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.core.logging import get_logger
+from app.models.poi import POICreate
 from app.models.route import (
+    ParsedRoute,
     RouteDetailResponse,
     RouteListResponse,
     RouteResponse,
     RouteStatsResponse,
+    RouteWaypoint,
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
@@ -31,6 +34,115 @@ def set_route_manager(route_manager: RouteManager) -> None:
     """Set the route manager instance (called by main.py during startup)."""
     global _route_manager
     _route_manager = route_manager
+
+
+def _resolve_waypoint_metadata(
+    waypoint: RouteWaypoint, fallback_index: int
+) -> tuple[str, str, str, Optional[str]]:
+    """
+    Map a RouteWaypoint role to POI category/icon and derive a safe name/description.
+
+    Args:
+        waypoint: Source waypoint data
+        fallback_index: Index used to build fallback name if missing
+
+    Returns:
+        Tuple of (name, category, icon, description)
+    """
+    role = (waypoint.role or "").lower()
+
+    category = "waypoint"
+    icon = "waypoint"
+
+    if role == "departure":
+        category = "departure"
+        icon = "airport"
+    elif role == "arrival":
+        category = "arrival"
+        icon = "flag"
+    elif role == "alternate":
+        category = "alternate"
+        icon = "star"
+
+    raw_name = (waypoint.name or "").strip()
+    if raw_name:
+        name = raw_name
+    else:
+        name = f"Waypoint {fallback_index}"
+
+    description_parts: list[str] = []
+
+    if waypoint.description:
+        waypoint_desc = waypoint.description.strip()
+        if waypoint_desc:
+            description_parts.append(waypoint_desc)
+
+    if role:
+        description_parts.append(f"Role: {role}")
+
+    description = " | ".join(description_parts) if description_parts else None
+
+    return name, category, icon, description
+
+
+def _import_waypoints_as_pois(route_id: str, parsed_route: ParsedRoute) -> tuple[int, int]:
+    """
+    Create POIs for the supplied route using its waypoint metadata.
+
+    Args:
+        route_id: Route identifier (filename stem)
+        parsed_route: ParsedRoute instance containing waypoint data
+
+    Returns:
+        Tuple of (created_count, skipped_count)
+    """
+    if not parsed_route.waypoints:
+        return 0, 0
+
+    created = 0
+    skipped = 0
+
+    # Remove any previously imported POIs for this route to avoid duplicates
+    try:
+        removed = _poi_manager.delete_route_pois(route_id)
+        if removed:
+            logger.info(f"Removed {removed} existing POIs prior to re-import for route {route_id}")
+    except Exception as exc:
+        logger.error(f"Failed to delete existing POIs for route {route_id}: {exc}")
+
+    for idx, waypoint in enumerate(parsed_route.waypoints, start=1):
+        try:
+            latitude = waypoint.latitude
+            longitude = waypoint.longitude
+
+            if latitude is None or longitude is None:
+                skipped += 1
+                continue
+
+            name, category, icon, description = _resolve_waypoint_metadata(waypoint, idx)
+
+            route_note = f"Imported from route {parsed_route.metadata.name}" if parsed_route.metadata.name else "Imported from uploaded KML"
+            if description:
+                description = f"{description} | {route_note}"
+            else:
+                description = route_note
+
+            poi = POICreate(
+                name=name,
+                latitude=latitude,
+                longitude=longitude,
+                icon=icon,
+                category=category,
+                description=description,
+                route_id=route_id,
+            )
+            _poi_manager.create_poi(poi)
+            created += 1
+        except Exception as exc:
+            logger.error(f"Failed to create POI for waypoint {waypoint.name or idx} on route {route_id}: {exc}")
+            skipped += 1
+
+    return created, skipped
 
 
 @router.get("", response_model=RouteListResponse, summary="List all routes")
@@ -108,6 +220,7 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
 
     distance_m = parsed_route.get_total_distance()
     bounds = parsed_route.get_bounds()
+    poi_count = _poi_manager.count_pois(route_id=route_id)
 
     return RouteDetailResponse(
         id=route_id,
@@ -123,6 +236,8 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
             "distance_km": distance_m / 1000,
             "bounds": bounds,
         },
+        poi_count=poi_count,
+        waypoints=parsed_route.waypoints,
     )
 
 
@@ -217,7 +332,13 @@ async def get_route_stats(route_id: str) -> RouteStatsResponse:
 
 
 @router.post("/upload", response_model=RouteResponse, status_code=status.HTTP_201_CREATED, summary="Upload KML route")
-async def upload_route(file: UploadFile = File(...)) -> RouteResponse:
+async def upload_route(
+    import_pois: bool = Query(
+        default=False,
+        description="Import POIs from waypoint placemarks in the uploaded KML",
+    ),
+    file: UploadFile = File(...),
+) -> RouteResponse:
     """
     Upload a new KML route file.
 
@@ -277,6 +398,17 @@ async def upload_route(file: UploadFile = File(...)) -> RouteResponse:
                 detail=f"Failed to parse KML file: {file.filename}",
             )
 
+        created_pois = skipped_pois = None
+
+        if import_pois:
+            created_pois, skipped_pois = _import_waypoints_as_pois(route_id, parsed_route)
+            logger.info(
+                "Imported %d POIs (skipped %d) from KML placemarks for route %s",
+                created_pois,
+                skipped_pois,
+                route_id,
+            )
+
         return RouteResponse(
             id=route_id,
             name=parsed_route.metadata.name,
@@ -284,6 +416,8 @@ async def upload_route(file: UploadFile = File(...)) -> RouteResponse:
             point_count=parsed_route.metadata.point_count,
             is_active=False,
             imported_at=parsed_route.metadata.imported_at,
+            imported_poi_count=created_pois,
+            skipped_poi_count=skipped_pois,
         )
 
     except HTTPException:

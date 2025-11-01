@@ -144,7 +144,7 @@ class POIManager:
             List of POI objects
         """
         if route_id:
-            return [poi for poi in self._pois.values() if poi.route_id == route_id or poi.route_id is None]
+            return [poi for poi in self._pois.values() if poi.route_id == route_id]
         return list(self._pois.values())
 
     def get_poi(self, poi_id: str) -> Optional[POI]:
@@ -268,7 +268,7 @@ class POIManager:
             Number of POIs
         """
         if route_id:
-            return len([poi for poi in self._pois.values() if poi.route_id == route_id or poi.route_id is None])
+            return len([poi for poi in self._pois.values() if poi.route_id == route_id])
         return len(self._pois)
 
     def delete_route_pois(self, route_id: str) -> int:

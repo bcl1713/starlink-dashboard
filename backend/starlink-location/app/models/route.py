@@ -19,6 +19,37 @@ class RoutePoint(BaseModel):
     model_config = {"json_schema_extra": {"example": {"latitude": 40.7128, "longitude": -74.0060, "altitude": 100, "sequence": 0}}}
 
 
+class RouteWaypoint(BaseModel):
+    """Represents a waypoint parsed from a KML Placemark."""
+
+    name: Optional[str] = Field(default=None, description="Waypoint name as defined in KML")
+    description: Optional[str] = Field(default=None, description="Waypoint description text")
+    style_url: Optional[str] = Field(default=None, description="Referenced style URL for icon/styling")
+    latitude: float = Field(..., description="Waypoint latitude in decimal degrees")
+    longitude: float = Field(..., description="Waypoint longitude in decimal degrees")
+    altitude: Optional[float] = Field(default=None, description="Waypoint altitude if provided")
+    order: int = Field(..., description="Document order index of this waypoint")
+    role: Optional[str] = Field(
+        default=None,
+        description="Semantic role (e.g., 'departure', 'arrival', 'waypoint', 'alternate')",
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "name": "WMSA",
+                "description": "Sultan Abdul Aziz Shah",
+                "style_url": "#destWaypointIcon",
+                "latitude": 3.132222,
+                "longitude": 101.55028,
+                "altitude": None,
+                "order": 42,
+                "role": "departure",
+            }
+        }
+    }
+
+
 class RouteMetadata(BaseModel):
     """Metadata about a parsed KML route."""
 
@@ -36,6 +67,10 @@ class ParsedRoute(BaseModel):
 
     metadata: RouteMetadata = Field(..., description="Route metadata")
     points: list[RoutePoint] = Field(..., description="Ordered list of route points")
+    waypoints: list[RouteWaypoint] = Field(
+        default_factory=list,
+        description="Optional waypoint placemarks associated with the route",
+    )
 
     def get_total_distance(self) -> float:
         """
@@ -104,6 +139,14 @@ class RouteResponse(BaseModel):
     point_count: int = Field(..., description="Number of points in route")
     is_active: bool = Field(default=False, description="Whether this is the active route")
     imported_at: datetime = Field(..., description="When route was imported")
+    imported_poi_count: Optional[int] = Field(
+        default=None,
+        description="Number of POIs imported from the KML upload (only set on upload response)",
+    )
+    skipped_poi_count: Optional[int] = Field(
+        default=None,
+        description="Number of waypoint placemarks skipped during POI import",
+    )
 
 
 class RouteListResponse(BaseModel):
@@ -125,6 +168,13 @@ class RouteDetailResponse(BaseModel):
     file_path: str = Field(..., description="Path to KML file")
     points: list[RoutePoint] = Field(..., description="All route points")
     statistics: dict = Field(..., description="Route statistics (distance, bounds)")
+    poi_count: int = Field(
+        default=0, description="Number of POIs currently associated with this route"
+    )
+    waypoints: list[RouteWaypoint] = Field(
+        default_factory=list,
+        description="Waypoint placemarks extracted from the KML (for POI import/reference)",
+    )
 
 
 class RouteStatsResponse(BaseModel):

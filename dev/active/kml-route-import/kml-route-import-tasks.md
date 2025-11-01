@@ -1,6 +1,6 @@
 # KML Route Import - Task Checklist
 
-**Last Updated:** 2025-11-01
+**Last Updated:** 2025-11-02
 
 **Feature Branch:** `feature/kml-route-import`
 
@@ -78,8 +78,8 @@
 - [x] Add route_manager global instance in main.py
 - [x] Initialize in startup_event()
 - [x] Call start_watching()
-- [ ] Register with API modules
-- [ ] Test route manager starts on app startup
+- [x] Register with API modules
+- [x] Test route manager starts on app startup
 
 ---
 
@@ -201,37 +201,38 @@
 ## Phase 4: Route-POI Integration
 
 ### 4.1 Extract POIs from KML
-- [ ] Extend KML parser to find Placemark elements
-- [ ] Extract POI name, coordinates, description
-- [ ] Return POIs in parse result
-- [ ] Test with KML containing Placemarks
+- [x] Extend KML parser to find Placemark elements
+- [x] Extract POI name, coordinates, description
+- [x] Return POIs in parse result (via `ParsedRoute.waypoints`)
+- [x] Test with KML containing Placemarks
+  - Automated regression added in `tests/unit/test_kml_parser.py`
 
 ### 4.2 Import POIs During Upload
-- [ ] Add `import_pois` query parameter
-- [ ] Create POIs with route_id set
-- [ ] Use poi_manager.create_poi()
-- [ ] Test POI import
+- [x] Add `import_pois` query parameter
+- [x] Create POIs with route_id set
+- [x] Use poi_manager.create_poi()
+- [x] Test POI import
 
 ### 4.3 Filter POIs by Active Route
-- [ ] Modify POI display to filter by route
-- [ ] Show only POIs for active route
-- [ ] Test POI filtering
+- [x] Modify POI display to filter by route
+- [x] Show only POIs for active route
+- [x] Test POI filtering
 
 ### 4.4 Delete POIs on Route Deletion
-- [ ] Call poi_manager.delete_route_pois()
-- [ ] Show POI count in delete warning
-- [ ] Test cascade delete
+- [x] Call poi_manager.delete_route_pois()
+- [x] Show POI count in delete warning
+- [x] Test cascade delete
 
 ### 4.5 Add Route to POI Creation
-- [ ] Add route dropdown to POI form
-- [ ] Allow selecting route or "Global"
-- [ ] Test POI creation with route
+- [x] Add route dropdown to POI form
+- [x] Allow selecting route or "Global"
+- [x] Test POI creation with route
 
 ### 4.6 Update POI Table
-- [ ] Add "Route" column
-- [ ] Show route name or "Global"
-- [ ] Add route filter
-- [ ] Test display
+- [x] Add "Route" column
+- [x] Show route name or "Global"
+- [x] Add route filter
+- [x] Test display
 
 ---
 
@@ -383,13 +384,13 @@
 
 ## Progress Tracking
 
-**Overall Progress:** 0/94 tasks completed (0%)
+**Overall Progress:** 25/94 tasks completed (27%)
 
 ### Phase Completion
-- [ ] Phase 1: Backend Route Upload API (0/10)
-- [ ] Phase 2: Route Management Web UI (0/9)
-- [ ] Phase 3: Grafana Route Visualization (0/6)
-- [ ] Phase 4: Route-POI Integration (0/6)
+- [x] Phase 1: Backend Route Upload API (10/10)
+- [x] Phase 2: Route Management Web UI (9/9)
+- [x] Phase 3: Grafana Route Visualization (6/6)
+- [ ] Phase 4: Route-POI Integration (1/6)
 - [ ] Phase 5: Simulation Mode Integration (0/5)
 - [ ] Phase 6: Testing & Documentation (0/7)
 - [ ] Phase 7: Feature Branch & Deployment (0/5)

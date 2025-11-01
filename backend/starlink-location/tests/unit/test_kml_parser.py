@@ -47,6 +47,46 @@ VALID_KML_FOLDER_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
   </Document>
 </kml>"""
 
+# KML with route waypoints and segmented path
+KML_WITH_WAYPOINTS_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>KJFK-KBOS Test Route</name>
+    <Placemark>
+      <name>KJFK</name>
+      <styleUrl>#departureIcon</styleUrl>
+      <Point>
+        <coordinates>-73.7781,40.6413,10</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Segment A</name>
+      <LineString>
+        <coordinates>
+          -73.7781,40.6413,10
+          -72.5000,41.0000,20
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Segment B</name>
+      <LineString>
+        <coordinates>
+          -72.5000,41.0000,20
+          -71.0050,42.3643,30
+        </coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>KBOS</name>
+      <styleUrl>#arrivalIcon</styleUrl>
+      <Point>
+        <coordinates>-71.0050,42.3643,30</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>"""
+
 # Invalid KML - no coordinates
 INVALID_KML_NO_COORDS = """<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
@@ -107,6 +147,14 @@ def malformed_kml_file(temp_kml_dir):
     """Create a malformed KML file."""
     kml_file = temp_kml_dir / "malformed.kml"
     kml_file.write_text(MALFORMED_KML_CONTENT)
+    return kml_file
+
+
+@pytest.fixture
+def kml_with_waypoints_file(temp_kml_dir):
+    """Create a KML file containing waypoint placemarks."""
+    kml_file = temp_kml_dir / "waypoints_route.kml"
+    kml_file.write_text(KML_WITH_WAYPOINTS_CONTENT)
     return kml_file
 
 
@@ -256,3 +304,26 @@ class TestKMLParser:
         assert point.latitude == 40.0
         assert point.longitude == -74.0
         assert point.sequence == 0
+
+    def test_parse_waypoints_from_kml(self, kml_with_waypoints_file):
+        """Verify waypoint placemarks are extracted with roles and ordering."""
+        result = parse_kml_file(kml_with_waypoints_file)
+
+        assert result.metadata.name == "KJFK-KBOS Test Route"
+        assert len(result.points) == 3  # start, mid, end deduplicated chain
+
+        waypoints = result.waypoints
+        assert len(waypoints) == 2
+
+        departure = waypoints[0]
+        arrival = waypoints[1]
+
+        assert departure.name == "KJFK"
+        assert departure.role == "departure"
+        assert pytest.approx(departure.latitude, rel=1e-6) == 40.6413
+        assert pytest.approx(departure.longitude, rel=1e-6) == -73.7781
+
+        assert arrival.name == "KBOS"
+        assert arrival.role == "arrival"
+        assert pytest.approx(arrival.latitude, rel=1e-6) == 42.3643
+        assert pytest.approx(arrival.longitude, rel=1e-6) == -71.005

@@ -1,6 +1,6 @@
 # KML Route Import - Implementation Context
 
-**Last Updated:** 2025-11-01 - Phase 1 Complete
+**Last Updated:** 2025-11-02 - Phase 4 Complete, Phase 5 Prep
 
 **Feature Branch:** `feature/kml-route-import`
 
@@ -9,6 +9,47 @@
 ## Overview
 
 This document provides quick-reference context for implementing the KML route import and management feature. It consolidates key file locations, existing implementations, and technical decisions.
+
+---
+
+## Current Implementation Status
+
+- **Phase 1 (Backend API)** ✅ Complete — upload/list/detail/activation/deletion endpoints live and integrated with `RouteManager`.
+- **Phase 2 (Route UI)** ✅ Complete — web UI at `/ui/routes` supports upload, activation, download, delete, and detail modals.
+- **Phase 3 (Grafana Visualization)** ✅ Complete — dashboard displays the active route via `/api/route/coordinates`, with deactivate controls in UI.
+- **Phase 4 (Route-POI Integration)** ✅ Complete — route uploads can auto-import waypoint placemarks as POIs, API responses include import metrics, and UI surfaces route-scoped POIs with filters.
+
+---
+
+## Highlights From Session 5 (2025-11-02)
+
+- **Route Upload Enhancements:** `POST /api/routes/upload` now accepts `import_pois`, converts waypoint placemarks into persisted POIs via `_import_waypoints_as_pois`, and echoes created/skipped counts in the response (`RouteResponse.imported_poi_count`).
+- **POI Filtering Hardening:** `POIManager.list_pois()` and `count_pois()` now return route-specific entries exclusively, enabling `/api/pois` and `/api/route.geojson` to show only active-route POIs by default.
+- **UI Integration:** `/ui/routes` exposes an “Import POIs” checkbox, reports POI counts in the details modal and delete confirmation, and `/ui/pois` adds route selection/filtering with badges distinguishing global vs. route-scoped POIs.
+- **Regression Coverage:** Added waypoint regression in `backend/starlink-location/tests/unit/test_kml_parser.py`, adjusted POI manager expectations, and introduced an API-level integration test that verifies `import_pois=true` creates the expected POIs.
+
+---
+
+## Files Modified This Session
+
+- `backend/starlink-location/app/api/routes.py` — imports waypoint metadata into POIs on upload and surfaces counts in responses.
+- `backend/starlink-location/app/api/ui.py` — adds import toggle, route-aware delete messaging, POI route selector, and filtering controls.
+- `backend/starlink-location/app/models/route.py` — extends `RouteResponse`/`RouteDetailResponse` with POI metrics and waypoint payloads.
+- `backend/starlink-location/app/services/poi_manager.py` — restricts filtered queries to route-specific POIs.
+- `backend/starlink-location/tests/*` — unit/integration coverage for waypoint parsing and POI import behaviour.
+- `dev/STATUS.md`, `SESSION-NOTES.md`, and task checklist — recorded Phase 4 completion and queued Phase 5.
+
+---
+
+## Pending / Next Steps
+
+1. Phase 5 kickoff: wire `RouteManager` into the simulation follower so the active route drives telemetry playback.
+2. Emit route-progress metrics (e.g., `% complete`, current waypoint) for Prometheus once simulation integration is live.
+3. Backfill automated KML edge-case fixtures (alternates, disjoint legs) to harden the parser before Phase 6 testing.
+4. Expand UI validation/error messaging for bulk POI imports and ensure accessibility of the new route filters.
+5. Address environment gaps (install `pytest`) ahead of the broader regression pass in Phase 6.
+
+---
 
 ---
 
@@ -122,16 +163,19 @@ def parse_kml_file(file_path: str | Path) -> Optional[ParsedRoute]:
     """
 ```
 
-**Features:**
-- Parses KML namespace properly
-- Extracts LineString coordinates (lon, lat, altitude)
-- Handles multiple LineString elements
-- Returns RoutePoint objects with sequence numbers
-- Raises KMLParseError for invalid files
+**Current Features (as of Session 4):**
+- Parses all placemarks, building data classes for geometry, inline styles, and document order.
+- Identifies the primary departure/arrival waypoints (using route name patterns or first/last fallback).
+- Chains connected route segments to form a single primary coordinate list; falls back to concatenation if heuristics fail.
+- Returns:
+  - `ParsedRoute.points`: filtered sequence of `RoutePoint` objects for the primary path.
+  - `ParsedRoute.waypoints`: structured `RouteWaypoint` objects with roles and styling hints for POI creation.
+- Raises `KMLParseError` with informative messages when no coordinate data is found or the file cannot be parsed.
 
-**Limitations:**
-- Currently only extracts LineString (not Placemarks for POIs)
-- No support for GPX or other formats (future enhancement)
+**Current Limitations:**
+- Waypoint roles are heuristic (style-based) and may need refinement once more samples arrive.
+- Automated regression tests for complex KML inputs still pending.
+- POI auto-import pipeline not yet wired into upload flow.
 
 ### Parsed Route Model (`app/models/route.py`)
 
@@ -153,6 +197,7 @@ class RouteMetadata(BaseModel):
 class ParsedRoute(BaseModel):
     metadata: RouteMetadata
     points: list[RoutePoint]
+    waypoints: list[RouteWaypoint]
 
     def get_total_distance(self) -> float:
         # Haversine calculation of total route distance
@@ -170,10 +215,10 @@ class ParsedRoute(BaseModel):
   - Optional POIs as Point features
   - Optional current position
 
-**Current Issues:**
-- route_manager is instantiated locally in geojson.py
-- Not integrated with main app startup
-- Need to ensure singleton pattern or shared instance
+**Current Issues / Follow-ups:**
+- route_manager is instantiated locally in geojson.py (should ensure single instance via startup wiring).
+- GeoJSON endpoint still delivers legacy LineString data; Grafana layer now prefers `/api/route/coordinates`.
+- Need to expose waypoint metadata through dedicated POI/API endpoints once importer is complete.
 
 **Endpoint: GET /api/route.json**
 - Returns route metadata without coordinates
