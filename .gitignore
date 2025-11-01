@@ -23,6 +23,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# Claude
+.claude/tsc-cache/
+
 # Docker
 data/
 volumes/
