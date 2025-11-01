@@ -104,3 +104,33 @@ class RouteResponse(BaseModel):
     point_count: int = Field(..., description="Number of points in route")
     is_active: bool = Field(default=False, description="Whether this is the active route")
     imported_at: datetime = Field(..., description="When route was imported")
+
+
+class RouteListResponse(BaseModel):
+    """Response model for list routes endpoint."""
+
+    routes: list[RouteResponse] = Field(..., description="List of available routes")
+    total: int = Field(..., description="Total number of routes")
+
+
+class RouteDetailResponse(BaseModel):
+    """Response model for route detail endpoint."""
+
+    id: str = Field(..., description="Unique route identifier")
+    name: str = Field(..., description="Route name from KML")
+    description: Optional[str] = Field(default=None, description="Route description")
+    point_count: int = Field(..., description="Number of points in route")
+    is_active: bool = Field(default=False, description="Whether this is the active route")
+    imported_at: datetime = Field(..., description="When route was imported")
+    file_path: str = Field(..., description="Path to KML file")
+    points: list[RoutePoint] = Field(..., description="All route points")
+    statistics: dict = Field(..., description="Route statistics (distance, bounds)")
+
+
+class RouteStatsResponse(BaseModel):
+    """Response model for route statistics endpoint."""
+
+    distance_meters: float = Field(..., description="Total route distance in meters")
+    distance_km: float = Field(..., description="Total route distance in kilometers")
+    point_count: int = Field(..., description="Total number of points")
+    bounds: dict = Field(..., description="Geographic bounds (min/max lat/lon)")

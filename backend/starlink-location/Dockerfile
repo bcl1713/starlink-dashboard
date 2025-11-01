@@ -29,7 +29,7 @@ COPY app/ ./app/
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 
 # Create /data directory for POI storage with proper permissions
-RUN mkdir -p /data && chown -R appuser:appuser /data
+RUN mkdir -p /data/routes /data/sim_routes && chown -R appuser:appuser /data && chmod -R 755 /data
 
 USER appuser
 

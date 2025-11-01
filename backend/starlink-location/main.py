@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import config, geojson, health, metrics, pois, status, ui
+from app.api import config, geojson, health, metrics, pois, routes, status, ui
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
@@ -18,6 +18,7 @@ from app.core.metrics import set_service_info
 from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -31,11 +32,12 @@ logger = get_logger(__name__)
 _coordinator: SimulationCoordinator = None
 _background_task = None
 _simulation_config = None
+_route_manager: RouteManager = None
 
 
 async def startup_event():
     """Initialize application on startup."""
-    global _coordinator, _background_task, _simulation_config
+    global _coordinator, _background_task, _simulation_config, _route_manager
 
     try:
         logger.info_json("Initializing Starlink Location Backend")
@@ -98,6 +100,22 @@ async def startup_event():
                 extra_fields={"error": str(e)},
                 exc_info=True
             )
+
+        # Initialize Route Manager for KML route handling
+        logger.info_json("Initializing Route Manager")
+        try:
+            _route_manager = RouteManager()
+            _route_manager.start_watching()
+            geojson.set_route_manager(_route_manager)
+            routes.set_route_manager(_route_manager)
+            logger.info_json("Route Manager initialized successfully")
+        except Exception as e:
+            logger.error_json(
+                "Failed to initialize Route Manager",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
+            raise
 
         # Log active mode prominently
         mode_description = "Real Starlink terminal data" if active_mode == "live" else "Simulated telemetry"
@@ -308,6 +326,7 @@ app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
+app.include_router(routes.router, tags=["Routes"])
 app.include_router(ui.router, tags=["UI"])
 
 
