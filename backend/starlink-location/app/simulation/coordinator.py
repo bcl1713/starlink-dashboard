@@ -110,9 +110,7 @@ class SimulationCoordinator:
                 # New route activated
                 logger.info(f"Route activated in simulator: {active_route.metadata.name}")
                 follower = KMLRouteFollower(active_route)
-                completion_behavior = getattr(
-                    self.config, "route_completion_behavior", "loop"
-                )
+                completion_behavior = self.config.route.completion_behavior
                 self.position_sim.set_route_follower(follower, completion_behavior)
                 self._previous_active_route_id = current_route_id
             else:
