@@ -293,7 +293,7 @@ class PositionSimulator:
         """
         self.progress = progress % 1.0
 
-    def set_route_follower(self, follower, completion_behavior: str = "loop") -> None:
+    def set_route_follower(self, follower: Optional['KMLRouteFollower'], completion_behavior: str = "loop") -> None:
         """
         Set a KML route follower for this simulator.
 
