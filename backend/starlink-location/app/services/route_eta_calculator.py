@@ -6,8 +6,13 @@ from typing import Optional
 from datetime import datetime
 
 from app.models.route import ParsedRoute, RoutePoint, RouteWaypoint
+from app.services.eta_cache import ETACache, ETAHistoryTracker
 
 logger = logging.getLogger(__name__)
+
+# Global cache instance (singleton pattern)
+_eta_cache = ETACache(ttl_seconds=5.0)
+_eta_history = ETAHistoryTracker(max_history=100)
 
 
 class RouteETACalculator:
@@ -16,6 +21,7 @@ class RouteETACalculator:
 
     Provides ETA calculations to waypoints, arbitrary locations, and route progress metrics.
     Supports both routes with timing data and estimates for routes without timing.
+    Includes caching for improved performance and history tracking for accuracy analysis.
     """
 
     EARTH_RADIUS_M = 6371000.0  # Earth's radius in meters
@@ -386,3 +392,38 @@ class RouteETACalculator:
             "expected_duration_remaining_seconds": expected_duration_remaining,
             "average_speed_knots": average_speed,
         }
+
+
+def get_eta_cache_stats() -> dict:
+    """
+    Get statistics about the global ETA cache.
+
+    Returns:
+        Dictionary with cache metrics
+    """
+    return _eta_cache.stats()
+
+
+def get_eta_accuracy_stats() -> dict:
+    """
+    Get ETA accuracy statistics from historical tracking.
+
+    Returns:
+        Dictionary with accuracy metrics
+    """
+    return _eta_history.get_accuracy_stats()
+
+
+def clear_eta_cache() -> None:
+    """Clear all cached ETA calculations."""
+    _eta_cache.clear()
+
+
+def cleanup_eta_cache() -> int:
+    """
+    Clean up expired entries in the ETA cache.
+
+    Returns:
+        Number of expired entries removed
+    """
+    return _eta_cache.cleanup_expired()

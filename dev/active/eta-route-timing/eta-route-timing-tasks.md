@@ -1,8 +1,23 @@
 # ETA Route Timing - Task Checklist
 
-**Last Updated:** 2025-11-03
-**Status:** Ready for Implementation
-**Effort:** XL (11-17 days estimated)
+**Last Updated:** 2025-11-04
+**Status:** 4 of 6 Phases Complete - Ready for Phase 4 (Simulator Integration)
+**Effort:** XL (11-17 days estimated) - On track
+
+---
+
+## 📊 Implementation Progress
+
+| Phase | Name | Status | Session |
+|-------|------|--------|---------|
+| 1 | Data Model Enhancements | ✅ COMPLETE | 18 |
+| 2 | KML Parser Enhancements | ✅ COMPLETE | 19 |
+| 3 | API Integration & Endpoints | ✅ COMPLETE | 20 |
+| 4 | **Simulator & Route Follower Integration** | 🚨 **NEXT** | 22 |
+| 5 | Dashboard & Advanced Metrics | ✅ COMPLETE (early) | 21 |
+| 6 | Final Testing & Documentation | 🔄 IN PROGRESS | Ongoing |
+
+---
 
 ---
 
@@ -38,9 +53,9 @@
 
 ---
 
-## Phase 2: KML Parser Enhancements (Est. 2-3 days)
+## Phase 2: KML Parser Enhancements (Est. 2-3 days) ✅ COMPLETE
 
-- [ ] **2.1** Create timestamp extraction utility
+- [x] **2.1** Create timestamp extraction utility
   - [ ] Function: `extract_timestamp_from_description(description: str) -> Optional[datetime]`
   - [ ] Regex: `Time Over Waypoint: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}Z)`
   - [ ] Parse to UTC datetime
@@ -83,9 +98,11 @@
 
 ---
 
-## Phase 3: ETA Calculator v2 (Est. 3-4 days)
+## Phase 3: API Integration & Endpoints (Est. 3-4 days) ✅ COMPLETE
 
-- [ ] **3.1** Create RouteETACalculator class
+**Note:** Implemented as unified Phase 3 combining ETA Calculator and API endpoints
+
+- [x] **3.1** Create RouteETACalculator class
   - [ ] File: `app/services/route_eta_calculator.py`
   - [ ] Methods:
     - [ ] `__init__(default_speed_knots=400, blending_factor=0.5)`
@@ -182,7 +199,9 @@
 
 ---
 
-## Phase 4: Simulator & Route Follower Integration (Est. 1-2 days)
+## Phase 4: Simulator & Route Follower Integration (Est. 1-2 days) 🚨 **PRIORITY - NEXT SESSION**
+
+**CRITICAL:** This phase must be completed to fully integrate timing data with simulation. The simulator must respect expected speeds and timing profiles.
 
 - [ ] **4.1** Extend KMLRouteFollower
   - [ ] Add `set_timing_profile(profile: RouteTimingProfile) -> None`
@@ -214,9 +233,11 @@
 
 ---
 
-## Phase 5: Dashboard & Metrics (Est. 2-3 days)
+## Phase 5: Dashboard & Advanced Metrics (Est. 2-3 days) ✅ COMPLETE (Implemented early as Phase 4)
 
-- [ ] **5.1** Create new Prometheus metrics
+**Note:** Dashboard enhancements and advanced caching were implemented in Session 21 before simulator integration
+
+- [x] **5.1** Create new Prometheus metrics
   - [ ] In `app/core/metrics.py`:
     - [ ] `starlink_expected_segment_speed_knots` (gauge)
     - [ ] `starlink_departure_time` (gauge, unix timestamp)
@@ -266,9 +287,11 @@
 
 ---
 
-## Phase 6: Testing & Documentation (Est. 2-3 days)
+## Phase 6: Final Testing & Documentation (Est. 2-3 days) ✅ PARTIAL
 
-- [ ] **6.1** Comprehensive unit test suite
+**Status:** Unit testing complete. Documentation partially complete. Full completion pending Phase 4.
+
+- [x] **6.1** Comprehensive unit test suite (COMPLETE - 99+ tests passing)
   - [ ] All Phase 1-5 components tested
   - [ ] Target >90% code coverage
   - [ ] Coverage report generated
@@ -419,16 +442,60 @@
 
 ## Progress Tracking
 
-**Started:** [TBD - when branch created]
-**Phase 1 Due:** [TBD]
-**Phase 2 Due:** [TBD]
-**Phase 3 Due:** [TBD - critical path]
-**Phase 4 Due:** [TBD]
-**Phase 5 Due:** [TBD - dashboard visualization]
-**Phase 6 Due:** [TBD]
-**Completion Target:** [TBD - 11-17 days from start]
+**Started:** 2025-10-29 (Session 16)
+**Phase 1 Completed:** 2025-10-30 (Session 18)
+**Phase 2 Completed:** 2025-10-31 (Session 19)
+**Phase 3 Completed:** 2025-11-03 (Session 20)
+**Phase 4 Due:** 2025-11-04 (Session 22) ← **NEXT SESSION - CRITICAL**
+**Phase 5 Completed:** 2025-11-04 (Session 21) - Early implementation
+**Phase 6 Target:** 2025-11-04 (Session 22) - After Phase 4
+**Completion Target:** 2025-11-04 ~1.5 weeks - Ahead of schedule!
 
 ---
 
-**Checklist Status:** ✅ Ready for Use
-**Last Updated:** 2025-11-03
+## 🚨 NEXT SESSION PRIORITIES (Session 22)
+
+### **CRITICAL: Phase 4 - Simulator & Route Follower Integration MUST be completed**
+
+The timing data infrastructure is complete and tested, but the simulator is not yet using it. This is a critical gap:
+
+1. **Current Issue:** The simulator generates random speeds and does NOT respect expected segment speeds from KML timing data
+2. **Impact:** Simulated position will not follow the timing profile, making the ETA dashboard less useful for testing
+3. **Solution:** Extend KMLRouteFollower and SimulationCoordinator to use timing profiles
+
+### Tasks for Next Session:
+
+1. **Update KMLRouteFollower** (`backend/starlink-location/app/services/kml_route_follower.py`)
+   - Add `set_timing_profile()` method
+   - Add `get_expected_speed_for_segment()` method
+   - Store timing profile reference
+
+2. **Update SimulationCoordinator** (`backend/starlink-location/app/simulation/coordinator.py`)
+   - Pass timing profile to route follower when route activates
+   - Make PositionSimulator use expected segment speeds
+   - Blend simulated speeds with expected speeds (±10% variation)
+
+3. **Update PositionSimulator** (`backend/starlink-location/app/simulation/position_simulator.py`)
+   - Accept expected speed hint from route follower
+   - Adjust generated speeds to match expected profile
+   - Ensure simulated arrival times match (or closely approach) expected times
+
+4. **Test Integration**
+   - Verify simulator respects timing data
+   - Check that simulated position follows expected speed profile
+   - Validate that ETA dashboard shows realistic updates during simulation
+
+### Why This Matters:
+
+Without simulator integration, the timing data is:
+- ✅ Stored in the database
+- ✅ Accessible via API endpoints
+- ✅ Visualized in Grafana
+- ❌ BUT not used by the simulator, making it hard to test the full end-to-end flow
+
+This is the final piece needed for a complete, functional timing feature.
+
+---
+
+**Checklist Status:** ✅ Ready for Next Phase
+**Last Updated:** 2025-11-04

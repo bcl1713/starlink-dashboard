@@ -246,8 +246,31 @@ class PositionSimulator:
         self.progress += (direction * km_traveled / route_length_km)
 
     def _update_speed(self) -> None:
-        """Update speed with realistic acceleration/deceleration."""
+        """
+        Update speed with realistic acceleration/deceleration.
+
+        Phase 5 Enhancement: Respects expected segment speeds from timing data.
+        If the route has timing information, uses the expected speed instead of
+        generating a random cruising speed.
+        """
         config = self.position_config
+
+        # Phase 5: Check if we're following a route with timing data
+        if self.route_follower:
+            expected_speed = self.route_follower.get_segment_speed_at_progress(self.progress)
+            if expected_speed is not None:
+                # Route has timing data - use expected speed from route
+                # Add small drift (±0.5 knots) to simulate realistic variations
+                # while still staying close to expected speed
+                speed_change = random.uniform(-0.5, 0.5)
+                self.current_speed = expected_speed + speed_change
+
+                # Clamp to valid range
+                self.current_speed = max(
+                    config.speed_min_knots,
+                    min(config.speed_max_knots, self.current_speed)
+                )
+                return
 
         # For Starlink terminal movement simulation:
         # Use a stable cruising speed with very small variations

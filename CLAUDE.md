@@ -25,6 +25,33 @@ docker compose restart         # Restart services
 docker compose build           # Build images (use --no-cache to force rebuild)
 ```
 
+### IMPORTANT: Backend Code Changes Workflow
+
+**ALWAYS follow this sequence when modifying backend Python code:**
+
+```bash
+# 1. Make your code changes (edit *.py files)
+# 2. Force a clean rebuild of containers with new code
+docker compose down && docker compose build --no-cache && docker compose up -d
+
+# 3. Wait for services to be healthy
+sleep 10
+
+# 4. Test your changes
+curl http://localhost:8000/health
+curl http://localhost:8000/docs
+
+# 5. Only after verifying it works, commit changes
+git add .
+git commit -m "Your message"
+```
+
+**Why this matters:**
+- Docker caches layers, so `docker compose up` alone won't pick up Python code changes
+- Must use `docker compose down` to remove old containers completely
+- Must use `--no-cache` on build to ensure new Python packages/code are included
+- Services may appear healthy but still be serving old code if you skip this
+
 ### Access Points
 
 - **Grafana:** <http://localhost:3000> (default: admin/admin)

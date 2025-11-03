@@ -19,7 +19,13 @@ from app.models.route import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.services.route_eta_calculator import RouteETACalculator
+from app.services.route_eta_calculator import (
+    RouteETACalculator,
+    get_eta_cache_stats,
+    get_eta_accuracy_stats,
+    clear_eta_cache,
+    cleanup_eta_cache,
+)
 
 logger = get_logger(__name__)
 
@@ -695,4 +701,194 @@ async def get_route_progress(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error calculating progress: {str(e)}",
+        )
+
+
+@router.get("/active/timing")
+async def get_active_route_timing() -> dict:
+    """
+    Get timing profile data for the currently active route.
+
+    Returns:
+    - Dictionary with timing profile information (departure_time, arrival_time, total_duration, etc.)
+    - Empty dict if no route is active or route lacks timing data
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    active_route = _route_manager.get_active_route()
+    if not active_route:
+        return {
+            "has_timing_data": False,
+            "message": "No active route"
+        }
+
+    if not active_route.timing_profile:
+        return {
+            "has_timing_data": False,
+            "message": "Active route has no timing data"
+        }
+
+    timing = active_route.timing_profile
+    return {
+        "route_name": active_route.metadata.name or "Unknown",
+        "has_timing_data": timing.has_timing_data,
+        "departure_time": timing.departure_time.isoformat() if timing.departure_time else None,
+        "arrival_time": timing.arrival_time.isoformat() if timing.arrival_time else None,
+        "total_expected_duration_seconds": timing.total_expected_duration_seconds,
+        "segment_count_with_timing": timing.segment_count_with_timing,
+        "total_duration_readable": _format_duration(timing.total_expected_duration_seconds) if timing.total_expected_duration_seconds else None
+    }
+
+
+def _format_duration(seconds: float) -> str:
+    """Format duration in seconds to human-readable format."""
+    if not seconds or seconds < 0:
+        return "Unknown"
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
+@router.get("/metrics/eta-cache", summary="Get ETA cache statistics")
+async def get_eta_cache_metrics() -> dict:
+    """
+    Get statistics about ETA calculation caching performance.
+
+    Returns:
+    - Dictionary with cache size, TTL, and timestamp
+    """
+    return get_eta_cache_stats()
+
+
+@router.get("/metrics/eta-accuracy", summary="Get ETA accuracy statistics")
+async def get_eta_accuracy_metrics() -> dict:
+    """
+    Get ETA accuracy statistics from historical tracking.
+
+    Returns:
+    - Dictionary with average error, max error, completion percentage
+    """
+    return get_eta_accuracy_stats()
+
+
+@router.post("/cache/cleanup", summary="Clean up expired cache entries")
+async def cleanup_eta_cache_endpoint() -> dict:
+    """
+    Remove expired entries from the ETA cache.
+
+    Returns:
+    - Dictionary with number of entries removed
+    """
+    removed = cleanup_eta_cache()
+    return {
+        "status": "success",
+        "entries_removed": removed,
+        "message": f"Cleaned up {removed} expired cache entries"
+    }
+
+
+@router.post("/cache/clear", summary="Clear all ETA cache")
+async def clear_eta_cache_endpoint() -> dict:
+    """
+    Clear all cached ETA calculations (use with caution).
+
+    Returns:
+    - Dictionary with status
+    """
+    clear_eta_cache()
+    return {
+        "status": "success",
+        "message": "ETA cache cleared"
+    }
+
+
+@router.get("/live-mode/active-route-eta", summary="Get active route ETA for live mode")
+async def get_live_mode_active_route_eta(
+    current_position_lat: float = Query(..., description="Current latitude"),
+    current_position_lon: float = Query(..., description="Current longitude"),
+    current_speed_knots: float = Query(default=500.0, description="Current speed in knots"),
+) -> dict:
+    """
+    Get ETA calculations for the active route in live mode.
+
+    Useful for real-time position updates from Starlink terminal.
+
+    Query Parameters:
+    - current_position_lat: Current latitude
+    - current_position_lon: Current longitude
+    - current_speed_knots: Current speed in knots (default: 500)
+
+    Returns:
+    - Dictionary with ETA to next waypoint, remaining distance, and timing info
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    parsed_route = _route_manager.get_active_route()
+    if not parsed_route:
+        return {
+            "has_active_route": False,
+            "message": "No active route"
+        }
+
+    try:
+        calculator = RouteETACalculator(parsed_route)
+
+        # Get progress metrics
+        progress = calculator.get_route_progress(current_position_lat, current_position_lon)
+
+        # Get timing profile
+        timing_info = {}
+        if parsed_route.timing_profile:
+            timing_info = {
+                "has_timing_data": parsed_route.timing_profile.has_timing_data,
+                "departure_time": (
+                    parsed_route.timing_profile.departure_time.isoformat()
+                    if parsed_route.timing_profile.departure_time else None
+                ),
+                "arrival_time": (
+                    parsed_route.timing_profile.arrival_time.isoformat()
+                    if parsed_route.timing_profile.arrival_time else None
+                ),
+                "total_duration_seconds": parsed_route.timing_profile.total_expected_duration_seconds,
+            }
+
+        # Find next waypoint and calculate ETA
+        nearest_idx, _ = calculator.find_nearest_point(current_position_lat, current_position_lon)
+        next_waypoint_idx = nearest_idx + 1 if nearest_idx < len(parsed_route.waypoints) - 1 else nearest_idx
+
+        next_eta = None
+        if next_waypoint_idx < len(parsed_route.waypoints):
+            next_wp = parsed_route.waypoints[next_waypoint_idx]
+            next_eta = calculator.calculate_eta_to_waypoint(
+                next_waypoint_idx,
+                current_position_lat,
+                current_position_lon,
+            )
+
+        return {
+            "has_active_route": True,
+            "route_name": parsed_route.metadata.name or "Unknown",
+            "current_position": {
+                "latitude": current_position_lat,
+                "longitude": current_position_lon,
+                "speed_knots": current_speed_knots,
+            },
+            "progress": progress,
+            "timing_profile": timing_info,
+            "next_waypoint_eta": next_eta,
+        }
+    except Exception as e:
+        logger.error(f"Error calculating live mode ETA: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating ETA: {str(e)}",
         )
