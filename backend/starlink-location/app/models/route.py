@@ -190,6 +190,10 @@ class RouteResponse(BaseModel):
     has_timing_data: bool = Field(
         default=False, description="Whether route has embedded timing metadata"
     )
+    timing_profile: Optional[RouteTimingProfile] = Field(
+        default=None,
+        description="Timing profile with departure/arrival/duration info (if has_timing_data is True)",
+    )
 
 
 class RouteListResponse(BaseModel):

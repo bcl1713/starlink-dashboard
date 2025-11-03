@@ -19,6 +19,7 @@ from app.models.route import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.services.route_eta_calculator import RouteETACalculator
 
 logger = get_logger(__name__)
 
@@ -184,6 +185,12 @@ async def list_routes(
         from datetime import datetime
         imported_at = datetime.fromisoformat(route_info["imported_at"])
 
+        # Get parsed route to check for timing data
+        parsed_route = _route_manager.get_route(route_id)
+        has_timing_data = False
+        if parsed_route and parsed_route.timing_profile:
+            has_timing_data = parsed_route.timing_profile.has_timing_data
+
         route_response = RouteResponse(
             id=route_id,
             name=route_info["name"],
@@ -191,6 +198,7 @@ async def list_routes(
             point_count=route_info["point_count"],
             is_active=is_active,
             imported_at=imported_at,
+            has_timing_data=has_timing_data,
         )
         routes_list.append(route_response)
 
@@ -244,6 +252,7 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
         },
         poi_count=poi_count,
         waypoints=parsed_route.waypoints,
+        timing_profile=parsed_route.timing_profile,
     )
 
 
@@ -273,6 +282,10 @@ async def activate_route(route_id: str) -> RouteResponse:
 
     _route_manager.activate_route(route_id)
 
+    has_timing_data = False
+    if parsed_route.timing_profile:
+        has_timing_data = parsed_route.timing_profile.has_timing_data
+
     return RouteResponse(
         id=route_id,
         name=parsed_route.metadata.name,
@@ -280,6 +293,8 @@ async def activate_route(route_id: str) -> RouteResponse:
         point_count=parsed_route.metadata.point_count,
         is_active=True,
         imported_at=parsed_route.metadata.imported_at,
+        has_timing_data=has_timing_data,
+        timing_profile=parsed_route.timing_profile,
     )
 
 
@@ -415,6 +430,10 @@ async def upload_route(
                 route_id,
             )
 
+        has_timing_data = False
+        if parsed_route.timing_profile:
+            has_timing_data = parsed_route.timing_profile.has_timing_data
+
         return RouteResponse(
             id=route_id,
             name=parsed_route.metadata.name,
@@ -424,6 +443,8 @@ async def upload_route(
             imported_at=parsed_route.metadata.imported_at,
             imported_poi_count=created_pois,
             skipped_poi_count=skipped_pois,
+            has_timing_data=has_timing_data,
+            timing_profile=parsed_route.timing_profile,
         )
 
     except HTTPException:
@@ -518,4 +539,160 @@ async def delete_route(route_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting route: {str(e)}",
+        )
+
+
+@router.get("/{route_id}/eta/waypoint/{waypoint_index}", summary="Calculate ETA to waypoint")
+async def calculate_eta_to_waypoint(
+    route_id: str,
+    waypoint_index: int,
+    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
+    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+) -> dict:
+    """
+    Calculate estimated time of arrival (ETA) to a specific waypoint.
+
+    Path Parameters:
+    - route_id: Route identifier
+    - waypoint_index: Index of the waypoint in the route
+
+    Query Parameters:
+    - current_position_lat: Current latitude
+    - current_position_lon: Current longitude
+
+    Returns:
+    - Dictionary with waypoint info and ETA details
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    parsed_route = _route_manager.get_route(route_id)
+    if not parsed_route:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Route not found: {route_id}",
+        )
+
+    if waypoint_index >= len(parsed_route.waypoints):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Waypoint index {waypoint_index} out of range (route has {len(parsed_route.waypoints)} waypoints)",
+        )
+
+    try:
+        calculator = RouteETACalculator(parsed_route)
+        eta_data = calculator.calculate_eta_to_waypoint(
+            waypoint_index,
+            current_position_lat,
+            current_position_lon,
+        )
+        return eta_data
+    except Exception as e:
+        logger.error(f"Error calculating ETA for route {route_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating ETA: {str(e)}",
+        )
+
+
+@router.get("/{route_id}/eta/location", summary="Calculate ETA to arbitrary location")
+async def calculate_eta_to_location(
+    route_id: str,
+    latitude: float = Query(..., description="Target latitude in decimal degrees"),
+    longitude: float = Query(..., description="Target longitude in decimal degrees"),
+    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
+    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+) -> dict:
+    """
+    Calculate estimated time of arrival (ETA) to an arbitrary location.
+
+    Path Parameters:
+    - route_id: Route identifier
+
+    Query Parameters:
+    - latitude: Target latitude
+    - longitude: Target longitude
+    - current_position_lat: Current latitude
+    - current_position_lon: Current longitude
+
+    Returns:
+    - Dictionary with location info and ETA details
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    parsed_route = _route_manager.get_route(route_id)
+    if not parsed_route:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Route not found: {route_id}",
+        )
+
+    try:
+        calculator = RouteETACalculator(parsed_route)
+        eta_data = calculator.calculate_eta_to_location(
+            latitude,
+            longitude,
+            current_position_lat,
+            current_position_lon,
+        )
+        return eta_data
+    except Exception as e:
+        logger.error(f"Error calculating ETA for route {route_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating ETA: {str(e)}",
+        )
+
+
+@router.get("/{route_id}/progress", summary="Get route progress metrics")
+async def get_route_progress(
+    route_id: str,
+    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
+    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+) -> dict:
+    """
+    Get route progress metrics including distance traveled and ETA to destination.
+
+    Path Parameters:
+    - route_id: Route identifier
+
+    Query Parameters:
+    - current_position_lat: Current latitude
+    - current_position_lon: Current longitude
+
+    Returns:
+    - Dictionary with progress metrics
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    parsed_route = _route_manager.get_route(route_id)
+    if not parsed_route:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Route not found: {route_id}",
+        )
+
+    try:
+        calculator = RouteETACalculator(parsed_route)
+        progress_data = calculator.get_route_progress(
+            current_position_lat,
+            current_position_lon,
+        )
+        return progress_data
+    except Exception as e:
+        logger.error(f"Error calculating route progress for {route_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating progress: {str(e)}",
         )
