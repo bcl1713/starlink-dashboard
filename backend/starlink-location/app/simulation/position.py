@@ -179,44 +179,33 @@ class PositionSimulator:
         )
 
     def _update_progress(self) -> None:
-        """Update progress along the route based on current speed."""
-        # Calculate actual time delta since last update
-        current_time = time.time()
-        time_delta_seconds = current_time - self.last_update_time
-        self.last_update_time = current_time
+        """Update progress along the route based on current speed.
 
-        # Update speed with some randomness
-        self._update_speed()
-
-        # Convert speed (knots) to distance per second
-        # 1 knot = 1.852 km/h = 1.852 / 3600 km/s = 0.000514 km/s
-        km_per_second = self.current_speed * 1.852 / 3600.0
-
-        # Calculate actual distance traveled based on time delta
-        km_traveled = km_per_second * time_delta_seconds
-
-        # Estimate route circumference/length for progress calculation
-        # For circular route: 2 * pi * radius
-        # For straight route: total distance
-        if hasattr(self.route, 'radius_km'):
-            # Circular route
-            route_length_km = 2 * 3.14159 * self.route.radius_km
-        else:
-            # Straight route
-            route_length_km = self.route.distance_km
-
-        # Update progress based on actual distance traveled
-        self.progress += km_traveled / route_length_km
+        Delegates to the generic progress update method with default parameters.
+        """
+        self._update_progress_generic(direction=1, use_route_length=False)
 
     def _update_progress_with_direction(self) -> None:
         """Update progress along the route based on current speed and direction.
 
         For route following with reverse completion behavior support.
+        Delegates to the generic progress update method with route-aware parameters.
         """
         # If movement is stopped (e.g., in 'stop' completion behavior), do nothing
         if self._movement_stopped:
             return
 
+        self._update_progress_generic(direction=self._route_direction, use_route_length=True)
+
+    def _update_progress_generic(self, direction: int = 1, use_route_length: bool = False) -> None:
+        """Generic method to update progress with configurable behavior.
+
+        Eliminates code duplication between default and route-following updates.
+
+        Args:
+            direction: Direction multiplier (1 for forward, -1 for backward)
+            use_route_length: If True, use KML route length; if False, use default route calculation
+        """
         # Calculate actual time delta since last update
         current_time = time.time()
         time_delta_seconds = current_time - self.last_update_time
@@ -232,18 +221,23 @@ class PositionSimulator:
         # Calculate actual distance traveled based on time delta
         km_traveled = km_per_second * time_delta_seconds
 
-        # When following a KML route, use the route's total distance
-        if self.route_follower:
+        # Determine route length based on context
+        if use_route_length and self.route_follower:
+            # Using KML route: get total distance
             route_length_km = self.route_follower.get_total_distance() / 1000.0  # Convert meters to km
         else:
-            # Fallback to default route calculation
+            # Using default route: estimate circumference/length for progress calculation
+            # For circular route: 2 * pi * radius
+            # For straight route: total distance
             if hasattr(self.route, 'radius_km'):
+                # Circular route
                 route_length_km = 2 * 3.14159 * self.route.radius_km
             else:
+                # Straight route
                 route_length_km = self.route.distance_km
 
-        # Update progress based on direction (positive or negative)
-        self.progress += (self._route_direction * km_traveled / route_length_km)
+        # Update progress based on actual distance traveled and direction
+        self.progress += (direction * km_traveled / route_length_km)
 
     def _update_speed(self) -> None:
         """Update speed with realistic acceleration/deceleration."""
