@@ -1,6 +1,7 @@
 """Position simulator for realistic movement along a route."""
 
 import logging
+import math
 import random
 import time
 from datetime import datetime
@@ -231,7 +232,7 @@ class PositionSimulator:
             # For straight route: total distance
             if hasattr(self.route, 'radius_km'):
                 # Circular route
-                route_length_km = 2 * 3.14159 * self.route.radius_km
+                route_length_km = 2 * math.pi * self.route.radius_km
             else:
                 # Straight route
                 route_length_km = self.route.distance_km
