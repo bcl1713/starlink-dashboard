@@ -9,10 +9,10 @@ We're approaching context limits. Please update the development documentation to
 
 When creating session files, use ALL CAPS with hyphens:
 - `SESSION-NOTES.md` (NOT `session_notes.md` or `SESSION_NOTES.md`)
-- `CONTEXT-HANDOFF.md` (NOT `context_handoff.md`)
-- `PHASE-N-SUMMARY.md` (where N is the phase number)
 
 Follow `.claude/NAMING-CONVENTIONS.md` for all file creation.
+
+**Important:** All handoff information goes in `SESSION-NOTES.md` and `STATUS.md` ONLY. No separate CONTEXT-HANDOFF or PHASE-N-SUMMARY documents.
 
 ## Required Updates
 
@@ -52,12 +52,13 @@ Include any relevant information about:
 - Commands that need to be run on restart
 - Any temporary workarounds that need permanent fixes
 
-### 5. Create Handoff Notes
-If switching to a new conversation:
-- Exact file and line being edited
+### 5. Handoff Notes in SESSION-NOTES.md
+Include in SESSION-NOTES.md if switching to a new conversation:
+- Exact file and line being edited (if mid-edit)
 - The goal of current changes
 - Any uncommitted changes that need attention
 - Test commands to verify work
+- Critical state information hard to rediscover
 
 ## Additional Context: $ARGUMENTS
 
