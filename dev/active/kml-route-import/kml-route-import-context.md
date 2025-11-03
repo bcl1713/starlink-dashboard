@@ -101,13 +101,81 @@ Parser is now in optimal state for Phase 5 (Simulation Integration):
 - No edge cases remaining from ordinal-based detection
 - Ready to integrate with route follower
 
+## Phase 5 Implementation Details (Ready to Start)
+
+### Overview
+When simulation mode is active AND a route is active, the simulated position follows the route's waypoints with real-time progress metrics and configurable completion behavior (loop/stop/reverse).
+
+### Key Components Identified
+
+#### 1. KMLRouteFollower (`app/simulation/kml_follower.py`)
+- **Constructor:** `KMLRouteFollower(route: ParsedRoute, deviation_degrees: float = 0.0005)`
+- **Core Method:** `get_position(progress: float) -> dict`
+  - Takes progress value 0.0-1.0
+  - Returns: `{latitude, longitude, altitude, heading, sequence, progress}`
+- **Other Methods:** `reset()`, `get_total_distance()`, `get_point_count()`, `get_route_name()`
+- **Status:** Already implemented and working with all route data
+
+#### 2. SimulationCoordinator (`app/simulation/coordinator.py`)
+- **Update Cycle:** Called ~1x/second from background loop in main.py
+- **Current Flow:** position_sim.update() → speed_tracker.update() → network_sim.update() → obstruction_sim.update()
+- **Integration Point:** After position update (line 88), check for active route and override position if present
+- **Status:** Ready for route injection
+
+#### 3. PositionSimulator (`app/simulation/position.py`)
+- **Recommended Approach:** Add optional `KMLRouteFollower` property
+- **Current Logic:** Tracks progress (0.0-1.0) along route, updates based on speed/time
+- **Can Override:** Set progress directly via `set_progress()` or use follower entirely
+- **Status:** Architecture allows clean integration
+
+#### 4. RouteManager Integration
+- **Already Initialized:** Main.py creates global instance and injects into API modules (Session 11)
+- **Available Properties:** `active_route`, `routes`, `set_active_route()`, `deactivate_route()`
+- **Data Available:** Route name, points, total distance, bounds via ParsedRoute
+- **Status:** Ready to inject into SimulationCoordinator
+
+#### 5. Metrics System (`app/core/metrics.py`)
+- **Current Pattern:** Gauges defined at module level, updated in SimulationCoordinator
+- **To Add:**
+  - `starlink_route_progress_percent` - Progress 0-100%
+  - `starlink_current_waypoint_index` - Current waypoint position
+- **Status:** Ready for new metrics
+
+### Phase 5 Tasks (5 sub-phases, ~7-8 hours total)
+
+**5.1 Review Route Following (1-2h)** ✅ COMPLETE
+- Analyzed KMLRouteFollower and SimulationCoordinator
+- Documented integration points
+- Identified dependency injection pattern from Sessions 6-7
+
+**5.2 Integrate with Simulator (2-3h)** - NEXT
+- Add RouteManager injection to SimulationCoordinator
+- Add KMLRouteFollower to PositionSimulator
+- Wire active route into position update cycle
+
+**5.3 Progress Metrics (1h)** - AFTER 5.2
+- Create progress tracking metrics
+- Update metrics during simulation
+- Expose to Prometheus
+
+**5.4 Completion Behavior (1h)** - AFTER 5.3
+- Implement loop/stop/reverse options
+- Make configurable in config.yaml
+- Test each mode
+
+**5.5 Integration Testing (2h)** - FINAL
+- Upload test route, activate, verify simulation follows
+- Check metrics exposed correctly
+- Test route switching during simulation
+- Verify backward compatibility
+
 ## Pending / Next Steps
 
-1. **Phase 5 kickoff:** Wire `RouteManager` into the simulation follower so the active route drives telemetry playback.
-2. **Emit route-progress metrics** (e.g., `% complete`, current waypoint) for Prometheus once simulation integration is live.
-3. **UI/UX enhancements:** Error messages, bulk POI handling, and accessibility improvements.
-4. **Testing infrastructure:** Install pytest and add comprehensive test suite (Phase 6).
-5. **Documentation:** Update architecture docs to reflect final parser implementation.
+1. **Phase 5.2 kickoff:** Wire `RouteManager` into the simulation follower (PositionSimulator modification)
+2. **Emit route-progress metrics** (e.g., `% complete`, current waypoint) for Prometheus
+3. **UI/UX enhancements:** Error messages, bulk POI handling, and accessibility improvements (Phase 6)
+4. **Testing infrastructure:** Install pytest and add comprehensive test suite (Phase 6)
+5. **Documentation:** Update architecture docs to reflect final parser implementation (Phase 6)
 
 ---
 
@@ -731,4 +799,4 @@ If issues arise after deployment:
 
 **Document Status:** ✅ Complete and Ready for Implementation
 
-**Last Updated:** 2025-10-31
+**Last Updated:** 2025-11-03 Session 12 - Documentation Consolidated
