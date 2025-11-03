@@ -63,6 +63,7 @@ class PositionSimulator:
         self.route_completion_behavior = "loop"  # loop, stop, or reverse
         self._previous_route_name = None  # Track route changes
         self._route_direction = 1  # 1 = forward, -1 = backward (for reverse mode)
+        self._movement_stopped = False  # Flag to explicitly stop movement at route end (for 'stop' mode)
 
     def update(self) -> PositionData:
         """
@@ -101,32 +102,38 @@ class PositionSimulator:
             heading = (heading + 180) % 360
 
         # Handle route completion behavior
-        if self.progress >= 1.0 or self.progress <= 0.0:
+        if self.progress >= 1.0:
+            # Route end reached
             if self.route_completion_behavior == "loop":
                 logger.info(
                     f"Route loop completed, restarting: {self.route_follower.get_route_name()}"
                 )
                 self.progress = 0.0
                 self._route_direction = 1
+                self._movement_stopped = False
             elif self.route_completion_behavior == "stop":
                 logger.info(
                     f"Route completed, stopping: {self.route_follower.get_route_name()}"
                 )
-                self.progress = 0.999999 if self._route_direction == 1 else 0.000001
+                self.progress = 1.0  # Clamp to end
+                self._movement_stopped = True
             elif self.route_completion_behavior == "reverse":
-                # Reverse direction
-                if self.progress >= 1.0:
-                    logger.info(
-                        f"Route end reached, reversing direction: {self.route_follower.get_route_name()}"
-                    )
-                    self.progress = 0.999999
-                    self._route_direction = -1
-                elif self.progress <= 0.0:
-                    logger.info(
-                        f"Route start reached, reversing direction: {self.route_follower.get_route_name()}"
-                    )
-                    self.progress = 0.000001
-                    self._route_direction = 1
+                logger.info(
+                    f"Route end reached, reversing direction: {self.route_follower.get_route_name()}"
+                )
+                self._route_direction = -1
+                self._movement_stopped = False
+                # Adjust progress slightly to avoid immediately hitting 0.0
+                self.progress = 0.99
+        elif self.progress <= 0.0 and self.route_completion_behavior == "reverse":
+            # Route start reached (only relevant for reverse mode)
+            logger.info(
+                f"Route start reached, reversing direction: {self.route_follower.get_route_name()}"
+            )
+            self._route_direction = 1
+            self._movement_stopped = False
+            # Adjust progress slightly to avoid immediately hitting 1.0
+            self.progress = 0.01
 
         return PositionData(
             latitude=lat,
@@ -206,6 +213,10 @@ class PositionSimulator:
 
         For route following with reverse completion behavior support.
         """
+        # If movement is stopped (e.g., in 'stop' completion behavior), do nothing
+        if self._movement_stopped:
+            return
+
         # Calculate actual time delta since last update
         current_time = time.time()
         time_delta_seconds = current_time - self.last_update_time
@@ -298,6 +309,7 @@ class PositionSimulator:
         if follower is None:
             logger.info("Route following disabled")
             self.route_follower = None
+            self._movement_stopped = False
         else:
             logger.info(
                 f"Route following enabled for: {follower.get_route_name()}, "
@@ -307,6 +319,7 @@ class PositionSimulator:
             self.route_completion_behavior = completion_behavior
             self.progress = 0.0  # Reset progress when new route set
             self._route_direction = 1  # Reset direction to forward
+            self._movement_stopped = False  # Reset movement state for new route
             self._previous_route_name = follower.get_route_name()
 
     def reset(self) -> None:
