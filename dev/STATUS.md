@@ -1,113 +1,89 @@
 # Development Status
 
-**Last Updated:** 2025-11-03 Session 16 (Phase 7 Complete - Merged to Dev, Cleanup Complete)
+**Last Updated:** 2025-11-03 Session 18 (Phase 1: Data Models)
 
-**Current Branch:** dev
+**Current Branch:** feature/eta-route-timing
 
-**Status:** ✅ ALL PHASES COMPLETE (1-7) - KML Route Import Feature Successfully Merged to Dev Branch - Production Ready
+**Status:** 🚀 PHASE 1 COMPLETE - Data Model Enhancements
 
 ---
 
-## Recently Completed Tasks
+## Currently Active Task
 
-### KML Route Import and Management Feature (Phases 1-7 Complete)
-**Status:** ✅ COMPLETE - All code merged to dev branch, production-ready
+### ETA Calculations Using Route Timing from KML Files
+**Status:** 🔄 PHASE 1 COMPLETE - Moving to Phase 2 (KML Parser Enhancements)
+
+**Location:** `/dev/active/eta-route-timing/`
+
+**Key Documents:**
+- [Strategic Plan](./active/eta-route-timing/eta-route-timing-plan.md) - 6-phase implementation plan
+- [Implementation Context](./active/eta-route-timing/eta-route-timing-context.md) - Technical context and architecture
+- [Task Checklist](./active/eta-route-timing/eta-route-timing-tasks.md) - Detailed task breakdown (190+ tasks across 6 phases)
+
+**Feature Summary:**
+- Parse timing metadata from KML waypoint descriptions (`Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ`)
+- Calculate expected segment speeds (distance / time delta)
+- Implement pre-departure ETA mode (absolute countdown to expected waypoint times)
+- Implement in-flight ETA blending (actual speed blended with flight plan)
+- Departure detection at 50 knots threshold (configurable)
+- Off-route point projection for POIs not on primary route
+- Hybrid point status determination (route-based primary, angle-based fallback)
+- Expose new Prometheus metrics for speed profiles and ETA countdown
+- Update Grafana dashboard with timing visualization
+
+**Timeline Estimate:** 11-17 days (6 phases, mostly sequential)
+
+**Test Data:** All 6 existing KML route files contain embedded timing metadata ready for testing
+
+**Dependencies:**
+- Builds on completed Phase 5.2 (RouteManager integration with SimulationCoordinator)
+- Uses existing POI management infrastructure
+- No new external dependencies (stdlib only)
+
+---
+
+## Completed Features
+
+### KML Route Import and Management Feature (Phases 1-7)
+**Status:** ✅ COMPLETE - Merged to dev (commit 1fdbfb9), production-ready
 
 **Location:** `/dev/completed/kml-route-import/`
 
-**Key Documents:**
-- [Strategic Plan](./completed/kml-route-import/kml-route-import-plan.md) - 7-phase implementation plan
-- [Technical Context](./completed/kml-route-import/kml-route-import-context.md) - Integration points, Phase 5 setup, and existing infrastructure
-- [Task Checklist](./completed/kml-route-import/kml-route-import-tasks.md) - 94 tasks across 7 phases (62/94 complete)
-- [Session Notes](./completed/kml-route-import/SESSION-NOTES.md) - Comprehensive session history (Sessions 1-16 documented)
-- [Phase 6 Testing Plan](./completed/kml-route-import/PHASE-6-TESTING-PLAN.md) - Complete test strategy and results
-- [Phase 6 Test Results](./completed/kml-route-import/PHASE-6-TEST-RESULTS.md) - All 100+ tests passing with 100% success rate
-
-**Feature Summary:**
-- ✅ Web UI for uploading KML route files
-- ✅ REST API endpoints for route CRUD operations
-- ✅ Grafana visualization of active routes on map
+**Key Achievements:**
+- ✅ Web UI + REST API for KML route management
+- ✅ Grafana route visualization on map
 - ✅ Route-POI integration with cascade deletion
-- ✅ POI category filtering in dashboard
-- ✅ Route management (activate, deactivate, delete, download)
-- ✅ Parser optimization: Style/color-based filtering (all 6 test routes working)
-- ✅ Simulation mode route following (Phase 5 complete and tested - Sessions 13-14)
+- ✅ Simulation mode route following (Phase 5 complete)
+- ✅ Progress metrics: `starlink_route_progress_percent`, `starlink_current_waypoint_index`
+- ✅ Completion behavior: loop/stop/reverse modes
+- ✅ All 6 test flight plan KML files validated and working
 
-**Timeline:** Completed in 16 sessions (Phases 1-7)
-
-**Progress:** 62/94 tasks complete (66% - remaining tasks are optional enhancements)
-- Phase 1: Backend Route Upload API (10/10) ✅ COMPLETE
-- Phase 2: Route Management Web UI (9/9) ✅ COMPLETE
-- Phase 3: Grafana Route Visualization (6/6) ✅ COMPLETE + Bonus: Route Deactivate UI
-- Phase 4: Route-POI Integration (6/6) ✅ COMPLETE
-- Phase 5.1-5.5: Simulation Mode Integration (5/5) ✅ COMPLETE
-  - 5.1 Review KML Follower: ✅ COMPLETE
-  - 5.2 Integrate with Simulator: ✅ COMPLETE (RouteManager → SimulationCoordinator)
-  - 5.3 Progress Metrics: ✅ COMPLETE (starlink_route_progress_percent exposed)
-  - 5.4 Completion Behavior: ✅ COMPLETE (loop/stop/reverse implemented)
-  - 5.5 Integration Testing: ✅ COMPLETE (All routes tested, switching verified)
-- Phase 6: Testing & Documentation (6/7) ✅ COMPLETE
-  - 6.1 End-to-End Testing: ✅ COMPLETE (8/8 tests passing)
-  - 6.2 UI/UX Testing: ✅ VERIFIED (all scenarios passing)
-  - 6.3 Performance Testing: ✅ COMPLETE (all metrics pass)
-  - 6.4 Documentation Updates: ✅ COMPLETE (CLAUDE.md route section added)
-  - 6.5 Sample KML Files: ✅ COMPLETE (4 example files + README)
-  - 6.7 Test Documentation: ✅ COMPLETE (Test plan and results documented)
-  - 6.6 Automated Tests: ⏳ OPTIONAL (nice-to-have, core feature complete)
-- Phase 7: Code Review & Merge (5/5) ✅ COMPLETE
-  - 7.1 Code Review: ✅ COMPLETE (6 issues resolved)
-  - 7.2 Branch Cleanup: ✅ COMPLETE (Merged to dev, feature branch deleted)
-  - 7.3 Documentation Migration: ✅ COMPLETE (Moved to /dev/completed/)
-
-**Status After Cleanup:**
-- Feature branch merged to dev (commit 1fdbfb9)
-- Feature branch deleted locally and remotely
-- Documentation moved to /dev/completed/kml-route-import/
-- All code production-ready in dev branch
+**Progress:** 62/94 core tasks complete (remaining are optional enhancements)
+**Completed in:** 16 sessions
+**Documentation:** Comprehensive session notes and test results in `/dev/completed/kml-route-import/`
 
 ---
 
-## Recently Completed Tasks
+## Previously Completed Tasks
 
 ### POI Interactive Management Feature (Phase 3)
-**Status:** ✅ COMPLETE - Archived 2025-10-31
+**Status:** ✅ COMPLETE - 47/47 tasks complete (100%)
 
-**Location:** `/dev/completed/poi-interactive-management/` (archived)
+**Location:** `/dev/completed/poi-interactive-management/`
 
-**Key Documents:**
-- [README.md](./completed/poi-interactive-management/README.md) - Quick reference
-- [SESSION-NOTES.md](./completed/poi-interactive-management/SESSION-NOTES.md) - Latest session details (10 sessions documented)
-- [RESEARCH-SUMMARY.md](./completed/poi-interactive-management/RESEARCH-SUMMARY.md) - Best practices
-- [Task Checklist](./completed/poi-interactive-management/poi-interactive-management-tasks.md) - 47 tasks (47/47 complete ✅)
-- [Implementation Context](./completed/poi-interactive-management/poi-interactive-management-context.md) - Final implementation details
+**Key Achievements:**
+- ✅ Interactive POI markers on Grafana map with ETA tooltips
+- ✅ Full CRUD API + responsive management UI
+- ✅ Real-time ETA calculations with color-coding
+- ✅ Bearing and course status indicators
+- ✅ File locking for concurrent access safety
+- ✅ All 7 phases completed successfully
 
-**Feature Summary:**
-- Interactive POI markers on Grafana map ✅
-- Real-time ETA tooltips with color-coding ✅
-- POI management UI (create, edit, delete) ✅
-- POI table view with live ETAs ✅
-- Course status indicators (on/off track) ✅
-
-**Timeline:** Completed on schedule
-
-**Progress:** 47/47 tasks complete (100%)
-- All 7 phases completed successfully
-- Full CRUD API with ETA calculations
-- Web UI with Leaflet.js map integration
-- Grafana dashboard integration complete
-
-**Key Accomplishments:**
-- ✅ Fixed FastAPI route ordering issue
-- ✅ Resolved Docker networking DNS configuration
-- ✅ Implemented bearing and course status calculations
-- ✅ Created file locking for concurrent access safety
-- ✅ Built responsive UI with real-time updates
+**Completed in:** 10 sessions
 
 ---
 
-## Recent Completed Work
-
-### Phase 0: Starlink Dashboard Foundation
+### Starlink Dashboard Foundation (Phase 0)
 **Completed:** 2025-10-29
 **Status:** ✅ Production Ready
 
@@ -281,12 +257,12 @@ When approaching context limits, ensure:
 ## Quick Reference
 
 ### Current Sprint Focus
-**KML Route Import and Management** - Phase 4 implementation
+**ETA Route Timing Feature** - Planning complete, ready for Phase 1 implementation
 
 ### Critical Files for Current Task
-- `/dev/active/kml-route-import/kml-route-import-plan.md`
-- `/dev/active/kml-route-import/kml-route-import-context.md`
-- `/dev/active/kml-route-import/kml-route-import-tasks.md`
+- `/dev/active/eta-route-timing/eta-route-timing-plan.md` - 6-phase implementation plan
+- `/dev/active/eta-route-timing/eta-route-timing-context.md` - Technical context and integration points
+- `/dev/active/eta-route-timing/eta-route-timing-tasks.md` - Detailed task checklist with 190+ tasks
 
 ### Most Important Commands
 ```bash
@@ -309,44 +285,30 @@ curl http://localhost:8000/api/pois
 
 ### Current Feature Branch
 ```bash
+# Create and checkout feature branch (Session 17)
+git checkout dev
+git pull origin dev
+git checkout -b feature/eta-route-timing
+
 # Verify you're on feature branch
 git branch --show-current
-# Should show: feature/kml-route-import
-
-# Pull latest from dev
-git fetch origin
-git rebase origin/dev
+# Should show: feature/eta-route-timing
 ```
 
 ---
 
-## Documentation Cleanup (Session 12)
+## Session 17 Status Update
 
-**Consolidated into main documents:**
-- Merged CONTEXT-HANDOFF.md content into SESSION-NOTES.md
-- Merged PHASE-5-REVIEW-FINDINGS.md into kml-route-import-context.md (Phase 5 Implementation Details section)
-- Merged KML-PARSER-NOTES.md content into SESSION-NOTES.md session history
-- Merged all Phase 5 planning docs into unified context
+**Transition:** KML Route Import feature completed and merged to dev (Session 16)
+**Planning:** ETA Route Timing feature planning documents completed (Session 17)
+**Next Step:** Ready to create feature branch and begin Phase 1 implementation
 
-**Deleted redundant files (content now in main documents):**
-- CONTEXT-HANDOFF.md
-- IDL-CROSSING-FIX.md
-- kml-parser-enhancement-plan.md
-- KML-PARSER-NOTES.md
-- PHASE-5-CONTEXT.md
-- PHASE-5-PLAN.md
-- PHASE-5-README.md
-- PHASE-5-REVIEW-FINDINGS.md
-- PHASE-5-SESSION-NOTES.md
-- PHASE-5-TASKS.md
-- poi-import-sync-plan.md
-
-**Remaining active documentation (clean and complete):**
-- SESSION-NOTES.md - Comprehensive session history (all work from Sessions 1-12)
-- kml-route-import-context.md - Technical context and Phase 5 implementation details
-- kml-route-import-plan.md - Strategic 7-phase plan
-- kml-route-import-tasks.md - Detailed task checklist with progress tracking
+**Documentation Status:**
+- ✅ Strategic plan complete with 6 phases
+- ✅ Technical context documented with integration points
+- ✅ Task checklist ready with 190+ tasks across phases
+- ✅ All 6 test KML files contain timing metadata for validation
 
 ---
 
-**Status File Last Updated:** 2025-11-03 Session 13 (Phase 5.2-5.4 Verification Complete)
+**Status File Last Updated:** 2025-11-03 Session 17 (ETA Route Timing Planning Complete)

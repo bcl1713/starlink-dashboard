@@ -15,8 +15,14 @@ class RoutePoint(BaseModel):
         default=None, description="Altitude in meters above sea level"
     )
     sequence: int = Field(default=0, description="Order of point in route (0-indexed)")
+    expected_arrival_time: Optional[datetime] = Field(
+        default=None, description="Expected arrival time at this waypoint (UTC, ISO-8601)"
+    )
+    expected_segment_speed_knots: Optional[float] = Field(
+        default=None, description="Expected speed for segment ending at this point (in knots)"
+    )
 
-    model_config = {"json_schema_extra": {"example": {"latitude": 40.7128, "longitude": -74.0060, "altitude": 100, "sequence": 0}}}
+    model_config = {"json_schema_extra": {"example": {"latitude": 40.7128, "longitude": -74.0060, "altitude": 100, "sequence": 0, "expected_arrival_time": "2025-10-27T16:57:55Z", "expected_segment_speed_knots": 598.0}}}
 
 
 class RouteWaypoint(BaseModel):
@@ -33,18 +39,22 @@ class RouteWaypoint(BaseModel):
         default=None,
         description="Semantic role (e.g., 'departure', 'arrival', 'waypoint', 'alternate')",
     )
+    expected_arrival_time: Optional[datetime] = Field(
+        default=None, description="Expected arrival time at this waypoint (UTC, ISO-8601), parsed from description"
+    )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "name": "WMSA",
-                "description": "Sultan Abdul Aziz Shah",
+                "description": "Sultan Abdul Aziz Shah\nTime Over Waypoint: 2025-10-27 16:57:55Z",
                 "style_url": "#destWaypointIcon",
                 "latitude": 3.132222,
                 "longitude": 101.55028,
                 "altitude": None,
                 "order": 42,
                 "role": "departure",
+                "expected_arrival_time": "2025-10-27T16:57:55Z",
             }
         }
     }
@@ -62,6 +72,33 @@ class RouteMetadata(BaseModel):
     point_count: int = Field(..., description="Total number of points in route")
 
 
+class RouteTimingProfile(BaseModel):
+    """Timing profile for a route with expected speeds and arrival times."""
+
+    departure_time: Optional[datetime] = Field(
+        default=None, description="Expected departure time (UTC, ISO-8601)"
+    )
+    arrival_time: Optional[datetime] = Field(
+        default=None, description="Expected arrival time at route end (UTC, ISO-8601)"
+    )
+    total_expected_duration_seconds: Optional[float] = Field(
+        default=None, description="Total expected flight duration in seconds"
+    )
+    has_timing_data: bool = Field(
+        default=False, description="Whether route has timing metadata"
+    )
+    segment_count_with_timing: int = Field(
+        default=0, description="Number of segments with calculated expected speeds"
+    )
+
+    def get_total_duration(self) -> Optional[float]:
+        """Get total expected duration in seconds."""
+        if self.departure_time and self.arrival_time:
+            delta = self.arrival_time - self.departure_time
+            return delta.total_seconds()
+        return self.total_expected_duration_seconds
+
+
 class ParsedRoute(BaseModel):
     """Complete route data parsed from a KML file."""
 
@@ -70,6 +107,9 @@ class ParsedRoute(BaseModel):
     waypoints: list[RouteWaypoint] = Field(
         default_factory=list,
         description="Optional waypoint placemarks associated with the route",
+    )
+    timing_profile: Optional[RouteTimingProfile] = Field(
+        default=None, description="Timing profile if route has embedded timing data"
     )
 
     def get_total_distance(self) -> float:
@@ -147,6 +187,9 @@ class RouteResponse(BaseModel):
         default=None,
         description="Number of waypoint placemarks skipped during POI import",
     )
+    has_timing_data: bool = Field(
+        default=False, description="Whether route has embedded timing metadata"
+    )
 
 
 class RouteListResponse(BaseModel):
@@ -174,6 +217,9 @@ class RouteDetailResponse(BaseModel):
     waypoints: list[RouteWaypoint] = Field(
         default_factory=list,
         description="Waypoint placemarks extracted from the KML (for POI import/reference)",
+    )
+    timing_profile: Optional[RouteTimingProfile] = Field(
+        default=None, description="Timing profile if route has embedded timing data"
     )
 
 
