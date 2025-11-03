@@ -127,6 +127,12 @@ async def startup_event():
             from app.api import metrics_export
             metrics_export.set_route_manager(_route_manager)
             metrics_export.set_poi_manager(poi_manager)
+
+            # Inject RouteManager into SimulationCoordinator (Phase 5 feature)
+            if isinstance(_coordinator, SimulationCoordinator):
+                _coordinator.set_route_manager(_route_manager)
+                logger.info_json("RouteManager injected into SimulationCoordinator")
+
             logger.info_json("Route Manager initialized successfully")
         except Exception as e:
             logger.error_json(

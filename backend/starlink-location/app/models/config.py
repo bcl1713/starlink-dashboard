@@ -27,6 +27,10 @@ class RouteConfig(BaseModel):
         default=500.0,
         description="Total distance for straight route (kilometers)"
     )
+    completion_behavior: Literal["loop", "stop", "reverse"] = Field(
+        default="loop",
+        description="Behavior when route is completed: loop (restart), stop (stay at end), or reverse (oscillate)"
+    )
 
     @field_validator("radius_km", "distance_km")
     @classmethod

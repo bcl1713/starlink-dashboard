@@ -169,6 +169,157 @@ Storage_GB ≈ 2.4 GB
 - `30d` - 30 days (~200 MB)
 - `15d` - 15 days (~100 MB)
 
+## Route Management
+
+### Quick Start
+
+**Access Route Management UI:**
+```bash
+# Web UI for managing routes
+http://localhost:8000/ui/routes
+
+# API documentation and testing
+http://localhost:8000/docs
+```
+
+### Common Operations
+
+**Upload a KML route:**
+```bash
+curl -X POST \
+  -F "file=@myroute.kml" \
+  http://localhost:8000/api/routes/upload
+```
+
+**List all routes:**
+```bash
+curl http://localhost:8000/api/routes
+```
+
+**Get route details:**
+```bash
+curl http://localhost:8000/api/routes/{route_id}
+```
+
+**Activate a route (simulation will follow it):**
+```bash
+curl -X POST http://localhost:8000/api/routes/{route_id}/activate
+```
+
+**Deactivate all routes:**
+```bash
+curl -X POST http://localhost:8000/api/routes/deactivate
+```
+
+**Delete a route:**
+```bash
+curl -X DELETE http://localhost:8000/api/routes/{route_id}
+```
+
+**Download original KML file:**
+```bash
+curl -O http://localhost:8000/api/routes/{route_id}/download
+```
+
+### Route Features
+
+- **KML Import:** Upload KML files with LineString and/or Point geometries
+- **Route Visualization:** Active route displays on Grafana map in dark orange
+- **Simulation Following:** In simulation mode, position automatically follows active route
+- **Progress Metrics:** Track progress along route via Prometheus metrics
+  - `starlink_route_progress_percent` - Progress from 0-100%
+  - `starlink_current_waypoint_index` - Current waypoint number
+- **POI Integration:** Embedded Point placemarks can be imported as POIs
+- **Route Switching:** Only one route active at a time; activating new route deactivates previous
+
+### Sample Routes
+
+Example KML files for testing are available in `/data/sample_routes/`:
+- `simple-circular.kml` - Small route (14 waypoints, ~50 km)
+- `cross-country.kml` - Large route (100+ waypoints, ~3944 km)
+- `route-with-pois.kml` - Route with embedded waypoints (24 points + 5 POIs)
+- `invalid-malformed.kml` - Intentionally malformed (for error handling testing)
+
+See `/data/sample_routes/README.md` for detailed descriptions.
+
+### KML File Format
+
+**Minimum required structure:**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <Placemark>
+      <LineString>
+        <coordinates>
+          longitude,latitude,altitude
+          longitude,latitude,altitude
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>
+```
+
+**Coordinate format:**
+- Longitude: -180 to 180 (negative = West)
+- Latitude: -90 to 90 (negative = South)
+- Altitude: Meters above sea level
+
+**Optional features:**
+- Multiple Placemarks (multiple route segments)
+- Point geometry for waypoints (will be imported as POIs)
+- Route names and descriptions in `<name>` and `<description>` tags
+
+### Route Storage
+
+Routes are stored as KML files in `/data/routes/` directory and watched for changes:
+- Uploading via API saves to this directory
+- Routes manually placed here are auto-discovered
+- Deleting via API removes the KML file
+- File changes detected automatically (watchdog)
+
+### Monitoring Route Following
+
+**In Grafana:**
+1. Open http://localhost:3000/d/starlink/fullscreen-overview
+2. Activate a route
+3. Route appears as dark orange line on map
+4. With simulation mode active, position follows the route
+
+**Via Prometheus:**
+```bash
+# Check route progress
+curl 'http://localhost:9090/api/v1/query?query=starlink_route_progress_percent'
+
+# Check waypoint index
+curl 'http://localhost:9090/api/v1/query?query=starlink_current_waypoint_index'
+```
+
+### Troubleshooting
+
+**Route won't upload:**
+- Verify file is valid KML (must have `.kml` extension)
+- Check file contains LineString or Point geometries
+- Ensure XML syntax is correct
+
+**Route not showing on map:**
+- Activate route via UI or API
+- Verify Grafana dashboard is loaded
+- Check browser console for errors
+
+**Position not following route:**
+- Verify `STARLINK_MODE=simulation` in `.env`
+- Check route is activated
+- Monitor logs: `docker logs -f starlink-location | grep route`
+
+**POIs not importing:**
+- Route must have Point placemarks to import
+- Use `import_pois=true` flag if available
+- Check backend logs for parsing errors
+
+---
+
 ## Dashboard Features
 
 ### Position History Route (Fullscreen Overview)
