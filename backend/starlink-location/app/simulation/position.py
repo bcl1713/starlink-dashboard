@@ -18,6 +18,11 @@ logger = logging.getLogger(__name__)
 class PositionSimulator:
     """Simulator for position data along a predefined route."""
 
+    # Class constant for reverse mode boundary adjustment
+    # Used to prevent immediate re-triggering of boundary conditions (progress >= 1.0 or <= 0.0)
+    # when reversing direction at route endpoints
+    _PROGRESS_EPSILON = 0.01
+
     def __init__(
         self,
         route_config: RouteConfig,
@@ -125,7 +130,7 @@ class PositionSimulator:
                 self._route_direction = -1
                 self._movement_stopped = False
                 # Adjust progress slightly to avoid immediately hitting 0.0
-                self.progress = 0.99
+                self.progress = 1.0 - self._PROGRESS_EPSILON
         elif self.progress <= 0.0 and self.route_completion_behavior == "reverse":
             # Route start reached (only relevant for reverse mode)
             logger.info(
@@ -134,7 +139,7 @@ class PositionSimulator:
             self._route_direction = 1
             self._movement_stopped = False
             # Adjust progress slightly to avoid immediately hitting 1.0
-            self.progress = 0.01
+            self.progress = 0.0 + self._PROGRESS_EPSILON
 
         return PositionData(
             latitude=lat,
