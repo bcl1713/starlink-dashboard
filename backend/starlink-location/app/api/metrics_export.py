@@ -1,5 +1,7 @@
 """Metrics export endpoint for integration with Prometheus and monitoring."""
 
+from typing import Optional
+
 from fastapi import APIRouter, status
 
 from app.core.config import ConfigManager
@@ -12,11 +14,25 @@ from app.simulation.coordinator import SimulationCoordinator
 
 # Initialize services
 config_manager = ConfigManager()
-route_manager = RouteManager()
-poi_manager = POIManager()
+
+# Global manager instances (set by main.py)
+route_manager: Optional[RouteManager] = None
+poi_manager: Optional[POIManager] = None
 
 # Create API router
 router = APIRouter(tags=["metrics"])
+
+
+def set_route_manager(manager: RouteManager) -> None:
+    """Set the route manager instance (called by main.py during startup)."""
+    global route_manager
+    route_manager = manager
+
+
+def set_poi_manager(manager: POIManager) -> None:
+    """Set the POI manager instance (called by main.py during startup)."""
+    global poi_manager
+    poi_manager = manager
 
 
 @router.get("/metrics", status_code=status.HTTP_200_OK)

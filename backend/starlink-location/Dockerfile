@@ -24,12 +24,13 @@ COPY --from=builder /root/.local /home/appuser/.local
 COPY main.py .
 COPY config.yaml .
 COPY app/ ./app/
+COPY tests/ ./tests/
 
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 
 # Create /data directory for POI storage with proper permissions
-RUN mkdir -p /data && chown -R appuser:appuser /data
+RUN mkdir -p /data/routes /data/sim_routes && chown -R appuser:appuser /data && chmod -R 755 /data
 
 USER appuser
 

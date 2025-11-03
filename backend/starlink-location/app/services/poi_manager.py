@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from filelock import FileLock
+
 from app.models.poi import POI, POICreate, POIUpdate
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,7 @@ class POIManager:
             pois_file: Path to pois.json file
         """
         self.pois_file = Path(pois_file)
+        self.lock_file = Path(str(self.pois_file) + ".lock")
         self._pois: dict[str, POI] = {}
         self._load_pois()
 
@@ -51,14 +54,20 @@ class POIManager:
                 logger.error(f"Failed to create POI file: {e}")
 
     def _load_pois(self) -> None:
-        """Load POIs from JSON file."""
+        """Load POIs from JSON file with file locking."""
         self._ensure_file_exists()
 
+        lock = FileLock(self.lock_file, timeout=5)
         try:
-            with open(self.pois_file, "r") as f:
-                data = json.load(f)
+            with lock.acquire(timeout=5):
+                with open(self.pois_file, "r") as f:
+                    data = json.load(f)
         except (IOError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load POI file: {e}")
+            self._pois = {}
+            return
+        except Exception as e:
+            logger.error(f"Failed to acquire lock for reading POI file: {e}")
             self._pois = {}
             return
 
@@ -82,34 +91,47 @@ class POIManager:
         logger.info(f"Loaded {len(self._pois)} POIs from {self.pois_file}")
 
     def _save_pois(self) -> None:
-        """Save POIs to JSON file."""
+        """Save POIs to JSON file with file locking and atomic writes."""
+        lock = FileLock(self.lock_file, timeout=5)
         try:
-            # Load existing file to preserve route data
-            with open(self.pois_file, "r") as f:
-                data = json.load(f)
-        except (IOError, json.JSONDecodeError):
-            data = {"pois": {}, "routes": {}}
+            with lock.acquire(timeout=5):
+                try:
+                    # Load existing file to preserve route data
+                    with open(self.pois_file, "r") as f:
+                        data = json.load(f)
+                except (IOError, json.JSONDecodeError):
+                    data = {"pois": {}, "routes": {}}
 
-        # Update pois section
-        pois_section = {}
-        for poi_id, poi in self._pois.items():
-            poi_dict = poi.model_dump()
-            # Convert datetime to ISO format for JSON serialization
-            if isinstance(poi_dict.get("created_at"), datetime):
-                poi_dict["created_at"] = poi_dict["created_at"].isoformat()
-            if isinstance(poi_dict.get("updated_at"), datetime):
-                poi_dict["updated_at"] = poi_dict["updated_at"].isoformat()
-            pois_section[poi_id] = poi_dict
+                # Update pois section
+                pois_section = {}
+                for poi_id, poi in self._pois.items():
+                    poi_dict = poi.model_dump()
+                    # Convert datetime to ISO format for JSON serialization
+                    if isinstance(poi_dict.get("created_at"), datetime):
+                        poi_dict["created_at"] = poi_dict["created_at"].isoformat()
+                    if isinstance(poi_dict.get("updated_at"), datetime):
+                        poi_dict["updated_at"] = poi_dict["updated_at"].isoformat()
+                    pois_section[poi_id] = poi_dict
 
-        data["pois"] = pois_section
+                data["pois"] = pois_section
 
-        # Write updated data
-        try:
-            with open(self.pois_file, "w") as f:
-                json.dump(data, f, indent=2)
-            logger.debug(f"Saved {len(self._pois)} POIs to {self.pois_file}")
-        except IOError as e:
-            logger.error(f"Failed to save POI file: {e}")
+                # Atomic write pattern: write to temp file, then atomic rename
+                temp_file = self.pois_file.with_suffix('.tmp')
+                try:
+                    with open(temp_file, "w") as f:
+                        json.dump(data, f, indent=2)
+                    # Atomic rename (platform-specific but reliable on both Unix and Windows)
+                    temp_file.replace(self.pois_file)
+                    logger.debug(f"Saved {len(self._pois)} POIs to {self.pois_file}")
+                except IOError as e:
+                    logger.error(f"Failed to save POI file: {e}")
+                    # Clean up temp file if it exists
+                    try:
+                        temp_file.unlink()
+                    except Exception:
+                        pass
+        except Exception as e:
+            logger.error(f"Failed to acquire lock for writing POI file: {e}")
 
     def list_pois(self, route_id: Optional[str] = None) -> list[POI]:
         """
@@ -122,7 +144,7 @@ class POIManager:
             List of POI objects
         """
         if route_id:
-            return [poi for poi in self._pois.values() if poi.route_id == route_id or poi.route_id is None]
+            return [poi for poi in self._pois.values() if poi.route_id == route_id]
         return list(self._pois.values())
 
     def get_poi(self, poi_id: str) -> Optional[POI]:
@@ -246,7 +268,7 @@ class POIManager:
             Number of POIs
         """
         if route_id:
-            return len([poi for poi in self._pois.values() if poi.route_id == route_id or poi.route_id is None])
+            return len([poi for poi in self._pois.values() if poi.route_id == route_id])
         return len(self._pois)
 
     def delete_route_pois(self, route_id: str) -> int:

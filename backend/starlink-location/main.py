@@ -10,12 +10,15 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import config, geojson, health, metrics, status
+from app.api import config, geojson, health, metrics, pois, routes, status, ui
 from app.core.config import ConfigManager
+from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
 from app.core.metrics import set_service_info
 from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -29,11 +32,12 @@ logger = get_logger(__name__)
 _coordinator: SimulationCoordinator = None
 _background_task = None
 _simulation_config = None
+_route_manager: RouteManager = None
 
 
 async def startup_event():
     """Initialize application on startup."""
-    global _coordinator, _background_task, _simulation_config
+    global _coordinator, _background_task, _simulation_config, _route_manager
 
     try:
         logger.info_json("Initializing Starlink Location Backend")
@@ -82,6 +86,61 @@ async def startup_event():
         health.set_coordinator(_coordinator)
         status.set_coordinator(_coordinator)
         config.set_coordinator(_coordinator)
+        pois.set_coordinator(_coordinator)
+
+        # Initialize ETA service for POI calculations
+        logger.info_json("Initializing ETA service")
+        try:
+            poi_manager = POIManager()
+            initialize_eta_service(poi_manager)
+            logger.info_json("ETA service initialized successfully")
+        except Exception as e:
+            logger.warning_json(
+                "Failed to initialize ETA service",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
+
+        # Inject POIManager singleton into all API modules
+        logger.info_json("Injecting POIManager into API modules")
+        try:
+            pois.set_poi_manager(poi_manager)
+            routes.set_poi_manager(poi_manager)
+            geojson.set_poi_manager(poi_manager)
+            # Note: metrics_export also gets POIManager but via route_manager injection below
+            logger.info_json("POIManager injected successfully")
+        except Exception as e:
+            logger.warning_json(
+                "Failed to inject POIManager",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
+
+        # Initialize Route Manager for KML route handling
+        logger.info_json("Initializing Route Manager")
+        try:
+            _route_manager = RouteManager()
+            _route_manager.start_watching()
+            geojson.set_route_manager(_route_manager)
+            routes.set_route_manager(_route_manager)
+            # Inject into metrics_export as well
+            from app.api import metrics_export
+            metrics_export.set_route_manager(_route_manager)
+            metrics_export.set_poi_manager(poi_manager)
+
+            # Inject RouteManager into SimulationCoordinator (Phase 5 feature)
+            if isinstance(_coordinator, SimulationCoordinator):
+                _coordinator.set_route_manager(_route_manager)
+                logger.info_json("RouteManager injected into SimulationCoordinator")
+
+            logger.info_json("Route Manager initialized successfully")
+        except Exception as e:
+            logger.error_json(
+                "Failed to initialize Route Manager",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
+            raise
 
         # Log active mode prominently
         mode_description = "Real Starlink terminal data" if active_mode == "live" else "Simulated telemetry"
@@ -122,6 +181,10 @@ async def shutdown_event():
                 await _background_task
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
+
+        # Shutdown ETA service
+        logger.info_json("Shutting down ETA service")
+        shutdown_eta_service()
 
         logger.info_json("Shutdown complete")
     except Exception as e:
@@ -203,8 +266,8 @@ async def _background_update_loop():
                                 }
                             )
 
-                # Sleep for update interval (0.1 seconds = 10 Hz)
-                await asyncio.sleep(0.1)
+                # Sleep for configured update interval
+                await asyncio.sleep(_simulation_config.update_interval_seconds)
 
             except Exception as e:
                 error_count += 1
@@ -287,6 +350,9 @@ app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(geojson.router, tags=["GeoJSON"])
+app.include_router(pois.router, tags=["POIs"])
+app.include_router(routes.router, tags=["Routes"])
+app.include_router(ui.router, tags=["UI"])
 
 
 @app.get("/")

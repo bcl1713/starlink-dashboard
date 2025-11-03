@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="utf-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Flight Plan PHNL-RJTY</name>
+    <Style id="altWaypointIcon">
+      <IconStyle>
+        <color>ffb3b3b3</color>
+        <colorMode>random</colorMode>
+        <scale>0.75</scale>
+        <Icon>
+          <href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    <Style id="destWaypointIcon">
+      <IconStyle>
+        <color>ffddad05</color>
+        <colorMode>random</colorMode>
+        <scale>0.75</scale>
+        <Icon>
+          <href>https://maps.google.com/mapfiles/kml/pal2/icon18.png</href>
+        </Icon>
+      </IconStyle>
+    </Style>
+    <Placemark>
+      <name>RJTY</name>
+      <description>Yokota Air Base
+ Time Over Waypoint: 2025-10-28 04:08:14Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.34848,35.748493000000003</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffb3b3b3</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.34848,35.748493000000003
+139.174665,35.635209000000003</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>-TOC-</name>
+      <description>-TOC-
+ Time Over Waypoint: 2025-10-28 04:11:34Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.174665,35.635209000000003</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffb3b3b3</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.174665,35.635209000000003
+138.966667,35.5</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>APPCH</name>
+      <description>
+ Time Over Waypoint: 2025-10-28 04:13:52Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>138.966667,35.5</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffb3b3b3</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>138.966667,35.5
+138.97019599999999,35.499675000000003</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>-TOD-</name>
+      <description>-TOD-
+ Time Over Waypoint: 2025-10-28 04:13:54Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>138.97019599999999,35.499675000000003</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffb3b3b3</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>138.97019599999999,35.499675000000003
+139.44999999999999,35.454723000000001</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>RJTA</name>
+      <description>Atsugi
+ Time Over Waypoint: 2025-10-28 04:19:01Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.44999999999999,35.454723000000001</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>RJTY</name>
+      <description>Yokota Air Base
+ Time Over Waypoint: 2025-10-28 04:08:14Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.34848,35.748493000000003</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffb3b3b3</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.34848,35.748493000000003
+139.34077400000001,35.519925000000001</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>-TOC-</name>
+      <description>-TOC-
+ Time Over Waypoint: 2025-10-28 04:12:06Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.34077400000001,35.519925000000001</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffb3b3b3</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.34077400000001,35.519925000000001
+139.33530999999999,35.357061999999999</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>-TOD-</name>
+      <description>-TOD-
+ Time Over Waypoint: 2025-10-28 04:13:45Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.33530999999999,35.357061999999999</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffb3b3b3</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.33530999999999,35.357061999999999
+139.33333300000001,35.299999999999997</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>APPCH</name>
+      <description>
+ Time Over Waypoint: 2025-10-28 04:14:36Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.33333300000001,35.299999999999997</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffb3b3b3</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.33333300000001,35.299999999999997
+139.78111000000001,35.553333000000002</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>RJTT</name>
+      <description>Tokyo (Haneda) International
+ Time Over Waypoint: 2025-10-28 04:20:26Z</description>
+      <styleUrl>#altWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.78111000000001,35.553333000000002</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>PHNL</name>
+      <description>Daniel K Inouye International
+ Time Over Waypoint: 2025-10-27 20:00:00Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>-157.92026000000001,21.317824999999999</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>-157.92026000000001,21.317824999999999
+-158.49052499999999,21.298121999999999</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>KEOLA</name>
+      <description>KEOLA
+ Time Over Waypoint: 2025-10-27 20:07:55Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>-158.49052499999999,21.298121999999999</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>-158.49052499999999,21.298121999999999
+-161.018248,22.298358</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>-TOC-</name>
+      <description>-TOC-
+ Time Over Waypoint: 2025-10-27 20:28:46Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>-161.018248,22.298358</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>-161.018248,22.298358
+-161.58318299999999,22.5077</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>LILIA</name>
+      <description>LILIA
+ Time Over Waypoint: 2025-10-27 20:33:04Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>-161.58318299999999,22.5077</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>-161.58318299999999,22.5077
+-163.85499999999999,23.258333</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>DOGIF</name>
+      <description>DOGIF
+ Time Over Waypoint: 2025-10-27 20:50:06Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>-163.85499999999999,23.258333</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>-163.85499999999999,23.258333
+-170,26</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>26N70</name>
+      <description>26N170W
+ Time Over Waypoint: 2025-10-27 21:37:47Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>-170,26</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>-170,26
+-180,30</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>180,30
+180,30</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>30E80</name>
+      <description>30N180E
+ Time Over Waypoint: 2025-10-27 22:53:38Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>180,30</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>180,30
+170,33</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>33E70</name>
+      <description>33N170E
+ Time Over Waypoint: 2025-10-28 00:09:03Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>170,33</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>170,33
+160,34</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>34E60</name>
+      <description>34N160E
+ Time Over Waypoint: 2025-10-28 01:22:08Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>160,34</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>160,34
+150,35</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>35E50</name>
+      <description>35N150E
+ Time Over Waypoint: 2025-10-28 02:37:13Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>150,35</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>150,35
+145.996275,35.321792000000002</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>SEALS</name>
+      <description>SEALS
+ Time Over Waypoint: 2025-10-28 03:07:44Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>145.996275,35.321792000000002</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>145.996275,35.321792000000002
+144.959022,35.287931</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>LAPIL</name>
+      <description>LAPIL
+ Time Over Waypoint: 2025-10-28 03:15:41Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>144.959022,35.287931</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>144.959022,35.287931
+143.32722200000001,35.251944000000002</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>IPROS</name>
+      <description>IPROS
+ Time Over Waypoint: 2025-10-28 03:28:13Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>143.32722200000001,35.251944000000002</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>143.32722200000001,35.251944000000002
+140.674285,34.741092000000002</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>-TOD-</name>
+      <description>-TOD-
+ Time Over Waypoint: 2025-10-28 03:49:22Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>140.674285,34.741092000000002</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>140.674285,34.741092000000002
+140.44785300000001,34.697017000000002</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>LIGNI</name>
+      <description>LIGNI
+ Time Over Waypoint: 2025-10-28 03:51:35Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>140.44785300000001,34.697017000000002</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>140.44785300000001,34.697017000000002
+139.89552800000001,34.946393999999998</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>UTIBO</name>
+      <description>UTIBO
+ Time Over Waypoint: 2025-10-28 03:56:47Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.89552800000001,34.946393999999998</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.89552800000001,34.946393999999998
+139.77397500000001,35.083908000000001</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>MIURA</name>
+      <description>MIURA
+ Time Over Waypoint: 2025-10-28 03:58:27Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.77397500000001,35.083908000000001</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.77397500000001,35.083908000000001
+139.58752200000001,35.255825000000002</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>KOSKA</name>
+      <description>KOSKA
+ Time Over Waypoint: 2025-10-28 04:00:41Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.58752200000001,35.255825000000002</coordinates>
+      </Point>
+    </Placemark>
+    <Placemark>
+      <name>Route</name>
+      <Style>
+        <LineStyle>
+          <color>ffddad05</color>
+          <width>5</width>
+          <outerColor xmlns="http://www.google.com/kml/ext/2.2">ff000000</outerColor>
+          <outerWidth xmlns="http://www.google.com/kml/ext/2.2">0.10000000000000001</outerWidth>
+        </LineStyle>
+      </Style>
+      <LineString>
+        <altitudeMode>clampToGround</altitudeMode>
+        <coordinates>139.58752200000001,35.255825000000002
+139.34848,35.748493000000003</coordinates>
+      </LineString>
+    </Placemark>
+    <Placemark>
+      <name>RJTY</name>
+      <description>Yokota Air Base
+ Time Over Waypoint: 2025-10-28 04:08:14Z</description>
+      <styleUrl>#destWaypointIcon</styleUrl>
+      <Point>
+        <coordinates>139.34848,35.748493000000003</coordinates>
+      </Point>
+    </Placemark>
+  </Document>
+</kml>

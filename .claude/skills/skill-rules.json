@@ -1,0 +1,81 @@
+{
+  "version": "1.0",
+  "description": "Skill activation triggers for Claude Code. Controls when skills automatically suggest or block actions.",
+  "skills": {
+    "skill-developer": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "description": "Meta-skill for creating and managing Claude Code skills",
+      "promptTriggers": {
+        "keywords": [
+          "skill system",
+          "create skill",
+          "add skill",
+          "skill triggers",
+          "skill rules",
+          "hook system",
+          "skill development",
+          "skill-rules.json"
+        ],
+        "intentPatterns": [
+          "(how do|how does|explain).*?skill",
+          "(create|add|modify|build).*?skill",
+          "skill.*?(work|trigger|activate|system)"
+        ]
+      }
+    },
+    "grafana-dashboard": {
+      "type": "domain",
+      "enforcement": "suggest",
+      "priority": "high",
+      "description": "Guide for creating and editing Grafana dashboards with Prometheus queries",
+      "promptTriggers": {
+        "keywords": [
+          "grafana",
+          "dashboard",
+          "panel",
+          "geomap",
+          "timeseries",
+          "stat panel",
+          "gauge",
+          "prometheus query",
+          "promql",
+          "visualization",
+          "metric query",
+          "grafana json"
+        ],
+        "intentPatterns": [
+          "(create|add|modify|edit|build|update).*?(dashboard|panel)",
+          "(add|create).*?(geomap|timeseries|stat|gauge|panel)",
+          "dashboard.*?(json|config|configuration)",
+          "(prometheus|promql).*?query",
+          "grafana.*?(panel|dashboard|visualization)"
+        ]
+      },
+      "filePathTriggers": {
+        "patterns": [
+          "**/monitoring/grafana/provisioning/dashboards/*.json"
+        ]
+      }
+    }
+  },
+  "notes": {
+    "enforcement_types": {
+      "suggest": "Skill suggestion appears but doesn't block execution",
+      "block": "Requires skill to be used before proceeding (guardrail)",
+      "warn": "Shows warning but allows proceeding"
+    },
+    "priority_levels": {
+      "critical": "Highest - Always trigger when matched",
+      "high": "Important - Trigger for most matches",
+      "medium": "Moderate - Trigger for clear matches",
+      "low": "Optional - Trigger only for explicit matches"
+    },
+    "customization": {
+      "pathPatterns": "Adjust to match your project structure (blog-api, auth-service, etc.)",
+      "keywords": "Add domain-specific terms relevant to your project",
+      "intentPatterns": "Use regex for flexible user intent matching"
+    }
+  }
+}

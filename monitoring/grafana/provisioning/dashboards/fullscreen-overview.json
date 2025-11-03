@@ -1,11 +1,24 @@
 {
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": null,
+  "id": 2,
   "links": [
     {
       "asDropdown": false,
@@ -35,8 +48,10 @@
   "liveNow": true,
   "panels": [
     {
-      "type": "grafana-clock-panel",
-      "title": "UTC (Zulu)",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 3,
         "w": 6,
@@ -45,6 +60,44 @@
       },
       "id": 200,
       "options": {
+        "bgColor": "",
+        "clockType": "24 hour",
+        "countdownSettings": {
+          "endCountdownTime": "2025-10-31T03:47:59-05:00",
+          "endText": "00:00:00",
+          "invalidValueText": "invalid value",
+          "noValueText": "no value found",
+          "queryCalculation": "last",
+          "source": "input"
+        },
+        "countupSettings": {
+          "beginCountupTime": "2025-10-31T03:47:59-05:00",
+          "beginText": "00:00:00",
+          "invalidValueText": "invalid value",
+          "noValueText": "no value found",
+          "queryCalculation": "last",
+          "source": "input"
+        },
+        "dateFormat": "YYYY-MM-DD",
+        "dateSettings": {
+          "dateFormat": "YYYY-MM-DD",
+          "fontSize": "20px",
+          "fontWeight": "normal",
+          "locale": "",
+          "showDate": false
+        },
+        "descriptionSettings": {
+          "descriptionText": "",
+          "fontSize": "12px",
+          "fontWeight": "normal",
+          "noValueText": "no description found",
+          "source": "none"
+        },
+        "fontMono": false,
+        "mode": "time",
+        "refresh": "sec",
+        "showDate": false,
+        "showSeconds": true,
         "timeSettings": {
           "fontSize": "24px",
           "fontWeight": "bold"
@@ -55,20 +108,22 @@
           "fontWeight": "normal",
           "showTimezone": true,
           "zoneFormat": "offset"
-        },
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true
+        }
       },
+      "pluginVersion": "3.0.1",
+      "targets": [
+        {
+          "refId": "A"
+        }
+      ],
+      "title": "UTC (Zulu)",
+      "type": "grafana-clock-panel"
+    },
+    {
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      }
-    },
-    {
-      "type": "grafana-clock-panel",
-      "title": "Washington DC",
+      },
       "gridPos": {
         "h": 3,
         "w": 6,
@@ -77,6 +132,44 @@
       },
       "id": 201,
       "options": {
+        "bgColor": "",
+        "clockType": "24 hour",
+        "countdownSettings": {
+          "endCountdownTime": "2025-10-31T03:47:59-05:00",
+          "endText": "00:00:00",
+          "invalidValueText": "invalid value",
+          "noValueText": "no value found",
+          "queryCalculation": "last",
+          "source": "input"
+        },
+        "countupSettings": {
+          "beginCountupTime": "2025-10-31T03:47:59-05:00",
+          "beginText": "00:00:00",
+          "invalidValueText": "invalid value",
+          "noValueText": "no value found",
+          "queryCalculation": "last",
+          "source": "input"
+        },
+        "dateFormat": "YYYY-MM-DD",
+        "dateSettings": {
+          "dateFormat": "YYYY-MM-DD",
+          "fontSize": "20px",
+          "fontWeight": "normal",
+          "locale": "",
+          "showDate": false
+        },
+        "descriptionSettings": {
+          "descriptionText": "",
+          "fontSize": "12px",
+          "fontWeight": "normal",
+          "noValueText": "no description found",
+          "source": "none"
+        },
+        "fontMono": false,
+        "mode": "time",
+        "refresh": "sec",
+        "showDate": false,
+        "showSeconds": true,
         "timeSettings": {
           "fontSize": "24px",
           "fontWeight": "bold"
@@ -87,20 +180,22 @@
           "fontWeight": "normal",
           "showTimezone": true,
           "zoneFormat": "offset"
-        },
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true
+        }
       },
+      "pluginVersion": "3.0.1",
+      "targets": [
+        {
+          "refId": "A"
+        }
+      ],
+      "title": "Washington DC",
+      "type": "grafana-clock-panel"
+    },
+    {
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      }
-    },
-    {
-      "type": "grafana-clock-panel",
-      "title": "Tokyo",
+      },
       "gridPos": {
         "h": 3,
         "w": 6,
@@ -109,6 +204,44 @@
       },
       "id": 203,
       "options": {
+        "bgColor": "",
+        "clockType": "24 hour",
+        "countdownSettings": {
+          "endCountdownTime": "2025-10-31T03:47:59-05:00",
+          "endText": "00:00:00",
+          "invalidValueText": "invalid value",
+          "noValueText": "no value found",
+          "queryCalculation": "last",
+          "source": "input"
+        },
+        "countupSettings": {
+          "beginCountupTime": "2025-10-31T03:47:59-05:00",
+          "beginText": "00:00:00",
+          "invalidValueText": "invalid value",
+          "noValueText": "no value found",
+          "queryCalculation": "last",
+          "source": "input"
+        },
+        "dateFormat": "YYYY-MM-DD",
+        "dateSettings": {
+          "dateFormat": "YYYY-MM-DD",
+          "fontSize": "20px",
+          "fontWeight": "normal",
+          "locale": "",
+          "showDate": false
+        },
+        "descriptionSettings": {
+          "descriptionText": "",
+          "fontSize": "12px",
+          "fontWeight": "normal",
+          "noValueText": "no description found",
+          "source": "none"
+        },
+        "fontMono": false,
+        "mode": "time",
+        "refresh": "sec",
+        "showDate": false,
+        "showSeconds": true,
         "timeSettings": {
           "fontSize": "24px",
           "fontWeight": "bold"
@@ -119,20 +252,22 @@
           "fontWeight": "normal",
           "showTimezone": true,
           "zoneFormat": "offset"
-        },
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true
+        }
       },
+      "pluginVersion": "3.0.1",
+      "targets": [
+        {
+          "refId": "A"
+        }
+      ],
+      "title": "Tokyo",
+      "type": "grafana-clock-panel"
+    },
+    {
       "fieldConfig": {
         "defaults": {},
         "overrides": []
-      }
-    },
-    {
-      "type": "grafana-clock-panel",
-      "title": "Kuala Lumpur",
+      },
       "gridPos": {
         "h": 3,
         "w": 6,
@@ -141,6 +276,44 @@
       },
       "id": 202,
       "options": {
+        "bgColor": "",
+        "clockType": "24 hour",
+        "countdownSettings": {
+          "endCountdownTime": "2025-10-31T03:47:59-05:00",
+          "endText": "00:00:00",
+          "invalidValueText": "invalid value",
+          "noValueText": "no value found",
+          "queryCalculation": "last",
+          "source": "input"
+        },
+        "countupSettings": {
+          "beginCountupTime": "2025-10-31T03:47:59-05:00",
+          "beginText": "00:00:00",
+          "invalidValueText": "invalid value",
+          "noValueText": "no value found",
+          "queryCalculation": "last",
+          "source": "input"
+        },
+        "dateFormat": "YYYY-MM-DD",
+        "dateSettings": {
+          "dateFormat": "YYYY-MM-DD",
+          "fontSize": "20px",
+          "fontWeight": "normal",
+          "locale": "",
+          "showDate": false
+        },
+        "descriptionSettings": {
+          "descriptionText": "",
+          "fontSize": "12px",
+          "fontWeight": "normal",
+          "noValueText": "no description found",
+          "source": "none"
+        },
+        "fontMono": false,
+        "mode": "time",
+        "refresh": "sec",
+        "showDate": false,
+        "showSeconds": true,
         "timeSettings": {
           "fontSize": "24px",
           "fontWeight": "bold"
@@ -151,27 +324,34 @@
           "fontWeight": "normal",
           "showTimezone": true,
           "zoneFormat": "offset"
-        },
-        "showDate": false,
-        "dateFormat": "YYYY-MM-DD",
-        "clockType": "24 hour",
-        "showSeconds": true
+        }
       },
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      }
+      "pluginVersion": "3.0.1",
+      "targets": [
+        {
+          "refId": "A"
+        }
+      ],
+      "title": "Kuala Lumpur",
+      "type": "grafana-clock-panel"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
+        "type": "datasource",
+        "uid": "-- Mixed --"
       },
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "fixed",
-            "fixedColor": "dark-red"
+            "fixedColor": "dark-red",
+            "mode": "fixed"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -179,7 +359,7 @@
             "steps": [
               {
                 "color": "dark-red",
-                "value": null
+                "value": 0
               }
             ]
           }
@@ -188,36 +368,135 @@
       },
       "gridPos": {
         "h": 22,
-        "w": 16,
+        "w": 18,
         "x": 0,
-        "y": 2
+        "y": 3
       },
       "id": 1,
       "options": {
         "basemap": {
-          "name": "OpenStreetMap"
+          "config": {},
+          "name": "Layer 0",
+          "type": "default"
         },
         "controls": {
+          "mouseWheelZoom": true,
           "showAttribution": true,
           "showDebug": false,
-          "showMeasure": false,
+          "showMeasure": true,
           "showScale": true,
-          "showZoom": true,
-          "mouseWheelZoom": true
+          "showZoom": true
         },
         "layers": [
           {
-            "type": "route",
-            "name": "Position History",
             "config": {
+              "showLegend": true,
               "style": {
                 "color": {
                   "fixed": "blue"
                 },
-                "opacity": 0.7,
-                "lineWidth": 3
-              },
-              "showLegend": false
+                "opacity": 1,
+                "size": {
+                  "fixed": 6,
+                  "max": 100,
+                  "min": 1,
+                  "mode": "fixed"
+                },
+                "symbol": {
+                  "field": "icon",
+                  "fixed": "marker",
+                  "mode": "field"
+                },
+                "text": {
+                  "field": "name",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 14,
+                  "offsetX": 0,
+                  "offsetY": 15,
+                  "textAlign": "center",
+                  "textBaseline": "top"
+                }
+              }
+            },
+            "filterByRefId": "G",
+            "filterData": {
+              "id": "byRefId",
+              "options": "G"
+            },
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Points of Interest",
+            "tooltip": {
+              "mode": "details"
+            },
+            "type": "markers"
+          },
+          {
+            "config": {
+              "showLegend": true,
+              "style": {
+                "color": {
+                  "fixed": "dark-orange"
+                },
+                "lineWidth": 2,
+                "opacity": 0.9
+              }
+            },
+            "filterByRefId": "H",
+            "filterData": {
+              "id": "byRefId",
+              "options": "H"
+            },
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Planned Route (KML) - Western Hemisphere",
+            "tooltip": false,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "dark-orange"
+                },
+                "lineWidth": 2,
+                "opacity": 0.9
+              }
+            },
+            "filterByRefId": "H_EAST",
+            "filterData": {
+              "id": "byRefId",
+              "options": "H_EAST"
+            },
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Planned Route (KML) - Eastern Hemisphere",
+            "tooltip": false,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "blue"
+                },
+                "lineWidth": 3,
+                "opacity": 0.7
+              }
             },
             "filterByRefId": "E",
             "filterData": {
@@ -225,16 +504,42 @@
               "options": "joinByField-E-F"
             },
             "location": {
-              "mode": "coords",
               "latitude": "latitude_history",
-              "longitude": "longitude_history"
+              "longitude": "longitude_history",
+              "mode": "coords"
             },
-            "tooltip": false
+            "name": "Position History - Western Hemisphere",
+            "tooltip": false,
+            "type": "route"
           },
           {
-            "type": "markers",
-            "name": "Current Position",
             "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "blue"
+                },
+                "lineWidth": 3,
+                "opacity": 0.7
+              }
+            },
+            "filterByRefId": "E_EAST",
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-E_EAST-F_EAST"
+            },
+            "location": {
+              "latitude": "latitude_history",
+              "longitude": "longitude_history",
+              "mode": "coords"
+            },
+            "name": "Position History - Eastern Hemisphere",
+            "tooltip": false,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": true,
               "style": {
                 "color": {
                   "fixed": "green"
@@ -269,8 +574,7 @@
                   "textAlign": "center",
                   "textBaseline": "middle"
                 }
-              },
-              "showLegend": true
+              }
             },
             "filterByRefId": "A",
             "filterData": {
@@ -278,74 +582,196 @@
               "options": "joinByField-A-B-C-D"
             },
             "location": {
-              "mode": "coords",
               "latitude": "latitude",
-              "longitude": "longitude"
+              "longitude": "longitude",
+              "mode": "coords"
             },
-            "tooltip": true
+            "name": "Current Position",
+            "tooltip": true,
+            "type": "markers"
           }
         ],
-        "view": {
-          "allLayers": false,
-          "initialZoom": 4,
-          "shared": false,
-          "fit": true
-        },
         "tooltip": {
           "mode": "details"
+        },
+        "view": {
+          "allLayers": false,
+          "fit": true,
+          "id": "zero",
+          "initialZoom": 4,
+          "lat": 0,
+          "lon": 0,
+          "noRepeat": false,
+          "shared": false,
+          "zoom": 1
         }
       },
       "pluginVersion": "12.2.1",
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_latitude_degrees",
           "instant": true,
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "latitude",
-          "refId": "A",
-          "interval": "1s"
+          "refId": "A"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_longitude_degrees",
           "instant": true,
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "longitude",
-          "refId": "B",
-          "interval": "1s"
+          "refId": "B"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_altitude_feet",
           "instant": true,
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "altitude",
-          "refId": "C",
-          "interval": "1s"
+          "refId": "C"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_heading_degrees",
           "instant": true,
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "heading",
-          "refId": "D",
-          "interval": "1s"
+          "refId": "D"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_latitude_degrees",
           "instant": false,
-          "range": true,
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "latitude_history",
-          "refId": "E",
-          "interval": "1s"
+          "range": true,
+          "refId": "E"
         },
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
           "expr": "starlink_dish_longitude_degrees",
           "instant": false,
-          "range": true,
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "longitude_history",
-          "refId": "F",
-          "interval": "1s"
+          "range": true,
+          "refId": "F"
+        },
+        {
+          "cacheDurationSeconds": 1,
+          "columns": [],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "parser": "json",
+          "refId": "G",
+          "root_selector": "pois",
+          "source": "url",
+          "type": "json",
+          "url": "/api/pois/etas?category=${poi_category},other",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "category",
+                "value": "${poi_category}"
+              }
+            ]
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
+            "params": []
+          }
+        },
+        {
+          "cacheDurationSeconds": 5,
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "format": "table",
+          "parser": "json",
+          "refId": "H",
+          "root_selector": "coordinates",
+          "source": "url",
+          "url": "/api/route/coordinates/west",
+          "urlOptions": {
+            "params": []
+          }
+        },
+        {
+          "cacheDurationSeconds": 5,
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "format": "table",
+          "parser": "json",
+          "refId": "H_EAST",
+          "root_selector": "coordinates",
+          "source": "url",
+          "url": "/api/route/coordinates/east",
+          "urlOptions": {
+            "params": []
+          }
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_dish_latitude_degrees",
+          "instant": false,
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "latitude_history",
+          "range": true,
+          "refId": "E_EAST"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_dish_longitude_degrees",
+          "instant": false,
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "longitude_history",
+          "range": true,
+          "refId": "F_EAST"
         }
       ],
       "title": "Current Position",
@@ -368,12 +794,278 @@
           },
           "id": "joinByField",
           "options": {
-            "mode": "inner",
-            "byField": "Time"
+            "byField": "Time",
+            "mode": "inner"
+          }
+        },
+        {
+          "filter": {
+            "id": "byRefId",
+            "options": "/^(?:E_EAST|F_EAST)$/"
+          },
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "inner"
           }
         }
       ],
       "type": "geomap"
+    },
+    {
+      "datasource": {
+        "type": "yesoreyeram-infinity-datasource",
+        "uid": "infinity"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": false,
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dthms"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "red",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 0
+                    },
+                    {
+                      "color": "orange",
+                      "value": 900
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1800
+                    },
+                    {
+                      "color": "blue",
+                      "value": 3600
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "applyToRow": false,
+                  "mode": "gradient",
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 91
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 20
+              },
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "POI"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 345
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Course Status"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom.viz",
+                "value": true
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 18,
+        "y": 3
+      },
+      "id": 204,
+      "options": {
+        "cellHeight": "sm",
+        "filterByRefId": "A",
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "cacheDurationSeconds": 1,
+          "columns": [],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "pagination": {
+            "enabled": false
+          },
+          "parser": "json",
+          "refId": "A",
+          "resultFormat": "json",
+          "root_selector": "pois",
+          "source": "url",
+          "type": "json",
+          "url": "/api/pois/etas?category=${poi_category},other",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "latitude",
+                "value": "41.6"
+              },
+              {
+                "name": "longitude",
+                "value": "-74.0"
+              },
+              {
+                "name": "speed_knots",
+                "value": "67"
+              },
+              {
+                "name": "category",
+                "value": "${poi_category}"
+              }
+            ]
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET"
+          }
+        }
+      ],
+      "title": "POI Quick Reference (Top 5)",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "bearing_degrees": true,
+              "distance_meters": true,
+              "icon": true,
+              "latitude": true,
+              "longitude": true,
+              "poi_id": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "category": 1,
+              "eta_seconds": 2,
+              "name": 0
+            },
+            "renameByName": {
+              "category": "Type",
+              "course_status": "Course Status",
+              "eta_seconds": "ETA",
+              "name": "POI"
+            }
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "filters": [
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "behind"
+                  }
+                },
+                "fieldName": "Course Status"
+              },
+              {
+                "config": {
+                  "id": "equal",
+                  "options": {
+                    "value": "off_track"
+                  }
+                },
+                "fieldName": "Course Status"
+              }
+            ],
+            "match": "any",
+            "type": "exclude"
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": "5"
+          }
+        }
+      ],
+      "type": "table"
     },
     {
       "datasource": {
@@ -383,29 +1075,38 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "fixedColor": "blue",
+            "mode": "fixed",
+            "seriesBy": "last"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Latency (ms)",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 10,
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
             "lineWidth": 2,
             "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -415,22 +1116,22 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "blue",
+                "value": 0
               },
               {
-                "color": "yellow",
-                "value": 80
+                "color": "#EAB839",
+                "value": 100
               },
               {
                 "color": "red",
-                "value": 120
+                "value": 200
               }
             ]
           },
@@ -461,7 +1162,7 @@
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "orange",
+                  "fixedColor": "super-light-orange",
                   "mode": "fixed"
                 }
               }
@@ -486,9 +1187,9 @@
       },
       "gridPos": {
         "h": 11,
-        "w": 8,
-        "x": 16,
-        "y": 2
+        "w": 6,
+        "x": 18,
+        "y": 10
       },
       "id": 2,
       "options": {
@@ -499,39 +1200,40 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "expr": "starlink_network_latency_ms_current",
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "Current",
-          "refId": "A",
-          "interval": "1s"
+          "refId": "A"
         },
         {
           "expr": "min_over_time(starlink_network_latency_ms_current[5m])",
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "Min (5m)",
-          "refId": "B",
-          "interval": "1s"
+          "refId": "B"
         },
         {
           "expr": "avg_over_time(starlink_network_latency_ms_current[5m])",
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "Avg (5m)",
-          "refId": "C",
-          "interval": "1s"
+          "refId": "C"
         },
         {
           "expr": "max_over_time(starlink_network_latency_ms_current[5m])",
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "Max (5m)",
-          "refId": "D",
-          "interval": "1s"
+          "refId": "D"
         }
       ],
       "title": "Network Latency",
@@ -548,11 +1250,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Mbps",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -561,6 +1265,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
@@ -568,6 +1273,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -583,7 +1289,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               }
             ]
           },
@@ -623,10 +1329,10 @@
         ]
       },
       "gridPos": {
-        "h": 11,
-        "w": 8,
-        "x": 16,
-        "y": 13
+        "h": 9,
+        "w": 6,
+        "x": 18,
+        "y": 21
       },
       "id": 3,
       "options": {
@@ -637,25 +1343,26 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "expr": "starlink_network_throughput_up_mbps_current * -1",
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "Upload",
-          "refId": "A",
-          "interval": "1s"
+          "refId": "A"
         },
         {
           "expr": "starlink_network_throughput_down_mbps_current",
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "Download",
-          "refId": "B",
-          "interval": "1s"
+          "refId": "B"
         }
       ],
       "title": "Download/Upload Throughput",
@@ -672,11 +1379,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
             "axisLabel": "Packet Loss %",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -685,6 +1394,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 2,
             "pointSize": 5,
@@ -692,6 +1402,7 @@
               "type": "linear"
             },
             "showPoints": "never",
+            "showValues": false,
             "spanNulls": true,
             "stacking": {
               "group": "A",
@@ -709,7 +1420,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "yellow",
@@ -726,10 +1437,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 6,
-        "w": 12,
+        "h": 5,
+        "w": 18,
         "x": 0,
-        "y": 24
+        "y": 25
       },
       "id": 4,
       "options": {
@@ -740,138 +1451,76 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "multi",
           "sort": "none"
         }
       },
-      "pluginVersion": "11.1.0",
+      "pluginVersion": "12.2.1",
       "targets": [
         {
           "expr": "starlink_network_packet_loss_percent",
+          "interval": "1s",
           "intervalFactor": 1,
           "legendFormat": "Packet Loss",
-          "refId": "A",
-          "interval": "1s"
+          "refId": "A"
         }
       ],
       "title": "Packet Loss",
       "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Outage Status",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "steps",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [
-            {
-              "type": "value",
-              "options": {
-                "1": {
-                  "color": "red",
-                  "index": 1,
-                  "text": "OUTAGE"
-                },
-                "0": {
-                  "color": "green",
-                  "index": 0,
-                  "text": "CONNECTED"
-                }
-              }
-            }
-          ],
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 0.5
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 24
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": ["lastNotNull"],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "11.1.0",
-      "targets": [
-        {
-          "expr": "starlink_dish_outage_active",
-          "intervalFactor": 1,
-          "legendFormat": "Connection State",
-          "refId": "A",
-          "interval": "1s"
-        }
-      ],
-      "title": "Connection State",
-      "type": "state-timeline"
     }
   ],
+  "preload": false,
   "refresh": "1s",
-  "schemaVersion": 38,
-  "style": "dark",
+  "schemaVersion": 42,
   "tags": ["starlink", "fullscreen", "overview"],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "text": "Departure & Arrival",
+          "value": "departure,arrival"
+        },
+        "description": "Filter POIs by category",
+        "includeAll": false,
+        "label": "POI Category",
+        "name": "poi_category",
+        "options": [
+          {
+            "selected": true,
+            "text": "Departure & Arrival",
+            "value": "departure,arrival"
+          },
+          {
+            "selected": false,
+            "text": "All POIs",
+            "value": ""
+          },
+          {
+            "selected": false,
+            "text": "Departure Only",
+            "value": "departure"
+          },
+          {
+            "selected": false,
+            "text": "Arrival Only",
+            "value": "arrival"
+          },
+          {
+            "selected": false,
+            "text": "Waypoints Only",
+            "value": "waypoint"
+          },
+          {
+            "selected": false,
+            "text": "Alternates Only",
+            "value": "alternate"
+          }
+        ],
+        "query": "Departure & Arrival : departure\\,arrival, All POIs :  , Departure Only : departure, Arrival Only : arrival, Waypoints Only : waypoint, Alternates Only : alternate",
+        "type": "custom"
+      }
+    ]
   },
   "time": {
     "from": "now-30m",
@@ -883,5 +1532,5 @@
   "timezone": "utc",
   "title": "Fullscreen Overview",
   "uid": "starlink-fullscreen",
-  "version": 1
+  "version": 15
 }

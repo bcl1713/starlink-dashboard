@@ -13,14 +13,21 @@ route:
   pattern: circular
 
   # Starting position (decimal degrees)
-  latitude_start: 40.7128
-  longitude_start: -74.0060
+  latitude_start: 70.0
+  longitude_start: 179.95
 
   # For circular route: radius in kilometers
   radius_km: 100.0
 
   # For straight route: total distance in kilometers
-  distance_km: 500.0
+  # ~60 km covers -179° to +179° at equator in ~60 seconds at 60 knots
+  distance_km: 60.0
+
+  # KML route completion behavior when active route is being followed
+  # 'loop': Route restarts from beginning when completed (default)
+  # 'stop': Position stays at last waypoint when completed
+  # 'reverse': Route reverses direction when completed (alternates forward/backward)
+  completion_behavior: loop
 
 # Network metrics simulation configuration
 network:
@@ -29,7 +36,7 @@ network:
   latency_typical_ms: 50.0
   latency_max_ms: 80.0
   latency_spike_max_ms: 200.0
-  spike_probability: 0.05  # 5% chance of spike each update
+  spike_probability: 0.05 # 5% chance of spike each update
 
   # Download throughput (Mbps)
   throughput_down_min_mbps: 50.0
@@ -55,8 +62,8 @@ obstruction:
 # Position simulation configuration
 position:
   # Speed range (knots)
-  speed_min_knots: 0.0
-  speed_max_knots: 100.0
+  speed_min_knots: 1600.0
+  speed_max_knots: 1650.0
 
   # Altitude range (meters)
   altitude_min_meters: 100.0

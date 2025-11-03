@@ -2,6 +2,7 @@
 
 import logging
 import math
+import time
 from collections import deque
 from datetime import datetime
 from typing import Optional
@@ -22,20 +23,21 @@ class ETACalculator:
     - Tracking of passed POIs
     """
 
-    def __init__(self, window_size: int = 5, default_speed_knots: float = 150.0):
+    def __init__(self, smoothing_duration_seconds: float = 120.0, default_speed_knots: float = 150.0):
         """
         Initialize ETA calculator.
 
         Args:
-            window_size: Number of samples for moving average (PRD requires 5x update interval)
+            smoothing_duration_seconds: Duration of time-based smoothing window in seconds (default: 120s = 2 min)
             default_speed_knots: Default speed to use when no speed data available
         """
-        self.window_size = window_size
+        self.smoothing_duration_seconds = smoothing_duration_seconds
         self.default_speed_knots = default_speed_knots
         self.earth_radius_m = 6371000.0  # Earth's radius in meters
 
-        # Speed smoothing using rolling window
-        self._speed_history: deque[float] = deque(maxlen=window_size)
+        # Speed smoothing using time-based rolling window
+        # Store tuples of (speed, timestamp) to enable time-based windowing
+        self._speed_history: deque[tuple[float, float]] = deque()  # (speed_knots, timestamp)
         self._smoothed_speed: float = default_speed_knots
         self._last_update_time: Optional[datetime] = None
 
@@ -47,23 +49,30 @@ class ETACalculator:
         """
         Update current speed and recalculate smoothed speed.
 
-        Uses rolling window average for speed smoothing.
+        Uses time-based rolling window average for speed smoothing.
+        Only considers samples within the smoothing window duration.
 
         Args:
             current_speed_knots: Current speed in knots
         """
-        self._speed_history.append(current_speed_knots)
+        current_time = time.time()
+        self._speed_history.append((current_speed_knots, current_time))
 
-        # Calculate rolling average
+        # Remove samples older than smoothing window
+        cutoff_time = current_time - self.smoothing_duration_seconds
+        while self._speed_history and self._speed_history[0][1] < cutoff_time:
+            self._speed_history.popleft()
+
+        # Calculate average of samples within window
         if len(self._speed_history) > 0:
-            self._smoothed_speed = sum(self._speed_history) / len(self._speed_history)
+            self._smoothed_speed = sum(speed for speed, _ in self._speed_history) / len(self._speed_history)
         else:
             self._smoothed_speed = self.default_speed_knots
 
         self._last_update_time = datetime.utcnow()
 
         logger.debug(
-            f"Speed updated: raw={current_speed_knots:.1f}kn, smoothed={self._smoothed_speed:.1f}kn"
+            f"Speed updated: raw={current_speed_knots:.1f}kn, smoothed={self._smoothed_speed:.1f}kn, samples={len(self._speed_history)}"
         )
 
     def get_smoothed_speed(self) -> float:
@@ -114,8 +123,10 @@ class ETACalculator:
         """
         speed = speed_knots if speed_knots is not None else self._smoothed_speed
 
-        # Handle zero or no speed
-        if speed <= 0:
+        # Handle zero or very small speed (below 0.5 knots is effectively stationary)
+        # This prevents division by near-zero values and extreme ETA estimates
+        # At less than 0.5 knots, meaningful ETA predictions are unreliable
+        if speed < 0.5:
             return -1.0
 
         # Convert distance to nautical miles
@@ -164,6 +175,7 @@ class ETACalculator:
 
             metrics[poi.id] = {
                 "poi_name": poi.name,
+                "poi_category": poi.category or "",  # Use empty string for null categories
                 "distance_meters": distance,
                 "eta_seconds": eta,
                 "passed": passed,
@@ -177,7 +189,7 @@ class ETACalculator:
         self._smoothed_speed = self.default_speed_knots
         self._passed_pois.clear()
         self._last_update_time = None
-        logger.info("ETA calculator reset")
+        logger.info(f"ETA calculator reset (smoothing window: {self.smoothing_duration_seconds}s)")
 
     def get_passed_pois(self) -> set[str]:
         """
@@ -200,9 +212,18 @@ class ETACalculator:
         Returns:
             Dictionary with current stats
         """
+        # Calculate window coverage (time from oldest to newest sample)
+        window_coverage_seconds = 0.0
+        if len(self._speed_history) > 1:
+            oldest_time = self._speed_history[0][1]
+            newest_time = self._speed_history[-1][1]
+            window_coverage_seconds = newest_time - oldest_time
+
         return {
             "smoothed_speed_knots": self._smoothed_speed,
             "speed_samples": len(self._speed_history),
+            "smoothing_window_seconds": self.smoothing_duration_seconds,
+            "current_window_coverage_seconds": window_coverage_seconds,
             "passed_pois_count": len(self._passed_pois),
             "last_update": self._last_update_time.isoformat() if self._last_update_time else None,
         }

@@ -230,14 +230,31 @@ starlink_thermal_events_total = Counter(
 starlink_eta_poi_seconds = Gauge(
     'starlink_eta_poi_seconds',
     'Estimated time of arrival to point of interest in seconds',
-    labelnames=['name'],
+    labelnames=['name', 'category'],
     registry=REGISTRY
 )
 
 starlink_distance_to_poi_meters = Gauge(
     'starlink_distance_to_poi_meters',
     'Distance to point of interest in meters',
-    labelnames=['name'],
+    labelnames=['name', 'category'],
+    registry=REGISTRY
+)
+
+# ============================================================================
+# Route following metrics (Phase 5 - Simulation mode route following)
+# ============================================================================
+starlink_route_progress_percent = Gauge(
+    'starlink_route_progress_percent',
+    'Current progress along active KML route (0-100%)',
+    labelnames=['route_name'],
+    registry=REGISTRY
+)
+
+starlink_current_waypoint_index = Gauge(
+    'starlink_current_waypoint_index',
+    'Index of current waypoint in active route (0-indexed)',
+    labelnames=['route_name'],
     registry=REGISTRY
 )
 
@@ -356,6 +373,31 @@ def update_metrics_from_telemetry(telemetry, config=None):
     # Status metrics
     starlink_uptime_seconds.set(telemetry.environmental.uptime_seconds)
 
+    # Update POI/ETA metrics
+    try:
+        from app.core.eta_service import update_eta_metrics
+
+        eta_metrics = update_eta_metrics(
+            telemetry.position.latitude,
+            telemetry.position.longitude,
+            telemetry.position.speed
+        )
+
+        # Update Prometheus gauges with ETA data
+        for poi_id, metrics_data in eta_metrics.items():
+            poi_name = metrics_data.get("poi_name", "unknown")
+            poi_category = metrics_data.get("poi_category", "")
+            eta_seconds = metrics_data.get("eta_seconds", -1)
+            distance_meters = metrics_data.get("distance_meters", 0)
+
+            # Only set valid ETA values (skip -1 which means no speed)
+            if eta_seconds >= 0:
+                starlink_eta_poi_seconds.labels(name=poi_name, category=poi_category).set(eta_seconds)
+            starlink_distance_to_poi_meters.labels(name=poi_name, category=poi_category).set(distance_meters)
+
+    except Exception as e:
+        logger.warning(f"Error updating POI/ETA metrics: {e}")
+
     # Increment update counter
     simulation_updates_total.inc()
 
@@ -392,6 +434,9 @@ def clear_telemetry_metrics():
     starlink_dish_uptime_seconds.set(math.nan)
     starlink_dish_thermal_throttle.set(math.nan)
     starlink_dish_outage_active.set(math.nan)
+
+    # Clear route metrics when no active route (handled separately by simulator)
+    # Route metrics are only cleared when route is deactivated
 
     # Clear custom position collector data
     global _current_position

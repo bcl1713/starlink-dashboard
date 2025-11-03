@@ -1,0 +1,11 @@
+apiVersion: 1
+
+datasources:
+  - name: Infinity
+    type: yesoreyeram-infinity-datasource
+    uid: infinity
+    url: http://starlink-location:8000
+    access: proxy
+    isDefault: false
+    jsonData:
+      source: url
