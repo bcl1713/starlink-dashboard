@@ -159,24 +159,49 @@ Speed: (62800m / 1852) / (402/3600) = 598 knots
 - Missing intermediate waypoints → leave speed null
 
 ### 4. Departure Detection
-**Trigger:** Speed exceeds 10 knots threshold
+**Trigger:** Speed exceeds 50 knots threshold (configurable via DEPARTURE_THRESHOLD_SPEED_KNOTS)
 **Status:** Sticky once departed, resets when route deactivated
-**Alternative:** Could use altitude change, but speed is more reliable
+**Rationale:** 50 knots clearly indicates takeoff roll (max taxi ~30 knots with buffer)
+**Future Consideration:** Can be adjusted per-operation for different aircraft types
 
-### 5. ETA Blending Formula
+### 5. ETA Data Formats
+**ETA always returned in two formats:**
+- `eta_countdown_seconds`: Relative time in seconds (e.g., 402 for 6m 42s)
+- `eta_time_gmt`: Absolute time in GMT/Z format (e.g., "2025-10-27T16:57:55Z")
+
+**Why:** Both formats needed for dashboard display (countdown for clarity, GMT for mission planning)
+
+### 6. ETA Blending Formula
 **Current Mode (Pre-departure):**
 ```
-eta_seconds = expected_arrival_time - current_utc_time
+eta_countdown_seconds = expected_arrival_time - current_utc_time
+eta_time_gmt = expected_arrival_time (as ISO-8601 datetime)
 ```
 
 **Blending Mode (In-flight):**
 ```
 alpha = 0.5  # Configurable via ETA_BLENDING_FACTOR
-eta_seconds = (remaining_distance / actual_speed) * alpha
-            + (time_to_expected_arrival) * (1 - alpha)
+eta_countdown_seconds = (remaining_distance / actual_speed) * alpha
+                      + (time_to_expected_arrival) * (1 - alpha)
+eta_time_gmt = now + eta_countdown_seconds (as ISO-8601 datetime)
 ```
 
 **Why:** Balances actual performance with flight plan, prevents wild swings
+
+### 7. Off-Route Point Projection & Hybrid Point Status
+**For POIs not strictly on route (e.g., satellite handoff markers):**
+- **ETA Calculation:** Project point onto nearest route segment, use projected distance
+- **Map Display:** Show point at original coordinates (unchanged visual position)
+- **API Response:** Include both original and projected coordinates
+- **Point Status:** Hybrid approach:
+  - **Primary:** Route-based - Is projected point ahead/passed current position along route?
+  - **Fallback:** Angle-based - Existing heading logic for non-routed points
+  - **Flag:** Mark as "projected_to_route" in API response
+
+**Use Case:** Satellite communication handoff points in space that aren't on flight path
+- Provides accurate ETA for strategic event (when we reach that point in space)
+- Maintains accurate position display on map (original coordinates)
+- Supports mission planning and communication transition scheduling
 
 ---
 
@@ -218,8 +243,10 @@ eta_seconds = (remaining_distance / actual_speed) * alpha
 # ETA calculation blending factor (0.0 = 100% plan, 1.0 = 100% actual)
 ETA_BLENDING_FACTOR=0.5
 
-# Speed threshold to detect departure (knots)
-DEPARTURE_SPEED_THRESHOLD_KNOTS=10
+# Speed threshold to detect departure (knots) - 50 knots indicates takeoff roll
+# (max taxi ~30 knots, so 50 knots gives clear buffer for this aircraft)
+# Can be adjusted per-operation for different aircraft types
+DEPARTURE_THRESHOLD_SPEED_KNOTS=50
 
 # Enable route timing features
 ENABLE_ROUTE_TIMING=true

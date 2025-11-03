@@ -1,20 +1,26 @@
 # ETA Calculations Using Route Timing from KML Files
 
-**Last Updated:** 2025-11-03
-**Status:** Planning Phase
-**Author:** Claude Code
+**Last Updated:** 2025-11-03 **Status:** Planning Phase **Author:** Claude Code
 
 ---
 
 ## Executive Summary
 
-This feature enhances ETA calculations by leveraging timing metadata embedded in KML route files (specifically the test flight plan KML files in `dev/completed/kml-route-import/`). The system will parse `Time Over Waypoint` timestamps to determine anticipated speeds for each route segment, enabling accurate ETAs both before departure and during flight.
+This feature enhances ETA calculations by leveraging timing metadata embedded in
+KML route files (specifically the test flight plan KML files in
+`dev/completed/kml-route-import/`). The system will parse `Time Over Waypoint`
+timestamps to determine anticipated speeds for each route segment, enabling
+accurate ETAs both before departure and during flight.
 
 **Key Improvements:**
+
 - **Pre-departure ETAs:** Accurate waypoint arrival times based on flight plan
-- **In-flight ETAs:** Dynamic blending of actual speed with anticipated segment speeds
-- **Departure detection:** Use existing logic to detect when the aircraft leaves the ground
-- **Graceful fallback:** Use configurable default speed when timing data unavailable
+- **In-flight ETAs:** Dynamic blending of actual speed with anticipated segment
+  speeds
+- **Departure detection:** Use existing logic to detect when the aircraft leaves
+  the ground
+- **Graceful fallback:** Use configurable default speed when timing data
+  unavailable
 
 ---
 
@@ -29,7 +35,8 @@ This feature enhances ETA calculations by leveraging timing metadata embedded in
 
 2. **Route Models** (`app/models/route.py`)
    - `RoutePoint`: Basic coordinate + altitude, no timing
-   - `RouteWaypoint`: Includes description (contains timing), no parsed timestamp
+   - `RouteWaypoint`: Includes description (contains timing), no parsed
+     timestamp
    - `ParsedRoute`: Container for points and waypoints
    - No segment-level speed or timing data
 
@@ -89,11 +96,13 @@ Prometheus Metrics + API Responses
 ### Key Concepts
 
 **1. Timing Data Extraction**
+
 - Parse `Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ` from waypoint descriptions
 - Extract ISO-8601 timestamps (UTC)
 - Store in `RoutePoint` model as `expected_arrival_time: Optional[datetime]`
 
 **2. Segment Speed Calculation**
+
 - For adjacent waypoints with times: `speed = distance / time_delta`
 - Example: PHNL (16:51:13Z) → APPCH (16:57:55Z), 62.8 km distance
   - Time delta: 6m 42s = 402 seconds
@@ -101,23 +110,42 @@ Prometheus Metrics + API Responses
 - Used to populate segment expected speeds
 
 **3. Departure Detection**
+
 - Track initial position and speed
 - Departure = speed exceeds threshold (e.g., 10 knots) after ground start
 - Used to switch from "pre-departure" to "in-flight" mode
 
 **4. Pre-Departure ETA Calculation**
+
 - If aircraft on ground (speed ~0) and route active:
   - Calculate current UTC time to first waypoint arrival time
   - Report absolute ETA, or as relative countdown
   - Use segment expected speeds if available
 
 **5. In-Flight ETA Blending**
+
 - When departed:
   - Remaining waypoints use their expected arrival times
   - If actual speed < expected: ETA extends backward
   - If actual speed > expected: ETA compresses forward
-  - Blend formula: `eta = (remaining_distance / current_speed) * α + (remaining_time_by_plan) * (1-α)`
+  - Blend formula:
+    `eta = (remaining_distance / current_speed) * α + (remaining_time_by_plan) * (1-α)`
   - Where `α` is a weight factor (0.5 = 50% actual, 50% plan)
+
+**6. Off-Route Point Projection & Point Status**
+
+- For points not strictly on route (e.g., satellite handoff markers):
+  - Project point onto nearest route segment for ETA calculations
+  - Point remains at original location on map (visual display unchanged)
+  - Use projected distance for ETA, original coordinates for display
+  - Point status (ahead/reached/passed) uses hybrid approach:
+    - Primary: Route-based distance (is projected point ahead of current position along route?)
+    - Fallback: Angle-based heading (existing logic for non-routed points)
+    - Flag: Off-route points marked in UI as "projected to route"
+- Benefits:
+  - Accurate ETA for strategic points not on primary route
+  - Maintains accurate position display on map
+  - Supports satellite handoff scenarios (point in space where communication transitions occur)
 
 ---
 
@@ -128,6 +156,7 @@ Prometheus Metrics + API Responses
 **Objective:** Add timing support to route models
 
 **Tasks:**
+
 1. Extend `RoutePoint` model
    - Add `expected_arrival_time: Optional[datetime]` field
    - Add `expected_segment_speed_knots: Optional[float]` field
@@ -146,6 +175,7 @@ Prometheus Metrics + API Responses
    - Expose expected segment speeds for dashboard display
 
 **Acceptance Criteria:**
+
 - ✅ Models include timing fields
 - ✅ Existing routes still parse (fields optional)
 - ✅ Unit tests pass for model creation with/without timing
@@ -158,6 +188,7 @@ Prometheus Metrics + API Responses
 **Objective:** Extract timing metadata from KML waypoint descriptions
 
 **Tasks:**
+
 1. Create timestamp extraction utility
    - Regex pattern: `Time Over Waypoint: (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}Z)`
    - Parse to `datetime` object (UTC)
@@ -183,6 +214,7 @@ Prometheus Metrics + API Responses
    - Store in `ParsedRoute` or `RouteTimingProfile`
 
 **Acceptance Criteria:**
+
 - ✅ All 6 test KML files parse correctly
 - ✅ Waypoint timestamps extracted accurately
 - ✅ Segment speeds calculated correctly (validate math)
@@ -196,6 +228,7 @@ Prometheus Metrics + API Responses
 **Objective:** Implement route-aware ETA calculations with blending
 
 **Tasks:**
+
 1. Create `RouteETACalculator` class (or extend `ETACalculator`)
    - Accept `ParsedRoute` as input
    - Methods:
@@ -206,19 +239,23 @@ Prometheus Metrics + API Responses
 
 2. Implement departure detection
    - Track ground position on startup
-   - Threshold: speed > 10 knots = departed
+   - Threshold: speed > 50 knots = departed (configurable via DEPARTURE_THRESHOLD_SPEED_KNOTS, default: 50)
    - Once departed, flag persists until route deactivated
    - Log departure event with timestamp
+   - Note: 50 knots indicates takeoff roll (max taxi ~30 knots with buffer)
 
 3. Implement pre-departure ETA
    - Input: current UTC time, first waypoint expected arrival
-   - Output: seconds to arrival (countdown)
+   - Output: Both countdown (seconds) AND absolute GMT/Z time
    - For intermediate waypoints: use their expected_arrival_time
    - Handle case where expected times are in the past
+   - ETA data must include both fields for dashboard display (countdown + expected_time)
 
 4. Implement in-flight ETA blending
-   - Input: remaining distance, current speed, expected segment speed, time-to-expected-arrival
-   - Blend formula: `eta = (dist / speed_actual) * α + (time_to_expected) * (1-α)`
+   - Input: remaining distance, current speed, expected segment speed,
+     time-to-expected-arrival
+   - Blend formula:
+     `eta = (dist / speed_actual) * α + (time_to_expected) * (1-α)`
    - Configurable `α` (default 0.5)
    - Fallback to current speed if segment speed unavailable
 
@@ -226,14 +263,34 @@ Prometheus Metrics + API Responses
    - If POI matches a waypoint with expected arrival time: use that
    - Otherwise: calculate as normal but consider segment speeds
    - Add metric: `expected_arrival_time` in response
+   - Provide both countdown (seconds) and absolute GMT/Z time in responses
+
+6. Implement off-route point projection
+   - For POIs not strictly on route: project to nearest route segment
+   - Calculate distance from current position to projected point along route
+   - Use projected distance for ETA calculation
+   - Return both original POI coordinates (for map) and projected coordinates (for ETA)
+   - Hybrid point status: route-based primary, angle-based fallback
+   - Flag off-route points in API responses
+
+7. Implement hybrid point status determination
+   - When route active: Use route-projected distance to determine "ahead" vs "passed"
+   - When route inactive: Fall back to angle-based heading logic
+   - Update existing POI status logic to work with both approaches
 
 **Acceptance Criteria:**
-- ✅ Departure detection works reliably
+
+- ✅ Departure detection works reliably (50 knot threshold)
 - ✅ Pre-departure ETAs match KML timing (within 1 second)
 - ✅ In-flight blending adjusts ETAs dynamically
+- ✅ ETA data includes both countdown (seconds) AND absolute GMT/Z time
+- ✅ Off-route points project correctly to nearest route segment
+- ✅ Hybrid point status (route-based + angle-based) works correctly
+- ✅ Off-route points show original coordinates on map, use projected distance for ETA
 - ✅ Fallback to current speed works
 - ✅ Unit tests cover all blending scenarios
 - ✅ Integration tests with real KML files pass
+- ✅ Integration tests with off-route POI scenarios pass
 
 ---
 
@@ -242,6 +299,7 @@ Prometheus Metrics + API Responses
 **Objective:** Use timing data for realistic route-following simulation
 
 **Tasks:**
+
 1. Extend `KMLRouteFollower`
    - Accept route timing profile
    - Methods:
@@ -254,9 +312,11 @@ Prometheus Metrics + API Responses
    - Speed up/slow down to match expected arrival times more closely
 
 3. Add simulation controls (optional)
-   - `POST /api/sim/set_speed_multiplier?factor=1.0` - Speed up/slow down simulation
+   - `POST /api/sim/set_speed_multiplier?factor=1.0` - Speed up/slow down
+     simulation
 
 **Acceptance Criteria:**
+
 - ✅ Simulation respects expected segment speeds
 - ✅ Route following timestamps match KML data
 - ✅ Speed variations are realistic
@@ -268,8 +328,10 @@ Prometheus Metrics + API Responses
 **Objective:** Expose timing data and new metrics to Grafana
 
 **Tasks:**
+
 1. Create new Prometheus metrics
-   - `starlink_expected_segment_speed_knots` - Expected speed for current segment
+   - `starlink_expected_segment_speed_knots` - Expected speed for current
+     segment
    - `starlink_departure_time` - Unix timestamp of departure
    - `starlink_eta_to_next_waypoint_seconds` - ETA to next route waypoint
    - `starlink_waypoint_sequence` - Current waypoint index
@@ -294,6 +356,7 @@ Prometheus Metrics + API Responses
    - Display segment speeds
 
 **Acceptance Criteria:**
+
 - ✅ All new metrics exposed to Prometheus
 - ✅ Dashboard panels display timing correctly
 - ✅ Grafana queries work without errors
@@ -306,6 +369,7 @@ Prometheus Metrics + API Responses
 **Objective:** Comprehensive test coverage and user documentation
 
 **Tasks:**
+
 1. Unit tests
    - Timestamp extraction and parsing
    - Speed calculations (math verification)
@@ -327,7 +391,8 @@ Prometheus Metrics + API Responses
 4. Documentation
    - Update design doc with timing architecture
    - Document ETA calculation algorithms
-   - Document configuration options (α blending factor, departure speed threshold)
+   - Document configuration options (α blending factor, departure speed
+     threshold)
    - Create user guide for timing-aware routes
 
 5. Configuration
@@ -337,6 +402,7 @@ Prometheus Metrics + API Responses
      - `ENABLE_ROUTE_TIMING` (default: true)
 
 **Acceptance Criteria:**
+
 - ✅ >90% code coverage for new ETA logic
 - ✅ All 6 KML files tested
 - ✅ Integration tests pass
@@ -347,37 +413,41 @@ Prometheus Metrics + API Responses
 
 ## Risk Assessment & Mitigation
 
-| Risk | Impact | Probability | Mitigation |
-|------|--------|-------------|-----------|
-| Malformed timestamp data in KML | ETAs invalid | Medium | Regex validation + fallback to default speed |
-| Out-of-order waypoints in timing | Negative time deltas | Low | Validation during parse, skip bad segments |
-| Departure detection false positives | Wrong ETA mode | Medium | Higher speed threshold (10 knots), hysteresis |
-| Backward compatibility break | Existing routes fail | Low | All timing fields optional, defaults work |
-| Blending factor complexity | Hard to debug | Medium | Expose α as configurable, log blending ratio |
-| Timezone issues in timestamp parsing | Wrong times | Low | Enforce UTC in parser, unit tests verify |
+| Risk                                 | Impact               | Probability | Mitigation                                    |
+| ------------------------------------ | -------------------- | ----------- | --------------------------------------------- |
+| Malformed timestamp data in KML      | ETAs invalid         | Medium      | Regex validation + fallback to default speed  |
+| Out-of-order waypoints in timing     | Negative time deltas | Low         | Validation during parse, skip bad segments    |
+| Departure detection false positives  | Wrong ETA mode       | Medium      | Higher speed threshold (10 knots), hysteresis |
+| Backward compatibility break         | Existing routes fail | Low         | All timing fields optional, defaults work     |
+| Blending factor complexity           | Hard to debug        | Medium      | Expose α as configurable, log blending ratio  |
+| Timezone issues in timestamp parsing | Wrong times          | Low         | Enforce UTC in parser, unit tests verify      |
 
 ---
 
 ## Success Metrics
 
 **Functional:**
+
 - ✅ Pre-departure ETAs match KML timing (±2%)
 - ✅ In-flight ETAs adjust smoothly with actual speed
 - ✅ All 6 test KML files parse without errors
 - ✅ Zero regressions in existing ETA functionality
 
 **Quality:**
+
 - ✅ >90% code coverage for new modules
 - ✅ All unit tests pass
 - ✅ All integration tests pass
 - ✅ No critical or high-severity bugs
 
 **Performance:**
+
 - ✅ ETA calculations <10ms per POI
 - ✅ Route parsing <5 seconds even for 10,000-point routes
 - ✅ Simulator speed/timing accurate within 1-2%
 
 **User Experience:**
+
 - ✅ Dashboard displays timing clearly
 - ✅ Pre-flight countdown visible and accurate
 - ✅ Speed profile visualization helpful
@@ -388,16 +458,19 @@ Prometheus Metrics + API Responses
 ## Required Resources & Dependencies
 
 ### Python Packages
+
 - Existing: `pydantic`, `fastapi`, `prometheus_client`
 - New: None (use stdlib `datetime`, `re`)
 
 ### Files to Create
+
 - `app/services/route_timing_calculator.py` - Timing profile generation
 - `app/services/route_eta_calculator.py` - Enhanced ETA logic
 - `tests/unit/test_route_timing.py` - Unit tests
 - `tests/integration/test_route_eta.py` - Integration tests
 
 ### Files to Modify
+
 - `app/models/route.py` - Add timing fields
 - `app/services/kml_parser.py` - Parse timestamps
 - `app/services/eta_calculator.py` - Or create wrapper
@@ -407,21 +480,22 @@ Prometheus Metrics + API Responses
 - `monitoring/grafana/provisioning/dashboards/*.json` - New panels
 
 ### Test Data
+
 - All 6 existing test KML files already have timing data
 
 ---
 
 ## Timeline Estimates
 
-| Phase | Effort | Duration | Dependencies |
-|-------|--------|----------|--------------|
-| Phase 1: Data Models | M | 1-2 days | None |
-| Phase 2: KML Parser | M | 2-3 days | Phase 1 |
-| Phase 3: ETA Calculator | L | 3-4 days | Phase 2 |
-| Phase 4: Simulator | S | 1-2 days | Phase 3 |
-| Phase 5: Dashboard | M | 2-3 days | Phase 3 |
-| Phase 6: Testing & Docs | M | 2-3 days | All phases |
-| **Total** | **XL** | **11-17 days** | Sequential |
+| Phase                   | Effort | Duration       | Dependencies |
+| ----------------------- | ------ | -------------- | ------------ |
+| Phase 1: Data Models    | M      | 1-2 days       | None         |
+| Phase 2: KML Parser     | M      | 2-3 days       | Phase 1      |
+| Phase 3: ETA Calculator | L      | 3-4 days       | Phase 2      |
+| Phase 4: Simulator      | S      | 1-2 days       | Phase 3      |
+| Phase 5: Dashboard      | M      | 2-3 days       | Phase 3      |
+| Phase 6: Testing & Docs | M      | 2-3 days       | All phases   |
+| **Total**               | **XL** | **11-17 days** | Sequential   |
 
 ---
 
@@ -453,40 +527,52 @@ Prometheus Metrics + API Responses
 
 ```python
 # .env
-ETA_BLENDING_FACTOR=0.5  # 50% actual, 50% plan
-DEPARTURE_SPEED_THRESHOLD_KNOTS=10
-ENABLE_ROUTE_TIMING=true
-ETA_DEFAULT_SPEED_KNOTS=400
+ETA_BLENDING_FACTOR=0.5                      # 50% actual, 50% plan
+DEPARTURE_THRESHOLD_SPEED_KNOTS=50           # Indicates takeoff roll (configurable for other aircraft)
+ENABLE_ROUTE_TIMING=true                     # Enable timing features
+ETA_DEFAULT_SPEED_KNOTS=400                  # Default speed when timing unavailable
 ```
 
-### Sample Output (Pre-flight)
+Note: 50 knots threshold accommodates max taxi speed (~30 knots) with safety buffer.
+For future aircraft types with different characteristics, this can be adjusted per-operation.
+
+### Sample Output (Pre-flight, On-Route Point)
 
 ```json
 {
   "poi_id": "waypoint_1",
   "poi_name": "APPCH",
   "distance_meters": 62800,
-  "eta_seconds": 402,  // 6m 42s
+  "eta_countdown_seconds": 402,
+  "eta_time_gmt": "2025-10-27T16:57:55Z",
   "expected_arrival_time": "2025-10-27T16:57:55Z",
   "is_expected_timing": true,
-  "is_pre_departure": true
+  "is_pre_departure": true,
+  "on_route": true
 }
 ```
 
-### Sample Output (In-flight)
+### Sample Output (In-flight, Off-Route Point with Projection)
 
 ```json
 {
-  "poi_id": "waypoint_2",
-  "poi_name": "TOC",
+  "poi_id": "satcomm_handoff_1",
+  "poi_name": "Sat Handoff (Geo-1 to Geo-2)",
+  "latitude": 15.2345,
+  "longitude": 45.6789,
+  "projected_latitude": 15.2301,
+  "projected_longitude": 45.6725,
   "distance_meters": 28900,
-  "eta_seconds": 187,  // 3m 7s (actual speed faster than expected)
-  "expected_arrival_time": "2025-10-27T17:02:32Z",
+  "eta_countdown_seconds": 187,
+  "eta_time_gmt": "2025-10-27T17:02:32Z",
   "expected_segment_speed_knots": 598,
   "actual_speed_knots": 650,
   "blending_factor": 0.5,
   "is_expected_timing": true,
-  "is_pre_departure": false
+  "is_pre_departure": false,
+  "on_route": false,
+  "projected_to_route": true,
+  "point_status": "ahead"
 }
 ```
 
@@ -504,5 +590,5 @@ ETA_DEFAULT_SPEED_KNOTS=400
 
 ---
 
-**Document Status:** ✅ Ready for Implementation
-**Approval:** Pending User Review
+**Document Status:** ✅ Ready for Implementation **Approval:** Pending User
+Review

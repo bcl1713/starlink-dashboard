@@ -97,17 +97,20 @@
 
 - [ ] **3.2** Implement departure detection
   - [ ] Track ground position and speed on initialization
-  - [ ] Speed > 10 knots threshold = departed
+  - [ ] Speed > 50 knots threshold = departed (configurable via DEPARTURE_THRESHOLD_SPEED_KNOTS)
   - [ ] Once departed, flag persists until route deactivated
   - [ ] Log departure with timestamp
   - [ ] Tests: speed threshold, persistence, reset
+  - [ ] Note: 50 knots indicates takeoff roll (max taxi ~30 knots with buffer)
 
 - [ ] **3.3** Implement pre-departure ETA calculation
   - [ ] When is_departed() == False:
     - [ ] For each waypoint with expected_arrival_time:
-    - [ ] ETA = expected_arrival_time - current_utc_time
-    - [ ] Return as seconds (negative if past)
-  - [ ] Tests: various current times relative to schedule
+    - [ ] Calculate eta_countdown_seconds = expected_arrival_time - current_utc_time
+    - [ ] Calculate eta_time_gmt = expected_arrival_time (as ISO-8601 datetime)
+    - [ ] Return both values (countdown + absolute time)
+    - [ ] Return negative countdown if time is in past
+  - [ ] Tests: various current times relative to schedule, both time formats
 
 - [ ] **3.4** Implement in-flight ETA blending
   - [ ] When is_departed() == True:
@@ -122,28 +125,60 @@
 
 - [ ] **3.5** Extend POI ETA calculations
   - [ ] Update POI metric responses to include:
+    - [ ] `eta_countdown_seconds` (relative time in seconds)
+    - [ ] `eta_time_gmt` (absolute time in GMT/Z)
     - [ ] `expected_arrival_time` (if waypoint)
     - [ ] `expected_segment_speed_knots` (if available)
     - [ ] `actual_speed_knots` (current speed)
     - [ ] `blending_factor_used` (for debugging)
     - [ ] `is_pre_departure` (mode flag)
-  - [ ] Tests: POI response structure
+    - [ ] `on_route` (boolean)
+  - [ ] Tests: POI response structure with both time formats
+  - [ ] Tests: on_route flag accuracy
 
-- [ ] **3.6** Unit tests for Phase 3
+- [ ] **3.6** Implement off-route point projection
+  - [ ] For POIs not on route: project to nearest route segment
+  - [ ] Calculate distance from current position to projected point along route
+  - [ ] Use projected distance for ETA calculation
+  - [ ] Return both original and projected coordinates in API response:
+    - [ ] `latitude`, `longitude` (original position for map)
+    - [ ] `projected_latitude`, `projected_longitude` (projection to route)
+  - [ ] Add flags to response:
+    - [ ] `on_route` (boolean - is point on route?)
+    - [ ] `projected_to_route` (boolean - was point projected?)
+    - [ ] `point_status` (ahead/reached/passed)
+  - [ ] Tests: projection accuracy on 6 KML files
+  - [ ] Tests: ETA calculation with projected distance
+
+- [ ] **3.7** Implement hybrid point status determination
+  - [ ] When route active:
+    - [ ] Use route-projected distance to determine "ahead" vs "passed"
+    - [ ] Compare current position along route to projected point position
+  - [ ] When route inactive:
+    - [ ] Fall back to angle-based heading logic (existing)
+  - [ ] Update POI status logic to work with both approaches
+  - [ ] Tests: point status accuracy for on-route and off-route POIs
+  - [ ] Tests: graceful fallback when route deactivated
+
+- [ ] **3.8** Unit tests for Phase 3
   - [ ] test_route_eta_calculator.py
-    - [ ] Departure detection (5+ scenarios)
-    - [ ] Pre-departure ETA (5+ scenarios)
-    - [ ] Blending formula (10+ scenarios)
+    - [ ] Departure detection (5+ scenarios with 50 knot threshold)
+    - [ ] Pre-departure ETA (5+ scenarios, both time formats)
+    - [ ] In-flight blending formula (10+ scenarios)
+    - [ ] Off-route point projection accuracy
+    - [ ] Hybrid point status determination
     - [ ] Edge cases (zero speed, missing times, etc.)
   - [ ] Code coverage >90%
   - [ ] Math verification with manual calculations
 
-- [ ] **3.7** Integration tests with real KML
+- [ ] **3.9** Integration tests with real KML
   - [ ] test_route_eta_integration.py
   - [ ] Load each of 6 KML files
   - [ ] Calculate ETAs for first 3 waypoints each
-  - [ ] Verify against expected times
+  - [ ] Verify against expected times (both countdown and GMT formats)
   - [ ] Simulate position updates and verify adjustments
+  - [ ] Test off-route POI scenarios (satellite handoff markers)
+  - [ ] Verify hybrid point status with and without active route
 
 ---
 
@@ -342,9 +377,12 @@
 - [ ] In-flight ETAs adjust smoothly with actual speed
 - [ ] All 6 test KML files parse without errors
 - [ ] Zero regressions in existing ETA functionality
-- [ ] Departure detection reliable
-- [ ] Blending factor configurable and working
-- [ ] Simulator respects timing
+- [ ] Departure detection reliable (50 knot threshold)
+- [ ] Blending factor configurable and working (default 0.5)
+- [ ] ETA data available in both countdown (seconds) and GMT/Z (ISO-8601) formats
+- [ ] Off-route point projection working (distance and point status)
+- [ ] Hybrid point status determination (route-based + angle-based fallback)
+- [ ] Simulator respects timing and expected speeds
 
 ### Code Quality Complete
 - [ ] >90% code coverage achieved
