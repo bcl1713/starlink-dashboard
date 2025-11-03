@@ -5,7 +5,14 @@ from typing import Optional
 from fastapi import APIRouter, status
 
 from app.core.config import ConfigManager
-from app.core.metrics import REGISTRY
+from app.core.metrics import (
+    REGISTRY,
+    starlink_route_has_timing_data,
+    starlink_route_total_duration_seconds,
+    starlink_route_departure_time_unix,
+    starlink_route_arrival_time_unix,
+    starlink_route_segment_count_with_timing,
+)
 from app.models.telemetry import TelemetryData
 from app.services.eta_calculator import ETACalculator
 from app.services.poi_manager import POIManager
@@ -51,8 +58,43 @@ async def get_metrics() -> str:
         coordinator = SimulationCoordinator(config=config_manager.get_config())
         telemetry = coordinator.get_current_telemetry()
 
-        # Update POI metrics if we have active route and POIs
+        # Update route timing metrics if we have an active route with timing data
         active_route = route_manager.get_active_route()
+        if active_route and active_route.timing_profile:
+            route_name = active_route.metadata.name
+            timing_profile = active_route.timing_profile
+
+            # Export route timing presence
+            starlink_route_has_timing_data.labels(route_name=route_name).set(
+                1 if timing_profile.has_timing_data else 0
+            )
+
+            # Export route timing metrics if available
+            if timing_profile.total_expected_duration_seconds:
+                starlink_route_total_duration_seconds.labels(route_name=route_name).set(
+                    timing_profile.total_expected_duration_seconds
+                )
+
+            if timing_profile.departure_time:
+                import time as time_module
+                departure_unix = time_module.mktime(timing_profile.departure_time.timetuple())
+                starlink_route_departure_time_unix.labels(route_name=route_name).set(
+                    departure_unix
+                )
+
+            if timing_profile.arrival_time:
+                import time as time_module
+                arrival_unix = time_module.mktime(timing_profile.arrival_time.timetuple())
+                starlink_route_arrival_time_unix.labels(route_name=route_name).set(
+                    arrival_unix
+                )
+
+            # Export segment count
+            starlink_route_segment_count_with_timing.labels(route_name=route_name).set(
+                timing_profile.segment_count_with_timing
+            )
+
+        # Update POI metrics if we have active route and POIs
         pois = poi_manager.list_pois()
 
         if telemetry and active_route and pois:

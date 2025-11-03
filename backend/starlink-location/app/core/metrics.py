@@ -259,6 +259,65 @@ starlink_current_waypoint_index = Gauge(
 )
 
 # ============================================================================
+# Route timing metrics (Phase 3 - ETA Route Timing)
+# ============================================================================
+starlink_route_has_timing_data = Gauge(
+    'starlink_route_has_timing_data',
+    'Binary flag indicating if route has embedded timing data (1=has timing, 0=no timing)',
+    labelnames=['route_name'],
+    registry=REGISTRY
+)
+
+starlink_route_total_duration_seconds = Gauge(
+    'starlink_route_total_duration_seconds',
+    'Expected total flight duration for active route in seconds',
+    labelnames=['route_name'],
+    registry=REGISTRY
+)
+
+starlink_route_departure_time_unix = Gauge(
+    'starlink_route_departure_time_unix',
+    'Expected departure time for active route (Unix timestamp)',
+    labelnames=['route_name'],
+    registry=REGISTRY
+)
+
+starlink_route_arrival_time_unix = Gauge(
+    'starlink_route_arrival_time_unix',
+    'Expected arrival time for active route (Unix timestamp)',
+    labelnames=['route_name'],
+    registry=REGISTRY
+)
+
+starlink_route_segment_count_with_timing = Gauge(
+    'starlink_route_segment_count_with_timing',
+    'Number of route segments with calculated expected speeds',
+    labelnames=['route_name'],
+    registry=REGISTRY
+)
+
+starlink_eta_to_waypoint_seconds = Gauge(
+    'starlink_eta_to_waypoint_seconds',
+    'Estimated time to arrival at specific waypoint in seconds',
+    labelnames=['route_name', 'waypoint_name'],
+    registry=REGISTRY
+)
+
+starlink_distance_to_waypoint_meters = Gauge(
+    'starlink_distance_to_waypoint_meters',
+    'Distance to specific waypoint in meters',
+    labelnames=['route_name', 'waypoint_name'],
+    registry=REGISTRY
+)
+
+starlink_route_segment_speed_knots = Gauge(
+    'starlink_route_segment_speed_knots',
+    'Expected speed for route segment in knots',
+    labelnames=['route_name', 'segment_index'],
+    registry=REGISTRY
+)
+
+# ============================================================================
 # Meta-metrics for monitoring the monitoring system
 # ============================================================================
 starlink_metrics_scrape_duration_seconds = Histogram(
