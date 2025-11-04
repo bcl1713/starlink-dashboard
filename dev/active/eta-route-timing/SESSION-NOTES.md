@@ -1,16 +1,85 @@
-# ETA Route Timing - Session 20 Notes
+# ETA Route Timing - Session 24 Notes
 
-**Date:** 2025-11-03
-**Session:** 20
-**Status:** Phase 3 Complete - Ready for Phase 4 (Grafana & Advanced Features)
+**Date:** 2025-11-04
+**Session:** 24
+**Status:** CRITICAL BUG FIX - Route Timing Speeds Now Respected
 
 ---
 
 ## Session Overview
 
-Successfully completed Phase 3 (API Integration & Endpoints) of the ETA Route Timing feature. Implemented route response endpoint updates, ETA calculation endpoints with RouteETACalculator service, and Prometheus metrics for timing data. All 54 route-related tests passing.
+**CRITICAL BUG FIX:** Fixed route timing speed override issue where simulator was ignoring route
+timing data and using arbitrary config speeds (e.g., 1600 knots) instead of expected speeds
+(e.g., 450 knots for Korea-Andrews leg).
 
-## Work Completed
+**Key Achievement:** Routes with timing data now simulate at realistic expected speeds instead of
+config defaults. This was a showstopper bug that made timing-aware simulation completely unusable.
+
+**Test Status:** All 451 tests passing ✅ (4 new tests added, 2 existing tests updated)
+
+## Session 24 Work: Route Timing Speed Override Bug Fix
+
+### The Bug
+When activating a route with timing data, simulator was running at config speed limits (1600 knots)
+instead of expected speeds from KML (450 knots for Korea-Andrews). This made the entire timing
+feature unusable for realistic simulation.
+
+### Root Cause Analysis
+1. **position.py (lines 270-273):** Speed was clamped to config range even when route timing data available
+2. **coordinator.py (lines 150-187):** SpeedTracker's GPS-calculated speeds were overriding route timing speeds
+3. **Design issue:** Config speed range is for generic default movement, NOT for timed routes
+
+### Solution Implemented
+
+**File 1: backend/starlink-location/app/simulation/position.py**
+- Removed speed clamping when route has timing data
+- Route timing speeds now take full precedence (no config limits applied)
+- Config limits only apply to untimed routes or when not following a route
+- Lines 259-272: Route timing branch now returns without clamping
+
+**File 2: backend/starlink-location/app/simulation/coordinator.py**
+- Added check to detect if route has timing data at current position
+- Only use SpeedTracker when NO timing data available
+- Reset SpeedTracker when routes change (line 119-120) to avoid stale position history
+- Lines 160-187: New conditional logic for speed source selection
+
+**File 3: backend/starlink-location/tests/unit/test_coordinator_route_timing.py (NEW)**
+- 4 comprehensive integration tests covering:
+  - Speed respects route timing (not config defaults)
+  - Speed transitions when enabling/disabling routes
+  - Route timing speeds override config limits
+  - Routes without timing data fall back to GPS calculation
+
+**File 4: backend/starlink-location/tests/unit/test_timing_aware_simulation.py (UPDATED)**
+- Updated test names and logic to match new behavior:
+  - OLD: `test_speed_clamping_within_config_limits` → NEW: `test_route_timing_speeds_not_clamped_by_config`
+  - Now asserts speed is NOT clamped instead of IS clamped
+  - Reflects architectural change that route timing takes precedence
+
+**File 5: CLAUDE.md (UPDATED)**
+- Made Docker rebuild requirement MUCH MORE FORCEFUL
+- Added warning section with:
+  - ❌ What NOT to do (docker compose up, restart, build without --no-cache)
+  - ✅ What TO do (docker compose down && docker compose build --no-cache && docker compose up -d)
+  - "THIS IS NOT OPTIONAL" - emphasized the critical nature
+
+### Testing & Verification
+```bash
+# All tests pass:
+docker compose exec -T starlink-location python -m pytest tests/ -v
+# Result: 451 passed, 26 skipped ✅
+
+# Specific coordinator tests:
+docker compose exec -T starlink-location python -m pytest \
+  tests/unit/test_coordinator_route_timing.py \
+  tests/unit/test_timing_aware_simulation.py -v
+# Result: 16 passed ✅
+```
+
+### Commit Hash
+- `21cd51c` - "fix: Route timing speeds now take precedence over config defaults"
+
+## Work Completed (Previous Sessions)
 
 ### Phase 1: Data Model Enhancements ✅
 
@@ -545,3 +614,28 @@ if route_follower and expected_speed = follower.get_segment_speed_at_progress(pr
 - No regressions from Phase 5 changes
 
 **Total Test Count:** 140+ tests all passing
+
+---
+
+## Session 24 Final Status
+
+**Feature Status:** ✅ COMPLETE AND WORKING
+- All 5 phases implemented
+- All 451 tests passing (including 4 new coordinator tests)
+- Critical speed override bug FIXED
+- Route timing now simulates at realistic expected speeds
+- Ready for merge to main
+
+**Files Modified This Session:**
+1. `backend/starlink-location/app/simulation/position.py` - Removed speed clamping
+2. `backend/starlink-location/app/simulation/coordinator.py` - Smart speed source selection
+3. `backend/starlink-location/tests/unit/test_coordinator_route_timing.py` - NEW (4 tests)
+4. `backend/starlink-location/tests/unit/test_timing_aware_simulation.py` - Updated test logic
+5. `CLAUDE.md` - Made Docker rebuild requirement VERY EXPLICIT
+
+**Latest Commit:** `21cd51c` - "fix: Route timing speeds now take precedence over config defaults"
+
+**Next Session Action:**
+- Feature is ready to merge to main
+- Consider updating config.yaml speed_min/max to realistic aircraft values (not 1600 knots)
+- Or better yet, add warning about config not applying to timed routes
