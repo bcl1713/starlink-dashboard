@@ -2,9 +2,10 @@
 
 A Docker-based monitoring system for Starlink terminals with real-time metrics visualization through Prometheus and Grafana. Supports both live monitoring of physical Starlink hardware and simulation mode for offline development.
 
-**Status:** Phase 0 Complete (Foundation) - Ready for next development phase
-**Version:** 0.2.0
-**Last Updated:** 2025-10-31
+**Status:** Phase 0 Complete (Foundation) + ETA Route Timing Feature Complete
+**Version:** 0.3.0
+**Last Updated:** 2025-11-04
+**Branch:** feature/eta-route-timing (ready for merge to main)
 
 ## Quick Navigation
 
@@ -335,14 +336,22 @@ Want to help improve Starlink Dashboard?
 
 ## Development Status
 
-**Current Phase:** Phase 0 Complete (Foundation)
+**Current Phase:** Foundation Complete + Major Feature Complete
 
-**Recent Work:**
+**Completed Work:**
 - Phase 0: Core infrastructure, metrics, dashboards ✅
 - POI Interactive Management: Complete ✅ (10 sessions)
-- POI Management UI: Complete ✅
+- KML Route Import and Management: Complete ✅ (16 sessions)
+- ETA Route Timing: Complete ✅ (24 sessions)
+  - Automatic timing metadata extraction from KML waypoints
+  - Real-time ETA calculations to waypoints and locations
+  - Simulator respects route timing speeds for realistic movement
+  - Comprehensive Prometheus metrics and Grafana visualization
+  - All 451 tests passing
 
-**Next Phases:** See [Phased Development Plan](./docs/phased-development-plan.md)
+**Branch Status:** feature/eta-route-timing (ready for merge to main)
+
+**Next Steps:** See [Phased Development Plan](./docs/phased-development-plan.md) for future enhancements
 
 ---
 
