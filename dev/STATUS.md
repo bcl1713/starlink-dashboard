@@ -1,10 +1,10 @@
 # Development Status
 
-**Last Updated:** 2025-11-04 Session 24 (Route Timing Speed Bug Fix - COMPLETE)
+**Last Updated:** 2025-11-04 Session 25-26 (Route-Aware POI Quick Reference - COMPLETE)
 
 **Current Branch:** feature/eta-route-timing
 
-**Status:** 🎉 ETA ROUTE TIMING COMPLETE - ALL 451 TESTS PASSING
+**Status:** 🎉 ETA ROUTE TIMING FEATURE COMPLETE + ROUTE-AWARE POI FILTERING IMPLEMENTED - ALL 451 TESTS PASSING
 
 ---
 
@@ -35,14 +35,22 @@
 - Phase 4: Grafana dashboard and caching ✅
 - Phase 5: Simulator timing integration (speed override) ✅
 
-**Session Work Summary:** 24 total sessions invested
+**Session Work Summary:** 26 total sessions invested
 - Sessions 16-17: KML Route Import completion and ETA planning
 - Sessions 18-21: Phases 1-4 implementation
 - Session 22: Test suite completion (446/447 passing)
 - Session 23: Test failure fix (all 447 passing)
 - Session 24: Route timing speed bug fix (all 451 passing)
+- Sessions 25-26: Route-Aware POI Quick Reference Implementation (all 451 passing)
 
-**Critical Bug Fix (Session 24):**
+**Latest Enhancement (Sessions 25-26): Route-Aware POI Quick Reference**
+- Implemented POI projection onto active route path
+- Dashboard quick reference now shows destination waypoints (like KADW) even when not "on course"
+- POIs filtered by route progress instead of bearing angle
+- Destination waypoints now properly displayed in Grafana quick reference panel
+- All projection data calculated once per route activation and persisted to JSON
+
+**Previous Critical Bug Fix (Session 24):**
 - Fixed simulator ignoring route timing speeds and using config defaults
 - Route timing speeds now take full precedence (no config limits applied)
 - Simulator arrival times now match expected times when following timed routes
@@ -318,7 +326,25 @@ git branch --show-current
 
 ---
 
-**Status File Last Updated:** 2025-11-04 Session 24 (CRITICAL BUG FIX - Route Timing Speeds Now Respected - All 451 Tests Passing)
+**Status File Last Updated:** 2025-11-04 Session 27 (ROOT CAUSE ANALYSIS COMPLETE - Metrics ETA Bug Root Cause Identified, Architectural Fix Defined)
+
+## Session 27 Update - Metrics ETA Bug Investigation
+
+**Problem Found:** Metrics dashboard shows 27-hour ETA instead of 14 hours for Korea-to-Andrews route, while API correctly shows ~14 hours.
+
+**Root Cause Analysis (COMPLETE):**
+- Two separate ETA calculation paths exist
+- RouteETACalculator (API) = ✅ Works correctly with segment-based speeds
+- ETACalculator (Metrics) = ❌ Broken, uses only distance/smoothed_speed
+
+**Key Architectural Discovery:**
+The problem isn't that we need an override - the problem is that ETACalculator should BE route-aware by default. It should accept an active_route parameter and use segment-based timing data when available, not have route awareness bolted on afterward.
+
+**Next Session Actions:**
+1. Modify ETACalculator to accept optional active_route parameter
+2. Use RouteETACalculator logic when POI matches route waypoint with timing
+3. Fall back to distance/speed only for POIs not on active route
+4. Test with Korea-to-Andrews route (should show ~50,572 seconds = 14 hours)
 
 ## Next Steps for Future Development
 
