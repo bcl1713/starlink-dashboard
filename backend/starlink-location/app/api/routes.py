@@ -412,11 +412,15 @@ async def upload_route(
             f"KML file uploaded: {file.filename} (size: {len(content)} bytes)"
         )
 
-        # Give watchdog time to detect and parse the file
-        await asyncio.sleep(0.2)
-
         # Get parsed route
         route_id = file_path.stem
+
+        # Explicitly load the route file (watchdog may not pick it up in tests)
+        try:
+            _route_manager._load_route_file(file_path)
+        except Exception as e:
+            logger.error(f"Error loading route file {file_path}: {str(e)}")
+
         parsed_route = _route_manager.get_route(route_id)
 
         if not parsed_route:
