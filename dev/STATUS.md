@@ -1,10 +1,45 @@
 # Development Status
 
-**Last Updated:** 2025-11-04 Session 25-26 (Route-Aware POI Quick Reference - COMPLETE)
+**Last Updated:** 2025-11-04 Session 29 (ETA Timing Modes Phases 1-5 - IN PROGRESS)
 
 **Current Branch:** feature/eta-route-timing
 
-**Status:** 🎉 ETA ROUTE TIMING FEATURE COMPLETE + ROUTE-AWARE POI FILTERING IMPLEMENTED - ALL 451 TESTS PASSING
+**Status:** 🎉 ETA ROUTE TIMING FEATURE COMPLETE + ETA TIMING MODES (Phases 1-5) IMPLEMENTED
+
+---
+
+## Current Session: ETA Timing Modes Feature (Phases 1-5)
+
+**Status:** ✅ Phases 1-5 COMPLETE - Ready for Phase 6
+
+**Location:** `/dev/active/eta-timing-modes/`
+
+**What Was Built (Session 29):**
+- Flight status data models (FlightPhase, ETAMode, FlightStatus)
+- FlightStateManager with speed-based departure detection (50 knots + 10-sec persistence)
+- Dual-mode ETA calculation engine:
+  - Anticipated: Flight plan times (pre-departure)
+  - Estimated: Real-time with speed blending `(current + expected) / 2`
+- Flight status API endpoints (3 new endpoints)
+- Prometheus metrics for flight state tracking (4 new metrics)
+- Full integration with existing POI/ETA system
+
+**Files Created:** 3 new files (575 lines total)
+**Files Modified:** 7 existing files (~500 new/modified lines)
+**Tests Status:** ⏳ Tests not yet written (Phase 7)
+**Docker Status:** ✅ Building successfully (background build 9100b1)
+
+**Phases Completed:**
+- Phase 1: Data models ✅
+- Phase 2: Flight state manager ✅
+- Phase 3: Dual-mode ETA calculation ✅
+- Phase 4: API endpoints ✅
+- Phase 5: Prometheus metrics ✅
+
+**Phases Remaining:**
+- Phase 6: Grafana dashboards
+- Phase 7: Unit & integration tests (60+ tests)
+- Phase 8: Documentation updates
 
 ---
 
@@ -345,6 +380,32 @@ The problem isn't that we need an override - the problem is that ETACalculator s
 2. Use RouteETACalculator logic when POI matches route waypoint with timing
 3. Fall back to distance/speed only for POIs not on active route
 4. Test with Korea-to-Andrews route (should show ~50,572 seconds = 14 hours)
+
+## Session 29 Update - ETA Timing Modes Planning Complete
+
+**Feature:** Anticipated vs. Estimated ETA Display
+**Status:** Planning Complete - Ready for Implementation
+**Location:** `/dev/active/eta-timing-modes/`
+
+**What's Being Built:**
+- Automatic switch between "Anticipated" ETAs (pre-departure) and "Estimated" ETAs (post-departure)
+- Flight state machine (PRE_DEPARTURE → IN_FLIGHT → POST_ARRIVAL)
+- Visual distinction in Grafana (blue = planned, green = live)
+- Automatic departure/arrival detection + manual override API
+- No manual intervention required for mode switching
+
+**Planning Documents Created:**
+- ✅ Strategic plan with 8 implementation phases (26-34 hours)
+- ✅ Technical context with architecture decisions and data flows
+- ✅ Task tracking checklist with 60+ tasks across phases
+- ✅ README with quick start guide
+
+**Implementation Approach:**
+Full implementation with flight phase tracking and comprehensive state management.
+
+**Next Session:** Begin Phase 1 (Data Model Extensions)
+
+---
 
 ## Next Steps for Future Development
 
