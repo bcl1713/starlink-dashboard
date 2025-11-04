@@ -326,7 +326,7 @@ git branch --show-current
 
 ---
 
-**Status File Last Updated:** 2025-11-04 Session 27 (ROOT CAUSE ANALYSIS COMPLETE - Metrics ETA Bug Root Cause Identified, Architectural Fix Defined)
+**Status File Last Updated:** 2025-11-04 Session 28 (DASHBOARD ETA FIX IN PROGRESS - API endpoint now uses route-aware calculations, KADW working correctly, SAT SWAP projection needed)
 
 ## Session 27 Update - Metrics ETA Bug Investigation
 
