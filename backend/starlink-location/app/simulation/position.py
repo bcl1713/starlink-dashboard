@@ -266,11 +266,9 @@ class PositionSimulator:
                 speed_change = random.uniform(-0.5, 0.5)
                 self.current_speed = expected_speed + speed_change
 
-                # Clamp to valid range
-                self.current_speed = max(
-                    config.speed_min_knots,
-                    min(config.speed_max_knots, self.current_speed)
-                )
+                # Do NOT clamp to config speed range when using route timing data
+                # The route's expected speeds take precedence over generic config defaults
+                # Config speed range is only for non-timed routes
                 return
 
         # For Starlink terminal movement simulation:

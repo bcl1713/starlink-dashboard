@@ -25,32 +25,46 @@ docker compose restart         # Restart services
 docker compose build           # Build images (use --no-cache to force rebuild)
 ```
 
-### IMPORTANT: Backend Code Changes Workflow
+### ⚠️ CRITICAL: Backend Python Code Changes Workflow
 
-**ALWAYS follow this sequence when modifying backend Python code:**
+**YOU MUST FOLLOW THIS EXACT SEQUENCE EVERY TIME YOU MODIFY ANY .py FILE IN backend/**
+
+**FAILURE TO DO THIS WILL RESULT IN RUNNING OLD CODE AND WASTING HOURS DEBUGGING**
 
 ```bash
 # 1. Make your code changes (edit *.py files)
-# 2. Force a clean rebuild of containers with new code
+
+# 2. IMMEDIATELY RUN THIS (no exceptions, no shortcuts):
 docker compose down && docker compose build --no-cache && docker compose up -d
 
-# 3. Wait for services to be healthy
-sleep 10
+# 3. WAIT for services to be healthy (check with):
+docker compose ps    # All containers should show "healthy"
 
-# 4. Test your changes
+# 4. VERIFY your changes took effect:
 curl http://localhost:8000/health
 curl http://localhost:8000/docs
 
-# 5. Only after verifying it works, commit changes
+# 5. ONLY AFTER VERIFICATION, commit changes:
 git add .
 git commit -m "Your message"
 ```
 
-**Why this matters:**
-- Docker caches layers, so `docker compose up` alone won't pick up Python code changes
-- Must use `docker compose down` to remove old containers completely
-- Must use `--no-cache` on build to ensure new Python packages/code are included
-- Services may appear healthy but still be serving old code if you skip this
+**WHY THIS IS NON-NEGOTIABLE:**
+
+- ❌ `docker compose up` alone WILL NOT WORK - it serves cached code
+- ❌ `docker compose restart` WILL NOT WORK - containers are still using old images
+- ❌ `docker compose build` (without `--no-cache`) WILL NOT WORK - layers are cached
+- ✅ ONLY THIS WORKS: `docker compose down && docker compose build --no-cache && docker compose up -d`
+
+**WHAT HAPPENS IF YOU SKIP THIS:**
+
+- Backend runs old Python code while you see your edits in files
+- Tests fail mysteriously (old code vs new tests)
+- Changes appear to have no effect
+- Hours wasted debugging code that isn't even running
+- **YOU WILL GET CONFUSED AND FRUSTRATED**
+
+**THIS IS NOT OPTIONAL. THIS IS REQUIRED EVERY SINGLE TIME.**
 
 ### Access Points
 
@@ -131,9 +145,9 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 
 **Connection Behavior:** If the system fails to connect to the dish on startup,
 it initializes successfully but begins serving without metrics. The service
-remains in live mode and attempts to reconnect on each update cycle. This
-allows the system to continue running and be ready when the dish becomes
-available. Check the `/health` endpoint to see current connection status.
+remains in live mode and attempts to reconnect on each update cycle. This allows
+the system to continue running and be ready when the dish becomes available.
+Check the `/health` endpoint to see current connection status.
 
 **Testing Connection:**
 
@@ -175,9 +189,11 @@ The backend exposes Prometheus metrics including:
 
 ## Storage Requirements
 
-With the default 1-year retention period, Prometheus will store approximately **2.4 GB** of telemetry data.
+With the default 1-year retention period, Prometheus will store approximately
+**2.4 GB** of telemetry data.
 
 **Storage Calculation:**
+
 - **Number of unique metrics:** 45 (collected from live backend)
 - **Scrape interval:** 1 second
 - **Retention period:** 1 year (31,536,000 seconds)
@@ -185,12 +201,14 @@ With the default 1-year retention period, Prometheus will store approximately **
 - **Compression overhead:** ~1.2x
 
 **Formula:**
+
 ```
 Storage_GB = (45 metrics × 31,536,000 seconds × 1.5 bytes × 1.2 overhead) / 1,073,741,824
 Storage_GB ≈ 2.4 GB
 ```
 
 **To adjust retention**, modify `PROMETHEUS_RETENTION` in `.env`:
+
 - `1y` - 1 year (~2.4 GB) - default for long-term analysis
 - `90d` - 90 days (~600 MB)
 - `30d` - 30 days (~200 MB)
@@ -201,6 +219,7 @@ Storage_GB ≈ 2.4 GB
 ### Quick Start
 
 **Access Route Management UI:**
+
 ```bash
 # Web UI for managing routes
 http://localhost:8000/ui/routes
@@ -212,6 +231,7 @@ http://localhost:8000/docs
 ### Common Operations
 
 **Upload a KML route:**
+
 ```bash
 curl -X POST \
   -F "file=@myroute.kml" \
@@ -219,31 +239,37 @@ curl -X POST \
 ```
 
 **List all routes:**
+
 ```bash
 curl http://localhost:8000/api/routes
 ```
 
 **Get route details:**
+
 ```bash
 curl http://localhost:8000/api/routes/{route_id}
 ```
 
 **Activate a route (simulation will follow it):**
+
 ```bash
 curl -X POST http://localhost:8000/api/routes/{route_id}/activate
 ```
 
 **Deactivate all routes:**
+
 ```bash
 curl -X POST http://localhost:8000/api/routes/deactivate
 ```
 
 **Delete a route:**
+
 ```bash
 curl -X DELETE http://localhost:8000/api/routes/{route_id}
 ```
 
 **Download original KML file:**
+
 ```bash
 curl -O http://localhost:8000/api/routes/{route_id}/download
 ```
@@ -252,16 +278,19 @@ curl -O http://localhost:8000/api/routes/{route_id}/download
 
 - **KML Import:** Upload KML files with LineString and/or Point geometries
 - **Route Visualization:** Active route displays on Grafana map in dark orange
-- **Simulation Following:** In simulation mode, position automatically follows active route
+- **Simulation Following:** In simulation mode, position automatically follows
+  active route
 - **Progress Metrics:** Track progress along route via Prometheus metrics
   - `starlink_route_progress_percent` - Progress from 0-100%
   - `starlink_current_waypoint_index` - Current waypoint number
 - **POI Integration:** Embedded Point placemarks can be imported as POIs
-- **Route Switching:** Only one route active at a time; activating new route deactivates previous
+- **Route Switching:** Only one route active at a time; activating new route
+  deactivates previous
 
 ### Sample Routes
 
 Example KML files for testing are available in `/data/sample_routes/`:
+
 - `simple-circular.kml` - Small route (14 waypoints, ~50 km)
 - `cross-country.kml` - Large route (100+ waypoints, ~3944 km)
 - `route-with-pois.kml` - Route with embedded waypoints (24 points + 5 POIs)
@@ -272,6 +301,7 @@ See `/data/sample_routes/README.md` for detailed descriptions.
 ### KML File Format
 
 **Minimum required structure:**
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
@@ -289,18 +319,22 @@ See `/data/sample_routes/README.md` for detailed descriptions.
 ```
 
 **Coordinate format:**
+
 - Longitude: -180 to 180 (negative = West)
 - Latitude: -90 to 90 (negative = South)
 - Altitude: Meters above sea level
 
 **Optional features:**
+
 - Multiple Placemarks (multiple route segments)
 - Point geometry for waypoints (will be imported as POIs)
 - Route names and descriptions in `<name>` and `<description>` tags
 
 ### Route Storage
 
-Routes are stored as KML files in `/data/routes/` directory and watched for changes:
+Routes are stored as KML files in `/data/routes/` directory and watched for
+changes:
+
 - Uploading via API saves to this directory
 - Routes manually placed here are auto-discovered
 - Deleting via API removes the KML file
@@ -309,12 +343,14 @@ Routes are stored as KML files in `/data/routes/` directory and watched for chan
 ### Monitoring Route Following
 
 **In Grafana:**
-1. Open http://localhost:3000/d/starlink/fullscreen-overview
+
+1. Open <http://localhost:3000/d/starlink/fullscreen-overview>
 2. Activate a route
 3. Route appears as dark orange line on map
 4. With simulation mode active, position follows the route
 
 **Via Prometheus:**
+
 ```bash
 # Check route progress
 curl 'http://localhost:9090/api/v1/query?query=starlink_route_progress_percent'
@@ -326,21 +362,25 @@ curl 'http://localhost:9090/api/v1/query?query=starlink_current_waypoint_index'
 ### Troubleshooting
 
 **Route won't upload:**
+
 - Verify file is valid KML (must have `.kml` extension)
 - Check file contains LineString or Point geometries
 - Ensure XML syntax is correct
 
 **Route not showing on map:**
+
 - Activate route via UI or API
 - Verify Grafana dashboard is loaded
 - Check browser console for errors
 
 **Position not following route:**
+
 - Verify `STARLINK_MODE=simulation` in `.env`
 - Check route is activated
 - Monitor logs: `docker logs -f starlink-location | grep route`
 
 **POIs not importing:**
+
 - Route must have Point placemarks to import
 - Use `import_pois=true` flag if available
 - Check backend logs for parsing errors
@@ -382,10 +422,12 @@ always, auto line endings).
 
 ## File Naming Conventions
 
-When creating documentation or task management files, follow these naming standards:
+When creating documentation or task management files, follow these naming
+standards:
 
-- **Status/session files:** ALL CAPS with hyphens (SESSION-NOTES.md, CONTEXT-HANDOFF.md)
-- **Task planning files:** kebab-case (poi-management-plan.md, feature-context.md)
+- **Status/session files:** ALL CAPS with hyphens (SESSION-NOTES.md)
+- **Task planning files:** kebab-case (poi-management-plan.md,
+  feature-context.md)
 - **Never use underscores** for multi-word filenames (use hyphens instead)
 
 See `.claude/NAMING-CONVENTIONS.md` for complete guidelines.

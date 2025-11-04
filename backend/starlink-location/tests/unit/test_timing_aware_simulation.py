@@ -338,11 +338,11 @@ class TestPositionSimulatorTimingAware:
         speed_variance = max(speeds) - min(speeds)
         assert 0.0 < speed_variance <= 2.0  # Up to ±1 knot variation
 
-    def test_speed_clamping_within_config_limits(
+    def test_route_timing_speeds_not_clamped_by_config(
         self, position_config, route_config
     ):
-        """Test that speeds are clamped to config limits."""
-        # Create a route with unrealistic speed
+        """Test that route timing speeds are NOT clamped by config limits."""
+        # Create a route with extreme timing speed (higher than config max)
         metadata = RouteMetadata(
             name="Extreme Speed Route",
             file_path="/test/extreme.kml",
@@ -362,7 +362,7 @@ class TestPositionSimulatorTimingAware:
                 longitude=-74.0,
                 altitude=10000,
                 sequence=1,
-                expected_segment_speed_knots=1000.0,  # Unrealistically high
+                expected_segment_speed_knots=1000.0,  # Much higher than config max (600)
             ),
         ]
 
@@ -379,8 +379,12 @@ class TestPositionSimulatorTimingAware:
 
         simulator.update()
 
-        # Speed should be clamped to max_knots (600.0)
-        assert simulator.current_speed <= position_config.speed_max_knots
+        # Speed should NOT be clamped - route timing takes precedence
+        # Speed should be ~1000 knots (±0.5 drift)
+        assert simulator.current_speed > position_config.speed_max_knots, (
+            f"Route timing speed (1000 knots) should NOT be clamped by config max "
+            f"({position_config.speed_max_knots}), got {simulator.current_speed}"
+        )
 
     def test_speed_override_with_direction(self, position_config, route_config):
         """Test that speed override works with reverse direction."""
