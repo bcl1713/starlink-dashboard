@@ -56,7 +56,8 @@ class PositionSimulator:
         ) / 2.0
 
         # Time tracking for accurate delta calculation
-        self.last_update_time = time.time()
+        # Initialize to 1 second in the past so first update has a reasonable time delta
+        self.last_update_time = time.time() - 1.0
 
         # Initialize heading tracker (simulates live mode behavior)
         self.heading_tracker = HeadingTracker(

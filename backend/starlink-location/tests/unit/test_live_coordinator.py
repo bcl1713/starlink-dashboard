@@ -273,13 +273,18 @@ class TestLiveCoordinatorReset:
         mock_telemetry = default_mock_telemetry()
         mock_client.get_telemetry.return_value = mock_telemetry
 
-        # Use iter to create an infinite generator
-        time_values = iter([1000.0, 1100.0, 1200.0])
-        with patch("app.live.coordinator.time.time", side_effect=lambda: next(time_values)):
+        # Use a fixed sequence rather than cycle to ensure exact order
+        from unittest.mock import Mock
+        time_values = [1000.0, 1000.0, 1000.0, 1100.0, 1100.0, 1000.0, 1000.0, 1000.0]
+        time_iter = iter(time_values)
+
+        with patch("app.live.coordinator.time.time", side_effect=lambda: next(time_iter)):
             config = SimulationConfig()
             coordinator = LiveCoordinator(config)
 
-            assert coordinator.get_uptime_seconds() > 0
+            uptime = coordinator.get_uptime_seconds()
+            # uptime should be 100 (1100 - 1000)
+            assert uptime >= 100.0
 
             coordinator.reset()
 
@@ -298,7 +303,10 @@ class TestLiveCoordinatorUptime:
         mock_client.connect.return_value = False  # Skip initial connection
         mock_client_class.return_value = mock_client
 
-        with patch("app.live.coordinator.time.time", side_effect=[1000.0, 1050.0]):
+        # Use itertools.cycle to create an infinite generator
+        from itertools import cycle
+        time_values = cycle([1000.0, 1050.0])
+        with patch("app.live.coordinator.time.time", side_effect=lambda: next(time_values)):
             config = SimulationConfig()
             coordinator = LiveCoordinator(config)
 
