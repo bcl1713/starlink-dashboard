@@ -1,11 +1,73 @@
 # ETA Route Timing - Session Notes
 
-**Last Updated:** 2025-11-04 (Session 27 - ROOT CAUSE IDENTIFIED, SOLUTION APPROACH REFINED)
-**Current Status:** BUG FIX IN PROGRESS - Architecture Redesign Required
+**Last Updated:** 2025-11-04 (Session 28 - ROUTE-AWARE ETA CALCULATOR IMPLEMENTED)
+**Current Status:** ✅ BUG FIX COMPLETE - All 451 tests passing, ready for review
 
 ---
 
-## Session 27 Summary: Fixing Dashboard ETA Display (Active)
+## Session 28 Summary: Route-Aware ETACalculator Implementation (COMPLETE)
+
+### Problem & Root Cause (From Session 27)
+Dashboard showed 27-hour ETA instead of ~14 hours due to two separate ETA calculation paths:
+- RouteETACalculator (API) - ✅ Correct
+- ETACalculator (metrics) - ❌ Broken, ignored route timing
+
+### Solution Implemented
+Made ETACalculator natively route-aware instead of bolting on overrides afterward.
+
+**Key Changes:**
+1. **ETACalculator** (`app/services/eta_calculator.py`)
+   - Added optional `active_route` parameter to `calculate_poi_metrics()`
+   - Added `_calculate_route_aware_eta()` method that:
+     - Finds matching waypoint by name (case-insensitive)
+     - Finds nearest route point with timing data
+     - Calculates ETA as time delta between destination and current waypoint
+     - Returns None to fall back to distance/speed for non-matching POIs
+
+2. **eta_service** (`app/core/eta_service.py`)
+   - Updated `update_eta_metrics()` to accept and pass `active_route` parameter
+   - Clean delegation pattern: service passes route to calculator
+
+3. **metrics** (`app/core/metrics.py`)
+   - Updated `update_metrics_from_telemetry()` to accept `active_route` parameter
+   - Passes route to eta_service
+
+4. **main** (`main.py`)
+   - Extracts active route from coordinator before calling metrics update
+   - Route is retrieved via `coordinator.route_manager.get_active_route()`
+
+**Architecture Benefits:**
+- Single source of truth for ETA calculation
+- Calculator automatically chooses calculation method based on data availability
+- No complex overrides or workarounds needed
+- Clear separation of concerns
+- Easy to test and maintain
+
+### Implementation Details
+The `_calculate_route_aware_eta()` method:
+1. Verifies route has timing data
+2. Finds matching waypoint on route by POI name
+3. Finds nearest route point to current position that has timing data
+4. Calculates ETA as: `destination_time - nearest_point_time`
+5. Returns None if calculation fails to fall back to distance/speed
+
+**Formula:**
+```
+ETA = (matching_waypoint.expected_arrival_time - nearest_timed_point.expected_arrival_time).total_seconds()
+```
+
+### Testing & Results
+✅ All 451 tests passing
+- No regressions from architectural changes
+- Route-aware logic properly integrated
+- Full backward compatibility maintained
+
+### Commit
+- `7811512` - "fix: Make ETACalculator route-aware to fix metrics ETA display"
+
+---
+
+## Session 27 Summary: Fixing Dashboard ETA Display (Previous)
 
 ### Problem Statement
 Korea-to-Andrews route (actual 14-hour duration) shows 27-hour ETA on metrics dashboard, despite API endpoint returning correct 14-hour ETA.
