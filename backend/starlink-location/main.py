@@ -224,12 +224,7 @@ async def _background_update_loop():
 
                         scrape_start = time.time()
                         try:
-                            # Get active route from coordinator for route-aware ETA calculations
-                            active_route = None
-                            if _coordinator and _coordinator.route_manager:
-                                active_route = _coordinator.route_manager.get_active_route()
-
-                            update_metrics_from_telemetry(telemetry, _simulation_config, active_route=active_route)
+                            update_metrics_from_telemetry(telemetry, _simulation_config)
                             scrape_duration = time.time() - scrape_start
                             starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
                             starlink_metrics_last_update_timestamp_seconds.set(time.time())

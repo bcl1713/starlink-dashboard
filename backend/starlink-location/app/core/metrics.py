@@ -355,14 +355,13 @@ simulation_errors_total = Counter(
 )
 
 
-def update_metrics_from_telemetry(telemetry, config=None, active_route=None):
+def update_metrics_from_telemetry(telemetry, config=None):
     """
     Update all Prometheus metrics from telemetry data.
 
     Args:
         telemetry: TelemetryData instance or None
         config: Optional ConfigManager instance for label computation
-        active_route: Optional ParsedRoute with timing data for route-aware ETA calculations
 
     Returns:
         None. Does nothing if telemetry is None (prevents publishing invalid data).

@@ -212,16 +212,22 @@ class ETACalculator:
         """
         Calculate ETA using segment-based speeds from route timing data.
 
-        For POIs that match a waypoint on the active route:
-        1. Find nearest route point to current position
-        2. Calculate remaining distance segment by segment
-        3. Use the segment's expected speed for each segment
-        4. Use current smoothed speed for the immediate segment
+        Handles two cases:
+        1. POI is on the active route (matches a waypoint by name):
+           - Find nearest route point to current position
+           - Calculate remaining distance segment by segment
+           - Use the segment's expected speed for each segment
+           - Use current smoothed speed for the immediate segment
+
+        2. POI is off-route but has projection data:
+           - Calculate ETA from current position to projection point (current speed)
+           - Calculate ETA from projection point to final destination (route-aware speeds)
+           - Return sum for total ETA
 
         Args:
             current_lat: Current latitude
             current_lon: Current longitude
-            poi: POI object whose name should match a waypoint name
+            poi: POI object whose name should match a waypoint name (or has projection data)
             active_route: ParsedRoute with timing data
 
         Returns:
@@ -231,7 +237,7 @@ class ETACalculator:
         if not active_route.timing_profile or not active_route.timing_profile.has_timing_data:
             return None
 
-        # Try to find matching waypoint on route by name
+        # Try to find matching waypoint on route by name (on-route POI case)
         matching_waypoint = None
         matching_waypoint_index = None
         for idx, waypoint in enumerate(active_route.waypoints):
@@ -240,9 +246,44 @@ class ETACalculator:
                 matching_waypoint_index = idx
                 break
 
-        if not matching_waypoint:
-            return None
+        # If POI is on the route, use direct route-aware calculation
+        if matching_waypoint:
+            return self._calculate_on_route_eta(
+                current_lat, current_lon, matching_waypoint, active_route
+            )
 
+        # If POI is not on route but has projection data, use projection-based calculation
+        if (poi.projected_latitude is not None and
+            poi.projected_longitude is not None and
+            poi.projected_route_progress is not None):
+            return self._calculate_off_route_eta_with_projection(
+                current_lat, current_lon, poi, active_route
+            )
+
+        # If neither on-route nor has projection, return None to fall back to distance/speed
+        return None
+
+    def _calculate_on_route_eta(
+        self,
+        current_lat: float,
+        current_lon: float,
+        destination_waypoint: "RouteWaypoint",
+        active_route: "ParsedRoute",
+    ) -> Optional[float]:
+        """
+        Calculate ETA for a waypoint that is on the active route.
+
+        Uses segment-based speeds from route timing data.
+
+        Args:
+            current_lat: Current latitude
+            current_lon: Current longitude
+            destination_waypoint: Destination waypoint on the route
+            active_route: ParsedRoute with timing data
+
+        Returns:
+            ETA in seconds if calculation succeeds, None otherwise
+        """
         try:
             # Find nearest route point to current position
             nearest_point_index = 0
@@ -264,8 +305,8 @@ class ETACalculator:
                 next_point = active_route.points[idx + 1]
 
                 # Check if we've reached the destination waypoint
-                if (current_point.latitude == matching_waypoint.latitude and
-                    current_point.longitude == matching_waypoint.longitude):
+                if (current_point.latitude == destination_waypoint.latitude and
+                    current_point.longitude == destination_waypoint.longitude):
                     break
 
                 # Calculate segment distance
@@ -298,8 +339,169 @@ class ETACalculator:
             return None
 
         except Exception as e:
-            logger.debug(f"Route-aware ETA calculation failed for {poi.name}: {e}")
+            logger.debug(f"On-route ETA calculation failed: {e}")
             return None
+
+    def _calculate_off_route_eta_with_projection(
+        self,
+        current_lat: float,
+        current_lon: float,
+        poi: POI,
+        active_route: "ParsedRoute",
+    ) -> Optional[float]:
+        """
+        Calculate ETA for a POI that is off-route but has projection data.
+
+        Uses the same segment-walking logic as on-route POIs, but walks only
+        from current position to the POI's projection point on the route.
+
+        Strategy:
+        1. Find nearest route point to current position
+        2. Find which route segment contains the projection point
+        3. Walk segments from current position to the projection point
+        4. Use current speed for first segment, expected speeds for subsequent segments
+
+        Args:
+            current_lat: Current latitude
+            current_lon: Current longitude
+            poi: POI with projection data (projected_latitude, projected_longitude)
+            active_route: ParsedRoute with timing data
+
+        Returns:
+            ETA in seconds if calculation succeeds, None otherwise
+        """
+        try:
+            # Find nearest route point to current position
+            nearest_point_index = 0
+            nearest_distance = float('inf')
+
+            for idx, point in enumerate(active_route.points):
+                dist = self.calculate_distance(current_lat, current_lon, point.latitude, point.longitude)
+                if dist < nearest_distance:
+                    nearest_distance = dist
+                    nearest_point_index = idx
+
+            # Find which route segment contains the projection point
+            # We need to find the segment where the POI projects
+            projection_segment_index = None
+            for idx in range(len(active_route.points) - 1):
+                p1 = active_route.points[idx]
+                p2 = active_route.points[idx + 1]
+
+                # Check if projection point lies on this segment
+                # by calculating distance from projection to this segment
+                dist_to_segment = self._distance_to_line_segment(
+                    poi.projected_latitude, poi.projected_longitude,
+                    p1.latitude, p1.longitude,
+                    p2.latitude, p2.longitude
+                )
+
+                if dist_to_segment < 1000:  # Within 1km of segment (projection tolerance)
+                    projection_segment_index = idx
+                    break
+
+            # If we couldn't find the projection segment, fall back to distance/speed
+            if projection_segment_index is None:
+                return None
+
+            # Calculate remaining distance and time segment by segment
+            total_eta_seconds = 0.0
+
+            # Walk through segments from nearest point to projection point
+            for idx in range(nearest_point_index, projection_segment_index + 1):
+                current_point = active_route.points[idx]
+                next_point = active_route.points[idx + 1]
+
+                # Calculate segment distance
+                segment_distance = self.calculate_distance(
+                    current_point.latitude, current_point.longitude,
+                    next_point.latitude, next_point.longitude
+                )
+
+                # Determine speed for this segment
+                # Use current smoothed speed for first segment, then use expected segment speed
+                if idx == nearest_point_index:
+                    # First segment: use current smoothed speed
+                    speed_knots = self._smoothed_speed
+                else:
+                    # Subsequent segments: use expected speed if available
+                    speed_knots = current_point.expected_segment_speed_knots or self._smoothed_speed
+
+                # Calculate time for this segment (avoid division by zero)
+                if speed_knots > 0.5:
+                    distance_nm = segment_distance / 1852.0
+                    segment_time = (distance_nm / speed_knots) * 3600.0
+                    total_eta_seconds += segment_time
+
+            # Return total ETA or None if calculation failed
+            if total_eta_seconds > 0:
+                return total_eta_seconds
+
+            return None
+
+        except Exception as e:
+            logger.debug(f"Off-route ETA calculation with projection failed for {poi.name}: {e}")
+            return None
+
+    def _distance_to_line_segment(
+        self,
+        point_lat: float,
+        point_lon: float,
+        seg_start_lat: float,
+        seg_start_lon: float,
+        seg_end_lat: float,
+        seg_end_lon: float,
+    ) -> float:
+        """
+        Calculate perpendicular distance from a point to a line segment.
+
+        Args:
+            point_lat/lon: Point to measure distance from
+            seg_start_lat/lon: Start of line segment
+            seg_end_lat/lon: End of line segment
+
+        Returns:
+            Distance in meters
+        """
+        # Using simplified haversine-based distance to line segment
+        # This is a rough approximation for short segments
+
+        # Distance from point to segment start
+        dist_to_start = self.calculate_distance(
+            point_lat, point_lon,
+            seg_start_lat, seg_start_lon
+        )
+
+        # Distance from point to segment end
+        dist_to_end = self.calculate_distance(
+            point_lat, point_lon,
+            seg_end_lat, seg_end_lon
+        )
+
+        # Distance along segment
+        segment_length = self.calculate_distance(
+            seg_start_lat, seg_start_lon,
+            seg_end_lat, seg_end_lon
+        )
+
+        # If segment is very short, return distance to start
+        if segment_length < 1:
+            return dist_to_start
+
+        # Use triangle inequality: perpendicular distance is approximate
+        # For a point on the segment, sum of distances to ends equals segment length
+        # Deviation from this tells us how far off the segment the point is
+        max_dist = max(dist_to_start, dist_to_end)
+        min_dist = min(dist_to_start, dist_to_end)
+
+        # Perpendicular distance approximation
+        if dist_to_start + dist_to_end > segment_length:
+            # Point is roughly perpendicular to segment
+            perp_dist = (dist_to_start ** 2 + dist_to_end ** 2 - segment_length ** 2) / (2 * segment_length)
+            return abs(perp_dist)
+        else:
+            # Point is outside segment bounds
+            return min_dist
 
     def reset(self) -> None:
         """Reset calculator state."""
