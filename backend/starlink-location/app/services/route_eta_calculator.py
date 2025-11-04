@@ -15,6 +15,70 @@ _eta_cache = ETACache(ttl_seconds=5.0)
 _eta_history = ETAHistoryTracker(max_history=100)
 
 
+def project_point_to_line_segment(
+    point_lat: float,
+    point_lon: float,
+    seg_start_lat: float,
+    seg_start_lon: float,
+    seg_end_lat: float,
+    seg_end_lon: float,
+) -> tuple[float, float, float]:
+    """
+    Project a point onto a line segment using parametric projection.
+
+    Finds the closest point on the line segment to the given point.
+
+    Args:
+        point_lat/lon: Point to project
+        seg_start_lat/lon: Start of line segment
+        seg_end_lat/lon: End of line segment
+
+    Returns:
+        Tuple of (projected_lat, projected_lon, distance_to_segment_meters)
+    """
+    # Convert to radians for distance calculations
+    p_lat, p_lon = math.radians(point_lat), math.radians(point_lon)
+    a_lat, a_lon = math.radians(seg_start_lat), math.radians(seg_start_lon)
+    b_lat, b_lon = math.radians(seg_end_lat), math.radians(seg_end_lon)
+
+    # Haversine distance helper
+    def haversine(lat1, lon1, lat2, lon2):
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        )
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        return 6371000.0 * c  # Earth radius in meters
+
+    # Calculate distances
+    dist_a_b = haversine(a_lat, a_lon, b_lat, b_lon)
+    dist_a_p = haversine(a_lat, a_lon, p_lat, p_lon)
+    dist_b_p = haversine(b_lat, b_lon, p_lat, p_lon)
+
+    # Handle zero-length segment
+    if dist_a_b < 1:
+        return seg_start_lat, seg_start_lon, dist_a_p
+
+    # Parametric projection using spherical geometry approximation
+    # For small segments, use planar approximation
+    cos_angle = (dist_a_b ** 2 + dist_a_p ** 2 - dist_b_p ** 2) / (2 * dist_a_b * dist_a_p) if dist_a_p > 0 else 1
+    cos_angle = max(-1, min(1, cos_angle))  # Clamp to [-1, 1]
+
+    t = dist_a_p * math.cos(math.acos(cos_angle)) / dist_a_b if dist_a_p > 0 else 0
+    t = max(0, min(1, t))  # Clamp to [0, 1]
+
+    # Linear interpolation for projected point
+    proj_lat = seg_start_lat + t * (seg_end_lat - seg_start_lat)
+    proj_lon = seg_start_lon + t * (seg_end_lon - seg_start_lon)
+
+    # Distance from point to projected point
+    dist_to_proj = haversine(p_lat, p_lon, math.radians(proj_lat), math.radians(proj_lon))
+
+    return proj_lat, proj_lon, dist_to_proj
+
+
 class RouteETACalculator:
     """
     Calculate ETAs for routes with embedded timing data.
@@ -41,6 +105,98 @@ class RouteETACalculator:
         """Validate that route has required data."""
         if not self.route.points:
             raise ValueError("Route must have at least one point")
+
+    def project_poi_to_route(
+        self,
+        poi_lat: float,
+        poi_lon: float,
+    ) -> dict:
+        """
+        Project a POI onto the route path.
+
+        Finds the closest point on the route's LineString to the POI and calculates
+        the progress percentage where that point occurs.
+
+        Args:
+            poi_lat: POI latitude
+            poi_lon: POI longitude
+
+        Returns:
+            Dictionary with:
+            - projected_lat: Latitude of projection point
+            - projected_lon: Longitude of projection point
+            - projected_waypoint_index: Index of closest route point
+            - projected_route_progress: Progress percentage (0-100) where POI projects
+            - distance_to_route_meters: Distance from POI to its projection
+        """
+        if not self.route.points:
+            return {
+                "projected_lat": poi_lat,
+                "projected_lon": poi_lon,
+                "projected_waypoint_index": 0,
+                "projected_route_progress": 0.0,
+                "distance_to_route_meters": float("inf"),
+            }
+
+        best_proj_lat = self.route.points[0].latitude
+        best_proj_lon = self.route.points[0].longitude
+        best_waypoint_index = 0
+        best_distance = float("inf")
+        best_distance_along_route = 0.0
+
+        # Find closest point on route path by checking all segments
+        distance_along_route = 0.0
+
+        for i in range(len(self.route.points) - 1):
+            p1 = self.route.points[i]
+            p2 = self.route.points[i + 1]
+
+            # Project POI onto this segment
+            proj_lat, proj_lon, dist_to_segment = project_point_to_line_segment(
+                poi_lat,
+                poi_lon,
+                p1.latitude,
+                p1.longitude,
+                p2.latitude,
+                p2.longitude,
+            )
+
+            # Check if this is the closest projection so far
+            if dist_to_segment < best_distance:
+                best_distance = dist_to_segment
+                best_proj_lat = proj_lat
+                best_proj_lon = proj_lon
+                best_waypoint_index = i
+                best_distance_along_route = distance_along_route + self._haversine_distance(
+                    p1.latitude,
+                    p1.longitude,
+                    proj_lat,
+                    proj_lon,
+                )
+
+            # Add segment distance for next iteration
+            distance_along_route += self._haversine_distance(
+                p1.latitude,
+                p1.longitude,
+                p2.latitude,
+                p2.longitude,
+            )
+
+        # Calculate progress percentage
+        total_distance = self.route.get_total_distance()
+        projected_route_progress = (
+            (best_distance_along_route / total_distance * 100)
+            if total_distance > 0
+            else 0.0
+        )
+
+        return {
+            "projected_lat": best_proj_lat,
+            "projected_lon": best_proj_lon,
+            "projected_waypoint_index": best_waypoint_index,
+            "projected_route_progress": projected_route_progress,
+            "distance_to_route_meters": best_distance,
+        }
 
     def _haversine_distance(
         self,
@@ -180,6 +336,66 @@ class RouteETACalculator:
             distance += segment_distance
 
         return distance
+
+    def _calculate_remaining_duration_from_segments(
+        self,
+        start_index: int,
+    ) -> Optional[float]:
+        """
+        Calculate expected duration for remaining route using segment-specific data.
+
+        This method calculates the actual expected time to complete the remaining
+        route by examining each segment's timing data and expected speeds.
+
+        Args:
+            start_index: Index of current position on route
+
+        Returns:
+            Duration in seconds, or None if cannot be calculated
+        """
+        if not self.route.timing_profile or start_index >= len(self.route.points) - 1:
+            return None
+
+        total_remaining_duration = 0.0
+
+        # If we have a timing profile with departure and arrival times,
+        # use the expected arrival time from the profile
+        if (self.route.timing_profile.arrival_time and
+            self.route.timing_profile.departure_time):
+            # Get the expected arrival time for the route
+            arrival_time = self.route.timing_profile.arrival_time
+
+            # Calculate time from current point to final destination
+            if self.route.points[start_index].expected_arrival_time:
+                time_delta = (
+                    arrival_time -
+                    self.route.points[start_index].expected_arrival_time
+                ).total_seconds()
+                if time_delta > 0:
+                    return time_delta
+
+        # Fall back to calculating from segment speeds if available
+        for i in range(start_index, len(self.route.points) - 1):
+            point = self.route.points[i]
+            next_point = self.route.points[i + 1]
+
+            # Get segment distance
+            segment_distance = self._haversine_distance(
+                point.latitude,
+                point.longitude,
+                next_point.latitude,
+                next_point.longitude,
+            )
+
+            # Get segment speed
+            segment_speed = self._get_speed_for_segment(i)
+
+            # Calculate time for this segment
+            if segment_speed > 0:
+                segment_duration = (segment_distance / 1852.0 / segment_speed) * 3600.0
+                total_remaining_duration += segment_duration
+
+        return total_remaining_duration if total_remaining_duration > 0 else None
 
     def calculate_eta_to_waypoint(
         self,
@@ -368,13 +584,20 @@ class RouteETACalculator:
                 self.route.timing_profile.get_total_duration()
             )
 
+        # Calculate remaining duration using segment-aware method if available
+        # This ensures multi-leg routes with varying speeds calculate correct ETAs
+        if not expected_duration_remaining and self.route.timing_profile:
+            expected_duration_remaining = (
+                self._calculate_remaining_duration_from_segments(nearest_point_idx)
+            )
+
         # Calculate average speed if we have total duration
         average_speed = self.DEFAULT_SPEED_KNOTS
         if expected_total_duration and expected_total_duration > 0:
             average_speed = (total_distance / expected_total_duration) * (3600 / 1852)
 
-            # Calculate remaining time based on distance and average speed
-            if average_speed > 0 and distance_remaining > 0:
+            # If we couldn't calculate segment-aware duration, fall back to average speed
+            if not expected_duration_remaining and average_speed > 0 and distance_remaining > 0:
                 expected_duration_remaining = (
                     distance_remaining / 1852.0 / average_speed
                 ) * 3600.0
