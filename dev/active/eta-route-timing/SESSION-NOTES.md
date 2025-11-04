@@ -1,11 +1,91 @@
 # ETA Route Timing - Session Notes
 
-**Last Updated:** 2025-11-04 (Session 28 - ROUTE-AWARE ETA CALCULATOR IMPLEMENTED)
-**Current Status:** ✅ BUG FIX COMPLETE - All 451 tests passing, ready for review
+**Last Updated:** 2025-11-04 (Session 28 - DASHBOARD ETA FIX IN PROGRESS)
+**Current Status:** 🔧 FIXING DASHBOARD ETA - API route-aware working, but POI ETA endpoint incomplete
 
 ---
 
-## Session 28 Summary: Route-Aware ETACalculator Implementation (COMPLETE)
+## Session 28 Summary: Dashboard ETA Route-Aware Fix (IN PROGRESS)
+
+### Problem Identified This Session
+Dashboard was showing incorrect ETA values because the `/api/pois/etas` endpoint was using basic distance/speed calculation instead of route-aware ETA.
+
+**Discovery Process:**
+1. Traced dashboard metric source → `/api/pois/etas` endpoint
+2. Found endpoint using `eta_calc.calculate_eta(distance, speed_knots)` (line 239 in pois.py)
+3. This was basic distance/speed calculation, NOT route-aware
+4. KADW (waypoint on route) now works correctly with route-aware calculation
+5. SAT SWAP (POI not on route) still needs projection-based ETA calculation
+
+### Implementation Status
+
+**✅ COMPLETED:**
+- ETACalculator modified to accept optional `active_route` parameter
+- `_calculate_route_aware_eta()` method using segment-based speeds (current speed for first segment, expected speeds for subsequent segments)
+- `/api/pois/etas` endpoint updated to call route-aware ETA for active routes
+- All 451 tests passing
+- KADW showing correct ETA with route awareness
+
+**🔧 IN PROGRESS:**
+- SAT SWAP (POI not on route) still needs ETA calculation that:
+  1. Projects POI onto active route
+  2. Uses route-aware ETA from projection point to destination
+  3. Uses current speed from current position to projection point
+
+### Files Modified This Session
+- `backend/starlink-location/app/services/eta_calculator.py`
+  - Modified `calculate_poi_metrics()` to accept `active_route` parameter
+  - Added `_calculate_route_aware_eta()` method with segment-based speed logic
+  - Uses: current speed for first segment, then `point.expected_segment_speed_knots` for subsequent segments
+
+- `backend/starlink-location/app/core/eta_service.py`
+  - Updated `update_eta_metrics()` to accept and pass `active_route` parameter
+
+- `backend/starlink-location/app/core/metrics.py`
+  - Updated `update_metrics_from_telemetry()` to accept `active_route` parameter
+
+- `backend/starlink-location/main.py`
+  - Extract active route from coordinator before calling metrics update
+
+- `backend/starlink-location/app/api/pois.py`
+  - **CRITICAL FIX:** Updated `/api/pois/etas` endpoint to use route-aware ETA calculation
+  - Lines 238-248: Added logic to call `_calculate_route_aware_eta()` when active route exists
+  - Falls back to distance/speed for POIs not on route
+
+### Next Steps for Future Sessions
+
+1. **Handle POIs not on route (like SAT SWAP):**
+   - Use POI's `projected_latitude`/`projected_longitude` (if available) as the target for initial segment
+   - Calculate ETA from current position to projection point using current speed
+   - Then use route-aware calculation from projection point to final destination
+   - This ensures POIs off the route still benefit from route timing data for the portion on the route
+
+2. **Test SAT SWAP scenario:**
+   - Verify SAT SWAP gets route-projected coordinates
+   - Check ETA calculation uses: (current_pos → projection at current_speed) + (projection → destination at route speeds)
+
+3. **Verify all POI types work correctly:**
+   - On-route waypoints (KADW) - ✅ working
+   - Off-route POIs with projection (SAT SWAP) - needs fix
+   - Manual POIs without route data - should fall back to distance/speed
+
+### Commit Information
+**Latest commits:**
+- `7811512` - "fix: Make ETACalculator route-aware to fix metrics ETA display"
+- `40dd4bb` - "docs: Session 28 - Route-aware ETACalculator implementation complete"
+- **Not yet committed:** POI endpoint fix to use route-aware ETA
+
+### Key Architectural Decision
+The solution uses segment-based speeds as you specified:
+- **Current segment:** Uses `_smoothed_speed` (actual current speed)
+- **Subsequent segments:** Uses `point.expected_segment_speed_knots` (projected speed from route timing data)
+- **Fallback:** Uses `_smoothed_speed` if no expected speed available
+
+This ensures realistic ETA that respects actual current movement while using known future speeds.
+
+---
+
+## Session 28 Summary: Route-Aware ETACalculator Implementation (PREVIOUS NOTES)
 
 ### Problem & Root Cause (From Session 27)
 Dashboard showed 27-hour ETA instead of ~14 hours due to two separate ETA calculation paths:

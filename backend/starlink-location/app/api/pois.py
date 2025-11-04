@@ -235,8 +235,17 @@ async def get_pois_with_etas(
                 latitude, longitude, poi.latitude, poi.longitude
             )
 
-            # Calculate ETA
-            eta_seconds = eta_calc.calculate_eta(distance, speed_knots)
+            # Calculate ETA - use route-aware calculation if active route exists
+            eta_seconds = None
+            if active_route:
+                # Try route-aware ETA calculation first
+                eta_seconds = eta_calc._calculate_route_aware_eta(
+                    latitude, longitude, poi, active_route
+                )
+
+            # Fall back to distance/speed calculation if route-aware failed
+            if eta_seconds is None:
+                eta_seconds = eta_calc.calculate_eta(distance, speed_knots)
 
             # Calculate bearing
             bearing = calculate_bearing(latitude, longitude, poi.latitude, poi.longitude)

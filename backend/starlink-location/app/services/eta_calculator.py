@@ -210,11 +210,13 @@ class ETACalculator:
         active_route: "ParsedRoute",
     ) -> Optional[float]:
         """
-        Calculate ETA using route timing data if POI is a waypoint on the active route.
+        Calculate ETA using segment-based speeds from route timing data.
 
-        This method implements the route-aware ETA logic: if the POI name matches a waypoint
-        on the active route with timing data, we use the route's expected arrival time for
-        that waypoint minus the expected arrival time at the nearest current point.
+        For POIs that match a waypoint on the active route:
+        1. Find nearest route point to current position
+        2. Calculate remaining distance segment by segment
+        3. Use the segment's expected speed for each segment
+        4. Use current smoothed speed for the immediate segment
 
         Args:
             current_lat: Current latitude
@@ -231,37 +233,69 @@ class ETACalculator:
 
         # Try to find matching waypoint on route by name
         matching_waypoint = None
-        for waypoint in active_route.waypoints:
+        matching_waypoint_index = None
+        for idx, waypoint in enumerate(active_route.waypoints):
             if waypoint.name.upper() == poi.name.upper():
                 matching_waypoint = waypoint
+                matching_waypoint_index = idx
                 break
 
-        if not matching_waypoint or not matching_waypoint.expected_arrival_time:
+        if not matching_waypoint:
             return None
 
         try:
-            # Find nearest route point to current position that has timing data
-            nearest_point_with_timing = None
+            # Find nearest route point to current position
+            nearest_point_index = 0
             nearest_distance = float('inf')
 
-            for point in active_route.points:
-                if point.expected_arrival_time:
-                    dist = self.calculate_distance(current_lat, current_lon, point.latitude, point.longitude)
-                    if dist < nearest_distance:
-                        nearest_distance = dist
-                        nearest_point_with_timing = point
+            for idx, point in enumerate(active_route.points):
+                dist = self.calculate_distance(current_lat, current_lon, point.latitude, point.longitude)
+                if dist < nearest_distance:
+                    nearest_distance = dist
+                    nearest_point_index = idx
 
-            if not nearest_point_with_timing:
-                return None
+            # Calculate remaining distance and time segment by segment
+            total_eta_seconds = 0.0
+            distance_remaining = nearest_distance  # Distance from current position to nearest point
 
-            # Calculate ETA as the difference between destination arrival time and current point arrival time
-            time_to_destination = (matching_waypoint.expected_arrival_time - nearest_point_with_timing.expected_arrival_time).total_seconds()
+            # Walk through segments from nearest point to destination
+            for idx in range(nearest_point_index, len(active_route.points) - 1):
+                current_point = active_route.points[idx]
+                next_point = active_route.points[idx + 1]
 
-            # If time_to_destination is negative, we've already passed this waypoint
-            if time_to_destination <= 0:
-                return None
+                # Check if we've reached the destination waypoint
+                if (current_point.latitude == matching_waypoint.latitude and
+                    current_point.longitude == matching_waypoint.longitude):
+                    break
 
-            return time_to_destination
+                # Calculate segment distance
+                segment_distance = self.calculate_distance(
+                    current_point.latitude, current_point.longitude,
+                    next_point.latitude, next_point.longitude
+                )
+
+                distance_remaining += segment_distance
+
+                # Determine speed for this segment
+                # Use current smoothed speed for first segment, then use expected segment speed
+                if idx == nearest_point_index:
+                    # First segment: use current smoothed speed
+                    speed_knots = self._smoothed_speed
+                else:
+                    # Subsequent segments: use expected speed if available
+                    speed_knots = current_point.expected_segment_speed_knots or self._smoothed_speed
+
+                # Calculate time for this segment (avoid division by zero)
+                if speed_knots > 0.5:
+                    distance_nm = segment_distance / 1852.0
+                    segment_time = (distance_nm / speed_knots) * 3600.0
+                    total_eta_seconds += segment_time
+
+            # Return total ETA or None if calculation failed
+            if total_eta_seconds > 0:
+                return total_eta_seconds
+
+            return None
 
         except Exception as e:
             logger.debug(f"Route-aware ETA calculation failed for {poi.name}: {e}")
