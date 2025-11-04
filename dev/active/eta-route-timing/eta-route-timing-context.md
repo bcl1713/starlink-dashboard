@@ -1,14 +1,30 @@
 # ETA Route Timing - Implementation Context
 
-**Last Updated:** 2025-11-03 (Session 18 - Phase 1 Complete)
-**Feature Branch:** `feature/eta-route-timing` (created, active)
-**Current Phase:** Phase 2 - KML Parser Enhancements (ready to start)
+**Last Updated:** 2025-11-04 (Session 27 - Root Cause Identified, Approach Refined)
+**Feature Branch:** `feature/eta-route-timing`
+**Status:** 🔧 BUG FIX IN PROGRESS - Root cause identified, architecture redesign in progress
 
 ---
 
-## Overview
+## Overview & Current Issue (Session 27 - ARCHITECTURAL REDESIGN)
 
-Context consolidation for implementing route-aware ETA calculations using timing metadata from KML flight plan files. This work builds on the completed Phase 5.2 integration where RouteManager is wired into the simulation coordinator.
+ETA Route Timing feature is feature-complete (Sessions 1-26) for API and simulation, but **metrics dashboard shows incorrect ETA** (27 hours instead of 14) for Korea-to-Andrews route.
+
+### Root Cause (CONFIRMED)
+Two separate ETA calculation codepaths:
+1. **`RouteETACalculator`** (API endpoint) - ✅ Works correctly, uses segment-based speeds from timing profile
+2. **`ETACalculator`** (Prometheus metrics) - ❌ Broken, uses only distance/smoothed_speed, completely ignores route timing
+
+### The Real Problem
+The attempted fix (override after calculation) was wrong architecturally. **ETACalculator should BE route-aware by default**, not have it bolted on afterward. The calculator needs to know about the active route and use segment-based speeds automatically when available.
+
+### Solution (NEW APPROACH)
+Enhance `ETACalculator` to:
+- Accept optional `active_route: ParsedRoute` parameter
+- When POI matches active route waypoint with timing data, use RouteETACalculator logic
+- Use segment-based speeds from route timing profile
+- Fall back to distance/speed only for POIs not on active route
+- Make this the default behavior, not an override
 
 ---
 
@@ -309,6 +325,53 @@ eta:
 - Simulator speed adjustment: negligible overhead
 
 ---
+
+## Session 27 Debugging Findings
+
+### Metrics ETA Bug Investigation
+
+**What Works:**
+- API endpoint `/api/routes/{id}/progress?lat=X&lon=Y` returns correct ~14 hour ETA ✅
+- RouteETACalculator `_calculate_remaining_duration_from_segments()` uses timing profile correctly
+- Route timing profile populated correctly (departure 09:15, arrival 23:17, duration 50572 seconds = 14.04 hours)
+
+**What's Broken:**
+- Prometheus metric `starlink_eta_poi_seconds` shows 98773 seconds (27.4 hours) ❌
+- Metrics calculated via `update_eta_metrics()` in `app/core/eta_service.py`
+- ETACalculator uses simple distance/speed, ignores route timing
+
+**Root Cause Anatomy:**
+```
+Metrics Flow:
+  telemetry_update_loop()
+    → update_eta_metrics(lat, lon, speed)  [in eta_service.py]
+      → ETACalculator.calculate_poi_metrics()  [WRONG: uses distance/speed only]
+      → Sets starlink_eta_poi_seconds gauge
+
+API Flow:
+  /api/routes/{id}/progress?lat=X&lon=Y
+    → RouteETACalculator(route).get_route_progress(lat, lon)  [CORRECT]
+    → Returns expected_duration_remaining_seconds from timing profile
+```
+
+### Attempted Fix (In Progress)
+
+Modified `update_eta_metrics()` to:
+1. Get active route from route_manager
+2. If route has timing_profile, create RouteETACalculator
+3. Calculate progress and remaining duration
+4. Find arrival POI (last waypoint) in POI list
+5. Override its ETA in metrics dict before returning
+
+**Potential Issues to Debug:**
+- Route manager import/availability from eta_service
+- POI matching logic ("KADW" substring search may not work)
+- Metrics recalculation frequency (might be using cached values)
+- Need to verify waypoint.name matches poi.name correctly
+
+**Code Added:**
+- `app/core/eta_service.py:105-150` - Route-aware ETA override logic
+- Fall back to standard POI metrics if route logic fails
 
 ## Documentation to Update
 
