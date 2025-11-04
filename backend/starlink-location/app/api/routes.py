@@ -288,6 +288,16 @@ async def activate_route(route_id: str) -> RouteResponse:
 
     _route_manager.activate_route(route_id)
 
+    # Calculate POI projections for the newly activated route
+    if _poi_manager:
+        try:
+            projected_count = _poi_manager.calculate_poi_projections(parsed_route)
+            logger.info(f"Calculated projections for {projected_count} POIs on route activation")
+            # Reload POIs to ensure in-memory cache has the projection data
+            _poi_manager.reload_pois()
+        except Exception as e:
+            logger.error(f"Failed to calculate POI projections: {e}")
+
     has_timing_data = False
     if parsed_route.timing_profile:
         has_timing_data = parsed_route.timing_profile.has_timing_data
@@ -319,6 +329,14 @@ async def deactivate_route() -> dict:
         )
 
     _route_manager.deactivate_route()
+
+    # Clear POI projections on route deactivation
+    if _poi_manager:
+        try:
+            cleared_count = _poi_manager.clear_poi_projections()
+            logger.info(f"Cleared projections for {cleared_count} POIs on route deactivation")
+        except Exception as e:
+            logger.error(f"Failed to clear POI projections: {e}")
 
     return {"message": "Route deactivated successfully"}
 

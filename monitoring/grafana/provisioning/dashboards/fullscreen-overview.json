@@ -1039,19 +1039,10 @@
                 "config": {
                   "id": "equal",
                   "options": {
-                    "value": "behind"
+                    "value": "already_passed"
                   }
                 },
-                "fieldName": "Course Status"
-              },
-              {
-                "config": {
-                  "id": "equal",
-                  "options": {
-                    "value": "off_track"
-                  }
-                },
-                "fieldName": "Course Status"
+                "fieldName": "route_aware_status"
               }
             ],
             "match": "any",

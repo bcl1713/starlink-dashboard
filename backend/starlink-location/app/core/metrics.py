@@ -355,13 +355,14 @@ simulation_errors_total = Counter(
 )
 
 
-def update_metrics_from_telemetry(telemetry, config=None):
+def update_metrics_from_telemetry(telemetry, config=None, active_route=None):
     """
     Update all Prometheus metrics from telemetry data.
 
     Args:
         telemetry: TelemetryData instance or None
         config: Optional ConfigManager instance for label computation
+        active_route: Optional ParsedRoute with timing data for route-aware ETA calculations
 
     Returns:
         None. Does nothing if telemetry is None (prevents publishing invalid data).
@@ -439,7 +440,8 @@ def update_metrics_from_telemetry(telemetry, config=None):
         eta_metrics = update_eta_metrics(
             telemetry.position.latitude,
             telemetry.position.longitude,
-            telemetry.position.speed
+            telemetry.position.speed,
+            active_route=active_route
         )
 
         # Update Prometheus gauges with ETA data

@@ -62,8 +62,8 @@ obstruction:
 # Position simulation configuration
 position:
   # Speed range (knots)
-  speed_min_knots: 1600.0
-  speed_max_knots: 1650.0
+  speed_min_knots: 450.0
+  speed_max_knots: 550.0
 
   # Altitude range (meters)
   altitude_min_meters: 100.0

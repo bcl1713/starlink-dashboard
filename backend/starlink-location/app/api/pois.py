@@ -119,6 +119,10 @@ async def list_pois(route_id: Optional[str] = Query(None, description="Filter by
             route_id=poi.route_id,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
+            projected_latitude=poi.projected_latitude,
+            projected_longitude=poi.projected_longitude,
+            projected_waypoint_index=poi.projected_waypoint_index,
+            projected_route_progress=poi.projected_route_progress,
         )
         for poi in pois
     ]
@@ -139,6 +143,7 @@ async def get_pois_with_etas(
     Get all POIs with real-time ETA and distance data.
 
     This endpoint calculates ETA and distance for all POIs based on current position and speed.
+    When an active route exists, POIs are filtered by route progress (showing only future POIs).
     Uses coordinator telemetry if available, otherwise uses query parameters or fallback values.
 
     Query Parameters:
@@ -158,6 +163,9 @@ async def get_pois_with_etas(
     try:
         # Get current position from coordinator if available
         heading = 0.0  # Default heading
+        current_route_progress = None
+        active_route = None
+
         if _coordinator:
             try:
                 telemetry = _coordinator.get_current_telemetry()
@@ -165,6 +173,13 @@ async def get_pois_with_etas(
                 longitude = telemetry.position.longitude
                 speed_knots = telemetry.position.speed
                 heading = telemetry.position.heading
+
+                # Get active route and current progress
+                if hasattr(_coordinator, 'route_manager'):
+                    active_route = _coordinator.route_manager.get_active_route()
+                    # Get progress from position simulator if available
+                    if hasattr(_coordinator, 'position_sim') and _coordinator.position_sim:
+                        current_route_progress = _coordinator.position_sim.progress * 100.0 if _coordinator.position_sim.progress else None
             except Exception as e:
                 # Fall back to query parameters if coordinator fails
                 latitude = None
@@ -229,9 +244,37 @@ async def get_pois_with_etas(
             # Calculate course status
             course_status = calculate_course_status(heading, bearing)
 
+            # Determine route-aware status
+            is_on_active_route = False
+            projected_waypoint_index = None
+            projected_route_progress = None
+            route_aware_status = None
+
+            if active_route and current_route_progress is not None:
+                # POI has projection data from active route
+                if poi.projected_route_progress is not None:
+                    is_on_active_route = True
+                    projected_waypoint_index = poi.projected_waypoint_index
+                    projected_route_progress = poi.projected_route_progress
+
+                    # Determine if POI is ahead or already passed
+                    if projected_route_progress > current_route_progress:
+                        route_aware_status = "ahead_on_route"
+                    else:
+                        route_aware_status = "already_passed"
+
             # Apply status filter if specified
-            if status_filter and course_status not in status_filter:
-                continue
+            # When a route is active and POI is on the route, use route-aware filtering
+            # Otherwise, fall back to angle-based filtering
+            if status_filter:
+                if active_route and is_on_active_route:
+                    # Route-aware: only show if ahead on route
+                    if route_aware_status != "ahead_on_route":
+                        continue
+                else:
+                    # Angle-based: use course_status as before
+                    if course_status not in status_filter:
+                        continue
 
             # Apply category filter if specified
             # Include POIs with null category (manually created) always
@@ -251,6 +294,12 @@ async def get_pois_with_etas(
                     distance_meters=distance,
                     bearing_degrees=bearing,
                     course_status=course_status,
+                    is_on_active_route=is_on_active_route,
+                    projected_latitude=poi.projected_latitude,
+                    projected_longitude=poi.projected_longitude,
+                    projected_waypoint_index=projected_waypoint_index,
+                    projected_route_progress=projected_route_progress,
+                    route_aware_status=route_aware_status,
                 )
             )
 
@@ -490,6 +539,10 @@ async def get_poi(poi_id: str) -> POIResponse:
         route_id=poi.route_id,
         created_at=poi.created_at,
         updated_at=poi.updated_at,
+        projected_latitude=poi.projected_latitude,
+        projected_longitude=poi.projected_longitude,
+        projected_waypoint_index=poi.projected_waypoint_index,
+        projected_route_progress=poi.projected_route_progress,
     )
 
 
@@ -514,7 +567,15 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
     - 400: Invalid input data
     """
     try:
-        poi = poi_manager.create_poi(poi_create)
+        # Get active route for POI projection
+        active_route = None
+        if _coordinator and hasattr(_coordinator, 'route_manager'):
+            try:
+                active_route = _coordinator.route_manager.get_active_route()
+            except Exception:
+                pass
+
+        poi = poi_manager.create_poi(poi_create, active_route=active_route)
 
         return POIResponse(
             id=poi.id,
@@ -527,6 +588,10 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
             route_id=poi.route_id,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
+            projected_latitude=poi.projected_latitude,
+            projected_longitude=poi.projected_longitude,
+            projected_waypoint_index=poi.projected_waypoint_index,
+            projected_route_progress=poi.projected_route_progress,
         )
     except Exception as e:
         raise HTTPException(

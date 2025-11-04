@@ -5,9 +5,12 @@ import math
 import time
 from collections import deque
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from app.models.poi import POI
+
+if TYPE_CHECKING:
+    from app.models.route import ParsedRoute
 
 logger = logging.getLogger(__name__)
 
@@ -146,15 +149,21 @@ class ETACalculator:
         current_lon: float,
         pois: list[POI],
         speed_knots: Optional[float] = None,
+        active_route: Optional["ParsedRoute"] = None,
     ) -> dict[str, dict]:
         """
         Calculate distance and ETA metrics for all POIs.
+
+        When an active route with timing data is provided, POIs that are waypoints
+        on that route will use route-aware ETA calculations (segment-based speeds).
+        POIs not on the active route fall back to distance/speed calculation.
 
         Args:
             current_lat: Current latitude
             current_lon: Current longitude
             pois: List of POI objects
             speed_knots: Current speed in knots (uses smoothed speed if not provided)
+            active_route: Optional ParsedRoute with timing data for route-aware calculations
 
         Returns:
             Dictionary mapping POI ID to dict with 'eta', 'distance', and 'passed' keys
@@ -163,7 +172,17 @@ class ETACalculator:
 
         for poi in pois:
             distance = self.calculate_distance(current_lat, current_lon, poi.latitude, poi.longitude)
-            eta = self.calculate_eta(distance, speed_knots)
+
+            # Try route-aware ETA calculation if active route available
+            eta = None
+            if active_route and poi.route_id and poi.route_id == active_route.metadata.file_path:
+                eta = self._calculate_route_aware_eta(
+                    current_lat, current_lon, poi, active_route
+                )
+
+            # Fall back to distance/speed calculation if route-aware failed
+            if eta is None:
+                eta = self.calculate_eta(distance, speed_knots)
 
             # Determine if POI has been passed
             passed = distance < self._poi_distance_threshold_m
@@ -182,6 +201,71 @@ class ETACalculator:
             }
 
         return metrics
+
+    def _calculate_route_aware_eta(
+        self,
+        current_lat: float,
+        current_lon: float,
+        poi: POI,
+        active_route: "ParsedRoute",
+    ) -> Optional[float]:
+        """
+        Calculate ETA using route timing data if POI is a waypoint on the active route.
+
+        This method implements the route-aware ETA logic: if the POI name matches a waypoint
+        on the active route with timing data, we use the route's expected arrival time for
+        that waypoint minus the expected arrival time at the nearest current point.
+
+        Args:
+            current_lat: Current latitude
+            current_lon: Current longitude
+            poi: POI object whose name should match a waypoint name
+            active_route: ParsedRoute with timing data
+
+        Returns:
+            ETA in seconds if route-aware calculation succeeds, None to fall back to distance/speed
+        """
+        # Early return if no timing data on route
+        if not active_route.timing_profile or not active_route.timing_profile.has_timing_data:
+            return None
+
+        # Try to find matching waypoint on route by name
+        matching_waypoint = None
+        for waypoint in active_route.waypoints:
+            if waypoint.name.upper() == poi.name.upper():
+                matching_waypoint = waypoint
+                break
+
+        if not matching_waypoint or not matching_waypoint.expected_arrival_time:
+            return None
+
+        try:
+            # Find nearest route point to current position that has timing data
+            nearest_point_with_timing = None
+            nearest_distance = float('inf')
+
+            for point in active_route.points:
+                if point.expected_arrival_time:
+                    dist = self.calculate_distance(current_lat, current_lon, point.latitude, point.longitude)
+                    if dist < nearest_distance:
+                        nearest_distance = dist
+                        nearest_point_with_timing = point
+
+            if not nearest_point_with_timing:
+                return None
+
+            # Calculate ETA as the difference between destination arrival time and current point arrival time
+            time_to_destination = (matching_waypoint.expected_arrival_time - nearest_point_with_timing.expected_arrival_time).total_seconds()
+
+            # If time_to_destination is negative, we've already passed this waypoint
+            if time_to_destination <= 0:
+                return None
+
+            return time_to_destination
+
+        except Exception as e:
+            logger.debug(f"Route-aware ETA calculation failed for {poi.name}: {e}")
+            return None
 
     def reset(self) -> None:
         """Reset calculator state."""

@@ -19,6 +19,11 @@ class POI(BaseModel):
     route_id: Optional[str] = Field(default=None, description="Associated route ID if route-specific")
     created_at: datetime = Field(default_factory=datetime.utcnow, description="When POI was created")
     updated_at: datetime = Field(default_factory=datetime.utcnow, description="When POI was last updated")
+    # Route projection fields (calculated when route is active, cleared on deactivation)
+    projected_latitude: Optional[float] = Field(default=None, description="Latitude of projection point on active route")
+    projected_longitude: Optional[float] = Field(default=None, description="Longitude of projection point on active route")
+    projected_waypoint_index: Optional[int] = Field(default=None, description="Index of closest route point")
+    projected_route_progress: Optional[float] = Field(default=None, description="Progress percentage (0-100) where POI projects on route")
 
     model_config = {
         "json_schema_extra": {
@@ -31,6 +36,10 @@ class POI(BaseModel):
                 "category": "airport",
                 "description": "John F. Kennedy International Airport",
                 "route_id": None,
+                "projected_latitude": None,
+                "projected_longitude": None,
+                "projected_waypoint_index": None,
+                "projected_route_progress": None,
             }
         }
     }
@@ -126,6 +135,11 @@ class POIResponse(BaseModel):
     route_id: Optional[str]
     created_at: datetime
     updated_at: datetime
+    # Route projection fields (only populated when route is active)
+    projected_latitude: Optional[float] = None
+    projected_longitude: Optional[float] = None
+    projected_waypoint_index: Optional[int] = None
+    projected_route_progress: Optional[float] = None
 
     model_config = {
         "json_schema_extra": {
@@ -140,6 +154,10 @@ class POIResponse(BaseModel):
                 "route_id": None,
                 "created_at": "2025-10-24T00:00:00",
                 "updated_at": "2025-10-24T00:00:00",
+                "projected_latitude": None,
+                "projected_longitude": None,
+                "projected_waypoint_index": None,
+                "projected_route_progress": None,
             }
         }
     }
@@ -179,6 +197,16 @@ class POIWithETA(BaseModel):
         default=None,
         description="Course status relative to heading: 'on_course' (<45°), 'slightly_off' (45-90°), 'off_track' (90-135°), 'behind' (>135°)"
     )
+    # Route-aware projection fields (populated when active route exists)
+    is_on_active_route: bool = Field(default=False, description="Whether POI projects to active route")
+    projected_latitude: Optional[float] = Field(default=None, description="Projected point on route")
+    projected_longitude: Optional[float] = Field(default=None, description="Projected point on route")
+    projected_waypoint_index: Optional[int] = Field(default=None, description="Index of closest route point")
+    projected_route_progress: Optional[float] = Field(default=None, description="Progress % where POI projects on route")
+    route_aware_status: Optional[str] = Field(
+        default=None,
+        description="Route awareness status: 'ahead_on_route', 'already_passed', 'not_on_route', or None if no active route"
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -193,6 +221,12 @@ class POIWithETA(BaseModel):
                 "distance_meters": 45000.0,
                 "bearing_degrees": 125.0,
                 "course_status": "on_course",
+                "is_on_active_route": True,
+                "projected_latitude": 40.6400,
+                "projected_longitude": -73.7800,
+                "projected_waypoint_index": 42,
+                "projected_route_progress": 45.5,
+                "route_aware_status": "ahead_on_route",
             }
         }
     }
