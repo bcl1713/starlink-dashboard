@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -79,9 +79,15 @@ class POIManager:
             try:
                 # Ensure timestamps are datetime objects
                 if isinstance(poi_data.get("created_at"), str):
-                    poi_data["created_at"] = datetime.fromisoformat(poi_data["created_at"])
+                    created_at = datetime.fromisoformat(poi_data["created_at"])
+                    if created_at.tzinfo is None:
+                        created_at = created_at.replace(tzinfo=timezone.utc)
+                    poi_data["created_at"] = created_at
                 if isinstance(poi_data.get("updated_at"), str):
-                    poi_data["updated_at"] = datetime.fromisoformat(poi_data["updated_at"])
+                    updated_at = datetime.fromisoformat(poi_data["updated_at"])
+                    if updated_at.tzinfo is None:
+                        updated_at = updated_at.replace(tzinfo=timezone.utc)
+                    poi_data["updated_at"] = updated_at
 
                 poi = POI(**poi_data)
                 self._pois[poi_id] = poi
@@ -183,7 +189,7 @@ class POIManager:
             poi_id = f"{original_id}-{counter}"
             counter += 1
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         poi = POI(
             id=poi_id,
             name=poi_create.name,
@@ -246,7 +252,7 @@ class POIManager:
                 setattr(poi, field, value)
 
         # Update timestamp
-        poi.updated_at = datetime.utcnow()
+        poi.updated_at = datetime.now(timezone.utc)
 
         self._pois[poi_id] = poi
         self._save_pois()

@@ -443,6 +443,7 @@ async def poi_management_ui():
                                     <option value="departure">Departure</option>
                                     <option value="arrival">Arrival</option>
                                     <option value="alternate">Alternate</option>
+                                    <option value="satelite">Satelite</option>
                                     <option value="other">Other</option>
                                 </select>
                             </div>

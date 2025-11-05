@@ -2,7 +2,7 @@
 
 import time
 from typing import Optional, Dict, Tuple
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.logging import get_logger
 
@@ -132,7 +132,7 @@ class ETACache:
         return {
             "cached_entries": len(self._cache),
             "ttl_seconds": self.ttl_seconds,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
 
@@ -173,7 +173,7 @@ class ETAHistoryTracker:
             timestamp: Timestamp of prediction (defaults to now)
         """
         if timestamp is None:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now(timezone.utc)
 
         record = {
             "waypoint_id": waypoint_id,
@@ -204,7 +204,7 @@ class ETAHistoryTracker:
             actual_arrival_time: Actual arrival time (defaults to now)
         """
         if actual_arrival_time is None:
-            actual_arrival_time = datetime.utcnow()
+            actual_arrival_time = datetime.now(timezone.utc)
 
         # Find matching prediction (most recent for this waypoint)
         for record in reversed(self._history):

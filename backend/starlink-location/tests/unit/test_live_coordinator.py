@@ -5,7 +5,7 @@ and graceful degradation using mocked StarlinkClient.
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import starlink_grpc
@@ -273,9 +273,13 @@ class TestLiveCoordinatorReset:
         mock_telemetry = default_mock_telemetry()
         mock_client.get_telemetry.return_value = mock_telemetry
 
-        # Use a fixed sequence rather than cycle to ensure exact order
-        from unittest.mock import Mock
-        time_values = [1000.0, 1000.0, 1000.0, 1100.0, 1100.0, 1000.0, 1000.0, 1000.0]
+        # Use specific timestamps to make uptime/reset behaviour deterministic
+        time_values = [
+            1000.0,  # initial start_time inside LiveCoordinator.__init__
+            1100.0,  # get_uptime_seconds() call
+            1200.0,  # reset() start_time assignment
+            1200.0,  # any subsequent time.time() calls post-reset
+        ]
         time_iter = iter(time_values)
 
         with patch("app.live.coordinator.time.time", side_effect=lambda: next(time_iter)):

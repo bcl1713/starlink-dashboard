@@ -149,11 +149,19 @@ class TestRouteTimingProfile:
             total_expected_duration_seconds=4575.0,
             has_timing_data=True,
             segment_count_with_timing=42,
+            actual_departure_time=departure,
+            actual_arrival_time=None,
+            flight_status="in_flight",
         )
         assert profile.departure_time == departure
         assert profile.arrival_time == arrival
         assert profile.has_timing_data is True
         assert profile.segment_count_with_timing == 42
+        assert profile.actual_departure_time == departure
+        assert profile.actual_arrival_time is None
+        assert profile.flight_status == "in_flight"
+        assert profile.is_departed() is True
+        assert profile.is_in_flight() is True
 
     def test_timing_profile_get_total_duration_from_times(self):
         """Test calculating duration from departure/arrival times."""
@@ -202,6 +210,49 @@ class TestRouteTimingProfile:
         assert json_data["departure_time"] == "2025-10-27T15:45:00Z"
         assert json_data["arrival_time"] == "2025-10-27T16:57:55Z"
         assert json_data["has_timing_data"] is True
+        assert json_data["actual_departure_time"] is None
+        assert json_data["flight_status"] == "pre_departure"
+
+    def test_timing_profile_status_helpers(self):
+        """is_departed/is_in_flight should respect status text and timestamps."""
+        profile = RouteTimingProfile(
+            flight_status="pre_departure",
+            actual_departure_time=None,
+        )
+        assert profile.is_departed() is False
+        assert profile.is_in_flight() is False
+
+        profile.flight_status = "in_flight"
+        assert profile.is_departed() is True
+        assert profile.is_in_flight() is True
+
+        profile.flight_status = "post_arrival"
+        assert profile.is_departed() is True
+        assert profile.is_in_flight() is False
+
+        profile.flight_status = "pre_departure"
+        profile.actual_departure_time = datetime(2025, 10, 27, 15, 45, 0, tzinfo=timezone.utc)
+        assert profile.is_departed() is True
+        assert profile.is_in_flight() is False
+
+    def test_timing_profile_serialization_includes_actual_times(self):
+        """Ensure model_dump exposes actual timing metadata when populated."""
+        departure = datetime(2025, 10, 27, 15, 45, 0, tzinfo=timezone.utc)
+        arrival = datetime(2025, 10, 27, 16, 50, 0, tzinfo=timezone.utc)
+        profile = RouteTimingProfile(
+            departure_time=departure,
+            arrival_time=arrival,
+            actual_departure_time=departure,
+            actual_arrival_time=arrival,
+            flight_status="post_arrival",
+            has_timing_data=True,
+            segment_count_with_timing=10,
+        )
+
+        serialized = profile.model_dump(mode="json")
+        assert serialized["actual_departure_time"] == "2025-10-27T15:45:00Z"
+        assert serialized["actual_arrival_time"] == "2025-10-27T16:50:00Z"
+        assert serialized["flight_status"] == "post_arrival"
 
 
 class TestParsedRouteWithTiming:

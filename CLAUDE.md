@@ -10,8 +10,11 @@ metrics visualization and full simulation mode for offline development.
 
 **Tech Stack:** Python (FastAPI) + Prometheus + Grafana + Docker Compose
 
-**Documentation:** See `docs/design-document.md` for architecture and
-`docs/phased-development-plan.md` for implementation phases.
+**Documentation:** 
+- `docs/design-document.md` – architecture overview
+- `docs/phased-development-plan.md` – implementation roadmap
+- `docs/ROUTE-TIMING-GUIDE.md` – route timing feature + ETA modes
+- `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phase manager, overrides, dashboards
 
 ## Development Commands
 
@@ -184,8 +187,21 @@ The backend exposes Prometheus metrics including:
   `starlink_network_throughput_down_mbps`, `starlink_network_throughput_up_mbps`
 - Status: `starlink_dish_obstruction_percent`, `starlink_dish_speed_knots`,
   `starlink_dish_heading_degrees`
-- POI/ETA: `starlink_eta_poi_seconds{name="..."}`,
-  `starlink_distance_to_poi_meters{name="..."}`
+- POI/ETA: `starlink_eta_poi_seconds{name="...",eta_type="anticipated|estimated"}`,
+  `starlink_distance_to_poi_meters{...,eta_type="..."}`  
+
+### Flight Status & ETA Modes
+
+- Flight phases: `pre_departure`, `in_flight`, `post_arrival`
+- ETA modes auto-switch between `anticipated` (planned timeline pre-departure) and
+  `estimated` (live performance once airborne)
+- Relevant APIs:
+  - `/api/flight-status` – snapshot with phase, mode, countdown, route context
+  - `/api/pois/etas` – returns `eta_type`, `flight_phase`, `is_pre_departure` per POI
+  - `/api/routes` & `/api/routes/{id}` – include `flight_phase`, `eta_mode`, `has_timing_data`
+- Prometheus: `starlink_flight_phase`, `starlink_eta_mode`, `starlink_time_until_departure_seconds`
+- For manual testing use `/api/flight-status/depart` and `/api/flight-status/arrive`;
+  see `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` for full workflow and troubleshooting.
 
 ## Storage Requirements
 

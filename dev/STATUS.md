@@ -1,33 +1,50 @@
 # Development Status
 
-**Last Updated:** 2025-11-04 Session 29 (ETA Timing Modes Phases 1-5 - IN PROGRESS)
+**Last Updated:** 2025-11-05 Session 32 (ETA Timing Modes Phase 7 Testing – IN PROGRESS)
 
 **Current Branch:** feature/eta-route-timing
 
-**Status:** 🎉 ETA ROUTE TIMING FEATURE COMPLETE + ETA TIMING MODES (Phases 1-5) IMPLEMENTED
+**Status:** ✅ Phases 1-6 delivered • Phase 7 validation wrapping up (unit + integration suites passing; performance benchmarks recorded; full-suite `pytest --cov` executed)
 
 ---
 
-## Current Session: ETA Timing Modes Feature (Phases 1-5)
+## Current Session: ETA Timing Modes Feature (Phase 7 – Testing & Validation)
 
-**Status:** ✅ Phases 1-5 COMPLETE - Ready for Phase 6
+**Status:** 🔄 Phase 7 in progress (unit + integration coverage complete, performance benchmarks captured, full-suite pytest + coverage run verified)
 
 **Location:** `/dev/active/eta-timing-modes/`
 
-**What Was Built (Session 29):**
-- Flight status data models (FlightPhase, ETAMode, FlightStatus)
-- FlightStateManager with speed-based departure detection (50 knots + 10-sec persistence)
-- Dual-mode ETA calculation engine:
-  - Anticipated: Flight plan times (pre-departure)
-  - Estimated: Real-time with speed blending `(current + expected) / 2`
-- Flight status API endpoints (3 new endpoints)
-- Prometheus metrics for flight state tracking (4 new metrics)
-- Full integration with existing POI/ETA system
+**What Was Built (Session 30):**
+- FlightStateManager now uses timezone-aware timestamps (`datetime.now(timezone.utc)`) to eliminate `datetime.utcnow()` warnings.
+- Unit suites expanded (`test_flight_state_manager.py`, `test_eta_calculator.py`, `test_flight_status_models.py`, `test_poi_eta_models.py`) covering persistence guards, route-less contexts, projection ETAs, and serialization defaults.
+- Integration coverage added/updated (`test_flight_status_api.py`, `test_poi_stats_endpoints.py`, `test_pois_quick_reference.py`, `test_route_endpoints_with_timing.py`, new `test_eta_modes.py`) validating manual depart/arrive flows, POI ETA metadata, Grafana quick-reference behaviour, and `flight_phase`/`eta_mode` propagation.
+- Phase 7 task checklist updated to reflect completed testing milestones; context file refreshed with current decisions and next steps.
 
-**Files Created:** 3 new files (575 lines total)
-**Files Modified:** 7 existing files (~500 new/modified lines)
-**Tests Status:** ⏳ Tests not yet written (Phase 7)
-**Docker Status:** ✅ Building successfully (background build 9100b1)
+**Additional Work (Session 31):**
+- Added integration coverage for the no-timing fallback and route-change reset scenarios in `tests/integration/test_eta_modes.py`.
+- Introduced `tests/unit/test_performance_metrics.py` to benchmark ETA calculations (1,100 POIs across a 1,200-waypoint route), verify `check_departure` overhead, and stress rapid phase transitions.
+- Phase 7 Task 7.5 and Task 7.6 marked complete; awaiting full-suite pytest execution once the host environment provides the binary.
+- Full unit/integration suites run via project venv (see Session 14 notes); coverage report still pending (`pytest --cov` to do).
+
+**Additional Work (Session 32):**
+- Hardened POI ETA metric export by seeding default cruise speed when telemetry speed <0.5 kn, ensuring `eta_type` labels emit during pre-departure snapshots.
+- Routed `/metrics` through `metrics_export.get_metrics()` so Prometheus scrapes include on-demand POI labels even with background updates disabled (fixes `test_metrics_exposes_eta_type_labels`).
+- Ran `.venv/bin/python -m pytest --cov=app --cov-report=term backend/starlink-location/tests -q` (530 passed, 4 skipped, 1 warning; total coverage 79 %) to close Task 7.7 coverage check.
+- Completed Phase 8 documentation first pass: refreshed `docs/ROUTE-TIMING-GUIDE.md`, added `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, and updated API docstrings with `eta_type`/flight-state metadata.
+- Updated `CLAUDE.md` with flight-status/ETA guidance and drafted `dev/active/eta-timing-modes/flight-status-migration-notes.md` (backward compatibility + deployment checklist).
+- Verified deployment requirements checklist (Task 8.6): rebuild path, Grafana provisioning, environment variables, and backward compatibility captured in migration notes.
+- Created `dev/active/eta-timing-modes/final-review-checklist.md` to track remaining Task 8.7 review items (design doc refresh, coverage follow-ups, Prometheus validation).
+- Added a flight-state architecture summary to `docs/design-document.md` documenting the FlightStateManager, ETA modes, new endpoints, and metrics labels.
+- Added `tests/unit/test_eta_cache_service.py` to raise coverage on `ETACache` / `ETAHistoryTracker`; dedicated pytest command recorded in session notes.
+- Added `tests/unit/test_route_eta_calculator_service.py` for route projection/ETA coverage; optional follow-up coverage now limited to legacy POI API.
+- Prometheus label verification remains outstanding for staging environments (local scrape blocked by `/data` permission in sandbox).
+
+**Files Created/Updated (highlights):**
+- New: `backend/starlink-location/tests/integration/test_eta_modes.py`, `tests/unit/test_flight_status_models.py`, `tests/unit/test_poi_eta_models.py`
+- Updated: `tests/unit/test_flight_state_manager.py`, `tests/unit/test_eta_calculator.py`, `tests/integration/test_route_endpoints_with_timing.py`, `app/services/flight_state_manager.py`, documentation under `/dev/active/eta-timing-modes/`
+
+**Tests Status:** ✅ `.venv/bin/python -m pytest -q backend/starlink-location/tests/unit` (421 passed) • ✅ `.venv/bin/python -m pytest -q backend/starlink-location/tests/integration` (97 passed, 4 skipped) • ✅ `.venv/bin/python -m pytest --cov=app --cov-report=term backend/starlink-location/tests -q` (530 passed, 4 skipped, 1 warning; total coverage 79 %) • ✅ Targeted performance + ETA mode regression tests green • ⚠️ Deprecation warnings remain for lingering `datetime.utcnow()` usage (tracking separately).
+**Docker Status:** ✅ Services healthy (no rebuild required this session)
 
 **Phases Completed:**
 - Phase 1: Data models ✅
@@ -37,9 +54,8 @@
 - Phase 5: Prometheus metrics ✅
 
 **Phases Remaining:**
-- Phase 6: Grafana dashboards
-- Phase 7: Unit & integration tests (60+ tests)
-- Phase 8: Documentation updates
+- Phase 7: Performance benchmarks & stress testing (ETA calc throughput, 1000+ POI/waypoint load, rapid transition stress)
+- Phase 8: Documentation updates (ROUTE-TIMING-GUIDE additions, new FLIGHT-STATUS-GUIDE, dashboard notes)
 
 ---
 

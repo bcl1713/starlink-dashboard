@@ -1,6 +1,6 @@
 """Route and KML data models for the Starlink location service."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -67,7 +67,8 @@ class RouteMetadata(BaseModel):
     description: Optional[str] = Field(default=None, description="Description from KML")
     file_path: str = Field(..., description="Path to the source KML file")
     imported_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When route was imported"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When route was imported",
     )
     point_count: int = Field(..., description="Total number of points in route")
 
@@ -84,6 +85,16 @@ class RouteTimingProfile(BaseModel):
     total_expected_duration_seconds: Optional[float] = Field(
         default=None, description="Total expected flight duration in seconds"
     )
+    actual_departure_time: Optional[datetime] = Field(
+        default=None, description="Observed departure time when flight state transitioned from PRE_DEPARTURE"
+    )
+    actual_arrival_time: Optional[datetime] = Field(
+        default=None, description="Observed arrival time when flight state transitioned to POST_ARRIVAL"
+    )
+    flight_status: str = Field(
+        default="pre_departure",
+        description="Current flight status for route timing profile (pre_departure, in_flight, post_arrival)",
+    )
     has_timing_data: bool = Field(
         default=False, description="Whether route has timing metadata"
     )
@@ -97,6 +108,33 @@ class RouteTimingProfile(BaseModel):
             delta = self.arrival_time - self.departure_time
             return delta.total_seconds()
         return self.total_expected_duration_seconds
+
+    def is_departed(self) -> bool:
+        """Return True if the flight has departed based on status or recorded timestamp."""
+        status = (self.flight_status or "pre_departure").lower()
+        if status != "pre_departure":
+            return True
+        return self.actual_departure_time is not None
+
+    def is_in_flight(self) -> bool:
+        """Return True if the current flight status reflects in-flight operations."""
+        status = (self.flight_status or "pre_departure").lower()
+        return status == "in_flight"
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "departure_time": "2025-10-27T16:45:00Z",
+                "arrival_time": "2025-10-27T22:05:00Z",
+                "total_expected_duration_seconds": 20100.0,
+                "actual_departure_time": "2025-10-27T16:48:12Z",
+                "actual_arrival_time": None,
+                "flight_status": "in_flight",
+                "has_timing_data": True,
+                "segment_count_with_timing": 128,
+            }
+        }
+    }
 
 
 class ParsedRoute(BaseModel):
@@ -194,6 +232,14 @@ class RouteResponse(BaseModel):
         default=None,
         description="Timing profile with departure/arrival/duration info (if has_timing_data is True)",
     )
+    flight_phase: Optional[str] = Field(
+        default=None,
+        description="Current flight phase (pre_departure, in_flight, post_arrival) when route is active",
+    )
+    eta_mode: Optional[str] = Field(
+        default=None,
+        description="Current ETA mode (anticipated or estimated) when route is active",
+    )
 
 
 class RouteListResponse(BaseModel):
@@ -224,6 +270,17 @@ class RouteDetailResponse(BaseModel):
     )
     timing_profile: Optional[RouteTimingProfile] = Field(
         default=None, description="Timing profile if route has embedded timing data"
+    )
+    has_timing_data: bool = Field(
+        default=False, description="Whether the timing profile contains schedule metadata"
+    )
+    flight_phase: Optional[str] = Field(
+        default=None,
+        description="Current flight phase (pre_departure, in_flight, post_arrival) when route is active",
+    )
+    eta_mode: Optional[str] = Field(
+        default=None,
+        description="Current ETA mode (anticipated or estimated) when route is active",
     )
 
 

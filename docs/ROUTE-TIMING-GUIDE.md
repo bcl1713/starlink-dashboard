@@ -1,7 +1,7 @@
 # Route Timing Feature Guide
 
-**Version:** 0.3.0
-**Last Updated:** 2025-11-04
+**Version:** 0.4.0
+**Last Updated:** 2025-11-05
 **Status:** Complete - All 451 tests passing
 
 This guide covers the comprehensive ETA Route Timing feature that enables realistic simulation and tracking of timed flight paths with expected waypoint arrival times.
@@ -13,11 +13,12 @@ This guide covers the comprehensive ETA Route Timing feature that enables realis
 3. [How Route Timing Works](#how-route-timing-works)
 4. [KML Format with Timing Data](#kml-format-with-timing-data)
 5. [Using the API](#using-the-api)
-6. [Grafana Dashboard Visualization](#grafana-dashboard-visualization)
-7. [Simulation Mode Behavior](#simulation-mode-behavior)
-8. [Live Mode Integration](#live-mode-integration)
-9. [Troubleshooting](#troubleshooting)
-10. [Examples](#examples)
+6. [ETA Modes: Anticipated vs. Estimated](#eta-modes-anticipated-vs-estimated)
+7. [Grafana Dashboard Visualization](#grafana-dashboard-visualization)
+8. [Simulation Mode Behavior](#simulation-mode-behavior)
+9. [Live Mode Integration](#live-mode-integration)
+10. [Troubleshooting](#troubleshooting)
+11. [Examples](#examples)
 
 ---
 
@@ -288,6 +289,51 @@ curl -X POST \
   }' \
   http://localhost:8000/api/routes/live-mode/active-route-eta
 ```
+
+---
+
+## ETA Modes: Anticipated vs. Estimated
+
+Dual-mode ETA calculations keep operators informed both before departure and during live operations. Anticipated mode projects the planned schedule, while estimated mode reacts to real performance.
+
+### Anticipated Mode (Planned Timeline)
+
+- **Phase:** `FlightPhase.PRE_DEPARTURE`
+- **Source:** Planned timestamps and segment speeds from the timing profile
+- **Behaviour:** Assumes the aircraft follows the filed plan; standalone POIs are labelled `is_pre_departure: true`
+- **Surfaces:** `/api/flight-status` (`"eta_mode": "anticipated"`), `/api/pois/etas` (`"eta_type": "anticipated"`), Prometheus (`eta_type="anticipated"`), Grafana badges (**PLANNED**)
+
+```json
+{
+  "name": "Gate Push",
+  "eta_seconds": 900,
+  "eta_type": "anticipated",
+  "is_pre_departure": true,
+  "flight_phase": "pre_departure"
+}
+```
+
+### Estimated Mode (Live Performance)
+
+- **Phase:** `FlightPhase.IN_FLIGHT` and `FlightPhase.POST_ARRIVAL`
+- **Source:** Blends smoothed live speed (120 s window) with the timing profile; falls back to distance/speed when timing is absent
+- **Behaviour:** Adjusts ETAs to reflect actual performance or manual depart/arrive triggers
+- **Surfaces:** `/api/flight-status` (`"eta_mode": "estimated"`), `/api/pois/etas` (`"eta_type": "estimated"`), Prometheus (`eta_type="estimated"`), Grafana badges (**LIVE**)
+
+### Automatic Switching Rules
+
+| Trigger | Phase Transition | Resulting ETA Mode | Notes |
+|---------|------------------|--------------------|-------|
+| Speed rises above departure threshold (default 40 kn) | `pre_departure → in_flight` | Estimated | Detected by `FlightStateManager.check_departure`; can be forced via `/api/flight-status/depart` |
+| Arrival threshold met (within 100 m for 60 s) or `/api/flight-status/arrive` called | `in_flight → post_arrival` | Estimated | Keeps last-known ETAs until reset |
+| `/api/flight-status` reset or route deactivated | `post_arrival → pre_departure` | Anticipated | Clears actual departure/arrival timestamps and resumes planned timeline |
+
+### Timed vs. Untimed Routes
+
+- **Timed routes:** Anticipated mode mirrors the KML plan; estimated mode blends live speed with expected segment speeds for smoother updates.
+- **Untimed routes:** Both modes fall back to distance-based estimation. `has_timing_data` stays `false`, but `eta_mode` still tracks the flight phase.
+
+> Tip: During dashboard validation you can issue `/api/flight-status/depart` and `/api/flight-status/arrive` to cycle modes instantly without waiting for automatic detection.
 
 ---
 

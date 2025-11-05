@@ -70,7 +70,14 @@ def get_poi_manager() -> POIManager:
     return _poi_manager
 
 
-def update_eta_metrics(latitude: float, longitude: float, speed_knots: float, active_route=None) -> dict:
+def update_eta_metrics(
+    latitude: float,
+    longitude: float,
+    speed_knots: float,
+    active_route=None,
+    eta_mode=None,
+    flight_phase=None,
+) -> dict:
     """Update ETA metrics for all POIs.
 
     This function is called by the background update loop on each telemetry cycle.
@@ -85,23 +92,42 @@ def update_eta_metrics(latitude: float, longitude: float, speed_knots: float, ac
         longitude: Current longitude in decimal degrees
         speed_knots: Current speed in knots
         active_route: Optional ParsedRoute with timing data for route-aware calculations
+        eta_mode: Optional ETAMode for dual-mode calculation (defaults to ESTIMATED)
 
     Returns:
         Dictionary mapping POI IDs to their ETA metrics
     """
     try:
+        from app.models.flight_status import ETAMode
+
         eta_calculator = get_eta_calculator()
         poi_manager = get_poi_manager()
 
+        # Default to estimated mode if not specified
+        if eta_mode is None:
+            eta_mode = ETAMode.ESTIMATED
+
         # Update speed in calculator (maintains rolling average)
-        eta_calculator.update_speed(speed_knots)
+        safe_speed = None
+        if speed_knots is not None and speed_knots >= 0.5:
+            safe_speed = speed_knots
+            eta_calculator.update_speed(speed_knots)
+        else:
+            # Seed smoothing window with default cruise speed so pre-departure ETAs stay positive
+            eta_calculator.update_speed(eta_calculator.default_speed_knots)
 
         # Get all POIs
         pois = poi_manager.list_pois()
 
-        # Calculate metrics for all POIs (passing active_route for route-aware calculations)
+        # Calculate metrics for all POIs (passing active_route and eta_mode)
         metrics = eta_calculator.calculate_poi_metrics(
-            latitude, longitude, pois, speed_knots, active_route=active_route
+            latitude,
+            longitude,
+            pois,
+            safe_speed,
+            active_route=active_route,
+            eta_mode=eta_mode,
+            flight_phase=flight_phase,
         )
 
         return metrics

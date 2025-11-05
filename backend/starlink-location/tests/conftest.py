@@ -1,10 +1,13 @@
 """Shared test fixtures and configuration."""
 
 import asyncio
+import os
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 import sys
+
+os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
 
 # Ensure /data directories exist for RouteManager
 Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)

@@ -19,10 +19,12 @@ async def test_list_routes_includes_has_timing_data(test_client):
     assert "routes" in data
     assert "total" in data
 
-    # Each route should have has_timing_data field
+    # Each route should expose timing + flight status metadata
     for route in data["routes"]:
         assert "has_timing_data" in route
         assert isinstance(route["has_timing_data"], bool)
+        assert "flight_phase" in route
+        assert "eta_mode" in route
 
 
 @pytest.mark.asyncio
@@ -90,6 +92,8 @@ async def test_get_route_detail_has_timing_data_flag(test_client):
     data = response.json()
     assert "has_timing_data" in data
     assert isinstance(data["has_timing_data"], bool)
+    assert "flight_phase" in data
+    assert "eta_mode" in data
 
     # If timing_profile exists and has_timing_data is true, they should be consistent
     if data["timing_profile"] and data["timing_profile"]["has_timing_data"]:
@@ -117,6 +121,8 @@ async def test_activate_route_includes_timing_data(test_client):
     assert "has_timing_data" in data
     assert "timing_profile" in data
     assert data["is_active"] is True
+    assert "flight_phase" in data
+    assert "eta_mode" in data
 
 
 @pytest.mark.asyncio
@@ -230,6 +236,9 @@ async def test_list_routes_timing_consistency(test_client):
         detail_has_timing = detail_data.get("has_timing_data", False)
 
         # has_timing_data should be consistent between list and detail
+        assert "flight_phase" in detail_data
+        assert "eta_mode" in detail_data
+
         assert list_has_timing == detail_has_timing, (
             f"Inconsistent has_timing_data for route {route_id}: "
             f"list={list_has_timing}, detail={detail_has_timing}"

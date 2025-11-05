@@ -1,6 +1,7 @@
 """Prometheus metrics registry and definitions."""
 
 import math
+from datetime import datetime, timezone
 
 from prometheus_client import CollectorRegistry, Gauge, Counter, Histogram, CollectorRegistry as PrometheusCollectorRegistry
 from prometheus_client.core import GaugeMetricFamily
@@ -229,15 +230,48 @@ starlink_thermal_events_total = Counter(
 # ============================================================================
 starlink_eta_poi_seconds = Gauge(
     'starlink_eta_poi_seconds',
-    'Estimated time of arrival to point of interest in seconds',
-    labelnames=['name', 'category'],
+    'Estimated time of arrival to point of interest in seconds (anticipated or estimated)',
+    labelnames=['name', 'category', 'eta_type'],
     registry=REGISTRY
 )
 
 starlink_distance_to_poi_meters = Gauge(
     'starlink_distance_to_poi_meters',
     'Distance to point of interest in meters',
-    labelnames=['name', 'category'],
+    labelnames=['name', 'category', 'eta_type'],
+    registry=REGISTRY
+)
+
+# ============================================================================
+# Flight Status metrics (Phase 0 - ETA Timing Modes)
+# ============================================================================
+starlink_flight_phase = Gauge(
+    'starlink_flight_phase',
+    'Current flight phase (0=pre_departure, 1=in_flight, 2=post_arrival)',
+    registry=REGISTRY
+)
+
+starlink_eta_mode = Gauge(
+    'starlink_eta_mode',
+    'Current ETA calculation mode (0=anticipated, 1=estimated)',
+    registry=REGISTRY
+)
+
+starlink_flight_departure_time_unix = Gauge(
+    'starlink_flight_departure_time_unix',
+    'Detected departure time (Unix timestamp), 0 if not yet departed',
+    registry=REGISTRY
+)
+
+starlink_flight_arrival_time_unix = Gauge(
+    'starlink_flight_arrival_time_unix',
+    'Detected arrival time (Unix timestamp), 0 if not yet arrived',
+    registry=REGISTRY
+)
+
+starlink_time_until_departure_seconds = Gauge(
+    'starlink_time_until_departure_seconds',
+    'Seconds remaining until scheduled or detected departure (0 once departed, negative if scheduled time is in the past and departure not detected)',
     registry=REGISTRY
 )
 
@@ -433,15 +467,137 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None):
     # Status metrics
     starlink_uptime_seconds.set(telemetry.environmental.uptime_seconds)
 
+    # Evaluate automatic flight phase transitions and cache current status
+    flight_state = None
+    flight_status = None
+    try:
+        from app.services.flight_state_manager import get_flight_state_manager
+
+        flight_state = get_flight_state_manager()
+
+        # Automatic departure detection (speed-based)
+        try:
+            flight_state.check_departure(telemetry.position.speed)
+        except Exception as departure_error:  # pragma: no cover - defensive guard
+            logger.warning(f"Departure detection error: {departure_error}")
+
+        # Automatic arrival detection when an active route is available
+        if active_route:
+            try:
+                from app.services.route_eta_calculator import RouteETACalculator
+
+                route_calculator = RouteETACalculator(active_route)
+                progress_info = route_calculator.get_route_progress(
+                    telemetry.position.latitude,
+                    telemetry.position.longitude,
+                )
+                distance_remaining = progress_info.get("distance_remaining_meters")
+                if distance_remaining is not None:
+                    flight_state.check_arrival(distance_remaining, telemetry.position.speed)
+            except Exception as arrival_error:  # pragma: no cover - defensive guard
+                logger.debug(f"Arrival detection skipped: {arrival_error}")
+
+        flight_status = flight_state.get_status()
+    except Exception as state_error:  # pragma: no cover - defensive guard
+        logger.warning(f"Flight state manager unavailable: {state_error}")
+
+    # Update Flight Status metrics
+    try:
+        if flight_status is None:
+            if flight_state is None:
+                from app.services.flight_state_manager import get_flight_state_manager
+                flight_state = get_flight_state_manager()
+            flight_status = flight_state.get_status()
+
+        # Map phase to numeric value
+        phase_value = {
+            'pre_departure': 0,
+            'in_flight': 1,
+            'post_arrival': 2
+        }.get(flight_status.phase.value, 0)
+
+        # Map ETA mode to numeric value
+        mode_value = {
+            'anticipated': 0,
+            'estimated': 1
+        }.get(flight_status.eta_mode.value, 0)
+
+        starlink_flight_phase.set(phase_value)
+        starlink_eta_mode.set(mode_value)
+
+        # Set timestamp metrics (0 if not set)
+        if flight_status.departure_time:
+            starlink_flight_departure_time_unix.set(flight_status.departure_time.timestamp())
+        else:
+            starlink_flight_departure_time_unix.set(0)
+
+        if flight_status.arrival_time:
+            starlink_flight_arrival_time_unix.set(flight_status.arrival_time.timestamp())
+        else:
+            starlink_flight_arrival_time_unix.set(0)
+
+        # Synchronize active route timing profile with live flight status
+        if active_route is not None and flight_status is not None:
+            try:
+                from app.models.route import RouteTimingProfile  # Local import to avoid cycle
+
+                timing_profile = active_route.timing_profile
+                if timing_profile is None:
+                    timing_profile = RouteTimingProfile()
+                    active_route.timing_profile = timing_profile
+
+                timing_profile.flight_status = flight_status.phase.value
+                timing_profile.actual_departure_time = flight_status.departure_time
+                timing_profile.actual_arrival_time = flight_status.arrival_time
+            except Exception as sync_error:  # pragma: no cover - defensive guard
+                logger.debug(f"Failed to sync route timing profile with flight status: {sync_error}")
+
+        # Update time-until-departure gauge
+        time_until_departure = 0.0
+        if flight_status is not None:
+            now = datetime.now(timezone.utc)
+
+            departure_time = getattr(flight_status, "departure_time", None)
+            if departure_time:
+                departure_time = departure_time.astimezone(timezone.utc) if departure_time.tzinfo else departure_time.replace(tzinfo=timezone.utc)
+                delta = (departure_time - now).total_seconds()
+                time_until_departure = max(0.0, delta)
+            elif active_route and active_route.timing_profile and active_route.timing_profile.departure_time:
+                scheduled_departure = active_route.timing_profile.departure_time
+                if scheduled_departure:
+                    scheduled_departure = (
+                        scheduled_departure.astimezone(timezone.utc)
+                        if scheduled_departure.tzinfo
+                        else scheduled_departure.replace(tzinfo=timezone.utc)
+                    )
+                    delta = (scheduled_departure - now).total_seconds()
+                    time_until_departure = delta
+
+        starlink_time_until_departure_seconds.set(time_until_departure)
+
+    except Exception as e:
+        logger.warning(f"Error updating flight status metrics: {e}")
+
     # Update POI/ETA metrics
     try:
         from app.core.eta_service import update_eta_metrics
+        from app.models.flight_status import ETAMode
+
+        if flight_status is None:
+            if flight_state is None:
+                from app.services.flight_state_manager import get_flight_state_manager
+                flight_state = get_flight_state_manager()
+            flight_status = flight_state.get_status()
+
+        current_eta_mode = flight_status.eta_mode if flight_status else ETAMode.ESTIMATED
 
         eta_metrics = update_eta_metrics(
             telemetry.position.latitude,
             telemetry.position.longitude,
             telemetry.position.speed,
-            active_route=active_route
+            active_route=active_route,
+            eta_mode=current_eta_mode,
+            flight_phase=flight_status.phase if flight_status else None,
         )
 
         # Update Prometheus gauges with ETA data
@@ -450,11 +606,20 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None):
             poi_category = metrics_data.get("poi_category", "")
             eta_seconds = metrics_data.get("eta_seconds", -1)
             distance_meters = metrics_data.get("distance_meters", 0)
+            eta_type = metrics_data.get("eta_type", current_eta_mode.value if current_eta_mode else "estimated")
 
             # Only set valid ETA values (skip -1 which means no speed)
             if eta_seconds >= 0:
-                starlink_eta_poi_seconds.labels(name=poi_name, category=poi_category).set(eta_seconds)
-            starlink_distance_to_poi_meters.labels(name=poi_name, category=poi_category).set(distance_meters)
+                starlink_eta_poi_seconds.labels(
+                    name=poi_name,
+                    category=poi_category,
+                    eta_type=eta_type
+                ).set(eta_seconds)
+            starlink_distance_to_poi_meters.labels(
+                name=poi_name,
+                category=poi_category,
+                eta_type=eta_type
+            ).set(distance_meters)
 
     except Exception as e:
         logger.warning(f"Error updating POI/ETA metrics: {e}")

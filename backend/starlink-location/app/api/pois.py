@@ -1,6 +1,8 @@
 """POI CRUD API endpoints for managing points of interest."""
 
+import logging
 import math
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -14,12 +16,17 @@ from app.models.poi import (
     POIWithETA,
 )
 from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
+
+logger = logging.getLogger(__name__)
 
 # Global coordinator reference for accessing telemetry
 _coordinator: Optional[object] = None
 
 # Global POI manager instance (set by main.py)
 poi_manager: Optional[POIManager] = None
+# Global route manager (optional; set when available)
+_route_manager: Optional[RouteManager] = None
 
 
 def set_coordinator(coordinator):
@@ -32,6 +39,12 @@ def set_poi_manager(manager: POIManager) -> None:
     """Set the POI manager instance (called by main.py during startup)."""
     global poi_manager
     poi_manager = manager
+
+
+def set_route_manager(route_manager: RouteManager) -> None:
+    """Set the RouteManager instance for route-aware ETA calculations."""
+    global _route_manager
+    _route_manager = route_manager
 
 # Create API router
 router = APIRouter(prefix="/api/pois", tags=["pois"])
@@ -136,7 +149,7 @@ async def get_pois_with_etas(
     latitude: Optional[str] = Query(None, description="Current latitude (decimal degrees)"),
     longitude: Optional[str] = Query(None, description="Current longitude (decimal degrees)"),
     speed_knots: Optional[str] = Query(None, description="Current speed in knots"),
-    status: Optional[str] = Query(None, description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)"),
+    status_filter: Optional[str] = Query(None, description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)"),
     category: Optional[str] = Query(None, description="Filter by POI category (comma-separated: departure,arrival,waypoint,alternate)"),
 ) -> POIETAListResponse:
     """
@@ -155,7 +168,16 @@ async def get_pois_with_etas(
     - category: Optional POI category filter (comma-separated list of: departure, arrival, waypoint, alternate)
 
     Returns:
-    - JSON object with list of POIs with ETA data and timestamp
+    - JSON object containing:
+      - `pois`: List of POIs with ETA metadata (eta_seconds, distance_meters, eta_type, flight_phase, is_pre_departure)
+      - `eta_mode`: Current ETA mode (`anticipated` or `estimated`)
+      - `flight_phase`: Current flight phase (`pre_departure`, `in_flight`, `post_arrival`)
+      - `timestamp`: ISO8601 timestamp of the calculation
+
+    Example:
+        ```bash
+        curl http://localhost:8000/api/pois/etas | jq '.pois[0]'
+        ```
 
     Raises:
     - 400: Failed to calculate ETA
@@ -186,6 +208,18 @@ async def get_pois_with_etas(
                 longitude = None
                 speed_knots = None
 
+        # If coordinator doesn't have route manager or is unavailable, try _route_manager directly
+        if not active_route and _route_manager:
+            active_route = _route_manager.get_active_route()
+
+        active_route_id = None
+        if active_route and active_route.metadata and active_route.metadata.file_path:
+            try:
+                active_route_id = Path(active_route.metadata.file_path).stem
+            except Exception as exc:  # pragma: no cover - defensive guard
+                logger.debug("Failed to derive active route ID from metadata: %s", exc)
+                active_route_id = active_route.metadata.file_path
+
         # Use query parameters if provided (override coordinator)
         if latitude is None or latitude == "":
             latitude = 41.6 if _coordinator is None else latitude
@@ -211,10 +245,27 @@ async def get_pois_with_etas(
             except (ValueError, TypeError):
                 speed_knots = 67.0 if _coordinator is None else speed_knots
 
+        # In live mode we may not have simulator progress; derive it from the active route instead.
+        if (
+            active_route
+            and current_route_progress is None
+            and latitude is not None
+            and longitude is not None
+        ):
+            try:
+                from app.services.route_eta_calculator import RouteETACalculator
+
+                route_calculator = RouteETACalculator(active_route)
+                progress_info = route_calculator.get_route_progress(latitude, longitude)
+                current_route_progress = progress_info.get("progress_percent")
+            except Exception as exc:  # pragma: no cover - defensive guard
+                logger.debug("Failed to calculate route progress for POI ETAs: %s", exc)
+                current_route_progress = None
+
         # Parse status filter if provided
-        status_filter = set()
-        if status:
-            status_filter = set(s.strip() for s in status.split(",") if s.strip())
+        status_filter_set = set()
+        if status_filter:
+            status_filter_set = set(s.strip() for s in status_filter.split(",") if s.strip())
 
         # Parse category filter if provided
         category_filter = set()
@@ -225,27 +276,58 @@ async def get_pois_with_etas(
 
         # Calculate ETA and distance for each POI
         from app.core.eta_service import get_eta_calculator
+        from app.services.flight_state_manager import get_flight_state_manager
+        from app.models.flight_status import ETAMode, FlightPhase
 
         eta_calc = get_eta_calculator()
 
+        status_snapshot = None
+        try:
+            flight_state = get_flight_state_manager()
+            status_snapshot = flight_state.get_status()
+        except Exception as state_error:  # pragma: no cover - defensive guard
+            logger.debug("Flight state unavailable for POI ETAs: %s", state_error)
+
+        if status_snapshot:
+            current_eta_mode = status_snapshot.eta_mode
+            flight_phase_value = status_snapshot.phase.value
+            is_pre_departure = status_snapshot.phase == FlightPhase.PRE_DEPARTURE
+        else:
+            current_eta_mode = ETAMode.ESTIMATED
+            flight_phase_value = None
+            is_pre_departure = False
+
         pois_with_eta = []
+        progress_epsilon = 0.05  # Prevent jitter from flipping ahead/passed status
+        route_projection_distance_threshold_m = 20000.0  # Treat POIs beyond 20km as off-route
+
         for poi in pois:
             # Calculate distance using Haversine formula
             distance = eta_calc.calculate_distance(
                 latitude, longitude, poi.latitude, poi.longitude
             )
 
-            # Calculate ETA - use route-aware calculation if active route exists
+            # Calculate ETA - use dual-mode calculation
             eta_seconds = None
+            eta_type = current_eta_mode.value
+
             if active_route:
-                # Try route-aware ETA calculation first
-                eta_seconds = eta_calc._calculate_route_aware_eta(
-                    latitude, longitude, poi, active_route
-                )
+                # Try route-aware ETA calculation first with mode-specific logic
+                if current_eta_mode == ETAMode.ESTIMATED:
+                    eta_seconds = eta_calc._calculate_route_aware_eta_estimated(
+                        latitude, longitude, poi, active_route, speed_knots
+                    )
+                else:  # ANTICIPATED mode
+                    eta_seconds = eta_calc._calculate_route_aware_eta_anticipated(
+                        latitude, longitude, poi, active_route
+                    )
 
             # Fall back to distance/speed calculation if route-aware failed
             if eta_seconds is None:
-                eta_seconds = eta_calc.calculate_eta(distance, speed_knots)
+                if current_eta_mode == ETAMode.ESTIMATED:
+                    eta_seconds = eta_calc.calculate_eta(distance, speed_knots)
+                else:  # ANTICIPATED mode fallback: use default cruise speed
+                    eta_seconds = eta_calc.calculate_eta(distance, eta_calc.default_speed_knots)
 
             # Calculate bearing
             bearing = calculate_bearing(latitude, longitude, poi.latitude, poi.longitude)
@@ -254,35 +336,82 @@ async def get_pois_with_etas(
             course_status = calculate_course_status(heading, bearing)
 
             # Determine route-aware status
-            is_on_active_route = False
             projected_waypoint_index = None
             projected_route_progress = None
             route_aware_status = None
 
-            if active_route and current_route_progress is not None:
-                # POI has projection data from active route
-                if poi.projected_route_progress is not None:
-                    is_on_active_route = True
-                    projected_waypoint_index = poi.projected_waypoint_index
-                    projected_route_progress = poi.projected_route_progress
+            projected_distance_to_route = None
+            if (
+                poi.projected_latitude is not None
+                and poi.projected_longitude is not None
+            ):
+                projected_distance_to_route = eta_calc.calculate_distance(
+                    poi.latitude,
+                    poi.longitude,
+                    poi.projected_latitude,
+                    poi.projected_longitude,
+                )
 
-                    # Determine if POI is ahead or already passed
-                    if projected_route_progress > current_route_progress:
-                        route_aware_status = "ahead_on_route"
+            belongs_to_active_route = bool(
+                active_route
+                and active_route_id
+                and poi.route_id
+                and poi.route_id == active_route_id
+            )
+            close_to_route = bool(
+                projected_distance_to_route is not None
+                and projected_distance_to_route <= route_projection_distance_threshold_m
+            )
+
+            is_on_active_route = bool(
+                active_route
+                and belongs_to_active_route
+                and (
+                    projected_distance_to_route is None
+                    or close_to_route
+                )
+            )
+
+            if active_route and poi.projected_route_progress is not None:
+                projected_waypoint_index = poi.projected_waypoint_index
+                projected_route_progress = poi.projected_route_progress
+
+                if is_on_active_route:
+                    if current_route_progress is not None:
+                        if projected_route_progress >= (current_route_progress - progress_epsilon):
+                            route_aware_status = "ahead_on_route"
+                        else:
+                            route_aware_status = "already_passed"
                     else:
-                        route_aware_status = "already_passed"
+                        route_aware_status = "ahead_on_route"
+                else:
+                    route_aware_status = "not_on_route"
+            elif active_route and not is_on_active_route:
+                route_aware_status = "not_on_route"
+
+            # Preserve ETA visibility for standalone POIs during pre-departure countdowns
+            if route_aware_status == "not_on_route" and is_pre_departure:
+                route_aware_status = "pre_departure"
+
+            # If anticipated ETA returned negative time but POI is still ahead, fall back to distance-based estimate
+            if (
+                current_eta_mode == ETAMode.ANTICIPATED
+                and route_aware_status == "ahead_on_route"
+                and (eta_seconds is None or eta_seconds < 0)
+            ):
+                eta_seconds = eta_calc.calculate_eta(distance, eta_calc.default_speed_knots)
 
             # Apply status filter if specified
             # When a route is active and POI is on the route, use route-aware filtering
             # Otherwise, fall back to angle-based filtering
-            if status_filter:
+            if status_filter_set:
                 if active_route and is_on_active_route:
                     # Route-aware: only show if ahead on route
                     if route_aware_status != "ahead_on_route":
                         continue
                 else:
                     # Angle-based: use course_status as before
-                    if course_status not in status_filter:
+                    if course_status not in status_filter_set:
                         continue
 
             # Apply category filter if specified
@@ -300,6 +429,9 @@ async def get_pois_with_etas(
                     category=poi.category,
                     icon=poi.icon,
                     eta_seconds=eta_seconds,
+                    eta_type=eta_type,
+                    is_pre_departure=is_pre_departure,
+                    flight_phase=flight_phase_value,
                     distance_meters=distance,
                     bearing_degrees=bearing,
                     course_status=course_status,
@@ -381,7 +513,22 @@ async def get_next_destination(
 
     pois = poi_manager.list_pois()
     if not pois:
-        return {"name": "No POIs available"}
+        status_eta_mode = "estimated"
+        status_phase = None
+        try:
+            from app.services.flight_state_manager import get_flight_state_manager
+
+            snapshot = get_flight_state_manager().get_status()
+            status_eta_mode = snapshot.eta_mode.value
+            status_phase = snapshot.phase.value
+        except Exception:  # pragma: no cover - defensive guard
+            pass
+        return {
+            "name": "No POIs available",
+            "eta_type": status_eta_mode,
+            "flight_phase": status_phase,
+            "eta_seconds": -1,
+        }
 
     from app.core.eta_service import get_eta_calculator
     eta_calc = get_eta_calculator()
@@ -395,8 +542,24 @@ async def get_next_destination(
         if eta_seconds < closest_eta:
             closest_eta = eta_seconds
             closest = poi
+    status_eta_mode = "estimated"
+    status_phase = None
+    try:
+        from app.services.flight_state_manager import get_flight_state_manager
 
-    return {"name": closest.name if closest else "No POIs available"}
+        snapshot = get_flight_state_manager().get_status()
+        status_eta_mode = snapshot.eta_mode.value
+        status_phase = snapshot.phase.value
+    except Exception:  # pragma: no cover - defensive guard
+        pass
+
+    eta_value = max(0, closest_eta) if closest_eta != float('inf') else -1
+    return {
+        "name": closest.name if closest else "No POIs available",
+        "eta_type": status_eta_mode,
+        "flight_phase": status_phase,
+        "eta_seconds": eta_value,
+    }
 
 
 @router.get("/stats/next-eta", response_model=dict, summary="Get time to next arrival (closest POI ETA)")
@@ -416,7 +579,11 @@ async def get_next_eta(
     - speed_knots: Current speed in knots (optional, uses coordinator if available)
 
     Returns:
-    - JSON object with 'eta_seconds' field containing ETA in seconds
+    - JSON object with:
+      - `name`: Closest POI name (or fallback message)
+      - `eta_seconds`: ETA in seconds (or -1 if unavailable)
+      - `eta_type`: Current ETA mode (`anticipated` / `estimated`)
+      - `flight_phase`: Current flight phase (may be null if unavailable)
     """
     try:
         # Get current position from coordinator if available
@@ -441,7 +608,21 @@ async def get_next_eta(
 
     pois = poi_manager.list_pois()
     if not pois:
-        return {"eta_seconds": -1}
+        status_eta_mode = "estimated"
+        status_phase = None
+        try:
+            from app.services.flight_state_manager import get_flight_state_manager
+
+            snapshot = get_flight_state_manager().get_status()
+            status_eta_mode = snapshot.eta_mode.value
+            status_phase = snapshot.phase.value
+        except Exception:  # pragma: no cover - defensive guard
+            pass
+        return {
+            "eta_seconds": -1,
+            "eta_type": status_eta_mode,
+            "flight_phase": status_phase,
+        }
 
     from app.core.eta_service import get_eta_calculator
     eta_calc = get_eta_calculator()
@@ -454,7 +635,22 @@ async def get_next_eta(
         if eta_seconds < closest_eta:
             closest_eta = eta_seconds
 
-    return {"eta_seconds": max(0, closest_eta) if closest_eta != float('inf') else -1}
+    status_eta_mode = "estimated"
+    status_phase = None
+    try:
+        from app.services.flight_state_manager import get_flight_state_manager
+
+        snapshot = get_flight_state_manager().get_status()
+        status_eta_mode = snapshot.eta_mode.value
+        status_phase = snapshot.phase.value
+    except Exception:  # pragma: no cover - defensive guard
+        pass
+
+    return {
+        "eta_seconds": max(0, closest_eta) if closest_eta != float('inf') else -1,
+        "eta_type": status_eta_mode,
+        "flight_phase": status_phase,
+    }
 
 
 @router.get("/stats/approaching", response_model=dict, summary="Get count of approaching POIs (< 30 min)")
@@ -678,5 +874,3 @@ async def delete_poi(poi_id: str) -> None:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"POI not found: {poi_id}",
         )
-
-

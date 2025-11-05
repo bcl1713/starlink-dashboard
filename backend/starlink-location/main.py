@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import config, geojson, health, metrics, pois, routes, status, ui
+from app.api import config, flight_status, geojson, health, metrics, pois, routes, status, ui
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
@@ -24,6 +24,9 @@ from app.services.route_manager import RouteManager
 log_level = os.getenv("LOG_LEVEL", "INFO")
 json_logs = os.getenv("JSON_LOGS", "true").lower() == "true"
 log_file = os.getenv("LOG_FILE")
+
+# Optional flag to disable background updates (useful for tests)
+_background_updates_enabled = os.getenv("STARLINK_DISABLE_BACKGROUND_TASKS", "0").lower() not in {"1", "true", "yes"}
 
 setup_logging(level=log_level, json_format=json_logs, log_file=log_file)
 logger = get_logger(__name__)
@@ -123,6 +126,7 @@ async def startup_event():
             _route_manager.start_watching()
             geojson.set_route_manager(_route_manager)
             routes.set_route_manager(_route_manager)
+            pois.set_route_manager(_route_manager)
             # Inject into metrics_export as well
             from app.api import metrics_export
             metrics_export.set_route_manager(_route_manager)
@@ -142,6 +146,37 @@ async def startup_event():
             )
             raise
 
+        # Initialize Flight State Manager for flight phase and ETA mode tracking
+        logger.info_json("Initializing Flight State Manager")
+        try:
+            from app.services.flight_state_manager import get_flight_state_manager
+            flight_state = get_flight_state_manager()
+            # Sync existing active route (if any) without forcing reset during startup
+            if _route_manager:
+                try:
+                    active_route = _route_manager.get_active_route()
+                    if active_route:
+                        flight_state.update_route_context(active_route, auto_reset=False, reason="startup")
+                except Exception as sync_exc:  # pragma: no cover - defensive guard
+                    logger.debug_json(
+                        "Failed to sync flight state with active route during startup",
+                        extra_fields={"error": str(sync_exc)}
+                    )
+            logger.info_json(
+                "Flight State Manager initialized successfully",
+                extra_fields={
+                    "initial_phase": flight_state.get_status().phase.value,
+                    "initial_eta_mode": flight_state.get_status().eta_mode.value
+                }
+            )
+        except Exception as e:
+            logger.error_json(
+                "Failed to initialize Flight State Manager",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
+            raise
+
         # Log active mode prominently
         mode_description = "Real Starlink terminal data" if active_mode == "live" else "Simulated telemetry"
         logger.info_json(
@@ -153,9 +188,11 @@ async def startup_event():
             }
         )
 
-        # Start background update task
-        logger.info_json("Starting background update task")
-        _background_task = asyncio.create_task(_background_update_loop())
+        if _background_updates_enabled:
+            logger.info_json("Starting background update task")
+            _background_task = asyncio.create_task(_background_update_loop())
+        else:
+            logger.info_json("Background update task disabled via STARLINK_DISABLE_BACKGROUND_TASKS")
 
         logger.info_json("Starlink Location Backend ready")
     except Exception as e:
@@ -354,6 +391,7 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])
+app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])

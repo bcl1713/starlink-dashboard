@@ -1,6 +1,6 @@
 """Point of Interest (POI) data models for the Starlink location service."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -17,8 +17,14 @@ class POI(BaseModel):
     category: Optional[str] = Field(default=None, description="POI category (e.g., 'airport', 'city')")
     description: Optional[str] = Field(default=None, description="Detailed description of the POI")
     route_id: Optional[str] = Field(default=None, description="Associated route ID if route-specific")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="When POI was created")
-    updated_at: datetime = Field(default_factory=datetime.utcnow, description="When POI was last updated")
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When POI was created",
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When POI was last updated",
+    )
     # Route projection fields (calculated when route is active, cleared on deactivation)
     projected_latitude: Optional[float] = Field(default=None, description="Latitude of projection point on active route")
     projected_longitude: Optional[float] = Field(default=None, description="Longitude of projection point on active route")
@@ -67,9 +73,11 @@ class POICreate(BaseModel):
     @field_validator("longitude")
     @classmethod
     def validate_longitude(cls, v):
-        """Validate longitude is in valid range (-180 to 180)."""
-        if not -180 <= v <= 180:
-            raise ValueError("Longitude must be between -180 and 180 degrees")
+        """Validate and normalize longitude to the -180 to 180 degree range."""
+        if not -180 <= v <= 360:
+            raise ValueError("Longitude must be between -180 and 360 degrees")
+        if v > 180:
+            v -= 360
         return v
 
     model_config = {
@@ -107,9 +115,12 @@ class POIUpdate(BaseModel):
     @field_validator("longitude")
     @classmethod
     def validate_longitude(cls, v):
-        """Validate longitude is in valid range (-180 to 180)."""
-        if v is not None and not -180 <= v <= 180:
-            raise ValueError("Longitude must be between -180 and 180 degrees")
+        """Validate and normalize longitude to the -180 to 180 degree range."""
+        if v is not None:
+            if not -180 <= v <= 360:
+                raise ValueError("Longitude must be between -180 and 360 degrees")
+            if v > 180:
+                v -= 360
         return v
 
     model_config = {
@@ -191,6 +202,18 @@ class POIWithETA(BaseModel):
     category: Optional[str] = Field(default=None, description="POI category")
     icon: str = Field(default="marker", description="Icon identifier")
     eta_seconds: float = Field(..., description="Estimated time to arrival in seconds (-1 if no speed)")
+    eta_type: str = Field(
+        default="estimated",
+        description="ETA type: 'anticipated' (pre-departure, based on flight plan) or 'estimated' (post-departure, based on telemetry)",
+    )
+    is_pre_departure: bool = Field(
+        default=False,
+        description="True when the active flight has not yet departed; anticipated ETAs will set this flag",
+    )
+    flight_phase: Optional[str] = Field(
+        default=None,
+        description="Flight phase associated with this ETA (pre_departure, in_flight, post_arrival)",
+    )
     distance_meters: float = Field(..., description="Distance to POI in meters")
     bearing_degrees: Optional[float] = Field(default=None, description="Bearing to POI in degrees (0=North)")
     course_status: Optional[str] = Field(
@@ -205,7 +228,7 @@ class POIWithETA(BaseModel):
     projected_route_progress: Optional[float] = Field(default=None, description="Progress % where POI projects on route")
     route_aware_status: Optional[str] = Field(
         default=None,
-        description="Route awareness status: 'ahead_on_route', 'already_passed', 'not_on_route', or None if no active route"
+        description="Route awareness status: 'ahead_on_route', 'already_passed', 'not_on_route', 'pre_departure', or None if no active route"
     )
 
     model_config = {
@@ -218,6 +241,9 @@ class POIWithETA(BaseModel):
                 "category": "airport",
                 "icon": "airport",
                 "eta_seconds": 1080.0,
+                "eta_type": "estimated",
+                "is_pre_departure": False,
+                "flight_phase": "in_flight",
                 "distance_meters": 45000.0,
                 "bearing_degrees": 125.0,
                 "course_status": "on_course",
@@ -237,7 +263,10 @@ class POIETAListResponse(BaseModel):
 
     pois: list[POIWithETA] = Field(default_factory=list, description="List of POIs with ETA data")
     total: int = Field(default=0, description="Total number of POIs")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When this data was calculated")
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When this data was calculated",
+    )
 
     model_config = {
         "json_schema_extra": {

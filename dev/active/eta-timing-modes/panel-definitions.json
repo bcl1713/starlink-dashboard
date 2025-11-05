@@ -1,0 +1,297 @@
+{
+  "_description": "Panel definitions for Phase 6 Grafana dashboard updates. These panels should be added to the respective dashboards.",
+  "_locations": {
+    "overview": "monitoring/grafana/provisioning/dashboards/overview.json",
+    "fullscreen": "monitoring/grafana/provisioning/dashboards/fullscreen-overview.json",
+    "network": "monitoring/grafana/provisioning/dashboards/network-metrics.json",
+    "poi": "monitoring/grafana/provisioning/dashboards/poi-management.json"
+  },
+  "panels": {
+    "flight_phase_indicator": {
+      "id_overview": 204,
+      "id_fullscreen": 205,
+      "type": "stat",
+      "title": "Flight Phase",
+      "description": "Current flight phase showing pre-departure, in-flight, or post-arrival status",
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "starlink_flight_phase",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "🚁 PRE-DEPARTURE",
+                  "color": "orange"
+                },
+                "1": {
+                  "text": "✈️ IN-FLIGHT",
+                  "color": "green"
+                },
+                "2": {
+                  "text": "🛬 POST-ARRIVAL",
+                  "color": "blue"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "blue",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {},
+        "textMode": "auto"
+      }
+    },
+    "eta_mode_indicator": {
+      "id_overview": 205,
+      "id_fullscreen": 206,
+      "type": "stat",
+      "title": "ETA Mode",
+      "description": "Current ETA calculation mode: anticipated or estimated",
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "starlink_eta_mode",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "📋 ANTICIPATED",
+                  "color": "blue"
+                },
+                "1": {
+                  "text": "📊 ESTIMATED",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {},
+        "textMode": "auto"
+      }
+    },
+    "flight_timeline": {
+      "id_overview": 206,
+      "id_fullscreen": 207,
+      "type": "text",
+      "title": "Flight Timeline",
+      "description": "Visual representation of flight progress through departure, flight, and arrival phases",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 3
+      },
+      "options": {
+        "content": "# Flight Progress Timeline\n\n**Current Status:** Monitoring flight phase transitions\n\n**Phases:**\n- 🚁 PRE-DEPARTURE → ✈️ IN-FLIGHT → 🛬 POST-ARRIVAL\n\nThis timeline tracks the aircraft's progression through three key operational phases. The system automatically transitions based on speed thresholds and positional data.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.4.0"
+    },
+    "color_coded_etas": {
+      "id_network": 105,
+      "id_poi": 305,
+      "type": "timeseries",
+      "title": "ETA Metrics by Mode",
+      "description": "Time series showing anticipated (blue) and estimated (green) ETAs to points of interest",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 100
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "starlink_eta_poi_seconds{eta_type=\"anticipated\"}",
+          "refId": "A",
+          "legendFormat": "{{name}} (anticipated)"
+        },
+        {
+          "expr": "starlink_eta_poi_seconds{eta_type=\"estimated\"}",
+          "refId": "B",
+          "legendFormat": "{{name}} (estimated)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Seconds to POI",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*anticipated.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*estimated.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    }
+  }
+}

@@ -169,7 +169,12 @@ async def list_routes(
     - active: Filter by active status (true/false, or omit for all)
 
     Returns:
-    - List of routes with metadata
+    - List of routes with metadata including `flight_phase`, `eta_mode`, `has_timing_data`, and active route context
+
+    Example:
+        ```bash
+        curl http://localhost:8000/api/routes | jq '.routes[0]'
+        ```
     """
     if not _route_manager:
         raise HTTPException(
@@ -179,6 +184,14 @@ async def list_routes(
 
     routes_dict = _route_manager.list_routes()
     active_route_id = _route_manager._active_route_id
+
+    flight_status_snapshot = None
+    try:
+        from app.services.flight_state_manager import get_flight_state_manager
+
+        flight_status_snapshot = get_flight_state_manager().get_status()
+    except Exception as state_error:  # pragma: no cover - defensive guard
+        logger.debug("Flight state unavailable while listing routes: %s", state_error)
 
     routes_list = []
     for route_id, route_info in routes_dict.items():
@@ -194,8 +207,17 @@ async def list_routes(
         # Get parsed route to check for timing data
         parsed_route = _route_manager.get_route(route_id)
         has_timing_data = False
+        timing_profile = None
+        flight_phase = None
         if parsed_route and parsed_route.timing_profile:
-            has_timing_data = parsed_route.timing_profile.has_timing_data
+            timing_profile = parsed_route.timing_profile
+            has_timing_data = timing_profile.has_timing_data
+            flight_phase = timing_profile.flight_status
+
+        eta_mode = None
+        if is_active and flight_status_snapshot:
+            flight_phase = flight_status_snapshot.phase.value
+            eta_mode = flight_status_snapshot.eta_mode.value
 
         route_response = RouteResponse(
             id=route_id,
@@ -205,6 +227,9 @@ async def list_routes(
             is_active=is_active,
             imported_at=imported_at,
             has_timing_data=has_timing_data,
+            timing_profile=timing_profile,
+            flight_phase=flight_phase,
+            eta_mode=eta_mode,
         )
         routes_list.append(route_response)
 
@@ -220,7 +245,12 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
     - route_id: Route identifier (filename without .kml extension)
 
     Returns:
-    - Full route details including all points and statistics
+    - Full route details including points, statistics, timing profile, and live flight-state metadata (`flight_phase`, `eta_mode`, countdown fields)
+
+    Example:
+        ```bash
+        curl http://localhost:8000/api/routes/{route_id} | jq '{name: .name, flight_phase: .flight_phase, eta_mode: .eta_mode}'
+        ```
     """
     if not _route_manager:
         raise HTTPException(
@@ -242,6 +272,21 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
     bounds = parsed_route.get_bounds()
     poi_count = _poi_manager.count_pois(route_id=route_id)
 
+    timing_profile = parsed_route.timing_profile
+    has_timing_data = bool(timing_profile and timing_profile.has_timing_data)
+    flight_phase = timing_profile.flight_status if timing_profile else None
+    eta_mode = None
+
+    if is_active:
+        try:
+            from app.services.flight_state_manager import get_flight_state_manager
+
+            status_snapshot = get_flight_state_manager().get_status()
+            flight_phase = status_snapshot.phase.value
+            eta_mode = status_snapshot.eta_mode.value
+        except Exception as state_error:  # pragma: no cover - defensive guard
+            logger.debug("Flight state unavailable for route detail: %s", state_error)
+
     return RouteDetailResponse(
         id=route_id,
         name=parsed_route.metadata.name,
@@ -258,7 +303,10 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
         },
         poi_count=poi_count,
         waypoints=parsed_route.waypoints,
-        timing_profile=parsed_route.timing_profile,
+        timing_profile=timing_profile,
+        has_timing_data=has_timing_data,
+        flight_phase=flight_phase,
+        eta_mode=eta_mode,
     )
 
 
@@ -271,7 +319,12 @@ async def activate_route(route_id: str) -> RouteResponse:
     - route_id: Route identifier
 
     Returns:
-    - Updated route information
+    - Updated route information including live `flight_phase`, `eta_mode`, and timing profile context
+
+    Example:
+        ```bash
+        curl -X POST http://localhost:8000/api/routes/{route_id}/activate | jq '.eta_mode'
+        ```
     """
     if not _route_manager:
         raise HTTPException(
@@ -299,8 +352,30 @@ async def activate_route(route_id: str) -> RouteResponse:
             logger.error(f"Failed to calculate POI projections: {e}")
 
     has_timing_data = False
+    flight_phase = None
+    eta_mode = None
     if parsed_route.timing_profile:
         has_timing_data = parsed_route.timing_profile.has_timing_data
+        flight_phase = parsed_route.timing_profile.flight_status
+
+    try:
+        from app.services.flight_state_manager import get_flight_state_manager
+        from app.models.route import RouteTimingProfile
+
+        status_snapshot = get_flight_state_manager().get_status()
+        flight_phase = status_snapshot.phase.value
+        eta_mode = status_snapshot.eta_mode.value
+
+        timing_profile = parsed_route.timing_profile
+        if timing_profile is None:
+            timing_profile = RouteTimingProfile()
+            parsed_route.timing_profile = timing_profile
+
+        timing_profile.flight_status = flight_phase
+        timing_profile.actual_departure_time = status_snapshot.departure_time
+        timing_profile.actual_arrival_time = status_snapshot.arrival_time
+    except Exception as state_error:  # pragma: no cover - defensive guard
+        logger.debug("Flight state unavailable while activating route: %s", state_error)
 
     return RouteResponse(
         id=route_id,
@@ -311,6 +386,8 @@ async def activate_route(route_id: str) -> RouteResponse:
         imported_at=parsed_route.metadata.imported_at,
         has_timing_data=has_timing_data,
         timing_profile=parsed_route.timing_profile,
+        flight_phase=flight_phase,
+        eta_mode=eta_mode,
     )
 
 
@@ -407,8 +484,8 @@ async def upload_route(
         )
 
     try:
-        # Ensure directory exists
-        routes_dir = Path("/data/routes")
+        # Ensure we write uploads to the active RouteManager directory
+        routes_dir = Path(getattr(_route_manager, "routes_dir", "/data/routes"))
         routes_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate unique filename (handle conflicts)
@@ -461,6 +538,9 @@ async def upload_route(
         has_timing_data = False
         if parsed_route.timing_profile:
             has_timing_data = parsed_route.timing_profile.has_timing_data
+            flight_phase = parsed_route.timing_profile.flight_status
+        else:
+            flight_phase = None
 
         return RouteResponse(
             id=route_id,
@@ -473,6 +553,7 @@ async def upload_route(
             skipped_poi_count=skipped_pois,
             has_timing_data=has_timing_data,
             timing_profile=parsed_route.timing_profile,
+            flight_phase=flight_phase,
         )
 
     except HTTPException:
@@ -755,11 +836,20 @@ async def get_active_route_timing() -> dict:
         }
 
     timing = active_route.timing_profile
+    flight_status = timing.flight_status
+    is_departed = timing.is_departed()
+    is_in_flight = timing.is_in_flight()
+
     return {
         "route_name": active_route.metadata.name or "Unknown",
         "has_timing_data": timing.has_timing_data,
         "departure_time": timing.departure_time.isoformat() if timing.departure_time else None,
         "arrival_time": timing.arrival_time.isoformat() if timing.arrival_time else None,
+        "actual_departure_time": timing.actual_departure_time.isoformat() if timing.actual_departure_time else None,
+        "actual_arrival_time": timing.actual_arrival_time.isoformat() if timing.actual_arrival_time else None,
+        "flight_status": flight_status,
+        "is_departed": is_departed,
+        "is_in_flight": is_in_flight,
         "total_expected_duration_seconds": timing.total_expected_duration_seconds,
         "segment_count_with_timing": timing.segment_count_with_timing,
         "total_duration_readable": _format_duration(timing.total_expected_duration_seconds) if timing.total_expected_duration_seconds else None
