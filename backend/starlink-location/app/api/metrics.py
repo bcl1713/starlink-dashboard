@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from fastapi.responses import Response, JSONResponse
 from prometheus_client import generate_latest
 
+from app.api import metrics_export
 from app.core.metrics import REGISTRY, _current_position
 
 router = APIRouter()
@@ -36,6 +37,7 @@ async def metrics():
     - Network metrics (latency, throughput, packet loss)
     - Obstruction and signal quality metrics
     - Service info and uptime metrics
+    - POI distance/ETA gauges including the `eta_type` label for anticipated vs estimated mode
     - Simulation counters (updates, errors)
     - Histogram metrics for latency and throughput (percentile analysis)
     - Event counters (connection attempts, failures, outages, thermal events)
@@ -49,12 +51,15 @@ async def metrics():
     # Record scrape time for health endpoint monitoring
     set_last_scrape_time(time.time())
 
-    # Generate metrics and ensure OpenMetrics EOF marker is present
-    metrics_output = generate_latest(REGISTRY)
-
-    # Ensure OpenMetrics format compliance with EOF marker
-    if not metrics_output.endswith(b"# EOF\n"):
-        metrics_output = metrics_output.rstrip() + b"\n# EOF\n"
+    try:
+        # Delegate to metrics_export for on-demand POI updates (handles pre-flight cases)
+        metrics_output = await metrics_export.get_metrics()
+    except Exception:
+        # Fall back to direct registry scrape if export helper fails
+        raw_output = generate_latest(REGISTRY)
+        if not raw_output.endswith(b"# EOF\n"):
+            raw_output = raw_output.rstrip() + b"\n# EOF\n"
+        metrics_output = raw_output.decode("utf-8")
 
     return Response(
         content=metrics_output,

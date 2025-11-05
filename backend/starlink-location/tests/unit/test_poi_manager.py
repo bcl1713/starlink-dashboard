@@ -303,3 +303,8 @@ class TestPOIManager:
 
         assert poi.name == "POI: Test & Validation #1"
         assert "quotes" in poi.description
+
+    def test_longitude_conversion(self, poi_manager):
+        """Test that longitude is converted to -180 to 180 range."""
+        poi_create = POICreate(name="Test POI", latitude=0.0, longitude=270.0)
+        assert poi_create.longitude == -90.0

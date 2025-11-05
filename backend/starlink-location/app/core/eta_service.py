@@ -70,33 +70,64 @@ def get_poi_manager() -> POIManager:
     return _poi_manager
 
 
-def update_eta_metrics(latitude: float, longitude: float, speed_knots: float) -> dict:
+def update_eta_metrics(
+    latitude: float,
+    longitude: float,
+    speed_knots: float,
+    active_route=None,
+    eta_mode=None,
+    flight_phase=None,
+) -> dict:
     """Update ETA metrics for all POIs.
 
     This function is called by the background update loop on each telemetry cycle.
     It calculates ETA and distance for all available POIs and returns the results.
 
+    When an active route with timing data is available, POIs that are waypoints
+    on that route will use route-aware ETA calculations (segment-based speeds).
+    POIs not on the active route fall back to distance/speed calculation.
+
     Args:
         latitude: Current latitude in decimal degrees
         longitude: Current longitude in decimal degrees
         speed_knots: Current speed in knots
+        active_route: Optional ParsedRoute with timing data for route-aware calculations
+        eta_mode: Optional ETAMode for dual-mode calculation (defaults to ESTIMATED)
 
     Returns:
         Dictionary mapping POI IDs to their ETA metrics
     """
     try:
+        from app.models.flight_status import ETAMode
+
         eta_calculator = get_eta_calculator()
         poi_manager = get_poi_manager()
 
+        # Default to estimated mode if not specified
+        if eta_mode is None:
+            eta_mode = ETAMode.ESTIMATED
+
         # Update speed in calculator (maintains rolling average)
-        eta_calculator.update_speed(speed_knots)
+        safe_speed = None
+        if speed_knots is not None and speed_knots >= 0.5:
+            safe_speed = speed_knots
+            eta_calculator.update_speed(speed_knots)
+        else:
+            # Seed smoothing window with default cruise speed so pre-departure ETAs stay positive
+            eta_calculator.update_speed(eta_calculator.default_speed_knots)
 
         # Get all POIs
         pois = poi_manager.list_pois()
 
-        # Calculate metrics for all POIs
+        # Calculate metrics for all POIs (passing active_route and eta_mode)
         metrics = eta_calculator.calculate_poi_metrics(
-            latitude, longitude, pois, speed_knots
+            latitude,
+            longitude,
+            pois,
+            safe_speed,
+            active_route=active_route,
+            eta_mode=eta_mode,
+            flight_phase=flight_phase,
         )
 
         return metrics

@@ -1,6 +1,6 @@
 """Point of Interest (POI) data models for the Starlink location service."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
@@ -17,8 +17,19 @@ class POI(BaseModel):
     category: Optional[str] = Field(default=None, description="POI category (e.g., 'airport', 'city')")
     description: Optional[str] = Field(default=None, description="Detailed description of the POI")
     route_id: Optional[str] = Field(default=None, description="Associated route ID if route-specific")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="When POI was created")
-    updated_at: datetime = Field(default_factory=datetime.utcnow, description="When POI was last updated")
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When POI was created",
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When POI was last updated",
+    )
+    # Route projection fields (calculated when route is active, cleared on deactivation)
+    projected_latitude: Optional[float] = Field(default=None, description="Latitude of projection point on active route")
+    projected_longitude: Optional[float] = Field(default=None, description="Longitude of projection point on active route")
+    projected_waypoint_index: Optional[int] = Field(default=None, description="Index of closest route point")
+    projected_route_progress: Optional[float] = Field(default=None, description="Progress percentage (0-100) where POI projects on route")
 
     model_config = {
         "json_schema_extra": {
@@ -31,6 +42,10 @@ class POI(BaseModel):
                 "category": "airport",
                 "description": "John F. Kennedy International Airport",
                 "route_id": None,
+                "projected_latitude": None,
+                "projected_longitude": None,
+                "projected_waypoint_index": None,
+                "projected_route_progress": None,
             }
         }
     }
@@ -58,9 +73,11 @@ class POICreate(BaseModel):
     @field_validator("longitude")
     @classmethod
     def validate_longitude(cls, v):
-        """Validate longitude is in valid range (-180 to 180)."""
-        if not -180 <= v <= 180:
-            raise ValueError("Longitude must be between -180 and 180 degrees")
+        """Validate and normalize longitude to the -180 to 180 degree range."""
+        if not -180 <= v <= 360:
+            raise ValueError("Longitude must be between -180 and 360 degrees")
+        if v > 180:
+            v -= 360
         return v
 
     model_config = {
@@ -98,9 +115,12 @@ class POIUpdate(BaseModel):
     @field_validator("longitude")
     @classmethod
     def validate_longitude(cls, v):
-        """Validate longitude is in valid range (-180 to 180)."""
-        if v is not None and not -180 <= v <= 180:
-            raise ValueError("Longitude must be between -180 and 180 degrees")
+        """Validate and normalize longitude to the -180 to 180 degree range."""
+        if v is not None:
+            if not -180 <= v <= 360:
+                raise ValueError("Longitude must be between -180 and 360 degrees")
+            if v > 180:
+                v -= 360
         return v
 
     model_config = {
@@ -126,6 +146,11 @@ class POIResponse(BaseModel):
     route_id: Optional[str]
     created_at: datetime
     updated_at: datetime
+    # Route projection fields (only populated when route is active)
+    projected_latitude: Optional[float] = None
+    projected_longitude: Optional[float] = None
+    projected_waypoint_index: Optional[int] = None
+    projected_route_progress: Optional[float] = None
 
     model_config = {
         "json_schema_extra": {
@@ -140,6 +165,10 @@ class POIResponse(BaseModel):
                 "route_id": None,
                 "created_at": "2025-10-24T00:00:00",
                 "updated_at": "2025-10-24T00:00:00",
+                "projected_latitude": None,
+                "projected_longitude": None,
+                "projected_waypoint_index": None,
+                "projected_route_progress": None,
             }
         }
     }
@@ -173,11 +202,33 @@ class POIWithETA(BaseModel):
     category: Optional[str] = Field(default=None, description="POI category")
     icon: str = Field(default="marker", description="Icon identifier")
     eta_seconds: float = Field(..., description="Estimated time to arrival in seconds (-1 if no speed)")
+    eta_type: str = Field(
+        default="estimated",
+        description="ETA type: 'anticipated' (pre-departure, based on flight plan) or 'estimated' (post-departure, based on telemetry)",
+    )
+    is_pre_departure: bool = Field(
+        default=False,
+        description="True when the active flight has not yet departed; anticipated ETAs will set this flag",
+    )
+    flight_phase: Optional[str] = Field(
+        default=None,
+        description="Flight phase associated with this ETA (pre_departure, in_flight, post_arrival)",
+    )
     distance_meters: float = Field(..., description="Distance to POI in meters")
     bearing_degrees: Optional[float] = Field(default=None, description="Bearing to POI in degrees (0=North)")
     course_status: Optional[str] = Field(
         default=None,
         description="Course status relative to heading: 'on_course' (<45°), 'slightly_off' (45-90°), 'off_track' (90-135°), 'behind' (>135°)"
+    )
+    # Route-aware projection fields (populated when active route exists)
+    is_on_active_route: bool = Field(default=False, description="Whether POI projects to active route")
+    projected_latitude: Optional[float] = Field(default=None, description="Projected point on route")
+    projected_longitude: Optional[float] = Field(default=None, description="Projected point on route")
+    projected_waypoint_index: Optional[int] = Field(default=None, description="Index of closest route point")
+    projected_route_progress: Optional[float] = Field(default=None, description="Progress % where POI projects on route")
+    route_aware_status: Optional[str] = Field(
+        default=None,
+        description="Route awareness status: 'ahead_on_route', 'already_passed', 'not_on_route', 'pre_departure', or None if no active route"
     )
 
     model_config = {
@@ -190,9 +241,18 @@ class POIWithETA(BaseModel):
                 "category": "airport",
                 "icon": "airport",
                 "eta_seconds": 1080.0,
+                "eta_type": "estimated",
+                "is_pre_departure": False,
+                "flight_phase": "in_flight",
                 "distance_meters": 45000.0,
                 "bearing_degrees": 125.0,
                 "course_status": "on_course",
+                "is_on_active_route": True,
+                "projected_latitude": 40.6400,
+                "projected_longitude": -73.7800,
+                "projected_waypoint_index": 42,
+                "projected_route_progress": 45.5,
+                "route_aware_status": "ahead_on_route",
             }
         }
     }
@@ -203,7 +263,10 @@ class POIETAListResponse(BaseModel):
 
     pois: list[POIWithETA] = Field(default_factory=list, description="List of POIs with ETA data")
     total: int = Field(default=0, description="Total number of POIs")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="When this data was calculated")
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When this data was calculated",
+    )
 
     model_config = {
         "json_schema_extra": {

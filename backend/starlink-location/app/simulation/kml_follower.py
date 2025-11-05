@@ -3,9 +3,12 @@
 import logging
 import math
 import random
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from app.models.route import ParsedRoute
+
+if TYPE_CHECKING:
+    from app.models.route import RouteTimingProfile
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +174,64 @@ class KMLRouteFollower:
     def get_route_name(self) -> str:
         """Get route name."""
         return self.route.metadata.name
+
+    def get_segment_speed_at_progress(self, progress: float) -> Optional[float]:
+        """
+        Get expected segment speed at current progress (Phase 5 timing integration).
+
+        This looks up the expected_segment_speed_knots from the route point
+        at the current progress position.
+
+        Args:
+            progress: Route progress (0.0 to 1.0)
+
+        Returns:
+            Expected speed in knots if available, None otherwise
+        """
+        if not self.route.points:
+            return None
+
+        # Normalize progress to 0-1
+        progress = progress % 1.0
+
+        # Calculate total distance traveled
+        distance_traveled = progress * self._total_route_distance
+
+        # Find current segment
+        cumulative_distance = 0.0
+
+        for i in range(len(self.route.points) - 1):
+            p1 = self.route.points[i]
+            p2 = self.route.points[i + 1]
+
+            segment_distance = self._calculate_distance(
+                p1.latitude, p1.longitude, p2.latitude, p2.longitude
+            )
+
+            if cumulative_distance + segment_distance >= distance_traveled:
+                # We're on this segment - use speed from p2 (end of segment)
+                if p2.expected_segment_speed_knots is not None:
+                    return p2.expected_segment_speed_knots
+                return None
+
+            cumulative_distance += segment_distance
+
+        # Past the end - use last point's speed if available
+        if self.route.points:
+            last_point = self.route.points[-1]
+            if last_point.expected_segment_speed_knots is not None:
+                return last_point.expected_segment_speed_knots
+
+        return None
+
+    def get_route_timing_profile(self) -> Optional['RouteTimingProfile']:
+        """
+        Get route timing profile if available (Phase 5 timing integration).
+
+        Returns:
+            RouteTimingProfile if route has timing data, None otherwise
+        """
+        return self.route.timing_profile
 
     def reset(self) -> None:
         """Reset follower to start of route."""

@@ -1,7 +1,7 @@
 """GeoJSON generation service for converting routes and POIs to GeoJSON format."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from app.models.poi import POI
@@ -114,7 +114,7 @@ class GeoJSONBuilder:
                 "altitude": position.altitude,
                 "speed_knots": position.speed,
                 "heading_degrees": position.heading,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
         }
 
@@ -156,7 +156,7 @@ class GeoJSONBuilder:
             "type": "FeatureCollection",
             "features": features,
             "properties": {
-                "generated_at": datetime.utcnow().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
                 "feature_count": len(features),
                 "has_route": route is not None,
                 "has_pois": pois is not None and len(pois) > 0,

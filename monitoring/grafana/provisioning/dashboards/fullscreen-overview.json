@@ -896,7 +896,7 @@
               },
               {
                 "id": "custom.width",
-                "value": 91
+                "value": 185
               }
             ]
           },
@@ -924,7 +924,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 345
+                "value": 247
               }
             ]
           },
@@ -936,7 +936,46 @@
             "properties": [
               {
                 "id": "custom.hideFrom.viz",
-                "value": true
+                "value": false
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "badge"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "result": {
+                      "color": "#1f78c1",
+                      "text": "PLANNED"
+                    },
+                    "type": 1,
+                    "value": "anticipated"
+                  },
+                  {
+                    "result": {
+                      "color": "#2eb85c",
+                      "text": "LIVE"
+                    },
+                    "type": 1,
+                    "value": "estimated"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 110
               }
             ]
           }
@@ -1027,6 +1066,7 @@
               "category": "Type",
               "course_status": "Course Status",
               "eta_seconds": "ETA",
+              "eta_type": "ETA Mode",
               "name": "POI"
             }
           }
@@ -1039,16 +1079,16 @@
                 "config": {
                   "id": "equal",
                   "options": {
-                    "value": "behind"
+                    "value": "already_passed"
                   }
                 },
-                "fieldName": "Course Status"
+                "fieldName": "route_aware_status"
               },
               {
                 "config": {
                   "id": "equal",
                   "options": {
-                    "value": "off_track"
+                    "value": "behind"
                   }
                 },
                 "fieldName": "Course Status"
@@ -1534,3 +1574,4 @@
   "uid": "starlink-fullscreen",
   "version": 15
 }
+

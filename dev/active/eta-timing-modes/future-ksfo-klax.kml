@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Flight Plan KSFO-KLAX</name>
+
+    <Placemark>
+      <name>KSFO</name>
+      <description>San Francisco International Airport&#10;Time Over Waypoint: 2025-11-04 18:20:00Z</description>
+      <Point>
+        <coordinates>-122.375,37.618,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>ENRT1</name>
+      <description>En-route Fix&#10;Time Over Waypoint: 2025-11-04 19:05:00Z</description>
+      <Point>
+        <coordinates>-120.000,35.500,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>KLAX</name>
+      <description>Los Angeles International Airport&#10;Time Over Waypoint: 2025-11-04 19:45:00Z</description>
+      <Point>
+        <coordinates>-118.408,33.942,0</coordinates>
+      </Point>
+    </Placemark>
+
+    <Placemark>
+      <name>KSFO-KLAX Route</name>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          -122.375,37.618,0
+          -121.200,36.800,0
+          -120.000,35.500,0
+          -118.408,33.942,0
+        </coordinates>
+      </LineString>
+    </Placemark>
+  </Document>
+</kml>

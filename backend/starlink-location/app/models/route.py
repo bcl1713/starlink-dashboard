@@ -1,6 +1,6 @@
 """Route and KML data models for the Starlink location service."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -15,8 +15,14 @@ class RoutePoint(BaseModel):
         default=None, description="Altitude in meters above sea level"
     )
     sequence: int = Field(default=0, description="Order of point in route (0-indexed)")
+    expected_arrival_time: Optional[datetime] = Field(
+        default=None, description="Expected arrival time at this waypoint (UTC, ISO-8601)"
+    )
+    expected_segment_speed_knots: Optional[float] = Field(
+        default=None, description="Expected speed for segment ending at this point (in knots)"
+    )
 
-    model_config = {"json_schema_extra": {"example": {"latitude": 40.7128, "longitude": -74.0060, "altitude": 100, "sequence": 0}}}
+    model_config = {"json_schema_extra": {"example": {"latitude": 40.7128, "longitude": -74.0060, "altitude": 100, "sequence": 0, "expected_arrival_time": "2025-10-27T16:57:55Z", "expected_segment_speed_knots": 598.0}}}
 
 
 class RouteWaypoint(BaseModel):
@@ -33,18 +39,22 @@ class RouteWaypoint(BaseModel):
         default=None,
         description="Semantic role (e.g., 'departure', 'arrival', 'waypoint', 'alternate')",
     )
+    expected_arrival_time: Optional[datetime] = Field(
+        default=None, description="Expected arrival time at this waypoint (UTC, ISO-8601), parsed from description"
+    )
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "name": "WMSA",
-                "description": "Sultan Abdul Aziz Shah",
+                "description": "Sultan Abdul Aziz Shah\nTime Over Waypoint: 2025-10-27 16:57:55Z",
                 "style_url": "#destWaypointIcon",
                 "latitude": 3.132222,
                 "longitude": 101.55028,
                 "altitude": None,
                 "order": 42,
                 "role": "departure",
+                "expected_arrival_time": "2025-10-27T16:57:55Z",
             }
         }
     }
@@ -57,9 +67,74 @@ class RouteMetadata(BaseModel):
     description: Optional[str] = Field(default=None, description="Description from KML")
     file_path: str = Field(..., description="Path to the source KML file")
     imported_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When route was imported"
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When route was imported",
     )
     point_count: int = Field(..., description="Total number of points in route")
+
+
+class RouteTimingProfile(BaseModel):
+    """Timing profile for a route with expected speeds and arrival times."""
+
+    departure_time: Optional[datetime] = Field(
+        default=None, description="Expected departure time (UTC, ISO-8601)"
+    )
+    arrival_time: Optional[datetime] = Field(
+        default=None, description="Expected arrival time at route end (UTC, ISO-8601)"
+    )
+    total_expected_duration_seconds: Optional[float] = Field(
+        default=None, description="Total expected flight duration in seconds"
+    )
+    actual_departure_time: Optional[datetime] = Field(
+        default=None, description="Observed departure time when flight state transitioned from PRE_DEPARTURE"
+    )
+    actual_arrival_time: Optional[datetime] = Field(
+        default=None, description="Observed arrival time when flight state transitioned to POST_ARRIVAL"
+    )
+    flight_status: str = Field(
+        default="pre_departure",
+        description="Current flight status for route timing profile (pre_departure, in_flight, post_arrival)",
+    )
+    has_timing_data: bool = Field(
+        default=False, description="Whether route has timing metadata"
+    )
+    segment_count_with_timing: int = Field(
+        default=0, description="Number of segments with calculated expected speeds"
+    )
+
+    def get_total_duration(self) -> Optional[float]:
+        """Get total expected duration in seconds."""
+        if self.departure_time and self.arrival_time:
+            delta = self.arrival_time - self.departure_time
+            return delta.total_seconds()
+        return self.total_expected_duration_seconds
+
+    def is_departed(self) -> bool:
+        """Return True if the flight has departed based on status or recorded timestamp."""
+        status = (self.flight_status or "pre_departure").lower()
+        if status != "pre_departure":
+            return True
+        return self.actual_departure_time is not None
+
+    def is_in_flight(self) -> bool:
+        """Return True if the current flight status reflects in-flight operations."""
+        status = (self.flight_status or "pre_departure").lower()
+        return status == "in_flight"
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "departure_time": "2025-10-27T16:45:00Z",
+                "arrival_time": "2025-10-27T22:05:00Z",
+                "total_expected_duration_seconds": 20100.0,
+                "actual_departure_time": "2025-10-27T16:48:12Z",
+                "actual_arrival_time": None,
+                "flight_status": "in_flight",
+                "has_timing_data": True,
+                "segment_count_with_timing": 128,
+            }
+        }
+    }
 
 
 class ParsedRoute(BaseModel):
@@ -70,6 +145,9 @@ class ParsedRoute(BaseModel):
     waypoints: list[RouteWaypoint] = Field(
         default_factory=list,
         description="Optional waypoint placemarks associated with the route",
+    )
+    timing_profile: Optional[RouteTimingProfile] = Field(
+        default=None, description="Timing profile if route has embedded timing data"
     )
 
     def get_total_distance(self) -> float:
@@ -147,6 +225,21 @@ class RouteResponse(BaseModel):
         default=None,
         description="Number of waypoint placemarks skipped during POI import",
     )
+    has_timing_data: bool = Field(
+        default=False, description="Whether route has embedded timing metadata"
+    )
+    timing_profile: Optional[RouteTimingProfile] = Field(
+        default=None,
+        description="Timing profile with departure/arrival/duration info (if has_timing_data is True)",
+    )
+    flight_phase: Optional[str] = Field(
+        default=None,
+        description="Current flight phase (pre_departure, in_flight, post_arrival) when route is active",
+    )
+    eta_mode: Optional[str] = Field(
+        default=None,
+        description="Current ETA mode (anticipated or estimated) when route is active",
+    )
 
 
 class RouteListResponse(BaseModel):
@@ -174,6 +267,20 @@ class RouteDetailResponse(BaseModel):
     waypoints: list[RouteWaypoint] = Field(
         default_factory=list,
         description="Waypoint placemarks extracted from the KML (for POI import/reference)",
+    )
+    timing_profile: Optional[RouteTimingProfile] = Field(
+        default=None, description="Timing profile if route has embedded timing data"
+    )
+    has_timing_data: bool = Field(
+        default=False, description="Whether the timing profile contains schedule metadata"
+    )
+    flight_phase: Optional[str] = Field(
+        default=None,
+        description="Current flight phase (pre_departure, in_flight, post_arrival) when route is active",
+    )
+    eta_mode: Optional[str] = Field(
+        default=None,
+        description="Current ETA mode (anticipated or estimated) when route is active",
     )
 
 

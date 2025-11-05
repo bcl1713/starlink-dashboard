@@ -47,7 +47,7 @@
   "liveNow": true,
   "panels": [
     {
-      "type": "stat",
+      "type": "table",
       "title": "Next Destination",
       "gridPos": {
         "h": 4,
@@ -77,42 +77,95 @@
           "parser": "json"
         }
       ],
-      "transformations": [],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "flight_phase": true
+            },
+            "renameByName": {
+              "eta_seconds": "ETA (s)",
+              "eta_type": "ETA Mode",
+              "name": "Destination"
+            }
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
           "custom": {
-            "hideFrom": {
-              "tooltip": false,
-              "viz": false,
-              "legend": false
+            "cellOptions": {
+              "type": "auto"
             }
-          },
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "gray"
           },
           "mappings": []
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA (s)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "badge"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": 1,
+                    "value": "anticipated",
+                    "result": {
+                      "text": "PLANNED",
+                      "color": "#1f78c1"
+                    }
+                  },
+                  {
+                    "type": 1,
+                    "value": "estimated",
+                    "result": {
+                      "text": "LIVE",
+                      "color": "#2eb85c"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "reduceOptions": {
-          "values": false,
-          "fields": "name",
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
+        "showHeader": true,
+        "sortBy": []
       }
     },
     {
-      "type": "stat",
+      "type": "table",
       "title": "Time to Next Arrival",
       "gridPos": {
         "h": 4,
@@ -142,56 +195,90 @@
           "parser": "json"
         }
       ],
-      "transformations": [],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "flight_phase": true
+            },
+            "renameByName": {
+              "eta_seconds": "ETA (s)",
+              "eta_type": "ETA Mode"
+            }
+          }
+        }
+      ],
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "thresholds"
+          "custom": {
+            "cellOptions": {
+              "type": "auto"
+            }
           },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
+          "mappings": []
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA (s)"
+            },
+            "properties": [
               {
-                "color": "red",
-                "value": null
+                "id": "unit",
+                "value": "s"
               },
               {
-                "color": "red",
-                "value": 0
-              },
-              {
-                "color": "orange",
-                "value": 300
-              },
-              {
-                "color": "yellow",
-                "value": 900
-              },
-              {
-                "color": "blue",
-                "value": 3600
+                "id": "custom.width",
+                "value": 160
               }
             ]
           },
-          "unit": "s"
-        },
-        "overrides": []
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "badge"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": 1,
+                    "value": "anticipated",
+                    "result": {
+                      "text": "PLANNED",
+                      "color": "#1f78c1"
+                    }
+                  },
+                  {
+                    "type": 1,
+                    "value": "estimated",
+                    "result": {
+                      "text": "LIVE",
+                      "color": "#2eb85c"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
+          }
+        ]
       },
       "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "center",
-        "orientation": "auto",
-        "textMode": "auto",
-        "wideLayout": true,
-        "reduceOptions": {
-          "values": false,
-          "fields": "eta_seconds",
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
+        "showHeader": true,
+        "sortBy": []
       }
     },
     {
@@ -250,10 +337,11 @@
               "category": 1,
               "distance_meters": 2,
               "eta_seconds": 3,
-              "bearing_degrees": 4,
-              "latitude": 5,
-              "longitude": 6,
-              "icon": 7
+              "bearing_degrees": 5,
+              "latitude": 6,
+              "longitude": 7,
+              "icon": 8,
+              "eta_type": 4
             },
             "renameByName": {
               "name": "POI Name",
@@ -263,7 +351,8 @@
               "bearing_degrees": "Bearing (\u00b0)",
               "latitude": "Latitude",
               "longitude": "Longitude",
-              "icon": "Icon"
+              "icon": "Icon",
+              "eta_type": "ETA Mode"
             }
           }
         }
@@ -450,6 +539,45 @@
                 "value": 60
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ETA Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "badge"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": 1,
+                    "value": "anticipated",
+                    "result": {
+                      "text": "PLANNED",
+                      "color": "#1f78c1"
+                    }
+                  },
+                  {
+                    "type": 1,
+                    "value": "estimated",
+                    "result": {
+                      "text": "LIVE",
+                      "color": "#2eb85c"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 110
+              }
+            ]
           }
         ]
       },
@@ -484,8 +612,121 @@
       },
       "id": 105,
       "options": {
-        "content": "<div style=\"padding: 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white;\">\n<h2 style=\"margin: 0 0 20px 0; font-size: 28px;\">🗺️ POI Management Interface</h2>\n<p style=\"margin: 0 0 25px 0; font-size: 16px; opacity: 0.9;\">Manage your Points of Interest with an interactive map and form</p>\n<a href=\"http://localhost:8000/ui/pois\" target=\"_blank\" style=\"display: inline-block; padding: 15px 40px; background: white; color: #667eea; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);\">Open POI Management in Full Window</a>\n<div style=\"margin-top: 25px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 6px;\">\n<p style=\"margin: 0; font-size: 14px;\">✨ Full-featured interface with:</p>\n<ul style=\"margin: 10px 0 0 0; text-align: left; display: inline-block; padding: 0;\">\n<li>✅ Create new POIs with interactive map</li>\n<li>✏️ Edit existing POIs</li>\n<li>🗑️ Delete POIs with confirmation</li>\n<li>📍 Click-to-place coordinates on map</li>\n<li>🔄 Real-time sync with dashboard</li>\n</ul>\n</div>\n</div>",
+        "content": "<div style=\"padding: 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white;\">\n<h2 style=\"margin: 0 0 20px 0; font-size: 28px;\">\ud83d\uddfa\ufe0f POI Management Interface</h2>\n<p style=\"margin: 0 0 25px 0; font-size: 16px; opacity: 0.9;\">Manage your Points of Interest with an interactive map and form</p>\n<a href=\"http://localhost:8000/ui/pois\" target=\"_blank\" style=\"display: inline-block; padding: 15px 40px; background: white; color: #667eea; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2);\">Open POI Management in Full Window</a>\n<div style=\"margin-top: 25px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 6px;\">\n<p style=\"margin: 0; font-size: 14px;\">\u2728 Full-featured interface with:</p>\n<ul style=\"margin: 10px 0 0 0; text-align: left; display: inline-block; padding: 0;\">\n<li>\u2705 Create new POIs with interactive map</li>\n<li>\u270f\ufe0f Edit existing POIs</li>\n<li>\ud83d\uddd1\ufe0f Delete POIs with confirmation</li>\n<li>\ud83d\udccd Click-to-place coordinates on map</li>\n<li>\ud83d\udd04 Real-time sync with dashboard</li>\n</ul>\n</div>\n</div>",
         "mode": "html"
+      }
+    },
+    {
+      "id": 305,
+      "title": "ETA Metrics by Mode",
+      "description": "Time series showing anticipated (blue) and estimated (green) ETAs to points of interest",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "starlink_eta_poi_seconds{eta_type=\"anticipated\"}",
+          "refId": "A",
+          "legendFormat": "{{name}} (anticipated)"
+        },
+        {
+          "expr": "starlink_eta_poi_seconds{eta_type=\"estimated\"}",
+          "refId": "B",
+          "legendFormat": "{{name}} (estimated)"
+        }
+      ],
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 100
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "Seconds to POI",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*anticipated.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*estimated.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "calcs": [
+            "last",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
       }
     }
   ],
