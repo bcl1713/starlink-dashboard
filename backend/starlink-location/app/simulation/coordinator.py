@@ -113,6 +113,11 @@ class SimulationCoordinator:
                 completion_behavior = self.config.route.completion_behavior
                 self.position_sim.set_route_follower(follower, completion_behavior)
                 self._previous_active_route_id = current_route_id
+
+                # Reset SpeedTracker when route starts to avoid stale position history
+                # This ensures GPS-based speed calculations start fresh
+                self.speed_tracker.reset()
+                logger.info("SpeedTracker reset for new route")
             else:
                 # Route deactivated
                 logger.info("Route deactivated in simulator")
@@ -157,13 +162,33 @@ class SimulationCoordinator:
         # Update position
         position_data = self.position_sim.update()
 
-        # Update speed tracker with current position (GPS-based speed calculation)
-        # This replaces the generated speed from position simulator
-        speed = self.speed_tracker.update(
-            latitude=position_data.latitude,
-            longitude=position_data.longitude,
-            timestamp=time.time(),
-        )
+        # Determine if we should use route timing data or GPS-based speed
+        # Use route timing speed if:
+        # 1. We're following a KML route, AND
+        # 2. The route has timing data at current position
+        use_route_timing_speed = False
+        if self.position_sim.route_follower:
+            expected_speed = self.position_sim.route_follower.get_segment_speed_at_progress(
+                self.position_sim.progress
+            )
+            if expected_speed is not None:
+                # Route has timing data - use it directly
+                use_route_timing_speed = True
+
+        if use_route_timing_speed:
+            # Position simulator already set speed from route timing data
+            # Keep it as-is, don't override with GPS calculation
+            speed = position_data.speed
+        else:
+            # No route timing data - use GPS-based speed calculation
+            # This is for live mode or untimed routes
+            speed = self.speed_tracker.update(
+                latitude=position_data.latitude,
+                longitude=position_data.longitude,
+                timestamp=time.time(),
+            )
+            # Update position with calculated speed
+            position_data.speed = speed
 
         # Update network
         network_data = self.network_sim.update()
@@ -184,9 +209,6 @@ class SimulationCoordinator:
             uptime_seconds=uptime_seconds,
             temperature_celsius=None  # Could be added to config
         )
-
-        # Update position with calculated speed (instead of generated speed)
-        position_data.speed = speed
 
         # Update route progress metrics if route following is active
         self._update_route_metrics()

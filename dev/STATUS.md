@@ -1,113 +1,155 @@
 # Development Status
 
-**Last Updated:** 2025-11-03 Session 16 (Phase 7 Complete - Merged to Dev, Cleanup Complete)
+**Last Updated:** 2025-11-05 Session 32 (ETA Timing Modes Phase 7 Testing – IN PROGRESS)
 
-**Current Branch:** dev
+**Current Branch:** feature/eta-route-timing
 
-**Status:** ✅ ALL PHASES COMPLETE (1-7) - KML Route Import Feature Successfully Merged to Dev Branch - Production Ready
+**Status:** ✅ Phases 1-6 delivered • Phase 7 validation wrapping up (unit + integration suites passing; performance benchmarks recorded; full-suite `pytest --cov` executed)
 
 ---
 
-## Recently Completed Tasks
+## Current Session: ETA Timing Modes Feature (Phase 7 – Testing & Validation)
 
-### KML Route Import and Management Feature (Phases 1-7 Complete)
-**Status:** ✅ COMPLETE - All code merged to dev branch, production-ready
+**Status:** 🔄 Phase 7 in progress (unit + integration coverage complete, performance benchmarks captured, full-suite pytest + coverage run verified)
+
+**Location:** `/dev/completed/eta-timing-modes/`
+
+**What Was Built (Session 30):**
+- FlightStateManager now uses timezone-aware timestamps (`datetime.now(timezone.utc)`) to eliminate `datetime.utcnow()` warnings.
+- Unit suites expanded (`test_flight_state_manager.py`, `test_eta_calculator.py`, `test_flight_status_models.py`, `test_poi_eta_models.py`) covering persistence guards, route-less contexts, projection ETAs, and serialization defaults.
+- Integration coverage added/updated (`test_flight_status_api.py`, `test_poi_stats_endpoints.py`, `test_pois_quick_reference.py`, `test_route_endpoints_with_timing.py`, new `test_eta_modes.py`) validating manual depart/arrive flows, POI ETA metadata, Grafana quick-reference behaviour, and `flight_phase`/`eta_mode` propagation.
+- Phase 7 task checklist updated to reflect completed testing milestones; context file refreshed with current decisions and next steps.
+
+**Additional Work (Session 31):**
+- Added integration coverage for the no-timing fallback and route-change reset scenarios in `tests/integration/test_eta_modes.py`.
+- Introduced `tests/unit/test_performance_metrics.py` to benchmark ETA calculations (1,100 POIs across a 1,200-waypoint route), verify `check_departure` overhead, and stress rapid phase transitions.
+- Phase 7 Task 7.5 and Task 7.6 marked complete; awaiting full-suite pytest execution once the host environment provides the binary.
+- Full unit/integration suites run via project venv (see Session 14 notes); coverage report still pending (`pytest --cov` to do).
+
+**Additional Work (Session 32):**
+- Hardened POI ETA metric export by seeding default cruise speed when telemetry speed <0.5 kn, ensuring `eta_type` labels emit during pre-departure snapshots.
+- Routed `/metrics` through `metrics_export.get_metrics()` so Prometheus scrapes include on-demand POI labels even with background updates disabled (fixes `test_metrics_exposes_eta_type_labels`).
+- Ran `.venv/bin/python -m pytest --cov=app --cov-report=term backend/starlink-location/tests -q` (530 passed, 4 skipped, 1 warning; total coverage 79 %) to close Task 7.7 coverage check.
+- Completed Phase 8 documentation first pass: refreshed `docs/ROUTE-TIMING-GUIDE.md`, added `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, and updated API docstrings with `eta_type`/flight-state metadata.
+- Updated `CLAUDE.md` with flight-status/ETA guidance and drafted `dev/completed/eta-timing-modes/flight-status-migration-notes.md` (backward compatibility + deployment checklist).
+- Verified deployment requirements checklist (Task 8.6): rebuild path, Grafana provisioning, environment variables, and backward compatibility captured in migration notes.
+- Created `dev/completed/eta-timing-modes/final-review-checklist.md` to track remaining Task 8.7 review items (design doc refresh, coverage follow-ups, Prometheus validation).
+- Added a flight-state architecture summary to `docs/design-document.md` documenting the FlightStateManager, ETA modes, new endpoints, and metrics labels.
+- Added `tests/unit/test_eta_cache_service.py` to raise coverage on `ETACache` / `ETAHistoryTracker`; dedicated pytest command recorded in session notes.
+- Added `tests/unit/test_route_eta_calculator_service.py` for route projection/ETA coverage; optional follow-up coverage now limited to legacy POI API.
+- Prometheus label verification remains outstanding for staging environments (local scrape blocked by `/data` permission in sandbox).
+
+**Files Created/Updated (highlights):**
+- New: `backend/starlink-location/tests/integration/test_eta_modes.py`, `tests/unit/test_flight_status_models.py`, `tests/unit/test_poi_eta_models.py`
+- Updated: `tests/unit/test_flight_state_manager.py`, `tests/unit/test_eta_calculator.py`, `tests/integration/test_route_endpoints_with_timing.py`, `app/services/flight_state_manager.py`, documentation under `/dev/completed/eta-timing-modes/`
+
+**Tests Status:** ✅ `.venv/bin/python -m pytest -q backend/starlink-location/tests/unit` (421 passed) • ✅ `.venv/bin/python -m pytest -q backend/starlink-location/tests/integration` (97 passed, 4 skipped) • ✅ `.venv/bin/python -m pytest --cov=app --cov-report=term backend/starlink-location/tests -q` (530 passed, 4 skipped, 1 warning; total coverage 79 %) • ✅ Targeted performance + ETA mode regression tests green • ⚠️ Deprecation warnings remain for lingering `datetime.utcnow()` usage (tracking separately).
+**Docker Status:** ✅ Services healthy (no rebuild required this session)
+
+**Phases Completed:**
+- Phase 1: Data models ✅
+- Phase 2: Flight state manager ✅
+- Phase 3: Dual-mode ETA calculation ✅
+- Phase 4: API endpoints ✅
+- Phase 5: Prometheus metrics ✅
+
+**Phases Remaining:**
+- Phase 7: Performance benchmarks & stress testing (ETA calc throughput, 1000+ POI/waypoint load, rapid transition stress)
+- Phase 8: Documentation updates (ROUTE-TIMING-GUIDE additions, new FLIGHT-STATUS-GUIDE, dashboard notes)
+
+---
+
+## Completed Major Features
+
+### 1. ETA Calculations Using Route Timing from KML Files
+**Status:** ✅ COMPLETE (All 5 Phases Implemented)
+
+**Location:** `/dev/active/eta-route-timing/SESSION-NOTES.md`
+
+**What Was Built:**
+- Automatic timing metadata extraction from KML waypoint descriptions
+- Expected segment speed calculations using haversine distance formula
+- Real-time ETA calculations to any waypoint or location
+- Grafana dashboard visualization with timing profile panels
+- ETA caching system with 5-second TTL for performance
+- ETA accuracy tracking and historical metrics
+- Simulator respects route timing speeds for realistic movement
+- Live mode support for real-time position feeds
+- Comprehensive Prometheus metrics for monitoring
+
+**Test Coverage:** 451 tests passing (100%)
+
+**Phases Completed:**
+- Phase 1: Data models with timing fields ✅
+- Phase 2: KML parser timestamp extraction ✅
+- Phase 3: API endpoints for ETA calculations ✅
+- Phase 4: Grafana dashboard and caching ✅
+- Phase 5: Simulator timing integration (speed override) ✅
+
+**Session Work Summary:** 26 total sessions invested
+- Sessions 16-17: KML Route Import completion and ETA planning
+- Sessions 18-21: Phases 1-4 implementation
+- Session 22: Test suite completion (446/447 passing)
+- Session 23: Test failure fix (all 447 passing)
+- Session 24: Route timing speed bug fix (all 451 passing)
+- Sessions 25-26: Route-Aware POI Quick Reference Implementation (all 451 passing)
+
+**Latest Enhancement (Sessions 25-26): Route-Aware POI Quick Reference**
+- Implemented POI projection onto active route path
+- Dashboard quick reference now shows destination waypoints (like KADW) even when not "on course"
+- POIs filtered by route progress instead of bearing angle
+- Destination waypoints now properly displayed in Grafana quick reference panel
+- All projection data calculated once per route activation and persisted to JSON
+
+**Previous Critical Bug Fix (Session 24):**
+- Fixed simulator ignoring route timing speeds and using config defaults
+- Route timing speeds now take full precedence (no config limits applied)
+- Simulator arrival times now match expected times when following timed routes
+
+---
+
+## Completed Features
+
+### KML Route Import and Management Feature (Phases 1-7)
+**Status:** ✅ COMPLETE - Merged to dev (commit 1fdbfb9), production-ready
 
 **Location:** `/dev/completed/kml-route-import/`
 
-**Key Documents:**
-- [Strategic Plan](./completed/kml-route-import/kml-route-import-plan.md) - 7-phase implementation plan
-- [Technical Context](./completed/kml-route-import/kml-route-import-context.md) - Integration points, Phase 5 setup, and existing infrastructure
-- [Task Checklist](./completed/kml-route-import/kml-route-import-tasks.md) - 94 tasks across 7 phases (62/94 complete)
-- [Session Notes](./completed/kml-route-import/SESSION-NOTES.md) - Comprehensive session history (Sessions 1-16 documented)
-- [Phase 6 Testing Plan](./completed/kml-route-import/PHASE-6-TESTING-PLAN.md) - Complete test strategy and results
-- [Phase 6 Test Results](./completed/kml-route-import/PHASE-6-TEST-RESULTS.md) - All 100+ tests passing with 100% success rate
-
-**Feature Summary:**
-- ✅ Web UI for uploading KML route files
-- ✅ REST API endpoints for route CRUD operations
-- ✅ Grafana visualization of active routes on map
+**Key Achievements:**
+- ✅ Web UI + REST API for KML route management
+- ✅ Grafana route visualization on map
 - ✅ Route-POI integration with cascade deletion
-- ✅ POI category filtering in dashboard
-- ✅ Route management (activate, deactivate, delete, download)
-- ✅ Parser optimization: Style/color-based filtering (all 6 test routes working)
-- ✅ Simulation mode route following (Phase 5 complete and tested - Sessions 13-14)
+- ✅ Simulation mode route following (Phase 5 complete)
+- ✅ Progress metrics: `starlink_route_progress_percent`, `starlink_current_waypoint_index`
+- ✅ Completion behavior: loop/stop/reverse modes
+- ✅ All 6 test flight plan KML files validated and working
 
-**Timeline:** Completed in 16 sessions (Phases 1-7)
-
-**Progress:** 62/94 tasks complete (66% - remaining tasks are optional enhancements)
-- Phase 1: Backend Route Upload API (10/10) ✅ COMPLETE
-- Phase 2: Route Management Web UI (9/9) ✅ COMPLETE
-- Phase 3: Grafana Route Visualization (6/6) ✅ COMPLETE + Bonus: Route Deactivate UI
-- Phase 4: Route-POI Integration (6/6) ✅ COMPLETE
-- Phase 5.1-5.5: Simulation Mode Integration (5/5) ✅ COMPLETE
-  - 5.1 Review KML Follower: ✅ COMPLETE
-  - 5.2 Integrate with Simulator: ✅ COMPLETE (RouteManager → SimulationCoordinator)
-  - 5.3 Progress Metrics: ✅ COMPLETE (starlink_route_progress_percent exposed)
-  - 5.4 Completion Behavior: ✅ COMPLETE (loop/stop/reverse implemented)
-  - 5.5 Integration Testing: ✅ COMPLETE (All routes tested, switching verified)
-- Phase 6: Testing & Documentation (6/7) ✅ COMPLETE
-  - 6.1 End-to-End Testing: ✅ COMPLETE (8/8 tests passing)
-  - 6.2 UI/UX Testing: ✅ VERIFIED (all scenarios passing)
-  - 6.3 Performance Testing: ✅ COMPLETE (all metrics pass)
-  - 6.4 Documentation Updates: ✅ COMPLETE (CLAUDE.md route section added)
-  - 6.5 Sample KML Files: ✅ COMPLETE (4 example files + README)
-  - 6.7 Test Documentation: ✅ COMPLETE (Test plan and results documented)
-  - 6.6 Automated Tests: ⏳ OPTIONAL (nice-to-have, core feature complete)
-- Phase 7: Code Review & Merge (5/5) ✅ COMPLETE
-  - 7.1 Code Review: ✅ COMPLETE (6 issues resolved)
-  - 7.2 Branch Cleanup: ✅ COMPLETE (Merged to dev, feature branch deleted)
-  - 7.3 Documentation Migration: ✅ COMPLETE (Moved to /dev/completed/)
-
-**Status After Cleanup:**
-- Feature branch merged to dev (commit 1fdbfb9)
-- Feature branch deleted locally and remotely
-- Documentation moved to /dev/completed/kml-route-import/
-- All code production-ready in dev branch
+**Progress:** 62/94 core tasks complete (remaining are optional enhancements)
+**Completed in:** 16 sessions
+**Documentation:** Comprehensive session notes and test results in `/dev/completed/kml-route-import/`
 
 ---
 
-## Recently Completed Tasks
+## Previously Completed Tasks
 
 ### POI Interactive Management Feature (Phase 3)
-**Status:** ✅ COMPLETE - Archived 2025-10-31
+**Status:** ✅ COMPLETE - 47/47 tasks complete (100%)
 
-**Location:** `/dev/completed/poi-interactive-management/` (archived)
+**Location:** `/dev/completed/poi-interactive-management/`
 
-**Key Documents:**
-- [README.md](./completed/poi-interactive-management/README.md) - Quick reference
-- [SESSION-NOTES.md](./completed/poi-interactive-management/SESSION-NOTES.md) - Latest session details (10 sessions documented)
-- [RESEARCH-SUMMARY.md](./completed/poi-interactive-management/RESEARCH-SUMMARY.md) - Best practices
-- [Task Checklist](./completed/poi-interactive-management/poi-interactive-management-tasks.md) - 47 tasks (47/47 complete ✅)
-- [Implementation Context](./completed/poi-interactive-management/poi-interactive-management-context.md) - Final implementation details
+**Key Achievements:**
+- ✅ Interactive POI markers on Grafana map with ETA tooltips
+- ✅ Full CRUD API + responsive management UI
+- ✅ Real-time ETA calculations with color-coding
+- ✅ Bearing and course status indicators
+- ✅ File locking for concurrent access safety
+- ✅ All 7 phases completed successfully
 
-**Feature Summary:**
-- Interactive POI markers on Grafana map ✅
-- Real-time ETA tooltips with color-coding ✅
-- POI management UI (create, edit, delete) ✅
-- POI table view with live ETAs ✅
-- Course status indicators (on/off track) ✅
-
-**Timeline:** Completed on schedule
-
-**Progress:** 47/47 tasks complete (100%)
-- All 7 phases completed successfully
-- Full CRUD API with ETA calculations
-- Web UI with Leaflet.js map integration
-- Grafana dashboard integration complete
-
-**Key Accomplishments:**
-- ✅ Fixed FastAPI route ordering issue
-- ✅ Resolved Docker networking DNS configuration
-- ✅ Implemented bearing and course status calculations
-- ✅ Created file locking for concurrent access safety
-- ✅ Built responsive UI with real-time updates
+**Completed in:** 10 sessions
 
 ---
 
-## Recent Completed Work
-
-### Phase 0: Starlink Dashboard Foundation
+### Starlink Dashboard Foundation (Phase 0)
 **Completed:** 2025-10-29
 **Status:** ✅ Production Ready
 
@@ -281,12 +323,12 @@ When approaching context limits, ensure:
 ## Quick Reference
 
 ### Current Sprint Focus
-**KML Route Import and Management** - Phase 4 implementation
+**ETA Route Timing Feature** - Planning complete, ready for Phase 1 implementation
 
 ### Critical Files for Current Task
-- `/dev/active/kml-route-import/kml-route-import-plan.md`
-- `/dev/active/kml-route-import/kml-route-import-context.md`
-- `/dev/active/kml-route-import/kml-route-import-tasks.md`
+- `/dev/active/eta-route-timing/eta-route-timing-plan.md` - 6-phase implementation plan
+- `/dev/active/eta-route-timing/eta-route-timing-context.md` - Technical context and integration points
+- `/dev/active/eta-route-timing/eta-route-timing-tasks.md` - Detailed task checklist with 190+ tasks
 
 ### Most Important Commands
 ```bash
@@ -309,44 +351,85 @@ curl http://localhost:8000/api/pois
 
 ### Current Feature Branch
 ```bash
+# Create and checkout feature branch (Session 17)
+git checkout dev
+git pull origin dev
+git checkout -b feature/eta-route-timing
+
 # Verify you're on feature branch
 git branch --show-current
-# Should show: feature/kml-route-import
-
-# Pull latest from dev
-git fetch origin
-git rebase origin/dev
+# Should show: feature/eta-route-timing
 ```
 
 ---
 
-## Documentation Cleanup (Session 12)
+## Session 17 Status Update
 
-**Consolidated into main documents:**
-- Merged CONTEXT-HANDOFF.md content into SESSION-NOTES.md
-- Merged PHASE-5-REVIEW-FINDINGS.md into kml-route-import-context.md (Phase 5 Implementation Details section)
-- Merged KML-PARSER-NOTES.md content into SESSION-NOTES.md session history
-- Merged all Phase 5 planning docs into unified context
+**Transition:** KML Route Import feature completed and merged to dev (Session 16)
+**Planning:** ETA Route Timing feature planning documents completed (Session 17)
+**Next Step:** Ready to create feature branch and begin Phase 1 implementation
 
-**Deleted redundant files (content now in main documents):**
-- CONTEXT-HANDOFF.md
-- IDL-CROSSING-FIX.md
-- kml-parser-enhancement-plan.md
-- KML-PARSER-NOTES.md
-- PHASE-5-CONTEXT.md
-- PHASE-5-PLAN.md
-- PHASE-5-README.md
-- PHASE-5-REVIEW-FINDINGS.md
-- PHASE-5-SESSION-NOTES.md
-- PHASE-5-TASKS.md
-- poi-import-sync-plan.md
-
-**Remaining active documentation (clean and complete):**
-- SESSION-NOTES.md - Comprehensive session history (all work from Sessions 1-12)
-- kml-route-import-context.md - Technical context and Phase 5 implementation details
-- kml-route-import-plan.md - Strategic 7-phase plan
-- kml-route-import-tasks.md - Detailed task checklist with progress tracking
+**Documentation Status:**
+- ✅ Strategic plan complete with 6 phases
+- ✅ Technical context documented with integration points
+- ✅ Task checklist ready with 190+ tasks across phases
+- ✅ All 6 test KML files contain timing metadata for validation
 
 ---
 
-**Status File Last Updated:** 2025-11-03 Session 13 (Phase 5.2-5.4 Verification Complete)
+**Status File Last Updated:** 2025-11-04 Session 28 (DASHBOARD ETA FIX IN PROGRESS - API endpoint now uses route-aware calculations, KADW working correctly, SAT SWAP projection needed)
+
+## Session 27 Update - Metrics ETA Bug Investigation
+
+**Problem Found:** Metrics dashboard shows 27-hour ETA instead of 14 hours for Korea-to-Andrews route, while API correctly shows ~14 hours.
+
+**Root Cause Analysis (COMPLETE):**
+- Two separate ETA calculation paths exist
+- RouteETACalculator (API) = ✅ Works correctly with segment-based speeds
+- ETACalculator (Metrics) = ❌ Broken, uses only distance/smoothed_speed
+
+**Key Architectural Discovery:**
+The problem isn't that we need an override - the problem is that ETACalculator should BE route-aware by default. It should accept an active_route parameter and use segment-based timing data when available, not have route awareness bolted on afterward.
+
+**Next Session Actions:**
+1. Modify ETACalculator to accept optional active_route parameter
+2. Use RouteETACalculator logic when POI matches route waypoint with timing
+3. Fall back to distance/speed only for POIs not on active route
+4. Test with Korea-to-Andrews route (should show ~50,572 seconds = 14 hours)
+
+## Session 29 Update - ETA Timing Modes Planning Complete
+
+**Feature:** Anticipated vs. Estimated ETA Display
+**Status:** Planning Complete - Ready for Implementation
+**Location:** `/dev/completed/eta-timing-modes/`
+
+**What's Being Built:**
+- Automatic switch between "Anticipated" ETAs (pre-departure) and "Estimated" ETAs (post-departure)
+- Flight state machine (PRE_DEPARTURE → IN_FLIGHT → POST_ARRIVAL)
+- Visual distinction in Grafana (blue = planned, green = live)
+- Automatic departure/arrival detection + manual override API
+- No manual intervention required for mode switching
+
+**Planning Documents Created:**
+- ✅ Strategic plan with 8 implementation phases (26-34 hours)
+- ✅ Technical context with architecture decisions and data flows
+- ✅ Task tracking checklist with 60+ tasks across phases
+- ✅ README with quick start guide
+
+**Implementation Approach:**
+Full implementation with flight phase tracking and comprehensive state management.
+
+**Next Session:** Begin Phase 1 (Data Model Extensions)
+
+---
+
+## Next Steps for Future Development
+
+After merge to main, consider:
+1. Create comprehensive Route Timing user guide
+2. Update simulator documentation with timing example scenarios
+3. Performance optimization for large routes (1000+ waypoints)
+4. Add weather/wind integration for ETA adjustments
+5. Historical flight statistics and pattern analysis
+6. Multi-route management and switching strategies
+7. Mobile app notifications for ETA milestones

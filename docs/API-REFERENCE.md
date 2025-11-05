@@ -1,8 +1,9 @@
 # Starlink Dashboard API Reference
 
-**Last Updated:** 2025-10-31
-**Backend Version:** 0.2.0
+**Last Updated:** 2025-11-04
+**Backend Version:** 0.3.0
 **Base URL:** `http://localhost:8000`
+**Status:** Complete with ETA Route Timing endpoints
 
 ## Table of Contents
 
@@ -12,8 +13,9 @@
 4. [Configuration Endpoints](#configuration-endpoints)
 5. [POI Management Endpoints](#poi-management-endpoints)
 6. [Route & Geographic Endpoints](#route--geographic-endpoints)
-7. [UI Endpoints](#ui-endpoints)
-8. [Error Handling](#error-handling)
+7. [ETA Route Timing Endpoints](#eta-route-timing-endpoints) - NEW
+8. [UI Endpoints](#ui-endpoints)
+9. [Error Handling](#error-handling)
 
 ---
 
@@ -519,6 +521,310 @@ Get route history as GeoJSON for map display.
 Alias for `/route.geojson` (for compatibility).
 
 **Response:** Same as `/route.geojson`
+
+---
+
+## ETA Route Timing Endpoints
+
+### GET `/api/routes/{route_id}/eta/waypoint/{waypoint_index}`
+
+Calculate ETA to a specific waypoint on the active route.
+
+**Description:** Returns estimated time to arrive at a waypoint, considering current position and available timing data.
+
+**Parameters:**
+- `route_id` (path, required): Route identifier
+- `waypoint_index` (path, required): Index of waypoint (0-based)
+- `current_position_lat` (query, optional): Current latitude
+- `current_position_lon` (query, optional): Current longitude
+
+**Response:**
+```json
+{
+  "waypoint_index": 5,
+  "waypoint_name": "Departure Point",
+  "eta_seconds": 3600,
+  "eta_minutes": 60.0,
+  "distance_meters": 150000,
+  "distance_km": 150.0,
+  "estimated_speed_knots": 150.0,
+  "has_timing_data": true
+}
+```
+
+**Status Codes:**
+- `200 OK` - ETA calculated
+- `400 Bad Request` - Invalid parameters
+- `404 Not Found` - Route not found
+
+**Use Case:** Real-time waypoint ETAs, flight plan tracking, progress monitoring.
+
+---
+
+### GET `/api/routes/{route_id}/eta/location`
+
+Calculate ETA to an arbitrary geographic location.
+
+**Description:** Returns estimated time to reach any specified coordinate, supporting routes with or without timing data.
+
+**Parameters:**
+- `route_id` (path, required): Route identifier
+- `target_lat` (query, required): Target latitude
+- `target_lon` (query, required): Target longitude
+- `current_position_lat` (query, optional): Current latitude
+- `current_position_lon` (query, optional): Current longitude
+
+**Response:**
+```json
+{
+  "target_location": {"latitude": 40.7128, "longitude": -74.0060},
+  "eta_seconds": 1800,
+  "eta_minutes": 30.0,
+  "distance_meters": 75000,
+  "distance_km": 75.0,
+  "estimated_speed_knots": 150.0,
+  "route_id": "route-001"
+}
+```
+
+**Status Codes:**
+- `200 OK` - ETA calculated
+- `400 Bad Request` - Invalid coordinates
+- `404 Not Found` - Route not found
+
+**Use Case:** POI arrival predictions, arbitrary destination ETAs, navigation planning.
+
+---
+
+### GET `/api/routes/{route_id}/progress`
+
+Get overall route progress and timing metrics.
+
+**Description:** Returns current progress along the route, next waypoint information, and timing profile.
+
+**Parameters:**
+- `route_id` (path, required): Route identifier
+- `current_position_lat` (query, optional): Current latitude
+- `current_position_lon` (query, optional): Current longitude
+
+**Response:**
+```json
+{
+  "route_id": "route-001",
+  "progress_percent": 35.5,
+  "current_waypoint_index": 12,
+  "total_waypoints": 34,
+  "waypoints_remaining": 22,
+  "distance_traveled_meters": 45000,
+  "distance_remaining_meters": 84000,
+  "total_distance_meters": 129000,
+  "eta_to_destination_seconds": 2400,
+  "average_speed_knots": 150.0,
+  "has_timing_data": true,
+  "timing_profile": {
+    "departure_time": "2025-10-27T16:45:00Z",
+    "arrival_time": "2025-10-27T18:30:00Z",
+    "total_expected_duration_seconds": 6300,
+    "segment_count_with_timing": 28
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK` - Progress retrieved
+- `404 Not Found` - Route not found
+
+**Use Case:** Progress dashboards, ETA updates, route completion monitoring.
+
+---
+
+### GET `/api/routes/active/timing`
+
+Get timing profile of the currently active route.
+
+**Description:** Returns detailed timing information for the active route, if available.
+
+**Response:**
+```json
+{
+  "route_id": "route-001",
+  "has_timing_data": true,
+  "timing_profile": {
+    "departure_time": "2025-10-27T16:45:00Z",
+    "arrival_time": "2025-10-27T18:30:00Z",
+    "total_expected_duration_seconds": 6300,
+    "segment_count_with_timing": 28
+  },
+  "segments": [
+    {
+      "waypoint_index": 0,
+      "waypoint_name": "Departure Point",
+      "expected_arrival_time": "2025-10-27T16:45:00Z",
+      "expected_segment_speed_knots": 150.0
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Timing profile available
+- `404 Not Found` - No active route or no timing data
+
+**Use Case:** Timing visualization, speed profile analysis, flight plan review.
+
+---
+
+### GET `/api/routes/metrics/eta-cache`
+
+Get ETA caching performance metrics.
+
+**Description:** Returns statistics about the ETA cache system, useful for performance monitoring.
+
+**Response:**
+```json
+{
+  "cache_enabled": true,
+  "ttl_seconds": 5,
+  "total_cache_hits": 1250,
+  "total_cache_misses": 342,
+  "hit_rate_percent": 78.5,
+  "cached_entries": 23,
+  "average_calculation_time_ms": 12.5,
+  "last_cleanup": "2025-11-04T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Cache metrics retrieved
+
+**Use Case:** Performance monitoring, cache optimization, system diagnostics.
+
+---
+
+### GET `/api/routes/metrics/eta-accuracy`
+
+Get historical ETA accuracy statistics.
+
+**Description:** Returns how accurate the ETA predictions have been, comparing predicted vs actual arrivals.
+
+**Response:**
+```json
+{
+  "total_predictions": 150,
+  "total_arrivals": 127,
+  "accuracy_stats": {
+    "average_error_seconds": 45.3,
+    "min_error_seconds": -120,
+    "max_error_seconds": 240,
+    "median_error_seconds": 30.0,
+    "std_deviation_seconds": 67.5
+  },
+  "recent_predictions": [
+    {
+      "predicted_time": "2025-11-04T10:30:00Z",
+      "actual_arrival_time": "2025-11-04T10:31:30Z",
+      "error_seconds": 90,
+      "destination": "waypoint_5"
+    }
+  ]
+}
+```
+
+**Status Codes:**
+- `200 OK` - Accuracy metrics retrieved
+
+**Use Case:** ETA algorithm validation, accuracy tracking, continuous improvement.
+
+---
+
+### POST `/api/routes/cache/cleanup`
+
+Clean up expired cache entries.
+
+**Description:** Removes TTL-expired entries from the ETA cache.
+
+**Response:**
+```json
+{
+  "cleaned_entries": 12,
+  "remaining_entries": 23,
+  "timestamp": "2025-11-04T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Cache cleaned
+
+**Use Case:** Maintenance, memory management, periodic cleanup.
+
+---
+
+### POST `/api/routes/cache/clear`
+
+Clear all ETA cache entries.
+
+**Description:** Removes all entries from the ETA cache immediately.
+
+**Response:**
+```json
+{
+  "message": "Cache cleared",
+  "cleared_entries": 35,
+  "timestamp": "2025-11-04T10:30:00Z"
+}
+```
+
+**Status Codes:**
+- `200 OK` - Cache cleared
+
+**Use Case:** Cache reset, troubleshooting, system maintenance.
+
+---
+
+### POST `/api/routes/live-mode/active-route-eta`
+
+Get ETA for active route using real-time position (live mode).
+
+**Description:** Calculates ETA for the active route based on a real-time position update, ideal for Starlink terminal position feeds.
+
+**Parameters (JSON Body):**
+```json
+{
+  "latitude": 40.7128,
+  "longitude": -74.0060,
+  "altitude": 5000.0,
+  "timestamp": "2025-11-04T10:30:00Z"
+}
+```
+
+**Response:**
+```json
+{
+  "current_position": {"latitude": 40.7128, "longitude": -74.0060},
+  "route_progress": {
+    "progress_percent": 45.5,
+    "waypoints_remaining": 20,
+    "distance_remaining_km": 75.0
+  },
+  "next_waypoint": {
+    "index": 15,
+    "name": "Waypoint 15",
+    "eta_seconds": 1800,
+    "distance_meters": 75000
+  },
+  "timing_profile": {
+    "departure_time": "2025-10-27T16:45:00Z",
+    "arrival_time": "2025-10-27T18:30:00Z"
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK` - ETA calculated
+- `400 Bad Request` - Invalid position data
+- `404 Not Found` - No active route
+
+**Use Case:** Live aircraft tracking, real-time ETA updates, Starlink integration.
 
 ---
 

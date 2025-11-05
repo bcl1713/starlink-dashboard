@@ -1,7 +1,8 @@
 # Starlink Dashboard Documentation Index
 
-**Last Updated:** 2025-10-31
+**Last Updated:** 2025-11-04
 **Complete Documentation Map**
+**Status:** Comprehensive coverage including ETA Route Timing feature (451 tests passing)
 
 ## Navigation Guide
 
@@ -84,6 +85,7 @@ Start here if you're new to the project:
 |------|---------|--------------|
 | [SETUP-GUIDE.md](./SETUP-GUIDE.md) | Complete setup instructions for all modes | Setting up the project |
 | [API-REFERENCE.md](./API-REFERENCE.md) | All REST API endpoints with examples | Using the API |
+| [ROUTE-TIMING-GUIDE.md](./ROUTE-TIMING-GUIDE.md) | Route timing feature complete guide | Using route timing features |
 
 #### Reference
 
@@ -197,12 +199,13 @@ Read in order:
 | Category | Count | Total Pages |
 |----------|-------|------------|
 | Setup & Getting Started | 2 | ~40 pages |
-| API & Integration | 2 | ~30 pages |
+| API & Integration | 3 | ~60 pages |
 | Troubleshooting & Reference | 2 | ~40 pages |
+| Feature Guides | 1 | ~30 pages |
 | Architecture & Design | 4 | ~50 pages |
 | Development & Contributing | 4 | ~30 pages |
 | Backend Service | 2 | ~20 pages |
-| **Total** | **16** | **~210 pages** |
+| **Total** | **18** | **~270 pages** |
 
 ---
 
@@ -363,6 +366,7 @@ Found an issue in the documentation?
 
 ---
 
-**Last Updated:** 2025-10-31
-**Total Documentation:** 16 files, ~210 pages
-**Comprehensive Coverage:** Setup, API, Troubleshooting, Architecture, Development
+**Last Updated:** 2025-11-04
+**Total Documentation:** 18 files, ~270 pages
+**Comprehensive Coverage:** Setup, API, Troubleshooting, Architecture, Development, Route Timing
+**Feature Status:** ETA Route Timing complete (451 tests passing)

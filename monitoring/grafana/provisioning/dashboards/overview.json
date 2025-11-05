@@ -31,6 +31,73 @@
       "tooltip": "",
       "type": "dashboards",
       "url": ""
+    },
+    {
+      "id": 207,
+      "title": "Time Until Departure",
+      "description": "Countdown to scheduled or detected departure (shows Departed once airborne)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "starlink_time_until_departure_seconds",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": 2,
+              "from": -1000000,
+              "to": 1,
+              "result": {
+                "text": "Departed",
+                "color": "#6c757d"
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#e24d42",
+                "value": null
+              },
+              {
+                "color": "#f2cc0c",
+                "value": 600
+              },
+              {
+                "color": "#1f78c1",
+                "value": 1800
+              }
+            ]
+          },
+          "unit": "s"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "textMode": "auto"
+      }
     }
   ],
   "liveNow": false,
@@ -510,23 +577,62 @@
               }
             ]
           },
+  {
+    "matcher": {
+      "id": "byName",
+      "options": "Distance (km)"
+    },
+    "properties": [
+      {
+        "id": "unit",
+        "value": "km"
+      },
+      {
+        "id": "custom.width",
+        "value": 150
+      }
+    ]
+  },
+  {
+    "matcher": {
+      "id": "byName",
+      "options": "ETA Mode"
+    },
+    "properties": [
+      {
+        "id": "custom.cellOptions",
+        "value": {
+          "type": "badge"
+        }
+      },
+      {
+        "id": "mappings",
+        "value": [
           {
-            "matcher": {
-              "id": "byName",
-              "options": "Distance (km)"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "km"
-              },
-              {
-                "id": "custom.width",
-                "value": 150
-              }
-            ]
+            "type": 1,
+            "value": "anticipated",
+            "result": {
+              "text": "PLANNED",
+              "color": "#1f78c1"
+            }
+          },
+          {
+            "type": 1,
+            "value": "estimated",
+            "result": {
+              "text": "LIVE",
+              "color": "#2eb85c"
+            }
           }
         ]
+      },
+      {
+        "id": "custom.width",
+        "value": 120
+      }
+    ]
+  }
+]
       },
       "gridPos": {
         "h": 8,
@@ -569,12 +675,13 @@
               "job": true,
               "instance": true
             },
-            "indexByName": {},
-            "renameByName": {
-              "id": "POI ID",
-              "name": "POI Name",
-              "Value": "ETA (seconds)"
-            }
+      "indexByName": {},
+      "renameByName": {
+        "eta_type": "ETA Mode",
+        "id": "POI ID",
+        "name": "POI Name",
+        "Value": "ETA (seconds)"
+      }
           }
         }
       ],
@@ -1117,6 +1224,175 @@
       ],
       "title": "Connection Status",
       "type": "stat"
+    },
+    {
+      "id": 204,
+      "title": "Flight Phase",
+      "description": "Current flight phase showing pre-departure, in-flight, or post-arrival status",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "starlink_flight_phase",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 0,
+        "y": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "\ud83d\ude81 PRE-DEPARTURE",
+                  "color": "orange"
+                },
+                "1": {
+                  "text": "\u2708\ufe0f IN-FLIGHT",
+                  "color": "green"
+                },
+                "2": {
+                  "text": "\ud83d\udeec POST-ARRIVAL",
+                  "color": "blue"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "orange",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              },
+              {
+                "color": "blue",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {},
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 205,
+      "title": "ETA Mode",
+      "description": "Current ETA calculation mode: anticipated or estimated",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "targets": [
+        {
+          "expr": "starlink_eta_mode",
+          "refId": "A",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "gridPos": {
+        "h": 3,
+        "w": 6,
+        "x": 6,
+        "y": 12
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "\ud83d\udccb ANTICIPATED",
+                  "color": "blue"
+                },
+                "1": {
+                  "text": "\ud83d\udcca ESTIMATED",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              },
+              {
+                "color": "blue",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "text": {},
+        "textMode": "auto"
+      }
+    },
+    {
+      "id": 206,
+      "title": "Flight Timeline",
+      "description": "Visual representation of flight progress through departure, flight, and arrival phases",
+      "type": "text",
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "options": {
+        "content": "# Flight Progress Timeline\n\n**Current Status:** Monitoring flight phase transitions\n\n**Phases:**\n- \ud83d\ude81 PRE-DEPARTURE \u2192 \u2708\ufe0f IN-FLIGHT \u2192 \ud83d\udeec POST-ARRIVAL\n\nThis timeline tracks the aircraft's progression through three key operational phases.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.4.0"
     }
   ],
   "refresh": "1s",

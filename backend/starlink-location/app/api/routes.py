@@ -19,6 +19,13 @@ from app.models.route import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.services.route_eta_calculator import (
+    RouteETACalculator,
+    get_eta_cache_stats,
+    get_eta_accuracy_stats,
+    clear_eta_cache,
+    cleanup_eta_cache,
+)
 
 logger = get_logger(__name__)
 
@@ -162,7 +169,12 @@ async def list_routes(
     - active: Filter by active status (true/false, or omit for all)
 
     Returns:
-    - List of routes with metadata
+    - List of routes with metadata including `flight_phase`, `eta_mode`, `has_timing_data`, and active route context
+
+    Example:
+        ```bash
+        curl http://localhost:8000/api/routes | jq '.routes[0]'
+        ```
     """
     if not _route_manager:
         raise HTTPException(
@@ -172,6 +184,14 @@ async def list_routes(
 
     routes_dict = _route_manager.list_routes()
     active_route_id = _route_manager._active_route_id
+
+    flight_status_snapshot = None
+    try:
+        from app.services.flight_state_manager import get_flight_state_manager
+
+        flight_status_snapshot = get_flight_state_manager().get_status()
+    except Exception as state_error:  # pragma: no cover - defensive guard
+        logger.debug("Flight state unavailable while listing routes: %s", state_error)
 
     routes_list = []
     for route_id, route_info in routes_dict.items():
@@ -184,6 +204,21 @@ async def list_routes(
         from datetime import datetime
         imported_at = datetime.fromisoformat(route_info["imported_at"])
 
+        # Get parsed route to check for timing data
+        parsed_route = _route_manager.get_route(route_id)
+        has_timing_data = False
+        timing_profile = None
+        flight_phase = None
+        if parsed_route and parsed_route.timing_profile:
+            timing_profile = parsed_route.timing_profile
+            has_timing_data = timing_profile.has_timing_data
+            flight_phase = timing_profile.flight_status
+
+        eta_mode = None
+        if is_active and flight_status_snapshot:
+            flight_phase = flight_status_snapshot.phase.value
+            eta_mode = flight_status_snapshot.eta_mode.value
+
         route_response = RouteResponse(
             id=route_id,
             name=route_info["name"],
@@ -191,6 +226,10 @@ async def list_routes(
             point_count=route_info["point_count"],
             is_active=is_active,
             imported_at=imported_at,
+            has_timing_data=has_timing_data,
+            timing_profile=timing_profile,
+            flight_phase=flight_phase,
+            eta_mode=eta_mode,
         )
         routes_list.append(route_response)
 
@@ -206,7 +245,12 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
     - route_id: Route identifier (filename without .kml extension)
 
     Returns:
-    - Full route details including all points and statistics
+    - Full route details including points, statistics, timing profile, and live flight-state metadata (`flight_phase`, `eta_mode`, countdown fields)
+
+    Example:
+        ```bash
+        curl http://localhost:8000/api/routes/{route_id} | jq '{name: .name, flight_phase: .flight_phase, eta_mode: .eta_mode}'
+        ```
     """
     if not _route_manager:
         raise HTTPException(
@@ -228,6 +272,21 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
     bounds = parsed_route.get_bounds()
     poi_count = _poi_manager.count_pois(route_id=route_id)
 
+    timing_profile = parsed_route.timing_profile
+    has_timing_data = bool(timing_profile and timing_profile.has_timing_data)
+    flight_phase = timing_profile.flight_status if timing_profile else None
+    eta_mode = None
+
+    if is_active:
+        try:
+            from app.services.flight_state_manager import get_flight_state_manager
+
+            status_snapshot = get_flight_state_manager().get_status()
+            flight_phase = status_snapshot.phase.value
+            eta_mode = status_snapshot.eta_mode.value
+        except Exception as state_error:  # pragma: no cover - defensive guard
+            logger.debug("Flight state unavailable for route detail: %s", state_error)
+
     return RouteDetailResponse(
         id=route_id,
         name=parsed_route.metadata.name,
@@ -244,6 +303,10 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
         },
         poi_count=poi_count,
         waypoints=parsed_route.waypoints,
+        timing_profile=timing_profile,
+        has_timing_data=has_timing_data,
+        flight_phase=flight_phase,
+        eta_mode=eta_mode,
     )
 
 
@@ -256,7 +319,12 @@ async def activate_route(route_id: str) -> RouteResponse:
     - route_id: Route identifier
 
     Returns:
-    - Updated route information
+    - Updated route information including live `flight_phase`, `eta_mode`, and timing profile context
+
+    Example:
+        ```bash
+        curl -X POST http://localhost:8000/api/routes/{route_id}/activate | jq '.eta_mode'
+        ```
     """
     if not _route_manager:
         raise HTTPException(
@@ -273,6 +341,42 @@ async def activate_route(route_id: str) -> RouteResponse:
 
     _route_manager.activate_route(route_id)
 
+    # Calculate POI projections for the newly activated route
+    if _poi_manager:
+        try:
+            projected_count = _poi_manager.calculate_poi_projections(parsed_route)
+            logger.info(f"Calculated projections for {projected_count} POIs on route activation")
+            # Reload POIs to ensure in-memory cache has the projection data
+            _poi_manager.reload_pois()
+        except Exception as e:
+            logger.error(f"Failed to calculate POI projections: {e}")
+
+    has_timing_data = False
+    flight_phase = None
+    eta_mode = None
+    if parsed_route.timing_profile:
+        has_timing_data = parsed_route.timing_profile.has_timing_data
+        flight_phase = parsed_route.timing_profile.flight_status
+
+    try:
+        from app.services.flight_state_manager import get_flight_state_manager
+        from app.models.route import RouteTimingProfile
+
+        status_snapshot = get_flight_state_manager().get_status()
+        flight_phase = status_snapshot.phase.value
+        eta_mode = status_snapshot.eta_mode.value
+
+        timing_profile = parsed_route.timing_profile
+        if timing_profile is None:
+            timing_profile = RouteTimingProfile()
+            parsed_route.timing_profile = timing_profile
+
+        timing_profile.flight_status = flight_phase
+        timing_profile.actual_departure_time = status_snapshot.departure_time
+        timing_profile.actual_arrival_time = status_snapshot.arrival_time
+    except Exception as state_error:  # pragma: no cover - defensive guard
+        logger.debug("Flight state unavailable while activating route: %s", state_error)
+
     return RouteResponse(
         id=route_id,
         name=parsed_route.metadata.name,
@@ -280,6 +384,10 @@ async def activate_route(route_id: str) -> RouteResponse:
         point_count=parsed_route.metadata.point_count,
         is_active=True,
         imported_at=parsed_route.metadata.imported_at,
+        has_timing_data=has_timing_data,
+        timing_profile=parsed_route.timing_profile,
+        flight_phase=flight_phase,
+        eta_mode=eta_mode,
     )
 
 
@@ -298,6 +406,14 @@ async def deactivate_route() -> dict:
         )
 
     _route_manager.deactivate_route()
+
+    # Clear POI projections on route deactivation
+    if _poi_manager:
+        try:
+            cleared_count = _poi_manager.clear_poi_projections()
+            logger.info(f"Cleared projections for {cleared_count} POIs on route deactivation")
+        except Exception as e:
+            logger.error(f"Failed to clear POI projections: {e}")
 
     return {"message": "Route deactivated successfully"}
 
@@ -368,8 +484,8 @@ async def upload_route(
         )
 
     try:
-        # Ensure directory exists
-        routes_dir = Path("/data/routes")
+        # Ensure we write uploads to the active RouteManager directory
+        routes_dir = Path(getattr(_route_manager, "routes_dir", "/data/routes"))
         routes_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate unique filename (handle conflicts)
@@ -391,11 +507,15 @@ async def upload_route(
             f"KML file uploaded: {file.filename} (size: {len(content)} bytes)"
         )
 
-        # Give watchdog time to detect and parse the file
-        await asyncio.sleep(0.2)
-
         # Get parsed route
         route_id = file_path.stem
+
+        # Explicitly load the route file (watchdog may not pick it up in tests)
+        try:
+            _route_manager._load_route_file(file_path)
+        except Exception as e:
+            logger.error(f"Error loading route file {file_path}: {str(e)}")
+
         parsed_route = _route_manager.get_route(route_id)
 
         if not parsed_route:
@@ -415,6 +535,13 @@ async def upload_route(
                 route_id,
             )
 
+        has_timing_data = False
+        if parsed_route.timing_profile:
+            has_timing_data = parsed_route.timing_profile.has_timing_data
+            flight_phase = parsed_route.timing_profile.flight_status
+        else:
+            flight_phase = None
+
         return RouteResponse(
             id=route_id,
             name=parsed_route.metadata.name,
@@ -424,6 +551,9 @@ async def upload_route(
             imported_at=parsed_route.metadata.imported_at,
             imported_poi_count=created_pois,
             skipped_poi_count=skipped_pois,
+            has_timing_data=has_timing_data,
+            timing_profile=parsed_route.timing_profile,
+            flight_phase=flight_phase,
         )
 
     except HTTPException:
@@ -518,4 +648,359 @@ async def delete_route(route_id: str):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting route: {str(e)}",
+        )
+
+
+@router.get("/{route_id}/eta/waypoint/{waypoint_index}", summary="Calculate ETA to waypoint")
+async def calculate_eta_to_waypoint(
+    route_id: str,
+    waypoint_index: int,
+    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
+    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+) -> dict:
+    """
+    Calculate estimated time of arrival (ETA) to a specific waypoint.
+
+    Path Parameters:
+    - route_id: Route identifier
+    - waypoint_index: Index of the waypoint in the route
+
+    Query Parameters:
+    - current_position_lat: Current latitude
+    - current_position_lon: Current longitude
+
+    Returns:
+    - Dictionary with waypoint info and ETA details
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    parsed_route = _route_manager.get_route(route_id)
+    if not parsed_route:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Route not found: {route_id}",
+        )
+
+    if waypoint_index >= len(parsed_route.waypoints):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Waypoint index {waypoint_index} out of range (route has {len(parsed_route.waypoints)} waypoints)",
+        )
+
+    try:
+        calculator = RouteETACalculator(parsed_route)
+        eta_data = calculator.calculate_eta_to_waypoint(
+            waypoint_index,
+            current_position_lat,
+            current_position_lon,
+        )
+        return eta_data
+    except Exception as e:
+        logger.error(f"Error calculating ETA for route {route_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating ETA: {str(e)}",
+        )
+
+
+@router.get("/{route_id}/eta/location", summary="Calculate ETA to arbitrary location")
+async def calculate_eta_to_location(
+    route_id: str,
+    latitude: float = Query(..., description="Target latitude in decimal degrees"),
+    longitude: float = Query(..., description="Target longitude in decimal degrees"),
+    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
+    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+) -> dict:
+    """
+    Calculate estimated time of arrival (ETA) to an arbitrary location.
+
+    Path Parameters:
+    - route_id: Route identifier
+
+    Query Parameters:
+    - latitude: Target latitude
+    - longitude: Target longitude
+    - current_position_lat: Current latitude
+    - current_position_lon: Current longitude
+
+    Returns:
+    - Dictionary with location info and ETA details
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    parsed_route = _route_manager.get_route(route_id)
+    if not parsed_route:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Route not found: {route_id}",
+        )
+
+    try:
+        calculator = RouteETACalculator(parsed_route)
+        eta_data = calculator.calculate_eta_to_location(
+            latitude,
+            longitude,
+            current_position_lat,
+            current_position_lon,
+        )
+        return eta_data
+    except Exception as e:
+        logger.error(f"Error calculating ETA for route {route_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating ETA: {str(e)}",
+        )
+
+
+@router.get("/{route_id}/progress", summary="Get route progress metrics")
+async def get_route_progress(
+    route_id: str,
+    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
+    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+) -> dict:
+    """
+    Get route progress metrics including distance traveled and ETA to destination.
+
+    Path Parameters:
+    - route_id: Route identifier
+
+    Query Parameters:
+    - current_position_lat: Current latitude
+    - current_position_lon: Current longitude
+
+    Returns:
+    - Dictionary with progress metrics
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    parsed_route = _route_manager.get_route(route_id)
+    if not parsed_route:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Route not found: {route_id}",
+        )
+
+    try:
+        calculator = RouteETACalculator(parsed_route)
+        progress_data = calculator.get_route_progress(
+            current_position_lat,
+            current_position_lon,
+        )
+        return progress_data
+    except Exception as e:
+        logger.error(f"Error calculating route progress for {route_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating progress: {str(e)}",
+        )
+
+
+@router.get("/active/timing")
+async def get_active_route_timing() -> dict:
+    """
+    Get timing profile data for the currently active route.
+
+    Returns:
+    - Dictionary with timing profile information (departure_time, arrival_time, total_duration, etc.)
+    - Empty dict if no route is active or route lacks timing data
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    active_route = _route_manager.get_active_route()
+    if not active_route:
+        return {
+            "has_timing_data": False,
+            "message": "No active route"
+        }
+
+    if not active_route.timing_profile:
+        return {
+            "has_timing_data": False,
+            "message": "Active route has no timing data"
+        }
+
+    timing = active_route.timing_profile
+    flight_status = timing.flight_status
+    is_departed = timing.is_departed()
+    is_in_flight = timing.is_in_flight()
+
+    return {
+        "route_name": active_route.metadata.name or "Unknown",
+        "has_timing_data": timing.has_timing_data,
+        "departure_time": timing.departure_time.isoformat() if timing.departure_time else None,
+        "arrival_time": timing.arrival_time.isoformat() if timing.arrival_time else None,
+        "actual_departure_time": timing.actual_departure_time.isoformat() if timing.actual_departure_time else None,
+        "actual_arrival_time": timing.actual_arrival_time.isoformat() if timing.actual_arrival_time else None,
+        "flight_status": flight_status,
+        "is_departed": is_departed,
+        "is_in_flight": is_in_flight,
+        "total_expected_duration_seconds": timing.total_expected_duration_seconds,
+        "segment_count_with_timing": timing.segment_count_with_timing,
+        "total_duration_readable": _format_duration(timing.total_expected_duration_seconds) if timing.total_expected_duration_seconds else None
+    }
+
+
+def _format_duration(seconds: float) -> str:
+    """Format duration in seconds to human-readable format."""
+    if not seconds or seconds < 0:
+        return "Unknown"
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = int(seconds % 60)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
+@router.get("/metrics/eta-cache", summary="Get ETA cache statistics")
+async def get_eta_cache_metrics() -> dict:
+    """
+    Get statistics about ETA calculation caching performance.
+
+    Returns:
+    - Dictionary with cache size, TTL, and timestamp
+    """
+    return get_eta_cache_stats()
+
+
+@router.get("/metrics/eta-accuracy", summary="Get ETA accuracy statistics")
+async def get_eta_accuracy_metrics() -> dict:
+    """
+    Get ETA accuracy statistics from historical tracking.
+
+    Returns:
+    - Dictionary with average error, max error, completion percentage
+    """
+    return get_eta_accuracy_stats()
+
+
+@router.post("/cache/cleanup", summary="Clean up expired cache entries")
+async def cleanup_eta_cache_endpoint() -> dict:
+    """
+    Remove expired entries from the ETA cache.
+
+    Returns:
+    - Dictionary with number of entries removed
+    """
+    removed = cleanup_eta_cache()
+    return {
+        "status": "success",
+        "entries_removed": removed,
+        "message": f"Cleaned up {removed} expired cache entries"
+    }
+
+
+@router.post("/cache/clear", summary="Clear all ETA cache")
+async def clear_eta_cache_endpoint() -> dict:
+    """
+    Clear all cached ETA calculations (use with caution).
+
+    Returns:
+    - Dictionary with status
+    """
+    clear_eta_cache()
+    return {
+        "status": "success",
+        "message": "ETA cache cleared"
+    }
+
+
+@router.get("/live-mode/active-route-eta", summary="Get active route ETA for live mode")
+async def get_live_mode_active_route_eta(
+    current_position_lat: float = Query(..., description="Current latitude"),
+    current_position_lon: float = Query(..., description="Current longitude"),
+    current_speed_knots: float = Query(default=500.0, description="Current speed in knots"),
+) -> dict:
+    """
+    Get ETA calculations for the active route in live mode.
+
+    Useful for real-time position updates from Starlink terminal.
+
+    Query Parameters:
+    - current_position_lat: Current latitude
+    - current_position_lon: Current longitude
+    - current_speed_knots: Current speed in knots (default: 500)
+
+    Returns:
+    - Dictionary with ETA to next waypoint, remaining distance, and timing info
+    """
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager not initialized",
+        )
+
+    parsed_route = _route_manager.get_active_route()
+    if not parsed_route:
+        return {
+            "has_active_route": False,
+            "message": "No active route"
+        }
+
+    try:
+        calculator = RouteETACalculator(parsed_route)
+
+        # Get progress metrics
+        progress = calculator.get_route_progress(current_position_lat, current_position_lon)
+
+        # Get timing profile
+        timing_info = {}
+        if parsed_route.timing_profile:
+            timing_info = {
+                "has_timing_data": parsed_route.timing_profile.has_timing_data,
+                "departure_time": (
+                    parsed_route.timing_profile.departure_time.isoformat()
+                    if parsed_route.timing_profile.departure_time else None
+                ),
+                "arrival_time": (
+                    parsed_route.timing_profile.arrival_time.isoformat()
+                    if parsed_route.timing_profile.arrival_time else None
+                ),
+                "total_duration_seconds": parsed_route.timing_profile.total_expected_duration_seconds,
+            }
+
+        # Find next waypoint and calculate ETA
+        nearest_idx, _ = calculator.find_nearest_point(current_position_lat, current_position_lon)
+        next_waypoint_idx = nearest_idx + 1 if nearest_idx < len(parsed_route.waypoints) - 1 else nearest_idx
+
+        next_eta = None
+        if next_waypoint_idx < len(parsed_route.waypoints):
+            next_wp = parsed_route.waypoints[next_waypoint_idx]
+            next_eta = calculator.calculate_eta_to_waypoint(
+                next_waypoint_idx,
+                current_position_lat,
+                current_position_lon,
+            )
+
+        return {
+            "has_active_route": True,
+            "route_name": parsed_route.metadata.name or "Unknown",
+            "current_position": {
+                "latitude": current_position_lat,
+                "longitude": current_position_lon,
+                "speed_knots": current_speed_knots,
+            },
+            "progress": progress,
+            "timing_profile": timing_info,
+            "next_waypoint_eta": next_eta,
+        }
+    except Exception as e:
+        logger.error(f"Error calculating live mode ETA: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating ETA: {str(e)}",
         )

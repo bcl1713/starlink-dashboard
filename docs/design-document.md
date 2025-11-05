@@ -118,6 +118,24 @@ POST /api/sim/set_route?file=route1.kml
   - `/metrics` → Prometheus metrics (lat, lon, speed, latency, etc.)
   - `/api/dish/reboot`, `/api/dish/stow`
   - `/api/sim/*` (simulation controls)
+
+### ✈️ Flight State Manager & ETA Modes
+
+- **Purpose:** Track global flight phase (`pre_departure`, `in_flight`, `post_arrival`) and expose dual ETA strategies:
+  - **Anticipated mode:** Uses route timing metadata prior to departure.
+  - **Estimated mode:** Blends live speed with planned profile once airborne.
+- **Key Endpoints:**
+  - `GET /api/flight-status` – consolidated snapshot with phase, ETA mode, countdowns, and route context.
+  - `POST /api/flight-status/depart` / `/arrive` – manual overrides to force phase transitions (used for testing and operations).
+  - `GET /api/pois/etas` – returns POI entries with `eta_type`, `flight_phase`, and `is_pre_departure` fields.
+  - `GET /api/routes` / `/api/routes/{id}` – now include `flight_phase`, `eta_mode`, and `has_timing_data`.
+- **Prometheus Metrics:**
+  - `starlink_flight_phase`, `starlink_eta_mode`, `starlink_time_until_departure_seconds`.
+  - `starlink_eta_poi_seconds` and `starlink_distance_to_poi_meters` now include an `eta_type="anticipated|estimated"` label.
+- **Design Notes:**
+  - `FlightStateManager` is a singleton with thread-safe updates and automatic detection hooks (`check_departure`, `check_arrival`).
+  - Metrics exporter seeds a default cruise speed (<0.5 kn fallback) to keep pre-departure ETAs non-negative.
+  - Route activation resets flight state to `pre_departure`, ensuring anticipated mode is the default for new missions.
   - `/route.geojson` (converted from uploaded KML)
 - **Features:**
   - ETA + distance calculation to POIs
@@ -176,17 +194,47 @@ Default configuration runs in simulation mode for dev and demo use.
 - User mounts `/data/routes/` directory with `.kml` files.
 - On startup, system auto-converts to `/route.geojson`.
 - Grafana loads via URL layer in the Geomap panel.
+- Routes support embedded timing metadata for realistic simulation and ETA calculations.
 
 ### ETA Calculations
 
+#### Standard ETA (All Routes)
+
 - Based on current speed & great-circle distance (Haversine formula)
-- Future option: route-aware ETA (along KML path)
 - Published as Prometheus metrics:
 
   ```
   starlink_eta_poi_seconds{name="WaypointA"}  450
   starlink_distance_to_poi_meters{name="WaypointA"}  23000
   ```
+
+#### Timing-Aware ETA (Routes with Timing Data)
+
+**New in Version 0.3.0:** Full ETA route timing system
+
+- **Automatic Timing Extraction:** Parses `Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ` from KML descriptions
+- **Speed Calculations:** Computes segment speeds using haversine distance and timing data
+- **Route-Aware ETA:** Calculates ETAs along the KML path using expected segment speeds
+- **Timing Profile:** Aggregates route-level timing metrics (departure, arrival, duration)
+- **Published Metrics:**
+
+  ```
+  starlink_route_timing_has_data{route_id="route-001"} 1
+  starlink_route_timing_departure_unix{route_id="route-001"} 1728594300
+  starlink_route_timing_arrival_unix{route_id="route-001"} 1728601200
+  starlink_eta_to_waypoint_seconds{waypoint="15"} 1800
+  starlink_distance_to_waypoint_meters{waypoint="15"} 75000
+  starlink_segment_speed_knots{segment="5-6"} 150.0
+  ```
+
+- **API Endpoints:**
+  - `GET /api/routes/{route_id}/eta/waypoint/{index}` - ETA to specific waypoint
+  - `GET /api/routes/{route_id}/eta/location` - ETA to arbitrary location
+  - `GET /api/routes/{route_id}/progress` - Route progress and timing
+  - `GET /api/routes/active/timing` - Active route timing profile
+  - `POST /api/routes/live-mode/active-route-eta` - Live position updates
+
+- **Performance:** ETA cache with 5-second TTL, accuracy tracking, historical metrics
 
 ---
 
@@ -238,7 +286,25 @@ Default configuration runs in simulation mode for dev and demo use.
 | **Simulation (default)** | Generates realistic Starlink telemetry for offline testing | Internal generator / KML route     |
 | **Live**                 | Polls Starlink terminal via gRPC API                       | Dish at `192.168.100.1:9200`       |
 | **Hybrid**               | Uses simulation when dish unreachable                      | Fallback logic in location service |
+| **Timing-Aware Sim**     | Follows KML routes with expected speeds                    | KML timing metadata                |
 
 The simulator ensures **feature-complete development and demo capability**
 without requiring live hardware — you can build and validate dashboards,
 routing, ETAs, and control logic before ever connecting a real dish.
+
+### Version 0.3.0: ETA Route Timing Feature
+
+**New in this release:** Advanced timing-aware system for parsing flight plans
+with expected waypoint arrival times. Enables realistic simulation of timed routes,
+accurate ETA calculations, and comprehensive performance monitoring.
+
+**Capabilities:**
+- Automatic extraction of timing metadata from KML files
+- Real-time ETA calculations to waypoints and arbitrary locations
+- Route timing profile visualization in Grafana
+- Simulator respects timing data for authentic movement
+- Cache-backed performance optimization (5-second TTL)
+- Historical ETA accuracy tracking
+- Live mode integration for Starlink terminal position feeds
+
+**Testing:** 451 tests passing (100% coverage)

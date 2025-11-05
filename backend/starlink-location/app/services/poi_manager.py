@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -79,9 +79,15 @@ class POIManager:
             try:
                 # Ensure timestamps are datetime objects
                 if isinstance(poi_data.get("created_at"), str):
-                    poi_data["created_at"] = datetime.fromisoformat(poi_data["created_at"])
+                    created_at = datetime.fromisoformat(poi_data["created_at"])
+                    if created_at.tzinfo is None:
+                        created_at = created_at.replace(tzinfo=timezone.utc)
+                    poi_data["created_at"] = created_at
                 if isinstance(poi_data.get("updated_at"), str):
-                    poi_data["updated_at"] = datetime.fromisoformat(poi_data["updated_at"])
+                    updated_at = datetime.fromisoformat(poi_data["updated_at"])
+                    if updated_at.tzinfo is None:
+                        updated_at = updated_at.replace(tzinfo=timezone.utc)
+                    poi_data["updated_at"] = updated_at
 
                 poi = POI(**poi_data)
                 self._pois[poi_id] = poi
@@ -159,12 +165,13 @@ class POIManager:
         """
         return self._pois.get(poi_id)
 
-    def create_poi(self, poi_create: POICreate) -> POI:
+    def create_poi(self, poi_create: POICreate, active_route=None) -> POI:
         """
         Create a new POI.
 
         Args:
             poi_create: POI creation request data
+            active_route: Optional active route to project POI onto
 
         Returns:
             Created POI object with generated ID
@@ -182,7 +189,7 @@ class POIManager:
             poi_id = f"{original_id}-{counter}"
             counter += 1
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         poi = POI(
             id=poi_id,
             name=poi_create.name,
@@ -195,6 +202,22 @@ class POIManager:
             created_at=now,
             updated_at=now,
         )
+
+        # Calculate projection if an active route is provided
+        if active_route and active_route.points:
+            try:
+                from app.services.route_eta_calculator import RouteETACalculator
+                calculator = RouteETACalculator(active_route)
+                projection = calculator.project_poi_to_route(poi.latitude, poi.longitude)
+
+                poi.projected_latitude = projection["projected_lat"]
+                poi.projected_longitude = projection["projected_lon"]
+                poi.projected_waypoint_index = projection["projected_waypoint_index"]
+                poi.projected_route_progress = projection["projected_route_progress"]
+
+                logger.info(f"Projected new POI {poi_id} onto active route")
+            except Exception as e:
+                logger.warning(f"Failed to project new POI {poi_id} onto active route: {e}")
 
         self._pois[poi_id] = poi
         self._save_pois()
@@ -229,7 +252,7 @@ class POIManager:
                 setattr(poi, field, value)
 
         # Update timestamp
-        poi.updated_at = datetime.utcnow()
+        poi.updated_at = datetime.now(timezone.utc)
 
         self._pois[poi_id] = poi
         self._save_pois()
@@ -296,3 +319,82 @@ class POIManager:
         """Reload POIs from disk, discarding any unsaved changes."""
         self._load_pois()
         logger.info("Reloaded POIs from disk")
+
+    def calculate_poi_projections(self, route) -> int:
+        """
+        Calculate route projections for all POIs using a given route.
+
+        Projects each POI onto the route path and stores projection data.
+
+        Args:
+            route: ParsedRoute object with waypoints and path information
+
+        Returns:
+            Number of POIs that were projected onto the route
+        """
+        if not route or not route.points:
+            return 0
+
+        from app.services.route_eta_calculator import RouteETACalculator
+
+        try:
+            calculator = RouteETACalculator(route)
+        except Exception as e:
+            logger.error(f"Failed to create route ETA calculator: {e}")
+            return 0
+
+        projected_count = 0
+
+        for poi_id, poi in list(self._pois.items()):
+            try:
+                projection = calculator.project_poi_to_route(poi.latitude, poi.longitude)
+
+                # Update POI with projection data
+                poi.projected_latitude = projection["projected_lat"]
+                poi.projected_longitude = projection["projected_lon"]
+                poi.projected_waypoint_index = projection["projected_waypoint_index"]
+                poi.projected_route_progress = projection["projected_route_progress"]
+
+                # Ensure the POI object is updated in the dict
+                self._pois[poi_id] = poi
+
+                projected_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to project POI {poi_id} onto route: {e}")
+                continue
+
+        # Save POIs with projection data
+        if projected_count > 0:
+            self._save_pois()
+            logger.info(f"Calculated projections for {projected_count} POIs on route")
+
+        return projected_count
+
+    def clear_poi_projections(self) -> int:
+        """
+        Clear all route projection data from POIs (typically on route deactivation).
+
+        Returns:
+            Number of POIs that had projections cleared
+        """
+        cleared_count = 0
+
+        for poi_id, poi in self._pois.items():
+            if (
+                poi.projected_latitude is not None
+                or poi.projected_longitude is not None
+                or poi.projected_waypoint_index is not None
+                or poi.projected_route_progress is not None
+            ):
+                poi.projected_latitude = None
+                poi.projected_longitude = None
+                poi.projected_waypoint_index = None
+                poi.projected_route_progress = None
+                cleared_count += 1
+
+        # Save POIs with cleared projections
+        if cleared_count > 0:
+            self._save_pois()
+            logger.info(f"Cleared projections for {cleared_count} POIs")
+
+        return cleared_count
