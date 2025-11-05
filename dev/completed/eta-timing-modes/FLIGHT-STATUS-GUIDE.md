@@ -195,4 +195,4 @@ Additions to OpenAPI descriptions (in FastAPI docstrings) should reference the n
 
 ---
 
-For further architectural background see `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md` and `docs/ROUTE-TIMING-GUIDE.md`.
+For further architectural background see `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md` and `docs/ROUTE-TIMING-GUIDE.md`.

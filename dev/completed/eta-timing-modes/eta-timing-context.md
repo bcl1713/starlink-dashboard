@@ -116,10 +116,10 @@ The aircraft is in PRE_DEPARTURE phase with 0 speed. The -1 value is correct:
 
 ## References
 
-- Design doc: `/dev/active/eta-timing-modes/PHASE-6-DESIGN.md`
-- Panel templates: `/dev/active/eta-timing-modes/panel-definitions.json`
+- Design doc: `/dev/completed/eta-timing-modes/PHASE-6-DESIGN.md`
+- Panel templates: `/dev/completed/eta-timing-modes/panel-definitions.json`
 - Session notes: `/SESSION-NOTES.md`
-- Architecture doc: `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md`
+- Architecture doc: `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md`
 
 ## Docker & Services Status
 

@@ -75,7 +75,7 @@ This directory contains all planning materials for implementing the dual-mode ET
 - `app/services/flight_state_manager.py` - State management
 - `app/api/flight_status.py` - Flight status endpoints
 - `tests/test_flight_state_manager.py` - Unit tests
-- `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` - User documentation
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` - User documentation
 
 ### Files to Modify (12)
 - `app/models/route.py` - Add flight status fields
@@ -258,7 +258,7 @@ See full risk assessment in `eta-timing-modes-plan.md`.
 - **Tasks:** `eta-timing-modes-tasks.md` (progress tracking)
 
 ### Related Documentation
-- `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md` - ETA system architecture
+- `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md` - ETA system architecture
 - `docs/ROUTE-TIMING-GUIDE.md` - Route timing feature
 - `CLAUDE.md` - Project instructions
 

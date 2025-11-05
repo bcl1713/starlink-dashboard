@@ -476,7 +476,7 @@ The ETA system currently has three layers:
 
 1. **Update User Documentation**
    - Add section to `docs/ROUTE-TIMING-GUIDE.md` on ETA modes
-   - Create `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` with:
+   - Create `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` with:
      - Flight phase state machine diagram
      - Manual override instructions
      - Dashboard interpretation guide
@@ -777,7 +777,7 @@ OR
 2. `backend/starlink-location/app/services/flight_state_manager.py` - State management
 3. `backend/starlink-location/app/api/flight_status.py` - Flight status endpoints
 4. `backend/starlink-location/tests/test_flight_state_manager.py` - Unit tests
-5. `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` - User documentation
+5. `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` - User documentation
 
 ### Modified Files (12)
 

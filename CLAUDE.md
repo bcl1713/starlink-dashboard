@@ -14,7 +14,7 @@ metrics visualization and full simulation mode for offline development.
 - `docs/design-document.md` – architecture overview
 - `docs/phased-development-plan.md` – implementation roadmap
 - `docs/ROUTE-TIMING-GUIDE.md` – route timing feature + ETA modes
-- `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phase manager, overrides, dashboards
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phase manager, overrides, dashboards
 
 ## Development Commands
 
@@ -201,7 +201,7 @@ The backend exposes Prometheus metrics including:
   - `/api/routes` & `/api/routes/{id}` – include `flight_phase`, `eta_mode`, `has_timing_data`
 - Prometheus: `starlink_flight_phase`, `starlink_eta_mode`, `starlink_time_until_departure_seconds`
 - For manual testing use `/api/flight-status/depart` and `/api/flight-status/arrive`;
-  see `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` for full workflow and troubleshooting.
+  see `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` for full workflow and troubleshooting.
 
 ## Storage Requirements
 

@@ -97,9 +97,9 @@ backend/starlink-location/app/services/eta_calculator.py
 ## Design Documentation Created
 
 **Files Added:**
-- `dev/active/eta-timing-modes/PHASE-6-DESIGN.md` - Comprehensive design document
-- `dev/active/eta-timing-modes/panel-definitions.json` - JSON panel templates
-- `dev/active/eta-timing-modes/PHASE-6-SUMMARY.md` - This file
+- `dev/completed/eta-timing-modes/PHASE-6-DESIGN.md` - Comprehensive design document
+- `dev/completed/eta-timing-modes/panel-definitions.json` - JSON panel templates
+- `dev/completed/eta-timing-modes/PHASE-6-SUMMARY.md` - This file
 
 ## Docker Rebuild Status
 
@@ -154,7 +154,7 @@ backend/starlink-location/app/services/eta_calculator.py
 
 ## References
 
-- **Phase 6 Design:** `dev/active/eta-timing-modes/PHASE-6-DESIGN.md`
-- **Panel Templates:** `dev/active/eta-timing-modes/panel-definitions.json`
+- **Phase 6 Design:** `dev/completed/eta-timing-modes/PHASE-6-DESIGN.md`
+- **Panel Templates:** `dev/completed/eta-timing-modes/panel-definitions.json`
 - **Grafana Skill:** `.claude/skills/grafana-dashboard/`
 - **Session Notes:** `SESSION-NOTES.md`

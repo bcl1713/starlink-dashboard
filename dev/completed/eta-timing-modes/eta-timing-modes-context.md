@@ -15,7 +15,7 @@ This document provides essential context for implementing the anticipated vs. es
 ## Current Implementation Snapshot (Session 10)
 
 - **POI Visibility Safeguard:** `/api/pois/etas` now re-labels standalone POIs as `route_aware_status="pre_departure"` whenever the aircraft is still in `FlightPhase.PRE_DEPARTURE`. This prevents pre-flight “other” POIs (e.g., HCX swap) from being filtered out of Grafana quick-reference panels that exclude `not_on_route`.
-- **Model + Doc Sync:** `POIWithETA` schema and `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md` document the new `pre_departure` route-awareness state so client integrations stay aligned.
+- **Model + Doc Sync:** `POIWithETA` schema and `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md` document the new `pre_departure` route-awareness state so client integrations stay aligned.
 - **Regression Guard:** Added `tests/integration/test_pois_quick_reference.py` to reproduce Grafana’s Infinity query and assert the new status/ETA behaviour. Introduced foundational `tests/unit/test_flight_state_manager.py` coverage (singleton, initial state, departure persistence, arrival detection, reset).
 
 ### Session 11 Addendum (Tests & API parity)
@@ -32,7 +32,7 @@ This document provides essential context for implementing the anticipated vs. es
 - **Integration Coverage:** Added `tests/integration/test_eta_modes.py` to verify manual depart/arrive transitions, POI ETA metadata, and metrics label propagation. Updated `test_route_endpoints_with_timing.py` to assert `flight_phase`/`eta_mode` on list/detail/activate responses.
 - **Timezone Normalisation:** `FlightStateManager` now records timestamps with `datetime.now(timezone.utc)` to eliminate `datetime.utcnow()` warnings and ensure consistent UTC handling.
 - **Test Runs:** `.venv/bin/python -m pytest backend/starlink-location/tests/unit/test_flight_state_manager.py`, `.venv/bin/python -m pytest backend/starlink-location/tests/unit/test_eta_calculator.py`, `.venv/bin/python -m pytest backend/starlink-location/tests/unit/test_route_models_with_timing.py backend/starlink-location/tests/unit/test_flight_status_models.py backend/starlink-location/tests/unit/test_poi_eta_models.py`. Full integration pack (flight status, POI stats, quick reference, route endpoints, eta modes) passes under full environment; harness times out locally.
-- **Files Touched:** `backend/starlink-location/app/services/flight_state_manager.py`, `app/services/eta_calculator.py` (tests), integration/unit test suites listed above, `dev/active/eta-timing-modes/eta-timing-modes-tasks.md`, `SESSION-NOTES.md`.
+- **Files Touched:** `backend/starlink-location/app/services/flight_state_manager.py`, `app/services/eta_calculator.py` (tests), integration/unit test suites listed above, `dev/completed/eta-timing-modes/eta-timing-modes-tasks.md`, `SESSION-NOTES.md`.
 - **Pending:** Performance benchmarks (Task 7.6) and documentation updates (Phase 8). Consider migrating remaining `datetime.utcnow()` instances in ancillary services/tests to `datetime.now(timezone.utc)` to silence residual warnings.
 
 **Immediate Next Steps:**
@@ -50,7 +50,7 @@ This document provides essential context for implementing the anticipated vs. es
 - **Open Risk:** Deprecation warnings from core services (`eta_calculator`, `poi_manager`, `geojson`) still reference `datetime.utcnow()`; plan to sweep during Phase 8 documentation/cleanup.
 
 **Next Focus:**
-- Phase 8 documentation updates (`docs/ROUTE-TIMING-GUIDE.md`, new `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, `CLAUDE.md` refresh).
+- Phase 8 documentation updates (`docs/ROUTE-TIMING-GUIDE.md`, new `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, `CLAUDE.md` refresh).
 - Optional follow-up to replace remaining `datetime.utcnow()` usage outside the main flight-state path.
 
 ### Session 12 Addendum (Flight Status APIs & Countdown Visuals)
@@ -70,8 +70,8 @@ This document provides essential context for implementing the anticipated vs. es
 ### Session 32 Addendum (Metrics Exporter, Documentation, Final Review Prep)
 
 - **Metrics Exporter Hardening:** `metrics_export.get_metrics` seeds default cruise speed when telemetry speed falls below 0.5 kn and fetches the current `FlightStateManager` snapshot so Prometheus always emits `eta_type` labels. FastAPI `/metrics` now delegates to the exporter, which keeps scrapes accurate even when background updates are disabled.
-- **Documentation Sweep:** Added the ETA mode primer to `docs/ROUTE-TIMING-GUIDE.md`, published `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, refreshed `CLAUDE.md`, and created `dev/active/eta-timing-modes/flight-status-migration-notes.md`. `docs/design-document.md` now includes the flight-state architecture summary.
-- **Task & Status Tracking:** `eta-timing-modes-tasks.md` is current through Phase 8 Task 8.6; final review items live in `dev/active/eta-timing-modes/final-review-checklist.md`.
+- **Documentation Sweep:** Added the ETA mode primer to `docs/ROUTE-TIMING-GUIDE.md`, published `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, refreshed `CLAUDE.md`, and created `dev/completed/eta-timing-modes/flight-status-migration-notes.md`. `docs/design-document.md` now includes the flight-state architecture summary.
+- **Task & Status Tracking:** `eta-timing-modes-tasks.md` is current through Phase 8 Task 8.6; final review items live in `dev/completed/eta-timing-modes/final-review-checklist.md`.
 - **New Tests:** `tests/unit/test_eta_cache_service.py` covers ETACache + ETAHistoryTracker; `tests/unit/test_route_eta_calculator_service.py` validates projections, waypoint/location ETAs, route progress, and cache helpers.
 - **Coverage Snapshot:** `.venv/bin/python -m pytest --cov=app --cov-report=term backend/starlink-location/tests -q` → 530 passed / 4 skipped / 1 warning (overall 79 % coverage; ETA modules >95 %).
 - **Outstanding:** Prometheus scrape verification must occur in staging (local TestClient run blocked by sandbox writing to `/data`). Optional follow-up: rerun performance suite on production hardware if it deviates from dev environment.
@@ -83,9 +83,9 @@ This document provides essential context for implementing the anticipated vs. es
 - **Prometheus Enhancements:** Added `starlink_time_until_departure_seconds` gauge and expanded `starlink_distance_to_poi_meters` to share the `eta_type` label with `starlink_eta_poi_seconds`. The metrics export shim mirrors the new label set.
 - **Model Updates:** `RouteTimingProfile` stores observed departure/arrival times + flight status helpers; `POIWithETA` exposes `eta_type`, `is_pre_departure`, and `flight_phase`.
 - **API Synchronisation:** Route endpoints return live flight metadata (`flight_phase`, `eta_mode`, actual departure/arrival). `/api/pois/etas` annotates each row with the new fields.
-- **Simulation Fixture:** Added `dev/active/eta-timing-modes/future-ksfo-klax.kml` with “Time Over Waypoint” metadata to exercise pre-departure countdowns in simulation.
+- **Simulation Fixture:** Added `dev/completed/eta-timing-modes/future-ksfo-klax.kml` with “Time Over Waypoint” metadata to exercise pre-departure countdowns in simulation.
 - **Verification:** Uploading the sample plan, activating it in simulation, and resetting flight status produces `flight_phase=pre_departure` with a positive `time_until_departure_seconds`; once velocity crosses the threshold, the countdown hits zero and phase flips to `in_flight`.
-- **Files Touched:** `backend/starlink-location/app/api/health.py`, `backend/starlink-location/app/core/metrics.py`, `backend/starlink-location/app/api/metrics_export.py`, `backend/starlink-location/app/api/pois.py`, `backend/starlink-location/app/api/routes.py`, `backend/starlink-location/app/models/{route,poi}.py`, and the new fixture `dev/active/eta-timing-modes/future-ksfo-klax.kml`.
+- **Files Touched:** `backend/starlink-location/app/api/health.py`, `backend/starlink-location/app/core/metrics.py`, `backend/starlink-location/app/api/metrics_export.py`, `backend/starlink-location/app/api/pois.py`, `backend/starlink-location/app/api/routes.py`, `backend/starlink-location/app/models/{route,poi}.py`, and the new fixture `dev/completed/eta-timing-modes/future-ksfo-klax.kml`.
 
 ### Outstanding Work vs. Plan
 
@@ -139,14 +139,14 @@ This document provides essential context for implementing the anticipated vs. es
 
 ### Simulation Fixtures
 
-- `dev/active/eta-timing-modes/future-ksfo-klax.kml` - Sample timed route (KSFO→KLAX) for pre-departure countdown validation
+- `dev/completed/eta-timing-modes/future-ksfo-klax.kml` - Sample timed route (KSFO→KLAX) for pre-departure countdown validation
 
 ### Documentation Files
 
 **Technical Documentation:**
 - `docs/ROUTE-TIMING-GUIDE.md` - Route timing feature guide (MODIFY)
-- `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` - Flight status user guide (CREATE)
-- `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md` - ETA system architecture (READ ONLY)
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` - Flight status user guide (CREATE)
+- `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md` - ETA system architecture (READ ONLY)
 
 **Project Documentation:**
 - `CLAUDE.md` - Project instructions for Claude Code (MODIFY)
@@ -778,7 +778,7 @@ curl http://localhost:8000/metrics | grep flight_phase
 ## Related Documentation
 
 **Internal Documentation:**
-- `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md` - ETA system architecture overview
+- `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md` - ETA system architecture overview
 - `docs/ROUTE-TIMING-GUIDE.md` - Route timing feature guide
 - `docs/design-document.md` - Overall system design
 
@@ -794,7 +794,7 @@ curl http://localhost:8000/metrics | grep flight_phase
 
 For questions about this implementation:
 1. Review the plan: `eta-timing-modes-plan.md`
-2. Check related docs: `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md`
+2. Check related docs: `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md`
 3. Consult project guide: `CLAUDE.md`
 
 ---

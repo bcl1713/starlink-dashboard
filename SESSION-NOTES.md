@@ -10,10 +10,10 @@
 - Patched `eta_service.update_eta_metrics` and `metrics_export.get_metrics` to substitute the default cruise speed whenever telemetry reports <0.5 kn, keeping POI ETAs positive during pre-departure snapshots and restoring Prometheus label emission.
 - Updated `/metrics` to delegate to `metrics_export.get_metrics()` so POI ETA labels are materialised on-demand even with background tasks disabled; fixes `test_metrics_exposes_eta_type_labels` regression.
 - Executed the full coverage suite (`pytest --cov`) to close Task 7.7 and captured overall coverage (79 % total; new ETA timing paths ≥95 %).
-- Documented ETA mode behaviour in `docs/ROUTE-TIMING-GUIDE.md`, published the new `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, and refreshed API docstrings to note `eta_type` labels and flight-state fields.
-- Refreshed `CLAUDE.md` with flight-status quick reference and published `dev/active/eta-timing-modes/flight-status-migration-notes.md` with deployment/backward-compatibility guidance.
+- Documented ETA mode behaviour in `docs/ROUTE-TIMING-GUIDE.md`, published the new `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, and refreshed API docstrings to note `eta_type` labels and flight-state fields.
+- Refreshed `CLAUDE.md` with flight-status quick reference and published `dev/completed/eta-timing-modes/flight-status-migration-notes.md` with deployment/backward-compatibility guidance.
 - Marked Task 8.6 deployment requirements as verified (rebuild process, config, Grafana provisioning, env vars, backward compatibility) based on the migration checklist.
-- Drafted `dev/active/eta-timing-modes/final-review-checklist.md` outlining remaining Task 8.7 review steps (design doc update, coverage follow-ups, Prometheus validation).
+- Drafted `dev/completed/eta-timing-modes/final-review-checklist.md` outlining remaining Task 8.7 review steps (design doc update, coverage follow-ups, Prometheus validation).
 - Updated `docs/design-document.md` to include the new flight-state architecture section (FlightStateManager + dual ETA modes).
 - Added `tests/unit/test_route_eta_calculator_service.py` to cover route projections, waypoint/location ETAs, and progress calculations.
 
@@ -102,7 +102,7 @@
 - Added `starlink_time_until_departure_seconds` gauge and extended POI distance gauges with the `eta_type` label to match ETA metrics; updated `metrics_export.py` to mirror the label set.
 - Synced route timing profiles with live flight status (actual departure/arrival timestamps + phase) inside the telemetry loop.
 - Extended route/POI API responses so clients receive `flight_phase`, `eta_mode`, `is_pre_departure`, and `flight_phase` per POI.
-- Dropped `dev/active/eta-timing-modes/future-ksfo-klax.kml` fixture for simulation tests; verified countdown behaviour by switching to simulation, activating the route, and manually resetting the flight state.
+- Dropped `dev/completed/eta-timing-modes/future-ksfo-klax.kml` fixture for simulation tests; verified countdown behaviour by switching to simulation, activating the route, and manually resetting the flight state.
 
 ### Verification
 - `curl http://localhost:8000/health | jq` now shows countdown metadata in both live and simulated runs.
@@ -115,7 +115,7 @@
 - `backend/starlink-location/app/core/{metrics,eta_service}.py`
 - `backend/starlink-location/app/api/metrics_export.py`
 - `backend/starlink-location/app/models/{route,poi}.py`
-- `dev/active/eta-timing-modes/future-ksfo-klax.kml`
+- `dev/completed/eta-timing-modes/future-ksfo-klax.kml`
 
 ### Tests / Commands
 - `docker compose build starlink-location && docker compose up -d starlink-location`
@@ -162,7 +162,7 @@ docker exec grafana curl -s -o /dev/null -w "%{http_code}\n" \
 ### Highlights
 - Wired `FlightStateManager` into the background telemetry loop (`backend/starlink-location/app/core/metrics.py`), enabling automatic transitions to `IN_FLIGHT` / `POST_ARRIVAL` based on speed + route distance.
 - Tightened `/api/pois/etas` filtering so only ahead/on-route POIs surface in Grafana, with anticipated-mode fallbacks returning realistic values instead of `-1`.
-- Reviewed `dev/active/eta-timing-modes` plan and marked gaps: missing model fields (`actual_departure_time`, `is_pre_departure`), absent `/api/routes/flight-status/*` endpoints, pending metrics (`starlink_time_until_departure_seconds`, `eta_type` on distance metric), and dashboard enhancements.
+- Reviewed `dev/completed/eta-timing-modes` plan and marked gaps: missing model fields (`actual_departure_time`, `is_pre_departure`), absent `/api/routes/flight-status/*` endpoints, pending metrics (`starlink_time_until_departure_seconds`, `eta_type` on distance metric), and dashboard enhancements.
 
 ### Next Steps
 1. Implement remaining plan items (model metadata, dedicated flight-status endpoints, metric labels) or formally descoped.
@@ -203,9 +203,9 @@ docker exec grafana curl -s -o /dev/null -w "%{http_code}\n" \
    - Docker rebuild completed successfully
 
 5. **Documentation Created:**
-   - `/dev/active/eta-timing-modes/PHASE-6-DESIGN.md` - Comprehensive design doc
-   - `/dev/active/eta-timing-modes/panel-definitions.json` - JSON panel templates
-   - `/dev/active/eta-timing-modes/PHASE-6-SUMMARY.md` - Implementation summary
+   - `/dev/completed/eta-timing-modes/PHASE-6-DESIGN.md` - Comprehensive design doc
+   - `/dev/completed/eta-timing-modes/panel-definitions.json` - JSON panel templates
+   - `/dev/completed/eta-timing-modes/PHASE-6-SUMMARY.md` - Implementation summary
 
 ### Flight Status API Verification:
 ```bash
@@ -418,9 +418,9 @@ eta_calc._calculate_route_aware_eta_anticipated()
 - ✅ `SESSION-NOTES.md` (this file)
 
 ### Files Created This Session:
-- ✅ `/dev/active/eta-timing-modes/PHASE-6-DESIGN.md`
-- ✅ `/dev/active/eta-timing-modes/panel-definitions.json`
-- ✅ `/dev/active/eta-timing-modes/PHASE-6-SUMMARY.md`
+- ✅ `/dev/completed/eta-timing-modes/PHASE-6-DESIGN.md`
+- ✅ `/dev/completed/eta-timing-modes/panel-definitions.json`
+- ✅ `/dev/completed/eta-timing-modes/PHASE-6-SUMMARY.md`
 
 ### Docker Status:
 - All services running and healthy
@@ -505,7 +505,7 @@ The code will compile successfully once network stabilizes.
 
 ### What Happened
 - Adjusted `/api/pois/etas` to relabel standalone POIs as `route_aware_status="pre_departure"` whenever `FlightPhase.PRE_DEPARTURE` is active, keeping “other” POIs (e.g., HCX swap) visible in Grafana tables that exclude `not_on_route`.
-- Synced schemas/documents with the new state (`backend/starlink-location/app/models/poi.py`, `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md`).
+- Synced schemas/documents with the new state (`backend/starlink-location/app/models/poi.py`, `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md`).
 - Added `tests/integration/test_pois_quick_reference.py` to reproduce Grafana’s quick reference behaviour and assert the new status + ETA remains >= 0 for “other” POIs pre-departure.
 - Began dedicated `FlightStateManager` unit coverage in `tests/unit/test_flight_state_manager.py` (singleton identity, initial state, speed-based departure persistence, manual transition, automatic arrival detection, reset).
 
@@ -524,7 +524,7 @@ The code will compile successfully once network stabilizes.
 ### Files Touched
 - `backend/starlink-location/app/api/pois.py`
 - `backend/starlink-location/app/models/poi.py`
-- `dev/active/eta-timing-modes/ETA-ARCHITECTURE.md`
+- `dev/completed/eta-timing-modes/ETA-ARCHITECTURE.md`
 - `backend/starlink-location/tests/unit/test_flight_state_manager.py`
 - `backend/starlink-location/tests/integration/test_pois_quick_reference.py`
 
@@ -553,8 +553,8 @@ The code will compile successfully once network stabilizes.
 - `backend/starlink-location/app/models/route.py`
 - `backend/starlink-location/tests/integration/test_pois_quick_reference.py`
 - `backend/starlink-location/tests/integration/test_route_eta.py`
-- `dev/active/eta-timing-modes/eta-timing-modes-context.md`
-- `dev/active/eta-timing-modes/eta-timing-modes-tasks.md`
+- `dev/completed/eta-timing-modes/eta-timing-modes-context.md`
+- `dev/completed/eta-timing-modes/eta-timing-modes-tasks.md`
 
 ### Next Steps / Handoff
 - Mirror the new timing metadata in `/api/routes/active/timing` and related endpoints (Phase 4 Task 4.8 follow-up).

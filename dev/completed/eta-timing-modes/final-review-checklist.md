@@ -17,8 +17,8 @@ This checklist tracks the remaining verifications required to close Phase 8 Ta
 ## 2. Documentation Review
 
 - [x] Route timing guide updated with ETA modes (`docs/ROUTE-TIMING-GUIDE.md`).
-- [x] Flight status operations guide published (`dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`).
-- [x] Migration notes captured (`dev/active/eta-timing-modes/flight-status-migration-notes.md`).
+- [x] Flight status operations guide published (`dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`).
+- [x] Migration notes captured (`dev/completed/eta-timing-modes/flight-status-migration-notes.md`).
 - [x] Update high-level design doc (`docs/design-document.md`) with flight-state section.
 
 ## 3. Test Coverage

@@ -12,7 +12,7 @@
 
 **Status:** 🔄 Phase 7 in progress (unit + integration coverage complete, performance benchmarks captured, full-suite pytest + coverage run verified)
 
-**Location:** `/dev/active/eta-timing-modes/`
+**Location:** `/dev/completed/eta-timing-modes/`
 
 **What Was Built (Session 30):**
 - FlightStateManager now uses timezone-aware timestamps (`datetime.now(timezone.utc)`) to eliminate `datetime.utcnow()` warnings.
@@ -30,10 +30,10 @@
 - Hardened POI ETA metric export by seeding default cruise speed when telemetry speed <0.5 kn, ensuring `eta_type` labels emit during pre-departure snapshots.
 - Routed `/metrics` through `metrics_export.get_metrics()` so Prometheus scrapes include on-demand POI labels even with background updates disabled (fixes `test_metrics_exposes_eta_type_labels`).
 - Ran `.venv/bin/python -m pytest --cov=app --cov-report=term backend/starlink-location/tests -q` (530 passed, 4 skipped, 1 warning; total coverage 79 %) to close Task 7.7 coverage check.
-- Completed Phase 8 documentation first pass: refreshed `docs/ROUTE-TIMING-GUIDE.md`, added `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, and updated API docstrings with `eta_type`/flight-state metadata.
-- Updated `CLAUDE.md` with flight-status/ETA guidance and drafted `dev/active/eta-timing-modes/flight-status-migration-notes.md` (backward compatibility + deployment checklist).
+- Completed Phase 8 documentation first pass: refreshed `docs/ROUTE-TIMING-GUIDE.md`, added `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`, and updated API docstrings with `eta_type`/flight-state metadata.
+- Updated `CLAUDE.md` with flight-status/ETA guidance and drafted `dev/completed/eta-timing-modes/flight-status-migration-notes.md` (backward compatibility + deployment checklist).
 - Verified deployment requirements checklist (Task 8.6): rebuild path, Grafana provisioning, environment variables, and backward compatibility captured in migration notes.
-- Created `dev/active/eta-timing-modes/final-review-checklist.md` to track remaining Task 8.7 review items (design doc refresh, coverage follow-ups, Prometheus validation).
+- Created `dev/completed/eta-timing-modes/final-review-checklist.md` to track remaining Task 8.7 review items (design doc refresh, coverage follow-ups, Prometheus validation).
 - Added a flight-state architecture summary to `docs/design-document.md` documenting the FlightStateManager, ETA modes, new endpoints, and metrics labels.
 - Added `tests/unit/test_eta_cache_service.py` to raise coverage on `ETACache` / `ETAHistoryTracker`; dedicated pytest command recorded in session notes.
 - Added `tests/unit/test_route_eta_calculator_service.py` for route projection/ETA coverage; optional follow-up coverage now limited to legacy POI API.
@@ -41,7 +41,7 @@
 
 **Files Created/Updated (highlights):**
 - New: `backend/starlink-location/tests/integration/test_eta_modes.py`, `tests/unit/test_flight_status_models.py`, `tests/unit/test_poi_eta_models.py`
-- Updated: `tests/unit/test_flight_state_manager.py`, `tests/unit/test_eta_calculator.py`, `tests/integration/test_route_endpoints_with_timing.py`, `app/services/flight_state_manager.py`, documentation under `/dev/active/eta-timing-modes/`
+- Updated: `tests/unit/test_flight_state_manager.py`, `tests/unit/test_eta_calculator.py`, `tests/integration/test_route_endpoints_with_timing.py`, `app/services/flight_state_manager.py`, documentation under `/dev/completed/eta-timing-modes/`
 
 **Tests Status:** ✅ `.venv/bin/python -m pytest -q backend/starlink-location/tests/unit` (421 passed) • ✅ `.venv/bin/python -m pytest -q backend/starlink-location/tests/integration` (97 passed, 4 skipped) • ✅ `.venv/bin/python -m pytest --cov=app --cov-report=term backend/starlink-location/tests -q` (530 passed, 4 skipped, 1 warning; total coverage 79 %) • ✅ Targeted performance + ETA mode regression tests green • ⚠️ Deprecation warnings remain for lingering `datetime.utcnow()` usage (tracking separately).
 **Docker Status:** ✅ Services healthy (no rebuild required this session)
@@ -401,7 +401,7 @@ The problem isn't that we need an override - the problem is that ETACalculator s
 
 **Feature:** Anticipated vs. Estimated ETA Display
 **Status:** Planning Complete - Ready for Implementation
-**Location:** `/dev/active/eta-timing-modes/`
+**Location:** `/dev/completed/eta-timing-modes/`
 
 **What's Being Built:**
 - Automatic switch between "Anticipated" ETAs (pre-departure) and "Estimated" ETAs (post-departure)

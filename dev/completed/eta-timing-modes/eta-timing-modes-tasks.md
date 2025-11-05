@@ -626,7 +626,7 @@
 ---
 
 ### Task 8.2: Create Flight Status Guide
-- [x] Create `dev/active/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`
+- [x] Create `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md`
 - [x] Document flight phase state machine
 - [x] Explain automatic departure/arrival detection
 - [x] Document manual override API endpoints
