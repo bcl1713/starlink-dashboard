@@ -1770,3 +1770,1195 @@ async def route_management_ui():
     </body>
     </html>
     """
+
+
+@router.get("/mission-planner", response_class=HTMLResponse)
+async def mission_planner_ui():
+    """Serve Mission Planner user interface for communication planning."""
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Mission Planner</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                overflow: hidden;
+            }
+
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 30px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 2.5em;
+                margin-bottom: 10px;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            }
+
+            .header p {
+                opacity: 0.9;
+                font-size: 1.1em;
+            }
+
+            .content {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 30px;
+                padding: 30px;
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+
+            @media (max-width: 1024px) {
+                .content {
+                    grid-template-columns: 1fr;
+                    max-height: none;
+                }
+            }
+
+            .section {
+                background: #f8f9fa;
+                border-radius: 8px;
+                padding: 25px;
+                border: 1px solid #e0e0e0;
+            }
+
+            .section h2 {
+                color: #333;
+                margin-bottom: 20px;
+                font-size: 1.5em;
+                border-bottom: 2px solid #667eea;
+                padding-bottom: 10px;
+            }
+
+            .section h3 {
+                color: #333;
+                margin-top: 20px;
+                margin-bottom: 15px;
+                font-size: 1.1em;
+                padding-bottom: 5px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            .form-group {
+                margin-bottom: 20px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            label {
+                font-weight: 600;
+                color: #333;
+                margin-bottom: 8px;
+                font-size: 0.95em;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            input[type="datetime-local"],
+            textarea,
+            select {
+                padding: 12px;
+                border: 2px solid #e0e0e0;
+                border-radius: 6px;
+                font-family: inherit;
+                font-size: 1em;
+                transition: all 0.3s ease;
+            }
+
+            input[type="text"]:focus,
+            input[type="number"]:focus,
+            input[type="datetime-local"]:focus,
+            textarea:focus,
+            select:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+
+            textarea {
+                min-height: 80px;
+                resize: vertical;
+            }
+
+            .form-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+
+            .form-row-3 {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 15px;
+            }
+
+            .button-group {
+                display: flex;
+                gap: 12px;
+                margin-top: 25px;
+                flex-wrap: wrap;
+            }
+
+            button {
+                padding: 12px 24px;
+                border: none;
+                border-radius: 6px;
+                font-size: 1em;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                flex: 1;
+                min-width: 120px;
+            }
+
+            .btn-primary {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            }
+
+            .btn-primary:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none;
+            }
+
+            .btn-secondary {
+                background: #e0e0e0;
+                color: #333;
+            }
+
+            .btn-secondary:hover {
+                background: #d0d0d0;
+            }
+
+            .btn-small {
+                padding: 8px 12px;
+                font-size: 0.85em;
+                min-width: auto;
+                flex: 0;
+            }
+
+            .btn-danger {
+                background: #dc3545;
+                color: white;
+                flex: 0;
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+
+            .btn-danger:hover {
+                background: #c82333;
+                transform: translateY(-2px);
+            }
+
+            .alert {
+                padding: 15px;
+                border-radius: 6px;
+                margin-bottom: 20px;
+                font-weight: 500;
+            }
+
+            .alert-success {
+                background: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+
+            .alert-error {
+                background: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+
+            .alert-info {
+                background: #d1ecf1;
+                color: #0c5460;
+                border: 1px solid #bee5eb;
+            }
+
+            .card {
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 15px;
+            }
+
+            .card-title {
+                font-weight: 600;
+                color: #333;
+                margin-bottom: 12px;
+                font-size: 1.05em;
+            }
+
+            .card-content {
+                color: #666;
+                font-size: 0.95em;
+                line-height: 1.6;
+            }
+
+            .badge {
+                display: inline-block;
+                background: #667eea;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.75em;
+                font-weight: 600;
+                margin-right: 5px;
+            }
+
+            .badge-ka {
+                background: #2dce89;
+            }
+
+            .badge-x {
+                background: #fb6340;
+            }
+
+            .badge-ku {
+                background: #11cdef;
+            }
+
+            .list-item {
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                padding: 15px;
+                margin-bottom: 12px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .list-item-content {
+                flex: 1;
+            }
+
+            .list-item-title {
+                font-weight: 600;
+                color: #333;
+                margin-bottom: 5px;
+            }
+
+            .list-item-details {
+                color: #666;
+                font-size: 0.9em;
+            }
+
+            .list-item-actions {
+                display: flex;
+                gap: 8px;
+                flex-shrink: 0;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 40px 20px;
+                color: #999;
+            }
+
+            .empty-state p {
+                font-size: 1.1em;
+                margin-bottom: 10px;
+            }
+
+            .loading {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid #f3f3f3;
+                border-top: 3px solid #667eea;
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            .status-text {
+                font-size: 0.9em;
+                color: #666;
+                margin-top: 10px;
+            }
+
+            .tab-buttons {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 20px;
+                border-bottom: 2px solid #e0e0e0;
+            }
+
+            .tab-button {
+                padding: 12px 20px;
+                border: none;
+                background: none;
+                color: #666;
+                font-weight: 600;
+                cursor: pointer;
+                border-bottom: 3px solid transparent;
+                transition: all 0.3s ease;
+                font-size: 0.95em;
+            }
+
+            .tab-button.active {
+                color: #667eea;
+                border-bottom-color: #667eea;
+            }
+
+            .tab-button:hover {
+                color: #667eea;
+            }
+
+            .tab-content {
+                display: none;
+            }
+
+            .tab-content.active {
+                display: block;
+            }
+
+            .info-box {
+                background: #e8f0fe;
+                border-left: 4px solid #667eea;
+                padding: 15px;
+                border-radius: 4px;
+                margin-bottom: 15px;
+                font-size: 0.95em;
+                color: #333;
+            }
+
+            .help-text {
+                font-size: 0.85em;
+                color: #666;
+                margin-top: 6px;
+                font-style: italic;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>✈️ Mission Planner</h1>
+                <p>Plan satellite communication for your mission with precise X transitions, Ka coverage, AAR windows, and Ku overrides</p>
+            </div>
+
+            <div class="content">
+                <!-- Mission Creation/Selection -->
+                <div class="section">
+                    <h2>Mission Setup</h2>
+                    <div id="alerts"></div>
+
+                    <div class="form-group">
+                        <label for="missionSelect">Select Mission or Create New</label>
+                        <select id="missionSelect">
+                            <option value="new">+ Create New Mission</option>
+                        </select>
+                    </div>
+
+                    <form id="missionForm">
+                        <div class="form-group">
+                            <label for="missionName">Mission Name *</label>
+                            <input type="text" id="missionName" required placeholder="e.g., Leg 6 Rev 6 - KSA to Europe">
+                            <p class="help-text">Human-readable mission identifier</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="routeId">Flight Route *</label>
+                            <select id="routeId" required>
+                                <option value="">Select a route...</option>
+                            </select>
+                            <p class="help-text">Choose an active KML route for timing and waypoint references</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="missionDescription">Description</label>
+                            <textarea id="missionDescription" placeholder="Optional detailed description..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="initialXSatellite">Initial X Satellite *</label>
+                            <input type="text" id="initialXSatellite" required value="X-1" placeholder="e.g., X-1">
+                            <p class="help-text">Starting X satellite for the mission</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="missionNotes">Planning Notes</label>
+                            <textarea id="missionNotes" placeholder="Customer briefs, constraints, or special considerations..."></textarea>
+                        </div>
+
+                        <div class="button-group">
+                            <button type="submit" class="btn-primary" id="saveMissionBtn">Save Mission</button>
+                            <button type="button" class="btn-secondary" id="resetMissionBtn">Clear</button>
+                            <button type="button" class="btn-danger" id="deleteMissionBtn" style="display: none;">Delete Mission</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Transport Configuration Tabs -->
+                <div class="section">
+                    <h2>Transport Configuration</h2>
+
+                    <div class="tab-buttons">
+                        <button class="tab-button active" onclick="switchTab('x-transport')">X (Geo)</button>
+                        <button class="tab-button" onclick="switchTab('ka-transport')">Ka (Geo)</button>
+                        <button class="tab-button" onclick="switchTab('ku-transport')">Ku (LEO)</button>
+                        <button class="tab-button" onclick="switchTab('aar-windows')">AAR</button>
+                    </div>
+
+                    <!-- X Transport Tab -->
+                    <div id="x-transport" class="tab-content active">
+                        <h3>X Transport - Satellite Transitions</h3>
+                        <div class="info-box">
+                            Fixed geostationary satellite. Add transition points with target satellites and optional beam changes.
+                        </div>
+
+                        <div class="form-group">
+                            <label for="xTransitionLat">Transition Latitude *</label>
+                            <input type="number" id="xTransitionLat" step="0.00001" placeholder="35.5">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="xTransitionLon">Longitude *</label>
+                                <input type="number" id="xTransitionLon" step="0.00001" placeholder="-120.3">
+                            </div>
+                            <div class="form-group">
+                                <label for="targetXSatellite">Target Satellite *</label>
+                                <input type="text" id="targetXSatellite" placeholder="e.g., X-2">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="targetXBeam">Target Beam (optional)</label>
+                                <input type="text" id="targetXBeam" placeholder="e.g., Beam-3">
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="sameXSatellite">
+                                    Same Satellite Transition (beam change only)
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-primary" onclick="addXTransition()">Add X Transition</button>
+
+                        <div id="xTransitionsList" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <!-- Ka Transport Tab -->
+                    <div id="ka-transport" class="tab-content">
+                        <h3>Ka Transport - Coverage & Outages</h3>
+                        <div class="info-box">
+                            Three geostationary satellites (T2-1, T2-2, T2-3) with auto-calculated coverage. Optionally define manual outage windows.
+                        </div>
+
+                        <div class="form-group">
+                            <label for="kaInitialSatellites">Initial Ka Satellites</label>
+                            <input type="text" id="kaInitialSatellites" value="T2-1, T2-2, T2-3" disabled placeholder="T2-1, T2-2, T2-3">
+                            <p class="help-text">Read-only. Auto-calculated from coverage.</p>
+                        </div>
+
+                        <h3>Manual Outage Windows</h3>
+                        <div class="form-group">
+                            <label for="kaOutageStart">Outage Start Time</label>
+                            <input type="datetime-local" id="kaOutageStart">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="kaOutageDuration">Duration (seconds)</label>
+                                <input type="number" id="kaOutageDuration" step="1" min="1" placeholder="600">
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-primary" onclick="addKaOutage()">Add Ka Outage</button>
+
+                        <div id="kaOutagesList" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <!-- Ku Transport Tab -->
+                    <div id="ku-transport" class="tab-content">
+                        <h3>Ku Transport - LEO Overrides</h3>
+                        <div class="info-box">
+                            Ku LEO constellation is always-on by default. Only define outage windows for expected or actual downtime.
+                        </div>
+
+                        <div class="form-group">
+                            <label for="kuOutageStart">Outage Start Time</label>
+                            <input type="datetime-local" id="kuOutageStart">
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="kuOutageDuration">Duration (seconds)</label>
+                                <input type="number" id="kuOutageDuration" step="1" min="1" placeholder="300">
+                            </div>
+                            <div class="form-group">
+                                <label for="kuOutageReason">Reason (optional)</label>
+                                <input type="text" id="kuOutageReason" placeholder="e.g., Planned maintenance">
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-primary" onclick="addKuOverride()">Add Ku Outage</button>
+
+                        <div id="kuOverridesList" style="margin-top: 20px;"></div>
+                    </div>
+
+                    <!-- AAR Windows Tab -->
+                    <div id="aar-windows" class="tab-content">
+                        <h3>Air-Refueling (AAR) Windows</h3>
+                        <div class="info-box">
+                            Define route segments where the X azimuth exclusion zone inverts to 315°–45°. Use waypoint names from your route.
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="aarStartWaypoint">Start Waypoint *</label>
+                                <select id="aarStartWaypoint">
+                                    <option value="">Select waypoint...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="aarEndWaypoint">End Waypoint *</label>
+                                <select id="aarEndWaypoint">
+                                    <option value="">Select waypoint...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-primary" onclick="addAARWindow()">Add AAR Window</button>
+
+                        <div id="aarWindowsList" style="margin-top: 20px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export/Import Section -->
+            <div style="padding: 30px; border-top: 1px solid #e0e0e0; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn-secondary" onclick="exportMission()">📥 Export to JSON</button>
+                <button class="btn-secondary" onclick="document.getElementById('importFile').click()">📤 Import from JSON</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importMission()">
+            </div>
+        </div>
+
+        <script>
+            // Global state
+            let currentMission = null;
+            let missions = [];
+            let routes = [];
+            let currentRouteWaypoints = [];
+
+            // Initialize on page load
+            document.addEventListener('DOMContentLoaded', async () => {
+                await loadMissions();
+                await loadRoutes();
+                setupEventListeners();
+            });
+
+            // Tab switching
+            function switchTab(tabName) {
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+
+                document.getElementById(tabName).classList.add('active');
+                event.target.classList.add('active');
+            }
+
+            // Setup event listeners
+            function setupEventListeners() {
+                document.getElementById('missionForm').addEventListener('submit', saveMission);
+                document.getElementById('resetMissionBtn').addEventListener('click', resetForm);
+                document.getElementById('deleteMissionBtn').addEventListener('click', deleteMission);
+                document.getElementById('missionSelect').addEventListener('change', selectMission);
+                document.getElementById('routeId').addEventListener('change', loadRouteWaypoints);
+
+                // Reload missions every 5 seconds
+                setInterval(loadMissions, 5000);
+            }
+
+            // Load missions from API
+            async function loadMissions() {
+                try {
+                    const response = await fetch('/api/missions');
+                    if (!response.ok) throw new Error('Failed to load missions');
+
+                    const data = await response.json();
+                    missions = data.missions || [];
+
+                    const select = document.getElementById('missionSelect');
+                    const currentValue = select.value;
+
+                    select.innerHTML = '<option value="new">+ Create New Mission</option>';
+                    missions.forEach(mission => {
+                        const option = document.createElement('option');
+                        option.value = mission.id;
+                        option.textContent = mission.name || mission.id;
+                        select.appendChild(option);
+                    });
+
+                    if (currentValue !== 'new' && missions.some(m => m.id === currentValue)) {
+                        select.value = currentValue;
+                    }
+                } catch (error) {
+                    console.error('Failed to load missions:', error);
+                }
+            }
+
+            // Load routes from API
+            async function loadRoutes() {
+                try {
+                    const response = await fetch('/api/routes');
+                    if (!response.ok) throw new Error('Failed to load routes');
+
+                    const data = await response.json();
+                    routes = data.routes || [];
+
+                    const select = document.getElementById('routeId');
+                    select.innerHTML = '<option value="">Select a route...</option>';
+                    routes.forEach(route => {
+                        const option = document.createElement('option');
+                        option.value = route.id;
+                        option.textContent = route.name || route.id;
+                        select.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Failed to load routes:', error);
+                    showAlert('Failed to load routes: ' + error.message, 'error');
+                }
+            }
+
+            // Load waypoints for selected route
+            async function loadRouteWaypoints() {
+                const routeId = document.getElementById('routeId').value;
+                if (!routeId) {
+                    currentRouteWaypoints = [];
+                    updateWaypointSelects();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/routes/${routeId}`);
+                    if (!response.ok) throw new Error('Failed to load route details');
+
+                    const route = await response.json();
+                    currentRouteWaypoints = route.waypoints || [];
+                    updateWaypointSelects();
+                } catch (error) {
+                    console.error('Failed to load waypoints:', error);
+                    showAlert('Failed to load route waypoints: ' + error.message, 'error');
+                }
+            }
+
+            // Update waypoint select dropdowns
+            function updateWaypointSelects() {
+                const startSelect = document.getElementById('aarStartWaypoint');
+                const endSelect = document.getElementById('aarEndWaypoint');
+
+                const currentStart = startSelect.value;
+                const currentEnd = endSelect.value;
+
+                startSelect.innerHTML = '<option value="">Select waypoint...</option>';
+                endSelect.innerHTML = '<option value="">Select waypoint...</option>';
+
+                currentRouteWaypoints.forEach(wp => {
+                    const startOption = document.createElement('option');
+                    startOption.value = wp.name || wp.order;
+                    startOption.textContent = wp.name || `Waypoint ${wp.order + 1}`;
+                    startSelect.appendChild(startOption);
+
+                    const endOption = document.createElement('option');
+                    endOption.value = wp.name || wp.order;
+                    endOption.textContent = wp.name || `Waypoint ${wp.order + 1}`;
+                    endSelect.appendChild(endOption);
+                });
+
+                if (currentStart) startSelect.value = currentStart;
+                if (currentEnd) endSelect.value = currentEnd;
+            }
+
+            // Select mission
+            async function selectMission() {
+                const select = document.getElementById('missionSelect');
+                const missionId = select.value;
+
+                if (missionId === 'new') {
+                    resetForm();
+                    currentMission = null;
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/missions/${missionId}`);
+                    if (!response.ok) throw new Error('Failed to load mission');
+
+                    currentMission = await response.json();
+                    populateFormFromMission(currentMission);
+                } catch (error) {
+                    showAlert('Failed to load mission: ' + error.message, 'error');
+                }
+            }
+
+            // Populate form from mission
+            function populateFormFromMission(mission) {
+                document.getElementById('missionName').value = mission.name;
+                document.getElementById('routeId').value = mission.route_id;
+                document.getElementById('missionDescription').value = mission.description || '';
+                document.getElementById('initialXSatellite').value = mission.transports.initial_x_satellite_id;
+                document.getElementById('missionNotes').value = mission.notes || '';
+
+                // Update transport displays
+                renderXTransitions(mission.transports.x_transitions);
+                renderKaOutages(mission.transports.ka_outages);
+                renderKuOverrides(mission.transports.ku_overrides);
+
+                // Load route waypoints
+                loadRouteWaypoints();
+
+                // Show delete button
+                document.getElementById('deleteMissionBtn').style.display = 'flex';
+            }
+
+            // Add X transition
+            function addXTransition() {
+                const lat = parseFloat(document.getElementById('xTransitionLat').value);
+                const lon = parseFloat(document.getElementById('xTransitionLon').value);
+                const satellite = document.getElementById('targetXSatellite').value;
+                const beam = document.getElementById('targetXBeam').value || null;
+                const isSameSat = document.getElementById('sameXSatellite').checked;
+
+                if (!Number.isFinite(lat) || !Number.isFinite(lon) || !satellite) {
+                    showAlert('Please fill in required X transition fields', 'error');
+                    return;
+                }
+
+                if (currentMission) {
+                    const transition = {
+                        id: `x-transition-${Date.now()}`,
+                        latitude: lat,
+                        longitude: lon,
+                        target_satellite_id: satellite,
+                        target_beam_id: beam,
+                        is_same_satellite_transition: isSameSat
+                    };
+                    currentMission.transports.x_transitions.push(transition);
+                    renderXTransitions(currentMission.transports.x_transitions);
+                    clearXTransitionForm();
+                }
+            }
+
+            // Render X transitions
+            function renderXTransitions(transitions) {
+                const list = document.getElementById('xTransitionsList');
+                if (transitions.length === 0) {
+                    list.innerHTML = '<p class="empty-state">No X transitions yet</p>';
+                    return;
+                }
+
+                list.innerHTML = transitions.map(t => `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">
+                                <span class="badge badge-x">X</span>
+                                ${t.target_satellite_id} ${t.is_same_satellite_transition ? '(beam change)' : ''}
+                            </div>
+                            <div class="list-item-details">
+                                ${t.latitude.toFixed(4)}°, ${t.longitude.toFixed(4)}° → ${t.target_satellite_id}${t.target_beam_id ? ' / ' + t.target_beam_id : ''}
+                            </div>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="btn-danger btn-small" onclick="removeXTransition('${t.id}')">Remove</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Remove X transition
+            function removeXTransition(id) {
+                if (currentMission) {
+                    currentMission.transports.x_transitions = currentMission.transports.x_transitions.filter(t => t.id !== id);
+                    renderXTransitions(currentMission.transports.x_transitions);
+                }
+            }
+
+            // Clear X transition form
+            function clearXTransitionForm() {
+                document.getElementById('xTransitionLat').value = '';
+                document.getElementById('xTransitionLon').value = '';
+                document.getElementById('targetXSatellite').value = '';
+                document.getElementById('targetXBeam').value = '';
+                document.getElementById('sameXSatellite').checked = false;
+            }
+
+            // Add Ka outage
+            function addKaOutage() {
+                const start = document.getElementById('kaOutageStart').value;
+                const duration = parseFloat(document.getElementById('kaOutageDuration').value);
+
+                if (!start || !Number.isFinite(duration)) {
+                    showAlert('Please fill in Ka outage fields', 'error');
+                    return;
+                }
+
+                if (currentMission) {
+                    const outage = {
+                        id: `ka-outage-${Date.now()}`,
+                        start_time: new Date(start).toISOString(),
+                        duration_seconds: duration
+                    };
+                    currentMission.transports.ka_outages.push(outage);
+                    renderKaOutages(currentMission.transports.ka_outages);
+                    clearKaOutageForm();
+                }
+            }
+
+            // Render Ka outages
+            function renderKaOutages(outages) {
+                const list = document.getElementById('kaOutagesList');
+                if (outages.length === 0) {
+                    list.innerHTML = '<p class="empty-state">No Ka outages defined</p>';
+                    return;
+                }
+
+                list.innerHTML = outages.map(o => `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title"><span class="badge badge-ka">Ka</span>Outage Window</div>
+                            <div class="list-item-details">
+                                ${new Date(o.start_time).toLocaleString()} for ${(o.duration_seconds / 60).toFixed(1)} minutes
+                            </div>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="btn-danger btn-small" onclick="removeKaOutage('${o.id}')">Remove</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Remove Ka outage
+            function removeKaOutage(id) {
+                if (currentMission) {
+                    currentMission.transports.ka_outages = currentMission.transports.ka_outages.filter(o => o.id !== id);
+                    renderKaOutages(currentMission.transports.ka_outages);
+                }
+            }
+
+            // Clear Ka outage form
+            function clearKaOutageForm() {
+                document.getElementById('kaOutageStart').value = '';
+                document.getElementById('kaOutageDuration').value = '';
+            }
+
+            // Add Ku override
+            function addKuOverride() {
+                const start = document.getElementById('kuOutageStart').value;
+                const duration = parseFloat(document.getElementById('kuOutageDuration').value);
+                const reason = document.getElementById('kuOutageReason').value || null;
+
+                if (!start || !Number.isFinite(duration)) {
+                    showAlert('Please fill in Ku outage fields', 'error');
+                    return;
+                }
+
+                if (currentMission) {
+                    const override = {
+                        id: `ku-outage-${Date.now()}`,
+                        start_time: new Date(start).toISOString(),
+                        duration_seconds: duration,
+                        reason: reason
+                    };
+                    currentMission.transports.ku_overrides.push(override);
+                    renderKuOverrides(currentMission.transports.ku_overrides);
+                    clearKuOverrideForm();
+                }
+            }
+
+            // Render Ku overrides
+            function renderKuOverrides(overrides) {
+                const list = document.getElementById('kuOverridesList');
+                if (overrides.length === 0) {
+                    list.innerHTML = '<p class="empty-state">No Ku overrides defined</p>';
+                    return;
+                }
+
+                list.innerHTML = overrides.map(o => `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title"><span class="badge badge-ku">Ku</span>Outage Override</div>
+                            <div class="list-item-details">
+                                ${new Date(o.start_time).toLocaleString()} for ${(o.duration_seconds / 60).toFixed(1)} minutes
+                                ${o.reason ? ` - ${o.reason}` : ''}
+                            </div>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="btn-danger btn-small" onclick="removeKuOverride('${o.id}')">Remove</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Remove Ku override
+            function removeKuOverride(id) {
+                if (currentMission) {
+                    currentMission.transports.ku_overrides = currentMission.transports.ku_overrides.filter(o => o.id !== id);
+                    renderKuOverrides(currentMission.transports.ku_overrides);
+                }
+            }
+
+            // Clear Ku override form
+            function clearKuOverrideForm() {
+                document.getElementById('kuOutageStart').value = '';
+                document.getElementById('kuOutageDuration').value = '';
+                document.getElementById('kuOutageReason').value = '';
+            }
+
+            // Add AAR window
+            function addAARWindow() {
+                const start = document.getElementById('aarStartWaypoint').value;
+                const end = document.getElementById('aarEndWaypoint').value;
+
+                if (!start || !end) {
+                    showAlert('Please select start and end waypoints', 'error');
+                    return;
+                }
+
+                if (currentMission) {
+                    const window = {
+                        id: `aar-${Date.now()}`,
+                        start_waypoint_name: start,
+                        end_waypoint_name: end
+                    };
+                    currentMission.transports.aar_windows.push(window);
+                    renderAARWindows(currentMission.transports.aar_windows);
+                    clearAARWindowForm();
+                }
+            }
+
+            // Render AAR windows
+            function renderAARWindows(windows) {
+                const list = document.getElementById('aarWindowsList');
+                if (windows.length === 0) {
+                    list.innerHTML = '<p class="empty-state">No AAR windows defined</p>';
+                    return;
+                }
+
+                list.innerHTML = windows.map(w => `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <div class="list-item-title">AAR Segment</div>
+                            <div class="list-item-details">
+                                ${w.start_waypoint_name} → ${w.end_waypoint_name}
+                            </div>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="btn-danger btn-small" onclick="removeAARWindow('${w.id}')">Remove</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Remove AAR window
+            function removeAARWindow(id) {
+                if (currentMission) {
+                    currentMission.transports.aar_windows = currentMission.transports.aar_windows.filter(w => w.id !== id);
+                    renderAARWindows(currentMission.transports.aar_windows);
+                }
+            }
+
+            // Clear AAR window form
+            function clearAARWindowForm() {
+                document.getElementById('aarStartWaypoint').value = '';
+                document.getElementById('aarEndWaypoint').value = '';
+            }
+
+            // Save mission
+            async function saveMission(e) {
+                e.preventDefault();
+
+                if (!currentMission) {
+                    currentMission = {
+                        id: `mission-${Date.now()}`,
+                        name: document.getElementById('missionName').value,
+                        description: document.getElementById('missionDescription').value || null,
+                        route_id: document.getElementById('routeId').value,
+                        transports: {
+                            initial_x_satellite_id: document.getElementById('initialXSatellite').value,
+                            initial_ka_satellite_ids: ["T2-1", "T2-2", "T2-3"],
+                            x_transitions: [],
+                            ka_outages: [],
+                            aar_windows: [],
+                            ku_overrides: []
+                        },
+                        notes: document.getElementById('missionNotes').value || null,
+                        is_active: false,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                }
+
+                currentMission.name = document.getElementById('missionName').value;
+                currentMission.route_id = document.getElementById('routeId').value;
+                currentMission.description = document.getElementById('missionDescription').value || null;
+                currentMission.transports.initial_x_satellite_id = document.getElementById('initialXSatellite').value;
+                currentMission.notes = document.getElementById('missionNotes').value || null;
+                currentMission.updated_at = new Date().toISOString();
+
+                const saveBtn = document.querySelector('#saveMissionBtn');
+                const originalText = saveBtn.textContent;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="loading"></span>';
+
+                try {
+                    const method = missions.some(m => m.id === currentMission.id) ? 'PUT' : 'POST';
+                    const url = method === 'PUT'
+                        ? `/api/missions/${currentMission.id}`
+                        : '/api/missions';
+
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(currentMission)
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Save failed');
+                    }
+
+                    showAlert(`Mission "${currentMission.name}" saved successfully`, 'success');
+                    await loadMissions();
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = originalText;
+                }
+            }
+
+            // Delete mission
+            async function deleteMission() {
+                if (!currentMission || !confirm(`Delete mission "${currentMission.name}"? This cannot be undone.`)) return;
+
+                try {
+                    const response = await fetch(`/api/missions/${currentMission.id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) throw new Error('Delete failed');
+
+                    showAlert(`Mission "${currentMission.name}" deleted successfully`, 'success');
+                    resetForm();
+                    await loadMissions();
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                }
+            }
+
+            // Reset form
+            function resetForm() {
+                document.getElementById('missionForm').reset();
+                document.getElementById('missionSelect').value = 'new';
+                currentMission = null;
+                document.getElementById('deleteMissionBtn').style.display = 'none';
+                renderXTransitions([]);
+                renderKaOutages([]);
+                renderKuOverrides([]);
+                renderAARWindows([]);
+                clearXTransitionForm();
+                clearKaOutageForm();
+                clearKuOverrideForm();
+                clearAARWindowForm();
+            }
+
+            // Export mission
+            function exportMission() {
+                if (!currentMission) {
+                    showAlert('Please create or select a mission first', 'error');
+                    return;
+                }
+
+                const json = JSON.stringify(currentMission, null, 2);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentMission.id}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showAlert('Mission exported successfully', 'success');
+            }
+
+            // Import mission
+            function importMission() {
+                const fileInput = document.getElementById('importFile');
+                const file = fileInput.files[0];
+
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const mission = JSON.parse(e.target.result);
+                        currentMission = mission;
+                        populateFormFromMission(mission);
+                        document.getElementById('missionSelect').value = mission.id;
+                        showAlert('Mission imported successfully', 'success');
+                    } catch (error) {
+                        showAlert('Error importing mission: ' + error.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+                fileInput.value = '';
+            }
+
+            // Show alert
+            function showAlert(message, type = 'info') {
+                const alertsDiv = document.getElementById('alerts');
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+
+                alertsDiv.appendChild(alertDiv);
+                setTimeout(() => alertDiv.remove(), 4000);
+            }
+        </script>
+    </body>
+    </html>
+    """
