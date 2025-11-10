@@ -560,7 +560,8 @@ async def poi_management_ui():
                     'other': 'star',
                     'departure': 'airport',
                     'arrival': 'flag',
-                    'alternate': 'star'
+                    'alternate': 'star',
+                    'satellite': 'channel'
                 };
                 document.getElementById('poiIcon').value = iconMap[e.target.value] || 'star';
             });
