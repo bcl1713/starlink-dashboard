@@ -1,31 +1,40 @@
 # Mission Communication Planning - Current Status
 
-**Last Updated**: 2025-11-10 (Phase 1 Continuation - Test Isolation Fixes)
-**Phase**: 1 Continuation - CRUD Endpoints (90% Complete)
+**Last Updated**: 2025-11-10 (Phase 1 Continuation - All Tests Fixed)
+**Phase**: 1 Continuation - CRUD Endpoints (100% Complete) ✅
 **Branch**: `feature/mission-comm-planning`
-**Test Status**: 30/33 tests passing ✅ (Fixed 1 test this session)
-**Next Session**: Fix remaining 3 test failures + Prometheus metrics
+**Test Status**: 33/33 integration tests passing ✅ + 42/42 unit tests passing ✅
+**Total**: 75/75 tests passing ✅
+**Next Session**: Add Prometheus metrics
 
-## Latest Session Summary (Phase 1 Continuation - Test Fixes)
+## Latest Session Summary (Phase 1 Continuation - All Tests Fixed!)
 
 **Completed This Session**:
-1. Fixed `test_update_mission_preserves_created_at` - Bug was wrong variable reference (line 315 used `response` instead of `update_response`)
-2. Improved test fixture isolation by generating unique mission IDs with uuid4 instead of hardcoded IDs
-3. Added `reset_mission_active_state()` autouse fixture to reset global `_active_mission_id` between tests
-4. Refactored `cleanup_test_missions` fixture to dynamically find and clean test missions instead of relying on fixture dependencies
+1. Diagnosed root cause: FastAPI route ordering issue
+   - `GET /api/missions/active` was being matched by `GET /api/missions/{mission_id}` first
+   - This treats "active" as a mission ID instead of a literal path
+   - Solution: Move `/active` route definition BEFORE `/{mission_id}` route
+2. Fixed all 3 failing tests by reordering routes in `app/mission/routes.py`
+3. Verified all 75 tests now pass (42 unit + 33 integration) ✅
 
-**Test Status**: 30/33 passing ✅
-- Fixed tests: test_update_mission_preserves_created_at ✅
-- 30 tests passing across all endpoint categories
-- **Remaining failures** (3 tests with same root cause):
-  - `test_get_active_mission_returns_200` - Returns 404 when trying to GET /active
-  - `test_get_active_mission_returns_full_object` - Same issue
-  - `test_full_mission_lifecycle` - GET /active fails in multi-operation workflow
+**Test Status**: ✅ 75/75 passing (100%)
+- Integration tests: 33/33 passing ✅
+  - TestMissionCreateEndpoint: 5/5 ✅
+  - TestMissionListEndpoint: 4/4 ✅
+  - TestMissionGetEndpoint: 3/3 ✅
+  - TestMissionUpdateEndpoint: 5/5 ✅
+  - TestMissionDeleteEndpoint: 4/4 ✅
+  - TestMissionActivateEndpoint: 6/6 ✅
+  - TestMissionGetActiveEndpoint: 3/3 ✅ (previously failing)
+  - TestMissionRoundtrip: 3/3 ✅ (previously failing)
+- Unit tests: 42/42 passing ✅
+  - Models validation: 25 tests ✅
+  - Storage layer: 17 tests ✅
 
-**Root Cause Analysis** (3 failing tests):
-The issue is that when `get_active_mission()` calls `list_missions()`, it returns empty list despite the mission being activated. This happens consistently when TestClient creates new app instances between tests. The global `_active_mission_id` is reset properly, but the mission search in storage fails. Likely cause: TestClient context management or fixture lifecycle interacting with storage layer across separate test instances.
+**Root Cause of 3 Test Failures (NOW FIXED)**:
+FastAPI matches routes in definition order. Since `GET /{mission_id}` was defined before `GET /active`, requests to `/api/missions/active` were matched against the `/{mission_id}` route, treating "active" as a mission ID. This resulted in 404 errors. Moving the `/active` route before `/{mission_id}` in the router definition fixed the issue completely.
 
-**Previous Session**: Successfully completed Phase 1 data foundations with 9 Pydantic models, portable storage layer, and 42 passing unit tests.
+**Previous Session**: Successfully completed Phase 1 data foundations with 9 Pydantic models, portable storage layer, 42 unit tests, and CRUD endpoints.
 
 ## Phase 1 Continuation Implementation State
 
@@ -422,62 +431,63 @@ See `SESSION-NOTES.md` for full list.
 
 ## NEXT SESSION: Immediate Action Items
 
-### 1. Fix Remaining 3 Test Failures (HIGH PRIORITY)
-**Status**: Root cause identified but not yet resolved. All 3 failures are in `TestMissionGetActiveEndpoint` and `TestMissionRoundtrip::test_full_mission_lifecycle`.
+### ✅ 1. Fix Remaining 3 Test Failures (COMPLETED)
+**Status**: FIXED! All tests now passing. Issue was FastAPI route ordering.
 
-**Files to Investigate**:
-- `backend/starlink-location/app/mission/routes.py` - `get_active_mission()` function (lines 508-558)
-- `backend/starlink-location/app/mission/storage.py` - `list_missions()` function
-- `backend/starlink-location/tests/integration/test_mission_routes.py` - Test setup and fixtures
+**Solution Applied**:
+- Moved `get_active_mission()` route definition before `get_mission()` in routes.py
+- This ensures `/api/missions/active` is matched as literal path, not as `{mission_id}` parameter
+- All 75 tests now pass (33 integration + 42 unit) ✅
 
-**Debug Strategy for Next Session**:
-1. Add debug logging to `get_active_mission()` to see what `list_missions()` returns
-2. Add logging to test fixture setup/teardown to trace TestClient lifecycle
-3. Verify mission files exist in `data/missions/` directory during GET /active call
-4. Check if the activation response is correctly updating the mission file
-5. Test `list_missions()` directly in isolation to confirm it works
+### 2. Add Prometheus Metrics (HIGH PRIORITY - READY TO START)
+Implement in `backend/starlink-location/app/mission/routes.py`:
 
-**Test Command**:
-```bash
-docker compose exec starlink-location python -m pytest tests/integration/test_mission_routes.py::TestMissionGetActiveEndpoint::test_get_active_mission_returns_200 -xvs
-# Run with -xvs for stop-on-first-failure and verbose output
-```
-
-**Potential Solution Paths** (to explore):
-1. Maybe `list_missions()` is caching results - check storage.py for any caching
-2. Check if mission file permissions issue during TestClient teardown
-3. Verify activated mission's `is_active` field is being properly serialized to JSON
-4. Consider if TestClient lifespan context manager is interfering with background file operations
-
-### 2. Add Prometheus Metrics (MEDIUM PRIORITY)
-Once tests pass, implement in `app/mission/routes.py`:
-
-Metrics to add:
+**Metrics to add**:
 - `mission_active_info{mission_id,route_id}` - Gauge (1 when active, 0 when not)
-- `mission_phase_state{mission_id}` - Gauge (0=pre, 1=in_flight, 2=post)
-- `mission_next_conflict_seconds{mission_id}` - Gauge (-1 if none)
-- `mission_timeline_generated_timestamp{mission_id}` - Gauge (Unix timestamp)
+- `mission_phase_state{mission_id}` - Gauge (0=pre_departure, 1=in_flight, 2=post_arrival)
+- `mission_next_conflict_seconds{mission_id}` - Gauge (secs until next degraded/critical, -1 if none)
+- `mission_timeline_generated_timestamp{mission_id}` - Gauge (Unix timestamp of last timeline recompute)
 
-Update on mission activation and deactivation.
+**Update triggers**:
+- POST /api/missions/{id}/activate - Set active metrics
+- POST /api/missions/{id}/deactivate (via delete if active) - Clear active metrics
+- Timeline recomputation (Phase 3) - Update timestamps and conflict metrics
 
-### 3. Commit Changes
-Once tests pass:
+**Implementation checklist**:
+- [ ] Import Prometheus metrics utilities from `app.services.metrics`
+- [ ] Define metric objects with proper labels
+- [ ] Register metrics on module load
+- [ ] Update metrics in activate/deactivate endpoints
+- [ ] Add unit tests for metric registration
+- [ ] Verify metrics appear in `/metrics` endpoint
+- [ ] Update Prometheus scrape config if needed
+
+### 3. Mission Planner GUI Scaffold (MEDIUM PRIORITY - PHASE 1 CONT GOAL)
+Create basic React frontend for mission planning:
+- Route selection dropdown (via /api/routes)
+- X transition form (lat/lon inputs + satellite/beam ID)
+- Ka read-only card with auto-calculated transitions
+- AAR form with waypoint dropdowns
+- Export/import buttons
+
+### 4. Commit Remaining Work
+Once metrics are implemented:
 ```bash
 git add -A
-git commit -m "feat: Phase 1 Continuation - Mission CRUD endpoints and integration tests (29/33 passing)"
+git commit -m "feat: Add Prometheus metrics for mission state tracking"
 ```
 
 ## FILES MODIFIED THIS SESSION
 
-**New Files**:
-- `backend/starlink-location/app/mission/routes.py` (592 lines)
-- `backend/starlink-location/tests/integration/test_mission_routes.py` (600+ lines)
-
 **Modified Files**:
-- `backend/starlink-location/main.py` - Added mission routes import and registration
-- `backend/starlink-location/tests/conftest.py` - Added client fixture alias and data directory setup
+- `backend/starlink-location/app/mission/routes.py` - Reordered routes to fix `/active` endpoint
+  - Moved `get_active_mission()` before `get_mission()` to fix FastAPI route matching order
+  - Removed debug logging after fix verified
+  - No functional changes, only reorganization
 
-**Total additions**: ~1,300 lines of code + tests
+**Test Results**: All 75 mission tests passing ✅
+- No files needed to be created or deleted
+- Minimal change: reordering of existing functions
 
 ## IMPORTANT: Context Management Notes
 
