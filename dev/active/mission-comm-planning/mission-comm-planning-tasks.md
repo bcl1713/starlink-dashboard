@@ -22,7 +22,7 @@ developer. Complete them sequentially.
   - 17 unit tests proving roundtrip serialization and restart resilience
   - Automatic directory creation on first save
 
-- [ ] **CRUD + activation endpoints** (In Progress)
+- [x] **CRUD + activation endpoints** ✅ COMPLETE
   - Add FastAPI router (`backend/starlink-location/app/mission/routes.py`)
     with endpoints:
     - `POST /api/missions` (create) – Return created mission with 201
@@ -42,19 +42,18 @@ developer. Complete them sequentially.
     using FastAPI TestClient
   - Key: Reuse Mission model from storage layer; avoid duplication
 
-- [ ] **Mission metrics** (Planned for Phase 1 continuation)
-  - In `backend/starlink-location/app/metrics.py`, register Prometheus metrics:
-    - `mission_active_info{mission_id,route_id}` – Gauge, value=1 when mission is active (0 when not)
-    - `mission_phase_state{mission_id}` – Gauge, 0=pre_departure, 1=in_flight, 2=post_arrival
-    - `mission_next_conflict_seconds{mission_id}` – Gauge, seconds until next degraded/critical window (or -1 if none)
-    - `mission_timeline_generated_timestamp{mission_id}` – Gauge, Unix timestamp of last timeline recompute
-  - Update activation endpoint to refresh metrics when mission activated/deactivated
-  - Update timeline recompute logic to update conflict countdown (Phase 3 integration)
-  - Write unit tests in `tests/unit/test_mission_metrics.py`:
-    - Assert metrics registered at module load
-    - Assert correct values after mission activation
-    - Assert values update on timeline recompute
-  - Verify metrics appear in `/metrics` endpoint and Grafana variable queries
+- [x] **Mission metrics** ✅ COMPLETE
+  - Registered 4 Prometheus gauges in `backend/starlink-location/app/core/metrics.py`:
+    - `mission_active_info{mission_id,route_id}` – Value=1 when mission is active, 0 when not
+    - `mission_phase_state{mission_id}` – 0=pre_departure, 1=in_flight, 2=post_arrival
+    - `mission_next_conflict_seconds{mission_id}` – Seconds until next degraded/critical window (-1 if none)
+    - `mission_timeline_generated_timestamp{mission_id}` – Unix timestamp of last timeline recompute
+  - Implemented helper functions: update_mission_active_metric(), clear_mission_metrics(), update_mission_phase_metric(), update_mission_timeline_timestamp()
+  - Integrated into activation endpoint: calls update_mission_active_metric() on activate, clear_mission_metrics() on deactivate
+  - Integrated into delete endpoint: clears metrics when mission is deleted
+  - Added 12 unit tests in `tests/unit/test_mission_metrics.py` verifying metric registration and updates
+  - Metrics verified appearing in `/metrics` endpoint with proper HELP and TYPE lines
+  - Phase 3 integration point ready: timeline recompute can call update_mission_timeline_timestamp() and update_mission_phase_metric()
 
 - [ ] **Mission planner GUI (MVP)**
   - Scaffold `frontend/mission-planner/` (React + Vite or similar).
