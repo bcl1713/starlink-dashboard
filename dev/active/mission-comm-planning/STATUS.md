@@ -431,15 +431,31 @@ See `SESSION-NOTES.md` for full list.
 
 ## NEXT SESSION: Immediate Action Items
 
-### ✅ 1. Fix Remaining 3 Test Failures (COMPLETED)
-**Status**: FIXED! All tests now passing. Issue was FastAPI route ordering.
+### ✅ 1. Fix Mission Test Failures (COMPLETED)
+**Status**: FIXED! All 75 mission tests now passing. Issue was FastAPI route ordering.
 
 **Solution Applied**:
 - Moved `get_active_mission()` route definition before `get_mission()` in routes.py
 - This ensures `/api/missions/active` is matched as literal path, not as `{mission_id}` parameter
-- All 75 tests now pass (33 integration + 42 unit) ✅
+- All 75 tests pass (33 integration + 42 unit) ✅
 
-### 2. Add Prometheus Metrics (HIGH PRIORITY - READY TO START)
+### 2. Fix Pre-existing Test Failures in Other Modules (HIGH PRIORITY)
+**Status**: Not yet fixed. These are unrelated to mission work but should be addressed.
+
+**Failing tests**:
+- `tests/unit/test_live_coordinator.py::TestLiveCoordinatorReset::test_reset`
+- `tests/unit/test_metrics_export.py::test_metrics_export_emits_eta_labels[trio]`
+- `tests/unit/test_metrics_export.py::test_metrics_export_includes_route_timing[trio]`
+
+**Root cause**: Missing `trio` module in test environment (trio backend for anyio).
+
+**Fix strategy**:
+1. Check if trio should be in requirements/dev dependencies
+2. Either install trio or skip trio-based tests in test configuration
+3. Verify all 519 other tests pass after fix
+4. Goal: Zero failing tests in full test suite
+
+### 3. Add Prometheus Metrics (HIGH PRIORITY - READY TO START)
 Implement in `backend/starlink-location/app/mission/routes.py`:
 
 **Metrics to add**:
@@ -462,7 +478,14 @@ Implement in `backend/starlink-location/app/mission/routes.py`:
 - [ ] Verify metrics appear in `/metrics` endpoint
 - [ ] Update Prometheus scrape config if needed
 
-### 3. Mission Planner GUI Scaffold (MEDIUM PRIORITY - PHASE 1 CONT GOAL)
+### 4. Add Prometheus Metrics (HIGH PRIORITY - READY TO START - MOVED DOWN)
+Implement in `backend/starlink-location/app/mission/routes.py`:
+- `mission_active_info{mission_id,route_id}` - Gauge (1 when active, 0 when not)
+- `mission_phase_state{mission_id}` - Gauge (0=pre_departure, 1=in_flight, 2=post_arrival)
+- `mission_next_conflict_seconds{mission_id}` - Gauge (secs until next degraded/critical, -1 if none)
+- `mission_timeline_generated_timestamp{mission_id}` - Gauge (Unix timestamp of last timeline recompute)
+
+### 5. Mission Planner GUI Scaffold (MEDIUM PRIORITY - PHASE 1 CONT GOAL)
 Create basic React frontend for mission planning:
 - Route selection dropdown (via /api/routes)
 - X transition form (lat/lon inputs + satellite/beam ID)
@@ -470,11 +493,11 @@ Create basic React frontend for mission planning:
 - AAR form with waypoint dropdowns
 - Export/import buttons
 
-### 4. Commit Remaining Work
-Once metrics are implemented:
+### 6. Commit Remaining Work
+Once all tests pass and metrics are implemented:
 ```bash
 git add -A
-git commit -m "feat: Add Prometheus metrics for mission state tracking"
+git commit -m "fix: Fix remaining test failures + feat: Add Prometheus metrics for mission state tracking"
 ```
 
 ## FILES MODIFIED THIS SESSION
