@@ -194,6 +194,12 @@ def default_mock_telemetry():
     )
 
 
+@pytest.fixture(params=["asyncio"])
+def anyio_backend(request):
+    """Limit anyio backend to asyncio only (trio not installed)."""
+    return request.param
+
+
 @pytest.fixture
 def mock_starlink_client_factory():
     """Factory to create a mocked StarlinkClient with default success behavior.

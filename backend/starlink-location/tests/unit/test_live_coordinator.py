@@ -274,15 +274,20 @@ class TestLiveCoordinatorReset:
         mock_client.get_telemetry.return_value = mock_telemetry
 
         # Use specific timestamps to make uptime/reset behaviour deterministic
+        # Counter to track how many times time.time() is called
         time_values = [
             1000.0,  # initial start_time inside LiveCoordinator.__init__
             1100.0,  # get_uptime_seconds() call
             1200.0,  # reset() start_time assignment
-            1200.0,  # any subsequent time.time() calls post-reset
+            1300.0,  # any subsequent time.time() calls post-reset
         ]
-        time_iter = iter(time_values)
 
-        with patch("app.live.coordinator.time.time", side_effect=lambda: next(time_iter)):
+        def mock_time():
+            if len(time_values) > 0:
+                return time_values.pop(0)
+            return 9999.0  # Fallback for any extra calls
+
+        with patch("app.live.coordinator.time.time", side_effect=mock_time):
             config = SimulationConfig()
             coordinator = LiveCoordinator(config)
 
