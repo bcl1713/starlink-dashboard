@@ -6,6 +6,7 @@
 **Test Status**: 608/608 tests passing (100%) ✅ - All tests passing after GUI addition
 **Total**: 608 consistently passing (no regressions introduced)
 **Status**: Mission Planner GUI scaffold complete and fully functional
+**Implementation Guide**: See `mission-comm-planning-tasks.md` for detailed Phase 1-5 task breakdown with acceptance criteria ⭐
 
 ## Latest Session Summary (Mission Planner GUI Scaffold Completed!)
 
@@ -432,8 +433,8 @@ See `mission-comm-planning-plan.md` for complete roadmap.
 
 **For Developers (Phase 1 Continuation)**:
 1. `dev/active/mission-comm-planning/README.md` - Start here (253 lines)
-2. `backend/starlink-location/app/mission/models.py` - Review data structure (551 lines)
-3. `mission-comm-planning-tasks.md` - Read CRUD endpoints task (clear acceptance criteria)
+2. **`mission-comm-planning-tasks.md` - IMPLEMENTATION GUIDE with all Phase 1-5 tasks and acceptance criteria** ⭐
+3. `backend/starlink-location/app/mission/models.py` - Review data structure (551 lines)
 4. `backend/starlink-location/tests/unit/test_mission_models.py` - See test patterns (25 tests)
 
 **For Architects/Code Reviewers**:
