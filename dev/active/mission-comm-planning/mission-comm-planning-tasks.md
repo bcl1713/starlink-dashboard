@@ -7,51 +7,54 @@ developer. Complete them sequentially.
 
 ## Phase 1 – Mission Data Foundations
 
-- [ ] **Define mission schemas**
-  - Create `backend/starlink-location/app/mission/models.py` containing Pydantic
-    models for `Mission`, `TransportConfig`, `XTransition`, `KaOutage`,
-    `AARWindow`, `TimelineAdvisory`.
-  - Required fields (see `mission-comm-planning-plan.md:32-54`): route_id,
-    transport IDs, transition lat/lon, target satellite/beam ID, optional outage
-    windows, AAR waypoint names.
-  - Add validation helpers (e.g., lat between -90/90, lon -180/180, timestamps
-    ISO8601).
-  - Write tests in `backend/starlink-location/tests/test_mission_models.py` that
-    load sample JSON and assert both successful parsing and expected validation
-    errors.
+- [x] **Define mission schemas** ✅ COMPLETE
+  - Created `backend/starlink-location/app/mission/models.py` (551 lines)
+  - Pydantic models: Mission, TransportConfig, XTransition, KaOutage, AARWindow, KuOutageOverride, TimelineSegment, TimelineAdvisory, MissionTimeline
+  - All required fields with validation: coordinates (-90/90 lat, -180/180 lon), durations (>0), ISO8601 timestamps
+  - 25 unit tests covering all models and enumerations
+  - See `PHASE-1-COMPLETION.md` for detailed model documentation
 
-- [ ] **Mission storage utilities**
-  - Create `backend/starlink-location/app/mission/storage.py` with functions
-    `save_mission(mission: Mission)`, `load_mission(mission_id)`,
-    `list_missions()` using `data/missions/` for persistence.
-  - Files should be portable (`<mission_id>.json` plus subfolder for
-    attachments); ensure directories are created automatically.
-  - Add a simple checksum (e.g., SHA256) stored alongside each mission for
-    integrity.
-  - Test with `pytest` to confirm missions survive process restarts (write,
-    reload, compare models).
+- [x] **Mission storage utilities** ✅ COMPLETE
+  - Created `backend/starlink-location/app/mission/storage.py` (243 lines)
+  - Functions: save_mission, load_mission, list_missions, delete_mission, mission_exists
+  - Portable flat-file design: `data/missions/{mission_id}.json` + `.sha256` checksums
+  - SHA256 checksum validation for data integrity
+  - 17 unit tests proving roundtrip serialization and restart resilience
+  - Automatic directory creation on first save
 
-- [ ] **CRUD + activation endpoints**
-  - Add a FastAPI router (`backend/starlink-location/app/mission/routes.py`)
-    exposing:
-    - `POST /api/missions` (create)
-    - `GET /api/missions` (list)
-    - `GET /api/missions/{id}` (details)
-    - `PUT /api/missions/{id}` (update/import)
-    - `POST /api/missions/{id}/activate`
-  - Activation should: store `active_mission_id`, reset `FlightStateManager` to
-    `pre_departure`, and enqueue a timeline recompute.
-  - Write integration tests in
-    `backend/starlink-location/tests/test_mission_routes.py` using FastAPI
-    TestClient.
+- [ ] **CRUD + activation endpoints** (In Progress)
+  - Add FastAPI router (`backend/starlink-location/app/mission/routes.py`)
+    with endpoints:
+    - `POST /api/missions` (create) – Return created mission with 201
+    - `GET /api/missions` (list) – Return paginated list with filtering
+    - `GET /api/missions/{id}` (read) – Return full mission object
+    - `PUT /api/missions/{id}` (update) – Merge changes, update timestamp
+    - `DELETE /api/missions/{id}` (delete) – Remove mission files
+    - `POST /api/missions/{id}/activate` (activate) – Set active_mission_id, trigger timeline recompute
+    - `GET /api/missions/active` (get active) – Return currently active mission
+  - Activation logic:
+    - Store global `active_mission_id` in app state (or config)
+    - Signal flight state manager to reset to `pre_departure` (integration point)
+    - Enqueue or immediately trigger timeline recomputation (Phase 3)
+    - Return activation confirmation with timestamp
+  - Error handling: 404 if mission not found, 409 if already active, 422 if invalid
+  - Write integration tests in `backend/starlink-location/tests/integration/test_mission_routes.py`
+    using FastAPI TestClient
+  - Key: Reuse Mission model from storage layer; avoid duplication
 
-- [ ] **Mission metrics**
-  - In `backend/starlink-location/app/metrics.py`, register gauges/counters:
-    - `mission_active_info{mission_id,route_id}` (value 1 when active)
-    - `mission_phase_state` (0=pre,1=in_flight,2=post)
-    - `mission_next_conflict_seconds` (time until next degraded/critical window)
-  - Update activation handler to refresh these metrics.
-  - Add tests asserting the metrics exist and update when missions change.
+- [ ] **Mission metrics** (Planned for Phase 1 continuation)
+  - In `backend/starlink-location/app/metrics.py`, register Prometheus metrics:
+    - `mission_active_info{mission_id,route_id}` – Gauge, value=1 when mission is active (0 when not)
+    - `mission_phase_state{mission_id}` – Gauge, 0=pre_departure, 1=in_flight, 2=post_arrival
+    - `mission_next_conflict_seconds{mission_id}` – Gauge, seconds until next degraded/critical window (or -1 if none)
+    - `mission_timeline_generated_timestamp{mission_id}` – Gauge, Unix timestamp of last timeline recompute
+  - Update activation endpoint to refresh metrics when mission activated/deactivated
+  - Update timeline recompute logic to update conflict countdown (Phase 3 integration)
+  - Write unit tests in `tests/unit/test_mission_metrics.py`:
+    - Assert metrics registered at module load
+    - Assert correct values after mission activation
+    - Assert values update on timeline recompute
+  - Verify metrics appear in `/metrics` endpoint and Grafana variable queries
 
 - [ ] **Mission planner GUI (MVP)**
   - Scaffold `frontend/mission-planner/` (React + Vite or similar).

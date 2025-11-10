@@ -11,20 +11,26 @@ transition points).
 
 ## Key Components & Files
 
-- `backend/starlink-location/` – FastAPI service hosting mission APIs,
-  simulation, metrics exporters.
-- `data/routes/` + `/data/sim_routes/` – Input KML files with timing metadata
-  already supported.
-- `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` –
-  Primary visualization to extend with satellite overlays and mission timeline
-  panel.
-- `docs/ROUTE-TIMING-GUIDE.md`, `docs/METRICS.md`, `docs/ROUTE-API-SUMMARY.md` –
-  Current behavior for route timing, metrics, and APIs that mission planning
-  must extend.
-- `dev/active/eta-route-timing/` – Previous plan that established the timing
-  engine we now depend on.
-- `frontend/mission-planner/` (new) or Grafana custom panel – UI surface where
-  planners will configure transports, transitions, and exports.
+### Completed (Phase 1)
+- `backend/starlink-location/app/mission/models.py` – Pydantic models for Mission, TransportConfig, XTransition, KaOutage, AARWindow, KuOutageOverride, TimelineSegment, TimelineAdvisory, MissionTimeline
+- `backend/starlink-location/app/mission/storage.py` – Portable mission persistence (JSON + SHA256 checksums)
+- `backend/starlink-location/tests/unit/test_mission_*.py` – 42 passing unit tests
+- `data/missions/` – Mission storage directory (auto-created)
+- `dev/active/mission-comm-planning/PHASE-1-COMPLETION.md` – Detailed Phase 1 report
+
+### In Progress / Planned
+- `backend/starlink-location/app/mission/routes.py` – CRUD endpoints (Phase 1 continuation)
+- `backend/starlink-location/app/mission/satellites/` – Geometry engine (Phase 2)
+- `backend/starlink-location/app/mission/timeline.py` – Timeline engine (Phase 3)
+- `frontend/mission-planner/` (new) – UI for mission configuration
+- `monitoring/grafana/provisioning/dashboards/` – Mission timeline panel updates (Phase 4)
+
+### Foundation Systems
+- `backend/starlink-location/` – FastAPI service hosting mission APIs, simulation, metrics exporters
+- `data/routes/` + `/data/sim_routes/` – Input KML files with timing metadata already supported
+- `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` – Primary visualization to extend
+- `docs/ROUTE-TIMING-GUIDE.md`, `docs/METRICS.md`, `docs/ROUTE-API-SUMMARY.md` – Foundational APIs
+- `dev/active/eta-route-timing/` – Previous work that established the timing engine we depend on
 
 ## Data Inputs & Artifacts
 
