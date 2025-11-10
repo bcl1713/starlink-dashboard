@@ -1,20 +1,32 @@
 # Mission Communication Planning - Current Status
 
-**Last Updated**: 2025-11-10 (Prometheus Metrics Implementation Complete)
+**Last Updated**: 2025-11-10 (Test Isolation Fixes + Prometheus Metrics Complete)
 **Phase**: 1 Continuation - CRUD Endpoints + Prometheus Metrics (100% Complete) ✅
 **Branch**: `feature/mission-comm-planning`
-**Test Status**: 607/607 tests passing ✅ (496 unit + 111 integration) + pre-existing test isolation issues
-**Total**: 607 tests passing + 12 new mission metrics tests
-**Next Session**: Mission Planner GUI + Fix remaining test isolation issues
+**Test Status**: 607/608 tests passing (99.8%) ✅ - 1 intermittent NaN test remaining
+**Total**: 607 consistently passing + 1 intermittent flaky test
+**Next Session**: FIX INTERMITTENT TEST FIRST, then Mission Planner GUI
 
-## Latest Session Summary (Prometheus Metrics Added!)
+## Latest Session Summary (Test Isolation Fixes + Prometheus Metrics)
 
 **Completed This Session**:
-1. ✅ Fixed remaining integration test failure (`test_route_activation_resets_flight_state`)
-   - Test was actually passing when run individually
-   - Issue was transient test isolation problem from earlier sessions
+1. ✅ Fixed ETA service test isolation issues in conftest.py:
+   - Root cause identified: `test_eta_service.py` has autouse fixture that clears ETA service globals
+   - Tests were failing when run in full suite but passing individually
+   - Solution: Added `ensure_eta_service_initialized()` fixture that re-initializes ETA service before each test
+   - Updated `coordinator()` fixture to ensure ETA service initialized when coordinator created
+   - This is CRITICAL for metrics unit tests that use coordinator fixture
+   - Files modified: `backend/starlink-location/tests/conftest.py`
 
-2. ✅ Added Prometheus metrics for mission state tracking:
+2. ⚠️ REMAINING: 1 intermittent NaN test failure (HIGH PRIORITY FOR NEXT SESSION):
+   - Test: `tests/unit/test_metrics.py::TestMetricsFormatting::test_metrics_are_numeric`
+   - Status: 607/608 tests passing (99.8%) - only fails intermittently when running full suite
+   - Root cause: Prometheus registry contains NaN values from previous tests (metric pollution)
+   - The test itself is correct - passes individually, fails when run after other metrics tests
+   - Solution needed: Clear Prometheus registry metrics properly between tests or reset metric values
+   - This is a pre-existing issue not introduced this session, but makes test suite unstable
+
+3. ✅ Added Prometheus metrics for mission state tracking (FROM PREVIOUS SESSION):
    - **4 new Prometheus Gauge metrics** in `app/core/metrics.py`:
      - `mission_active_info{mission_id,route_id}` - Tracks currently active mission
      - `mission_phase_state{mission_id}` - Mission flight phase (0=pre_departure, 1=in_flight, 2=post_arrival)
@@ -457,9 +469,47 @@ See `SESSION-NOTES.md` for full list.
 
 ## NEXT SESSION: Immediate Action Items
 
-### ✅ 1. Fix Remaining Integration Test Failure (COMPLETED)
-**Status**: FIXED! Test `test_route_activation_resets_flight_state` passes when run individually.
-- No code changes needed; issue is transient test isolation from earlier sessions.
+### 🔴 CRITICAL: Fix Intermittent NaN Test (HIGH PRIORITY - BLOCKS TEST STABILITY)
+**Status**: IN PROGRESS - 607/608 tests passing, need to fix the 1 flaky test
+
+**The Problem**:
+- Test: `tests/unit/test_metrics.py::TestMetricsFormatting::test_metrics_are_numeric`
+- When run individually: PASSES ✅
+- When run after other metrics tests in full suite: FAILS with NaN assertion error
+- Root cause: Prometheus global registry accumulates metric state and NaN values across tests
+
+**Key Insight**:
+- The test checks that all metric values are numeric (not NaN)
+- In full suite execution, metrics from previous tests contain NaN values
+- This happens because Prometheus metrics are module-level singletons that persist across tests
+- Solutions attempted but incomplete:
+  1. ✅ Fixed ETA service initialization (now working)
+  2. ❌ Tried clearing registry (too aggressive, broke other tests)
+  3. ❌ Tried resetting gauges (metrics still persisted as NaN)
+
+**Next Steps to Try**:
+1. Clear ONLY numeric gauge values (not the entire registry) between tests
+2. Or: Modify test to skip metrics from previous tests (ignore NaN from old metric samples)
+3. Or: Ensure metrics are re-registered fresh for each test that uses metrics
+4. Look at how Prometheus `REGISTRY._collector_to_names` and collector state works
+5. Consider whether to unregister and re-register metrics between test classes
+
+**Test Commands**:
+```bash
+# Run individual test (passes)
+docker compose exec starlink-location python -m pytest tests/unit/test_metrics.py::TestMetricsFormatting::test_metrics_are_numeric -xvs
+
+# Run full suite (fails intermittently)
+docker compose exec starlink-location python -m pytest tests/ --tb=short
+
+# Run metrics tests only
+docker compose exec starlink-location python -m pytest tests/unit/test_metrics.py -xvs
+```
+
+### ✅ 1. Fix ETA Service Initialization (COMPLETED)
+**Status**: FIXED! Conftest now ensures ETA service initialized before each test.
+- Changes in: `backend/starlink-location/tests/conftest.py`
+- Impact: Fixed majority of test isolation issues
 
 ### ✅ 2. Add Prometheus Metrics (COMPLETED)
 **Status**: DONE! All 4 mission metrics implemented and tested.
