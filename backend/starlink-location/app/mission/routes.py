@@ -173,6 +173,69 @@ async def list_missions_endpoint(
 
 
 @router.get(
+    "/active",
+    response_model=Mission,
+    responses={
+        404: {
+            "model": MissionErrorResponse,
+            "description": "No active mission",
+        }
+    },
+)
+async def get_active_mission() -> Mission:
+    """
+    Get the currently active mission.
+
+    Returns:
+        Full active mission object
+
+    Raises:
+        HTTPException: 404 if no mission is active
+    """
+    global _active_mission_id
+
+    try:
+        logger.debug("Getting active mission")
+
+        # If we have an in-memory active mission ID, use it
+        if _active_mission_id:
+            if mission_exists(_active_mission_id):
+                mission = load_mission(_active_mission_id)
+                if mission.is_active:
+                    return mission
+            else:
+                # Stale reference, clear it
+                _active_mission_id = None
+
+        # Otherwise, search for any mission marked as active
+        all_missions = list_missions()
+        for m_metadata in all_missions:
+            if m_metadata.get("is_active"):
+                m_id = m_metadata.get("id")
+                if m_id:
+                    mission = load_mission(m_id)
+                    _active_mission_id = m_id  # Update in-memory reference
+                    return mission
+
+        # No active mission found
+        logger.debug("No active mission found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No mission is currently active",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Failed to get active mission",
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get active mission",
+        )
+
+
+@router.get(
     "/{mission_id}",
     response_model=Mission,
     responses={
@@ -492,67 +555,4 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to activate mission",
-        )
-
-
-@router.get(
-    "/active",
-    response_model=Mission,
-    responses={
-        404: {
-            "model": MissionErrorResponse,
-            "description": "No active mission",
-        }
-    },
-)
-async def get_active_mission() -> Mission:
-    """
-    Get the currently active mission.
-
-    Returns:
-        Full active mission object
-
-    Raises:
-        HTTPException: 404 if no mission is active
-    """
-    global _active_mission_id
-
-    try:
-        logger.debug("Getting active mission")
-
-        # If we have an in-memory active mission ID, use it
-        if _active_mission_id:
-            if mission_exists(_active_mission_id):
-                mission = load_mission(_active_mission_id)
-                if mission.is_active:
-                    return mission
-            else:
-                # Stale reference, clear it
-                _active_mission_id = None
-
-        # Otherwise, search for any mission marked as active
-        all_missions = list_missions()
-        for m_metadata in all_missions:
-            if m_metadata.get("is_active"):
-                m_id = m_metadata.get("id")
-                if m_id:
-                    mission = load_mission(m_id)
-                    _active_mission_id = m_id  # Update in-memory reference
-                    return mission
-
-        # No active mission found
-        logger.debug("No active mission found")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No mission is currently active",
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(
-            "Failed to get active mission",
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get active mission",
         )
