@@ -17,6 +17,11 @@ from app.mission.storage import (
     save_mission,
 )
 from app.services.flight_state_manager import get_flight_state_manager
+from app.core.metrics import (
+    update_mission_active_metric,
+    clear_mission_metrics,
+    update_mission_phase_metric,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -412,6 +417,9 @@ async def delete_mission_endpoint(mission_id: str) -> None:
         # Remove from storage
         delete_mission(mission_id)
 
+        # Clear mission metrics
+        clear_mission_metrics(mission_id)
+
         # If this was the active mission, clear it
         if _active_mission_id == mission_id:
             _active_mission_id = None
@@ -508,6 +516,8 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
                         other_mission.is_active = False
                         other_mission.updated_at = datetime.now(timezone.utc)
                         save_mission(other_mission)
+                        # Clear metrics for deactivated mission
+                        clear_mission_metrics(m_id)
                         logger.debug(
                             "Deactivated mission",
                         )
@@ -521,6 +531,10 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
         mission.updated_at = datetime.now(timezone.utc)
         save_mission(mission)
         _active_mission_id = mission_id
+
+        # Update metrics for activated mission
+        update_mission_active_metric(mission_id, mission.route_id)
+        update_mission_phase_metric(mission_id, MissionPhase.PRE_DEPARTURE.value)
 
         # Reset flight state to pre_departure
         try:
