@@ -9,9 +9,10 @@ import sys
 
 os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
 
-# Ensure /data directories exist for RouteManager
+# Ensure /data directories exist for RouteManager and Missions
 Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)
 Path("/tmp/test_data/sim_routes").mkdir(parents=True, exist_ok=True)
+Path("data/missions").mkdir(parents=True, exist_ok=True)
 
 # Monkey-patch RouteManager and POIManager before any imports
 import app.services.route_manager as route_manager_module
@@ -148,6 +149,27 @@ def unified_poi_manager_in_tests():
     yield
     # After test completes, modules maintain their shared instance
     # until next test's TestClient initialization
+
+
+@pytest.fixture
+def client(test_client):
+    """Alias for test_client for convenience."""
+    return test_client
+
+
+@pytest.fixture(autouse=True)
+def reset_mission_active_state():
+    """Reset global _active_mission_id before each test to prevent state leakage."""
+    # Import here to avoid circular imports
+    import app.mission.routes as mission_routes
+
+    # Reset before test starts
+    mission_routes._active_mission_id = None
+
+    yield
+
+    # Reset after test completes
+    mission_routes._active_mission_id = None
 
 
 def default_mock_telemetry():
