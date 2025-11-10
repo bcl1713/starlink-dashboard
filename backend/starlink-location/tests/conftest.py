@@ -214,16 +214,52 @@ def ensure_eta_service_initialized():
 
 @pytest.fixture(autouse=True)
 def reset_prometheus_registry():
-    """Reset Prometheus registry before each test to prevent metric pollution.
+    """Reset all gauge metrics before each test to prevent NaN pollution from previous tests.
 
     This addresses test isolation issues where Prometheus metrics from previous
-    tests can interfere with current tests. For example, metrics with NaN values
-    from one test can persist and cause subsequent tests to fail.
+    tests can interfere with current tests. NaN values that may have been set by
+    clear_telemetry_metrics() in live mode tests will persist across tests if
+    not cleared.
+
+    This fixture clears all gauge metric values (both with and without labels)
+    by setting them to 0.0 before each test runs.
     """
-    # No need to reset - test_client fixture already calls startup_event which
-    # re-registers all metrics. For unit tests that use coordinator fixture directly,
-    # the metrics are re-initialized naturally through module-level registration.
-    # The key is that ETA service is now initialized in the coordinator fixture.
+    # Before each test, reset all gauge metrics to prevent pollution from NaN values
+    try:
+        from app.core import metrics
+        from prometheus_client.core import Gauge
+
+        # Reset the custom position collector data
+        metrics._current_position['latitude'] = 0.0
+        metrics._current_position['longitude'] = 0.0
+        metrics._current_position['altitude'] = 0.0
+
+        # Get the registry and iterate through all collectors
+        # Find all Gauge collectors and reset their values
+        for collector in list(metrics.REGISTRY._collector_to_names.keys()):
+            if isinstance(collector, Gauge):
+                try:
+                    # Gauges without labels: can call set() directly
+                    if not hasattr(collector, '_metrics') or not collector._metrics:
+                        try:
+                            collector.set(0)
+                        except Exception:
+                            pass
+                    # Gauges with labels: need to reset each child metric
+                    else:
+                        for child in collector._metrics.values():
+                            try:
+                                child.set(0)
+                            except Exception:
+                                pass
+                except Exception:
+                    # Silently skip any gauges we can't reset
+                    pass
+
+    except Exception:
+        # If we can't reset the registry, continue anyway - tests will still run
+        pass
+
     yield
     # No cleanup needed after test
 

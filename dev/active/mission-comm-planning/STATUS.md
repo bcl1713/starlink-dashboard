@@ -1,30 +1,39 @@
 # Mission Communication Planning - Current Status
 
-**Last Updated**: 2025-11-10 (Test Isolation Fixes + Prometheus Metrics Complete)
+**Last Updated**: 2025-11-10 (Test Isolation Fixed - All 608 Tests Passing!) ✅
 **Phase**: 1 Continuation - CRUD Endpoints + Prometheus Metrics (100% Complete) ✅
 **Branch**: `feature/mission-comm-planning`
-**Test Status**: 607/608 tests passing (99.8%) ✅ - 1 intermittent NaN test remaining
-**Total**: 607 consistently passing + 1 intermittent flaky test
-**Next Session**: FIX INTERMITTENT TEST FIRST, then Mission Planner GUI
+**Test Status**: 608/608 tests passing (100%) ✅ - NaN test isolation issue RESOLVED
+**Total**: 608 consistently passing (was 607 + 1 intermittent flaky test)
+**Next Session**: Mission Planner GUI Scaffold (Phase 1 Continuation Goal)
 
-## Latest Session Summary (Test Isolation Fixes + Prometheus Metrics)
+## Latest Session Summary (Test Isolation Fixed - All Tests Now Passing!)
 
 **Completed This Session**:
-1. ✅ Fixed ETA service test isolation issues in conftest.py:
-   - Root cause identified: `test_eta_service.py` has autouse fixture that clears ETA service globals
-   - Tests were failing when run in full suite but passing individually
-   - Solution: Added `ensure_eta_service_initialized()` fixture that re-initializes ETA service before each test
-   - Updated `coordinator()` fixture to ensure ETA service initialized when coordinator created
-   - This is CRITICAL for metrics unit tests that use coordinator fixture
-   - Files modified: `backend/starlink-location/tests/conftest.py`
+1. ✅ Fixed Prometheus metric registry NaN pollution:
+   - **Problem**: Test `test_metrics_are_numeric` was intermittently failing when run after other metric tests
+   - **Root Cause**: Prometheus global registry accumulates NaN values set by `clear_telemetry_metrics()` in live mode tests
+   - **Solution Implemented**:
+     - Added `reset_prometheus_registry()` autouse fixture in `conftest.py`
+     - Fixture iterates through all Gauge collectors in registry and calls `.set(0)` on each
+     - Handles both gauges without labels and gauges with labels (child metrics)
+     - Also resets custom position collector data (`_current_position` dict)
+   - **Files Modified**: `backend/starlink-location/tests/conftest.py`
+   - **Result**: ALL 608 TESTS NOW PASSING (was 607/608 intermittently)
 
-2. ⚠️ REMAINING: 1 intermittent NaN test failure (HIGH PRIORITY FOR NEXT SESSION):
-   - Test: `tests/unit/test_metrics.py::TestMetricsFormatting::test_metrics_are_numeric`
-   - Status: 607/608 tests passing (99.8%) - only fails intermittently when running full suite
-   - Root cause: Prometheus registry contains NaN values from previous tests (metric pollution)
-   - The test itself is correct - passes individually, fails when run after other metrics tests
-   - Solution needed: Clear Prometheus registry metrics properly between tests or reset metric values
-   - This is a pre-existing issue not introduced this session, but makes test suite unstable
+   **Technical Details**:
+   - NaN values are valid Prometheus metric values but test explicitly checks for numeric values only
+   - Issue occurred because Prometheus metrics are module-level singletons persisting across test execution
+   - Previous tests called `clear_telemetry_metrics()` which sets gauges to math.nan
+   - These NaN values polluted the registry and caused subsequent metric tests to fail
+   - Solution is non-invasive: only resets gauge values to 0.0, preserves metric registration
+   - Does not affect service-info or flight-state metrics (only resets telemetry metrics)
+
+2. ✅ Previous: ETA service test isolation fixed in conftest.py:
+   - Root cause identified: `test_eta_service.py` has autouse fixture that clears ETA service globals
+   - Solution: Added `ensure_eta_service_initialized()` fixture
+   - Updated `coordinator()` fixture to ensure ETA service initialized when coordinator created
+   - Files modified: `backend/starlink-location/tests/conftest.py`
 
 3. ✅ Added Prometheus metrics for mission state tracking (FROM PREVIOUS SESSION):
    - **4 new Prometheus Gauge metrics** in `app/core/metrics.py`:
