@@ -19,6 +19,8 @@ from app.mission.models import (
     TransportState,
     XTransition,
 )
+from app.mission.state import TransportInterval, generate_transport_intervals
+from app.mission.timeline import assemble_mission_timeline, build_timeline_segments
 
 __all__ = [
     "Mission",
@@ -34,4 +36,8 @@ __all__ = [
     "TransportState",
     "MissionPhase",
     "TimelineStatus",
+    "TransportInterval",
+    "generate_transport_intervals",
+    "build_timeline_segments",
+    "assemble_mission_timeline",
 ]

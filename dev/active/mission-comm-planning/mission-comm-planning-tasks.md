@@ -1,6 +1,6 @@
 # Mission Communication Planning Tasks
 
-Last Updated: 2025-11-10
+Last Updated: 2025-11-11
 
 Each checkbox is a self-contained work item with concrete steps for a junior
 developer. Complete them sequentially.
@@ -135,20 +135,13 @@ developer. Complete them sequentially.
 
 ## Phase 3 – Communication Timeline Engine
 
-- [ ] **Transport availability state machine**
-  - Implement logic in `backend/starlink-location/app/mission/state.py` that
-    takes `MissionEvent` list and outputs contiguous intervals per transport
-    (available/degraded/offline).
-  - Unit tests should simulate overlapping events (e.g., X transition
-    overlapping AAR) to ensure precedence rules behave as expected.
+- [x] **Transport availability state machine** ✅ COMPLETE (2025-11-11)
+  - Added `backend/starlink-location/app/mission/state.py` with helpers to turn `MissionEvent` sequences into contiguous intervals per transport (tracks degraded/offline reasons, clamps bounds, handles overlapping events).
+  - Unit coverage in `backend/starlink-location/tests/unit/test_mission_state.py` exercises X transitions, landing buffers, Ka coverage/outage precedence, pre-mission events, and ensures intervals close correctly.
 
-- [ ] **Timeline segmentation**
-  - Build `backend/starlink-location/app/mission/timeline.py` to merge
-    per-transport intervals into mission-wide segments labeled `nominal`,
-    `degraded`, `critical`.
-  - Include reasons (array) and impacted transports.
-  - Write tests using Leg 6 Rev 6 sample events (manually crafted) to confirm
-    segmentation.
+- [x] **Timeline segmentation** ✅ COMPLETE (2025-11-11)
+  - Implemented `backend/starlink-location/app/mission/timeline.py` to merge transport intervals into ordered `TimelineSegment`s plus `MissionTimeline` assembly helpers.
+  - Added `tests/unit/test_mission_timeline.py` validating nominal/degraded/critical slicing, impacted transport metadata, and boundary clamping.
 
 - [ ] **Metrics + REST endpoints**
   - Expose `GET /api/missions/{id}/timeline` (returns JSON array) and
@@ -215,3 +208,21 @@ developer. Complete them sequentially.
     delivery, live monitoring, and incident response.
   - Update root `README.md` and `docs/INDEX.md` to link to all new mission
     planning docs + GUI instructions.
+- [x] **Mission planner UX hardening** ✅ COMPLETE (2025-11-11)
+  - Added mission draft dirty-state tracking, “New Mission” CTA, and confirmation prompts before discarding edits.
+  - Inline KML upload now reuses `/api/routes/upload`, reloads waypoints automatically, and mission save/export reconciles with server timestamps.
+  - Activation button calls `/api/missions/{id}/activate` and UI status badge reflects Draft / Unsaved / Active states.
+
+- [x] **Mission-scoped POIs** ✅ COMPLETE (2025-11-11)
+  - `POI` models/storage/API now support `mission_id`.
+  - Mission save regenerates mission POIs (X transitions + AAR endpoints) scoped to the active route/mission pair; mission delete purges them automatically.
+  - Prevents global POI pollution while allowing multiple revisions of the same base route.
+
+- [x] **Mission activation auto-syncs route** ✅ COMPLETE (2025-11-11)
+  - `mission_routes.activate_mission` now activates the associated KML route through `RouteManager`.
+  - Ensures POI projections, timelines, and Grafana panels stay aligned without a manual route toggle.
+
+- [ ] **Fix mission/POI regression tests** ⏳ NEXT
+  - Re-run full unit + integration suite after the POI schema/UI changes.
+  - Update failing tests (expected POI fields, route activation side effects, etc.).
+  - Blocker for merging current branch.

@@ -22,6 +22,8 @@ from app.core.metrics import (
     clear_mission_metrics,
     update_mission_phase_metric,
 )
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +32,20 @@ router = APIRouter(prefix="/api/missions", tags=["missions"])
 
 # Global active mission ID (stored in memory; would be persisted in production)
 _active_mission_id: Optional[str] = None
+_poi_manager: Optional[POIManager] = None
+_route_manager: Optional[RouteManager] = None
+
+
+def set_poi_manager(poi_manager: POIManager) -> None:
+    """Inject POI manager for mission-scoped POI cleanup."""
+    global _poi_manager
+    _poi_manager = poi_manager
+
+
+def set_route_manager(route_manager: RouteManager) -> None:
+    """Inject RouteManager so mission activation can ensure matching route activation."""
+    global _route_manager
+    _route_manager = route_manager
 
 
 class MissionListResponse(BaseModel):
@@ -414,6 +430,15 @@ async def delete_mission_endpoint(mission_id: str) -> None:
                 detail=f"Mission {mission_id} not found",
             )
 
+        # Remove related mission POIs
+        if _poi_manager:
+            try:
+                removed = _poi_manager.delete_mission_pois(mission_id)
+                if removed:
+                    logger.info("Deleted %d mission-scoped POIs for %s", removed, mission_id)
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.warning("Failed to delete mission POIs for %s: %s", mission_id, exc)
+
         # Remove from storage
         delete_mission(mission_id)
 
@@ -531,6 +556,26 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
         mission.updated_at = datetime.now(timezone.utc)
         save_mission(mission)
         _active_mission_id = mission_id
+
+        # Ensure associated route is active
+        if mission.route_id and _route_manager:
+            try:
+                _route_manager.activate_route(mission.route_id)
+            except Exception as exc:
+                mission.is_active = False
+                mission.updated_at = datetime.now(timezone.utc)
+                save_mission(mission)
+                _active_mission_id = None
+                logger.error(
+                    "Failed to activate route %s for mission %s",
+                    mission.route_id,
+                    mission_id,
+                    exc_info=True,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to activate route {mission.route_id} while activating mission",
+                )
 
         # Update metrics for activated mission
         update_mission_active_metric(mission_id, mission.route_id)

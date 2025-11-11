@@ -109,17 +109,21 @@ def calculate_course_status(heading: float, bearing: float) -> str:
 
 
 @router.get("", response_model=POIListResponse, summary="List all POIs")
-async def list_pois(route_id: Optional[str] = Query(None, description="Filter by route ID")) -> POIListResponse:
+async def list_pois(
+    route_id: Optional[str] = Query(None, description="Filter by route ID"),
+    mission_id: Optional[str] = Query(None, description="Filter by mission ID"),
+) -> POIListResponse:
     """
     Get list of all POIs, optionally filtered by route.
 
     Query Parameters:
     - route_id: Optional route ID to filter POIs
+    - mission_id: Optional mission ID to filter POIs
 
     Returns:
     - List of POI objects and total count
     """
-    pois = poi_manager.list_pois(route_id=route_id)
+    pois = poi_manager.list_pois(route_id=route_id, mission_id=mission_id)
     responses = [
         POIResponse(
             id=poi.id,
@@ -130,6 +134,7 @@ async def list_pois(route_id: Optional[str] = Query(None, description="Filter by
             category=poi.category,
             description=poi.description,
             route_id=poi.route_id,
+            mission_id=poi.mission_id,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
             projected_latitude=poi.projected_latitude,
@@ -140,7 +145,7 @@ async def list_pois(route_id: Optional[str] = Query(None, description="Filter by
         for poi in pois
     ]
 
-    return POIListResponse(pois=responses, total=len(responses), route_id=route_id)
+    return POIListResponse(pois=responses, total=len(responses), route_id=route_id, mission_id=mission_id)
 
 
 @router.get("/etas", response_model=POIETAListResponse, summary="Get all POIs with real-time ETA data")
@@ -742,6 +747,7 @@ async def get_poi(poi_id: str) -> POIResponse:
         category=poi.category,
         description=poi.description,
         route_id=poi.route_id,
+        mission_id=poi.mission_id,
         created_at=poi.created_at,
         updated_at=poi.updated_at,
         projected_latitude=poi.projected_latitude,
@@ -764,6 +770,7 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
     - category: POI category (optional)
     - description: POI description (optional)
     - route_id: Associated route ID (optional)
+    - mission_id: Associated mission ID (optional)
 
     Returns:
     - Created POI object with ID and timestamps
@@ -791,6 +798,7 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
             category=poi.category,
             description=poi.description,
             route_id=poi.route_id,
+            mission_id=poi.mission_id,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
             projected_latitude=poi.projected_latitude,
@@ -845,6 +853,7 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
             category=poi.category,
             description=poi.description,
             route_id=poi.route_id,
+            mission_id=poi.mission_id,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
         )

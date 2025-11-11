@@ -139,19 +139,23 @@ class POIManager:
         except Exception as e:
             logger.error(f"Failed to acquire lock for writing POI file: {e}")
 
-    def list_pois(self, route_id: Optional[str] = None) -> list[POI]:
+    def list_pois(self, route_id: Optional[str] = None, mission_id: Optional[str] = None) -> list[POI]:
         """
-        Get list of POIs, optionally filtered by route.
+        Get list of POIs, optionally filtered by route or mission.
 
         Args:
             route_id: Optional route ID to filter by
+            mission_id: Optional mission ID to filter by
 
         Returns:
             List of POI objects
         """
+        pois = list(self._pois.values())
         if route_id:
-            return [poi for poi in self._pois.values() if poi.route_id == route_id]
-        return list(self._pois.values())
+            pois = [poi for poi in pois if poi.route_id == route_id]
+        if mission_id:
+            pois = [poi for poi in pois if poi.mission_id == mission_id]
+        return pois
 
     def get_poi(self, poi_id: str) -> Optional[POI]:
         """
@@ -179,8 +183,13 @@ class POIManager:
         Raises:
             ValueError: If POI creation fails
         """
-        # Generate unique ID if not provided
-        poi_id = poi_create.route_id + "-" + poi_create.name.lower().replace(" ", "-") if poi_create.route_id else poi_create.name.lower().replace(" ", "-")
+        base_slug = poi_create.name.lower().replace(" ", "-")
+        if poi_create.route_id:
+            poi_id = f"{poi_create.route_id}-{base_slug}"
+        elif poi_create.mission_id:
+            poi_id = f"{poi_create.mission_id}-{base_slug}"
+        else:
+            poi_id = base_slug
 
         # Ensure unique ID
         counter = 1
@@ -199,6 +208,7 @@ class POIManager:
             category=poi_create.category,
             description=poi_create.description,
             route_id=poi_create.route_id,
+            mission_id=poi_create.mission_id,
             created_at=now,
             updated_at=now,
         )
@@ -312,6 +322,27 @@ class POIManager:
         if pois_to_delete:
             self._save_pois()
             logger.info(f"Deleted {len(pois_to_delete)} POIs for route: {route_id}")
+
+        return len(pois_to_delete)
+
+    def delete_mission_pois(self, mission_id: str) -> int:
+        """
+        Delete all POIs associated with a specific mission.
+
+        Args:
+            mission_id: Mission identifier
+
+        Returns:
+            Number of POIs deleted
+        """
+        pois_to_delete = [poi_id for poi_id, poi in self._pois.items() if poi.mission_id == mission_id]
+
+        for poi_id in pois_to_delete:
+            del self._pois[poi_id]
+
+        if pois_to_delete:
+            self._save_pois()
+            logger.info(f"Deleted {len(pois_to_delete)} POIs for mission: {mission_id}")
 
         return len(pois_to_delete)
 

@@ -1,6 +1,6 @@
 # Mission Communication Planning Context
 
-Last Updated: 2025-11-10 (Mission Planner GUI Complete)
+Last Updated: 2025-11-11 (Phase 3 timeline scaffolding + test isolation)
 
 ## Purpose
 
@@ -23,12 +23,20 @@ transition points).
 - `dev/active/mission-comm-planning/PHASE-1-COMPLETION.md` – Detailed Phase 1 report
 
 ### Completed (Phase 1 Continuation)
-- `backend/starlink-location/app/api/ui.py` – Mission Planner GUI endpoint `/ui/mission-planner` (lines 1775-2964, 1,190 lines)
+- `backend/starlink-location/app/api/ui.py` – Mission Planner GUI endpoint `/ui/mission-planner` (lines 1775-2964, 1,190 lines) with inline route upload, mission drafts, dirty-state tracking, activation controls, satellite POI modal, and automatic mission POI sync.
+- `backend/starlink-location/app/models/poi.py`, `app/services/poi_manager.py`, `app/api/pois.py` – Mission-scoped POI support (new `mission_id`, filtering, cleanup utilities).
+- `backend/starlink-location/app/mission/routes.py` + `main.py` – Mission activation now auto-activates the associated route and injects the POI manager for mission POI cleanup on delete.
+
+### Completed (Phase 2 + Phase 3 Kickoff)
+- `backend/starlink-location/app/satellites/` – Satellite catalog, KMZ ingestion, look-angle geometry, coverage sampler, and rule engine (Phase 2) with 75 dedicated unit tests.
+- `backend/starlink-location/app/mission/state.py` – Transport availability state machine generating contiguous intervals for X/Ka/Ku along with pytest coverage in `tests/unit/test_mission_state.py`.
+- `backend/starlink-location/app/mission/timeline.py` – Timeline segment builder and `MissionTimeline` assembler plus `tests/unit/test_mission_timeline.py`.
+- Test fixtures now isolate mission storage under `/tmp/test_data/missions`, eliminating leftover JSON files that previously broke first-run integration tests.
 
 ### In Progress / Planned
-- `backend/starlink-location/app/mission/satellites/` – Geometry engine (Phase 2)
-- `backend/starlink-location/app/mission/timeline.py` – Timeline engine (Phase 3)
-- `monitoring/grafana/provisioning/dashboards/` – Mission timeline panel updates (Phase 4)
+- Wire the new state machine/timeline helpers into the mission execution flow and persist generated segments.
+- Expose `/api/missions/{id}/timeline` + `/api/missions/active/timeline` endpoints alongside Prometheus metrics (`mission_comm_state`, degraded/critical counters).
+- Build export tooling (CSV/XLSX/PDF) and Grafana mission timeline panels + alerts (Phase 4).
 
 ### Foundation Systems
 - `backend/starlink-location/` – FastAPI service hosting mission APIs, simulation, metrics exporters
@@ -36,6 +44,15 @@ transition points).
 - `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` – Primary visualization to extend
 - `docs/ROUTE-TIMING-GUIDE.md`, `docs/METRICS.md`, `docs/ROUTE-API-SUMMARY.md` – Foundational APIs
 - `dev/active/eta-route-timing/` – Previous work that established the timing engine we depend on
+
+### Current Session Highlights (2025-11-11)
+- Added transport availability state machine (`app/mission/state.py`) to collapse raw mission events into contiguous intervals per transport.
+- Built the first pass of the mission timeline assembler (`app/mission/timeline.py`) that merges interval data into `TimelineSegment`s with impacted transports and reasons.
+- Hardened pytest isolation by forcing mission storage into `/tmp/test_data/missions`, preventing first-run failures triggered by persistent JSON files.
+- Created new unit suites (`tests/unit/test_mission_state.py`, `test_mission_timeline.py`) and re-ran the full suite inside the container: `docker compose exec starlink-location python -m pytest` → 691 passed / 22 skipped / 1 warning (expected Pydantic serializer deprecation).
+- Captured next actions (timeline API, metrics, exports) in STATUS and SESSION-NOTES for quick pickup.
+
+**Outstanding work:** Integrate the interval/timeline helpers into mission activation flow, expose REST/metrics outputs, and implement exporter + Grafana wiring (see updated task list).
 
 ## Data Inputs & Artifacts
 
@@ -99,6 +116,8 @@ transition points).
    Customer deliverables must show timestamps in UTC (Zulu), Eastern (DST-aware
    for the mission date), and relative T+HH:MM. Live dashboards should
    automatically align to actual time/position vs. the plan.
+6. **Mission-scoped POIs (new 2025-11-11):** X-band transitions and AAR window endpoints are persisted as mission-specific POIs (tagged with both `mission_id` and `route_id`). Mission delete cleans them up, and subsequent saves re-generate them to keep revisions self-contained.
+7. **Mission activation (new 2025-11-11):** Activating a mission also activates its associated route through `RouteManager`, guaranteeing POI projections and Grafana panels reflect the correct geometry without manual route toggles.
 
 ## Open Questions
 

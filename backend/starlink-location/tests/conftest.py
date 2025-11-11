@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -13,6 +14,8 @@ os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
 Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)
 Path("/tmp/test_data/sim_routes").mkdir(parents=True, exist_ok=True)
 Path("data/missions").mkdir(parents=True, exist_ok=True)
+TEST_MISSIONS_DIR = Path("/tmp/test_data/missions")
+TEST_MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Monkey-patch RouteManager and POIManager before any imports
 import app.services.route_manager as route_manager_module
@@ -262,6 +265,36 @@ def reset_prometheus_registry():
 
     yield
     # No cleanup needed after test
+
+
+def _clean_directory(directory: Path):
+    """Remove all files/sub-directories inside the provided directory."""
+    if not directory.exists():
+        return
+    for child in directory.iterdir():
+        if child.is_file() or child.is_symlink():
+            try:
+                child.unlink()
+            except FileNotFoundError:
+                pass
+        elif child.is_dir():
+            shutil.rmtree(child, ignore_errors=True)
+
+
+@pytest.fixture(autouse=True)
+def isolate_mission_storage():
+    """Force mission storage to use a temp directory with full cleanup."""
+    from app.mission import storage
+
+    original_dir = storage.MISSIONS_DIR
+    storage.MISSIONS_DIR = TEST_MISSIONS_DIR
+    storage.ensure_missions_directory()
+    _clean_directory(TEST_MISSIONS_DIR)
+
+    yield
+
+    _clean_directory(TEST_MISSIONS_DIR)
+    storage.MISSIONS_DIR = original_dir
 
 
 def default_mock_telemetry():

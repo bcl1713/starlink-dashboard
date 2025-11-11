@@ -2165,6 +2165,110 @@ async def mission_planner_ui():
                 margin-top: 6px;
                 font-style: italic;
             }
+            .inline-upload-row {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                flex-wrap: wrap;
+                margin-top: 10px;
+            }
+            .file-chip {
+                font-size: 0.85em;
+                color: #555;
+            }
+            .checkbox-inline {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.9em;
+                color: #444;
+            }
+            .select-with-action {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+            .select-with-action select {
+                flex: 1;
+            }
+            .modal-content.small {
+                max-width: 480px;
+            }
+            .status-badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 4px 10px;
+                border-radius: 999px;
+                font-size: 0.85em;
+                font-weight: 600;
+            }
+            .status-active {
+                background: #2dce89;
+                color: #fff;
+            }
+            .status-inactive {
+                background: #e0e0e0;
+                color: #555;
+            }
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 2000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+            .modal.show {
+                display: flex;
+            }
+            .modal-content {
+                background: white;
+                border-radius: 10px;
+                width: 100%;
+                max-width: 560px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                animation: fadeIn 0.2s ease-out;
+            }
+            .modal-header {
+                padding: 16px 20px;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .modal-header h2 {
+                font-size: 1.3em;
+                color: #333;
+            }
+            .modal-close {
+                background: none;
+                border: none;
+                font-size: 1.5em;
+                cursor: pointer;
+                color: #888;
+            }
+            .modal-body {
+                padding: 20px;
+            }
+            .modal-footer {
+                padding: 16px 20px;
+                border-top: 1px solid #eee;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+            .modal-footer button {
+                margin: 0;
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
         </style>
     </head>
     <body>
@@ -2181,10 +2285,16 @@ async def mission_planner_ui():
                     <div id="alerts"></div>
 
                     <div class="form-group">
-                        <label for="missionSelect">Select Mission or Create New</label>
-                        <select id="missionSelect">
-                            <option value="new">+ Create New Mission</option>
-                        </select>
+                        <label for="missionSelect">Select Mission</label>
+                        <div class="select-with-action">
+                            <select id="missionSelect">
+                                <option value="new">+ Create New Mission</option>
+                            </select>
+                            <button type="button" class="btn-secondary btn-small" id="newMissionBtn">New Mission</button>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <span id="missionStatusBadge" class="status-badge status-inactive">Draft</span>
+                        </div>
                     </div>
 
                     <form id="missionForm">
@@ -2200,6 +2310,17 @@ async def mission_planner_ui():
                                 <option value="">Select a route...</option>
                             </select>
                             <p class="help-text">Choose an active KML route for timing and waypoint references</p>
+                            <div class="inline-upload-row">
+                                <button type="button" class="btn-secondary btn-small" id="selectMissionRouteFileBtn">Select KML</button>
+                                <span class="file-chip" id="missionRouteFileName">No file selected</span>
+                                <label class="checkbox-inline">
+                                    <input type="checkbox" id="missionImportPois" checked>
+                                    Import POIs from waypoints
+                                </label>
+                                <button type="button" class="btn-secondary btn-small" id="missionRouteUploadBtn">Upload Route</button>
+                            </div>
+                            <input type="file" id="missionRouteFile" accept=".kml" style="display: none;">
+                            <p class="help-text" id="missionRouteUploadStatus">Upload a new KML if your route is missing.</p>
                         </div>
 
                         <div class="form-group">
@@ -2209,8 +2330,13 @@ async def mission_planner_ui():
 
                         <div class="form-group">
                             <label for="initialXSatellite">Initial X Satellite *</label>
-                            <input type="text" id="initialXSatellite" required value="X-1" placeholder="e.g., X-1">
-                            <p class="help-text">Starting X satellite for the mission</p>
+                            <div class="select-with-action">
+                                <select id="initialXSatellite" required>
+                                    <option value="">Select satellite...</option>
+                                </select>
+                                <button type="button" class="btn-secondary btn-small add-satellite-btn" data-target-field="initial">+ New Satellite</button>
+                            </div>
+                            <p class="help-text">Pick from satellite POIs. Add a new one if it is missing.</p>
                         </div>
 
                         <div class="form-group">
@@ -2221,6 +2347,7 @@ async def mission_planner_ui():
                         <div class="button-group">
                             <button type="submit" class="btn-primary" id="saveMissionBtn">Save Mission</button>
                             <button type="button" class="btn-secondary" id="resetMissionBtn">Clear</button>
+                            <button type="button" class="btn-secondary" id="activateMissionBtn" disabled>Activate Mission</button>
                             <button type="button" class="btn-danger" id="deleteMissionBtn" style="display: none;">Delete Mission</button>
                         </div>
                     </form>
@@ -2244,32 +2371,24 @@ async def mission_planner_ui():
                             Fixed geostationary satellite. Add transition points with target satellites and optional beam changes.
                         </div>
 
-                        <div class="form-group">
-                            <label for="xTransitionLat">Transition Latitude *</label>
-                            <input type="number" id="xTransitionLat" step="0.00001" placeholder="35.5">
-                        </div>
-
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="xTransitionLon">Longitude *</label>
+                                <label for="xTransitionLat">Transition Latitude *</label>
+                                <input type="number" id="xTransitionLat" step="0.00001" placeholder="35.5">
+                            </div>
+                            <div class="form-group">
+                                <label for="xTransitionLon">Transition Longitude *</label>
                                 <input type="number" id="xTransitionLon" step="0.00001" placeholder="-120.3">
                             </div>
-                            <div class="form-group">
-                                <label for="targetXSatellite">Target Satellite *</label>
-                                <input type="text" id="targetXSatellite" placeholder="e.g., X-2">
-                            </div>
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="targetXBeam">Target Beam (optional)</label>
-                                <input type="text" id="targetXBeam" placeholder="e.g., Beam-3">
-                            </div>
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" id="sameXSatellite">
-                                    Same Satellite Transition (beam change only)
-                                </label>
+                        <div class="form-group">
+                            <label for="targetXSatellite">Target Satellite *</label>
+                            <div class="select-with-action">
+                                <select id="targetXSatellite">
+                                    <option value="">Select satellite...</option>
+                                </select>
+                                <button type="button" class="btn-secondary btn-small add-satellite-btn" data-target-field="target">+ New Satellite</button>
                             </div>
                         </div>
 
@@ -2374,19 +2493,97 @@ async def mission_planner_ui():
             </div>
         </div>
 
+        <div id="satelliteModal" class="modal">
+            <div class="modal-content small">
+                <div class="modal-header">
+                    <h2 id="satelliteModalTitle">Add Satellite POI</h2>
+                    <button class="modal-close" type="button" onclick="closeSatelliteModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="satelliteForm">
+                        <div class="form-group">
+                            <label for="satelliteName">Satellite Name *</label>
+                            <input type="text" id="satelliteName" required placeholder="e.g., X-1">
+                        </div>
+                        <div class="form-group">
+                            <label for="satelliteLongitude">Longitude *</label>
+                            <input type="number" step="0.00001" id="satelliteLongitude" required placeholder="0.0">
+                        </div>
+                        <p class="help-text">Latitude is fixed at 0° for geostationary satellites. New satellites are stored globally as POIs.</p>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" id="satelliteModalCancel">Cancel</button>
+                    <button type="submit" class="btn-primary" form="satelliteForm" id="saveSatelliteBtn">Save Satellite</button>
+                </div>
+            </div>
+        </div>
+
         <script>
             // Global state
             let currentMission = null;
             let missions = [];
             let routes = [];
             let currentRouteWaypoints = [];
+            let satellitePois = [];
+            let missionRouteFile = null;
+            let satelliteModalContext = 'initial';
+            let selectedInitialSatellite = '';
+            let selectedTargetSatellite = '';
+            let missionDirty = false;
+            let suppressDirtyEvents = false;
+            const DEFAULT_KA_SATELLITES = ["T2-1", "T2-2", "T2-3"];
 
             // Initialize on page load
             document.addEventListener('DOMContentLoaded', async () => {
-                await loadMissions();
-                await loadRoutes();
+                await Promise.all([loadMissions(), loadRoutes(), loadSatellitePOIs()]);
                 setupEventListeners();
             });
+
+            function generateMissionId() {
+                return `mission-${Date.now()}`;
+            }
+
+            function createEmptyMission() {
+                const initialSatelliteInput = document.getElementById('initialXSatellite');
+                const initialSatellite = initialSatelliteInput?.value || '';
+                const timestamp = new Date().toISOString();
+                return {
+                    id: generateMissionId(),
+                    name: '',
+                    description: null,
+                    route_id: '',
+                    transports: {
+                        initial_x_satellite_id: initialSatellite,
+                        initial_ka_satellite_ids: [...DEFAULT_KA_SATELLITES],
+                        x_transitions: [],
+                        ka_outages: [],
+                        aar_windows: [],
+                        ku_overrides: []
+                    },
+                    notes: null,
+                    is_active: false,
+                    created_at: timestamp,
+                    updated_at: timestamp
+                };
+            }
+
+    function markMissionDirtyFromForm(event) {
+        if (suppressDirtyEvents) return;
+        if (!event.target) return;
+        missionDirty = true;
+        updateMissionStatus();
+    }
+
+    function markMissionDirty() {
+        missionDirty = true;
+        updateMissionStatus();
+    }
+
+    function resetMissionDirty() {
+        missionDirty = false;
+        updateMissionStatus();
+    }
 
             // Tab switching
             function switchTab(tabName) {
@@ -2407,10 +2604,230 @@ async def mission_planner_ui():
                 document.getElementById('resetMissionBtn').addEventListener('click', resetForm);
                 document.getElementById('deleteMissionBtn').addEventListener('click', deleteMission);
                 document.getElementById('missionSelect').addEventListener('change', selectMission);
-                document.getElementById('routeId').addEventListener('change', loadRouteWaypoints);
+                document.getElementById('newMissionBtn').addEventListener('click', startNewMissionDraft);
+                document.getElementById('activateMissionBtn').addEventListener('click', activateMission);
+                document.getElementById('routeId').addEventListener('change', () => {
+                    loadRouteWaypoints();
+                    if (!suppressDirtyEvents) {
+                        markMissionDirty();
+                    }
+                });
+                document.getElementById('aarStartWaypoint').addEventListener('change', handleAARStartChange);
+                document.getElementById('initialXSatellite').addEventListener('change', () => {
+                    if (!suppressDirtyEvents) {
+                        markMissionDirty();
+                    }
+                });
+                document.getElementById('selectMissionRouteFileBtn').addEventListener('click', () => document.getElementById('missionRouteFile').click());
+                document.getElementById('missionRouteFile').addEventListener('change', handleMissionRouteFileChange);
+                document.getElementById('missionRouteUploadBtn').addEventListener('click', uploadMissionRoute);
+                document.getElementById('initialXSatellite').addEventListener('change', (event) => {
+                    selectedInitialSatellite = event.target.value;
+                });
+                document.getElementById('targetXSatellite').addEventListener('change', (event) => {
+                    selectedTargetSatellite = event.target.value;
+                });
+                document.querySelectorAll('.add-satellite-btn').forEach(button => {
+                    button.addEventListener('click', () => openSatelliteModal(button.dataset.targetField));
+                });
+                document.getElementById('satelliteForm').addEventListener('submit', submitSatelliteForm);
+                document.getElementById('satelliteModalCancel').addEventListener('click', closeSatelliteModal);
+                document.getElementById('missionForm').addEventListener('input', markMissionDirtyFromForm);
 
                 // Reload missions every 5 seconds
                 setInterval(loadMissions, 5000);
+                updateMissionStatus();
+            }
+
+            function buildMissionDraftFromForm() {
+                const name = document.getElementById('missionName').value.trim();
+                const routeId = document.getElementById('routeId').value;
+                const description = document.getElementById('missionDescription').value || null;
+                const notes = document.getElementById('missionNotes').value || null;
+                const initialSatellite = document.getElementById('initialXSatellite').value;
+
+                if (!name || !routeId || !initialSatellite) {
+                    return null;
+                }
+
+                const timestamp = new Date().toISOString();
+                return {
+                    id: generateMissionId(),
+                    name,
+                    description,
+                    route_id: routeId,
+                    transports: {
+                        initial_x_satellite_id: initialSatellite,
+                        initial_ka_satellite_ids: [...DEFAULT_KA_SATELLITES],
+                        x_transitions: [],
+                        ka_outages: [],
+                        aar_windows: [],
+                        ku_overrides: []
+                    },
+                    notes,
+                    is_active: false,
+                    created_at: timestamp,
+                    updated_at: timestamp
+                };
+            }
+
+            function ensureMissionDraft() {
+                if (currentMission) {
+                    return true;
+                }
+                const draft = buildMissionDraftFromForm();
+                if (!draft) {
+                    showAlert('Enter mission name, route, and initial X satellite before adding transitions.', 'error');
+                    return false;
+                }
+                currentMission = draft;
+                markMissionDirty();
+                return true;
+            }
+
+    function confirmDiscardIfDirty() {
+        if (!missionDirty) return true;
+        return confirm('You have unsaved mission changes. Continue and discard them?');
+    }
+
+    function updateMissionStatus() {
+        const badge = document.getElementById('missionStatusBadge');
+        const activateBtn = document.getElementById('activateMissionBtn');
+        if (!badge || !activateBtn) return;
+
+        badge.classList.remove('status-active', 'status-inactive');
+
+        if (!currentMission) {
+            badge.textContent = 'Draft';
+            badge.classList.add('status-inactive');
+            activateBtn.disabled = true;
+            return;
+        }
+
+        if (missionDirty) {
+            badge.textContent = 'Unsaved Changes';
+            badge.classList.add('status-inactive');
+        } else if (currentMission.is_active) {
+            badge.textContent = 'Active';
+            badge.classList.add('status-active');
+        } else {
+            badge.textContent = 'Saved Draft';
+            badge.classList.add('status-inactive');
+        }
+
+        activateBtn.disabled = missionDirty || !currentMission.id || currentMission.is_active;
+    }
+
+            function findWaypointByName(name) {
+                if (!name) return null;
+                return currentRouteWaypoints.find(wp => (wp.name || String(wp.order)) === name) || null;
+            }
+
+            async function createPoi(payload) {
+                const response = await fetch('/api/pois', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    let detail = 'Failed to create POI';
+                    try {
+                        const errorBody = await response.json();
+                        if (errorBody.detail) detail = errorBody.detail;
+                    } catch (_) {
+                        // ignore parse errors
+                    }
+                    throw new Error(detail);
+                }
+                return response.json();
+            }
+
+            async function syncMissionPois(mission) {
+                if (!mission || !mission.route_id || !mission.id) {
+                    return;
+                }
+
+                await deleteMissionScopedPois(mission.id);
+
+                const poiPayloads = [];
+                const descriptionBase = mission.name ? `Mission ${mission.name}` : mission.id;
+
+                (mission.transports.x_transitions || []).forEach((transition, idx) => {
+                    if (!Number.isFinite(transition.latitude) || !Number.isFinite(transition.longitude)) {
+                        return;
+                    }
+                    const satelliteName = transition.target_satellite_id || 'Satellite';
+                    poiPayloads.push({
+                        name: `X Transition ${idx + 1} - ${satelliteName}`,
+                        latitude: transition.latitude,
+                        longitude: transition.longitude,
+                        icon: 'satellite',
+                        category: 'mission-x-transition',
+                        description: `${descriptionBase} | Target: ${satelliteName}`,
+                        route_id: mission.route_id,
+                        mission_id: mission.id
+                    });
+                });
+
+                (mission.transports.aar_windows || []).forEach((window, idx) => {
+                    const startWaypoint = findWaypointByName(window.start_waypoint_name);
+                    if (startWaypoint && Number.isFinite(startWaypoint.latitude) && Number.isFinite(startWaypoint.longitude)) {
+                        poiPayloads.push({
+                            name: `AAR Start ${idx + 1} - ${window.start_waypoint_name}`,
+                            latitude: startWaypoint.latitude,
+                            longitude: startWaypoint.longitude,
+                            icon: 'aar',
+                            category: 'mission-aar-start',
+                            description: `${descriptionBase} | AAR window start`,
+                            route_id: mission.route_id,
+                            mission_id: mission.id
+                        });
+                    }
+                    const endWaypoint = findWaypointByName(window.end_waypoint_name);
+                    if (endWaypoint && Number.isFinite(endWaypoint.latitude) && Number.isFinite(endWaypoint.longitude)) {
+                        poiPayloads.push({
+                            name: `AAR End ${idx + 1} - ${window.end_waypoint_name}`,
+                            latitude: endWaypoint.latitude,
+                            longitude: endWaypoint.longitude,
+                            icon: 'aar',
+                            category: 'mission-aar-end',
+                            description: `${descriptionBase} | AAR window end`,
+                            route_id: mission.route_id,
+                            mission_id: mission.id
+                        });
+                    }
+                });
+
+                if (poiPayloads.length === 0) {
+                    return;
+                }
+
+                try {
+                    const results = await Promise.allSettled(poiPayloads.map(payload => createPoi(payload)));
+                    const createdCount = results.filter(r => r.status === 'fulfilled').length;
+                    const failedCount = results.length - createdCount;
+                    if (createdCount > 0) {
+                        showAlert(`Created ${createdCount} mission POI${createdCount === 1 ? '' : 's'}`, 'success');
+                    }
+                    if (failedCount > 0) {
+                        showAlert(`Failed to create ${failedCount} mission POI${failedCount === 1 ? '' : 's'}`, 'error');
+                    }
+                } catch (error) {
+                    showAlert(`Error creating mission POIs: ${error.message}`, 'error');
+                }
+            }
+            async function deleteMissionScopedPois(missionId) {
+                if (!missionId) return;
+                try {
+                    const response = await fetch(`/api/pois?mission_id=${encodeURIComponent(missionId)}`);
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    const pois = data.pois || [];
+                    if (pois.length === 0) return;
+                    await Promise.allSettled(pois.map(poi => fetch(`/api/pois/${poi.id}`, { method: 'DELETE' })));
+                } catch (error) {
+                    console.error('Failed to delete mission POIs:', error);
+                }
             }
 
             // Load missions from API
@@ -2430,12 +2847,18 @@ async def mission_planner_ui():
                         const option = document.createElement('option');
                         option.value = mission.id;
                         option.textContent = mission.name || mission.id;
+                        if (mission.is_active) {
+                            option.textContent += ' (Active)';
+                        }
                         select.appendChild(option);
                     });
 
                     if (currentValue !== 'new' && missions.some(m => m.id === currentValue)) {
                         select.value = currentValue;
+                    } else if (currentMission && missions.some(m => m.id === currentMission.id)) {
+                        select.value = currentMission.id;
                     }
+                    updateMissionStatus();
                 } catch (error) {
                     console.error('Failed to load missions:', error);
                 }
@@ -2451,6 +2874,9 @@ async def mission_planner_ui():
                     routes = data.routes || [];
 
                     const select = document.getElementById('routeId');
+                    const previousValue = select.value;
+                    const preferredValue = currentMission?.route_id || previousValue || '';
+
                     select.innerHTML = '<option value="">Select a route...</option>';
                     routes.forEach(route => {
                         const option = document.createElement('option');
@@ -2458,6 +2884,20 @@ async def mission_planner_ui():
                         option.textContent = route.name || route.id;
                         select.appendChild(option);
                     });
+
+                    if (preferredValue) {
+                        const hasMatch = routes.some(route => route.id === preferredValue);
+                        select.value = hasMatch ? preferredValue : '';
+                    } else {
+                        select.value = '';
+                    }
+
+                    if (select.value) {
+                        await loadRouteWaypoints();
+                    } else {
+                        currentRouteWaypoints = [];
+                        updateWaypointSelects();
+                    }
                 } catch (error) {
                     console.error('Failed to load routes:', error);
                     showAlert('Failed to load routes: ' + error.message, 'error');
@@ -2486,6 +2926,234 @@ async def mission_planner_ui():
                 }
             }
 
+            function handleMissionRouteFileChange(event) {
+                missionRouteFile = event.target.files[0] || null;
+                const label = document.getElementById('missionRouteFileName');
+                if (label) {
+                    label.textContent = missionRouteFile ? missionRouteFile.name : 'No file selected';
+                }
+            }
+
+            async function uploadMissionRoute() {
+                if (!missionRouteFile) {
+                    showAlert('Select a KML file before uploading', 'error');
+                    return;
+                }
+
+                const uploadBtn = document.getElementById('missionRouteUploadBtn');
+                const originalText = uploadBtn.textContent;
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<span class="loading"></span>';
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', missionRouteFile);
+
+                    const importPois = document.getElementById('missionImportPois').checked;
+                    const uploadUrl = importPois ? '/api/routes/upload?import_pois=true' : '/api/routes/upload';
+
+                    const response = await fetch(uploadUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        let errorDetail = 'Upload failed';
+                        try {
+                            const errorBody = await response.json();
+                            if (errorBody.detail) errorDetail = errorBody.detail;
+                        } catch (parseError) {
+                            // ignore JSON parse failure
+                        }
+                        throw new Error(errorDetail);
+                    }
+
+                    const result = await response.json();
+                    showAlert(`Route "${result.name || result.id}" uploaded successfully`, 'success');
+                    const status = document.getElementById('missionRouteUploadStatus');
+                    if (status) {
+                        status.textContent = `Last uploaded: ${result.name || result.id}`;
+                    }
+
+                    missionRouteFile = null;
+                    document.getElementById('missionRouteFile').value = '';
+                    document.getElementById('missionRouteFileName').textContent = 'No file selected';
+
+                    await loadRoutes();
+                    document.getElementById('routeId').value = result.id;
+                    await loadRouteWaypoints();
+                } catch (error) {
+                    const status = document.getElementById('missionRouteUploadStatus');
+                    if (status) {
+                        status.textContent = `Upload failed: ${error.message}`;
+                    }
+                    showAlert(error.message, 'error');
+                } finally {
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = originalText;
+                }
+            }
+
+            async function loadSatellitePOIs() {
+                try {
+                    const response = await fetch('/api/pois');
+                    if (!response.ok) throw new Error('Failed to load POIs');
+
+                    const data = await response.json();
+                    const pois = data.pois || [];
+                    satellitePois = pois
+                        .filter(poi => {
+                            const category = (poi.category || '').toLowerCase();
+                            const icon = (poi.icon || '').toLowerCase();
+                            return category.includes('satellite') || icon.includes('satellite');
+                        })
+                        .sort((a, b) => a.name.localeCompare(b.name));
+
+                    populateSatelliteSelects();
+                } catch (error) {
+                    console.error('Failed to load satellite POIs:', error);
+                    satellitePois = [];
+                    populateSatelliteSelects();
+                }
+            }
+
+            function populateSatelliteSelects() {
+                const selects = [
+                    { element: document.getElementById('initialXSatellite'), selected: selectedInitialSatellite },
+                    { element: document.getElementById('targetXSatellite'), selected: selectedTargetSatellite }
+                ];
+
+                selects.forEach(({ element, selected }) => {
+                    if (!element) return;
+                    const previousValue = selected || element.value;
+                    element.innerHTML = '';
+
+                    const placeholder = document.createElement('option');
+                    placeholder.value = '';
+                    placeholder.textContent = satellitePois.length
+                        ? 'Select satellite...'
+                        : 'No satellites available - add one';
+                    element.appendChild(placeholder);
+
+                    satellitePois.forEach(poi => {
+                        const option = document.createElement('option');
+                        option.value = poi.name;
+                        option.textContent = poi.name;
+                        option.dataset.poiId = poi.id;
+                        option.dataset.latitude = poi.latitude;
+                        option.dataset.longitude = poi.longitude;
+                        element.appendChild(option);
+                    });
+
+                    if (previousValue) {
+                        ensureSatelliteOption(element, previousValue);
+                        element.value = previousValue;
+                    } else {
+                        element.value = '';
+                    }
+                });
+            }
+
+            function ensureSatelliteOption(selectElement, value) {
+                if (!selectElement || !value) return;
+                const exists = Array.from(selectElement.options).some(option => option.value === value);
+                if (!exists) {
+                    const fallback = document.createElement('option');
+                    fallback.value = value;
+                    fallback.textContent = `${value} (custom)`;
+                    selectElement.appendChild(fallback);
+                }
+            }
+
+            function setSatelliteValue(selectId, value) {
+                const selectElement = document.getElementById(selectId);
+                if (!selectElement) return;
+                ensureSatelliteOption(selectElement, value);
+                selectElement.value = value || '';
+
+                if (selectId === 'initialXSatellite') {
+                    selectedInitialSatellite = value || '';
+                } else if (selectId === 'targetXSatellite') {
+                    selectedTargetSatellite = value || '';
+                }
+            }
+
+            function openSatelliteModal(targetField = 'initial') {
+                satelliteModalContext = targetField || 'initial';
+                const modal = document.getElementById('satelliteModal');
+                document.getElementById('satelliteForm').reset();
+                const title = document.getElementById('satelliteModalTitle');
+                title.textContent = satelliteModalContext === 'target'
+                    ? 'Add Target Satellite'
+                    : 'Add Satellite POI';
+                modal.classList.add('show');
+            }
+
+            function closeSatelliteModal() {
+                document.getElementById('satelliteModal').classList.remove('show');
+                satelliteModalContext = 'initial';
+            }
+
+            async function submitSatelliteForm(event) {
+                event.preventDefault();
+
+                const name = document.getElementById('satelliteName').value.trim();
+                const longitude = parseFloat(document.getElementById('satelliteLongitude').value);
+                const latitude = 0;
+
+                if (!name || !Number.isFinite(longitude)) {
+                    showAlert('Provide a satellite name and longitude', 'error');
+                    return;
+                }
+
+                const saveBtn = document.getElementById('saveSatelliteBtn');
+                const originalText = saveBtn.textContent;
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="loading"></span>';
+
+                try {
+                    const response = await fetch('/api/pois', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name,
+                            latitude,
+                            longitude,
+                            icon: 'satellite',
+                            category: 'satellite',
+                            description: 'Created via Mission Planner'
+                        })
+                    });
+
+                    if (!response.ok) {
+                        let errorDetail = 'Failed to create satellite';
+                        try {
+                            const errorBody = await response.json();
+                            if (errorBody.detail) errorDetail = errorBody.detail;
+                        } catch (parseError) {
+                            // ignore
+                        }
+                        throw new Error(errorDetail);
+                    }
+
+                    const result = await response.json();
+                    showAlert(`Satellite "${result.name}" created`, 'success');
+                    closeSatelliteModal();
+                    await loadSatellitePOIs();
+
+                    if (satelliteModalContext === 'target') {
+                        setSatelliteValue('targetXSatellite', result.name);
+                    } else {
+                        setSatelliteValue('initialXSatellite', result.name);
+                    }
+                } catch (error) {
+                    showAlert(error.message, 'error');
+                } finally {
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = originalText;
+                }
+            }
+
             // Update waypoint select dropdowns
             function updateWaypointSelects() {
                 const startSelect = document.getElementById('aarStartWaypoint');
@@ -2497,20 +3165,62 @@ async def mission_planner_ui():
                 startSelect.innerHTML = '<option value="">Select waypoint...</option>';
                 endSelect.innerHTML = '<option value="">Select waypoint...</option>';
 
-                currentRouteWaypoints.forEach(wp => {
+                currentRouteWaypoints.forEach((wp, idx) => {
+                    const orderValue = typeof wp.order === 'number' ? wp.order : idx;
+
                     const startOption = document.createElement('option');
                     startOption.value = wp.name || wp.order;
                     startOption.textContent = wp.name || `Waypoint ${wp.order + 1}`;
+                    startOption.dataset.order = orderValue;
                     startSelect.appendChild(startOption);
 
                     const endOption = document.createElement('option');
                     endOption.value = wp.name || wp.order;
                     endOption.textContent = wp.name || `Waypoint ${wp.order + 1}`;
+                    endOption.dataset.order = orderValue;
                     endSelect.appendChild(endOption);
                 });
 
                 if (currentStart) startSelect.value = currentStart;
                 if (currentEnd) endSelect.value = currentEnd;
+
+                applyAAREndpointConstraints();
+            }
+
+            function getOptionOrder(selectElement, value) {
+                if (!value) return null;
+                const option = Array.from(selectElement.options).find(opt => opt.value === value);
+                if (!option || option.dataset.order === undefined) return null;
+                const parsed = Number(option.dataset.order);
+                return Number.isFinite(parsed) ? parsed : null;
+            }
+
+            function handleAARStartChange() {
+                applyAAREndpointConstraints();
+            }
+
+            function applyAAREndpointConstraints() {
+                const startSelect = document.getElementById('aarStartWaypoint');
+                const endSelect = document.getElementById('aarEndWaypoint');
+                const startOrder = getOptionOrder(startSelect, startSelect.value);
+
+                Array.from(endSelect.options).forEach(option => {
+                    if (!option.dataset.order) {
+                        option.disabled = false;
+                        option.hidden = false;
+                        return;
+                    }
+
+                    const optionOrder = Number(option.dataset.order);
+                    const shouldDisable = startOrder !== null && optionOrder <= startOrder;
+                    option.disabled = shouldDisable;
+                    option.hidden = shouldDisable;
+                });
+
+                const endOrder = getOptionOrder(endSelect, endSelect.value);
+                if (startOrder !== null && endOrder !== null && endOrder <= startOrder) {
+                    endSelect.value = '';
+                }
             }
 
             // Select mission
@@ -2519,12 +3229,15 @@ async def mission_planner_ui():
                 const missionId = select.value;
 
                 if (missionId === 'new') {
-                    resetForm();
-                    currentMission = null;
+                    startNewMissionDraft();
                     return;
                 }
 
                 try {
+                    if (!confirmDiscardIfDirty()) {
+                        select.value = currentMission?.id || 'new';
+                        return;
+                    }
                     const response = await fetch(`/api/missions/${missionId}`);
                     if (!response.ok) throw new Error('Failed to load mission');
 
@@ -2537,22 +3250,29 @@ async def mission_planner_ui():
 
             // Populate form from mission
             function populateFormFromMission(mission) {
+                suppressDirtyEvents = true;
                 document.getElementById('missionName').value = mission.name;
                 document.getElementById('routeId').value = mission.route_id;
                 document.getElementById('missionDescription').value = mission.description || '';
-                document.getElementById('initialXSatellite').value = mission.transports.initial_x_satellite_id;
+                setSatelliteValue('initialXSatellite', mission.transports.initial_x_satellite_id);
                 document.getElementById('missionNotes').value = mission.notes || '';
 
+                currentMission = JSON.parse(JSON.stringify(mission));
+
                 // Update transport displays
-                renderXTransitions(mission.transports.x_transitions);
-                renderKaOutages(mission.transports.ka_outages);
-                renderKuOverrides(mission.transports.ku_overrides);
+                renderXTransitions(currentMission.transports.x_transitions);
+                renderKaOutages(currentMission.transports.ka_outages);
+                renderKuOverrides(currentMission.transports.ku_overrides);
+                renderAARWindows(currentMission.transports.aar_windows);
 
                 // Load route waypoints
                 loadRouteWaypoints();
 
                 // Show delete button
                 document.getElementById('deleteMissionBtn').style.display = 'flex';
+                document.getElementById('activateMissionBtn').disabled = missionDirty || !currentMission.id;
+                suppressDirtyEvents = false;
+                resetMissionDirty();
             }
 
             // Add X transition
@@ -2560,27 +3280,34 @@ async def mission_planner_ui():
                 const lat = parseFloat(document.getElementById('xTransitionLat').value);
                 const lon = parseFloat(document.getElementById('xTransitionLon').value);
                 const satellite = document.getElementById('targetXSatellite').value;
-                const beam = document.getElementById('targetXBeam').value || null;
-                const isSameSat = document.getElementById('sameXSatellite').checked;
 
                 if (!Number.isFinite(lat) || !Number.isFinite(lon) || !satellite) {
                     showAlert('Please fill in required X transition fields', 'error');
                     return;
                 }
 
-                if (currentMission) {
-                    const transition = {
-                        id: `x-transition-${Date.now()}`,
-                        latitude: lat,
-                        longitude: lon,
-                        target_satellite_id: satellite,
-                        target_beam_id: beam,
-                        is_same_satellite_transition: isSameSat
-                    };
-                    currentMission.transports.x_transitions.push(transition);
-                    renderXTransitions(currentMission.transports.x_transitions);
-                    clearXTransitionForm();
+                if (!ensureMissionDraft()) {
+                    return;
                 }
+
+                const transitions = currentMission.transports.x_transitions;
+                const previousSatellite = transitions.length > 0
+                    ? transitions[transitions.length - 1].target_satellite_id
+                    : currentMission.transports.initial_x_satellite_id;
+
+                const transition = {
+                    id: `x-transition-${Date.now()}`,
+                    latitude: lat,
+                    longitude: lon,
+                    target_satellite_id: satellite,
+                    target_beam_id: null,
+                    is_same_satellite_transition: previousSatellite === satellite
+                };
+
+                transitions.push(transition);
+                renderXTransitions(transitions);
+                clearXTransitionForm();
+                markMissionDirty();
             }
 
             // Render X transitions
@@ -2593,13 +3320,13 @@ async def mission_planner_ui():
 
                 list.innerHTML = transitions.map(t => `
                     <div class="list-item">
-                        <div class="list-item-content">
-                            <div class="list-item-title">
-                                <span class="badge badge-x">X</span>
-                                ${t.target_satellite_id} ${t.is_same_satellite_transition ? '(beam change)' : ''}
+                            <div class="list-item-content">
+                                <div class="list-item-title">
+                                    <span class="badge badge-x">X</span>
+                                ${t.target_satellite_id} ${t.is_same_satellite_transition ? '(beam shift)' : ''}
                             </div>
                             <div class="list-item-details">
-                                ${t.latitude.toFixed(4)}°, ${t.longitude.toFixed(4)}° → ${t.target_satellite_id}${t.target_beam_id ? ' / ' + t.target_beam_id : ''}
+                                ${t.latitude.toFixed(4)}°, ${t.longitude.toFixed(4)}° → ${t.target_satellite_id}
                             </div>
                         </div>
                         <div class="list-item-actions">
@@ -2614,6 +3341,7 @@ async def mission_planner_ui():
                 if (currentMission) {
                     currentMission.transports.x_transitions = currentMission.transports.x_transitions.filter(t => t.id !== id);
                     renderXTransitions(currentMission.transports.x_transitions);
+                    markMissionDirty();
                 }
             }
 
@@ -2621,9 +3349,7 @@ async def mission_planner_ui():
             function clearXTransitionForm() {
                 document.getElementById('xTransitionLat').value = '';
                 document.getElementById('xTransitionLon').value = '';
-                document.getElementById('targetXSatellite').value = '';
-                document.getElementById('targetXBeam').value = '';
-                document.getElementById('sameXSatellite').checked = false;
+                setSatelliteValue('targetXSatellite', '');
             }
 
             // Add Ka outage
@@ -2645,6 +3371,7 @@ async def mission_planner_ui():
                     currentMission.transports.ka_outages.push(outage);
                     renderKaOutages(currentMission.transports.ka_outages);
                     clearKaOutageForm();
+                    markMissionDirty();
                 }
             }
 
@@ -2676,6 +3403,7 @@ async def mission_planner_ui():
                 if (currentMission) {
                     currentMission.transports.ka_outages = currentMission.transports.ka_outages.filter(o => o.id !== id);
                     renderKaOutages(currentMission.transports.ka_outages);
+                    markMissionDirty();
                 }
             }
 
@@ -2706,6 +3434,7 @@ async def mission_planner_ui():
                     currentMission.transports.ku_overrides.push(override);
                     renderKuOverrides(currentMission.transports.ku_overrides);
                     clearKuOverrideForm();
+                    markMissionDirty();
                 }
             }
 
@@ -2738,6 +3467,7 @@ async def mission_planner_ui():
                 if (currentMission) {
                     currentMission.transports.ku_overrides = currentMission.transports.ku_overrides.filter(o => o.id !== id);
                     renderKuOverrides(currentMission.transports.ku_overrides);
+                    markMissionDirty();
                 }
             }
 
@@ -2758,16 +3488,19 @@ async def mission_planner_ui():
                     return;
                 }
 
-                if (currentMission) {
-                    const window = {
-                        id: `aar-${Date.now()}`,
-                        start_waypoint_name: start,
-                        end_waypoint_name: end
-                    };
-                    currentMission.transports.aar_windows.push(window);
-                    renderAARWindows(currentMission.transports.aar_windows);
-                    clearAARWindowForm();
+                if (!ensureMissionDraft()) {
+                    return;
                 }
+
+                const aarWindow = {
+                    id: `aar-${Date.now()}`,
+                    start_waypoint_name: start,
+                    end_waypoint_name: end
+                };
+                currentMission.transports.aar_windows.push(aarWindow);
+                renderAARWindows(currentMission.transports.aar_windows);
+                clearAARWindowForm();
+                markMissionDirty();
             }
 
             // Render AAR windows
@@ -2798,6 +3531,7 @@ async def mission_planner_ui():
                 if (currentMission) {
                     currentMission.transports.aar_windows = currentMission.transports.aar_windows.filter(w => w.id !== id);
                     renderAARWindows(currentMission.transports.aar_windows);
+                    markMissionDirty();
                 }
             }
 
@@ -2805,37 +3539,27 @@ async def mission_planner_ui():
             function clearAARWindowForm() {
                 document.getElementById('aarStartWaypoint').value = '';
                 document.getElementById('aarEndWaypoint').value = '';
+                applyAAREndpointConstraints();
             }
 
             // Save mission
             async function saveMission(e) {
                 e.preventDefault();
 
+                const initialSatellite = document.getElementById('initialXSatellite').value;
+                if (!initialSatellite) {
+                    showAlert('Select an initial X satellite before saving', 'error');
+                    return;
+                }
+
                 if (!currentMission) {
-                    currentMission = {
-                        id: `mission-${Date.now()}`,
-                        name: document.getElementById('missionName').value,
-                        description: document.getElementById('missionDescription').value || null,
-                        route_id: document.getElementById('routeId').value,
-                        transports: {
-                            initial_x_satellite_id: document.getElementById('initialXSatellite').value,
-                            initial_ka_satellite_ids: ["T2-1", "T2-2", "T2-3"],
-                            x_transitions: [],
-                            ka_outages: [],
-                            aar_windows: [],
-                            ku_overrides: []
-                        },
-                        notes: document.getElementById('missionNotes').value || null,
-                        is_active: false,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    };
+                    currentMission = createEmptyMission();
                 }
 
                 currentMission.name = document.getElementById('missionName').value;
                 currentMission.route_id = document.getElementById('routeId').value;
                 currentMission.description = document.getElementById('missionDescription').value || null;
-                currentMission.transports.initial_x_satellite_id = document.getElementById('initialXSatellite').value;
+                currentMission.transports.initial_x_satellite_id = initialSatellite;
                 currentMission.notes = document.getElementById('missionNotes').value || null;
                 currentMission.updated_at = new Date().toISOString();
 
@@ -2861,13 +3585,50 @@ async def mission_planner_ui():
                         throw new Error(error.detail || 'Save failed');
                     }
 
+                    const savedMission = await response.json();
+                    populateFormFromMission(savedMission);
+                    document.getElementById('missionSelect').value = savedMission.id;
+
                     showAlert(`Mission "${currentMission.name}" saved successfully`, 'success');
+                    await syncMissionPois(currentMission);
                     await loadMissions();
+                    resetMissionDirty();
                 } catch (error) {
                     showAlert('Error: ' + error.message, 'error');
                 } finally {
                     saveBtn.disabled = false;
                     saveBtn.textContent = originalText;
+                }
+            }
+
+            async function activateMission() {
+                if (!currentMission || !currentMission.id) {
+                    showAlert('Save mission before activating', 'error');
+                    return;
+                }
+
+                if (missionDirty) {
+                    showAlert('Save mission before activating', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/missions/${currentMission.id}/activate`, {
+                        method: 'POST'
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Activation failed');
+                    }
+
+                    const result = await response.json();
+                    currentMission.is_active = true;
+                    updateMissionStatus();
+                    showAlert(`Mission activated (phase: ${result.flight_phase})`, 'success');
+                    await loadMissions();
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
                 }
             }
 
@@ -2892,10 +3653,12 @@ async def mission_planner_ui():
 
             // Reset form
             function resetForm() {
+                suppressDirtyEvents = true;
                 document.getElementById('missionForm').reset();
                 document.getElementById('missionSelect').value = 'new';
                 currentMission = null;
                 document.getElementById('deleteMissionBtn').style.display = 'none';
+                document.getElementById('activateMissionBtn').disabled = true;
                 renderXTransitions([]);
                 renderKaOutages([]);
                 renderKuOverrides([]);
@@ -2904,6 +3667,25 @@ async def mission_planner_ui():
                 clearKaOutageForm();
                 clearKuOverrideForm();
                 clearAARWindowForm();
+                selectedInitialSatellite = '';
+                selectedTargetSatellite = '';
+                populateSatelliteSelects();
+                suppressDirtyEvents = false;
+                resetMissionDirty();
+            }
+
+            function startNewMissionDraft() {
+                if (!confirmDiscardIfDirty()) {
+                    document.getElementById('missionSelect').value = currentMission?.id || 'new';
+                    return;
+                }
+                resetForm();
+                currentMission = createEmptyMission();
+                document.getElementById('missionSelect').value = 'new';
+                resetMissionDirty();
+                document.getElementById('activateMissionBtn').disabled = true;
+                updateMissionStatus();
+                showAlert('Started a new mission draft', 'info');
             }
 
             // Export mission
@@ -2931,15 +3713,24 @@ async def mission_planner_ui():
                 const file = fileInput.files[0];
 
                 if (!file) return;
+                if (!confirmDiscardIfDirty()) {
+                    fileInput.value = '';
+                    return;
+                }
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
                         const mission = JSON.parse(e.target.result);
-                        currentMission = mission;
+                        const timestamp = new Date().toISOString();
+                        mission.id = generateMissionId();
+                        mission.is_active = false;
+                        mission.created_at = timestamp;
+                        mission.updated_at = timestamp;
+                        document.getElementById('missionSelect').value = 'new';
                         populateFormFromMission(mission);
-                        document.getElementById('missionSelect').value = mission.id;
-                        showAlert('Mission imported successfully', 'success');
+                        markMissionDirty();
+                        showAlert('Mission imported as new draft', 'success');
                     } catch (error) {
                         showAlert('Error importing mission: ' + error.message, 'error');
                     }
@@ -2947,6 +3738,13 @@ async def mission_planner_ui():
                 reader.readAsText(file);
                 fileInput.value = '';
             }
+
+            window.addEventListener('click', (event) => {
+                const satelliteModal = document.getElementById('satelliteModal');
+                if (event.target === satelliteModal) {
+                    closeSatelliteModal();
+                }
+            });
 
             // Show alert
             function showAlert(message, type = 'info') {

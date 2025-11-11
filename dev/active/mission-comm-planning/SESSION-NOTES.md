@@ -1,5 +1,36 @@
 # Mission Communication Planning - Session Notes
 
+**Date**: 2025-11-11
+**Branch**: `feature/mission-comm-planning`
+**Session Duration**: ~2 hours
+**Status**: Phase 3 timeline scaffolding in progress
+
+## Session Summary (2025-11-11)
+
+- Added `backend/starlink-location/app/mission/state.py` with helpers to translate `MissionEvent` streams into contiguous per-transport intervals plus `tests/unit/test_mission_state.py`.
+- Implemented `backend/starlink-location/app/mission/timeline.py` to merge interval data into `TimelineSegment`s + `MissionTimeline` instances with coverage from `tests/unit/test_mission_timeline.py`.
+- Updated pytest fixtures to isolate mission storage under `/tmp/test_data/missions`, preventing first-run integration failures that were caused by leftover JSON files.
+- Rebuilt the Docker image, restarted `starlink-location`, and re-ran the full test suite inside the container: `docker compose exec starlink-location python -m pytest` → 691 passed / 22 skipped / 1 warning (expected Pydantic serializer deprecation).
+- Refreshed `mission-comm-planning-context.md`, `...-tasks.md`, and `STATUS.md` with the new progress plus next actions.
+
+### Files Touched
+- `backend/starlink-location/app/mission/state.py` (new) & `tests/unit/test_mission_state.py`
+- `backend/starlink-location/app/mission/timeline.py` (new) & `tests/unit/test_mission_timeline.py`
+- `backend/starlink-location/tests/conftest.py` (mission storage isolation)
+- Documentation under `dev/active/mission-comm-planning/`
+
+### Outstanding / Next Steps
+1. Hook the new interval/timeline helpers into mission activation so we persist fresh segments on every save/activate.
+2. Expose `/api/missions/{id}/timeline` + `/api/missions/active/timeline` and publish Prometheus metrics (`mission_comm_state{transport=...}`, degraded/critical counters).
+3. Once APIs exist, re-run `docker compose exec starlink-location python -m pytest tests/integration/test_mission_routes.py tests/integration/test_eta_modes.py` followed by the full suite.
+4. Begin export generator + Grafana timeline work after the API/metrics backbone is in place.
+
+### Verification Commands
+- `docker compose exec starlink-location python -m pytest`
+- `docker compose exec starlink-location python -m pytest tests/unit/test_mission_state.py tests/unit/test_mission_timeline.py`
+
+---
+
 **Date**: 2025-11-10
 **Branch**: `feature/mission-comm-planning`
 **Session Duration**: ~90 minutes
