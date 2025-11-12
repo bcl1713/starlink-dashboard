@@ -2350,6 +2350,18 @@ async def mission_planner_ui():
                             <button type="button" class="btn-secondary" id="activateMissionBtn" disabled>Activate Mission</button>
                             <button type="button" class="btn-danger" id="deleteMissionBtn" style="display: none;">Delete Mission</button>
                         </div>
+                        <div class="button-group">
+                            <button type="button" class="btn-secondary" id="recomputeTimelineBtn" disabled>Recompute Timeline</button>
+                            <div class="select-with-action" style="flex: 1;">
+                                <select id="exportFormatSelect">
+                                    <option value="csv">CSV (Excel compatible)</option>
+                                    <option value="xlsx">XLSX (Multi-sheet)</option>
+                                    <option value="pdf">PDF Brief</option>
+                                </select>
+                                <button type="button" class="btn-secondary" id="exportTimelineBtn" disabled>Download Timeline</button>
+                            </div>
+                        </div>
+                        <p class="status-text" id="timelineStatusText">Save a mission to enable timeline tools.</p>
                     </form>
                 </div>
 
@@ -2401,12 +2413,12 @@ async def mission_planner_ui():
                     <div id="ka-transport" class="tab-content">
                         <h3>Ka Transport - Coverage & Outages</h3>
                         <div class="info-box">
-                            Three geostationary satellites (T2-1, T2-2, T2-3) with auto-calculated coverage. Optionally define manual outage windows.
+                            Three geostationary satellites (AOR, POR, IOR) with auto-calculated coverage. Optionally define manual outage windows.
                         </div>
 
                         <div class="form-group">
                             <label for="kaInitialSatellites">Initial Ka Satellites</label>
-                            <input type="text" id="kaInitialSatellites" value="T2-1, T2-2, T2-3" disabled placeholder="T2-1, T2-2, T2-3">
+                            <input type="text" id="kaInitialSatellites" value="AOR, POR, IOR" disabled placeholder="AOR, POR, IOR">
                             <p class="help-text">Read-only. Auto-calculated from coverage.</p>
                         </div>
 
@@ -2531,8 +2543,9 @@ async def mission_planner_ui():
             let selectedInitialSatellite = '';
             let selectedTargetSatellite = '';
             let missionDirty = false;
+            let timelineAvailable = false;
             let suppressDirtyEvents = false;
-            const DEFAULT_KA_SATELLITES = ["T2-1", "T2-2", "T2-3"];
+            const DEFAULT_KA_SATELLITES = ["AOR", "POR", "IOR"];
 
             // Initialize on page load
             document.addEventListener('DOMContentLoaded', async () => {
@@ -2568,15 +2581,55 @@ async def mission_planner_ui():
                 };
             }
 
+    function setTimelineAvailability(flag) {
+        timelineAvailable = flag;
+        updateMissionStatus();
+    }
+
+    async function refreshTimelineAvailability() {
+        if (!currentMission || !currentMission.id) {
+            setTimelineAvailability(false);
+            return;
+        }
+        try {
+            const response = await fetch(`/api/missions/${currentMission.id}/timeline`);
+            setTimelineAvailability(response.ok);
+        } catch (_) {
+            setTimelineAvailability(false);
+        }
+    }
+
+    function updateTimelineStatusMessage() {
+        const statusEl = document.getElementById('timelineStatusText');
+        if (!statusEl) return;
+
+        if (!currentMission) {
+            statusEl.textContent = 'Save a mission to enable timeline tools.';
+            return;
+        }
+        if (missionDirty) {
+            statusEl.textContent = 'Save changes before recomputing the timeline.';
+            return;
+        }
+        statusEl.textContent = timelineAvailable
+            ? 'Timeline ready for export.'
+            : 'Timeline not computed yet. Recompute to refresh segments.';
+    }
+
     function markMissionDirtyFromForm(event) {
         if (suppressDirtyEvents) return;
-        if (!event.target) return;
+        const ignoreIds = new Set(['exportFormatSelect']);
+        if (!event.target || ignoreIds.has(event.target.id)) {
+            return;
+        }
         missionDirty = true;
+        setTimelineAvailability(false);
         updateMissionStatus();
     }
 
     function markMissionDirty() {
         missionDirty = true;
+        setTimelineAvailability(false);
         updateMissionStatus();
     }
 
@@ -2627,6 +2680,8 @@ async def mission_planner_ui():
                 document.getElementById('targetXSatellite').addEventListener('change', (event) => {
                     selectedTargetSatellite = event.target.value;
                 });
+                document.getElementById('recomputeTimelineBtn').addEventListener('click', recomputeTimeline);
+                document.getElementById('exportTimelineBtn').addEventListener('click', exportTimeline);
                 document.querySelectorAll('.add-satellite-btn').forEach(button => {
                     button.addEventListener('click', () => openSatelliteModal(button.dataset.targetField));
                 });
@@ -2693,6 +2748,8 @@ async def mission_planner_ui():
     function updateMissionStatus() {
         const badge = document.getElementById('missionStatusBadge');
         const activateBtn = document.getElementById('activateMissionBtn');
+        const recomputeBtn = document.getElementById('recomputeTimelineBtn');
+        const exportBtn = document.getElementById('exportTimelineBtn');
         if (!badge || !activateBtn) return;
 
         badge.classList.remove('status-active', 'status-inactive');
@@ -2701,6 +2758,9 @@ async def mission_planner_ui():
             badge.textContent = 'Draft';
             badge.classList.add('status-inactive');
             activateBtn.disabled = true;
+            if (recomputeBtn) recomputeBtn.disabled = true;
+            if (exportBtn) exportBtn.disabled = true;
+            updateTimelineStatusMessage();
             return;
         }
 
@@ -2716,6 +2776,13 @@ async def mission_planner_ui():
         }
 
         activateBtn.disabled = missionDirty || !currentMission.id || currentMission.is_active;
+        if (recomputeBtn) {
+            recomputeBtn.disabled = missionDirty || !currentMission.id;
+        }
+        if (exportBtn) {
+            exportBtn.disabled = missionDirty || !currentMission.id || !timelineAvailable;
+        }
+        updateTimelineStatusMessage();
     }
 
             function findWaypointByName(name) {
@@ -2752,32 +2819,45 @@ async def mission_planner_ui():
                 const poiPayloads = [];
                 const descriptionBase = mission.name ? `Mission ${mission.name}` : mission.id;
 
-                (mission.transports.x_transitions || []).forEach((transition, idx) => {
+                const xTransitions = mission.transports.x_transitions || [];
+                let activeXSatellite = mission.transports.initial_x_satellite_id || null;
+                xTransitions.forEach((transition, idx) => {
                     if (!Number.isFinite(transition.latitude) || !Number.isFinite(transition.longitude)) {
                         return;
                     }
                     const satelliteName = transition.target_satellite_id || 'Satellite';
+                    let poiName;
+                    if (transition.is_same_satellite_transition) {
+                        poiName = 'X-Band\\nBeam Swap';
+                    } else if (activeXSatellite) {
+                        poiName = `X-Band\\n${activeXSatellite}→${satelliteName}`;
+                    } else {
+                        poiName = `X-Band\\n→${satelliteName}`;
+                    }
                     poiPayloads.push({
-                        name: `X Transition ${idx + 1} - ${satelliteName}`,
+                        name: poiName,
                         latitude: transition.latitude,
                         longitude: transition.longitude,
                         icon: 'satellite',
-                        category: 'mission-x-transition',
+                        category: 'mission-event',
                         description: `${descriptionBase} | Target: ${satelliteName}`,
                         route_id: mission.route_id,
                         mission_id: mission.id
                     });
+                    if (!transition.is_same_satellite_transition && transition.target_satellite_id) {
+                        activeXSatellite = transition.target_satellite_id;
+                    }
                 });
 
                 (mission.transports.aar_windows || []).forEach((window, idx) => {
                     const startWaypoint = findWaypointByName(window.start_waypoint_name);
                     if (startWaypoint && Number.isFinite(startWaypoint.latitude) && Number.isFinite(startWaypoint.longitude)) {
                         poiPayloads.push({
-                            name: `AAR Start ${idx + 1} - ${window.start_waypoint_name}`,
+                            name: 'AAR\\nStart',
                             latitude: startWaypoint.latitude,
                             longitude: startWaypoint.longitude,
                             icon: 'aar',
-                            category: 'mission-aar-start',
+                            category: 'mission-event',
                             description: `${descriptionBase} | AAR window start`,
                             route_id: mission.route_id,
                             mission_id: mission.id
@@ -2786,11 +2866,11 @@ async def mission_planner_ui():
                     const endWaypoint = findWaypointByName(window.end_waypoint_name);
                     if (endWaypoint && Number.isFinite(endWaypoint.latitude) && Number.isFinite(endWaypoint.longitude)) {
                         poiPayloads.push({
-                            name: `AAR End ${idx + 1} - ${window.end_waypoint_name}`,
+                            name: 'AAR\\nEnd',
                             latitude: endWaypoint.latitude,
                             longitude: endWaypoint.longitude,
                             icon: 'aar',
-                            category: 'mission-aar-end',
+                            category: 'mission-event',
                             description: `${descriptionBase} | AAR window end`,
                             route_id: mission.route_id,
                             mission_id: mission.id
@@ -3243,6 +3323,7 @@ async def mission_planner_ui():
 
                     currentMission = await response.json();
                     populateFormFromMission(currentMission);
+                    await refreshTimelineAvailability();
                 } catch (error) {
                     showAlert('Failed to load mission: ' + error.message, 'error');
                 }
@@ -3273,6 +3354,7 @@ async def mission_planner_ui():
                 document.getElementById('activateMissionBtn').disabled = missionDirty || !currentMission.id;
                 suppressDirtyEvents = false;
                 resetMissionDirty();
+                setTimelineAvailability(false);
             }
 
             // Add X transition
@@ -3588,11 +3670,13 @@ async def mission_planner_ui():
                     const savedMission = await response.json();
                     populateFormFromMission(savedMission);
                     document.getElementById('missionSelect').value = savedMission.id;
+                    await refreshTimelineAvailability();
 
                     showAlert(`Mission "${currentMission.name}" saved successfully`, 'success');
-                    await syncMissionPois(currentMission);
                     await loadMissions();
                     resetMissionDirty();
+                    await recomputeTimeline(true);
+                    await loadPOIs();
                 } catch (error) {
                     showAlert('Error: ' + error.message, 'error');
                 } finally {
@@ -3624,11 +3708,113 @@ async def mission_planner_ui():
 
                     const result = await response.json();
                     currentMission.is_active = true;
-                    updateMissionStatus();
+                    setTimelineAvailability(true);
                     showAlert(`Mission activated (phase: ${result.flight_phase})`, 'success');
                     await loadMissions();
+                    await refreshTimelineAvailability();
                 } catch (error) {
                     showAlert('Error: ' + error.message, 'error');
+                }
+            }
+
+            async function recomputeTimeline(silent = false) {
+                if (!currentMission || !currentMission.id) {
+                    if (!silent) {
+                        showAlert('Save mission before recomputing timeline', 'error');
+                    }
+                    return;
+                }
+                if (missionDirty) {
+                    if (!silent) {
+                        showAlert('Save changes before recomputing timeline', 'error');
+                    }
+                    return;
+                }
+
+                const btn = document.getElementById('recomputeTimelineBtn');
+                const originalText = btn ? btn.textContent : null;
+                if (btn) {
+                    if (!silent) {
+                        btn.disabled = true;
+                        btn.innerHTML = '<span class="loading"></span>';
+                    } else {
+                        btn.disabled = true;
+                    }
+                }
+
+                try {
+                    const response = await fetch(`/api/missions/${currentMission.id}/timeline/recompute`, {
+                        method: 'POST'
+                    });
+                    if (!response.ok) {
+                        const error = await response.json().catch(() => ({}));
+                        throw new Error(error.detail || 'Timeline recompute failed');
+                    }
+                    const timeline = await response.json();
+                    setTimelineAvailability(true);
+                    if (!silent) {
+                        showAlert(`Timeline recomputed (${timeline.segments.length} segments)`, 'success');
+                    }
+                    await refreshTimelineAvailability();
+                    return timeline;
+                } catch (error) {
+                    if (!silent) {
+                        showAlert('Error: ' + error.message, 'error');
+                    } else {
+                        console.error('Timeline recompute failed:', error);
+                    }
+                } finally {
+                    if (btn) {
+                        if (!silent && originalText !== null) {
+                            btn.textContent = originalText;
+                        }
+                        btn.disabled = false;
+                    }
+                    updateMissionStatus();
+                }
+            }
+
+            async function exportTimeline() {
+                if (!currentMission || !currentMission.id) {
+                    showAlert('Save mission before exporting timeline', 'error');
+                    return;
+                }
+                if (!timelineAvailable || missionDirty) {
+                    showAlert('Recompute the timeline before exporting', 'error');
+                    return;
+                }
+
+                const formatSelect = document.getElementById('exportFormatSelect');
+                const format = formatSelect?.value || 'csv';
+                const btn = document.getElementById('exportTimelineBtn');
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading"></span>';
+
+                try {
+                    const response = await fetch(`/api/missions/${currentMission.id}/export?format=${format}`, {
+                        method: 'POST'
+                    });
+                    if (!response.ok) {
+                        const error = await response.json().catch(() => ({}));
+                        throw new Error(error.detail || 'Timeline export failed');
+                    }
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${currentMission.id}-timeline.${format}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    showAlert(`Downloaded ${format.toUpperCase()} timeline`, 'success');
+                } catch (error) {
+                    showAlert('Error: ' + error.message, 'error');
+                } finally {
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    updateMissionStatus();
                 }
             }
 
@@ -3645,6 +3831,7 @@ async def mission_planner_ui():
 
                     showAlert(`Mission "${currentMission.name}" deleted successfully`, 'success');
                     resetForm();
+                    setTimelineAvailability(false);
                     await loadMissions();
                 } catch (error) {
                     showAlert('Error: ' + error.message, 'error');
@@ -3672,6 +3859,7 @@ async def mission_planner_ui():
                 populateSatelliteSelects();
                 suppressDirtyEvents = false;
                 resetMissionDirty();
+                setTimelineAvailability(false);
             }
 
             function startNewMissionDraft() {

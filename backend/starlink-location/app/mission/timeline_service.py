@@ -31,13 +31,40 @@ from app.mission.models import KaOutage, KuOutageOverride
 
 logger = logging.getLogger(__name__)
 
+MISSION_EVENT_CATEGORY = "mission-event"
 KA_POI_CATEGORIES = {
     "mission-ka-transition",
     "mission-ka-gap-exit",
     "mission-ka-gap-entry",
 }
+KA_POI_NAME_PREFIXES = (
+    "Ka Coverage Exit",
+    "Ka Coverage Entry",
+    "Ka Transition",
+    "Ka Swap",
+    "HCX",
+)
+X_AAR_POI_PREFIXES = (
+    "X-Band",
+    "AAR",
+)
+KA_POI_NAME_PREFIXES = (
+    "Ka Coverage Exit",
+    "Ka Coverage Entry",
+    "Ka Transition",
+    "Ka Swap",
+    "HCX",
+)
 
 _COVERAGE_SAMPLER: CoverageSampler | None = None
+try:
+    APP_DIR = Path(__file__).resolve().parents[1]
+except IndexError:
+    APP_DIR = Path(__file__).resolve().parent
+try:
+    REPO_ROOT = Path(__file__).resolve().parents[4]
+except IndexError:
+    REPO_ROOT = Path.cwd()
 DEFAULT_CRUISE_ALTITUDE_M = 10668.0  # ~35,000 ft
 TIMELINE_SAMPLE_INTERVAL_SECONDS = 60  # Minute-level sampling cadence
 
@@ -205,6 +232,8 @@ def build_mission_timeline(
 
     if poi_manager and (coverage_result.gaps or coverage_result.swaps):
         _sync_ka_pois(mission, route, poi_manager, coverage_result)
+    if poi_manager:
+        _sync_x_aar_pois(mission, route, poi_manager)
 
     _apply_manual_outages(rule_engine, mission.transports.ka_outages, Transport.KA)
     _apply_manual_outages(rule_engine, mission.transports.ku_overrides, Transport.KU)
@@ -555,6 +584,16 @@ def _analyze_ka_coverage(
             boundary = _interpolate_sample(projector, prev_sample, curr_sample)
             gap_state.end = boundary
             gap_state.regained_satellite = _pick_satellite(curr_set)
+            is_same_satellite = (
+                gap_state.lost_satellite
+                and gap_state.lost_satellite == gap_state.regained_satellite
+            )
+            if (
+                is_same_satellite
+                and _looks_like_idl_gap(gap_state.start, gap_state.end)
+            ):
+                gap_state = None
+                continue
             gaps.append(gap_state)
             gap_state = None
 
@@ -1072,9 +1111,32 @@ def _sync_ka_pois(
     poi_manager: POIManager,
     coverage: CoverageAnalysisResult,
 ) -> None:
-    deleted = poi_manager.delete_mission_pois_by_category(mission.id, KA_POI_CATEGORIES)
-    if deleted:
-        logger.debug("Deleted %d existing Ka mission POIs", deleted)
+    deleted = poi_manager.delete_mission_pois_by_category(
+        mission.id, KA_POI_CATEGORIES
+    )
+    deleted_prefix = poi_manager.delete_mission_pois_by_name_prefixes(
+        mission.id, KA_POI_NAME_PREFIXES
+    )
+    route_cleanup = 0
+    if mission.route_id:
+        route_cleanup = poi_manager.delete_route_mission_pois_with_prefixes(
+            mission.route_id,
+            KA_POI_NAME_PREFIXES,
+            exclude_mission_id=mission.id,
+        )
+    if deleted or deleted_prefix:
+        logger.debug(
+            "Deleted %d existing Ka mission POIs (category=%d, prefix=%d)",
+            deleted + deleted_prefix,
+            deleted,
+            deleted_prefix,
+        )
+    if route_cleanup:
+        logger.info(
+            "Deleted %d Ka mission POIs on route %s (other missions)",
+            route_cleanup,
+            mission.route_id,
+        )
 
     def create_poi(payload: POICreate):
         poi_manager.create_poi(payload, active_route=route)
@@ -1083,11 +1145,11 @@ def _sync_ka_pois(
         if gap.start:
             create_poi(
                 POICreate(
-                    name=f"Ka Coverage Exit - {gap.lost_satellite or 'Unknown'}",
+                    name=_format_hcx_exit_entry("Exit", gap.lost_satellite),
                     latitude=gap.start.latitude,
                     longitude=gap.start.longitude,
                     icon="satellite",
-                    category="mission-ka-gap-exit",
+                    category=MISSION_EVENT_CATEGORY,
                     description=f"Loss at {gap.start.timestamp.isoformat()}",
                     route_id=mission.route_id,
                     mission_id=mission.id,
@@ -1096,11 +1158,11 @@ def _sync_ka_pois(
         if gap.end:
             create_poi(
                 POICreate(
-                    name=f"Ka Coverage Entry - {gap.regained_satellite or 'Unknown'}",
+                    name=_format_hcx_exit_entry("Enter", gap.regained_satellite),
                     latitude=gap.end.latitude,
                     longitude=gap.end.longitude,
                     icon="satellite",
-                    category="mission-ka-gap-entry",
+                    category=MISSION_EVENT_CATEGORY,
                     description=f"Regain at {gap.end.timestamp.isoformat()}",
                     route_id=mission.route_id,
                     mission_id=mission.id,
@@ -1111,30 +1173,107 @@ def _sync_ka_pois(
         midpoint = swap.midpoint
         create_poi(
             POICreate(
-                name=f"Ka Transition {swap.from_satellite} → {swap.to_satellite}",
+                name=_format_hcx_transition_label(
+                    swap.from_satellite, swap.to_satellite
+                ),
                 latitude=midpoint.latitude,
                 longitude=midpoint.longitude,
                 icon="satellite",
-                category="mission-ka-transition",
+                category=MISSION_EVENT_CATEGORY,
                 description=f"Recommended swap near {midpoint.timestamp.isoformat()}",
                 route_id=mission.route_id,
                 mission_id=mission.id,
             )
         )
 
-    for swap in coverage.swaps:
-        create_poi(
+
+def _sync_x_aar_pois(
+    mission: Mission,
+    route: ParsedRoute,
+    poi_manager: POIManager,
+) -> None:
+    deleted = poi_manager.delete_mission_pois_by_name_prefixes(
+        mission.id, X_AAR_POI_PREFIXES
+    )
+    route_cleanup = 0
+    if mission.route_id:
+        route_cleanup = poi_manager.delete_route_mission_pois_with_prefixes(
+            mission.route_id,
+            X_AAR_POI_PREFIXES,
+            exclude_mission_id=mission.id,
+        )
+    if deleted:
+        logger.debug("Deleted %d existing X/AAR mission POIs", deleted)
+    if route_cleanup:
+        logger.info(
+            "Deleted %d X/AAR mission POIs on route %s (other missions)",
+            route_cleanup,
+            mission.route_id,
+        )
+
+    transports = mission.transports
+    if not transports:
+        return
+
+    def create(payload: POICreate):
+        poi_manager.create_poi(payload, active_route=route)
+
+    current_satellite = transports.initial_x_satellite_id
+    for transition in transports.x_transitions or []:
+        if transition.latitude is None or transition.longitude is None:
+            continue
+        label = _format_x_transition_label(
+            current_satellite,
+            transition.target_satellite_id,
+            transition.is_same_satellite_transition,
+        )
+        create(
             POICreate(
-                name=f"Ka Swap {swap.from_satellite or 'Unknown'}→{swap.to_satellite or 'Unknown'}",
-                latitude=swap.midpoint.latitude,
-                longitude=swap.midpoint.longitude,
+                name=label,
+                latitude=transition.latitude,
+                longitude=transition.longitude,
                 icon="satellite",
-                category="mission-ka-transition",
-                description=f"Ideal swap at {swap.midpoint.timestamp.isoformat()}",
+                category=MISSION_EVENT_CATEGORY,
+                description=f"X transition target {transition.target_satellite_id or 'Unknown'}",
                 route_id=mission.route_id,
                 mission_id=mission.id,
             )
         )
+        if (
+            not transition.is_same_satellite_transition
+            and transition.target_satellite_id
+        ):
+            current_satellite = transition.target_satellite_id
+
+    for window in transports.aar_windows or []:
+        start_coords = _find_waypoint_coordinates(route, window.start_waypoint_name)
+        if start_coords:
+            create(
+                POICreate(
+                    name="AAR\nStart",
+                    latitude=start_coords[0],
+                    longitude=start_coords[1],
+                    icon="aar",
+                    category=MISSION_EVENT_CATEGORY,
+                    description=f"AAR window start ({window.start_waypoint_name})",
+                    route_id=mission.route_id,
+                    mission_id=mission.id,
+                )
+            )
+        end_coords = _find_waypoint_coordinates(route, window.end_waypoint_name)
+        if end_coords:
+            create(
+                POICreate(
+                    name="AAR\nEnd",
+                    latitude=end_coords[0],
+                    longitude=end_coords[1],
+                    icon="aar",
+                    category=MISSION_EVENT_CATEGORY,
+                    description=f"AAR window end ({window.end_waypoint_name})",
+                    route_id=mission.route_id,
+                    mission_id=mission.id,
+                )
+            )
 
 
 def _apply_manual_outages(
@@ -1249,8 +1388,8 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
     if not coverage_path.exists():
         kmz_candidates = [
             Path("data/sat_coverage/HCX.kmz"),
-            Path("app/satellites/assets/HCX.kmz"),
-            Path("dev/active/mission-comm-planning/HCX.kmz"),
+            APP_DIR / "satellites" / "assets" / "HCX.kmz",
+            REPO_ROOT / "dev" / "active" / "mission-comm-planning" / "HCX.kmz",
         ]
         for kmz_path in kmz_candidates:
             if kmz_path.exists():
@@ -1264,3 +1403,52 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
         _COVERAGE_SAMPLER = None
 
     return _COVERAGE_SAMPLER
+def _format_hcx_exit_entry(kind: str, satellite: str | None) -> str:
+    label = satellite or "Unknown"
+    return f"HCX\n{kind} {label}"
+
+
+def _format_hcx_transition_label(
+    from_satellite: str | None, to_satellite: str | None
+) -> str:
+    if from_satellite and to_satellite:
+        return f"HCX\n{from_satellite}→{to_satellite}"
+    if to_satellite:
+        return f"HCX\n→{to_satellite}"
+    return "HCX\nTransition"
+
+
+def _format_x_transition_label(
+    current_satellite: str | None,
+    target_satellite: str | None,
+    is_same_satellite: bool,
+) -> str:
+    if is_same_satellite:
+        return "X-Band\nBeam Swap"
+    if current_satellite and target_satellite:
+        return f"X-Band\n{current_satellite}→{target_satellite}"
+    if target_satellite:
+        return f"X-Band\n→{target_satellite}"
+    return "X-Band\nTransition"
+
+
+def _find_waypoint_coordinates(
+    route: ParsedRoute, waypoint_name: str | None
+) -> tuple[float, float] | None:
+    if not route or not waypoint_name:
+        return None
+    normalized = waypoint_name.strip().lower()
+    for waypoint in route.waypoints or []:
+        name = (waypoint.name or f"waypoint-{waypoint.order}").strip().lower()
+        if name == normalized and waypoint.latitude is not None and waypoint.longitude is not None:
+            return waypoint.latitude, waypoint.longitude
+    return None
+
+
+def _looks_like_idl_gap(
+    start_sample: RouteSample | None, end_sample: RouteSample | None
+) -> bool:
+    if not start_sample or not end_sample:
+        return False
+    lon_diff = abs(start_sample.longitude - end_sample.longitude)
+    return lon_diff > 300.0

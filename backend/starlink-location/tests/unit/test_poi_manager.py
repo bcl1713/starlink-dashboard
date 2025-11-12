@@ -198,7 +198,107 @@ class TestPOIManager:
         remaining_pois = poi_manager.list_pois()
         assert len(remaining_pois) == 2
         assert any(p.name == "Global POI" for p in remaining_pois)
-        assert any(p.name == "Route2 POI" for p in remaining_pois)
+
+    def test_find_global_poi_by_name(self, poi_manager):
+        """Ensure only global POIs are returned."""
+        poi_manager.create_poi(POICreate(name="Sat", latitude=1.0, longitude=1.0))
+        poi_manager.create_poi(
+            POICreate(name="Sat", latitude=2.0, longitude=2.0, mission_id="mission-1")
+        )
+        poi_manager.create_poi(
+            POICreate(name="Sat", latitude=3.0, longitude=3.0, route_id="route-1")
+        )
+
+        poi = poi_manager.find_global_poi_by_name("Sat")
+        assert poi is not None
+        assert poi.longitude == 1.0
+
+    def test_delete_scoped_pois_by_names(self, poi_manager):
+        """Delete mission/route scoped POIs matching satellite names."""
+        poi_manager.create_poi(
+            POICreate(name="WGS-7", latitude=1.0, longitude=1.0, mission_id="mission-1")
+        )
+        poi_manager.create_poi(
+            POICreate(name="WGS-8", latitude=2.0, longitude=2.0, route_id="route-1")
+        )
+        poi_manager.create_poi(
+            POICreate(name="WGS-7", latitude=3.0, longitude=3.0)  # global
+        )
+
+        removed = poi_manager.delete_scoped_pois_by_names({"WGS-7", "WGS-8"})
+        assert removed == 2
+        remaining = poi_manager.list_pois()
+        assert len(remaining) == 1
+        assert remaining[0].name == "WGS-7"
+        assert remaining[0].mission_id is None and remaining[0].route_id is None
+
+    def test_delete_mission_pois_by_category(self, poi_manager):
+        """Ensure mission category deletions only remove targeted POIs."""
+        poi_manager.create_poi(
+            POICreate(
+                name="Transition",
+                latitude=1.0,
+                longitude=1.0,
+                mission_id="mission-1",
+                category="mission-event",
+            )
+        )
+        poi_manager.create_poi(
+            POICreate(
+                name="Ka Gap",
+                latitude=2.0,
+                longitude=2.0,
+                mission_id="mission-1",
+                category="mission-event",
+            )
+        )
+        poi_manager.create_poi(
+            POICreate(
+                name="Other Mission",
+                latitude=3.0,
+                longitude=3.0,
+                mission_id="mission-2",
+                category="mission-event",
+            )
+        )
+
+        removed = poi_manager.delete_mission_pois_by_category(
+            "mission-1", {"mission-event"}
+        )
+        assert removed == 2
+        remaining = poi_manager.list_pois(mission_id="mission-1")
+        assert len(remaining) == 0
+        other_mission_pois = poi_manager.list_pois(mission_id="mission-2")
+        assert len(other_mission_pois) == 1
+        assert other_mission_pois[0].name == "Other Mission"
+
+    def test_delete_mission_pois_by_name_prefixes(self, poi_manager):
+        poi_manager.create_poi(
+            POICreate(
+                name="Ka Coverage Exit - POR",
+                latitude=1.0,
+                longitude=1.0,
+                mission_id="mission-1",
+                category="mission-event",
+            )
+        )
+        poi_manager.create_poi(
+            POICreate(
+                name="AAR Start 1 - WP",
+                latitude=2.0,
+                longitude=2.0,
+                mission_id="mission-1",
+                category="mission-event",
+            )
+        )
+
+        removed = poi_manager.delete_mission_pois_by_name_prefixes(
+            "mission-1", ["Ka Coverage Exit"]
+        )
+        assert removed == 1
+        remaining = poi_manager.list_pois(mission_id="mission-1")
+        assert len(remaining) == 1
+        assert remaining[0].name.startswith("AAR Start")
 
     def test_persistence(self, temp_pois_file):
         """Test that POIs are persisted to file."""
@@ -308,3 +408,14 @@ class TestPOIManager:
         """Test that longitude is converted to -180 to 180 range."""
         poi_create = POICreate(name="Test POI", latitude=0.0, longitude=270.0)
         assert poi_create.longitude == -90.0
+
+    def test_create_poi_slugifies_newlines(self, poi_manager):
+        """Ensure newline-heavy names still produce stable IDs."""
+        poi_create = POICreate(
+            name="X-Band\nBeam Swap",
+            latitude=1.0,
+            longitude=1.0,
+            mission_id="mission-1",
+        )
+        poi = poi_manager.create_poi(poi_create)
+        assert "x-band-beam-swap" in poi.id

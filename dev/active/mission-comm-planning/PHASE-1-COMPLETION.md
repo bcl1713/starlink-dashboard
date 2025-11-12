@@ -24,7 +24,7 @@ Implemented Pydantic v2 models capturing all mission planning requirements:
 
 - **TransportConfig** (three-transport orchestration)
   - `initial_x_satellite_id`: Starting X satellite (e.g., "X-1")
-  - `initial_ka_satellite_ids`: Default ["T2-1", "T2-2", "T2-3"]
+  - `initial_ka_satellite_ids`: Default ["AOR", "POR", "IOR"]
   - `x_transitions[]`: List of XTransition objects
   - `ka_outages[]`: List of KaOutage objects
   - `aar_windows[]`: List of AARWindow objects
@@ -172,7 +172,7 @@ from app.mission import Mission, TransportConfig, XTransition, ...
 
 ### Three-Transport Coordination
 - **X (Fixed Geostationary)**: Single satellite per segment; planners specify transitions with lat/lon + target satellite
-- **Ka (Three Geostationary)**: Default satellites T2-1/T2-2/T2-3; coverage math or KML overlays determine availability; optional manual outages
+- **Ka (Three Geostationary)**: Default satellites AOR/POR/IOR; coverage math or KML overlays determine availability; optional manual outages
 - **Ku (LEO Constellation)**: Always-on by default; only tracks explicit manual overrides
 
 ### Portable Mission Files

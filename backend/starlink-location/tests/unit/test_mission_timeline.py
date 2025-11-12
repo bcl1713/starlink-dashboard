@@ -2,9 +2,17 @@
 
 from datetime import datetime, timedelta, timezone
 
-from app.mission.models import TimelineStatus, Transport, TransportState
+from app.mission.models import (
+    MissionTimeline,
+    TimelineSegment,
+    TimelineStatus,
+    Transport,
+    TransportState,
+)
 from app.mission.state import TransportInterval
 from app.mission.timeline import build_timeline_segments
+from app.mission.timeline_service import _annotate_aar_markers
+from app.satellites.rules import EventType, MissionEvent
 
 
 BASE = datetime(2025, 10, 27, 12, 0, tzinfo=timezone.utc)
@@ -123,3 +131,68 @@ def test_segment_boundaries_clamped():
     assert segments[0].start_time == mission_start
     assert segments[-1].end_time == mission_end
     assert segments[0].status == TimelineStatus.DEGRADED
+
+
+def test_annotate_aar_markers_appends_reasons():
+    """AAR start/end markers should show up in timeline segment reasons."""
+    segments = [
+        TimelineSegment(
+            id="seg-1",
+            start_time=BASE,
+            end_time=BASE + timedelta(minutes=30),
+            status=TimelineStatus.NOMINAL,
+            x_state=TransportState.AVAILABLE,
+            ka_state=TransportState.AVAILABLE,
+            ku_state=TransportState.AVAILABLE,
+            reasons=[],
+            impacted_transports=[],
+            metadata={},
+        ),
+        TimelineSegment(
+            id="seg-2",
+            start_time=BASE + timedelta(minutes=30),
+            end_time=BASE + timedelta(minutes=60),
+            status=TimelineStatus.NOMINAL,
+            x_state=TransportState.AVAILABLE,
+            ka_state=TransportState.AVAILABLE,
+            ku_state=TransportState.AVAILABLE,
+            reasons=[],
+            impacted_transports=[],
+            metadata={},
+        ),
+    ]
+    timeline = MissionTimeline(
+        mission_id="mission-1",
+        segments=segments,
+        advisories=[],
+        statistics={},
+    )
+    events = [
+        MissionEvent(
+            timestamp=BASE + timedelta(minutes=10),
+            event_type=EventType.AAR_WINDOW,
+            transport=Transport.X,
+            affected_transport=Transport.X,
+            severity="warning",
+            reason="AAR Start",
+        ),
+        MissionEvent(
+            timestamp=BASE + timedelta(minutes=45),
+            event_type=EventType.AAR_WINDOW,
+            transport=Transport.X,
+            affected_transport=Transport.X,
+            severity="info",
+            reason="AAR End",
+        ),
+    ]
+
+    _annotate_aar_markers(timeline, events)
+
+    blocks = timeline.statistics.get("_aar_blocks")
+    assert blocks is not None
+    assert len(blocks) == 1
+    block = blocks[0]
+    expected_start = (BASE + timedelta(minutes=10)).isoformat()
+    expected_end = (BASE + timedelta(minutes=45)).isoformat()
+    assert block["start"] == expected_start
+    assert block["end"] == expected_end

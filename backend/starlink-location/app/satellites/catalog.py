@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class Satellite:
     """Satellite metadata including position, coverage, and transport info."""
 
-    satellite_id: str  # e.g., 'X-1', 'Ka-T2-1', 'Ku-Leo-1'
+    satellite_id: str  # e.g., 'X-1', 'AOR', 'Ku-Leo-1'
     transport: str  # 'X', 'Ka', or 'Ku'
     longitude: Optional[float] = None  # For geostationary satellites
     slot: Optional[str] = None  # Orbital slot name
@@ -176,43 +176,39 @@ def _add_default_satellites(
         )
     )
 
-    # Ka transport: Three default geostationary satellites
-    # (actual longitudes would come from KMZ or config)
+    # Ka transport: Three operational beams (Atlantic, Pacific, Indian)
     hcx_coverage = sat_coverage_dir / "hcx.geojson"
 
-    # PORB (Pacific Ocean Region B)
     catalog.add_satellite(
         Satellite(
-            satellite_id="Ka-T2-1",
+            satellite_id="AOR",
             transport="Ka",
-            longitude=154.0,  # Approximate
-            slot="PORB",
+            longitude=-30.0,
+            slot="Atlantic Ocean Region",
             coverage_geojson_path=hcx_coverage if hcx_coverage.exists() else None,
             color="#4CAF50",
         )
     )
 
-    # PORA (Pacific Ocean Region A)
     catalog.add_satellite(
         Satellite(
-            satellite_id="Ka-T2-2",
+            satellite_id="POR",
             transport="Ka",
-            longitude=159.0,  # Approximate
-            slot="PORA",
+            longitude=154.0,
+            slot="Pacific Ocean Region",
             coverage_geojson_path=hcx_coverage if hcx_coverage.exists() else None,
-            color="#4CAF50",
+            color="#66BB6A",
         )
     )
 
-    # IOR (Indian Ocean Region)
     catalog.add_satellite(
         Satellite(
-            satellite_id="Ka-T2-3",
+            satellite_id="IOR",
             transport="Ka",
-            longitude=60.0,  # Approximate
-            slot="IOR",
+            longitude=60.0,
+            slot="Indian Ocean Region",
             coverage_geojson_path=hcx_coverage if hcx_coverage.exists() else None,
-            color="#4CAF50",
+            color="#81C784",
         )
     )
 
@@ -227,7 +223,7 @@ def _add_default_satellites(
         )
     )
 
-    logger.info("Initialized default satellite catalog (X-1, Ka-T2-1/2/3, Ku-Leo)")
+    logger.info("Initialized default satellite catalog (X-1, AOR/POR/IOR, Ku-Leo)")
 
 
 def _load_yaml_catalog(

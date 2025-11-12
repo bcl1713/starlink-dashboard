@@ -1,7 +1,7 @@
 """Integration tests for mission planning CRUD endpoints."""
 
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 from fastapi.testclient import TestClient
 
@@ -10,10 +10,14 @@ from app.mission.models import (
     Transport,
     TransportConfig,
     TransportState,
+    TimelineSegment,
+    TimelineStatus,
+    MissionTimeline,
     XTransition,
     MissionPhase,
 )
-from app.mission.storage import delete_mission, mission_exists
+from app.mission.storage import delete_mission, delete_mission_timeline, mission_exists
+from app.mission.timeline_service import TimelineSummary
 
 
 # Fixtures for test missions
@@ -28,7 +32,7 @@ def test_mission():
         route_id="test-route-001",
         transports=TransportConfig(
             initial_x_satellite_id="X-1",
-            initial_ka_satellite_ids=["T2-1", "T2-2", "T2-3"],
+            initial_ka_satellite_ids=["AOR", "POR", "IOR"],
             x_transitions=[],
             ka_outages=[],
             aar_windows=[],
@@ -50,7 +54,7 @@ def test_mission_with_transitions():
         route_id="test-route-001",
         transports=TransportConfig(
             initial_x_satellite_id="X-1",
-            initial_ka_satellite_ids=["T2-1", "T2-2", "T2-3"],
+            initial_ka_satellite_ids=["AOR", "POR", "IOR"],
             x_transitions=[
                 XTransition(
                     id="transition-1",
@@ -84,6 +88,39 @@ def cleanup_test_missions():
     for mission_id in missions_to_delete:
         if mission_exists(mission_id):
             delete_mission(mission_id)
+
+
+@pytest.fixture(autouse=True)
+def stub_timeline_builder(monkeypatch):
+    """Stub mission timeline computation to avoid heavy dependencies."""
+
+    def _builder(mission, route_manager, poi_manager=None):
+        now = datetime.now(timezone.utc)
+        segment = TimelineSegment(
+            id=f"{mission.id}-segment",
+            start_time=now,
+            end_time=now + timedelta(hours=1),
+            status=TimelineStatus.NOMINAL,
+        )
+        timeline = MissionTimeline(mission_id=mission.id, segments=[segment])
+        summary = TimelineSummary(
+            mission_start=now,
+            mission_end=now + timedelta(hours=1),
+            degraded_seconds=0.0,
+            critical_seconds=0.0,
+            next_conflict_seconds=-1.0,
+            transport_states={
+                Transport.X: TransportState.AVAILABLE,
+                Transport.KA: TransportState.AVAILABLE,
+                Transport.KU: TransportState.AVAILABLE,
+            },
+            sample_count=2,
+            sample_interval_seconds=60,
+            generation_runtime_ms=0.0,
+        )
+        return timeline, summary
+
+    monkeypatch.setattr("app.mission.routes.build_mission_timeline", _builder)
 
 
 class TestMissionCreateEndpoint:
@@ -155,7 +192,7 @@ class TestMissionCreateEndpoint:
             "route_id": "test-route",
             "transports": {
                 "initial_x_satellite_id": "X-1",
-                "initial_ka_satellite_ids": ["T2-1"],
+                "initial_ka_satellite_ids": ["AOR"],
                 "x_transitions": [],
                 "ka_outages": [],
                 "aar_windows": [],
@@ -639,3 +676,92 @@ class TestMissionRoundtrip:
             f"/api/missions/{test_mission_with_transitions.id}"
         )
         assert get_response.status_code == 404
+
+
+class TestMissionTimelineEndpoints:
+    """Tests for mission timeline retrieval APIs."""
+
+    def test_timeline_available_immediately_after_save(
+        self, client: TestClient, test_mission
+    ):
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+
+        response = client.get(f"/api/missions/{test_mission.id}/timeline")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["mission_id"] == test_mission.id
+        assert len(data["segments"]) == 1
+
+    def test_timeline_available_after_activation(
+        self, client: TestClient, test_mission
+    ):
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        activate = client.post(f"/api/missions/{test_mission.id}/activate")
+        assert activate.status_code == 200
+
+        timeline_response = client.get(f"/api/missions/{test_mission.id}/timeline")
+        assert timeline_response.status_code == 200
+        data = timeline_response.json()
+        assert data["mission_id"] == test_mission.id
+        assert len(data["segments"]) == 1
+
+        active_timeline = client.get("/api/missions/active/timeline")
+        assert active_timeline.status_code == 200
+        assert active_timeline.json()["mission_id"] == test_mission.id
+
+    def test_recompute_requires_existing_mission(self, client: TestClient):
+        response = client.post("/api/missions/unknown-mission/timeline/recompute")
+        assert response.status_code == 404
+
+    def test_recompute_generates_timeline_without_activation(
+        self, client: TestClient, test_mission
+    ):
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        recompute = client.post(
+            f"/api/missions/{test_mission.id}/timeline/recompute"
+        )
+        assert recompute.status_code == 200
+        data = recompute.json()
+        assert data["mission_id"] == test_mission.id
+        assert len(data["segments"]) == 1
+
+        # Should now be retrievable via standard timeline endpoint
+        timeline = client.get(f"/api/missions/{test_mission.id}/timeline")
+        assert timeline.status_code == 200
+
+
+class TestMissionExportEndpoint:
+    """Tests for mission timeline export endpoint."""
+
+    def test_export_returns_404_when_timeline_missing(
+        self, client: TestClient, test_mission
+    ):
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        delete_mission_timeline(test_mission.id)
+        response = client.post(f"/api/missions/{test_mission.id}/export")
+        assert response.status_code == 404
+
+    def test_export_supports_multiple_formats(
+        self, client: TestClient, test_mission
+    ):
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        activate = client.post(f"/api/missions/{test_mission.id}/activate")
+        assert activate.status_code == 200
+
+        for fmt, media in [
+            ("csv", "text/csv"),
+            (
+                "xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ),
+            ("pdf", "application/pdf"),
+        ]:
+            response = client.post(
+                f"/api/missions/{test_mission.id}/export",
+                params={"format": fmt},
+            )
+            assert response.status_code == 200
+            assert response.headers["content-type"].startswith(media)
+            disposition = response.headers.get("content-disposition", "")
+            assert disposition.endswith(f".{fmt}\"")
+            assert len(response.content) > 0

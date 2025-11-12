@@ -38,7 +38,11 @@ def build_timeline_segments(
     if mission_end <= mission_start:
         raise ValueError("mission_end must be after mission_start")
 
-    boundaries = _collect_boundaries(mission_start, mission_end, intervals)
+    boundaries = _collect_boundaries(
+        mission_start,
+        mission_end,
+        intervals,
+    )
     segments: List[TimelineSegment] = []
 
     for i in range(len(boundaries) - 1):

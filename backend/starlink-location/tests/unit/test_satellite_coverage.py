@@ -112,14 +112,14 @@ class TestCoverageEvent:
         event = CoverageEvent(
             timestamp=now,
             event_type="entry",
-            satellite_id="Ka-T2-1",
+            satellite_id="POR",
             latitude=30.0,
             longitude=120.0,
         )
 
         assert event.timestamp == now
         assert event.event_type == "entry"
-        assert event.satellite_id == "Ka-T2-1"
+        assert event.satellite_id == "POR"
         assert event.latitude == 30.0
         assert event.longitude == 120.0
 
@@ -129,7 +129,7 @@ class TestCoverageEvent:
         event = CoverageEvent(
             timestamp=now,
             event_type="exit",
-            satellite_id="Ka-T2-2",
+            satellite_id="AOR",
             latitude=30.0,
             longitude=120.0,
             metadata={"reason": "scheduled maintenance"},
@@ -155,7 +155,7 @@ class TestCoverageSampler:
             "features": [
                 {
                     "type": "Feature",
-                    "properties": {"satellite_id": "Ka-T2-1"},
+                    "properties": {"satellite_id": "POR"},
                     "geometry": {
                         "type": "Polygon",
                         "coordinates": [
@@ -179,8 +179,8 @@ class TestCoverageSampler:
 
             sampler = CoverageSampler(geojson_path)
 
-            assert "Ka-T2-1" in sampler.satellite_polygons
-            assert len(sampler.satellite_polygons["Ka-T2-1"]) == 1
+            assert "POR" in sampler.satellite_polygons
+            assert len(sampler.satellite_polygons["POR"]) == 1
 
     def test_check_coverage_at_point_inside(self):
         """Test coverage check for point inside polygon."""
@@ -189,7 +189,7 @@ class TestCoverageSampler:
             "features": [
                 {
                     "type": "Feature",
-                    "properties": {"satellite_id": "Ka-T2-1"},
+                    "properties": {"satellite_id": "POR"},
                     "geometry": {
                         "type": "Polygon",
                         "coordinates": [
@@ -215,7 +215,7 @@ class TestCoverageSampler:
 
             # Point inside coverage
             covered = sampler.check_coverage_at_point(37.5, -121.5)
-            assert "Ka-T2-1" in covered
+            assert "POR" in covered
 
     def test_check_coverage_at_point_outside(self):
         """Test coverage check for point outside polygon."""
@@ -224,7 +224,7 @@ class TestCoverageSampler:
             "features": [
                 {
                     "type": "Feature",
-                    "properties": {"satellite_id": "Ka-T2-1"},
+                    "properties": {"satellite_id": "POR"},
                     "geometry": {
                         "type": "Polygon",
                         "coordinates": [
@@ -250,7 +250,7 @@ class TestCoverageSampler:
 
             # Point outside coverage
             covered = sampler.check_coverage_at_point(39.0, -121.0)
-            assert "Ka-T2-1" not in covered
+            assert "POR" not in covered
 
     def test_multipolygon_support_idl_crossing(self):
         """Test multi-polygon support for IDL-crossing coverage."""
@@ -260,7 +260,7 @@ class TestCoverageSampler:
             "features": [
                 {
                     "type": "Feature",
-                    "properties": {"satellite_id": "Ka-T2-1"},
+                    "properties": {"satellite_id": "POR"},
                     "geometry": {
                         "type": "MultiPolygon",
                         "coordinates": [
@@ -297,21 +297,21 @@ class TestCoverageSampler:
 
             sampler = CoverageSampler(geojson_path)
 
-            # Should have two rings for Ka-T2-1
-            assert "Ka-T2-1" in sampler.satellite_polygons
-            assert len(sampler.satellite_polygons["Ka-T2-1"]) == 2
+            # Should have two rings for POR
+            assert "POR" in sampler.satellite_polygons
+            assert len(sampler.satellite_polygons["POR"]) == 2
 
             # Test point in western part
             covered_west = sampler.check_coverage_at_point(0.0, 175.0)
-            assert "Ka-T2-1" in covered_west
+            assert "POR" in covered_west
 
             # Test point in eastern part (negative longitude)
             covered_east = sampler.check_coverage_at_point(0.0, -175.0)
-            assert "Ka-T2-1" in covered_east
+            assert "POR" in covered_east
 
             # Test point outside
             covered_out = sampler.check_coverage_at_point(0.0, 90.0)
-            assert "Ka-T2-1" not in covered_out
+            assert "POR" not in covered_out
 
     def test_sample_route_coverage(self):
         """Test sampling route for coverage events."""
@@ -320,7 +320,7 @@ class TestCoverageSampler:
             "features": [
                 {
                     "type": "Feature",
-                    "properties": {"satellite_id": "Ka-T2-1"},
+                    "properties": {"satellite_id": "POR"},
                     "geometry": {
                         "type": "Polygon",
                         "coordinates": [
@@ -371,14 +371,14 @@ class TestCoverageSampler:
             CoverageEvent(
                 timestamp=datetime.utcnow(),
                 event_type="entry",
-                satellite_id="Ka-T2-1",
+                satellite_id="POR",
                 latitude=30.0,
                 longitude=120.0,
             ),
             CoverageEvent(
                 timestamp=datetime.utcnow() + timedelta(hours=1),
                 event_type="exit",
-                satellite_id="Ka-T2-1",
+                satellite_id="POR",
                 latitude=30.0,
                 longitude=121.0,
             ),

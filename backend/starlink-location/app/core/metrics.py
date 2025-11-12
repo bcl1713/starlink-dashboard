@@ -407,6 +407,27 @@ mission_timeline_generated_timestamp = Gauge(
     registry=REGISTRY
 )
 
+mission_comm_state = Gauge(
+    'mission_comm_state',
+    'Planned state per transport (0=available, 1=degraded, 2=offline)',
+    labelnames=['mission_id', 'transport'],
+    registry=REGISTRY
+)
+
+mission_degraded_seconds = Gauge(
+    'mission_degraded_seconds',
+    'Planned degraded duration for mission timeline (seconds)',
+    labelnames=['mission_id'],
+    registry=REGISTRY
+)
+
+mission_critical_seconds = Gauge(
+    'mission_critical_seconds',
+    'Planned critical duration for mission timeline (seconds)',
+    labelnames=['mission_id'],
+    registry=REGISTRY
+)
+
 # ============================================================================
 # Simulation metrics (only in simulation mode)
 # ============================================================================
@@ -760,6 +781,10 @@ def clear_mission_metrics(mission_id: str):
         # For mission_active_info, we need to set to 0 for all label combinations
         # Since we don't track all combinations, we'll just set to 0 with empty route_id
         mission_active_info.labels(mission_id=mission_id, route_id="").set(0)
+        for transport in ['X', 'Ka', 'Ku']:
+            mission_comm_state.labels(mission_id=mission_id, transport=transport).set(math.nan)
+        mission_degraded_seconds.labels(mission_id=mission_id).set(math.nan)
+        mission_critical_seconds.labels(mission_id=mission_id).set(math.nan)
     except Exception as e:  # pragma: no cover - defensive guard
         logger.warning(f"Failed to clear mission metrics: {e}")
 
@@ -796,3 +821,28 @@ def update_mission_timeline_timestamp(mission_id: str, timestamp: float):
         mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(timestamp)
     except Exception as e:  # pragma: no cover - defensive guard
         logger.warning(f"Failed to update mission timeline timestamp metric: {e}")
+
+
+def update_mission_comm_state_metric(mission_id: str, transport: str, state_value: int):
+    """Update mission communication state metric for a given transport."""
+    try:
+        mission_comm_state.labels(mission_id=mission_id, transport=transport).set(state_value)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to update mission comm state metric: {e}")
+
+
+def update_mission_duration_metrics(mission_id: str, degraded_seconds: float, critical_seconds: float):
+    """Update degraded/critical mission duration gauges."""
+    try:
+        mission_degraded_seconds.labels(mission_id=mission_id).set(degraded_seconds)
+        mission_critical_seconds.labels(mission_id=mission_id).set(critical_seconds)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to update mission duration metrics: {e}")
+
+
+def update_mission_next_conflict_metric(mission_id: str, seconds: float):
+    """Update countdown to next degraded/critical event (-1 if none)."""
+    try:
+        mission_next_conflict_seconds.labels(mission_id=mission_id).set(seconds)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to update mission next conflict metric: {e}")

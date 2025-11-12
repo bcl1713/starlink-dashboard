@@ -96,7 +96,7 @@ class TestRuleEngine:
         engine = RuleEngine()
 
         # Aircraft at various positions relative to satellite
-        is_violation, azimuth = engine.evaluate_x_azimuth_window(
+        is_violation, azimuth, debug = engine.evaluate_x_azimuth_window(
             aircraft_lat=45.0,
             aircraft_lon=0.0,
             aircraft_alt=0.0,
@@ -107,6 +107,8 @@ class TestRuleEngine:
         # Should return valid boolean and azimuth
         assert isinstance(is_violation, bool)
         assert 0 <= azimuth < 360
+        assert "absolute_azimuth_degrees" in debug
+        assert "elevation_degrees" in debug
 
     def test_evaluate_x_azimuth_violation(self):
         """Test azimuth evaluation when violation occurs."""
@@ -114,7 +116,7 @@ class TestRuleEngine:
 
         # This test is approximate; actual violation depends on exact geometry
         # At high northern latitude with satellite at different longitude
-        is_violation, azimuth = engine.evaluate_x_azimuth_window(
+        is_violation, azimuth, debug = engine.evaluate_x_azimuth_window(
             aircraft_lat=85.0,  # High latitude
             aircraft_lon=0.0,
             aircraft_alt=0.0,
@@ -126,6 +128,8 @@ class TestRuleEngine:
         # Verify we get numeric results
         assert isinstance(is_violation, bool)
         assert 0 <= azimuth < 360
+        assert "absolute_azimuth_degrees" in debug
+        assert "elevation_degrees" in debug
 
     def test_add_x_transition_events(self):
         """Test adding X transition degrade events."""
@@ -152,7 +156,7 @@ class TestRuleEngine:
         now = datetime.utcnow()
         end = now + timedelta(hours=1)
 
-        engine.add_ka_coverage_events(now, end, "Ka-T2-1")
+        engine.add_ka_coverage_events(now, end, "POR")
 
         assert len(engine.events) == 2
 
@@ -184,12 +188,18 @@ class TestRuleEngine:
 
         engine.add_takeoff_landing_buffers(departure, landing)
 
-        # Should have 4 events (takeoff start/end, landing start/end)
-        assert len(engine.events) == 4
+        # Should have 12 events (start/end for each buffer across 3 transports)
+        assert len(engine.events) == 12
 
-        event_types = {e.event_type for e in engine.events}
-        assert EventType.TAKEOFF_BUFFER in event_types
-        assert EventType.LANDING_BUFFER in event_types
+        takeoff_events = [e for e in engine.events if e.event_type == EventType.TAKEOFF_BUFFER]
+        landing_events = [e for e in engine.events if e.event_type == EventType.LANDING_BUFFER]
+
+        assert len(takeoff_events) == 6
+        assert len(landing_events) == 6
+        assert {e.transport for e in takeoff_events} == {Transport.X, Transport.KA, Transport.KU}
+        assert {e.transport for e in landing_events} == {Transport.X, Transport.KA, Transport.KU}
+        assert any("Safety-of-Flight" in e.reason for e in takeoff_events)
+        assert any("Safety-of-Flight" in e.reason for e in landing_events)
 
     def test_add_aar_window_events(self):
         """Test adding AAR window events."""
@@ -203,6 +213,8 @@ class TestRuleEngine:
 
         event_types = {e.event_type for e in engine.events}
         assert EventType.AAR_WINDOW in event_types
+        reasons = {e.reason for e in engine.events}
+        assert reasons == {"AAR Start", "AAR End"}
 
     def test_get_sorted_events(self):
         """Test getting events in sorted order."""
@@ -249,7 +261,7 @@ class TestRuleEngine:
         now = datetime.utcnow()
 
         engine.add_x_transition_events(now, "X-1")
-        engine.add_ka_coverage_events(now + timedelta(hours=1), now + timedelta(hours=2), "Ka-T2-1")
+        engine.add_ka_coverage_events(now + timedelta(hours=1), now + timedelta(hours=2), "POR")
         engine.add_manual_outage_events(
             now + timedelta(hours=3),
             now + timedelta(hours=4),
@@ -276,9 +288,9 @@ class TestRuleEngine:
         engine.add_takeoff_landing_buffers(now, now + timedelta(hours=10))
         events = engine.get_sorted_events()
 
-        # Find landing event (should be critical)
         landing_events = [e for e in events if e.event_type == EventType.LANDING_BUFFER]
-        assert any(e.severity == "critical" for e in landing_events)
+        assert any(e.severity == "warning" for e in landing_events)
+        assert any(e.severity == "info" for e in landing_events)
 
     def test_buffer_configuration_affects_timing(self):
         """Test that buffer configuration changes event timing."""
@@ -311,7 +323,7 @@ class TestRuleEngine:
 
         # Both should complete without error
         # (actual violation depends on geometry)
-        is_violation1, az1 = engine.evaluate_x_azimuth_window(
+        is_violation1, az1, _ = engine.evaluate_x_azimuth_window(
             aircraft_lat=30.0,
             aircraft_lon=0.0,
             aircraft_alt=0.0,
@@ -320,7 +332,7 @@ class TestRuleEngine:
             is_aar_mode=False,  # Normal ops
         )
 
-        is_violation2, az2 = engine.evaluate_x_azimuth_window(
+        is_violation2, az2, _ = engine.evaluate_x_azimuth_window(
             aircraft_lat=30.0,
             aircraft_lon=0.0,
             aircraft_alt=0.0,
@@ -334,3 +346,83 @@ class TestRuleEngine:
         assert isinstance(is_violation2, bool)
         assert 0 <= az1 < 360
         assert 0 <= az2 < 360
+
+    def test_heading_relative_azimuth(self, monkeypatch):
+        """Heading should act as 0° reference for azimuth checks."""
+        engine = RuleEngine()
+
+        monkeypatch.setattr(
+            "app.satellites.rules.look_angles",
+            lambda *args, **kwargs: (200.0, 45.0),
+        )
+
+        is_violation, relative, debug = engine.evaluate_x_azimuth_window(
+            aircraft_lat=0.0,
+            aircraft_lon=0.0,
+            aircraft_alt=0.0,
+            satellite_lon=0.0,
+            timestamp=datetime.utcnow(),
+            heading_deg=20.0,
+            is_aar_mode=False,
+        )
+
+        assert is_violation is True  # 180° relative falls in aft cone
+        assert relative == pytest.approx(180.0)
+        assert pytest.approx(200.0, rel=1e-3) == debug["absolute_azimuth_degrees"]
+
+    def test_forward_cone_only_in_aar_mode(self, monkeypatch):
+        """Forward cone limits apply exclusively during AAR windows."""
+        engine = RuleEngine()
+
+        monkeypatch.setattr(
+            "app.satellites.rules.look_angles",
+            lambda *args, **kwargs: (350.0, 45.0),
+        )
+
+        # Outside AAR window this relative azimuth should be allowed
+        normal_violation, rel_normal, _ = engine.evaluate_x_azimuth_window(
+            aircraft_lat=0.0,
+            aircraft_lon=0.0,
+            aircraft_alt=0.0,
+            satellite_lon=0.0,
+            timestamp=datetime.utcnow(),
+            heading_deg=0.0,
+            is_aar_mode=False,
+        )
+
+        aar_violation, rel_aar, _ = engine.evaluate_x_azimuth_window(
+            aircraft_lat=0.0,
+            aircraft_lon=0.0,
+            aircraft_alt=0.0,
+            satellite_lon=0.0,
+            timestamp=datetime.utcnow(),
+            heading_deg=0.0,
+            is_aar_mode=True,
+        )
+
+        assert rel_normal == pytest.approx(350.0)
+        assert rel_aar == pytest.approx(350.0)
+        assert normal_violation is False
+        assert aar_violation is True
+
+    def test_elevation_violation_metadata(self, monkeypatch):
+        """Low elevation violations should be flagged separately."""
+        engine = RuleEngine()
+
+        monkeypatch.setattr(
+            "app.satellites.rules.look_angles",
+            lambda *args, **kwargs: (110.0, -2.5),
+        )
+
+        is_violation, _, debug = engine.evaluate_x_azimuth_window(
+            aircraft_lat=0.0,
+            aircraft_lon=0.0,
+            aircraft_alt=0.0,
+            satellite_lon=0.0,
+            timestamp=datetime.utcnow(),
+            is_aar_mode=False,
+        )
+
+        assert is_violation is True
+        assert debug["violation_reason"] == "elevation"
+        assert debug["elevation_below_min"] is True

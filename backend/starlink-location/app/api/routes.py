@@ -26,6 +26,7 @@ from app.services.route_eta_calculator import (
     clear_eta_cache,
     cleanup_eta_cache,
 )
+from app.services.kml_parser import parse_kml_file, KMLParseError
 
 logger = get_logger(__name__)
 
@@ -517,6 +518,18 @@ async def upload_route(
             logger.error(f"Error loading route file {file_path}: {str(e)}")
 
         parsed_route = _route_manager.get_route(route_id)
+
+        if not parsed_route:
+            # Fallback: parse synchronously to avoid race conditions with filesystem events
+            try:
+                parsed_route = parse_kml_file(file_path)
+                if parsed_route:
+                    _route_manager.add_route(route_id, parsed_route)
+            except KMLParseError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Failed to parse KML file: {file.filename} ({exc})",
+                ) from exc
 
         if not parsed_route:
             raise HTTPException(

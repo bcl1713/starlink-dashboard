@@ -1,6 +1,6 @@
 # Mission Communication Planning Context
 
-Last Updated: 2025-11-15 (Timeline exports + AAR block rendering)
+Last Updated: 2025-11-12 (Auto HCX/X-Band POI sync + IDL fixes)
 
 ## Purpose
 
@@ -35,9 +35,15 @@ transition points).
 - `backend/starlink-location/app/mission/routes.py` – Activation writes cached timelines, updates new metrics, and exposes `/api/missions/{id|active}/timeline`; mission storage now persists `*.timeline.json`.
 - Test fixtures now isolate mission storage under `/tmp/test_data/missions`, eliminating leftover JSON files that previously broke first-run integration tests.
 
+### Completed (Latest Session Enhancements)
+- `backend/starlink-location/app/mission/timeline_service.py` now performs automatic HCX coverage and X/AAR POI synchronization whenever a mission timeline is recomputed (including the silent recomputes triggered immediately after mission saves). Mission-generated POIs share the `mission-event` category and use concise multi-line labels (`HCX\nExit POR`, `X-Band\nWGS-7→WGS-6`, `AAR\nStart/End`).
+- Ka coverage gap detection became International Date Line aware, preventing false POR outages when polygons wrap at ±180°.
+- Mission planner save workflow (`app/api/ui.py`) now triggers a backend recompute + POI reload, so planners see updated HCX/X-Band markers without clicking "Recompute Timeline".
+- `/api/pois` filtering prefers the latest (or active) mission per route, hiding stale mission-event POIs from earlier drafts.
+
 ### In Progress / Planned
-- Grafana mission timeline panels + alert rules (Phase 4) still pending now that exporters are in place.
-- Document the timeline API/metrics (including LOS behavior) in `docs/MISSION-PLANNING-GUIDE.md` + Grafana README once dashboards are wired.
+- Grafana mission timeline panels + alert rules (Phase 4) still pending now that exporters/APIs/POIs are aligned.
+- Document the new POI lifecycle, IDL handling, and save-time recompute behavior in `docs/MISSION-PLANNING-GUIDE.md` + monitoring README once Grafana work lands.
 
 ### Foundation Systems
 - `backend/starlink-location/` – FastAPI service hosting mission APIs, simulation, metrics exporters
@@ -46,12 +52,13 @@ transition points).
 - `docs/ROUTE-TIMING-GUIDE.md`, `docs/METRICS.md`, `docs/ROUTE-API-SUMMARY.md` – Foundational APIs
 - `dev/active/eta-route-timing/` – Previous work that established the timing engine we depend on
 
-### Current Session Highlights (2025-11-15)
-- Timeline exporter now renders AAR windows as explicit warning segments (with start/end timestamps, uppercase status labels, compact HH:MM time blocks, and optional branding). Transport states remain accurate during AAR because we stopped injecting synthetic degradations unless an azimuth violation occurs.
-- `_attach_statistics()` preserves auxiliary `_aar_blocks` metadata so synthetic segments can be regenerated in exports even after the statistics block is recomputed.
-- Added `backend/starlink-location/app/mission/assets/` to host optional logos (`logo.png`) and moved the “Timeline generated” stamp to the PDF footer to free up header space.
+### Current Session Highlights (2025-11-12)
+- Mission saves auto-trigger timeline recompute + POI refresh, keeping HCX/X-Band/AAR markers in sync without manual intervention.
+- Ka coverage samplers ignore IDL-induced polygon splits, eliminating false POR gaps and keeping coverage continuous through longitude wrap.
+- Mission-event POIs across multiple missions on the same route are now de-duped at recompute time and hidden from `/api/pois` results unless they belong to the latest (or active) mission.
+- POI titles were shortened and formatted with explicit `\n`, and POI IDs are slugified so newline titles produce stable identifiers for projection caching.
 
-**Outstanding work:** Grafana overlays/panels and alerts (Phase 4), documentation updates, exporter UX polish, HCX transition visualization, and scenario/perf hardening (Phase 5); see STATUS for details.
+**Outstanding work:** Grafana overlays/panels and alerts (Phase 4), documentation updates, exporter UX polish, HCX transition visualization inside Grafana, and scenario/perf hardening (Phase 5); see STATUS for details.
 
 ## Data Inputs & Artifacts
 

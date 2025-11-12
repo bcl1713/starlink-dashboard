@@ -24,6 +24,7 @@ class EventType(str, Enum):
     X_TRANSITION_END = "x_transition_end"
     KA_COVERAGE_ENTRY = "ka_coverage_entry"
     KA_COVERAGE_EXIT = "ka_coverage_exit"
+    KA_TRANSITION = "ka_transition"
     KA_OUTAGE_START = "ka_outage_start"
     KA_OUTAGE_END = "ka_outage_end"
     KU_OUTAGE_START = "ku_outage_start"
@@ -85,9 +86,10 @@ class RuleEngine:
         aircraft_lon: float,
         aircraft_alt: float,
         satellite_lon: float,
-        timestamp: datetime,
+        timestamp: datetime,  # noqa: ARG002 (timestamp reserved for future logging)
         is_aar_mode: bool = False,
-    ) -> Tuple[bool, float]:
+        heading_deg: float | None = None,
+    ) -> Tuple[bool, float, Dict[str, float | bool]]:
         """Evaluate if aircraft-to-satellite azimuth violates constraints.
 
         Args:
@@ -95,19 +97,29 @@ class RuleEngine:
             aircraft_lon: Aircraft longitude
             aircraft_alt: Aircraft altitude in meters
             satellite_lon: Satellite longitude (assumes equator at geostationary altitude)
-            timestamp: Time of check
             is_aar_mode: True if in AAR phase (different azimuth constraints)
+            heading_deg: Optional aircraft heading for relative azimuth calculation
 
         Returns:
-            Tuple of (is_violation, azimuth)
+            Tuple of (is_violation, relative_azimuth_degrees, debug_metadata)
         """
         azimuth, elevation = look_angles(
             aircraft_lat, aircraft_lon, aircraft_alt, satellite_lon
         )
+        relative_azimuth = _relative_to_heading(azimuth, heading_deg)
+        debug_metadata: Dict[str, float | bool] = {
+            "absolute_azimuth_degrees": azimuth,
+            "relative_azimuth_degrees": relative_azimuth,
+            "elevation_degrees": elevation,
+            "min_elevation_degrees": self.config.elevation_min_degrees,
+        }
 
         # Check elevation minimum
-        if elevation < self.config.elevation_min_degrees:
-            return True, azimuth
+        elevation_violation = elevation < self.config.elevation_min_degrees
+        debug_metadata["elevation_below_min"] = elevation_violation
+        if elevation_violation:
+            debug_metadata["violation_reason"] = "elevation"
+            return True, relative_azimuth, debug_metadata
 
         # Check azimuth constraint
         if is_aar_mode:
@@ -117,8 +129,10 @@ class RuleEngine:
             min_az = self.config.normal_azimuth_min
             max_az = self.config.normal_azimuth_max
 
-        is_in_forbidden = is_in_azimuth_range(azimuth, min_az, max_az)
-        return is_in_forbidden, azimuth
+        is_in_forbidden = is_in_azimuth_range(relative_azimuth, min_az, max_az)
+        if is_in_forbidden:
+            debug_metadata["violation_reason"] = "azimuth"
+        return is_in_forbidden, relative_azimuth, debug_metadata
 
     def add_x_transition_events(
         self,
@@ -145,7 +159,7 @@ class RuleEngine:
                 transport=Transport.X,
                 affected_transport=Transport.X,
                 severity="warning",
-                reason=f"X transition to {satellite_id} begins (degrade buffer)",
+                reason=f"X Transition to {satellite_id}",
                 satellite_id=satellite_id,
             )
         )
@@ -158,7 +172,7 @@ class RuleEngine:
                 transport=Transport.X,
                 affected_transport=Transport.X,
                 severity="info",
-                reason=f"X transition to {satellite_id} complete",
+                reason=f"X Transition to {satellite_id}",
                 satellite_id=satellite_id,
             )
         )
@@ -171,7 +185,7 @@ class RuleEngine:
         Args:
             entry_time: Time entering coverage
             exit_time: Time exiting coverage
-            satellite_id: Satellite ID (e.g., 'Ka-T2-1')
+            satellite_id: Satellite ID (e.g., 'AOR')
         """
         self.events.append(
             MissionEvent(
@@ -248,50 +262,30 @@ class RuleEngine:
         takeoff_buffer = timedelta(minutes=self.config.takeoff_buffer_minutes)
         landing_buffer = timedelta(minutes=self.config.landing_buffer_minutes)
 
-        # Takeoff buffer
-        self.events.append(
-            MissionEvent(
-                timestamp=departure_time,
-                event_type=EventType.TAKEOFF_BUFFER,
-                transport=Transport.X,
-                affected_transport=Transport.X,
-                severity="warning",
-                reason="Takeoff buffer - X disabled on ground",
-            )
+        self._emit_comm_safety_window(
+            timestamp=departure_time,
+            event_type=EventType.TAKEOFF_BUFFER,
+            severity="warning",
+            reason="Safety-of-Flight (takeoff)",
+        )
+        self._emit_comm_safety_window(
+            timestamp=departure_time + takeoff_buffer,
+            event_type=EventType.TAKEOFF_BUFFER,
+            severity="info",
+            reason="Takeoff window complete",
         )
 
-        self.events.append(
-            MissionEvent(
-                timestamp=departure_time + takeoff_buffer,
-                event_type=EventType.TAKEOFF_BUFFER,
-                transport=Transport.X,
-                affected_transport=Transport.X,
-                severity="info",
-                reason="Takeoff buffer complete - X available",
-            )
+        self._emit_comm_safety_window(
+            timestamp=landing_time - landing_buffer,
+            event_type=EventType.LANDING_BUFFER,
+            severity="warning",
+            reason="Safety-of-Flight (landing)",
         )
-
-        # Landing buffer
-        self.events.append(
-            MissionEvent(
-                timestamp=landing_time - landing_buffer,
-                event_type=EventType.LANDING_BUFFER,
-                transport=Transport.X,
-                affected_transport=Transport.X,
-                severity="warning",
-                reason="Landing buffer - prepare for X loss",
-            )
-        )
-
-        self.events.append(
-            MissionEvent(
-                timestamp=landing_time,
-                event_type=EventType.LANDING_BUFFER,
-                transport=Transport.X,
-                affected_transport=Transport.X,
-                severity="critical",
-                reason="Landing complete - X disabled",
-            )
+        self._emit_comm_safety_window(
+            timestamp=landing_time,
+            event_type=EventType.LANDING_BUFFER,
+            severity="info",
+            reason="Landing window complete",
         )
 
     def add_aar_window_events(
@@ -304,6 +298,8 @@ class RuleEngine:
             end_time: AAR end
             window_name: Optional window identifier
         """
+        start_label = "AAR Start"
+        end_label = "AAR End"
         self.events.append(
             MissionEvent(
                 timestamp=start_time,
@@ -311,7 +307,7 @@ class RuleEngine:
                 transport=Transport.X,
                 affected_transport=Transport.X,
                 severity="warning",
-                reason=f"AAR window begin {window_name} - alternate azimuth constraints apply",
+                reason=start_label,
             )
         )
 
@@ -322,7 +318,7 @@ class RuleEngine:
                 transport=Transport.X,
                 affected_transport=Transport.X,
                 severity="info",
-                reason=f"AAR window end {window_name} - resume normal azimuth constraints",
+                reason=end_label,
             )
         )
 
@@ -377,3 +373,32 @@ class RuleEngine:
     def clear_events(self) -> None:
         """Clear all accumulated events."""
         self.events = []
+
+
+    def _emit_comm_safety_window(
+        self,
+        timestamp: datetime,
+        event_type: EventType,
+        severity: str,
+        reason: str,
+    ) -> None:
+        """Emit takeoff/landing safety window events for all transports."""
+        for transport in (Transport.X, Transport.KA, Transport.KU):
+            self.events.append(
+                MissionEvent(
+                    timestamp=timestamp,
+                    event_type=event_type,
+                    transport=transport,
+                    affected_transport=transport,
+                    severity=severity,
+                    reason=reason,
+                )
+            )
+
+
+def _relative_to_heading(azimuth: float, heading_deg: float | None) -> float:
+    """Convert absolute azimuth to heading-relative azimuth (nose = 0°)."""
+    azimuth = azimuth % 360.0
+    if heading_deg is None:
+        return azimuth
+    return (azimuth - heading_deg) % 360.0

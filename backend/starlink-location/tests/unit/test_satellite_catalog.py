@@ -29,7 +29,7 @@ class TestSatellite:
         coverage_path = Path("/tmp/coverage.geojson")
 
         sat = Satellite(
-            satellite_id="Ka-T2-1",
+            satellite_id="AOR",
             transport="Ka",
             longitude=154.0,
             coverage_geojson_path=coverage_path,
@@ -84,7 +84,7 @@ class TestSatelliteCatalog:
         for i in range(1, 4):
             catalog.add_satellite(
                 Satellite(
-                    satellite_id=f"Ka-T2-{i}",
+                    satellite_id=f"Ka-Custom-{i}",
                     transport="Ka",
                     longitude=100.0 + i * 10,
                 )
@@ -110,14 +110,14 @@ class TestSatelliteCatalog:
 
         # Add mix of transports
         catalog.add_satellite(Satellite(satellite_id="X-1", transport="X"))
-        catalog.add_satellite(Satellite(satellite_id="Ka-T2-1", transport="Ka"))
+        catalog.add_satellite(Satellite(satellite_id="AOR", transport="Ka"))
         catalog.add_satellite(Satellite(satellite_id="Ku-Leo", transport="Ku"))
 
         all_sats = catalog.list_all()
         assert len(all_sats) == 3
 
         sat_ids = {sat.satellite_id for sat in all_sats}
-        assert sat_ids == {"X-1", "Ka-T2-1", "Ku-Leo"}
+        assert sat_ids == {"X-1", "AOR", "Ku-Leo"}
 
     def test_transport_index_isolation(self):
         """Test that transport index tracks satellites correctly."""
@@ -153,11 +153,8 @@ class TestLoadSatelliteCatalog:
             )
 
             # Should have default satellites
-            assert catalog.validate_satellite("X-1")
-            assert catalog.validate_satellite("Ka-T2-1")
-            assert catalog.validate_satellite("Ka-T2-2")
-            assert catalog.validate_satellite("Ka-T2-3")
-            assert catalog.validate_satellite("Ku-Leo")
+            for sat_id in ("X-1", "AOR", "POR", "IOR", "Ku-Leo"):
+                assert catalog.validate_satellite(sat_id)
 
     def test_default_ka_satellites_have_color(self):
         """Test that default Ka satellites have proper color coding."""
@@ -173,9 +170,9 @@ class TestLoadSatelliteCatalog:
             ka_sats = catalog.get_by_transport("Ka")
             assert len(ka_sats) == 3
 
-            # All Ka sats should have green color
+            allowed_colors = {"#4CAF50", "#66BB6A", "#81C784"}
             for sat in ka_sats:
-                assert sat.color == "#4CAF50"
+                assert sat.color in allowed_colors
 
     def test_x_satellite_has_red_color(self):
         """Test that X satellite has red color."""
@@ -246,13 +243,13 @@ class TestSatelliteDefaults:
                 sat_coverage_dir=Path(tmpdir) / "cov",
             )
 
-            t2_1 = catalog.get_satellite("Ka-T2-1")
-            t2_2 = catalog.get_satellite("Ka-T2-2")
-            t2_3 = catalog.get_satellite("Ka-T2-3")
+            aor = catalog.get_satellite("AOR")
+            por = catalog.get_satellite("POR")
+            ior = catalog.get_satellite("IOR")
 
-            assert t2_1.slot == "PORB"
-            assert t2_2.slot == "PORA"
-            assert t2_3.slot == "IOR"
+            assert aor.slot == "Atlantic Ocean Region"
+            assert por.slot == "Pacific Ocean Region"
+            assert ior.slot == "Indian Ocean Region"
 
     def test_ku_satellite_properties(self):
         """Test Ku LEO satellite properties."""

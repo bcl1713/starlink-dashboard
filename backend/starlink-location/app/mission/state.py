@@ -201,10 +201,7 @@ def _apply_event(
         return activate("offline", offline_key, offline_reason) or changed
 
     if event.event_type == EventType.AAR_WINDOW:
-        key = "aar_window"
-        if event.severity in ("warning", "critical"):
-            return activate("degraded", key, reason or "AAR window")
-        return deactivate("degraded", key)
+        return False
 
     if event.event_type == EventType.X_AZIMUTH_VIOLATION:
         key = "x_azimuth"
@@ -213,11 +210,18 @@ def _apply_event(
         return deactivate("degraded", key)
 
     if event.event_type == EventType.KA_COVERAGE_EXIT:
-        key = f"ka_coverage:{sat_suffix or 'unknown'}"
+        key = "ka_no_coverage"
         return activate("degraded", key, reason or "Ka coverage gap")
 
     if event.event_type == EventType.KA_COVERAGE_ENTRY:
-        key = f"ka_coverage:{sat_suffix or 'unknown'}"
+        key = "ka_no_coverage"
+        return deactivate("degraded", key)
+
+    if event.event_type == EventType.KA_TRANSITION:
+        transition_id = event.metadata.get("transition_id") if event.metadata else None
+        key = f"ka_transition:{transition_id or event.satellite_id or 'swap'}"
+        if event.severity in ("warning", "critical"):
+            return activate("degraded", key, reason or "Ka transition")
         return deactivate("degraded", key)
 
     if event.event_type == EventType.KA_OUTAGE_START:

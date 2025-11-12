@@ -149,7 +149,7 @@ class TestTransportConfig:
         """Test creating a valid transport configuration."""
         config = TransportConfig(
             initial_x_satellite_id="X-1",
-            initial_ka_satellite_ids=["T2-1", "T2-2", "T2-3"],
+            initial_ka_satellite_ids=["AOR", "POR", "IOR"],
             x_transitions=[],
             ka_outages=[],
             aar_windows=[],
@@ -157,12 +157,12 @@ class TestTransportConfig:
         )
         assert config.initial_x_satellite_id == "X-1"
         assert len(config.initial_ka_satellite_ids) == 3
-        assert config.initial_ka_satellite_ids == ["T2-1", "T2-2", "T2-3"]
+        assert config.initial_ka_satellite_ids == ["AOR", "POR", "IOR"]
 
     def test_default_ka_satellites(self):
         """Test that default Ka satellites are assigned."""
         config = TransportConfig(initial_x_satellite_id="X-1")
-        assert config.initial_ka_satellite_ids == ["T2-1", "T2-2", "T2-3"]
+        assert config.initial_ka_satellite_ids == ["AOR", "POR", "IOR"]
 
     def test_with_transitions(self):
         """Test config with transitions."""
@@ -235,7 +235,7 @@ class TestMission:
             "route_id": "test-route",
             "transports": {
                 "initial_x_satellite_id": "X-1",
-                "initial_ka_satellite_ids": ["T2-1", "T2-2", "T2-3"],
+                "initial_ka_satellite_ids": ["AOR", "POR", "IOR"],
             },
         }
         mission = Mission(**json_data)

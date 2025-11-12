@@ -109,7 +109,7 @@ def test_ka_coverage_and_outage_precedence():
             affected_transport=Transport.KA,
             timestamp=start + timedelta(minutes=10),
             event_type=EventType.KA_COVERAGE_EXIT,
-            satellite_id="Ka-T2-1",
+            satellite_id="POR",
             reason="Coverage exit",
         ),
         _make_event(
@@ -131,7 +131,7 @@ def test_ka_coverage_and_outage_precedence():
             affected_transport=Transport.KA,
             timestamp=start + timedelta(minutes=70),
             event_type=EventType.KA_COVERAGE_ENTRY,
-            satellite_id="Ka-T2-1",
+            satellite_id="POR",
             reason="Coverage restored",
         ),
     ]
@@ -171,3 +171,28 @@ def test_events_before_mission_start_apply_at_start():
     assert x_states == [TransportState.DEGRADED]
     assert intervals[Transport.X][0].start == start
     assert intervals[Transport.X][0].end == end
+
+
+def test_aar_window_does_not_degrade_transport():
+    """AAR window markers should not degrade X-Band on their own."""
+    start = BASE_TIME
+    end = start + timedelta(hours=2)
+    events = [
+        _make_event(
+            timestamp=start + timedelta(minutes=20),
+            event_type=EventType.AAR_WINDOW,
+            severity="warning",
+            reason="AAR Start",
+        ),
+        _make_event(
+            timestamp=start + timedelta(minutes=60),
+            event_type=EventType.AAR_WINDOW,
+            severity="info",
+            reason="AAR End",
+        ),
+    ]
+
+    intervals = generate_transport_intervals(events, start, end)
+    x_states = [interval.state for interval in intervals[Transport.X]]
+
+    assert x_states == [TransportState.AVAILABLE]

@@ -1,3 +1,26 @@
+# Session Notes – 2025-11-12
+**Branch**: `feature/mission-comm-planning`  
+**Status**: Phase 3 – HCX/X-Band POI automation + IDL fixes
+
+## Summary
+- Mission saves now trigger a silent timeline recompute + POI reload, keeping HCX/X-Band/AAR markers synchronized without extra planner clicks.
+- `_sync_ka_pois` and `_sync_x_aar_pois` gained route-level cleanup (via `delete_route_mission_pois_with_prefixes`) so older missions on the same route no longer leave duplicate mission-event POIs.
+- Ka coverage sampling now ignores International Date Line polygon splits, eliminating phantom POR gaps around ±180°.
+- `/api/pois` route filtering and the mission planner UI now show only the newest/active mission’s mission-event POIs, preventing duplicate HCX overlays in Grafana/maps.
+- POI titles were simplified with multi-line labels (`HCX\nExit POR`, `X-Band\nWGS-7→WGS-6`, `AAR\nStart`) and slug-safe IDs for projection caching.
+
+## Commands Run
+```
+. .venv/bin/activate && cd backend/starlink-location && pytest tests/unit/test_poi_manager.py tests/unit/test_mission_timeline.py tests/unit/test_kmz_importer.py
+```
+
+## Next Session
+1. Wire mission-event POIs and `/api/missions/active/timeline` into Grafana panels/alerts (Phase 4 kickoff).
+2. Update `docs/MISSION-PLANNING-GUIDE.md` + monitoring README with the auto-recompute/POI lifecycle and IDL behavior.
+3. Extend regression tests to cover multi-mission POI cleanup + IDL edge cases (ties into “Fix mission/POI regression tests” task).
+
+---
+
 # Session Notes – 2025-11-15
 **Branch**: `feature/mission-comm-planning`  
 **Status**: Phase 3 – Timeline exporters + AAR warning segments refreshed

@@ -197,8 +197,8 @@ class TransportConfig(BaseModel):
         description="Initial X satellite ID at mission start (e.g., 'X-1')",
     )
     initial_ka_satellite_ids: list[str] = Field(
-        default_factory=lambda: ["T2-1", "T2-2", "T2-3"],
-        description="Initial Ka satellite IDs (default: T2-1, T2-2, T2-3)",
+        default_factory=lambda: ["AOR", "POR", "IOR"],
+        description="Initial Ka satellite IDs (default: AOR, POR, IOR)",
     )
     x_transitions: list[XTransition] = Field(
         default_factory=list,
@@ -221,7 +221,7 @@ class TransportConfig(BaseModel):
         "json_schema_extra": {
             "example": {
                 "initial_x_satellite_id": "X-1",
-                "initial_ka_satellite_ids": ["T2-1", "T2-2", "T2-3"],
+                "initial_ka_satellite_ids": ["AOR", "POR", "IOR"],
                 "x_transitions": [],
                 "ka_outages": [],
                 "aar_windows": [],
@@ -339,7 +339,7 @@ class Mission(BaseModel):
                 "route_id": "leg-6-rev-6",
                 "transports": {
                     "initial_x_satellite_id": "X-1",
-                    "initial_ka_satellite_ids": ["T2-1", "T2-2", "T2-3"],
+                    "initial_ka_satellite_ids": ["AOR", "POR", "IOR"],
                     "x_transitions": [],
                     "ka_outages": [],
                     "aar_windows": [],
@@ -407,7 +407,7 @@ class TimelineSegment(BaseModel):
                 "ku_state": "available",
                 "reasons": [],
                 "impacted_transports": [],
-                "metadata": {"satellites": {"X": "X-1", "Ka": ["T2-1", "T2-2", "T2-3"]}},
+                "metadata": {"satellites": {"X": "X-1", "Ka": ["AOR", "POR", "IOR"]}},
             }
         }
     }

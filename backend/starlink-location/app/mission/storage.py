@@ -11,12 +11,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from app.mission.models import Mission
+from app.mission.models import Mission, MissionTimeline
 
 logger = logging.getLogger(__name__)
 
 # Base directory for mission storage
 MISSIONS_DIR = Path("data/missions")
+TIMELINE_SUFFIX = ".timeline.json"
 
 
 def ensure_missions_directory():
@@ -32,6 +33,11 @@ def get_mission_path(mission_id: str) -> Path:
 def get_mission_checksum_path(mission_id: str) -> Path:
     """Get the checksum file path for a mission."""
     return MISSIONS_DIR / f"{mission_id}.sha256"
+
+
+def get_mission_timeline_path(mission_id: str) -> Path:
+    """Get the file path for a mission's cached timeline."""
+    return MISSIONS_DIR / f"{mission_id}{TIMELINE_SUFFIX}"
 
 
 def compute_file_checksum(file_path: Path) -> str:
@@ -156,12 +162,16 @@ def list_missions() -> list[dict]:
 
     missions = []
     for mission_path in sorted(MISSIONS_DIR.glob("*.json")):
+        if mission_path.name.endswith(TIMELINE_SUFFIX):
+            continue
         try:
             with open(mission_path, "r") as f:
                 mission_data = json.load(f)
 
+            mission_id = mission_data.get("id") or mission_path.stem
+
             missions.append({
-                "id": mission_data.get("id"),
+                "id": mission_id,
                 "name": mission_data.get("name"),
                 "route_id": mission_data.get("route_id"),
                 "is_active": mission_data.get("is_active", False),
@@ -187,6 +197,7 @@ def delete_mission(mission_id: str) -> bool:
     """
     mission_path = get_mission_path(mission_id)
     checksum_path = get_mission_checksum_path(mission_id)
+    timeline_path = get_mission_timeline_path(mission_id)
 
     deleted = False
 
@@ -207,10 +218,48 @@ def delete_mission(mission_id: str) -> bool:
             logger.error(f"Failed to delete checksum file {checksum_path}: {e}")
             raise
 
+    if timeline_path.exists():
+        try:
+            timeline_path.unlink()
+            logger.info(f"Deleted timeline file {timeline_path}")
+        except OSError as e:
+            logger.error(f"Failed to delete timeline file {timeline_path}: {e}")
+            raise
+
     if not deleted:
         logger.warning(f"Mission {mission_id} not found for deletion")
 
     return deleted
+
+
+def save_mission_timeline(mission_id: str, timeline: MissionTimeline) -> Path:
+    """Persist a mission timeline to disk."""
+    ensure_missions_directory()
+    timeline_path = get_mission_timeline_path(mission_id)
+    with open(timeline_path, "w") as handle:
+        json.dump(timeline.model_dump(), handle, indent=2, default=str)
+    logger.info("Saved mission timeline for %s", mission_id)
+    return timeline_path
+
+
+def load_mission_timeline(mission_id: str) -> MissionTimeline | None:
+    """Load a previously computed mission timeline."""
+    timeline_path = get_mission_timeline_path(mission_id)
+    if not timeline_path.exists():
+        return None
+    with open(timeline_path, "r") as handle:
+        data = json.load(handle)
+    return MissionTimeline(**data)
+
+
+def delete_mission_timeline(mission_id: str) -> None:
+    """Remove cached mission timeline without touching mission data."""
+    timeline_path = get_mission_timeline_path(mission_id)
+    if timeline_path.exists():
+        try:
+            timeline_path.unlink()
+        except OSError as exc:
+            logger.warning("Failed to delete mission timeline %s: %s", mission_id, exc)
 
 
 def mission_exists(mission_id: str) -> bool:

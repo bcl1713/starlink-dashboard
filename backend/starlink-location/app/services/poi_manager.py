@@ -2,10 +2,11 @@
 
 import json
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
 from filelock import FileLock
 
@@ -169,6 +170,68 @@ class POIManager:
         """
         return self._pois.get(poi_id)
 
+    def find_poi_by_name(self, name: str) -> Optional[POI]:
+        """
+        Find the first POI matching the provided name (case-insensitive).
+
+        Args:
+            name: POI name to search for
+
+        Returns:
+            POI object or None if not found
+        """
+        normalized = name.strip().lower()
+        for poi in self._pois.values():
+            if poi.name.strip().lower() == normalized:
+                return poi
+        return None
+
+    def find_global_poi_by_name(self, name: str) -> Optional[POI]:
+        """
+        Find a global (non-scoped) POI by name.
+
+        Args:
+            name: POI name to search for
+
+        Returns:
+            POI without mission/route scope or None if not found
+        """
+        normalized = name.strip().lower()
+        for poi in self._pois.values():
+            if (
+                poi.name.strip().lower() == normalized
+                and poi.mission_id is None
+                and poi.route_id is None
+            ):
+                return poi
+        return None
+
+    def delete_scoped_pois_by_names(self, names: set[str]) -> int:
+        """
+        Delete mission- or route-scoped POIs whose names match.
+
+        Args:
+            names: Set of POI names to delete (case-insensitive)
+
+        Returns:
+            Number of POIs removed
+        """
+        normalized = {name.strip().lower() for name in names if name}
+        if not normalized:
+            return 0
+
+        removed_ids: list[str] = []
+        for poi_id, poi in list(self._pois.items()):
+            if poi.name.strip().lower() in normalized and (
+                poi.mission_id is not None or poi.route_id is not None
+            ):
+                removed_ids.append(poi_id)
+                self._pois.pop(poi_id, None)
+
+        if removed_ids:
+            self._save_pois()
+        return len(removed_ids)
+
     def create_poi(self, poi_create: POICreate, active_route=None) -> POI:
         """
         Create a new POI.
@@ -183,7 +246,10 @@ class POIManager:
         Raises:
             ValueError: If POI creation fails
         """
-        base_slug = poi_create.name.lower().replace(" ", "-")
+        slug_source = poi_create.name.lower()
+        slug_source = re.sub(r"\s+", "-", slug_source.strip())
+        slug_source = re.sub(r"[^a-z0-9\-]+", "", slug_source)
+        base_slug = slug_source or f"poi-{uuid.uuid4().hex[:6]}"
         if poi_create.route_id:
             poi_id = f"{poi_create.route_id}-{base_slug}"
         elif poi_create.mission_id:
@@ -345,6 +411,86 @@ class POIManager:
             logger.info(f"Deleted {len(pois_to_delete)} POIs for mission: {mission_id}")
 
         return len(pois_to_delete)
+
+    def delete_mission_pois_by_category(self, mission_id: str, categories: set[str]) -> int:
+        """Delete mission-scoped POIs that match one of the provided categories."""
+        if not categories:
+            return 0
+        to_remove = [
+            poi_id
+            for poi_id, poi in self._pois.items()
+            if poi.mission_id == mission_id and poi.category in categories
+        ]
+
+        for poi_id in to_remove:
+            del self._pois[poi_id]
+
+        if to_remove:
+            self._save_pois()
+            logger.info(
+                "Deleted %d mission POIs for %s in categories %s",
+                len(to_remove),
+                mission_id,
+                sorted(categories),
+            )
+
+        return len(to_remove)
+
+    def delete_mission_pois_by_name_prefixes(
+        self, mission_id: str, prefixes: Sequence[str]
+    ) -> int:
+        """Delete mission POIs whose names start with any of the provided prefixes."""
+        if not prefixes:
+            return 0
+        normalized = tuple(prefixes)
+        to_remove = [
+            poi_id
+            for poi_id, poi in self._pois.items()
+            if poi.mission_id == mission_id
+            and any(poi.name.startswith(prefix) for prefix in normalized)
+        ]
+        for poi_id in to_remove:
+            del self._pois[poi_id]
+        if to_remove:
+            self._save_pois()
+            logger.info(
+                "Deleted %d mission POIs for %s with prefixes %s",
+                len(to_remove),
+                mission_id,
+                normalized,
+            )
+        return len(to_remove)
+
+    def delete_route_mission_pois_with_prefixes(
+        self,
+        route_id: str,
+        prefixes: Sequence[str],
+        exclude_mission_id: str | None = None,
+    ) -> int:
+        """Delete mission POIs on a route whose names start with prefixes."""
+        if not route_id or not prefixes:
+            return 0
+        normalized = tuple(prefixes)
+        to_remove = [
+            poi_id
+            for poi_id, poi in self._pois.items()
+            if poi.route_id == route_id
+            and poi.mission_id is not None
+            and poi.mission_id != exclude_mission_id
+            and any(poi.name.startswith(prefix) for prefix in normalized)
+        ]
+        for poi_id in to_remove:
+            del self._pois[poi_id]
+        if to_remove:
+            self._save_pois()
+            logger.info(
+                "Deleted %d mission POIs on route %s (excluded=%s prefixes=%s)",
+                len(to_remove),
+                route_id,
+                exclude_mission_id,
+                normalized,
+            )
+        return len(to_remove)
 
     def reload_pois(self) -> None:
         """Reload POIs from disk, discarding any unsaved changes."""

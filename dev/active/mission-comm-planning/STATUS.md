@@ -1,24 +1,25 @@
 # Mission Communication Planning - Current Status
 
-**Last Updated**: 2025-11-15 (Timeline exports + AAR block rendering) ✅
+**Last Updated**: 2025-11-12 (Auto HCX/X-Band POI sync + IDL fixes) ✅
 **Phase**: 3 - Communication Timeline Engine (in progress)
 **Branch**: `feature/mission-comm-planning`
-**Test Status**: 691/713 tests passing (22 skipped by design, 1 warning) ✅
-**Latest Full Run**: `docker compose exec starlink-location python -m pytest` → 691 passed / 22 skipped / 1 warning (Pydantic `json_encoders` deprecation)
-**Status**: Phase 2 complete, Phase 3 timeline computation + APIs/metrics + export pipeline delivered (AAR segments now first-class)
+**Test Status**: Targeted suites green (`pytest tests/unit/test_poi_manager.py tests/unit/test_mission_timeline.py tests/unit/test_kmz_importer.py`) ✅
+**Latest Full Run**: `cd backend/starlink-location && pytest tests/unit/test_poi_manager.py tests/unit/test_mission_timeline.py tests/unit/test_kmz_importer.py`
+**Status**: Phase 2 complete, Phase 3 timeline computation + APIs/metrics solid; Ka/X/AAR POIs now auto-sync on every mission save/recompute with IDL-aware coverage sampling
 **Implementation Guide**: See `mission-comm-planning-tasks.md` for detailed Phase 1-5 task breakdown with acceptance criteria ⭐
 
-## Latest Session Summary (2025-11-15)
+## Latest Session Summary (2025-11-12)
 
-- Timeline exports now treat AAR windows as explicit warning segments (with start/end timestamps, uppercase status/transport columns, condensed HH:MM timestamps, and optional branding). Transports remain AVAILABLE during AAR unless geometry actually triggers a violation.
-- `_attach_statistics()` preserves `_aar_blocks` metadata so exporter/Grafana consumers can rebuild warning segments even after summary recomputation.
-- Added `backend/starlink-location/app/mission/assets/` (ships with `.gitkeep`) so we can drop a `logo.png` that the PDF header renders automatically; “Timeline generated” moved to the footer to free header real estate.
-- Unit coverage: `python -m pytest backend/starlink-location/tests/unit/test_mission_exporter.py` (venv) verifies CSV/XLSX/PDF exporters plus the new AAR row behavior (existing Pydantic/pytest warnings only).
+- Mission saves now trigger a silent timeline recompute + POI reload, so HCX/X-Band/AAR markers update automatically without manual "Recompute Timeline" clicks.
+- `_sync_ka_pois` / `_sync_x_aar_pois` use the new `delete_route_mission_pois_with_prefixes()` helper to remove stale mission-event POIs from other missions on the same route before writing the latest concise labels.
+- Ka coverage samplers ignore International Date Line splits, eliminating phantom POR outages when polygons wrap at ±180°.
+- `/api/pois` route filtering keeps only the newest (or active) mission-event POIs when multiple missions target the same route, so Grafana/Planner overlays don’t show duplicates.
+- Tests exercised: `. .venv/bin/activate && cd backend-starlink-location && pytest tests/unit/test_poi_manager.py tests/unit/test_mission_timeline.py tests/unit/test_kmz_importer.py`.
 
 ### Where to Resume Next Session
-1. **HCX/Ka transition surfacing**: Add coverage overlap summaries + exporter rows so Ka transitions show up next to X transitions (and prep for Grafana panel variables).
-2. **Grafana integration** (Phase 4 kickoff): Wire `/api/missions/active/timeline` + `/api/missions/active/satellites` into dashboards/alerts using the new warning color rules.
-3. **Docs**: Update `docs/MISSION-PLANNING-GUIDE.md` + `monitoring/README.md` once Grafana panels reflect the refreshed styling.
+1. **Grafana integration (Phase 4 kickoff)**: Wire `/api/missions/active/timeline` + mission-event POIs into dashboard layers/alerts now that the data is clean.
+2. **Docs**: Capture the auto-recompute + POI lifecycle and IDL handling in `docs/MISSION-PLANNING-GUIDE.md` and monitoring docs.
+3. **Regression tests**: Expand pytest coverage for multi-mission POI scenarios and IDL gaps (ties into the “Fix mission/POI regression tests” task).
 
 ## Latest Session Summary (Phase 2: Satellite Geometry & Constraint Engine)
 

@@ -123,9 +123,10 @@ developer. Complete them sequentially.
   - Added `POST /api/missions/{id}/export?format=csv|xlsx|pdf` producing streamed downloads with correct MIME types + attachment filenames.
   - Mission Planner UI now exposes “Recompute Timeline” + inline export controls that call the recompute/export APIs, and integration/unit tests validate every format.
 
-- [ ] **HCX/Ka transition surfacing**
-  - Generate human-readable Ka swap entries (derived from coverage overlaps) and expose them via exporter + Grafana data sources.
-  - Acceptance: Timeline/export rows list upcoming HCX transitions with timestamps/satellite IDs, and the mission planner GUI presents the same data so operators can brief Ka handoffs alongside X-band transitions.
+- [x] **HCX/Ka transition surfacing** ✅ COMPLETE (2025-11-12)
+  - Timeline recompute now writes concise `HCX\n{Exit|Enter|POR→AOR}` POIs directly from `_sync_ka_pois`, capturing coverage gap boundaries and swap midpoints with minute-level precision.
+  - Mission planner save flow triggers a silent recompute + POI reload, so planners immediately see updated HCX transitions without manually clicking “Recompute Timeline”.
+  - `/api/pois` route filtering prefers the latest/active mission when multiple mission-event POI sets exist, preventing stale HCX overlays from appearing in Grafana/UI.
 
 ## Phase 4 – Visualization & Outputs
 

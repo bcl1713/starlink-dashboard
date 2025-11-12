@@ -1,14 +1,16 @@
 """Mission planning API endpoints for CRUD operations and lifecycle management."""
 
+import io
 import logging
 import sys
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.mission.models import Mission, MissionPhase
+from app.mission.models import Mission, MissionPhase, MissionTimeline, TransportState
 from app.mission.storage import (
     delete_mission,
     list_missions,
@@ -16,11 +18,26 @@ from app.mission.storage import (
     mission_exists,
     save_mission,
 )
+from app.mission.storage import load_mission_timeline, save_mission_timeline
+from app.mission.timeline_service import (
+    TimelineComputationError,
+    TimelineSummary,
+    build_mission_timeline,
+)
+from app.mission.exporter import (
+    ExportGenerationError,
+    TimelineExportFormat,
+    generate_timeline_export,
+)
 from app.services.flight_state_manager import get_flight_state_manager
 from app.core.metrics import (
     update_mission_active_metric,
     clear_mission_metrics,
     update_mission_phase_metric,
+    update_mission_timeline_timestamp,
+    update_mission_comm_state_metric,
+    update_mission_duration_metrics,
+    update_mission_next_conflict_metric,
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
@@ -46,6 +63,78 @@ def set_route_manager(route_manager: RouteManager) -> None:
     """Inject RouteManager so mission activation can ensure matching route activation."""
     global _route_manager
     _route_manager = route_manager
+
+
+def _compute_and_store_timeline_for_mission(
+    mission: Mission,
+    refresh_metrics: bool,
+) -> tuple[MissionTimeline, TimelineSummary]:
+    """Build, persist, and optionally publish metrics for a mission timeline."""
+    if not _route_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Route manager unavailable for timeline computation",
+        )
+
+    timeline, summary = build_mission_timeline(
+        mission,
+        _route_manager,
+        _poi_manager,
+    )
+    save_mission_timeline(mission.id, timeline)
+    generated_ts = datetime.now(timezone.utc).timestamp()
+    update_mission_timeline_timestamp(mission.id, generated_ts)
+
+    if refresh_metrics:
+        update_mission_duration_metrics(
+            mission.id,
+            summary.degraded_seconds,
+            summary.critical_seconds,
+        )
+        update_mission_next_conflict_metric(
+            mission.id,
+            summary.next_conflict_seconds,
+        )
+        for transport, state in summary.transport_states.items():
+            update_mission_comm_state_metric(
+                mission.id,
+                transport.value,
+                _state_to_metric_value(state),
+            )
+
+    return timeline, summary
+
+
+def _refresh_timeline_after_save(mission: Mission) -> None:
+    """Attempt to compute a fresh timeline immediately after save operations."""
+    if not mission.route_id:
+        return
+    try:
+        _compute_and_store_timeline_for_mission(
+            mission,
+            refresh_metrics=False,
+        )
+    except HTTPException as exc:
+        logger.warning(
+            "Skipped timeline recompute for %s (route manager unavailable): %s",
+            mission.id,
+            exc.detail,
+        )
+    except TimelineComputationError as exc:
+        logger.warning(
+            "Timeline computation failed for %s during save: %s",
+            mission.id,
+            exc,
+        )
+
+
+def _state_to_metric_value(state: TransportState) -> int:
+    mapping = {
+        TransportState.AVAILABLE: 0,
+        TransportState.DEGRADED: 1,
+        TransportState.OFFLINE: 2,
+    }
+    return mapping.get(state, 0)
 
 
 class MissionListResponse(BaseModel):
@@ -115,6 +204,7 @@ async def create_mission(mission: Mission) -> Mission:
 
         # Save mission to storage
         save_mission(mission)
+        _refresh_timeline_after_save(mission)
 
         logger.info(
             "Mission created successfully",
@@ -257,6 +347,27 @@ async def get_active_mission() -> Mission:
 
 
 @router.get(
+    "/active/timeline",
+    response_model=MissionTimeline,
+    responses={
+        404: {
+            "model": MissionErrorResponse,
+            "description": "No active mission or timeline",
+        }
+    },
+)
+async def get_active_mission_timeline() -> MissionTimeline:
+    mission = await get_active_mission()
+    timeline = load_mission_timeline(mission.id)
+    if not timeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Timeline not found for active mission",
+        )
+    return timeline
+
+
+@router.get(
     "/{mission_id}",
     response_model=Mission,
     responses={
@@ -303,6 +414,131 @@ async def get_mission(mission_id: str) -> Mission:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get mission",
         )
+
+
+@router.get(
+    "/{mission_id}/timeline",
+    response_model=MissionTimeline,
+    responses={
+        404: {
+            "model": MissionErrorResponse,
+            "description": "Timeline not found",
+        }
+    },
+)
+async def get_mission_timeline_endpoint(mission_id: str) -> MissionTimeline:
+    if not mission_exists(mission_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Mission {mission_id} not found",
+        )
+
+    timeline = load_mission_timeline(mission_id)
+    if not timeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Timeline not found",
+        )
+
+    return timeline
+
+
+@router.post(
+    "/{mission_id}/timeline/recompute",
+    response_model=MissionTimeline,
+    responses={
+        404: {
+            "model": MissionErrorResponse,
+            "description": "Mission or timeline prerequisites missing",
+        }
+    },
+)
+async def recompute_mission_timeline_endpoint(
+    mission_id: str,
+) -> MissionTimeline:
+    """Force a fresh mission timeline computation without altering activation."""
+    mission = load_mission(mission_id)
+    if not mission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Mission {mission_id} not found",
+        )
+
+    try:
+        timeline, _summary = _compute_and_store_timeline_for_mission(
+            mission,
+            refresh_metrics=mission.is_active,
+        )
+    except TimelineComputationError as exc:
+        logger.error(
+            "Failed to recompute timeline for %s", mission_id, exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to compute mission timeline",
+        ) from exc
+
+    return timeline
+
+
+@router.post(
+    "/{mission_id}/export",
+    responses={
+        200: {
+            "content": {
+                "text/csv": {},
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
+                "application/pdf": {},
+            },
+            "description": "Mission timeline export",
+        },
+        404: {
+            "model": MissionErrorResponse,
+            "description": "Mission or timeline not found",
+        },
+        400: {
+            "model": MissionErrorResponse,
+            "description": "Unsupported export format",
+        },
+    },
+)
+async def export_mission_timeline_endpoint(
+    mission_id: str,
+    format: str = Query("csv", description="Export format: csv, xlsx, or pdf"),
+) -> StreamingResponse:
+    """Generate a downloadable mission timeline export."""
+    mission = load_mission(mission_id)
+    if not mission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Mission {mission_id} not found",
+        )
+
+    timeline = load_mission_timeline(mission_id)
+    if not timeline:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Timeline not found",
+        )
+
+    try:
+        export_format = TimelineExportFormat.from_string(format)
+        artifact = generate_timeline_export(export_format, mission, timeline)
+    except ExportGenerationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+
+    filename = f"{mission_id}-timeline.{artifact.extension}"
+    headers = {
+        "Content-Disposition": f'attachment; filename="{filename}"',
+    }
+    return StreamingResponse(
+        io.BytesIO(artifact.content),
+        media_type=artifact.media_type,
+        headers=headers,
+    )
 
 
 @router.put(
@@ -368,6 +604,7 @@ async def update_mission(
 
         # Save merged mission
         save_mission(merged)
+        _refresh_timeline_after_save(merged)
 
         logger.info(
             "Mission updated successfully",
@@ -577,6 +814,30 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
                     detail=f"Failed to activate route {mission.route_id} while activating mission",
                 )
 
+        try:
+            _compute_and_store_timeline_for_mission(
+                mission,
+                refresh_metrics=True,
+            )
+        except HTTPException:
+            mission.is_active = False
+            mission.updated_at = datetime.now(timezone.utc)
+            save_mission(mission)
+            _active_mission_id = None
+            raise
+        except TimelineComputationError as exc:
+            mission.is_active = False
+            mission.updated_at = datetime.now(timezone.utc)
+            save_mission(mission)
+            _active_mission_id = None
+            logger.error(
+                "Failed to compute mission timeline for %s", mission_id, exc_info=True
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to compute mission timeline",
+            ) from exc
+
         # Update metrics for activated mission
         update_mission_active_metric(mission_id, mission.route_id)
         update_mission_phase_metric(mission_id, MissionPhase.PRE_DEPARTURE.value)
@@ -615,3 +876,6 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to activate mission",
         )
+def get_active_mission_id() -> Optional[str]:
+    """Return the currently active mission ID, if any."""
+    return _active_mission_id

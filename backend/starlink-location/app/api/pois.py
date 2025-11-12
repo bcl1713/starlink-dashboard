@@ -17,6 +17,8 @@ from app.models.poi import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.mission.routes import get_active_mission_id
+from app.mission.storage import load_mission
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +125,35 @@ async def list_pois(
     Returns:
     - List of POI objects and total count
     """
-    pois = poi_manager.list_pois(route_id=route_id, mission_id=mission_id)
+    effective_mission_id = mission_id
+    if route_id and mission_id is None:
+        active_id = get_active_mission_id()
+        if active_id:
+            active_mission = load_mission(active_id)
+            if active_mission and active_mission.route_id == route_id:
+                effective_mission_id = active_id
+
+    pois = poi_manager.list_pois(route_id=route_id, mission_id=effective_mission_id)
+
+    if route_id and mission_id is None:
+        mission_event_pois = [
+            poi
+            for poi in pois
+            if poi.category == "mission-event" and poi.mission_id
+        ]
+        if mission_event_pois:
+            latest = max(
+                mission_event_pois,
+                key=lambda poi: poi.updated_at or poi.created_at,
+            )
+            latest_mission_id = latest.mission_id
+            pois = [
+                poi
+                for poi in pois
+                if poi.category != "mission-event"
+                or not poi.mission_id
+                or poi.mission_id == latest_mission_id
+            ]
     responses = [
         POIResponse(
             id=poi.id,

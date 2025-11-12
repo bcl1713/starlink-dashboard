@@ -17,6 +17,22 @@ logger = logging.getLogger(__name__)
 KML_NS = {"kml": "http://www.opengis.net/kml/2.2"}
 
 
+def _names_match(candidate: Optional[str], expected: Optional[str]) -> bool:
+    """Return True when a Placemark name should satisfy the requested polygon."""
+    if not expected:
+        return True
+    if not candidate:
+        return False
+
+    candidate_norm = candidate.replace("_", " ").strip().upper()
+    expected_norm = expected.strip().upper()
+    if candidate_norm == expected_norm:
+        return True
+
+    tokens = candidate_norm.replace("-", " ").split()
+    return expected_norm in tokens
+
+
 def extract_kmz(kmz_path: Path, extract_to: Optional[Path] = None) -> Optional[Path]:
     """Extract KMZ (zipped KML) to a temporary directory.
 
@@ -93,7 +109,8 @@ def extract_polygon_from_kml(
     for placemark in placemarks:
         # Check name if filtering
         name_elem = placemark.find("kml:name", KML_NS)
-        if polygon_name and (name_elem is None or name_elem.text != polygon_name):
+        name_value = name_elem.text if name_elem is not None else None
+        if polygon_name and not _names_match(name_value, polygon_name):
             continue
 
         # Look for Polygon geometry
@@ -166,7 +183,7 @@ def kmz_to_geojson(
         kmz_path: Path to .kmz file
         output_path: If provided, save GeoJSON to this file
         polygon_mappings: Dict mapping KML polygon names to satellite IDs
-                         (e.g., {"PORB": "Ka-T2-1"})
+                         (e.g., {"PORB": "POR"})
 
     Returns:
         GeoJSON FeatureCollection dict, or None if conversion failed
@@ -190,10 +207,10 @@ def kmz_to_geojson(
     # Default mappings for HCX satellite coverage
     if polygon_mappings is None:
         polygon_mappings = {
-            "PORB": "Ka-T2-1",
-            "PORA": "Ka-T2-2",
-            "IOR": "Ka-T2-3",
-            "AOR": "Ka-AOR",
+            "PORB": "POR",
+            "PORA": "POR",
+            "IOR": "IOR",
+            "AOR": "AOR",
         }
 
     features = []
