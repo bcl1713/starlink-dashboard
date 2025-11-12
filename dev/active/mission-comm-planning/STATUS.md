@@ -1,26 +1,24 @@
 # Mission Communication Planning - Current Status
 
-**Last Updated**: 2025-11-11 (Phase 3 timeline scaffolding + state machine) ✅
+**Last Updated**: 2025-11-15 (Timeline exports + AAR block rendering) ✅
 **Phase**: 3 - Communication Timeline Engine (in progress)
 **Branch**: `feature/mission-comm-planning`
 **Test Status**: 691/713 tests passing (22 skipped by design, 1 warning) ✅
 **Latest Full Run**: `docker compose exec starlink-location python -m pytest` → 691 passed / 22 skipped / 1 warning (Pydantic `json_encoders` deprecation)
-**Status**: Phase 2 complete, Phase 3 interval/timeline scaffolding landed, ready to expose timeline APIs/metrics next
+**Status**: Phase 2 complete, Phase 3 timeline computation + APIs/metrics + export pipeline delivered (AAR segments now first-class)
 **Implementation Guide**: See `mission-comm-planning-tasks.md` for detailed Phase 1-5 task breakdown with acceptance criteria ⭐
 
-## Latest Session Summary (2025-11-11)
+## Latest Session Summary (2025-11-15)
 
-- Added `app/mission/state.py` transport availability state machine + `tests/unit/test_mission_state.py` to convert mission events into contiguous per-transport intervals (handles transitions, AAR, buffers, outages).
-- Implemented `app/mission/timeline.py` and `tests/unit/test_mission_timeline.py` to merge intervals into `TimelineSegment`s and assemble `MissionTimeline` objects (nominal/degraded/critical with impacted transports/reasons).
-- Hardened pytest isolation by sandboxing mission storage in `/tmp/test_data/missions` so first-run integration tests no longer read stale JSON files.
-- Verified the full containerized test suite after the new modules landed (see command above). Warning remains the expected Pydantic serializer notice.
-- Updated documentation (context, tasks, session notes) with new state and handoff details.
+- Timeline exports now treat AAR windows as explicit warning segments (with start/end timestamps, uppercase status/transport columns, condensed HH:MM timestamps, and optional branding). Transports remain AVAILABLE during AAR unless geometry actually triggers a violation.
+- `_attach_statistics()` preserves `_aar_blocks` metadata so exporter/Grafana consumers can rebuild warning segments even after summary recomputation.
+- Added `backend/starlink-location/app/mission/assets/` (ships with `.gitkeep`) so we can drop a `logo.png` that the PDF header renders automatically; “Timeline generated” moved to the footer to free header real estate.
+- Unit coverage: `python -m pytest backend/starlink-location/tests/unit/test_mission_exporter.py` (venv) verifies CSV/XLSX/PDF exporters plus the new AAR row behavior (existing Pydantic/pytest warnings only).
 
 ### Where to Resume Next Session
-1. **Integrate timeline computation**: Wire the new state machine/timeline helpers into mission activation flow (populate mission events, persist intervals/segments, update metrics).
-2. **Expose APIs/metrics**: Implement `/api/missions/{id}/timeline` & `/api/missions/active/timeline` plus Prometheus gauges (`mission_comm_state`, degraded/critical counters).
-3. **Re-run** `docker compose exec starlink-location python -m pytest tests/integration/test_mission_routes.py tests/integration/test_eta_modes.py` to confirm mission/timeline endpoints once added; then re-run the full suite.
-4. **Next tests**: keep using the isolated storage fixtures; no manual cleanup needed between runs.
+1. **HCX/Ka transition surfacing**: Add coverage overlap summaries + exporter rows so Ka transitions show up next to X transitions (and prep for Grafana panel variables).
+2. **Grafana integration** (Phase 4 kickoff): Wire `/api/missions/active/timeline` + `/api/missions/active/satellites` into dashboards/alerts using the new warning color rules.
+3. **Docs**: Update `docs/MISSION-PLANNING-GUIDE.md` + `monitoring/README.md` once Grafana panels reflect the refreshed styling.
 
 ## Latest Session Summary (Phase 2: Satellite Geometry & Constraint Engine)
 
@@ -30,7 +28,7 @@
 
 1. ✅ **Satellite Catalog Module** (`app/satellites/catalog.py` - 270 lines)
    - `SatelliteCatalog` class managing X/Ka/Ku satellite metadata
-   - Default definitions (X-1, Ka-T2-1/2/3, Ku-Leo) with color coding
+   - Default definitions (X-1, AOR/POR/IOR, Ku-Leo) with color coding
    - YAML-based custom satellite definitions
    - Coverage GeoJSON lazy loading
    - Transport-based indexing
@@ -340,7 +338,7 @@ docker compose exec starlink-location python -m pytest tests/unit/test_mission_*
 - Subject to azimuth exclusion zones (135°–225° normal, 315°–45° AAR)
 
 **Ka (Three Geostationary)**:
-- Default satellites: T2-1, T2-2, T2-3
+- Default satellites: AOR, POR, IOR
 - Coverage-based availability + optional manual outages
 - Uses HCX KMZ polygons or math-based fallback
 

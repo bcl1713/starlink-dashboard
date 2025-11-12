@@ -1,6 +1,6 @@
 # Mission Communication Planning Context
 
-Last Updated: 2025-11-11 (Phase 3 timeline scaffolding + test isolation)
+Last Updated: 2025-11-15 (Timeline exports + AAR block rendering)
 
 ## Purpose
 
@@ -27,16 +27,17 @@ transition points).
 - `backend/starlink-location/app/models/poi.py`, `app/services/poi_manager.py`, `app/api/pois.py` – Mission-scoped POI support (new `mission_id`, filtering, cleanup utilities).
 - `backend/starlink-location/app/mission/routes.py` + `main.py` – Mission activation now auto-activates the associated route and injects the POI manager for mission POI cleanup on delete.
 
-### Completed (Phase 2 + Phase 3 Kickoff)
+### Completed (Phase 2 + Phase 3 Core)
 - `backend/starlink-location/app/satellites/` – Satellite catalog, KMZ ingestion, look-angle geometry, coverage sampler, and rule engine (Phase 2) with 75 dedicated unit tests.
 - `backend/starlink-location/app/mission/state.py` – Transport availability state machine generating contiguous intervals for X/Ka/Ku along with pytest coverage in `tests/unit/test_mission_state.py`.
 - `backend/starlink-location/app/mission/timeline.py` – Timeline segment builder and `MissionTimeline` assembler plus `tests/unit/test_mission_timeline.py`.
+- `backend/starlink-location/app/mission/timeline_service.py` – End-to-end timeline computation (POI projection, Ka coverage sampling, swap/gap POI generation, Prometheus summary) invoked during mission activation.
+- `backend/starlink-location/app/mission/routes.py` – Activation writes cached timelines, updates new metrics, and exposes `/api/missions/{id|active}/timeline`; mission storage now persists `*.timeline.json`.
 - Test fixtures now isolate mission storage under `/tmp/test_data/missions`, eliminating leftover JSON files that previously broke first-run integration tests.
 
 ### In Progress / Planned
-- Wire the new state machine/timeline helpers into the mission execution flow and persist generated segments.
-- Expose `/api/missions/{id}/timeline` + `/api/missions/active/timeline` endpoints alongside Prometheus metrics (`mission_comm_state`, degraded/critical counters).
-- Build export tooling (CSV/XLSX/PDF) and Grafana mission timeline panels + alerts (Phase 4).
+- Grafana mission timeline panels + alert rules (Phase 4) still pending now that exporters are in place.
+- Document the timeline API/metrics (including LOS behavior) in `docs/MISSION-PLANNING-GUIDE.md` + Grafana README once dashboards are wired.
 
 ### Foundation Systems
 - `backend/starlink-location/` – FastAPI service hosting mission APIs, simulation, metrics exporters
@@ -45,14 +46,12 @@ transition points).
 - `docs/ROUTE-TIMING-GUIDE.md`, `docs/METRICS.md`, `docs/ROUTE-API-SUMMARY.md` – Foundational APIs
 - `dev/active/eta-route-timing/` – Previous work that established the timing engine we depend on
 
-### Current Session Highlights (2025-11-11)
-- Added transport availability state machine (`app/mission/state.py`) to collapse raw mission events into contiguous intervals per transport.
-- Built the first pass of the mission timeline assembler (`app/mission/timeline.py`) that merges interval data into `TimelineSegment`s with impacted transports and reasons.
-- Hardened pytest isolation by forcing mission storage into `/tmp/test_data/missions`, preventing first-run failures triggered by persistent JSON files.
-- Created new unit suites (`tests/unit/test_mission_state.py`, `test_mission_timeline.py`) and re-ran the full suite inside the container: `docker compose exec starlink-location python -m pytest` → 691 passed / 22 skipped / 1 warning (expected Pydantic serializer deprecation).
-- Captured next actions (timeline API, metrics, exports) in STATUS and SESSION-NOTES for quick pickup.
+### Current Session Highlights (2025-11-15)
+- Timeline exporter now renders AAR windows as explicit warning segments (with start/end timestamps, uppercase status labels, compact HH:MM time blocks, and optional branding). Transport states remain accurate during AAR because we stopped injecting synthetic degradations unless an azimuth violation occurs.
+- `_attach_statistics()` preserves auxiliary `_aar_blocks` metadata so synthetic segments can be regenerated in exports even after the statistics block is recomputed.
+- Added `backend/starlink-location/app/mission/assets/` to host optional logos (`logo.png`) and moved the “Timeline generated” stamp to the PDF footer to free up header space.
 
-**Outstanding work:** Integrate the interval/timeline helpers into mission activation flow, expose REST/metrics outputs, and implement exporter + Grafana wiring (see updated task list).
+**Outstanding work:** Grafana overlays/panels and alerts (Phase 4), documentation updates, exporter UX polish, HCX transition visualization, and scenario/perf hardening (Phase 5); see STATUS for details.
 
 ## Data Inputs & Artifacts
 
@@ -105,8 +104,10 @@ transition points).
 1. **Mission storage:** Use portable flat files so planning can run on one
    instance and be copied to another for live execution.
 2. **Ka coverage:** Ship the provided HCX KMZ (PORB/PORA/IOR/AOR) with the app
-   as the default footprint set. When alternative satellites are needed, fall
-   back to math-based coverage estimates unless planners supply another KMZ.
+   as the default footprint set (`app/satellites/assets/HCX.kmz` auto-converts
+   into `/data/sat_coverage/hcx.geojson` at runtime). When alternative
+   satellites are needed, fall back to math-based coverage estimates unless
+   planners supply another KMZ.
 3. **Planner workflow:** Provide a mission-planning GUI (Grafana panel or
    standalone web UI) backed by the same APIs used for routes/POIs so planners
    rarely touch raw JSON.

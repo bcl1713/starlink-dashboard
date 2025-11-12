@@ -1,3 +1,48 @@
+# Session Notes – 2025-11-15
+**Branch**: `feature/mission-comm-planning`  
+**Status**: Phase 3 – Timeline exporters + AAR warning segments refreshed
+
+## Summary
+- Timeline exporter renders AAR windows as explicit warning segments (uppercase labels, compact HH:MM timestamps, dedicated rows in CSV/XLSX/PDF) while keeping X/Ka/Ku states accurate.
+- `_attach_statistics()` now preserves auxiliary `_aar_blocks` metadata so exporters can regenerate warning segments even after timeline summaries are recomputed.
+- Added `backend/starlink-location/app/mission/assets/` to host an optional `logo.png`; the PDF header automatically displays the logo and moves “Timeline generated” to the footer.
+
+## Commands Run
+```
+source .venv/bin/activate && python -m pytest backend/starlink-location/tests/unit/test_mission_exporter.py
+```
+
+## Next Session
+1. Implement HCX/Ka transition surfacing (derive swap timestamps + expose them in exports/UI).
+2. Begin Grafana timeline panel work once Ka transitions appear in the API responses.
+3. Update documentation (MISSION-PLANNING-GUIDE + monitoring README) after the visualization work lands.
+
+---
+
+# Session Notes – 2025-11-14
+**Branch**: `feature/mission-comm-planning`  
+**Status**: Phase 3 – Minute-level simulation + LOS debug finalized
+
+## Summary
+- Timeline builder now samples every 60 s, caching heading/lat/lon/coverage so Ka overlap checks, X azimuth/LOS, and exports share identical geometry.
+- Added dateline-aware longitude interpolation + heading derivation to `RouteTemporalProjector`, preventing bogus samples when the route crosses ±180°.
+- Satellite longitudes now come strictly from the catalog/global POIs; mission-scoped satellite POIs are purged automatically, and `_resolve_satellite_longitude` ignores scoped overrides.
+- LOS vs. cone conflicts are clearly separated (`X line-of-sight blocked …` vs `X azimuth conflict …`) and event metadata captures sample lat/lon, timestamp, satellite longitude, and nearest waypoint for CSV/GUI debugging.
+- Safety-of-flight buffers mark all transports degraded (informational) without claiming X-specific degradation.
+
+## Commands Run
+```
+. .venv/bin/activate && pytest backend/starlink-location/tests/unit/test_poi_manager.py backend-starlink-location/tests/unit/test_satellite_rules.py backend-starlink-location/tests/integration/test_mission_routes.py
+. .venv/bin/activate && pytest backend-starlink-location/tests/unit/test_mission_state.py
+```
+
+## Next Session
+1. Wire `/api/missions/active/timeline` into Grafana (Phase 4) and surface the new LOS metadata in dashboards/alerts.
+2. Document minute-level sim + LOS rules in `docs/MISSION-PLANNING-GUIDE.md` and update STATUS.
+3. Expand regression scenarios (Phase 5) to cover LOS drops, dateline crossings, and terminal cone logic.
+
+---
+
 # Mission Communication Planning - Session Notes
 
 **Date**: 2025-11-11

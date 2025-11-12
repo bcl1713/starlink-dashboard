@@ -63,7 +63,7 @@ developer. Complete them sequentially.
     - Route selection dropdown (calls `/api/routes`)
     - X transition form: latitude, longitude, target satellite, optional beam ID
     - X transition table with add/remove functionality
-    - Ka transport tab: read-only default satellites (T2-1, T2-2, T2-3), manual outage scheduler
+    - Ka transport tab: read-only default satellites (AOR, POR, IOR), manual outage scheduler
     - Ku transport tab: LEO overrides with duration and optional reason
     - AAR form: waypoint dropdowns dynamically populated from selected route via `/api/routes/{id}`
     - AAR segments table with add/remove functionality
@@ -86,106 +86,65 @@ developer. Complete them sequentially.
 
 ## Phase 2 – Satellite Geometry & Constraint Engine
 
-- [ ] **Satellite catalog + HCX KMZ ingestion**
-  - Place the provided `HCX.kmz` under `data/sat_coverage/` and load it at
-    startup.
-  - Convert KMZ polygons (PORB/PORA/IOR/AOR) to GeoJSON
-    (`data/sat_coverage/hcx.geojson`); store metadata (satellite name,
-    longitudinal center, color) in
-    `backend/starlink-location/app/satellites/catalog.py`.
-  - Support additional satellite definitions via `data/satellites/catalog.yaml`
-    (for future expansion).
+- [x] **Satellite catalog + HCX KMZ ingestion** ✅ COMPLETE
+  - Default catalog now ships with HCX coverage (`app/satellites/assets/HCX.kmz`) which auto-converts into `/data/sat_coverage/hcx.geojson` at runtime; custom catalogs load from `/data/satellites/catalog.yaml`.
 
-- [ ] **Azimuth/elevation utilities**
-  - Implement `backend/starlink-location/app/satellites/geometry.py` with
-    helpers:
-    - `ecef_from_geodetic(lat, lon, alt)`
-    - `look_angles(aircraft_lat, aircraft_lon, aircraft_alt, sat_lon)`
-  - Use `pyproj` if available; fallback to manual formulas.
-  - Add tests comparing outputs to known values (hard-code cases from online
-    calculators).
+- [x] **Azimuth/elevation utilities** ✅ COMPLETE
+  - `app/satellites/geometry.py` implements ECEF helpers + `look_angles` with unit coverage.
 
-- [ ] **Transition projection + buffers**
-  - Expose a backend helper (or reuse an existing API route) that wraps
-    `RouteETACalculator.project_poi_to_route` so new X transition lat/lon pairs
-    can be projected without duplicating math (this is the same logic already
-    used by `POIManager.calculate_poi_projections`).
-  - Automatically create POIs in `/data/generated/pois/` for both the actual
-    coordinates (for map display) and the projected route point (for timing
-    math).
-  - Generate ±15 min degrade windows for each X/Ka transition and tag them with
-    reason codes.
+- [x] **Transition projection + buffers** ✅ COMPLETE
+  - Route projections reuse `RouteETACalculator`; mission save emits ±15 minute degrade windows.
 
-- [ ] **Coverage sampler for Ka**
-  - Build `backend/starlink-location/app/satellites/coverage.py` that:
-    1. Samples the route every 60 s.
-    2. Runs point-in-polygon against the GeoJSON footprints.
-    3. Detects entry/exit times and produces crossover events.
-    4. Falls back to elevation math when the aircraft isn’t inside any polygon.
-  - Store computed events in `data/missions/<id>/t2-transitions.json` for reuse.
+- [x] **Coverage sampler for Ka** ✅ COMPLETE
+  - `app/satellites/coverage.py` samples once per minute and emits swap/gap events persisted via timeline service.
 
-- [ ] **Rule evaluation + advisories**
-  - Combine azimuth checks, coverage events, takeoff/landing buffers, and AAR
-    windows into a single list of `MissionEvent` objects (timestamp, event_type,
-    transport, metadata).
-  - Produce operator advisories (e.g., “Disable X from 01:25Z to 02:10Z due to
-    transition to X-2”).
-  - Expose the advisories via `/api/missions/{id}` so exports and dashboards can
-    reuse them.
+- [x] **Rule evaluation + advisories** ✅ COMPLETE
+  - `app/satellites/rules.py` produces unified `MissionEvent` streams (X/Ka/Ku) consumed by `timeline_service`.
 
 ## Phase 3 – Communication Timeline Engine
 
 - [x] **Transport availability state machine** ✅ COMPLETE (2025-11-11)
   - Added `backend/starlink-location/app/mission/state.py` with helpers to turn `MissionEvent` sequences into contiguous intervals per transport (tracks degraded/offline reasons, clamps bounds, handles overlapping events).
   - Unit coverage in `backend/starlink-location/tests/unit/test_mission_state.py` exercises X transitions, landing buffers, Ka coverage/outage precedence, pre-mission events, and ensures intervals close correctly.
+  - 2025-11-13 refresh: Route sampling now drives Ka overlap-based transitions and real-time X-band azimuth checks (forward + aft cones), so degradations only trigger when geometry demands it.
 
 - [x] **Timeline segmentation** ✅ COMPLETE (2025-11-11)
   - Implemented `backend/starlink-location/app/mission/timeline.py` to merge transport intervals into ordered `TimelineSegment`s plus `MissionTimeline` assembly helpers.
   - Added `tests/unit/test_mission_timeline.py` validating nominal/degraded/critical slicing, impacted transport metadata, and boundary clamping.
 
-- [ ] **Metrics + REST endpoints**
-  - Expose `GET /api/missions/{id}/timeline` (returns JSON array) and
-    `GET /api/missions/active/timeline`.
-  - In `/metrics`, publish gauges: `mission_comm_state{transport=…}`,
-    `mission_degraded_seconds`, `mission_critical_seconds` (latter counters
-    accumulate since activation).
-  - Validate via tests that metrics change when new timeline data is computed.
+- [x] **Metrics + REST endpoints** ✅ COMPLETE (2025-11-12)
+  - Added `backend/starlink-location/app/mission/timeline_service.py` to project X transitions and Ka coverage events onto the route, persist cached `MissionTimeline` JSON, and emit swap/gap POIs.
+  - Mission activation now computes/stores the timeline, updates Prometheus gauges (`mission_comm_state`, `mission_degraded_seconds`, `mission_critical_seconds`, `mission_next_conflict_seconds`, `mission_timeline_generated_timestamp`), and exposes `GET /api/missions/{id}/timeline` plus `/api/missions/active/timeline`.
+  - Integration tests stub the timeline builder to validate activation, endpoints, and metrics without heavy geometry dependencies; all suites run inside Docker after rebuilding/restarting the container.
 
-- [ ] **Export generators (CSV/XLSX/PDF)**
-  - Create `backend/starlink-location/app/mission/exporter.py`:
-    - Convert timeline segments to pandas DataFrame → export to CSV and XLSX.
-    - Use `WeasyPrint` or `ReportLab` to render the PDF mock (cover page, table,
-      map placeholder).
-    - Format timestamps as UTC, Eastern (DST aware via `pytz`/`zoneinfo`), and
-      T+HH:MM.
-  - Add API endpoint `POST /api/missions/{id}/export?format=csv|xlsx|pdf`
-    returning file downloads.
-  - Integration tests should generate each format and verify headers/content.
+- [x] **Export generators (CSV/XLSX/PDF)** ✅ COMPLETE (2025-11-12)
+  - Added `backend/starlink-location/app/mission/exporter.py` with CSV, XLSX (multi-sheet), and PDF renderers built on pandas/openpyxl/reportlab plus timezone-aware formatting for UTC, Eastern, and T+ offsets.
+  - Introduced `TimelineExportFormat` + `generate_timeline_export()` wrapper returning media metadata and byte payloads for API use.
+  - Added `POST /api/missions/{id}/export?format=csv|xlsx|pdf` producing streamed downloads with correct MIME types + attachment filenames.
+  - Mission Planner UI now exposes “Recompute Timeline” + inline export controls that call the recompute/export APIs, and integration/unit tests validate every format.
+
+- [ ] **HCX/Ka transition surfacing**
+  - Generate human-readable Ka swap entries (derived from coverage overlaps) and expose them via exporter + Grafana data sources.
+  - Acceptance: Timeline/export rows list upcoming HCX transitions with timestamps/satellite IDs, and the mission planner GUI presents the same data so operators can brief Ka handoffs alongside X-band transitions.
 
 ## Phase 4 – Visualization & Outputs
 
 - [ ] **Grafana map overlays**
-  - Update `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-    to include:
+  - Update `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` to include:
     - Satellite POI layer hitting `/api/missions/active/satellites`.
-    - Coverage overlay layer referencing the GeoJSON served from
-      `/data/sat_coverage/hcx.geojson` (via backend proxy if needed).
+    - Coverage overlay layer referencing the GeoJSON served from `/data/sat_coverage/hcx.geojson` (via backend proxy if needed).
     - AAR start/end markers and transition POIs from mission data.
   - Document required Grafana plugins or permissions in `monitoring/README.md`.
 
 - [ ] **Mission timeline panel & alerts**
-  - Add a state timeline panel (e.g., Grafana “State Timeline” viz) pointed at
-    `/api/missions/active/timeline`.
-  - Configure Prometheus alert rules under
-    `monitoring/prometheus/rules/mission-alerts.yml` to notify when a
-    degraded/critical window is <15 minutes away.
+  - Add a state timeline panel (e.g., Grafana “State Timeline” viz) pointed at `/api/missions/active/timeline`.
+  - Mirror the export styling rules: single-transport degradations render with light yellow backgrounds, multi-transport degradations with light red backgrounds, and pure `X-Ku Conflict` windows remain warning-only. Panel legend labels must read `X-Band`, `HCX`, and `StarShield`.
+  - Configure Prometheus alert rules under `monitoring/prometheus/rules/mission-alerts.yml` to notify when a degraded/critical window is <15 minutes away.
   - Verify with `promtool test rules` and Grafana alert test mode.
 
 - [ ] **UX validation + documentation**
-  - Run a dry-run with planners using Leg 6 Rev 6 data; capture notes in
-    `dev/active/mission-comm-planning/SESSION-NOTES.md`.
-  - Update `docs/MISSION-PLANNING-GUIDE.md` with screenshots of the GUI and
-    sample PDFs/CSVs.
+  - Run a dry-run with planners using Leg 6 Rev 6 data; capture notes in `dev/active/mission-comm-planning/SESSION-NOTES.md`.
+  - Update `docs/MISSION-PLANNING-GUIDE.md` with screenshots of the GUI and sample PDFs/CSVs.
 
 ## Phase 5 – Hardening & Ops Readiness
 
