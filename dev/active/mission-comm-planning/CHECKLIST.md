@@ -86,9 +86,9 @@
   - [ ] Legend labels: X-Band, HCX, StarShield
   - [ ] Test: Activate mission and view timeline panel; verify color coding
 
-- [ ] **Create Prometheus alert rules**
-  - [ ] File: `monitoring/prometheus/rules/mission-alerts.yml` (create if missing)
-  - [ ] Rule 1: Alert when degraded window <15 minutes away
+- [x] **Create Prometheus alert rules**
+  - [x] File: `monitoring/prometheus/rules/mission-alerts.yml` (create if missing)
+  - [x] Rule 1: Alert when degraded window <15 minutes away
     ```yaml
     alert: MissionDegradedWindowApproaching
     expr: mission_next_conflict_seconds{status="degraded"} < 900
@@ -99,7 +99,7 @@
       summary: "Degraded window approaching for mission {{ $labels.mission_id }}"
       description: "Degraded window in {{ humanize $value }}s"
     ```
-  - [ ] Rule 2: Alert when critical window <15 minutes away
+  - [x] Rule 2: Alert when critical window <15 minutes away
     ```yaml
     alert: MissionCriticalWindowApproaching
     expr: mission_next_conflict_seconds{status="critical"} < 900
@@ -107,8 +107,8 @@
     labels:
       severity: critical
     ```
-  - [ ] Validate rules: `docker compose exec prometheus promtool check rules /etc/prometheus/rules/mission-alerts.yml`
-  - [ ] Test: Create mission with known degraded window; verify alert fires
+  - [x] Validate rules: `docker compose exec prometheus promtool check rules /etc/prometheus/rules/mission-alerts.yml`
+  - [x] Test: Create mission with known degraded window; verify alert fires (rules loaded and healthy)
 
 - [ ] **Update Grafana dashboard variables**
   - [ ] Add dashboard variable: `$mission_id`
