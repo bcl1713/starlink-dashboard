@@ -97,7 +97,7 @@ Implement transport availability state machine, timeline segmentation logic, and
 ### **Phase 4 — Visualization & Customer Outputs** ⏳ IN PROGRESS
 
 **Description:**
-Wire mission data into Grafana dashboards with satellite POI overlays, coverage footprints, AAR markers, and mission timeline panel. Configure Prometheus/Grafana alerts for upcoming degraded windows. Validate UX with stakeholders.
+Wire mission data into Grafana dashboards with satellite POI overlays, coverage footprints, AAR markers, and mission timeline panel. Configure Prometheus/Grafana alerts for upcoming degraded windows. Add mission deactivation capability and route cascade cleanup. Validate UX with stakeholders.
 
 **Entry Criteria:**
 
@@ -110,6 +110,8 @@ Wire mission data into Grafana dashboards with satellite POI overlays, coverage 
 - Fullscreen Overview dashboard updated with satellite layers
 - Mission timeline panel (State Timeline viz) operational
 - Prometheus alert rules (`mission-alerts.yml`) firing correctly
+- Mission deactivation endpoint implemented with route cascade
+- Mission planner UI includes deactivation button
 - Grafana variables updated for mission context
 - UX validation session completed with stakeholder feedback
 - Docs/screenshots captured in SESSION-NOTES.md

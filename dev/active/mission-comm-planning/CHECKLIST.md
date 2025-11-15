@@ -167,6 +167,20 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [ ] Continue with existing deletion logic
   - [ ] Verify: Deleting active mission should deactivate its route
 
+- [ ] **Update mission planner UI with deactivation button**
+  - [ ] File: `backend/starlink-location/app/api/ui.py`
+  - [ ] Add "Deactivate Mission" button next to existing "Activate Mission" button
+    - [ ] Only visible when mission is active (`currentMission.is_active === true`)
+    - [ ] Button styling: secondary (not danger like delete)
+  - [ ] Add `deactivateMission()` function:
+    - [ ] Confirm with user: "Deactivate mission X?"
+    - [ ] Call `POST /api/missions/active/deactivate`
+    - [ ] On success: Set `currentMission.is_active = false`, show success alert
+    - [ ] On error: Show error alert with detail
+    - [ ] Reload missions list
+  - [ ] Update button state handler to show/hide deactivate button based on `is_active`
+  - [ ] Test: Activate mission → Deactivate button visible → Click deactivate → Mission no longer active
+
 - [ ] **Write tests**
   - [ ] File: `backend/starlink-location/tests/integration/test_mission_routes.py`
   - [ ] Test: Deactivate active mission returns 200
@@ -177,7 +191,7 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [ ] Run all tests: `docker compose exec starlink-location python -m pytest tests/ -v`
 
 - [ ] **Commit**
-  - [ ] Commit message: `feat: add mission deactivation with route cascade`
+  - [ ] Commit message: `feat: add mission deactivation with route cascade and UI button`
 
 ### 4.3 UX Validation with Stakeholders
 

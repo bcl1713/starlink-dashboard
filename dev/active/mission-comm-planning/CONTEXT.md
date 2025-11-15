@@ -25,7 +25,7 @@ Mission communication planning is critical for flight operations because the air
 **Core mission modules:**
 - `backend/starlink-location/app/mission/models.py` — Pydantic data models (Mission, TimelineSegment, etc.)
 - `backend/starlink-location/app/mission/storage.py` — Portable JSON-based persistence
-- `backend/starlink-location/app/mission/routes.py` — CRUD/activation endpoints
+- `backend/starlink-location/app/mission/routes.py` — CRUD/activation/deactivation endpoints (add POST /api/missions/active/deactivate)
 - `backend/starlink-location/app/mission/state.py` — Transport availability state machine
 - `backend/starlink-location/app/mission/timeline.py` — Timeline segmentation logic
 - `backend/starlink-location/app/mission/timeline_service.py` — End-to-end timeline computation
@@ -39,7 +39,7 @@ Mission communication planning is critical for flight operations because the air
 - `backend/starlink-location/app/satellites/kmz_importer.py` — HCX KMZ ingest with IDL handling
 
 **UI & integration:**
-- `backend/starlink-location/app/api/ui.py` — Mission Planner GUI (lines 1775–2964)
+- `backend/starlink-location/app/api/ui.py` — Mission Planner GUI (add deactivateMission() button function alongside activateMission)
 - `backend/starlink-location/app/api/pois.py` — POI filtering with mission scoping
 - `backend/starlink-location/app/models/poi.py` — POI model with mission_id support
 - `backend/starlink-location/app/services/poi_manager.py` — POI lifecycle management
