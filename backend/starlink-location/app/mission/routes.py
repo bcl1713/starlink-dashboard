@@ -787,6 +787,29 @@ async def delete_mission_endpoint(mission_id: str) -> None:
                 detail=f"Mission {mission_id} not found",
             )
 
+        # Load mission to get route_id before deletion
+        mission = load_mission(mission_id)
+
+        # Deactivate associated route if it's the active one
+        if mission.route_id and _route_manager:
+            try:
+                # Only deactivate if this mission's route is the currently active route
+                if _route_manager._active_route_id == mission.route_id:
+                    _route_manager.deactivate_route()
+                    logger.info(
+                        "Deactivated route %s associated with mission %s",
+                        mission.route_id,
+                        mission_id,
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to deactivate route %s for mission %s: %s",
+                    mission.route_id,
+                    mission_id,
+                    exc,
+                )
+                # Continue with mission deletion even if route deactivation fails
+
         # Remove related mission POIs
         if _poi_manager:
             try:
@@ -1034,15 +1057,17 @@ async def deactivate_mission() -> MissionDeactivationResponse:
         # Get the active mission
         mission = await get_active_mission()
 
-        # Deactivate the associated route if it exists
+        # Deactivate the associated route if it's the active one
         if mission.route_id and _route_manager:
             try:
-                _route_manager.deactivate_route(mission.route_id)
-                logger.info(
-                    "Deactivated route %s associated with mission %s",
-                    mission.route_id,
-                    mission.id,
-                )
+                # Only deactivate if this mission's route is the currently active route
+                if _route_manager._active_route_id == mission.route_id:
+                    _route_manager.deactivate_route()
+                    logger.info(
+                        "Deactivated route %s associated with mission %s",
+                        mission.route_id,
+                        mission.id,
+                    )
             except Exception as exc:
                 logger.warning(
                     "Failed to deactivate route %s for mission %s: %s",
