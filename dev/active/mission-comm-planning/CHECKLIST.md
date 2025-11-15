@@ -1,12 +1,11 @@
 # Checklist for mission-comm-planning
 
-**Branch:** `feature/mission-comm-planning`
-**Folder:** `dev/active/mission-comm-planning/`
-**Status:** In Progress
-**Current Phase:** Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
+**Branch:** `feature/mission-comm-planning` **Folder:**
+`dev/active/mission-comm-planning/` **Status:** In Progress **Current Phase:**
+Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
 
-> This checklist assumes execution proceeds through Phase 4 and Phase 5 sequentially.
-> Phases 1–3 are already complete with 607+ passing tests.
+> This checklist assumes execution proceeds through Phase 4 and Phase 5
+> sequentially. Phases 1–3 are already complete with 607+ passing tests.
 
 ---
 
@@ -23,19 +22,24 @@
 
 ### 4.1 Grafana Map Overlays
 
-- [ ] **Wire satellite POIs to Fullscreen Overview dashboard** *(User to execute - backend endpoint ready)*
-  - [ ] Edit `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-  - [ ] Add new panel with ID not conflicting with existing panels
-  - [ ] Panel type: Geomap
-  - [ ] Data source: Prometheus or Infinity datasource
-  - [ ] Query: Call `/api/missions/active/satellites` endpoint (implementation complete)
-  - [ ] Layer type: Points (for satellite locations)
-  - [ ] Symbol: Satellite icon or marker
-  - [ ] Test: Activate a mission and verify satellite POIs appear on map
+- [x] **Wire satellite POIs to Fullscreen Overview dashboard** _(User to
+      execute - backend endpoint ready)_
+  - [x] Edit
+        `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
+  - [x] Add new panel with ID not conflicting with existing panels
+  - [x] Panel type: Geomap
+  - [x] Data source: Prometheus or Infinity datasource
+  - [x] Query: Call `/api/missions/active/satellites` endpoint (implementation
+        complete)
+  - [x] Layer type: Points (for satellite locations)
+  - [x] Symbol: Satellite icon or marker
+  - [x] Test: Activate a mission and verify satellite POIs appear on map
 
-- [x] **Implement `/api/missions/active/satellites` endpoint** *(Completed; executed before wiring due to API dependency)*
+- [x] **Implement `/api/missions/active/satellites` endpoint** _(Completed;
+      executed before wiring due to API dependency)_
   - [x] Location: `backend/starlink-location/app/mission/routes.py`
   - [x] Add new route handler:
+
     ```python
     @router.get("/missions/active/satellites")
     async def get_active_mission_satellites():
@@ -44,22 +48,57 @@
         # Extract satellite definitions from mission.transports
         # Return as GeoJSON FeatureCollection with satellite metadata
     ```
-  - [x] Test: `curl http://localhost:8000/api/missions/active/satellites` returns valid GeoJSON
-  - [x] Commit: `feat: add /api/missions/active/satellites endpoint for Grafana overlay`
+
+  - [x] Test: `curl http://localhost:8000/api/missions/active/satellites`
+        returns valid GeoJSON
+  - [x] Commit:
+        `feat: add /api/missions/active/satellites endpoint for Grafana overlay`
 
 - [ ] **Add coverage overlay layer (HCX GeoJSON)**
+  - [ ] **Backend setup:** Edit `backend/starlink-location/main.py`
+    - [x] Add import: `from fastapi.staticfiles import StaticFiles` ✅ DONE
+    - [x] Add static files mount (after CORS middleware) ✅ DONE
+    - [ ] **NEW:** Initialize HCX coverage on startup
+      - [ ] Add imports in `startup_event()`:
+        ```python
+        from app.satellites.kmz_importer import load_hcx_coverage
+        from pathlib import Path
+        ```
+      - [ ] In `startup_event()` after satellite catalog initialization, add:
+        ```python
+        # Initialize HCX coverage for Grafana static file serving
+        hcx_kmz = Path("app/satellites/assets/HCX.kmz")
+        sat_coverage_dir = Path("data/sat_coverage")
+        if hcx_kmz.exists():
+            try:
+                load_hcx_coverage(hcx_kmz, sat_coverage_dir)
+                logger.info_json("HCX coverage initialized for Grafana overlay")
+            except Exception as e:
+                logger.warning_json("Failed to initialize HCX coverage", extra_fields={"error": str(e)})
+        ```
+    - [ ] Rebuild Docker:
+          `docker compose down && docker compose build --no-cache && docker compose up -d`
+    - [ ] Verify endpoint returns GeoJSON:
+          `curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.type'`
+          Expected: `"FeatureCollection"`
   - [ ] Edit Fullscreen Overview dashboard
   - [ ] Add new Geomap panel for coverage
-  - [ ] Data source: Direct file serving of `/data/sat_coverage/hcx.geojson`
+  - [ ] Data source: Backend endpoint
+        `http://localhost:8000/data/sat_coverage/hcx.geojson`
+    - ℹ️ This URL serves the HCX coverage file via FastAPI static files mount
+      (no direct filesystem access needed)
   - [ ] Layer type: GeoJSON overlay
-  - [ ] Styling: Semi-transparent fill (20–30% opacity) with Ka-specific colors (AOR/POR/IOR)
+  - [ ] Styling: Semi-transparent fill (20–30% opacity) with Ka-specific colors
+        (AOR/POR/IOR)
   - [ ] Test: Verify HCX polygons display without overlapping waypoints
 
 - [ ] **Add AAR & transition POI markers**
   - [ ] These are already generated as mission-event POIs
-  - [ ] Add panel querying `/api/pois?mission_id=<active_mission_id>&category=mission-event`
+  - [ ] Add panel querying
+        `/api/pois?mission_id=<active_mission_id>&category=mission-event`
   - [ ] Filter and display only AAR and X-Band transition POIs
-  - [ ] Test: Create mission with AAR window and transitions; verify markers appear
+  - [ ] Test: Create mission with AAR window and transitions; verify markers
+        appear
 
 - [ ] **Update `monitoring/README.md`**
   - [ ] Document new Grafana plugins or permissions needed
@@ -74,10 +113,12 @@
   - [ ] Add new panel with Grafana's "State Timeline" visualization
   - [ ] Data source: Prometheus
   - [ ] Query structure:
+
     ```
     # Fetch timeline data from /api/missions/active/timeline
     # Convert to timeseries format for state timeline viz
     ```
+
   - [ ] Styling rules:
     - Single-transport degradation: light yellow background
     - Multi-transport degradation: light red background
@@ -87,8 +128,10 @@
   - [ ] Test: Activate mission and view timeline panel; verify color coding
 
 - [x] **Create Prometheus alert rules**
-  - [x] File: `monitoring/prometheus/rules/mission-alerts.yml` (create if missing)
+  - [x] File: `monitoring/prometheus/rules/mission-alerts.yml` (create if
+        missing)
   - [x] Rule 1: Alert when degraded window <15 minutes away
+
     ```yaml
     alert: MissionDegradedWindowApproaching
     expr: mission_next_conflict_seconds{status="degraded"} < 900
@@ -96,10 +139,13 @@
     labels:
       severity: warning
     annotations:
-      summary: "Degraded window approaching for mission {{ $labels.mission_id }}"
+      summary:
+        "Degraded window approaching for mission {{ $labels.mission_id }}"
       description: "Degraded window in {{ humanize $value }}s"
     ```
+
   - [x] Rule 2: Alert when critical window <15 minutes away
+
     ```yaml
     alert: MissionCriticalWindowApproaching
     expr: mission_next_conflict_seconds{status="critical"} < 900
@@ -107,8 +153,11 @@
     labels:
       severity: critical
     ```
-  - [x] Validate rules: `docker compose exec prometheus promtool check rules /etc/prometheus/rules/mission-alerts.yml`
-  - [x] Test: Create mission with known degraded window; verify alert fires (rules loaded and healthy)
+
+  - [x] Validate rules:
+        `docker compose exec prometheus promtool check rules /etc/prometheus/rules/mission-alerts.yml`
+  - [x] Test: Create mission with known degraded window; verify alert fires
+        (rules loaded and healthy)
 
 - [ ] **Update Grafana dashboard variables**
   - [ ] Add dashboard variable: `$mission_id`
@@ -135,7 +184,8 @@
 - [ ] **Schedule validation session**
   - [ ] Identify 1–2 mission planners or operators
   - [ ] Schedule 45–60 minute hands-on session
-  - [ ] Prepare test mission with real-world-like parameters (e.g., Leg 6 Rev 6 data)
+  - [ ] Prepare test mission with real-world-like parameters (e.g., Leg 6 Rev 6
+        data)
 
 - [ ] **Run validation workflows**
   - [ ] Create new mission from scratch
@@ -166,18 +216,22 @@
 ### 5.1 Scenario Regression Tests
 
 - [ ] **Test 1: Normal ops with X transitions**
-  - [ ] File: `backend/starlink-location/tests/integration/test_mission_scenarios.py` (create if missing)
+  - [ ] File:
+        `backend/starlink-location/tests/integration/test_mission_scenarios.py`
+        (create if missing)
   - [ ] Scenario: Mission with route, 2 X-Band transitions, no AAR
   - [ ] Setup:
     - [ ] Load sample route (cross-country with multiple waypoints)
     - [ ] Add X transition from X-1 to X-2 at waypoint 30%
     - [ ] Add X transition from X-2 back to X-1 at waypoint 70%
   - [ ] Assertions:
-    - [ ] Timeline has ≥4 segments (pre-transition, transition1, between, transition2, post)
+    - [ ] Timeline has ≥4 segments (pre-transition, transition1, between,
+          transition2, post)
     - [ ] Each X transition has ±15-min degrade buffer
     - [ ] No Ka/Ku degradations (assume nominal coverage)
     - [ ] Export generates without errors
-  - [ ] Run test: `pytest tests/integration/test_mission_scenarios.py::test_normal_ops_x_transitions -v`
+  - [ ] Run test:
+        `pytest tests/integration/test_mission_scenarios.py::test_normal_ops_x_transitions -v`
 
 - [ ] **Test 2: Ka coverage gaps**
   - [ ] Scenario: Mission with route crossing POR→AOR boundary, no X transitions
@@ -189,7 +243,8 @@
     - [ ] Swap point is at coverage boundary midpoint
     - [ ] X and Ku remain nominal during swap
     - [ ] Swap has <1-minute window
-  - [ ] Run test: `pytest tests/integration/test_mission_scenarios.py::test_ka_coverage_swap -v`
+  - [ ] Run test:
+        `pytest tests/integration/test_mission_scenarios.py::test_ka_coverage_swap -v`
 
 - [ ] **Test 3: AAR with X azimuth inversion**
   - [ ] Scenario: Mission with AAR window that inverts X azimuth constraints
@@ -202,17 +257,20 @@
     - [ ] X becomes degraded during AAR if azimuth within inverted range
     - [ ] Other transports unaffected
     - [ ] AAR window marked as comm blackout (informational)
-  - [ ] Run test: `pytest tests/integration/test_mission_scenarios.py::test_aar_azimuth_inversion -v`
+  - [ ] Run test:
+        `pytest tests/integration/test_mission_scenarios.py::test_aar_azimuth_inversion -v`
 
 - [ ] **Test 4: Multi-transport degradation logic**
   - [ ] Scenario: Mission where X and Ka both degrade simultaneously
   - [ ] Setup:
-    - [ ] Arrange route + transitions + coverage such that X azimuth conflict and Ka gap overlap
+    - [ ] Arrange route + transitions + coverage such that X azimuth conflict
+          and Ka gap overlap
   - [ ] Assertions:
     - [ ] Overlapping degradation creates "critical" status (2 transports down)
     - [ ] Prometheus metric `mission_critical_seconds` > 0
     - [ ] Export highlights critical window with dark red background
-  - [ ] Run test: `pytest tests/integration/test_mission_scenarios.py::test_multi_transport_critical -v`
+  - [ ] Run test:
+        `pytest tests/integration/test_mission_scenarios.py::test_multi_transport_critical -v`
 
 - [ ] **Commit scenario tests**
   - [ ] `feat: add Phase 5 scenario regression test suite`
@@ -222,6 +280,7 @@
 - [ ] **Create benchmark script**
   - [ ] File: `tools/benchmark_mission_timeline.py`
   - [ ] Script:
+
     ```python
     import time
     import concurrent.futures
@@ -243,6 +302,7 @@
         # Memory usage via psutil
         # Record results to docs/PERFORMANCE-NOTES.md
     ```
+
   - [ ] Run locally: `cd tools && python benchmark_mission_timeline.py`
   - [ ] Target: <1.0s for 10 concurrent missions
   - [ ] If >1.0s, profile and optimize hot paths
@@ -306,16 +366,19 @@
 ### 5.4 Final Verification
 
 - [ ] **Run full test suite**
-  - [ ] Command: `docker compose exec starlink-location python -m pytest tests/ -v`
+  - [ ] Command:
+        `docker compose exec starlink-location python -m pytest tests/ -v`
   - [ ] Expected: 700+ tests passing
   - [ ] If any failures: debug and fix before continuing
 
 - [ ] **Docker rebuild and health check**
-  - [ ] Command: `docker compose down && docker compose build --no-cache && docker compose up -d`
+  - [ ] Command:
+        `docker compose down && docker compose build --no-cache && docker compose up -d`
   - [ ] Verify all containers healthy: `docker compose ps`
   - [ ] Check service endpoints:
     - [ ] `curl http://localhost:8000/health`
-    - [ ] `curl http://localhost:8000/api/missions` (returns empty list or missions)
+    - [ ] `curl http://localhost:8000/api/missions` (returns empty list or
+          missions)
     - [ ] `curl http://localhost:3000` (Grafana login page)
     - [ ] `curl http://localhost:9090` (Prometheus)
 
@@ -339,7 +402,8 @@
 
 - [ ] Update PLAN.md if any phase scope changed
 - [ ] Update CONTEXT.md if new files, dependencies, or constraints discovered
-- [ ] Update LESSONS-LEARNED.md at `dev/LESSONS-LEARNED.md` with dated entry capturing key learnings
+- [ ] Update LESSONS-LEARNED.md at `dev/LESSONS-LEARNED.md` with dated entry
+      capturing key learnings
 
 ---
 

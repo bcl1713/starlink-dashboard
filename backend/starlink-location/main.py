@@ -9,6 +9,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import config, flight_status, geojson, health, metrics, pois, routes, status, ui
 from app.mission import routes as mission_routes
@@ -368,6 +369,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount data/sat_coverage directory for satellite coverage overlays (Ka/HCX GeoJSON)
+# This enables Grafana to access coverage footprints via HTTP at /data/sat_coverage/hcx.geojson
+# instead of requiring direct filesystem access across Docker container boundaries
+sat_coverage_dir = Path("data/sat_coverage")
+sat_coverage_dir.mkdir(parents=True, exist_ok=True)
+try:
+    app.mount("/data/sat_coverage", StaticFiles(directory=str(sat_coverage_dir)), name="sat_coverage")
+    logger.info_json("Mounted static files for satellite coverage at /data/sat_coverage")
+except Exception as e:
+    logger.warning_json(
+        "Failed to mount satellite coverage static files",
+        extra_fields={"error": str(e)},
+        exc_info=True
+    )
 
 # Exception handlers
 @app.exception_handler(Exception)
