@@ -708,6 +708,48 @@
             "name": "Current Position",
             "tooltip": true,
             "type": "markers"
+          },
+          {
+            "config": {
+              "rules": [],
+              "src": "http://localhost:8000/data/sat_coverage/hcx.geojson",
+              "style": {
+                "color": {
+                  "fixed": "#8AB8FF"
+                },
+                "opacity": 0.1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "build/img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "name": "HCXOverlay",
+            "opacity": 1,
+            "tooltip": true,
+            "type": "geojson"
           }
         ],
         "tooltip": {
@@ -1725,5 +1767,5 @@
   "timezone": "utc",
   "title": "Fullscreen Overview",
   "uid": "starlink-fullscreen",
-  "version": 2
+  "version": 4
 }
