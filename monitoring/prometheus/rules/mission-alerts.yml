@@ -1,0 +1,23 @@
+groups:
+  - name: mission_alerts
+    interval: 30s
+    rules:
+      # Alert when a degraded communication window is approaching (< 15 minutes away)
+      - alert: MissionDegradedWindowApproaching
+        expr: mission_next_conflict_seconds{status="degraded"} < 900
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Degraded communication window approaching for mission {{ $labels.mission_id }}"
+          description: "Degraded window for mission {{ $labels.mission_id }} approaches in {{ humanize $value }}s"
+
+      # Alert when a critical communication window is approaching (< 15 minutes away)
+      - alert: MissionCriticalWindowApproaching
+        expr: mission_next_conflict_seconds{status="critical"} < 900
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL: Communication window approaching for mission {{ $labels.mission_id }}"
+          description: "CRITICAL communication window for mission {{ $labels.mission_id }} approaches in {{ humanize $value }}s. Two or more transports may be unavailable."
