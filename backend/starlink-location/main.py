@@ -181,6 +181,35 @@ async def startup_event():
             )
             raise
 
+        # Initialize HCX coverage for Grafana static file serving
+        logger.info_json("Initializing HCX satellite coverage")
+        try:
+            from app.satellites.kmz_importer import load_hcx_coverage
+            hcx_kmz = Path("app/satellites/assets/HCX.kmz")
+            sat_coverage_dir = Path("data/sat_coverage")
+            sat_coverage_dir.mkdir(parents=True, exist_ok=True)
+
+            if hcx_kmz.exists():
+                result = load_hcx_coverage(hcx_kmz, sat_coverage_dir)
+                if result:
+                    logger.info_json(
+                        "HCX coverage initialized for Grafana overlay",
+                        extra_fields={"geojson_path": str(result)}
+                    )
+                else:
+                    logger.warning_json("Failed to convert HCX KMZ to GeoJSON")
+            else:
+                logger.warning_json(
+                    "HCX KMZ file not found",
+                    extra_fields={"expected_path": str(hcx_kmz)}
+                )
+        except Exception as e:
+            logger.warning_json(
+                "Failed to initialize HCX coverage",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
+
         # Log active mode prominently
         mode_description = "Real Starlink terminal data" if active_mode == "live" else "Simulated telemetry"
         logger.info_json(
