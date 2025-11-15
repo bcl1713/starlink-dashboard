@@ -1766,24 +1766,6 @@
         ],
         "query": "Departure & Arrival : departure\\,arrival, All POIs :  , Departure Only : departure, Arrival Only : arrival, Waypoints Only : waypoint, Alternates Only : alternate",
         "type": "custom"
-      },
-      {
-        "current": {
-          "text": "mission-1763220136794",
-          "value": "mission-1763220136794"
-        },
-        "definition": "label_values(mission_active_info,mission_id)",
-        "label": "Active Mission",
-        "name": "active_mission",
-        "options": [],
-        "query": {
-          "qryType": 1,
-          "query": "label_values(mission_active_info,mission_id)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "regex": "",
-        "type": "query"
       }
     ]
   },
@@ -1797,5 +1779,5 @@
   "timezone": "utc",
   "title": "Fullscreen Overview",
   "uid": "starlink-fullscreen",
-  "version": 5
+  "version": 6
 }
