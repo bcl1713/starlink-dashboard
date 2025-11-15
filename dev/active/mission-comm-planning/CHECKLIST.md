@@ -33,9 +33,9 @@
   - [ ] Symbol: Satellite icon or marker
   - [ ] Test: Activate a mission and verify satellite POIs appear on map
 
-- [ ] **Implement `/api/missions/active/satellites` endpoint**
-  - [ ] Location: `backend/starlink-location/app/mission/routes.py`
-  - [ ] Add new route handler:
+- [x] **Implement `/api/missions/active/satellites` endpoint**
+  - [x] Location: `backend/starlink-location/app/mission/routes.py`
+  - [x] Add new route handler:
     ```python
     @router.get("/missions/active/satellites")
     async def get_active_mission_satellites():
@@ -44,8 +44,8 @@
         # Extract satellite definitions from mission.transports
         # Return as GeoJSON FeatureCollection with satellite metadata
     ```
-  - [ ] Test: `curl http://localhost:8000/api/missions/active/satellites` returns valid GeoJSON
-  - [ ] Commit: `feat: add /api/missions/active/satellites endpoint for Grafana overlay`
+  - [x] Test: `curl http://localhost:8000/api/missions/active/satellites` returns valid GeoJSON
+  - [x] Commit: `feat: add /api/missions/active/satellites endpoint for Grafana overlay`
 
 - [ ] **Add coverage overlay layer (HCX GeoJSON)**
   - [ ] Edit Fullscreen Overview dashboard
