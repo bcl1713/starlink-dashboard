@@ -65,16 +65,16 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [x] Rebuilt Docker with full initialization ✅ DONE
     - [x] Verified endpoint returns GeoJSON ✅ DONE
       - Verified: `curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.type'` returns `"FeatureCollection"`
-  - [ ] Edit Fullscreen Overview dashboard
-  - [ ] Add new Geomap panel for coverage
-  - [ ] Data source: Backend endpoint
-        `http://localhost:8000/data/sat_coverage/hcx.geojson`
+  - [x] Edit Fullscreen Overview dashboard ✅ COMPLETE
+  - [x] Add new Geomap panel for coverage ✅ COMPLETE
+  - [x] Data source: Backend endpoint
+        `http://localhost:8000/data/sat_coverage/hcx.geojson` ✅ COMPLETE
     - ℹ️ This URL serves the HCX coverage file via FastAPI static files mount
       (no direct filesystem access needed)
-  - [ ] Layer type: GeoJSON overlay
-  - [ ] Styling: Semi-transparent fill (20–30% opacity) with Ka-specific colors
-        (AOR/POR/IOR)
-  - [ ] Test: Verify HCX polygons display without overlapping waypoints
+  - [x] Layer type: GeoJSON overlay ✅ COMPLETE
+  - [x] Styling: Semi-transparent fill (20–30% opacity) with Ka-specific colors
+        (AOR/POR/IOR) ✅ COMPLETE
+  - [x] Test: Verify HCX polygons display without overlapping waypoints ✅ COMPLETE
 
 - [ ] **Add AAR & transition POI markers**
   - [ ] These are already generated as mission-event POIs
