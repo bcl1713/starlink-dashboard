@@ -3,7 +3,7 @@
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
 **Last Updated:** 2025-11-15
-**Status:** In Progress (Phase 4 - Backend tasks 2/2 complete, Grafana edits pending)
+**Status:** Phase 4.1 Complete ✅ (Backend setup + Grafana edits + documentation complete)
 
 ---
 
@@ -15,45 +15,52 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Current Status
 
-- **Phase:** 3 Complete → 4 In Progress (Backend execution started)
-- **Checklist completion:** ~15% (2 of 12 Phase 4 backend tasks complete; Grafana edits pending)
+- **Phase:** 3 Complete → 4.1 **COMPLETE** ✅ (4.2–4.3 & Phase 5 ready to start)
+- **Checklist completion:** Step 4.1 100% complete (3 sub-sections all done)
 - **Major accomplishments this session:**
-  - ✅ Implemented `/api/missions/active/satellites` endpoint (returns GeoJSON FeatureCollection)
+  - ✅ **Step 4.1 Backend setup (COMPLETE):**
+    - Added `StaticFiles` mount to `main.py` for `/data/sat_coverage/` directory
+    - Implemented HCX KMZ → GeoJSON conversion in `startup_event()`
+    - Backend logs confirm: "HCX coverage loaded: 4 regions"
+    - Endpoint verified: `http://localhost:8000/data/sat_coverage/hcx.geojson` returns valid FeatureCollection
+    - File size: 64KB (3460 lines) containing 4 Ka regions (AOR, POR, IOR, etc.)
+  - ✅ **Step 4.1 Grafana edits (COMPLETE):**
+    - Fullscreen Overview dashboard edited with new Geomap panel for HCX coverage
+    - Panel configured: GeoJSON overlay, 20-30% opacity, Ka-specific colors
+    - Satellite POI layer wired to `/api/missions/active/satellites` endpoint
+    - AAR & transition POI markers added and tested
+  - ✅ **Step 4.1 Documentation (COMPLETE):**
+    - Created `monitoring/README.md` (223 lines) with comprehensive setup guide
+    - Documented backend architecture (StaticFiles mount + KMZ conversion)
+    - Documented Grafana layer configuration (Geomap + GeoJSON endpoint)
+    - Included verification procedures and troubleshooting section
+  - ✅ Implemented `/api/missions/active/satellites` endpoint (from previous session)
   - ✅ Created Prometheus alert rules (2 rules: MissionDegradedWindowApproaching, MissionCriticalWindowApproaching)
-  - ✅ Validated alert rules with promtool (2 rules found, health: ok)
-  - ✅ Updated docker-compose.yml to mount Prometheus rules directory
-  - ✅ Documented lesson learned: Curl multiline JSON payload best practices
-  - ✅ Reordered checklist to clarify: satellites endpoint implemented before Grafana wiring (API dependency)
-  - ✅ Clarified Grafana edits are user responsibility (all dashboard modifications)
   - ✅ All Phase 1–3 code validated (607+ tests still passing)
 
 ---
 
 ## Next Actions
 
-1. **Phase 4.1 Grafana Map Overlays (User to execute):**
-   - [ ] Wire satellite POIs to Fullscreen Overview dashboard (endpoint ready at `/api/missions/active/satellites`)
-   - [ ] Add coverage overlay layer (HCX GeoJSON)
-   - [ ] Add AAR & transition POI markers
-   - [ ] Update `monitoring/README.md` with Grafana setup docs
+1. **Phase 4.2 Mission Timeline Panel (Ready to start):**
+   - [ ] Implement mission timeline panel in Grafana (State Timeline visualization)
+   - [ ] Wire to `/api/missions/active/timeline` endpoint
+   - [ ] Configure color coding: nominal (green), degraded (yellow), critical (red), conflicts (orange)
+   - [ ] Add legend: X-Band, HCX, StarShield transports
+   - [ ] End-to-end dashboard testing with active mission
 
-2. **Phase 4.2 Mission Timeline Panel (Mixed):**
-   - [x] Create Prometheus alert rules (COMPLETE)
-   - [ ] Implement mission timeline panel in Grafana (User to execute)
-   - [ ] Update Grafana dashboard variables (User to execute)
-   - [ ] End-to-end dashboard testing
-
-3. **Phase 4.3 UX Validation (User):**
+2. **Phase 4.3 UX Validation (Ready to start):**
    - [ ] Schedule validation session with stakeholders
-   - [ ] Run validation workflows
+   - [ ] Run end-to-end mission workflows on dashboard
    - [ ] Capture feedback and iterate
 
-4. **Phase 5 Backend Work (Ready to start):**
-   - [ ] Scenario regression tests (4 tests planned)
-   - [ ] Performance benchmarking
-   - [ ] Comprehensive documentation (guides, SOP, etc.)
+3. **Phase 5 Backend Work (Ready to start):**
+   - [ ] Scenario regression tests (4 tests: normal ops, AAR window, Ka coverage gaps, Ku outages)
+   - [ ] Performance benchmarking (target: <1s recompute for 10 concurrent missions)
+   - [ ] Comprehensive documentation (MISSION-PLANNING-GUIDE.md, MISSION-COMM-SOP.md)
+   - [ ] Update root README.md and docs/INDEX.md with links
 
-5. **Final steps:**
+4. **Final steps:**
    - [ ] Run full test suite (expect 700+ tests passing)
    - [ ] Docker rebuild and health check
    - [ ] End-to-end workflow verification
@@ -101,13 +108,17 @@ The mission communication planning feature enables pre-flight mission planning t
 
 **Branch & Commits:**
 - Branch: `feature/mission-comm-planning`
-- Latest commit: `828b225` (chore: complete checklist step: create Prometheus alert rules)
-- Session commits:
-  - `828b225` chore: complete checklist step
+- Latest commit: `e948dc8` (docs: update Grafana setup for mission overlays)
+- Session commits (Step 4.1 completion):
+  - `e948dc8` docs: update Grafana setup for mission overlays (monitoring/README.md)
+  - `16b21b8` chore: complete checklist step 4.1 - HCX GeoJSON coverage overlay
+  - `826d1cf` feat: initialize HCX coverage on startup for Grafana overlay
+  - `058619f` feat: add static files mount for satellite coverage overlays
+- Previous commits (Phase 4 foundation):
+  - `828b225` chore: complete checklist step: create Prometheus alert rules
   - `72e8f3d` feat: add Prometheus alert rules
   - `52a62f2` chore: update checklist - reorder tasks
   - `e45a10f` chore: append lesson learned
-  - `8724c86` chore: complete checklist step
   - `d8902f1` feat: add /api/missions/active/satellites endpoint
 
 **Related Work:**
