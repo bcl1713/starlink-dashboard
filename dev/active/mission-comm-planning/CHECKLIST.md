@@ -159,13 +159,13 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [x] Return 200 with confirmation
   - [x] Error handling: Return 404 if no active mission
 
-- [ ] **Update mission deletion to cascade route deactivation**
-  - [ ] File: `backend/starlink-location/app/mission/routes.py`
-  - [ ] In `delete_mission_endpoint()`, before deleting mission:
-    - [ ] Check if mission has `route_id`
-    - [ ] If route_id exists, call `_route_manager.deactivate_route(route_id)`
-    - [ ] Continue with existing deletion logic
-  - [ ] Verify: Deleting active mission should deactivate its route
+- [x] **Update mission deletion to cascade route deactivation**
+  - [x] File: `backend/starlink-location/app/mission/routes.py`
+  - [x] In `delete_mission_endpoint()`, before deleting mission:
+    - [x] Check if mission has `route_id`
+    - [x] If route_id exists, call `_route_manager.deactivate_route()` (no params)
+    - [x] Continue with existing deletion logic
+  - [x] Verify: Deleting active mission deactivates its route (tested ✓)
 
 - [ ] **Update mission planner UI with deactivation button**
   - [ ] File: `backend/starlink-location/app/api/ui.py`
