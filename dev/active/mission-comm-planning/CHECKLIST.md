@@ -144,6 +144,41 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [x] Metrics updated in Prometheus
   - [x] Commit: `chore: complete Phase 4.2 end-to-end dashboard testing`
 
+### 4.2b Mission API Enhancements
+
+- [ ] **Implement mission deactivation endpoint**
+  - [ ] File: `backend/starlink-location/app/mission/routes.py`
+  - [ ] Add new route: `POST /api/missions/active/deactivate`
+  - [ ] Handler function:
+    - [ ] Get active mission (or return 404 if none)
+    - [ ] Get the mission's associated route_id
+    - [ ] Call `_route_manager.deactivate_route()` if route_id exists
+    - [ ] Set `mission.is_active = False` and save
+    - [ ] Call `clear_mission_metrics(mission_id)`
+    - [ ] Clear `_active_mission_id` global
+    - [ ] Return 200 with confirmation
+  - [ ] Error handling: Return 404 if no active mission
+
+- [ ] **Update mission deletion to cascade route deactivation**
+  - [ ] File: `backend/starlink-location/app/mission/routes.py`
+  - [ ] In `delete_mission_endpoint()`, before deleting mission:
+    - [ ] Check if mission has `route_id`
+    - [ ] If route_id exists, call `_route_manager.deactivate_route(route_id)`
+    - [ ] Continue with existing deletion logic
+  - [ ] Verify: Deleting active mission should deactivate its route
+
+- [ ] **Write tests**
+  - [ ] File: `backend/starlink-location/tests/integration/test_mission_routes.py`
+  - [ ] Test: Deactivate active mission returns 200
+  - [ ] Test: Route is deactivated when mission is deactivated
+  - [ ] Test: Mission metrics are cleared after deactivation
+  - [ ] Test: No active mission returns 404 on deactivate attempt
+  - [ ] Test: Deleting active mission deactivates its route
+  - [ ] Run all tests: `docker compose exec starlink-location python -m pytest tests/ -v`
+
+- [ ] **Commit**
+  - [ ] Commit message: `feat: add mission deactivation with route cascade`
+
 ### 4.3 UX Validation with Stakeholders
 
 - [ ] **Schedule validation session**
