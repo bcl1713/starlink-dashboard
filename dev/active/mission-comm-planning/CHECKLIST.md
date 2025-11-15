@@ -23,17 +23,17 @@
 
 ### 4.1 Grafana Map Overlays
 
-- [ ] **Wire satellite POIs to Fullscreen Overview dashboard**
+- [ ] **Wire satellite POIs to Fullscreen Overview dashboard** *(User to execute - backend endpoint ready)*
   - [ ] Edit `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
   - [ ] Add new panel with ID not conflicting with existing panels
   - [ ] Panel type: Geomap
-  - [ ] Data source: Prometheus
-  - [ ] Query: Call `/api/missions/active/satellites` endpoint (to be implemented below)
+  - [ ] Data source: Prometheus or Infinity datasource
+  - [ ] Query: Call `/api/missions/active/satellites` endpoint (implementation complete)
   - [ ] Layer type: Points (for satellite locations)
   - [ ] Symbol: Satellite icon or marker
   - [ ] Test: Activate a mission and verify satellite POIs appear on map
 
-- [x] **Implement `/api/missions/active/satellites` endpoint**
+- [x] **Implement `/api/missions/active/satellites` endpoint** *(Completed; executed before wiring due to API dependency)*
   - [x] Location: `backend/starlink-location/app/mission/routes.py`
   - [x] Add new route handler:
     ```python
