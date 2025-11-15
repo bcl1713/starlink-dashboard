@@ -368,6 +368,118 @@ async def get_active_mission_timeline() -> MissionTimeline:
 
 
 @router.get(
+    "/active/satellites",
+    response_model=dict,
+    responses={
+        404: {
+            "model": MissionErrorResponse,
+            "description": "No active mission",
+        }
+    },
+)
+async def get_active_mission_satellites() -> dict:
+    """
+    Return satellite POIs for active mission in GeoJSON FeatureCollection format.
+
+    Extracts satellite definitions from the active mission's transports and
+    returns them as a GeoJSON FeatureCollection suitable for Grafana overlay
+    visualization.
+
+    Returns:
+        GeoJSON FeatureCollection with satellite positions and metadata
+
+    Raises:
+        HTTPException: 404 if no mission is active
+    """
+    try:
+        logger.debug("Getting active mission satellites for Grafana overlay")
+
+        mission = await get_active_mission()
+
+        # Build GeoJSON FeatureCollection with satellite points
+        features = []
+
+        # Add X satellite if configured
+        if mission.transports.initial_x_satellite_id:
+            x_sat_id = mission.transports.initial_x_satellite_id
+            features.append(
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [0, 0],  # Geostationary; fixed position
+                    },
+                    "properties": {
+                        "name": x_sat_id,
+                        "satellite_id": x_sat_id,
+                        "transport": "X",
+                        "type": "satellite",
+                    },
+                }
+            )
+
+        # Add Ka satellites if configured
+        for ka_sat_id in mission.transports.initial_ka_satellite_ids:
+            features.append(
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [0, 0],  # Geostationary; fixed position
+                    },
+                    "properties": {
+                        "name": ka_sat_id,
+                        "satellite_id": ka_sat_id,
+                        "transport": "Ka",
+                        "type": "satellite",
+                    },
+                }
+            )
+
+        # Note: Ku is a constellation, not fixed satellites; may add later
+        # For now, represent as a nominal marker
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [0, 0],  # Placeholder for LEO constellation
+                },
+                "properties": {
+                    "name": "Ku-Constellation",
+                    "satellite_id": "Ku-LEO",
+                    "transport": "Ku",
+                    "type": "constellation",
+                },
+            }
+        )
+
+        geojson = {
+            "type": "FeatureCollection",
+            "features": features,
+        }
+
+        logger.debug(
+            "Returning %d satellite features for mission %s",
+            len(features),
+            mission.id,
+        )
+
+        return geojson
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Failed to get active mission satellites",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get active mission satellites",
+        )
+
+
+@router.get(
     "/{mission_id}",
     response_model=Mission,
     responses={
