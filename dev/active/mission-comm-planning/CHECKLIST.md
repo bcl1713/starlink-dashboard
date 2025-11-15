@@ -146,18 +146,18 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
 
 ### 4.2b Mission API Enhancements
 
-- [ ] **Implement mission deactivation endpoint**
-  - [ ] File: `backend/starlink-location/app/mission/routes.py`
-  - [ ] Add new route: `POST /api/missions/active/deactivate`
-  - [ ] Handler function:
-    - [ ] Get active mission (or return 404 if none)
-    - [ ] Get the mission's associated route_id
-    - [ ] Call `_route_manager.deactivate_route()` if route_id exists
-    - [ ] Set `mission.is_active = False` and save
-    - [ ] Call `clear_mission_metrics(mission_id)`
-    - [ ] Clear `_active_mission_id` global
-    - [ ] Return 200 with confirmation
-  - [ ] Error handling: Return 404 if no active mission
+- [x] **Implement mission deactivation endpoint**
+  - [x] File: `backend/starlink-location/app/mission/routes.py`
+  - [x] Add new route: `POST /api/missions/active/deactivate`
+  - [x] Handler function:
+    - [x] Get active mission (or return 404 if none)
+    - [x] Get the mission's associated route_id
+    - [x] Call `_route_manager.deactivate_route()` if route_id exists
+    - [x] Set `mission.is_active = False` and save
+    - [x] Call `clear_mission_metrics(mission_id)`
+    - [x] Clear `_active_mission_id` global
+    - [x] Return 200 with confirmation
+  - [x] Error handling: Return 404 if no active mission
 
 - [ ] **Update mission deletion to cascade route deactivation**
   - [ ] File: `backend/starlink-location/app/mission/routes.py`

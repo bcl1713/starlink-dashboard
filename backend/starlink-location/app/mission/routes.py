@@ -159,6 +159,14 @@ class MissionActivationResponse(BaseModel):
     )
 
 
+class MissionDeactivationResponse(BaseModel):
+    """Response for mission deactivation endpoint."""
+
+    mission_id: str = Field(..., description="Deactivated mission ID")
+    is_active: bool = Field(..., description="Whether mission is now inactive")
+    deactivated_at: datetime = Field(..., description="Deactivation timestamp")
+
+
 class MissionErrorResponse(BaseModel):
     """Standard error response."""
 
@@ -988,6 +996,90 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to activate mission",
         )
+
+
+@router.post(
+    "/active/deactivate",
+    response_model=MissionDeactivationResponse,
+    responses={
+        404: {
+            "model": MissionErrorResponse,
+            "description": "No active mission",
+        }
+    },
+)
+async def deactivate_mission() -> MissionDeactivationResponse:
+    """
+    Deactivate the currently active mission.
+
+    Deactivation logic:
+    - Gets the active mission (returns 404 if none)
+    - Deactivates the associated route (if route_id exists)
+    - Marks mission as inactive (is_active=False)
+    - Clears mission metrics from Prometheus
+    - Clears the active mission reference
+    - Returns deactivation confirmation
+
+    Returns:
+        Deactivation response with timestamp
+
+    Raises:
+        HTTPException: 404 if no mission is active
+    """
+    global _active_mission_id
+
+    try:
+        logger.info("Deactivating mission")
+
+        # Get the active mission
+        mission = await get_active_mission()
+
+        # Deactivate the associated route if it exists
+        if mission.route_id and _route_manager:
+            try:
+                _route_manager.deactivate_route(mission.route_id)
+                logger.info(
+                    "Deactivated route %s associated with mission %s",
+                    mission.route_id,
+                    mission.id,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Failed to deactivate route %s for mission %s: %s",
+                    mission.route_id,
+                    mission.id,
+                    exc,
+                )
+                # Continue with mission deactivation even if route deactivation fails
+
+        # Mark mission as inactive
+        mission.is_active = False
+        mission.updated_at = datetime.now(timezone.utc)
+        save_mission(mission)
+
+        # Clear mission metrics
+        clear_mission_metrics(mission.id)
+
+        # Clear active mission reference
+        _active_mission_id = None
+
+        logger.info("Mission deactivated successfully")
+
+        return MissionDeactivationResponse(
+            mission_id=mission.id,
+            is_active=False,
+            deactivated_at=datetime.now(timezone.utc),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to deactivate mission", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to deactivate mission",
+        )
+
+
 def get_active_mission_id() -> Optional[str]:
     """Return the currently active mission ID, if any."""
     return _active_mission_id
