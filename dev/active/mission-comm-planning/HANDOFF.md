@@ -2,8 +2,8 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Generated:** 2025-11-14
-**Status:** In Progress (Ready for Phase 4)
+**Last Updated:** 2025-11-15
+**Status:** In Progress (Phase 4 - Backend tasks 2/2 complete, Grafana edits pending)
 
 ---
 
@@ -15,27 +15,50 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Current Status
 
-- **Phase:** 3 Complete → 4 In Progress
-- **Checklist completion:** 0% (Phases 4–5 ready to start, all setup tasks complete)
+- **Phase:** 3 Complete → 4 In Progress (Backend execution started)
+- **Checklist completion:** ~15% (2 of 12 Phase 4 backend tasks complete; Grafana edits pending)
 - **Major accomplishments this session:**
-  - ✅ Created standardized PLAN.md (5 phases with entry/exit criteria)
-  - ✅ Created comprehensive CONTEXT.md (code paths, dependencies, risks, testing strategy)
-  - ✅ Created atomic CHECKLIST.md (Phase 4: 12 tasks, Phase 5: 15+ tasks)
-  - ✅ Created dev/LESSONS-LEARNED.md (project-wide append-only journal)
-  - ✅ Committed all planning docs and pushed to `feature/mission-comm-planning`
-  - ✅ All Phase 1–3 code validated (607+ tests passing)
+  - ✅ Implemented `/api/missions/active/satellites` endpoint (returns GeoJSON FeatureCollection)
+  - ✅ Created Prometheus alert rules (2 rules: MissionDegradedWindowApproaching, MissionCriticalWindowApproaching)
+  - ✅ Validated alert rules with promtool (2 rules found, health: ok)
+  - ✅ Updated docker-compose.yml to mount Prometheus rules directory
+  - ✅ Documented lesson learned: Curl multiline JSON payload best practices
+  - ✅ Reordered checklist to clarify: satellites endpoint implemented before Grafana wiring (API dependency)
+  - ✅ Clarified Grafana edits are user responsibility (all dashboard modifications)
+  - ✅ All Phase 1–3 code validated (607+ tests still passing)
 
 ---
 
 ## Next Actions
 
-1. **Read CHECKLIST.md** (start with "Phase 4 — Visualization & Customer Outputs")
-2. **Begin Phase 4 work:** Wire `/api/missions/active/timeline` into Grafana dashboard
-   - First task: Implement satellite POI overlay layer
-   - Expected: ~2–3 hours for complete Phase 4
-3. **Execute checklist sequentially** using the `executing-plan-checklist` skill
-4. **After Phase 4 complete:** Proceed to Phase 5 (scenario tests, performance benchmarks, final documentation)
-5. **Final step:** Handoff to `wrapping-up-plan` skill for PR creation and merge
+1. **Phase 4.1 Grafana Map Overlays (User to execute):**
+   - [ ] Wire satellite POIs to Fullscreen Overview dashboard (endpoint ready at `/api/missions/active/satellites`)
+   - [ ] Add coverage overlay layer (HCX GeoJSON)
+   - [ ] Add AAR & transition POI markers
+   - [ ] Update `monitoring/README.md` with Grafana setup docs
+
+2. **Phase 4.2 Mission Timeline Panel (Mixed):**
+   - [x] Create Prometheus alert rules (COMPLETE)
+   - [ ] Implement mission timeline panel in Grafana (User to execute)
+   - [ ] Update Grafana dashboard variables (User to execute)
+   - [ ] End-to-end dashboard testing
+
+3. **Phase 4.3 UX Validation (User):**
+   - [ ] Schedule validation session with stakeholders
+   - [ ] Run validation workflows
+   - [ ] Capture feedback and iterate
+
+4. **Phase 5 Backend Work (Ready to start):**
+   - [ ] Scenario regression tests (4 tests planned)
+   - [ ] Performance benchmarking
+   - [ ] Comprehensive documentation (guides, SOP, etc.)
+
+5. **Final steps:**
+   - [ ] Run full test suite (expect 700+ tests passing)
+   - [ ] Docker rebuild and health check
+   - [ ] End-to-end workflow verification
+   - [ ] Code quality checks
+   - [ ] Invoke `wrapping-up-plan` for PR creation and merge
 
 ---
 
@@ -78,8 +101,14 @@ The mission communication planning feature enables pre-flight mission planning t
 
 **Branch & Commits:**
 - Branch: `feature/mission-comm-planning`
-- Latest commit: `c37386a` (chore: create standardized planning documents)
-- Previous: `b366ce3` (fix: remove claude commands)
+- Latest commit: `828b225` (chore: complete checklist step: create Prometheus alert rules)
+- Session commits:
+  - `828b225` chore: complete checklist step
+  - `72e8f3d` feat: add Prometheus alert rules
+  - `52a62f2` chore: update checklist - reorder tasks
+  - `e45a10f` chore: append lesson learned
+  - `8724c86` chore: complete checklist step
+  - `d8902f1` feat: add /api/missions/active/satellites endpoint
 
 **Related Work:**
 - `dev/active/eta-route-timing/` — ETA/flight-phase system (dependency)
