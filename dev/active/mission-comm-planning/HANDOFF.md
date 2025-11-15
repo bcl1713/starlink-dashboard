@@ -2,8 +2,8 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Last Updated:** 2025-11-15
-**Status:** Phase 4.1 Complete ✅ (Backend setup + Grafana edits + documentation complete)
+**Last Updated:** 2025-11-15 (Session 2)
+**Status:** Phase 4.2 Planned ✅ → Phase 4.2b In Progress 🔧 (Mission API enhancements planned)
 
 ---
 
@@ -15,46 +15,49 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Current Status
 
-- **Phase:** 3 Complete → 4.1 **COMPLETE** ✅ (4.2–4.3 & Phase 5 ready to start)
-- **Checklist completion:** Step 4.1 100% complete (3 sub-sections all done)
+- **Phase:** 4.1 Complete → 4.2 Executed → **4.2b Planned** 🔧 (4.3 & Phase 5 pending)
+- **Checklist completion:** Step 4.2 100% complete; Step 4.2b documented and ready to implement
 - **Major accomplishments this session:**
-  - ✅ **Step 4.1 Backend setup (COMPLETE):**
-    - Added `StaticFiles` mount to `main.py` for `/data/sat_coverage/` directory
-    - Implemented HCX KMZ → GeoJSON conversion in `startup_event()`
-    - Backend logs confirm: "HCX coverage loaded: 4 regions"
-    - Endpoint verified: `http://localhost:8000/data/sat_coverage/hcx.geojson` returns valid FeatureCollection
-    - File size: 64KB (3460 lines) containing 4 Ka regions (AOR, POR, IOR, etc.)
-  - ✅ **Step 4.1 Grafana edits (COMPLETE):**
-    - Fullscreen Overview dashboard edited with new Geomap panel for HCX coverage
-    - Panel configured: GeoJSON overlay, 20-30% opacity, Ka-specific colors
-    - Satellite POI layer wired to `/api/missions/active/satellites` endpoint
-    - AAR & transition POI markers added and tested
-  - ✅ **Step 4.1 Documentation (COMPLETE):**
-    - Created `monitoring/README.md` (223 lines) with comprehensive setup guide
-    - Documented backend architecture (StaticFiles mount + KMZ conversion)
-    - Documented Grafana layer configuration (Geomap + GeoJSON endpoint)
-    - Included verification procedures and troubleshooting section
-  - ✅ Implemented `/api/missions/active/satellites` endpoint (from previous session)
-  - ✅ Created Prometheus alert rules (2 rules: MissionDegradedWindowApproaching, MissionCriticalWindowApproaching)
-  - ✅ All Phase 1–3 code validated (607+ tests still passing)
+  - ✅ **Step 4.2 Dashboard Testing (COMPLETE):**
+    - Verified satellite POIs appear on map
+    - Confirmed coverage overlays visible
+    - Tested AAR markers displayed
+    - Validated metrics updated in Prometheus
+    - End-to-end dashboard testing passed
+  - ✅ **API Feedback & Analysis (COMPLETE):**
+    - Investigated `/api/pois/etas?category=mission-event` (confirmed working, mission-aware)
+    - Investigated `/api/missions/active/satellites` (GeoJSON format, not array format)
+    - Clarified that `/api/route/coordinates/west` and `/east` already filter by active route
+    - Confirmed cascade delete removes mission POIs automatically
+  - ✅ **Phase 4.2b Plan Created (COMPLETE):**
+    - Added deactivation endpoint: `POST /api/missions/active/deactivate`
+    - Planned route cascade for both deactivate AND delete operations
+    - Designed mission planner UI button for deactivation
+    - Created 4 atomic checklist tasks with specific file paths and code locations
+  - ✅ **Documentation Updated:**
+    - PLAN.md: Updated Phase 4 exit criteria to include deactivation
+    - CONTEXT.md: Noted code locations for deactivation work
+    - CHECKLIST.md: Added Phase 4.2b with 4 sub-tasks (backend, delete cascade, UI, tests)
 
 ---
 
 ## Next Actions
 
-1. **Phase 4.2 Mission Timeline Panel (Ready to start):**
-   - [ ] Implement mission timeline panel in Grafana (State Timeline visualization)
-   - [ ] Wire to `/api/missions/active/timeline` endpoint
-   - [ ] Configure color coding: nominal (green), degraded (yellow), critical (red), conflicts (orange)
-   - [ ] Add legend: X-Band, HCX, StarShield transports
-   - [ ] End-to-end dashboard testing with active mission
+1. **Phase 4.2b Mission API Enhancements (READY TO START - HIGH PRIORITY):**
+   - [ ] Implement `POST /api/missions/active/deactivate` endpoint (backend/starlink-location/app/mission/routes.py)
+   - [ ] Update mission deletion to cascade route deactivation
+   - [ ] Add "Deactivate Mission" button to mission planner UI (backend/starlink-location/app/api/ui.py)
+   - [ ] Write integration tests for deactivation scenarios
+   - [ ] Test: Activate → deactivate mission → verify route deactivated + metrics cleared
+   - **Reference:** CHECKLIST.md Phase 4.2b (lines 147–194)
 
-2. **Phase 4.3 UX Validation (Ready to start):**
-   - [ ] Schedule validation session with stakeholders
+2. **Phase 4.3 UX Validation (Ready to start after 4.2b):**
+   - [ ] Schedule validation session with stakeholders (45–60 min)
    - [ ] Run end-to-end mission workflows on dashboard
+   - [ ] Test new deactivation button in mission planner
    - [ ] Capture feedback and iterate
 
-3. **Phase 5 Backend Work (Ready to start):**
+3. **Phase 5 Hardening (Ready to start after 4.3):**
    - [ ] Scenario regression tests (4 tests: normal ops, AAR window, Ka coverage gaps, Ku outages)
    - [ ] Performance benchmarking (target: <1s recompute for 10 concurrent missions)
    - [ ] Comprehensive documentation (MISSION-PLANNING-GUIDE.md, MISSION-COMM-SOP.md)
@@ -64,7 +67,6 @@ The mission communication planning feature enables pre-flight mission planning t
    - [ ] Run full test suite (expect 700+ tests passing)
    - [ ] Docker rebuild and health check
    - [ ] End-to-end workflow verification
-   - [ ] Code quality checks
    - [ ] Invoke `wrapping-up-plan` for PR creation and merge
 
 ---
@@ -85,6 +87,9 @@ The mission communication planning feature enables pre-flight mission planning t
 1. **Standardized workflow adoption:** Moved away from ad-hoc documentation to skill-based PLAN/CONTEXT/CHECKLIST structure for consistency and scalability
 2. **Phase 4 Grafana-first:** Prioritizing dashboard visualization before hardening allows stakeholder validation
 3. **Atomic checklist tasks:** CHECKLIST.md assumes junior developer with no prior knowledge; every step explicit for reproducibility
+4. **Timeline panel deferred:** Skipped `/api/missions/active/timeline` State Timeline panel due to limited live usefulness (data computed once at activation, not updated during flight); PDF exports already provide timeline briefings
+5. **Dashboard variable deferred:** Skipped `$mission_id` dashboard variable due to Grafana refresh limitations (only "on dashboard load" or "on time range change"); moved to Phase 5 with note to implement once dynamic variable refresh is available
+6. **Mission deactivation prioritized:** Added Phase 4.2b to implement deactivation endpoint and route cascade as critical API feature for mission planner UX (user feedback: "need a way to deactivate a mission")
 
 ---
 
@@ -108,17 +113,18 @@ The mission communication planning feature enables pre-flight mission planning t
 
 **Branch & Commits:**
 - Branch: `feature/mission-comm-planning`
-- Latest commit: `e948dc8` (docs: update Grafana setup for mission overlays)
-- Session commits (Step 4.1 completion):
-  - `e948dc8` docs: update Grafana setup for mission overlays (monitoring/README.md)
+- Session 2 commits (Step 4.2 completion + 4.2b planning):
+  - `f879267` chore: update phase 4.2b docs to include mission planner UI deactivation button
+  - `15ad23a` chore: add Phase 4.2b mission API enhancements to checklist (deactivation + route cascade)
+  - `78bdf2d` chore: complete Phase 4.2 end-to-end dashboard testing
+- Session 1 commits (Step 4.1 completion):
+  - `e948dc8` docs: update Grafana setup for mission overlays
   - `16b21b8` chore: complete checklist step 4.1 - HCX GeoJSON coverage overlay
   - `826d1cf` feat: initialize HCX coverage on startup for Grafana overlay
   - `058619f` feat: add static files mount for satellite coverage overlays
-- Previous commits (Phase 4 foundation):
+- Phase 4 foundation commits:
   - `828b225` chore: complete checklist step: create Prometheus alert rules
   - `72e8f3d` feat: add Prometheus alert rules
-  - `52a62f2` chore: update checklist - reorder tasks
-  - `e45a10f` chore: append lesson learned
   - `d8902f1` feat: add /api/missions/active/satellites endpoint
 
 **Related Work:**
