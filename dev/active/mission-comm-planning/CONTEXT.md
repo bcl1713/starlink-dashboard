@@ -108,9 +108,9 @@ Mission communication planning is critical for flight operations because the air
 - *Impact:* False coverage gaps when HCX polygons cross ±180°
 - *Mitigation:* Ka coverage sampler now IDL-aware; extensive test coverage for wrap scenarios
 
-**Risk 3: Grafana dashboard complexity**
-- *Impact:* Panel configuration errors could break live monitoring
-- *Mitigation:* Version-control all dashboard JSON, test overlay layers in staging before production
+**Risk 3: Grafana dashboard complexity + Cross-container file access**
+- *Impact:* Panel configuration errors could break live monitoring; Grafana cannot access backend filesystem directly
+- *Mitigation:* Version-control all dashboard JSON, test overlay layers in staging before production; expose satellite coverage files via FastAPI static file serving at `/data/sat_coverage/` endpoint (Architecture decision documented below)
 
 **Risk 4: Performance under high mission load**
 - *Impact:* Timeline recompute >1s could slow planner workflow
@@ -198,3 +198,30 @@ Mission communication planning is critical for flight operations because the air
 2. Add satellite POI and coverage overlay layers
 3. Configure mission timeline panel and Prometheus alerts
 4. Update documentation with Grafana workflows
+
+---
+
+## Architecture Decision: Static File Serving for Satellite Coverage
+
+**Problem:** Step 4.1 (Grafana coverage overlays) requires Grafana to access `hcx.geojson` coverage polygons. In Docker Compose, Grafana runs in a separate container with no filesystem access to the starlink-location backend service.
+
+**Solution:** Mount `data/sat_coverage/` directory as static files via FastAPI `StaticFiles` middleware, serving at `http://localhost:8000/data/sat_coverage/`. This allows:
+
+- ✅ Grafana (and any HTTP client) to fetch GeoJSON via HTTP
+- ✅ No changes to Grafana configuration
+- ✅ Portable across Docker Compose, Kubernetes, bare-metal
+- ✅ CORS-enabled by default (existing middleware covers it)
+
+**Implementation:**
+- Add `from fastapi.staticfiles import StaticFiles` to `main.py`
+- After CORS middleware, mount: `app.mount("/data/sat_coverage", StaticFiles(directory="data/sat_coverage"), name="sat_coverage")`
+- Directory is auto-created on startup if missing
+- No security implications (coverage data is non-sensitive)
+
+**Tested Verification:**
+```bash
+curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.type'
+# Returns: "FeatureCollection"
+```
+
+**Related CHECKLIST tasks:** Step 4.1 (Add coverage overlay layer) now includes backend setup with verification curl command.
