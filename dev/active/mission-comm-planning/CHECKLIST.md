@@ -64,7 +64,9 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
       - [x] File created: `/app/data/sat_coverage/hcx.geojson` (64K)
     - [x] Rebuilt Docker with full initialization ✅ DONE
     - [x] Verified endpoint returns GeoJSON ✅ DONE
-      - Verified: `curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.type'` returns `"FeatureCollection"`
+      - Verified:
+        `curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.type'`
+        returns `"FeatureCollection"`
   - [x] Edit Fullscreen Overview dashboard ✅ COMPLETE
   - [x] Add new Geomap panel for coverage ✅ COMPLETE
   - [x] Data source: Backend endpoint
@@ -74,21 +76,22 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] Layer type: GeoJSON overlay ✅ COMPLETE
   - [x] Styling: Semi-transparent fill (20–30% opacity) with Ka-specific colors
         (AOR/POR/IOR) ✅ COMPLETE
-  - [x] Test: Verify HCX polygons display without overlapping waypoints ✅ COMPLETE
+  - [x] Test: Verify HCX polygons display without overlapping waypoints ✅
+        COMPLETE
 
-- [ ] **Add AAR & transition POI markers**
-  - [ ] These are already generated as mission-event POIs
-  - [ ] Add panel querying
+- [x] **Add AAR & transition POI markers**
+  - [x] These are already generated as mission-event POIs
+  - [x] Add panel querying
         `/api/pois?mission_id=<active_mission_id>&category=mission-event`
-  - [ ] Filter and display only AAR and X-Band transition POIs
-  - [ ] Test: Create mission with AAR window and transitions; verify markers
+  - [x] Filter and display only AAR and X-Band transition POIs
+  - [x] Test: Create mission with AAR window and transitions; verify markers
         appear
 
-- [ ] **Update `monitoring/README.md`**
-  - [ ] Document new Grafana plugins or permissions needed
-  - [ ] Document layer setup and configuration steps
-  - [ ] Include screenshot of expected overlay appearance
-  - [ ] Commit: `docs: update Grafana setup for mission overlays`
+- [x] **Update `monitoring/README.md`** ✅ COMPLETE
+  - [x] Document new Grafana plugins or permissions needed
+  - [x] Document layer setup and configuration steps
+  - [x] Include troubleshooting and verification procedures
+  - [x] Commit: `docs: update Grafana setup for mission overlays`
 
 ### 4.2 Mission Timeline Panel & Alerts
 
