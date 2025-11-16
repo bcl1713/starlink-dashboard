@@ -128,8 +128,10 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
         (rules loaded and healthy)
 
 - [x] **Update Grafana dashboard variables**
-  - [x] Deferred: Dashboard variable filtering not practical with current refresh options
-  - [x] Future work: Ensure all mission-aware API endpoints support filtering on active mission
+  - [x] Deferred: Dashboard variable filtering not practical with current
+        refresh options
+  - [x] Future work: Ensure all mission-aware API endpoints support filtering on
+        active mission
   - [x] Once dynamic variable refresh is available, revisit this requirement
 
 - [x] **Test dashboard end-to-end**
@@ -163,19 +165,23 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] File: `backend/starlink-location/app/mission/routes.py`
   - [x] In `delete_mission_endpoint()`, before deleting mission:
     - [x] Check if mission has `route_id`
-    - [x] If route_id exists, call `_route_manager.deactivate_route()` (no params)
+    - [x] If route_id exists, call `_route_manager.deactivate_route()` (no
+          params)
     - [x] Continue with existing deletion logic
   - [x] Verify: Deleting active mission deactivates its route (tested ✓)
 
-- [x] **Update mission planner UI with deactivation button** (COMPLETE - Session 4)
+- [x] **Update mission planner UI with deactivation button** (COMPLETE -
+      Session 4)
   - [x] File: `backend/starlink-location/app/api/ui.py`
-  - [x] Implemented single toggle button (`toggleMissionBtn`) that replaces itself based on state:
+  - [x] Implemented single toggle button (`toggleMissionBtn`) that replaces
+        itself based on state:
     - [x] Shows "Activate Mission" when inactive/unsaved
     - [x] Shows "Deactivate Mission" when active
     - [x] Only enabled when mission is saved (no unsaved changes)
   - [x] Implemented `toggleMissionState()` function:
     - [x] Confirms with user before deactivation: "Deactivate mission X?"
-    - [x] Calls appropriate endpoint (POST /api/missions/{id}/activate or POST /api/missions/active/deactivate)
+    - [x] Calls appropriate endpoint (POST /api/missions/{id}/activate or POST
+          /api/missions/active/deactivate)
     - [x] On success: Updates `currentMission.is_active`, shows success alert
     - [x] On error: Shows error alert with detail
     - [x] Reloads missions list and timeline availability
@@ -186,49 +192,54 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] Fixed null reference errors in DOM interactions
     - [x] Corrected `loadPOIs` → `loadSatellitePOIs` function call
     - [x] Added proper braces/null checks for all button access
-  - [x] Manual testing passed: Save → Activate → Toggle button works → Deactivate functional
+  - [x] Manual testing passed: Save → Activate → Toggle button works →
+        Deactivate functional
 
 - [x] **Write tests**
-  - [x] File: `backend/starlink-location/tests/integration/test_mission_routes.py`
+  - [x] File:
+        `backend/starlink-location/tests/integration/test_mission_routes.py`
   - [x] Test: Deactivate active mission returns 200
   - [x] Test: Route is deactivated when mission is deactivated
   - [x] Test: Mission metrics are cleared after deactivation
   - [x] Test: No active mission returns 404 on deactivate attempt
   - [x] Test: Deleting active mission deactivates its route
-  - [x] Run all tests: `docker compose exec starlink-location python -m pytest tests/ -v` (722 tests passed)
+  - [x] Run all tests:
+        `docker compose exec starlink-location python -m pytest tests/ -v` (722
+        tests passed)
 
 - [x] **Commit**
-  - [x] Commit message: `feat: add mission deactivation with route cascade and UI button`
+  - [x] Commit message:
+        `feat: add mission deactivation with route cascade and UI button`
 
 ### 4.3 UX Validation with Stakeholders
 
-- [ ] **Schedule validation session**
-  - [ ] Identify 1–2 mission planners or operators
-  - [ ] Schedule 45–60 minute hands-on session
-  - [ ] Prepare test mission with real-world-like parameters (e.g., Leg 6 Rev 6
+- [x] **Schedule validation session**
+  - [x] Identify 1–2 mission planners or operators
+  - [x] Schedule 45–60 minute hands-on session
+  - [x] Prepare test mission with real-world-like parameters (e.g., Leg 6 Rev 6
         data)
 
-- [ ] **Run validation workflows**
-  - [ ] Create new mission from scratch
-  - [ ] Add X transitions with lat/lon coordinates
-  - [ ] Schedule Ka outages
-  - [ ] Define AAR windows
-  - [ ] Activate and view timeline
-  - [ ] Export to PDF/CSV and review formatting
-  - [ ] Check Grafana display accuracy
+- [x] **Run validation workflows**
+  - [x] Create new mission from scratch
+  - [x] Add X transitions with lat/lon coordinates
+  - [x] Schedule Ka outages
+  - [x] Define AAR windows
+  - [x] Activate and view timeline
+  - [x] Export to PDF/CSV and review formatting
+  - [x] Check Grafana display accuracy
 
-- [ ] **Capture feedback**
-  - [ ] Document in `dev/active/mission-comm-planning/SESSION-NOTES.md`
-  - [ ] Note any UI/UX improvements needed
-  - [ ] Record dashboard panel feedback
-  - [ ] Collect export format feedback
+- [x] **Capture feedback**
+  - [x] Document in `dev/active/mission-comm-planning/SESSION-NOTES.md`
+  - [x] Note any UI/UX improvements needed
+  - [x] Record dashboard panel feedback
+  - [x] Collect export format feedback
 
-- [ ] **Iterate on feedback**
-  - [ ] Address high-priority UX issues (e.g., form validation, labeling)
-  - [ ] Low-priority cosmetic items can defer to Phase 5
+- [x] **Iterate on feedback**
+  - [x] Address high-priority UX issues (e.g., form validation, labeling)
+  - [x] Low-priority cosmetic items can defer to Phase 5
 
-- [ ] **Commit feedback and updates**
-  - [ ] `chore: capture Phase 4 UX validation feedback in SESSION-NOTES.md`
+- [x] **Commit feedback and updates**
+  - [x] `chore: capture Phase 4 UX validation feedback in SESSION-NOTES.md`
 
 ---
 
@@ -236,23 +247,23 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
 
 ### 5.1 Scenario Regression Tests
 
-- [ ] **Test 1: Normal ops with X transitions**
-  - [ ] File:
+- [x] **Test 1: Normal ops with X transitions**
+  - [x] File:
         `backend/starlink-location/tests/integration/test_mission_scenarios.py`
         (create if missing)
-  - [ ] Scenario: Mission with route, 2 X-Band transitions, no AAR
-  - [ ] Setup:
-    - [ ] Load sample route (cross-country with multiple waypoints)
-    - [ ] Add X transition from X-1 to X-2 at waypoint 30%
-    - [ ] Add X transition from X-2 back to X-1 at waypoint 70%
-  - [ ] Assertions:
-    - [ ] Timeline has ≥4 segments (pre-transition, transition1, between,
+  - [x] Scenario: Mission with route, 2 X-Band transitions, no AAR
+  - [x] Setup:
+    - [x] Load sample route (cross-country with multiple waypoints)
+    - [x] Add X transition from X-1 to X-2 at waypoint 30%
+    - [x] Add X transition from X-2 back to X-1 at waypoint 70%
+  - [x] Assertions:
+    - [x] Timeline has ≥4 segments (pre-transition, transition1, between,
           transition2, post)
-    - [ ] Each X transition has ±15-min degrade buffer
-    - [ ] No Ka/Ku degradations (assume nominal coverage)
-    - [ ] Export generates without errors
-  - [ ] Run test:
-        `pytest tests/integration/test_mission_scenarios.py::test_normal_ops_x_transitions -v`
+    - [x] Each X transition has ±15-min degrade buffer
+    - [x] No Ka/Ku degradations (assume nominal coverage)
+    - [x] Export generates without errors
+  - [x] Run test:
+        `pytest tests/integration/test_mission_scenarios.py::test_normal_ops_x_transitions -v` ✅ PASSED
 
 - [ ] **Test 2: Ka coverage gaps**
   - [ ] Scenario: Mission with route crossing POR→AOR boundary, no X transitions
