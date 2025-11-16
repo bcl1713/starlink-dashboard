@@ -357,13 +357,13 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [x] Incident response (e.g., unplanned outage)
   - [x] Commit: `docs: add mission communication operations SOP` (Session 9)
 
-- [ ] **Update monitoring README**
-  - [ ] File: `monitoring/README.md`
-  - [ ] Add section:
-    - [ ] Mission timeline panel setup
-    - [ ] Prometheus alert configuration
-    - [ ] Dashboard layer management
-    - [ ] Troubleshooting common display issues
+- [x] **Update monitoring README**
+  - [x] File: `monitoring/README.md`
+  - [x] Add section:
+    - [x] Mission timeline panel setup
+    - [x] Prometheus alert configuration
+    - [x] Dashboard layer management
+    - [x] Troubleshooting common display issues
 
 - [ ] **Update project README**
   - [ ] File: `README.md` (root)
