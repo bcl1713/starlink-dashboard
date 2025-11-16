@@ -323,39 +323,39 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] Target: <1.0s for 10 concurrent missions with 4 workers
   - [x] Commit: `feat: add Phase 5.2 performance benchmark test infrastructure`
 
-- [ ] **Create performance notes document**
-  - [ ] File: `docs/PERFORMANCE-NOTES.md`
-  - [ ] Include:
-    - [ ] Hardware specs (CPU, memory)
-    - [ ] Benchmark results (recompute time, memory usage)
-    - [ ] Comparison to targets
-    - [ ] Any performance optimization recommendations
-  - [ ] Commit: `docs: add Phase 5 performance benchmarking results`
+- [x] **Create performance notes document**
+  - [x] File: `docs/PERFORMANCE-NOTES.md`
+  - [x] Include:
+    - [x] Hardware specs (CPU, memory)
+    - [x] Benchmark results (recompute time, memory usage)
+    - [x] Comparison to targets
+    - [x] Any performance optimization recommendations
+  - [x] Commit: `docs: add Phase 5 performance benchmarking results`
 
 ### 5.3 Comprehensive Documentation
 
-- [ ] **Create Mission Planning Guide**
-  - [ ] File: `docs/MISSION-PLANNING-GUIDE.md`
-  - [ ] Include:
-    - [ ] Overview of mission planning workflow
-    - [ ] Step-by-step planner instructions (with screenshots)
-    - [ ] X-Band, Ka, Ku transport behavior tables
-    - [ ] Off-route projection rules
-    - [ ] Timeline segment interpretation (nominal/degraded/critical)
-    - [ ] Export format documentation
-    - [ ] Troubleshooting section
-  - [ ] Commit: `docs: add comprehensive mission planning guide`
+- [x] **Create Mission Planning Guide**
+  - [x] File: `docs/MISSION-PLANNING-GUIDE.md`
+  - [x] Include:
+    - [x] Overview of mission planning workflow
+    - [x] Step-by-step planner instructions (with screenshots)
+    - [x] X-Band, Ka, Ku transport behavior tables
+    - [x] Off-route projection rules
+    - [x] Timeline segment interpretation (nominal/degraded/critical)
+    - [x] Export format documentation
+    - [x] Troubleshooting section
+  - [x] Commit: `docs: add comprehensive mission planning guide` (Session 9)
 
-- [ ] **Create Mission Communication SOP**
-  - [ ] File: `docs/MISSION-COMM-SOP.md`
-  - [ ] Include:
-    - [ ] Pre-flight planning checklist
-    - [ ] Grafana monitoring setup
-    - [ ] Alert response procedures
-    - [ ] Operator actions during degraded windows
-    - [ ] Export delivery process
-    - [ ] Incident response (e.g., unplanned outage)
-  - [ ] Commit: `docs: add mission communication operations SOP`
+- [x] **Create Mission Communication SOP**
+  - [x] File: `docs/MISSION-COMM-SOP.md`
+  - [x] Include:
+    - [x] Pre-flight planning checklist
+    - [x] Grafana monitoring setup
+    - [x] Alert response procedures
+    - [x] Operator actions during degraded windows
+    - [x] Export delivery process
+    - [x] Incident response (e.g., unplanned outage)
+  - [x] Commit: `docs: add mission communication operations SOP` (Session 9)
 
 - [ ] **Update monitoring README**
   - [ ] File: `monitoring/README.md`
