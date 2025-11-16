@@ -2,8 +2,8 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Last Updated:** 2025-11-16 (Session 8)
-**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Complete ✅ → Phase 5.2 (Benchmark Script) Complete ✅
+**Last Updated:** 2025-11-16 (Session 9)
+**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Complete ✅ → Phase 5.2 (In Progress) → Phase 5.3 (In Progress)
 
 ---
 
@@ -15,10 +15,15 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Current Status
 
-- **Phase:** 4.1–4.3 Complete ✅ → Phase 5.1 Complete ✅ → Phase 5.2 (Benchmark Script) Complete ✅
-- **Checklist completion:** Phase 4 100% complete; Phase 5.1 100% complete (4/4 scenario tests); Phase 5.2 50% complete (benchmark script done, performance notes pending)
+- **Phase:** 4.1–4.3 Complete ✅ → Phase 5.1 Complete ✅ → Phase 5.2 (90% complete) → Phase 5.3 (In Progress)
+- **Checklist completion:** Phase 4 100% complete; Phase 5.1 100% complete (4/4 scenario tests); Phase 5.2 90% (benchmark script + route creation done, needs final import fix + run); Phase 5.3 40% (2 docs created: MISSION-PLANNING-GUIDE.md, MISSION-COMM-SOP.md)
 - **Test suite:** **720+ tests passing** (all scenario tests + benchmark framework integrated)
-- **Major accomplishments (Sessions 4–8):**
+- **Major accomplishments (Sessions 4–9):**
+  - ✅ **Phase 5.3 User Documentation (Session 9):**
+    - ✅ Created `docs/MISSION-PLANNING-GUIDE.md` (1000+ lines, comprehensive user guide with screenshots, FAQ, troubleshooting)
+    - ✅ Created `docs/MISSION-COMM-SOP.md` (600+ lines, operations playbook with monitoring, alerts, incident response)
+    - 🔄 Phase 5.2 benchmark script: Fixed imports, added route creation logic; needs ONE final fix (line 107 import path)
+  - **Previous accomplishments (Sessions 4–8):**
   - ✅ **Phase 4.2b UI Finalization (Session 8):**
     - ✅ Finalized mission toggle button implementation with all fixes
     - ✅ Fixed `loadPOIs()` → `loadSatellitePOIs()` function call
@@ -87,32 +92,29 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Next Actions
 
-1. **Phase 5.1 Scenario Regression Tests (4 of 4 COMPLETE):** ✅
-   - [x] Test 1: Normal ops with X transitions (DONE - Session 6, commit `3fe0c84`)
-   - [x] Test 2: Ka coverage gaps (DONE - Session 7, commit `d0688cc`)
-   - [x] Test 3: AAR with X azimuth inversion (DONE - Session 7, commit `d264b05`)
-   - [x] Test 4: Multi-transport degradation (DONE - Session 7, commit `abc0b38`)
-   - **Reference:** CHECKLIST.md Phase 5.1 (lines 248–305) - ALL COMPLETE
+**IMMEDIATE (Session 10 - Critical Path):**
 
-2. **Phase 5.2 Performance Benchmarking (In Progress - Script Done):**
-   - [x] Create benchmark script (`tests/performance/test_benchmark.py`)
-   - [ ] Run benchmark to collect performance metrics
-   - [ ] Document results in `docs/PERFORMANCE-NOTES.md`
-   - **Reference:** CHECKLIST.md Phase 5.2 (lines 312+)
+1. **Fix & Run Phase 5.2 Benchmark:**
+   - [ ] Fix line 107 in `tests/performance/test_benchmark.py`: Change `from app.route.models` → `from app.models.route`
+   - [ ] Rebuild Docker: `docker compose down && docker compose build --no-cache && docker compose up -d && sleep 5`
+   - [ ] Run benchmark: `docker compose exec starlink-location python -m pytest tests/performance/test_benchmark.py -v -s`
+   - [ ] Create `docs/PERFORMANCE-NOTES.md` with results (hardware specs, benchmark numbers, comparison to <1s target)
+   - **Reference:** CHECKLIST.md Phase 5.2 (lines 312–334)
 
-3. **Phase 5.3 Documentation (Ready to start after 5.2):**
-   - [ ] Create `MISSION-PLANNING-GUIDE.md` (user-facing guide)
-   - [ ] Create `MISSION-COMM-SOP.md` (operator playbook)
-   - [ ] Update root README.md with mission planning links
-   - [ ] Update docs/INDEX.md with new doc references
-   - **Reference:** CHECKLIST.md Phase 5.3 (lines 330+)
+2. **Complete Phase 5.3 Documentation:**
+   - [x] ✅ Created `docs/MISSION-PLANNING-GUIDE.md` (1000+ lines)
+   - [x] ✅ Created `docs/MISSION-COMM-SOP.md` (600+ lines)
+   - [ ] Update root `README.md` with section: "Mission Communication Planning" linking to both docs
+   - [ ] Update `docs/INDEX.md` with new documentation references
+   - **Reference:** CHECKLIST.md Phase 5.3 (lines 337–381)
 
-4. **Final steps (Ready to start after 5.3):**
-   - [ ] Run full test suite (expect 700+ tests passing)
-   - [ ] Docker rebuild and health check
-   - [ ] End-to-end workflow verification
-   - [ ] Invoke `wrapping-up-plan` for PR creation and merge
-   - **Reference:** CHECKLIST.md Final Steps (lines 355+)
+3. **Final Verification & Wrap-up:**
+   - [ ] Run full test suite: `docker compose exec starlink-location python -m pytest tests/ -v` (expect 700+ passing)
+   - [ ] Docker rebuild and health check: `docker compose ps` (all containers healthy)
+   - [ ] E2E workflow: Create mission → Activate → View timeline → Export PDF/CSV/Excel
+   - [ ] Commit all changes: `chore: sync planning and handoff docs for mission-comm-planning`
+   - [ ] Invoke `wrapping-up-plan` skill for PR creation
+   - **Reference:** CHECKLIST.md Phase 5.4 Final Verification (lines 383–443)
 
 ---
 
