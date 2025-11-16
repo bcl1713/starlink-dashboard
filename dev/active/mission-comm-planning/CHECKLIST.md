@@ -426,7 +426,10 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] No new dependencies or constraints discovered
   - [x] Existing dependencies (pandas, openpyxl, reportlab) satisfactory
 - [x] Update LESSONS-LEARNED.md at `dev/LESSONS-LEARNED.md` with dated entry
-  - [x] TODO: Add session 12 learnings after wrapping-up-plan
+  - [x] Address code review feedback from PR #8
+    - [x] Fixed POI filtering logic in list_pois endpoint (pois.py:113-156)
+    - [x] Added clarifying docstring to longitude validator for intentional dual-format support
+    - [x] All 725 tests passing post-fix verification
 
 ---
 

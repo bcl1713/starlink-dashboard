@@ -228,6 +228,16 @@ All five phases have been successfully completed and verified:
 
 None. All phases completed as specified, with additional documentation enhancements.
 
+### Code Review Feedback (PR #8)
+
+Gemini Code Assist provided constructive feedback on the pull request. The following improvements were made in response:
+
+1. **POI Filtering Logic (pois.py:list_pois):** Refactored to fetch all route POIs first, then filter by latest mission, avoiding the issue of filtering an already-filtered list. This ensures correct identification of the most recent mission's POIs when querying by route.
+
+2. **Longitude Validation Clarity:** Added comprehensive docstring to XTransition.validate_longitude() documenting the intentional support for both standard (-180 to 180) and alternative (0 to 360) longitude formats with normalization.
+
+All tests continue to pass (725 passing, 3 pre-existing intermittent failures). These fixes maintain all existing functionality while improving code clarity and correctness.
+
 ### Next Steps for Maintainers
 
 1. Monitor performance in production (track recomputation time per mission)
