@@ -2,8 +2,8 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Last Updated:** 2025-11-16 (Session 7)
-**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Complete ✅ (All 4 scenario regression tests implemented and passing)
+**Last Updated:** 2025-11-16 (Session 8)
+**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Complete ✅ → Phase 5.2 (Benchmark Script) Complete ✅
 
 ---
 
@@ -15,10 +15,25 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Current Status
 
-- **Phase:** 4.1–4.3 Complete ✅ → Phase 5.1 Complete ✅ (All 4 scenario regression tests pass; ready for Phase 5.2)
-- **Checklist completion:** Phase 4 100% complete; Phase 5.1 100% complete (4 of 4 scenario tests)
-- **Test suite:** **720+ tests passing** (all scenario tests integrated)
-- **Major accomplishments (Sessions 4–7):**
+- **Phase:** 4.1–4.3 Complete ✅ → Phase 5.1 Complete ✅ → Phase 5.2 (Benchmark Script) Complete ✅
+- **Checklist completion:** Phase 4 100% complete; Phase 5.1 100% complete (4/4 scenario tests); Phase 5.2 50% complete (benchmark script done, performance notes pending)
+- **Test suite:** **720+ tests passing** (all scenario tests + benchmark framework integrated)
+- **Major accomplishments (Sessions 4–8):**
+  - ✅ **Phase 4.2b UI Finalization (Session 8):**
+    - ✅ Finalized mission toggle button implementation with all fixes
+    - ✅ Fixed `loadPOIs()` → `loadSatellitePOIs()` function call
+    - ✅ Commit: `d85fbb2` feat: implement mission toggle button for activation/deactivation
+  - ✅ **Phase 5.1 Scenario Regression Tests (Sessions 6–7):**
+    - ✅ All 4 scenario tests implemented and passing
+    - ✅ Commit: `abc0b38` (Test 4: Multi-transport degradation)
+  - ✅ **Phase 5.2 Performance Benchmark Script (Session 8):**
+    - ✅ Created `tests/performance/test_benchmark.py` with pytest-native benchmarks
+    - ✅ Created `tools/benchmark_mission_timeline.py` as standalone reference
+    - ✅ Implemented `benchmark_timeline_recompute()` function
+    - ✅ TestTimelineBenchmark class with `test_10_concurrent_missions_under_1s()` test
+    - ✅ Added psutil>=5.9.0 dependency for memory profiling
+    - ✅ Commit: `12058e7` feat: add Phase 5.2 performance benchmark test infrastructure
+  - **Previous accomplishments (Sessions 4–7):**
   - ✅ **Phase 4.2b Backend Implementation (Session 3):**
     - ✅ Implemented `POST /api/missions/active/deactivate` endpoint
     - ✅ Updated mission deletion to cascade route deactivation
@@ -79,11 +94,11 @@ The mission communication planning feature enables pre-flight mission planning t
    - [x] Test 4: Multi-transport degradation (DONE - Session 7, commit `abc0b38`)
    - **Reference:** CHECKLIST.md Phase 5.1 (lines 248–305) - ALL COMPLETE
 
-2. **Phase 5.2 Performance Benchmarking (Ready to start):**
-   - [ ] Profile timeline computation with 10 concurrent missions
-   - [ ] Verify <1s recompute target
+2. **Phase 5.2 Performance Benchmarking (In Progress - Script Done):**
+   - [x] Create benchmark script (`tests/performance/test_benchmark.py`)
+   - [ ] Run benchmark to collect performance metrics
    - [ ] Document results in `docs/PERFORMANCE-NOTES.md`
-   - **Reference:** CHECKLIST.md Phase 5.2 (lines 310+)
+   - **Reference:** CHECKLIST.md Phase 5.2 (lines 312+)
 
 3. **Phase 5.3 Documentation (Ready to start after 5.2):**
    - [ ] Create `MISSION-PLANNING-GUIDE.md` (user-facing guide)
@@ -144,6 +159,10 @@ The mission communication planning feature enables pre-flight mission planning t
 
 **Branch & Commits:**
 - Branch: `feature/mission-comm-planning`
+- Session 8 commits (Phase 4.2b UI finalization + Phase 5.2 benchmark):
+  - `5610964` chore: complete Phase 5.2 benchmark script creation step in checklist
+  - `12058e7` feat: add Phase 5.2 performance benchmark test infrastructure
+  - `d85fbb2` feat: implement mission toggle button for activation/deactivation
 - Session 7 commits (Phase 5.1 Tests 2–4):
   - `abc0b38` feat: add Phase 5.1 Test 4 - Multi-transport degradation scenario test
   - `d264b05` feat: add Phase 5.1 Test 3 - AAR with X azimuth inversion scenario test
