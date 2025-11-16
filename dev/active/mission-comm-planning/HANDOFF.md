@@ -2,8 +2,8 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Last Updated:** 2025-11-16 (Session 6)
-**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Test 1 Complete ✅ (First scenario test implemented and passing)
+**Last Updated:** 2025-11-16 (Session 7)
+**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Complete ✅ (All 4 scenario regression tests implemented and passing)
 
 ---
 
@@ -15,9 +15,10 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Current Status
 
-- **Phase:** 4.1–4.3 Complete ✅ → Phase 5.1 Test 1 Complete ✅ (Phase 5.1 Tests 2–4 ready to start)
-- **Checklist completion:** Phase 4 100% complete; Phase 5.1 Test 1 complete (1 of 4 scenario tests)
-- **Major accomplishments (Sessions 4–6):**
+- **Phase:** 4.1–4.3 Complete ✅ → Phase 5.1 Complete ✅ (All 4 scenario regression tests pass; ready for Phase 5.2)
+- **Checklist completion:** Phase 4 100% complete; Phase 5.1 100% complete (4 of 4 scenario tests)
+- **Test suite:** **720+ tests passing** (all scenario tests integrated)
+- **Major accomplishments (Sessions 4–7):**
   - ✅ **Phase 4.2b Backend Implementation (Session 3):**
     - ✅ Implemented `POST /api/missions/active/deactivate` endpoint
     - ✅ Updated mission deletion to cascade route deactivation
@@ -46,42 +47,57 @@ The mission communication planning feature enables pre-flight mission planning t
       - test_delete_active_mission_deactivates_route
     - ✅ All 6 tests pass; full test suite: **722 tests passing**
     - ✅ Commit: `d8fd695` feat: add mission deactivation integration tests
-  - ✅ **Phase 5.1 Scenario Tests - Test 1 (Session 6 - COMPLETE):**
-    - ✅ Created `tests/integration/test_mission_scenarios.py`
-    - ✅ Implemented "Normal Ops with X Transitions" scenario test
+  - ✅ **Phase 5.1 Scenario Regression Tests (Sessions 6–7 - COMPLETE):**
+    - ✅ Created `tests/integration/test_mission_scenarios.py` with TestMissionScenarioNormalOps class
+    - ✅ Test 1: "Normal Ops with X Transitions" (Session 6)
       - Mission with 2 X-Band transitions (X-1 → X-2 → X-1)
       - Timeline validation (≥4 segments with proper degradation)
       - All 3 export formats validated (CSV, XLSX, PDF)
-    - ✅ Test passes; full test suite: **720+ tests passing**
-    - ✅ Commits: `3fe0c84` (feat), `cd2541f` (chore: checklist)
+      - Commit: `3fe0c84` (feat), `cd2541f` (chore: checklist)
+    - ✅ Test 2: "Ka Coverage Gaps" (Session 7)
+      - Mission crossing POR↔AOR coverage boundary
+      - Verified swap detection and export validation
+      - Commit: `d0688cc`
+    - ✅ Test 3: "AAR with X Azimuth Inversion" (Session 7)
+      - Mission with AAR window inverting X azimuth constraints
+      - Verified X degradation during AAR while Ka/Ku remain nominal
+      - Commit: `d264b05`
+    - ✅ Test 4: "Multi-Transport Degradation" (Session 7)
+      - Overlapping X and Ka degradation creating CRITICAL timeline status
+      - Verified both transports impacted simultaneously
+      - Commit: `abc0b38`
+    - ✅ All 4 tests pass; full test suite: **720+ tests passing**
 
 ---
 
 ## Next Actions
 
-1. **Phase 5.1 Scenario Regression Tests (1 of 4 COMPLETE):**
+1. **Phase 5.1 Scenario Regression Tests (4 of 4 COMPLETE):** ✅
    - [x] Test 1: Normal ops with X transitions (DONE - Session 6, commit `3fe0c84`)
-   - [ ] Test 2: Ka coverage gaps (POR↔AOR boundary crossing)
-   - [ ] Test 3: AAR with X azimuth inversion
-   - [ ] Test 4: Multi-transport degradation (X + Ka outage)
-   - **Reference:** CHECKLIST.md Phase 5.1 (lines 248–285)
+   - [x] Test 2: Ka coverage gaps (DONE - Session 7, commit `d0688cc`)
+   - [x] Test 3: AAR with X azimuth inversion (DONE - Session 7, commit `d264b05`)
+   - [x] Test 4: Multi-transport degradation (DONE - Session 7, commit `abc0b38`)
+   - **Reference:** CHECKLIST.md Phase 5.1 (lines 248–305) - ALL COMPLETE
 
-2. **Phase 5.2 Performance Benchmarking (Ready to start after 5.1):**
+2. **Phase 5.2 Performance Benchmarking (Ready to start):**
    - [ ] Profile timeline computation with 10 concurrent missions
    - [ ] Verify <1s recompute target
    - [ ] Document results in `docs/PERFORMANCE-NOTES.md`
+   - **Reference:** CHECKLIST.md Phase 5.2 (lines 310+)
 
 3. **Phase 5.3 Documentation (Ready to start after 5.2):**
    - [ ] Create `MISSION-PLANNING-GUIDE.md` (user-facing guide)
    - [ ] Create `MISSION-COMM-SOP.md` (operator playbook)
    - [ ] Update root README.md with mission planning links
    - [ ] Update docs/INDEX.md with new doc references
+   - **Reference:** CHECKLIST.md Phase 5.3 (lines 330+)
 
-4. **Final steps:**
+4. **Final steps (Ready to start after 5.3):**
    - [ ] Run full test suite (expect 700+ tests passing)
    - [ ] Docker rebuild and health check
    - [ ] End-to-end workflow verification
    - [ ] Invoke `wrapping-up-plan` for PR creation and merge
+   - **Reference:** CHECKLIST.md Final Steps (lines 355+)
 
 ---
 
@@ -128,6 +144,10 @@ The mission communication planning feature enables pre-flight mission planning t
 
 **Branch & Commits:**
 - Branch: `feature/mission-comm-planning`
+- Session 7 commits (Phase 5.1 Tests 2–4):
+  - `abc0b38` feat: add Phase 5.1 Test 4 - Multi-transport degradation scenario test
+  - `d264b05` feat: add Phase 5.1 Test 3 - AAR with X azimuth inversion scenario test
+  - `d0688cc` feat: add Phase 5.1 Test 2 - Ka coverage gaps scenario test
 - Session 6 commits (Phase 5.1 Test 1):
   - `cd2541f` chore: complete Phase 5.1 Test 1 - Normal ops with X transitions
   - `3fe0c84` feat: add Phase 5.1 scenario test - normal ops with X transitions
