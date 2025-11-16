@@ -188,17 +188,17 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [x] Added proper braces/null checks for all button access
   - [x] Manual testing passed: Save → Activate → Toggle button works → Deactivate functional
 
-- [ ] **Write tests**
-  - [ ] File: `backend/starlink-location/tests/integration/test_mission_routes.py`
-  - [ ] Test: Deactivate active mission returns 200
-  - [ ] Test: Route is deactivated when mission is deactivated
-  - [ ] Test: Mission metrics are cleared after deactivation
-  - [ ] Test: No active mission returns 404 on deactivate attempt
-  - [ ] Test: Deleting active mission deactivates its route
-  - [ ] Run all tests: `docker compose exec starlink-location python -m pytest tests/ -v`
+- [x] **Write tests**
+  - [x] File: `backend/starlink-location/tests/integration/test_mission_routes.py`
+  - [x] Test: Deactivate active mission returns 200
+  - [x] Test: Route is deactivated when mission is deactivated
+  - [x] Test: Mission metrics are cleared after deactivation
+  - [x] Test: No active mission returns 404 on deactivate attempt
+  - [x] Test: Deleting active mission deactivates its route
+  - [x] Run all tests: `docker compose exec starlink-location python -m pytest tests/ -v` (722 tests passed)
 
-- [ ] **Commit**
-  - [ ] Commit message: `feat: add mission deactivation with route cascade and UI button`
+- [x] **Commit**
+  - [x] Commit message: `feat: add mission deactivation with route cascade and UI button`
 
 ### 4.3 UX Validation with Stakeholders
 

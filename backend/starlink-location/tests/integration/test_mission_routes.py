@@ -765,3 +765,121 @@ class TestMissionExportEndpoint:
             disposition = response.headers.get("content-disposition", "")
             assert disposition.endswith(f".{fmt}\"")
             assert len(response.content) > 0
+
+
+class TestMissionDeactivateEndpoint:
+    """Tests for POST /api/missions/active/deactivate endpoint."""
+
+    def test_deactivate_active_mission_returns_200(
+        self, client: TestClient, test_mission
+    ):
+        """Test deactivating an active mission returns 200."""
+        # Create and activate mission
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        activate_response = client.post(
+            f"/api/missions/{test_mission.id}/activate"
+        )
+        assert activate_response.status_code == 200
+
+        # Deactivate mission
+        response = client.post("/api/missions/active/deactivate")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["mission_id"] == test_mission.id
+        assert data["is_active"] is False
+
+    def test_deactivate_no_active_mission_returns_404(
+        self, client: TestClient
+    ):
+        """Test deactivating when no mission is active returns 404."""
+        response = client.post("/api/missions/active/deactivate")
+        assert response.status_code == 404
+        data = response.json()
+        assert "detail" in data
+
+    def test_deactivate_sets_mission_inactive(
+        self, client: TestClient, test_mission
+    ):
+        """Test that deactivation sets is_active to False."""
+        # Create and activate mission
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        client.post(f"/api/missions/{test_mission.id}/activate")
+
+        # Verify mission is active
+        active_response = client.get("/api/missions/active")
+        assert active_response.status_code == 200
+        assert active_response.json()["is_active"] is True
+
+        # Deactivate mission
+        client.post("/api/missions/active/deactivate")
+
+        # Verify mission is no longer active
+        get_response = client.get(f"/api/missions/{test_mission.id}")
+        assert get_response.status_code == 200
+        assert get_response.json()["is_active"] is False
+
+    def test_deactivate_clears_active_mission_status(
+        self, client: TestClient, test_mission
+    ):
+        """Test that deactivation clears the active mission."""
+        # Create and activate mission
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        client.post(f"/api/missions/{test_mission.id}/activate")
+
+        # Verify active mission exists
+        active_response = client.get("/api/missions/active")
+        assert active_response.status_code == 200
+
+        # Deactivate mission
+        client.post("/api/missions/active/deactivate")
+
+        # Verify no active mission exists
+        active_response = client.get("/api/missions/active")
+        assert active_response.status_code == 404
+
+    def test_deactivate_clears_mission_metrics(
+        self, client: TestClient, test_mission
+    ):
+        """Test that deactivation clears mission metrics."""
+        # Create and activate mission
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        client.post(f"/api/missions/{test_mission.id}/activate")
+
+        # Deactivate mission
+        deactivate_response = client.post(
+            "/api/missions/active/deactivate"
+        )
+        assert deactivate_response.status_code == 200
+        data = deactivate_response.json()
+
+        # Verify response contains deactivation info
+        assert "mission_id" in data
+        assert "is_active" in data
+        assert "deactivated_at" in data
+        assert data["is_active"] is False
+        assert data["mission_id"] == test_mission.id
+
+    def test_delete_active_mission_deactivates_route(
+        self, client: TestClient, test_mission
+    ):
+        """Test that deleting active mission deactivates its route."""
+        # Create and activate mission
+        client.post("/api/missions", json=test_mission.model_dump(mode="json"))
+        activate_response = client.post(
+            f"/api/missions/{test_mission.id}/activate"
+        )
+        assert activate_response.status_code == 200
+
+        # Delete the active mission
+        delete_response = client.delete(
+            f"/api/missions/{test_mission.id}"
+        )
+        assert delete_response.status_code == 204
+
+        # Verify mission is gone
+        get_response = client.get(f"/api/missions/{test_mission.id}")
+        assert get_response.status_code == 404
+
+        # Verify no active mission exists
+        active_response = client.get("/api/missions/active")
+        assert active_response.status_code == 404
