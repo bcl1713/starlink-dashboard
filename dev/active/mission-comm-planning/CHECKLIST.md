@@ -374,10 +374,10 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [x] Grafana dashboard instructions
     - [x] API reference
 
-- [ ] **Create/update docs/INDEX.md**
-  - [ ] Ensure all new documentation is indexed
-  - [ ] Add links to mission-specific guides
-  - [ ] Commit: `docs: update documentation index with mission planning links`
+- [x] **Create/update docs/INDEX.md**
+  - [x] Ensure all new documentation is indexed
+  - [x] Add links to mission-specific guides
+  - [x] Commit: `docs: update documentation index with mission planning links`
 
 ### 5.4 Final Verification
 

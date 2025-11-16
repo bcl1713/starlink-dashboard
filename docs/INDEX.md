@@ -1,8 +1,8 @@
 # Starlink Dashboard Documentation Index
 
-**Last Updated:** 2025-11-04
+**Last Updated:** 2025-11-16
 **Complete Documentation Map**
-**Status:** Comprehensive coverage including ETA Route Timing feature (451 tests passing)
+**Status:** Comprehensive coverage including Mission Communication Planning (720+ tests passing)
 
 ## Navigation Guide
 
@@ -42,6 +42,14 @@ Start here if you're new to the project:
 | Learn dashboard features | [grafana-setup.md](./grafana-setup.md) | 15 min |
 | Create custom dashboards | [grafana-setup.md](./grafana-setup.md) | 20 min |
 | Understand the metrics | [METRICS.md](./METRICS.md) | 10 min |
+
+#### Plan missions
+
+| Goal | Document | Time |
+|------|----------|------|
+| Learn mission planning workflow | [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) | 20 min |
+| Set up for mission operations | [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) | 15 min |
+| Understand performance targets | [PERFORMANCE-NOTES.md](./PERFORMANCE-NOTES.md) | 10 min |
 
 #### Develop features
 
@@ -86,6 +94,14 @@ Start here if you're new to the project:
 | [SETUP-GUIDE.md](./SETUP-GUIDE.md) | Complete setup instructions for all modes | Setting up the project |
 | [API-REFERENCE.md](./API-REFERENCE.md) | All REST API endpoints with examples | Using the API |
 | [ROUTE-TIMING-GUIDE.md](./ROUTE-TIMING-GUIDE.md) | Route timing feature complete guide | Using route timing features |
+
+#### Mission Communication Planning
+
+| File | Purpose | When to read |
+|------|---------|--------------|
+| [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) | Mission planning interface and workflow guide | Using mission planner |
+| [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) | Operations playbook for mission planning and monitoring | Planning and executing missions |
+| [PERFORMANCE-NOTES.md](./PERFORMANCE-NOTES.md) | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
 
 #### Reference
 
@@ -192,6 +208,14 @@ Read in order:
 2. [SETUP-GUIDE.md - Performance](./SETUP-GUIDE.md#performance-tuning) - Tuning (10 min)
 3. [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Monitoring (15 min)
 
+### For Mission Planners
+
+Read in order:
+1. [README.md#mission-communication-planning](../README.md#mission-communication-planning) - Overview (5 min)
+2. [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) - User guide (20 min)
+3. [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) - Operations procedures (15 min)
+4. [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning) - Dashboard setup (10 min)
+
 ---
 
 ## Documentation Statistics
@@ -200,12 +224,14 @@ Read in order:
 |----------|-------|------------|
 | Setup & Getting Started | 2 | ~40 pages |
 | API & Integration | 3 | ~60 pages |
+| Mission Communication Planning | 3 | ~180 pages |
 | Troubleshooting & Reference | 2 | ~40 pages |
-| Feature Guides | 1 | ~30 pages |
+| Feature Guides | 2 | ~100 pages |
 | Architecture & Design | 4 | ~50 pages |
 | Development & Contributing | 4 | ~30 pages |
 | Backend Service | 2 | ~20 pages |
-| **Total** | **18** | **~270 pages** |
+| Monitoring & Operations | 1 | ~50 pages |
+| **Total** | **23** | **~570 pages** |
 
 ---
 
@@ -237,6 +263,13 @@ Read in order:
 - Prometheus Config: [monitoring/prometheus/prometheus.yml](../monitoring/prometheus/prometheus.yml)
 - Grafana Setup: [grafana-setup.md](./grafana-setup.md)
 - Dashboard Features: [README.md#grafana-dashboards](../README.md#grafana-dashboards)
+- Mission Monitoring: [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning)
+
+**Mission Communication Planning:**
+- User Guide: [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md)
+- Operations Playbook: [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md)
+- Performance Analysis: [PERFORMANCE-NOTES.md](./PERFORMANCE-NOTES.md)
+- Monitoring Setup: [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning)
 
 **Development & Contributing:**
 - How to Contribute: [CONTRIBUTING.md](../CONTRIBUTING.md)
@@ -366,7 +399,7 @@ Found an issue in the documentation?
 
 ---
 
-**Last Updated:** 2025-11-04
-**Total Documentation:** 18 files, ~270 pages
-**Comprehensive Coverage:** Setup, API, Troubleshooting, Architecture, Development, Route Timing
-**Feature Status:** ETA Route Timing complete (451 tests passing)
+**Last Updated:** 2025-11-16
+**Total Documentation:** 23 files, ~570 pages
+**Comprehensive Coverage:** Setup, API, Troubleshooting, Architecture, Development, Route Timing, Mission Communication Planning
+**Feature Status:** Mission Communication Planning complete (720+ tests passing)
