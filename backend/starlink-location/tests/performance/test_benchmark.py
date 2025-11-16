@@ -23,6 +23,9 @@ from app.mission.models import (
     XTransition,
 )
 from app.mission.timeline_service import build_mission_timeline
+from app.services.route_manager import RouteManager
+from app.services.poi_manager import POIManager
+from app.satellites.coverage import CoverageSampler
 
 
 def create_test_mission(mission_number: int) -> Mission:
@@ -94,8 +97,47 @@ def benchmark_timeline_recompute(
     # Get process for memory tracking
     process = psutil.Process(os.getpid())
 
+    # Initialize managers needed for timeline computation
+    print(f"[0/4] Initializing route and POI managers...")
+    try:
+        route_manager = RouteManager()
+        poi_manager = POIManager()
+
+        # Create a test route if it doesn't exist
+        from app.models.route import ParsedRoute, RoutePoint, RouteMetadata
+        from datetime import datetime, timezone
+
+        test_route_id = "test-route-cross-country"
+        if test_route_id not in route_manager._routes:
+            # Create a simple test route with 10 waypoints
+            points = [
+                RoutePoint(
+                    latitude=40.0 + i*0.5,
+                    longitude=-100.0 + i*0.5,
+                    altitude=10000.0,
+                    sequence=i
+                ) for i in range(10)
+            ]
+            metadata = RouteMetadata(
+                name="Test Cross-Country Route",
+                file_path="/tmp/test-route.kml",
+                point_count=len(points),
+                imported_at=datetime.now(timezone.utc)
+            )
+            test_route = ParsedRoute(
+                metadata=metadata,
+                points=points,
+                waypoints=[]
+            )
+            route_manager._routes[test_route_id] = test_route
+
+        print(f"      ✓ Managers initialized")
+    except Exception as e:
+        print(f"      ✗ Failed to initialize managers: {e}")
+        raise
+
     # Create test missions
-    print(f"[1/4] Creating {mission_count} test missions...")
+    print(f"\n[1/4] Creating {mission_count} test missions...")
     missions = [create_test_mission(i) for i in range(mission_count)]
     print(f"      ✓ Created {len(missions)} missions")
 
@@ -114,7 +156,13 @@ def benchmark_timeline_recompute(
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         # Submit all missions to executor
         future_to_mission = {
-            executor.submit(build_mission_timeline, mission): mission
+            executor.submit(
+                build_mission_timeline,
+                mission,
+                route_manager,
+                poi_manager,
+                None,  # coverage_sampler=None, uses default
+            ): mission
             for mission in missions
         }
 

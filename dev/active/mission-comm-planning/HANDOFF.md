@@ -2,8 +2,8 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Last Updated:** 2025-11-16 (Session 9)
-**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Complete ✅ → Phase 5.2 (In Progress) → Phase 5.3 (In Progress)
+**Last Updated:** 2025-11-16 (Session 10)
+**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Complete ✅ → Phase 5.2 (90%+ complete) → Phase 5.3 (40% complete)
 
 ---
 
@@ -92,14 +92,15 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Next Actions
 
-**IMMEDIATE (Session 10 - Critical Path):**
+**IMMEDIATE (Session 11 - Critical Path):**
 
-1. **Fix & Run Phase 5.2 Benchmark:**
-   - [ ] Fix line 107 in `tests/performance/test_benchmark.py`: Change `from app.route.models` → `from app.models.route`
-   - [ ] Rebuild Docker: `docker compose down && docker compose build --no-cache && docker compose up -d && sleep 5`
-   - [ ] Run benchmark: `docker compose exec starlink-location python -m pytest tests/performance/test_benchmark.py -v -s`
+1. **Run Phase 5.2 Benchmark & Document Results:** ✅ Script fixed, ready to execute
+   - [x] Fixed line 107 in `tests/performance/test_benchmark.py`: Changed import to `from app.models.route`
+   - [x] Updated benchmark to use correct `ParsedRoute`, `RoutePoint`, `RouteMetadata` models
+   - [ ] Rebuild Docker (in progress): `docker compose down && docker compose build --no-cache && docker compose up -d && sleep 10`
+   - [ ] Run benchmark once Docker is ready: `docker compose exec starlink-location python -m pytest tests/performance/test_benchmark.py -v -s`
    - [ ] Create `docs/PERFORMANCE-NOTES.md` with results (hardware specs, benchmark numbers, comparison to <1s target)
-   - **Reference:** CHECKLIST.md Phase 5.2 (lines 312–334)
+   - **Reference:** CHECKLIST.md Phase 5.2 (lines 326–333)
 
 2. **Complete Phase 5.3 Documentation:**
    - [x] ✅ Created `docs/MISSION-PLANNING-GUIDE.md` (1000+ lines)
