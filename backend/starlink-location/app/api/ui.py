@@ -2347,7 +2347,7 @@ async def mission_planner_ui():
                         <div class="button-group">
                             <button type="submit" class="btn-primary" id="saveMissionBtn">Save Mission</button>
                             <button type="button" class="btn-secondary" id="resetMissionBtn">Clear</button>
-                            <button type="button" class="btn-secondary" id="activateMissionBtn" disabled>Activate Mission</button>
+                            <button type="button" class="btn-secondary" id="toggleMissionBtn" disabled>Activate Mission</button>
                             <button type="button" class="btn-danger" id="deleteMissionBtn" style="display: none;">Delete Mission</button>
                         </div>
                         <div class="button-group">
@@ -2658,7 +2658,10 @@ async def mission_planner_ui():
                 document.getElementById('deleteMissionBtn').addEventListener('click', deleteMission);
                 document.getElementById('missionSelect').addEventListener('change', selectMission);
                 document.getElementById('newMissionBtn').addEventListener('click', startNewMissionDraft);
-                document.getElementById('activateMissionBtn').addEventListener('click', activateMission);
+                const toggleBtn = document.getElementById('toggleMissionBtn');
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', toggleMissionState);
+                }
                 document.getElementById('routeId').addEventListener('change', () => {
                     loadRouteWaypoints();
                     if (!suppressDirtyEvents) {
@@ -2747,19 +2750,26 @@ async def mission_planner_ui():
 
     function updateMissionStatus() {
         const badge = document.getElementById('missionStatusBadge');
-        const activateBtn = document.getElementById('activateMissionBtn');
+        const toggleBtn = document.getElementById('toggleMissionBtn');
         const recomputeBtn = document.getElementById('recomputeTimelineBtn');
         const exportBtn = document.getElementById('exportTimelineBtn');
-        if (!badge || !activateBtn) return;
+        if (!badge) return;
 
         badge.classList.remove('status-active', 'status-inactive');
 
         if (!currentMission) {
             badge.textContent = 'Draft';
             badge.classList.add('status-inactive');
-            activateBtn.disabled = true;
-            if (recomputeBtn) recomputeBtn.disabled = true;
-            if (exportBtn) exportBtn.disabled = true;
+            if (toggleBtn) {
+                toggleBtn.disabled = true;
+                toggleBtn.textContent = 'Activate Mission';
+            }
+            if (recomputeBtn) {
+                recomputeBtn.disabled = true;
+            }
+            if (exportBtn) {
+                exportBtn.disabled = true;
+            }
             updateTimelineStatusMessage();
             return;
         }
@@ -2775,7 +2785,10 @@ async def mission_planner_ui():
             badge.classList.add('status-inactive');
         }
 
-        activateBtn.disabled = missionDirty || !currentMission.id || currentMission.is_active;
+        if (toggleBtn) {
+            toggleBtn.disabled = missionDirty || !currentMission.id;
+            toggleBtn.textContent = currentMission.is_active ? 'Deactivate Mission' : 'Activate Mission';
+        }
         if (recomputeBtn) {
             recomputeBtn.disabled = missionDirty || !currentMission.id;
         }
@@ -3351,9 +3364,12 @@ async def mission_planner_ui():
 
                 // Show delete button
                 document.getElementById('deleteMissionBtn').style.display = 'flex';
-                document.getElementById('activateMissionBtn').disabled = missionDirty || !currentMission.id;
                 suppressDirtyEvents = false;
                 resetMissionDirty();
+                const toggleBtn = document.getElementById('toggleMissionBtn');
+                if (toggleBtn) {
+                    toggleBtn.disabled = missionDirty || !currentMission.id;
+                }
                 setTimelineAvailability(false);
             }
 
@@ -3676,7 +3692,7 @@ async def mission_planner_ui():
                     await loadMissions();
                     resetMissionDirty();
                     await recomputeTimeline(true);
-                    await loadPOIs();
+                    await loadSatellitePOIs();
                 } catch (error) {
                     showAlert('Error: ' + error.message, 'error');
                 } finally {
@@ -3685,31 +3701,53 @@ async def mission_planner_ui():
                 }
             }
 
-            async function activateMission() {
+            async function toggleMissionState() {
                 if (!currentMission || !currentMission.id) {
                     showAlert('Save mission before activating', 'error');
                     return;
                 }
 
                 if (missionDirty) {
-                    showAlert('Save mission before activating', 'error');
+                    showAlert('Save mission before continuing', 'error');
                     return;
                 }
 
                 try {
-                    const response = await fetch(`/api/missions/${currentMission.id}/activate`, {
-                        method: 'POST'
-                    });
+                    if (currentMission.is_active) {
+                        // Deactivate the mission
+                        if (!confirm(`Deactivate mission "${currentMission.name}"?`)) {
+                            return;
+                        }
 
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.detail || 'Activation failed');
+                        const response = await fetch('/api/missions/active/deactivate', {
+                            method: 'POST'
+                        });
+
+                        if (!response.ok) {
+                            const error = await response.json();
+                            throw new Error(error.detail || 'Deactivation failed');
+                        }
+
+                        currentMission.is_active = false;
+                        setTimelineAvailability(false);
+                        showAlert(`Mission "${currentMission.name}" deactivated`, 'success');
+                    } else {
+                        // Activate the mission
+                        const response = await fetch(`/api/missions/${currentMission.id}/activate`, {
+                            method: 'POST'
+                        });
+
+                        if (!response.ok) {
+                            const error = await response.json();
+                            throw new Error(error.detail || 'Activation failed');
+                        }
+
+                        const result = await response.json();
+                        currentMission.is_active = true;
+                        setTimelineAvailability(true);
+                        showAlert(`Mission activated (phase: ${result.flight_phase})`, 'success');
                     }
 
-                    const result = await response.json();
-                    currentMission.is_active = true;
-                    setTimelineAvailability(true);
-                    showAlert(`Mission activated (phase: ${result.flight_phase})`, 'success');
                     await loadMissions();
                     await refreshTimelineAvailability();
                 } catch (error) {
@@ -3845,7 +3883,10 @@ async def mission_planner_ui():
                 document.getElementById('missionSelect').value = 'new';
                 currentMission = null;
                 document.getElementById('deleteMissionBtn').style.display = 'none';
-                document.getElementById('activateMissionBtn').disabled = true;
+                const toggleBtn = document.getElementById('toggleMissionBtn');
+                if (toggleBtn) {
+                    toggleBtn.disabled = true;
+                }
                 renderXTransitions([]);
                 renderKaOutages([]);
                 renderKuOverrides([]);
@@ -3871,7 +3912,10 @@ async def mission_planner_ui():
                 currentMission = createEmptyMission();
                 document.getElementById('missionSelect').value = 'new';
                 resetMissionDirty();
-                document.getElementById('activateMissionBtn').disabled = true;
+                const toggleBtn = document.getElementById('toggleMissionBtn');
+                if (toggleBtn) {
+                    toggleBtn.disabled = true;
+                }
                 updateMissionStatus();
                 showAlert('Started a new mission draft', 'info');
             }
