@@ -365,14 +365,14 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [x] Dashboard layer management
     - [x] Troubleshooting common display issues
 
-- [ ] **Update project README**
-  - [ ] File: `README.md` (root)
-  - [ ] Add section: "Mission Communication Planning"
-  - [ ] Link to:
-    - [ ] MISSION-PLANNING-GUIDE.md
-    - [ ] MISSION-COMM-SOP.md
-    - [ ] Grafana dashboard instructions
-    - [ ] API reference
+- [x] **Update project README**
+  - [x] File: `README.md` (root)
+  - [x] Add section: "Mission Communication Planning"
+  - [x] Link to:
+    - [x] MISSION-PLANNING-GUIDE.md
+    - [x] MISSION-COMM-SOP.md
+    - [x] Grafana dashboard instructions
+    - [x] API reference
 
 - [ ] **Create/update docs/INDEX.md**
   - [ ] Ensure all new documentation is indexed
