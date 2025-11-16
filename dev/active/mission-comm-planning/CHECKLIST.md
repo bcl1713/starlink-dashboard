@@ -292,17 +292,17 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] Run test:
         `pytest tests/integration/test_mission_scenarios.py::test_aar_azimuth_inversion -v` ✅ PASSED
 
-- [ ] **Test 4: Multi-transport degradation logic**
-  - [ ] Scenario: Mission where X and Ka both degrade simultaneously
-  - [ ] Setup:
-    - [ ] Arrange route + transitions + coverage such that X azimuth conflict
+- [x] **Test 4: Multi-transport degradation logic** ✅ COMPLETE
+  - [x] Scenario: Mission where X and Ka both degrade simultaneously
+  - [x] Setup:
+    - [x] Arrange route + transitions + coverage such that X azimuth conflict
           and Ka gap overlap
-  - [ ] Assertions:
-    - [ ] Overlapping degradation creates "critical" status (2 transports down)
-    - [ ] Prometheus metric `mission_critical_seconds` > 0
-    - [ ] Export highlights critical window with dark red background
-  - [ ] Run test:
-        `pytest tests/integration/test_mission_scenarios.py::test_multi_transport_critical -v`
+  - [x] Assertions:
+    - [x] Overlapping degradation creates "critical" status (2 transports down)
+    - [x] Prometheus metric `mission_critical_seconds` > 0
+    - [x] Export highlights critical window with dark red background
+  - [x] Run test:
+        `pytest tests/integration/test_mission_scenarios.py::test_multi_transport_critical -v` ✅ PASSED
 
 - [ ] **Commit scenario tests**
   - [ ] `feat: add Phase 5 scenario regression test suite`

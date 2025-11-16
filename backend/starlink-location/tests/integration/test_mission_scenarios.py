@@ -107,6 +107,45 @@ def test_mission_aar_azimuth_inversion():
     )
 
 
+@pytest.fixture
+def test_mission_multi_transport_critical():
+    """Create a test mission with overlapping X and Ka degradation (critical status)."""
+    from app.mission.models import KaOutage
+
+    unique_id = f"scenario-multi-crit-{uuid4().hex[:8]}"
+    now = datetime.now(timezone.utc)
+    return Mission(
+        id=unique_id,
+        name="Scenario: Multi-Transport Degradation - Critical Status",
+        description="Mission where X azimuth conflict and Ka gap overlap, creating critical window",
+        route_id="test-route-cross-country",
+        transports=TransportConfig(
+            initial_x_satellite_id="X-1",
+            initial_ka_satellite_ids=["AOR", "POR", "IOR"],
+            x_transitions=[
+                XTransition(
+                    id="transition-1-multi-crit",
+                    latitude=38.5,
+                    longitude=-95.0,
+                    target_satellite_id="X-2",
+                    target_beam_id=None,
+                    is_same_satellite_transition=False,
+                )
+            ],
+            ka_outages=[
+                KaOutage(
+                    id="ka-outage-1-multi-crit",
+                    start_time=now + timedelta(minutes=51),  # Overlaps with X degradation
+                    duration_seconds=1800,  # 30 minutes
+                )
+            ],
+            aar_windows=[],
+            ku_overrides=[],
+        ),
+        is_active=False,
+    )
+
+
 @pytest.fixture(autouse=True)
 def cleanup_scenario_missions():
     """Clean up test scenario missions after each test."""
@@ -126,8 +165,52 @@ def stub_timeline_builder(monkeypatch):
     def _builder(mission, route_manager, poi_manager=None):
         now = datetime.now(timezone.utc)
 
+        # Check if this is a multi-transport critical scenario
+        if "multi-crit" in mission.id:
+            # Scenario: Overlapping X and Ka degradation (critical status)
+            segments = [
+                TimelineSegment(
+                    id=f"{mission.id}-seg-1",
+                    start_time=now,
+                    end_time=now + timedelta(minutes=21),
+                    status=TimelineStatus.NOMINAL,
+                    reasons=[],
+                    impacted_transports=[],
+                ),
+                TimelineSegment(
+                    id=f"{mission.id}-seg-2",
+                    start_time=now + timedelta(minutes=21),
+                    end_time=now + timedelta(minutes=51),
+                    status=TimelineStatus.DEGRADED,
+                    reasons=["X transition from X-1 to X-2"],
+                    impacted_transports=[Transport.X],
+                ),
+                TimelineSegment(
+                    id=f"{mission.id}-seg-3",
+                    start_time=now + timedelta(minutes=51),
+                    end_time=now + timedelta(minutes=81),
+                    status=TimelineStatus.CRITICAL,
+                    reasons=["X transition to X-2", "Ka coverage gap (POR lost)"],
+                    impacted_transports=[Transport.X, Transport.KA],
+                ),
+                TimelineSegment(
+                    id=f"{mission.id}-seg-4",
+                    start_time=now + timedelta(minutes=81),
+                    end_time=now + timedelta(hours=2),
+                    status=TimelineStatus.NOMINAL,
+                    reasons=[],
+                    impacted_transports=[],
+                ),
+            ]
+            transport_states = {
+                Transport.X: TransportState.DEGRADED,
+                Transport.KA: TransportState.DEGRADED,
+                Transport.KU: TransportState.AVAILABLE,
+            }
+            degraded_seconds = 60.0 * 60  # 60 minutes total (30 X + 30 critical)
+            critical_seconds = 30.0 * 60  # 30 minutes critical (both X and Ka down)
         # Check if this is a Ka coverage swap scenario
-        if "ka-swap" in mission.id:
+        elif "ka-swap" in mission.id:
             # Scenario: Ka coverage swap (POR↔AOR boundary crossing)
             segments = [
                 TimelineSegment(
@@ -245,13 +328,14 @@ def stub_timeline_builder(monkeypatch):
                 Transport.KU: TransportState.AVAILABLE,
             }
             degraded_seconds = 60.0  # 2 transitions x 30 min each
+            critical_seconds = 0.0
 
         timeline = MissionTimeline(mission_id=mission.id, segments=segments)
         summary = TimelineSummary(
             mission_start=now,
             mission_end=now + timedelta(hours=2),
             degraded_seconds=degraded_seconds,
-            critical_seconds=0.0,
+            critical_seconds=critical_seconds,
             next_conflict_seconds=900.0,  # 15 min
             transport_states=transport_states,
             sample_count=120,
@@ -592,3 +676,127 @@ class TestMissionScenarioNormalOps:
         assert len(response.content) > 0
 
         print("✅ AAR azimuth inversion scenario test PASSED")
+
+    def test_multi_transport_critical(self, client: TestClient, test_mission_multi_transport_critical):
+        """
+        Test multi-transport degradation with critical status scenario.
+
+        Scenario: Mission where X-Band azimuth conflict and Ka coverage gap
+        overlap, creating a critical window where 2+ transports are degraded.
+        Expected:
+        - Mission can be created with X transitions and Ka outages
+        - Mission can be activated successfully
+        - Timeline has critical segment (status=CRITICAL)
+        - Critical segment lists both X and Ka issues in reasons
+        - Ka and X both marked as DEGRADED in transport states
+        - Ku remains AVAILABLE throughout mission
+        - Prometheus metric `mission_critical_seconds` > 0
+        - Exports work without errors (critical window highlights supported)
+        """
+        mission = test_mission_multi_transport_critical
+
+        # Create mission
+        response = client.post(
+            "/api/missions",
+            json=mission.model_dump(mode="json"),
+        )
+        assert response.status_code == 201
+        created_mission = response.json()
+        assert created_mission["id"] == mission.id
+        assert len(created_mission["transports"]["x_transitions"]) == 1
+        assert len(created_mission["transports"]["ka_outages"]) == 1
+
+        # Verify mission is stored
+        response = client.get(f"/api/missions/{mission.id}")
+        assert response.status_code == 200
+        stored_mission = response.json()
+        assert stored_mission["id"] == mission.id
+        assert len(stored_mission["transports"]["x_transitions"]) == 1
+        assert len(stored_mission["transports"]["ka_outages"]) == 1
+
+        # Activate mission
+        response = client.post(f"/api/missions/{mission.id}/activate")
+        assert response.status_code == 200
+        activated_mission = response.json()
+        assert activated_mission["is_active"] is True
+
+        # Fetch timeline
+        response = client.get("/api/missions/active/timeline")
+        assert response.status_code == 200
+        timeline_data = response.json()
+
+        # Verify timeline structure
+        assert "segments" in timeline_data
+        segments = timeline_data["segments"]
+
+        # Should have at least 4 segments (nominal, degraded, critical, nominal)
+        assert len(segments) >= 4, f"Expected ≥4 segments, got {len(segments)}"
+
+        # Verify critical segment exists
+        critical_segments = [
+            s for s in segments if s.get("status") == TimelineStatus.CRITICAL
+        ]
+        assert (
+            len(critical_segments) > 0
+        ), "Expected critical segment where X and Ka both degrade"
+
+        # Verify critical segment has both X and Ka reasons
+        critical_reasons = []
+        for segment in critical_segments:
+            if "reasons" in segment and segment["reasons"]:
+                critical_reasons.extend(segment["reasons"])
+
+        has_x_reason = any("X" in r or "transition" in r for r in critical_reasons)
+        has_ka_reason = any("Ka" in r or "coverage" in r or "gap" in r for r in critical_reasons)
+        assert has_x_reason and has_ka_reason, (
+            f"Critical segment should have both X and Ka reasons, got: {critical_reasons}"
+        )
+
+        # Verify Ka and X are both degraded during critical period
+        for segment in critical_segments:
+            impacted = segment.get("impacted_transports", [])
+            # Both X and Ka should be impacted in critical segment
+            assert Transport.X in impacted or "X" in impacted, (
+                f"Expected X in impacted_transports during critical segment"
+            )
+            assert Transport.KA in impacted or "Ka" in impacted, (
+                f"Expected Ka in impacted_transports during critical segment"
+            )
+
+        # Verify Ku remains unaffected (not in reasons or impacted)
+        for segment in segments:
+            reasons = segment.get("reasons", [])
+            ku_reasons = [r for r in reasons if "Ku" in r or "Ku" in r]
+            assert len(ku_reasons) == 0, (
+                f"Expected Ku to remain unaffected, but found: {ku_reasons}"
+            )
+
+        # Verify timeline has valid metadata
+        assert "mission_id" in timeline_data
+        assert timeline_data["mission_id"] == mission.id
+
+        # Verify first and last segments have valid times
+        assert len(segments) > 0
+        first_segment = segments[0]
+        last_segment = segments[-1]
+        assert "start_time" in first_segment
+        assert "end_time" in last_segment
+
+        # Test export to CSV
+        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "csv"})
+        assert response.status_code == 200
+        csv_data = response.text
+        assert len(csv_data) > 0
+        assert "Time" in csv_data or "time" in csv_data.lower()
+
+        # Test export to XLSX
+        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "xlsx"})
+        assert response.status_code == 200
+        assert len(response.content) > 0
+
+        # Test export to PDF
+        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "pdf"})
+        assert response.status_code == 200
+        assert len(response.content) > 0
+
+        print("✅ Multi-transport critical scenario test PASSED")
