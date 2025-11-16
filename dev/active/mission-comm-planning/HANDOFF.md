@@ -3,7 +3,8 @@
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
 **Last Updated:** 2025-11-16 (Session 12 - FINAL)
-**Status:** ✅ ALL PHASES COMPLETE - READY FOR MERGE
+**Status:** ✅ ALL PHASES COMPLETE - PR CREATED
+**PR:** https://github.com/bcl1713/starlink-dashboard/pull/8
 
 ---
 
