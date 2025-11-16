@@ -2,8 +2,8 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Last Updated:** 2025-11-16 (Session 4)
-**Status:** Phase 4.2 Complete ✅ → Phase 4.2b Complete ✅ (Deactivation backend & UI complete, testing pending)
+**Last Updated:** 2025-11-16 (Session 5)
+**Status:** Phase 4.2 Complete ✅ → Phase 4.2b Complete ✅ (Deactivation backend, UI, and integration tests complete)
 
 ---
 
@@ -15,10 +15,13 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Current Status
 
-- **Phase:** 4.1 Complete → 4.2 Executed → 4.2b Complete ✅ (Testing & Phase 4.3 pending)
-- **Checklist completion:** Step 4.2 100% complete; Step 4.2b 75% complete (3 of 4 tasks)
-- **Major accomplishments this session (Session 4):**
-  - ✅ **Phase 4.2b UI Implementation (COMPLETE):**
+- **Phase:** 4.1 Complete → 4.2 Executed → 4.2b Complete ✅ (Phase 4.3 ready to start)
+- **Checklist completion:** Step 4.2 100% complete; Step 4.2b 100% complete (4 of 4 tasks)
+- **Major accomplishments (Sessions 4–5):**
+  - ✅ **Phase 4.2b Backend Implementation (Session 3):**
+    - ✅ Implemented `POST /api/missions/active/deactivate` endpoint
+    - ✅ Updated mission deletion to cascade route deactivation
+  - ✅ **Phase 4.2b UI Implementation (Session 4):**
     - ✅ Implemented single toggle button for mission activation/deactivation
       - Button ID: `toggleMissionBtn`
       - Dynamically shows "Activate Mission" or "Deactivate Mission" based on state
@@ -32,35 +35,33 @@ The mission communication planning feature enables pre-flight mission planning t
       - Dynamic button text management
       - All DOM element access guarded with null checks
       - Fixed multiple null reference errors
-    - ✅ Fixed critical bugs:
-      - Corrected `loadPOIs` → `loadSatellitePOIs` function call
-      - Added proper null checks and braces for all button element access
-      - Resolved "can't access property disabled" errors
-  - ✅ **Manual Testing (COMPLETE):**
-    - Tested: Create mission → Save → Activate → Button shows "Deactivate"
-    - Tested: Click deactivate → Confirmation dialog → Mission deactivated
-    - Verified: Mission list updates correctly after deactivation
-    - Verified: Route deactivates when mission deactivates
-  - ✅ **Documentation Updated:**
-    - CHECKLIST.md: Marked 4.2b.3 UI implementation as complete
-    - HANDOFF.md: Updated session progress and accomplishments
-    - Commits created for each major fix
+    - ✅ Fixed critical bugs and manual testing passed
+  - ✅ **Phase 4.2b Integration Tests (Session 5 - COMPLETE):**
+    - ✅ Added 6 comprehensive integration tests in `test_mission_routes.py::TestMissionDeactivateEndpoint`
+      - test_deactivate_active_mission_returns_200
+      - test_deactivate_no_active_mission_returns_404
+      - test_deactivate_sets_mission_inactive
+      - test_deactivate_clears_active_mission_status
+      - test_deactivate_clears_mission_metrics
+      - test_delete_active_mission_deactivates_route
+    - ✅ All 6 tests pass; full test suite: **722 tests passing**
+    - ✅ Commit: `d8fd695` feat: add mission deactivation integration tests
 
 ---
 
 ## Next Actions
 
-1. **Phase 4.2b Mission API Enhancements (75% COMPLETE - 1 TASK PENDING):**
+1. **Phase 4.2b Mission API Enhancements (100% COMPLETE):**
    - [x] Implement `POST /api/missions/active/deactivate` endpoint (DONE - commit `ebb8226`)
    - [x] Update mission deletion to cascade route deactivation (DONE - commit `6ce1c04`)
    - [x] Add "Deactivate Mission" button to mission planner UI (DONE - Session 4)
-   - [ ] Write integration tests for deactivation scenarios (backend/starlink-location/tests/integration/test_mission_routes.py)
-     - Test deactivation endpoint returns 200
-     - Test route is deactivated when mission is deactivated
-     - Test mission metrics are cleared after deactivation
-     - Test no active mission returns 404 on deactivate attempt
-     - Test deleting active mission deactivates its route
-   - **Reference:** CHECKLIST.md Phase 4.2b (lines 149–195)
+   - [x] Write integration tests for deactivation scenarios (DONE - Session 5, commit `d8fd695`)
+     - ✅ Test deactivation endpoint returns 200
+     - ✅ Test route is deactivated when mission is deactivated
+     - ✅ Test mission metrics are cleared after deactivation
+     - ✅ Test no active mission returns 404 on deactivate attempt
+     - ✅ Test deleting active mission deactivates its route
+   - **Reference:** CHECKLIST.md Phase 4.2b (lines 191–201)
 
 2. **Phase 4.3 UX Validation (Ready to start after 4.2b):**
    - [ ] Schedule validation session with stakeholders (45–60 min)
@@ -125,6 +126,11 @@ The mission communication planning feature enables pre-flight mission planning t
 
 **Branch & Commits:**
 - Branch: `feature/mission-comm-planning`
+- Session 5 commits (Phase 4.2b integration tests):
+  - `d8fd695` feat: add mission deactivation integration tests (Phase 4.2b complete)
+- Session 4 commits (Phase 4.2b UI implementation):
+  - `87a00d5` chore: update HANDOFF and CHECKLIST for Phase 4.2b UI completion
+  - (UI implementation commits from Session 4)
 - Session 3 commits (Phase 4.2b backend implementation):
   - `6ce1c04` feat: fix mission deletion cascade to properly deactivate routes
   - `ebb8226` feat: implement mission deactivation endpoint (POST /api/missions/active/deactivate)

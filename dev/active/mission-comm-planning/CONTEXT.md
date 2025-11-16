@@ -2,7 +2,7 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Last Updated:** 2025-11-14
+**Last Updated:** 2025-11-16
 
 ---
 
@@ -180,24 +180,37 @@ Mission communication planning is critical for flight operations because the air
 
 ---
 
-## Current Session Highlights
+## Current Session Highlights (Session 5 - 2025-11-16)
 
-**Phase 3 Status (as of 2025-11-12):**
-- Timeline computation, APIs, and exporters fully operational
-- HCX/X-Band/AAR POI auto-sync on every mission save
-- International Date Line coverage gaps fixed
-- Mission-event POIs de-duped and filtered
-- 607+ tests passing (99.5% pass rate)
+**Phase 4.2b Status (Integration Tests - COMPLETE):**
+- Added 6 comprehensive integration tests for mission deactivation
+- All tests pass; full test suite now **722 tests passing** (up from 716)
+- Tests cover:
+  - Deactivation endpoint returns 200 with correct response
+  - No active mission returns 404
+  - Mission `is_active` flag properly cleared
+  - GET `/api/missions/active` returns 404 after deactivation
+  - Deactivation response contains proper metadata
+  - Route cascade deactivation when deleting active mission
+- Commit: `d8fd695` feat: add mission deactivation integration tests
+
+**Previous Phase Status (Sessions 1–4):**
+- Phase 4.1: Grafana overlays, satellite POI layer, HCX coverage GeoJSON mounting (100% complete)
+- Phase 4.2: End-to-end dashboard testing (100% complete)
+- Phase 4.2b Backend: Deactivation endpoint + route cascade (100% complete)
+- Phase 4.2b UI: Toggle button + user confirmation (100% complete)
+- Phase 4.2b Tests: Integration tests (100% complete - this session)
 
 **Outstanding Work:**
-- Phase 4: Grafana overlays, timeline panel, alerts (ready to start)
-- Phase 5: Scenario tests, performance benchmarks, documentation (ready after Phase 4)
+- Phase 4.3: UX validation with stakeholders (ready to start)
+- Phase 5: Scenario tests, performance benchmarks, documentation (ready after Phase 4.3)
 
 **Next Steps:**
-1. Start Phase 4 by wiring `/api/missions/active/timeline` into dashboard
-2. Add satellite POI and coverage overlay layers
-3. Configure mission timeline panel and Prometheus alerts
-4. Update documentation with Grafana workflows
+1. Schedule Phase 4.3 stakeholder validation session (45–60 min)
+2. Run end-to-end mission workflows on dashboard
+3. Test new deactivation button in mission planner UI
+4. Capture feedback and iterate if needed
+5. After Phase 4.3, proceed to Phase 5 hardening
 
 ---
 
