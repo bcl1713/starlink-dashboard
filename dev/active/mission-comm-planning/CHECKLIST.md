@@ -310,35 +310,18 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
 
 ### 5.2 Performance Benchmarking
 
-- [ ] **Create benchmark script**
-  - [ ] File: `tools/benchmark_mission_timeline.py`
-  - [ ] Script:
-
-    ```python
-    import time
-    import concurrent.futures
-    from backend.starlink_location.app.mission import timeline_service
-
-    def benchmark_timeline_recompute(mission_count=10):
-        """Measure timeline recompute time and memory for N missions."""
-        missions = [create_test_mission() for _ in range(mission_count)]
-
-        start = time.time()
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            futures = [executor.submit(timeline_service.compute_mission_timeline, m) for m in missions]
-            results = [f.result() for f in futures]
-        duration = time.time() - start
-
-        print(f"Recomputed {mission_count} missions in {duration:.2f}s")
-        print(f"Average: {duration / mission_count:.3f}s per mission")
-
-        # Memory usage via psutil
-        # Record results to docs/PERFORMANCE-NOTES.md
-    ```
-
-  - [ ] Run locally: `cd tools && python benchmark_mission_timeline.py`
-  - [ ] Target: <1.0s for 10 concurrent missions
-  - [ ] If >1.0s, profile and optimize hot paths
+- [x] **Create benchmark script**
+  - [x] File: `tests/performance/test_benchmark.py` (pytest-native vs standalone)
+  - [x] Implemented:
+    - [x] `benchmark_timeline_recompute()` function measuring concurrent missions
+    - [x] `TestTimelineBenchmark.test_10_concurrent_missions_under_1s()` pytest test
+    - [x] `create_test_mission()` helper for realistic test scenarios
+    - [x] Memory profiling with psutil, timing, and throughput metrics
+  - [x] Also created `tools/benchmark_mission_timeline.py` as standalone reference
+  - [x] Added `psutil>=5.9.0` to requirements.txt
+  - [x] Run: `docker compose exec starlink-location python -m pytest tests/performance/test_benchmark.py -v -s`
+  - [x] Target: <1.0s for 10 concurrent missions with 4 workers
+  - [x] Commit: `feat: add Phase 5.2 performance benchmark test infrastructure`
 
 - [ ] **Create performance notes document**
   - [ ] File: `docs/PERFORMANCE-NOTES.md`
