@@ -81,7 +81,14 @@ class XTransition(BaseModel):
     @field_validator("longitude")
     @classmethod
     def validate_longitude(cls, v):
-        """Validate and normalize longitude to the -180 to 180 degree range."""
+        """Validate and normalize longitude to the -180 to 180 degree range.
+
+        Intentionally accepts both longitude formats:
+        - Standard (-180 to 180): negative for west, positive for east
+        - Alternative (0 to 360): used in some systems for western hemisphere
+
+        Values are normalized to -180 to 180 range.
+        """
         if not -180 <= v <= 360:
             raise ValueError("Longitude must be between -180 and 360 degrees")
         if v > 180:

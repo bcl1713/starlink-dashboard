@@ -125,35 +125,35 @@ async def list_pois(
     Returns:
     - List of POI objects and total count
     """
-    effective_mission_id = mission_id
-    if route_id and mission_id is None:
-        active_id = get_active_mission_id()
-        if active_id:
-            active_mission = load_mission(active_id)
-            if active_mission and active_mission.route_id == route_id:
-                effective_mission_id = active_id
-
-    pois = poi_manager.list_pois(route_id=route_id, mission_id=effective_mission_id)
-
-    if route_id and mission_id is None:
+    if mission_id:
+        # If a specific mission is requested, filter by it.
+        pois = poi_manager.list_pois(route_id=route_id, mission_id=mission_id)
+    elif route_id:
+        # If only a route is requested, get all its POIs and then filter mission events.
+        all_route_pois = poi_manager.list_pois(route_id=route_id)
         mission_event_pois = [
-            poi
-            for poi in pois
-            if poi.category == "mission-event" and poi.mission_id
+            poi for poi in all_route_pois if poi.category == "mission-event" and poi.mission_id
         ]
+
         if mission_event_pois:
-            latest = max(
+            latest_mission_poi = max(
                 mission_event_pois,
                 key=lambda poi: poi.updated_at or poi.created_at,
             )
-            latest_mission_id = latest.mission_id
+            latest_mission_id = latest_mission_poi.mission_id
+
+            # Keep non-mission events, and mission events from the latest mission
             pois = [
-                poi
-                for poi in pois
-                if poi.category != "mission-event"
-                or not poi.mission_id
-                or poi.mission_id == latest_mission_id
+                p for p in all_route_pois
+                if p.category != "mission-event"
+                or not p.mission_id
+                or p.mission_id == latest_mission_id
             ]
+        else:
+            pois = all_route_pois
+    else:
+        # No route or mission specified, get all POIs.
+        pois = poi_manager.list_pois()
     responses = [
         POIResponse(
             id=poi.id,
