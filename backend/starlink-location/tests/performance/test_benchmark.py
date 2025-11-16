@@ -104,8 +104,7 @@ def benchmark_timeline_recompute(
         poi_manager = POIManager()
 
         # Create a test route if it doesn't exist
-        from app.models.route import ParsedRoute, RoutePoint, RouteMetadata
-        from datetime import datetime, timezone
+        from app.models.route import ParsedRoute, RoutePoint, RouteMetadata, RouteTimingProfile
 
         test_route_id = "test-route-cross-country"
         if test_route_id not in route_manager._routes:
@@ -124,10 +123,18 @@ def benchmark_timeline_recompute(
                 point_count=len(points),
                 imported_at=datetime.now(timezone.utc)
             )
+            # Create timing profile with departure/arrival times
+            timing_profile = RouteTimingProfile(
+                departure_time=datetime(2025, 11, 16, 10, 0, 0, tzinfo=timezone.utc),
+                arrival_time=datetime(2025, 11, 16, 16, 0, 0, tzinfo=timezone.utc),
+                flight_status="in_flight",
+                has_timing_data=True
+            )
             test_route = ParsedRoute(
                 metadata=metadata,
                 points=points,
-                waypoints=[]
+                waypoints=[],
+                timing_profile=timing_profile
             )
             route_manager._routes[test_route_id] = test_route
 
