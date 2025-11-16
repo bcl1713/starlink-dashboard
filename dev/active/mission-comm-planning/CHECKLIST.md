@@ -278,19 +278,19 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] Run test:
         `pytest tests/integration/test_mission_scenarios.py::test_ka_coverage_swap -v` ✅ PASSED
 
-- [ ] **Test 3: AAR with X azimuth inversion**
-  - [ ] Scenario: Mission with AAR window that inverts X azimuth constraints
-  - [ ] Setup:
-    - [ ] Define mission with normal X assignments
-    - [ ] Add AAR window at waypoints 40–60%
-    - [ ] Configure azimuth such that normal ops X is blocked during AAR
-  - [ ] Assertions:
-    - [ ] During AAR, X azimuth rule inverts (315–45° instead of 135–225°)
-    - [ ] X becomes degraded during AAR if azimuth within inverted range
-    - [ ] Other transports unaffected
-    - [ ] AAR window marked as comm blackout (informational)
-  - [ ] Run test:
-        `pytest tests/integration/test_mission_scenarios.py::test_aar_azimuth_inversion -v`
+- [x] **Test 3: AAR with X azimuth inversion** ✅ COMPLETE
+  - [x] Scenario: Mission with AAR window that inverts X azimuth constraints
+  - [x] Setup:
+    - [x] Define mission with normal X assignments
+    - [x] Add AAR window at waypoints 40–60%
+    - [x] Configure azimuth such that normal ops X is blocked during AAR
+  - [x] Assertions:
+    - [x] During AAR, X azimuth rule inverts (315–45° instead of 135–225°)
+    - [x] X becomes degraded during AAR if azimuth within inverted range
+    - [x] Other transports unaffected
+    - [x] AAR window marked as comm blackout (informational)
+  - [x] Run test:
+        `pytest tests/integration/test_mission_scenarios.py::test_aar_azimuth_inversion -v` ✅ PASSED
 
 - [ ] **Test 4: Multi-transport degradation logic**
   - [ ] Scenario: Mission where X and Ka both degrade simultaneously

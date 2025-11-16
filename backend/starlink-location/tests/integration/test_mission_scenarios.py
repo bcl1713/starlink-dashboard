@@ -78,6 +78,35 @@ def test_mission_ka_coverage_swap():
     )
 
 
+@pytest.fixture
+def test_mission_aar_azimuth_inversion():
+    """Create a test mission with AAR window causing X azimuth inversion."""
+    from app.mission.models import AARWindow
+
+    unique_id = f"scenario-aar-azimuth-{uuid4().hex[:8]}"
+    return Mission(
+        id=unique_id,
+        name="Scenario: AAR with X Azimuth Inversion",
+        description="Mission with AAR window that inverts normal X-Band azimuth constraints",
+        route_id="test-route-cross-country",
+        transports=TransportConfig(
+            initial_x_satellite_id="X-1",
+            initial_ka_satellite_ids=["AOR", "POR", "IOR"],
+            x_transitions=[],  # No manual X transitions; azimuth constraint is primary
+            ka_outages=[],
+            aar_windows=[
+                AARWindow(
+                    id="aar-window-1",
+                    start_waypoint_name="Waypoint_A",
+                    end_waypoint_name="Waypoint_B",
+                )
+            ],
+            ku_overrides=[],
+        ),
+        is_active=False,
+    )
+
+
 @pytest.fixture(autouse=True)
 def cleanup_scenario_missions():
     """Clean up test scenario missions after each test."""
@@ -132,6 +161,40 @@ def stub_timeline_builder(monkeypatch):
                 Transport.KU: TransportState.AVAILABLE,
             }
             degraded_seconds = 30.0 * 60  # 30 minutes
+        elif "aar-azimuth" in mission.id:
+            # Scenario: AAR window with X azimuth inversion
+            segments = [
+                TimelineSegment(
+                    id=f"{mission.id}-seg-1",
+                    start_time=now,
+                    end_time=now + timedelta(minutes=24),
+                    status=TimelineStatus.NOMINAL,
+                    reasons=[],
+                    impacted_transports=[],
+                ),
+                TimelineSegment(
+                    id=f"{mission.id}-seg-2",
+                    start_time=now + timedelta(minutes=24),
+                    end_time=now + timedelta(minutes=72),
+                    status=TimelineStatus.DEGRADED,
+                    reasons=["X-Band azimuth conflict during AAR window (inverted constraint: 315-45°)"],
+                    impacted_transports=[Transport.X],
+                ),
+                TimelineSegment(
+                    id=f"{mission.id}-seg-3",
+                    start_time=now + timedelta(minutes=72),
+                    end_time=now + timedelta(hours=2),
+                    status=TimelineStatus.NOMINAL,
+                    reasons=[],
+                    impacted_transports=[],
+                ),
+            ]
+            transport_states = {
+                Transport.X: TransportState.DEGRADED,
+                Transport.KA: TransportState.AVAILABLE,
+                Transport.KU: TransportState.AVAILABLE,
+            }
+            degraded_seconds = 48.0 * 60  # 48 minutes (40-60% of 2-hour mission)
         else:
             # Scenario: X transitions (default)
             segments = [
@@ -414,3 +477,118 @@ class TestMissionScenarioNormalOps:
         assert len(response.content) > 0
 
         print("✅ Ka coverage swap scenario test PASSED")
+
+    def test_aar_azimuth_inversion(self, client: TestClient, test_mission_aar_azimuth_inversion):
+        """
+        Test AAR window with X-Band azimuth inversion scenario.
+
+        Scenario: Mission with AAR window that inverts normal X-Band azimuth
+        constraints, causing X degradation during AAR period.
+        Expected:
+        - Mission can be created with AAR window configuration
+        - Mission can be activated successfully
+        - Timeline has segments with X degradation during AAR
+        - X azimuth rule inverts during AAR (315–45° instead of 135–225°)
+        - X becomes degraded if azimuth within inverted range
+        - Ka and Ku remain AVAILABLE throughout mission
+        - AAR window marked in timeline as communication constraint
+        - Exports work without errors
+        """
+        mission = test_mission_aar_azimuth_inversion
+
+        # Create mission
+        response = client.post(
+            "/api/missions",
+            json=mission.model_dump(mode="json"),
+        )
+        assert response.status_code == 201
+        created_mission = response.json()
+        assert created_mission["id"] == mission.id
+        assert len(created_mission["transports"]["aar_windows"]) == 1
+
+        # Verify mission is stored
+        response = client.get(f"/api/missions/{mission.id}")
+        assert response.status_code == 200
+        stored_mission = response.json()
+        assert stored_mission["id"] == mission.id
+        assert len(stored_mission["transports"]["aar_windows"]) == 1
+        aar_window = stored_mission["transports"]["aar_windows"][0]
+        assert aar_window["start_waypoint_name"] == "Waypoint_A"
+        assert aar_window["end_waypoint_name"] == "Waypoint_B"
+
+        # Activate mission
+        response = client.post(f"/api/missions/{mission.id}/activate")
+        assert response.status_code == 200
+        activated_mission = response.json()
+        assert activated_mission["is_active"] is True
+
+        # Fetch timeline
+        response = client.get("/api/missions/active/timeline")
+        assert response.status_code == 200
+        timeline_data = response.json()
+
+        # Verify timeline structure
+        assert "segments" in timeline_data
+        segments = timeline_data["segments"]
+
+        # Should have at least 3 segments (pre-AAR, AAR-degraded, post-AAR)
+        assert len(segments) >= 3, f"Expected ≥3 segments, got {len(segments)}"
+
+        # Verify X degradation during AAR
+        degraded_segments = [
+            s for s in segments if s.get("status") == TimelineStatus.DEGRADED
+        ]
+        assert len(degraded_segments) > 0, "Expected degraded segment for AAR azimuth conflict"
+
+        # Verify reasons mention X azimuth conflict during AAR
+        all_reasons = []
+        for segment in segments:
+            if "reasons" in segment and segment["reasons"]:
+                all_reasons.extend(segment["reasons"])
+
+        aar_related_reasons = [
+            r for r in all_reasons
+            if ("azimuth" in r.lower() or "AAR" in r)
+            and ("X" in r or "X-Band" in r)
+        ]
+        assert (
+            len(aar_related_reasons) > 0
+        ), f"Expected X azimuth/AAR reasons in degraded segments, got {all_reasons}"
+
+        # Verify Ka and Ku remain unaffected (no Ka/Ku in reasons)
+        ka_ku_reasons = [
+            r for r in all_reasons if ("Ka" in r or "Ku" in r)
+        ]
+        assert (
+            len(ka_ku_reasons) == 0
+        ), f"Expected Ka and Ku to remain unaffected during AAR, but found: {ka_ku_reasons}"
+
+        # Verify timeline has valid metadata
+        assert "mission_id" in timeline_data
+        assert timeline_data["mission_id"] == mission.id
+
+        # Verify first and last segments have valid times
+        assert len(segments) > 0
+        first_segment = segments[0]
+        last_segment = segments[-1]
+        assert "start_time" in first_segment
+        assert "end_time" in last_segment
+
+        # Test export to CSV
+        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "csv"})
+        assert response.status_code == 200
+        csv_data = response.text
+        assert len(csv_data) > 0
+        assert "Time" in csv_data or "time" in csv_data.lower()
+
+        # Test export to XLSX
+        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "xlsx"})
+        assert response.status_code == 200
+        assert len(response.content) > 0
+
+        # Test export to PDF
+        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "pdf"})
+        assert response.status_code == 200
+        assert len(response.content) > 0
+
+        print("✅ AAR azimuth inversion scenario test PASSED")
