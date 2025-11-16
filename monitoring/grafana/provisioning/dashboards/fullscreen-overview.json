@@ -43,6 +43,18 @@
       "tooltip": "",
       "type": "dashboards",
       "url": ""
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Mission Planner",
+      "tooltip": "Open Mission Planner",
+      "type": "link",
+      "url": "http://localhost:8000/ui/mission-planner"
     }
   ],
   "liveNow": true,
@@ -377,6 +389,7 @@
         "basemap": {
           "config": {},
           "name": "Layer 0",
+          "noRepeat": false,
           "type": "default"
         },
         "controls": {
@@ -388,55 +401,6 @@
           "showZoom": true
         },
         "layers": [
-          {
-            "config": {
-              "showLegend": true,
-              "style": {
-                "color": {
-                  "fixed": "blue"
-                },
-                "opacity": 1,
-                "size": {
-                  "fixed": 6,
-                  "max": 100,
-                  "min": 1,
-                  "mode": "fixed"
-                },
-                "symbol": {
-                  "field": "icon",
-                  "fixed": "marker",
-                  "mode": "field"
-                },
-                "text": {
-                  "field": "name",
-                  "fixed": "",
-                  "mode": "field"
-                },
-                "textConfig": {
-                  "fontSize": 14,
-                  "offsetX": 0,
-                  "offsetY": 15,
-                  "textAlign": "center",
-                  "textBaseline": "top"
-                }
-              }
-            },
-            "filterByRefId": "G",
-            "filterData": {
-              "id": "byRefId",
-              "options": "G"
-            },
-            "location": {
-              "latitude": "latitude",
-              "longitude": "longitude",
-              "mode": "coords"
-            },
-            "name": "Points of Interest",
-            "tooltip": {
-              "mode": "details"
-            },
-            "type": "markers"
-          },
           {
             "config": {
               "showLegend": true,
@@ -470,7 +434,7 @@
                   "fixed": "dark-orange"
                 },
                 "lineWidth": 2,
-                "opacity": 0.9
+                "opacity": 1
               }
             },
             "filterByRefId": "H_EAST",
@@ -539,7 +503,173 @@
           },
           {
             "config": {
-              "showLegend": true,
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "dark-orange"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 12,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "field": "",
+                  "fixed": "img/icons/marker/x-mark.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "text": {
+                  "field": "name",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 25,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "FlightRouteMarkers"
+            },
+            "layer-tooltip": true,
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "FlightRouteMarkers",
+            "tooltip": true,
+            "type": "markers"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "purple"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 15,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/unicons/arrow-compress-h.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "text": {
+                  "field": "name",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 25,
+                  "textAlign": "center",
+                  "textBaseline": "bottom"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "Satellites"
+            },
+            "layer-tooltip": true,
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Satellites",
+            "tooltip": true,
+            "type": "markers"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "yellow"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 15,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "img/icons/unicons/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "text": {
+                  "field": "name",
+                  "fixed": "",
+                  "mode": "field"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 50,
+                  "textAlign": "center",
+                  "textBaseline": "bottom"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "MissionEvents"
+            },
+            "layer-tooltip": true,
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "MissionEvents",
+            "tooltip": true,
+            "type": "markers"
+          },
+          {
+            "config": {
+              "showLegend": false,
               "style": {
                 "color": {
                   "fixed": "green"
@@ -581,6 +711,7 @@
               "id": "byRefId",
               "options": "joinByField-A-B-C-D"
             },
+            "layer-tooltip": true,
             "location": {
               "latitude": "latitude",
               "longitude": "longitude",
@@ -589,6 +720,48 @@
             "name": "Current Position",
             "tooltip": true,
             "type": "markers"
+          },
+          {
+            "config": {
+              "rules": [],
+              "src": "http://localhost:8000/data/sat_coverage/hcx.geojson",
+              "style": {
+                "color": {
+                  "fixed": "#8AB8FF"
+                },
+                "opacity": 0.1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 5,
+                  "max": 15,
+                  "min": 2
+                },
+                "symbol": {
+                  "fixed": "build/img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "symbolAlign": {
+                  "horizontal": "center",
+                  "vertical": "center"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 0,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "name": "HCXOverlay",
+            "opacity": 1,
+            "tooltip": true,
+            "type": "geojson"
           }
         ],
         "tooltip": {
@@ -694,11 +867,11 @@
           "format": "table",
           "global_query_id": "",
           "parser": "json",
-          "refId": "G",
+          "refId": "FlightRouteMarkers",
           "root_selector": "pois",
           "source": "url",
           "type": "json",
-          "url": "/api/pois/etas?category=${poi_category},other,satellite",
+          "url": "/api/pois/etas?category=${poi_category}",
           "urlOptions": {
             "params": [
               {
@@ -772,6 +945,70 @@
           "legendFormat": "longitude_history",
           "range": true,
           "refId": "F_EAST"
+        },
+        {
+          "cacheDurationSeconds": 1,
+          "columns": [],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "hide": false,
+          "parser": "backend",
+          "refId": "Satellites",
+          "root_selector": "pois",
+          "source": "url",
+          "type": "json",
+          "url": "/api/pois/etas?category=satellite",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "category",
+                "value": "${poi_category}"
+              }
+            ]
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
+            "params": []
+          }
+        },
+        {
+          "cacheDurationSeconds": 1,
+          "columns": [],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "hide": false,
+          "parser": "backend",
+          "refId": "MissionEvents",
+          "root_selector": "pois",
+          "source": "url",
+          "type": "json",
+          "url": "/api/pois/etas?category=mission-event",
+          "urlOptions": {
+            "params": [
+              {
+                "name": "category",
+                "value": "${poi_category}"
+              }
+            ]
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
+            "params": []
+          }
         }
       ],
       "title": "Current Position",
@@ -893,10 +1130,6 @@
                   "mode": "gradient",
                   "type": "color-background"
                 }
-              },
-              {
-                "id": "custom.width",
-                "value": 185
               }
             ]
           },
@@ -906,10 +1139,6 @@
               "options": "Type"
             },
             "properties": [
-              {
-                "id": "custom.width",
-                "value": 20
-              },
               {
                 "id": "custom.hideFrom.viz",
                 "value": true
@@ -921,12 +1150,7 @@
               "id": "byName",
               "options": "POI"
             },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 247
-              }
-            ]
+            "properties": []
           },
           {
             "matcher": {
@@ -936,46 +1160,19 @@
             "properties": [
               {
                 "id": "custom.hideFrom.viz",
-                "value": false
+                "value": true
               }
             ]
           },
           {
             "matcher": {
               "id": "byName",
-              "options": "ETA Mode"
+              "options": "route_aware_status"
             },
             "properties": [
               {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "badge"
-                }
-              },
-              {
-                "id": "mappings",
-                "value": [
-                  {
-                    "result": {
-                      "color": "#1f78c1",
-                      "text": "PLANNED"
-                    },
-                    "type": 1,
-                    "value": "anticipated"
-                  },
-                  {
-                    "result": {
-                      "color": "#2eb85c",
-                      "text": "LIVE"
-                    },
-                    "type": 1,
-                    "value": "estimated"
-                  }
-                ]
-              },
-              {
-                "id": "custom.width",
-                "value": 110
+                "id": "custom.hideFrom.viz",
+                "value": true
               }
             ]
           }
@@ -1016,7 +1213,7 @@
           "root_selector": "pois",
           "source": "url",
           "type": "json",
-          "url": "/api/pois/etas?category=${poi_category},other",
+          "url": "/api/pois/etas?category=arrival,departure,mission-event",
           "urlOptions": {
             "params": [
               {
@@ -1050,11 +1247,21 @@
           "options": {
             "excludeByName": {
               "bearing_degrees": true,
+              "course_status": false,
               "distance_meters": true,
+              "eta_type": true,
+              "flight_phase": true,
               "icon": true,
+              "is_on_active_route": true,
+              "is_pre_departure": true,
               "latitude": true,
               "longitude": true,
-              "poi_id": true
+              "poi_id": true,
+              "projected_latitude": true,
+              "projected_longitude": true,
+              "projected_route_progress": true,
+              "projected_waypoint_index": true,
+              "route_aware_status": false
             },
             "includeByName": {},
             "indexByName": {
@@ -1572,5 +1779,5 @@
   "timezone": "utc",
   "title": "Fullscreen Overview",
   "uid": "starlink-fullscreen",
-  "version": 16
+  "version": 6
 }

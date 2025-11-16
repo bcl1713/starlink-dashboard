@@ -137,6 +137,18 @@ class RouteManager:
             self._errors[route_id] = error_msg
             logger.error(error_msg)
 
+    def add_route(self, route_id: str, parsed_route: ParsedRoute) -> None:
+        """
+        Register a ParsedRoute in the manager cache.
+
+        This helper is used by the upload API to ensure a route is immediately
+        available even if filesystem watchers miss an event.
+        """
+        self._routes[route_id] = parsed_route
+        if route_id in self._errors:
+            del self._errors[route_id]
+        logger.info(f"Registered route: {route_id} with {len(parsed_route.points)} points via add_route()")
+
     def _remove_route(self, route_id: str) -> None:
         """
         Remove a route from cache.

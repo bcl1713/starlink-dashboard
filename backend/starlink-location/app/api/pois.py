@@ -17,6 +17,8 @@ from app.models.poi import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.mission.routes import get_active_mission_id
+from app.mission.storage import load_mission
 
 logger = logging.getLogger(__name__)
 
@@ -109,17 +111,49 @@ def calculate_course_status(heading: float, bearing: float) -> str:
 
 
 @router.get("", response_model=POIListResponse, summary="List all POIs")
-async def list_pois(route_id: Optional[str] = Query(None, description="Filter by route ID")) -> POIListResponse:
+async def list_pois(
+    route_id: Optional[str] = Query(None, description="Filter by route ID"),
+    mission_id: Optional[str] = Query(None, description="Filter by mission ID"),
+) -> POIListResponse:
     """
     Get list of all POIs, optionally filtered by route.
 
     Query Parameters:
     - route_id: Optional route ID to filter POIs
+    - mission_id: Optional mission ID to filter POIs
 
     Returns:
     - List of POI objects and total count
     """
-    pois = poi_manager.list_pois(route_id=route_id)
+    if mission_id:
+        # If a specific mission is requested, filter by it.
+        pois = poi_manager.list_pois(route_id=route_id, mission_id=mission_id)
+    elif route_id:
+        # If only a route is requested, get all its POIs and then filter mission events.
+        all_route_pois = poi_manager.list_pois(route_id=route_id)
+        mission_event_pois = [
+            poi for poi in all_route_pois if poi.category == "mission-event" and poi.mission_id
+        ]
+
+        if mission_event_pois:
+            latest_mission_poi = max(
+                mission_event_pois,
+                key=lambda poi: poi.updated_at or poi.created_at,
+            )
+            latest_mission_id = latest_mission_poi.mission_id
+
+            # Keep non-mission events, and mission events from the latest mission
+            pois = [
+                p for p in all_route_pois
+                if p.category != "mission-event"
+                or not p.mission_id
+                or p.mission_id == latest_mission_id
+            ]
+        else:
+            pois = all_route_pois
+    else:
+        # No route or mission specified, get all POIs.
+        pois = poi_manager.list_pois()
     responses = [
         POIResponse(
             id=poi.id,
@@ -130,6 +164,7 @@ async def list_pois(route_id: Optional[str] = Query(None, description="Filter by
             category=poi.category,
             description=poi.description,
             route_id=poi.route_id,
+            mission_id=poi.mission_id,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
             projected_latitude=poi.projected_latitude,
@@ -140,7 +175,7 @@ async def list_pois(route_id: Optional[str] = Query(None, description="Filter by
         for poi in pois
     ]
 
-    return POIListResponse(pois=responses, total=len(responses), route_id=route_id)
+    return POIListResponse(pois=responses, total=len(responses), route_id=route_id, mission_id=mission_id)
 
 
 @router.get("/etas", response_model=POIETAListResponse, summary="Get all POIs with real-time ETA data")
@@ -742,6 +777,7 @@ async def get_poi(poi_id: str) -> POIResponse:
         category=poi.category,
         description=poi.description,
         route_id=poi.route_id,
+        mission_id=poi.mission_id,
         created_at=poi.created_at,
         updated_at=poi.updated_at,
         projected_latitude=poi.projected_latitude,
@@ -764,6 +800,7 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
     - category: POI category (optional)
     - description: POI description (optional)
     - route_id: Associated route ID (optional)
+    - mission_id: Associated mission ID (optional)
 
     Returns:
     - Created POI object with ID and timestamps
@@ -791,6 +828,7 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
             category=poi.category,
             description=poi.description,
             route_id=poi.route_id,
+            mission_id=poi.mission_id,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
             projected_latitude=poi.projected_latitude,
@@ -845,6 +883,7 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
             category=poi.category,
             description=poi.description,
             route_id=poi.route_id,
+            mission_id=poi.mission_id,
             created_at=poi.created_at,
             updated_at=poi.updated_at,
         )

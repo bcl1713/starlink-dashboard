@@ -1,10 +1,13 @@
 """Prometheus metrics registry and definitions."""
 
+import logging
 import math
 from datetime import datetime, timezone
 
 from prometheus_client import CollectorRegistry, Gauge, Counter, Histogram, CollectorRegistry as PrometheusCollectorRegistry
 from prometheus_client.core import GaugeMetricFamily
+
+logger = logging.getLogger(__name__)
 
 # Create a dedicated registry for our metrics
 REGISTRY = CollectorRegistry()
@@ -374,6 +377,58 @@ starlink_metrics_last_update_timestamp_seconds = Gauge(
 )
 
 # ============================================================================
+# Mission planning metrics (Phase 1 Continuation)
+# ============================================================================
+mission_active_info = Gauge(
+    'mission_active_info',
+    'Currently active mission information (1 when active, 0 when not)',
+    labelnames=['mission_id', 'route_id'],
+    registry=REGISTRY
+)
+
+mission_phase_state = Gauge(
+    'mission_phase_state',
+    'Current mission phase state (0=pre_departure, 1=in_flight, 2=post_arrival)',
+    labelnames=['mission_id'],
+    registry=REGISTRY
+)
+
+mission_next_conflict_seconds = Gauge(
+    'mission_next_conflict_seconds',
+    'Seconds until next degraded/critical event in mission timeline (-1 if none)',
+    labelnames=['mission_id'],
+    registry=REGISTRY
+)
+
+mission_timeline_generated_timestamp = Gauge(
+    'mission_timeline_generated_timestamp',
+    'Unix timestamp of last mission timeline computation',
+    labelnames=['mission_id'],
+    registry=REGISTRY
+)
+
+mission_comm_state = Gauge(
+    'mission_comm_state',
+    'Planned state per transport (0=available, 1=degraded, 2=offline)',
+    labelnames=['mission_id', 'transport'],
+    registry=REGISTRY
+)
+
+mission_degraded_seconds = Gauge(
+    'mission_degraded_seconds',
+    'Planned degraded duration for mission timeline (seconds)',
+    labelnames=['mission_id'],
+    registry=REGISTRY
+)
+
+mission_critical_seconds = Gauge(
+    'mission_critical_seconds',
+    'Planned critical duration for mission timeline (seconds)',
+    labelnames=['mission_id'],
+    registry=REGISTRY
+)
+
+# ============================================================================
 # Simulation metrics (only in simulation mode)
 # ============================================================================
 simulation_updates_total = Counter(
@@ -692,3 +747,102 @@ def set_service_info(version: str, mode: str):
             starlink_mode_info.labels(mode=possible_mode).set(1)
         else:
             starlink_mode_info.labels(mode=possible_mode).set(0)
+
+
+def update_mission_active_metric(mission_id: str, route_id: str):
+    """
+    Update mission active info metric when a mission is activated.
+
+    Args:
+        mission_id: ID of the activated mission
+        route_id: Route ID associated with the mission
+    """
+    try:
+        mission_active_info.labels(mission_id=mission_id, route_id=route_id).set(1)
+    except Exception as e:  # pragma: no cover - defensive guard
+        logger.warning(f"Failed to update mission active metric: {e}")
+
+
+def clear_mission_metrics(mission_id: str):
+    """
+    Clear mission metrics when a mission is deactivated or deleted.
+
+    Args:
+        mission_id: ID of the mission to clear metrics for
+    """
+    try:
+        # Clear all mission metrics with this mission_id label
+        # Note: Prometheus doesn't have a direct way to delete labels,
+        # so we set them to NaN or 0 to indicate they're not active
+        mission_phase_state.labels(mission_id=mission_id).set(math.nan)
+        mission_next_conflict_seconds.labels(mission_id=mission_id).set(math.nan)
+        mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(math.nan)
+
+        # For mission_active_info, we need to set to 0 for all label combinations
+        # Since we don't track all combinations, we'll just set to 0 with empty route_id
+        mission_active_info.labels(mission_id=mission_id, route_id="").set(0)
+        for transport in ['X', 'Ka', 'Ku']:
+            mission_comm_state.labels(mission_id=mission_id, transport=transport).set(math.nan)
+        mission_degraded_seconds.labels(mission_id=mission_id).set(math.nan)
+        mission_critical_seconds.labels(mission_id=mission_id).set(math.nan)
+    except Exception as e:  # pragma: no cover - defensive guard
+        logger.warning(f"Failed to clear mission metrics: {e}")
+
+
+def update_mission_phase_metric(mission_id: str, phase: str):
+    """
+    Update mission phase state metric.
+
+    Args:
+        mission_id: ID of the mission
+        phase: Mission phase ('pre_departure', 'in_flight', 'post_arrival')
+    """
+    try:
+        phase_map = {
+            'pre_departure': 0,
+            'in_flight': 1,
+            'post_arrival': 2
+        }
+        phase_value = phase_map.get(phase, 0)
+        mission_phase_state.labels(mission_id=mission_id).set(phase_value)
+    except Exception as e:  # pragma: no cover - defensive guard
+        logger.warning(f"Failed to update mission phase metric: {e}")
+
+
+def update_mission_timeline_timestamp(mission_id: str, timestamp: float):
+    """
+    Update mission timeline generation timestamp.
+
+    Args:
+        mission_id: ID of the mission
+        timestamp: Unix timestamp of timeline generation
+    """
+    try:
+        mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(timestamp)
+    except Exception as e:  # pragma: no cover - defensive guard
+        logger.warning(f"Failed to update mission timeline timestamp metric: {e}")
+
+
+def update_mission_comm_state_metric(mission_id: str, transport: str, state_value: int):
+    """Update mission communication state metric for a given transport."""
+    try:
+        mission_comm_state.labels(mission_id=mission_id, transport=transport).set(state_value)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to update mission comm state metric: {e}")
+
+
+def update_mission_duration_metrics(mission_id: str, degraded_seconds: float, critical_seconds: float):
+    """Update degraded/critical mission duration gauges."""
+    try:
+        mission_degraded_seconds.labels(mission_id=mission_id).set(degraded_seconds)
+        mission_critical_seconds.labels(mission_id=mission_id).set(critical_seconds)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to update mission duration metrics: {e}")
+
+
+def update_mission_next_conflict_metric(mission_id: str, seconds: float):
+    """Update countdown to next degraded/critical event (-1 if none)."""
+    try:
+        mission_next_conflict_seconds.labels(mission_id=mission_id).set(seconds)
+    except Exception as e:  # pragma: no cover
+        logger.warning(f"Failed to update mission next conflict metric: {e}")

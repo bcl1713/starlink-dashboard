@@ -9,8 +9,10 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api import config, flight_status, geojson, health, metrics, pois, routes, status, ui
+from app.mission import routes as mission_routes
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
@@ -110,6 +112,7 @@ async def startup_event():
             pois.set_poi_manager(poi_manager)
             routes.set_poi_manager(poi_manager)
             geojson.set_poi_manager(poi_manager)
+            mission_routes.set_poi_manager(poi_manager)
             # Note: metrics_export also gets POIManager but via route_manager injection below
             logger.info_json("POIManager injected successfully")
         except Exception as e:
@@ -127,6 +130,7 @@ async def startup_event():
             geojson.set_route_manager(_route_manager)
             routes.set_route_manager(_route_manager)
             pois.set_route_manager(_route_manager)
+            mission_routes.set_route_manager(_route_manager)
             # Inject into metrics_export as well
             from app.api import metrics_export
             metrics_export.set_route_manager(_route_manager)
@@ -176,6 +180,35 @@ async def startup_event():
                 exc_info=True
             )
             raise
+
+        # Initialize HCX coverage for Grafana static file serving
+        logger.info_json("Initializing HCX satellite coverage")
+        try:
+            from app.satellites.kmz_importer import load_hcx_coverage
+            hcx_kmz = Path("app/satellites/assets/HCX.kmz")
+            sat_coverage_dir = Path("data/sat_coverage")
+            sat_coverage_dir.mkdir(parents=True, exist_ok=True)
+
+            if hcx_kmz.exists():
+                result = load_hcx_coverage(hcx_kmz, sat_coverage_dir)
+                if result:
+                    logger.info_json(
+                        "HCX coverage initialized for Grafana overlay",
+                        extra_fields={"geojson_path": str(result)}
+                    )
+                else:
+                    logger.warning_json("Failed to convert HCX KMZ to GeoJSON")
+            else:
+                logger.warning_json(
+                    "HCX KMZ file not found",
+                    extra_fields={"expected_path": str(hcx_kmz)}
+                )
+        except Exception as e:
+            logger.warning_json(
+                "Failed to initialize HCX coverage",
+                extra_fields={"error": str(e)},
+                exc_info=True
+            )
 
         # Log active mode prominently
         mode_description = "Real Starlink terminal data" if active_mode == "live" else "Simulated telemetry"
@@ -365,6 +398,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount data/sat_coverage directory for satellite coverage overlays (Ka/HCX GeoJSON)
+# This enables Grafana to access coverage footprints via HTTP at /data/sat_coverage/hcx.geojson
+# instead of requiring direct filesystem access across Docker container boundaries
+sat_coverage_dir = Path("data/sat_coverage")
+sat_coverage_dir.mkdir(parents=True, exist_ok=True)
+try:
+    app.mount("/data/sat_coverage", StaticFiles(directory=str(sat_coverage_dir)), name="sat_coverage")
+    logger.info_json("Mounted static files for satellite coverage at /data/sat_coverage")
+except Exception as e:
+    logger.warning_json(
+        "Failed to mount satellite coverage static files",
+        extra_fields={"error": str(e)},
+        exc_info=True
+    )
 
 # Exception handlers
 @app.exception_handler(Exception)
@@ -395,6 +442,7 @@ app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
+app.include_router(mission_routes.router, tags=["Missions"])
 app.include_router(ui.router, tags=["UI"])
 
 

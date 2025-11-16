@@ -17,6 +17,7 @@ class POI(BaseModel):
     category: Optional[str] = Field(default=None, description="POI category (e.g., 'airport', 'city')")
     description: Optional[str] = Field(default=None, description="Detailed description of the POI")
     route_id: Optional[str] = Field(default=None, description="Associated route ID if route-specific")
+    mission_id: Optional[str] = Field(default=None, description="Associated mission ID if mission-scoped")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="When POI was created",
@@ -42,6 +43,7 @@ class POI(BaseModel):
                 "category": "airport",
                 "description": "John F. Kennedy International Airport",
                 "route_id": None,
+                "mission_id": None,
                 "projected_latitude": None,
                 "projected_longitude": None,
                 "projected_waypoint_index": None,
@@ -60,7 +62,9 @@ class POICreate(BaseModel):
     icon: str = Field(default="marker", description="Icon identifier")
     category: Optional[str] = Field(default=None, description="POI category")
     description: Optional[str] = Field(default=None, description="POI description")
+    mission_id: Optional[str] = Field(default=None, description="Associated mission ID")
     route_id: Optional[str] = Field(default=None, description="Associated route ID")
+    mission_id: Optional[str] = Field(default=None, description="Associated mission ID")
 
     @field_validator("latitude")
     @classmethod
@@ -89,6 +93,7 @@ class POICreate(BaseModel):
                 "icon": "park",
                 "category": "landmark",
                 "description": "Public park in Manhattan",
+                "mission_id": None,
             }
         }
     }
@@ -144,6 +149,7 @@ class POIResponse(BaseModel):
     category: Optional[str]
     description: Optional[str]
     route_id: Optional[str]
+    mission_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     # Route projection fields (only populated when route is active)
@@ -163,6 +169,7 @@ class POIResponse(BaseModel):
                 "category": "landmark",
                 "description": "Public park in Manhattan",
                 "route_id": None,
+                "mission_id": None,
                 "created_at": "2025-10-24T00:00:00",
                 "updated_at": "2025-10-24T00:00:00",
                 "projected_latitude": None,
@@ -180,6 +187,7 @@ class POIListResponse(BaseModel):
     pois: list[POIResponse] = Field(default_factory=list, description="List of POIs")
     total: int = Field(default=0, description="Total number of POIs")
     route_id: Optional[str] = Field(default=None, description="Filter by route_id if applicable")
+    mission_id: Optional[str] = Field(default=None, description="Filter by mission_id if applicable")
 
     model_config = {
         "json_schema_extra": {
@@ -187,6 +195,7 @@ class POIListResponse(BaseModel):
                 "pois": [],
                 "total": 0,
                 "route_id": None,
+                "mission_id": None,
             }
         }
     }

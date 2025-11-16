@@ -334,9 +334,31 @@ Want to help improve Starlink Dashboard?
 
 ---
 
+## Mission Communication Planning
+
+Pre-flight mission communication analysis for predicting and managing satellite communication degradation across three onboard transports (X-Band, Ka, StarShield/Ku). Essential for flight operations planning, crew briefing, and communication contingency preparation.
+
+**Features:**
+- **Mission Planning Interface:** Create and manage missions with transport configurations, timing windows, and operational constraints
+- **Satellite Geometry Engine:** Analyzes 3D satellite positions, azimuth angles, and elevation constraints for real-time communication status
+- **Timeline Generation:** Predicts communication degradation windows across mission flight phases
+- **Multi-Format Exports:** Generate PDF briefings, CSV logs, and Excel reports for crew and ground operators
+- **Grafana Integration:** Real-time mission timeline visualization, alert rules for approaching degradation windows, satellite coverage overlays
+- **Performance Optimized:** Benchmark-tested recomputation at <0.12s per mission with concurrent support
+
+**Documentation:**
+- [Mission Planning Guide](./docs/MISSION-PLANNING-GUIDE.md) - Complete user guide with UI walkthrough
+- [Mission Communication SOP](./docs/MISSION-COMM-SOP.md) - Operations playbook for mission planning and monitoring
+- [Performance Notes](./docs/PERFORMANCE-NOTES.md) - Benchmark results and optimization guidance
+- [Monitoring Setup](./monitoring/README.md#mission-communication-planning) - Dashboard and alert configuration
+
+**Status:** Phase 5 Complete ✅ (All tests passing, production-ready)
+
+---
+
 ## Development Status
 
-**Current Phase:** Foundation Complete + Major Feature Complete
+**Current Phase:** Foundation Complete + Major Features Complete
 
 **Completed Work:**
 - Phase 0: Core infrastructure, metrics, dashboards ✅
@@ -348,8 +370,15 @@ Want to help improve Starlink Dashboard?
   - Simulator respects route timing speeds for realistic movement
   - Comprehensive Prometheus metrics and Grafana visualization
   - All 451 tests passing
+- **Mission Communication Planning: Complete ✅ (12 sessions)**
+  - Pre-flight communication degradation prediction
+  - Satellite geometry analysis (X-Band, Ka, Ku transports)
+  - Timeline computation and multi-format exports (PDF, CSV, XLSX)
+  - Grafana visualization with real-time monitoring and alerts
+  - 720+ integration and scenario tests passing
+  - Production-ready with <0.12s per-mission performance
 
-**Branch Status:** feature/eta-route-timing (ready for merge to main)
+**Branch Status:** feature/mission-comm-planning (ready for merge to main)
 
 **Next Steps:** See [Phased Development Plan](./docs/phased-development-plan.md) for future enhancements
 

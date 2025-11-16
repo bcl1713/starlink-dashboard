@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -9,9 +10,12 @@ import sys
 
 os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
 
-# Ensure /data directories exist for RouteManager
+# Ensure /data directories exist for RouteManager and Missions
 Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)
 Path("/tmp/test_data/sim_routes").mkdir(parents=True, exist_ok=True)
+Path("data/missions").mkdir(parents=True, exist_ok=True)
+TEST_MISSIONS_DIR = Path("/tmp/test_data/missions")
+TEST_MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Monkey-patch RouteManager and POIManager before any imports
 import app.services.route_manager as route_manager_module
@@ -115,6 +119,15 @@ def default_config():
 @pytest.fixture
 def coordinator(default_config):
     """Provide a simulation coordinator for tests."""
+    # Ensure ETA service is initialized before creating coordinator
+    # This prevents "ETA service not initialized" errors in metrics tests
+    from app.core import eta_service
+    from app.services.poi_manager import POIManager
+
+    if eta_service._eta_calculator is None:
+        poi_manager = POIManager()
+        eta_service.initialize_eta_service(poi_manager)
+
     return SimulationCoordinator(default_config)
 
 
@@ -150,6 +163,140 @@ def unified_poi_manager_in_tests():
     # until next test's TestClient initialization
 
 
+@pytest.fixture
+def client(test_client):
+    """Alias for test_client for convenience."""
+    return test_client
+
+
+@pytest.fixture(autouse=True)
+def reset_mission_active_state():
+    """Reset global _active_mission_id before each test to prevent state leakage."""
+    # Import here to avoid circular imports
+    import app.mission.routes as mission_routes
+
+    # Reset before test starts
+    mission_routes._active_mission_id = None
+
+    yield
+
+    # Reset after test completes
+    mission_routes._active_mission_id = None
+
+
+@pytest.fixture(autouse=True)
+def ensure_eta_service_initialized():
+    """Ensure ETA service is initialized before each test.
+
+    This fixture addresses test isolation issues where test_eta_service.py's
+    reset_eta_service_globals fixture clears the ETA service globals,
+    which causes subsequent tests to fail with "ETA service not initialized".
+
+    By re-initializing the ETA service before each test, we ensure all tests
+    have access to a properly initialized ETA service.
+    """
+    # Before test starts, ensure ETA service is initialized
+    from app.core import eta_service
+    from app.services.poi_manager import POIManager
+
+    try:
+        # Check if ETA service is uninitialized
+        if eta_service._eta_calculator is None:
+            # Re-initialize the ETA service
+            poi_manager = POIManager()
+            eta_service.initialize_eta_service(poi_manager)
+    except Exception:
+        # Silently handle initialization errors - they may be expected in some tests
+        pass
+
+    yield
+
+    # Cleanup after test completes (optional - keeps tests that reset the service working)
+    # No cleanup needed - tests that want to reset will do it themselves
+
+
+@pytest.fixture(autouse=True)
+def reset_prometheus_registry():
+    """Reset all gauge metrics before each test to prevent NaN pollution from previous tests.
+
+    This addresses test isolation issues where Prometheus metrics from previous
+    tests can interfere with current tests. NaN values that may have been set by
+    clear_telemetry_metrics() in live mode tests will persist across tests if
+    not cleared.
+
+    This fixture clears all gauge metric values (both with and without labels)
+    by setting them to 0.0 before each test runs.
+    """
+    # Before each test, reset all gauge metrics to prevent pollution from NaN values
+    try:
+        from app.core import metrics
+        from prometheus_client.core import Gauge
+
+        # Reset the custom position collector data
+        metrics._current_position['latitude'] = 0.0
+        metrics._current_position['longitude'] = 0.0
+        metrics._current_position['altitude'] = 0.0
+
+        # Get the registry and iterate through all collectors
+        # Find all Gauge collectors and reset their values
+        for collector in list(metrics.REGISTRY._collector_to_names.keys()):
+            if isinstance(collector, Gauge):
+                try:
+                    # Gauges without labels: can call set() directly
+                    if not hasattr(collector, '_metrics') or not collector._metrics:
+                        try:
+                            collector.set(0)
+                        except Exception:
+                            pass
+                    # Gauges with labels: need to reset each child metric
+                    else:
+                        for child in collector._metrics.values():
+                            try:
+                                child.set(0)
+                            except Exception:
+                                pass
+                except Exception:
+                    # Silently skip any gauges we can't reset
+                    pass
+
+    except Exception:
+        # If we can't reset the registry, continue anyway - tests will still run
+        pass
+
+    yield
+    # No cleanup needed after test
+
+
+def _clean_directory(directory: Path):
+    """Remove all files/sub-directories inside the provided directory."""
+    if not directory.exists():
+        return
+    for child in directory.iterdir():
+        if child.is_file() or child.is_symlink():
+            try:
+                child.unlink()
+            except FileNotFoundError:
+                pass
+        elif child.is_dir():
+            shutil.rmtree(child, ignore_errors=True)
+
+
+@pytest.fixture(autouse=True)
+def isolate_mission_storage():
+    """Force mission storage to use a temp directory with full cleanup."""
+    from app.mission import storage
+
+    original_dir = storage.MISSIONS_DIR
+    storage.MISSIONS_DIR = TEST_MISSIONS_DIR
+    storage.ensure_missions_directory()
+    _clean_directory(TEST_MISSIONS_DIR)
+
+    yield
+
+    _clean_directory(TEST_MISSIONS_DIR)
+    storage.MISSIONS_DIR = original_dir
+
+
 def default_mock_telemetry():
     """Create default mock telemetry for tests."""
     return TelemetryData(
@@ -170,6 +317,12 @@ def default_mock_telemetry():
         obstruction=ObstructionData(obstruction_percent=15.0),
         environmental=EnvironmentalData(),
     )
+
+
+@pytest.fixture(params=["asyncio"])
+def anyio_backend(request):
+    """Limit anyio backend to asyncio only (trio not installed)."""
+    return request.param
 
 
 @pytest.fixture
