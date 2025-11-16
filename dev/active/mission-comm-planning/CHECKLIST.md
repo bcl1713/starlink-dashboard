@@ -167,19 +167,26 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
     - [x] Continue with existing deletion logic
   - [x] Verify: Deleting active mission deactivates its route (tested ✓)
 
-- [ ] **Update mission planner UI with deactivation button**
-  - [ ] File: `backend/starlink-location/app/api/ui.py`
-  - [ ] Add "Deactivate Mission" button next to existing "Activate Mission" button
-    - [ ] Only visible when mission is active (`currentMission.is_active === true`)
-    - [ ] Button styling: secondary (not danger like delete)
-  - [ ] Add `deactivateMission()` function:
-    - [ ] Confirm with user: "Deactivate mission X?"
-    - [ ] Call `POST /api/missions/active/deactivate`
-    - [ ] On success: Set `currentMission.is_active = false`, show success alert
-    - [ ] On error: Show error alert with detail
-    - [ ] Reload missions list
-  - [ ] Update button state handler to show/hide deactivate button based on `is_active`
-  - [ ] Test: Activate mission → Deactivate button visible → Click deactivate → Mission no longer active
+- [x] **Update mission planner UI with deactivation button** (COMPLETE - Session 4)
+  - [x] File: `backend/starlink-location/app/api/ui.py`
+  - [x] Implemented single toggle button (`toggleMissionBtn`) that replaces itself based on state:
+    - [x] Shows "Activate Mission" when inactive/unsaved
+    - [x] Shows "Deactivate Mission" when active
+    - [x] Only enabled when mission is saved (no unsaved changes)
+  - [x] Implemented `toggleMissionState()` function:
+    - [x] Confirms with user before deactivation: "Deactivate mission X?"
+    - [x] Calls appropriate endpoint (POST /api/missions/{id}/activate or POST /api/missions/active/deactivate)
+    - [x] On success: Updates `currentMission.is_active`, shows success alert
+    - [x] On error: Shows error alert with detail
+    - [x] Reloads missions list and timeline availability
+  - [x] Updated `updateMissionStatus()` to dynamically manage button:
+    - [x] Sets button text based on mission state
+    - [x] Manages button enabled/disabled state
+    - [x] All button element access guarded with null checks
+  - [x] Fixed null reference errors in DOM interactions
+    - [x] Corrected `loadPOIs` → `loadSatellitePOIs` function call
+    - [x] Added proper braces/null checks for all button access
+  - [x] Manual testing passed: Save → Activate → Toggle button works → Deactivate functional
 
 - [ ] **Write tests**
   - [ ] File: `backend/starlink-location/tests/integration/test_mission_routes.py`
