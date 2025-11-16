@@ -265,18 +265,18 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] Run test:
         `pytest tests/integration/test_mission_scenarios.py::test_normal_ops_x_transitions -v` ✅ PASSED
 
-- [ ] **Test 2: Ka coverage gaps**
-  - [ ] Scenario: Mission with route crossing POR→AOR boundary, no X transitions
-  - [ ] Setup:
-    - [ ] Use route that naturally crosses Ka coverage boundary
-    - [ ] No manual Ka outages (auto-detected from coverage)
-  - [ ] Assertions:
-    - [ ] POR→AOR swap event detected
-    - [ ] Swap point is at coverage boundary midpoint
-    - [ ] X and Ku remain nominal during swap
-    - [ ] Swap has <1-minute window
-  - [ ] Run test:
-        `pytest tests/integration/test_mission_scenarios.py::test_ka_coverage_swap -v`
+- [x] **Test 2: Ka coverage gaps** ✅ COMPLETE
+  - [x] Scenario: Mission with route crossing POR→AOR boundary, no X transitions
+  - [x] Setup:
+    - [x] Use route that naturally crosses Ka coverage boundary
+    - [x] No manual Ka outages (auto-detected from coverage)
+  - [x] Assertions:
+    - [x] POR→AOR swap event detected
+    - [x] Swap point is at coverage boundary midpoint
+    - [x] X and Ku remain nominal during swap
+    - [x] Swap has <1-minute window
+  - [x] Run test:
+        `pytest tests/integration/test_mission_scenarios.py::test_ka_coverage_swap -v` ✅ PASSED
 
 - [ ] **Test 3: AAR with X azimuth inversion**
   - [ ] Scenario: Mission with AAR window that inverts X azimuth constraints
