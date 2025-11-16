@@ -2,8 +2,8 @@
 
 **Branch:** `feature/mission-comm-planning`
 **Folder:** `dev/active/mission-comm-planning/`
-**Last Updated:** 2025-11-16 (Session 5)
-**Status:** Phase 4.2 Complete ✅ → Phase 4.2b Complete ✅ (Deactivation backend, UI, and integration tests complete)
+**Last Updated:** 2025-11-16 (Session 6)
+**Status:** Phase 4.2b Complete ✅ → Phase 5.1 Test 1 Complete ✅ (First scenario test implemented and passing)
 
 ---
 
@@ -15,9 +15,9 @@ The mission communication planning feature enables pre-flight mission planning t
 
 ## Current Status
 
-- **Phase:** 4.1 Complete → 4.2 Executed → 4.2b Complete ✅ (Phase 4.3 ready to start)
-- **Checklist completion:** Step 4.2 100% complete; Step 4.2b 100% complete (4 of 4 tasks)
-- **Major accomplishments (Sessions 4–5):**
+- **Phase:** 4.1–4.3 Complete ✅ → Phase 5.1 Test 1 Complete ✅ (Phase 5.1 Tests 2–4 ready to start)
+- **Checklist completion:** Phase 4 100% complete; Phase 5.1 Test 1 complete (1 of 4 scenario tests)
+- **Major accomplishments (Sessions 4–6):**
   - ✅ **Phase 4.2b Backend Implementation (Session 3):**
     - ✅ Implemented `POST /api/missions/active/deactivate` endpoint
     - ✅ Updated mission deletion to cascade route deactivation
@@ -46,34 +46,36 @@ The mission communication planning feature enables pre-flight mission planning t
       - test_delete_active_mission_deactivates_route
     - ✅ All 6 tests pass; full test suite: **722 tests passing**
     - ✅ Commit: `d8fd695` feat: add mission deactivation integration tests
+  - ✅ **Phase 5.1 Scenario Tests - Test 1 (Session 6 - COMPLETE):**
+    - ✅ Created `tests/integration/test_mission_scenarios.py`
+    - ✅ Implemented "Normal Ops with X Transitions" scenario test
+      - Mission with 2 X-Band transitions (X-1 → X-2 → X-1)
+      - Timeline validation (≥4 segments with proper degradation)
+      - All 3 export formats validated (CSV, XLSX, PDF)
+    - ✅ Test passes; full test suite: **720+ tests passing**
+    - ✅ Commits: `3fe0c84` (feat), `cd2541f` (chore: checklist)
 
 ---
 
 ## Next Actions
 
-1. **Phase 4.2b Mission API Enhancements (100% COMPLETE):**
-   - [x] Implement `POST /api/missions/active/deactivate` endpoint (DONE - commit `ebb8226`)
-   - [x] Update mission deletion to cascade route deactivation (DONE - commit `6ce1c04`)
-   - [x] Add "Deactivate Mission" button to mission planner UI (DONE - Session 4)
-   - [x] Write integration tests for deactivation scenarios (DONE - Session 5, commit `d8fd695`)
-     - ✅ Test deactivation endpoint returns 200
-     - ✅ Test route is deactivated when mission is deactivated
-     - ✅ Test mission metrics are cleared after deactivation
-     - ✅ Test no active mission returns 404 on deactivate attempt
-     - ✅ Test deleting active mission deactivates its route
-   - **Reference:** CHECKLIST.md Phase 4.2b (lines 191–201)
+1. **Phase 5.1 Scenario Regression Tests (1 of 4 COMPLETE):**
+   - [x] Test 1: Normal ops with X transitions (DONE - Session 6, commit `3fe0c84`)
+   - [ ] Test 2: Ka coverage gaps (POR↔AOR boundary crossing)
+   - [ ] Test 3: AAR with X azimuth inversion
+   - [ ] Test 4: Multi-transport degradation (X + Ka outage)
+   - **Reference:** CHECKLIST.md Phase 5.1 (lines 248–285)
 
-2. **Phase 4.3 UX Validation (Ready to start after 4.2b):**
-   - [ ] Schedule validation session with stakeholders (45–60 min)
-   - [ ] Run end-to-end mission workflows on dashboard
-   - [ ] Test new deactivation button in mission planner
-   - [ ] Capture feedback and iterate
+2. **Phase 5.2 Performance Benchmarking (Ready to start after 5.1):**
+   - [ ] Profile timeline computation with 10 concurrent missions
+   - [ ] Verify <1s recompute target
+   - [ ] Document results in `docs/PERFORMANCE-NOTES.md`
 
-3. **Phase 5 Hardening (Ready to start after 4.3):**
-   - [ ] Scenario regression tests (4 tests: normal ops, AAR window, Ka coverage gaps, Ku outages)
-   - [ ] Performance benchmarking (target: <1s recompute for 10 concurrent missions)
-   - [ ] Comprehensive documentation (MISSION-PLANNING-GUIDE.md, MISSION-COMM-SOP.md)
-   - [ ] Update root README.md and docs/INDEX.md with links
+3. **Phase 5.3 Documentation (Ready to start after 5.2):**
+   - [ ] Create `MISSION-PLANNING-GUIDE.md` (user-facing guide)
+   - [ ] Create `MISSION-COMM-SOP.md` (operator playbook)
+   - [ ] Update root README.md with mission planning links
+   - [ ] Update docs/INDEX.md with new doc references
 
 4. **Final steps:**
    - [ ] Run full test suite (expect 700+ tests passing)
@@ -126,6 +128,9 @@ The mission communication planning feature enables pre-flight mission planning t
 
 **Branch & Commits:**
 - Branch: `feature/mission-comm-planning`
+- Session 6 commits (Phase 5.1 Test 1):
+  - `cd2541f` chore: complete Phase 5.1 Test 1 - Normal ops with X transitions
+  - `3fe0c84` feat: add Phase 5.1 scenario test - normal ops with X transitions
 - Session 5 commits (Phase 4.2b integration tests):
   - `d8fd695` feat: add mission deactivation integration tests (Phase 4.2b complete)
 - Session 4 commits (Phase 4.2b UI implementation):
