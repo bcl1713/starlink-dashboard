@@ -304,8 +304,9 @@ Phase 4 (Grafana Visualization) & Phase 5 (Hardening)
   - [x] Run test:
         `pytest tests/integration/test_mission_scenarios.py::test_multi_transport_critical -v` ✅ PASSED
 
-- [ ] **Commit scenario tests**
-  - [ ] `feat: add Phase 5 scenario regression test suite`
+- [x] **Commit scenario tests**
+  - [x] `feat: add Phase 5 scenario regression test suite`
+  - [x] All 4 tests committed individually (Sessions 6–7), summary commit at `abc0b38`
 
 ### 5.2 Performance Benchmarking
 
