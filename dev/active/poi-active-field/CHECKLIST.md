@@ -274,20 +274,20 @@ status
 
 ### Task 4.1: Rebuild Docker containers
 
-- [ ] **CRITICAL:** Stop, rebuild, and restart all containers:
+- [x] **CRITICAL:** Stop, rebuild, and restart all containers:
   ```bash
   docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- [ ] Wait for services to become healthy:
+- [x] Wait for services to become healthy:
   ```bash
   docker compose ps
   ```
-- [ ] Expected result: All containers show "healthy" status
-- [ ] Verify backend is running:
+- [x] Expected result: All containers show "healthy" status
+- [x] Verify backend is running:
   ```bash
   curl http://localhost:8000/health
   ```
-- [ ] Expected result: JSON response with `"status": "ok"`
+- [x] Expected result: JSON response with `"status": "ok"`
 
 ### Task 4.2: Test global POIs
 
