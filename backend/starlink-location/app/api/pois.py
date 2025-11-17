@@ -158,6 +158,10 @@ def _calculate_poi_active_status(
 async def list_pois(
     route_id: Optional[str] = Query(None, description="Filter by route ID"),
     mission_id: Optional[str] = Query(None, description="Filter by mission ID"),
+    active_only: bool = Query(
+        True,
+        description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
+    ),
 ) -> POIListResponse:
     """
     Get list of all POIs, optionally filtered by route.
@@ -198,26 +202,39 @@ async def list_pois(
     else:
         # No route or mission specified, get all POIs.
         pois = poi_manager.list_pois()
-    responses = [
-        POIResponse(
-            id=poi.id,
-            name=poi.name,
-            latitude=poi.latitude,
-            longitude=poi.longitude,
-            icon=poi.icon,
-            category=poi.category,
-            description=poi.description,
-            route_id=poi.route_id,
-            mission_id=poi.mission_id,
-            created_at=poi.created_at,
-            updated_at=poi.updated_at,
-            projected_latitude=poi.projected_latitude,
-            projected_longitude=poi.projected_longitude,
-            projected_waypoint_index=poi.projected_waypoint_index,
-            projected_route_progress=poi.projected_route_progress,
+    responses = []
+    for poi in pois:
+        # Calculate active status for this POI
+        active_status = _calculate_poi_active_status(
+            poi=poi,
+            route_manager=_route_manager,
+            mission_storage=MissionStorage(),
         )
-        for poi in pois
-    ]
+
+        responses.append(
+            POIResponse(
+                id=poi.id,
+                name=poi.name,
+                latitude=poi.latitude,
+                longitude=poi.longitude,
+                icon=poi.icon,
+                category=poi.category,
+                active=active_status,
+                description=poi.description,
+                route_id=poi.route_id,
+                mission_id=poi.mission_id,
+                created_at=poi.created_at,
+                updated_at=poi.updated_at,
+                projected_latitude=poi.projected_latitude,
+                projected_longitude=poi.projected_longitude,
+                projected_waypoint_index=poi.projected_waypoint_index,
+                projected_route_progress=poi.projected_route_progress,
+            )
+        )
+
+    # Apply active filtering if requested
+    if active_only:
+        responses = [r for r in responses if r.active]
 
     return POIListResponse(pois=responses, total=len(responses), route_id=route_id, mission_id=mission_id)
 

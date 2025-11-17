@@ -207,26 +207,26 @@ active status
 
 ### Task 3.4: Update GET /api/pois endpoint - Add parameter
 
-- [ ] Locate the `/api/pois` endpoint function (around line 113)
-- [ ] Add the `active_only` query parameter to the function signature:
+- [x] Locate the `/api/pois` endpoint function (around line 113)
+- [x] Add the `active_only` query parameter to the function signature:
   ```python
   active_only: bool = Query(
       True,
       description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
   ),
   ```
-- [ ] Expected result: `/api/pois` endpoint signature includes `active_only`
+- [x] Expected result: `/api/pois` endpoint signature includes `active_only`
   parameter
 
 ### Task 3.5: Update GET /api/pois endpoint - Calculate and filter by active
 status
 
-- [ ] In the `/api/pois` endpoint function, find where `POIResponse` objects are
+- [x] In the `/api/pois` endpoint function, find where `POIResponse` objects are
   created (likely in a list comprehension or loop)
-- [ ] For each POI, calculate active status using the helper function
-- [ ] Add the `active` field to the `POIResponse` object creation
-- [ ] Filter the results based on `active_only` parameter
-- [ ] The logic should look like this (adapt to existing structure):
+- [x] For each POI, calculate active status using the helper function
+- [x] Add the `active` field to the `POIResponse` object creation
+- [x] Filter the results based on `active_only` parameter
+- [x] The logic should look like this (adapt to existing structure):
   ```python
   # When building POIResponse objects:
   responses = []
@@ -249,7 +249,7 @@ status
   if active_only:
       responses = [r for r in responses if r.active]
   ```
-- [ ] Expected result: `/api/pois` calculates `active` and filters by
+- [x] Expected result: `/api/pois` calculates `active` and filters by
   `active_only`
 
 ### Task 3.6: Commit API endpoint changes
