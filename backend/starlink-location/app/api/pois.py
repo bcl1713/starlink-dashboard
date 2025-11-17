@@ -8,6 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.models.poi import (
+    POI,
     POICreate,
     POIETAListResponse,
     POIListResponse,
@@ -18,7 +19,7 @@ from app.models.poi import (
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.mission.routes import get_active_mission_id
-from app.mission.storage import load_mission
+from app.mission.storage import load_mission, MissionStorage
 
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,49 @@ def calculate_course_status(heading: float, bearing: float) -> str:
         return "off_track"
     else:
         return "behind"
+
+
+def _calculate_poi_active_status(
+    poi: POI,
+    route_manager: RouteManager,
+    mission_storage: MissionStorage,
+) -> bool:
+    """
+    Calculate whether a POI is currently active based on its associated
+    route or mission.
+
+    Logic:
+    - Global POIs (no route_id/mission_id): always active
+    - Route POIs: active if their route is the active route
+    - Mission POIs: active if their mission has is_active=true
+
+    Args:
+        poi: The POI to check
+        route_manager: RouteManager instance to check active route
+        mission_storage: Mission storage instance to check mission status
+
+    Returns:
+        bool: True if POI is active, False otherwise
+    """
+    # Global POIs are always active
+    if poi.route_id is None and poi.mission_id is None:
+        return True
+
+    # Check route-based POIs
+    if poi.route_id is not None:
+        active_route = route_manager.get_active_route()
+        return active_route is not None and active_route.id == poi.route_id
+
+    # Check mission-based POIs
+    if poi.mission_id is not None:
+        try:
+            mission = mission_storage.load_mission(poi.mission_id)
+            return mission.is_active if mission else False
+        except Exception:
+            # Mission not found or error loading
+            return False
+
+    return False
 
 
 @router.get("", response_model=POIListResponse, summary="List all POIs")

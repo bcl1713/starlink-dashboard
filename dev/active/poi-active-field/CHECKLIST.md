@@ -95,14 +95,14 @@ exploration are done.
 
 ### Task 3.1: Add helper function to calculate active status
 
-- [ ] Open the file:
+- [x] Open the file:
   ```bash
   # Just for reference - use your editor/Read tool
   backend/starlink-location/app/api/pois.py
   ```
-- [ ] Add a new helper function near the top of the file (after imports, before
+- [x] Add a new helper function near the top of the file (after imports, before
   endpoint definitions)
-  - [ ] Add this complete function:
+  - [x] Add this complete function:
     ```python
     def _calculate_poi_active_status(
         poi: POI,
@@ -146,7 +146,7 @@ exploration are done.
 
         return False
     ```
-- [ ] Expected result: Helper function is added and ready to use
+- [x] Expected result: Helper function is added and ready to use
 
 ### Task 3.2: Update GET /api/pois/etas endpoint - Add parameter and imports
 
