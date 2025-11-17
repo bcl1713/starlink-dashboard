@@ -3,7 +3,8 @@
 **Branch:** `feat/poi-active-field`
 **Folder:** `dev/active/poi-active-field/`
 **Generated:** 2025-11-17
-**Status:** Implementation Complete, Ready for PR and Merge
+**Status:** Implementation Complete, PR Created
+**PR:** https://github.com/bcl1713/starlink-dashboard/pull/9
 
 ---
 
