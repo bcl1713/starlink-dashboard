@@ -254,19 +254,19 @@ status
 
 ### Task 3.6: Commit API endpoint changes
 
-- [ ] Stage the changes:
+- [x] Stage the changes:
   ```bash
   git add backend/starlink-location/app/api/pois.py
   ```
-- [ ] Commit with message:
+- [x] Commit with message:
   ```bash
   git commit -m "feat: add active filtering to POI endpoints"
   ```
-- [ ] Push to remote:
+- [x] Push to remote:
   ```bash
   git push
   ```
-- [ ] Expected result: API changes are committed and pushed
+- [x] Expected result: API changes are committed and pushed
 
 ---
 
