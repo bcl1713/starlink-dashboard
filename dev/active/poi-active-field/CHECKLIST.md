@@ -315,17 +315,17 @@ status
 
 ### Task 4.3: Test route POIs - Active scenario
 
-- [ ] Upload a test route:
+- [x] Upload a test route:
   ```bash
   curl -X POST http://localhost:8000/api/routes/upload \
     -F "file=@/data/sample_routes/simple-circular.kml"
   ```
-- [ ] Note the route ID from the response
-- [ ] Activate the route:
+- [x] Note the route ID from the response
+- [x] Activate the route:
   ```bash
   curl -X POST http://localhost:8000/api/routes/{route_id}/activate
   ```
-- [ ] Create a POI associated with this route:
+- [x] Create a POI associated with this route:
   ```bash
   curl -X POST http://localhost:8000/api/pois \
     -H "Content-Type: application/json" \
@@ -337,29 +337,29 @@ status
       "route_id": "{route_id}"
     }'
   ```
-- [ ] Retrieve POIs with ETAs:
+- [x] Retrieve POIs with ETAs:
   ```bash
   curl http://localhost:8000/api/pois/etas
   ```
-- [ ] Expected result: POI appears in response with `"active": true`
+- [x] Expected result: POI appears in response with `"active": true`
 
 ### Task 4.4: Test route POIs - Inactive scenario
 
-- [ ] Deactivate all routes:
+- [x] Deactivate all routes:
   ```bash
   curl -X POST http://localhost:8000/api/routes/deactivate
   ```
-- [ ] Retrieve POIs with default filtering:
+- [x] Retrieve POIs with default filtering:
   ```bash
   curl http://localhost:8000/api/pois/etas
   ```
-- [ ] Expected result: Route POI is **NOT** in response (filtered out)
-- [ ] Retrieve POIs with `active_only=false`:
+- [x] Expected result: Route POI is **NOT** in response (filtered out)
+- [x] Retrieve POIs with `active_only=false`:
   ```bash
   curl http://localhost:8000/api/pois/etas?active_only=false
   ```
-- [ ] Expected result: Route POI **IS** in response with `"active": false`
-- [ ] Clean up: Delete the test route POI and route
+- [x] Expected result: Route POI **IS** in response with `"active": false`
+- [x] Clean up: Delete the test route POI and route
 
 ### Task 4.5: Test mission POIs (if mission system is available)
 
@@ -373,21 +373,21 @@ status
 
 ### Task 4.6: Test /api/pois endpoint
 
-- [ ] Repeat similar tests for the `/api/pois` endpoint:
+- [x] Repeat similar tests for the `/api/pois` endpoint:
   ```bash
   curl http://localhost:8000/api/pois
   curl http://localhost:8000/api/pois?active_only=false
   ```
-- [ ] Expected result: Filtering works identically to `/api/pois/etas`
+- [x] Expected result: Filtering works identically to `/api/pois/etas`
 
 ### Task 4.7: Check backend logs for errors
 
-- [ ] View backend logs:
+- [x] View backend logs:
   ```bash
   docker logs starlink-location | tail -n 100
   ```
-- [ ] Expected result: No errors or warnings related to POI active status
-- [ ] If errors exist, debug and fix before proceeding
+- [x] Expected result: No errors or warnings related to POI active status
+- [x] If errors exist, debug and fix before proceeding
 
 ---
 
