@@ -291,7 +291,7 @@ status
 
 ### Task 4.2: Test global POIs
 
-- [ ] Create a test global POI (no route_id or mission_id):
+- [x] Create a test global POI (no route_id or mission_id):
   ```bash
   curl -X POST http://localhost:8000/api/pois \
     -H "Content-Type: application/json" \
@@ -302,13 +302,13 @@ status
       "category": "waypoint"
     }'
   ```
-- [ ] Expected result: POI created successfully
-- [ ] Retrieve POIs with ETAs:
+- [x] Expected result: POI created successfully
+- [x] Retrieve POIs with ETAs:
   ```bash
   curl http://localhost:8000/api/pois/etas
   ```
-- [ ] Expected result: Response includes the global POI with `"active": true`
-- [ ] Clean up: Delete the test POI (use the ID from creation response):
+- [x] Expected result: Response includes the global POI with `"active": true`
+- [x] Clean up: Delete the test POI (use the ID from creation response):
   ```bash
   curl -X DELETE http://localhost:8000/api/pois/{poi_id}
   ```

@@ -841,6 +841,12 @@ async def get_poi(poi_id: str) -> POIResponse:
             detail=f"POI not found: {poi_id}",
         )
 
+    # Calculate active status for this POI
+    active_status = _calculate_poi_active_status(
+        poi=poi,
+        route_manager=_route_manager,
+    )
+
     return POIResponse(
         id=poi.id,
         name=poi.name,
@@ -848,6 +854,7 @@ async def get_poi(poi_id: str) -> POIResponse:
         longitude=poi.longitude,
         icon=poi.icon,
         category=poi.category,
+        active=active_status,
         description=poi.description,
         route_id=poi.route_id,
         mission_id=poi.mission_id,
@@ -892,6 +899,12 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
 
         poi = poi_manager.create_poi(poi_create, active_route=active_route)
 
+        # Calculate active status for this POI
+        active_status = _calculate_poi_active_status(
+            poi=poi,
+            route_manager=_route_manager,
+        )
+
         return POIResponse(
             id=poi.id,
             name=poi.name,
@@ -899,6 +912,7 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
             longitude=poi.longitude,
             icon=poi.icon,
             category=poi.category,
+            active=active_status,
             description=poi.description,
             route_id=poi.route_id,
             mission_id=poi.mission_id,
@@ -947,6 +961,12 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
                 detail=f"POI not found: {poi_id}",
             )
 
+        # Calculate active status for this POI
+        active_status = _calculate_poi_active_status(
+            poi=poi,
+            route_manager=_route_manager,
+        )
+
         return POIResponse(
             id=poi.id,
             name=poi.name,
@@ -954,6 +974,7 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
             longitude=poi.longitude,
             icon=poi.icon,
             category=poi.category,
+            active=active_status,
             description=poi.description,
             route_id=poi.route_id,
             mission_id=poi.mission_id,
