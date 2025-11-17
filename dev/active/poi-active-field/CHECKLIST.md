@@ -363,13 +363,13 @@ status
 
 ### Task 4.5: Test mission POIs (if mission system is available)
 
-- [ ] Create and activate a test mission (refer to mission API docs)
-- [ ] Create a POI associated with the mission
-- [ ] Verify POI shows as `"active": true` when mission is active
-- [ ] Deactivate the mission
-- [ ] Verify POI is filtered out by default
-- [ ] Verify POI shows `"active": false` with `?active_only=false`
-- [ ] Clean up test data
+- [x] Create and activate a test mission (refer to mission API docs)
+- [x] Create a POI associated with the mission
+- [x] Verify POI shows as `"active": true` when mission is active
+- [x] Deactivate the mission
+- [x] Verify POI is filtered out by default
+- [x] Verify POI shows `"active": false` with `?active_only=false`
+- [x] Clean up test data
 
 ### Task 4.6: Test /api/pois endpoint
 
