@@ -230,6 +230,10 @@ async def get_pois_with_etas(
     speed_knots: Optional[str] = Query(None, description="Current speed in knots"),
     status_filter: Optional[str] = Query(None, description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)"),
     category: Optional[str] = Query(None, description="Filter by POI category (comma-separated: departure,arrival,waypoint,alternate)"),
+    active_only: bool = Query(
+        True,
+        description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
+    ),
 ) -> POIETAListResponse:
     """
     Get all POIs with real-time ETA and distance data.
@@ -499,6 +503,13 @@ async def get_pois_with_etas(
                 if poi.category not in category_filter:
                     continue
 
+            # Calculate active status for this POI
+            active_status = _calculate_poi_active_status(
+                poi=poi,
+                route_manager=_route_manager,
+                mission_storage=MissionStorage(),
+            )
+
             pois_with_eta.append(
                 POIWithETA(
                     poi_id=poi.id,
@@ -507,6 +518,7 @@ async def get_pois_with_etas(
                     longitude=poi.longitude,
                     category=poi.category,
                     icon=poi.icon,
+                    active=active_status,
                     eta_seconds=eta_seconds,
                     eta_type=eta_type,
                     is_pre_departure=is_pre_departure,
@@ -522,6 +534,10 @@ async def get_pois_with_etas(
                     route_aware_status=route_aware_status,
                 )
             )
+
+        # Apply active filtering if requested
+        if active_only:
+            pois_with_eta = [p for p in pois_with_eta if p.active]
 
         # Sort by ETA (ascending) so closest POIs appear first
         pois_with_eta.sort(key=lambda p: p.eta_seconds if p.eta_seconds >= 0 else float('inf'))

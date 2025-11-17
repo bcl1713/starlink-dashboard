@@ -150,39 +150,39 @@ exploration are done.
 
 ### Task 3.2: Update GET /api/pois/etas endpoint - Add parameter and imports
 
-- [ ] Locate the `/api/pois/etas` endpoint function (around line 181)
-- [ ] Add the `active_only` query parameter to the function signature
-  - [ ] Find the existing parameters like `route_id`, `status_filter`,
+- [x] Locate the `/api/pois/etas` endpoint function (around line 181)
+- [x] Add the `active_only` query parameter to the function signature
+  - [x] Find the existing parameters like `route_id`, `status_filter`,
     `category`
-  - [ ] Add this new parameter:
+  - [x] Add this new parameter:
     ```python
     active_only: bool = Query(
         True,
         description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
     ),
     ```
-- [ ] Ensure necessary imports are present at the top of the file:
-  - [ ] Check for: `from app.mission.storage import MissionStorage`
-  - [ ] Check for: `from app.mission.routes import get_active_mission_id`
-  - [ ] If missing, add them to the imports section
-- [ ] Expected result: Endpoint signature includes `active_only` parameter
+- [x] Ensure necessary imports are present at the top of the file:
+  - [x] Check for: `from app.mission.storage import MissionStorage`
+  - [x] Check for: `from app.mission.routes import get_active_mission_id`
+  - [x] If missing, add them to the imports section
+- [x] Expected result: Endpoint signature includes `active_only` parameter
 
 ### Task 3.3: Update GET /api/pois/etas endpoint - Calculate and filter by
 active status
 
-- [ ] In the `/api/pois/etas` endpoint function, find where POIs are retrieved
+- [x] In the `/api/pois/etas` endpoint function, find where POIs are retrieved
   (around line 310):
   ```python
   pois = poi_manager.list_pois(route_id=route_id)
   ```
-- [ ] After the POI loop where `POIWithETA` objects are created (around line
+- [x] After the POI loop where `POIWithETA` objects are created (around line
   480), add active status calculation and filtering:
-  - [ ] Find the section where `pois_with_eta` list is built
-  - [ ] For each POI being added to `pois_with_eta`, calculate its active status
+  - [x] Find the section where `pois_with_eta` list is built
+  - [x] For each POI being added to `pois_with_eta`, calculate its active status
     using the helper function
-  - [ ] Add the active status to the `POIWithETA` object creation
-  - [ ] After all POIs are processed, filter by `active_only` if needed
-  - [ ] The logic should look like this (adapt to fit the existing code
+  - [x] Add the active status to the `POIWithETA` object creation
+  - [x] After all POIs are processed, filter by `active_only` if needed
+  - [x] The logic should look like this (adapt to fit the existing code
     structure):
     ```python
     # Inside the loop where POIWithETA objects are created:
@@ -202,7 +202,7 @@ active status
     if active_only:
         pois_with_eta = [p for p in pois_with_eta if p.active]
     ```
-- [ ] Expected result: Endpoint calculates `active` for each POI and filters if
+- [x] Expected result: Endpoint calculates `active` for each POI and filters if
   `active_only=True`
 
 ### Task 3.4: Update GET /api/pois endpoint - Add parameter
