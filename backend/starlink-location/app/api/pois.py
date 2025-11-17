@@ -19,7 +19,7 @@ from app.models.poi import (
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.mission.routes import get_active_mission_id
-from app.mission.storage import load_mission, MissionStorage
+from app.mission.storage import load_mission
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,6 @@ def calculate_course_status(heading: float, bearing: float) -> str:
 def _calculate_poi_active_status(
     poi: POI,
     route_manager: RouteManager,
-    mission_storage: MissionStorage,
 ) -> bool:
     """
     Calculate whether a POI is currently active based on its associated
@@ -128,7 +127,6 @@ def _calculate_poi_active_status(
     Args:
         poi: The POI to check
         route_manager: RouteManager instance to check active route
-        mission_storage: Mission storage instance to check mission status
 
     Returns:
         bool: True if POI is active, False otherwise
@@ -145,7 +143,7 @@ def _calculate_poi_active_status(
     # Check mission-based POIs
     if poi.mission_id is not None:
         try:
-            mission = mission_storage.load_mission(poi.mission_id)
+            mission = load_mission(poi.mission_id)
             return mission.is_active if mission else False
         except Exception:
             # Mission not found or error loading
@@ -208,7 +206,6 @@ async def list_pois(
         active_status = _calculate_poi_active_status(
             poi=poi,
             route_manager=_route_manager,
-            mission_storage=MissionStorage(),
         )
 
         responses.append(
@@ -524,7 +521,6 @@ async def get_pois_with_etas(
             active_status = _calculate_poi_active_status(
                 poi=poi,
                 route_manager=_route_manager,
-                mission_storage=MissionStorage(),
             )
 
             pois_with_eta.append(
