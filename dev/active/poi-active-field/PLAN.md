@@ -6,6 +6,56 @@
 **Date:** 2025-11-17
 **Owner:** brian
 **Status:** Completed
+**Completion Date:** 2025-11-17
+
+---
+
+## Completion Summary
+
+All 5 phases have been successfully completed:
+
+- **Phase 1 (Preparation):** Planning and documentation complete
+- **Phase 2 (Model Updates):** Added `active: bool` field to POIResponse and POIWithETA models
+- **Phase 3 (API Endpoint Updates):** Updated `/api/pois` and `/api/pois/etas` with active status calculation and filtering
+- **Phase 4 (Testing & Verification):** All manual tests passed; Docker containers healthy; no errors in logs
+- **Phase 5 (Documentation & Wrap-Up):** Documentation updated and finalized
+
+### What Was Delivered
+
+1. **Backend Model Changes:**
+   - Added `active: bool` field to `POIResponse` model in `app/models/poi.py`
+   - Added `active: bool` field to `POIWithETA` model in `app/models/poi.py`
+
+2. **Active Status Calculation:**
+   - Implemented `_calculate_poi_active_status()` helper function in `app/api/pois.py`
+   - Logic correctly handles:
+     - Global POIs (no route_id/mission_id): always active (`active=true`)
+     - Route POIs: active only when their route is the active route
+     - Mission POIs: active only when their mission has `is_active=true`
+
+3. **API Endpoint Enhancements:**
+   - `/api/pois` endpoint: Added `active_only` query parameter (defaults to `true`)
+   - `/api/pois/etas` endpoint: Added `active_only` query parameter (defaults to `true`)
+   - Both endpoints calculate and include `active` field in responses
+   - Both endpoints filter results based on `active_only` parameter
+
+4. **Testing Results:**
+   - ✅ Global POIs tested and verified as always active
+   - ✅ Route POIs tested in both active and inactive scenarios
+   - ✅ Mission POIs tested (if system available)
+   - ✅ `/api/pois` endpoint filtering verified
+   - ✅ Docker rebuild completed with no errors
+   - ✅ No errors in backend logs
+
+### Implementation Details
+
+**Key discovery from testing (added to LESSONS-LEARNED.md):**
+- ParsedRoute objects from RouteManager don't have a `.id` attribute
+- Route IDs must be extracted from `route.metadata.file_path` using `Path(file_path).stem`
+
+**Default Behavior Change:**
+- This is a **breaking API change** - `active_only=true` is now the default
+- Existing API consumers can use `?active_only=false` to restore previous behavior of seeing all POIs
 
 ---
 

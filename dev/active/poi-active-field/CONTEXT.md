@@ -165,6 +165,48 @@ Define exactly what "done and verified" means:
 
 ---
 
+---
+
+## Final Architecture Notes
+
+### Implementation Pattern
+
+The active status calculation follows a simple, efficient pattern:
+
+1. **Helper Function** (`_calculate_poi_active_status`): Encapsulates all business logic
+   - Takes POI object, RouteManager, and mission storage
+   - Returns boolean indicating active status
+   - Handles three scenarios: global, route-based, mission-based
+
+2. **Endpoint Integration**:
+   - Both `/api/pois` and `/api/pois/etas` call the helper during response building
+   - Active status is computed at response time (not persisted)
+   - Filtering applied after all active values are calculated
+
+3. **Route ID Extraction**:
+   - Critical detail: Use `Path(active_route.metadata.file_path).stem` to get route ID
+   - ParsedRoute objects don't have direct `.id` attribute
+   - See LESSONS-LEARNED.md entry for [2025-11-17]
+
+### Backward Compatibility
+
+- **Breaking Change:** Default `active_only=true` filters POIs from inactive routes/missions
+- **Recovery Path:** Clients can use `?active_only=false` to get all POIs with `active` field populated
+- **Migration Note:** API documentation should clearly state this change with examples
+
+### Performance Characteristics
+
+- **Time Complexity:** O(n) where n = number of POIs (single pass to calculate active status)
+- **Space Complexity:** O(n) for response building (same as before)
+- **Caching:** None needed; active status checks are simple boolean comparisons
+- **Impact:** Negligible performance impact from active status calculation
+
+### Error Handling
+
+- Mission loading failures are caught and treated as inactive (safe fallback)
+- Route manager lookups are direct and fast
+- No null pointer risks due to early returns in helper function
+
 ## References
 
 - POI system architecture: `docs/design-document.md` (section 5)

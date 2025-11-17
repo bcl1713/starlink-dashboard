@@ -3,7 +3,7 @@
 **Branch:** `feat/poi-active-field`
 **Folder:** `dev/active/poi-active-field/`
 **Generated:** 2025-11-17
-**Status:** Planning Complete, Ready for Implementation
+**Status:** Implementation Complete, Ready for PR and Merge
 
 ---
 
@@ -21,8 +21,10 @@ active only when their mission has `is_active=true`.
 
 ## Current Status
 
-- **Phase:** Phase 3 (API Endpoint Updates) Complete, Phase 4 (Testing) In Progress
-- **Checklist completion:** ~90% (Model updates ✅, API updates ✅, Docker rebuild ✅, Testing in progress)
+- **Phase:** All phases complete (1-5)
+- **Checklist completion:** 100% - All items marked `[x]`
+- **All tests passed:** ✅ Yes
+- **Acceptance criteria met:** ✅ Yes
 - **Major accomplishments in this session:**
   - ✅ Phase 2: Added `active: bool` field to POIResponse and POIWithETA models
   - ✅ Phase 3.1: Created `_calculate_poi_active_status()` helper function with proper mission/route logic
@@ -33,33 +35,41 @@ active only when their mission has `is_active=true`.
 
 ---
 
-## Next Actions
+## Completed Actions
 
-To complete the feature:
+All implementation and testing tasks have been completed:
 
-1. **Complete Phase 4 (Testing & Verification):**
-   - Tasks 4.2-4.7: Run integration tests to verify active field behavior:
-     - Task 4.2: Test global POIs (should always be active)
-     - Task 4.3: Test route POIs in active scenario
-     - Task 4.4: Test route POIs in inactive scenario
-     - Task 4.5: Test mission POIs (if mission system available)
-     - Task 4.6: Test `/api/pois` endpoint filtering
-     - Task 4.7: Check backend logs for any errors
-   - Reference CHECKLIST.md lines 292-391 for exact test commands
+1. ✅ **Phase 4 (Testing & Verification) Completed:**
+   - All integration tests passed (Tasks 4.2-4.7)
+   - Global POIs tested and verified as always active
+   - Route POIs tested in both active and inactive scenarios
+   - Mission POIs tested successfully
+   - `/api/pois` and `/api/pois/etas` endpoints filtering verified
+   - Backend logs checked and show no errors
 
-2. **Verify API Behavior:**
-   - Confirm `/api/pois/etas?active_only=true` returns only active POIs
-   - Confirm `/api/pois/etas?active_only=false` returns all POIs with `active` field populated
-   - Same for `/api/pois` endpoint
+2. ✅ **API Behavior Verified:**
+   - `/api/pois/etas?active_only=true` returns only active POIs
+   - `/api/pois/etas?active_only=false` returns all POIs with `active` field populated
+   - `/api/pois` endpoint behaves identically
 
-3. **Documentation Maintenance:**
-   - Update PLAN.md status to "Completed" when all tests pass
-   - Add any new learnings to LESSONS-LEARNED.md
-   - Ensure all checklist items are marked `[x]`
+3. ✅ **Documentation Completed:**
+   - PLAN.md status updated to "Completed" with completion summary
+   - CONTEXT.md updated with final architecture notes
+   - CHECKLIST.md 100% complete with all items marked `[x]`
+   - LESSONS-LEARNED.md updated with implementation discovery [2025-11-17]
+   - HANDOFF.md updated with completion status
 
-4. **Final Handoff:**
-   - Run syncing-context-handoff skill to update docs
-   - Create PR for review once tests complete
+## Next Actions (PR & Merge)
+
+This feature is ready for:
+
+1. **Create PR** from `feat/poi-active-field` to `main`
+   - Title: `feat: add active field and filtering to POI endpoints`
+   - Include checklist completion and testing results in description
+
+2. **Merge PR** once approved
+
+3. **Archive to dev/complete** folder after merge
 
 ---
 
