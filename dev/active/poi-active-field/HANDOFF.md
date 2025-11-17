@@ -21,71 +21,64 @@ active only when their mission has `is_active=true`.
 
 ## Current Status
 
-- **Phase:** Phase 1 (Preparation) Complete — Planning Done
-- **Checklist completion:** 0% (Implementation starting)
-- **Major accomplishments since last session:**
-  - ✅ Completed codebase exploration and requirements gathering
-  - ✅ Generated PLAN.md with 5 phases and clear objectives
-  - ✅ Generated CONTEXT.md with all file locations and testing strategy
-  - ✅ Generated CHECKLIST.md with detailed, junior-friendly tasks
-  - ✅ Feature branch created and pushed to remote
+- **Phase:** Phase 3 (API Endpoint Updates) Complete, Phase 4 (Testing) In Progress
+- **Checklist completion:** ~90% (Model updates ✅, API updates ✅, Docker rebuild ✅, Testing in progress)
+- **Major accomplishments in this session:**
+  - ✅ Phase 2: Added `active: bool` field to POIResponse and POIWithETA models
+  - ✅ Phase 3.1: Created `_calculate_poi_active_status()` helper function with proper mission/route logic
+  - ✅ Phase 3.2-3.3: Updated `/api/pois/etas` endpoint to calculate and filter by active status
+  - ✅ Phase 3.4-3.5: Updated `/api/pois` endpoint to calculate and filter by active status
+  - ✅ Phase 4.1: Docker rebuild successful; all containers healthy
+  - ✅ Fixed import issue: Used `load_mission()` function directly instead of non-existent `MissionStorage` class
 
 ---
 
 ## Next Actions
 
-Follow these steps to implement the feature:
+To complete the feature:
 
-1. **Start Phase 2 (Model Updates):**
-   - Continue with CHECKLIST.md → Section "Phase 2: Model Updates"
-   - Task 2.1: Add `active: bool` field to `POIResponse` class in
-     `backend/starlink-location/app/models/poi.py` (around line 141)
-   - Task 2.2: Add `active: bool` field to `POIWithETA` class in same file
-     (around line 204)
-   - Task 2.3: Commit changes with message: `feat: add active field to POI
-     response models`
+1. **Complete Phase 4 (Testing & Verification):**
+   - Tasks 4.2-4.7: Run integration tests to verify active field behavior:
+     - Task 4.2: Test global POIs (should always be active)
+     - Task 4.3: Test route POIs in active scenario
+     - Task 4.4: Test route POIs in inactive scenario
+     - Task 4.5: Test mission POIs (if mission system available)
+     - Task 4.6: Test `/api/pois` endpoint filtering
+     - Task 4.7: Check backend logs for any errors
+   - Reference CHECKLIST.md lines 292-391 for exact test commands
 
-2. **Move to Phase 3 (API Endpoint Updates):**
-   - Create helper function `_calculate_poi_active_status()` in
-     `backend/starlink-location/app/api/pois.py`
-   - Update `/api/pois/etas` endpoint to accept `active_only: bool = True`
-     query parameter
-   - Update `/api/pois` endpoint to accept `active_only: bool = True` query
-     parameter
-   - Implement active status calculation and filtering logic for both endpoints
-   - Commit changes with message: `feat: add active filtering to POI endpoints`
+2. **Verify API Behavior:**
+   - Confirm `/api/pois/etas?active_only=true` returns only active POIs
+   - Confirm `/api/pois/etas?active_only=false` returns all POIs with `active` field populated
+   - Same for `/api/pois` endpoint
 
-3. **Run Phase 4 (Testing & Verification):**
-   - CRITICAL: Rebuild Docker with: `docker compose down && docker compose
-     build --no-cache && docker compose up -d`
-   - Verify containers are healthy: `docker compose ps`
-   - Test all 7 scenarios in CHECKLIST.md (global, route active/inactive, mission
-     active/inactive, parameter behavior)
+3. **Documentation Maintenance:**
+   - Update PLAN.md status to "Completed" when all tests pass
+   - Add any new learnings to LESSONS-LEARNED.md
+   - Ensure all checklist items are marked `[x]`
 
-4. **Complete Phase 5 (Wrap-Up):**
-   - Update PLAN.md status to "Completed"
-   - Finalize CONTEXT.md with any new learnings
-   - Update LESSONS-LEARNED.md if anything surprising happened
-   - Ensure all checklist items are checked off
+4. **Final Handoff:**
+   - Run syncing-context-handoff skill to update docs
+   - Create PR for review once tests complete
 
 ---
 
 ## Risks / Questions / Notes
 
 **Breaking API Change:**
-- Setting `active_only=True` by default means existing API consumers will only
-  see active POIs
-- Mitigation: Parameter can be set to `false` to get all POIs
-- Document this prominently in CHANGELOG and PR
+- ✅ RESOLVED: Setting `active_only=True` by default filters inactive POIs
+- Backward compatibility: Clients can use `?active_only=false` to get old behavior
+- Should document in CHANGELOG and PR
 
-**Implementation Detail:**
-- Helper function needs access to RouteManager and MissionStorage instances
-- Check how other endpoints in `pois.py` obtain these dependencies via FastAPI
-  injection
+**Implementation Details:**
+- ✅ Helper function `_calculate_poi_active_status()` uses `_route_manager` global
+- ✅ Uses `load_mission()` function for mission lookups (not a class)
+- Both endpoints properly initialized with global route_manager
 
-**Testing Caveat:**
-- Mission system testing may require having missions set up first
-- If mission endpoints not available, focus on global and route POI testing
+**Testing Considerations:**
+- Docker rebuild successful with fixed imports
+- Mission system testing depends on mission endpoints availability
+- Focus Phase 4 tests on global and route POI scenarios first
 
 ---
 
