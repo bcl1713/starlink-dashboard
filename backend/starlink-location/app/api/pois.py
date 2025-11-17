@@ -138,7 +138,14 @@ def _calculate_poi_active_status(
     # Check route-based POIs
     if poi.route_id is not None:
         active_route = route_manager.get_active_route()
-        return active_route is not None and active_route.id == poi.route_id
+        if active_route is not None:
+            # Extract route ID from metadata file_path (e.g., "/data/routes/route-name.kml" -> "route-name")
+            try:
+                active_route_id = Path(active_route.metadata.file_path).stem
+                return active_route_id == poi.route_id
+            except Exception:
+                return False
+        return False
 
     # Check mission-based POIs
     if poi.mission_id is not None:
