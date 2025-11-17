@@ -40,54 +40,54 @@ exploration are done.
 
 ### Task 2.1: Add `active` field to POIResponse model
 
-- [ ] Open the file:
+- [x] Open the file:
   ```bash
   # Just for reference - use your editor/Read tool
   backend/starlink-location/app/models/poi.py
   ```
-- [ ] Locate the `POIResponse` class (starts around line 141)
-- [ ] Add the `active` field after the existing fields
-  - [ ] Add this line in the appropriate position within the class:
+- [x] Locate the `POIResponse` class (starts around line 141)
+- [x] Add the `active` field after the existing fields
+  - [x] Add this line in the appropriate position within the class:
     ```python
     active: bool = Field(
         ...,
         description="Whether this POI is currently active (based on associated route/mission active status)",
     )
     ```
-  - [ ] Place it after the `category` field and before the `Config` class
-- [ ] Expected result: `POIResponse` now has an `active: bool` field
+  - [x] Place it after the `category` field and before the `Config` class
+- [x] Expected result: `POIResponse` now has an `active: bool` field
 
 ### Task 2.2: Add `active` field to POIWithETA model
 
-- [ ] In the same file (`app/models/poi.py`), locate the `POIWithETA` class
+- [x] In the same file (`app/models/poi.py`), locate the `POIWithETA` class
   (starts around line 204)
-- [ ] Add the `active` field after the existing POI-related fields
-  - [ ] Add this line in the appropriate position within the class:
+- [x] Add the `active` field after the existing POI-related fields
+  - [x] Add this line in the appropriate position within the class:
     ```python
     active: bool = Field(
         ...,
         description="Whether this POI is currently active (based on associated route/mission active status)",
     )
     ```
-  - [ ] Place it near the core POI fields (after `category`, before ETA fields
+  - [x] Place it near the core POI fields (after `category`, before ETA fields
     like `eta_seconds`)
-- [ ] Expected result: `POIWithETA` now has an `active: bool` field
+- [x] Expected result: `POIWithETA` now has an `active: bool` field
 
 ### Task 2.3: Commit model changes
 
-- [ ] Stage the changes:
+- [x] Stage the changes:
   ```bash
   git add backend/starlink-location/app/models/poi.py
   ```
-- [ ] Commit with message:
+- [x] Commit with message:
   ```bash
   git commit -m "feat: add active field to POI response models"
   ```
-- [ ] Push to remote:
+- [x] Push to remote:
   ```bash
   git push -u origin feat/poi-active-field
   ```
-- [ ] Expected result: Changes are committed and pushed to the feature branch
+- [x] Expected result: Changes are committed and pushed to the feature branch
 
 ---
 
