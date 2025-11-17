@@ -147,6 +147,10 @@ class POIResponse(BaseModel):
     longitude: float
     icon: str
     category: Optional[str]
+    active: bool = Field(
+        ...,
+        description="Whether this POI is currently active (based on associated route/mission active status)",
+    )
     description: Optional[str]
     route_id: Optional[str]
     mission_id: Optional[str] = None
@@ -210,6 +214,10 @@ class POIWithETA(BaseModel):
     longitude: float = Field(..., description="POI longitude in decimal degrees")
     category: Optional[str] = Field(default=None, description="POI category")
     icon: str = Field(default="marker", description="Icon identifier")
+    active: bool = Field(
+        ...,
+        description="Whether this POI is currently active (based on associated route/mission active status)",
+    )
     eta_seconds: float = Field(..., description="Estimated time to arrival in seconds (-1 if no speed)")
     eta_type: str = Field(
         default="estimated",
