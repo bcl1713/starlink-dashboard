@@ -393,28 +393,28 @@ status
 
 ## Documentation Maintenance
 
-- [ ] Update PLAN.md status to "Completed" when all tasks are done
-- [ ] Update CONTEXT.md if any assumptions or risks changed during
+- [x] Update PLAN.md status to "Completed" when all tasks are done
+- [x] Update CONTEXT.md if any assumptions or risks changed during
   implementation
-- [ ] Add entry to dev/LESSONS-LEARNED.md if anything surprising happened:
-  - [ ] Open `dev/LESSONS-LEARNED.md`
-  - [ ] Add dated entry with what was learned
-  - [ ] Commit the update
+- [x] Add entry to dev/LESSONS-LEARNED.md if anything surprising happened:
+  - [x] Open `dev/LESSONS-LEARNED.md`
+  - [x] Add dated entry with what was learned
+  - [x] Commit the update
 
 ---
 
 ## Verification Tasks
 
-- [ ] Confirm all objectives from PLAN.md are met:
-  - [ ] POI response models include `active: bool` field
-  - [ ] Active status logic works for global POIs
-  - [ ] Active status logic works for route POIs
-  - [ ] Active status logic works for mission POIs
-  - [ ] `/api/pois/etas` accepts `active_only` parameter
-  - [ ] `/api/pois` accepts `active_only` parameter
-  - [ ] API responses filter correctly when `active_only=true`
-  - [ ] API responses include all POIs when `active_only=false`
-  - [ ] Docker rebuild completed successfully
+- [x] Confirm all objectives from PLAN.md are met:
+  - [x] POI response models include `active: bool` field
+  - [x] Active status logic works for global POIs
+  - [x] Active status logic works for route POIs
+  - [x] Active status logic works for mission POIs
+  - [x] `/api/pois/etas` accepts `active_only` parameter
+  - [x] `/api/pois` accepts `active_only` parameter
+  - [x] API responses filter correctly when `active_only=true`
+  - [x] API responses include all POIs when `active_only=false`
+  - [x] Docker rebuild completed successfully
 
 ---
 
@@ -422,11 +422,11 @@ status
 
 All of the following must be checked before handoff to `wrapping-up-plan`:
 
-- [ ] All implementation tasks above are marked `- [x]`
-- [ ] All verification tests passed
-- [ ] No TODOs remain in code
-- [ ] Backend runs without errors: `docker logs starlink-location`
-- [ ] PLAN.md updated to "Completed" status
-- [ ] CONTEXT.md finalized
-- [ ] LESSONS-LEARNED.md updated if applicable
-- [ ] All changes committed and pushed to feature branch
+- [x] All implementation tasks above are marked `- [x]`
+- [x] All verification tests passed
+- [x] No TODOs remain in code
+- [x] Backend runs without errors: `docker logs starlink-location`
+- [x] PLAN.md updated to "Completed" status
+- [x] CONTEXT.md finalized
+- [x] LESSONS-LEARNED.md updated if applicable
+- [x] All changes committed and pushed to feature branch
