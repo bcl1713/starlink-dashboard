@@ -143,7 +143,8 @@ def _calculate_poi_active_status(
             try:
                 active_route_id = Path(active_route.metadata.file_path).stem
                 return active_route_id == poi.route_id
-            except Exception:
+            except Exception as e:
+                logger.warning("Failed to extract active route ID from path '%s': %s", active_route.metadata.file_path, e)
                 return False
         return False
 
@@ -152,8 +153,9 @@ def _calculate_poi_active_status(
         try:
             mission = load_mission(poi.mission_id)
             return mission.is_active if mission else False
-        except Exception:
+        except Exception as e:
             # Mission not found or error loading
+            logger.warning("Failed to load mission '%s' for active status check: %s", poi.mission_id, e)
             return False
 
     return False
@@ -215,6 +217,10 @@ async def list_pois(
             route_manager=_route_manager,
         )
 
+        # If filtering is active, skip inactive POIs before creating the response object
+        if active_only and not active_status:
+            continue
+
         responses.append(
             POIResponse(
                 id=poi.id,
@@ -235,10 +241,6 @@ async def list_pois(
                 projected_route_progress=poi.projected_route_progress,
             )
         )
-
-    # Apply active filtering if requested
-    if active_only:
-        responses = [r for r in responses if r.active]
 
     return POIListResponse(pois=responses, total=len(responses), route_id=route_id, mission_id=mission_id)
 
@@ -530,6 +532,10 @@ async def get_pois_with_etas(
                 route_manager=_route_manager,
             )
 
+            # If filtering is active, skip inactive POIs before creating the response object
+            if active_only and not active_status:
+                continue
+
             pois_with_eta.append(
                 POIWithETA(
                     poi_id=poi.id,
@@ -554,10 +560,6 @@ async def get_pois_with_etas(
                     route_aware_status=route_aware_status,
                 )
             )
-
-        # Apply active filtering if requested
-        if active_only:
-            pois_with_eta = [p for p in pois_with_eta if p.active]
 
         # Sort by ETA (ascending) so closest POIs appear first
         pois_with_eta.sort(key=lambda p: p.eta_seconds if p.eta_seconds >= 0 else float('inf'))
