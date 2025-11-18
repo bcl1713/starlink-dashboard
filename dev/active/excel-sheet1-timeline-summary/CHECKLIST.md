@@ -45,30 +45,30 @@
 
 ### Rebuild Docker environment with new dependencies
 
-- [ ] Stop all running containers:
+- [x] Stop all running containers:
   ```bash
   docker compose down
   ```
-- [ ] Expected result: Output shows containers stopped and removed
+- [x] Expected result: Output shows containers stopped and removed
 
-- [ ] Rebuild Docker images with no cache:
+- [x] Rebuild Docker images with no cache:
   ```bash
   docker compose build --no-cache
   ```
-- [ ] Expected result: Build completes successfully, showing matplotlib and cartopy installation steps
-- [ ] Note: This may take 5-10 minutes due to cartopy compilation
+- [x] Expected result: Build completes successfully, showing matplotlib and cartopy installation steps
+- [x] Note: This may take 5-10 minutes due to cartopy compilation
 
-- [ ] Start containers:
+- [x] Start containers:
   ```bash
   docker compose up -d
   ```
-- [ ] Expected result: All containers start and show healthy status
+- [x] Expected result: All containers start and show healthy status
 
-- [ ] Verify backend is healthy:
+- [x] Verify backend is healthy:
   ```bash
   curl http://localhost:8000/health
   ```
-- [ ] Expected result: JSON response with `"status": "ok"`
+- [x] Expected result: JSON response with `"status": "ok"`
 
 ### Commit dependency changes
 
