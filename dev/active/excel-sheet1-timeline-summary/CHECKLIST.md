@@ -72,38 +72,38 @@
 
 ### Commit dependency changes
 
-- [ ] Stage the requirements file:
+- [x] Stage the requirements file:
   ```bash
   git add backend/starlink-location/requirements.txt
   ```
-- [ ] Commit with message:
+- [x] Commit with message:
   ```bash
   git commit -m "feat: add matplotlib and cartopy for export visualizations"
   ```
-- [ ] Push to remote:
+- [x] Push to remote:
   ```bash
   git push -u origin feat/excel-sheet1-timeline-summary
   ```
 
 ### Review current exporter implementation
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Read the `generate_xlsx_export()` function (lines 415-430)
-- [ ] Note how it creates DataFrame objects and writes them to Excel using `pd.ExcelWriter`
-- [ ] Read the `_segment_rows()` function (lines 271-331) to understand timeline data structure
-- [ ] Read the color constants at the top of the file (lines 37-48)
-- [ ] Confirm understanding: The current Excel export uses pandas DataFrames written directly to sheets without any image embedding or cell styling
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Read the `generate_xlsx_export()` function (lines 415-430)
+- [x] Note how it creates DataFrame objects and writes them to Excel using `pd.ExcelWriter`
+- [x] Read the `_segment_rows()` function (lines 271-331) to understand timeline data structure
+- [x] Read the color constants at the top of the file (lines 37-48)
+- [x] Confirm understanding: The current Excel export uses pandas DataFrames written directly to sheets without any image embedding or cell styling
 
 ### Verify data structure access
 
-- [ ] Open `backend/starlink-location/app/mission/models.py`
-- [ ] Locate the `Mission` class definition
-- [ ] Note the fields: `route` (relationship), `pois` (relationship), metadata fields
-- [ ] Locate the `MissionTimeline` class definition
-- [ ] Note the `segments` field (list of TimelineSegment)
-- [ ] Locate the `TimelineSegment` class definition
-- [ ] Note fields: `start_time`, `end_time`, `status` (TimelineStatus enum), `x_state`, `ka_state`, `ku_state` (TransportState enum)
-- [ ] Confirm understanding: Mission provides route/POI access, Timeline provides segments with status and transport states
+- [x] Open `backend/starlink-location/app/mission/models.py`
+- [x] Locate the `Mission` class definition
+- [x] Note the fields: `route` (relationship), `pois` (relationship), metadata fields
+- [x] Locate the `MissionTimeline` class definition
+- [x] Note the `segments` field (list of TimelineSegment)
+- [x] Locate the `TimelineSegment` class definition
+- [x] Note fields: `start_time`, `end_time`, `status` (TimelineStatus enum), `x_state`, `ka_state`, `ku_state` (TransportState enum)
+- [x] Confirm understanding: Mission provides route/POI access, Timeline provides segments with status and transport states
 
 ---
 
