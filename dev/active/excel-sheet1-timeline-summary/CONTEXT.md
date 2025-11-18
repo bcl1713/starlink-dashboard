@@ -120,6 +120,25 @@ This was prompted by user feedback noticing the discrepancy and requesting produ
 
 ---
 
+## Critical Bug Fixes Applied
+
+**Issue 1: Excel map showing "No route data available"**
+- **Root Cause:** Mission model stores `route_id` (string ID), not a `route` object. The original code tried to access `mission.route` directly, which doesn't exist.
+- **Fix:** Updated `_generate_route_map()` to use RouteManager to fetch the actual ParsedRoute object from the route_id. Extracts waypoints from `route.points` (which contain latitude, longitude, altitude).
+- **Files Changed:** `backend/starlink-location/app/mission/exporter.py` (lines 300-343)
+- **Added:** Global `_route_manager` variable and `set_route_manager()` function (lines 62-68)
+- **Main.py:** Added initialization call `exporter.set_route_manager(_route_manager)` (line 134)
+
+**Issue 2: PDF export missing route map and timeline chart**
+- **Root Cause:** The `generate_pdf_export()` function was never updated to add the map and chart visualizations, even though they were implemented for Excel.
+- **Fix:** Added route map image and timeline chart image to PDF export with proper PageBreak between them. Both have error handling to gracefully show "[unavailable]" message if image generation fails.
+- **Files Changed:** `backend/starlink-location/app/mission/exporter.py` (lines 926-951)
+- **Added:** Import of `PageBreak` from reportlab.platypus (line 34)
+
+**Status:** All fixes applied, Docker rebuilt and verified working. Backend exports all three formats (CSV, XLSX, PDF) successfully.
+
+---
+
 ## Testing Strategy
 
 **Definition of "done and verified":**
