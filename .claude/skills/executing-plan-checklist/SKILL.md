@@ -1,10 +1,10 @@
 ---
 name: executing-plan-checklist
 description:
-  Executes one checklist task at a time for the current feature branch by
-  automatically locating dev/active/<slug>/CHECKLIST.md, applying changes,
-  committing after each step, and updating the checklist immediately. Use once a
-  plan exists.
+  Use this skill to implement work on any feature/fix/chore branch. Executes one
+  checklist task at a time for the current feature branch by automatically
+  locating dev/active/<slug>/CHECKLIST.md, applying changes, committing after
+  each step, and updating the checklist immediately. Use once a plan exists.
 ---
 
 # Executing plan checklist
@@ -36,6 +36,7 @@ This skill uses tools to:
 - Inspect the active git branch.
 - Read and update markdown files and source files.
 - Run git add/commit/push after each completed task.
+- Uses sub agents liberally to minimize context pollution.
 
 The user should not have to run these commands manually.
 
@@ -110,10 +111,14 @@ If a checklist item is ambiguous or insufficiently detailed:
 
 Once confirmed:
 
+- Follow the checklist exactly!
+- Use sub agents with Haiku liberally to minimize context pollution.
 - Apply code and config changes using tools.
 - If the task implies updates to PLAN.md or CONTEXT.md, update those files as
   well.
-- If the task yields a significant lesson:
+- If you run into errors, check `dev/LESSONS-LEARNED.md` for prior solutions.
+- If the task yields a significant lesson or you had commands that resulted in
+  errors that needed correction:
   - Append a dated entry to `dev/LESSONS-LEARNED.md` in this format:
     - `- [YYYY-MM-DD] Short lesson description (optional link to PR/commit/path)`
 
