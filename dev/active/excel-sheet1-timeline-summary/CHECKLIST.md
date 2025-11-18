@@ -111,8 +111,8 @@
 
 ### Create _generate_route_map function skeleton
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Add imports at the top of the file (after existing imports):
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Add imports at the top of the file (after existing imports):
   ```python
   import io
   import matplotlib
@@ -123,8 +123,8 @@
   from matplotlib.patches import Rectangle
   from matplotlib.lines import Line2D
   ```
-- [ ] Find a good location for new helper functions (suggest before `_segment_rows` function around line 270)
-- [ ] Add new function:
+- [x] Find a good location for new helper functions (suggest before `_segment_rows` function around line 270)
+- [x] Add new function:
   ```python
   def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
       """Generate geographic map PNG showing route with color-coded segments and POI markers.
@@ -139,11 +139,11 @@
       # TODO: Implementation
       pass
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### Implement route waypoint extraction
 
-- [ ] In the `_generate_route_map` function, replace the `pass` statement with:
+- [x] In the `_generate_route_map` function, replace the `pass` statement with:
   ```python
       if mission is None or mission.route is None:
           # Return empty/placeholder map if no route
@@ -176,12 +176,12 @@
           buf.seek(0)
           return buf.read()
   ```
-- [ ] Save the file
-- [ ] Note: The actual route geometry structure may differ; will adjust after testing
+- [x] Save the file
+- [x] Note: The actual route geometry structure may differ; will adjust after testing
 
 ### Implement map projection and base features
 
-- [ ] Continue adding to `_generate_route_map` function:
+- [x] Continue adding to `_generate_route_map` function:
   ```python
       # Create figure with geographic projection
       fig = plt.figure(figsize=(12, 8))
@@ -210,7 +210,7 @@
 
 ### Implement route path with color-coded segments
 
-- [ ] Continue adding to `_generate_route_map` function:
+- [x] Continue adding to `_generate_route_map` function:
   ```python
       # Map segment status to colors
       status_colors = {
@@ -249,7 +249,7 @@
 
 ### Implement POI and airport markers
 
-- [ ] Continue adding to `_generate_route_map` function:
+- [x] Continue adding to `_generate_route_map` function:
   ```python
       # Add departure airport marker (first waypoint)
       if waypoints:
@@ -282,7 +282,7 @@
 
 ### Add legend and finalize map
 
-- [ ] Continue adding to `_generate_route_map` function:
+- [x] Continue adding to `_generate_route_map` function:
   ```python
       # Create legend
       legend_elements = [
@@ -307,35 +307,35 @@
       buf.seek(0)
       return buf.read()
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### Test map generation
 
-- [ ] Rebuild and restart Docker:
+- [x] Rebuild and restart Docker:
   ```bash
   docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- [ ] Expected result: Backend starts successfully with no import errors
+- [x] Expected result: Backend starts successfully with no import errors
 
-- [ ] Test by triggering an export (use existing test or API endpoint)
-- [ ] If errors occur, check logs:
+- [x] Test by triggering an export (use existing test or API endpoint)
+- [x] If errors occur, check logs:
   ```bash
   docker compose logs -f starlink-location
   ```
-- [ ] Adjust route geometry parsing based on actual data structure
-- [ ] Expected result: Map function executes without crashing (visual inspection comes later)
+- [x] Adjust route geometry parsing based on actual data structure
+- [x] Expected result: Map function executes without crashing (visual inspection comes later)
 
 ### Commit map implementation
 
-- [ ] Stage changes:
+- [x] Stage changes:
   ```bash
   git add backend/starlink-location/app/mission/exporter.py
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "feat: implement geographic route map generation"
   ```
-- [ ] Push:
+- [x] Push:
   ```bash
   git push
   ```
