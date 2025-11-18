@@ -13,16 +13,16 @@
 
 ## Initialization
 
-- [ ] Ensure you are on the correct branch:
-  - [ ] Run:
+- [x] Ensure you are on the correct branch:
+  - [x] Run:
     ```bash
     git branch
     ```
-  - [ ] Confirm that the current branch line is:
+  - [x] Confirm that the current branch line is:
     ```text
     * feat/excel-sheet1-timeline-summary
     ```
-  - [ ] If you are on a different branch, switch with:
+  - [x] If you are on a different branch, switch with:
     ```bash
     git checkout feat/excel-sheet1-timeline-summary
     ```
@@ -33,15 +33,15 @@
 
 ### Add matplotlib and cartopy to requirements.txt
 
-- [ ] Open the file `backend/starlink-location/requirements.txt`
-- [ ] Locate the line containing `reportlab>=4.0.0` (around line 22)
-- [ ] Add two new lines immediately after the reportlab line:
+- [x] Open the file `backend/starlink-location/requirements.txt`
+- [x] Locate the line containing `reportlab>=4.0.0` (around line 22)
+- [x] Add two new lines immediately after the reportlab line:
   ```
   matplotlib>=3.8.0
   cartopy>=0.22.0
   ```
-- [ ] Save the file
-- [ ] Expected result: requirements.txt now includes matplotlib and cartopy
+- [x] Save the file
+- [x] Expected result: requirements.txt now includes matplotlib and cartopy
 
 ### Rebuild Docker environment with new dependencies
 
