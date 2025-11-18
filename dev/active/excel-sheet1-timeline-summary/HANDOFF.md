@@ -17,45 +17,52 @@ Adding the missing Sheet 1 "Timeline Summary" to mission planning Excel exports 
 
 - **Phase:** Phase 7 (Testing & Verification) - In Progress
 - **Checklist completion:** ~95% (Phases 1-6 complete, testing and doc updates in progress)
-- **Major accomplishments since last session:**
-  - ✅ Implemented 3 new helper functions: `_generate_route_map()`, `_generate_timeline_chart()`, `_summary_table_rows()`
-  - ✅ Integrated map and chart images into Excel export with proper positioning
-  - ✅ Added map and chart to PDF export with page breaks
-  - ✅ Discovered and fixed critical RouteManager integration bug
-  - ✅ Docker environment rebuilt and verified all export formats working
-  - ✅ Updated PLAN.md and CONTEXT.md with bug fix details
+- **Major accomplishments in current session (Nov 18):**
+  - ✅ Improved map and chart visualizations with modern styling (200 DPI, modern colors)
+  - ✅ Fixed map color-coded route lines using time-interpolation algorithm
+  - ✅ Implemented IDL (International Date Line) crossing detection and segment skipping
+  - ✅ Adjusted map bounds to exclude IDL-crossing segments (fixes map centering)
+  - ✅ Set map resolution to 1280x1024 pixels (from 3200x1800)
+  - ⚠️ ISSUE IDENTIFIED: Map is now too wide/short, legend takes up 40% of space
+  - ⚠️ ISSUE IDENTIFIED: Need to adjust figure layout and legend positioning
 
 ---
 
 ## Next Actions
 
-1. **Manual testing with real mission data** (CHECKLIST Phase 7):
-   - Generate test Excel export and verify in Google Sheets:
-     - Summary sheet is first tab
-     - Map shows actual route (not placeholder)
-     - Timeline chart visible with colored blocks
-     - Summary table color-coded correctly
-   - Generate test PDF export and verify:
-     - Route map page present
-     - Timeline chart page present
-   - Fix any remaining issues if exports don't look correct
+1. **URGENT: Fix map layout and legend sizing**:
+   - Map is 1280x1024 but aspect ratio is wrong (too wide/short)
+   - Legend occupies ~40% of figure width (should be max 20%)
+   - Need to adjust:
+     - Figure size calculation (possibly need different aspect ratio)
+     - Legend placement and font size (make it smaller or move outside plot area)
+     - Subplot layout to give more space to actual map area
+   - Test with real mission data after layout fix
 
-2. **Update documentation** (CHECKLIST Phase 8):
+2. **Manual testing with real mission data** (CHECKLIST Phase 7):
+   - Generate test Excel export and verify map layout is correct
+   - Verify timeline chart displays properly with correct spacing
+   - Generate PDF export and verify both visualizations
+
+3. **Update documentation** (CHECKLIST Phase 8):
    - Update MISSION-PLANNING-GUIDE.md to accurately describe Sheet 1 and PDF timeline chart
    - Finalize PLAN.md by changing status to "Completed"
    - Commit final documentation updates
 
-3. **Wrap up**:
+4. **Wrap up**:
    - Mark all CHECKLIST items complete
-   - Add entry to dev/LESSONS-LEARNED.md about RouteManager discovery
+   - Add entries to dev/LESSONS-LEARNED.md about IDL crossing detection and layout challenges
    - Create PR using wrapping-up-plan skill
 
 ---
 
 ## Risks / Questions / Open Items
 
-- **Testing not yet complete:** Need to manually verify exports with real mission data to confirm map shows route correctly (previously showed "no route data available" due to bug now fixed)
-- **PDF timeline chart not yet visually verified:** Added to code but needs to be tested in actual PDF export
+- **🔴 CRITICAL: Map layout is broken** - Currently outputs 1280x1024 pixels but aspect ratio is inverted (too wide/short like a landscape monitor). Figure size calculation may need complete redesign to output proper square-ish proportions for printing/Excel embedding.
+- **🔴 CRITICAL: Legend takes up 40% of space** - Legend is oversized relative to the actual map area. Need to either shrink legend font, reduce legend frame size, or move legend outside the plot area.
+- **IDL crossing detection working** - Correctly skips segments that cross ±180° longitude, but need to test with actual IDL-crossing routes to confirm visual output is correct
+- **Color-coded routes implemented** - Using time-interpolation algorithm to map route segments to timeline segments, needs visual verification
+- **Testing not yet complete:** Need to manually verify exports with real mission data
 - **Minor formatting issues possible:** Chart/map sizing may need tweaks based on actual rendered output (especially in Google Sheets which may display differently than Excel)
 - **Potential cartopy data download:** On first use, cartopy downloads Natural Earth geographic data (~50MB) - this is one-time only, expected behavior
 
