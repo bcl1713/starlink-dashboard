@@ -539,9 +539,9 @@
 
 ### Modify generate_xlsx_export to create Summary sheet
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Locate the `generate_xlsx_export` function (around line 415)
-- [ ] Replace the entire function with:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Locate the `generate_xlsx_export` function (around line 415)
+- [x] Replace the entire function with:
   ```python
   def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
       """Return XLSX bytes containing summary (with map/chart), timeline, advisory, and stats sheets."""
@@ -646,30 +646,30 @@
       workbook.seek(0)
       return workbook.read()
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### Test Excel export
 
-- [ ] Rebuild and restart Docker:
+- [x] Rebuild and restart Docker:
   ```bash
   docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- [ ] Expected result: Backend starts successfully
+- [x] Expected result: Backend starts successfully
 
-- [ ] Trigger an export via API or test (will do full verification in Phase 7)
-- [ ] If errors occur, check logs and adjust image positioning/table shifting logic
+- [x] Trigger an export via API or test (will do full verification in Phase 7)
+- [x] If errors occur, check logs and adjust image positioning/table shifting logic
 
 ### Commit Excel integration
 
-- [ ] Stage changes:
+- [x] Stage changes:
   ```bash
   git add backend/starlink-location/app/mission/exporter.py
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "feat: integrate map, chart, and summary table into Excel Sheet 1"
   ```
-- [ ] Push:
+- [x] Push:
   ```bash
   git push
   ```
@@ -680,9 +680,9 @@
 
 ### Add timeline chart to PDF export
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Locate the `generate_pdf_export` function (around line 433)
-- [ ] Near the end of the function, before the final `return`, add:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Locate the `generate_pdf_export` function (around line 433)
+- [x] Near the end of the function, before the final `return`, add:
   ```python
       # Add timeline chart as new page
       story.append(PageBreak())
@@ -700,30 +700,30 @@
       story.append(Spacer(1, 0.2 * inch))
       story.append(Image(io.BytesIO(timeline_chart_png), width=chart_width, height=chart_height))
   ```
-- [ ] Note: May need to adjust `heading_style` reference or create new style
-- [ ] Save the file
+- [x] Note: May need to adjust `heading_style` reference or create new style
+- [x] Save the file
 
 ### Test PDF export
 
-- [ ] Rebuild and restart Docker:
+- [x] Rebuild and restart Docker:
   ```bash
   docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- [ ] Expected result: Backend starts successfully
+- [x] Expected result: Backend starts successfully
 
-- [ ] Trigger PDF export (full verification in Phase 7)
+- [x] Trigger PDF export (full verification in Phase 7)
 
 ### Commit PDF integration
 
-- [ ] Stage changes:
+- [x] Stage changes:
   ```bash
   git add backend/starlink-location/app/mission/exporter.py
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "feat: add timeline chart to PDF export"
   ```
-- [ ] Push:
+- [x] Push:
   ```bash
   git push
   ```
