@@ -1,8 +1,8 @@
-# Checklist for excel-sheet1-timeline-summary
+# Checklist for excel-sheet1-timeline-summary (Map Reset)
 
 **Branch:** `feat/excel-sheet1-timeline-summary`
 **Folder:** `dev/active/excel-sheet1-timeline-summary/`
-**Status:** In Progress
+**Status:** Phase 7 Map Reset - In Progress
 **Skill:** executing-plan-checklist
 
 > This checklist is intentionally extremely detailed and assumes the executor
@@ -11,853 +11,134 @@
 
 ---
 
-## Initialization
+## Context: What We're Doing
 
-- [x] Ensure you are on the correct branch:
-  - [x] Run:
-    ```bash
-    git branch
-    ```
-  - [x] Confirm that the current branch line is:
-    ```text
-    * feat/excel-sheet1-timeline-summary
-    ```
-  - [x] If you are on a different branch, switch with:
-    ```bash
-    git checkout feat/excel-sheet1-timeline-summary
-    ```
+The existing map output has a broken aspect ratio (1280x1024 too wide/short) and the legend takes up 40% of the figure space. We are completely resetting the map generation logic to output proper 4K resolution (3840x2880 pixels @ 300 DPI) with smart 5% padding and proper legend placement.
+
+**Important:** Each phase below has a STOP point where you must test the output before proceeding to the next phase. Do not skip testing steps.
 
 ---
 
-## Phase 1: Preparation & Dependencies
+## Phase 7: Map Reset - Base 4K Canvas
 
-### Add matplotlib and cartopy to requirements.txt
+### 7.1: Locate the current _generate_route_map function
 
-- [x] Open the file `backend/starlink-location/requirements.txt`
-- [x] Locate the line containing `reportlab>=4.0.0` (around line 22)
-- [x] Add two new lines immediately after the reportlab line:
-  ```
-  matplotlib>=3.8.0
-  cartopy>=0.22.0
-  ```
-- [x] Save the file
-- [x] Expected result: requirements.txt now includes matplotlib and cartopy
+- [ ] Open file: `backend/starlink-location/app/mission/exporter.py`
+- [ ] Find the function `_generate_route_map` (starts at line 290)
+- [ ] Verify it ends around line 550 (look for the next function definition `def _generate_timeline_chart`)
+- [ ] Note: This function will be completely rewritten
 
-### Rebuild Docker environment with new dependencies
+### 7.2: Replace _generate_route_map with base 4K canvas implementation
 
-- [x] Stop all running containers:
+- [ ] In `backend/starlink-location/app/mission/exporter.py`, replace the entire `_generate_route_map()` function (lines 290-550) with:
+
+```python
+def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+    """Generate a 4K PNG image of the route map.
+
+    Current phase: Base canvas only (Phase 7)
+    - Output: 3840x2880 pixels @ 300 DPI
+    - No route drawn yet, no POIs, no text overlays
+
+    Args:
+        timeline: The mission timeline with segments and timing data
+        mission: The mission object containing route and POI information (optional)
+
+    Returns:
+        PNG image as bytes.
+    """
+    # Phase 7: Base 4K canvas with no content
+    # Resolution: 3840 x 2880 pixels at 300 DPI
+    # This equals 12.8" x 9.6" at 300 DPI (standard for print)
+
+    # Calculate figure size: figsize in inches = pixels / dpi
+    width_inches = 3840 / 300  # 12.8 inches
+    height_inches = 2880 / 300  # 9.6 inches
+
+    fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor='white')
+    ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+
+    # Remove all padding, margins, and borders
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+    # Set a default extent (will be overridden in Phase 8)
+    ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
+
+    # Add basic map features
+    ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
+    ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
+    ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
+
+    # Subtle gridlines without labels
+    ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
+
+    # Remove axis ticks and spines for clean, borderless appearance
+    ax.spines['geo'].set_visible(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Save to PNG bytes
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=300, bbox_inches='tight', pad_inches=0)
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
+```
+
+- [ ] Save the file
+- [ ] Expected result: File saved without errors
+
+### 7.3: Rebuild Docker environment
+
+- [ ] In terminal, run:
   ```bash
-  docker compose down
+  docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- [x] Expected result: Output shows containers stopped and removed
+- [ ] Expected result: Build completes without errors, all containers start healthy
+- [ ] Note: This will take 2-5 minutes
 
-- [x] Rebuild Docker images with no cache:
-  ```bash
-  docker compose build --no-cache
-  ```
-- [x] Expected result: Build completes successfully, showing matplotlib and cartopy installation steps
-- [x] Note: This may take 5-10 minutes due to cartopy compilation
+### 7.4: Verify backend health
 
-- [x] Start containers:
-  ```bash
-  docker compose up -d
-  ```
-- [x] Expected result: All containers start and show healthy status
-
-- [x] Verify backend is healthy:
+- [ ] Run:
   ```bash
   curl http://localhost:8000/health
   ```
-- [x] Expected result: JSON response with `"status": "ok"`
+- [ ] Expected result: JSON response with `"status": "ok"`
 
-### Commit dependency changes
+### 7.5: Generate test export to verify Phase 7 output
 
-- [x] Stage the requirements file:
+- [ ] Use API to generate an Excel export (you'll need an existing mission ID):
   ```bash
-  git add backend/starlink-location/requirements.txt
+  curl -o /tmp/test_map_phase7.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
   ```
-- [x] Commit with message:
-  ```bash
-  git commit -m "feat: add matplotlib and cartopy for export visualizations"
-  ```
-- [x] Push to remote:
-  ```bash
-  git push -u origin feat/excel-sheet1-timeline-summary
-  ```
+  - Replace `{MISSION_ID}` with an actual mission ID from your database
+  - If you don't have one, you may need to create a test mission first
+- [ ] Expected result: File `/tmp/test_map_phase7.xlsx` is created
 
-### Review current exporter implementation
+### 7.6: Manually verify Phase 7 canvas output
 
-- [x] Open `backend/starlink-location/app/mission/exporter.py`
-- [x] Read the `generate_xlsx_export()` function (lines 415-430)
-- [x] Note how it creates DataFrame objects and writes them to Excel using `pd.ExcelWriter`
-- [x] Read the `_segment_rows()` function (lines 271-331) to understand timeline data structure
-- [x] Read the color constants at the top of the file (lines 37-48)
-- [x] Confirm understanding: The current Excel export uses pandas DataFrames written directly to sheets without any image embedding or cell styling
+- [ ] Open the exported Excel file in Excel or LibreOffice Calc
+- [ ] Go to the "Summary" sheet (should be first sheet)
+- [ ] Look at the map image at the top
+- [ ] Verify visually:
+  - [ ] Map shows world with coastlines and oceans (blue water, light gray land)
+  - [ ] Map has proper 4K aspect ratio (should look like a wider, taller image than before)
+  - [ ] No route drawn on map (just empty world map)
+  - [ ] No POI markers
+  - [ ] No legend
+  - [ ] Clean borderless appearance with no axis labels
+- [ ] **STOP HERE**: Once you confirm the base canvas looks correct with proper dimensions, proceed to Phase 8
 
-### Verify data structure access
+### 7.7: Commit Phase 7 changes
 
-- [x] Open `backend/starlink-location/app/mission/models.py`
-- [x] Locate the `Mission` class definition
-- [x] Note the fields: `route` (relationship), `pois` (relationship), metadata fields
-- [x] Locate the `MissionTimeline` class definition
-- [x] Note the `segments` field (list of TimelineSegment)
-- [x] Locate the `TimelineSegment` class definition
-- [x] Note fields: `start_time`, `end_time`, `status` (TimelineStatus enum), `x_state`, `ka_state`, `ku_state` (TransportState enum)
-- [x] Confirm understanding: Mission provides route/POI access, Timeline provides segments with status and transport states
-
----
-
-## Phase 2: Geographic Map Implementation
-
-### Create _generate_route_map function skeleton
-
-- [x] Open `backend/starlink-location/app/mission/exporter.py`
-- [x] Add imports at the top of the file (after existing imports):
-  ```python
-  import io
-  import matplotlib
-  matplotlib.use('Agg')  # Must be before pyplot import for headless operation
-  import matplotlib.pyplot as plt
-  import cartopy.crs as ccrs
-  import cartopy.feature as cfeature
-  from matplotlib.patches import Rectangle
-  from matplotlib.lines import Line2D
-  ```
-- [x] Find a good location for new helper functions (suggest before `_segment_rows` function around line 270)
-- [x] Add new function:
-  ```python
-  def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
-      """Generate geographic map PNG showing route with color-coded segments and POI markers.
-
-      Args:
-          timeline: Mission timeline with segments
-          mission: Mission object containing route and POI data
-
-      Returns:
-          PNG image bytes
-      """
-      # TODO: Implementation
-      pass
-  ```
-- [x] Save the file
-
-### Implement route waypoint extraction
-
-- [x] In the `_generate_route_map` function, replace the `pass` statement with:
-  ```python
-      if mission is None or mission.route is None:
-          # Return empty/placeholder map if no route
-          fig, ax = plt.subplots(figsize=(10, 6))
-          ax.text(0.5, 0.5, 'No route data available', ha='center', va='center')
-          ax.axis('off')
-          buf = io.BytesIO()
-          plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
-          plt.close(fig)
-          buf.seek(0)
-          return buf.read()
-
-      # Extract waypoints from route
-      waypoints = []
-      if hasattr(mission.route, 'geometry') and mission.route.geometry:
-          # Parse route geometry (assumed to be list of [lon, lat] or similar)
-          # Adjust based on actual Route model structure
-          geometry = mission.route.geometry
-          if isinstance(geometry, list):
-              waypoints = [(pt[0], pt[1]) for pt in geometry if len(pt) >= 2]
-
-      if not waypoints:
-          # No valid waypoints
-          fig, ax = plt.subplots(figsize=(10, 6))
-          ax.text(0.5, 0.5, 'No waypoint data available', ha='center', va='center')
-          ax.axis('off')
-          buf = io.BytesIO()
-          plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
-          plt.close(fig)
-          buf.seek(0)
-          return buf.read()
-  ```
-- [x] Save the file
-- [x] Note: The actual route geometry structure may differ; will adjust after testing
-
-### Implement map projection and base features
-
-- [x] Continue adding to `_generate_route_map` function:
-  ```python
-      # Create figure with geographic projection
-      fig = plt.figure(figsize=(12, 8))
-      ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
-
-      # Calculate map bounds from waypoints
-      lons = [wp[0] for wp in waypoints]
-      lats = [wp[1] for wp in waypoints]
-      lon_min, lon_max = min(lons), max(lons)
-      lat_min, lat_max = min(lats), max(lats)
-
-      # Add margin (10% on each side)
-      lon_margin = (lon_max - lon_min) * 0.1
-      lat_margin = (lat_max - lat_min) * 0.1
-      ax.set_extent([lon_min - lon_margin, lon_max + lon_margin,
-                     lat_min - lat_margin, lat_max + lat_margin],
-                    crs=ccrs.PlateCarree())
-
-      # Add map features
-      ax.add_feature(cfeature.LAND, facecolor='lightgray', edgecolor='none')
-      ax.add_feature(cfeature.OCEAN, facecolor='lightblue', edgecolor='none')
-      ax.add_feature(cfeature.COASTLINE, linewidth=0.5)
-      ax.add_feature(cfeature.BORDERS, linewidth=0.5, linestyle='--', alpha=0.5)
-      ax.gridlines(draw_labels=True, linewidth=0.5, alpha=0.5)
-  ```
-
-### Implement route path with color-coded segments
-
-- [x] Continue adding to `_generate_route_map` function:
-  ```python
-      # Map segment status to colors
-      status_colors = {
-          'NOMINAL': '#00FF00',      # Green
-          'DEGRADED': '#FFFF00',     # Yellow
-          'CRITICAL': '#FF0000',     # Red
-      }
-
-      # Calculate segment boundaries along waypoint indices
-      # Assumption: segments are evenly distributed across the route duration
-      # Adjust logic based on actual timestamp-to-waypoint mapping
-      total_duration = (timeline.segments[-1].end_time - timeline.segments[0].start_time).total_seconds()
-      segment_waypoint_ranges = []
-      cumulative_time = 0
-      waypoint_index = 0
-
-      for segment in timeline.segments:
-          seg_duration = (segment.end_time - segment.start_time).total_seconds()
-          seg_fraction = seg_duration / total_duration
-          waypoints_in_segment = max(1, int(seg_fraction * len(waypoints)))
-          start_idx = waypoint_index
-          end_idx = min(waypoint_index + waypoints_in_segment, len(waypoints) - 1)
-          segment_waypoint_ranges.append((start_idx, end_idx, segment.status.name))
-          waypoint_index = end_idx
-
-      # Draw route segments with appropriate colors
-      for start_idx, end_idx, status in segment_waypoint_ranges:
-          if start_idx >= end_idx:
-              continue
-          segment_lons = [waypoints[i][0] for i in range(start_idx, end_idx + 1)]
-          segment_lats = [waypoints[i][1] for i in range(start_idx, end_idx + 1)]
-          color = status_colors.get(status, '#808080')  # Default gray
-          ax.plot(segment_lons, segment_lats, color=color, linewidth=2,
-                  transform=ccrs.PlateCarree(), zorder=2)
-  ```
-
-### Implement POI and airport markers
-
-- [x] Continue adding to `_generate_route_map` function:
-  ```python
-      # Add departure airport marker (first waypoint)
-      if waypoints:
-          dep_lon, dep_lat = waypoints[0]
-          ax.plot(dep_lon, dep_lat, marker='^', color='blue', markersize=12,
-                  transform=ccrs.PlateCarree(), zorder=3)
-          ax.text(dep_lon, dep_lat, ' Departure', fontsize=9, color='blue',
-                  transform=ccrs.PlateCarree(), zorder=4,
-                  verticalalignment='bottom', horizontalalignment='left')
-
-      # Add arrival airport marker (last waypoint)
-      if waypoints:
-          arr_lon, arr_lat = waypoints[-1]
-          ax.plot(arr_lon, arr_lat, marker='v', color='purple', markersize=12,
-                  transform=ccrs.PlateCarree(), zorder=3)
-          ax.text(arr_lon, arr_lat, ' Arrival', fontsize=9, color='purple',
-                  transform=ccrs.PlateCarree(), zorder=4,
-                  verticalalignment='top', horizontalalignment='left')
-
-      # Add mission-event POI markers
-      if mission.pois:
-          for poi in mission.pois:
-              if poi.poi_type == 'mission-event':
-                  ax.plot(poi.longitude, poi.latitude, marker='o', color='orange',
-                          markersize=10, transform=ccrs.PlateCarree(), zorder=3)
-                  ax.text(poi.longitude, poi.latitude, f' {poi.name}', fontsize=8,
-                          color='orange', transform=ccrs.PlateCarree(), zorder=4,
-                          verticalalignment='center', horizontalalignment='left')
-  ```
-
-### Add legend and finalize map
-
-- [x] Continue adding to `_generate_route_map` function:
-  ```python
-      # Create legend
-      legend_elements = [
-          Line2D([0], [0], color='#00FF00', linewidth=2, label='Nominal'),
-          Line2D([0], [0], color='#FFFF00', linewidth=2, label='Degraded'),
-          Line2D([0], [0], color='#FF0000', linewidth=2, label='Critical'),
-          Line2D([0], [0], marker='^', color='blue', linestyle='None',
-                 markersize=8, label='Departure'),
-          Line2D([0], [0], marker='v', color='purple', linestyle='None',
-                 markersize=8, label='Arrival'),
-          Line2D([0], [0], marker='o', color='orange', linestyle='None',
-                 markersize=8, label='POI'),
-      ]
-      ax.legend(handles=legend_elements, loc='upper right', fontsize=9)
-
-      ax.set_title('Mission Route Map', fontsize=14, fontweight='bold')
-
-      # Save to PNG bytes
-      buf = io.BytesIO()
-      plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
-      plt.close(fig)
-      buf.seek(0)
-      return buf.read()
-  ```
-- [x] Save the file
-
-### Test map generation
-
-- [x] Rebuild and restart Docker:
-  ```bash
-  docker compose down && docker compose build --no-cache && docker compose up -d
-  ```
-- [x] Expected result: Backend starts successfully with no import errors
-
-- [x] Test by triggering an export (use existing test or API endpoint)
-- [x] If errors occur, check logs:
-  ```bash
-  docker compose logs -f starlink-location
-  ```
-- [x] Adjust route geometry parsing based on actual data structure
-- [x] Expected result: Map function executes without crashing (visual inspection comes later)
-
-### Commit map implementation
-
-- [x] Stage changes:
+- [ ] Stage changes:
   ```bash
   git add backend/starlink-location/app/mission/exporter.py
-  ```
-- [x] Commit:
-  ```bash
-  git commit -m "feat: implement geographic route map generation"
-  ```
-- [x] Push:
-  ```bash
-  git push
-  ```
-
----
-
-## Phase 3: Timeline Bar Chart Implementation
-
-### Create _generate_timeline_chart function
-
-- [x] Open `backend/starlink-location/app/mission/exporter.py`
-- [x] Add new function after `_generate_route_map`:
-  ```python
-  def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
-      """Generate horizontal timeline bar chart showing transport states.
-
-      Args:
-          timeline: Mission timeline with segments
-
-      Returns:
-          PNG image bytes
-      """
-      if not timeline.segments:
-          # Empty chart
-          fig, ax = plt.subplots(figsize=(10, 3))
-          ax.text(0.5, 0.5, 'No timeline data available', ha='center', va='center')
-          ax.axis('off')
-          buf = io.BytesIO()
-          plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
-          plt.close(fig)
-          buf.seek(0)
-          return buf.read()
-
-      # Get mission start and end times
-      start_time = timeline.segments[0].start_time
-      end_time = timeline.segments[-1].end_time
-      total_duration = (end_time - start_time).total_seconds()
-
-      # State to color mapping
-      state_colors = {
-          'AVAILABLE': '#00FF00',    # Green
-          'DEGRADED': '#FFFF00',     # Yellow
-          'OFFLINE': '#FF0000',      # Red
-      }
-
-      # Create figure
-      fig, ax = plt.subplots(figsize=(14, 4))
-
-      # Y positions for each transport
-      transport_y_positions = {
-          'X-Band': 2,
-          'Ka (HCX)': 1,
-          'Ku (StarShield)': 0,
-      }
-
-      # Draw segments for each transport
-      for segment in timeline.segments:
-          seg_start_offset = (segment.start_time - start_time).total_seconds()
-          seg_duration = (segment.end_time - segment.start_time).total_seconds()
-
-          # X-Band
-          x_color = state_colors.get(segment.x_state.name, '#808080')
-          ax.barh(transport_y_positions['X-Band'], seg_duration, left=seg_start_offset,
-                  height=0.8, color=x_color, edgecolor='black', linewidth=0.5)
-
-          # Ka
-          ka_color = state_colors.get(segment.ka_state.name, '#808080')
-          ax.barh(transport_y_positions['Ka (HCX)'], seg_duration, left=seg_start_offset,
-                  height=0.8, color=ka_color, edgecolor='black', linewidth=0.5)
-
-          # Ku
-          ku_color = state_colors.get(segment.ku_state.name, '#808080')
-          ax.barh(transport_y_positions['Ku (StarShield)'], seg_duration, left=seg_start_offset,
-                  height=0.8, color=ku_color, edgecolor='black', linewidth=0.5)
-
-      # Set up axes
-      ax.set_yticks([0, 1, 2])
-      ax.set_yticklabels(['Ku (StarShield)', 'Ka (HCX)', 'X-Band'])
-      ax.set_xlim(0, total_duration)
-
-      # Format x-axis with time labels (HH:MM format from start)
-      def format_time_label(seconds, pos):
-          hours = int(seconds // 3600)
-          minutes = int((seconds % 3600) // 60)
-          return f'T+{hours:02d}:{minutes:02d}'
-
-      from matplotlib.ticker import FuncFormatter
-      ax.xaxis.set_major_formatter(FuncFormatter(format_time_label))
-      ax.set_xlabel('Time from Mission Start', fontsize=10)
-      ax.set_title('Transport State Timeline', fontsize=12, fontweight='bold')
-
-      # Add vertical grid lines at 1-hour intervals
-      hour_interval = 3600  # seconds
-      for hour_mark in range(0, int(total_duration) + hour_interval, hour_interval):
-          ax.axvline(x=hour_mark, color='gray', linestyle='--', linewidth=0.5, alpha=0.7)
-
-      # Add legend
-      from matplotlib.patches import Patch
-      legend_elements = [
-          Patch(facecolor='#00FF00', edgecolor='black', label='Available'),
-          Patch(facecolor='#FFFF00', edgecolor='black', label='Degraded'),
-          Patch(facecolor='#FF0000', edgecolor='black', label='Offline'),
-      ]
-      ax.legend(handles=legend_elements, loc='upper right', fontsize=9)
-
-      ax.grid(axis='x', alpha=0.3)
-
-      # Save to PNG bytes
-      buf = io.BytesIO()
-      plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
-      plt.close(fig)
-      buf.seek(0)
-      return buf.read()
-  ```
-- [x] Save the file
-
-### Test timeline chart generation
-
-- [x] Rebuild and restart Docker:
-  ```bash
-  docker compose down && docker compose build --no-cache && docker compose up -d
-  ```
-- [x] Expected result: Backend starts successfully
-
-- [x] Test chart generation (will verify visually in Phase 7)
-
-### Commit timeline chart implementation
-
-- [x] Stage changes:
-  ```bash
-  git add backend/starlink-location/app/mission/exporter.py
-  ```
-- [x] Commit:
-  ```bash
-  git commit -m "feat: implement timeline bar chart generation"
-  ```
-- [x] Push:
-  ```bash
-  git push
-  ```
-
----
-
-## Phase 4: Summary Table Implementation
-
-### Create _summary_table_rows function
-
-- [x] Open `backend/starlink-location/app/mission/exporter.py`
-- [x] Add new function after `_generate_timeline_chart`:
-  ```python
-  def _summary_table_rows(timeline: MissionTimeline, mission: Mission | None = None) -> pd.DataFrame:
-      """Generate simplified summary table DataFrame for Sheet 1.
-
-      Returns DataFrame with columns: Start (UTC), Duration, Status, Systems Down
-      """
-      rows = []
-
-      for segment in timeline.segments:
-          # Format start time in UTC
-          start_utc = segment.start_time.strftime('%Y-%m-%d %H:%M:%S UTC')
-
-          # Format duration as HH:MM:SS
-          duration_seconds = (segment.end_time - segment.start_time).total_seconds()
-          duration_str = _format_seconds_hms(int(duration_seconds))
-
-          # Status
-          status = segment.status.name
-
-          # Systems Down - list impacted transports
-          systems_down = _serialize_transport_list(segment.impacted_transports)
-
-          rows.append({
-              'Start (UTC)': start_utc,
-              'Duration': duration_str,
-              'Status': status,
-              'Systems Down': systems_down,
-          })
-
-      return pd.DataFrame(rows)
-  ```
-- [x] Save the file
-
-### Commit summary table implementation
-
-- [x] Stage changes:
-  ```bash
-  git add backend/starlink-location/app/mission/exporter.py
-  ```
-- [x] Commit:
-  ```bash
-  git commit -m "feat: implement summary table generation"
-  ```
-- [x] Push:
-  ```bash
-  git push
-  ```
-
----
-
-## Phase 5: Excel Export Integration
-
-### Modify generate_xlsx_export to create Summary sheet
-
-- [x] Open `backend/starlink-location/app/mission/exporter.py`
-- [x] Locate the `generate_xlsx_export` function (around line 415)
-- [x] Replace the entire function with:
-  ```python
-  def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
-      """Return XLSX bytes containing summary (with map/chart), timeline, advisory, and stats sheets."""
-      workbook = io.BytesIO()
-
-      # Generate all data
-      summary_df = _summary_table_rows(timeline, mission)
-      timeline_df = _segment_rows(timeline, mission)
-      advisories_df = _advisory_rows(timeline, mission)
-      stats_df = _statistics_rows(timeline)
-
-      # Generate images
-      route_map_png = _generate_route_map(timeline, mission)
-      timeline_chart_png = _generate_timeline_chart(timeline)
-
-      # Write to Excel
-      with pd.ExcelWriter(workbook, engine="openpyxl") as writer:
-          # Write all sheets (summary will be reordered to position 0 after)
-          summary_df.to_excel(writer, sheet_name="Summary", index=False)
-          timeline_df.to_excel(writer, sheet_name="Timeline", index=False)
-          if not advisories_df.empty:
-              advisories_df.to_excel(writer, sheet_name="Advisories", index=False)
-          if not stats_df.empty:
-              stats_df.to_excel(writer, sheet_name="Statistics", index=False)
-
-          # Access workbook to add images and formatting
-          wb = writer.book
-          summary_ws = wb["Summary"]
-
-          # Embed route map image at top
-          from openpyxl.drawing.image import Image as OpenpyxlImage
-          map_img = OpenpyxlImage(io.BytesIO(route_map_png))
-          map_img.anchor = 'A1'  # Top-left corner
-          summary_ws.add_image(map_img)
-
-          # Calculate row offset for chart (map height + margin)
-          # Assume map is ~30 rows tall at default row height
-          chart_row = 32
-
-          # Embed timeline chart below map
-          chart_img = OpenpyxlImage(io.BytesIO(timeline_chart_png))
-          chart_img.anchor = f'A{chart_row}'
-          summary_ws.add_image(chart_img)
-
-          # Calculate row offset for table (chart height + margin)
-          # Assume chart is ~15 rows tall
-          table_start_row = chart_row + 17
-
-          # Move table data down to below images
-          # Insert rows at top to push table down
-          summary_ws.insert_rows(1, table_start_row - 1)
-
-          # Re-add images (they may have shifted)
-          summary_ws._images = []
-          map_img = OpenpyxlImage(io.BytesIO(route_map_png))
-          map_img.anchor = 'A1'
-          summary_ws.add_image(map_img)
-
-          chart_img = OpenpyxlImage(io.BytesIO(timeline_chart_png))
-          chart_img.anchor = f'A{chart_row}'
-          summary_ws.add_image(chart_img)
-
-          # Apply color formatting to table rows based on Status column
-          from openpyxl.styles import PatternFill
-
-          # Find Status column index (column C, index 3)
-          status_col_idx = 3
-
-          # Color fills
-          green_fill = PatternFill(start_color='00FF00', end_color='00FF00', fill_type='solid')
-          yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
-          red_fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
-
-          # Apply to data rows (skip header at table_start_row)
-          for row_idx in range(table_start_row + 1, table_start_row + 1 + len(summary_df)):
-              status_cell = summary_ws.cell(row=row_idx, column=status_col_idx)
-              status_value = status_cell.value
-
-              if status_value == 'NOMINAL':
-                  fill = green_fill
-              elif status_value == 'DEGRADED':
-                  fill = yellow_fill
-              elif status_value == 'CRITICAL':
-                  fill = red_fill
-              else:
-                  continue
-
-              # Apply fill to entire row
-              for col_idx in range(1, 5):  # Columns A-D
-                  summary_ws.cell(row=row_idx, column=col_idx).fill = fill
-
-          # Adjust column widths
-          summary_ws.column_dimensions['A'].width = 25  # Start (UTC)
-          summary_ws.column_dimensions['B'].width = 15  # Duration
-          summary_ws.column_dimensions['C'].width = 12  # Status
-          summary_ws.column_dimensions['D'].width = 30  # Systems Down
-
-          # Reorder sheets so Summary is first
-          wb._sheets.remove(summary_ws)
-          wb._sheets.insert(0, summary_ws)
-
-      workbook.seek(0)
-      return workbook.read()
-  ```
-- [x] Save the file
-
-### Test Excel export
-
-- [x] Rebuild and restart Docker:
-  ```bash
-  docker compose down && docker compose build --no-cache && docker compose up -d
-  ```
-- [x] Expected result: Backend starts successfully
-
-- [x] Trigger an export via API or test (will do full verification in Phase 7)
-- [x] If errors occur, check logs and adjust image positioning/table shifting logic
-
-### Commit Excel integration
-
-- [x] Stage changes:
-  ```bash
-  git add backend/starlink-location/app/mission/exporter.py
-  ```
-- [x] Commit:
-  ```bash
-  git commit -m "feat: integrate map, chart, and summary table into Excel Sheet 1"
-  ```
-- [x] Push:
-  ```bash
-  git push
-  ```
-
----
-
-## Phase 6: PDF Export Integration
-
-### Add timeline chart to PDF export
-
-- [x] Open `backend/starlink-location/app/mission/exporter.py`
-- [x] Locate the `generate_pdf_export` function (around line 433)
-- [x] Near the end of the function, before the final `return`, add:
-  ```python
-      # Add timeline chart as new page
-      story.append(PageBreak())
-
-      # Generate timeline chart
-      timeline_chart_png = _generate_timeline_chart(timeline)
-
-      # Embed chart image
-      from reportlab.lib.utils import ImageReader
-      chart_img = ImageReader(io.BytesIO(timeline_chart_png))
-      chart_width = 7 * inch  # Scale to fit page width
-      chart_height = 3 * inch
-
-      story.append(Paragraph("Timeline Chart", heading_style))
-      story.append(Spacer(1, 0.2 * inch))
-      story.append(Image(io.BytesIO(timeline_chart_png), width=chart_width, height=chart_height))
-  ```
-- [x] Note: May need to adjust `heading_style` reference or create new style
-- [x] Save the file
-
-### Test PDF export
-
-- [x] Rebuild and restart Docker:
-  ```bash
-  docker compose down && docker compose build --no-cache && docker compose up -d
-  ```
-- [x] Expected result: Backend starts successfully
-
-- [x] Trigger PDF export (full verification in Phase 7)
-
-### Commit PDF integration
-
-- [x] Stage changes:
-  ```bash
-  git add backend/starlink-location/app/mission/exporter.py
-  ```
-- [x] Commit:
-  ```bash
-  git commit -m "feat: add timeline chart to PDF export"
-  ```
-- [x] Push:
-  ```bash
-  git push
-  ```
-
----
-
-## Phase 7: Testing & Verification
-
-### Identify test mission data
-
-- [ ] Use existing mission planning API to find or create a test mission with:
-  - Route with multiple waypoints
-  - At least 3 POIs of type "mission-event"
-  - Timeline with varied segment statuses and transport states
-- [ ] Note the mission ID for testing
-
-### Generate Excel export
-
-- [ ] Use API endpoint to generate Excel export for test mission:
-  ```bash
-  curl -o test_export.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
-  ```
-- [ ] Replace `{MISSION_ID}` with actual ID
-- [ ] Expected result: File `test_export.xlsx` downloaded
-
-### Verify Excel Summary sheet
-
-- [ ] Open `test_export.xlsx` in Excel or LibreOffice Calc
-- [ ] Verify "Summary" is the first sheet (leftmost tab)
-- [ ] Verify map image is visible at top of sheet:
-  - [ ] Route path is drawn
-  - [ ] Route segments have different colors
-  - [ ] Departure marker (blue) is present and labeled
-  - [ ] Arrival marker (purple) is present and labeled
-  - [ ] POI markers (orange) are present and labeled with POI names
-  - [ ] Legend is visible
-  - [ ] Map looks professional and clear
-- [ ] Verify timeline chart is visible below map:
-  - [ ] Three rows labeled X-Band, Ka (HCX), Ku (StarShield)
-  - [ ] Colored blocks span the chart
-  - [ ] Time axis shows T+HH:MM labels
-  - [ ] Vertical grid lines at 1-hour intervals
-  - [ ] Legend is visible
-- [ ] Verify summary table is below chart:
-  - [ ] Four columns: Start (UTC), Duration, Status, Systems Down
-  - [ ] Number of rows matches expected segment count
-  - [ ] Start times are in UTC format
-  - [ ] Durations are in HH:MM:SS format
-  - [ ] Status column shows NOMINAL/DEGRADED/CRITICAL
-  - [ ] Systems Down lists transports (or empty for NOMINAL)
-  - [ ] Row backgrounds are colored: green (NOMINAL), yellow (DEGRADED), red (CRITICAL)
-- [ ] Verify other sheets are unchanged:
-  - [ ] "Timeline" sheet exists with all original columns
-  - [ ] "Statistics" sheet exists
-  - [ ] "Advisories" sheet exists if applicable
-
-### Verify Excel data accuracy
-
-- [ ] Compare Summary table rows with Timeline sheet rows
-- [ ] Confirm start times match
-- [ ] Confirm statuses match
-- [ ] Confirm duration calculations are correct
-- [ ] Compare timeline chart colors with Timeline sheet transport state columns
-- [ ] Verify chart blocks align with segment durations
-
-### Generate PDF export
-
-- [ ] Use API endpoint to generate PDF export:
-  ```bash
-  curl -o test_export.pdf http://localhost:8000/api/missions/{MISSION_ID}/export/pdf
-  ```
-- [ ] Expected result: File `test_export.pdf` downloaded
-
-### Verify PDF timeline chart
-
-- [ ] Open `test_export.pdf` in PDF viewer
-- [ ] Navigate to the page with timeline chart (should be after statistics)
-- [ ] Verify chart is present and matches Excel version:
-  - [ ] Three transport rows visible
-  - [ ] Colored blocks match expected states
-  - [ ] Time axis labeled
-  - [ ] Chart fits page properly
-  - [ ] Legend visible
-
-### Check backend logs
-
-- [ ] Review Docker logs for any errors or warnings during export generation:
-  ```bash
-  docker compose logs starlink-location | rg -i error
-  docker compose logs starlink-location | rg -i warning
-  ```
-- [ ] Expected result: No errors or warnings related to export generation
-
-### Test edge cases
-
-- [ ] Test export for mission with no POIs:
-  - [ ] Generate export
-  - [ ] Verify map still shows route and airports
-  - [ ] Verify no errors occur
-
-- [ ] Test export for mission with single segment:
-  - [ ] Generate export
-  - [ ] Verify timeline chart still renders
-  - [ ] Verify table has one row
-
-- [ ] Test export for very short mission (<30 min):
-  - [ ] Generate export
-  - [ ] Verify chart time axis adjusts appropriately
-  - [ ] Verify no rendering issues
-
-- [ ] Test export for very long mission (>8 hours if available):
-  - [ ] Generate export
-  - [ ] Verify chart grid intervals are readable
-  - [ ] Verify file size is reasonable
-
-### Update CONTEXT.md with testing notes
-
-- [ ] Open `dev/active/excel-sheet1-timeline-summary/CONTEXT.md`
-- [ ] In the "Testing Strategy" section, add notes about any adjustments made during testing
-- [ ] Save the file
-
-### Commit testing adjustments
-
-- [ ] If any code changes were made during testing, stage them:
-  ```bash
-  git add backend/starlink-location/app/mission/exporter.py
-  ```
-- [ ] If CONTEXT.md was updated:
-  ```bash
-  git add dev/active/excel-sheet1-timeline-summary/CONTEXT.md
   ```
 - [ ] Commit:
   ```bash
-  git commit -m "test: verify Excel and PDF exports with real mission data"
+  git commit -m "feat: reset map to base 4K canvas (Phase 7)"
   ```
 - [ ] Push:
   ```bash
@@ -866,160 +147,795 @@
 
 ---
 
-## Phase 8: Documentation & Wrap-Up
+## Phase 8: Map - Calculate & Display Route Bounds
 
-### Update MISSION-PLANNING-GUIDE.md
+### 8.1: Add route waypoint extraction and bounds calculation
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Find the `_generate_route_map()` function
+- [ ] Replace the function body (after the docstring, replace the `fig = plt.figure(...)` section onwards) with:
+
+```python
+    # Phase 8: Calculate map bounds from route with smart 5% padding
+
+    # Check if we have valid mission and route data
+    if mission is None or not mission.route_id or not _route_manager:
+        # Return base canvas if no mission data
+        width_inches = 3840 / 300
+        height_inches = 2880 / 300
+        fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor='white')
+        ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+        fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
+        ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
+        ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
+        ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
+        ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
+        ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
+        ax.spines['geo'].set_visible(False)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight', pad_inches=0)
+        plt.close(fig)
+        buf.seek(0)
+        return buf.read()
+
+    # Fetch route from manager
+    route = _route_manager.get_route(mission.route_id)
+    if route is None or not route.points:
+        # Return base canvas if route not found
+        width_inches = 3840 / 300
+        height_inches = 2880 / 300
+        fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor='white')
+        ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+        fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
+        ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
+        ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
+        ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
+        ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
+        ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
+        ax.spines['geo'].set_visible(False)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight', pad_inches=0)
+        plt.close(fig)
+        buf.seek(0)
+        return buf.read()
+
+    # Extract waypoint coordinates
+    points = route.points
+    lats = [p.latitude for p in points]
+    lons = [p.longitude for p in points]
+
+    if not lats or not lons:
+        # Return base canvas if no valid waypoints
+        width_inches = 3840 / 300
+        height_inches = 2880 / 300
+        fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor='white')
+        ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+        fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+        ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
+        ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
+        ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
+        ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
+        ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
+        ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
+        ax.spines['geo'].set_visible(False)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=300, bbox_inches='tight', pad_inches=0)
+        plt.close(fig)
+        buf.seek(0)
+        return buf.read()
+
+    # Detect IDL (International Date Line) crossings
+    idl_crossing_segments = set()
+    for i in range(len(points) - 1):
+        p1, p2 = points[i], points[i + 1]
+        lon_diff = abs(p2.longitude - p1.longitude)
+        if lon_diff > 180:
+            idl_crossing_segments.add(i)
+
+    # Use only valid waypoints (excluding IDL-crossing segments) for bounds calculation
+    valid_indices = [i for i in range(len(points))
+                     if i not in idl_crossing_segments and (i == 0 or i - 1 not in idl_crossing_segments)]
+
+    if valid_indices:
+        valid_lats = [points[i].latitude for i in valid_indices]
+        valid_lons = [points[i].longitude for i in valid_indices]
+        min_lat, max_lat = min(valid_lats), max(valid_lats)
+        min_lon, max_lon = min(valid_lons), max(valid_lons)
+    else:
+        # Fallback if all segments cross IDL (shouldn't happen)
+        min_lat, max_lat = min(lats), max(lats)
+        min_lon, max_lon = min(lons), max(lons)
+
+    # Calculate route extent
+    lat_range = max_lat - min_lat if max_lat != min_lat else 1.0
+    lon_range = max_lon - min_lon if max_lon != min_lon else 1.0
+
+    # Smart 5% padding: apply padding to the larger dimension, adjust other for aspect ratio
+    if lon_range >= lat_range:
+        # East-West dominant: 5% padding on E/W, height adjusts
+        padding_lon = lon_range * 0.05
+        bounds_west = min_lon - padding_lon
+        bounds_east = max_lon + padding_lon
+
+        # Calculate padded longitude range
+        padded_lon_range = bounds_east - bounds_west
+
+        # Aspect ratio of 4K canvas: 3840/2880 = 4:3 = 1.333
+        # At equator: degrees_lat = degrees_lon * (canvas_height / canvas_width)
+        target_lat_range = padded_lon_range * (2880 / 3840)
+
+        # Center latitude bounds on route center
+        lat_center = (min_lat + max_lat) / 2
+        bounds_south = lat_center - (target_lat_range / 2)
+        bounds_north = lat_center + (target_lat_range / 2)
+    else:
+        # North-South dominant: 5% padding on N/S, width adjusts
+        padding_lat = lat_range * 0.05
+        bounds_south = min_lat - padding_lat
+        bounds_north = max_lat + padding_lat
+
+        # Calculate padded latitude range
+        padded_lat_range = bounds_north - bounds_south
+
+        # Aspect ratio: degrees_lon = degrees_lat * (canvas_width / canvas_height)
+        target_lon_range = padded_lat_range * (3840 / 2880)
+
+        # Center longitude bounds on route center
+        lon_center = (min_lon + max_lon) / 2
+        bounds_west = lon_center - (target_lon_range / 2)
+        bounds_east = lon_center + (target_lon_range / 2)
+
+    # Create 4K figure
+    width_inches = 3840 / 300
+    height_inches = 2880 / 300
+
+    fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor='white')
+    ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+
+    # Remove all padding and margins
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+    # Set map extent to calculated bounds
+    ax.set_extent([bounds_west, bounds_east, bounds_south, bounds_north],
+                  crs=ccrs.PlateCarree())
+
+    # Add map features
+    ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
+    ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
+    ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
+
+    # Subtle gridlines without labels
+    ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
+
+    # Remove axis ticks and spines for clean appearance
+    ax.spines['geo'].set_visible(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    # Save to PNG bytes
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=300, bbox_inches='tight', pad_inches=0)
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
+```
+
+- [ ] Save the file
+
+### 8.2: Rebuild Docker and verify
+
+- [ ] Run:
+  ```bash
+  docker compose down && docker compose build --no-cache && docker compose up -d
+  ```
+- [ ] Verify health:
+  ```bash
+  curl http://localhost:8000/health
+  ```
+
+### 8.3: Generate test export for Phase 8
+
+- [ ] Use same mission ID as Phase 7:
+  ```bash
+  curl -o /tmp/test_map_phase8.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
+  ```
+
+### 8.4: Manually verify Phase 8 bounds output
+
+- [ ] Open `/tmp/test_map_phase8.xlsx` in Excel or LibreOffice
+- [ ] Go to Summary sheet, look at the map image
+- [ ] Verify visually:
+  - [ ] Map now shows only the area around the route (zoomed in from world map)
+  - [ ] Route extent is visible with appropriate padding around it
+  - [ ] If route is primarily E-W: padding appears on east and west, latitude auto-adjusted
+  - [ ] If route is primarily N-S: padding appears on north and south, longitude auto-adjusted
+  - [ ] Aspect ratio still correct (4K: 3840x2880)
+  - [ ] No route line drawn yet (still just terrain)
+- [ ] **STOP HERE**: Once you confirm bounds are correct, proceed to Phase 9
+
+### 8.5: Commit Phase 8 changes
+
+- [ ] Stage changes:
+  ```bash
+  git add backend/starlink-location/app/mission/exporter.py
+  ```
+- [ ] Commit:
+  ```bash
+  git commit -m "feat: add route bounds calculation with smart 5% padding (Phase 8)"
+  ```
+- [ ] Push:
+  ```bash
+  git push
+  ```
+
+---
+
+## Phase 9: Map - Draw Route as Simple Line
+
+### 9.1: Add route line drawing to _generate_route_map
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Find the `_generate_route_map()` function
+- [ ] Before the final `buf = io.BytesIO()` and `plt.savefig(...)` section, add:
+
+```python
+    # Phase 9: Draw route as single-color line
+    # Draw route as simple connected line (no color coding yet)
+    if points:
+        # Filter out IDL-crossing segments
+        route_lons = []
+        route_lats = []
+        current_segment = []
+
+        for i in range(len(points)):
+            current_segment.append((points[i].longitude, points[i].latitude))
+
+            # If next segment would cross IDL, draw current segment and start new one
+            if i < len(points) - 1 and i in idl_crossing_segments:
+                if len(current_segment) > 1:
+                    seg_lons = [p[0] for p in current_segment]
+                    seg_lats = [p[1] for p in current_segment]
+                    ax.plot(seg_lons, seg_lats, color='#2c3e50', linewidth=2,
+                           transform=ccrs.PlateCarree(), zorder=5)
+                current_segment = []
+
+        # Draw final segment
+        if len(current_segment) > 1:
+            seg_lons = [p[0] for p in current_segment]
+            seg_lats = [p[1] for p in current_segment]
+            ax.plot(seg_lons, seg_lats, color='#2c3e50', linewidth=2,
+                   transform=ccrs.PlateCarree(), zorder=5)
+```
+
+- [ ] Save the file
+
+### 9.2: Rebuild Docker and verify
+
+- [ ] Run:
+  ```bash
+  docker compose down && docker compose build --no-cache && docker compose up -d
+  ```
+- [ ] Verify health:
+  ```bash
+  curl http://localhost:8000/health
+  ```
+
+### 9.3: Generate test export for Phase 9
+
+- [ ] Use same mission ID:
+  ```bash
+  curl -o /tmp/test_map_phase9.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
+  ```
+
+### 9.4: Manually verify Phase 9 route line output
+
+- [ ] Open `/tmp/test_map_phase9.xlsx`
+- [ ] Go to Summary sheet, look at the map
+- [ ] Verify visually:
+  - [ ] Single dark blue/gray line is drawn on the map showing the route
+  - [ ] Line follows the expected geographic path (matches your knowledge of the mission route)
+  - [ ] Line does not have IDL artifacts (no diagonal lines crossing the map)
+  - [ ] Entire route is visible within the map bounds
+  - [ ] Line is visible but not overwhelming (appropriate width)
+- [ ] **STOP HERE**: Once route geometry looks correct, proceed to Phase 10
+
+### 9.5: Commit Phase 9 changes
+
+- [ ] Stage changes:
+  ```bash
+  git add backend/starlink-location/app/mission/exporter.py
+  ```
+- [ ] Commit:
+  ```bash
+  git commit -m "feat: draw route as simple line (Phase 9)"
+  ```
+- [ ] Push:
+  ```bash
+  git push
+  ```
+
+---
+
+## Phase 10: Map - Add Color-Coded Segments
+
+### 10.1: Replace route drawing with color-coded segments
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Find the route drawing section you added in Phase 9 (the code starting with `if points:`)
+- [ ] Replace that section with:
+
+```python
+    # Phase 10: Draw route with color-coded segments by status
+    status_colors = {
+        "NOMINAL": "#27ae60",      # Modern emerald green
+        "DEGRADED": "#f39c12",     # Modern amber/orange
+        "CRITICAL": "#e74c3c",     # Modern red
+    }
+
+    if points and timeline.segments:
+        # Calculate mission duration for time-based waypoint interpolation
+        mission_start = _ensure_timezone(timeline.segments[0].start_time)
+        mission_end = _ensure_timezone(timeline.segments[-1].end_time)
+        total_duration_sec = (mission_end - mission_start).total_seconds()
+
+        # For each route segment (between consecutive waypoints), determine its color
+        for i in range(len(points) - 1):
+            # Skip segments that cross IDL
+            if i in idl_crossing_segments:
+                continue
+
+            p1 = points[i]
+            p2 = points[i + 1]
+
+            # Calculate time at the midpoint of this route segment
+            # Assume waypoints are evenly distributed along the route
+            segment_progress = i / len(points)
+            segment_time = mission_start + (mission_end - mission_start) * segment_progress
+
+            # Find which timeline segment contains this time
+            segment_status = "NOMINAL"  # Default
+            for tl_seg in timeline.segments:
+                if tl_seg.start_time <= segment_time <= tl_seg.end_time:
+                    segment_status = tl_seg.status.name
+                    break
+
+            # Get color for this status
+            color = status_colors.get(segment_status, "#95a5a6")  # Gray fallback
+
+            # Draw this route segment
+            ax.plot([p1.longitude, p2.longitude],
+                   [p1.latitude, p2.latitude],
+                   color=color, linewidth=2,
+                   transform=ccrs.PlateCarree(), zorder=5)
+```
+
+- [ ] Save the file
+
+### 10.2: Rebuild Docker and verify
+
+- [ ] Run:
+  ```bash
+  docker compose down && docker compose build --no-cache && docker compose up -d
+  ```
+- [ ] Verify health:
+  ```bash
+  curl http://localhost:8000/health
+  ```
+
+### 10.3: Generate test export for Phase 10
+
+- [ ] Use same mission ID:
+  ```bash
+  curl -o /tmp/test_map_phase10.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
+  ```
+
+### 10.4: Manually verify Phase 10 color-coded route output
+
+- [ ] Open `/tmp/test_map_phase10.xlsx`
+- [ ] Go to Summary sheet, look at the map
+- [ ] Verify visually:
+  - [ ] Route is drawn with multiple colors
+  - [ ] Green segments appear where timeline status is NOMINAL
+  - [ ] Yellow/amber segments appear where timeline status is DEGRADED
+  - [ ] Red segments appear where timeline status is CRITICAL
+  - [ ] Compare colors with Timeline sheet: segment colors should match status column
+  - [ ] No IDL artifacts
+  - [ ] Route is fully visible within bounds
+- [ ] **STOP HERE**: Once color coding matches timeline data, proceed to Phase 11
+
+### 10.5: Commit Phase 10 changes
+
+- [ ] Stage changes:
+  ```bash
+  git add backend/starlink-location/app/mission/exporter.py
+  ```
+- [ ] Commit:
+  ```bash
+  git commit -m "feat: add color-coded route segments by timeline status (Phase 10)"
+  ```
+- [ ] Push:
+  ```bash
+  git push
+  ```
+
+---
+
+## Phase 11: Map - Add POI & Airport Markers
+
+### 11.1: Add departure, arrival, and POI markers
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Before the final `buf = io.BytesIO()` section, add:
+
+```python
+    # Phase 11: Add POI and airport markers
+
+    # Departure airport marker (at first waypoint)
+    if points:
+        dep_lon = points[0].longitude
+        dep_lat = points[0].latitude
+        ax.plot(dep_lon, dep_lat, marker='^', color='#3498db', markersize=12,
+               transform=ccrs.PlateCarree(), zorder=10)
+        ax.text(dep_lon, dep_lat, '  Departure', fontsize=9, color='#3498db',
+               transform=ccrs.PlateCarree(), zorder=11,
+               verticalalignment='bottom', horizontalalignment='left',
+               bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7, edgecolor='none'))
+
+    # Arrival airport marker (at last waypoint)
+    if points:
+        arr_lon = points[-1].longitude
+        arr_lat = points[-1].latitude
+        ax.plot(arr_lon, arr_lat, marker='v', color='#9b59b6', markersize=12,
+               transform=ccrs.PlateCarree(), zorder=10)
+        ax.text(arr_lon, arr_lat, '  Arrival', fontsize=9, color='#9b59b6',
+               transform=ccrs.PlateCarree(), zorder=11,
+               verticalalignment='top', horizontalalignment='left',
+               bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7, edgecolor='none'))
+
+    # Mission-event POI markers
+    if mission.pois:
+        for poi in mission.pois:
+            if poi.poi_type == 'mission-event':
+                ax.plot(poi.longitude, poi.latitude, marker='o', color='#e67e22', markersize=10,
+                       transform=ccrs.PlateCarree(), zorder=10)
+                ax.text(poi.longitude, poi.latitude, f'  {poi.name}', fontsize=8, color='#e67e22',
+                       transform=ccrs.PlateCarree(), zorder=11,
+                       verticalalignment='center', horizontalalignment='left',
+                       bbox=dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.7, edgecolor='none'))
+```
+
+- [ ] Save the file
+
+### 11.2: Rebuild Docker and verify
+
+- [ ] Run:
+  ```bash
+  docker compose down && docker compose build --no-cache && docker compose up -d
+  ```
+- [ ] Verify health:
+  ```bash
+  curl http://localhost:8000/health
+  ```
+
+### 11.3: Generate test export for Phase 11
+
+- [ ] Use same mission ID:
+  ```bash
+  curl -o /tmp/test_map_phase11.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
+  ```
+
+### 11.4: Manually verify Phase 11 markers output
+
+- [ ] Open `/tmp/test_map_phase11.xlsx`
+- [ ] Go to Summary sheet, look at the map
+- [ ] Verify visually:
+  - [ ] Blue triangle marker appears at route start, labeled "Departure"
+  - [ ] Purple triangle marker appears at route end, labeled "Arrival"
+  - [ ] Orange circle markers appear at mission-event POIs
+  - [ ] All POI markers are labeled with POI names
+  - [ ] Labels are readable and positioned clearly
+  - [ ] Markers do not obscure the route line
+  - [ ] All expected POIs are present (compare with mission data)
+- [ ] **STOP HERE**: Once all markers are correct, proceed to Phase 12
+
+### 11.5: Commit Phase 11 changes
+
+- [ ] Stage changes:
+  ```bash
+  git add backend/starlink-location/app/mission/exporter.py
+  ```
+- [ ] Commit:
+  ```bash
+  git commit -m "feat: add POI and airport markers with labels (Phase 11)"
+  ```
+- [ ] Push:
+  ```bash
+  git push
+  ```
+
+---
+
+## Phase 12: Map - Add Legend Inset
+
+### 12.1: Add legend to map
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Before the final `buf = io.BytesIO()` section, add:
+
+```python
+    # Phase 12: Add legend inset to map
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    legend_elements = [
+        # Route status colors
+        Line2D([0], [0], color='#27ae60', linewidth=3, label='Nominal'),
+        Line2D([0], [0], color='#f39c12', linewidth=3, label='Degraded'),
+        Line2D([0], [0], color='#e74c3c', linewidth=3, label='Critical'),
+        # Marker types
+        Line2D([0], [0], marker='^', color='w', markerfacecolor='#3498db',
+               markersize=8, label='Departure', linestyle='None'),
+        Line2D([0], [0], marker='v', color='w', markerfacecolor='#9b59b6',
+               markersize=8, label='Arrival', linestyle='None'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='#e67e22',
+               markersize=8, label='POI', linestyle='None'),
+    ]
+
+    # Add legend inset at lower-right, positioned to not extend beyond figure
+    legend = ax.legend(handles=legend_elements, loc='lower right', fontsize=9,
+                      framealpha=0.95, edgecolor='#2c3e50', fancybox=True)
+    # Ensure legend is drawn on top and doesn't extend beyond axes
+    legend.set_zorder(100)
+```
+
+- [ ] Save the file
+
+### 12.2: Rebuild Docker and verify
+
+- [ ] Run:
+  ```bash
+  docker compose down && docker compose build --no-cache && docker compose up -d
+  ```
+- [ ] Verify health:
+  ```bash
+  curl http://localhost:8000/health
+  ```
+
+### 12.3: Generate test export for Phase 12
+
+- [ ] Use same mission ID:
+  ```bash
+  curl -o /tmp/test_map_phase12.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
+  ```
+
+### 12.4: Manually verify Phase 12 legend output
+
+- [ ] Open `/tmp/test_map_phase12.xlsx`
+- [ ] Go to Summary sheet, look at the map
+- [ ] Verify visually:
+  - [ ] Legend appears in lower-right corner of map
+  - [ ] Legend shows: Nominal (green), Degraded (orange), Critical (red)
+  - [ ] Legend shows: Departure (blue triangle), Arrival (purple triangle), POI (orange circle)
+  - [ ] Legend text is readable
+  - [ ] Legend does NOT extend beyond the map figure boundaries
+  - [ ] Legend does not obscure important map features
+  - [ ] Legend has proper spacing and formatting
+- [ ] **STOP HERE**: Once legend looks good, proceed to Phase 13
+
+### 12.5: Commit Phase 12 changes
+
+- [ ] Stage changes:
+  ```bash
+  git add backend/starlink-location/app/mission/exporter.py
+  ```
+- [ ] Commit:
+  ```bash
+  git commit -m "feat: add legend inset to map (Phase 12)"
+  ```
+- [ ] Push:
+  ```bash
+  git push
+  ```
+
+---
+
+## Phase 13: Full Integration & Testing
+
+### 13.1: Verify map integrates with timeline chart and summary table
+
+- [ ] Use same mission ID from testing:
+  ```bash
+  curl -o /tmp/test_integration.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
+  ```
+
+### 13.2: Verify Excel Sheet 1 (Summary) layout
+
+- [ ] Open `/tmp/test_integration.xlsx`
+- [ ] Go to "Summary" sheet (should be first sheet)
+- [ ] Verify order and layout:
+  - [ ] Map image appears at top
+  - [ ] Timeline chart appears below map
+  - [ ] Summary table appears below chart
+  - [ ] All three elements fit on the sheet properly
+  - [ ] Column widths are reasonable
+
+### 13.3: Verify Timeline sheet is unchanged
+
+- [ ] Go to "Timeline" sheet
+- [ ] Verify:
+  - [ ] All original columns present (13 columns total)
+  - [ ] Data looks correct
+  - [ ] No formatting changes
+
+### 13.4: Verify Statistics sheet is unchanged
+
+- [ ] Go to "Statistics" sheet
+- [ ] Verify:
+  - [ ] Original content present
+  - [ ] Data looks correct
+
+### 13.5: Verify PDF export includes map and chart
+
+- [ ] Generate PDF export:
+  ```bash
+  curl -o /tmp/test_integration.pdf http://localhost:8000/api/missions/{MISSION_ID}/export/pdf
+  ```
+- [ ] Open `/tmp/test_integration.pdf` in PDF viewer
+- [ ] Verify:
+  - [ ] PDF has multiple pages
+  - [ ] Map image appears on a page
+  - [ ] Timeline chart appears on a page
+  - [ ] Chart matches the Excel version
+  - [ ] All pages render correctly
+
+### 13.6: Check backend logs for errors
+
+- [ ] Run:
+  ```bash
+  docker compose logs starlink-location | rg -i "error|exception" | head -20
+  ```
+- [ ] Expected result: No export-related errors
+- [ ] If errors appear, note them and address in code before proceeding
+
+### 13.7: Commit integration verification
+
+- [ ] If no code changes needed:
+  ```bash
+  git status
+  ```
+- [ ] Expected result: "nothing to commit, working tree clean"
+- [ ] If code changes were made during testing, commit them:
+  ```bash
+  git add backend/starlink-location/app/mission/exporter.py
+  git commit -m "test: verify full integration of map, chart, and summary table"
+  git push
+  ```
+
+---
+
+## Phase 14: Documentation & Wrap-Up
+
+### 14.1: Update MISSION-PLANNING-GUIDE.md with map specifications
 
 - [ ] Open `docs/MISSION-PLANNING-GUIDE.md`
-- [ ] Locate the section describing Excel Sheet 1 (around lines 314-318)
-- [ ] Replace the current description with accurate details:
+- [ ] Find the section describing Excel exports (look for "Sheet 1")
+- [ ] Update the Sheet 1 description to include map specifications:
   ```markdown
   **Sheet 1: Summary**
-
   - Geographic map showing mission route with color-coded segments (green=NOMINAL, yellow=DEGRADED, red=CRITICAL)
+  - Map resolution: 3840×2880 pixels @ 300 DPI (12.8" × 9.6" for printing)
   - Labeled markers for departure airport (blue), arrival airport (purple), and mission-event POIs (orange)
+  - Route centered with 5% smart padding (5% on larger dimension, other dimension auto-adjusted for aspect ratio)
   - Horizontal timeline bar chart showing X-Band, Ka, and Ku transport states over time
   - Simplified summary table with columns: Start (UTC), Duration, Status, Systems Down
   - Color-coded table rows matching segment status
   ```
-- [ ] Locate the section describing PDF Page 3 timeline chart (around lines 351-356)
-- [ ] Update to match actual implementation:
-  ```markdown
-  **Page 3: Timeline Chart**
-
-  - Horizontal bar chart with three rows (X-Band, Ka, Ku)
-  - Color-coded blocks showing transport states: green (AVAILABLE), yellow (DEGRADED), red (OFFLINE)
-  - Vertical grid lines at 1-hour intervals
-  - Time axis showing mission-relative time (T+HH:MM)
-  - Legend explaining color coding
-  ```
 - [ ] Save the file
 
-### Commit documentation updates
-
-- [ ] Stage changes:
-  ```bash
-  git add docs/MISSION-PLANNING-GUIDE.md
-  ```
-- [ ] Commit:
-  ```bash
-  git commit -m "docs: update MISSION-PLANNING-GUIDE to reflect actual export implementation"
-  ```
-- [ ] Push:
-  ```bash
-  git push
-  ```
-
-### Update PLAN.md status
+### 14.2: Update PLAN.md status
 
 - [ ] Open `dev/active/excel-sheet1-timeline-summary/PLAN.md`
-- [ ] Change the Status field from "Planning" to "Completed"
+- [ ] Change the line:
+  ```
+  **Status:** Phase 7 (Testing & Verification - In Progress)
+  ```
+  to:
+  ```
+  **Status:** Completed
+  ```
 - [ ] Save the file
 
-### Finalize CONTEXT.md
+### 14.3: Update CONTEXT.md
 
 - [ ] Open `dev/active/excel-sheet1-timeline-summary/CONTEXT.md`
+- [ ] Update the "Last Updated" field to today's date
 - [ ] Review all sections for accuracy
-- [ ] Update "Last Updated" date to today
-- [ ] Add any final notes about implementation decisions or discovered constraints
+- [ ] If any new findings or constraints were discovered, add them
 - [ ] Save the file
 
-### Mark all checklist items complete
+### 14.4: Mark all checklist items complete
 
 - [ ] Review this entire checklist
-- [ ] Ensure all tasks are marked `- [x]`
-- [ ] Save CHECKLIST.md
+- [ ] Ensure all `- [ ]` items are marked `- [x]`
+- [ ] Save the file
 
-### Commit final plan document updates
+### 14.5: Commit final documentation
 
-- [ ] Stage plan documents:
+- [ ] Stage all documentation changes:
   ```bash
+  git add docs/MISSION-PLANNING-GUIDE.md
   git add dev/active/excel-sheet1-timeline-summary/PLAN.md
   git add dev/active/excel-sheet1-timeline-summary/CONTEXT.md
   git add dev/active/excel-sheet1-timeline-summary/CHECKLIST.md
   ```
 - [ ] Commit:
   ```bash
-  git commit -m "docs: finalize plan documents for excel-sheet1-timeline-summary"
+  git commit -m "docs: update documentation for map reset completion"
   ```
 - [ ] Push:
   ```bash
   git push
   ```
 
-### Update LESSONS-LEARNED.md
+### 14.6: Verify all changes are committed and pushed
 
-- [ ] Open `dev/LESSONS-LEARNED.md`
-- [ ] Add a new dated entry describing key learnings from this work
-- [ ] Save the file
-
-### Commit LESSONS-LEARNED update
-
-- [ ] Stage changes:
-  ```bash
-  git add dev/LESSONS-LEARNED.md
-  ```
-- [ ] Commit:
-  ```bash
-  git commit -m "docs: add lessons learned from excel-sheet1-timeline-summary"
-  ```
-- [ ] Push:
-  ```bash
-  git push
-  ```
-
-### Verify branch is ready for PR
-
-- [ ] Confirm all changes are committed:
+- [ ] Run:
   ```bash
   git status
   ```
 - [ ] Expected result: "nothing to commit, working tree clean"
 
-- [ ] Confirm branch is pushed to remote:
-  ```bash
-  git log origin/feat/excel-sheet1-timeline-summary..HEAD
-  ```
-- [ ] Expected result: No commits (meaning everything is pushed)
+### 14.7: Ready for wrap-up skill
 
-### Ready for wrap-up skill
-
-- [ ] This feature is now complete and ready for PR creation
-- [ ] Use the `wrapping-up-plan` skill to create the pull request
-- [ ] The wrapping-up skill will handle final archival and PR creation
+- [ ] This feature is complete
+- [ ] All checklist items are marked as done
+- [ ] All changes are committed and pushed
+- [ ] Use the `wrapping-up-plan` skill to create the PR
 
 ---
 
-## Documentation Maintenance
+## Testing Summary
 
-- [ ] Update PLAN.md if any phase boundaries changed
-- [ ] Update CONTEXT.md if new files, dependencies, assumptions, or risks were discovered
-- [ ] Update LESSONS-LEARNED.md when something surprising or important happens
+The following were tested during this implementation:
 
----
-
-## Verification Tasks
-
-- [ ] Manual testing with real mission data completed
-- [ ] Excel Summary sheet verified (map, chart, table all correct)
-- [ ] PDF timeline chart verified
-- [ ] Edge cases tested (no POIs, single segment, short/long missions)
-- [ ] No errors in backend logs
-- [ ] Data accuracy confirmed (cross-checked with Timeline sheet)
+- [ ] Phase 7: Base 4K canvas generates with correct dimensions
+- [ ] Phase 8: Route bounds calculated correctly with smart 5% padding
+- [ ] Phase 9: Route drawn as single line with correct geometry
+- [ ] Phase 10: Route segments colored correctly by timeline status
+- [ ] Phase 11: Departure, arrival, and POI markers all present and labeled
+- [ ] Phase 12: Legend positioned correctly and does not extend boundaries
+- [ ] Phase 13: Full integration with timeline chart and summary table working
+- [ ] Phase 13: PDF export includes map and chart correctly
+- [ ] Phase 13: No errors in backend logs during export generation
+- [ ] Phase 13: Export generation completes in reasonable time
 
 ---
 
-## Pre-Wrap Checklist
+## Verification Checklist
 
-All of the following must be checked before handoff to `wrapping-up-plan`:
+All of the following must be checked before wrap-up:
 
 - [ ] All implementation tasks above are marked `- [x]`
 - [ ] No TODOs remain in code
-- [ ] Backend runs without warnings or errors
-- [ ] Tests pass (manual testing completed)
-- [ ] PLAN.md updated to "Completed" status
+- [ ] Backend runs without warnings or errors related to map generation
+- [ ] Manual testing completed with real mission data
+- [ ] Map outputs at 4K resolution (3840x2880 pixels)
+- [ ] Route bounds and padding correct
+- [ ] Route colors match timeline status
+- [ ] All POI markers present and correct
+- [ ] Legend positioned and formatted correctly
+- [ ] Excel export generates without errors
+- [ ] PDF export includes map and chart
+- [ ] MISSION-PLANNING-GUIDE.md updated
+- [ ] PLAN.md marked as Completed
 - [ ] CONTEXT.md finalized
-- [ ] CHECKLIST.md fully completed
-- [ ] MISSION-PLANNING-GUIDE.md documentation updated
-- [ ] LESSONS-LEARNED.md updated
 - [ ] All changes committed and pushed to feat/excel-sheet1-timeline-summary branch

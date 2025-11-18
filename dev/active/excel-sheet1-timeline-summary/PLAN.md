@@ -166,45 +166,172 @@ Add timeline bar chart to PDF export as Page 3, matching the documented behavior
 
 ---
 
-### **Phase 7 — Testing & Verification**
+### **Phase 7 — Map Reset: Base 4K Canvas**
 
 **Description:**
-Manually test exports with real mission data to verify all visualizations render correctly and accurately reflect the underlying data.
+Create base map at 4K resolution (3840x2880 pixels @ 300 DPI) with no content. Map fills entire figure with no borders, margins, or metadata. User tests output and verifies canvas dimensions and aspect ratio are correct before proceeding.
 
 **Entry Criteria:**
 
-- All implementation complete
-- Sample mission data available
+- Current problematic map code identified
+- Requirements locked: 4K output (3840x2880), 300 DPI, full-frame
 
 **Exit Criteria:**
 
-- Excel export manually tested with real mission containing route, POIs, and varied timeline segments
-- Map confirms: route path correct, segment colors match statuses, POI/airport markers correctly positioned and labeled
-- Timeline chart confirms: transport states match segment data, time axis accurate, colors correct
-- Summary table confirms: times in UTC, durations calculated correctly, row colors match statuses
-- PDF export manually tested and timeline chart verified
-- No errors or warnings in backend logs during export generation
-- Export generation completes in reasonable time (no performance issues)
+- `_generate_route_map()` rewritten to output 4K canvas
+- No route, no POIs, no text overlays
+- Docker environment rebuilt
+- User runs test export, verifies map dimensions and aspect ratio visually
+- STOP: Wait for user verification before Phase 8
 
 ---
 
-### **Phase 8 — Documentation & Wrap-Up**
+### **Phase 8 — Map: Calculate & Display Route Bounds**
 
 **Description:**
-Update MISSION-PLANNING-GUIDE.md to accurately describe the actual implementation, finalize plan documents, and prepare for PR creation.
+Calculate map bounds from route waypoints with smart 5% padding. Display bounds as initial view (no route drawn yet, just the projected area). User verifies bounds are correct and padding is smart (5% on larger dimension).
 
 **Entry Criteria:**
 
-- All testing passed
-- Implementation verified working
+- Base 4K map rendering correctly
+- User confirmed canvas looks good
 
 **Exit Criteria:**
 
-- MISSION-PLANNING-GUIDE.md updated with accurate descriptions of Sheet 1 content and PDF Page 3
-- Any discrepancies between documentation and implementation resolved
+- Calculate route waypoint extents (min/max lat/lon)
+- Apply 5% smart padding:
+  - If (lon_extent >= lat_extent): pad east/west, height adjusts for aspect ratio
+  - Else: pad north/south, width adjusts for aspect ratio
+- Map bounds set to these padded coordinates
+- User tests export, verifies correct area is shown with proper padding
+- STOP: Wait for user verification before Phase 9
+
+---
+
+### **Phase 9 — Map: Draw Route as Simple Line**
+
+**Description:**
+Draw route as single-color connected line (no color coding yet). Route follows waypoints from route data. User verifies route geometry is correct and follows expected path.
+
+**Entry Criteria:**
+
+- Route bounds calculating correctly
+- Map centering on correct area
+
+**Exit Criteria:**
+
+- Route waypoints extracted from `route.points`
+- Connected line drawn through all waypoints in order
+- Single color (e.g., dark blue) for entire route
+- No legend or additional elements
+- User tests export, verifies route path matches expected geography
+- STOP: Wait for user verification before Phase 10
+
+---
+
+### **Phase 10 — Map: Add Color-Coded Segments**
+
+**Description:**
+Color each route segment according to TimelineStatus (green=NOMINAL, yellow=DEGRADED, red=CRITICAL). Use time-interpolation to map waypoints to timeline segments. User verifies colors match timeline data and IDL crossing logic works (segments crossing ±180° skipped).
+
+**Entry Criteria:**
+
+- Route line rendering correctly
+- Time-interpolation algorithm available
+
+**Exit Criteria:**
+
+- Map segments colored by TimelineStatus
+- Time-interpolation maps waypoints to timeline segments
+- IDL crossing detection: segments crossing ±180° longitude skipped
+- Route displays multi-colored according to status timeline
+- User tests export, verifies colors match Timeline sheet
+- STOP: Wait for user verification before Phase 11
+
+---
+
+### **Phase 11 — Map: Add POI & Airport Markers**
+
+**Description:**
+Add labeled markers: departure airport (start), arrival airport (end), and mission-event POIs (at correct coordinates). Markers positioned to not obscure route. User verifies all markers present and correctly positioned.
+
+**Entry Criteria:**
+
+- Color-coded route rendering correctly
+- Route geometry stable
+
+**Exit Criteria:**
+
+- Departure airport marker at route start (distinct style/color)
+- Arrival airport marker at route end (distinct style/color)
+- Mission-event POI markers at correct coordinates (distinct style/color)
+- All markers labeled with readable text
+- Markers positioned to avoid overlapping route line
+- User tests export, verifies all markers present and correctly positioned
+- STOP: Wait for user verification before Phase 12
+
+---
+
+### **Phase 12 — Map: Add Legend Inset**
+
+**Description:**
+Add legend overlaid inset on map (e.g., lower-right corner). Legend shows color meanings (NOMINAL green, DEGRADED yellow, CRITICAL red) and marker meanings (departure, arrival, POIs). Legend must NOT extend beyond figure boundaries.
+
+**Entry Criteria:**
+
+- Route, segments, and POI markers all rendering
+- Map at final resolution
+
+**Exit Criteria:**
+
+- Legend inset positioned on map (not extending boundaries)
+- Legend shows route status colors and meanings
+- Legend shows marker type meanings
+- Legend font/size readable and non-overlapping
+- User tests export, verifies legend looks correct and doesn't extend figure
+- STOP: Wait for user verification before Phase 13
+
+---
+
+### **Phase 13 — Full Integration & Testing**
+
+**Description:**
+Ensure map integrates correctly into Excel and PDF exports with timeline chart and summary table unchanged. Manually test with real mission data.
+
+**Entry Criteria:**
+
+- All map elements rendering correctly
+- Each component verified independently
+
+**Exit Criteria:**
+
+- Excel export generates without errors
+- Sheet 1 displays map at 4K resolution
+- Timeline chart unchanged
+- Summary table unchanged
+- PDF export includes map and chart
+- All three sheets/pages render correctly
+- User manually tests with real mission data
+- STOP: Wait for user verification before Phase 14
+
+---
+
+### **Phase 14 — Documentation & Wrap-Up**
+
+**Description:**
+Update MISSION-PLANNING-GUIDE.md with map specifications, finalize plan documents, and prepare for PR creation.
+
+**Entry Criteria:**
+
+- All components tested and verified
+- Implementation stable
+
+**Exit Criteria:**
+
+- MISSION-PLANNING-GUIDE.md updated with map specs (4K, 300 DPI, resolution)
 - PLAN.md status updated to "Completed"
 - CONTEXT.md finalized
 - CHECKLIST.md fully checked
 - All changes committed to feat/excel-sheet1-timeline-summary branch
 - Branch pushed to remote
-- Ready for PR creation via wrapping-up skill
+- Ready for PR creation
