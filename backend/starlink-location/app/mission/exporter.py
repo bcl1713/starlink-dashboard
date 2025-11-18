@@ -9,20 +9,29 @@ from __future__ import annotations
 
 import io
 import json
+import matplotlib
+matplotlib.use('Agg')  # Headless mode for Docker
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+from matplotlib.lines import Line2D
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Optional
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+import openpyxl
+from openpyxl.drawing.image import Image as OpenpyxlImage
+from openpyxl.styles import PatternFill
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import LETTER, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, PageBreak
 
 from app.mission.models import (
     Mission,
@@ -32,6 +41,7 @@ from app.mission.models import (
     Transport,
     TransportState,
 )
+from app.services.route_manager import RouteManager
 
 EASTERN_TZ = ZoneInfo("America/New_York")
 LIGHT_YELLOW = colors.Color(1.0, 1.0, 0.85)
@@ -47,6 +57,15 @@ STATE_COLUMNS = [
     TRANSPORT_DISPLAY[Transport.KU],
 ]
 LOGO_PATH = Path(__file__).with_name("assets").joinpath("logo.png")
+
+# Global route manager instance (set by main.py)
+_route_manager: Optional[RouteManager] = None
+
+
+def set_route_manager(route_manager: RouteManager) -> None:
+    """Set the route manager instance (called by main.py during startup)."""
+    global _route_manager
+    _route_manager = route_manager
 
 
 def _load_logo_flowable() -> Image | None:
@@ -268,6 +287,309 @@ def _segment_at_time(
     return timeline.segments[-1] if timeline.segments else None
 
 
+def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+    """Generate a PNG image of the route map with segment status coloring.
+
+    Args:
+        timeline: The mission timeline with segments and timing data
+        mission: The mission object containing route and POI information (optional)
+
+    Returns:
+        PNG image as bytes. Returns a placeholder image if mission/route is None.
+    """
+    if mission is None or not mission.route_id or not _route_manager:
+        # Return placeholder if no mission or route manager
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.text(0.5, 0.5, 'No route data available', ha='center', va='center')
+        ax.axis('off')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        buf.seek(0)
+        return buf.read()
+
+    # Fetch route from manager
+    route = _route_manager.get_route(mission.route_id)
+    if route is None or not route.points:
+        # Return placeholder if route not found
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.text(0.5, 0.5, 'No waypoint data available', ha='center', va='center')
+        ax.axis('off')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        buf.seek(0)
+        return buf.read()
+
+    # Extract waypoints from route points
+    waypoints = []
+    for pt in route.points:
+        waypoints.append((pt.longitude, pt.latitude))
+
+    if not waypoints:
+        # No valid waypoints
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.text(0.5, 0.5, 'No waypoint coordinates available', ha='center', va='center')
+        ax.axis('off')
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        buf.seek(0)
+        return buf.read()
+
+    # Extract waypoint coordinates
+    points = route.points
+    lats = [p.latitude for p in points]
+    lons = [p.longitude for p in points]
+
+    # Calculate map bounds with 10% margin
+    min_lat, max_lat = min(lats), max(lats)
+    min_lon, max_lon = min(lons), max(lons)
+    lat_range = max_lat - min_lat if max_lat != min_lat else 1.0
+    lon_range = max_lon - min_lon if max_lon != min_lon else 1.0
+    margin_lat = lat_range * 0.1
+    margin_lon = lon_range * 0.1
+
+    bounds = {
+        'north': max_lat + margin_lat,
+        'south': min_lat - margin_lat,
+        'east': max_lon + margin_lon,
+        'west': min_lon - margin_lon,
+    }
+
+    # Create figure with cartopy
+    fig = plt.figure(figsize=(12, 8), dpi=150)
+    ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+
+    # Set map extent
+    ax.set_extent([bounds['west'], bounds['east'], bounds['south'], bounds['north']],
+                  crs=ccrs.PlateCarree())
+
+    # Add map features
+    ax.coastlines(resolution='50m', linewidth=0.5)
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5)
+    ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
+    ax.add_feature(cfeature.OCEAN, facecolor='lightblue', alpha=0.2)
+    ax.gridlines(draw_labels=True, alpha=0.3)
+
+    # Map segment status to colors
+    status_colors = {
+        "NOMINAL": "#00FF00",     # Green
+        "DEGRADED": "#FFFF00",    # Yellow
+        "CRITICAL": "#FF0000",    # Red
+    }
+
+    # Distribute segments across waypoints proportionally by duration
+    if timeline.segments:
+        total_duration = sum(
+            (_ensure_timezone(seg.end_time) - _ensure_timezone(seg.start_time)).total_seconds()
+            for seg in timeline.segments
+        )
+
+        segment_idx = 0
+        segment_progress = 0.0
+
+        # Draw route segments colored by status
+        for i in range(len(points) - 1):
+            p1 = points[i]
+            p2 = points[i + 1]
+
+            # Determine which segment(s) this route segment covers
+            while segment_idx < len(timeline.segments):
+                segment = timeline.segments[segment_idx]
+                segment_duration = (
+                    _ensure_timezone(segment.end_time) - _ensure_timezone(segment.start_time)
+                ).total_seconds()
+                segment_fraction = segment_duration / total_duration if total_duration > 0 else 0
+
+                # Get segment status
+                status_str = segment.status.value.upper() if hasattr(segment.status, 'value') else str(segment.status).upper()
+                color = status_colors.get(status_str, "#808080")  # Gray as fallback
+
+                # Draw line segment
+                ax.plot([p1.longitude, p2.longitude],
+                       [p1.latitude, p2.latitude],
+                       color=color, linewidth=2, transform=ccrs.PlateCarree(),
+                       zorder=3)
+
+                segment_progress += segment_fraction
+                if segment_progress >= 1.0 / (len(points) - 1):
+                    segment_progress = 0.0
+                    segment_idx += 1
+                else:
+                    break
+    else:
+        # If no timeline segments, draw route in gray
+        ax.plot(lons, lats, color='#808080', linewidth=2,
+               transform=ccrs.PlateCarree(), zorder=3)
+
+    # Add departure marker (blue triangle at first waypoint)
+    if points:
+        first = points[0]
+        ax.plot(first.longitude, first.latitude, marker='^', color='blue',
+               markersize=12, transform=ccrs.PlateCarree(), zorder=4)
+
+    # Add arrival marker (purple triangle at last waypoint)
+    if points:
+        last = points[-1]
+        ax.plot(last.longitude, last.latitude, marker='^', color='purple',
+               markersize=12, transform=ccrs.PlateCarree(), zorder=4)
+
+    # Add mission-event POIs (orange circles with labels)
+    if hasattr(mission, 'pois') and mission.pois:
+        for poi in mission.pois:
+            # Check if this is a mission-event POI
+            poi_type = getattr(poi, 'category', None) or getattr(poi, 'poi_type', None)
+            if poi_type == "mission-event":
+                ax.plot(poi.longitude, poi.latitude, marker='o', color='orange',
+                       markersize=8, transform=ccrs.PlateCarree(), zorder=4)
+                # Add label
+                ax.text(poi.longitude, poi.latitude, f"  {poi.name}",
+                       fontsize=8, transform=ccrs.PlateCarree(), zorder=4)
+
+    # Create legend
+    legend_elements = [
+        Line2D([0], [0], color='#00FF00', lw=2, label='Nominal'),
+        Line2D([0], [0], color='#FFFF00', lw=2, label='Degraded'),
+        Line2D([0], [0], color='#FF0000', lw=2, label='Critical'),
+        Line2D([0], [0], marker='^', color='w', markerfacecolor='blue',
+               markersize=8, label='Departure'),
+        Line2D([0], [0], marker='^', color='w', markerfacecolor='purple',
+               markersize=8, label='Arrival'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor='orange',
+               markersize=8, label='Mission Event'),
+    ]
+    ax.legend(handles=legend_elements, loc='upper left', fontsize=9)
+
+    # Add title
+    mission_name = mission.name if hasattr(mission, 'name') else 'Mission'
+    ax.set_title(f'Route Map: {mission_name}', fontsize=14, fontweight='bold')
+
+    # Save to buffer
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    buffer.seek(0)
+    return buffer.read()
+
+
+def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
+    """Generate a PNG image of a horizontal bar chart showing transport timeline.
+
+    Args:
+        timeline: The mission timeline with segments containing transport states
+
+    Returns:
+        PNG image as bytes showing three rows of colored blocks representing
+        X-Band, Ka (HCX), and Ku (StarShield) state transitions over mission duration.
+    """
+    from matplotlib.ticker import FuncFormatter
+
+    # Handle empty timeline
+    if not timeline.segments:
+        fig, ax = plt.subplots(figsize=(14, 4), dpi=150)
+        ax.text(0.5, 0.5, 'No timeline segments available',
+                ha='center', va='center', fontsize=14, transform=ax.transAxes)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.axis('off')
+
+        buffer = io.BytesIO()
+        fig.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
+        plt.close(fig)
+        buffer.seek(0)
+        return buffer.read()
+
+    # Get mission duration from last segment end time
+    mission_end_seconds = (
+        _ensure_timezone(timeline.segments[-1].end_time) -
+        _ensure_timezone(timeline.segments[0].start_time)
+    ).total_seconds()
+
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(14, 4), dpi=150)
+
+    # State to color mapping
+    state_colors = {
+        'AVAILABLE': '#00FF00',
+        'DEGRADED': '#FFFF00',
+        'OFFLINE': '#FF0000',
+    }
+
+    # Transport configuration: (y_position, name, state_getter)
+    transports = [
+        (0, 'Ku (StarShield)', lambda seg: seg.ku_state),
+        (1, 'Ka (HCX)', lambda seg: seg.ka_state),
+        (2, 'X-Band', lambda seg: seg.x_state),
+    ]
+
+    mission_start = _ensure_timezone(timeline.segments[0].start_time)
+
+    # Draw segments for each transport
+    for y_pos, transport_name, state_getter in transports:
+        for segment in timeline.segments:
+            seg_start = _ensure_timezone(segment.start_time)
+            seg_end = _ensure_timezone(segment.end_time)
+
+            # Calculate position and width in mission seconds
+            start_offset = (seg_start - mission_start).total_seconds()
+            duration = (seg_end - seg_start).total_seconds()
+
+            # Get state and color
+            state = state_getter(segment)
+            state_str = state.value.upper() if hasattr(state, 'value') else str(state).upper()
+            color = state_colors.get(state_str, '#808080')
+
+            # Draw horizontal bar
+            ax.barh(y_pos, duration, left=start_offset, height=0.8,
+                   color=color, edgecolor='black', linewidth=0.5)
+
+        # Label transport row
+        ax.text(-50, y_pos, transport_name, ha='right', va='center', fontsize=10)
+
+    # Configure y-axis
+    ax.set_ylim(-0.5, 2.5)
+    ax.set_yticks([0, 1, 2])
+    ax.set_yticklabels(['Ku (StarShield)', 'Ka (HCX)', 'X-Band'])
+
+    # Configure x-axis with T+ formatting
+    def format_time_label(seconds, pos):
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        return f'T+{hours:02d}:{minutes:02d}'
+
+    ax.xaxis.set_major_formatter(FuncFormatter(format_time_label))
+    ax.set_xlim(0, mission_end_seconds)
+
+    # Add vertical grid lines at 1-hour intervals
+    for hour in range(0, int(mission_end_seconds) + 1, 3600):
+        if hour <= mission_end_seconds:
+            ax.axvline(x=hour, color='gray', linestyle='--', linewidth=0.5, alpha=0.5)
+
+    # Configure grid and labels
+    ax.grid(True, axis='x', alpha=0.3, linestyle='--')
+    ax.set_xlabel('Mission Time', fontsize=11, fontweight='bold')
+    ax.set_title('Transport State Timeline', fontsize=12, fontweight='bold')
+
+    # Add legend
+    legend_elements = [
+        Line2D([0], [0], color='#00FF00', lw=10, label='Available'),
+        Line2D([0], [0], color='#FFFF00', lw=10, label='Degraded'),
+        Line2D([0], [0], color='#FF0000', lw=10, label='Offline'),
+    ]
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=9)
+
+    # Adjust layout
+    plt.tight_layout()
+
+    # Save to buffer
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format='png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    buffer.seek(0)
+    return buffer.read()
+
+
 def _segment_rows(
     timeline: MissionTimeline,
     mission: Mission | None,
@@ -412,22 +734,132 @@ def generate_csv_export(timeline: MissionTimeline, mission: Mission | None = Non
     return csv_buffer.getvalue().encode("utf-8")
 
 
+def _summary_table_rows(timeline: MissionTimeline, mission: Mission | None = None) -> pd.DataFrame:
+    """Generate simplified summary table DataFrame with key columns for Sheet 1.
+
+    Returns a DataFrame with columns: Start (UTC), Duration, Status, Systems Down
+    """
+    mission_start = _mission_start_timestamp(timeline)
+    records: list[dict] = []
+
+    for segment in timeline.segments:
+        start_utc = _ensure_timezone(segment.start_time)
+        end_value = segment.end_time if segment.end_time else segment.start_time
+        end_utc = _ensure_timezone(end_value)
+        duration_seconds = max((end_utc - start_utc).total_seconds(), 0)
+
+        # Get segment status
+        status_value = (
+            segment.status.value if isinstance(segment.status, TimelineStatus) else str(segment.status)
+        )
+        status_value = status_value.upper()
+
+        # Get systems down (impacted transports)
+        systems_down = _serialize_transport_list(segment.impacted_transports)
+
+        record = {
+            "Start (UTC)": _format_utc(start_utc),
+            "Duration": _format_seconds_hms(duration_seconds),
+            "Status": status_value,
+            "Systems Down": systems_down,
+        }
+        records.append(record)
+
+    columns = ["Start (UTC)", "Duration", "Status", "Systems Down"]
+    return pd.DataFrame.from_records(records, columns=columns)
+
+
 def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
-    """Return XLSX bytes containing timeline, advisory, and stats sheets."""
-    workbook = io.BytesIO()
+    """Return XLSX bytes containing Summary sheet (with map, chart, table) plus Timeline, Advisory, and Statistics sheets."""
+    workbook_bytes = io.BytesIO()
+
+    # Generate all data
+    summary_df = _summary_table_rows(timeline, mission)
     timeline_df = _segment_rows(timeline, mission)
     advisories_df = _advisory_rows(timeline, mission)
     stats_df = _statistics_rows(timeline)
+    map_image_bytes = _generate_route_map(timeline, mission)
+    chart_image_bytes = _generate_timeline_chart(timeline)
 
-    with pd.ExcelWriter(workbook, engine="openpyxl") as writer:
+    # Write DataFrames to Excel sheets
+    with pd.ExcelWriter(workbook_bytes, engine="openpyxl") as writer:
+        # Write Summary sheet first (will reorder later)
+        summary_df.to_excel(writer, sheet_name="Summary", index=False, startrow=0)
         timeline_df.to_excel(writer, sheet_name="Timeline", index=False)
         if not advisories_df.empty:
             advisories_df.to_excel(writer, sheet_name="Advisories", index=False)
         if not stats_df.empty:
             stats_df.to_excel(writer, sheet_name="Statistics", index=False)
 
-    workbook.seek(0)
-    return workbook.read()
+        # Access openpyxl workbook for image embedding and formatting
+        wb = writer.book
+        ws_summary = writer.sheets["Summary"]
+
+        # Set column widths for summary sheet
+        ws_summary.column_dimensions['A'].width = 25
+        ws_summary.column_dimensions['B'].width = 15
+        ws_summary.column_dimensions['C'].width = 12
+        ws_summary.column_dimensions['D'].width = 30
+
+        # Insert rows at top to accommodate map and chart images
+        # Map will be at A1 (approximately 30 rows tall)
+        # Chart will be at A32 (approximately 15 rows tall)
+        # Table will be at A49
+        ws_summary.insert_rows(1, 48)
+
+        # Embed map image at A1
+        try:
+            map_image_stream = io.BytesIO(map_image_bytes)
+            map_image = OpenpyxlImage(map_image_stream)
+            map_image.width = 750  # pixels
+            map_image.height = 500  # pixels
+            ws_summary.add_image(map_image, 'A1')
+        except Exception as e:
+            # Log error but continue
+            pass
+
+        # Embed timeline chart at A32
+        try:
+            chart_image_stream = io.BytesIO(chart_image_bytes)
+            chart_image = OpenpyxlImage(chart_image_stream)
+            chart_image.width = 850  # pixels
+            chart_image.height = 300  # pixels
+            ws_summary.add_image(chart_image, 'A32')
+        except Exception as e:
+            # Log error but continue
+            pass
+
+        # Apply color formatting to summary table rows (starting at row 49)
+        # Header is at row 49, data starts at row 50
+        color_map = {
+            "NOMINAL": PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid"),
+            "DEGRADED": PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid"),
+            "CRITICAL": PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid"),
+        }
+
+        # Apply color to data rows (skip header row)
+        for row_idx, (_, row) in enumerate(summary_df.iterrows(), start=50):
+            status = row["Status"]
+            fill = color_map.get(status)
+            if fill:
+                # Apply fill to columns A-D for this row
+                for col_idx in range(1, 5):  # Columns A-D (1-4)
+                    ws_summary.cell(row=row_idx, column=col_idx).fill = fill
+
+    workbook_bytes.seek(0)
+    wb_final = openpyxl.load_workbook(workbook_bytes)
+
+    # Reorder sheets: move Summary to position 0 (first)
+    if 'Summary' in wb_final.sheetnames:
+        summary_sheet = wb_final['Summary']
+        wb_final._sheets.remove(summary_sheet)
+        wb_final._sheets.insert(0, summary_sheet)
+
+    # Write final workbook to bytes
+    final_bytes = io.BytesIO()
+    wb_final.save(final_bytes)
+    final_bytes.seek(0)
+    return final_bytes.read()
 
 
 def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
@@ -490,6 +922,33 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
         )
         story.append(stats_table)
         story.append(Spacer(1, 0.2 * inch))
+
+    story.append(Spacer(1, 0.3 * inch))
+
+    # Add route map
+    story.append(Paragraph("Route Map", styles["Heading2"]))
+    try:
+        route_map_bytes = _generate_route_map(timeline, mission)
+        route_map_stream = io.BytesIO(route_map_bytes)
+        route_map_image = Image(route_map_stream, width=6.5 * inch, height=4.3 * inch)
+        story.append(route_map_image)
+    except Exception as e:
+        story.append(Paragraph(f"[Route map unavailable: {str(e)}]", styles["Normal"]))
+
+    # Page break before timeline
+    story.append(PageBreak())
+
+    # Add timeline chart
+    story.append(Paragraph("Transport Timeline", styles["Heading2"]))
+    try:
+        chart_image_bytes = _generate_timeline_chart(timeline)
+        chart_image_stream = io.BytesIO(chart_image_bytes)
+        chart_image = Image(chart_image_stream, width=7 * inch, height=2.3 * inch)
+        story.append(chart_image)
+    except Exception as e:
+        story.append(Paragraph(f"[Timeline chart unavailable: {str(e)}]", styles["Normal"]))
+
+    story.append(Spacer(1, 0.2 * inch))
 
     timeline_df = _segment_rows(timeline, mission)
     if timeline_df.empty:
