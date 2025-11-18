@@ -2,7 +2,7 @@
 
 **Branch:** `feat/excel-sheet1-timeline-summary`
 **Folder:** `dev/active/excel-sheet1-timeline-summary/`
-**Last Updated:** 2025-11-17
+**Last Updated:** 2025-11-18 (Phase 8 debugging session)
 
 ---
 
@@ -101,22 +101,27 @@ This was prompted by user feedback noticing the discrepancy and requesting produ
 **Risk 1: Geographic projection library complexity**
 - Cartopy/basemap can be heavyweight and difficult to install in Docker
 - **Mitigation:** Test installation early in Phase 1; fallback to simpler matplotlib scatter plot if necessary
+- **Status:** ❌ REALIZED - Cartopy PlateCarree projection cannot handle trans-Pacific routes crossing IDL
 
 **Risk 2: Image quality vs file size**
 - High-resolution maps increase Excel file size significantly
 - **Mitigation:** Use reasonable DPI (150-200) and PNG compression; test file sizes during Phase 5
+- **Status:** ✅ MITIGATED - 4K resolution (300 DPI) tested successfully in Phase 7
 
 **Risk 3: Color coding ambiguity**
 - Segment status (NOMINAL/DEGRADED/CRITICAL) vs transport state (AVAILABLE/DEGRADED/OFFLINE) use similar names but different contexts
 - **Mitigation:** Clearly document which applies where (route segments use status, transport bars use state)
+- **Status:** ⚠️ NOT YET TESTED - Phase 10 will implement color coding
 
 **Risk 4: Breaking existing export consumers**
 - Unknown if other systems consume these exports programmatically
 - **Mitigation:** New sheet is added (not replacing), so existing sheet structure unchanged
+- **Status:** ✅ MITIGATED - Sheet structure remains backward compatible
 
 **Risk 5: Timeline chart time axis scaling**
 - Missions of vastly different durations (30 min vs 10 hours) may not display well with same grid interval
 - **Mitigation:** Dynamically adjust grid interval based on mission duration (1-hour default, adjust if needed)
+- **Status:** ⚠️ NOT YET TESTED - Phase 3 timeline chart implementation pending
 
 ---
 
@@ -136,6 +141,127 @@ This was prompted by user feedback noticing the discrepancy and requesting produ
 - **Added:** Import of `PageBreak` from reportlab.platypus (line 34)
 
 **Status:** All fixes applied, Docker rebuilt and verified working. Backend exports all three formats (CSV, XLSX, PDF) successfully.
+
+---
+
+## Phase 8 Investigation Summary
+
+Phase 8 (route bounds calculation) attempted to display a trans-Pacific route crossing the International Date Line. Multiple approaches were tried, all failed.
+
+### Route Characteristics
+- **Origin:** Korea (~126° longitude)
+- **Destination:** Washington DC (~-77° longitude)
+- **Route span:** -160° to 170° longitude (330° total span)
+- **IDL crossing:** Yes (multiple waypoints cross ±180° boundary)
+- **Latitude range:** ~35° to ~38° (relatively narrow N-S span)
+
+### Attempted Solutions
+
+#### Attempt 1: Pacific-Centered Projection with Coordinate Transformation
+- **Date:** 2025-11-18
+- **Code approach:** Normalize longitudes to [0,360), calculate center longitude, create PlateCarree(central_longitude=center), transform extent coordinates to projection space
+- **Error:** `Axis limits cannot be NaN or Inf`
+- **Diagnosis:** Coordinate transformation from geographic to projection coordinates produced NaN/Inf values
+- **Files modified:** `exporter.py` lines ~450-490
+
+#### Attempt 2: IDL Detection with [0,360) Normalization
+- **Date:** 2025-11-18
+- **Code approach:** Detect IDL crossing, normalize all coordinates to [0,360), calculate bounds, transform back to [-180,180)
+- **Error:** No error, but bounds collapsed to 3° window
+- **Diagnosis:** Bounds calculation showed only arrival area (DC vicinity) instead of full Pacific route; normalization logic incorrectly computed extent
+- **Symptom:** Map displayed only a narrow slice around Washington DC
+
+#### Attempt 3: Aspect Ratio Fix (Regression)
+- **Date:** 2025-11-18
+- **Code approach:** Removed IDL-specific logic, implemented standard aspect ratio preservation
+- **Error:** Blank map
+- **Diagnosis:** Breaking change introduced; map rendering completely stopped working
+- **Symptom:** PDF export showed "[Route map unavailable]" message
+
+#### Attempt 4: [0,360) Coordinate Space with Central Longitude
+- **Date:** 2025-11-18
+- **Code approach:** Normalize route to [0,360), set central_longitude to midpoint of normalized bounds
+- **Error:** Map showed wrong geographic area
+- **Diagnosis:** Projection centering was incorrect; displayed Spain/Europe instead of Pacific Ocean
+- **Symptom:** Map geography didn't match route coordinates at all
+
+#### Attempt 5: Simplified Raw Bounds
+- **Date:** 2025-11-18
+- **Code approach:** Removed all normalization and IDL-specific code, used raw min/max lat/lon with 5% padding
+- **Error:** No error, but map distorted
+- **Diagnosis:** Without proper projection handling, map aspect ratio was incorrect and geography stretched
+- **Symptom:** Map displayed but with significant visual distortion
+
+### Key Technical Insights
+
+**What Works:**
+1. ✅ IDL-crossing detection logic is correct (identifies segments crossing ±180°)
+2. ✅ Route data structure is valid (`route.points` with latitude, longitude, altitude)
+3. ✅ Phase 7 base 4K canvas renders correctly (3840x2880 @ 300 DPI)
+4. ✅ Longitude range correctly identified: -160° to 170° (330° span)
+
+**What Doesn't Work:**
+1. ❌ PlateCarree projection with `central_longitude` parameter for IDL-crossing routes
+2. ❌ Coordinate transformation between geographic and projection spaces (produces NaN/Inf)
+3. ❌ [0,360) normalization approaches (bounds collapse or show wrong area)
+4. ❌ Simple min/max bounds without projection awareness (causes distortion)
+
+**Root Cause Analysis:**
+The core issue is that PlateCarree projection expects extents within a single 360° longitude cycle. When a route spans from -160° to +170°, the extent is 330° wide, which exceeds the valid range for standard PlateCarree extent setting. Cartopy's `set_extent()` method cannot handle this case with the standard projection configuration.
+
+### Recommended Next Approach
+
+Based on the investigation, the next attempt should focus on **projection selection** rather than coordinate transformation:
+
+1. **Research cartopy documentation** for IDL-crossing route best practices
+2. **Consider alternative projections:**
+   - Orthographic (centered on Pacific) - shows globe-like view
+   - Mollweide - better for wide longitude spans
+   - Robinson - good for global routes
+3. **Consider deferring IDL handling to Phase 9:**
+   - Simplify Phase 8 to use standard bounds (may look incorrect)
+   - Implement proper IDL handling in Phase 9 when drawing route segments
+   - This unblocks progress while addressing the visualization issue separately
+
+### Data Structures Available
+
+For the next implementation attempt, these data structures are confirmed working:
+
+```python
+# Route object (from RouteManager)
+route = route_manager.get_route(mission.route_id)
+route.points  # List[RoutePoint] with latitude, longitude, altitude
+
+# Example route point
+point.latitude   # float (-90 to 90)
+point.longitude  # float (-180 to 180)
+point.altitude   # float (meters)
+
+# Bounds calculation (current Phase 8 code)
+lons = [p.longitude for p in route.points]
+lats = [p.latitude for p in route.points]
+min_lon, max_lon = min(lons), max(lons)  # -160.0, 170.0
+min_lat, max_lat = min(lats), max(lats)  # ~35.0, ~38.0
+
+# IDL crossing detection (working)
+idl_crossing_segments = []
+for i in range(len(route.points) - 1):
+    if abs(route.points[i+1].longitude - route.points[i].longitude) > 180:
+        idl_crossing_segments.append(i)
+# Result: [several segment indices where route crosses IDL]
+```
+
+---
+
+## Critical Blockers
+
+**BLOCKER 1: Phase 8 Map Bounds Calculation for IDL-Crossing Routes**
+- **Status:** BLOCKING all subsequent phases (9-14)
+- **Severity:** High - feature cannot progress without resolution
+- **Attempted solutions:** 5 different approaches, all failed
+- **Impact:** Cannot display trans-Pacific routes correctly
+- **Next steps:** Need fresh perspective on cartopy projection selection/configuration
+- **Alternative:** Consider deferring IDL handling to Phase 9 route drawing to unblock Phase 8
 
 ---
 

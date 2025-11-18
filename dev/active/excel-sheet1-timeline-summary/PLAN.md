@@ -4,8 +4,9 @@
 **Slug:** `excel-sheet1-timeline-summary`
 **Folder:** `dev/active/excel-sheet1-timeline-summary/`
 **Date:** 2025-11-17
+**Last Updated:** 2025-11-18 (Phase 8 debugging)
 **Owner:** brian
-**Status:** Phase 7 (Testing & Verification - In Progress)
+**Status:** Phase 7 COMPLETE ✅ | Phase 8 BLOCKED on Bounds/Projection Issue
 
 ---
 
@@ -186,17 +187,36 @@ Create base map at 4K resolution (3840x2880 pixels @ 300 DPI) with no content. M
 
 ---
 
-### **Phase 8 — Map: Calculate & Display Route Bounds**
+### **Phase 8 — Map: Calculate & Display Route Bounds** ⚠️ BLOCKED
 
 **Description:**
 Calculate map bounds from route waypoints with smart 5% padding. Display bounds as initial view (no route drawn yet, just the projected area). User verifies bounds are correct and padding is smart (5% on larger dimension).
 
 **Entry Criteria:**
 
-- Base 4K map rendering correctly
-- User confirmed canvas looks good
+- Base 4K map rendering correctly ✅
+- User confirmed canvas looks good ✅
 
-**Exit Criteria:**
+**Current Status:** 🔴 BLOCKED - Cannot display trans-Pacific IDL-crossing routes
+
+**Blocking Issue:**
+Phase 8 attempted to implement route bounds calculation for a trans-Pacific route (Korea to DC) crossing the International Date Line (longitude span: -160° to 170°, 330° total). Five different approaches were tried, all failed:
+
+1. **Pacific-centered projection with coordinate transformation** - NaN/Inf axis limits error
+2. **IDL detection with [0,360) normalization** - Bounds collapsed to 3° window around DC
+3. **Aspect ratio fix for standard routes** - Blank map regression
+4. **[0,360) coordinate space normalization** - Map showed Spain instead of Pacific
+5. **Simplified raw bounds with 5% padding** - Map distorted with incorrect aspect ratio
+
+**Root Cause:** PlateCarree projection cannot handle extents spanning >180° longitude with standard `set_extent()` method. The 330° route span exceeds the valid range for standard projection configuration.
+
+**Next Steps Required:**
+- Research cartopy documentation for IDL-crossing route best practices
+- Consider alternative projections (Orthographic, Mollweide, Robinson)
+- OR defer IDL handling to Phase 9 route drawing to unblock progress
+- See CONTEXT.md "Phase 8 Investigation Summary" for detailed analysis
+
+**Exit Criteria (unchanged):**
 
 - Calculate route waypoint extents (min/max lat/lon)
 - Apply 5% smart padding:
