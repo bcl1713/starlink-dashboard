@@ -8,6 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.models.poi import (
+    POI,
     POICreate,
     POIETAListResponse,
     POIListResponse,
@@ -110,10 +111,64 @@ def calculate_course_status(heading: float, bearing: float) -> str:
         return "behind"
 
 
+def _calculate_poi_active_status(
+    poi: POI,
+    route_manager: RouteManager,
+) -> bool:
+    """
+    Calculate whether a POI is currently active based on its associated
+    route or mission.
+
+    Logic:
+    - Global POIs (no route_id/mission_id): always active
+    - Route POIs: active if their route is the active route
+    - Mission POIs: active if their mission has is_active=true
+
+    Args:
+        poi: The POI to check
+        route_manager: RouteManager instance to check active route
+
+    Returns:
+        bool: True if POI is active, False otherwise
+    """
+    # Global POIs are always active
+    if poi.route_id is None and poi.mission_id is None:
+        return True
+
+    # Check route-based POIs
+    if poi.route_id is not None:
+        active_route = route_manager.get_active_route()
+        if active_route is not None:
+            # Extract route ID from metadata file_path (e.g., "/data/routes/route-name.kml" -> "route-name")
+            try:
+                active_route_id = Path(active_route.metadata.file_path).stem
+                return active_route_id == poi.route_id
+            except Exception as e:
+                logger.warning("Failed to extract active route ID from path '%s': %s", active_route.metadata.file_path, e)
+                return False
+        return False
+
+    # Check mission-based POIs
+    if poi.mission_id is not None:
+        try:
+            mission = load_mission(poi.mission_id)
+            return mission.is_active if mission else False
+        except Exception as e:
+            # Mission not found or error loading
+            logger.warning("Failed to load mission '%s' for active status check: %s", poi.mission_id, e)
+            return False
+
+    return False
+
+
 @router.get("", response_model=POIListResponse, summary="List all POIs")
 async def list_pois(
     route_id: Optional[str] = Query(None, description="Filter by route ID"),
     mission_id: Optional[str] = Query(None, description="Filter by mission ID"),
+    active_only: bool = Query(
+        True,
+        description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
+    ),
 ) -> POIListResponse:
     """
     Get list of all POIs, optionally filtered by route.
@@ -154,26 +209,38 @@ async def list_pois(
     else:
         # No route or mission specified, get all POIs.
         pois = poi_manager.list_pois()
-    responses = [
-        POIResponse(
-            id=poi.id,
-            name=poi.name,
-            latitude=poi.latitude,
-            longitude=poi.longitude,
-            icon=poi.icon,
-            category=poi.category,
-            description=poi.description,
-            route_id=poi.route_id,
-            mission_id=poi.mission_id,
-            created_at=poi.created_at,
-            updated_at=poi.updated_at,
-            projected_latitude=poi.projected_latitude,
-            projected_longitude=poi.projected_longitude,
-            projected_waypoint_index=poi.projected_waypoint_index,
-            projected_route_progress=poi.projected_route_progress,
+    responses = []
+    for poi in pois:
+        # Calculate active status for this POI
+        active_status = _calculate_poi_active_status(
+            poi=poi,
+            route_manager=_route_manager,
         )
-        for poi in pois
-    ]
+
+        # If filtering is active, skip inactive POIs before creating the response object
+        if active_only and not active_status:
+            continue
+
+        responses.append(
+            POIResponse(
+                id=poi.id,
+                name=poi.name,
+                latitude=poi.latitude,
+                longitude=poi.longitude,
+                icon=poi.icon,
+                category=poi.category,
+                active=active_status,
+                description=poi.description,
+                route_id=poi.route_id,
+                mission_id=poi.mission_id,
+                created_at=poi.created_at,
+                updated_at=poi.updated_at,
+                projected_latitude=poi.projected_latitude,
+                projected_longitude=poi.projected_longitude,
+                projected_waypoint_index=poi.projected_waypoint_index,
+                projected_route_progress=poi.projected_route_progress,
+            )
+        )
 
     return POIListResponse(pois=responses, total=len(responses), route_id=route_id, mission_id=mission_id)
 
@@ -186,6 +253,10 @@ async def get_pois_with_etas(
     speed_knots: Optional[str] = Query(None, description="Current speed in knots"),
     status_filter: Optional[str] = Query(None, description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)"),
     category: Optional[str] = Query(None, description="Filter by POI category (comma-separated: departure,arrival,waypoint,alternate)"),
+    active_only: bool = Query(
+        True,
+        description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
+    ),
 ) -> POIETAListResponse:
     """
     Get all POIs with real-time ETA and distance data.
@@ -455,6 +526,16 @@ async def get_pois_with_etas(
                 if poi.category not in category_filter:
                     continue
 
+            # Calculate active status for this POI
+            active_status = _calculate_poi_active_status(
+                poi=poi,
+                route_manager=_route_manager,
+            )
+
+            # If filtering is active, skip inactive POIs before creating the response object
+            if active_only and not active_status:
+                continue
+
             pois_with_eta.append(
                 POIWithETA(
                     poi_id=poi.id,
@@ -463,6 +544,7 @@ async def get_pois_with_etas(
                     longitude=poi.longitude,
                     category=poi.category,
                     icon=poi.icon,
+                    active=active_status,
                     eta_seconds=eta_seconds,
                     eta_type=eta_type,
                     is_pre_departure=is_pre_departure,
@@ -768,6 +850,12 @@ async def get_poi(poi_id: str) -> POIResponse:
             detail=f"POI not found: {poi_id}",
         )
 
+    # Calculate active status for this POI
+    active_status = _calculate_poi_active_status(
+        poi=poi,
+        route_manager=_route_manager,
+    )
+
     return POIResponse(
         id=poi.id,
         name=poi.name,
@@ -775,6 +863,7 @@ async def get_poi(poi_id: str) -> POIResponse:
         longitude=poi.longitude,
         icon=poi.icon,
         category=poi.category,
+        active=active_status,
         description=poi.description,
         route_id=poi.route_id,
         mission_id=poi.mission_id,
@@ -819,6 +908,12 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
 
         poi = poi_manager.create_poi(poi_create, active_route=active_route)
 
+        # Calculate active status for this POI
+        active_status = _calculate_poi_active_status(
+            poi=poi,
+            route_manager=_route_manager,
+        )
+
         return POIResponse(
             id=poi.id,
             name=poi.name,
@@ -826,6 +921,7 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
             longitude=poi.longitude,
             icon=poi.icon,
             category=poi.category,
+            active=active_status,
             description=poi.description,
             route_id=poi.route_id,
             mission_id=poi.mission_id,
@@ -874,6 +970,12 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
                 detail=f"POI not found: {poi_id}",
             )
 
+        # Calculate active status for this POI
+        active_status = _calculate_poi_active_status(
+            poi=poi,
+            route_manager=_route_manager,
+        )
+
         return POIResponse(
             id=poi.id,
             name=poi.name,
@@ -881,6 +983,7 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
             longitude=poi.longitude,
             icon=poi.icon,
             category=poi.category,
+            active=active_status,
             description=poi.description,
             route_id=poi.route_id,
             mission_id=poi.mission_id,
