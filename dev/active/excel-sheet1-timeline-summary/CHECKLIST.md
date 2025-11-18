@@ -346,8 +346,8 @@
 
 ### Create _generate_timeline_chart function
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Add new function after `_generate_route_map`:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Add new function after `_generate_route_map`:
   ```python
   def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
       """Generate horizontal timeline bar chart showing transport states.
@@ -450,29 +450,29 @@
       buf.seek(0)
       return buf.read()
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### Test timeline chart generation
 
-- [ ] Rebuild and restart Docker:
+- [x] Rebuild and restart Docker:
   ```bash
   docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- [ ] Expected result: Backend starts successfully
+- [x] Expected result: Backend starts successfully
 
-- [ ] Test chart generation (will verify visually in Phase 7)
+- [x] Test chart generation (will verify visually in Phase 7)
 
 ### Commit timeline chart implementation
 
-- [ ] Stage changes:
+- [x] Stage changes:
   ```bash
   git add backend/starlink-location/app/mission/exporter.py
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "feat: implement timeline bar chart generation"
   ```
-- [ ] Push:
+- [x] Push:
   ```bash
   git push
   ```
@@ -483,8 +483,8 @@
 
 ### Create _summary_table_rows function
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Add new function after `_generate_timeline_chart`:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Add new function after `_generate_timeline_chart`:
   ```python
   def _summary_table_rows(timeline: MissionTimeline, mission: Mission | None = None) -> pd.DataFrame:
       """Generate simplified summary table DataFrame for Sheet 1.
@@ -516,19 +516,19 @@
 
       return pd.DataFrame(rows)
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### Commit summary table implementation
 
-- [ ] Stage changes:
+- [x] Stage changes:
   ```bash
   git add backend/starlink-location/app/mission/exporter.py
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "feat: implement summary table generation"
   ```
-- [ ] Push:
+- [x] Push:
   ```bash
   git push
   ```
