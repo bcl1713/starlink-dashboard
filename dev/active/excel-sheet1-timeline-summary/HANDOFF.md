@@ -3,7 +3,7 @@
 **Branch:** `feat/excel-sheet1-timeline-summary`
 **Folder:** `dev/active/excel-sheet1-timeline-summary/`
 **Generated:** 2025-11-18
-**Status:** Phase 7 Map Reset - Planning Complete, Ready for Execution
+**Status:** Phase 8 (Map Bounds) - Debugging Projection Center Calculation
 
 ---
 
@@ -11,15 +11,16 @@
 
 The excel-sheet1-timeline-summary feature was initially implemented with map, chart, and summary table visualizations. However, the map output has a broken aspect ratio (1280x1024 pixels too wide/short) and the legend occupies 40% of the figure space.
 
-**This session:** Complete reset of map generation logic with a step-by-step implementation plan. The map will be rebuilt from scratch to output proper 4K resolution (3840×2880 pixels @ 300 DPI) with smart 5% padding and proper legend placement. Each phase has explicit testing stops so you can verify output before moving forward.
+**Current session progress:** Phase 7 (base 4K canvas) completed successfully ✅. Phase 8 (route bounds with smart 5% padding) is in progress but encountered an issue: axis limits becoming NaN/Inf when using calculated central_longitude for Pacific-centered projection on IDL-crossing routes.
 
 ---
 
 ## Current Status
 
-- **Phase:** Phase 7 (Map Reset) - Planning Complete
-- **Ready to Execute:** ✅ Yes - executing-plan-checklist skill ready to use
-- **Checklist Completion:** 0% (Phases 1-6 already completed in previous sessions; Phases 7-14 are new map reset phases)
+- **Phase:** Phase 8 (Map Bounds Calculation) - In Progress
+- **Completed:** Phase 7 (base 4K canvas) ✅
+- **Current Issue:** Axis limits NaN/Inf error when setting extent on Pacific-centered projection
+- **Root Cause:** Need to debug how extent coordinates interact with calculated central_longitude parameter
 - **Major Accomplishments This Session (Nov 18):**
   - ✅ Analyzed broken map output
   - ✅ Created comprehensive map reset plan (Phases 7-14)
@@ -52,28 +53,65 @@ The excel-sheet1-timeline-summary feature was initially implemented with map, ch
 
 ---
 
-## Next Session Workflow
+## Session 2 Progress (2025-11-18)
 
-**Step 1: Start Session**
-```bash
-git checkout feat/excel-sheet1-timeline-summary
+### ✅ Completed
+- **Phase 7.1-7.4:** Located and replaced _generate_route_map function with base 4K canvas
+- **Phase 7 Docker rebuild:** Build successful, all containers healthy
+- **Phase 7 testing:** Visual verification in PDF export ✅ (map shows correct 4K aspect ratio)
+- **Phase 8.1-8.3:** Implemented route bounds calculation with smart 5% padding
+- **Phase 8 debugging iteration 1:** Identified IDL crossing issue with longitude normalization
+- **Phase 8 debugging iteration 2:** Fixed IDL normalization logic (convert negative to [0,360), then back)
+- **Phase 8 debugging iteration 3:** Tried simplified bounds calculation (min/max without normalization)
+- **Phase 8 debugging iteration 4:** Implemented Pacific-centered projection with calculated central_longitude
+
+### 🔴 Current Blocker
+**Error:** `[Route map unavailable: Axis limits cannot be NaN or Inf]`
+
+When attempting to set map extent with a calculated `central_longitude` parameter on IDL-crossing routes (Korea to DC), cartopy throws NaN/Inf axis limit error.
+
+**Last code state:**
+```python
+if idl_crossing_segments:
+    bounds_center_lon = (bounds_west + bounds_east) / 2
+    projection = ccrs.PlateCarree(central_longitude=bounds_center_lon)
+    # ... convert extent bounds to projection coordinates ...
+    # ... then set_extent with shifted coordinates
 ```
 
-**Step 2: Use executing-plan-checklist**
-- Run the skill: `/executing-plan-checklist`
-- Skill will automatically:
-  - Detect the branch
-  - Find CHECKLIST.md
-  - Execute tasks one at a time
-  - Wait for confirmation before proceeding
-  - Commit and push after each step
+**Likely issues to investigate:**
+1. Extent coordinate shift calculation may be producing invalid values
+2. Bounds themselves may become invalid after padding (e.g., bounds_west > bounds_east after shifting)
+3. Need to verify all intermediate values (lon_range, padding, shifted coordinates) are valid numbers
+4. Cartopy may have special handling for extent crossing the projection center
 
-**Step 3: Follow Testing Stops**
-Each phase (7, 8, 9, 10, 11, 12) ends with:
-- Build Docker: `docker compose down && docker compose build --no-cache && docker compose up -d`
-- Generate test export: `curl -o /tmp/test_map.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx`
-- Open in Excel/LibreOffice and verify visually
-- Confirm output looks correct before proceeding to next phase
+---
+
+## Next Session: Phase 8 Debugging
+
+**Priority: Fix NaN/Inf axis limits error in Phase 8**
+
+### Recommended approach:
+1. Add debug logging to `_generate_route_map` to print:
+   - lon_range, lat_range values
+   - bounds_west, bounds_east, bounds_south, bounds_north after padding
+   - bounds_center_lon calculated value
+   - extent_west, extent_east after coordinate shift
+   - Any NaN/Inf detection before set_extent
+
+2. Generate test export and check backend logs for debug output
+
+3. Options if coordinate shifting approach doesn't work:
+   - **Option A:** Skip Pacific-centering for Phase 8; use standard PlateCarree() and handle IDL differently
+   - **Option B:** Simplify extent setting (don't shift coordinates, let cartopy handle it)
+   - **Option C:** Use a different approach: matplotlib's wrap-around handling instead of cartopy's central_longitude
+
+4. Once Phase 8 bounds are rendering correctly (even if not perfectly centered), move to Phase 9 (draw route line)
+
+### Code location:
+- File: `backend/starlink-location/app/mission/exporter.py`
+- Function: `_generate_route_map()` (starts at line 290)
+- Phase 8 implementation: Lines ~450-490 (bounds calculation and extent setting)
 
 ---
 
