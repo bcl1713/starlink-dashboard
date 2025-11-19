@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import config, flight_status, geojson, health, metrics, pois, routes, status, ui
-from app.mission import routes as mission_routes
+from app.mission import exporter, routes as mission_routes
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
@@ -131,6 +131,8 @@ async def startup_event():
             routes.set_route_manager(_route_manager)
             pois.set_route_manager(_route_manager)
             mission_routes.set_route_manager(_route_manager)
+            exporter.set_route_manager(_route_manager)
+            exporter.set_poi_manager(poi_manager)
             # Inject into metrics_export as well
             from app.api import metrics_export
             metrics_export.set_route_manager(_route_manager)
