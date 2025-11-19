@@ -181,44 +181,36 @@ def _get_route_coordinates_filtered(
                     
                     # If we are in the hemisphere that the segment is LEAVING, add the exit point
                     # If we are in the hemisphere that the segment is ENTERING, add the entry point
-                    
+
+                    # Determine which longitude value to use based on crossing direction and hemisphere
+                    lon_to_add = None
+
                     # Case 1: East -> West (e.g., 170 -> -170)
                     if p1.longitude > 0 and p2.longitude < 0:
                         if hemisphere == "east":
                             # Leaving East: Add point at 180
-                            coordinates.append({
-                                "latitude": lat_at_180,
-                                "longitude": 180.0,
-                                "altitude": alt_at_180,
-                                "sequence": p1.sequence + fraction, # Fractional sequence
-                            })
+                            lon_to_add = 180.0
                         elif hemisphere == "west":
                             # Entering West: Add point at -180
-                            coordinates.append({
-                                "latitude": lat_at_180,
-                                "longitude": -180.0,
-                                "altitude": alt_at_180,
-                                "sequence": p1.sequence + fraction,
-                            })
-                            
+                            lon_to_add = -180.0
+
                     # Case 2: West -> East (e.g., -170 -> 170)
                     elif p1.longitude < 0 and p2.longitude > 0:
                         if hemisphere == "west":
                             # Leaving West: Add point at -180
-                            coordinates.append({
-                                "latitude": lat_at_180,
-                                "longitude": -180.0,
-                                "altitude": alt_at_180,
-                                "sequence": p1.sequence + fraction,
-                            })
+                            lon_to_add = -180.0
                         elif hemisphere == "east":
                             # Entering East: Add point at 180
-                            coordinates.append({
-                                "latitude": lat_at_180,
-                                "longitude": 180.0,
-                                "altitude": alt_at_180,
-                                "sequence": p1.sequence + fraction,
-                            })
+                            lon_to_add = 180.0
+
+                    # Add interpolated boundary point if determined
+                    if lon_to_add is not None:
+                        coordinates.append({
+                            "latitude": lat_at_180,
+                            "longitude": lon_to_add,
+                            "altitude": alt_at_180,
+                            "sequence": p1.sequence + fraction,
+                        })
 
     # Extract route ID from file path (e.g., "test_fix.kml" -> "test_fix")
     route_id_str = route.metadata.file_path.split("/")[-1].split(".")[0]

@@ -1013,16 +1013,16 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.8: Refactor IDL crossing logic in geojson.py
 
-- [ ] Open `backend/starlink-location/app/api/geojson.py`
-- [ ] Find the International Date Line crossing handling section (around line 140-230)
-- [ ] Identify the repeated blocks for appending interpolated points
-- [ ] Refactor to extract `lon_to_add` logic:
+- [x] Open `backend/starlink-location/app/api/geojson.py`
+- [x] Find the International Date Line crossing handling section (around line 140-230)
+- [x] Identify the repeated blocks for appending interpolated points
+- [x] Refactor to extract `lon_to_add` logic:
   - Move the `lon_to_add = None` initialization outside the repeated block
   - Determine `lon_to_add` based on hemisphere and direction once
   - Use single `if lon_to_add is not None:` block to append to coordinates
-- [ ] Remove duplicate append statements
-- [ ] Add comments to clarify the logic
-- [ ] Save the file
+- [x] Remove duplicate append statements
+- [x] Add comments to clarify the logic
+- [x] Save the file
 
 ### 15.9: Clean up commented exploration code in exporter.py
 
