@@ -61,6 +61,15 @@ STATE_COLUMNS = [
 ]
 LOGO_PATH = Path(__file__).with_name("assets").joinpath("logo.png")
 
+# Status colors for route visualization and legends
+# Using standard traffic light colors for clear status indication
+STATUS_COLORS = {
+    'nominal': '#2ecc71',   # Green
+    'degraded': '#f1c40f',  # Yellow/Orange
+    'critical': '#e74c3c',  # Red
+    'unknown': '#95a5a6'    # Gray (fallback)
+}
+
 # Global route manager instance (set by main.py)
 _route_manager: Optional[RouteManager] = None
 _poi_manager: Optional[POIManager] = None
@@ -551,15 +560,6 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
     # Phase 10: Draw route with color-coded segments based on timeline status
     if points:
-        # Define status colors
-        # Using standard traffic light colors for clear status indication
-        STATUS_COLORS = {
-            'nominal': '#2ecc71',   # Green
-            'degraded': '#f1c40f',  # Yellow/Orange
-            'critical': '#e74c3c',  # Red
-            'unknown': '#95a5a6'    # Gray (fallback)
-        }
-        
         # Default to unknown/gray if no timeline data
         default_color = STATUS_COLORS['unknown']
         
@@ -1050,9 +1050,9 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
     # Phase 12: Add legend inset to map
     legend_elements = [
         # Route status colors
-        Line2D([0], [0], color='#27ae60', linewidth=3, label='Nominal'),
-        Line2D([0], [0], color='#f39c12', linewidth=3, label='Degraded'),
-        Line2D([0], [0], color='#e74c3c', linewidth=3, label='Critical'),
+        Line2D([0], [0], color=STATUS_COLORS['nominal'], linewidth=3, label='Nominal'),
+        Line2D([0], [0], color=STATUS_COLORS['degraded'], linewidth=3, label='Degraded'),
+        Line2D([0], [0], color=STATUS_COLORS['critical'], linewidth=3, label='Critical'),
         # Marker types
         Line2D([0], [0], marker='o', color='w', markerfacecolor='#2ecc71',
                markersize=8, label='Departure', linestyle='None'),

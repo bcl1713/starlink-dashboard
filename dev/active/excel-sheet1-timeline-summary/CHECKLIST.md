@@ -907,15 +907,15 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.1: Fix color code inconsistency
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Find the `STATUS_COLORS` dictionary (around line 556)
-- [ ] Find the `legend_elements` creation (around line 1053)
-- [ ] Verify the hex codes match exactly between the two:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Find the `STATUS_COLORS` dictionary (around line 556)
+- [x] Find the `legend_elements` creation (around line 1053)
+- [x] Verify the hex codes match exactly between the two:
   - GREEN (NOMINAL): Both should use same color (currently `#27ae60`)
   - ORANGE (DEGRADED): Both should use same color (currently `#f39c12`)
   - RED (CRITICAL): Both should use same color (currently `#e74c3c`)
-- [ ] If they differ, update `legend_elements` to match `STATUS_COLORS`
-- [ ] Save the file
+- [x] If they differ, update `legend_elements` to match `STATUS_COLORS`
+- [x] Save the file
 
 ### 15.2: Add error logging to Excel map embedding
 
