@@ -1112,34 +1112,34 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.15: Update CHECKLIST.md
 
-- [ ] Mark all Phase 15 items as complete: `- [x]`
-- [ ] Save the file
+- [x] Mark all Phase 15 items as complete: `- [x]`
+- [x] Save the file
 
 ### 15.16: Commit plan documentation
 
-- [ ] Stage changes:
+- [x] Stage changes:
   ```bash
   git add dev/active/excel-sheet1-timeline-summary/PLAN.md
   git add dev/active/excel-sheet1-timeline-summary/CHECKLIST.md
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "chore: document Phase 15 code review feedback improvements"
   ```
-- [ ] Push:
+- [x] Push:
   ```bash
   git push
   ```
 
 ### 15.17: Verify PR ready for merge
 
-- [ ] View updated PR:
+- [x] View updated PR:
   ```bash
   gh pr view 10
   ```
-- [ ] Expected result: All code review comments should be addressed by commits
-- [ ] All tests passing
-- [ ] Ready for merge
+- [x] Expected result: All code review comments should be addressed by commits
+- [x] All tests passing
+- [x] Ready for merge
 
 ---
 
