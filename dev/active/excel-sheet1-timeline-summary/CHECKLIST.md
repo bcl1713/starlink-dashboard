@@ -1056,15 +1056,15 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.12: Rebuild Docker and test
 
-- [ ] Run Docker rebuild:
+- [x] Run Docker rebuild:
   ```bash
   docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- [ ] Verify health:
+- [x] Verify health:
   ```bash
   curl http://localhost:8000/health
   ```
-- [ ] Expected result: `{"status": "ok", ...}`
+- [x] Expected result: `{"status": "ok", ...}`
 
 ### 15.13: Verify no functionality changes
 
