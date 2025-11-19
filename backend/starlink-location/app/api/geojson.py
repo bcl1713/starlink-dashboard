@@ -137,8 +137,6 @@ def _get_route_coordinates_filtered(
             "route_name": None,
         }
 
-    # Convert route points to tabular format
-    coordinates = []
     # Convert route points to tabular format with IDL handling
     coordinates = []
     points = route.points

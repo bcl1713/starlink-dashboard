@@ -1047,12 +1047,12 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.11: Remove redundant coordinates initialization in geojson.py
 
-- [ ] Open `backend/starlink-location/app/api/geojson.py`
-- [ ] Find line 141 where `coordinates` is first initialized
-- [ ] Find the second initialization of `coordinates` (should be a few lines later)
-- [ ] Keep only the second initialization (the one with the comment "Convert route points...")
-- [ ] Remove the first duplicate initialization
-- [ ] Save the file
+- [x] Open `backend/starlink-location/app/api/geojson.py`
+- [x] Find line 141 where `coordinates` is first initialized
+- [x] Find the second initialization of `coordinates` (should be a few lines later)
+- [x] Keep only the second initialization (the one with the comment "Convert route points...")
+- [x] Remove the first duplicate initialization
+- [x] Save the file
 
 ### 15.12: Rebuild Docker and test
 
