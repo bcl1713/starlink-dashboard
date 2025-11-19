@@ -139,19 +139,86 @@ def _get_route_coordinates_filtered(
 
     # Convert route points to tabular format
     coordinates = []
-    for point in route.points:
-        # Apply hemisphere filtering if specified
-        if hemisphere == "west" and point.longitude >= 0:
-            continue
-        if hemisphere == "east" and point.longitude < 0:
-            continue
-
-        coordinates.append({
-            "latitude": point.latitude,
-            "longitude": point.longitude,
-            "altitude": point.altitude,
-            "sequence": point.sequence,
-        })
+    # Convert route points to tabular format with IDL handling
+    coordinates = []
+    points = route.points
+    
+    for i in range(len(points)):
+        p1 = points[i]
+        
+        # Determine if we should include p1 based on hemisphere
+        include_p1 = True
+        if hemisphere == "west" and p1.longitude >= 0:
+            include_p1 = False
+        if hemisphere == "east" and p1.longitude < 0:
+            include_p1 = False
+            
+        if include_p1:
+            coordinates.append({
+                "latitude": p1.latitude,
+                "longitude": p1.longitude,
+                "altitude": p1.altitude,
+                "sequence": p1.sequence,
+            })
+            
+        # Check for IDL crossing to next point
+        if i < len(points) - 1:
+            p2 = points[i + 1]
+            
+            # Detect crossing: longitude difference > 180
+            if abs(p2.longitude - p1.longitude) > 180:
+                # Calculate intersection point at 180/-180
+                d_lon = 360 - abs(p1.longitude - p2.longitude)
+                if d_lon > 0:
+                    fraction = (180 - abs(p1.longitude)) / d_lon
+                    lat_at_180 = p1.latitude + (p2.latitude - p1.latitude) * fraction
+                    
+                    # Calculate interpolated altitude (handle None values)
+                    if p1.altitude is not None and p2.altitude is not None:
+                        alt_at_180 = p1.altitude + (p2.altitude - p1.altitude) * fraction
+                    else:
+                        alt_at_180 = p1.altitude if p1.altitude is not None else p2.altitude
+                    
+                    # If we are in the hemisphere that the segment is LEAVING, add the exit point
+                    # If we are in the hemisphere that the segment is ENTERING, add the entry point
+                    
+                    # Case 1: East -> West (e.g., 170 -> -170)
+                    if p1.longitude > 0 and p2.longitude < 0:
+                        if hemisphere == "east":
+                            # Leaving East: Add point at 180
+                            coordinates.append({
+                                "latitude": lat_at_180,
+                                "longitude": 180.0,
+                                "altitude": alt_at_180,
+                                "sequence": p1.sequence + fraction, # Fractional sequence
+                            })
+                        elif hemisphere == "west":
+                            # Entering West: Add point at -180
+                            coordinates.append({
+                                "latitude": lat_at_180,
+                                "longitude": -180.0,
+                                "altitude": alt_at_180,
+                                "sequence": p1.sequence + fraction,
+                            })
+                            
+                    # Case 2: West -> East (e.g., -170 -> 170)
+                    elif p1.longitude < 0 and p2.longitude > 0:
+                        if hemisphere == "west":
+                            # Leaving West: Add point at -180
+                            coordinates.append({
+                                "latitude": lat_at_180,
+                                "longitude": -180.0,
+                                "altitude": alt_at_180,
+                                "sequence": p1.sequence + fraction,
+                            })
+                        elif hemisphere == "east":
+                            # Entering East: Add point at 180
+                            coordinates.append({
+                                "latitude": lat_at_180,
+                                "longitude": 180.0,
+                                "altitude": alt_at_180,
+                                "sequence": p1.sequence + fraction,
+                            })
 
     # Extract route ID from file path (e.g., "test_fix.kml" -> "test_fix")
     route_id_str = route.metadata.file_path.split("/")[-1].split(".")[0]

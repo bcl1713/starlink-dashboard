@@ -132,6 +132,7 @@ async def startup_event():
             pois.set_route_manager(_route_manager)
             mission_routes.set_route_manager(_route_manager)
             exporter.set_route_manager(_route_manager)
+            exporter.set_poi_manager(poi_manager)
             # Inject into metrics_export as well
             from app.api import metrics_export
             metrics_export.set_route_manager(_route_manager)
