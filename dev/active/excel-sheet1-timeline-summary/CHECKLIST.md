@@ -919,24 +919,24 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.2: Add error logging to Excel map embedding
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Find the Excel map embedding section (around line 1440-1460)
-- [ ] Replace bare `pass` statement with:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Find the Excel map embedding section (around line 1440-1460)
+- [x] Replace bare `pass` statement with:
   ```python
   except Exception as e:
       logger.error("Failed to embed map image in Excel: %s", e, exc_info=True)
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### 15.3: Add error logging to Excel chart embedding
 
-- [ ] In the same file, find the chart embedding section (around line 1460-1480)
-- [ ] Replace bare `pass` statement with:
+- [x] In the same file, find the chart embedding section (around line 1460-1480)
+- [x] Replace bare `pass` statement with:
   ```python
   except Exception as e:
       logger.error("Failed to embed timeline chart in Excel: %s", e, exc_info=True)
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### 15.4: Add error logging to PDF map generation
 

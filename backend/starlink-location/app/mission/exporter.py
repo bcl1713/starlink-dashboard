@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import matplotlib
 matplotlib.use('Agg')  # Headless mode for Docker
 import matplotlib.pyplot as plt
@@ -45,6 +46,8 @@ from app.mission.models import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+
+logger = logging.getLogger(__name__)
 
 EASTERN_TZ = ZoneInfo("America/New_York")
 LIGHT_YELLOW = colors.Color(1.0, 1.0, 0.85)
@@ -1433,8 +1436,7 @@ def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = No
             map_image.height = 500  # pixels
             ws_summary.add_image(map_image, 'A1')
         except Exception as e:
-            # Log error but continue
-            pass
+            logger.error("Failed to embed map image in Excel: %s", e, exc_info=True)
 
         # Embed timeline chart at A32
         try:
@@ -1444,8 +1446,7 @@ def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = No
             chart_image.height = 300  # pixels
             ws_summary.add_image(chart_image, 'A32')
         except Exception as e:
-            # Log error but continue
-            pass
+            logger.error("Failed to embed timeline chart in Excel: %s", e, exc_info=True)
 
         # Apply color formatting to summary table rows (starting at row 49)
         # Header is at row 49, data starts at row 50
