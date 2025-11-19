@@ -979,10 +979,10 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.7: Refactor duplicate base map canvas code
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Find the `_generate_route_map()` function
-- [ ] Identify the base map canvas generation code (appears 3+ times for different early-return conditions)
-- [ ] Extract this into a helper function at the end of the file:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Find the `_generate_route_map()` function
+- [x] Identify the base map canvas generation code (appears 3+ times for different early-return conditions)
+- [x] Extract this into a helper function at the end of the file:
   ```python
   def _base_map_canvas() -> bytes:
       """Generate a blank 4K map canvas with no route or markers."""
@@ -1008,8 +1008,8 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
       buf.seek(0)
       return buf.read()
   ```
-- [ ] Replace the 3+ duplicate blocks with calls to `return _base_map_canvas()`
-- [ ] Save the file
+- [x] Replace the 3+ duplicate blocks with calls to `return _base_map_canvas()`
+- [x] Save the file
 
 ### 15.8: Refactor IDL crossing logic in geojson.py
 

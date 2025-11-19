@@ -338,45 +338,13 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
     # Check if we have valid mission and route data
     if mission is None or not mission.route_id or not _route_manager:
         # Return base canvas if no mission data
-        fig = plt.figure(figsize=(width_inches, height_inches), dpi=dpi, facecolor='white')
-        ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
-        fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
-        ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
-        ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
-        ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
-        ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
-        ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
-        ax.spines['geo'].set_visible(False)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=dpi, bbox_inches='tight', pad_inches=0)
-        plt.close(fig)
-        buf.seek(0)
-        return buf.read()
+        return _base_map_canvas()
 
     # Fetch route from manager
     route = _route_manager.get_route(mission.route_id)
     if route is None or not route.points:
         # Return base canvas if route not found
-        fig = plt.figure(figsize=(width_inches, height_inches), dpi=dpi, facecolor='white')
-        ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
-        fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
-        ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
-        ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
-        ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
-        ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
-        ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
-        ax.spines['geo'].set_visible(False)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=dpi, bbox_inches='tight', pad_inches=0)
-        plt.close(fig)
-        buf.seek(0)
-        return buf.read()
+        return _base_map_canvas()
 
     # Extract waypoint coordinates
     points = route.points
@@ -388,23 +356,7 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
     if not lats or not lons:
         # Return base canvas if no valid waypoints
-        fig = plt.figure(figsize=(width_inches, height_inches), dpi=dpi, facecolor='white')
-        ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
-        fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
-        ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
-        ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
-        ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
-        ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
-        ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
-        ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
-        ax.spines['geo'].set_visible(False)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png', dpi=dpi, bbox_inches='tight', pad_inches=0)
-        plt.close(fig)
-        buf.seek(0)
-        return buf.read()
+        return _base_map_canvas()
 
     # Detect IDL (International Date Line) crossings
     idl_crossing_segments = set()
@@ -1644,6 +1596,31 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
     doc.build(story)
     buffer.seek(0)
     return buffer.read()
+
+
+def _base_map_canvas() -> bytes:
+    """Generate a blank 4K map canvas with no route or markers."""
+    width_inches = 3840 / 300
+    height_inches = 2880 / 300
+
+    fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor='white')
+    ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
+    ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
+    ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
+    ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
+    ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
+    ax.spines['geo'].set_visible(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=300, bbox_inches='tight', pad_inches=0)
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
 
 
 def generate_timeline_export(
