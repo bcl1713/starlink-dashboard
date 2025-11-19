@@ -1068,21 +1068,21 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.13: Verify no functionality changes
 
-- [ ] Generate test export with same mission ID as before:
+- [x] Generate test export with same mission ID as before:
   ```bash
   curl -o /tmp/test_after_refactor.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
   ```
-- [ ] Open file in Excel/LibreOffice
-- [ ] Verify visually:
+- [x] Open file in Excel/LibreOffice
+- [x] Verify visually:
   - Map still renders correctly with same layout
   - Colors still match (green/orange/red segments match timeline)
   - Chart still displays correctly
   - Summary table unchanged
-- [ ] Check backend logs for new error logging:
+- [x] Check backend logs for new error logging:
   ```bash
   docker compose logs starlink-location | rg "error|Failed" | head -5
   ```
-- [ ] Expected result: No export-related errors (healthy start/shutdown logs only)
+- [x] Expected result: No export-related errors (healthy start/shutdown logs only)
 
 ### 15.14: Commit all quality improvements
 
