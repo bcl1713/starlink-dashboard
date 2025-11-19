@@ -1566,6 +1566,7 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
         chart_image = Image(chart_image_stream, width=7 * inch, height=2.3 * inch)
         story.append(chart_image)
     except Exception as e:
+        logger.error("Failed to generate timeline chart for PDF: %s", e, exc_info=True)
         story.append(Paragraph(f"[Timeline chart unavailable: {str(e)}]", styles["Normal"]))
 
     story.append(Spacer(1, 0.2 * inch))

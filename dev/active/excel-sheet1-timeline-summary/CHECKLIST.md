@@ -951,14 +951,14 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.5: Add error logging to PDF chart generation
 
-- [ ] Find the PDF chart generation section (around line 1580-1600)
-- [ ] Replace the broad exception handler with:
+- [x] Find the PDF chart generation section (around line 1580-1600)
+- [x] Replace the broad exception handler with:
   ```python
   except Exception as e:
       logger.error("Failed to generate timeline chart for PDF: %s", e, exc_info=True)
       story.append(Paragraph(f"[Timeline chart unavailable: {str(e)}]", styles["Normal"]))
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### 15.6: Move logger initialization to module level
 
