@@ -384,8 +384,6 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
     lons = [p.longitude for p in points]
 
     # Debug logging
-    import logging
-    logger = logging.getLogger(__name__)
     logger.info(f"Map generation - Route has {len(points)} points")
 
     if not lats or not lons:

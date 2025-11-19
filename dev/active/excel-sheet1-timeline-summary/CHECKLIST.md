@@ -962,20 +962,20 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.6: Move logger initialization to module level
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Check the imports at the top of the file (around line 1-50)
-- [ ] Find any `logging` module import
-- [ ] If not present, add it after other imports:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Check the imports at the top of the file (around line 1-50)
+- [x] Find any `logging` module import
+- [x] If not present, add it after other imports:
   ```python
   import logging
   ```
-- [ ] After imports, add module-level logger initialization (after line ~50):
+- [x] After imports, add module-level logger initialization (after line ~50):
   ```python
   logger = logging.getLogger(__name__)
   ```
-- [ ] Find the `_generate_route_map()` function (around line 376)
-- [ ] If it contains `import logging` or `logger = logging.getLogger(...)`, remove those lines from inside the function
-- [ ] Save the file
+- [x] Find the `_generate_route_map()` function (around line 376)
+- [x] If it contains `import logging` or `logger = logging.getLogger(...)`, remove those lines from inside the function
+- [x] Save the file
 
 ### 15.7: Refactor duplicate base map canvas code
 
