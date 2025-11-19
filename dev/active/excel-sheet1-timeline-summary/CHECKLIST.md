@@ -1026,12 +1026,12 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.9: Clean up commented exploration code in exporter.py
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Find the large IDL crossing block in `_generate_route_map()` (around line 851)
-- [ ] Review all commented-out code and exploration notes
-- [ ] Remove all commented lines (keep only active code)
-- [ ] Keep one clear comment explaining the IDL crossing handling approach
-- [ ] Save the file
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Find the large IDL crossing block in `_generate_route_map()` (around line 851)
+- [x] Review all commented-out code and exploration notes
+- [x] Remove all commented lines (keep only active code)
+- [x] Keep one clear comment explaining the IDL crossing handling approach
+- [x] Save the file
 
 ### 15.10: Optimize Docker layers
 
