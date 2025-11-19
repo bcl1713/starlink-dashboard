@@ -1,0 +1,254 @@
+MISSION DATA STRUCTURES ANALYSIS - SUMMARY
+==========================================
+
+## 1. MISSION MODEL RELATIONSHIPS
+
+Mission class provides:
+- id, name, description (basic metadata)
+- route_id (string reference to ParsedRoute)
+- transports (TransportConfig with satellite config)
+- is_active flag
+- timestamps (created_at, updated_at as UTC datetime)
+
+Key insight: Mission.route_id is a string ID that must be used to fetch the actual
+ParsedRoute object via the route manager service.
+
+---
+
+## 2. TIMELINE SEGMENT STRUCTURE (Most Important for Charts)
+
+TimelineSegment provides ALL the data for timeline visualization:
+
+Fields:
+  - start_time, end_time (UTC datetimes - order segments by start_time)
+  - status: TimelineStatus enum (NOMINAL, DEGRADED, CRITICAL)
+  - x_state, ka_state, ku_state: TransportState enum (AVAILABLE, DEGRADED, OFFLINE)
+  - impacted_transports: list[Transport] (which ones are down)
+  - reasons: list[str] (human-readable reason codes)
+  - metadata: dict with satellites info
+
+Duration calculation: (end_time - start_time).total_seconds()
+
+Visualization logic:
+  - NOMINAL = all transports green
+  - DEGRADED = one transport yellow
+  - CRITICAL = two+ transports red
+  - Transport states override overall status in detail view
+
+---
+
+## 3. TIMELINE STATUS & TRANSPORT STATE ENUMS
+
+TimelineStatus (segment-level):
+  - NOMINAL = "nominal" (all available)
+  - DEGRADED = "degraded" (one unavailable)
+  - CRITICAL = "critical" (two+ unavailable)
+
+TransportState (per-transport):
+  - AVAILABLE = "available" (green)
+  - DEGRADED = "degraded" (yellow)
+  - OFFLINE = "offline" (red)
+
+Transport enum (for mapping to display names):
+  - X = "X" → displays as "X-Band"
+  - KA = "Ka" → displays as "HCX"
+  - KU = "Ku" → displays as "StarShield"
+
+---
+
+## 4. MISSION TIMELINE STRUCTURE
+
+MissionTimeline provides:
+  - mission_id (string reference to Mission)
+  - created_at (when timeline was computed, UTC)
+  - segments: list[TimelineSegment] (ordered by time)
+  - advisories: list[TimelineAdvisory] (operational notes)
+  - statistics: dict with totals:
+      * total_duration_seconds
+      * nominal_seconds (all green)
+      * degraded_seconds (one yellow)
+      * critical_seconds (two+ red)
+      * _aar_blocks (internal AAR window list)
+
+Statistics dict uses underscore prefix for internal-only keys.
+
+---
+
+## 5. ROUTE GEOMETRY DATA
+
+ParsedRoute contains:
+  - metadata.name, description, file_path, point_count
+  - points: list[RoutePoint] (ordered lat/lon/altitude sequence)
+  - waypoints: list[RouteWaypoint] (named points, may be sparse)
+  - timing_profile: RouteTimingProfile (departure/arrival/duration)
+
+RoutePoint fields:
+  - latitude, longitude, altitude (nullable)
+  - sequence (0-indexed order)
+  - expected_arrival_time (optional, for time-aware visualization)
+  - expected_segment_speed_knots (optional)
+
+RouteTimingProfile fields:
+  - departure_time, arrival_time (UTC)
+  - total_expected_duration_seconds
+  - has_timing_data (boolean flag)
+  - flight_status ("pre_departure" | "in_flight" | "post_arrival")
+
+ParsedRoute methods:
+  - get_total_distance() → meters (Haversine calculation)
+  - get_bounds() → {"min_lat", "max_lat", "min_lon", "max_lon"}
+
+---
+
+## 6. POI DATA STRUCTURES
+
+Core POI fields:
+  - id, name (always present)
+  - latitude, longitude (decimal degrees)
+  - icon, category, description (optional)
+  - route_id, mission_id (optional associations)
+  - created_at, updated_at (UTC timestamps)
+  - projected_* fields (only populated when route is active)
+
+POIWithETA adds real-time navigation data:
+  - eta_seconds (time to arrival)
+  - eta_type: "anticipated" (pre-flight) or "estimated" (in-flight)
+  - distance_meters, bearing_degrees
+  - course_status: "on_course" | "slightly_off" | "off_track" | "behind"
+  - route_aware_status: "ahead_on_route" | "already_passed" | "not_on_route"
+
+---
+
+## 7. TIMELINE ADVISORY MODEL
+
+TimelineAdvisory provides operational guidance:
+  - id, timestamp (UTC)
+  - event_type: "transition" | "azimuth_conflict" | "buffer" | "aar_window"
+  - transport: Transport enum (X, Ka, Ku)
+  - severity: "info" | "warning" | "critical"
+  - message (human-readable)
+  - metadata dict (context like satellite IDs)
+
+Advisories are separate from segments and should be layered over timeline chart.
+
+---
+
+## 8. EXPORTER HELPER FUNCTIONS AVAILABLE
+
+Time formatting (all handle UTC conversion):
+  - _format_utc(dt) → "YYYY-MM-DD HH:MZ"
+  - _format_eastern(dt) → "YYYY-MM-DD HH:MMTZE" (DST-aware)
+  - _format_offset(timedelta) → "T+/-HH:MM"
+  - _compose_time_block(moment, mission_start) → multiline "UTC\nEastern\nT+offset"
+
+Data processing:
+  - _format_seconds_hms(seconds) → "HH:MM:SS" (handles negatives)
+  - _serialize_transport_list(transports) → "X-Band, HCX, StarShield"
+  - _ensure_timezone(dt) → UTC-aware datetime
+  - _mission_start_timestamp(timeline) → mission zero point
+
+Segment extraction:
+  - _segment_rows(timeline, mission) → DataFrame with all segment data
+  - _segment_at_time(timeline, timestamp) → TimelineSegment at time T
+  - _segment_is_x_ku_warning(segment) → bool (special warning case)
+
+Color constants:
+  - LIGHT_YELLOW for degraded (one transport down)
+  - LIGHT_RED for critical (two+ transports down)
+
+---
+
+## 9. KEY INSIGHT: SEGMENT TIME-TO-ROUTE MAPPING
+
+To place timeline segments on a map:
+  1. Get timeline segments (with start_time, end_time)
+  2. Get route points (with expected_arrival_time if available)
+  3. For each segment, find its position on route via time:
+     - Use segment.start_time to find nearest route point
+     - Use segment.metadata["satellites"] to track satellite state
+     - Calculate progress percentage along route
+  4. Render segment as colored bar on route timeline
+
+This allows simultaneous visualization of:
+  - Geographic position (map with route line)
+  - Communication state (timeline chart with status colors)
+  - Satellite configuration (metadata attached to segments)
+
+---
+
+## 10. IMPORTANT CAVEATS
+
+Timezone handling:
+  - All datetimes stored as UTC
+  - Always call _ensure_timezone() before operations
+  - EASTERN_TZ = ZoneInfo("America/New_York") for display
+
+Special cases:
+  - X-Ku conflict warnings show as "WARNING" even with DEGRADED state
+  - Use _segment_is_x_ku_warning() to detect this case
+  - Segment.impacted_transports may be empty for some reason codes
+
+Route timing:
+  - expected_arrival_time may be None on RoutePoints
+  - timing_profile may be None on ParsedRoute
+  - has_timing_data flag indicates whether timing is available
+
+POI projection:
+  - projected_* fields only set when route is active
+  - route_aware_status informs chart positioning logic
+
+---
+
+## 11. RECOMMENDED DATA STRUCTURE FOR MAP/CHART
+
+Unified data container:
+{
+  "mission": Mission,
+  "timeline": MissionTimeline,
+  "route": ParsedRoute,
+  "pois": list[POIWithETA],
+  "mission_start": datetime (from _mission_start_timestamp),
+  "segments_by_time": OrderedDict[start_time, segment],
+  "route_bounds": dict (from route.get_bounds()),
+  "route_distance_m": float (from route.get_total_distance()),
+}
+
+This allows map/chart functions to access all needed data in one call.
+
+---
+
+## 12. ENUM VALUE REFERENCE
+
+Transport:
+  X = "X"
+  KA = "Ka"
+  KU = "Ku"
+
+TransportState:
+  AVAILABLE = "available"
+  DEGRADED = "degraded"
+  OFFLINE = "offline"
+
+TimelineStatus:
+  NOMINAL = "nominal"
+  DEGRADED = "degraded"
+  CRITICAL = "critical"
+
+MissionPhase:
+  PRE_DEPARTURE = "pre_departure"
+  IN_FLIGHT = "in_flight"
+  POST_ARRIVAL = "post_arrival"
+
+TimelineAdvisory event_type:
+  "transition"
+  "azimuth_conflict"
+  "buffer"
+  "aar_window"
+  (or custom strings)
+
+Severity:
+  "info"
+  "warning"
+  "critical"
+
+---
