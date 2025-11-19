@@ -2,7 +2,7 @@
 
 **Branch:** `feat/excel-sheet1-timeline-summary`
 **Folder:** `dev/active/excel-sheet1-timeline-summary/`
-**Last Updated:** 2025-11-18 (Phase 8 debugging session)
+**Last Updated:** 2025-11-19 (Phase 15 - PR Review Feedback)
 
 ---
 
@@ -321,9 +321,32 @@ for i in range(len(route.points) - 1):
 
 ---
 
+## PR Review Feedback (Phase 15)
+
+**PR #10 Status:** OPEN (2025-11-19)
+
+**Reviewer:** gemini-code-assist (bot)
+
+**10 Code Review Comments:**
+1. Color code inconsistency (HIGH) - legend colors don't match route colors
+2. Silent Excel error handling (HIGH) - bare `pass` on image embedding
+3. Silent PDF error handling (HIGH) - no logging on PDF image generation
+4. Redundant base map code (MEDIUM) - generated 3 times for different early-returns
+5. Redundant IDL crossing logic (MEDIUM) - duplicated append blocks in geojson.py
+6. Logger inside function (MEDIUM) - should be at module level
+7. Commented exploration code (MEDIUM) - clutters readability
+8. Redundant coordinates init (MEDIUM) - duplicate initialization in geojson.py
+9. Docker layer optimization (MEDIUM) - multiple RUN commands can be combined
+10. All issues identified are quality/maintainability focused, not blocking functionality
+
+**Phase 15 Plan:** Address all 10 comments systematically (see PLAN.md Phase 15 for details)
+
+---
+
 ## References
 
 - **Documentation gap identified:** User feedback noting Sheet 1 missing from actual exports
 - **MISSION-PLANNING-GUIDE.md:** Lines 314-356 describe expected but unimplemented features
 - **Prior exploration findings:** Agent research confirmed Sheet 1 and PDF Page 3 timeline chart do not exist in codebase
-- **Related PRs:** None yet (this is first implementation)
+- **PR #10:** https://github.com/bcl1713/starlink-dashboard/pull/10 - Code review feedback with 10 items
+- **Related PRs:** Previous implementation PRs (details in git history)

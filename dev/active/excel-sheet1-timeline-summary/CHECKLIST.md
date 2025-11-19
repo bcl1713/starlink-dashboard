@@ -903,6 +903,246 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ---
 
+## Phase 15: Code Review Feedback & Quality Improvements
+
+### 15.1: Fix color code inconsistency
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Find the `STATUS_COLORS` dictionary (around line 556)
+- [ ] Find the `legend_elements` creation (around line 1053)
+- [ ] Verify the hex codes match exactly between the two:
+  - GREEN (NOMINAL): Both should use same color (currently `#27ae60`)
+  - ORANGE (DEGRADED): Both should use same color (currently `#f39c12`)
+  - RED (CRITICAL): Both should use same color (currently `#e74c3c`)
+- [ ] If they differ, update `legend_elements` to match `STATUS_COLORS`
+- [ ] Save the file
+
+### 15.2: Add error logging to Excel map embedding
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Find the Excel map embedding section (around line 1440-1460)
+- [ ] Replace bare `pass` statement with:
+  ```python
+  except Exception as e:
+      logger.error("Failed to embed map image in Excel: %s", e, exc_info=True)
+  ```
+- [ ] Save the file
+
+### 15.3: Add error logging to Excel chart embedding
+
+- [ ] In the same file, find the chart embedding section (around line 1460-1480)
+- [ ] Replace bare `pass` statement with:
+  ```python
+  except Exception as e:
+      logger.error("Failed to embed timeline chart in Excel: %s", e, exc_info=True)
+  ```
+- [ ] Save the file
+
+### 15.4: Add error logging to PDF map generation
+
+- [ ] Find the PDF map generation section (around line 1560-1575)
+- [ ] Replace the broad exception handler with:
+  ```python
+  except Exception as e:
+      logger.error("Failed to generate route map for PDF: %s", e, exc_info=True)
+      story.append(Paragraph(f"[Route map unavailable: {str(e)}]", styles["Normal"]))
+  ```
+- [ ] Save the file
+
+### 15.5: Add error logging to PDF chart generation
+
+- [ ] Find the PDF chart generation section (around line 1580-1600)
+- [ ] Replace the broad exception handler with:
+  ```python
+  except Exception as e:
+      logger.error("Failed to generate timeline chart for PDF: %s", e, exc_info=True)
+      story.append(Paragraph(f"[Timeline chart unavailable: {str(e)}]", styles["Normal"]))
+  ```
+- [ ] Save the file
+
+### 15.6: Move logger initialization to module level
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Check the imports at the top of the file (around line 1-50)
+- [ ] Find any `logging` module import
+- [ ] If not present, add it after other imports:
+  ```python
+  import logging
+  ```
+- [ ] After imports, add module-level logger initialization (after line ~50):
+  ```python
+  logger = logging.getLogger(__name__)
+  ```
+- [ ] Find the `_generate_route_map()` function (around line 376)
+- [ ] If it contains `import logging` or `logger = logging.getLogger(...)`, remove those lines from inside the function
+- [ ] Save the file
+
+### 15.7: Refactor duplicate base map canvas code
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Find the `_generate_route_map()` function
+- [ ] Identify the base map canvas generation code (appears 3+ times for different early-return conditions)
+- [ ] Extract this into a helper function at the end of the file:
+  ```python
+  def _base_map_canvas() -> bytes:
+      """Generate a blank 4K map canvas with no route or markers."""
+      width_inches = 3840 / 300
+      height_inches = 2880 / 300
+
+      fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor='white')
+      ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
+      fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+      ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
+      ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
+      ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
+      ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
+      ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
+      ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
+      ax.spines['geo'].set_visible(False)
+      ax.set_xticks([])
+      ax.set_yticks([])
+
+      buf = io.BytesIO()
+      plt.savefig(buf, format='png', dpi=300, bbox_inches='tight', pad_inches=0)
+      plt.close(fig)
+      buf.seek(0)
+      return buf.read()
+  ```
+- [ ] Replace the 3+ duplicate blocks with calls to `return _base_map_canvas()`
+- [ ] Save the file
+
+### 15.8: Refactor IDL crossing logic in geojson.py
+
+- [ ] Open `backend/starlink-location/app/api/geojson.py`
+- [ ] Find the International Date Line crossing handling section (around line 140-230)
+- [ ] Identify the repeated blocks for appending interpolated points
+- [ ] Refactor to extract `lon_to_add` logic:
+  - Move the `lon_to_add = None` initialization outside the repeated block
+  - Determine `lon_to_add` based on hemisphere and direction once
+  - Use single `if lon_to_add is not None:` block to append to coordinates
+- [ ] Remove duplicate append statements
+- [ ] Add comments to clarify the logic
+- [ ] Save the file
+
+### 15.9: Clean up commented exploration code in exporter.py
+
+- [ ] Open `backend/starlink-location/app/mission/exporter.py`
+- [ ] Find the large IDL crossing block in `_generate_route_map()` (around line 851)
+- [ ] Review all commented-out code and exploration notes
+- [ ] Remove all commented lines (keep only active code)
+- [ ] Keep one clear comment explaining the IDL crossing handling approach
+- [ ] Save the file
+
+### 15.10: Optimize Docker layers
+
+- [ ] Open `backend/starlink-location/Dockerfile`
+- [ ] Find the section with multiple consecutive `RUN` commands (around line 41)
+- [ ] Combine all mkdir and chown operations into a single `RUN` command:
+  ```dockerfile
+  RUN mkdir -p /data/routes /data/sim_routes /home/appuser/.local/share/cartopy /home/appuser/.config/matplotlib /home/appuser/.cache/matplotlib && \
+      chown -R appuser:appuser /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache && \
+      chmod -R 755 /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache
+  ```
+- [ ] Save the file
+
+### 15.11: Remove redundant coordinates initialization in geojson.py
+
+- [ ] Open `backend/starlink-location/app/api/geojson.py`
+- [ ] Find line 141 where `coordinates` is first initialized
+- [ ] Find the second initialization of `coordinates` (should be a few lines later)
+- [ ] Keep only the second initialization (the one with the comment "Convert route points...")
+- [ ] Remove the first duplicate initialization
+- [ ] Save the file
+
+### 15.12: Rebuild Docker and test
+
+- [ ] Run Docker rebuild:
+  ```bash
+  docker compose down && docker compose build --no-cache && docker compose up -d
+  ```
+- [ ] Verify health:
+  ```bash
+  curl http://localhost:8000/health
+  ```
+- [ ] Expected result: `{"status": "ok", ...}`
+
+### 15.13: Verify no functionality changes
+
+- [ ] Generate test export with same mission ID as before:
+  ```bash
+  curl -o /tmp/test_after_refactor.xlsx http://localhost:8000/api/missions/{MISSION_ID}/export/xlsx
+  ```
+- [ ] Open file in Excel/LibreOffice
+- [ ] Verify visually:
+  - Map still renders correctly with same layout
+  - Colors still match (green/orange/red segments match timeline)
+  - Chart still displays correctly
+  - Summary table unchanged
+- [ ] Check backend logs for new error logging:
+  ```bash
+  docker compose logs starlink-location | rg "error|Failed" | head -5
+  ```
+- [ ] Expected result: No export-related errors (healthy start/shutdown logs only)
+
+### 15.14: Commit all quality improvements
+
+- [ ] Stage all changed files:
+  ```bash
+  git add backend/starlink-location/app/mission/exporter.py
+  git add backend/starlink-location/app/api/geojson.py
+  git add backend/starlink-location/Dockerfile
+  ```
+- [ ] Commit:
+  ```bash
+  git commit -m "refactor: address code review feedback - improve quality and maintainability
+
+- Consolidate color codes into single constant (fixes HIGH priority issue)
+- Add error logging to Excel/PDF image embedding (fixes HIGH priority issue)
+- Extract duplicate base map canvas code to helper function
+- Refactor IDL crossing logic to reduce duplication in geojson.py
+- Move logger initialization to module level
+- Remove commented exploration code from _generate_route_map()
+- Optimize Docker layers by combining RUN commands
+- Remove redundant coordinates initialization in geojson.py"
+  ```
+- [ ] Push:
+  ```bash
+  git push
+  ```
+
+### 15.15: Update CHECKLIST.md
+
+- [ ] Mark all Phase 15 items as complete: `- [x]`
+- [ ] Save the file
+
+### 15.16: Commit plan documentation
+
+- [ ] Stage changes:
+  ```bash
+  git add dev/active/excel-sheet1-timeline-summary/PLAN.md
+  git add dev/active/excel-sheet1-timeline-summary/CHECKLIST.md
+  ```
+- [ ] Commit:
+  ```bash
+  git commit -m "chore: document Phase 15 code review feedback improvements"
+  ```
+- [ ] Push:
+  ```bash
+  git push
+  ```
+
+### 15.17: Verify PR ready for merge
+
+- [ ] View updated PR:
+  ```bash
+  gh pr view 10
+  ```
+- [ ] Expected result: All code review comments should be addressed by commits
+- [ ] All tests passing
+- [ ] Ready for merge
+
+---
+
 ## Testing Summary
 
 The following were tested during this implementation:
