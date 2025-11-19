@@ -1552,6 +1552,7 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
         route_map_image = Image(route_map_stream, width=6.5 * inch, height=4.3 * inch)
         story.append(route_map_image)
     except Exception as e:
+        logger.error("Failed to generate route map for PDF: %s", e, exc_info=True)
         story.append(Paragraph(f"[Route map unavailable: {str(e)}]", styles["Normal"]))
 
     # Page break before timeline

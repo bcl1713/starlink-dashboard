@@ -940,14 +940,14 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.4: Add error logging to PDF map generation
 
-- [ ] Find the PDF map generation section (around line 1560-1575)
-- [ ] Replace the broad exception handler with:
+- [x] Find the PDF map generation section (around line 1560-1575)
+- [x] Replace the broad exception handler with:
   ```python
   except Exception as e:
       logger.error("Failed to generate route map for PDF: %s", e, exc_info=True)
       story.append(Paragraph(f"[Route map unavailable: {str(e)}]", styles["Normal"]))
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### 15.5: Add error logging to PDF chart generation
 
