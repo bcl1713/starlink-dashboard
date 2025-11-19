@@ -1086,13 +1086,13 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.14: Commit all quality improvements
 
-- [ ] Stage all changed files:
+- [x] Stage all changed files:
   ```bash
   git add backend/starlink-location/app/mission/exporter.py
   git add backend/starlink-location/app/api/geojson.py
   git add backend/starlink-location/Dockerfile
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "refactor: address code review feedback - improve quality and maintainability
 
@@ -1105,7 +1105,7 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 - Optimize Docker layers by combining RUN commands
 - Remove redundant coordinates initialization in geojson.py"
   ```
-- [ ] Push:
+- [x] Push:
   ```bash
   git push
   ```
