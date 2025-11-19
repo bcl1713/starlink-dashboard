@@ -1035,15 +1035,15 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
 
 ### 15.10: Optimize Docker layers
 
-- [ ] Open `backend/starlink-location/Dockerfile`
-- [ ] Find the section with multiple consecutive `RUN` commands (around line 41)
-- [ ] Combine all mkdir and chown operations into a single `RUN` command:
+- [x] Open `backend/starlink-location/Dockerfile`
+- [x] Find the section with multiple consecutive `RUN` commands (around line 41)
+- [x] Combine all mkdir and chown operations into a single `RUN` command:
   ```dockerfile
   RUN mkdir -p /data/routes /data/sim_routes /home/appuser/.local/share/cartopy /home/appuser/.config/matplotlib /home/appuser/.cache/matplotlib && \
       chown -R appuser:appuser /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache && \
       chmod -R 755 /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache
   ```
-- [ ] Save the file
+- [x] Save the file
 
 ### 15.11: Remove redundant coordinates initialization in geojson.py
 

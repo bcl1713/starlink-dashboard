@@ -29,16 +29,10 @@ COPY tests/ ./tests/
 # Create non-root user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 
-# Create /data directory for POI storage with proper permissions
-RUN mkdir -p /data/routes /data/sim_routes && chown -R appuser:appuser /data && chmod -R 755 /data
-
-# Create cartopy data directory with proper permissions for matplotlib/cartopy
-RUN mkdir -p /home/appuser/.local/share/cartopy && chown -R appuser:appuser /home/appuser/.local/share/cartopy && chmod -R 755 /home/appuser/.local/share/cartopy
-
-# Create matplotlib config and cache directories with proper permissions
-RUN mkdir -p /home/appuser/.config/matplotlib /home/appuser/.cache/matplotlib && \
-    chown -R appuser:appuser /home/appuser/.config /home/appuser/.cache && \
-    chmod -R 755 /home/appuser/.config /home/appuser/.cache
+# Create data directories with proper permissions
+RUN mkdir -p /data/routes /data/sim_routes /home/appuser/.local/share/cartopy /home/appuser/.config/matplotlib /home/appuser/.cache/matplotlib && \
+    chown -R appuser:appuser /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache && \
+    chmod -R 755 /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache
 
 USER appuser
 
