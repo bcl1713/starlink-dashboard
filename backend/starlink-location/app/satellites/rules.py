@@ -265,7 +265,7 @@ class RuleEngine:
         self._emit_comm_safety_window(
             timestamp=departure_time,
             event_type=EventType.TAKEOFF_BUFFER,
-            severity="warning",
+            severity="safety",
             reason="Safety-of-Flight (takeoff)",
         )
         self._emit_comm_safety_window(
@@ -278,7 +278,7 @@ class RuleEngine:
         self._emit_comm_safety_window(
             timestamp=landing_time - landing_buffer,
             event_type=EventType.LANDING_BUFFER,
-            severity="warning",
+            severity="safety",
             reason="Safety-of-Flight (landing)",
         )
         self._emit_comm_safety_window(
@@ -306,7 +306,7 @@ class RuleEngine:
                 event_type=EventType.AAR_WINDOW,
                 transport=Transport.X,
                 affected_transport=Transport.X,
-                severity="warning",
+                severity="safety",
                 reason=start_label,
             )
         )

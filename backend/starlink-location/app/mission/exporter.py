@@ -35,6 +35,10 @@ from reportlab.lib.pagesizes import LETTER, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, PageBreak
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN
 
 from app.mission.models import (
     Mission,
@@ -115,6 +119,7 @@ class TimelineExportFormat(str, Enum):
     CSV = "csv"
     XLSX = "xlsx"
     PDF = "pdf"
+    PPTX = "pptx"
 
     @classmethod
     def from_string(cls, raw: str) -> "TimelineExportFormat":
@@ -307,6 +312,127 @@ def _segment_at_time(
         if start <= ts < end:
             return segment
     return timeline.segments[-1] if timeline.segments else None
+
+
+def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, timeline: MissionTimeline) -> list[tuple[datetime, datetime, str]]:
+    if not timeline or not timeline.segments:
+        return [(start_time, end_time, 'unknown')]
+    
+    intervals = []
+    current_time = start_time
+    
+    # Optimization: Filter relevant segments first
+    relevant_segments = []
+    for seg in timeline.segments:
+        s_start = _ensure_timezone(seg.start_time)
+        s_end = _ensure_timezone(seg.end_time) if seg.end_time else datetime.max.replace(tzinfo=timezone.utc)
+        if s_end > start_time and s_start < end_time:
+            relevant_segments.append((s_start, s_end, seg))
+    
+    # Sort by start time
+    relevant_segments.sort(key=lambda x: x[0])
+    
+    # Also check for AAR blocks
+    aar_blocks = []
+    if timeline.statistics and "_aar_blocks" in timeline.statistics:
+        for block in timeline.statistics["_aar_blocks"]:
+            aar_start_raw = block.get("start")
+            aar_end_raw = block.get("end")
+            if aar_start_raw and aar_end_raw:
+                aar_start = _parse_iso_timestamp(aar_start_raw)
+                aar_end = _parse_iso_timestamp(aar_end_raw)
+                if aar_end > start_time and aar_start < end_time:
+                    aar_blocks.append((aar_start, aar_end))
+    
+    while current_time < end_time:
+        # Find the segment that covers current_time
+        active_seg = None
+        next_change = end_time
+        
+        for s_start, s_end, seg in relevant_segments:
+            if s_start <= current_time < s_end:
+                active_seg = seg
+                next_change = min(end_time, s_end)
+                break
+            elif s_start > current_time:
+                # This is a future segment, it might define the end of a gap
+                next_change = min(end_time, s_start)
+                break
+        
+        # Check if current_time falls within an AAR block
+        in_aar_block = False
+        for aar_start, aar_end in aar_blocks:
+            if aar_start <= current_time < aar_end:
+                in_aar_block = True
+                # AAR block might end before the segment ends
+                next_change = min(next_change, aar_end)
+                break
+            elif aar_start > current_time:
+                # Future AAR block might start before next_change
+                next_change = min(next_change, aar_start)
+        
+        # Determine status
+        status = 'nominal' # Default if no segment found (gap) or segment has no status
+        if active_seg:
+            raw_status = active_seg.status.value
+            reasons = str(active_seg.reasons).lower()
+            is_sof = "safety-of-flight" in reasons or "aar" in reasons
+            
+            if raw_status == 'critical':
+                status = 'critical'
+            elif raw_status == 'degraded' or is_sof or in_aar_block:
+                status = 'degraded'
+            elif raw_status == 'warning':
+                status = 'degraded'
+            else:
+                    status = 'nominal'
+        else:
+                status = 'unknown' # Gap in timeline
+        
+        # Override to degraded if in AAR block (even if segment is nominal)
+        if in_aar_block and status == 'nominal':
+            status = 'degraded'
+        
+        intervals.append((current_time, next_change, status))
+        current_time = next_change
+        
+    return intervals
+
+
+def _interpolate_position_at_time(target_time, p1, p2):
+    if not p1.expected_arrival_time or not p2.expected_arrival_time:
+        return p1
+    
+    t1 = _ensure_timezone(p1.expected_arrival_time)
+    t2 = _ensure_timezone(p2.expected_arrival_time)
+    
+    if target_time <= t1: return p1
+    if target_time >= t2: return p2
+    
+    total_duration = (t2 - t1).total_seconds()
+    if total_duration == 0: return p1
+    
+    elapsed = (target_time - t1).total_seconds()
+    fraction = elapsed / total_duration
+    
+    lat = p1.latitude + (p2.latitude - p1.latitude) * fraction
+    
+    # Handle IDL for Longitude
+    lon1 = p1.longitude
+    lon2 = p2.longitude
+    
+    if abs(lon2 - lon1) > 180:
+        # Crosses IDL
+        if lon1 < 0: lon1 += 360
+        if lon2 < 0: lon2 += 360
+        
+        lon = lon1 + (lon2 - lon1) * fraction
+        if lon > 180: lon -= 360
+    else:
+        lon = lon1 + (lon2 - lon1) * fraction
+        
+    return type('Point', (), {'latitude': lat, 'longitude': lon})
+
 
 
 def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
@@ -515,74 +641,65 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
     if points:
         # Default to unknown/gray if no timeline data
         default_color = STATUS_COLORS['unknown']
-        
-        # Helper to find status for a given time
-        def get_segment_status(timestamp):
-            if not timeline or not timeline.segments:
-                return 'unknown'
-            
-            # Simple linear search (timeline segments are sorted)
-            for seg in timeline.segments:
-                if seg.start_time <= timestamp < seg.end_time:
-                    return seg.status.value
-            return 'unknown'
 
         # For each route segment (between consecutive waypoints), determine its color
         for i in range(len(points) - 1):
             p1 = points[i]
             p2 = points[i + 1]
             
-            # Determine color for this segment
-            segment_color = default_color
+            # If we lack timing, fall back to simple coloring (whole segment)
+            if not p1.expected_arrival_time or not p2.expected_arrival_time:
+                # ... (Existing fallback logic could go here, or just default to unknown)
+                # For now, let's just draw it as unknown if no times
+                 ax.plot([p1.longitude, p2.longitude], [p1.latitude, p2.latitude],
+                       color=STATUS_COLORS['unknown'], linewidth=1.5,
+                       transform=ccrs.PlateCarree(), zorder=5)
+                 continue
+
+            t1 = _ensure_timezone(p1.expected_arrival_time)
+            t2 = _ensure_timezone(p2.expected_arrival_time)
             
-            # If we have timing data, look up status
-            if p1.expected_arrival_time and p2.expected_arrival_time:
-                # Use midpoint of segment to determine status
-                # Ensure timestamps are timezone-aware (UTC)
-                t1 = p1.expected_arrival_time
-                t2 = p2.expected_arrival_time
-                mid_timestamp = t1 + (t2 - t1) / 2
+            # Get sub-segments based on status
+            sub_segments = _get_detailed_segment_statuses(t1, t2, timeline)
+            
+            for sub_start, sub_end, status in sub_segments:
+                # Interpolate positions
+                sp1 = _interpolate_position_at_time(sub_start, p1, p2)
+                sp2 = _interpolate_position_at_time(sub_end, p1, p2)
                 
-                status = get_segment_status(mid_timestamp)
-                segment_color = STATUS_COLORS.get(status, default_color)
-            elif p1.expected_arrival_time:
-                 # Fallback to p1 time if p2 missing
-                 status = get_segment_status(p1.expected_arrival_time)
-                 segment_color = STATUS_COLORS.get(status, default_color)
+                color = STATUS_COLORS.get(status, default_color)
+                
+                # Draw this sub-segment
+                # Check for IDL crossing within this sub-segment
+                if abs(sp2.longitude - sp1.longitude) > 180:
+                     # Handle International Date Line crossings: split route into segments at ±180° boundaries
+                    d_lon_short_path = 360 - abs(sp1.longitude - sp2.longitude)
 
-            # Get color for this status
-            color = segment_color # Use the determined segment_color
+                    if d_lon_short_path == 0:
+                        continue
 
-            # Draw this route segment
-            if i in idl_crossing_segments:
-                # Handle International Date Line crossings: split route into segments at ±180° boundaries
-                d_lon_short_path = 360 - abs(p1.longitude - p2.longitude)
+                    fraction = (180 - abs(sp1.longitude)) / d_lon_short_path
+                    lat_at_180 = sp1.latitude + (sp2.latitude - sp1.latitude) * fraction
 
-                if d_lon_short_path == 0:
-                    continue
+                    # Segment 1: P1 to Meridian
+                    target_lon1 = 180 if sp1.longitude > 0 else -180
+                    ax.plot([sp1.longitude, target_lon1],
+                           [sp1.latitude, lat_at_180],
+                           color=color, linewidth=1.5,
+                           transform=ccrs.PlateCarree(), zorder=5)
 
-                fraction = (180 - abs(p1.longitude)) / d_lon_short_path
-                lat_at_180 = p1.latitude + (p2.latitude - p1.latitude) * fraction
-
-                # Segment 1: P1 to Meridian
-                target_lon1 = 180 if p1.longitude > 0 else -180
-                ax.plot([p1.longitude, target_lon1],
-                       [p1.latitude, lat_at_180],
-                       color=color, linewidth=1.5,
-                       transform=ccrs.PlateCarree(), zorder=5)
-
-                # Segment 2: Meridian to P2
-                target_lon2 = 180 if p2.longitude > 0 else -180
-                ax.plot([target_lon2, p2.longitude],
-                       [lat_at_180, p2.latitude],
-                       color=color, linewidth=1.5,
-                       transform=ccrs.PlateCarree(), zorder=5)
-            else:
-                # Normal segment
-                ax.plot([p1.longitude, p2.longitude],
-                       [p1.latitude, p2.latitude],
-                       color=color, linewidth=1.5,
-                       transform=ccrs.PlateCarree(), zorder=5)
+                    # Segment 2: Meridian to P2
+                    target_lon2 = 180 if sp2.longitude > 0 else -180
+                    ax.plot([target_lon2, sp2.longitude],
+                           [lat_at_180, sp2.latitude],
+                           color=color, linewidth=1.5,
+                           transform=ccrs.PlateCarree(), zorder=5)
+                else:
+                    # Normal segment
+                    ax.plot([sp1.longitude, sp2.longitude],
+                           [sp1.latitude, sp2.latitude],
+                           color=color, linewidth=1.5,
+                           transform=ccrs.PlateCarree(), zorder=5)
                    
             # Add rounded caps for smooth joins (optional, but matplotlib lines usually join well)
             # For individual segments, we might see gaps if linewidth is large.
@@ -1316,11 +1433,40 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
         body_style = styles["BodyText"]
         body_style.fontSize = 8
         body_style.leading = 9.5
+        # Pre-calculate status overrides and identify critical rows
+        # We need to modify the data *before* creating the Table if we want to change text
+        
+        # Create a map of row_idx -> is_critical for styling later
+        critical_rows = {}
+        
+        # Rebuild data with overrides
         data = [[header for header, _ in table_columns]]
-        for _, row in timeline_df.iterrows():
+        for row_idx, row in timeline_df.iterrows():
+            # Determine if row is critical (2+ bad systems, excluding SoF)
+            bad_cols_count = 0
+            for name in STATE_COLUMNS:
+                val = str(row[name]).strip().lower()
+                if val in ("degraded", "warning", "offline"):
+                    bad_cols_count += 1
+            
+            is_critical = bad_cols_count >= 2
+            critical_rows[row_idx] = is_critical
+
+            # Check for SoF/AAR reasons
+            reasons = str(row.get("Reasons", "")).lower()
+            is_sof_row = "safety-of-flight" in reasons or "aar" in reasons
+
             row_values = []
             for header, key in table_columns:
                 value = row[key]
+                
+                # Override Status text
+                if key == "Status":
+                    if is_critical:
+                        value = "CRITICAL"
+                    elif is_sof_row and str(value).lower() in ("nominal", "available", "warning"):
+                        value = "SOF"
+                
                 if key in {"Start Time", "End Time"}:
                     display = (value or "-").replace("\n", "<br/>")
                     row_values.append(Paragraph(display, body_style))
@@ -1347,20 +1493,42 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
         ]
         column_index = {key: idx for idx, (_, key) in enumerate(table_columns)}
         state_column_indices = {name: column_index[name] for name in STATE_COLUMNS}
+        status_col_idx = column_index.get("Status")
+
         for row_idx in range(len(timeline_df)):
-            degraded_cols: list[int] = []
+            is_critical = critical_rows.get(row_idx, False)
+            
+            # Check for SoF/AAR reasons
+            reasons = str(timeline_df.iloc[row_idx]["Reasons"]).lower()
+            is_sof_row = "safety-of-flight" in reasons or "aar" in reasons
+
+            # Color Status column
+            if status_col_idx is not None:
+                status_val = str(timeline_df.iloc[row_idx]["Status"]).upper()
+                if is_critical:
+                     style_commands.append(("BACKGROUND", (status_col_idx, row_idx+1), (status_col_idx, row_idx+1), LIGHT_RED))
+                elif status_val in ("DEGRADED", "WARNING") or is_sof_row:
+                     style_commands.append(("BACKGROUND", (status_col_idx, row_idx+1), (status_col_idx, row_idx+1), LIGHT_YELLOW))
+
+            # Color Transport columns
             for name in STATE_COLUMNS:
-                column_idx = state_column_indices[name]
-                cell_value = str(timeline_df.iloc[row_idx][name]).strip().lower()
-                if cell_value in {"degraded", "offline"}:
-                    degraded_cols.append(column_idx)
-            if not degraded_cols:
-                continue
-            color = LIGHT_RED if len(degraded_cols) >= 2 else LIGHT_YELLOW
-            for col_idx in degraded_cols:
-                style_commands.append(
-                    ("BACKGROUND", (col_idx, row_idx + 1), (col_idx, row_idx + 1), color)
-                )
+                val = str(timeline_df.iloc[row_idx][name]).strip().lower()
+                col_idx = state_column_indices[name]
+                
+                # Check if this specific cell is SoF (AVAILABLE but needs yellow)
+                # SoF applies if the row is SoF and this cell is AVAILABLE/NOMINAL
+                cell_is_sof = is_sof_row and val in ("available", "nominal")
+                
+                if val in ("degraded", "warning", "offline") or cell_is_sof:
+                    if is_critical and not cell_is_sof:
+                        color = LIGHT_RED
+                    elif val in ("degraded", "warning") or cell_is_sof:
+                        color = LIGHT_YELLOW
+                    else:
+                        color = LIGHT_RED # Offline
+                    
+                    style_commands.append(("BACKGROUND", (col_idx, row_idx+1), (col_idx, row_idx+1), color))
+
         table.setStyle(TableStyle(style_commands))
         story.append(table)
 
@@ -1370,6 +1538,240 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
     story.append(Paragraph(f"Timeline generated: {_format_utc(timeline.created_at)}", footer_style))
 
     doc.build(story)
+    buffer.seek(0)
+    return buffer.read()
+
+
+def generate_pptx_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+    """Generate a PowerPoint presentation with map and timeline table."""
+    prs = Presentation()
+
+    # Slide 1: Route Map
+    # Use a blank layout (usually index 6 in default template)
+    blank_slide_layout = prs.slide_layouts[6]
+    slide1 = prs.slides.add_slide(blank_slide_layout)
+
+    # Generate map image
+    try:
+        map_image_bytes = _generate_route_map(timeline, mission)
+        map_image_stream = io.BytesIO(map_image_bytes)
+        
+        # Add image to slide, scaled to fit
+        # Default slide size is 10x7.5 inches
+        # We want to maximize the map visibility
+        left = Inches(0.5)
+        top = Inches(0.5)
+        width = Inches(9)
+        height = Inches(6.5)
+        
+        slide1.shapes.add_picture(map_image_stream, left, top, width=width, height=height)
+        
+        # Add title
+        title_box = slide1.shapes.add_textbox(Inches(0.5), Inches(0.1), Inches(9), Inches(0.5))
+        tf = title_box.text_frame
+        p = tf.paragraphs[0]
+        p.text = "Mission Route Map"
+        p.font.bold = True
+        p.font.size = Pt(24)
+        p.alignment = PP_ALIGN.CENTER
+
+    except Exception as e:
+        logger.error("Failed to add map to PPTX: %s", e, exc_info=True)
+        textbox = slide1.shapes.add_textbox(Inches(1), Inches(1), Inches(8), Inches(1))
+        textbox.text = f"Map generation failed: {str(e)}"
+
+    # Slide 2: Timeline Table
+    # Slide 2+: Timeline Table (Paginated)
+    timeline_df = _segment_rows(timeline, mission)
+    
+    if not timeline_df.empty:
+        # Define columns to show
+        columns_to_show = [
+            "Segment #", "Status", "Start Time", "End Time", "Duration",
+            TRANSPORT_DISPLAY[Transport.X],
+            TRANSPORT_DISPLAY[Transport.KA],
+            TRANSPORT_DISPLAY[Transport.KU],
+            "Reasons"
+        ]
+        
+        # Pagination settings
+        ROWS_PER_SLIDE = 10
+        MIN_ROWS_LAST_SLIDE = 3
+        
+        # Convert to list of dicts for easier manipulation if needed, or just slice dataframe
+        # Slicing dataframe is easier but we need to handle the orphan logic
+        records = timeline_df.to_dict('records')
+        total_rows = len(records)
+        
+        chunks = []
+        if total_rows <= ROWS_PER_SLIDE:
+            chunks.append(timeline_df)
+        else:
+            # Naive split first
+            current_idx = 0
+            while current_idx < total_rows:
+                end_idx = min(current_idx + ROWS_PER_SLIDE, total_rows)
+                chunks.append(timeline_df.iloc[current_idx:end_idx])
+                current_idx = end_idx
+            
+            # Check last chunk
+            if len(chunks) > 1:
+                last_chunk = chunks[-1]
+                if len(last_chunk) < MIN_ROWS_LAST_SLIDE:
+                    # Need to move items from second to last chunk
+                    needed = MIN_ROWS_LAST_SLIDE - len(last_chunk)
+                    # Re-slice the last two chunks
+                    # We need to go back to the source dataframe indices
+                    # Let's recalculate the split point for the last page
+                    
+                    # Total items excluding the last "naive" chunk's items
+                    # Actually, let's just do it numerically
+                    # If we have 11 items. 10, 1.
+                    # We want 8, 3.
+                    # Split point should be total - 3.
+                    
+                    # If we have 21 items. 10, 10, 1.
+                    # We want 10, 8, 3.
+                    
+                    # So we only adjust the boundary between the last two chunks.
+                    # The start of the last chunk is currently `total_rows - len(last_chunk)`
+                    # We want the start to be `total_rows - 3` (or whatever min is)
+                    # But we must ensure the second to last chunk doesn't exceed max? No, it will shrink.
+                    # We must ensure the second to last chunk doesn't fall below min?
+                    # If max=10, min=3.
+                    # Worst case for prev chunk: It had 10. We take 2. It has 8. Safe.
+                    
+                    # Re-build chunks
+                    # Everything up to the second to last chunk stays same
+                    base_chunks = chunks[:-2]
+                    
+                    # Combine last two
+                    remainder_count = len(chunks[-2]) + len(chunks[-1])
+                    # We want last chunk to have MIN_ROWS_LAST_SLIDE
+                    # So second to last has remainder_count - MIN_ROWS_LAST_SLIDE
+                    
+                    split_idx = total_rows - remainder_count # Start of the second-to-last chunk
+                    second_last_len = remainder_count - MIN_ROWS_LAST_SLIDE
+                    
+                    chunk_second_last = timeline_df.iloc[split_idx : split_idx + second_last_len]
+                    chunk_last = timeline_df.iloc[split_idx + second_last_len : ]
+                    
+                    chunks = base_chunks + [chunk_second_last, chunk_last]
+
+        for chunk_idx, chunk in enumerate(chunks):
+            # Add new slide for each chunk
+            slide = prs.slides.add_slide(blank_slide_layout)
+            
+            # Add title
+            title_box = slide.shapes.add_textbox(Inches(0.5), Inches(0.1), Inches(9), Inches(0.5))
+            tf = title_box.text_frame
+            p = tf.paragraphs[0]
+            p.text = "Mission Timeline" if chunk_idx == 0 else "Mission Timeline (cont.)"
+            p.font.bold = True
+            p.font.size = Pt(24)
+            p.alignment = PP_ALIGN.CENTER
+
+            rows = len(chunk) + 1  # +1 for header
+            cols = len(columns_to_show)
+            
+            # Create table
+            left = Inches(0.5)
+            top = Inches(1.0)
+            width = Inches(9.0)
+            # Use a minimal height so rows don't stretch to fill a large area
+            # The table will expand as needed
+            height = Inches(1.0) 
+            
+            shape = slide.shapes.add_table(rows, cols, left, top, width, height)
+            table = shape.table
+            
+            # Set column widths (adjusted for wider times)
+            # Total width 9 inches
+            # Old weights: [0.6, 1.0, 1.5, 1.5, 1.0, 1.0, 1.0, 1.0, 2.0]
+            # New weights: [0.6, 1.0, 1.75, 1.75, 1.0, 1.0, 1.0, 1.0, 1.5]
+            col_weights = [0.6, 1.0, 1.75, 1.75, 1.0, 1.0, 1.0, 1.0, 1.5]
+            total_weight = sum(col_weights)
+            for i, weight in enumerate(col_weights):
+                table.columns[i].width = int(width * (weight / total_weight))
+
+            # Header row style
+            for i, col_name in enumerate(columns_to_show):
+                cell = table.cell(0, i)
+                cell.text = col_name
+                cell.fill.solid()
+                cell.fill.fore_color.rgb = RGBColor(51, 102, 178)  # Dark Blue
+                paragraph = cell.text_frame.paragraphs[0]
+                paragraph.font.color.rgb = RGBColor(255, 255, 255) # White
+                paragraph.font.bold = True
+                paragraph.font.size = Pt(10)
+                paragraph.alignment = PP_ALIGN.CENTER
+
+            # Data rows
+            for row_idx, (_, row_data) in enumerate(chunk.iterrows(), start=1):
+                # Pre-calculate bad transports for this row
+                bad_transports = []
+                for col_name in STATE_COLUMNS:
+                    val = str(row_data[col_name] if row_data[col_name] else "").lower()
+                    if val in ("degraded", "warning", "offline"):
+                        bad_transports.append(col_name)
+            
+                is_critical_row = len(bad_transports) >= 2
+
+                for col_idx, col_name in enumerate(columns_to_show):
+                    cell = table.cell(row_idx, col_idx)
+                    val = str(row_data[col_name] if row_data[col_name] is not None else "")
+                    
+                    # Override Status text if critical
+                    if col_name == "Status" and is_critical_row:
+                        val = "CRITICAL"
+                    
+                    cell.text = val
+                    
+                    for paragraph in cell.text_frame.paragraphs:
+                        paragraph.font.size = Pt(9)
+                        paragraph.alignment = PP_ALIGN.LEFT
+                    
+                    # Alternating row colors
+                    cell.fill.solid()
+                    if row_idx % 2 == 0:
+                        cell.fill.fore_color.rgb = RGBColor(240, 240, 240) # Light Gray
+                    else:
+                        cell.fill.fore_color.rgb = RGBColor(255, 255, 255) # White
+
+                    # Status coloring for transport columns and Status column
+                    # Status coloring for transport columns and Status column
+                    if col_name in STATE_COLUMNS or col_name == "Status":
+                        val_lower = val.lower()
+                        
+                        # Check for Safety-of-Flight in reasons if available/nominal/warning
+                        is_sof = False
+                        # We check reasons regardless of status, but only apply SOF override if appropriate
+                        reasons = str(row_data.get("Reasons", "")).lower()
+                        if "safety-of-flight" in reasons or "aar" in reasons:
+                            is_sof = True
+
+                        # Override Status text to "SOF" if it's a safety window
+                        # User request: "baseline for both should just be SOF"
+                        # If status is WARNING (e.g. due to AAR) or NOMINAL/AVAILABLE, show SOF.
+                        # If DEGRADED or OFFLINE, show that.
+                        if col_name == "Status" and is_sof and val_lower in ("available", "nominal", "warning"):
+                             cell.text = "SOF"
+                             # Re-apply font size since setting text resets it
+                             for paragraph in cell.text_frame.paragraphs:
+                                paragraph.font.size = Pt(9)
+                                paragraph.alignment = PP_ALIGN.LEFT
+
+                        if val_lower in ("degraded", "warning", "offline") or is_sof:
+                            cell.fill.solid()
+                            if is_critical_row and not is_sof:
+                                 cell.fill.fore_color.rgb = RGBColor(255, 204, 204) # Light Red
+                            elif val_lower in ("degraded", "warning") or is_sof:
+                                cell.fill.fore_color.rgb = RGBColor(255, 255, 204) # Light Yellow
+                            else:
+                                cell.fill.fore_color.rgb = RGBColor(255, 204, 204) # Light Red
+
+    buffer = io.BytesIO()
+    prs.save(buffer)
     buffer.seek(0)
     return buffer.read()
 
@@ -1415,5 +1817,8 @@ def generate_timeline_export(
     if export_format is TimelineExportFormat.PDF:
         content = generate_pdf_export(timeline, mission)
         return ExportArtifact(content=content, media_type="application/pdf", extension="pdf")
+    if export_format is TimelineExportFormat.PPTX:
+        content = generate_pptx_export(timeline, mission)
+        return ExportArtifact(content=content, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", extension="pptx")
 
     raise ExportGenerationError(f"Unsupported export format: {export_format}")

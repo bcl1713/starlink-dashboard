@@ -293,7 +293,7 @@ def _annotate_aar_markers(
         if event.event_type != EventType.AAR_WINDOW:
             continue
         ts = _ensure_datetime(event.timestamp)
-        if event.severity in ("warning", "critical"):
+        if event.severity in ("warning", "critical", "safety"):
             pending_start = ts
         elif pending_start:
             blocks.append(

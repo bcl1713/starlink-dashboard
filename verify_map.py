@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 sys.path.append('/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location')
 
 from app.mission.exporter import _generate_route_map, set_route_manager, set_poi_manager
-from app.mission.models import Mission, MissionTimeline, MissionRoute, MissionTransport, TransportWindow, SatelliteTransition
+from app.mission.models import Mission, MissionTimeline, TransportConfig
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
 
@@ -44,7 +44,8 @@ def verify_map_generation():
         id="test-mission",
         name="Test Mission",
         route_id="test-route",
-        transports=MissionTransport(
+        transports=TransportConfig(
+            initial_x_satellite_id="X-1",
             aar_windows=[],
             x_transitions=[]
         )

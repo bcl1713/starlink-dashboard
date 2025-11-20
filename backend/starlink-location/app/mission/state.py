@@ -54,7 +54,7 @@ def generate_transport_intervals(
     transports = list(transports or [Transport.X, Transport.KA, Transport.KU])
 
     active_conditions: Dict[Transport, Dict[str, Dict[str, str]]] = {
-        transport: {"degraded": {}, "offline": {}} for transport in transports
+        transport: {"degraded": {}, "offline": {}, "safety": {}} for transport in transports
     }
 
     intervals: Dict[Transport, List[TransportInterval]] = {}
@@ -144,15 +144,18 @@ def _derive_state(condition_state: Dict[str, Dict[str, str]]) -> tuple[Transport
     degraded_reasons = [
         condition_state["degraded"][key] for key in sorted(condition_state["degraded"].keys())
     ]
+    safety_reasons = [
+        condition_state["safety"][key] for key in sorted(condition_state["safety"].keys())
+    ]
 
     if offline_reasons:
         return (
             TransportState.OFFLINE,
-            offline_reasons + degraded_reasons,
+            offline_reasons + degraded_reasons + safety_reasons,
         )
     if degraded_reasons:
-        return TransportState.DEGRADED, degraded_reasons
-    return TransportState.AVAILABLE, []
+        return TransportState.DEGRADED, degraded_reasons + safety_reasons
+    return TransportState.AVAILABLE, safety_reasons
 
 
 def _apply_event(
@@ -187,15 +190,25 @@ def _apply_event(
 
     if event.event_type == EventType.TAKEOFF_BUFFER:
         key = "takeoff_buffer"
+        if event.severity == "safety":
+             return activate("safety", key, reason or "Takeoff buffer")
         if event.severity in ("warning", "critical"):
             return activate("degraded", key, reason or "Takeoff buffer")
-        return deactivate("degraded", key)
+        d1 = deactivate("degraded", key)
+        d2 = deactivate("safety", key)
+        return d1 or d2
 
     if event.event_type == EventType.LANDING_BUFFER:
         prep_key = "landing_buffer"
+        if event.severity == "safety":
+            return activate("safety", prep_key, reason or "Landing buffer")
         if event.severity == "warning":
             return activate("degraded", prep_key, reason or "Landing buffer")
-        changed = deactivate("degraded", prep_key)
+        
+        d1 = deactivate("degraded", prep_key)
+        d2 = deactivate("safety", prep_key)
+        changed = d1 or d2
+        
         offline_key = "landing_complete"
         offline_reason = reason or "Landing complete - X offline"
         return activate("offline", offline_key, offline_reason) or changed

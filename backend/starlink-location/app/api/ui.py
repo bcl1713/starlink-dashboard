@@ -2354,9 +2354,10 @@ async def mission_planner_ui():
                             <button type="button" class="btn-secondary" id="recomputeTimelineBtn" disabled>Recompute Timeline</button>
                             <div class="select-with-action" style="flex: 1;">
                                 <select id="exportFormatSelect">
-                                    <option value="csv">CSV (Excel compatible)</option>
-                                    <option value="xlsx">XLSX (Multi-sheet)</option>
+                                    <option value="pptx" selected>PPTX (PowerPoint)</option>
                                     <option value="pdf">PDF Brief</option>
+                                    <option value="xlsx">XLSX (Multi-sheet)</option>
+                                    <option value="csv">CSV (Excel compatible)</option>
                                 </select>
                                 <button type="button" class="btn-secondary" id="exportTimelineBtn" disabled>Download Timeline</button>
                             </div>
