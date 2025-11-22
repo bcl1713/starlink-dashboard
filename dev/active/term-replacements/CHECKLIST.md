@@ -262,9 +262,9 @@
   - [x] Find and replace: `load_hcx_coverage` → `load_commka_coverage` (not present)
   - [x] Save file
 
-- [ ] Open `docs/MISSION-VISUALIZATION-GUIDE.md`
-  - [ ] Find and replace: `HCX` → `CommKa`
-  - [ ] Save file
+- [x] Open `docs/MISSION-VISUALIZATION-GUIDE.md`
+  - [x] Find and replace: `HCX` → `CommKa` (found 3 occurrences)
+  - [x] Save file
 
 ### Update Test Files
 

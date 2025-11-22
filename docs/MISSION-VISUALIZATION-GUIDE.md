@@ -63,7 +63,7 @@ CRITICAL        Red (#FF0000)        LIGHT_RED (RGB: 1.0, 0.85, 0.85)
 Transport Enum          Display Name
 ──────────────────────────────────────
 Transport.X = "X"       "X-Band"
-Transport.KA = "Ka"     "HCX"
+Transport.KA = "Ka"     "CommKa"
 Transport.KU = "Ku"     "StarShield"
 
 State Enum              Display Value
@@ -213,7 +213,7 @@ def extract_advisories_for_timeline(
             "timestamp": ts_utc,
             "t_offset": t_offset,
             "event_type": advisory.event_type,              # "transition", "azimuth_conflict", etc.
-            "transport": transport_display,                 # "X-Band", "HCX", "StarShield"
+            "transport": transport_display,                 # "X-Band", "CommKa", "StarShield"
             "severity": advisory.severity,                  # "info", "warning", "critical"
             "message": advisory.message,
             "metadata": advisory.metadata,
@@ -562,5 +562,5 @@ Key takeaways for map/chart visualization implementation:
 7. Statistics provide high-level overview metrics
 8. Special case: X-Ku conflict warnings display as "WARNING"
 9. Color coding: Green (NOMINAL), Yellow (DEGRADED), Red (CRITICAL)
-10. Transport display names: X→"X-Band", Ka→"HCX", Ku→"StarShield"
+10. Transport display names: X→"X-Band", Ka→"CommKa", Ku→"StarShield"
 
