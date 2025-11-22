@@ -127,16 +127,16 @@
 
 ### File Renames
 
-- [ ] Rename coverage asset:
+- [x] Rename coverage asset:
   ```bash
   mv backend/starlink-location/app/satellites/assets/HCX.kmz backend/starlink-location/app/satellites/assets/CommKa.kmz
   ```
-- [ ] Expected: File renamed with no errors
-- [ ] Verify:
+- [x] Expected: File renamed with no errors
+- [x] Verify:
   ```bash
   ls -la backend/starlink-location/app/satellites/assets/CommKa.kmz
   ```
-- [ ] Expected: File exists
+- [x] Expected: File exists
 
 ### Update Core Application Files
 
