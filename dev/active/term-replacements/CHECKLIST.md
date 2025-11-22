@@ -196,14 +196,14 @@
 
 #### Update catalog.py
 
-- [ ] Open `backend/starlink-location/app/satellites/catalog.py`
-- [ ] Find and replace: `HCX` → `CommKa` (coverage references)
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/app/satellites/catalog.py`
+- [x] Find and replace: `HCX` → `CommKa` (coverage references)
+- [x] Save file
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/app/satellites/catalog.py
   ```
-- [ ] Expected: No output
+- [x] Expected: No output
 
 #### Update coverage.py
 
