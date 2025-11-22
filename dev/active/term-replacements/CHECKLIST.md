@@ -48,7 +48,7 @@
 - [ ] Verify all HCX-related files exist:
   - [ ] Run:
     ```bash
-    ls -la data/sat_coverage/HCX.kmz
+    ls -la backend/starlink-location/app/satellites/assets/HCX.kmz
     ```
   - [ ] Expected: File exists
   - [ ] Run:
@@ -129,12 +129,12 @@
 
 - [ ] Rename coverage asset:
   ```bash
-  mv data/sat_coverage/HCX.kmz data/sat_coverage/CommKa.kmz
+  mv backend/starlink-location/app/satellites/assets/HCX.kmz backend/starlink-location/app/satellites/assets/CommKa.kmz
   ```
 - [ ] Expected: File renamed with no errors
 - [ ] Verify:
   ```bash
-  ls -la data/sat_coverage/CommKa.kmz
+  ls -la backend/starlink-location/app/satellites/assets/CommKa.kmz
   ```
 - [ ] Expected: File exists
 

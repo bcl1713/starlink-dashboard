@@ -39,7 +39,7 @@ This change improves clarity and consistency in how communication bands are refe
 - `backend/starlink-location/app/satellites/__init__.py` — Exports
 
 **Assets:**
-- `data/sat_coverage/HCX.kmz` — Coverage file (rename to CommKa.kmz)
+- `backend/starlink-location/app/satellites/assets/HCX.kmz` — Coverage file (rename to CommKa.kmz)
 
 **Documentation (10 files):**
 - `docs/MISSION-PLANNING-GUIDE.md`
