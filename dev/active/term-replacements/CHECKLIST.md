@@ -45,17 +45,17 @@
     ```
   - [x] Expected: File exists
 
-- [ ] Verify all HCX-related files exist:
-  - [ ] Run:
+- [x] Verify all HCX-related files exist:
+  - [x] Run:
     ```bash
     ls -la backend/starlink-location/app/satellites/assets/HCX.kmz
     ```
-  - [ ] Expected: File exists
-  - [ ] Run:
+  - [x] Expected: File exists
+  - [x] Run:
     ```bash
     ls -la backend/starlink-location/app/mission/timeline_service.py
     ```
-  - [ ] Expected: File exists
+  - [x] Expected: File exists
 
 ---
 
