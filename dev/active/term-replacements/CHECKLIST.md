@@ -285,10 +285,10 @@
     python -m py_compile backend/starlink-location/tests/unit/test_kmz_importer.py
     ```
 
-- [ ] Open `backend/starlink-location/tests/integration/test_pois_quick_reference.py`
-  - [ ] Find and replace: `HCX` → `CommKa` (~3 occurrences)
-  - [ ] Save file
-  - [ ] Run syntax check:
+- [x] Open `backend/starlink-location/tests/integration/test_pois_quick_reference.py`
+  - [x] Find and replace: `HCX` → `CommKa` (found 3 occurrences)
+  - [x] Save file
+  - [x] Run syntax check:
     ```bash
     python -m py_compile backend/starlink-location/tests/integration/test_pois_quick_reference.py
     ```
