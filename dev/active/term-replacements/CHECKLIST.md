@@ -218,14 +218,14 @@
 
 #### Update __init__.py
 
-- [ ] Open `backend/starlink-location/app/satellites/__init__.py`
-- [ ] Find and replace: `load_hcx_coverage` → `load_commka_coverage` (if exported)
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/app/satellites/__init__.py`
+- [x] Find and replace: `load_hcx_coverage` → `load_commka_coverage` (if exported)
+- [x] Save file
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/app/satellites/__init__.py
   ```
-- [ ] Expected: No output
+- [x] Expected: No output
 
 ### Update Configuration Files
 
