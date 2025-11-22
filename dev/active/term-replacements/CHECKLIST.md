@@ -268,10 +268,10 @@
 
 ### Update Test Files
 
-- [ ] Open `backend/starlink-location/tests/unit/test_mission_exporter.py`
-  - [ ] Find and replace: `"HCX"` → `"CommKa"`
-  - [ ] Save file
-  - [ ] Run syntax check:
+- [x] Open `backend/starlink-location/tests/unit/test_mission_exporter.py`
+  - [x] Find and replace: `"HCX"` → `"CommKa"` (found 2 occurrences)
+  - [x] Save file
+  - [x] Run syntax check:
     ```bash
     python -m py_compile backend/starlink-location/tests/unit/test_mission_exporter.py
     ```

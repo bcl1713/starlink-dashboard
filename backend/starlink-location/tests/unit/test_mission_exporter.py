@@ -122,7 +122,7 @@ class TestMissionTimelineExporters:
         assert "Mission ID" in output
         assert timeline.mission_id in output
         assert "X-Band" in output
-        assert "HCX" in output
+        assert "CommKa" in output
         assert "StarShield" in output
 
     def test_generate_xlsx_creates_multiple_sheets(self, mission, timeline):
@@ -209,5 +209,5 @@ class TestMissionTimelineExporters:
         aar_row = aar_rows.iloc[0]
         assert aar_row["Reasons"] == "AAR"
         assert aar_row["X-Band"] == "AVAILABLE"
-        assert aar_row["HCX"] == "AVAILABLE"
+        assert aar_row["CommKa"] == "AVAILABLE"
         assert aar_row["StarShield"] == "AVAILABLE"
