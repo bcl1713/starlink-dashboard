@@ -66,7 +66,7 @@ class TimelineSegment(BaseModel):
     end_time: datetime                   # Segment end (UTC, ISO-8601)
     status: TimelineStatus               # Overall communication status
     x_state: TransportState              # X-Band transport state
-    ka_state: TransportState             # Ka (HCX) transport state
+    ka_state: TransportState             # Ka (CommKa) transport state
     ku_state: TransportState             # Ku (StarShield) transport state
     reasons: list[str]                   # Reason codes explaining status
     impacted_transports: list[Transport] # Transports that are degraded/offline
@@ -264,13 +264,13 @@ LIGHT_RED = colors.Color(1.0, 0.85, 0.85)    # For critical transport highlighti
 ```python
 TRANSPORT_DISPLAY = {
     Transport.X: "X-Band",
-    Transport.KA: "HCX",
+    Transport.KA: "CommKa",
     Transport.KU: "StarShield",
 }
 
 STATE_COLUMNS = [
     "X-Band",      # TRANSPORT_DISPLAY[Transport.X]
-    "HCX",         # TRANSPORT_DISPLAY[Transport.KA]
+    "CommKa",         # TRANSPORT_DISPLAY[Transport.KA]
     "StarShield",  # TRANSPORT_DISPLAY[Transport.KU]
 ]
 ```
@@ -287,7 +287,7 @@ STATE_COLUMNS = [
 #### _serialize_transport_list(transports: Iterable[Transport]) -> str
 ```python
 # Converts Transport enums to display names, joined by ", "
-# Example: [Transport.X, Transport.KA] -> "X-Band, HCX"
+# Example: [Transport.X, Transport.KA] -> "X-Band, CommKa"
 ```
 
 #### _compose_time_block(moment: datetime, mission_start: datetime) -> str
@@ -332,7 +332,7 @@ STATE_COLUMNS = [
 # Returns DataFrame with columns:
 # - "Segment #", "Mission ID", "Mission Name", "Status"
 # - "Start Time", "End Time", "Duration"
-# - "X-Band", "HCX", "StarShield"  (transport states)
+# - "X-Band", "CommKa", "StarShield"  (transport states)
 # - "Impacted Transports", "Reasons", "Metadata"
 #
 # Special handling:

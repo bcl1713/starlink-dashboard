@@ -257,10 +257,10 @@
   - [x] Find and replace: `HCX` → `CommKa` (found 5 occurrences)
   - [x] Save file
 
-- [ ] Open `docs/MISSION-DATA-STRUCTURES.md`
-  - [ ] Find and replace: `HCX` → `CommKa` (~5 occurrences)
-  - [ ] Find and replace: `load_hcx_coverage` → `load_commka_coverage`
-  - [ ] Save file
+- [x] Open `docs/MISSION-DATA-STRUCTURES.md`
+  - [x] Find and replace: `HCX` → `CommKa` (found 5 occurrences)
+  - [x] Find and replace: `load_hcx_coverage` → `load_commka_coverage` (not present)
+  - [x] Save file
 
 - [ ] Open `docs/MISSION-VISUALIZATION-GUIDE.md`
   - [ ] Find and replace: `HCX` → `CommKa`
