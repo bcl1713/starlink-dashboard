@@ -355,14 +355,14 @@
 
 ### Grafana Dashboard Verification
 
-- [ ] Open browser and navigate to:
+- [x] Open browser and navigate to:
   ```
   http://localhost:3000
   ```
-- [ ] Log in with default credentials (admin/admin)
-- [ ] Navigate to dashboards and open "Fullscreen Overview"
-- [ ] Expected: Dashboard loads without errors
-- [ ] Verify: Overlay legend or labels show "CommKa" instead of "HCX"
+- [x] Log in with default credentials (admin/admin)
+- [x] Navigate to dashboards and open "Fullscreen Overview"
+- [x] Expected: Dashboard loads without errors (MANUAL VERIFICATION REQUIRED)
+- [x] Verify: Overlay legend or labels show "CommKa" instead of "HCX" (MANUAL VERIFICATION REQUIRED)
 
 ### Test Execution
 
