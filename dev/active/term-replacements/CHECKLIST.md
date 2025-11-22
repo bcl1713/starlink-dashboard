@@ -156,17 +156,17 @@
 
 #### Update kmz_importer.py
 
-- [ ] Open `backend/starlink-location/app/satellites/kmz_importer.py`
-- [ ] Find and replace function name: `load_hcx_coverage()` → `load_commka_coverage()`
-- [ ] Find and replace: `HCX.kmz` → `CommKa.kmz`
-- [ ] Find and replace: `hcx_` variable prefix → `commka_`
-- [ ] Find and replace: `"HCX"` → `"CommKa"` (in comments, strings, docstrings)
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/app/satellites/kmz_importer.py`
+- [x] Find and replace function name: `load_hcx_coverage()` → `load_commka_coverage()`
+- [x] Find and replace: `HCX.kmz` → `CommKa.kmz`
+- [x] Find and replace: `hcx_` variable prefix → `commka_`
+- [x] Find and replace: `"HCX"` → `"CommKa"` (in comments, strings, docstrings)
+- [x] Save file
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/app/satellites/kmz_importer.py
   ```
-- [ ] Expected: No output
+- [x] Expected: No output
 
 #### Update timeline_service.py
 
