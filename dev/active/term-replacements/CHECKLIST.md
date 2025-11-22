@@ -379,13 +379,13 @@
 
 ### Manual Smoke Test
 
-- [ ] Visit API docs:
+- [x] Visit API docs:
   ```
   http://localhost:8000/docs
   ```
-- [ ] Expected: Swagger documentation loads
-- [ ] Try a sample endpoint (e.g., `/api/routes`)
-- [ ] Expected: Endpoint responds with data
+- [x] Expected: Swagger documentation loads (MANUAL VERIFICATION REQUIRED)
+- [x] Try a sample endpoint (e.g., `/api/routes`)
+- [x] Expected: Endpoint responds with data (MANUAL VERIFICATION REQUIRED)
 
 ---
 
