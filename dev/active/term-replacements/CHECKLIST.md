@@ -77,16 +77,16 @@
 
 ### Update test_satellite_geometry.py
 
-- [ ] Open `backend/starlink-location/tests/unit/test_satellite_geometry.py`
-- [ ] Search for all WGS references in test data (should find ~6)
-- [ ] Replace satellite name references: `WGS` → `X-Band` (but NOT `WGS84` constants)
-- [ ] Example: Change `"WGS-X"` test cases to `"X-Band-X"`
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/tests/unit/test_satellite_geometry.py`
+- [x] Search for all WGS references in test data (found 6)
+- [x] Replace satellite name references: `WGS` → `X-Band` (but NOT `WGS84` constants)
+- [x] Example: Change `"WGS-X"` test cases to `"X-Band-X"` (NONE FOUND - only WGS84 constants present)
+- [x] Save file (no changes required)
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/tests/unit/test_satellite_geometry.py
   ```
-- [ ] Expected: No output
+- [x] Expected: No output
 
 ### Update Documentation Files
 
