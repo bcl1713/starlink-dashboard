@@ -184,15 +184,15 @@
 
 #### Update exporter.py
 
-- [ ] Open `backend/starlink-location/app/mission/exporter.py`
-- [ ] Find the display mapping dictionary (contains `Transport.KA: "HCX"`)
-- [ ] Replace: `Transport.KA: "HCX"` → `Transport.KA: "CommKa"`
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/app/mission/exporter.py`
+- [x] Find the display mapping dictionary (contains `Transport.KA: "HCX"`)
+- [x] Replace: `Transport.KA: "HCX"` → `Transport.KA: "CommKa"`
+- [x] Save file
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/app/mission/exporter.py
   ```
-- [ ] Expected: No output
+- [x] Expected: No output
 
 #### Update catalog.py
 
