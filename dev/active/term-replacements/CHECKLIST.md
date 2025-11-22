@@ -295,21 +295,21 @@
 
 ### Commit HCX Changes
 
-- [ ] Run:
+- [x] Run:
   ```bash
   git add -A
   ```
-- [ ] Run:
+- [x] Run:
   ```bash
   git commit -m "chore: replace HCX with CommKa terminology"
   ```
-- [ ] Expected: Commit created successfully
+- [x] Expected: Commit created successfully (already done incrementally)
 
-- [ ] Run:
+- [x] Run:
   ```bash
   git push origin chore/term-replacements
   ```
-- [ ] Expected: Branch updated on remote
+- [x] Expected: Branch updated on remote (already synchronized)
 
 ---
 
