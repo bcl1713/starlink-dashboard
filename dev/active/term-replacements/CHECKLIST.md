@@ -142,17 +142,17 @@
 
 #### Update main.py
 
-- [ ] Open `backend/starlink-location/main.py`
-- [ ] Find and replace: `load_hcx_coverage` → `load_commka_coverage`
-- [ ] Find and replace: `"HCX"` → `"CommKa"` (display strings)
-- [ ] Find and replace: `hcx_` variable prefix → `commka_` (all occurrences)
-- [ ] Find and replace: `HCX coverage` → `CommKa coverage` (in comments/logs)
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/main.py`
+- [x] Find and replace: `load_hcx_coverage` → `load_commka_coverage`
+- [x] Find and replace: `"HCX"` → `"CommKa"` (display strings)
+- [x] Find and replace: `hcx_` variable prefix → `commka_` (all occurrences)
+- [x] Find and replace: `HCX coverage` → `CommKa coverage` (in comments/logs)
+- [x] Save file
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/main.py
   ```
-- [ ] Expected: No output
+- [x] Expected: No output
 
 #### Update kmz_importer.py
 

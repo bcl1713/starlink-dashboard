@@ -183,31 +183,31 @@ async def startup_event():
             )
             raise
 
-        # Initialize HCX coverage for Grafana static file serving
-        logger.info_json("Initializing HCX satellite coverage")
+        # Initialize CommKa coverage for Grafana static file serving
+        logger.info_json("Initializing CommKa satellite coverage")
         try:
-            from app.satellites.kmz_importer import load_hcx_coverage
-            hcx_kmz = Path("app/satellites/assets/HCX.kmz")
+            from app.satellites.kmz_importer import load_commka_coverage
+            commka_kmz = Path("app/satellites/assets/CommKa.kmz")
             sat_coverage_dir = Path("data/sat_coverage")
             sat_coverage_dir.mkdir(parents=True, exist_ok=True)
 
-            if hcx_kmz.exists():
-                result = load_hcx_coverage(hcx_kmz, sat_coverage_dir)
+            if commka_kmz.exists():
+                result = load_commka_coverage(commka_kmz, sat_coverage_dir)
                 if result:
                     logger.info_json(
-                        "HCX coverage initialized for Grafana overlay",
+                        "CommKa coverage initialized for Grafana overlay",
                         extra_fields={"geojson_path": str(result)}
                     )
                 else:
-                    logger.warning_json("Failed to convert HCX KMZ to GeoJSON")
+                    logger.warning_json("Failed to convert CommKa KMZ to GeoJSON")
             else:
                 logger.warning_json(
-                    "HCX KMZ file not found",
-                    extra_fields={"expected_path": str(hcx_kmz)}
+                    "CommKa KMZ file not found",
+                    extra_fields={"expected_path": str(commka_kmz)}
                 )
         except Exception as e:
             logger.warning_json(
-                "Failed to initialize HCX coverage",
+                "Failed to initialize CommKa coverage",
                 extra_fields={"error": str(e)},
                 exc_info=True
             )
@@ -400,8 +400,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount data/sat_coverage directory for satellite coverage overlays (Ka/HCX GeoJSON)
-# This enables Grafana to access coverage footprints via HTTP at /data/sat_coverage/hcx.geojson
+# Mount data/sat_coverage directory for satellite coverage overlays (Ka/CommKa GeoJSON)
+# This enables Grafana to access coverage footprints via HTTP at /data/sat_coverage/commka.geojson
 # instead of requiring direct filesystem access across Docker container boundaries
 sat_coverage_dir = Path("data/sat_coverage")
 sat_coverage_dir.mkdir(parents=True, exist_ok=True)
