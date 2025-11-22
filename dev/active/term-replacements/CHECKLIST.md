@@ -90,10 +90,10 @@
 
 ### Update Documentation Files
 
-- [ ] Open `dev/completed/mission-comm-planning/mission-comm-planning-context.md`
-- [ ] Find and replace: `WGS-7→WGS-6` → `X-Band-7→X-Band-6`
-- [ ] Find and replace: `WGS-` → `X-Band-` (in satellite references only)
-- [ ] Save file
+- [x] Open `dev/completed/mission-comm-planning/mission-comm-planning-context.md`
+- [x] Find and replace: `WGS-7→WGS-6` → `X-Band-7→X-Band-6`
+- [x] Find and replace: `WGS-` → `X-Band-` (in satellite references only)
+- [x] Save file
 
 - [ ] Open `dev/completed/mission-comm-planning/STATUS.md`
 - [ ] Find and replace all WGS satellite references with X-Band

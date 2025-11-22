@@ -36,10 +36,13 @@ transition points).
 - Test fixtures now isolate mission storage under `/tmp/test_data/missions`, eliminating leftover JSON files that previously broke first-run integration tests.
 
 ### Completed (Latest Session Enhancements)
-- `backend/starlink-location/app/mission/timeline_service.py` now performs automatic HCX coverage and X/AAR POI synchronization whenever a mission timeline is recomputed (including the silent recomputes triggered immediately after mission saves). Mission-generated POIs share the `mission-event` category and use concise multi-line labels (`HCX\nExit POR`, `X-Band\nWGS-7→WGS-6`, `AAR\nStart/End`).
+- `backend/starlink-location/app/mission/timeline_service.py` now performs automatic HCX coverage and X/AAR POI synchronization whenever a mission timeline is recomputed (including the silent recomputes triggered immediately after mission saves). Mission-generated POIs share the `mission-event` category and use concise multi-line labels (`HCX\nExit POR`, `X-Band\nX-Band-7→X-Band-6`, `AAR\nStart/End`).
 - Ka coverage gap detection became International Date Line aware, preventing false POR outages when polygons wrap at ±180°.
 - Mission planner save workflow (`app/api/ui.py`) now triggers a backend recompute + POI reload, so planners see updated HCX/X-Band markers without clicking "Recompute Timeline".
 - `/api/pois` filtering prefers the latest (or active) mission per route, hiding stale mission-event POIs from earlier drafts.
+
+### Phase 2: Term Replacements (WGS → X-Band)
+- Documentation terminology standardized: `WGS-7→WGS-6` → `X-Band-7→X-Band-6` in mission-comm-planning-context.md, ensuring consistent satellite band naming across all dev documentation.
 
 ### In Progress / Planned
 - Grafana mission timeline panels + alert rules (Phase 4) still pending now that exporters/APIs/POIs are aligned.
