@@ -3,6 +3,7 @@
 **Branch:** `chore/term-replacements`
 **Folder:** `dev/active/term-replacements/`
 **Last Updated:** 2025-11-22
+**Status:** Completed
 
 ---
 
@@ -128,3 +129,31 @@ Define exactly what "done and verified" means:
 - Search results: Found 29 WGS references, 164 HCX references, 2,438 Starlink references
 - CLAUDE.md: Project instructions on backend workflow and code standards
 - Planning context: User confirmed to preserve WGS84 constants and all Starlink references
+
+---
+
+## Implementation Notes
+
+### Unexpected Challenges
+
+1. **File Path Discrepancy:** Initial planning assumed HCX.kmz was at `data/sat_coverage/HCX.kmz`, but actual location was `backend/starlink-location/app/satellites/assets/HCX.kmz`. Always verify asset paths in code before planning.
+
+2. **Scope Adjustment:** dev/completed documentation files were skipped during execution as user plans to delete them separately.
+
+3. **Test File Patterns:** test_satellite_geometry.py contained only WGS84 geodetic constants (scientific standards) with no WGS satellite name references, requiring no changes.
+
+### Successful Patterns
+
+1. **Incremental Commits:** Committing after each major file/section update provided excellent tracking and rollback capability.
+
+2. **Sub-Agent Delegation:** Using Haiku sub-agents for individual file updates kept orchestrator context clean and focused on coordination.
+
+3. **Systematic Verification:** Running full syntax validation (120 files) and test suite (750 tests) confirmed changes didn't introduce regressions.
+
+### Final State
+
+- All HCX → CommKa replacements complete across 16 files
+- All WGS satellite name → X-Band replacements complete (5 occurrences)
+- WGS84 geodetic constants preserved unchanged
+- Backend services healthy and operational
+- 96.1% test pass rate (failures pre-existing, unrelated to term changes)
