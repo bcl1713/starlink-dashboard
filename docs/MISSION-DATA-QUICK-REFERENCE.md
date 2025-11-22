@@ -79,7 +79,7 @@ route_aware_status: str          # "ahead_on_route" | "already_passed" | "not_on
 | Enum | Value | Display Name |
 |------|-------|--------------|
 | `Transport.X` | `"X"` | `"X-Band"` |
-| `Transport.KA` | `"Ka"` | `"HCX"` |
+| `Transport.KA` | `"Ka"` | `"CommKa"` |
 | `Transport.KU` | `"Ku"` | `"StarShield"` |
 
 ### Flight Status
@@ -106,7 +106,7 @@ _compose_time_block(dt, start)    # → "UTC\nEastern\nT+offset"
 ### Data Processing
 ```python
 _format_seconds_hms(seconds)      # → "HH:MM:SS"
-_serialize_transport_list(transports)  # → "X-Band, HCX, StarShield"
+_serialize_transport_list(transports)  # → "X-Band, CommKa, StarShield"
 _segment_rows(timeline, mission)  # → DataFrame with all segment data
 _segment_at_time(timeline, ts)    # → TimelineSegment | None
 _segment_is_x_ku_warning(segment) # → bool (special warning case)
@@ -116,14 +116,14 @@ _segment_is_x_ku_warning(segment) # → bool (special warning case)
 ```python
 TRANSPORT_DISPLAY = {
     Transport.X: "X-Band",
-    Transport.KA: "HCX",
+    Transport.KA: "CommKa",
     Transport.KU: "StarShield",
 }
 
 LIGHT_YELLOW = colors.Color(1.0, 1.0, 0.85)    # Degraded
 LIGHT_RED = colors.Color(1.0, 0.85, 0.85)      # Critical
 
-STATE_COLUMNS = ["X-Band", "HCX", "StarShield"]
+STATE_COLUMNS = ["X-Band", "CommKa", "StarShield"]
 ```
 
 ---
@@ -280,6 +280,6 @@ For chart visualization:
 1. Create timeline axis from `mission_start` to final segment end
 2. For each segment, draw bar: `start_time` to `end_time`, colored by status
 3. Add advisory markers at their timestamps
-4. Stack transport states (X-Band, HCX, StarShield) for degraded/critical
+4. Stack transport states (X-Band, CommKa, StarShield) for degraded/critical
 5. Display statistics summary above chart
 

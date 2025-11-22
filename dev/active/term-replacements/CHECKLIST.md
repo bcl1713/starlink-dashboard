@@ -253,9 +253,9 @@
   - [x] Find and replace all HCX references with CommKa (found 2)
   - [x] Save file
 
-- [ ] Open `docs/MISSION-DATA-QUICK-REFERENCE.md`
-  - [ ] Find and replace: `HCX` → `CommKa` (~5 occurrences)
-  - [ ] Save file
+- [x] Open `docs/MISSION-DATA-QUICK-REFERENCE.md`
+  - [x] Find and replace: `HCX` → `CommKa` (found 5 occurrences)
+  - [x] Save file
 
 - [ ] Open `docs/MISSION-DATA-STRUCTURES.md`
   - [ ] Find and replace: `HCX` → `CommKa` (~5 occurrences)
