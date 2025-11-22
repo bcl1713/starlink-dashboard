@@ -248,10 +248,10 @@
 
 ### Update Documentation Files
 
-- [ ] Open `docs/MISSION-PLANNING-GUIDE.md`
-  - [ ] Find and replace: `Ka (HCX)` → `Ka (CommKa)`
-  - [ ] Find and replace all HCX references with CommKa
-  - [ ] Save file
+- [x] Open `docs/MISSION-PLANNING-GUIDE.md`
+  - [x] Find and replace: `Ka (HCX)` → `Ka (CommKa)`
+  - [x] Find and replace all HCX references with CommKa (found 2)
+  - [x] Save file
 
 - [ ] Open `docs/MISSION-DATA-QUICK-REFERENCE.md`
   - [ ] Find and replace: `HCX` → `CommKa` (~5 occurrences)
