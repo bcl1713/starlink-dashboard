@@ -69,7 +69,7 @@ class CoverageSampler:
         """Initialize sampler with optional coverage data.
 
         Args:
-            coverage_geojson_path: Path to HCX or custom coverage GeoJSON
+            coverage_geojson_path: Path to CommKa or custom coverage GeoJSON
         """
         self.coverage_data = None
         self.satellite_polygons = {}  # satellite_id -> list of polygon rings

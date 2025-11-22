@@ -207,14 +207,14 @@
 
 #### Update coverage.py
 
-- [ ] Open `backend/starlink-location/app/satellites/coverage.py`
-- [ ] Find and replace: `HCX` → `CommKa` (in comments)
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/app/satellites/coverage.py`
+- [x] Find and replace: `HCX` → `CommKa` (in comments)
+- [x] Save file
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/app/satellites/coverage.py
   ```
-- [ ] Expected: No output
+- [x] Expected: No output
 
 #### Update __init__.py
 
