@@ -63,17 +63,17 @@
 
 ### Update test_poi_manager.py
 
-- [ ] Open `backend/starlink-location/tests/unit/test_poi_manager.py`
-- [ ] Find and replace: `"WGS-7"` → `"X-Band-7"`
-- [ ] Find and replace: `"WGS-8"` → `"X-Band-8"`
-- [ ] Find and replace: `WGS-7` → `X-Band-7` (unquoted references)
-- [ ] Find and replace: `WGS-8` → `X-Band-8` (unquoted references)
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/tests/unit/test_poi_manager.py`
+- [x] Find and replace: `"WGS-7"` → `"X-Band-7"`
+- [x] Find and replace: `"WGS-8"` → `"X-Band-8"`
+- [x] Find and replace: `WGS-7` → `X-Band-7` (unquoted references)
+- [x] Find and replace: `WGS-8` → `X-Band-8` (unquoted references)
+- [x] Save file
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/tests/unit/test_poi_manager.py
   ```
-- [ ] Expected: No output (no errors)
+- [x] Expected: No output (no errors)
 
 ### Update test_satellite_geometry.py
 

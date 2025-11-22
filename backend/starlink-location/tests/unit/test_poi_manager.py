@@ -216,20 +216,20 @@ class TestPOIManager:
     def test_delete_scoped_pois_by_names(self, poi_manager):
         """Delete mission/route scoped POIs matching satellite names."""
         poi_manager.create_poi(
-            POICreate(name="WGS-7", latitude=1.0, longitude=1.0, mission_id="mission-1")
+            POICreate(name="X-Band-7", latitude=1.0, longitude=1.0, mission_id="mission-1")
         )
         poi_manager.create_poi(
-            POICreate(name="WGS-8", latitude=2.0, longitude=2.0, route_id="route-1")
+            POICreate(name="X-Band-8", latitude=2.0, longitude=2.0, route_id="route-1")
         )
         poi_manager.create_poi(
-            POICreate(name="WGS-7", latitude=3.0, longitude=3.0)  # global
+            POICreate(name="X-Band-7", latitude=3.0, longitude=3.0)  # global
         )
 
-        removed = poi_manager.delete_scoped_pois_by_names({"WGS-7", "WGS-8"})
+        removed = poi_manager.delete_scoped_pois_by_names({"X-Band-7", "X-Band-8"})
         assert removed == 2
         remaining = poi_manager.list_pois()
         assert len(remaining) == 1
-        assert remaining[0].name == "WGS-7"
+        assert remaining[0].name == "X-Band-7"
         assert remaining[0].mission_id is None and remaining[0].route_id is None
 
     def test_delete_mission_pois_by_category(self, poi_manager):
