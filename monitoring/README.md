@@ -46,25 +46,25 @@ Grafana visualizes Prometheus metrics with interactive dashboards.
 
 ## Mission Communication Planning Features
 
-### Satellite Coverage Overlay (Ka/HCX)
+### Satellite Coverage Overlay (Ka/CommKa)
 
 The mission communication planning feature adds satellite coverage overlays to Grafana dashboards.
 
 #### Backend Setup
 
 **What it does:**
-- Converts HCX KMZ (Ka satellite coverage) to GeoJSON on startup
+- Converts CommKa KMZ (Ka satellite coverage) to GeoJSON on startup
 - Serves coverage data via HTTP static files endpoint
 - Enables Grafana to fetch coverage polygons across Docker containers
 
-**File location:** `/data/sat_coverage/hcx.geojson`
+**File location:** `/data/sat_coverage/commka.geojson`
 
-**Endpoint:** `http://localhost:8000/data/sat_coverage/hcx.geojson`
+**Endpoint:** `http://localhost:8000/data/sat_coverage/commka.geojson`
 
 **Backend code:** `backend/starlink-location/main.py`
 - StaticFiles mount: Exposes `/data/sat_coverage/` directory
-- HCX initialization: Converts HCX.kmz → GeoJSON during startup
-- See logs: "HCX coverage loaded: 4 regions"
+- CommKa initialization: Converts CommKa.kmz → GeoJSON during startup
+- See logs: "CommKa coverage loaded: 4 regions"
 
 #### Grafana Dashboard Configuration
 
@@ -74,7 +74,7 @@ The mission communication planning feature adds satellite coverage overlays to G
 
 1. **Panel Type:** Geomap
 2. **Data Source:** URL endpoint
-3. **URL:** `http://localhost:8000/data/sat_coverage/hcx.geojson`
+3. **URL:** `http://localhost:8000/data/sat_coverage/commka.geojson`
 4. **Layer Type:** GeoJSON overlay
 5. **Styling:**
    - Fill opacity: 20-30% (semi-transparent)
@@ -82,7 +82,7 @@ The mission communication planning feature adds satellite coverage overlays to G
      - AOR (Atlantic Ocean Region): Light green
      - POR (Pacific Ocean Region): Light blue
      - IOR (Indian Ocean Region): Light orange
-6. **Display Name:** "Ka Satellite Coverage (HCX)"
+6. **Display Name:** "Ka Satellite Coverage (CommKa)"
 
 **Alternative: If using Grafana plugin for KMZ/polygon visualization**
 - Install: `grafana-geomap-panel` (usually pre-installed)
@@ -93,13 +93,13 @@ The mission communication planning feature adds satellite coverage overlays to G
 
 **1. Backend endpoint is accessible:**
 ```bash
-curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.type'
+curl http://localhost:8000/data/sat_coverage/commka.geojson | jq '.type'
 # Expected output: "FeatureCollection"
 ```
 
 **2. GeoJSON has valid coverage data:**
 ```bash
-curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.features | length'
+curl http://localhost:8000/data/sat_coverage/commka.geojson | jq '.features | length'
 # Expected output: 4 (four Ka regions)
 ```
 
@@ -112,8 +112,8 @@ curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.features | lengt
 #### Common Issues & Troubleshooting
 
 **Issue: Coverage polygons not visible on map**
-- ✓ Verify backend endpoint returns 200 OK: `curl -I http://localhost:8000/data/sat_coverage/hcx.geojson`
-- ✓ Check Grafana panel data source URL is exactly: `http://localhost:8000/data/sat_coverage/hcx.geojson`
+- ✓ Verify backend endpoint returns 200 OK: `curl -I http://localhost:8000/data/sat_coverage/commka.geojson`
+- ✓ Check Grafana panel data source URL is exactly: `http://localhost:8000/data/sat_coverage/commka.geojson`
 - ✓ Verify panel layer type is "GeoJSON overlay" (not "Points" or other)
 - ✓ Check browser console for CORS errors (should be none - CORS enabled by default)
 - ✓ Reload Grafana dashboard (Ctrl+R or Cmd+R)
@@ -124,11 +124,11 @@ curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.features | lengt
 
 **Issue: Endpoint returns 404 "Not Found"**
 - ✓ Verify Docker container is running: `docker compose ps`
-- ✓ Check backend startup logs: `docker compose logs starlink-location | grep -i hcx`
-- ✓ Verify HCX.kmz file exists: `docker exec starlink-location ls app/satellites/assets/HCX.kmz`
+- ✓ Check backend startup logs: `docker compose logs starlink-location | grep -i commka`
+- ✓ Verify CommKa.kmz file exists: `docker exec starlink-location ls app/satellites/assets/CommKa.kmz`
 - ✓ Check file was converted: `docker exec starlink-location ls -lah /app/data/sat_coverage/`
 
-**Issue: "HCX coverage loaded: 0 regions" in logs**
+**Issue: "CommKa coverage loaded: 0 regions" in logs**
 - KMZ conversion failed; check for errors in logs
 - Try rebuilding: `docker compose down && docker compose build --no-cache && docker compose up -d`
 
@@ -248,7 +248,7 @@ The Fullscreen Overview dashboard contains multiple visualization layers for mis
 
 **Configuration:**
 - Data source: URL endpoint
-- URL: `http://localhost:8000/data/sat_coverage/hcx.geojson`
+- URL: `http://localhost:8000/data/sat_coverage/commka.geojson`
 - Layer type: GeoJSON overlay
 - Styling: Region-based colors with opacity
 
@@ -401,8 +401,8 @@ PROMETHEUS_RETENTION=30d  # Instead of 1y
 - GeoJSON loads but polygons don't appear
 
 **Diagnosis:**
-1. Check endpoint: `curl -I http://localhost:8000/data/sat_coverage/hcx.geojson`
-2. Verify GeoJSON validity: `curl http://localhost:8000/data/sat_coverage/hcx.geojson | jq '.type'`
+1. Check endpoint: `curl -I http://localhost:8000/data/sat_coverage/commka.geojson`
+2. Verify GeoJSON validity: `curl http://localhost:8000/data/sat_coverage/commka.geojson | jq '.type'`
 3. Check panel configuration in Grafana
 
 **Solutions:**
@@ -410,9 +410,9 @@ PROMETHEUS_RETENTION=30d  # Instead of 1y
   ```bash
   docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- If GeoJSON is invalid: Check HCX.kmz conversion logs
+- If GeoJSON is invalid: Check CommKa.kmz conversion logs
   ```bash
-  docker compose logs starlink-location | grep -i "hcx\|coverage"
+  docker compose logs starlink-location | grep -i "commka\|coverage"
   ```
 - Verify panel type is "Geomap" with GeoJSON layer
 - Check fill opacity is not set to 0%

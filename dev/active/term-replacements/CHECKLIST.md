@@ -238,13 +238,13 @@
 
 #### Update monitoring README
 
-- [ ] Open `monitoring/README.md`
-- [ ] Find and replace all HCX references with CommKa (~20 occurrences)
-- [ ] Examples:
+- [x] Open `monitoring/README.md`
+- [x] Find and replace all HCX references with CommKa (found 18 occurrences)
+- [x] Examples:
   - `HCX.kmz` → `CommKa.kmz`
   - `hcx.geojson` → `commka.geojson`
   - `HCX coverage` → `CommKa coverage`
-- [ ] Save file
+- [x] Save file
 
 ### Update Documentation Files
 
