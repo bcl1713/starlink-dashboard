@@ -170,17 +170,17 @@
 
 #### Update timeline_service.py
 
-- [ ] Open `backend/starlink-location/app/mission/timeline_service.py`
-- [ ] Find all occurrences of `"HCX"` in label formatting (should find ~17)
-- [ ] Replace format strings: `"HCX\n..."` → `"CommKa\n..."`
-- [ ] Replace display constants referencing HCX → CommKa
-- [ ] Find and replace: `hcx_` variables → `commka_`
-- [ ] Save file
-- [ ] Run syntax check:
+- [x] Open `backend/starlink-location/app/mission/timeline_service.py`
+- [x] Find all occurrences of `"HCX"` in label formatting (found 17)
+- [x] Replace format strings: `"HCX\n..."` → `"CommKa\n..."`
+- [x] Replace display constants referencing HCX → CommKa
+- [x] Find and replace: `hcx_` variables → `commka_`
+- [x] Save file
+- [x] Run syntax check:
   ```bash
   python -m py_compile backend/starlink-location/app/mission/timeline_service.py
   ```
-- [ ] Expected: No output
+- [x] Expected: No output
 
 #### Update exporter.py
 

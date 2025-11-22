@@ -24,7 +24,7 @@ from app.services.route_manager import RouteManager
 from app.services.route_eta_calculator import RouteETACalculator
 from app.simulation.route import calculate_bearing
 from app.satellites.coverage import CoverageSampler
-from app.satellites.kmz_importer import load_hcx_coverage
+from app.satellites.kmz_importer import load_commka_coverage
 from app.satellites.rules import EventType, MissionEvent, RuleEngine
 from app.satellites.catalog import get_satellite_catalog
 from app.mission.models import KaOutage, KuOutageOverride
@@ -42,7 +42,7 @@ KA_POI_NAME_PREFIXES = (
     "Ka Coverage Entry",
     "Ka Transition",
     "Ka Swap",
-    "HCX",
+    "CommKa",
 )
 X_AAR_POI_PREFIXES = (
     "X-Band",
@@ -53,7 +53,7 @@ KA_POI_NAME_PREFIXES = (
     "Ka Coverage Entry",
     "Ka Transition",
     "Ka Swap",
-    "HCX",
+    "CommKa",
 )
 
 _COVERAGE_SAMPLER: CoverageSampler | None = None
@@ -1145,7 +1145,7 @@ def _sync_ka_pois(
         if gap.start:
             create_poi(
                 POICreate(
-                    name=_format_hcx_exit_entry("Exit", gap.lost_satellite),
+                    name=_format_commka_exit_entry("Exit", gap.lost_satellite),
                     latitude=gap.start.latitude,
                     longitude=gap.start.longitude,
                     icon="satellite",
@@ -1158,7 +1158,7 @@ def _sync_ka_pois(
         if gap.end:
             create_poi(
                 POICreate(
-                    name=_format_hcx_exit_entry("Enter", gap.regained_satellite),
+                    name=_format_commka_exit_entry("Enter", gap.regained_satellite),
                     latitude=gap.end.latitude,
                     longitude=gap.end.longitude,
                     icon="satellite",
@@ -1173,7 +1173,7 @@ def _sync_ka_pois(
         midpoint = swap.midpoint
         create_poi(
             POICreate(
-                name=_format_hcx_transition_label(
+                name=_format_commka_transition_label(
                     swap.from_satellite, swap.to_satellite
                 ),
                 latitude=midpoint.latitude,
@@ -1384,17 +1384,17 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
     if _COVERAGE_SAMPLER is not None:
         return _COVERAGE_SAMPLER
 
-    coverage_path = Path("data/sat_coverage/hcx.geojson")
+    coverage_path = Path("data/sat_coverage/commka.geojson")
     if not coverage_path.exists():
         kmz_candidates = [
-            Path("data/sat_coverage/HCX.kmz"),
-            APP_DIR / "satellites" / "assets" / "HCX.kmz",
-            REPO_ROOT / "dev" / "active" / "mission-comm-planning" / "HCX.kmz",
+            Path("data/sat_coverage/CommKa.kmz"),
+            APP_DIR / "satellites" / "assets" / "CommKa.kmz",
+            REPO_ROOT / "dev" / "active" / "mission-comm-planning" / "CommKa.kmz",
         ]
         for kmz_path in kmz_candidates:
             if kmz_path.exists():
                 coverage_path.parent.mkdir(parents=True, exist_ok=True)
-                load_hcx_coverage(kmz_path, coverage_path.parent)
+                load_commka_coverage(kmz_path, coverage_path.parent)
                 break
 
     if coverage_path.exists():
@@ -1403,19 +1403,19 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
         _COVERAGE_SAMPLER = None
 
     return _COVERAGE_SAMPLER
-def _format_hcx_exit_entry(kind: str, satellite: str | None) -> str:
+def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
     label = satellite or "Unknown"
-    return f"HCX\n{kind} {label}"
+    return f"CommKa\n{kind} {label}"
 
 
-def _format_hcx_transition_label(
+def _format_commka_transition_label(
     from_satellite: str | None, to_satellite: str | None
 ) -> str:
     if from_satellite and to_satellite:
-        return f"HCX\n{from_satellite}→{to_satellite}"
+        return f"CommKa\n{from_satellite}→{to_satellite}"
     if to_satellite:
-        return f"HCX\n→{to_satellite}"
-    return "HCX\nTransition"
+        return f"CommKa\n→{to_satellite}"
+    return "CommKa\nTransition"
 
 
 def _format_x_transition_label(
