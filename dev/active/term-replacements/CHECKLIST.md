@@ -231,10 +231,10 @@
 
 #### Update Grafana Dashboard JSON
 
-- [ ] Open `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-- [ ] Find and replace: `hcx.geojson` → `commka.geojson`
-- [ ] Find and replace: `"HCX"` → `"CommKa"` (in display labels/titles)
-- [ ] Save file
+- [x] Open `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
+- [x] Find and replace: `hcx.geojson` → `commka.geojson`
+- [x] Find and replace: `"HCX"` → `"CommKa"` (in display labels/titles)
+- [x] Save file
 
 #### Update monitoring README
 
