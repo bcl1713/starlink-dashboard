@@ -6,7 +6,7 @@ SAMPLE_KML = """
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
     <Placemark>
-      <name>BOEING_HCX PORB</name>
+      <name>BOEING_CommKa PORB</name>
       <Polygon>
         <outerBoundaryIs>
           <LinearRing>
@@ -22,7 +22,7 @@ SAMPLE_KML = """
 """
 
 
-def test_extract_polygon_accepts_prefixed_hcx_names():
+def test_extract_polygon_accepts_prefixed_commka_names():
     root = ET.fromstring(SAMPLE_KML)
     coords = kmz_importer.extract_polygon_from_kml(root, "PORB")
     assert coords is not None

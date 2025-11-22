@@ -276,11 +276,11 @@
     python -m py_compile backend/starlink-location/tests/unit/test_mission_exporter.py
     ```
 
-- [ ] Open `backend/starlink-location/tests/unit/test_kmz_importer.py`
-  - [ ] Find and replace: `load_hcx_coverage` → `load_commka_coverage`
-  - [ ] Find and replace: `HCX.kmz` → `CommKa.kmz`
-  - [ ] Save file
-  - [ ] Run syntax check:
+- [x] Open `backend/starlink-location/tests/unit/test_kmz_importer.py`
+  - [x] Find and replace: `load_hcx_coverage` → `load_commka_coverage` (not present)
+  - [x] Find and replace: `HCX.kmz` → `CommKa.kmz` (found HCX in test data, 2 replacements)
+  - [x] Save file
+  - [x] Run syntax check:
     ```bash
     python -m py_compile backend/starlink-location/tests/unit/test_kmz_importer.py
     ```
