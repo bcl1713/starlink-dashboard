@@ -3,130 +3,99 @@
 **Branch:** `feat/mission-leg-planning-ui`
 **Folder:** `dev/active/mission-leg-planning-ui/`
 **Generated:** 2025-11-23
-**Status:** Phases 1-4 Complete, Phase 5 Ready
+**Status:** Phase 5 Complete, Ready for Phase 6
 
 ---
 
 ## Overview
 
-This feature introduces a hierarchical mission planning system where a Mission is a container for multiple Mission Legs. The backend has been fully refactored (models, storage, v2 API with export endpoints), and a complete React+TypeScript frontend has been implemented with core mission CRUD functionality. The system now supports creating multi-leg missions through a web UI, with upcoming phases to add satellite transitions, AAR segments, and mission package export/import functionality.
+This feature introduces a hierarchical mission planning system where a Mission is a container for multiple Mission Legs. The backend has been fully refactored, a complete React+TypeScript frontend is operational, and satellite/AAR configuration UI with live map visualization is complete. Users can now create missions, configure satellite transitions (X-Band, Ka, Ku) and AAR segments through an intuitive tabbed interface with real-time map updates.
 
-**Why:** Real-world operations consist of multiple connected flight legs that form complete missions. The current system treats each leg as isolated, making complex mission planning fragmented and difficult to share between systems.
+**Why:** Real-world operations consist of multiple connected flight legs that form complete missions. This system enables proper mission lifecycle management with satellite communication planning and air-refueling configuration.
 
 ---
 
 ## Current Status
 
-- **Phase:** Phases 1-4 Complete (Backend + Frontend Core UI)
-- **Checklist completion:** ~40% (Phase 4 complete, Phases 5-8 ready)
-- **Progress:** Backend fully functional, frontend core components implemented, checklists for remaining phases created
+- **Phase:** Phases 1-5 Complete (Backend + Frontend + Configuration UI + Map)
+- **Checklist completion:** ~62% (Phase 5 complete, Phases 6-8 remaining)
+- **Progress:** Full satellite/AAR configuration UI operational with side-by-side map visualization
 
-### Major accomplishments this session:
+### Major accomplishments (Phases 1-5):
 
-✅ **Phase 1 - Backend Data Model Refactoring (COMPLETE)**
-1. Renamed `Mission` → `MissionLeg` throughout codebase
-2. Created new hierarchical `Mission` model with `legs: List[MissionLeg]`
-3. Implemented hierarchical storage functions (`save_mission_v2`, `load_mission_v2`)
-4. Updated all imports, type hints, and tests
-5. All tests passing
+✅ **Phase 1-4:** Backend refactoring, v2 API, React frontend, mission CRUD UI (see previous handoff)
 
-✅ **Phase 2 - Backend API Implementation (COMPLETE)**
-1. Created `routes_v2.py` with v2 missions API
-2. Implemented CRUD endpoints:
-   - POST `/api/v2/missions` - Create mission (201 Created)
-   - GET `/api/v2/missions` - List missions with pagination
-   - GET `/api/v2/missions/{id}` - Get mission by ID
-   - POST `/api/v2/missions/{id}/export` - Export as zip
-3. Created `package_exporter.py` with mission package export
-4. Registered v2 router in main.py
-5. Tested all endpoints successfully
+✅ **Phase 5 - Satellite & AAR Configuration UI (COMPLETE)**
+1. Created satellite configuration types (X-Band, Ka, Ku with proper data models)
+2. Created AAR segment types with waypoint selection
+3. Extended MissionLeg type with satellite_config and aar_config fields
+4. Built XBandConfig component (lat/lon coordinate input, transition table)
+5. Built KaOutageConfig component (datetime range selection)
+6. Built KuOutageConfig component (datetime range selection)
+7. Built AARSegmentEditor component (waypoint dropdown with smart filtering)
+8. Created LegDetailPage with tabbed configuration interface
+9. Integrated RouteMap component with side-by-side layout and live updates
+10. Added navigation flow: missions list → mission detail → leg detail
 
-✅ **Phase 3 - Frontend Project Setup (COMPLETE)**
-1. Initialized React 19 + TypeScript 5.9 + Vite 7 project
-2. Installed core dependencies:
-   - Routing: react-router-dom
-   - State: @tanstack/react-query, zustand
-   - Forms: react-hook-form, zod, @hookform/resolvers
-   - Maps: leaflet, react-leaflet
-   - HTTP: axios
-3. Installed & configured ShadCN/UI + Tailwind CSS v4
-4. Installed dev dependencies:
-   - Testing: vitest, @testing-library/react, @playwright/test
-   - Linting: ESLint with 350-line max-lines rule
-   - Formatting: Prettier
-5. Created SOLID-based folder structure
-6. Created multi-stage Dockerfile + nginx.conf
-7. Added mission-planner service to docker-compose.yml (port 5173:80)
+✅ **Navigation & Bug Fixes:**
+1. Added MissionDetailPage showing mission info and legs
+2. Fixed MissionDetailPage to use API instead of placeholder data
+3. Made mission cards clickable to navigate
+4. Full navigation flow operational
 
-✅ **Phase 4 - Core UI Components (COMPLETE)**
-1. Created API client service (`src/services/api-client.ts`)
-2. Defined TypeScript types for Mission and MissionLeg
-3. Implemented missions API service with CRUD functions
-4. Created React Query hooks (useMissions, useCreateMission, useDeleteMission)
-5. Installed ShadCN components (Button, Card, Dialog, Input, Label)
-6. Built MissionCard component with summary display
-7. Built MissionList component with loading/error states
-8. Built CreateMissionDialog component with form validation
-9. Set up routing with React Router
-10. Created MissionsPage connecting all components
-11. All Phase 4 tasks verified complete
-
-✅ **Planning Infrastructure (COMPLETE)**
-1. Created detailed CHECKLIST-PHASE-5.md (Satellite & AAR Configuration UI - 161 tasks)
-2. Created detailed CHECKLIST-PHASE-6.md (Export/Import UI & Integration - 95 tasks)
-3. Created detailed CHECKLIST-PHASE-7.md (Testing & Documentation - 102 tasks)
-4. Created detailed CHECKLIST-PHASE-8.md (Wrap-Up & PR - 64 tasks)
-5. All checklists follow junior-developer-friendly pattern with exact commands
+✅ **Configuration Refinements (based on backend API review):**
+1. X-Band transitions use lat/lon coordinates (not waypoint indices)
+2. AAR segments simplified to start/end waypoints only
+3. Ka/Ku outages use time frames (datetime pickers, not waypoint ranges)
+4. AAR end waypoint dropdown filters to only show points after start waypoint
+5. Map shows route + X-Band transition points with reactive updates
 
 ---
 
 ## Next Actions
 
-**Immediate next steps (Phase 5 - Satellite & AAR Configuration UI):**
+**Immediate next steps (Phase 6 - Export/Import UI & Integration):**
 
-Phase 5 involves building satellite transition configuration UI and AAR segment editors. All tasks are detailed in `CHECKLIST-PHASE-5.md`.
+Phase 6 involves building the mission package export/import UI. All tasks are detailed in `CHECKLIST-PHASE-6.md`.
 
-**To begin Phase 5:**
+**To begin Phase 6:**
 
-1. Start with task 5.1.1: Create satellite types
-   - File: `frontend/mission-planner/src/types/satellite.ts`
-   - See CHECKLIST-PHASE-5.md lines 28-57
+1. Review `CHECKLIST-PHASE-6.md` for complete task list
+2. Key tasks include:
+   - Build export dialog UI with format selection
+   - Build import drag-and-drop interface
+   - Integrate with backend `/api/v2/missions/{id}/export` endpoint
+   - Add progress indicators for export/import operations
+   - Implement validation and error handling for imports
+   - Test export → import roundtrip workflow
 
-2. Continue with remaining Phase 5 tasks in order:
-   - 5.2: Add AAR configuration types
-   - 5.3: Update MissionLeg type
-   - 5.4: Create X-Band configuration component
-   - 5.5: Create Ka outage configuration component
-   - 5.6: Create Ku/Starlink outage configuration component
-   - 5.7: Create AAR segment editor component
-   - 5.8: Create leg detail/editor page
-   - 5.9: Add map visualization (optional)
-   - 5.10: Test Phase 5 components
-   - 5.11: Commit Phase 5 changes
+3. After Phase 6, proceed to Phase 7 (Testing & Documentation)
 
-3. Use the `executing-plan-checklist` skill to orchestrate task execution
-
-**Reference:** See `dev/active/mission-leg-planning-ui/CHECKLIST-PHASE-5.md` for complete Phase 5 tasks.
+**Reference:** See `dev/active/mission-leg-planning-ui/CHECKLIST-PHASE-6.md` for complete Phase 6 tasks.
 
 ---
 
 ## Risks / Questions
 
+### Resolved:
+- ✅ Satellite configuration UX - Using appropriate inputs (lat/lon, datetime, dropdowns)
+- ✅ Map visualization - Leaflet integrated with side-by-side layout
+- ✅ AAR segment editor - Dropdown-based waypoint selection with smart filtering
+
 ### Active Risks:
-1. **350-line file limit** - Enforced via ESLint. Requires disciplined component decomposition.
-2. **Frontend performance with large missions** - 10+ legs with routes/POIs may need virtualization.
-3. **Docker build time** - Multi-stage frontend build may be slow.
+1. **Save/Cancel buttons** - Not yet implemented; leg configurations aren't persisted
+2. **Leg management** - No UI to add/remove legs from missions yet
+3. **350-line file limit** - Successfully maintained across all components
+4. **Frontend performance** - Not yet tested with large missions (10+ legs)
 
 ### Open Questions:
-- **Satellite configuration UX** - Best approach for waypoint-based transition editing?
-- **Map visualization library** - Leaflet is installed; confirm it meets all Phase 5 needs?
-- **AAR segment editor** - Should waypoint selection be dropdown or map-based click?
+- Should leg configuration save automatically or require explicit Save button click?
+- Where should leg management UI live (mission detail page or separate)?
 
 ### No Blockers:
-- All Phase 1-4 exit criteria met
-- Phase 5 entry criteria satisfied (core mission UI functional)
-- All dependencies installed and configured
-- Detailed checklists created for all remaining phases
+- All Phase 1-5 exit criteria met
+- Phase 6 entry criteria satisfied (all configuration UIs functional)
+- Backend export/import endpoints exist (basic implementation)
 
 ---
 
@@ -136,8 +105,7 @@ Phase 5 involves building satellite transition configuration UI and AAR segment 
 - PLAN.md: `dev/active/mission-leg-planning-ui/PLAN.md`
 - CONTEXT.md: `dev/active/mission-leg-planning-ui/CONTEXT.md`
 - CHECKLIST.md: `dev/active/mission-leg-planning-ui/CHECKLIST.md`
-- CHECKLIST-PHASE-4.md: (all tasks completed)
-- CHECKLIST-PHASE-5.md: (ready to execute)
+- CHECKLIST-PHASE-5.md: (all tasks completed)
 - CHECKLIST-PHASE-6.md: (ready to execute)
 - CHECKLIST-PHASE-7.md: (ready to execute)
 - CHECKLIST-PHASE-8.md: (ready to execute)
@@ -150,13 +118,18 @@ Phase 5 involves building satellite transition configuration UI and AAR segment 
 - Export: `backend/starlink-location/app/mission/package_exporter.py`
 
 **Key Code Files (Frontend):**
-- API Client: `frontend/mission-planner/src/services/api-client.ts`
-- Types: `frontend/mission-planner/src/types/mission.ts`
-- API Service: `frontend/mission-planner/src/services/missions.ts`
+- Types: `frontend/mission-planner/src/types/{mission,satellite,aar}.ts`
+- API: `frontend/mission-planner/src/services/missions.ts`
 - Hooks: `frontend/mission-planner/src/hooks/api/useMissions.ts`
-- Components: `frontend/mission-planner/src/components/missions/`
-- Pages: `frontend/mission-planner/src/pages/MissionsPage.tsx`
-- App: `frontend/mission-planner/src/App.tsx`
+- Components:
+  - Satellites: `frontend/mission-planner/src/components/satellites/`
+  - AAR: `frontend/mission-planner/src/components/aar/AARSegmentEditor.tsx`
+  - Map: `frontend/mission-planner/src/components/common/RouteMap.tsx`
+- Pages:
+  - `frontend/mission-planner/src/pages/MissionsPage.tsx`
+  - `frontend/mission-planner/src/pages/MissionDetailPage.tsx`
+  - `frontend/mission-planner/src/pages/LegDetailPage.tsx`
+- Routing: `frontend/mission-planner/src/App.tsx`
 
 **Docker:**
 - Frontend Dockerfile: `frontend/mission-planner/Dockerfile`
@@ -166,8 +139,8 @@ Phase 5 involves building satellite transition configuration UI and AAR segment 
 **Branch:**
 - Repo: starlink-dashboard-dev
 - Branch: `feat/mission-leg-planning-ui`
-- Latest commit: Phase 4 completion + Phase 5-8 checklists created
-- Total commits: 25+ (covering Phases 1-4)
+- Latest commit: Phase 5 complete with side-by-side map integration
+- Total commits: 40+ (covering Phases 1-5)
 
 **PR:** Not yet created (will be created in Phase 8)
 
@@ -177,9 +150,9 @@ Phase 5 involves building satellite transition configuration UI and AAR segment 
 
 **Quick Start:**
 1. Read this HANDOFF.md first
-2. Review CHECKLIST-PHASE-5.md for detailed Phase 5 tasks
-3. Run `executing-plan-checklist` skill to begin Phase 5 execution
-4. Or work independently through CHECKLIST-PHASE-5.md tasks
+2. Review CHECKLIST-PHASE-6.md for Phase 6 tasks
+3. Run `executing-plan-checklist` skill to begin Phase 6 execution
+4. Or work independently through CHECKLIST-PHASE-6.md tasks
 
 **Testing the current state:**
 ```bash
@@ -190,17 +163,23 @@ curl http://localhost:8000/api/v2/missions
 cd frontend/mission-planner
 npm run dev  # Should start on http://localhost:5173
 
-# Test mission creation in browser
-# Open http://localhost:5173/missions
-# Click "Create New Mission", fill form, verify it appears in list
+# Navigate through the app
+# 1. Open http://localhost:5173/missions
+# 2. Click on a mission card
+# 3. Click on a leg card (or create test data if no legs exist)
+# 4. Test all 4 configuration tabs:
+#    - X-Band: Add transitions with lat/lon
+#    - Ka Outages: Add time-based outages
+#    - Ku Outages: Add time-based outages
+#    - AAR Segments: Select start/end waypoints
+# 5. Watch map update in real-time on the right side
 ```
 
 **Expected Duration:**
-- Phase 5: 8-12 hours (satellite & AAR UI components)
 - Phase 6: 4-6 hours (export/import dialogs)
 - Phase 7: 6-8 hours (testing & documentation)
 - Phase 8: 2-3 hours (wrap-up & PR)
-- Total remaining: ~20-30 hours
+- Total remaining: ~12-17 hours
 
 **Tech Stack Summary:**
 - Backend: Python + FastAPI + Pydantic
