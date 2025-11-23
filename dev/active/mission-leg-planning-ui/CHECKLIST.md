@@ -13,16 +13,16 @@
 
 ## Initialization
 
-- [ ] Ensure you are on the correct branch:
-  - [ ] Run:
+- [x] Ensure you are on the correct branch:
+  - [x] Run:
     ```bash
     git branch
     ```
-  - [ ] Confirm that the current branch line is:
+  - [x] Confirm that the current branch line is:
     ```text
     * feat/mission-leg-planning-ui
     ```
-  - [ ] If you are on a different branch, switch with:
+  - [x] If you are on a different branch, switch with:
     ```bash
     git checkout feat/mission-leg-planning-ui
     ```
