@@ -358,15 +358,15 @@ outages, Ku outages) and AAR segment definition UI with map visualization.
 
 ### 5.8.2: Add route to App.tsx
 
-- [ ] Open `frontend/mission-planner/src/App.tsx`
-- [ ] Add route for leg detail page:
+- [x] Open `frontend/mission-planner/src/App.tsx`
+- [x] Add route for leg detail page:
 
   ```typescript
   <Route path="/missions/:missionId/legs/:legId" element={<LegDetailPage />} />
   ```
 
-- [ ] Save file
-- [ ] Expected: Leg detail page accessible via routing
+- [x] Save file
+- [x] Expected: Leg detail page accessible via routing
 
 ---
 
