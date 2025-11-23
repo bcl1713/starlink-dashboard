@@ -73,9 +73,9 @@
 
 ### Task 2: Modify CommKa Transition/Swap POI Naming Function
 
-- [ ] In the same file (`timeline_service.py`), locate the function `_format_commka_transition_label()` around line 1404
+- [x] In the same file (`timeline_service.py`), locate the function `_format_commka_transition_label()` around line 1404
 
-- [ ] **Current code:**
+- [x] **Current code:**
   ```python
   def _format_commka_transition_label(
       from_satellite: str | None, to_satellite: str | None
@@ -87,7 +87,7 @@
       return "CommKa\nTransition"
   ```
 
-- [ ] **Replace with:**
+- [x] **Replace with:**
   ```python
   def _format_commka_transition_label(
       from_satellite: str | None, to_satellite: str | None
@@ -96,17 +96,17 @@
       return "CommKa\nSwap"
   ```
 
-- [ ] Save the file
+- [x] Save the file
 
-- [ ] **Expected result:** The function now always returns "CommKa\nSwap" regardless of satellite parameters
+- [x] **Expected result:** The function now always returns "CommKa\nSwap" regardless of satellite parameters
 
-- [ ] Commit this change:
+- [x] Commit this change:
   ```bash
   git add backend/starlink-location/app/mission/timeline_service.py
   git commit -m "feat: simplify CommKa swap POI names (remove satellite details)"
   ```
 
-- [ ] Push to remote:
+- [x] Push to remote:
   ```bash
   git push
   ```
