@@ -574,14 +574,14 @@
 
 ### 3.2: Install core dependencies
 
-- [ ] Install dependencies:
+- [x] Install dependencies:
   ```bash
   npm install react-router-dom @tanstack/react-query zustand
   npm install axios zod react-hook-form @hookform/resolvers
   npm install leaflet react-leaflet
   npm install -D @types/leaflet
   ```
-- [ ] Expected: Dependencies installed in package.json
+- [x] Expected: Dependencies installed in package.json
 
 ### 3.3: Install ShadCN/UI and Tailwind CSS
 
