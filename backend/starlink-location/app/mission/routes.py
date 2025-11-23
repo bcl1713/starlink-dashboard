@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.mission.models import Mission, MissionLeg, MissionPhase, MissionTimeline, TransportState
+from app.mission.models import Mission, MissionLeg, MissionPhase, MissionLegTimeline, TransportState
 from app.mission.storage import (
     delete_mission,
     list_missions,
@@ -68,7 +68,7 @@ def set_route_manager(route_manager: RouteManager) -> None:
 def _compute_and_store_timeline_for_mission(
     mission: MissionLeg,
     refresh_metrics: bool,
-) -> tuple[MissionTimeline, TimelineSummary]:
+) -> tuple[MissionLegTimeline, TimelineSummary]:
     """Build, persist, and optionally publish metrics for a mission timeline."""
     if not _route_manager:
         raise HTTPException(
@@ -229,7 +229,8 @@ async def create_mission(mission: MissionLeg) -> MissionLeg:
         )
     except Exception as e:
         logger.error(
-            "Mission creation failed",
+            "Mission creation failed: %s",
+            str(e),
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -356,7 +357,7 @@ async def get_active_mission() -> MissionLeg:
 
 @router.get(
     "/active/timeline",
-    response_model=MissionTimeline,
+    response_model=MissionLegTimeline,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -364,7 +365,7 @@ async def get_active_mission() -> MissionLeg:
         }
     },
 )
-async def get_active_mission_timeline() -> MissionTimeline:
+async def get_active_mission_timeline() -> MissionLegTimeline:
     mission = await get_active_mission()
     timeline = load_mission_timeline(mission.id)
     if not timeline:
@@ -538,7 +539,7 @@ async def get_mission(mission_id: str) -> MissionLeg:
 
 @router.get(
     "/{mission_id}/timeline",
-    response_model=MissionTimeline,
+    response_model=MissionLegTimeline,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -546,7 +547,7 @@ async def get_mission(mission_id: str) -> MissionLeg:
         }
     },
 )
-async def get_mission_timeline_endpoint(mission_id: str) -> MissionTimeline:
+async def get_mission_timeline_endpoint(mission_id: str) -> MissionLegTimeline:
     if not mission_exists(mission_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -565,7 +566,7 @@ async def get_mission_timeline_endpoint(mission_id: str) -> MissionTimeline:
 
 @router.post(
     "/{mission_id}/timeline/recompute",
-    response_model=MissionTimeline,
+    response_model=MissionLegTimeline,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -575,7 +576,7 @@ async def get_mission_timeline_endpoint(mission_id: str) -> MissionTimeline:
 )
 async def recompute_mission_timeline_endpoint(
     mission_id: str,
-) -> MissionTimeline:
+) -> MissionLegTimeline:
     """Force a fresh mission timeline computation without altering activation."""
     mission = load_mission(mission_id)
     if not mission:

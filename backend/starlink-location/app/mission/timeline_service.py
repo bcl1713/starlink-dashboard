@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from app.mission.models import (
-    Mission,
-    MissionTimeline,
+    MissionLeg,
+    MissionLegTimeline,
     TimelineStatus,
     Transport,
     TransportState,
@@ -143,11 +143,11 @@ class TimelineSummary:
 
 
 def build_mission_timeline(
-    mission: Mission,
+    mission: MissionLeg,
     route_manager: RouteManager,
     poi_manager: POIManager | None = None,
     coverage_sampler: CoverageSampler | None = None,
-) -> tuple[MissionTimeline, TimelineSummary]:
+) -> tuple[MissionLegTimeline, TimelineSummary]:
     """Compute the mission communication timeline and derived summary."""
 
     if not mission.route_id:
@@ -275,7 +275,7 @@ def build_mission_timeline(
 
 
 def _annotate_aar_markers(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     events: Sequence[MissionEvent],
 ) -> None:
     """Persist AAR window intervals for export consumers."""
@@ -1287,7 +1287,7 @@ def _apply_manual_outages(
 
 
 def _attach_statistics(
-    timeline: MissionTimeline, mission_start: datetime, mission_end: datetime
+    timeline: MissionLegTimeline, mission_start: datetime, mission_end: datetime
 ) -> None:
     total_seconds = max((mission_end - mission_start).total_seconds(), 1.0)
     degraded_seconds = 0.0
@@ -1313,7 +1313,7 @@ def _attach_statistics(
 
 
 def _summarize_timeline(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     mission_start: datetime,
     mission_end: datetime,
     sample_count: int,

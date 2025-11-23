@@ -6,13 +6,13 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.mission.models import (
-    Mission,
+    MissionLeg,
     Transport,
     TransportConfig,
     TransportState,
     TimelineSegment,
     TimelineStatus,
-    MissionTimeline,
+    MissionLegTimeline,
     XTransition,
     MissionPhase,
 )
@@ -25,7 +25,7 @@ from app.mission.timeline_service import TimelineSummary
 def test_mission():
     """Create a test mission object with unique ID."""
     unique_id = f"test-mission-{uuid4().hex[:8]}"
-    return Mission(
+    return MissionLeg(
         id=unique_id,
         name="Test Mission",
         description="A test mission for unit tests",
@@ -47,7 +47,7 @@ def test_mission():
 def test_mission_with_transitions():
     """Create a test mission with satellite transitions and unique ID."""
     unique_id = f"test-mission-transitions-{uuid4().hex[:8]}"
-    return Mission(
+    return MissionLeg(
         id=unique_id,
         name="Mission with Transitions",
         description="Test mission with X transitions",

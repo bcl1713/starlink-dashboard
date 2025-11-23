@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from app.mission.models import Mission, MissionLeg, MissionLegTimeline, MissionTimeline
+from app.mission.models import Mission, MissionLeg, MissionLegTimeline
 
 logger = logging.getLogger(__name__)
 
@@ -40,19 +40,19 @@ def get_mission_timeline_path(mission_id: str) -> Path:
     return MISSIONS_DIR / f"{mission_id}{TIMELINE_SUFFIX}"
 
 
-def get_mission_path(mission_id: str) -> Path:
-    """Get the directory path for a mission."""
+def get_mission_directory(mission_id: str) -> Path:
+    """Get the directory path for a mission (for hierarchical v2 storage)."""
     return MISSIONS_DIR / mission_id
 
 
 def get_mission_file_path(mission_id: str) -> Path:
     """Get the file path for mission metadata."""
-    return get_mission_path(mission_id) / "mission.json"
+    return get_mission_directory(mission_id) / "mission.json"
 
 
 def get_mission_legs_dir(mission_id: str) -> Path:
     """Get the legs directory for a mission."""
-    return get_mission_path(mission_id) / "legs"
+    return get_mission_directory(mission_id) / "legs"
 
 
 def get_mission_leg_file_path(mission_id: str, leg_id: str) -> Path:
@@ -69,7 +69,7 @@ def compute_file_checksum(file_path: Path) -> str:
     return sha256.hexdigest()
 
 
-def compute_mission_checksum(mission: Mission) -> str:
+def compute_mission_checksum(mission) -> str:
     """Compute checksum of a mission object (JSON-serialized)."""
     # Use model_dump for consistent serialization with sorted keys
     mission_dict = mission.model_dump()
@@ -77,7 +77,7 @@ def compute_mission_checksum(mission: Mission) -> str:
     return hashlib.sha256(mission_json.encode()).hexdigest()
 
 
-def save_mission(mission: Mission) -> dict:
+def save_mission(mission: MissionLeg) -> dict:
     """Save a mission to persistent storage.
 
     Args:
@@ -130,7 +130,7 @@ def save_mission_v2(mission: Mission) -> dict:
     Returns:
         Dictionary with save metadata
     """
-    mission_dir = get_mission_path(mission.id)
+    mission_dir = get_mission_directory(mission.id)
     mission_dir.mkdir(parents=True, exist_ok=True)
 
     legs_dir = get_mission_legs_dir(mission.id)
@@ -195,14 +195,14 @@ def load_mission_v2(mission_id: str) -> Optional[Mission]:
     return mission
 
 
-def load_mission(mission_id: str) -> Optional[Mission]:
-    """Load a mission from persistent storage.
+def load_mission(mission_id: str) -> Optional[MissionLeg]:
+    """Load a mission leg from persistent storage.
 
     Args:
         mission_id: ID of the mission to load
 
     Returns:
-        Mission object if found and valid, None otherwise
+        MissionLeg object if found and valid, None otherwise
 
     Raises:
         ValueError: If loaded data doesn't match integrity check
@@ -219,7 +219,7 @@ def load_mission(mission_id: str) -> Optional[Mission]:
         with open(mission_path, "r") as f:
             mission_data = json.load(f)
 
-        mission = Mission(**mission_data)
+        mission = MissionLeg(**mission_data)
 
         # Verify checksum if it exists
         if checksum_path.exists():
@@ -326,7 +326,7 @@ def delete_mission(mission_id: str) -> bool:
     return deleted
 
 
-def save_mission_timeline(mission_id: str, timeline: MissionTimeline) -> Path:
+def save_mission_timeline(mission_id: str, timeline: MissionLegTimeline) -> Path:
     """Persist a mission timeline to disk."""
     ensure_missions_directory()
     timeline_path = get_mission_timeline_path(mission_id)
@@ -336,14 +336,14 @@ def save_mission_timeline(mission_id: str, timeline: MissionTimeline) -> Path:
     return timeline_path
 
 
-def load_mission_timeline(mission_id: str) -> MissionTimeline | None:
+def load_mission_timeline(mission_id: str) -> MissionLegTimeline | None:
     """Load a previously computed mission timeline."""
     timeline_path = get_mission_timeline_path(mission_id)
     if not timeline_path.exists():
         return None
     with open(timeline_path, "r") as handle:
         data = json.load(handle)
-    return MissionTimeline(**data)
+    return MissionLegTimeline(**data)
 
 
 def delete_mission_timeline(mission_id: str) -> None:

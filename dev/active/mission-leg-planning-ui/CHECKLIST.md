@@ -219,12 +219,12 @@
 
 ### 1.8: Run backend tests
 
-- [ ] Run existing tests to ensure renaming didn't break anything:
+- [x] Run existing tests to ensure renaming didn't break anything:
   ```bash
   cd backend/starlink-location && python -m pytest tests/ -v
   ```
-- [ ] Expected: All tests pass or show clear errors to fix
-- [ ] If tests fail, fix import errors and model references
+- [x] Expected: All tests pass or show clear errors to fix
+- [x] If tests fail, fix import errors and model references
 
 ### 1.9: Commit Phase 1 changes
 

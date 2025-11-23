@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.mission.models import Mission, TransportConfig
+from app.mission.models import MissionLeg, TransportConfig
 from app.mission.storage import (
     compute_file_checksum,
     compute_mission_checksum,
@@ -24,7 +24,7 @@ from app.mission.storage import (
 @pytest.fixture
 def sample_mission():
     """Create a sample mission for testing."""
-    return Mission(
+    return MissionLeg(
         id="test-mission-001",
         name="Test Mission",
         description="A test mission",
