@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import type { Mission } from '../../types/mission';
@@ -9,9 +10,16 @@ interface MissionCardProps {
 }
 
 export function MissionCard({ mission, onSelect, onDelete }: MissionCardProps) {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    onSelect(mission.id);
+    navigate(`/missions/${mission.id}`);
+  };
+
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-      <CardHeader onClick={() => onSelect(mission.id)}>
+      <CardHeader onClick={handleClick}>
         <CardTitle>{mission.name}</CardTitle>
         <CardDescription>{mission.description || 'No description'}</CardDescription>
       </CardHeader>
