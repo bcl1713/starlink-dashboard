@@ -333,32 +333,34 @@
 
 ## Documentation Maintenance
 
-- [ ] Update PLAN.md status:
-  - [ ] Open `dev/active/simplify-swap-poi-names/PLAN.md`
-  - [ ] Change `**Status:** Planning` to `**Status:** Completed`
-  - [ ] Save the file
-  - [ ] Commit:
+- [x] Update PLAN.md status:
+  - [x] Open `dev/active/simplify-swap-poi-names/PLAN.md`
+  - [x] Change `**Status:** Planning` to `**Status:** Completed`
+  - [x] Save the file
+  - [x] Commit:
     ```bash
     git add dev/active/simplify-swap-poi-names/PLAN.md
     git commit -m "docs: mark plan as completed"
     git push
     ```
 
-- [ ] Review CONTEXT.md:
-  - [ ] Open `dev/active/simplify-swap-poi-names/CONTEXT.md`
-  - [ ] Add any discovered constraints, risks, or testing notes
-  - [ ] If changes made, commit:
+- [x] Review CONTEXT.md:
+  - [x] Open `dev/active/simplify-swap-poi-names/CONTEXT.md`
+  - [x] Add any discovered constraints, risks, or testing notes
+  - [x] If changes made, commit:
     ```bash
     git add dev/active/simplify-swap-poi-names/CONTEXT.md
     git commit -m "docs: update context with verification findings"
     git push
     ```
 
-- [ ] Update LESSONS-LEARNED.md (if applicable):
-  - [ ] If anything surprising or notable occurred during implementation, document it
-  - [ ] Open `dev/LESSONS-LEARNED.md`
-  - [ ] Add entry with date, feature slug, and lesson
-  - [ ] Commit if updated
+- [x] Update LESSONS-LEARNED.md (if applicable):
+  - [x] If anything surprising or notable occurred during implementation, document it
+  - [x] Open `dev/LESSONS-LEARNED.md`
+  - [x] Add entry with date, feature slug, and lesson
+  - [x] Commit if updated
+
+**Result:** All documentation updated. Added 3 lessons to LESSONS-LEARNED.md about POI persistence, mission creation workflow, and export endpoint methods.
 
 ---
 
