@@ -585,20 +585,20 @@
 
 ### 3.3: Install ShadCN/UI and Tailwind CSS
 
-- [ ] Install Tailwind:
+- [x] Install Tailwind:
   ```bash
   npm install -D tailwindcss postcss autoprefixer
   npx tailwindcss init -p
   ```
-- [ ] Initialize ShadCN:
+- [x] Initialize ShadCN:
   ```bash
   npx shadcn@latest init
   ```
-  - [ ] Select: TypeScript
-  - [ ] Select: Default style
-  - [ ] Select: Neutral color
-  - [ ] Select: CSS variables for colors
-- [ ] Expected: tailwind.config.js and components.json created
+  - [x] Select: TypeScript
+  - [x] Select: Default style
+  - [x] Select: Neutral color
+  - [x] Select: CSS variables for colors
+- [x] Expected: tailwind.config.js and components.json created
 
 ### 3.4: Install dev dependencies
 
