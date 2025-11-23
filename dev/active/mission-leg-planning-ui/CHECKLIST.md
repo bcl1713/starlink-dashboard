@@ -602,7 +602,7 @@
 
 ### 3.4: Install dev dependencies
 
-- [ ] Install testing and linting tools:
+- [x] Install testing and linting tools:
   ```bash
   npm install -D vitest @testing-library/react @testing-library/jest-dom
   npm install -D @playwright/test
@@ -610,7 +610,7 @@
   npm install -D prettier eslint-config-prettier
   npm install -D @types/node
   ```
-- [ ] Expected: All dev dependencies installed
+- [x] Expected: All dev dependencies installed
 
 ### 3.5: Configure ESLint with max-lines rule
 
