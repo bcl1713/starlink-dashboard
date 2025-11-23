@@ -703,8 +703,8 @@
 
 ### 3.9: Update docker-compose.yml
 
-- [ ] Open `docker-compose.yml` at repo root
-- [ ] Add frontend service:
+- [x] Open `docker-compose.yml` at repo root
+- [x] Add frontend service:
   ```yaml
   mission-planner:
     build:
@@ -717,8 +717,8 @@
     environment:
       - VITE_API_URL=http://localhost:8000
   ```
-- [ ] Save file
-- [ ] Expected: Frontend service defined in compose
+- [x] Save file
+- [x] Expected: Frontend service defined in compose
 
 ### 3.10: Commit Phase 3 changes
 

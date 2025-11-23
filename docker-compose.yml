@@ -73,6 +73,20 @@ services:
     networks:
       - starlink-net
 
+  mission-planner:
+    build:
+      context: ./frontend/mission-planner
+      dockerfile: Dockerfile
+    container_name: mission-planner
+    ports:
+      - "5173:80"
+    depends_on:
+      - starlink-location
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    networks:
+      - starlink-net
+
 networks:
   starlink-net:
     driver: bridge
