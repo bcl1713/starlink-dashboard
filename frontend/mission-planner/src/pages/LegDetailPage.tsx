@@ -5,6 +5,7 @@ import { XBandConfig } from '../components/satellites/XBandConfig';
 import { KaOutageConfig } from '../components/satellites/KaOutageConfig';
 import { KuOutageConfig } from '../components/satellites/KuOutageConfig';
 import { AARSegmentEditor } from '../components/aar/AARSegmentEditor';
+import { RouteMap } from '../components/common/RouteMap';
 import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
 
@@ -41,6 +42,33 @@ export function LegDetailPage() {
     'WP005',
   ];
 
+  // TODO: Fetch actual route coordinates from backend
+  // Placeholder route coordinates (example: Denver to DC)
+  const routeCoordinates: [number, number][] = [
+    [39.7392, -104.9903], // Denver
+    [39.8, -104.5],
+    [40.0, -103.0],
+    [40.5, -101.0],
+    [41.0, -99.0],
+    [41.8, -96.0],
+    [42.0, -93.0],
+    [41.5, -90.0],
+    [41.0, -87.0],
+    [40.5, -84.0],
+    [40.0, -81.0],
+    [39.5, -78.0],
+    [39.0, -77.0],
+    [38.9072, -77.0369], // Washington DC
+  ];
+
+  // Generate map coordinates: route + transition markers
+  const mapCoordinates = [...routeCoordinates];
+
+  // Add X-Band transition points to the map
+  satelliteConfig.xband_transitions.forEach((transition) => {
+    mapCoordinates.push([transition.latitude, transition.longitude]);
+  });
+
   const handleSatelliteConfigChange = (
     updates: Partial<SatelliteConfig>
   ) => {
@@ -56,86 +84,104 @@ export function LegDetailPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="xband" className="w-full">
-        <TabsList>
-          <TabsTrigger value="xband">X-Band</TabsTrigger>
-          <TabsTrigger value="ka">Ka Outages</TabsTrigger>
-          <TabsTrigger value="ku">Ku/Starlink Outages</TabsTrigger>
-          <TabsTrigger value="aar">AAR Segments</TabsTrigger>
-        </TabsList>
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left Column: Configuration Tabs */}
+        <div>
+          <Tabs defaultValue="xband" className="w-full">
+            <TabsList>
+              <TabsTrigger value="xband">X-Band</TabsTrigger>
+              <TabsTrigger value="ka">Ka Outages</TabsTrigger>
+              <TabsTrigger value="ku">Ku/Starlink Outages</TabsTrigger>
+              <TabsTrigger value="aar">AAR Segments</TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="xband" className="space-y-4">
-          <div className="rounded-lg border p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              X-Band Configuration
-            </h2>
-            <XBandConfig
-              startingSatellite={satelliteConfig.xband_starting_satellite}
-              transitions={satelliteConfig.xband_transitions}
-              onStartingSatelliteChange={(satellite) =>
-                handleSatelliteConfigChange({
-                  xband_starting_satellite: satellite,
-                })
-              }
-              onTransitionsChange={(transitions) =>
-                handleSatelliteConfigChange({ xband_transitions: transitions })
-              }
-              availableSatellites={availableSatellites}
-            />
+            <TabsContent value="xband" className="space-y-4">
+              <div className="rounded-lg border p-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  X-Band Configuration
+                </h2>
+                <XBandConfig
+                  startingSatellite={satelliteConfig.xband_starting_satellite}
+                  transitions={satelliteConfig.xband_transitions}
+                  onStartingSatelliteChange={(satellite) =>
+                    handleSatelliteConfigChange({
+                      xband_starting_satellite: satellite,
+                    })
+                  }
+                  onTransitionsChange={(transitions) =>
+                    handleSatelliteConfigChange({
+                      xband_transitions: transitions,
+                    })
+                  }
+                  availableSatellites={availableSatellites}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="ka" className="space-y-4">
+              <div className="rounded-lg border p-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  Ka Outage Configuration
+                </h2>
+                <KaOutageConfig
+                  outages={satelliteConfig.ka_outages}
+                  onOutagesChange={(outages) =>
+                    handleSatelliteConfigChange({ ka_outages: outages })
+                  }
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="ku" className="space-y-4">
+              <div className="rounded-lg border p-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  Ku/Starlink Outage Configuration
+                </h2>
+                <KuOutageConfig
+                  outages={satelliteConfig.ku_outages}
+                  onOutagesChange={(outages) =>
+                    handleSatelliteConfigChange({ ku_outages: outages })
+                  }
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="aar" className="space-y-4">
+              <div className="rounded-lg border p-6">
+                <h2 className="text-xl font-semibold mb-4">
+                  AAR Segment Configuration
+                </h2>
+                <AARSegmentEditor
+                  segments={aarConfig.segments}
+                  onSegmentsChange={(segments) =>
+                    setAARConfig({ ...aarConfig, segments })
+                  }
+                  availableWaypoints={availableWaypoints}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-end space-x-4 mt-6">
+            <button className="px-4 py-2 border rounded-md hover:bg-gray-100">
+              Cancel
+            </button>
+            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+              Save Changes
+            </button>
           </div>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="ka" className="space-y-4">
-          <div className="rounded-lg border p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Ka Outage Configuration
-            </h2>
-            <KaOutageConfig
-              outages={satelliteConfig.ka_outages}
-              onOutagesChange={(outages) =>
-                handleSatelliteConfigChange({ ka_outages: outages })
-              }
-            />
+        {/* Right Column: Map Visualization */}
+        <div className="sticky top-6 h-fit">
+          <h2 className="text-xl font-semibold mb-4">Route Visualization</h2>
+          <RouteMap coordinates={mapCoordinates} height="600px" />
+          <div className="mt-4 text-sm text-gray-600 space-y-1">
+            <p>• Blue line: Flight route</p>
+            <p>• Markers: X-Band transition points</p>
+            <p className="text-gray-400">AAR segments visualization coming soon</p>
           </div>
-        </TabsContent>
-
-        <TabsContent value="ku" className="space-y-4">
-          <div className="rounded-lg border p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Ku/Starlink Outage Configuration
-            </h2>
-            <KuOutageConfig
-              outages={satelliteConfig.ku_outages}
-              onOutagesChange={(outages) =>
-                handleSatelliteConfigChange({ ku_outages: outages })
-              }
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="aar" className="space-y-4">
-          <div className="rounded-lg border p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              AAR Segment Configuration
-            </h2>
-            <AARSegmentEditor
-              segments={aarConfig.segments}
-              onSegmentsChange={(segments) =>
-                setAARConfig({ ...aarConfig, segments })
-              }
-              availableWaypoints={availableWaypoints}
-            />
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      <div className="flex justify-end space-x-4">
-        <button className="px-4 py-2 border rounded-md hover:bg-gray-100">
-          Cancel
-        </button>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-          Save Changes
-        </button>
+        </div>
       </div>
     </div>
   );
