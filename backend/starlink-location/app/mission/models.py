@@ -452,10 +452,10 @@ class TimelineSegment(BaseModel):
     }
 
 
-class MissionTimeline(BaseModel):
-    """Complete timeline for a mission showing communication state evolution."""
+class MissionLegTimeline(BaseModel):
+    """Complete timeline for a mission leg showing communication state evolution."""
 
-    mission_id: str = Field(..., description="Associated mission ID")
+    mission_leg_id: str = Field(..., description="Associated mission leg ID")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="When timeline was computed (UTC, ISO-8601)",
@@ -476,7 +476,7 @@ class MissionTimeline(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "mission_id": "mission-001",
+                "mission_leg_id": "mission-leg-001",
                 "created_at": "2025-10-27T10:00:00Z",
                 "segments": [],
                 "advisories": [],

@@ -84,10 +84,10 @@
 
 ### 1.3: Update MissionTimeline to MissionLegTimeline
 
-- [ ] In `backend/starlink-location/app/mission/models.py`
-- [ ] Rename `class MissionTimeline` to `class MissionLegTimeline`
-- [ ] Update all references to `mission_id` field docstrings to mention "leg"
-- [ ] Save the file
+- [x] In `backend/starlink-location/app/mission/models.py`
+- [x] Rename `class MissionTimeline` to `class MissionLegTimeline`
+- [x] Update all references to `mission_id` field docstrings to mention "leg"
+- [x] Save the file
 
 ### 1.4: Update imports in routes.py
 
