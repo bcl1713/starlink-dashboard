@@ -5,7 +5,7 @@
 **Folder:** `dev/active/simplify-swap-poi-names/`
 **Date:** 2025-11-22
 **Owner:** brian
-**Status:** Planning
+**Status:** Completed
 
 ---
 
