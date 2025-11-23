@@ -100,11 +100,11 @@
 
 ### 6.3.1: Install additional UI components
 
-- [ ] Install Progress component:
+- [x] Install Progress component:
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add progress
   ```
-- [ ] Expected: Progress component available
+- [x] Expected: Progress component available
 
 ### 6.3.2: Create ExportDialog component
 
