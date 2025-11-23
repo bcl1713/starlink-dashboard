@@ -258,8 +258,8 @@
 
 ### 2.1: Create routes_v2.py file
 
-- [ ] Create new file `backend/starlink-location/app/mission/routes_v2.py`
-- [ ] Add initial imports and router setup:
+- [x] Create new file `backend/starlink-location/app/mission/routes_v2.py`
+- [x] Add initial imports and router setup:
   ```python
   """Mission v2 API endpoints for hierarchical mission management."""
 
@@ -280,8 +280,8 @@
 
   router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
   ```
-- [ ] Save the file
-- [ ] Expected: New file created with basic structure
+- [x] Save the file
+- [x] Expected: New file created with basic structure
 
 ### 2.2: Implement POST /api/v2/missions endpoint
 
