@@ -267,19 +267,19 @@
 
 ### Task 8: Verify Exported Documents (CSV)
 
-- [ ] Export a mission to CSV via API (replace `{mission_id}` with actual ID):
+- [x] Export a mission to CSV via API (replace `{mission_id}` with actual ID):
   ```bash
   curl -o /tmp/mission_export.csv http://localhost:8000/api/missions/{mission_id}/export/csv
   ```
 
-- [ ] Open the CSV file:
+- [x] Open the CSV file:
   ```bash
   cat /tmp/mission_export.csv | grep -E "(X-Band|CommKa|AAR)"
   ```
 
-- [ ] **Expected result:** POI names in CSV should show simplified format:
+- [x] **Expected result:** POI names in CSV should show simplified format:
   - "X-Band\nSwap" (may appear as "X-Band Swap" in CSV rendering)
-  - "CommKa\nSwap"
+  - "CommKa\nSwap" ✓ VERIFIED
   - "CommKa\nExit"
   - "CommKa\nEntry"
 
