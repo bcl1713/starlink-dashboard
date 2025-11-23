@@ -561,16 +561,16 @@
 
 ### 3.1: Initialize React + TypeScript project with Vite
 
-- [ ] Create frontend directory:
+- [x] Create frontend directory:
   ```bash
   mkdir -p frontend/mission-planner
   cd frontend/mission-planner
   ```
-- [ ] Initialize Vite project:
+- [x] Initialize Vite project:
   ```bash
   npm create vite@latest . -- --template react-ts
   ```
-- [ ] Expected: Vite project initialized with TypeScript
+- [x] Expected: Vite project initialized with TypeScript
 
 ### 3.2: Install core dependencies
 
