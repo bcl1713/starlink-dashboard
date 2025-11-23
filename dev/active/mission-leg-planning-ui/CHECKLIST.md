@@ -641,7 +641,7 @@
 
 ### 3.6: Configure Prettier
 
-- [ ] Create `.prettierrc`:
+- [x] Create `.prettierrc`:
   ```json
   {
     "semi": true,
@@ -651,7 +651,7 @@
     "tabWidth": 2
   }
   ```
-- [ ] Save file
+- [x] Save file
 
 ### 3.7: Create project folder structure
 
