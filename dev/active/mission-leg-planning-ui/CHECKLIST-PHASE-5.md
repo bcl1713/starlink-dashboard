@@ -1,19 +1,22 @@
 # Checklist: Phase 5 - Satellite & AAR Configuration UI
 
-**Branch:** `feat/mission-leg-planning-ui`
-**Folder:** `dev/active/mission-leg-planning-ui/`
-**Phase:** 5 - Satellite & AAR Configuration UI
-**Status:** Not Started
+**Branch:** `feat/mission-leg-planning-ui` **Folder:**
+`dev/active/mission-leg-planning-ui/` **Phase:** 5 - Satellite & AAR
+Configuration UI **Status:** Not Started
 
-> This checklist covers implementing satellite transition configuration (X-Band manual, Ka outages, Ku outages) and AAR segment definition UI with map visualization.
+> This checklist covers implementing satellite transition configuration (X-Band
+> manual, Ka outages, Ku outages) and AAR segment definition UI with map
+> visualization.
 
 ---
 
 ## Phase 5 Overview
 
-**Goal:** Implement satellite transition configuration (X-Band manual, Ka outages, Ku outages) and AAR segment definition UI with map visualization.
+**Goal:** Implement satellite transition configuration (X-Band manual, Ka
+outages, Ku outages) and AAR segment definition UI with map visualization.
 
 **Exit Criteria:**
+
 - X-Band configuration: starting satellite selector + transition table
 - Ka outage windows configurable
 - Ku/Starlink outage windows configurable
@@ -29,6 +32,7 @@
 
 - [x] Create `frontend/mission-planner/src/types/satellite.ts`
 - [x] Add satellite configuration interfaces:
+
   ```typescript
   export interface XBandTransition {
     waypoint_index: number;
@@ -61,6 +65,7 @@
     ku_outages: KuOutage[];
   }
   ```
+
 - [x] Save file (verify < 350 lines)
 - [x] Expected: Type definitions for satellite configuration
 
@@ -72,6 +77,7 @@
 
 - [x] Create `frontend/mission-planner/src/types/aar.ts`
 - [x] Add AAR segment interface:
+
   ```typescript
   export interface AARSegment {
     id: string;
@@ -88,6 +94,7 @@
     segments: AARSegment[];
   }
   ```
+
 - [x] Save file (verify < 350 lines)
 - [x] Expected: Type definitions for AAR configuration
 
@@ -99,11 +106,14 @@
 
 - [x] Open `frontend/mission-planner/src/types/mission.ts`
 - [x] Import satellite and AAR types:
+
   ```typescript
-  import { SatelliteConfig } from './satellite';
-  import { AARConfig } from './aar';
+  import { SatelliteConfig } from "./satellite";
+  import { AARConfig } from "./aar";
   ```
+
 - [x] Add fields to MissionLeg interface:
+
   ```typescript
   export interface MissionLeg {
     id: string;
@@ -116,6 +126,7 @@
     updated_at: string;
   }
   ```
+
 - [x] Save file (verify < 350 lines)
 - [x] Expected: MissionLeg supports satellite and AAR configuration
 
@@ -125,20 +136,26 @@
 
 ### 5.4.1: Install additional UI components
 
-- [ ] Install Select component:
+- [x] Install Select component:
+
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add select
   ```
-- [ ] Install Table component:
+
+- [x] Install Table component:
+
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add table
   ```
-- [ ] Expected: Select and Table components available
+
+- [x] Expected: Select and Table components available
 
 ### 5.4.2: Create XBandConfig component
 
-- [ ] Create `frontend/mission-planner/src/components/satellites/XBandConfig.tsx`
-- [ ] Implement X-Band starting satellite selector and transition table:
+- [x] Create
+      `frontend/mission-planner/src/components/satellites/XBandConfig.tsx`
+- [x] Implement X-Band starting satellite selector and transition table:
+
   ```typescript
   import { useState } from 'react';
   import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -287,8 +304,10 @@
     );
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: X-Band configuration component with starting satellite and transitions
+
+- [x] Save file (verify < 350 lines)
+- [x] Expected: X-Band configuration component with starting satellite and
+      transitions
 
 ---
 
@@ -296,7 +315,8 @@
 
 ### 5.5.1: Create KaOutageConfig component
 
-- [ ] Create `frontend/mission-planner/src/components/satellites/KaOutageConfig.tsx`
+- [ ] Create
+      `frontend/mission-planner/src/components/satellites/KaOutageConfig.tsx`
 - [ ] Implement Ka outage windows editor (similar pattern to X-Band transitions)
 - [ ] Save file (verify < 350 lines)
 - [ ] Expected: Ka outage configuration component
@@ -307,7 +327,8 @@
 
 ### 5.6.1: Create KuOutageConfig component
 
-- [ ] Create `frontend/mission-planner/src/components/satellites/KuOutageConfig.tsx`
+- [ ] Create
+      `frontend/mission-planner/src/components/satellites/KuOutageConfig.tsx`
 - [ ] Implement Ku/Starlink outage windows editor
 - [ ] Save file (verify < 350 lines)
 - [ ] Expected: Ku outage configuration component
@@ -339,9 +360,11 @@
 
 - [ ] Open `frontend/mission-planner/src/App.tsx`
 - [ ] Add route for leg detail page:
+
   ```typescript
   <Route path="/missions/:missionId/legs/:legId" element={<LegDetailPage />} />
   ```
+
 - [ ] Save file
 - [ ] Expected: Leg detail page accessible via routing
 
@@ -352,14 +375,18 @@
 ### 5.9.1: Install Leaflet dependencies
 
 - [ ] Verify Leaflet is installed:
+
   ```bash
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner list leaflet react-leaflet
   ```
+
 - [ ] If not installed, add:
+
   ```bash
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner install leaflet react-leaflet
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner install -D @types/leaflet
   ```
+
 - [ ] Expected: Leaflet ready for use
 
 ### 5.9.2: Create basic RouteMap component
@@ -376,9 +403,11 @@
 ### 5.10.1: Manual testing in browser
 
 - [ ] Start dev server:
+
   ```bash
   cd /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner && npm run dev
   ```
+
 - [ ] Navigate to mission detail page
 - [ ] Test X-Band configuration:
   - [ ] Select starting satellite
@@ -394,10 +423,13 @@
 ## 5.11: Commit Phase 5 Changes
 
 - [ ] Stage all changes:
+
   ```bash
   git add frontend/mission-planner/src/
   ```
+
 - [ ] Commit:
+
   ```bash
   git commit -m "feat: implement satellite and AAR configuration UI
 
@@ -411,10 +443,13 @@
 
   Ref: dev/active/mission-leg-planning-ui/PLAN.md Phase 5"
   ```
+
 - [ ] Push:
+
   ```bash
   git push origin feat/mission-leg-planning-ui
   ```
+
 - [ ] Expected: Phase 5 committed and pushed
 
 ---
