@@ -387,18 +387,18 @@
 
 ### 2.5: Register v2 router in main.py
 
-- [ ] Open `backend/starlink-location/main.py`
-- [ ] Add import:
+- [x] Open `backend/starlink-location/main.py`
+- [x] Add import:
   ```python
   from app.mission import routes_v2 as mission_routes_v2
   ```
-- [ ] Find where routers are registered (around line 447)
-- [ ] Add v2 router registration:
+- [x] Find where routers are registered (around line 447)
+- [x] Add v2 router registration:
   ```python
   app.include_router(mission_routes_v2.router, tags=["Missions V2"])
   ```
-- [ ] Save the file
-- [ ] Expected: V2 API registered in main application
+- [x] Save the file
+- [x] Expected: V2 API registered in main application
 
 ### 2.6: Test v2 endpoints manually
 
