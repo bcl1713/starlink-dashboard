@@ -315,8 +315,8 @@
 
 ### 2.3: Implement GET /api/v2/missions endpoint
 
-- [ ] In `backend/starlink-location/app/mission/routes_v2.py`
-- [ ] Add list missions endpoint:
+- [x] In `backend/starlink-location/app/mission/routes_v2.py`
+- [x] Add list missions endpoint:
   ```python
   @router.get("", response_model=list[Mission])
   async def list_missions(
@@ -354,8 +354,8 @@
               detail="Failed to list missions",
           )
   ```
-- [ ] Save the file
-- [ ] Expected: GET list endpoint defined
+- [x] Save the file
+- [x] Expected: GET list endpoint defined
 
 ### 2.4: Implement GET /api/v2/missions/{id} endpoint
 

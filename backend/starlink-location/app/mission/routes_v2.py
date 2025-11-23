@@ -39,3 +39,40 @@ async def create_mission(mission: Mission) -> Mission:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create mission",
         )
+
+
+@router.get("", response_model=list[Mission])
+async def list_missions(
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> list[Mission]:
+    """List all missions.
+
+    Args:
+        limit: Maximum number to return
+        offset: Number to skip
+
+    Returns:
+        List of missions
+    """
+    try:
+        from pathlib import Path
+        missions_dir = Path("data/missions")
+
+        if not missions_dir.exists():
+            return []
+
+        missions = []
+        for mission_dir in sorted(missions_dir.iterdir()):
+            if mission_dir.is_dir():
+                mission = load_mission_v2(mission_dir.name)
+                if mission:
+                    missions.append(mission)
+
+        return missions[offset : offset + limit]
+    except Exception as e:
+        logger.error(f"Failed to list missions: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to list missions",
+        )
