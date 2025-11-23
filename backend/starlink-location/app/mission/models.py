@@ -361,6 +361,38 @@ class MissionLeg(BaseModel):
     }
 
 
+class Mission(BaseModel):
+    """Top-level mission container holding multiple mission legs."""
+
+    id: str = Field(..., description="Unique mission identifier (UUID or slug)")
+    name: str = Field(..., description="Human-readable mission name", min_length=1)
+    description: Optional[str] = Field(default=None, description="Detailed mission description")
+    legs: list[MissionLeg] = Field(default_factory=list, description="Ordered list of mission legs")
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When mission was created (UTC, ISO-8601)",
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When mission was last updated (UTC, ISO-8601)",
+    )
+    metadata: dict = Field(default_factory=dict, description="Custom metadata fields")
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "id": "operation-falcon-2025",
+                "name": "Operation Falcon",
+                "description": "Multi-leg transcontinental mission",
+                "legs": [],
+                "created_at": "2025-11-23T10:00:00Z",
+                "updated_at": "2025-11-23T10:00:00Z",
+                "metadata": {},
+            }
+        }
+    }
+
+
 class TimelineSegment(BaseModel):
     """A contiguous time segment in the mission with uniform communication state."""
 

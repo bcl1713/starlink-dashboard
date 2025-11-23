@@ -45,8 +45,8 @@
 
 ### 1.2: Create new Mission model in models.py
 
-- [ ] In the same file `backend/starlink-location/app/mission/models.py`
-- [ ] Add the new `Mission` model after the `MissionLeg` class:
+- [x] In the same file `backend/starlink-location/app/mission/models.py`
+- [x] Add the new `Mission` model after the `MissionLeg` class:
   ```python
   class Mission(BaseModel):
       """Top-level mission container holding multiple mission legs."""
@@ -79,8 +79,8 @@
           }
       }
   ```
-- [ ] Save the file
-- [ ] Expected: File now contains both `Mission` and `MissionLeg` models
+- [x] Save the file
+- [x] Expected: File now contains both `Mission` and `MissionLeg` models
 
 ### 1.3: Update MissionTimeline to MissionLegTimeline
 
