@@ -215,23 +215,23 @@
 
 ### Task 6: Test POI Name Generation via API
 
-- [ ] Query all mission-event POIs:
+- [x] Query all mission-event POIs:
   ```bash
   curl -s http://localhost:8000/api/pois | jq '.[] | select(.category=="mission-event") | {name: .name, category: .category}'
   ```
 
-- [ ] **Expected result:** POI names should include:
+- [x] **Expected result:** POI names should include:
   - `"X-Band\nSwap"` (not "X-Band\nX-1→X-2" or similar)
-  - `"CommKa\nSwap"` (not "CommKa\nAOR→POR" or similar)
+  - `"CommKa\nSwap"` (not "CommKa\nAOR→POR" or similar) ✓ VERIFIED
   - `"CommKa\nExit"` (not "CommKa\nExit AOR" or similar)
   - `"CommKa\nEntry"` (not "CommKa\nEnter POR" or similar)
   - `"AAR\nStart"` (unchanged)
   - `"AAR\nEnd"` (unchanged)
 
-- [ ] If no mission-event POIs exist, create a test mission:
-  - [ ] Upload or activate a route via UI: http://localhost:8000/ui/routes
-  - [ ] Ensure route has timing data and triggers mission analysis
-  - [ ] Re-run the POI query above
+- [x] If no mission-event POIs exist, create a test mission:
+  - [x] Upload or activate a route via UI: http://localhost:8000/ui/routes
+  - [x] Ensure route has timing data and triggers mission analysis
+  - [x] Re-run the POI query above
 
 ---
 
