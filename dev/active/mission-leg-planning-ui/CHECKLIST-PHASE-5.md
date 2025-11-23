@@ -374,27 +374,27 @@ outages, Ku outages) and AAR segment definition UI with map visualization.
 
 ### 5.9.1: Install Leaflet dependencies
 
-- [ ] Verify Leaflet is installed:
+- [x] Verify Leaflet is installed:
 
   ```bash
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner list leaflet react-leaflet
   ```
 
-- [ ] If not installed, add:
+- [x] If not installed, add:
 
   ```bash
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner install leaflet react-leaflet
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner install -D @types/leaflet
   ```
 
-- [ ] Expected: Leaflet ready for use
+- [x] Expected: Leaflet ready for use
 
 ### 5.9.2: Create basic RouteMap component
 
-- [ ] Create `frontend/mission-planner/src/components/common/RouteMap.tsx`
-- [ ] Implement basic Leaflet map showing route
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Map component ready for route visualization
+- [x] Create `frontend/mission-planner/src/components/common/RouteMap.tsx`
+- [x] Implement basic Leaflet map showing route
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Map component ready for route visualization
 
 ---
 
