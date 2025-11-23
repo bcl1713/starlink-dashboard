@@ -228,13 +228,13 @@
 
 ### 1.9: Commit Phase 1 changes
 
-- [ ] Stage all changes:
+- [x] Stage all changes:
   ```bash
   git add backend/starlink-location/app/mission/models.py
   git add backend/starlink-location/app/mission/storage.py
   git add backend/starlink-location/app/mission/routes.py
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "feat: refactor Mission to MissionLeg, add hierarchical Mission model
 
@@ -246,11 +246,11 @@
 
   Ref: dev/active/mission-leg-planning-ui/PLAN.md Phase 1"
   ```
-- [ ] Push to remote:
+- [x] Push to remote:
   ```bash
   git push origin feat/mission-leg-planning-ui
   ```
-- [ ] Expected: Changes pushed successfully
+- [x] Expected: Changes pushed successfully
 
 ---
 
