@@ -121,6 +121,44 @@ def save_mission(mission: Mission) -> dict:
         raise
 
 
+def save_mission_v2(mission: Mission) -> dict:
+    """Save a hierarchical mission with nested legs.
+
+    Args:
+        mission: Mission object with legs
+
+    Returns:
+        Dictionary with save metadata
+    """
+    mission_dir = get_mission_path(mission.id)
+    mission_dir.mkdir(parents=True, exist_ok=True)
+
+    legs_dir = get_mission_legs_dir(mission.id)
+    legs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save mission metadata (without legs to avoid duplication)
+    mission_meta = mission.model_copy(update={"legs": []})
+    mission_file = get_mission_file_path(mission.id)
+
+    with open(mission_file, "w") as f:
+        json.dump(mission_meta.model_dump(), f, indent=2, default=str)
+
+    # Save each leg separately
+    for leg in mission.legs:
+        leg_file = get_mission_leg_file_path(mission.id, leg.id)
+        with open(leg_file, "w") as f:
+            json.dump(leg.model_dump(), f, indent=2, default=str)
+
+    logger.info(f"Mission {mission.id} saved with {len(mission.legs)} legs")
+
+    return {
+        "mission_id": mission.id,
+        "path": str(mission_dir),
+        "leg_count": len(mission.legs),
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
 def load_mission(mission_id: str) -> Optional[Mission]:
     """Load a mission from persistent storage.
 

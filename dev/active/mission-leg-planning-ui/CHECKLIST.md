@@ -131,8 +131,8 @@
 
 ### 1.6: Implement save_mission_v2 function
 
-- [ ] In `backend/starlink-location/app/mission/storage.py`
-- [ ] Add function to save top-level Mission:
+- [x] In `backend/starlink-location/app/mission/storage.py`
+- [x] Add function to save top-level Mission:
   ```python
   def save_mission_v2(mission: Mission) -> dict:
       """Save a hierarchical mission with nested legs.
@@ -171,8 +171,8 @@
           "saved_at": datetime.now(timezone.utc).isoformat(),
       }
   ```
-- [ ] Save the file
-- [ ] Expected: Function defined, no syntax errors
+- [x] Save the file
+- [x] Expected: Function defined, no syntax errors
 
 ### 1.7: Implement load_mission_v2 function
 
