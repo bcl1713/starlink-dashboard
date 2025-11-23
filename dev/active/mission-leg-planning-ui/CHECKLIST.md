@@ -176,8 +176,8 @@
 
 ### 1.7: Implement load_mission_v2 function
 
-- [ ] In `backend/starlink-location/app/mission/storage.py`
-- [ ] Add function to load hierarchical Mission:
+- [x] In `backend/starlink-location/app/mission/storage.py`
+- [x] Add function to load hierarchical Mission:
   ```python
   def load_mission_v2(mission_id: str) -> Optional[Mission]:
       """Load a hierarchical mission with all legs.
@@ -214,8 +214,8 @@
       logger.info(f"Mission {mission_id} loaded with {len(legs)} legs")
       return mission
   ```
-- [ ] Save the file
-- [ ] Expected: Load function defined
+- [x] Save the file
+- [x] Expected: Load function defined
 
 ### 1.8: Run backend tests
 

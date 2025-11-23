@@ -159,6 +159,42 @@ def save_mission_v2(mission: Mission) -> dict:
     }
 
 
+def load_mission_v2(mission_id: str) -> Optional[Mission]:
+    """Load a hierarchical mission with all legs.
+
+    Args:
+        mission_id: ID of mission to load
+
+    Returns:
+        Mission object with legs loaded, or None if not found
+    """
+    mission_file = get_mission_file_path(mission_id)
+
+    if not mission_file.exists():
+        logger.warning(f"Mission {mission_id} not found at {mission_file}")
+        return None
+
+    # Load mission metadata
+    with open(mission_file, "r") as f:
+        mission_data = json.load(f)
+
+    # Load all legs
+    legs_dir = get_mission_legs_dir(mission_id)
+    legs = []
+
+    if legs_dir.exists():
+        for leg_file in sorted(legs_dir.glob("*.json")):
+            with open(leg_file, "r") as f:
+                leg_data = json.load(f)
+                legs.append(MissionLeg(**leg_data))
+
+    mission_data["legs"] = legs
+    mission = Mission(**mission_data)
+
+    logger.info(f"Mission {mission_id} loaded with {len(legs)} legs")
+    return mission
+
+
 def load_mission(mission_id: str) -> Optional[Mission]:
     """Load a mission from persistent storage.
 
