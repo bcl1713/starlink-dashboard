@@ -12,6 +12,7 @@ def test_poi_with_eta_defaults():
         name="POI 1",
         latitude=40.0,
         longitude=-74.0,
+        active=True,
         eta_seconds=120.0,
         distance_meters=500.0,
     )
@@ -35,6 +36,7 @@ def test_poi_with_eta_with_route_metadata():
         name="Projected POI",
         latitude=41.0,
         longitude=-73.0,
+        active=True,
         category="airport",
         eta_seconds=450.0,
         eta_type="anticipated",

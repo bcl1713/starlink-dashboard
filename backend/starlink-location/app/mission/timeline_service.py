@@ -1397,18 +1397,15 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
 
     return _COVERAGE_SAMPLER
 def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
-    label = satellite or "Unknown"
-    return f"CommKa\n{kind} {label}"
+    # Simplified: no satellite name, just Exit or Entry
+    return f"CommKa\n{kind}"
 
 
 def _format_commka_transition_label(
     from_satellite: str | None, to_satellite: str | None
 ) -> str:
-    if from_satellite and to_satellite:
-        return f"CommKa\n{from_satellite}→{to_satellite}"
-    if to_satellite:
-        return f"CommKa\n→{to_satellite}"
-    return "CommKa\nTransition"
+    # Simplified: all CommKa swaps show as "CommKa\nSwap"
+    return "CommKa\nSwap"
 
 
 def _format_x_transition_label(
@@ -1416,13 +1413,8 @@ def _format_x_transition_label(
     target_satellite: str | None,
     is_same_satellite: bool,
 ) -> str:
-    if is_same_satellite:
-        return "X-Band\nBeam Swap"
-    if current_satellite and target_satellite:
-        return f"X-Band\n{current_satellite}→{target_satellite}"
-    if target_satellite:
-        return f"X-Band\n→{target_satellite}"
-    return "X-Band\nTransition"
+    # Simplified: all X-Band swaps show as "X-Band\nSwap"
+    return "X-Band\nSwap"
 
 
 def _find_waypoint_coordinates(
