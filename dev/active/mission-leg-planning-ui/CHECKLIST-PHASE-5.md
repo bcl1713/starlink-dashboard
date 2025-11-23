@@ -27,8 +27,8 @@
 
 ### 5.1.1: Create satellite types
 
-- [ ] Create `frontend/mission-planner/src/types/satellite.ts`
-- [ ] Add satellite configuration interfaces:
+- [x] Create `frontend/mission-planner/src/types/satellite.ts`
+- [x] Add satellite configuration interfaces:
   ```typescript
   export interface XBandTransition {
     waypoint_index: number;
@@ -61,8 +61,8 @@
     ku_outages: KuOutage[];
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Type definitions for satellite configuration
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Type definitions for satellite configuration
 
 ---
 
