@@ -350,11 +350,11 @@ outages, Ku outages) and AAR segment definition UI with map visualization.
 
 ### 5.8.1: Create LegDetailPage component
 
-- [ ] Create `frontend/mission-planner/src/pages/LegDetailPage.tsx`
-- [ ] Implement page layout with tabs for different config sections
-- [ ] Integrate X-Band, Ka, Ku, and AAR components
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Leg detail page with all configuration sections
+- [x] Create `frontend/mission-planner/src/pages/LegDetailPage.tsx`
+- [x] Implement page layout with tabs for different config sections
+- [x] Integrate X-Band, Ka, Ku, and AAR components
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Leg detail page with all configuration sections
 
 ### 5.8.2: Add route to App.tsx
 
