@@ -287,24 +287,24 @@
 
 ### Task 9: Verify Exported Documents (XLSX, PDF, PPTX)
 
-- [ ] Export mission to XLSX:
+- [x] Export mission to XLSX:
   ```bash
   curl -o /tmp/mission_export.xlsx http://localhost:8000/api/missions/{mission_id}/export/xlsx
   ```
 
-- [ ] Export mission to PDF:
+- [x] Export mission to PDF:
   ```bash
   curl -o /tmp/mission_export.pdf http://localhost:8000/api/missions/{mission_id}/export/pdf
   ```
 
-- [ ] Export mission to PPTX:
+- [x] Export mission to PPTX:
   ```bash
   curl -o /tmp/mission_export.pptx http://localhost:8000/api/missions/{mission_id}/export/pptx
   ```
 
-- [ ] **Manual inspection required:** Open each exported file and confirm POI names match simplified format
+- [x] **Manual inspection required:** Open each exported file and confirm POI names match simplified format
 
-- [ ] **Expected result:** All export formats show simplified POI names without satellite details
+- [x] **Expected result:** All export formats show simplified POI names without satellite details ✓ VERIFIED
 
 ---
 
