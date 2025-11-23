@@ -103,12 +103,12 @@
 
 ### 1.5: Update storage.py for hierarchical structure
 
-- [ ] Open `backend/starlink-location/app/mission/storage.py`
-- [ ] Update imports:
+- [x] Open `backend/starlink-location/app/mission/storage.py`
+- [x] Update imports:
   ```python
   from app.mission.models import Mission, MissionLeg, MissionLegTimeline
   ```
-- [ ] Add new storage functions for Mission (top-level):
+- [x] Add new storage functions for Mission (top-level):
   ```python
   def get_mission_path(mission_id: str) -> Path:
       """Get the directory path for a mission."""
@@ -126,8 +126,8 @@
       """Get the file path for a specific leg."""
       return get_mission_legs_dir(mission_id) / f"{leg_id}.json"
   ```
-- [ ] Save the file
-- [ ] Expected: New path helper functions defined
+- [x] Save the file
+- [x] Expected: New path helper functions defined
 
 ### 1.6: Implement save_mission_v2 function
 

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from app.mission.models import Mission, MissionTimeline
+from app.mission.models import Mission, MissionLeg, MissionLegTimeline, MissionTimeline
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,26 @@ def get_mission_checksum_path(mission_id: str) -> Path:
 def get_mission_timeline_path(mission_id: str) -> Path:
     """Get the file path for a mission's cached timeline."""
     return MISSIONS_DIR / f"{mission_id}{TIMELINE_SUFFIX}"
+
+
+def get_mission_directory(mission_id: str) -> Path:
+    """Get the directory path for a mission."""
+    return MISSIONS_DIR / mission_id
+
+
+def get_mission_file_path(mission_id: str) -> Path:
+    """Get the file path for mission metadata."""
+    return get_mission_directory(mission_id) / "mission.json"
+
+
+def get_mission_legs_dir(mission_id: str) -> Path:
+    """Get the legs directory for a mission."""
+    return get_mission_directory(mission_id) / "legs"
+
+
+def get_mission_leg_file_path(mission_id: str, leg_id: str) -> Path:
+    """Get the file path for a specific leg."""
+    return get_mission_legs_dir(mission_id) / f"{leg_id}.json"
 
 
 def compute_file_checksum(file_path: Path) -> str:
