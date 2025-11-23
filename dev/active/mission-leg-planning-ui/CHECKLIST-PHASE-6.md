@@ -26,8 +26,8 @@
 
 ### 6.1.1: Create export/import types
 
-- [ ] Create `frontend/mission-planner/src/types/export.ts`
-- [ ] Add export/import interfaces:
+- [x] Create `frontend/mission-planner/src/types/export.ts`
+- [x] Add export/import interfaces:
   ```typescript
   export interface ExportProgress {
     status: 'preparing' | 'exporting' | 'complete' | 'error';
@@ -47,8 +47,8 @@
     warnings?: string[];
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Type definitions for export/import operations
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Type definitions for export/import operations
 
 ---
 
