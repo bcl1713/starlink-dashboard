@@ -32,6 +32,15 @@ export function LegDetailPage() {
     'X-Band-5',
   ];
 
+  // Example available waypoints (TODO: fetch from route)
+  const availableWaypoints = [
+    'WP001',
+    'WP002',
+    'WP003',
+    'WP004',
+    'WP005',
+  ];
+
   const handleSatelliteConfigChange = (
     updates: Partial<SatelliteConfig>
   ) => {
@@ -114,6 +123,7 @@ export function LegDetailPage() {
               onSegmentsChange={(segments) =>
                 setAARConfig({ ...aarConfig, segments })
               }
+              availableWaypoints={availableWaypoints}
             />
           </div>
         </TabsContent>

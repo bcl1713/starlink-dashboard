@@ -2,34 +2,35 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import type { AARSegment } from '../../types/aar';
 
 interface AARSegmentEditorProps {
   segments: AARSegment[];
   onSegmentsChange: (segments: AARSegment[]) => void;
+  availableWaypoints: string[];
 }
 
 export function AARSegmentEditor({
   segments,
   onSegmentsChange,
+  availableWaypoints,
 }: AARSegmentEditorProps) {
   const [newSegment, setNewSegment] = useState<Partial<AARSegment>>({});
 
   const handleAddSegment = () => {
     if (
       newSegment.name &&
-      newSegment.start_waypoint_index !== undefined &&
-      newSegment.end_waypoint_index !== undefined
+      newSegment.start_waypoint &&
+      newSegment.end_waypoint
     ) {
       onSegmentsChange([
         ...segments,
         {
           id: crypto.randomUUID(),
           name: newSegment.name,
-          start_waypoint_index: newSegment.start_waypoint_index,
-          end_waypoint_index: newSegment.end_waypoint_index,
-          start_waypoint_name: newSegment.start_waypoint_name || '',
-          end_waypoint_name: newSegment.end_waypoint_name || '',
+          start_waypoint: newSegment.start_waypoint,
+          end_waypoint: newSegment.end_waypoint,
           altitude_feet: newSegment.altitude_feet,
           notes: newSegment.notes,
         },
@@ -50,10 +51,8 @@ export function AARSegmentEditor({
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Start Index</TableHead>
-              <TableHead>Start Name</TableHead>
-              <TableHead>End Index</TableHead>
-              <TableHead>End Name</TableHead>
+              <TableHead>Start Waypoint</TableHead>
+              <TableHead>End Waypoint</TableHead>
               <TableHead>Altitude (ft)</TableHead>
               <TableHead>Notes</TableHead>
               <TableHead>Actions</TableHead>
@@ -63,10 +62,8 @@ export function AARSegmentEditor({
             {segments.map((segment, index) => (
               <TableRow key={segment.id}>
                 <TableCell>{segment.name}</TableCell>
-                <TableCell>{segment.start_waypoint_index}</TableCell>
-                <TableCell>{segment.start_waypoint_name}</TableCell>
-                <TableCell>{segment.end_waypoint_index}</TableCell>
-                <TableCell>{segment.end_waypoint_name}</TableCell>
+                <TableCell>{segment.start_waypoint}</TableCell>
+                <TableCell>{segment.end_waypoint}</TableCell>
                 <TableCell>{segment.altitude_feet || 'N/A'}</TableCell>
                 <TableCell>{segment.notes || 'N/A'}</TableCell>
                 <TableCell>
@@ -91,54 +88,42 @@ export function AARSegmentEditor({
                 />
               </TableCell>
               <TableCell>
-                <Input
-                  type="number"
-                  placeholder="Start index"
-                  value={newSegment.start_waypoint_index ?? ''}
-                  onChange={(e) =>
-                    setNewSegment({
-                      ...newSegment,
-                      start_waypoint_index: parseInt(e.target.value),
-                    })
+                <Select
+                  value={newSegment.start_waypoint ?? ''}
+                  onValueChange={(value) =>
+                    setNewSegment({ ...newSegment, start_waypoint: value })
                   }
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Start waypoint" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableWaypoints.map((waypoint) => (
+                      <SelectItem key={waypoint} value={waypoint}>
+                        {waypoint}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell>
-                <Input
-                  placeholder="Start name"
-                  value={newSegment.start_waypoint_name ?? ''}
-                  onChange={(e) =>
-                    setNewSegment({
-                      ...newSegment,
-                      start_waypoint_name: e.target.value,
-                    })
+                <Select
+                  value={newSegment.end_waypoint ?? ''}
+                  onValueChange={(value) =>
+                    setNewSegment({ ...newSegment, end_waypoint: value })
                   }
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  type="number"
-                  placeholder="End index"
-                  value={newSegment.end_waypoint_index ?? ''}
-                  onChange={(e) =>
-                    setNewSegment({
-                      ...newSegment,
-                      end_waypoint_index: parseInt(e.target.value),
-                    })
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  placeholder="End name"
-                  value={newSegment.end_waypoint_name ?? ''}
-                  onChange={(e) =>
-                    setNewSegment({
-                      ...newSegment,
-                      end_waypoint_name: e.target.value,
-                    })
-                  }
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="End waypoint" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableWaypoints.map((waypoint) => (
+                      <SelectItem key={waypoint} value={waypoint}>
+                        {waypoint}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </TableCell>
               <TableCell>
                 <Input
