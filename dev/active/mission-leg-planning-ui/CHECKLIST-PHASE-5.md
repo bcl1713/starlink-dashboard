@@ -70,8 +70,8 @@
 
 ### 5.2.1: Create AAR types
 
-- [ ] Create `frontend/mission-planner/src/types/aar.ts`
-- [ ] Add AAR segment interface:
+- [x] Create `frontend/mission-planner/src/types/aar.ts`
+- [x] Add AAR segment interface:
   ```typescript
   export interface AARSegment {
     id: string;
@@ -88,8 +88,8 @@
     segments: AARSegment[];
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Type definitions for AAR configuration
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Type definitions for AAR configuration
 
 ---
 
