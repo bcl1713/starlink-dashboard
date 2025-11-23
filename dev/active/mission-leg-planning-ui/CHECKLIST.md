@@ -430,8 +430,8 @@
 
 ### 2.7: Create package_exporter.py file
 
-- [ ] Create `backend/starlink-location/app/mission/package_exporter.py`
-- [ ] Add initial structure (keep under 350 lines):
+- [x] Create `backend/starlink-location/app/mission/package_exporter.py`
+- [x] Add initial structure (keep under 350 lines):
   ```python
   """Mission package export utilities for creating portable mission archives."""
 
@@ -497,7 +497,7 @@
       buffer.seek(0)
       return buffer.read()
   ```
-- [ ] Save the file (check < 350 lines)
+- [x] Save the file (check < 350 lines)
 
 ### 2.8: Add export endpoint to routes_v2.py
 
