@@ -1,8 +1,10 @@
 """Mission v2 API endpoints for hierarchical mission management."""
 
+import io
 import logging
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.mission.models import Mission, MissionLeg
@@ -12,6 +14,7 @@ from app.mission.storage import (
     delete_mission,
     mission_exists,
 )
+from app.mission.package_exporter import export_mission_package
 
 logger = logging.getLogger(__name__)
 
@@ -97,3 +100,24 @@ async def get_mission(mission_id: str) -> Mission:
         )
 
     return mission
+
+
+@router.post("/{mission_id}/export")
+async def export_mission(mission_id: str) -> StreamingResponse:
+    """Export mission as zip package."""
+    try:
+        zip_bytes = export_mission_package(mission_id)
+
+        return StreamingResponse(
+            io.BytesIO(zip_bytes),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{mission_id}.zip"'
+            },
+        )
+    except Exception as e:
+        logger.error(f"Export failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )

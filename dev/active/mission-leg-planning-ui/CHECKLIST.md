@@ -501,13 +501,13 @@
 
 ### 2.8: Add export endpoint to routes_v2.py
 
-- [ ] Open `backend/starlink-location/app/mission/routes_v2.py`
-- [ ] Add import:
+- [x] Open `backend/starlink-location/app/mission/routes_v2.py`
+- [x] Add import:
   ```python
   from fastapi.responses import StreamingResponse
   from app.mission.package_exporter import export_mission_package
   ```
-- [ ] Add endpoint:
+- [x] Add endpoint:
   ```python
   @router.post("/{mission_id}/export")
   async def export_mission(mission_id: str) -> StreamingResponse:
@@ -529,7 +529,7 @@
               detail=str(e),
           )
   ```
-- [ ] Save file (check < 350 lines)
+- [x] Save file (check < 350 lines)
 
 ### 2.9: Commit Phase 2 changes
 
