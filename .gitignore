@@ -42,5 +42,5 @@ volumes/
 .env
 
 # Frontend
-frontend/mission-planner/node_modules/
+frontend/mission-planner/node_modules/*
 
