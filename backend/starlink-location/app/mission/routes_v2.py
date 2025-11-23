@@ -16,3 +16,26 @@ from app.mission.storage import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
+
+
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=Mission)
+async def create_mission(mission: Mission) -> Mission:
+    """Create a new hierarchical mission with legs.
+
+    Args:
+        mission: Mission object to create
+
+    Returns:
+        Created mission with 201 status
+    """
+    try:
+        logger.info(f"Creating mission {mission.id}")
+        save_mission_v2(mission)
+        logger.info(f"Mission {mission.id} created successfully")
+        return mission
+    except Exception as e:
+        logger.error(f"Failed to create mission: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create mission",
+        )

@@ -285,8 +285,8 @@
 
 ### 2.2: Implement POST /api/v2/missions endpoint
 
-- [ ] In `backend/starlink-location/app/mission/routes_v2.py`
-- [ ] Add create mission endpoint:
+- [x] In `backend/starlink-location/app/mission/routes_v2.py`
+- [x] Add create mission endpoint:
   ```python
   @router.post("", status_code=status.HTTP_201_CREATED, response_model=Mission)
   async def create_mission(mission: Mission) -> Mission:
@@ -310,8 +310,8 @@
               detail="Failed to create mission",
           )
   ```
-- [ ] Save the file (check line count < 350)
-- [ ] Expected: POST endpoint defined
+- [x] Save the file (check line count < 350)
+- [x] Expected: POST endpoint defined
 
 ### 2.3: Implement GET /api/v2/missions endpoint
 
