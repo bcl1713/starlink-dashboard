@@ -97,13 +97,13 @@
 
 ### 5.3.1: Extend MissionLeg with satellite and AAR config
 
-- [ ] Open `frontend/mission-planner/src/types/mission.ts`
-- [ ] Import satellite and AAR types:
+- [x] Open `frontend/mission-planner/src/types/mission.ts`
+- [x] Import satellite and AAR types:
   ```typescript
   import { SatelliteConfig } from './satellite';
   import { AARConfig } from './aar';
   ```
-- [ ] Add fields to MissionLeg interface:
+- [x] Add fields to MissionLeg interface:
   ```typescript
   export interface MissionLeg {
     id: string;
@@ -116,8 +116,8 @@
     updated_at: string;
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: MissionLeg supports satellite and AAR configuration
+- [x] Save file (verify < 350 lines)
+- [x] Expected: MissionLeg supports satellite and AAR configuration
 
 ---
 
