@@ -1,48 +1,15 @@
-import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { useMission } from '../hooks/api/useMissions';
 import type { Mission } from '../types/mission';
 
 export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
   const navigate = useNavigate();
-  const [mission, setMission] = useState<Mission | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: mission, isLoading, error } = useMission(missionId || '');
 
-  useEffect(() => {
-    // TODO: Replace with actual API call to fetch mission data
-    // For now, use placeholder data
-    const placeholderMission: Mission = {
-      id: missionId || 'unknown',
-      name: `Mission ${missionId}`,
-      description: 'Mission description placeholder',
-      legs: [
-        {
-          id: 'leg-1',
-          name: 'Leg 1',
-          description: 'First leg of the mission',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        {
-          id: 'leg-2',
-          name: 'Leg 2',
-          description: 'Second leg of the mission',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      metadata: {},
-    };
-
-    setMission(placeholderMission);
-    setLoading(false);
-  }, [missionId]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto p-6">
         <p className="text-muted-foreground">Loading mission...</p>
@@ -50,10 +17,12 @@ export function MissionDetailPage() {
     );
   }
 
-  if (!mission) {
+  if (error || !mission) {
     return (
       <div className="container mx-auto p-6">
-        <p className="text-red-600">Mission not found</p>
+        <p className="text-red-600">
+          {error ? 'Error loading mission' : 'Mission not found'}
+        </p>
         <Button onClick={() => navigate('/missions')} className="mt-4">
           Back to Missions
         </Button>
