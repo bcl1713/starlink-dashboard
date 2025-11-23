@@ -614,7 +614,7 @@
 
 ### 3.5: Configure ESLint with max-lines rule
 
-- [ ] Create `.eslintrc.json`:
+- [x] Create `.eslintrc.json`:
   ```json
   {
     "extends": [
@@ -636,8 +636,8 @@
     }
   }
   ```
-- [ ] Save file
-- [ ] Expected: ESLint enforces 350-line limit
+- [x] Save file
+- [x] Expected: ESLint enforces 350-line limit
 
 ### 3.6: Configure Prettier
 
