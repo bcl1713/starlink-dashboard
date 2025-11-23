@@ -5,13 +5,21 @@
 **Folder:** `dev/active/mission-leg-planning-ui/`
 **Date:** 2025-11-23
 **Owner:** brian
-**Status:** Phases 1-4 Complete, Phase 5 Ready
+**Status:** Phases 1-4 complete; Phase 5 next
 
 ---
 
 ## Executive Summary
 
 This work introduces a hierarchical mission planning system where a **Mission** contains multiple **Mission Legs** (what are currently called "missions" in the codebase). Users will plan entire missions through a React-based web interface, configure satellite transitions and AAR segments for each leg, and export complete mission packages (including all legs, routes, POIs, and pre-generated documents) as zip files for portability across systems. The backend will be refactored to support this hierarchy while the new UI provides an intuitive wizard-style workflow. This enables mission planners to manage complex multi-leg operations as cohesive units rather than disconnected individual flights.
+
+---
+
+## Progress Updates (most recent first)
+
+- **2025-11-23 — Phase 4 completed:** Core mission UI in the React planner is working (missions list + create dialog), with API client, types, React Query hooks, routing, Tailwind, and ShadCN components wired to the v2 backend.
+- **2025-11-23 — Phases 1-3 completed:** Backend models renamed to MissionLeg with new Mission container and hierarchical storage; v2 missions API and package export skeleton registered in FastAPI; frontend scaffolding created with Vite/TypeScript, ESLint/Prettier, Tailwind, and Docker Compose service.
+- **Next focus:** Phase 5 — Satellite & AAR configuration UI (transition tables, outages, and AAR segment editor with map overlays).
 
 ---
 
