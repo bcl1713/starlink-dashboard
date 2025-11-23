@@ -655,7 +655,7 @@
 
 ### 3.7: Create project folder structure
 
-- [ ] Create directory structure:
+- [x] Create directory structure:
   ```bash
   mkdir -p src/components/{missions,legs,satellites,ui,common}
   mkdir -p src/hooks/{api,ui,utils}
@@ -663,7 +663,7 @@
   mkdir -p src/types
   mkdir -p src/lib
   ```
-- [ ] Expected: Folder structure matches CONTEXT.md
+- [x] Expected: Folder structure matches CONTEXT.md
 
 ### 3.8: Create Dockerfile for frontend
 
