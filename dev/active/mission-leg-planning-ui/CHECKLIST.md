@@ -841,7 +841,7 @@ executing-plan-checklist
 > documented in separate checklist files:
 >
 > - [x] `CHECKLIST-PHASE-4.md` — Core UI Components (COMPLETED)
-> - [ ] `CHECKLIST-PHASE-5.md` — Satellite & AAR Configuration
+> - [x] `CHECKLIST-PHASE-5.md` — Satellite & AAR Configuration (COMPLETED)
 > - [ ] `CHECKLIST-PHASE-6.md` — Export/Import UI
 > - [ ] `CHECKLIST-PHASE-7.md` — Testing & Documentation
 > - [ ] `CHECKLIST-PHASE-8.md` — Wrap-Up & PR
