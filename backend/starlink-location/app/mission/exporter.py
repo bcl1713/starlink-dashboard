@@ -1,6 +1,6 @@
 """Mission timeline export utilities.
 
-Transforms `MissionTimeline` data into CSV, XLSX, and PDF deliverables with
+Transforms `MissionLegTimeline` data into CSV, XLSX, and PDF deliverables with
 parallel timestamp formats (UTC, Eastern, and T+ offsets) suitable for
 customer-facing mission briefs.
 """
@@ -42,7 +42,7 @@ from pptx.enum.text import PP_ALIGN
 
 from app.mission.models import (
     Mission,
-    MissionTimeline,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
     Transport,
@@ -147,7 +147,7 @@ def _ensure_timezone(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
-def _mission_start_timestamp(timeline: MissionTimeline) -> datetime:
+def _mission_start_timestamp(timeline: MissionLegTimeline) -> datetime:
     """Infer the mission's zero point for T+ offsets."""
     if timeline.segments:
         earliest = min(_ensure_timezone(seg.start_time) for seg in timeline.segments)
@@ -215,7 +215,7 @@ def _display_transport_state(
 
 
 def _aar_block_rows(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     mission: Mission | None,
     mission_start: datetime,
 ) -> list[tuple[datetime, int, dict]]:
@@ -260,7 +260,7 @@ def _build_aar_record(
     start: datetime,
     end: datetime,
     mission: Mission | None,
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     mission_start: datetime,
 ) -> dict:
     duration = max((end - start).total_seconds(), 0)
@@ -298,7 +298,7 @@ def _build_aar_record(
 
 
 def _segment_at_time(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     timestamp: datetime,
 ) -> TimelineSegment | None:
     ts = _ensure_timezone(timestamp)
@@ -314,7 +314,7 @@ def _segment_at_time(
     return timeline.segments[-1] if timeline.segments else None
 
 
-def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, timeline: MissionTimeline) -> list[tuple[datetime, datetime, str]]:
+def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, timeline: MissionLegTimeline) -> list[tuple[datetime, datetime, str]]:
     if not timeline or not timeline.segments:
         return [(start_time, end_time, 'unknown')]
     
@@ -435,7 +435,7 @@ def _interpolate_position_at_time(target_time, p1, p2):
 
 
 
-def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def _generate_route_map(timeline: MissionLegTimeline, mission: Mission | None = None) -> bytes:
     """Generate a 4K PNG image of the route map.
 
     Current phase: Route line drawing (Phase 9)
@@ -922,7 +922,7 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
     return buf.read()
 
 
-def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
+def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
     """Generate a PNG image of a horizontal bar chart showing transport timeline.
 
     Args:
@@ -1055,7 +1055,7 @@ def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
 
 
 def _segment_rows(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     mission: Mission | None,
 ) -> pd.DataFrame:
     """Convert timeline segments into a pandas DataFrame."""
@@ -1117,7 +1117,7 @@ def _segment_rows(
     return pd.DataFrame.from_records(ordered_records, columns=columns)
 
 
-def _advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame:
+def _advisory_rows(timeline: MissionLegTimeline, mission: Mission | None) -> pd.DataFrame:
     """Convert timeline advisories into a pandas DataFrame (may be empty)."""
     mission_start = _mission_start_timestamp(timeline)
     records: list[dict] = []
@@ -1148,7 +1148,7 @@ def _advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.Dat
     return pd.DataFrame.from_records(records, columns=columns)
 
 
-def _statistics_rows(timeline: MissionTimeline) -> pd.DataFrame:
+def _statistics_rows(timeline: MissionLegTimeline) -> pd.DataFrame:
     stats = timeline.statistics or {}
     if not stats:
         return pd.DataFrame(columns=["Metric", "Value"])
@@ -1190,7 +1190,7 @@ def _compose_time_block(moment: datetime, mission_start: datetime) -> str:
     return f"{utc}\n{eastern}\n{offset}"
 
 
-def generate_csv_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def generate_csv_export(timeline: MissionLegTimeline, mission: Mission | None = None) -> bytes:
     """Return CSV bytes for the mission timeline."""
     csv_buffer = io.StringIO()
     df = _segment_rows(timeline, mission)
@@ -1198,7 +1198,7 @@ def generate_csv_export(timeline: MissionTimeline, mission: Mission | None = Non
     return csv_buffer.getvalue().encode("utf-8")
 
 
-def _summary_table_rows(timeline: MissionTimeline, mission: Mission | None = None) -> pd.DataFrame:
+def _summary_table_rows(timeline: MissionLegTimeline, mission: Mission | None = None) -> pd.DataFrame:
     """Generate simplified summary table DataFrame with key columns for Sheet 1.
 
     Returns a DataFrame with columns: Start (UTC), Duration, Status, Systems Down
@@ -1233,7 +1233,7 @@ def _summary_table_rows(timeline: MissionTimeline, mission: Mission | None = Non
     return pd.DataFrame.from_records(records, columns=columns)
 
 
-def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def generate_xlsx_export(timeline: MissionLegTimeline, mission: Mission | None = None) -> bytes:
     """Return XLSX bytes containing Summary sheet (with map, chart, table) plus Timeline, Advisory, and Statistics sheets."""
     workbook_bytes = io.BytesIO()
 
@@ -1324,7 +1324,7 @@ def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = No
     return final_bytes.read()
 
 
-def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def generate_pdf_export(timeline: MissionLegTimeline, mission: Mission | None = None) -> bytes:
     """Render a PDF brief summarizing the mission timeline."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -1542,7 +1542,7 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
     return buffer.read()
 
 
-def generate_pptx_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def generate_pptx_export(timeline: MissionLegTimeline, mission: Mission | None = None) -> bytes:
     """Generate a PowerPoint presentation with map and timeline table."""
     prs = Presentation()
 
@@ -1804,7 +1804,7 @@ def _base_map_canvas() -> bytes:
 def generate_timeline_export(
     export_format: TimelineExportFormat,
     mission: Mission,
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
 ) -> ExportArtifact:
     """Generate the requested export artifact."""
     if export_format is TimelineExportFormat.CSV:

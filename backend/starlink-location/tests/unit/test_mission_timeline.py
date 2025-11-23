@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 from app.mission.models import (
-    MissionTimeline,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
     Transport,

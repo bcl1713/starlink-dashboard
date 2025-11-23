@@ -9,9 +9,9 @@ from app.mission.models import (
     AARWindow,
     KaOutage,
     KuOutageOverride,
-    Mission,
+    MissionLeg,
     MissionPhase,
-    MissionTimeline,
+    MissionLegTimeline,
     TimelineAdvisory,
     TimelineSegment,
     TimelineStatus,
@@ -181,11 +181,11 @@ class TestTransportConfig:
 
 
 class TestMission:
-    """Tests for Mission model."""
+    """Tests for MissionLeg model."""
 
     def test_create_valid_mission(self):
         """Test creating a valid mission."""
-        mission = Mission(
+        mission = MissionLeg(
             id="mission-001",
             name="Leg 6 Rev 6",
             route_id="leg-6-rev-6",
@@ -200,7 +200,7 @@ class TestMission:
 
     def test_mission_with_description_and_notes(self):
         """Test mission with optional fields."""
-        mission = Mission(
+        mission = MissionLeg(
             id="mission-002",
             name="Test Mission",
             description="A test mission for unit testing",
@@ -213,7 +213,7 @@ class TestMission:
 
     def test_mission_json_serialization(self):
         """Test that mission can be serialized to JSON."""
-        mission = Mission(
+        mission = MissionLeg(
             id="mission-003",
             name="Serialization Test",
             route_id="test-route",
@@ -238,7 +238,7 @@ class TestMission:
                 "initial_ka_satellite_ids": ["AOR", "POR", "IOR"],
             },
         }
-        mission = Mission(**json_data)
+        mission = MissionLeg(**json_data)
         assert mission.id == "mission-004"
         assert mission.name == "Deserialization Test"
 
@@ -306,12 +306,12 @@ class TestTimelineAdvisory:
 
 
 class TestMissionTimeline:
-    """Tests for MissionTimeline model."""
+    """Tests for MissionLegTimeline model."""
 
     def test_create_empty_timeline(self):
         """Test creating an empty timeline."""
-        timeline = MissionTimeline(mission_id="mission-001")
-        assert timeline.mission_id == "mission-001"
+        timeline = MissionLegTimeline(mission_leg_id="mission-001")
+        assert timeline.mission_leg_id == "mission-001"
         assert len(timeline.segments) == 0
         assert len(timeline.advisories) == 0
         assert timeline.created_at is not None
@@ -325,8 +325,8 @@ class TestMissionTimeline:
             end_time=now + timedelta(hours=5),
             status=TimelineStatus.NOMINAL,
         )
-        timeline = MissionTimeline(
-            mission_id="mission-001",
+        timeline = MissionLegTimeline(
+            mission_leg_id="mission-001",
             segments=[segment],
             statistics={
                 "total_duration_seconds": 18000,

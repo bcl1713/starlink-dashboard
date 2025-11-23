@@ -9,8 +9,9 @@ from app.mission.models import (
     KaOutage,
     KuOutageOverride,
     Mission,
+    MissionLeg,
     MissionPhase,
-    MissionTimeline,
+    MissionLegTimeline,
     TimelineAdvisory,
     TimelineSegment,
     TimelineStatus,
@@ -24,6 +25,7 @@ from app.mission.timeline import assemble_mission_timeline, build_timeline_segme
 
 __all__ = [
     "Mission",
+    "MissionLeg",
     "TransportConfig",
     "XTransition",
     "KaOutage",
@@ -31,7 +33,7 @@ __all__ = [
     "KuOutageOverride",
     "TimelineAdvisory",
     "TimelineSegment",
-    "MissionTimeline",
+    "MissionLegTimeline",
     "Transport",
     "TransportState",
     "MissionPhase",

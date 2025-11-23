@@ -6,13 +6,13 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.mission.models import (
-    Mission,
+    MissionLeg,
     Transport,
     TransportConfig,
     TimelineSegment,
     TimelineStatus,
     TransportState,
-    MissionTimeline,
+    MissionLegTimeline,
     XTransition,
 )
 from app.mission.storage import delete_mission, mission_exists, list_missions
@@ -23,7 +23,7 @@ from app.mission.timeline_service import TimelineSummary
 def test_mission_x_transitions():
     """Create a test mission with 2 X-Band transitions."""
     unique_id = f"scenario-x-trans-{uuid4().hex[:8]}"
-    return Mission(
+    return MissionLeg(
         id=unique_id,
         name="Scenario: Normal Ops with X Transitions",
         description="Mission with X-1 to X-2 transition at 30%, then back to X-1 at 70%",
@@ -61,7 +61,7 @@ def test_mission_x_transitions():
 def test_mission_ka_coverage_swap():
     """Create a test mission crossing Ka coverage boundary (POR↔AOR)."""
     unique_id = f"scenario-ka-swap-{uuid4().hex[:8]}"
-    return Mission(
+    return MissionLeg(
         id=unique_id,
         name="Scenario: Ka Coverage Gaps - POR↔AOR Boundary",
         description="Mission crossing POR to AOR boundary with auto-detected coverage swap",
@@ -84,7 +84,7 @@ def test_mission_aar_azimuth_inversion():
     from app.mission.models import AARWindow
 
     unique_id = f"scenario-aar-azimuth-{uuid4().hex[:8]}"
-    return Mission(
+    return MissionLeg(
         id=unique_id,
         name="Scenario: AAR with X Azimuth Inversion",
         description="Mission with AAR window that inverts normal X-Band azimuth constraints",
@@ -114,7 +114,7 @@ def test_mission_multi_transport_critical():
 
     unique_id = f"scenario-multi-crit-{uuid4().hex[:8]}"
     now = datetime.now(timezone.utc)
-    return Mission(
+    return MissionLeg(
         id=unique_id,
         name="Scenario: Multi-Transport Degradation - Critical Status",
         description="Mission where X azimuth conflict and Ka gap overlap, creating critical window",
@@ -330,7 +330,7 @@ def stub_timeline_builder(monkeypatch):
             degraded_seconds = 60.0  # 2 transitions x 30 min each
             critical_seconds = 0.0
 
-        timeline = MissionTimeline(mission_id=mission.id, segments=segments)
+        timeline = MissionLegTimeline(mission_leg_id=mission.id, segments=segments)
         summary = TimelineSummary(
             mission_start=now,
             mission_end=now + timedelta(hours=2),
