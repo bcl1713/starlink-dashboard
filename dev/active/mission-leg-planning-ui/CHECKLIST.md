@@ -533,13 +533,13 @@
 
 ### 2.9: Commit Phase 2 changes
 
-- [ ] Stage all changes:
+- [x] Stage all changes:
   ```bash
   git add backend/starlink-location/app/mission/routes_v2.py
   git add backend/starlink-location/app/mission/package_exporter.py
   git add backend/starlink-location/main.py
   ```
-- [ ] Commit:
+- [x] Commit:
   ```bash
   git commit -m "feat: add v2 missions API and export endpoint
 
@@ -550,7 +550,7 @@
 
   Ref: dev/active/mission-leg-planning-ui/PLAN.md Phase 2"
   ```
-- [ ] Push:
+- [x] Push:
   ```bash
   git push origin feat/mission-leg-planning-ui
   ```
