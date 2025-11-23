@@ -86,6 +86,7 @@ For `dev/LESSONS-LEARNED.md`, it:
    - CONTEXT.md → `dev/active/<slug>/CONTEXT.md`
    - CHECKLIST.md → `dev/active/<slug>/CHECKLIST.md`
    - LESSONS-LEARNED.md → `dev/LESSONS-LEARNED.md` (repo root)
+   - HANDOFF.md → `dev/active/<slug>/HANDOFF.md` (if exists)
 
 If CHECKLIST.md does not exist, surface an error and suggest running
 `planning-feature-work` for this branch.
@@ -97,9 +98,10 @@ delegation and local updates.
 
 ### 2. Identify next unchecked task
 
-1. Parse CHECKLIST.md.
-2. Find the first line with `- [ ]`.
-3. Include any direct subtasks under this item as context.
+1. Parse HANDOFF.md if it exists.
+2. Parse CHECKLIST.md.
+3. Find the first line with `- [ ]`.
+4. Include any direct subtasks under this item as context.
 
 If there are no remaining `- [ ]` items:
 
@@ -141,9 +143,9 @@ Once confirmed, delegate to a Haiku sub-agent via the Task tool:
 - Full content of CONTEXT.md.
 - Full content of LESSONS-LEARNED.md (with explicit instruction: "Check this
   file if you encounter errors or blockers").
-- Instruction: "Execute this task exactly as specified in the checklist.
-  Report back: (1) success or failure, (2) list of files changed, (3) any new
-  lessons learned that should be added to LESSONS-LEARNED.md."
+- Instruction: "Execute this task exactly as specified in the checklist. Report
+  back: (1) success or failure, (2) list of files changed, (3) any new lessons
+  learned that should be added to LESSONS-LEARNED.md."
 - Grant full tool access to the sub-agent (Read, Edit, Write, Bash, etc.).
 
 **Sub-agent behavior:**
@@ -221,8 +223,8 @@ This skill MUST treat `dev/LESSONS-LEARNED.md` as:
 **Sub-agent rules (via instruction):**
 
 - Sub-agents MUST be given the full content of LESSONS-LEARNED.md.
-- Sub-agents MUST be instructed: "If you encounter errors or blockers, check
-  the LESSONS-LEARNED.md file for prior solutions or patterns."
+- Sub-agents MUST be instructed: "If you encounter errors or blockers, check the
+  LESSONS-LEARNED.md file for prior solutions or patterns."
 - Sub-agents MUST report back any new lessons learned during task execution.
 - Sub-agents MUST NOT directly edit LESSONS-LEARNED.md; the orchestrator handles
   this.
