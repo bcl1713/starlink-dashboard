@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.mission.models import Mission, MissionPhase, MissionTimeline, TransportState
+from app.mission.models import Mission, MissionLeg, MissionPhase, MissionTimeline, TransportState
 from app.mission.storage import (
     delete_mission,
     list_missions,
@@ -66,7 +66,7 @@ def set_route_manager(route_manager: RouteManager) -> None:
 
 
 def _compute_and_store_timeline_for_mission(
-    mission: Mission,
+    mission: MissionLeg,
     refresh_metrics: bool,
 ) -> tuple[MissionTimeline, TimelineSummary]:
     """Build, persist, and optionally publish metrics for a mission timeline."""
@@ -105,7 +105,7 @@ def _compute_and_store_timeline_for_mission(
     return timeline, summary
 
 
-def _refresh_timeline_after_save(mission: Mission) -> None:
+def _refresh_timeline_after_save(mission: MissionLeg) -> None:
     """Attempt to compute a fresh timeline immediately after save operations."""
     if not mission.route_id:
         return
@@ -177,7 +177,7 @@ class MissionErrorResponse(BaseModel):
 @router.post(
     "",
     status_code=status.HTTP_201_CREATED,
-    response_model=Mission,
+    response_model=MissionLeg,
     responses={
         422: {
             "model": MissionErrorResponse,
@@ -185,7 +185,7 @@ class MissionErrorResponse(BaseModel):
         }
     },
 )
-async def create_mission(mission: Mission) -> Mission:
+async def create_mission(mission: MissionLeg) -> MissionLeg:
     """
     Create a new mission.
 
@@ -293,7 +293,7 @@ async def list_missions_endpoint(
 
 @router.get(
     "/active",
-    response_model=Mission,
+    response_model=MissionLeg,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -301,7 +301,7 @@ async def list_missions_endpoint(
         }
     },
 )
-async def get_active_mission() -> Mission:
+async def get_active_mission() -> MissionLeg:
     """
     Get the currently active mission.
 
@@ -489,7 +489,7 @@ async def get_active_mission_satellites() -> dict:
 
 @router.get(
     "/{mission_id}",
-    response_model=Mission,
+    response_model=MissionLeg,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -497,7 +497,7 @@ async def get_active_mission_satellites() -> dict:
         }
     },
 )
-async def get_mission(mission_id: str) -> Mission:
+async def get_mission(mission_id: str) -> MissionLeg:
     """
     Get a specific mission by ID.
 
@@ -663,7 +663,7 @@ async def export_mission_timeline_endpoint(
 
 @router.put(
     "/{mission_id}",
-    response_model=Mission,
+    response_model=MissionLeg,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -677,8 +677,8 @@ async def export_mission_timeline_endpoint(
 )
 async def update_mission(
     mission_id: str,
-    mission_update: Mission,
-) -> Mission:
+    mission_update: MissionLeg,
+) -> MissionLeg:
     """
     Update an existing mission (merge logic).
 
@@ -710,7 +710,7 @@ async def update_mission(
         existing_mission = load_mission(mission_id)
 
         # Merge: preserve original created_at, update updated_at
-        merged = Mission(
+        merged = MissionLeg(
             id=mission_id,
             name=mission_update.name,
             description=mission_update.description,

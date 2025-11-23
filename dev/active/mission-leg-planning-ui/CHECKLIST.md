@@ -91,15 +91,15 @@
 
 ### 1.4: Update imports in routes.py
 
-- [ ] Open `backend/starlink-location/app/mission/routes.py`
-- [ ] Update the import statement:
+- [x] Open `backend/starlink-location/app/mission/routes.py`
+- [x] Update the import statement:
   ```python
   from app.mission.models import Mission, MissionLeg, MissionLegTimeline, ...
   ```
-- [ ] Find all occurrences of `Mission` type hints in function signatures
-- [ ] Replace them with `MissionLeg` where appropriate
-- [ ] Save the file
-- [ ] Expected: No import errors, `MissionLeg` used for current mission operations
+- [x] Find all occurrences of `Mission` type hints in function signatures
+- [x] Replace them with `MissionLeg` where appropriate
+- [x] Save the file
+- [x] Expected: No import errors, `MissionLeg` used for current mission operations
 
 ### 1.5: Update storage.py for hierarchical structure
 
