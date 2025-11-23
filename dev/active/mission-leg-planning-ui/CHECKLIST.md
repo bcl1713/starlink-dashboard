@@ -359,8 +359,8 @@
 
 ### 2.4: Implement GET /api/v2/missions/{id} endpoint
 
-- [ ] In `backend/starlink-location/app/mission/routes_v2.py`
-- [ ] Add get mission by ID endpoint:
+- [x] In `backend/starlink-location/app/mission/routes_v2.py`
+- [x] Add get mission by ID endpoint:
   ```python
   @router.get("/{mission_id}", response_model=Mission)
   async def get_mission(mission_id: str) -> Mission:
@@ -382,8 +382,8 @@
 
       return mission
   ```
-- [ ] Save the file
-- [ ] Expected: GET by ID endpoint defined
+- [x] Save the file
+- [x] Expected: GET by ID endpoint defined
 
 ### 2.5: Register v2 router in main.py
 

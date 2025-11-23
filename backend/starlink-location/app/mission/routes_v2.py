@@ -76,3 +76,24 @@ async def list_missions(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list missions",
         )
+
+
+@router.get("/{mission_id}", response_model=Mission)
+async def get_mission(mission_id: str) -> Mission:
+    """Get a specific mission by ID.
+
+    Args:
+        mission_id: Mission ID to retrieve
+
+    Returns:
+        Mission object with all legs
+    """
+    mission = load_mission_v2(mission_id)
+
+    if not mission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Mission {mission_id} not found",
+        )
+
+    return mission
