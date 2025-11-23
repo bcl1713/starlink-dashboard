@@ -1404,11 +1404,8 @@ def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
 def _format_commka_transition_label(
     from_satellite: str | None, to_satellite: str | None
 ) -> str:
-    if from_satellite and to_satellite:
-        return f"CommKa\n{from_satellite}→{to_satellite}"
-    if to_satellite:
-        return f"CommKa\n→{to_satellite}"
-    return "CommKa\nTransition"
+    # Simplified: all CommKa swaps show as "CommKa\nSwap"
+    return "CommKa\nSwap"
 
 
 def _format_x_transition_label(
