@@ -339,10 +339,10 @@ outages, Ku outages) and AAR segment definition UI with map visualization.
 
 ### 5.7.1: Create AARSegmentEditor component
 
-- [ ] Create `frontend/mission-planner/src/components/aar/AARSegmentEditor.tsx`
-- [ ] Implement AAR segment editor with waypoint selection
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: AAR segment editor component
+- [x] Create `frontend/mission-planner/src/components/aar/AARSegmentEditor.tsx`
+- [x] Implement AAR segment editor with waypoint selection
+- [x] Save file (verify < 350 lines)
+- [x] Expected: AAR segment editor component
 
 ---
 
