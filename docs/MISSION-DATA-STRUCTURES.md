@@ -270,7 +270,7 @@ TRANSPORT_DISPLAY = {
 
 STATE_COLUMNS = [
     "X-Band",      # TRANSPORT_DISPLAY[Transport.X]
-    "CommKa",         # TRANSPORT_DISPLAY[Transport.KA]
+    "CommKa",      # TRANSPORT_DISPLAY[Transport.KA]
     "StarShield",  # TRANSPORT_DISPLAY[Transport.KU]
 ]
 ```
