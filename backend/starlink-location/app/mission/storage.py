@@ -40,19 +40,19 @@ def get_mission_timeline_path(mission_id: str) -> Path:
     return MISSIONS_DIR / f"{mission_id}{TIMELINE_SUFFIX}"
 
 
-def get_mission_directory(mission_id: str) -> Path:
+def get_mission_path(mission_id: str) -> Path:
     """Get the directory path for a mission."""
     return MISSIONS_DIR / mission_id
 
 
 def get_mission_file_path(mission_id: str) -> Path:
     """Get the file path for mission metadata."""
-    return get_mission_directory(mission_id) / "mission.json"
+    return get_mission_path(mission_id) / "mission.json"
 
 
 def get_mission_legs_dir(mission_id: str) -> Path:
     """Get the legs directory for a mission."""
-    return get_mission_directory(mission_id) / "legs"
+    return get_mission_path(mission_id) / "legs"
 
 
 def get_mission_leg_file_path(mission_id: str, leg_id: str) -> Path:
