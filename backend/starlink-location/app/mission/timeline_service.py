@@ -1413,13 +1413,8 @@ def _format_x_transition_label(
     target_satellite: str | None,
     is_same_satellite: bool,
 ) -> str:
-    if is_same_satellite:
-        return "X-Band\nBeam Swap"
-    if current_satellite and target_satellite:
-        return f"X-Band\n{current_satellite}→{target_satellite}"
-    if target_satellite:
-        return f"X-Band\n→{target_satellite}"
-    return "X-Band\nTransition"
+    # Simplified: all X-Band swaps show as "X-Band\nSwap"
+    return "X-Band\nSwap"
 
 
 def _find_waypoint_coordinates(
