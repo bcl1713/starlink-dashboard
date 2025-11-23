@@ -724,7 +724,7 @@
           {
             "config": {
               "rules": [],
-              "src": "http://localhost:8000/data/sat_coverage/hcx.geojson",
+              "src": "http://localhost:8000/data/sat_coverage/commka.geojson",
               "style": {
                 "color": {
                   "fixed": "#8AB8FF"
@@ -758,7 +758,7 @@
                 }
               }
             },
-            "name": "HCXOverlay",
+            "name": "CommKaOverlay",
             "opacity": 1,
             "tooltip": true,
             "type": "geojson"

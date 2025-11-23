@@ -20,7 +20,7 @@ from app.satellites.kmz_importer import (
     extract_kmz,
     kmz_to_geojson,
     load_geojson_polygon,
-    load_hcx_coverage,
+    load_commka_coverage,
 )
 
 __all__ = [
@@ -36,6 +36,6 @@ __all__ = [
     "CoverageEvent",
     "extract_kmz",
     "kmz_to_geojson",
-    "load_hcx_coverage",
+    "load_commka_coverage",
     "load_geojson_polygon",
 ]

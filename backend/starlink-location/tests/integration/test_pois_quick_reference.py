@@ -30,7 +30,7 @@ def test_pre_departure_other_poi_retains_eta(test_client, monkeypatch):
     create_response = test_client.post(
         "/api/pois",
         json={
-            "name": "HCX swap",
+            "name": "CommKa swap",
             "latitude": 41.0,
             "longitude": -73.0,
             "icon": "marker",
@@ -47,8 +47,8 @@ def test_pre_departure_other_poi_retains_eta(test_client, monkeypatch):
     assert eta_response.status_code == 200, eta_response.text
     payload = eta_response.json()
 
-    poi_rows = [poi for poi in payload.get("pois", []) if poi["name"] == "HCX swap"]
-    assert poi_rows, "HCX swap POI should be included in quick reference payload"
+    poi_rows = [poi for poi in payload.get("pois", []) if poi["name"] == "CommKa swap"]
+    assert poi_rows, "CommKa swap POI should be included in quick reference payload"
 
     poi_entry = poi_rows[0]
     assert poi_entry["route_aware_status"] == "pre_departure"

@@ -58,7 +58,7 @@ LIGHT_YELLOW = colors.Color(1.0, 1.0, 0.85)
 LIGHT_RED = colors.Color(1.0, 0.85, 0.85)
 TRANSPORT_DISPLAY = {
     Transport.X: "X-Band",
-    Transport.KA: "HCX",
+    Transport.KA: "CommKa",
     Transport.KU: "StarShield",
 }
 STATE_COLUMNS = [
@@ -930,7 +930,7 @@ def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
 
     Returns:
         PNG image as bytes showing three rows of colored blocks representing
-        X-Band, Ka (HCX), and Ku (StarShield) state transitions over mission duration.
+        X-Band, Ka (CommKa), and Ku (StarShield) state transitions over mission duration.
     """
     from matplotlib.ticker import FuncFormatter
 
@@ -970,7 +970,7 @@ def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
     # Transport configuration: (y_position, name, state_getter)
     transports = [
         (0, 'Ku (StarShield)', lambda seg: seg.ku_state),
-        (1, 'Ka (HCX)', lambda seg: seg.ka_state),
+        (1, 'Ka (CommKa)', lambda seg: seg.ka_state),
         (2, 'X-Band', lambda seg: seg.x_state),
     ]
 
@@ -999,7 +999,7 @@ def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
     # Configure y-axis with better spacing and readability
     ax.set_ylim(-0.6, 2.6)
     ax.set_yticks([0, 1, 2])
-    ax.set_yticklabels(['Ku (StarShield)', 'Ka (HCX)', 'X-Band'],
+    ax.set_yticklabels(['Ku (StarShield)', 'Ka (CommKa)', 'X-Band'],
                        fontsize=11, fontweight='semibold', color='#2c3e50')
     ax.tick_params(axis='y', labelsize=11, colors='#2c3e50')
 

@@ -1,7 +1,7 @@
 """Satellite catalog management for mission planning.
 
 Manages satellite metadata including POIs and coverage data. Integrates with
-HCX KMZ coverage files for Ka satellites and optional math-based fallback.
+CommKa KMZ coverage files for Ka satellites and optional math-based fallback.
 """
 
 import json
@@ -119,7 +119,7 @@ def load_satellite_catalog(
 
     Initializes catalog with:
     1. Default X/Ka/Ku satellite definitions
-    2. HCX KMZ polygons (converted to GeoJSON)
+    2. CommKa KMZ polygons (converted to GeoJSON)
     3. Custom catalog.yaml if present
 
     Args:
@@ -177,7 +177,7 @@ def _add_default_satellites(
     )
 
     # Ka transport: Three operational beams (Atlantic, Pacific, Indian)
-    hcx_coverage = sat_coverage_dir / "hcx.geojson"
+    commka_coverage = sat_coverage_dir / "commka.geojson"
 
     catalog.add_satellite(
         Satellite(
@@ -185,7 +185,7 @@ def _add_default_satellites(
             transport="Ka",
             longitude=-30.0,
             slot="Atlantic Ocean Region",
-            coverage_geojson_path=hcx_coverage if hcx_coverage.exists() else None,
+            coverage_geojson_path=commka_coverage if commka_coverage.exists() else None,
             color="#4CAF50",
         )
     )
@@ -196,7 +196,7 @@ def _add_default_satellites(
             transport="Ka",
             longitude=154.0,
             slot="Pacific Ocean Region",
-            coverage_geojson_path=hcx_coverage if hcx_coverage.exists() else None,
+            coverage_geojson_path=commka_coverage if commka_coverage.exists() else None,
             color="#66BB6A",
         )
     )
@@ -207,7 +207,7 @@ def _add_default_satellites(
             transport="Ka",
             longitude=60.0,
             slot="Indian Ocean Region",
-            coverage_geojson_path=hcx_coverage if hcx_coverage.exists() else None,
+            coverage_geojson_path=commka_coverage if commka_coverage.exists() else None,
             color="#81C784",
         )
     )

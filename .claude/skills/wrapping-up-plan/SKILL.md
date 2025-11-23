@@ -18,8 +18,8 @@ This skill completes a plan end-to-end by:
 - Creating a PR automatically for the feature branch.
 - Updating the PR description with outcome details.
 - Merging the PR when tools indicate it is approved and mergeable.
-- Archiving the dev folder:
-  - Moving `dev/active/<slug>/` to `dev/complete/<slug>/`.
+- Removing the dev folder:
+  - Deleting `dev/active/<slug>/` to keep the codebase clean.
 - Pushing a final cleanup commit to the default branch.
 
 ## When to use
@@ -157,23 +157,22 @@ If tools do not expose this information:
 
 ---
 
-### 7. Archive dev folder and cleanup commit
+### 7. Remove dev folder and cleanup commit
 
 Once the PR is merged and the default branch is up to date:
 
 1. Check out the default/main branch and pull the latest changes.
-2. Move the folder on disk:
-   - From: `dev/active/<slug>/`
-   - To: `dev/complete/<slug>/`
+2. Remove the folder on disk:
+   - Delete: `dev/active/<slug>/`
 3. Update any project-level indices/README as needed to reference:
-   - The archived folder.
    - The merged PR.
+   - The completion of work for this slug.
 
 Then:
 
 - Stage these changes.
 - Commit with a message like:
-  - `chore: archive <slug> to dev/complete`
+  - `chore: remove dev folder for <slug>`
 - Push the default branch.
 
 ---
@@ -185,9 +184,9 @@ The skill should summarize for the user:
 - The feature branch name and slug.
 - The PR URL.
 - Whether the PR is open or merged.
-- The archived folder path (`dev/complete/<slug>/`).
-- The locations of final docs:
-  - PLAN.md, CONTEXT.md, CHECKLIST.md, HANDOFF.md, LESSONS-LEARNED.md.
+- Confirmation that the dev folder has been removed.
+- Note that final docs (PLAN.md, CONTEXT.md, CHECKLIST.md, HANDOFF.md) are
+  preserved in the merged PR history.
 
 After this skill runs and the PR is merged, the work is considered fully wrapped
-and archived.
+and the dev folder is cleaned up to keep the codebase uncluttered.

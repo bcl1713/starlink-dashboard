@@ -29,7 +29,7 @@ to show exactly when communication will be **nominal** (all systems working),
 
 - **X-Band:** Military satellite system with fixed azimuth dead zones and manual
   handoff points
-- **Ka (HCX):** Commercial satellite constellation with automated coverage
+- **Ka (CommKa):** Commercial satellite constellation with automated coverage
   transitions
 - **Ku (StarShield):** LEO constellation backup system, always available unless
   manually flagged out
@@ -197,7 +197,7 @@ adjustable per mission).
 
 ---
 
-### Ka (HCX - High Capacity Satellite)
+### Ka (CommKa - High Capacity Satellite)
 
 **What it is:** Commercial very-high-bandwidth satellite system; lower latency
 than Ku.

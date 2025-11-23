@@ -1,6 +1,6 @@
 """KMZ/KML to GeoJSON conversion for satellite coverage overlays.
 
-Handles ingestion of KML/KMZ files (Ka coverage from HCX source) and converts
+Handles ingestion of KML/KMZ files (Ka coverage from CommKa source) and converts
 to standardized GeoJSON format for point-in-polygon testing and Grafana display.
 """
 
@@ -204,7 +204,7 @@ def kmz_to_geojson(
     if kml_root is None:
         return None
 
-    # Default mappings for HCX satellite coverage
+    # Default mappings for CommKa satellite coverage
     if polygon_mappings is None:
         polygon_mappings = {
             "PORB": "POR",
@@ -250,25 +250,25 @@ def kmz_to_geojson(
     return geojson
 
 
-def load_hcx_coverage(
+def load_commka_coverage(
     kmz_path: Path, output_dir: Path = Path("data/sat_coverage")
 ) -> Optional[Path]:
-    """Load HCX KMZ and convert to GeoJSON.
+    """Load CommKa KMZ and convert to GeoJSON.
 
-    Convenience function for standard HCX coverage ingestion.
+    Convenience function for standard CommKa coverage ingestion.
 
     Args:
-        kmz_path: Path to HCX.kmz
-        output_dir: Directory to save hcx.geojson
+        kmz_path: Path to CommKa.kmz
+        output_dir: Directory to save commka.geojson
 
     Returns:
-        Path to generated hcx.geojson, or None if failed
+        Path to generated commka.geojson, or None if failed
     """
-    output_path = output_dir / "hcx.geojson"
+    output_path = output_dir / "commka.geojson"
 
     # Skip if already converted
     if output_path.exists():
-        logger.info(f"HCX GeoJSON already exists at {output_path}")
+        logger.info(f"CommKa GeoJSON already exists at {output_path}")
         return output_path
 
     # Convert
@@ -276,7 +276,7 @@ def load_hcx_coverage(
     if geojson is None:
         return None
 
-    logger.info(f"HCX coverage loaded: {len(geojson['features'])} regions")
+    logger.info(f"CommKa coverage loaded: {len(geojson['features'])} regions")
     return output_path
 
 
