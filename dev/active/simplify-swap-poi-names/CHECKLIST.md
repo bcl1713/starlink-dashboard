@@ -197,19 +197,19 @@
 
 ### Task 5: Verify Backend Health
 
-- [ ] Check backend health endpoint:
+- [x] Check backend health endpoint:
   ```bash
   curl http://localhost:8000/health
   ```
 
-- [ ] **Expected result:** JSON response with `"status":"ok"`
+- [x] **Expected result:** JSON response with `"status":"ok"`
 
-- [ ] Check API documentation is accessible:
+- [x] Check API documentation is accessible:
   ```bash
   curl -I http://localhost:8000/docs
   ```
 
-- [ ] **Expected result:** HTTP 200 response
+- [x] **Expected result:** HTTP 200 response
 
 ---
 
