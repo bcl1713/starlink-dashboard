@@ -62,6 +62,25 @@ Files that consume POI names (no changes needed, just verification):
 
 ---
 
+## Verified During Implementation
+
+**POI Data Persistence:**
+- POI names are persisted in `/data/pois.json` after Docker rebuild
+- When testing new POI generation logic, ensure POI data is cleared or expect old names in existing missions
+- Solution: Delete `/data/pois.json` before Docker rebuild to test fresh POI generation, or create new missions after code deployment
+
+**Mission Creation Workflow:**
+- Missions must be explicitly created via POST `/api/missions` endpoint (not auto-generated)
+- Sample curl: `curl -X POST -H "Content-Type: application/json" -d '{"name":"Test","route_id":"simple-circular"}' http://localhost:8000/api/missions`
+- Verification of POI names requires an active mission with timing data
+
+**Export Endpoint Method:**
+- Export endpoints require POST method, not GET
+- Example: `curl -X POST http://localhost:8000/api/missions/{mission_id}/export/csv` returns CSV file
+- XLSX, PDF, PPTX exports follow the same pattern (POST, not GET)
+
+---
+
 ## Risks
 
 - **Risk:** Existing unit tests may expect specific POI name formats and could fail
