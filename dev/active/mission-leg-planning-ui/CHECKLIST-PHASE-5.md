@@ -315,11 +315,11 @@ outages, Ku outages) and AAR segment definition UI with map visualization.
 
 ### 5.5.1: Create KaOutageConfig component
 
-- [ ] Create
+- [x] Create
       `frontend/mission-planner/src/components/satellites/KaOutageConfig.tsx`
-- [ ] Implement Ka outage windows editor (similar pattern to X-Band transitions)
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Ka outage configuration component
+- [x] Implement Ka outage windows editor (similar pattern to X-Band transitions)
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Ka outage configuration component
 
 ---
 
