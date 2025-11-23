@@ -667,7 +667,7 @@
 
 ### 3.8: Create Dockerfile for frontend
 
-- [ ] Create `frontend/mission-planner/Dockerfile`:
+- [x] Create `frontend/mission-planner/Dockerfile`:
   ```dockerfile
   # Multi-stage build for production
   FROM node:20-alpine AS builder
@@ -699,7 +699,7 @@
 
   CMD ["nginx", "-g", "daemon off;"]
   ```
-- [ ] Save file
+- [x] Save file
 
 ### 3.9: Update docker-compose.yml
 
