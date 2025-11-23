@@ -768,8 +768,8 @@
 ## Documentation Maintenance
 
 - [x] Update PLAN.md after completing each phase
-- [ ] Update CONTEXT.md if new files, dependencies, or risks discovered
-- [ ] Update dev/LESSONS-LEARNED.md when something surprising happens
+- [x] Update CONTEXT.md if new files, dependencies, or risks discovered
+- [x] Update dev/LESSONS-LEARNED.md when something surprising happens
 
 ---
 
