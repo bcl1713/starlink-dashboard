@@ -27,8 +27,8 @@
 
 ### 4.1.1: Create API client configuration
 
-- [ ] Create `frontend/mission-planner/src/services/api-client.ts`
-- [ ] Add axios instance with base URL configuration:
+- [x] Create `frontend/mission-planner/src/services/api-client.ts`
+- [x] Add axios instance with base URL configuration:
   ```typescript
   import axios from 'axios';
 
@@ -50,8 +50,8 @@
     }
   );
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Axios client configured with base URL and interceptors
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Axios client configured with base URL and interceptors
 
 ---
 
