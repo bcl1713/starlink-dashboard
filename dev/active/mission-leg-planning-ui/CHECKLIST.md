@@ -402,15 +402,15 @@
 
 ### 2.6: Test v2 endpoints manually
 
-- [ ] Rebuild and restart Docker containers:
+- [x] Rebuild and restart Docker containers:
   ```bash
   docker compose down && docker compose build --no-cache && docker compose up -d
   ```
-- [ ] Wait for services to be healthy:
+- [x] Wait for services to be healthy:
   ```bash
   docker compose ps
   ```
-- [ ] Test create mission:
+- [x] Test create mission:
   ```bash
   curl -X POST http://localhost:8000/api/v2/missions \
     -H "Content-Type: application/json" \
@@ -421,12 +421,12 @@
       "legs": []
     }'
   ```
-- [ ] Expected: 201 Created response with mission JSON
-- [ ] Test list missions:
+- [x] Expected: 201 Created response with mission JSON
+- [x] Test list missions:
   ```bash
   curl http://localhost:8000/api/v2/missions
   ```
-- [ ] Expected: Array with test mission
+- [x] Expected: Array with test mission
 
 ### 2.7: Create package_exporter.py file
 
