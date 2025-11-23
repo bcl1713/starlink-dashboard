@@ -33,15 +33,15 @@
 
 ### 1.1: Rename Mission to MissionLeg in models.py
 
-- [ ] Open `backend/starlink-location/app/mission/models.py`
-- [ ] Locate the `class Mission(BaseModel):` definition
-- [ ] Rename the class from `Mission` to `MissionLeg`:
+- [x] Open `backend/starlink-location/app/mission/models.py`
+- [x] Locate the `class Mission(BaseModel):` definition
+- [x] Rename the class from `Mission` to `MissionLeg`:
   ```python
   class MissionLeg(BaseModel):
   ```
-- [ ] Update the docstring to reflect the rename
-- [ ] Save the file
-- [ ] Expected: File should now define `MissionLeg` instead of `Mission`
+- [x] Update the docstring to reflect the rename
+- [x] Save the file
+- [x] Expected: File should now define `MissionLeg` instead of `Mission`
 
 ### 1.2: Create new Mission model in models.py
 

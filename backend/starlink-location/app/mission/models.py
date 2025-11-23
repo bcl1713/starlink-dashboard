@@ -291,10 +291,10 @@ class TimelineAdvisory(BaseModel):
     }
 
 
-class Mission(BaseModel):
-    """Complete mission configuration for communication planning.
+class MissionLeg(BaseModel):
+    """Complete mission leg configuration for communication planning.
 
-    A mission ties together a timed flight route with transport assignments,
+    A mission leg ties together a timed flight route with transport assignments,
     satellite transitions, operational constraints (AAR, buffers), and
     produces a communication timeline for planning and customer delivery.
     """
