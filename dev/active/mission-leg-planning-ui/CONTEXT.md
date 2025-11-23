@@ -30,20 +30,22 @@ The current system treats each "mission" as an isolated entity, but real-world o
 
 **Backend - Export/Import:**
 - `backend/starlink-location/app/mission/exporter.py` — Current timeline export (PDF, XLSX, etc.)
-- `backend/starlink-location/app/mission/package_exporter.py` — New mission package exporter (to be created)
-- `backend/starlink-location/app/mission/package_importer.py` — New mission package importer (to be created)
+- `backend/starlink-location/app/mission/package_exporter.py` — Mission package exporter scaffold (zip manifest + mission metadata)
+- `backend/starlink-location/app/mission/package_importer.py` — Mission package importer (to be created)
 
-**Frontend (new):**
-- `frontend/mission-planner/` — React + TypeScript application root (to be created)
-- `frontend/mission-planner/src/components/` — UI components (ShadCN-based)
-- `frontend/mission-planner/src/hooks/` — Custom React hooks
-- `frontend/mission-planner/src/services/` — API client services
-- `frontend/mission-planner/src/types/` — TypeScript type definitions
-- `frontend/mission-planner/src/lib/` — Utility functions
+**Frontend (new, created):**
+- `frontend/mission-planner/` — React + TypeScript app (Vite) with Tailwind + ShadCN
+- `frontend/mission-planner/src/components/` — UI components (missions, legs, satellites, ui, common)
+- `frontend/mission-planner/src/hooks/` — Custom React hooks (`hooks/api/useMissions.ts`)
+- `frontend/mission-planner/src/services/` — API client services (`api-client.ts`, `missions.ts`)
+- `frontend/mission-planner/src/types/` — TypeScript types (`mission.ts`)
+- `frontend/mission-planner/src/lib/` — Utility helpers placeholder
+- `frontend/mission-planner/src/pages/` — Pages (`MissionsPage.tsx`)
+- `frontend/mission-planner/src/main.tsx` — Entry with QueryClient + Router
 
 **Docker:**
-- `docker-compose.yml` — Will need frontend service added
-- `frontend/mission-planner/Dockerfile` — Frontend build container (to be created)
+- `docker-compose.yml` — Includes mission-planner service on port 5173 targeting backend at 8000
+- `frontend/mission-planner/Dockerfile` — Frontend build container (multi-stage: node build → nginx serve)
 
 ---
 
@@ -57,25 +59,20 @@ The current system treats each "mission" as an isolated entity, but real-world o
 - python-pptx — PowerPoint export
 - zipfile (stdlib) — For package export/import
 
-**Frontend Libraries (to be added):**
-- React 18 — UI framework
-- TypeScript 5+ — Type safety
-- Vite — Build tooling and dev server
+**Frontend Libraries (current/install targets):**
+- React 18, TypeScript 5+, Vite — Core app stack
 - React Router — Navigation
-- TanStack Query (React Query) — Server state management
-- Zustand — Client state management
-- ShadCN/UI — Component library (Radix UI primitives)
-- Tailwind CSS — Utility-first styling (required for ShadCN)
+- TanStack Query (React Query) — Server state
+- Zustand — Client state (planned)
+- ShadCN/UI + Tailwind CSS — UI kit
 - Leaflet + react-leaflet — Map visualization
-- React Hook Form — Form management
-- Zod — Schema validation (runtime + TypeScript types)
+- React Hook Form — Form handling
+- Zod — Validation
 - Axios — HTTP client
 - react-dropzone — File upload
-- Vitest — Unit testing framework
-- React Testing Library — Component testing
+- Vitest, React Testing Library — Unit/component testing
 - Playwright — E2E testing
-- Prettier — Code formatting
-- ESLint + TypeScript ESLint — Linting
+- Prettier, ESLint + TypeScript ESLint — Formatting/linting
 
 **Environment Variables:**
 - `CORS_ORIGINS` — Add frontend dev server URL for CORS
