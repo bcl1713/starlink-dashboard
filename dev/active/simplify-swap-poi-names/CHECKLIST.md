@@ -237,31 +237,31 @@
 
 ### Task 7: Verify Grafana Map Display
 
-- [ ] Open Grafana in browser:
+- [x] Open Grafana in browser:
   ```
   http://localhost:3000
   ```
 
-- [ ] Login (default: admin / admin)
+- [x] Login (default: admin / admin)
 
-- [ ] Navigate to Fullscreen Overview dashboard:
+- [x] Navigate to Fullscreen Overview dashboard:
   ```
   http://localhost:3000/d/starlink/fullscreen-overview
   ```
 
-- [ ] Locate the map panel showing POI markers
+- [x] Locate the map panel showing POI markers
 
-- [ ] **Expected result:** POI labels on map show:
+- [x] **Expected result:** POI labels on map show:
   - "X-Band
     Swap" (two lines)
   - "CommKa
-    Swap" (two lines)
+    Swap" (two lines) ✓ VERIFIED
   - "CommKa
     Exit" (two lines)
   - "CommKa
     Entry" (two lines)
 
-- [ ] Confirm no satellite names appear in these POI labels
+- [x] Confirm no satellite names appear in these POI labels
 
 ---
 
