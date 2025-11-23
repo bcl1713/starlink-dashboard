@@ -327,11 +327,11 @@ outages, Ku outages) and AAR segment definition UI with map visualization.
 
 ### 5.6.1: Create KuOutageConfig component
 
-- [ ] Create
+- [x] Create
       `frontend/mission-planner/src/components/satellites/KuOutageConfig.tsx`
-- [ ] Implement Ku/Starlink outage windows editor
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Ku outage configuration component
+- [x] Implement Ku/Starlink outage windows editor
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Ku outage configuration component
 
 ---
 
