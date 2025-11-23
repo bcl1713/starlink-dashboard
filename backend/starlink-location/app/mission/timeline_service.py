@@ -48,13 +48,7 @@ X_AAR_POI_PREFIXES = (
     "X-Band",
     "AAR",
 )
-KA_POI_NAME_PREFIXES = (
-    "Ka Coverage Exit",
-    "Ka Coverage Entry",
-    "Ka Transition",
-    "Ka Swap",
-    "CommKa",
-)
+
 
 _COVERAGE_SAMPLER: CoverageSampler | None = None
 try:
@@ -1389,7 +1383,6 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
         kmz_candidates = [
             Path("data/sat_coverage/CommKa.kmz"),
             APP_DIR / "satellites" / "assets" / "CommKa.kmz",
-            REPO_ROOT / "dev" / "active" / "mission-comm-planning" / "CommKa.kmz",
         ]
         for kmz_path in kmz_candidates:
             if kmz_path.exists():
