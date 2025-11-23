@@ -1,6 +1,6 @@
 export interface XBandTransition {
-  waypoint_index: number;
-  waypoint_name: string;
+  latitude: number;
+  longitude: number;
   from_satellite: string;
   to_satellite: string;
   timestamp?: string;

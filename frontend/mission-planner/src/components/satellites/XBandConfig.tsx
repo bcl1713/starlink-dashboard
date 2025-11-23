@@ -23,12 +23,16 @@ export function XBandConfig({
   const [newTransition, setNewTransition] = useState<Partial<XBandTransition>>({});
 
   const handleAddTransition = () => {
-    if (newTransition.waypoint_index !== undefined && newTransition.to_satellite) {
+    if (
+      newTransition.latitude !== undefined &&
+      newTransition.longitude !== undefined &&
+      newTransition.to_satellite
+    ) {
       onTransitionsChange([
         ...transitions,
         {
-          waypoint_index: newTransition.waypoint_index,
-          waypoint_name: newTransition.waypoint_name || '',
+          latitude: newTransition.latitude,
+          longitude: newTransition.longitude,
           from_satellite: transitions[transitions.length - 1]?.to_satellite || startingSatellite || '',
           to_satellite: newTransition.to_satellite,
         },
@@ -64,8 +68,8 @@ export function XBandConfig({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Waypoint Index</TableHead>
-              <TableHead>Waypoint Name</TableHead>
+              <TableHead>Latitude</TableHead>
+              <TableHead>Longitude</TableHead>
               <TableHead>From Satellite</TableHead>
               <TableHead>To Satellite</TableHead>
               <TableHead>Actions</TableHead>
@@ -74,8 +78,8 @@ export function XBandConfig({
           <TableBody>
             {transitions.map((transition, index) => (
               <TableRow key={index}>
-                <TableCell>{transition.waypoint_index}</TableCell>
-                <TableCell>{transition.waypoint_name}</TableCell>
+                <TableCell>{transition.latitude}</TableCell>
+                <TableCell>{transition.longitude}</TableCell>
                 <TableCell>{transition.from_satellite}</TableCell>
                 <TableCell>{transition.to_satellite}</TableCell>
                 <TableCell>
@@ -93,22 +97,28 @@ export function XBandConfig({
               <TableCell>
                 <Input
                   type="number"
-                  placeholder="Index"
-                  value={newTransition.waypoint_index ?? ''}
+                  step="0.000001"
+                  placeholder="Latitude"
+                  value={newTransition.latitude ?? ''}
                   onChange={(e) =>
                     setNewTransition({
                       ...newTransition,
-                      waypoint_index: parseInt(e.target.value),
+                      latitude: parseFloat(e.target.value),
                     })
                   }
                 />
               </TableCell>
               <TableCell>
                 <Input
-                  placeholder="Name"
-                  value={newTransition.waypoint_name ?? ''}
+                  type="number"
+                  step="0.000001"
+                  placeholder="Longitude"
+                  value={newTransition.longitude ?? ''}
                   onChange={(e) =>
-                    setNewTransition({ ...newTransition, waypoint_name: e.target.value })
+                    setNewTransition({
+                      ...newTransition,
+                      longitude: parseFloat(e.target.value),
+                    })
                   }
                 />
               </TableCell>
