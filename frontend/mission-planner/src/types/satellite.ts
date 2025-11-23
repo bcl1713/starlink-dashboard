@@ -7,18 +7,14 @@ export interface XBandTransition {
 }
 
 export interface KaOutage {
-  start_waypoint_index: number;
-  end_waypoint_index: number;
-  start_waypoint_name: string;
-  end_waypoint_name: string;
+  start_time: string;  // ISO 8601 datetime string
+  end_time: string;    // ISO 8601 datetime string
   reason?: string;
 }
 
 export interface KuOutage {
-  start_waypoint_index: number;
-  end_waypoint_index: number;
-  start_waypoint_name: string;
-  end_waypoint_name: string;
+  start_time: string;  // ISO 8601 datetime string
+  end_time: string;    // ISO 8601 datetime string
   reason?: string;
 }
 

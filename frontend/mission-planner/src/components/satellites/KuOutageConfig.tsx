@@ -16,17 +16,12 @@ export function KuOutageConfig({
   const [newOutage, setNewOutage] = useState<Partial<KuOutage>>({});
 
   const handleAddOutage = () => {
-    if (
-      newOutage.start_waypoint_index !== undefined &&
-      newOutage.end_waypoint_index !== undefined
-    ) {
+    if (newOutage.start_time && newOutage.end_time) {
       onOutagesChange([
         ...outages,
         {
-          start_waypoint_index: newOutage.start_waypoint_index,
-          end_waypoint_index: newOutage.end_waypoint_index,
-          start_waypoint_name: newOutage.start_waypoint_name || '',
-          end_waypoint_name: newOutage.end_waypoint_name || '',
+          start_time: newOutage.start_time,
+          end_time: newOutage.end_time,
           reason: newOutage.reason,
         },
       ]);
@@ -45,10 +40,8 @@ export function KuOutageConfig({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Start Index</TableHead>
-              <TableHead>Start Name</TableHead>
-              <TableHead>End Index</TableHead>
-              <TableHead>End Name</TableHead>
+              <TableHead>Start Time</TableHead>
+              <TableHead>End Time</TableHead>
               <TableHead>Reason</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -56,10 +49,8 @@ export function KuOutageConfig({
           <TableBody>
             {outages.map((outage, index) => (
               <TableRow key={index}>
-                <TableCell>{outage.start_waypoint_index}</TableCell>
-                <TableCell>{outage.start_waypoint_name}</TableCell>
-                <TableCell>{outage.end_waypoint_index}</TableCell>
-                <TableCell>{outage.end_waypoint_name}</TableCell>
+                <TableCell>{new Date(outage.start_time).toLocaleString()}</TableCell>
+                <TableCell>{new Date(outage.end_time).toLocaleString()}</TableCell>
                 <TableCell>{outage.reason || 'N/A'}</TableCell>
                 <TableCell>
                   <Button
@@ -75,50 +66,24 @@ export function KuOutageConfig({
             <TableRow>
               <TableCell>
                 <Input
-                  type="number"
-                  placeholder="Start index"
-                  value={newOutage.start_waypoint_index ?? ''}
+                  type="datetime-local"
+                  value={newOutage.start_time ?? ''}
                   onChange={(e) =>
                     setNewOutage({
                       ...newOutage,
-                      start_waypoint_index: parseInt(e.target.value),
+                      start_time: e.target.value,
                     })
                   }
                 />
               </TableCell>
               <TableCell>
                 <Input
-                  placeholder="Start name"
-                  value={newOutage.start_waypoint_name ?? ''}
+                  type="datetime-local"
+                  value={newOutage.end_time ?? ''}
                   onChange={(e) =>
                     setNewOutage({
                       ...newOutage,
-                      start_waypoint_name: e.target.value,
-                    })
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  type="number"
-                  placeholder="End index"
-                  value={newOutage.end_waypoint_index ?? ''}
-                  onChange={(e) =>
-                    setNewOutage({
-                      ...newOutage,
-                      end_waypoint_index: parseInt(e.target.value),
-                    })
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  placeholder="End name"
-                  value={newOutage.end_waypoint_name ?? ''}
-                  onChange={(e) =>
-                    setNewOutage({
-                      ...newOutage,
-                      end_waypoint_name: e.target.value,
+                      end_time: e.target.value,
                     })
                   }
                 />

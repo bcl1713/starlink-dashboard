@@ -30,6 +30,21 @@ export function AARSegmentEditor({
 }: AARSegmentEditorProps) {
   const [newSegment, setNewSegment] = useState<Partial<AARSegment>>({});
 
+  // Calculate available end waypoints (only those after the start waypoint)
+  const getAvailableEndWaypoints = () => {
+    if (!newSegment.start_waypoint) {
+      return [];
+    }
+    const startIndex = availableWaypoints.indexOf(newSegment.start_waypoint);
+    if (startIndex === -1) {
+      return [];
+    }
+    // Return only waypoints after the start waypoint
+    return availableWaypoints.slice(startIndex + 1);
+  };
+
+  const availableEndWaypoints = getAvailableEndWaypoints();
+
   const handleAddSegment = () => {
     if (newSegment.start_waypoint && newSegment.end_waypoint) {
       onSegmentsChange([
@@ -81,7 +96,11 @@ export function AARSegmentEditor({
                 <Select
                   value={newSegment.start_waypoint ?? ''}
                   onValueChange={(value) =>
-                    setNewSegment({ ...newSegment, start_waypoint: value })
+                    setNewSegment({
+                      ...newSegment,
+                      start_waypoint: value,
+                      end_waypoint: undefined,
+                    })
                   }
                 >
                   <SelectTrigger>
@@ -102,12 +121,13 @@ export function AARSegmentEditor({
                   onValueChange={(value) =>
                     setNewSegment({ ...newSegment, end_waypoint: value })
                   }
+                  disabled={!newSegment.start_waypoint}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="End waypoint" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableWaypoints.map((waypoint) => (
+                    {availableEndWaypoints.map((waypoint) => (
                       <SelectItem key={waypoint} value={waypoint}>
                         {waypoint}
                       </SelectItem>
