@@ -207,31 +207,31 @@ UI. Implement route upload and POI management per leg.
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add button
   ```
 
-- [ ] Install Card component:
+- [x] Install Card component:
 
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add card
   ```
 
-- [ ] Install Dialog component:
+- [x] Install Dialog component:
 
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add dialog
   ```
 
-- [ ] Install Input component:
+- [x] Install Input component:
 
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add input
   ```
 
-- [ ] Install Label component:
+- [x] Install Label component:
 
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add label
   ```
 
-- [ ] Expected: UI components installed in `src/components/ui/`
+- [x] Expected: UI components installed in `src/components/ui/`
 
 ---
 
@@ -239,8 +239,8 @@ UI. Implement route upload and POI management per leg.
 
 ### 4.6.1: Create MissionCard component
 
-- [ ] Create `frontend/mission-planner/src/components/missions/MissionCard.tsx`
-- [ ] Implement card to display mission summary:
+- [x] Create `frontend/mission-planner/src/components/missions/MissionCard.tsx`
+- [x] Implement card to display mission summary:
 
   ```typescript
   import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
@@ -282,13 +282,13 @@ UI. Implement route upload and POI management per leg.
   }
   ```
 
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Reusable mission card component
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Reusable mission card component
 
 ### 4.6.2: Create MissionList component
 
-- [ ] Create `frontend/mission-planner/src/components/missions/MissionList.tsx`
-- [ ] Implement list view with loading/error states:
+- [x] Create `frontend/mission-planner/src/components/missions/MissionList.tsx`
+- [x] Implement list view with loading/error states:
 
   ```typescript
   import { useMissions, useDeleteMission } from '../../hooks/api/useMissions';
@@ -335,8 +335,8 @@ UI. Implement route upload and POI management per leg.
   }
   ```
 
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Mission list with create/delete actions
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Mission list with create/delete actions
 
 ---
 
@@ -344,9 +344,9 @@ UI. Implement route upload and POI management per leg.
 
 ### 4.7.1: Create CreateMissionDialog component
 
-- [ ] Create
+- [x] Create
       `frontend/mission-planner/src/components/missions/CreateMissionDialog.tsx`
-- [ ] Implement dialog with form:
+- [x] Implement dialog with form:
 
   ```typescript
   import { useState } from 'react';
@@ -426,8 +426,8 @@ UI. Implement route upload and POI management per leg.
   }
   ```
 
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Dialog for creating missions
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Dialog for creating missions
 
 ---
 
@@ -435,13 +435,13 @@ UI. Implement route upload and POI management per leg.
 
 ### 4.8.1: Create router configuration
 
-- [ ] Install React Router DOM (if not already):
+- [x] Install React Router DOM (if not already):
 
   ```bash
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner list react-router-dom
   ```
 
-- [ ] Create `frontend/mission-planner/src/App.tsx`:
+- [x] Create `frontend/mission-planner/src/App.tsx`:
 
   ```typescript
   import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -466,13 +466,13 @@ UI. Implement route upload and POI management per leg.
   export default App;
   ```
 
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Router with QueryClient provider
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Router with QueryClient provider
 
 ### 4.8.2: Create MissionsPage
 
-- [ ] Create `frontend/mission-planner/src/pages/MissionsPage.tsx`
-- [ ] Implement page with list and dialog:
+- [x] Create `frontend/mission-planner/src/pages/MissionsPage.tsx`
+- [x] Implement page with list and dialog:
 
   ```typescript
   import { useState } from 'react';
@@ -502,8 +502,8 @@ UI. Implement route upload and POI management per leg.
   }
   ```
 
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Page component connecting list and dialog
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Page component connecting list and dialog
 
 ---
 
@@ -511,8 +511,8 @@ UI. Implement route upload and POI management per leg.
 
 ### 4.9.1: Update main.tsx
 
-- [ ] Open `frontend/mission-planner/src/main.tsx`
-- [ ] Update to import global CSS and render App:
+- [x] Open `frontend/mission-planner/src/main.tsx`
+- [x] Update to import global CSS and render App:
 
   ```typescript
   import React from 'react';
@@ -527,13 +527,13 @@ UI. Implement route upload and POI management per leg.
   );
   ```
 
-- [ ] Save file
-- [ ] Expected: Entry point configured
+- [x] Save file
+- [x] Expected: Entry point configured
 
 ### 4.9.2: Update index.css for Tailwind
 
-- [ ] Open `frontend/mission-planner/src/index.css`
-- [ ] Add Tailwind directives:
+- [x] Open `frontend/mission-planner/src/index.css`
+- [x] Add Tailwind directives:
 
   ```css
   @tailwind base;
@@ -541,8 +541,8 @@ UI. Implement route upload and POI management per leg.
   @tailwind utilities;
   ```
 
-- [ ] Save file
-- [ ] Expected: Tailwind CSS loaded
+- [x] Save file
+- [x] Expected: Tailwind CSS loaded
 
 ---
 
@@ -550,33 +550,33 @@ UI. Implement route upload and POI management per leg.
 
 ### 4.10.1: Start dev server
 
-- [ ] Start Vite dev server:
+- [x] Start Vite dev server:
 
   ```bash
   cd /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner && npm run dev
   ```
 
-- [ ] Expected: Dev server running on <http://localhost:5173>
+- [x] Expected: Dev server running on <http://localhost:5173>
 
 ### 4.10.2: Verify in browser
 
-- [ ] Open <http://localhost:5173/missions> in browser
-- [ ] Verify mission list page loads
-- [ ] Click "Create New Mission" button
-- [ ] Fill in mission details and submit
-- [ ] Expected: Mission created and appears in list
+- [x] Open <http://localhost:5173/missions> in browser
+- [x] Verify mission list page loads
+- [x] Click "Create New Mission" button
+- [x] Fill in mission details and submit
+- [x] Expected: Mission created and appears in list
 
 ---
 
 ## 4.11: Commit Phase 4 Core Setup
 
-- [ ] Stage all changes:
+- [x] Stage all changes:
 
   ```bash
   git add frontend/mission-planner/src/
   ```
 
-- [ ] Commit:
+- [x] Commit:
 
   ```bash
   git commit -m "feat: implement core mission UI components
@@ -591,18 +591,18 @@ UI. Implement route upload and POI management per leg.
   Ref: dev/active/mission-leg-planning-ui/PLAN.md Phase 4"
   ```
 
-- [ ] Push:
+- [x] Push:
 
   ```bash
   git push origin feat/mission-leg-planning-ui
   ```
 
-- [ ] Expected: Core mission UI committed
+- [x] Expected: Core mission UI committed
 
 ---
 
 ## Status
 
-- [ ] All Phase 4 tasks completed
-- [ ] Dev server runs without errors
-- [ ] Mission CRUD operations work end-to-end
+- [x] All Phase 4 tasks completed
+- [x] Dev server runs without errors
+- [x] Mission CRUD operations work end-to-end
