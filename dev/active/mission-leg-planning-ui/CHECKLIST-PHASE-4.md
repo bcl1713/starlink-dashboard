@@ -1,9 +1,8 @@
 # Checklist: Phase 4 - Core UI Components
 
-**Branch:** `feat/mission-leg-planning-ui`
-**Folder:** `dev/active/mission-leg-planning-ui/`
-**Phase:** 4 - Core UI Components (Mission & Leg Management)
-**Status:** In Progress
+**Branch:** `feat/mission-leg-planning-ui` **Folder:**
+`dev/active/mission-leg-planning-ui/` **Phase:** 4 - Core UI Components (Mission
+& Leg Management) **Status:** In Progress
 
 > This checklist covers building the mission list view, mission creation wizard,
 > leg management UI, route upload, and POI management components.
@@ -12,9 +11,11 @@
 
 ## Phase 4 Overview
 
-**Goal:** Build mission list view, mission creation wizard, and leg management UI. Implement route upload and POI management per leg.
+**Goal:** Build mission list view, mission creation wizard, and leg management
+UI. Implement route upload and POI management per leg.
 
 **Exit Criteria:**
+
 - Mission list view displays all missions with summary stats
 - Mission creation wizard allows adding missions with multiple legs
 - Each leg can have a route (KML upload) assigned
@@ -29,15 +30,16 @@
 
 - [x] Create `frontend/mission-planner/src/services/api-client.ts`
 - [x] Add axios instance with base URL configuration:
-  ```typescript
-  import axios from 'axios';
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  ```typescript
+  import axios from "axios";
+
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   export const apiClient = axios.create({
     baseURL: API_BASE_URL,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
 
@@ -45,11 +47,12 @@
   apiClient.interceptors.response.use(
     (response) => response,
     (error) => {
-      console.error('API Error:', error.response?.data || error.message);
+      console.error("API Error:", error.response?.data || error.message);
       return Promise.reject(error);
-    }
+    },
   );
   ```
+
 - [x] Save file (verify < 350 lines)
 - [x] Expected: Axios client configured with base URL and interceptors
 
@@ -59,8 +62,9 @@
 
 ### 4.2.1: Create Mission types
 
-- [ ] Create `frontend/mission-planner/src/types/mission.ts`
-- [ ] Add Mission and MissionLeg interfaces:
+- [x] Create `frontend/mission-planner/src/types/mission.ts`
+- [x] Add Mission and MissionLeg interfaces:
+
   ```typescript
   export interface Mission {
     id: string;
@@ -88,8 +92,9 @@
     legs?: MissionLeg[];
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Type definitions match backend models
+
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Type definitions match backend models
 
 ---
 
@@ -97,15 +102,16 @@
 
 ### 4.3.1: Implement missions service
 
-- [ ] Create `frontend/mission-planner/src/services/missions.ts`
-- [ ] Add CRUD functions:
+- [x] Create `frontend/mission-planner/src/services/missions.ts`
+- [x] Add CRUD functions:
+
   ```typescript
-  import { apiClient } from './api-client';
-  import { Mission, CreateMissionRequest } from '../types/mission';
+  import { apiClient } from "./api-client";
+  import { Mission, CreateMissionRequest } from "../types/mission";
 
   export const missionsApi = {
     list: async () => {
-      const response = await apiClient.get<Mission[]>('/api/v2/missions');
+      const response = await apiClient.get<Mission[]>("/api/v2/missions");
       return response.data;
     },
 
@@ -115,7 +121,10 @@
     },
 
     create: async (mission: CreateMissionRequest) => {
-      const response = await apiClient.post<Mission>('/api/v2/missions', mission);
+      const response = await apiClient.post<Mission>(
+        "/api/v2/missions",
+        mission,
+      );
       return response.data;
     },
 
@@ -124,8 +133,9 @@
     },
   };
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: API service with type-safe functions
+
+- [x] Save file (verify < 350 lines)
+- [x] Expected: API service with type-safe functions
 
 ---
 
@@ -133,23 +143,24 @@
 
 ### 4.4.1: Create useMissions hook
 
-- [ ] Create `frontend/mission-planner/src/hooks/api/useMissions.ts`
-- [ ] Implement query and mutation hooks:
+- [x] Create `frontend/mission-planner/src/hooks/api/useMissions.ts`
+- [x] Implement query and mutation hooks:
+
   ```typescript
-  import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-  import { missionsApi } from '../../services/missions';
-  import type { Mission, CreateMissionRequest } from '../../types/mission';
+  import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+  import { missionsApi } from "../../services/missions";
+  import type { Mission, CreateMissionRequest } from "../../types/mission";
 
   export function useMissions() {
     return useQuery({
-      queryKey: ['missions'],
+      queryKey: ["missions"],
       queryFn: missionsApi.list,
     });
   }
 
   export function useMission(id: string) {
     return useQuery({
-      queryKey: ['missions', id],
+      queryKey: ["missions", id],
       queryFn: () => missionsApi.get(id),
       enabled: !!id,
     });
@@ -159,9 +170,10 @@
     const queryClient = useQueryClient();
 
     return useMutation({
-      mutationFn: (mission: CreateMissionRequest) => missionsApi.create(mission),
+      mutationFn: (mission: CreateMissionRequest) =>
+        missionsApi.create(mission),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['missions'] });
+        queryClient.invalidateQueries({ queryKey: ["missions"] });
       },
     });
   }
@@ -172,13 +184,14 @@
     return useMutation({
       mutationFn: (id: string) => missionsApi.delete(id),
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['missions'] });
+        queryClient.invalidateQueries({ queryKey: ["missions"] });
       },
     });
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: React Query hooks for missions
+
+- [x] Save file (verify < 350 lines)
+- [x] Expected: React Query hooks for missions
 
 ---
 
@@ -186,28 +199,38 @@
 
 ### 4.5.1: Install required UI components
 
-- [ ] Install Button component:
+- [x] Install Button component:
+
   ```bash
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner install
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner list @radix-ui/react-slot
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add button
   ```
+
 - [ ] Install Card component:
+
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add card
   ```
+
 - [ ] Install Dialog component:
+
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add dialog
   ```
+
 - [ ] Install Input component:
+
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add input
   ```
+
 - [ ] Install Label component:
+
   ```bash
   npx --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner shadcn@latest add label
   ```
+
 - [ ] Expected: UI components installed in `src/components/ui/`
 
 ---
@@ -218,6 +241,7 @@
 
 - [ ] Create `frontend/mission-planner/src/components/missions/MissionCard.tsx`
 - [ ] Implement card to display mission summary:
+
   ```typescript
   import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
   import { Button } from '../ui/button';
@@ -257,6 +281,7 @@
     );
   }
   ```
+
 - [ ] Save file (verify < 350 lines)
 - [ ] Expected: Reusable mission card component
 
@@ -264,6 +289,7 @@
 
 - [ ] Create `frontend/mission-planner/src/components/missions/MissionList.tsx`
 - [ ] Implement list view with loading/error states:
+
   ```typescript
   import { useMissions, useDeleteMission } from '../../hooks/api/useMissions';
   import { MissionCard } from './MissionCard';
@@ -308,6 +334,7 @@
     );
   }
   ```
+
 - [ ] Save file (verify < 350 lines)
 - [ ] Expected: Mission list with create/delete actions
 
@@ -317,8 +344,10 @@
 
 ### 4.7.1: Create CreateMissionDialog component
 
-- [ ] Create `frontend/mission-planner/src/components/missions/CreateMissionDialog.tsx`
+- [ ] Create
+      `frontend/mission-planner/src/components/missions/CreateMissionDialog.tsx`
 - [ ] Implement dialog with form:
+
   ```typescript
   import { useState } from 'react';
   import { useCreateMission } from '../../hooks/api/useMissions';
@@ -396,6 +425,7 @@
     );
   }
   ```
+
 - [ ] Save file (verify < 350 lines)
 - [ ] Expected: Dialog for creating missions
 
@@ -406,10 +436,13 @@
 ### 4.8.1: Create router configuration
 
 - [ ] Install React Router DOM (if not already):
+
   ```bash
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner list react-router-dom
   ```
+
 - [ ] Create `frontend/mission-planner/src/App.tsx`:
+
   ```typescript
   import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
   import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
@@ -432,6 +465,7 @@
 
   export default App;
   ```
+
 - [ ] Save file (verify < 350 lines)
 - [ ] Expected: Router with QueryClient provider
 
@@ -439,6 +473,7 @@
 
 - [ ] Create `frontend/mission-planner/src/pages/MissionsPage.tsx`
 - [ ] Implement page with list and dialog:
+
   ```typescript
   import { useState } from 'react';
   import { MissionList } from '../components/missions/MissionList';
@@ -466,6 +501,7 @@
     );
   }
   ```
+
 - [ ] Save file (verify < 350 lines)
 - [ ] Expected: Page component connecting list and dialog
 
@@ -477,6 +513,7 @@
 
 - [ ] Open `frontend/mission-planner/src/main.tsx`
 - [ ] Update to import global CSS and render App:
+
   ```typescript
   import React from 'react';
   import ReactDOM from 'react-dom/client';
@@ -489,6 +526,7 @@
     </React.StrictMode>
   );
   ```
+
 - [ ] Save file
 - [ ] Expected: Entry point configured
 
@@ -496,11 +534,13 @@
 
 - [ ] Open `frontend/mission-planner/src/index.css`
 - [ ] Add Tailwind directives:
+
   ```css
   @tailwind base;
   @tailwind components;
   @tailwind utilities;
   ```
+
 - [ ] Save file
 - [ ] Expected: Tailwind CSS loaded
 
@@ -511,14 +551,16 @@
 ### 4.10.1: Start dev server
 
 - [ ] Start Vite dev server:
+
   ```bash
   cd /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner && npm run dev
   ```
-- [ ] Expected: Dev server running on http://localhost:5173
+
+- [ ] Expected: Dev server running on <http://localhost:5173>
 
 ### 4.10.2: Verify in browser
 
-- [ ] Open http://localhost:5173/missions in browser
+- [ ] Open <http://localhost:5173/missions> in browser
 - [ ] Verify mission list page loads
 - [ ] Click "Create New Mission" button
 - [ ] Fill in mission details and submit
@@ -529,10 +571,13 @@
 ## 4.11: Commit Phase 4 Core Setup
 
 - [ ] Stage all changes:
+
   ```bash
   git add frontend/mission-planner/src/
   ```
+
 - [ ] Commit:
+
   ```bash
   git commit -m "feat: implement core mission UI components
 
@@ -545,10 +590,13 @@
 
   Ref: dev/active/mission-leg-planning-ui/PLAN.md Phase 4"
   ```
+
 - [ ] Push:
+
   ```bash
   git push origin feat/mission-leg-planning-ui
   ```
+
 - [ ] Expected: Core mission UI committed
 
 ---
