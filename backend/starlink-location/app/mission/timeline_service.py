@@ -1397,8 +1397,8 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
 
     return _COVERAGE_SAMPLER
 def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
-    label = satellite or "Unknown"
-    return f"CommKa\n{kind} {label}"
+    # Simplified: no satellite name, just Exit or Entry
+    return f"CommKa\n{kind}"
 
 
 def _format_commka_transition_label(
