@@ -115,9 +115,9 @@
 
 ### Task 3: Modify X-Band Transition POI Naming Function
 
-- [ ] In the same file (`timeline_service.py`), locate the function `_format_x_transition_label()` around line 1415
+- [x] In the same file (`timeline_service.py`), locate the function `_format_x_transition_label()` around line 1415
 
-- [ ] **Current code:**
+- [x] **Current code:**
   ```python
   def _format_x_transition_label(
       current_satellite: str | None,
@@ -133,7 +133,7 @@
       return "X-Band\nTransition"
   ```
 
-- [ ] **Replace with:**
+- [x] **Replace with:**
   ```python
   def _format_x_transition_label(
       current_satellite: str | None,
@@ -144,17 +144,17 @@
       return "X-Band\nSwap"
   ```
 
-- [ ] Save the file
+- [x] Save the file
 
-- [ ] **Expected result:** The function now always returns "X-Band\nSwap" regardless of parameters
+- [x] **Expected result:** The function now always returns "X-Band\nSwap" regardless of parameters
 
-- [ ] Commit this change:
+- [x] Commit this change:
   ```bash
   git add backend/starlink-location/app/mission/timeline_service.py
   git commit -m "feat: simplify X-Band swap POI names (remove satellite details)"
   ```
 
-- [ ] Push to remote:
+- [x] Push to remote:
   ```bash
   git push
   ```
