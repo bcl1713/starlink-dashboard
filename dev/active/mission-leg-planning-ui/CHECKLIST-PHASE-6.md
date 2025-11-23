@@ -56,8 +56,8 @@
 
 ### 6.2.1: Implement export/import service
 
-- [ ] Create `frontend/mission-planner/src/services/export-import.ts`
-- [ ] Add export and import functions:
+- [x] Create `frontend/mission-planner/src/services/export-import.ts`
+- [x] Add export and import functions:
   ```typescript
   import { apiClient } from './api-client';
   import type { ImportResult } from '../types/export';
@@ -91,8 +91,8 @@
     },
   };
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Export/import API service functions
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Export/import API service functions
 
 ---
 
