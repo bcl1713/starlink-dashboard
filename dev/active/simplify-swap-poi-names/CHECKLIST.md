@@ -33,38 +33,38 @@
 
 ### Task 1: Modify CommKa Exit/Entry POI Naming Function
 
-- [ ] Open the file:
+- [x] Open the file:
   ```bash
   /home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/mission/timeline_service.py
   ```
 
-- [ ] Locate the function `_format_commka_exit_entry()` around line 1399
+- [x] Locate the function `_format_commka_exit_entry()` around line 1399
 
-- [ ] **Current code:**
+- [x] **Current code:**
   ```python
   def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
       label = satellite or "Unknown"
       return f"CommKa\n{kind} {label}"
   ```
 
-- [ ] **Replace with:**
+- [x] **Replace with:**
   ```python
   def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
       # Simplified: no satellite name, just Exit or Entry
       return f"CommKa\n{kind}"
   ```
 
-- [ ] Save the file
+- [x] Save the file
 
-- [ ] **Expected result:** The function now returns "CommKa\nExit" or "CommKa\nEntry" without satellite names
+- [x] **Expected result:** The function now returns "CommKa\nExit" or "CommKa\nEntry" without satellite names
 
-- [ ] Commit this change:
+- [x] Commit this change:
   ```bash
   git add backend/starlink-location/app/mission/timeline_service.py
   git commit -m "feat: simplify CommKa exit/entry POI names (remove satellite)"
   ```
 
-- [ ] Push to remote:
+- [x] Push to remote:
   ```bash
   git push -u origin feat/simplify-swap-poi-names
   ```
