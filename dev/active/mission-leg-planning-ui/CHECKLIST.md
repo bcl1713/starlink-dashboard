@@ -899,12 +899,12 @@ Critical mismatches found between frontend types and backend models that cause 4
   - [x] Remove `aar_config?: AARConfig` field
   - [x] Remove unused type imports if applicable
 
-- [ ] Add proper types to TransportConfig arrays
-  - [ ] Replace `x_transitions?: unknown[]` with `x_transitions?: XBandTransition[]`
-  - [ ] Replace `ka_outages?: unknown[]` with `ka_outages?: KaOutage[]`
-  - [ ] Replace `aar_windows?: unknown[]` with `aar_windows?: AARSegment[]`
-  - [ ] Replace `ku_overrides?: unknown[]` with `ku_overrides?: KuOutageOverride[]`
-  - [ ] Import proper types from satellite.ts and aar.ts
+- [x] Add proper types to TransportConfig arrays
+  - [x] Replace `x_transitions?: unknown[]` with `x_transitions?: XBandTransition[]`
+  - [x] Replace `ka_outages?: unknown[]` with `ka_outages?: KaOutage[]`
+  - [x] Replace `aar_windows?: unknown[]` with `aar_windows?: AARSegment[]`
+  - [x] Replace `ku_overrides?: unknown[]` with `ku_overrides?: KuOutageOverride[]`
+  - [x] Import proper types from satellite.ts and aar.ts
 
 ### Priority 3: Validation and Safety
 
