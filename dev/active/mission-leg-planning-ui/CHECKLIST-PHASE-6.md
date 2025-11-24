@@ -388,13 +388,13 @@
 
 ### 6.5.3: Wire up dialogs in MissionsPage
 
-- [ ] Open `frontend/mission-planner/src/pages/MissionsPage.tsx`
-- [ ] Import ExportDialog and ImportDialog components
-- [ ] Add state for controlling dialogs
-- [ ] Add dialogs to page render
-- [ ] Pass callbacks to trigger dialogs from list/cards
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Export and import dialogs functional
+- [x] Open `frontend/mission-planner/src/pages/MissionsPage.tsx`
+- [x] Import ExportDialog and ImportDialog components
+- [x] Add state for controlling dialogs
+- [x] Add dialogs to page render
+- [x] Pass callbacks to trigger dialogs from list/cards
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Export and import dialogs functional
 
 ---
 
