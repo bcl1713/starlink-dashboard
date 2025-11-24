@@ -858,6 +858,73 @@ executing-plan-checklist
 
 ---
 
+## Frontend API Contract Fixes (Post-Audit)
+
+Critical mismatches found between frontend types and backend models that cause 422 validation errors:
+
+### Priority 1: Critical Fixes (Required for functionality)
+
+- [ ] Fix Ka Outage model structure
+  - [ ] Add required `id` field to KaOutage interface
+  - [ ] Replace `end_time` with `duration_seconds` field
+  - [ ] Remove `reason` field (not in backend)
+  - [ ] Update KaOutageConfig.tsx to generate IDs with crypto.randomUUID()
+  - [ ] Replace end_time input with duration_seconds number input
+  - [ ] Add helper functions for duration ↔ end_time display conversion
+
+- [ ] Fix Ku Outage model structure
+  - [ ] Rename `KuOutage` interface to `KuOutageOverride`
+  - [ ] Add required `id` field to interface
+  - [ ] Replace `end_time` with `duration_seconds` field
+  - [ ] Keep `reason` field (exists in backend as optional)
+  - [ ] Update KuOutageConfig.tsx to generate IDs with crypto.randomUUID()
+  - [ ] Replace end_time input with duration_seconds number input
+  - [ ] Add helper functions for duration ↔ end_time display conversion
+
+- [ ] Fix datetime format conversion
+  - [ ] Add toISO8601() helper function in lib/utils.ts
+  - [ ] Apply conversion in KaOutageConfig before saving
+  - [ ] Apply conversion in KuOutageConfig before saving
+  - [ ] Test round-trip (save → load → display)
+
+- [ ] Mark required fields correctly in TypeScript types
+  - [ ] MissionLeg.route_id - remove `?`, make required
+  - [ ] MissionLeg.transports - remove `?`, make required
+  - [ ] TransportConfig.initial_x_satellite_id - remove `?`, make required
+
+### Priority 2: Cleanup and Type Safety
+
+- [ ] Remove legacy unused fields from MissionLeg
+  - [ ] Remove `satellite_config?: SatelliteConfig` field
+  - [ ] Remove `aar_config?: AARConfig` field
+  - [ ] Remove unused type imports if applicable
+
+- [ ] Add proper types to TransportConfig arrays
+  - [ ] Replace `x_transitions?: unknown[]` with `x_transitions?: XBandTransition[]`
+  - [ ] Replace `ka_outages?: unknown[]` with `ka_outages?: KaOutage[]`
+  - [ ] Replace `aar_windows?: unknown[]` with `aar_windows?: AARSegment[]`
+  - [ ] Replace `ku_overrides?: unknown[]` with `ku_overrides?: KuOutageOverride[]`
+  - [ ] Import proper types from satellite.ts and aar.ts
+
+### Priority 3: Validation and Safety
+
+- [ ] Add frontend validation
+  - [ ] Validate satellite ID formats (regex patterns)
+  - [ ] Validate datetime ranges (start < end)
+  - [ ] Validate duration > 0
+  - [ ] Add error messages for invalid input
+
+- [ ] Verify all fixes work correctly
+  - [ ] Create new mission with all transport configs
+  - [ ] Add Ka outage with duration (not end_time)
+  - [ ] Add Ku outage with duration (not end_time)
+  - [ ] Save leg configuration - verify no 422 errors
+  - [ ] Reload page - verify data persists correctly
+  - [ ] Export mission - verify all fields present
+  - [ ] Import mission - verify no validation errors
+
+---
+
 ## Pre-Wrap Checklist
 
 All of the following must be checked before handoff to `wrapping-up-plan`:
