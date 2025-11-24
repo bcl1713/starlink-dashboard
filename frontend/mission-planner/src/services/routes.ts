@@ -23,4 +23,13 @@ export const routesApi = {
     });
     return response.data;
   },
+
+  async getCoordinates(routeId: string): Promise<[number, number][]> {
+    const response = await apiClient.get<any>(`/api/routes/${routeId}`);
+    // Extract coordinates from waypoints
+    if (response.data.waypoints && Array.isArray(response.data.waypoints)) {
+      return response.data.waypoints.map((wp: any) => [wp.latitude, wp.longitude]);
+    }
+    return [];
+  },
 };

@@ -62,3 +62,15 @@ export function useDeleteLeg(missionId: string) {
     },
   });
 }
+
+export function useUpdateLeg(missionId: string, legId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (leg: MissionLeg) => missionsApi.updateLeg(missionId, legId, leg),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+    },
+  });
+}

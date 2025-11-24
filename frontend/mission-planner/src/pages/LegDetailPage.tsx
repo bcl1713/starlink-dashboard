@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { XBandConfig } from '../components/satellites/XBandConfig';
 import { KaOutageConfig } from '../components/satellites/KaOutageConfig';
@@ -8,11 +8,21 @@ import { AARSegmentEditor } from '../components/aar/AARSegmentEditor';
 import { RouteMap } from '../components/common/RouteMap';
 import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
+import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
+import { routesApi } from '../services/routes';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{ missionId: string; legId: string }>();
+  const navigate = useNavigate();
+  const { data: mission, isLoading: isMissionLoading } = useMission(
+    missionId || ''
+  );
+  const updateLegMutation = useUpdateLeg(missionId || '', legId || '');
 
-  // TODO: Replace with actual API calls to fetch leg data
+  // Find the current leg
+  const leg = mission?.legs.find((l) => l.id === legId);
+
+  // State for configurations
   const [satelliteConfig, setSatelliteConfig] = useState<SatelliteConfig>({
     xband_starting_satellite: undefined,
     xband_transitions: [],
@@ -23,6 +33,33 @@ export function LegDetailPage() {
   const [aarConfig, setAARConfig] = useState<AARConfig>({
     segments: [],
   });
+
+  const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
+
+  // Load route coordinates when leg changes
+  useEffect(() => {
+    if (leg?.route_id) {
+      routesApi
+        .getCoordinates(leg.route_id)
+        .then((coords) => setRouteCoordinates(coords))
+        .catch((err) => console.error('Failed to load route:', err));
+    }
+  }, [leg?.route_id]);
+
+  // Initialize state from leg data
+  useEffect(() => {
+    if (leg?.transports) {
+      setSatelliteConfig({
+        xband_starting_satellite: leg.transports.initial_x_satellite_id,
+        xband_transitions: (leg.transports.x_transitions as any[]) || [],
+        ka_outages: (leg.transports.ka_outages as any[]) || [],
+        ku_outages: (leg.transports.ku_overrides as any[]) || [],
+      });
+      setAARConfig({
+        segments: (leg.transports.aar_windows as any[]) || [],
+      });
+    }
+  }, [leg?.transports]);
 
   // Example available satellites (TODO: fetch from backend)
   const availableSatellites = [
@@ -42,30 +79,11 @@ export function LegDetailPage() {
     'WP005',
   ];
 
-  // TODO: Fetch actual route coordinates from backend
-  // Placeholder route coordinates (example: Denver to DC)
-  const routeCoordinates: [number, number][] = [
-    [39.7392, -104.9903], // Denver
-    [39.8, -104.5],
-    [40.0, -103.0],
-    [40.5, -101.0],
-    [41.0, -99.0],
-    [41.8, -96.0],
-    [42.0, -93.0],
-    [41.5, -90.0],
-    [41.0, -87.0],
-    [40.5, -84.0],
-    [40.0, -81.0],
-    [39.5, -78.0],
-    [39.0, -77.0],
-    [38.9072, -77.0369], // Washington DC
-  ];
-
   // Generate map coordinates: route + transition markers
   const mapCoordinates = [...routeCoordinates];
 
   // Add X-Band transition points to the map
-  satelliteConfig.xband_transitions.forEach((transition) => {
+  satelliteConfig.xband_transitions.forEach((transition: any) => {
     mapCoordinates.push([transition.latitude, transition.longitude]);
   });
 
@@ -74,6 +92,53 @@ export function LegDetailPage() {
   ) => {
     setSatelliteConfig({ ...satelliteConfig, ...updates });
   };
+
+  const handleSave = async () => {
+    if (!leg) return;
+
+    try {
+      await updateLegMutation.mutateAsync({
+        ...leg,
+        transports: {
+          initial_x_satellite_id:
+            satelliteConfig.xband_starting_satellite || 'X-1',
+          initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
+          x_transitions: satelliteConfig.xband_transitions,
+          ka_outages: satelliteConfig.ka_outages,
+          aar_windows: aarConfig.segments,
+          ku_overrides: satelliteConfig.ku_outages,
+        },
+      });
+      alert('Changes saved successfully!');
+    } catch (error) {
+      console.error('Failed to save:', error);
+      alert('Failed to save changes');
+    }
+  };
+
+  // Loading state
+  if (isMissionLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <p className="text-muted-foreground">Loading leg configuration...</p>
+      </div>
+    );
+  }
+
+  // Leg not found state
+  if (!leg) {
+    return (
+      <div className="container mx-auto p-6">
+        <p className="text-red-600">Leg not found</p>
+        <button
+          className="mt-4 px-4 py-2 border rounded-md hover:bg-gray-100"
+          onClick={() => navigate(`/missions/${missionId}`)}
+        >
+          Back to Mission
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -163,11 +228,18 @@ export function LegDetailPage() {
           </Tabs>
 
           <div className="flex justify-end space-x-4 mt-6">
-            <button className="px-4 py-2 border rounded-md hover:bg-gray-100">
+            <button
+              className="px-4 py-2 border rounded-md hover:bg-gray-100"
+              onClick={() => navigate(`/missions/${missionId}`)}
+            >
               Cancel
             </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              Save Changes
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              onClick={handleSave}
+              disabled={updateLegMutation.isPending}
+            >
+              {updateLegMutation.isPending ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
