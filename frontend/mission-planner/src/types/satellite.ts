@@ -13,15 +13,16 @@ export interface KaOutage {
   duration_seconds: number;        // Duration in seconds (required)
 }
 
-export interface KuOutage {
-  start_time: string;  // ISO 8601 datetime string
-  end_time: string;    // ISO 8601 datetime string
-  reason?: string;
+export interface KuOutageOverride {
+  id: string;                      // Unique identifier (required)
+  start_time: string;              // ISO 8601 datetime string
+  duration_seconds: number;        // Duration in seconds (required)
+  reason?: string;                 // Optional reason for outage
 }
 
 export interface SatelliteConfig {
   xband_starting_satellite?: string;
   xband_transitions: XBandTransition[];
   ka_outages: KaOutage[];
-  ku_outages: KuOutage[];
+  ku_outages: KuOutageOverride[];
 }
