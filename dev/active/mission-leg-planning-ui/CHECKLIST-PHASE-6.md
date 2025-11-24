@@ -108,8 +108,8 @@
 
 ### 6.3.2: Create ExportDialog component
 
-- [ ] Create `frontend/mission-planner/src/components/missions/ExportDialog.tsx`
-- [ ] Implement export dialog with progress indicator:
+- [x] Create `frontend/mission-planner/src/components/missions/ExportDialog.tsx`
+- [x] Implement export dialog with progress indicator:
   ```typescript
   import { useState } from 'react';
   import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -204,8 +204,8 @@
     );
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Export dialog with progress tracking
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Export dialog with progress tracking
 
 ---
 
