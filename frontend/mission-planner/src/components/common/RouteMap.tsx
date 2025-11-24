@@ -80,14 +80,10 @@ export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
       const minLat = Math.min(...lats);
       const maxLat = Math.max(...lats);
 
-      // Convert back to -180 to 180 range for Leaflet
-      // Leaflet expects standard coordinate system
-      const west = minLng > 180 ? minLng - 360 : minLng;
-      const east = maxLng > 180 ? maxLng - 360 : maxLng;
-
+      // Keep in 0-360 range for Leaflet to display correctly
       return [
-        [minLat, west],
-        [maxLat, east],
+        [minLat, minLng],
+        [maxLat, maxLng],
       ];
     }
 
@@ -117,13 +113,9 @@ export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
       // Normalize longitudes for center calculation
       const normLngs = lngs.map(lng => lng < 0 ? lng + 360 : lng);
       const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-      let centerLng = (Math.min(...normLngs) + Math.max(...normLngs)) / 2;
+      const centerLng = (Math.min(...normLngs) + Math.max(...normLngs)) / 2;
 
-      // Convert back to -180 to 180 range
-      if (centerLng > 180) {
-        centerLng -= 360;
-      }
-
+      // Keep in 0-360 range for consistent Pacific view
       return [centerLat, centerLng];
     }
 
@@ -137,6 +129,51 @@ export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
   const center = getCenter();
   const routeSegments = getRouteSegments();
 
+  // For IDL-crossing routes, we need to normalize coordinates to be on same side
+  const normalizedCoordinates = (() => {
+    if (!detectIDLCrossing()) return coordinates;
+
+    // Normalize all coordinates to 0-360 range so they appear on same map side
+    return coordinates.map((coord) => {
+      if (Array.isArray(coord)) {
+        const [lat, lng] = coord;
+        return [lat, lng < 0 ? lng + 360 : lng] as [number, number];
+      }
+      const { lat, lng } = coord as { lat: number; lng: number };
+      return { lat, lng: lng < 0 ? lng + 360 : lng };
+    });
+  })();
+
+  // Recalculate segments with normalized coordinates
+  const normalizedSegments = (() => {
+    if (normalizedCoordinates.length === 0) return [];
+
+    const segments: LatLngExpression[][] = [];
+    let currentSegment: LatLngExpression[] = [normalizedCoordinates[0]];
+
+    for (let i = 1; i < normalizedCoordinates.length; i++) {
+      const prev = normalizedCoordinates[i - 1];
+      const curr = normalizedCoordinates[i];
+
+      const prevLng = Array.isArray(prev) ? prev[1] : (prev as any).lng;
+      const currLng = Array.isArray(curr) ? curr[1] : (curr as any).lng;
+
+      // Still check for wrapping (now in 0-360 space, look for > 180 jumps)
+      if (Math.abs(currLng - prevLng) > 180) {
+        segments.push(currentSegment);
+        currentSegment = [curr];
+      } else {
+        currentSegment.push(curr);
+      }
+    }
+
+    if (currentSegment.length > 0) {
+      segments.push(currentSegment);
+    }
+
+    return segments;
+  })();
+
   return (
     <div style={{ height, width: '100%' }}>
       {coordinates.length > 0 ? (
@@ -145,13 +182,14 @@ export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
           center={center}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={false}
+          worldCopyJump={true}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {/* Render each segment separately to avoid wrapping around the globe */}
-          {routeSegments.map((segment, idx) => (
+          {/* Render normalized segments for IDL routes, original segments otherwise */}
+          {(detectIDLCrossing() ? normalizedSegments : routeSegments).map((segment, idx) => (
             <Polyline
               key={idx}
               positions={segment}
