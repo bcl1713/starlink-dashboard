@@ -1,5 +1,5 @@
-import { SatelliteConfig } from './satellite';
-import { AARConfig } from './aar';
+import type { SatelliteConfig } from './satellite';
+import type { AARConfig } from './aar';
 
 export interface Mission {
   id: string;
@@ -11,6 +11,15 @@ export interface Mission {
   metadata: Record<string, unknown>;
 }
 
+export interface TransportConfig {
+  initial_x_satellite_id?: string;
+  initial_ka_satellite_ids?: string[];
+  x_transitions?: unknown[];
+  ka_outages?: unknown[];
+  aar_windows?: unknown[];
+  ku_overrides?: unknown[];
+}
+
 export interface MissionLeg {
   id: string;
   name: string;
@@ -18,8 +27,11 @@ export interface MissionLeg {
   description?: string;
   satellite_config?: SatelliteConfig;
   aar_config?: AARConfig;
-  created_at: string;
-  updated_at: string;
+  transports?: TransportConfig;
+  created_at?: string;
+  updated_at?: string;
+  is_active?: boolean;
+  notes?: string;
 }
 
 export interface CreateMissionRequest {

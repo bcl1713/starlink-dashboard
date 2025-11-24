@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { missionsApi } from '../../services/missions';
-import type { CreateMissionRequest } from '../../types/mission';
+import type { CreateMissionRequest, MissionLeg } from '../../types/mission';
 
 export function useMissions() {
   return useQuery({
@@ -34,6 +34,30 @@ export function useDeleteMission() {
   return useMutation({
     mutationFn: (id: string) => missionsApi.delete(id),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+    },
+  });
+}
+
+export function useAddLeg(missionId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (leg: Partial<MissionLeg>) => missionsApi.addLeg(missionId, leg),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+    },
+  });
+}
+
+export function useDeleteLeg(missionId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (legId: string) => missionsApi.deleteLeg(missionId, legId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
     },
   });

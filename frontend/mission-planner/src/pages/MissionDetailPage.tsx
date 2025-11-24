@@ -1,13 +1,24 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { useMission } from '../hooks/api/useMissions';
-import type { Mission } from '../types/mission';
+import { useMission, useAddLeg, useDeleteLeg } from '../hooks/api/useMissions';
+import { AddLegDialog } from '../components/missions/AddLegDialog';
+import type { MissionLeg } from '../types/mission';
 
 export function MissionDetailPage() {
   const { missionId } = useParams<{ missionId: string }>();
   const navigate = useNavigate();
+  const [showAddLegDialog, setShowAddLegDialog] = useState(false);
   const { data: mission, isLoading, error } = useMission(missionId || '');
+  const addLegMutation = useAddLeg(missionId || '');
+  const deleteLegMutation = useDeleteLeg(missionId || '');
 
   if (isLoading) {
     return (
@@ -30,6 +41,16 @@ export function MissionDetailPage() {
     );
   }
 
+  const handleAddLeg = async (leg: Partial<MissionLeg>) => {
+    await addLegMutation.mutateAsync(leg);
+  };
+
+  const handleDeleteLeg = (legId: string) => {
+    if (window.confirm('Are you sure you want to delete this leg?')) {
+      deleteLegMutation.mutate(legId);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-start">
@@ -44,36 +65,75 @@ export function MissionDetailPage() {
       </div>
 
       <div className="border-t pt-6">
-        <h2 className="text-2xl font-semibold mb-4">Mission Legs</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold">Mission Legs</h2>
+          <Button
+            onClick={() => setShowAddLegDialog(true)}
+            disabled={addLegMutation.isPending}
+          >
+            Add Leg
+          </Button>
+        </div>
         {mission.legs.length === 0 ? (
           <p className="text-muted-foreground">No legs configured for this mission</p>
         ) : (
           <div className="grid gap-4">
             {mission.legs.map((leg) => (
-              <Card
-                key={leg.id}
-                className="cursor-pointer hover:shadow-lg transition-shadow"
-                onClick={() => navigate(`/missions/${mission.id}/legs/${leg.id}`)}
-              >
+              <Card key={leg.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <CardTitle>{leg.name}</CardTitle>
-                  {leg.description && (
-                    <CardDescription>{leg.description}</CardDescription>
-                  )}
+                  <div className="flex justify-between items-start">
+                    <div
+                      className="flex-1 cursor-pointer"
+                      onClick={() =>
+                        navigate(`/missions/${mission.id}/legs/${leg.id}`)
+                      }
+                    >
+                      <CardTitle>{leg.name}</CardTitle>
+                      {leg.description && (
+                        <CardDescription>{leg.description}</CardDescription>
+                      )}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteLeg(leg.id)}
+                      disabled={deleteLegMutation.isPending}
+                      className="ml-2"
+                    >
+                      {deleteLegMutation.isPending ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600">
-                    ID: {leg.id}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Click to configure leg
-                  </p>
+                  <div
+                    className="cursor-pointer"
+                    onClick={() =>
+                      navigate(`/missions/${mission.id}/legs/${leg.id}`)
+                    }
+                  >
+                    <p className="text-sm text-gray-600">ID: {leg.id}</p>
+                    {leg.route_id && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        Route: {leg.route_id}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">
+                      Click to configure leg
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </div>
+
+      <AddLegDialog
+        open={showAddLegDialog}
+        onOpenChange={setShowAddLegDialog}
+        onAddLeg={handleAddLeg}
+        isSubmitting={addLegMutation.isPending}
+      />
     </div>
   );
 }

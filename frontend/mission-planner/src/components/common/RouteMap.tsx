@@ -1,6 +1,6 @@
 import { MapContainer, TileLayer, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { LatLngExpression } from 'leaflet';
+import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
 
 interface RouteMapProps {
   coordinates: LatLngExpression[];
@@ -9,7 +9,7 @@ interface RouteMapProps {
 
 export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
   // Calculate bounds from coordinates
-  const getBounds = () => {
+  const getBounds = (): LatLngBoundsExpression | undefined => {
     if (coordinates.length === 0) return undefined;
 
     const lats = coordinates.map((coord) => {
@@ -24,7 +24,7 @@ export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
     return [
       [Math.min(...lats), Math.min(...lngs)],
       [Math.max(...lats), Math.max(...lngs)],
-    ] as [LatLngExpression, LatLngExpression];
+    ];
   };
 
   const bounds = getBounds();
@@ -36,6 +36,7 @@ export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
       {coordinates.length > 0 ? (
         <MapContainer
           bounds={bounds}
+          center={center}
           style={{ height: '100%', width: '100%' }}
           scrollWheelZoom={false}
         >

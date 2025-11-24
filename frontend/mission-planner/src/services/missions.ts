@@ -1,5 +1,5 @@
 import { apiClient } from './api-client';
-import type { Mission, CreateMissionRequest } from '../types/mission';
+import type { Mission, CreateMissionRequest, MissionLeg } from '../types/mission';
 
 export const missionsApi = {
   list: async () => {
@@ -19,5 +19,25 @@ export const missionsApi = {
 
   delete: async (id: string) => {
     await apiClient.delete(`/api/v2/missions/${id}`);
+  },
+
+  addLeg: async (missionId: string, leg: Partial<MissionLeg>) => {
+    const response = await apiClient.post<MissionLeg>(
+      `/api/v2/missions/${missionId}/legs`,
+      leg
+    );
+    return response.data;
+  },
+
+  updateLeg: async (missionId: string, legId: string, leg: MissionLeg) => {
+    const response = await apiClient.put<MissionLeg>(
+      `/api/v2/missions/${missionId}/legs/${legId}`,
+      leg
+    );
+    return response.data;
+  },
+
+  deleteLeg: async (missionId: string, legId: string) => {
+    await apiClient.delete(`/api/v2/missions/${missionId}/legs/${legId}`);
   },
 };
