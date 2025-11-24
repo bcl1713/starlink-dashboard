@@ -221,8 +221,8 @@
 
 ### 6.4.2: Create ImportDialog component
 
-- [ ] Create `frontend/mission-planner/src/components/missions/ImportDialog.tsx`
-- [ ] Implement import dialog with drag-and-drop:
+- [x] Create `frontend/mission-planner/src/components/missions/ImportDialog.tsx`
+- [x] Implement import dialog with drag-and-drop:
   ```typescript
   import { useState } from 'react';
   import { useDropzone } from 'react-dropzone';
@@ -363,8 +363,8 @@
     );
   }
   ```
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Import dialog with drag-and-drop and validation
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Import dialog with drag-and-drop and validation
 
 ---
 
