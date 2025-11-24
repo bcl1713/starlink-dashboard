@@ -372,11 +372,11 @@
 
 ### 6.5.1: Add export button to MissionCard
 
-- [ ] Open `frontend/mission-planner/src/components/missions/MissionCard.tsx`
-- [ ] Add export button alongside delete button
-- [ ] Add onClick handler to trigger export dialog
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Export button in mission cards
+- [x] Open `frontend/mission-planner/src/components/missions/MissionCard.tsx`
+- [x] Add export button alongside delete button
+- [x] Add onClick handler to trigger export dialog
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Export button in mission cards
 
 ### 6.5.2: Add import button to MissionList
 

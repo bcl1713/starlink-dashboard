@@ -7,9 +7,10 @@ interface MissionCardProps {
   mission: Mission;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onExport: (id: string, name: string) => void;
 }
 
-export function MissionCard({ mission, onSelect, onDelete }: MissionCardProps) {
+export function MissionCard({ mission, onSelect, onDelete, onExport }: MissionCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -28,16 +29,28 @@ export function MissionCard({ mission, onSelect, onDelete }: MissionCardProps) {
           <span className="text-sm text-gray-600">
             {mission.legs.length} leg{mission.legs.length !== 1 ? 's' : ''}
           </span>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(mission.id);
-            }}
-          >
-            Delete
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExport(mission.id, mission.name);
+              }}
+            >
+              Export
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(mission.id);
+              }}
+            >
+              Delete
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
