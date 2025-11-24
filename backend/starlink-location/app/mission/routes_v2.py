@@ -3,7 +3,7 @@
 import io
 import logging
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, UploadFile, File
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -120,4 +120,69 @@ async def export_mission(mission_id: str) -> StreamingResponse:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
+        )
+
+
+@router.post("/import")
+async def import_mission(file: UploadFile = File(...)) -> dict:
+    """Import mission from zip package.
+
+    Args:
+        file: Uploaded zip file containing mission package
+
+    Returns:
+        Import result with success status and mission ID
+    """
+    try:
+        import zipfile
+        import tempfile
+        import json
+        from pathlib import Path
+
+        # Create temp directory for extraction
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            zip_path = tmppath / "upload.zip"
+
+            # Save uploaded file
+            contents = await file.read()
+            with open(zip_path, "wb") as f:
+                f.write(contents)
+
+            # Extract and validate
+            with zipfile.ZipFile(zip_path, "r") as zf:
+                # Check for required files
+                if "mission.json" not in zf.namelist():
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Invalid package: missing mission.json"
+                    )
+
+                # Extract mission.json
+                mission_data = json.loads(zf.read("mission.json"))
+
+                # Create Mission object
+                mission = Mission(**mission_data)
+
+                # Save mission
+                save_mission_v2(mission)
+
+                logger.info(f"Mission {mission.id} imported successfully")
+
+                return {
+                    "success": True,
+                    "mission_id": mission.id,
+                    "warnings": []
+                }
+
+    except zipfile.BadZipFile:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid zip file"
+        )
+    except Exception as e:
+        logger.error(f"Import failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Import failed: {str(e)}"
         )

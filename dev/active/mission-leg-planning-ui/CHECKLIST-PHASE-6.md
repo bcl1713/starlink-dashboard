@@ -415,10 +415,10 @@
 
 ### 6.6.2: Add backend import endpoint (if not exists)
 
-- [ ] Check if `/api/v2/missions/import` endpoint exists in backend
-- [ ] If not, this needs to be added in Phase 2 revisit
-- [ ] Document any missing backend endpoints
-- [ ] Expected: Backend import endpoint available
+- [x] Check if `/api/v2/missions/import` endpoint exists in backend
+- [x] If not, this needs to be added in Phase 2 revisit
+- [x] Document any missing backend endpoints
+- [x] Expected: Backend import endpoint available
 
 ---
 
