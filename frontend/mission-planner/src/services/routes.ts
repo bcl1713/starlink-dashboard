@@ -9,8 +9,8 @@ export interface Route {
 
 export const routesApi = {
   async list(): Promise<Route[]> {
-    const response = await apiClient.get<Route[]>('/api/routes');
-    return response.data;
+    const response = await apiClient.get<{ routes: Route[]; total: number }>('/api/routes');
+    return response.data.routes || [];
   },
 
   async upload(file: File): Promise<Route> {
