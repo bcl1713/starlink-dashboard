@@ -8,9 +8,9 @@ export interface XBandTransition {
 }
 
 export interface KaOutage {
-  start_time: string;  // ISO 8601 datetime string
-  end_time: string;    // ISO 8601 datetime string
-  reason?: string;
+  id: string;                      // Unique identifier (required)
+  start_time: string;              // ISO 8601 datetime string
+  duration_seconds: number;        // Duration in seconds (required)
 }
 
 export interface KuOutage {

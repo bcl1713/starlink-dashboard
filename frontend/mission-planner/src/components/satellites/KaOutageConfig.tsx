@@ -9,20 +9,40 @@ interface KaOutageConfigProps {
   onOutagesChange: (outages: KaOutage[]) => void;
 }
 
+// Helper to calculate end time for display
+const calculateEndTime = (startTime: string, durationSeconds: number): string => {
+  const start = new Date(startTime);
+  const end = new Date(start.getTime() + durationSeconds * 1000);
+  return end.toISOString().slice(0, 16); // Format for datetime-local
+};
+
+// Helper to calculate duration from times
+const calculateDuration = (startTime: string, endTime: string): number => {
+  const start = new Date(startTime).getTime();
+  const end = new Date(endTime).getTime();
+  return Math.max(0, (end - start) / 1000); // seconds
+};
+
+interface NewOutageInput {
+  start_time: string;
+  end_time: string;
+}
+
 export function KaOutageConfig({
   outages,
   onOutagesChange,
 }: KaOutageConfigProps) {
-  const [newOutage, setNewOutage] = useState<Partial<KaOutage>>({});
+  const [newOutage, setNewOutage] = useState<Partial<NewOutageInput>>({});
 
   const handleAddOutage = () => {
     if (newOutage.start_time && newOutage.end_time) {
+      const durationSeconds = calculateDuration(newOutage.start_time, newOutage.end_time);
       onOutagesChange([
         ...outages,
         {
+          id: crypto.randomUUID(),
           start_time: newOutage.start_time,
-          end_time: newOutage.end_time,
-          reason: newOutage.reason,
+          duration_seconds: durationSeconds,
         },
       ]);
       setNewOutage({});
@@ -41,17 +61,17 @@ export function KaOutageConfig({
           <TableHeader>
             <TableRow>
               <TableHead>Start Time</TableHead>
+              <TableHead>Duration (hours)</TableHead>
               <TableHead>End Time</TableHead>
-              <TableHead>Reason</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {outages.map((outage, index) => (
-              <TableRow key={index}>
+              <TableRow key={outage.id}>
                 <TableCell>{new Date(outage.start_time).toLocaleString()}</TableCell>
-                <TableCell>{new Date(outage.end_time).toLocaleString()}</TableCell>
-                <TableCell>{outage.reason || 'N/A'}</TableCell>
+                <TableCell>{(outage.duration_seconds / 3600).toFixed(2)}</TableCell>
+                <TableCell>{new Date(new Date(outage.start_time).getTime() + outage.duration_seconds * 1000).toLocaleString()}</TableCell>
                 <TableCell>
                   <Button
                     variant="destructive"
@@ -77,6 +97,13 @@ export function KaOutageConfig({
                 />
               </TableCell>
               <TableCell>
+                {newOutage.start_time && newOutage.end_time && (
+                  <span>
+                    {(calculateDuration(newOutage.start_time, newOutage.end_time) / 3600).toFixed(2)}
+                  </span>
+                )}
+              </TableCell>
+              <TableCell>
                 <Input
                   type="datetime-local"
                   value={newOutage.end_time ?? ''}
@@ -85,15 +112,6 @@ export function KaOutageConfig({
                       ...newOutage,
                       end_time: e.target.value,
                     })
-                  }
-                />
-              </TableCell>
-              <TableCell>
-                <Input
-                  placeholder="Reason (optional)"
-                  value={newOutage.reason ?? ''}
-                  onChange={(e) =>
-                    setNewOutage({ ...newOutage, reason: e.target.value })
                   }
                 />
               </TableCell>
