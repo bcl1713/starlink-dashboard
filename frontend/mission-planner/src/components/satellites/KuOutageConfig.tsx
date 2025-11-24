@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { toISO8601 } from '@/lib/utils';
 import type { KuOutageOverride } from '../../types/satellite';
 
 interface KuOutageConfigProps {
@@ -42,7 +43,7 @@ export function KuOutageConfig({
         ...outages,
         {
           id: crypto.randomUUID(),
-          start_time: newOutage.start_time,
+          start_time: toISO8601(newOutage.start_time),
           duration_seconds: durationSeconds,
           reason: newOutage.reason || undefined,
         },

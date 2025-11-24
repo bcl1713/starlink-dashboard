@@ -883,8 +883,8 @@ Critical mismatches found between frontend types and backend models that cause 4
 
 - [ ] Fix datetime format conversion
   - [x] Add toISO8601() helper function in lib/utils.ts
-  - [ ] Apply conversion in KaOutageConfig before saving
-  - [ ] Apply conversion in KuOutageConfig before saving
+  - [x] Apply conversion in KaOutageConfig before saving
+  - [x] Apply conversion in KuOutageConfig before saving
   - [ ] Test round-trip (save → load → display)
 
 - [ ] Mark required fields correctly in TypeScript types
