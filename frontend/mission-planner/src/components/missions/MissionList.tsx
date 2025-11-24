@@ -5,9 +5,11 @@ import { Button } from '../ui/button';
 interface MissionListProps {
   onSelectMission: (id: string) => void;
   onCreateNew: () => void;
+  onImport: () => void;
+  onExport: (id: string, name: string) => void;
 }
 
-export function MissionList({ onSelectMission, onCreateNew }: MissionListProps) {
+export function MissionList({ onSelectMission, onCreateNew, onImport, onExport }: MissionListProps) {
   const { data: missions, isLoading, error } = useMissions();
   const deleteMission = useDeleteMission();
 
@@ -18,7 +20,10 @@ export function MissionList({ onSelectMission, onCreateNew }: MissionListProps) 
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Missions</h1>
-        <Button onClick={onCreateNew}>Create New Mission</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onImport}>Import Mission</Button>
+          <Button onClick={onCreateNew}>Create New Mission</Button>
+        </div>
       </div>
 
       {missions?.length === 0 ? (
@@ -33,6 +38,7 @@ export function MissionList({ onSelectMission, onCreateNew }: MissionListProps) 
               mission={mission}
               onSelect={onSelectMission}
               onDelete={(id) => deleteMission.mutate(id)}
+              onExport={onExport}
             />
           ))}
         </div>

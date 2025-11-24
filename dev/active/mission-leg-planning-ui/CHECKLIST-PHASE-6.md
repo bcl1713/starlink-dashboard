@@ -380,11 +380,11 @@
 
 ### 6.5.2: Add import button to MissionList
 
-- [ ] Open `frontend/mission-planner/src/components/missions/MissionList.tsx`
-- [ ] Add "Import Mission" button next to "Create New Mission"
-- [ ] Add state for import dialog
-- [ ] Save file (verify < 350 lines)
-- [ ] Expected: Import button in mission list header
+- [x] Open `frontend/mission-planner/src/components/missions/MissionList.tsx`
+- [x] Add "Import Mission" button next to "Create New Mission"
+- [x] Add state for import dialog
+- [x] Save file (verify < 350 lines)
+- [x] Expected: Import button in mission list header
 
 ### 6.5.3: Wire up dialogs in MissionsPage
 
