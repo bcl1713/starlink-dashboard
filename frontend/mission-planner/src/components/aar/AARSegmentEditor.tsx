@@ -106,7 +106,7 @@ export function AARSegmentEditor({
                   <SelectTrigger>
                     <SelectValue placeholder="Start waypoint" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px]">
                     {availableWaypoints.map((waypoint) => (
                       <SelectItem key={waypoint} value={waypoint}>
                         {waypoint}
@@ -126,7 +126,7 @@ export function AARSegmentEditor({
                   <SelectTrigger>
                     <SelectValue placeholder="End waypoint" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[300px]">
                     {availableEndWaypoints.map((waypoint) => (
                       <SelectItem key={waypoint} value={waypoint}>
                         {waypoint}
