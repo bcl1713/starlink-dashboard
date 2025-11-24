@@ -26,9 +26,10 @@ export const routesApi = {
 
   async getCoordinates(routeId: string): Promise<[number, number][]> {
     const response = await apiClient.get<any>(`/api/routes/${routeId}`);
-    // Extract coordinates from waypoints
-    if (response.data.waypoints && Array.isArray(response.data.waypoints)) {
-      return response.data.waypoints.map((wp: any) => [wp.latitude, wp.longitude]);
+    // Extract coordinates from points (cleaned/calculated route)
+    // NOT waypoints (those are named placemarks)
+    if (response.data.points && Array.isArray(response.data.points)) {
+      return response.data.points.map((point: any) => [point.latitude, point.longitude]);
     }
     return [];
   },
