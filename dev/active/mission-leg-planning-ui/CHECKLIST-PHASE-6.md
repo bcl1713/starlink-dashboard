@@ -213,11 +213,11 @@
 
 ### 6.4.1: Install drag-and-drop library
 
-- [ ] Install react-dropzone:
+- [x] Install react-dropzone:
   ```bash
   npm --prefix /home/brian/Projects/starlink-dashboard-dev/frontend/mission-planner install react-dropzone
   ```
-- [ ] Expected: react-dropzone available
+- [x] Expected: react-dropzone available
 
 ### 6.4.2: Create ImportDialog component
 
