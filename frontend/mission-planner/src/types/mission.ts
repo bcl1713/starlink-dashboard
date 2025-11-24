@@ -1,6 +1,3 @@
-import type { SatelliteConfig } from './satellite';
-import type { AARConfig } from './aar';
-
 export interface Mission {
   id: string;
   name: string;
@@ -25,8 +22,6 @@ export interface MissionLeg {
   name: string;
   route_id: string;
   description?: string;
-  satellite_config?: SatelliteConfig;
-  aar_config?: AARConfig;
   transports: TransportConfig;
   created_at?: string;
   updated_at?: string;

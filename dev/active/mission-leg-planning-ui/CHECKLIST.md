@@ -894,10 +894,10 @@ Critical mismatches found between frontend types and backend models that cause 4
 
 ### Priority 2: Cleanup and Type Safety
 
-- [ ] Remove legacy unused fields from MissionLeg
-  - [ ] Remove `satellite_config?: SatelliteConfig` field
-  - [ ] Remove `aar_config?: AARConfig` field
-  - [ ] Remove unused type imports if applicable
+- [x] Remove legacy unused fields from MissionLeg
+  - [x] Remove `satellite_config?: SatelliteConfig` field
+  - [x] Remove `aar_config?: AARConfig` field
+  - [x] Remove unused type imports if applicable
 
 - [ ] Add proper types to TransportConfig arrays
   - [ ] Replace `x_transitions?: unknown[]` with `x_transitions?: XBandTransition[]`
