@@ -402,16 +402,16 @@
 
 ### 6.6.1: Verify backend export endpoint
 
-- [ ] Ensure backend is running:
+- [x] Ensure backend is running:
   ```bash
   docker compose ps
   ```
-- [ ] Test export endpoint manually:
+- [x] Test export endpoint manually:
   ```bash
   curl -X POST http://localhost:8000/api/v2/missions/test-mission-1/export -o test-export.zip
   ```
-- [ ] Verify zip file created
-- [ ] Expected: Backend export working
+- [x] Verify zip file created
+- [x] Expected: Backend export working
 
 ### 6.6.2: Add backend import endpoint (if not exists)
 
