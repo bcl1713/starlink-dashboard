@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import config, flight_status, geojson, health, metrics, pois, routes, status, ui
 from app.mission import exporter, routes as mission_routes, routes_v2 as mission_routes_v2
+from app.satellites import routes as satellite_routes
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
@@ -446,6 +447,7 @@ app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
 app.include_router(mission_routes.router, tags=["Missions"])
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
+app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(ui.router, tags=["UI"])
 
 

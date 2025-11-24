@@ -10,6 +10,7 @@ import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { routesApi } from '../services/routes';
+import { satellitesApi } from '../services/satellites';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{ missionId: string; legId: string }>();
@@ -36,6 +37,17 @@ export function LegDetailPage() {
 
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [availableWaypoints, setAvailableWaypoints] = useState<string[]>([]);
+  const [availableSatellites, setAvailableSatellites] = useState<string[]>([]);
+
+  // Load satellites on component mount
+  useEffect(() => {
+    satellitesApi
+      .list()
+      .then((satellites) =>
+        setAvailableSatellites(satellites.map((s) => s.satellite_id))
+      )
+      .catch((err) => console.error('Failed to load satellites:', err));
+  }, []);
 
   // Load route coordinates and waypoints when leg changes
   useEffect(() => {
@@ -69,14 +81,6 @@ export function LegDetailPage() {
     }
   }, [leg?.transports]);
 
-  // Example available satellites (TODO: fetch from backend)
-  const availableSatellites = [
-    'X-Band-1',
-    'X-Band-2',
-    'X-Band-3',
-    'X-Band-4',
-    'X-Band-5',
-  ];
 
   // Generate map coordinates: route + transition markers
   const mapCoordinates = [...routeCoordinates];
