@@ -887,10 +887,10 @@ Critical mismatches found between frontend types and backend models that cause 4
   - [x] Apply conversion in KuOutageConfig before saving
   - [x] Test round-trip (save → load → display)
 
-- [ ] Mark required fields correctly in TypeScript types
-  - [ ] MissionLeg.route_id - remove `?`, make required
-  - [ ] MissionLeg.transports - remove `?`, make required
-  - [ ] TransportConfig.initial_x_satellite_id - remove `?`, make required
+- [x] Mark required fields correctly in TypeScript types
+  - [x] MissionLeg.route_id - remove `?`, make required
+  - [x] MissionLeg.transports - remove `?`, make required
+  - [x] TransportConfig.initial_x_satellite_id - remove `?`, make required
 
 ### Priority 2: Cleanup and Type Safety
 

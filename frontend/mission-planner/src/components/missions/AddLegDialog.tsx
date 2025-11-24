@@ -81,7 +81,7 @@ export function AddLegDialog({
       await onAddLeg({
         id: legId,
         name: legName,
-        route_id: routeId || undefined,
+        route_id: routeId,
         description: description || undefined,
         transports: {
           initial_x_satellite_id: 'X-1',

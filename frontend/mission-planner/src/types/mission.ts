@@ -12,7 +12,7 @@ export interface Mission {
 }
 
 export interface TransportConfig {
-  initial_x_satellite_id?: string;
+  initial_x_satellite_id: string;
   initial_ka_satellite_ids?: string[];
   x_transitions?: unknown[];
   ka_outages?: unknown[];
@@ -23,11 +23,11 @@ export interface TransportConfig {
 export interface MissionLeg {
   id: string;
   name: string;
-  route_id?: string;
+  route_id: string;
   description?: string;
   satellite_config?: SatelliteConfig;
   aar_config?: AARConfig;
-  transports?: TransportConfig;
+  transports: TransportConfig;
   created_at?: string;
   updated_at?: string;
   is_active?: boolean;
