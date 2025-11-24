@@ -76,8 +76,8 @@
 
 ### 7.1.2: Test hierarchical storage functions
 
-- [ ] Open or create `backend/starlink-location/tests/test_mission_storage.py`
-- [ ] Add tests for save_mission_v2:
+- [x] Open or create `backend/starlink-location/tests/test_mission_storage.py`
+- [x] Add tests for save_mission_v2:
   ```python
   def test_save_mission_v2(tmp_path):
       """Test saving hierarchical mission."""
@@ -85,18 +85,18 @@
       # Test mission saved to correct structure
       # Test legs saved separately
   ```
-- [ ] Add tests for load_mission_v2:
+- [x] Add tests for load_mission_v2:
   ```python
   def test_load_mission_v2(tmp_path):
       """Test loading hierarchical mission."""
       # Create test mission files
       # Load and verify structure
   ```
-- [ ] Run tests:
+- [x] Run tests:
   ```bash
   source backend/starlink-location/venv/bin/activate && pytest backend/starlink-location/tests/test_mission_storage.py -v
   ```
-- [ ] Expected: All storage tests pass
+- [x] Expected: All storage tests pass
 
 ### 7.1.3: Test v2 API endpoints
 
