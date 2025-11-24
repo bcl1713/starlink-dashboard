@@ -13,6 +13,36 @@ interface XBandConfigProps {
   availableSatellites: string[];
 }
 
+const validateSatelliteId = (id: string): string | null => {
+  if (!id || id.trim() === '') {
+    return 'Satellite ID is required';
+  }
+  if (!/^[A-Z0-9-_]+$/i.test(id)) {
+    return 'Satellite ID must contain only letters, numbers, hyphens, and underscores';
+  }
+  return null; // Valid
+};
+
+const validateLatitude = (lat: number | undefined): string | null => {
+  if (lat === undefined || lat === null) {
+    return 'Latitude is required';
+  }
+  if (lat < -90 || lat > 90) {
+    return 'Latitude must be between -90 and 90 degrees';
+  }
+  return null; // Valid
+};
+
+const validateLongitude = (lon: number | undefined): string | null => {
+  if (lon === undefined || lon === null) {
+    return 'Longitude is required';
+  }
+  if (lon < -180 || lon > 180) {
+    return 'Longitude must be between -180 and 180 degrees';
+  }
+  return null; // Valid
+};
+
 export function XBandConfig({
   startingSatellite,
   transitions,
@@ -21,23 +51,38 @@ export function XBandConfig({
   availableSatellites,
 }: XBandConfigProps) {
   const [newTransition, setNewTransition] = useState<Partial<XBandTransition>>({});
+  const [satelliteIdError, setSatelliteIdError] = useState<string | null>(null);
+  const [latitudeError, setLatitudeError] = useState<string | null>(null);
+  const [longitudeError, setLongitudeError] = useState<string | null>(null);
 
   const handleAddTransition = () => {
-    if (
-      newTransition.latitude !== undefined &&
-      newTransition.longitude !== undefined &&
-      newTransition.target_satellite_id
-    ) {
+    // Validate inputs
+    const latError = validateLatitude(newTransition.latitude);
+    const lonError = validateLongitude(newTransition.longitude);
+    const satError = newTransition.target_satellite_id
+      ? validateSatelliteId(newTransition.target_satellite_id)
+      : 'Satellite ID is required';
+
+    setLatitudeError(latError);
+    setLongitudeError(lonError);
+    setSatelliteIdError(satError);
+
+    // Only proceed if all validations pass
+    if (!latError && !lonError && !satError) {
       onTransitionsChange([
         ...transitions,
         {
           id: crypto.randomUUID(),
-          latitude: newTransition.latitude,
-          longitude: newTransition.longitude,
-          target_satellite_id: newTransition.target_satellite_id,
+          latitude: newTransition.latitude!,
+          longitude: newTransition.longitude!,
+          target_satellite_id: newTransition.target_satellite_id!,
         },
       ]);
       setNewTransition({});
+      // Clear errors after successful submission
+      setSatelliteIdError(null);
+      setLatitudeError(null);
+      setLongitudeError(null);
     }
   };
 
@@ -93,54 +138,81 @@ export function XBandConfig({
             ))}
             <TableRow>
               <TableCell>
-                <Input
-                  type="number"
-                  step="0.000001"
-                  placeholder="Latitude"
-                  value={newTransition.latitude ?? ''}
-                  onChange={(e) =>
-                    setNewTransition({
-                      ...newTransition,
-                      latitude: parseFloat(e.target.value),
-                    })
-                  }
-                />
+                <div>
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    placeholder="Latitude"
+                    value={newTransition.latitude ?? ''}
+                    onChange={(e) => {
+                      const lat = parseFloat(e.target.value);
+                      setNewTransition({
+                        ...newTransition,
+                        latitude: lat,
+                      });
+                      setLatitudeError(validateLatitude(lat));
+                    }}
+                    className={latitudeError ? 'border-red-500' : ''}
+                  />
+                  {latitudeError && (
+                    <p className="text-sm text-red-500 mt-1">{latitudeError}</p>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
-                <Input
-                  type="number"
-                  step="0.000001"
-                  placeholder="Longitude"
-                  value={newTransition.longitude ?? ''}
-                  onChange={(e) =>
-                    setNewTransition({
-                      ...newTransition,
-                      longitude: parseFloat(e.target.value),
-                    })
-                  }
-                />
+                <div>
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    placeholder="Longitude"
+                    value={newTransition.longitude ?? ''}
+                    onChange={(e) => {
+                      const lon = parseFloat(e.target.value);
+                      setNewTransition({
+                        ...newTransition,
+                        longitude: lon,
+                      });
+                      setLongitudeError(validateLongitude(lon));
+                    }}
+                    className={longitudeError ? 'border-red-500' : ''}
+                  />
+                  {longitudeError && (
+                    <p className="text-sm text-red-500 mt-1">{longitudeError}</p>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
-                <Select
-                  value={newTransition.target_satellite_id || ''}
-                  onValueChange={(value) =>
-                    setNewTransition({ ...newTransition, target_satellite_id: value })
-                  }
+                <div>
+                  <Select
+                    value={newTransition.target_satellite_id || ''}
+                    onValueChange={(value) => {
+                      setNewTransition({ ...newTransition, target_satellite_id: value });
+                      setSatelliteIdError(validateSatelliteId(value));
+                    }}
+                  >
+                    <SelectTrigger className={satelliteIdError ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Target satellite" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableSatellites.map((sat) => (
+                        <SelectItem key={sat} value={sat}>
+                          {sat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {satelliteIdError && (
+                    <p className="text-sm text-red-500 mt-1">{satelliteIdError}</p>
+                  )}
+                </div>
+              </TableCell>
+              <TableCell>
+                <Button
+                  onClick={handleAddTransition}
+                  disabled={!!latitudeError || !!longitudeError || !!satelliteIdError}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Target satellite" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSatellites.map((sat) => (
-                      <SelectItem key={sat} value={sat}>
-                        {sat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </TableCell>
-              <TableCell>
-                <Button onClick={handleAddTransition}>Add</Button>
+                  Add
+                </Button>
               </TableCell>
             </TableRow>
           </TableBody>

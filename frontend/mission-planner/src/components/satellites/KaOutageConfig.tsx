@@ -10,18 +10,37 @@ interface KaOutageConfigProps {
   onOutagesChange: (outages: KaOutage[]) => void;
 }
 
-// Helper to calculate end time for display
-const calculateEndTime = (startTime: string, durationSeconds: number): string => {
-  const start = new Date(startTime);
-  const end = new Date(start.getTime() + durationSeconds * 1000);
-  return end.toISOString().slice(0, 16); // Format for datetime-local
-};
-
 // Helper to calculate duration from times
 const calculateDuration = (startTime: string, endTime: string): number => {
   const start = new Date(startTime).getTime();
   const end = new Date(endTime).getTime();
   return Math.max(0, (end - start) / 1000); // seconds
+};
+
+const validateDuration = (duration: number): string | null => {
+  if (duration <= 0) {
+    return 'Duration must be greater than 0 seconds';
+  }
+  if (duration > 86400) {
+    // 24 hours
+    return 'Duration cannot exceed 24 hours (86400 seconds)';
+  }
+  return null; // Valid
+};
+
+const validateDatetime = (datetime: string): string | null => {
+  if (!datetime || datetime.trim() === '') {
+    return 'Datetime is required';
+  }
+  try {
+    const date = new Date(datetime);
+    if (isNaN(date.getTime())) {
+      return 'Please enter a valid datetime';
+    }
+  } catch {
+    return 'Please enter a valid datetime';
+  }
+  return null; // Valid
 };
 
 interface NewOutageInput {
@@ -34,19 +53,39 @@ export function KaOutageConfig({
   onOutagesChange,
 }: KaOutageConfigProps) {
   const [newOutage, setNewOutage] = useState<Partial<NewOutageInput>>({});
+  const [startTimeError, setStartTimeError] = useState<string | null>(null);
+  const [endTimeError, setEndTimeError] = useState<string | null>(null);
+  const [durationError, setDurationError] = useState<string | null>(null);
 
   const handleAddOutage = () => {
-    if (newOutage.start_time && newOutage.end_time) {
-      const durationSeconds = calculateDuration(newOutage.start_time, newOutage.end_time);
+    // Validate inputs
+    const startError = validateDatetime(newOutage.start_time || '');
+    const endError = validateDatetime(newOutage.end_time || '');
+    const durationSeconds = calculateDuration(
+      newOutage.start_time || '',
+      newOutage.end_time || ''
+    );
+    const durError = validateDuration(durationSeconds);
+
+    setStartTimeError(startError);
+    setEndTimeError(endError);
+    setDurationError(durError);
+
+    // Only proceed if all validations pass
+    if (!startError && !endError && !durError) {
       onOutagesChange([
         ...outages,
         {
           id: crypto.randomUUID(),
-          start_time: toISO8601(newOutage.start_time),
+          start_time: toISO8601(newOutage.start_time!),
           duration_seconds: durationSeconds,
         },
       ]);
       setNewOutage({});
+      // Clear errors after successful submission
+      setStartTimeError(null);
+      setEndTimeError(null);
+      setDurationError(null);
     }
   };
 
@@ -86,38 +125,74 @@ export function KaOutageConfig({
             ))}
             <TableRow>
               <TableCell>
-                <Input
-                  type="datetime-local"
-                  value={newOutage.start_time ?? ''}
-                  onChange={(e) =>
-                    setNewOutage({
-                      ...newOutage,
-                      start_time: e.target.value,
-                    })
-                  }
-                />
+                <div>
+                  <Input
+                    type="datetime-local"
+                    value={newOutage.start_time ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setNewOutage({
+                        ...newOutage,
+                        start_time: value,
+                      });
+                      setStartTimeError(validateDatetime(value));
+                      // Re-validate duration if end time exists
+                      if (newOutage.end_time) {
+                        const dur = calculateDuration(value, newOutage.end_time);
+                        setDurationError(validateDuration(dur));
+                      }
+                    }}
+                    className={startTimeError ? 'border-red-500' : ''}
+                  />
+                  {startTimeError && (
+                    <p className="text-sm text-red-500 mt-1">{startTimeError}</p>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 {newOutage.start_time && newOutage.end_time && (
-                  <span>
-                    {(calculateDuration(newOutage.start_time, newOutage.end_time) / 3600).toFixed(2)}
-                  </span>
+                  <div>
+                    <span>
+                      {(calculateDuration(newOutage.start_time, newOutage.end_time) / 3600).toFixed(2)}
+                    </span>
+                    {durationError && (
+                      <p className="text-sm text-red-500 mt-1">{durationError}</p>
+                    )}
+                  </div>
                 )}
               </TableCell>
               <TableCell>
-                <Input
-                  type="datetime-local"
-                  value={newOutage.end_time ?? ''}
-                  onChange={(e) =>
-                    setNewOutage({
-                      ...newOutage,
-                      end_time: e.target.value,
-                    })
-                  }
-                />
+                <div>
+                  <Input
+                    type="datetime-local"
+                    value={newOutage.end_time ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setNewOutage({
+                        ...newOutage,
+                        end_time: value,
+                      });
+                      setEndTimeError(validateDatetime(value));
+                      // Re-validate duration if start time exists
+                      if (newOutage.start_time) {
+                        const dur = calculateDuration(newOutage.start_time, value);
+                        setDurationError(validateDuration(dur));
+                      }
+                    }}
+                    className={endTimeError ? 'border-red-500' : ''}
+                  />
+                  {endTimeError && (
+                    <p className="text-sm text-red-500 mt-1">{endTimeError}</p>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
-                <Button onClick={handleAddOutage}>Add</Button>
+                <Button
+                  onClick={handleAddOutage}
+                  disabled={!!startTimeError || !!endTimeError || !!durationError}
+                >
+                  Add
+                </Button>
               </TableCell>
             </TableRow>
           </TableBody>
