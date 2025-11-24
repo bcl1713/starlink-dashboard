@@ -1,9 +1,10 @@
 export interface XBandTransition {
+  id: string;
   latitude: number;
   longitude: number;
-  from_satellite: string;
-  to_satellite: string;
-  timestamp?: string;
+  target_satellite_id: string;
+  target_beam_id?: string;
+  is_same_satellite_transition?: boolean;
 }
 
 export interface KaOutage {

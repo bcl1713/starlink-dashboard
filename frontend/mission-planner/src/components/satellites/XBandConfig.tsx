@@ -26,15 +26,15 @@ export function XBandConfig({
     if (
       newTransition.latitude !== undefined &&
       newTransition.longitude !== undefined &&
-      newTransition.to_satellite
+      newTransition.target_satellite_id
     ) {
       onTransitionsChange([
         ...transitions,
         {
+          id: crypto.randomUUID(),
           latitude: newTransition.latitude,
           longitude: newTransition.longitude,
-          from_satellite: transitions[transitions.length - 1]?.to_satellite || startingSatellite || '',
-          to_satellite: newTransition.to_satellite,
+          target_satellite_id: newTransition.target_satellite_id,
         },
       ]);
       setNewTransition({});
@@ -70,18 +70,16 @@ export function XBandConfig({
             <TableRow>
               <TableHead>Latitude</TableHead>
               <TableHead>Longitude</TableHead>
-              <TableHead>From Satellite</TableHead>
-              <TableHead>To Satellite</TableHead>
+              <TableHead>Target Satellite</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {transitions.map((transition, index) => (
-              <TableRow key={index}>
+              <TableRow key={transition.id}>
                 <TableCell>{transition.latitude}</TableCell>
                 <TableCell>{transition.longitude}</TableCell>
-                <TableCell>{transition.from_satellite}</TableCell>
-                <TableCell>{transition.to_satellite}</TableCell>
+                <TableCell>{transition.target_satellite_id}</TableCell>
                 <TableCell>
                   <Button
                     variant="destructive"
@@ -123,17 +121,14 @@ export function XBandConfig({
                 />
               </TableCell>
               <TableCell>
-                {transitions[transitions.length - 1]?.to_satellite || startingSatellite || 'N/A'}
-              </TableCell>
-              <TableCell>
                 <Select
-                  value={newTransition.to_satellite}
+                  value={newTransition.target_satellite_id || ''}
                   onValueChange={(value) =>
-                    setNewTransition({ ...newTransition, to_satellite: value })
+                    setNewTransition({ ...newTransition, target_satellite_id: value })
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="To satellite" />
+                    <SelectValue placeholder="Target satellite" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableSatellites.map((sat) => (
