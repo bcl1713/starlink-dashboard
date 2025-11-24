@@ -9,6 +9,7 @@ from app.mission.models import (
     AARWindow,
     KaOutage,
     KuOutageOverride,
+    Mission,
     MissionLeg,
     MissionPhase,
     MissionLegTimeline,
@@ -365,3 +366,51 @@ class TestEnums:
         assert MissionPhase.PRE_DEPARTURE.value == "pre_departure"
         assert MissionPhase.IN_FLIGHT.value == "in_flight"
         assert MissionPhase.POST_ARRIVAL.value == "post_arrival"
+
+
+def test_mission_leg_creation():
+    """Test creating a MissionLeg instance."""
+    leg = MissionLeg(
+        id="leg-1",
+        name="Test Leg",
+        route_id="route-1",
+        description="Test description",
+        transports=TransportConfig(initial_x_satellite_id="X-1"),
+    )
+    assert leg.id == "leg-1"
+    assert leg.name == "Test Leg"
+    assert leg.route_id == "route-1"
+
+
+def test_mission_creation():
+    """Test creating a Mission with legs."""
+    mission = Mission(
+        id="mission-1",
+        name="Test Mission",
+        description="Test",
+        legs=[],
+    )
+    assert mission.id == "mission-1"
+    assert len(mission.legs) == 0
+
+
+def test_mission_with_legs():
+    """Test Mission with multiple legs."""
+    leg1 = MissionLeg(
+        id="leg-1",
+        name="Leg 1",
+        route_id="route-1",
+        transports=TransportConfig(initial_x_satellite_id="X-1"),
+    )
+    leg2 = MissionLeg(
+        id="leg-2",
+        name="Leg 2",
+        route_id="route-2",
+        transports=TransportConfig(initial_x_satellite_id="X-1"),
+    )
+    mission = Mission(
+        id="mission-1",
+        name="Test",
+        legs=[leg1, leg2],
+    )
+    assert len(mission.legs) == 2

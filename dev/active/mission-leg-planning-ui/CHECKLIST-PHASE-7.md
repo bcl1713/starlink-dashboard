@@ -27,8 +27,8 @@
 
 ### 7.1.1: Test Mission and MissionLeg models
 
-- [ ] Open or create `backend/starlink-location/tests/test_mission_models.py`
-- [ ] Add tests for MissionLeg model:
+- [x] Open or create `backend/starlink-location/tests/test_mission_models.py`
+- [x] Add tests for MissionLeg model:
   ```python
   def test_mission_leg_creation():
       """Test creating a MissionLeg instance."""
@@ -42,7 +42,7 @@
       assert leg.name == "Test Leg"
       assert leg.route_id == "route-1"
   ```
-- [ ] Add tests for Mission model:
+- [x] Add tests for Mission model:
   ```python
   def test_mission_creation():
       """Test creating a Mission with legs."""
@@ -55,7 +55,7 @@
       assert mission.id == "mission-1"
       assert len(mission.legs) == 0
   ```
-- [ ] Add tests for nested legs:
+- [x] Add tests for nested legs:
   ```python
   def test_mission_with_legs():
       """Test Mission with multiple legs."""
@@ -68,11 +68,11 @@
       )
       assert len(mission.legs) == 2
   ```
-- [ ] Run tests:
+- [x] Run tests:
   ```bash
   source backend/starlink-location/venv/bin/activate && pytest backend/starlink-location/tests/test_mission_models.py -v
   ```
-- [ ] Expected: All model tests pass
+- [x] Expected: All model tests pass
 
 ### 7.1.2: Test hierarchical storage functions
 
