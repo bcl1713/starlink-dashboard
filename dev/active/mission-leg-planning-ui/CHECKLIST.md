@@ -864,25 +864,25 @@ Critical mismatches found between frontend types and backend models that cause 4
 
 ### Priority 1: Critical Fixes (Required for functionality)
 
-- [ ] Fix Ka Outage model structure
-  - [ ] Add required `id` field to KaOutage interface
-  - [ ] Replace `end_time` with `duration_seconds` field
-  - [ ] Remove `reason` field (not in backend)
-  - [ ] Update KaOutageConfig.tsx to generate IDs with crypto.randomUUID()
-  - [ ] Replace end_time input with duration_seconds number input
-  - [ ] Add helper functions for duration ↔ end_time display conversion
+- [x] Fix Ka Outage model structure
+  - [x] Add required `id` field to KaOutage interface
+  - [x] Replace `end_time` with `duration_seconds` field
+  - [x] Remove `reason` field (not in backend)
+  - [x] Update KaOutageConfig.tsx to generate IDs with crypto.randomUUID()
+  - [x] Replace end_time input with duration_seconds number input
+  - [x] Add helper functions for duration ↔ end_time display conversion
 
-- [ ] Fix Ku Outage model structure
-  - [ ] Rename `KuOutage` interface to `KuOutageOverride`
-  - [ ] Add required `id` field to interface
-  - [ ] Replace `end_time` with `duration_seconds` field
-  - [ ] Keep `reason` field (exists in backend as optional)
-  - [ ] Update KuOutageConfig.tsx to generate IDs with crypto.randomUUID()
-  - [ ] Replace end_time input with duration_seconds number input
-  - [ ] Add helper functions for duration ↔ end_time display conversion
+- [x] Fix Ku Outage model structure
+  - [x] Rename `KuOutage` interface to `KuOutageOverride`
+  - [x] Add required `id` field to interface
+  - [x] Replace `end_time` with `duration_seconds` field
+  - [x] Keep `reason` field (exists in backend as optional)
+  - [x] Update KuOutageConfig.tsx to generate IDs with crypto.randomUUID()
+  - [x] Replace end_time input with duration_seconds number input
+  - [x] Add helper functions for duration ↔ end_time display conversion
 
 - [ ] Fix datetime format conversion
-  - [ ] Add toISO8601() helper function in lib/utils.ts
+  - [x] Add toISO8601() helper function in lib/utils.ts
   - [ ] Apply conversion in KaOutageConfig before saving
   - [ ] Apply conversion in KuOutageConfig before saving
   - [ ] Test round-trip (save → load → display)
