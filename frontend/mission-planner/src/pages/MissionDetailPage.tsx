@@ -79,15 +79,16 @@ export function MissionDetailPage() {
         ) : (
           <div className="grid gap-4">
             {mission.legs.map((leg) => (
-              <Card key={leg.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={leg.id}
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() =>
+                  navigate(`/missions/${mission.id}/legs/${leg.id}`)
+                }
+              >
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div
-                      className="flex-1 cursor-pointer"
-                      onClick={() =>
-                        navigate(`/missions/${mission.id}/legs/${leg.id}`)
-                      }
-                    >
+                    <div className="flex-1">
                       <CardTitle>{leg.name}</CardTitle>
                       {leg.description && (
                         <CardDescription>{leg.description}</CardDescription>
@@ -96,7 +97,10 @@ export function MissionDetailPage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDeleteLeg(leg.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteLeg(leg.id);
+                      }}
                       disabled={deleteLegMutation.isPending}
                       className="ml-2"
                     >
@@ -105,21 +109,13 @@ export function MissionDetailPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div
-                    className="cursor-pointer"
-                    onClick={() =>
-                      navigate(`/missions/${mission.id}/legs/${leg.id}`)
-                    }
-                  >
+                  <div>
                     <p className="text-sm text-gray-600">ID: {leg.id}</p>
                     {leg.route_id && (
                       <p className="text-sm text-gray-600 mt-1">
                         Route: {leg.route_id}
                       </p>
                     )}
-                    <p className="text-xs text-gray-500 mt-2">
-                      Click to configure leg
-                    </p>
                   </div>
                 </CardContent>
               </Card>
