@@ -32,10 +32,10 @@ export function AARSegmentEditor({
 
   // Calculate available end waypoints (only those after the start waypoint)
   const getAvailableEndWaypoints = () => {
-    if (!newSegment.start_waypoint) {
+    if (!newSegment.start_waypoint_name) {
       return [];
     }
-    const startIndex = availableWaypoints.indexOf(newSegment.start_waypoint);
+    const startIndex = availableWaypoints.indexOf(newSegment.start_waypoint_name);
     if (startIndex === -1) {
       return [];
     }
@@ -46,13 +46,13 @@ export function AARSegmentEditor({
   const availableEndWaypoints = getAvailableEndWaypoints();
 
   const handleAddSegment = () => {
-    if (newSegment.start_waypoint && newSegment.end_waypoint) {
+    if (newSegment.start_waypoint_name && newSegment.end_waypoint_name) {
       onSegmentsChange([
         ...segments,
         {
           id: crypto.randomUUID(),
-          start_waypoint: newSegment.start_waypoint,
-          end_waypoint: newSegment.end_waypoint,
+          start_waypoint_name: newSegment.start_waypoint_name,
+          end_waypoint_name: newSegment.end_waypoint_name,
         },
       ]);
       setNewSegment({});
@@ -78,8 +78,8 @@ export function AARSegmentEditor({
           <TableBody>
             {segments.map((segment, index) => (
               <TableRow key={segment.id}>
-                <TableCell>{segment.start_waypoint}</TableCell>
-                <TableCell>{segment.end_waypoint}</TableCell>
+                <TableCell>{segment.start_waypoint_name}</TableCell>
+                <TableCell>{segment.end_waypoint_name}</TableCell>
                 <TableCell>
                   <Button
                     variant="destructive"
@@ -94,12 +94,12 @@ export function AARSegmentEditor({
             <TableRow>
               <TableCell>
                 <Select
-                  value={newSegment.start_waypoint ?? ''}
+                  value={newSegment.start_waypoint_name ?? ''}
                   onValueChange={(value) =>
                     setNewSegment({
                       ...newSegment,
-                      start_waypoint: value,
-                      end_waypoint: undefined,
+                      start_waypoint_name: value,
+                      end_waypoint_name: undefined,
                     })
                   }
                 >
@@ -117,11 +117,11 @@ export function AARSegmentEditor({
               </TableCell>
               <TableCell>
                 <Select
-                  value={newSegment.end_waypoint ?? ''}
+                  value={newSegment.end_waypoint_name ?? ''}
                   onValueChange={(value) =>
-                    setNewSegment({ ...newSegment, end_waypoint: value })
+                    setNewSegment({ ...newSegment, end_waypoint_name: value })
                   }
-                  disabled={!newSegment.start_waypoint}
+                  disabled={!newSegment.start_waypoint_name}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="End waypoint" />

@@ -1,7 +1,7 @@
 export interface AARSegment {
   id: string;
-  start_waypoint: string;
-  end_waypoint: string;
+  start_waypoint_name: string;
+  end_waypoint_name: string;
 }
 
 export interface AARConfig {
