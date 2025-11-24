@@ -131,8 +131,8 @@ export function MissionDetailPage() {
       <AddLegDialog
         open={showAddLegDialog}
         onOpenChange={setShowAddLegDialog}
+        existingLegCount={mission?.legs.length || 0}
         onAddLeg={handleAddLeg}
-        isSubmitting={addLegMutation.isPending}
       />
     </div>
   );
