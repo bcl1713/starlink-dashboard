@@ -881,11 +881,11 @@ Critical mismatches found between frontend types and backend models that cause 4
   - [x] Replace end_time input with duration_seconds number input
   - [x] Add helper functions for duration ↔ end_time display conversion
 
-- [ ] Fix datetime format conversion
+- [x] Fix datetime format conversion
   - [x] Add toISO8601() helper function in lib/utils.ts
   - [x] Apply conversion in KaOutageConfig before saving
   - [x] Apply conversion in KuOutageConfig before saving
-  - [ ] Test round-trip (save → load → display)
+  - [x] Test round-trip (save → load → display)
 
 - [ ] Mark required fields correctly in TypeScript types
   - [ ] MissionLeg.route_id - remove `?`, make required
