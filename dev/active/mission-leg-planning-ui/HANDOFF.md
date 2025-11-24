@@ -3,7 +3,7 @@
 **Branch:** `feat/mission-leg-planning-ui`
 **Folder:** `dev/active/mission-leg-planning-ui/`
 **Generated:** 2025-11-23
-**Status:** Phase 5 Complete, Ready for Phase 6
+**Status:** Phase 6 Complete, Ready for Phase 7
 
 ---
 
@@ -17,11 +17,11 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Current Status
 
-- **Phase:** Phases 1-5 Complete (Backend + Frontend + Configuration UI + Map)
-- **Checklist completion:** ~62% (Phase 5 complete, Phases 6-8 remaining)
-- **Progress:** Full satellite/AAR configuration UI operational with side-by-side map visualization
+- **Phase:** Phases 1-6 Complete (Backend + Frontend + Configuration UI + Map + Export/Import)
+- **Checklist completion:** ~88% (Phase 6 complete, Phases 7-8 remaining)
+- **Progress:** Full export/import workflow operational with backend API verified
 
-### Major accomplishments (Phases 1-5):
+### Major accomplishments (Phases 1-6):
 
 ✅ **Phase 1-4:** Backend refactoring, v2 API, React frontend, mission CRUD UI (see previous handoff)
 
@@ -50,28 +50,40 @@ This feature introduces a hierarchical mission planning system where a Mission i
 4. AAR end waypoint dropdown filters to only show points after start waypoint
 5. Map shows route + X-Band transition points with reactive updates
 
+✅ **Phase 6 - Export/Import UI & Integration (COMPLETE)**
+1. Created export/import TypeScript types (`export.ts`)
+2. Implemented export/import API service (`export-import.ts`)
+3. Built ExportDialog component with progress indicator
+4. Built ImportDialog component with drag-and-drop file upload
+5. Integrated Export button into MissionCard
+6. Integrated Import button into MissionList
+7. Wired up dialogs in MissionsPage with state management
+8. Added backend import endpoint (`POST /api/v2/missions/import`)
+9. Verified complete roundtrip: export → delete → import → verify
+10. Tested validation with invalid zip files
+
 ---
 
 ## Next Actions
 
-**Immediate next steps (Phase 6 - Export/Import UI & Integration):**
+**Immediate next steps (Phase 7 - Testing & Documentation):**
 
-Phase 6 involves building the mission package export/import UI. All tasks are detailed in `CHECKLIST-PHASE-6.md`.
+Phase 7 involves comprehensive testing and documentation. All tasks are detailed in `CHECKLIST-PHASE-7.md`.
 
-**To begin Phase 6:**
+**To begin Phase 7:**
 
-1. Review `CHECKLIST-PHASE-6.md` for complete task list
+1. Review `CHECKLIST-PHASE-7.md` for complete task list
 2. Key tasks include:
-   - Build export dialog UI with format selection
-   - Build import drag-and-drop interface
-   - Integrate with backend `/api/v2/missions/{id}/export` endpoint
-   - Add progress indicators for export/import operations
-   - Implement validation and error handling for imports
-   - Test export → import roundtrip workflow
+   - Write backend unit tests (target >80% coverage)
+   - Write frontend component tests
+   - Create E2E test for full mission workflow
+   - Update CLAUDE.md with mission planning guide
+   - Update API documentation
+   - Create user guide with screenshots
 
-3. After Phase 6, proceed to Phase 7 (Testing & Documentation)
+3. After Phase 7, proceed to Phase 8 (Wrap-Up & PR)
 
-**Reference:** See `dev/active/mission-leg-planning-ui/CHECKLIST-PHASE-6.md` for complete Phase 6 tasks.
+**Reference:** See `dev/active/mission-leg-planning-ui/CHECKLIST-PHASE-7.md` for complete Phase 7 tasks.
 
 ---
 
@@ -81,21 +93,25 @@ Phase 6 involves building the mission package export/import UI. All tasks are de
 - ✅ Satellite configuration UX - Using appropriate inputs (lat/lon, datetime, dropdowns)
 - ✅ Map visualization - Leaflet integrated with side-by-side layout
 - ✅ AAR segment editor - Dropdown-based waypoint selection with smart filtering
+- ✅ Export/import endpoints - Both fully implemented and tested
+- ✅ Roundtrip verification - Export → delete → import works perfectly
 
 ### Active Risks:
-1. **Save/Cancel buttons** - Not yet implemented; leg configurations aren't persisted
-2. **Leg management** - No UI to add/remove legs from missions yet
-3. **350-line file limit** - Successfully maintained across all components
+1. **Test coverage** - No unit/component tests written yet (Phase 7 focus)
+2. **Save/Cancel buttons** - Not yet implemented; leg configurations aren't persisted
+3. **Leg management** - No UI to add/remove legs from missions yet
 4. **Frontend performance** - Not yet tested with large missions (10+ legs)
+5. **350-line file limit** - Successfully maintained across all components
 
 ### Open Questions:
 - Should leg configuration save automatically or require explicit Save button click?
 - Where should leg management UI live (mission detail page or separate)?
+- What level of test coverage is acceptable for Phase 7?
 
 ### No Blockers:
-- All Phase 1-5 exit criteria met
-- Phase 6 entry criteria satisfied (all configuration UIs functional)
-- Backend export/import endpoints exist (basic implementation)
+- All Phase 1-6 exit criteria met
+- Phase 7 entry criteria satisfied (all features implemented)
+- Frontend and backend fully functional and deployed
 
 ---
 
@@ -105,8 +121,9 @@ Phase 6 involves building the mission package export/import UI. All tasks are de
 - PLAN.md: `dev/active/mission-leg-planning-ui/PLAN.md`
 - CONTEXT.md: `dev/active/mission-leg-planning-ui/CONTEXT.md`
 - CHECKLIST.md: `dev/active/mission-leg-planning-ui/CHECKLIST.md`
+- CHECKLIST-PHASE-4.md: (all tasks completed)
 - CHECKLIST-PHASE-5.md: (all tasks completed)
-- CHECKLIST-PHASE-6.md: (ready to execute)
+- CHECKLIST-PHASE-6.md: (all tasks completed)
 - CHECKLIST-PHASE-7.md: (ready to execute)
 - CHECKLIST-PHASE-8.md: (ready to execute)
 - LESSONS-LEARNED.md: `dev/LESSONS-LEARNED.md` (project-wide)
@@ -115,13 +132,18 @@ Phase 6 involves building the mission package export/import UI. All tasks are de
 - Models: `backend/starlink-location/app/mission/models.py`
 - Storage: `backend/starlink-location/app/mission/storage.py`
 - V2 API: `backend/starlink-location/app/mission/routes_v2.py`
-- Export: `backend/starlink-location/app/mission/package_exporter.py`
+- Package Exporter: `backend/starlink-location/app/mission/package_exporter.py`
+- Export endpoint: `POST /api/v2/missions/{id}/export`
+- Import endpoint: `POST /api/v2/missions/import`
 
 **Key Code Files (Frontend):**
-- Types: `frontend/mission-planner/src/types/{mission,satellite,aar}.ts`
-- API: `frontend/mission-planner/src/services/missions.ts`
+- Types: `frontend/mission-planner/src/types/{mission,satellite,aar,export}.ts`
+- API Services:
+  - `frontend/mission-planner/src/services/missions.ts`
+  - `frontend/mission-planner/src/services/export-import.ts`
 - Hooks: `frontend/mission-planner/src/hooks/api/useMissions.ts`
 - Components:
+  - Missions: `frontend/mission-planner/src/components/missions/{MissionCard,MissionList,ExportDialog,ImportDialog}.tsx`
   - Satellites: `frontend/mission-planner/src/components/satellites/`
   - AAR: `frontend/mission-planner/src/components/aar/AARSegmentEditor.tsx`
   - Map: `frontend/mission-planner/src/components/common/RouteMap.tsx`
@@ -139,8 +161,8 @@ Phase 6 involves building the mission package export/import UI. All tasks are de
 **Branch:**
 - Repo: starlink-dashboard-dev
 - Branch: `feat/mission-leg-planning-ui`
-- Latest commit: Phase 5 complete with side-by-side map integration
-- Total commits: 40+ (covering Phases 1-5)
+- Latest commit: Phase 6 complete - export/import fully verified
+- Total commits: 55+ (covering Phases 1-6)
 
 **PR:** Not yet created (will be created in Phase 8)
 
@@ -150,36 +172,32 @@ Phase 6 involves building the mission package export/import UI. All tasks are de
 
 **Quick Start:**
 1. Read this HANDOFF.md first
-2. Review CHECKLIST-PHASE-6.md for Phase 6 tasks
-3. Run `executing-plan-checklist` skill to begin Phase 6 execution
-4. Or work independently through CHECKLIST-PHASE-6.md tasks
+2. Review CHECKLIST-PHASE-7.md for Phase 7 tasks
+3. Run `executing-plan-checklist` skill to begin Phase 7 execution
+4. Or work independently through CHECKLIST-PHASE-7.md tasks
 
 **Testing the current state:**
 ```bash
-# Backend API
+# Backend API (all services running)
 curl http://localhost:8000/api/v2/missions
+curl -X POST http://localhost:8000/api/v2/missions/test-mission-1/export -o test.zip
 
-# Frontend dev server
-cd frontend/mission-planner
-npm run dev  # Should start on http://localhost:5173
+# Frontend (running in Docker on port 5173)
+open http://localhost:5173/missions
 
-# Navigate through the app
+# Test export/import workflow
 # 1. Open http://localhost:5173/missions
-# 2. Click on a mission card
-# 3. Click on a leg card (or create test data if no legs exist)
-# 4. Test all 4 configuration tabs:
-#    - X-Band: Add transitions with lat/lon
-#    - Ka Outages: Add time-based outages
-#    - Ku Outages: Add time-based outages
-#    - AAR Segments: Select start/end waypoints
-# 5. Watch map update in real-time on the right side
+# 2. Click "Export" on a mission card
+# 3. Verify zip downloads
+# 4. Click "Import Mission"
+# 5. Drag and drop the zip file
+# 6. Verify mission recreated
 ```
 
 **Expected Duration:**
-- Phase 6: 4-6 hours (export/import dialogs)
 - Phase 7: 6-8 hours (testing & documentation)
 - Phase 8: 2-3 hours (wrap-up & PR)
-- Total remaining: ~12-17 hours
+- Total remaining: ~8-11 hours
 
 **Tech Stack Summary:**
 - Backend: Python + FastAPI + Pydantic

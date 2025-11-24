@@ -5,7 +5,7 @@
 **Folder:** `dev/active/mission-leg-planning-ui/`
 **Date:** 2025-11-23
 **Owner:** brian
-**Status:** Phases 1-4 complete; Phase 5 next
+**Status:** Phases 1-6 complete; Phase 7 next
 
 ---
 
@@ -17,9 +17,11 @@ This work introduces a hierarchical mission planning system where a **Mission** 
 
 ## Progress Updates (most recent first)
 
+- **2025-11-23 — Phase 6 completed:** Export/Import UI fully implemented with backend API integration. ExportDialog and ImportDialog components complete with progress indicators and drag-and-drop. Backend export/import endpoints fully functional and tested with complete roundtrip verification (export → delete → import → verify identical data).
+- **2025-11-23 — Phase 5 completed:** Satellite & AAR configuration UI complete with X-Band transitions, Ka/Ku outages, AAR segment editor, and side-by-side map visualization.
 - **2025-11-23 — Phase 4 completed:** Core mission UI in the React planner is working (missions list + create dialog), with API client, types, React Query hooks, routing, Tailwind, and ShadCN components wired to the v2 backend.
 - **2025-11-23 — Phases 1-3 completed:** Backend models renamed to MissionLeg with new Mission container and hierarchical storage; v2 missions API and package export skeleton registered in FastAPI; frontend scaffolding created with Vite/TypeScript, ESLint/Prettier, Tailwind, and Docker Compose service.
-- **Next focus:** Phase 5 — Satellite & AAR configuration UI (transition tables, outages, and AAR segment editor with map overlays).
+- **Next focus:** Phase 7 — Testing & Documentation (unit tests, component tests, E2E tests, and documentation updates).
 
 ---
 
