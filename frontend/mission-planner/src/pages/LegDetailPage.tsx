@@ -35,14 +35,22 @@ export function LegDetailPage() {
   });
 
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
+  const [availableWaypoints, setAvailableWaypoints] = useState<string[]>([]);
 
-  // Load route coordinates when leg changes
+  // Load route coordinates and waypoints when leg changes
   useEffect(() => {
     if (leg?.route_id) {
       routesApi
         .getCoordinates(leg.route_id)
         .then((coords) => setRouteCoordinates(coords))
-        .catch((err) => console.error('Failed to load route:', err));
+        .catch((err) => console.error('Failed to load route coordinates:', err));
+
+      routesApi
+        .getWaypoints(leg.route_id)
+        .then((waypoints) => setAvailableWaypoints(waypoints))
+        .catch((err) => console.error('Failed to load route waypoints:', err));
+    } else {
+      setAvailableWaypoints([]);
     }
   }, [leg?.route_id]);
 
@@ -68,15 +76,6 @@ export function LegDetailPage() {
     'X-Band-3',
     'X-Band-4',
     'X-Band-5',
-  ];
-
-  // Example available waypoints (TODO: fetch from route)
-  const availableWaypoints = [
-    'WP001',
-    'WP002',
-    'WP003',
-    'WP004',
-    'WP005',
   ];
 
   // Generate map coordinates: route + transition markers

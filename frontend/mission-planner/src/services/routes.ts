@@ -33,4 +33,15 @@ export const routesApi = {
     }
     return [];
   },
+
+  async getWaypoints(routeId: string): Promise<string[]> {
+    const response = await apiClient.get<any>(`/api/routes/${routeId}`);
+    // Extract waypoint names from the route detail response
+    if (response.data.waypoints && Array.isArray(response.data.waypoints)) {
+      return response.data.waypoints
+        .map((waypoint: any) => waypoint.name)
+        .filter((name: string | undefined) => name !== undefined && name !== '');
+    }
+    return [];
+  },
 };
