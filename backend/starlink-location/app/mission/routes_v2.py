@@ -367,6 +367,7 @@ async def update_leg(mission_id: str, leg_id: str, updated_leg: MissionLeg) -> M
                     route_manager=_route_manager,
                     poi_manager=_poi_manager,
                     coverage_sampler=_coverage_sampler,
+                    parent_mission_id=mission_id,
                 )
                 save_mission_timeline(leg_id, timeline)
                 logger.info(f"Timeline generated and saved for leg {leg_id}")
@@ -504,6 +505,7 @@ async def activate_leg(mission_id: str, leg_id: str) -> dict:
                     route_manager=_route_manager,
                     poi_manager=_poi_manager,
                     coverage_sampler=_coverage_sampler,
+                    parent_mission_id=mission_id,
                 )
                 save_mission_timeline(leg_id, timeline)
                 logger.info(f"Timeline generated and saved for leg {leg_id}")

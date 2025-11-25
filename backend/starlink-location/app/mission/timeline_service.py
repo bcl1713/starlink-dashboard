@@ -147,6 +147,7 @@ def build_mission_timeline(
     route_manager: RouteManager,
     poi_manager: POIManager | None = None,
     coverage_sampler: CoverageSampler | None = None,
+    parent_mission_id: str | None = None,
 ) -> tuple[MissionLegTimeline, TimelineSummary]:
     """Compute the mission communication timeline and derived summary."""
 
@@ -225,9 +226,9 @@ def build_mission_timeline(
     )
 
     if poi_manager and (coverage_result.gaps or coverage_result.swaps):
-        _sync_ka_pois(mission, route, poi_manager, coverage_result)
+        _sync_ka_pois(mission, route, poi_manager, coverage_result, parent_mission_id)
     if poi_manager:
-        _sync_x_aar_pois(mission, route, poi_manager)
+        _sync_x_aar_pois(mission, route, poi_manager, parent_mission_id)
 
     _apply_manual_outages(rule_engine, mission.transports.ka_outages, Transport.KA)
     _apply_manual_outages(rule_engine, mission.transports.ku_overrides, Transport.KU)
@@ -1100,16 +1101,18 @@ def _format_gap_reason(event: str, lost: str | None, regain: str | None) -> str:
 
 
 def _sync_ka_pois(
-    mission: Mission,
+    mission: MissionLeg,
     route: ParsedRoute,
     poi_manager: POIManager,
     coverage: CoverageAnalysisResult,
+    parent_mission_id: str | None = None,
 ) -> None:
+    effective_mission_id = parent_mission_id or mission.id
     deleted = poi_manager.delete_mission_pois_by_category(
-        mission.id, KA_POI_CATEGORIES
+        effective_mission_id, KA_POI_CATEGORIES
     )
     deleted_prefix = poi_manager.delete_mission_pois_by_name_prefixes(
-        mission.id, KA_POI_NAME_PREFIXES
+        effective_mission_id, KA_POI_NAME_PREFIXES
     )
     route_cleanup = 0
     if mission.route_id:
@@ -1146,7 +1149,7 @@ def _sync_ka_pois(
                     category=MISSION_EVENT_CATEGORY,
                     description=f"Loss at {gap.start.timestamp.isoformat()}",
                     route_id=mission.route_id,
-                    mission_id=mission.id,
+                    mission_id=effective_mission_id,
                 )
             )
         if gap.end:
@@ -1159,7 +1162,7 @@ def _sync_ka_pois(
                     category=MISSION_EVENT_CATEGORY,
                     description=f"Regain at {gap.end.timestamp.isoformat()}",
                     route_id=mission.route_id,
-                    mission_id=mission.id,
+                    mission_id=effective_mission_id,
                 )
             )
 
@@ -1176,18 +1179,20 @@ def _sync_ka_pois(
                 category=MISSION_EVENT_CATEGORY,
                 description=f"Recommended swap near {midpoint.timestamp.isoformat()}",
                 route_id=mission.route_id,
-                mission_id=mission.id,
+                mission_id=effective_mission_id,
             )
         )
 
 
 def _sync_x_aar_pois(
-    mission: Mission,
+    mission: MissionLeg,
     route: ParsedRoute,
     poi_manager: POIManager,
+    parent_mission_id: str | None = None,
 ) -> None:
+    effective_mission_id = parent_mission_id or mission.id
     deleted = poi_manager.delete_mission_pois_by_name_prefixes(
-        mission.id, X_AAR_POI_PREFIXES
+        effective_mission_id, X_AAR_POI_PREFIXES
     )
     route_cleanup = 0
     if mission.route_id:
@@ -1230,7 +1235,7 @@ def _sync_x_aar_pois(
                 category=MISSION_EVENT_CATEGORY,
                 description=f"X transition target {transition.target_satellite_id or 'Unknown'}",
                 route_id=mission.route_id,
-                mission_id=mission.id,
+                mission_id=effective_mission_id,
             )
         )
         if (
@@ -1251,7 +1256,7 @@ def _sync_x_aar_pois(
                     category=MISSION_EVENT_CATEGORY,
                     description=f"AAR window start ({window.start_waypoint_name})",
                     route_id=mission.route_id,
-                    mission_id=mission.id,
+                    mission_id=effective_mission_id,
                 )
             )
         end_coords = _find_waypoint_coordinates(route, window.end_waypoint_name)
@@ -1265,7 +1270,7 @@ def _sync_x_aar_pois(
                     category=MISSION_EVENT_CATEGORY,
                     description=f"AAR window end ({window.end_waypoint_name})",
                     route_id=mission.route_id,
-                    mission_id=mission.id,
+                    mission_id=effective_mission_id,
                 )
             )
 
