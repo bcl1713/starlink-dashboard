@@ -8,7 +8,7 @@ import {
   CardContent,
 } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { useMission, useAddLeg, useDeleteLeg, useActivateLeg } from '../hooks/api/useMissions';
+import { useMission, useAddLeg, useDeleteLeg, useActivateLeg, useDeleteMission } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
 import type { MissionLeg } from '../types/mission';
 
@@ -19,6 +19,7 @@ export function MissionDetailPage() {
   const { data: mission, isLoading, error } = useMission(missionId || '');
   const addLegMutation = useAddLeg(missionId || '');
   const deleteLegMutation = useDeleteLeg(missionId || '');
+  const deleteMissionMutation = useDeleteMission();
   const activateLeg = useActivateLeg();
 
   if (isLoading) {
@@ -46,9 +47,35 @@ export function MissionDetailPage() {
     await addLegMutation.mutateAsync(leg);
   };
 
-  const handleDeleteLeg = (legId: string) => {
-    if (window.confirm('Are you sure you want to delete this leg?')) {
-      deleteLegMutation.mutate(legId);
+  const handleDeleteMission = async () => {
+    const legCount = mission?.legs.length || 0;
+    const confirmed = window.confirm(
+      `Are you sure you want to delete this mission?\n\n` +
+      `This will permanently delete:\n` +
+      `- ${legCount} leg(s)\n` +
+      `- All associated routes\n` +
+      `- All associated POIs\n\n` +
+      `This action cannot be undone.`
+    );
+
+    if (confirmed) {
+      await deleteMissionMutation.mutateAsync(missionId || '');
+      navigate('/missions');
+    }
+  };
+
+  const handleDeleteLeg = (leg: MissionLeg) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete leg "${leg.name}"?\n\n` +
+      `This will permanently delete:\n` +
+      `- The leg configuration\n` +
+      `- Associated route (${leg.route_id || 'none'})\n` +
+      `- All associated POIs\n\n` +
+      `This action cannot be undone.`
+    );
+
+    if (confirmed) {
+      deleteLegMutation.mutate(leg.id);
     }
   };
 
@@ -64,9 +91,18 @@ export function MissionDetailPage() {
           <p className="text-muted-foreground mt-2">{mission.description}</p>
           <p className="text-sm text-gray-500 mt-2">ID: {mission.id}</p>
         </div>
-        <Button variant="outline" onClick={() => navigate('/missions')}>
-          Back to Missions
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/missions')}>
+            Back to Missions
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteMission}
+            disabled={deleteMissionMutation.isPending}
+          >
+            {deleteMissionMutation.isPending ? 'Deleting...' : 'Delete Mission'}
+          </Button>
+        </div>
       </div>
 
       <div className="border-t pt-6">
@@ -129,7 +165,7 @@ export function MissionDetailPage() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteLeg(leg.id);
+                          handleDeleteLeg(leg);
                         }}
                         disabled={deleteLegMutation.isPending}
                       >

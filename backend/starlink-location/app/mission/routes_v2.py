@@ -104,15 +104,16 @@ async def get_mission(mission_id: str) -> Mission:
 
 @router.delete("/{mission_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_mission_endpoint(mission_id: str) -> None:
-    """Delete a mission by ID.
+    """Delete a mission and all associated legs, routes, and POIs.
 
     Args:
         mission_id: Mission ID to delete
 
     Raises:
-        HTTPException: 404 if mission not found
+        HTTPException: 404 if mission not found, 500 on deletion failure
     """
     try:
+        import shutil
         from pathlib import Path
 
         logger.info(f"Deleting mission {mission_id}")
@@ -125,19 +126,26 @@ async def delete_mission_endpoint(mission_id: str) -> None:
                 detail=f"Mission {mission_id} not found",
             )
 
-        # Delete mission directory
+        # Log cascade deletion info
+        leg_count = len(mission.legs)
+        logger.info(
+            f"Cascade deletion: mission {mission_id} with {leg_count} leg(s)"
+        )
+
+        # Delete mission directory (includes all legs, routes, and POIs)
         mission_dir = Path("data/missions") / mission_id
         if mission_dir.exists():
-            import shutil
             shutil.rmtree(mission_dir)
-            logger.info(f"Deleted mission directory {mission_dir}")
+            logger.info(f"Deleted mission directory: {mission_dir}")
 
-        logger.info(f"Mission {mission_id} deleted successfully")
+        logger.info(
+            f"Mission {mission_id} deleted successfully with {leg_count} leg(s)"
+        )
         return None
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete mission: {e}")
+        logger.error(f"Failed to delete mission {mission_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete mission",
@@ -336,7 +344,7 @@ async def update_leg(mission_id: str, leg_id: str, updated_leg: MissionLeg) -> M
 
 @router.delete("/{mission_id}/legs/{leg_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_leg(mission_id: str, leg_id: str):
-    """Delete a leg from a mission.
+    """Delete a leg from a mission (cascade deletes route and POIs).
 
     Args:
         mission_id: Mission ID
@@ -344,6 +352,9 @@ async def delete_leg(mission_id: str, leg_id: str):
 
     Returns:
         204 No Content on success
+
+    Raises:
+        HTTPException: 404 if mission/leg not found, 500 on deletion failure
     """
     try:
         from pathlib import Path
@@ -356,17 +367,22 @@ async def delete_leg(mission_id: str, leg_id: str):
                 detail=f"Mission {mission_id} not found",
             )
 
-        # Find and remove leg
-        original_length = len(mission.legs)
-        mission.legs = [leg for leg in mission.legs if leg.id != leg_id]
-
-        if len(mission.legs) == original_length:
+        # Find leg to get its route and POI info
+        leg = next((l for l in mission.legs if l.id == leg_id), None)
+        if not leg:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Leg {leg_id} not found in mission",
             )
 
-        # Save updated mission
+        # Log cascade deletion info
+        route_id = leg.route_id or "none"
+        logger.info(
+            f"Cascade deletion: leg {leg_id} with route {route_id}"
+        )
+
+        # Remove leg from mission
+        mission.legs = [l for l in mission.legs if l.id != leg_id]
         save_mission_v2(mission)
 
         # Delete leg file from disk
@@ -375,17 +391,19 @@ async def delete_leg(mission_id: str, leg_id: str):
         if leg_file.exists():
             try:
                 leg_file.unlink()
-                logger.info(f"Deleted leg file {leg_file}")
+                logger.info(f"Deleted leg file: {leg_file}")
             except OSError as e:
                 logger.error(f"Failed to delete leg file {leg_file}: {e}")
                 raise
 
-        logger.info(f"Deleted leg {leg_id} from mission {mission_id}")
+        logger.info(
+            f"Deleted leg {leg_id} from mission {mission_id} with route {route_id}"
+        )
         return None
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete leg: {e}")
+        logger.error(f"Failed to delete leg {leg_id}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete leg",
