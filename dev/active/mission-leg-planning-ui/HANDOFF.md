@@ -3,7 +3,7 @@
 **Branch:** `feat/mission-leg-planning-ui`
 **Folder:** `dev/active/mission-leg-planning-ui/`
 **Generated:** 2025-11-25 (Updated after Phase 6.5 completion)
-**Status:** Phase 6.5 Complete - 3 New Issues Identified
+**Status:** Phase 6.5 Complete + Issue #2 Fixed - 2 Issues Remaining
 
 ---
 
@@ -17,10 +17,34 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Current Status
 
-- **Phase:** Phase 6.5 Complete ✅ - Ready for Phase 7 after addressing 3 new issues
+- **Phase:** Addressing Post-Phase 6.5 Issues (2/3 partially complete)
 - **Checklist completion:** 100% of Phase 6.5 tasks complete
-- **Progress:** All critical bugs fixed, satellite system integrated, AAR segments working, X-Band markers visible
-- **New Issues:** Export package incomplete, mission activation not showing on dashboard, Ka transitions not calculating
+- **Progress:** V1/V2 API bridge working, export infrastructure in place, timeline generation partially wired
+- **Remaining Issues:**
+  1. ⚠️ Export package documents (per-leg timelines + mission-level combined docs)
+  2. Ka transitions calculation & visualization
+
+### Session Summary (2025-11-25 Post-Phase 6.5 Issue Resolution):
+
+**✅ Issue #2 Fixed - V1/V2 API Bridge (2 commits):**
+
+1. **`2d4d7ad`** - Fixed per-leg timeline generation and auto-generation on activation
+2. **`b00ba30`** - Implemented V1/V2 API bridge for dashboard integration
+
+**Key Accomplishments This Session:**
+- ✅ Per-leg timeline loading implemented (using `leg.id` instead of `mission.id`)
+- ✅ Timeline auto-generation added to leg activation endpoint
+- ✅ V1/V2 API bridge successfully bridges `/api/missions/active` to v2 missions
+- ✅ Grafana dashboard now displays activated v2 missions
+- ⚠️ Discovered timeline generation requires satellite catalog setup (permissions issue)
+- ⚠️ Identified need for mission-level combined document functions
+
+**Remaining Work:**
+- Fix satellite catalog data directory permissions for timeline generation
+- Implement mission-level combined document generation functions
+- Implement Ka transition calculation & visualization
+
+---
 
 ### Session Summary (2025-11-25 Phase 6.5 completion):
 
@@ -49,30 +73,59 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## New Issues Identified (Post Phase 6.5)
 
-### 🐛 Issue 1: Export Package Missing Documents
+### 🐛 Issue 1: Export Package Missing Documents ⚠️ PARTIALLY FIXED
+**Status:** Per-leg timeline generation added, but files still not appearing in zip
+
 **Problem:** Mission export still only contains mission.json and manifest.json. Missing:
-- Per-leg timeline documents (CSV, XLSX, PPTX, PDF)
-- Mission-level combined documents (CSV, XLSX, PPTX, PDF)
-- Implementation exists but timeline generation functions may not be wired up correctly
+- Per-leg timeline documents (CSV, XLSX, PPTX, PDF) - Timeline generation code added but not producing files
+- Mission-level combined documents (CSV, XLSX, PPTX, PDF) - Need new functions to stitch leg documents together
+
+**Recent Changes (2025-11-25):**
+- ✅ Added per-leg timeline loading in `package_exporter.py` (loads timeline for each `leg.id`)
+- ✅ Added timeline generation on leg activation in `routes_v2.py`
+- ✅ Wired up RouteManager and POIManager dependencies to routes_v2
+- ⚠️ Timeline generation may be failing due to missing satellite catalog data directory permissions
+
+**Root Cause:**
+- Timeline generation functions exist in `exporter.py` for individual legs
+- Package exporter calls these functions but **timeline files may not exist** (generated on activation)
+- **Mission-level combined documents don't exist yet** - need new functions to merge per-leg documents
+
+**Required Actions:**
+1. **Fix timeline generation prerequisites:**
+   - Ensure `data/satellites` directory exists with proper permissions
+   - Verify satellite catalog data (CommKa.kmz) is accessible
+   - Test timeline generation in isolation (activate leg → check for timeline file)
+
+2. **Add mission-level document generation:**
+   - Create `generate_mission_combined_csv()` in `exporter.py` - concatenate all leg CSVs
+   - Create `generate_mission_combined_xlsx()` - combine leg sheets into workbook
+   - Create `generate_mission_combined_pptx()` - merge leg slide decks
+   - Create `generate_mission_combined_pdf()` - concatenate leg PDFs
+   - Wire up these functions in `package_exporter.py` at lines 393-418
 
 **Files to Check:**
-- `backend/starlink-location/app/mission/package_exporter.py` - Check timeline export calls
-- `backend/starlink-location/app/mission/exporter.py` - Verify timeline generation functions exist
-- Ensure `generate_timeline_export()` is being called for each leg
+- `backend/starlink-location/app/mission/package_exporter.py:330-391` - Per-leg export calls
+- `backend/starlink-location/app/mission/package_exporter.py:393-418` - Mission-level export calls (stubbed)
+- `backend/starlink-location/app/mission/exporter.py` - Add combined document functions
+- `backend/starlink-location/app/satellites/catalog.py:115` - Fix `data/satellites` path
 
-### 🐛 Issue 2: Mission Activation Not Showing on Dashboard
-**Problem:** Activating a leg in mission planner doesn't cause it to appear on the Grafana dashboard
+### 🐛 Issue 2: Mission Activation → Dashboard Integration ✅ FIXED
+**Status:** V1/V2 API bridge implemented successfully
 
-**Investigation Needed:**
-- Check `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` for mission data source
-- Review how dashboard queries mission data (likely looking for active mission/leg)
-- May need to update API routes to match dashboard expectations
-- Verify dashboard is querying the correct endpoints (`/api/missions` vs `/api/v2/missions`)
+**Problem (Resolved):** Activating a leg in mission planner didn't appear on the Grafana dashboard because the dashboard queries the v1 API (`/api/missions/active`) but missions were being activated via the v2 API.
 
-**Possible Root Cause:**
-- Dashboard may be looking for v1 API endpoints (`/api/missions`)
-- New v2 missions (`/api/v2/missions`) not being queried by dashboard
-- Need to either: (a) update dashboard queries, or (b) bridge v1/v2 APIs
+**Solution Implemented (2025-11-25):**
+- ✅ Created V1/V2 API bridge in `/api/missions/active` endpoint
+- ✅ Updated `get_active_mission()` to search both v1 missions and v2 missions
+- ✅ Added directory scanning for v2 missions in `data/missions/`
+- ✅ Returns active legs from v2 missions as `MissionLeg` objects (compatible with v1)
+- ✅ Tested with multi-leg mission - dashboard now displays activated v2 legs
+
+**Changes Made:**
+- `backend/starlink-location/app/mission/routes.py:343-360` - Added v2 mission scanning logic
+- Added imports: `load_mission_v2`, `MISSIONS_DIR`, `Path`
+- Commit: `b00ba30` - "fix: bridge v1/v2 APIs for active mission dashboard integration"
 
 ### 🐛 Issue 3: Ka Transitions Not Calculating/Displaying
 **Problem:** Ka satellite transitions are not being calculated and displayed on the map
@@ -97,17 +150,23 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 **IMMEDIATE PRIORITIES (Before Phase 7):**
 
-1. **Fix Export Package Document Generation**
-   - Wire up timeline export functions in package_exporter.py
-   - Verify CSV, XLSX, PPTX, PDF are generated for each leg
-   - Verify mission-level combined documents are generated
-   - Test export with multi-leg mission
+1. **Complete Export Package Document Generation** ⚠️ IN PROGRESS
+   - ✅ Added per-leg timeline loading (using `leg.id`)
+   - ✅ Added timeline generation on leg activation
+   - ⚠️ Documents still not appearing in zip (timeline generation may be failing)
+   - **TODO:** Debug timeline generation (check satellite catalog permissions)
+   - **TODO:** Add mission-level combined document functions:
+     - `generate_mission_combined_csv()` - concatenate all leg CSV files
+     - `generate_mission_combined_xlsx()` - combine leg sheets into single workbook
+     - `generate_mission_combined_pptx()` - merge leg slide decks
+     - `generate_mission_combined_pdf()` - concatenate leg PDFs with cover page
+   - **TODO:** Wire up combined document calls in `package_exporter.py:393-418`
+   - **TODO:** Test export with activated multi-leg mission
 
-2. **Fix Mission Activation → Dashboard Integration**
-   - Review fullscreen-overview.json dashboard configuration
-   - Identify which API endpoint dashboard queries for active mission
-   - Bridge v1/v2 APIs or update dashboard to use v2 endpoints
-   - Test: activate leg → verify appears on dashboard
+2. **~~Fix Mission Activation → Dashboard Integration~~** ✅ COMPLETE
+   - ✅ V1/V2 API bridge implemented
+   - ✅ Dashboard now displays activated v2 missions
+   - ✅ Tested and working (commit `b00ba30`)
 
 3. **Implement Ka Transition Calculation & Display**
    - Implement Ka coverage zone calculation (if missing)
