@@ -86,3 +86,14 @@ export function useActivateLeg() {
     },
   });
 }
+
+export function useDeactivateAllLegs(missionId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => missionsApi.deactivateAllLegs(missionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+    },
+  });
+}

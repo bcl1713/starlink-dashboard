@@ -1,5 +1,6 @@
 """Mission package export utilities for creating portable mission archives."""
 
+import hashlib
 import io
 import json
 import logging
@@ -11,8 +12,26 @@ from typing import Optional
 from app.mission.models import Mission
 from app.mission.storage import load_mission_v2, get_mission_path, load_mission_timeline
 from app.mission.exporter import generate_timeline_export, TimelineExportFormat
+from app.services.route_manager import RouteManager
+from app.services.poi_manager import POIManager
 
 logger = logging.getLogger(__name__)
+
+# Global manager instances (set by main.py during startup)
+_route_manager: Optional[RouteManager] = None
+_poi_manager: Optional[POIManager] = None
+
+
+def set_route_manager(route_manager: RouteManager) -> None:
+    """Set the route manager instance (called by main.py during startup)."""
+    global _route_manager
+    _route_manager = route_manager
+
+
+def set_poi_manager(poi_manager: POIManager) -> None:
+    """Set the POI manager instance (called by main.py during startup)."""
+    global _poi_manager
+    _poi_manager = poi_manager
 
 
 class ExportPackageError(RuntimeError):
@@ -189,7 +208,7 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
     return output.read()
 
 
-def export_mission_package(mission_id: str) -> bytes:
+def export_mission_package(mission_id: str, route_manager: Optional[RouteManager] = None, poi_manager: Optional[POIManager] = None) -> bytes:
     """Export complete mission as zip archive.
 
     Package structure:
@@ -202,6 +221,9 @@ def export_mission_package(mission_id: str) -> bytes:
         ├── routes/
         │   ├── {route-id-1}.kml
         │   └── {route-id-2}.kml
+        ├── pois/
+        │   ├── {leg-id-1}-pois.json
+        │   └── {leg-id-2}-pois.json
         ├── exports/
         │   ├── mission/
         │   │   ├── mission-timeline.csv
@@ -222,6 +244,8 @@ def export_mission_package(mission_id: str) -> bytes:
 
     Args:
         mission_id: Mission to export
+        route_manager: Optional RouteManager instance for fetching route KML files (uses global if not provided)
+        poi_manager: Optional POIManager instance for fetching mission POIs (uses global if not provided)
 
     Returns:
         Zip file as bytes
@@ -231,16 +255,81 @@ def export_mission_package(mission_id: str) -> bytes:
     if not mission:
         raise ExportPackageError(f"Mission {mission_id} not found")
 
+    # Use global managers if not provided
+    rm = route_manager or _route_manager
+    pm = poi_manager or _poi_manager
+
     buffer = io.BytesIO()
+    manifest_files = {
+        "mission_data": ["mission.json", "manifest.json"],
+        "legs": [],
+        "routes": [],
+        "pois": [],
+        "mission_exports": [],
+        "per_leg_exports": [],
+    }
 
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         # Add mission metadata
         zf.writestr("mission.json", json.dumps(mission.model_dump(), indent=2, default=str))
+        logger.info(f"Added mission.json for {mission.id}")
+
+        # Add leg JSON files
+        for leg in mission.legs:
+            leg_json = json.dumps(leg.model_dump(), indent=2, default=str)
+            leg_path = f"legs/{leg.id}.json"
+            zf.writestr(leg_path, leg_json)
+            manifest_files["legs"].append(leg_path)
+            logger.info(f"Added leg file: {leg_path}")
+
+        # Add route KML files for each leg
+        if rm:
+            for leg in mission.legs:
+                if leg.route_id:
+                    try:
+                        route = rm.get_route(leg.route_id)
+                        if route:
+                            # Try to read the KML file from disk
+                            routes_dir = Path(rm.routes_dir)
+                            kml_file = routes_dir / f"{leg.route_id}.kml"
+                            if kml_file.exists():
+                                with open(kml_file, "rb") as f:
+                                    kml_content = f.read()
+                                route_path = f"routes/{leg.route_id}.kml"
+                                zf.writestr(route_path, kml_content)
+                                manifest_files["routes"].append(route_path)
+                                logger.info(f"Added route KML: {route_path}")
+                            else:
+                                logger.warning(f"Route KML file not found at {kml_file} for leg {leg.id}")
+                        else:
+                            logger.warning(f"Route {leg.route_id} not found for leg {leg.id}")
+                    except Exception as e:
+                        logger.error(f"Failed to add route KML for leg {leg.id}: {e}")
+
+        # Add POI data for each leg
+        if pm:
+            for leg in mission.legs:
+                try:
+                    # Get POIs associated with this leg/mission
+                    pois = pm.list_pois(mission_id=mission.id)
+                    if pois:
+                        pois_data = {
+                            "leg_id": leg.id,
+                            "mission_id": mission.id,
+                            "pois": [poi.model_dump(mode='json') for poi in pois],
+                            "count": len(pois),
+                        }
+                        poi_path = f"pois/{leg.id}-pois.json"
+                        zf.writestr(poi_path, json.dumps(pois_data, indent=2, default=str))
+                        manifest_files["pois"].append(poi_path)
+                        logger.info(f"Added POI data: {poi_path} with {len(pois)} POIs")
+                except Exception as e:
+                    logger.error(f"Failed to add POI data for leg {leg.id}: {e}")
 
         # Load mission timeline for exports
         timeline = load_mission_timeline(mission_id)
         if not timeline:
-            logger.warning(f"No timeline found for mission {mission_id}, skipping per-leg exports")
+            logger.warning(f"No timeline found for mission {mission_id}, skipping exports")
         else:
             # Generate per-leg exports
             for leg in mission.legs:
@@ -251,7 +340,9 @@ def export_mission_package(mission_id: str) -> bytes:
                         mission=mission,
                         timeline=timeline,
                     )
-                    zf.writestr(f"exports/legs/{leg.id}/timeline.csv", csv_export.content)
+                    csv_path = f"exports/legs/{leg.id}/timeline.csv"
+                    zf.writestr(csv_path, csv_export.content)
+                    manifest_files["per_leg_exports"].append(csv_path)
                     logger.info(f"Generated CSV for leg {leg.id}")
                 except Exception as e:
                     logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
@@ -263,7 +354,9 @@ def export_mission_package(mission_id: str) -> bytes:
                         mission=mission,
                         timeline=timeline,
                     )
-                    zf.writestr(f"exports/legs/{leg.id}/timeline.xlsx", xlsx_export.content)
+                    xlsx_path = f"exports/legs/{leg.id}/timeline.xlsx"
+                    zf.writestr(xlsx_path, xlsx_export.content)
+                    manifest_files["per_leg_exports"].append(xlsx_path)
                     logger.info(f"Generated XLSX for leg {leg.id}")
                 except Exception as e:
                     logger.error(f"Failed to generate XLSX for leg {leg.id}: {e}")
@@ -275,7 +368,9 @@ def export_mission_package(mission_id: str) -> bytes:
                         mission=mission,
                         timeline=timeline,
                     )
-                    zf.writestr(f"exports/legs/{leg.id}/slides.pptx", pptx_export.content)
+                    pptx_path = f"exports/legs/{leg.id}/slides.pptx"
+                    zf.writestr(pptx_path, pptx_export.content)
+                    manifest_files["per_leg_exports"].append(pptx_path)
                     logger.info(f"Generated PPTX for leg {leg.id}")
                 except Exception as e:
                     logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
@@ -287,7 +382,9 @@ def export_mission_package(mission_id: str) -> bytes:
                         mission=mission,
                         timeline=timeline,
                     )
-                    zf.writestr(f"exports/legs/{leg.id}/report.pdf", pdf_export.content)
+                    pdf_path = f"exports/legs/{leg.id}/report.pdf"
+                    zf.writestr(pdf_path, pdf_export.content)
+                    manifest_files["per_leg_exports"].append(pdf_path)
                     logger.info(f"Generated PDF for leg {leg.id}")
                 except Exception as e:
                     logger.error(f"Failed to generate PDF for leg {leg.id}: {e}")
@@ -298,50 +395,69 @@ def export_mission_package(mission_id: str) -> bytes:
 
                 # Combined CSV
                 mission_csv = generate_mission_combined_csv(mission)
-                zf.writestr("exports/mission/mission-timeline.csv", mission_csv)
+                mission_csv_path = "exports/mission/mission-timeline.csv"
+                zf.writestr(mission_csv_path, mission_csv)
+                manifest_files["mission_exports"].append(mission_csv_path)
 
                 # Combined XLSX
                 mission_xlsx = generate_mission_combined_xlsx(mission)
-                zf.writestr("exports/mission/mission-timeline.xlsx", mission_xlsx)
+                mission_xlsx_path = "exports/mission/mission-timeline.xlsx"
+                zf.writestr(mission_xlsx_path, mission_xlsx)
+                manifest_files["mission_exports"].append(mission_xlsx_path)
 
                 # Combined PPTX
                 mission_pptx = generate_mission_combined_pptx(mission)
-                zf.writestr("exports/mission/mission-slides.pptx", mission_pptx)
+                mission_pptx_path = "exports/mission/mission-slides.pptx"
+                zf.writestr(mission_pptx_path, mission_pptx)
+                manifest_files["mission_exports"].append(mission_pptx_path)
 
                 # Combined PDF
                 mission_pdf = generate_mission_combined_pdf(mission)
-                zf.writestr("exports/mission/mission-report.pdf", mission_pdf)
+                mission_pdf_path = "exports/mission/mission-report.pdf"
+                zf.writestr(mission_pdf_path, mission_pdf)
+                manifest_files["mission_exports"].append(mission_pdf_path)
 
                 logger.info("Combined mission-level exports complete")
 
             except Exception as e:
                 logger.error(f"Failed to generate combined mission exports: {e}")
 
-        # Add manifest
+        # Create comprehensive manifest with file listing and statistics
         manifest = {
-            "version": "1.0",
+            "version": "2.0",
             "mission_id": mission.id,
             "mission_name": mission.name,
+            "mission_description": mission.description or "",
             "leg_count": len(mission.legs),
             "exported_at": datetime.now(timezone.utc).isoformat(),
-            "included_files": {
-                "mission_data": ["mission.json", "manifest.json"],
-                "legs": [f"legs/{leg.id}.json" for leg in mission.legs],
-                "mission_exports": [
-                    "exports/mission/mission-timeline.csv",
-                    "exports/mission/mission-timeline.xlsx",
-                    "exports/mission/mission-slides.pptx",
-                    "exports/mission/mission-report.pdf",
-                ],
-                "per_leg_exports": (
-                    [f"exports/legs/{leg.id}/timeline.csv" for leg in mission.legs]
-                    + [f"exports/legs/{leg.id}/timeline.xlsx" for leg in mission.legs]
-                    + [f"exports/legs/{leg.id}/slides.pptx" for leg in mission.legs]
-                    + [f"exports/legs/{leg.id}/report.pdf" for leg in mission.legs]
+            "file_structure": {
+                "mission_data": manifest_files["mission_data"],
+                "legs": manifest_files["legs"],
+                "routes": manifest_files["routes"],
+                "pois": manifest_files["pois"],
+                "mission_exports": manifest_files["mission_exports"],
+                "per_leg_exports": manifest_files["per_leg_exports"],
+            },
+            "statistics": {
+                "total_files": (
+                    len(manifest_files["mission_data"]) +
+                    len(manifest_files["legs"]) +
+                    len(manifest_files["routes"]) +
+                    len(manifest_files["pois"]) +
+                    len(manifest_files["mission_exports"]) +
+                    len(manifest_files["per_leg_exports"])
                 ),
+                "leg_files": len(manifest_files["legs"]),
+                "route_files": len(manifest_files["routes"]),
+                "poi_files": len(manifest_files["pois"]),
+                "mission_export_files": len(manifest_files["mission_exports"]),
+                "per_leg_export_files": len(manifest_files["per_leg_exports"]),
             },
         }
-        zf.writestr("manifest.json", json.dumps(manifest, indent=2))
+
+        manifest_json = json.dumps(manifest, indent=2)
+        zf.writestr("manifest.json", manifest_json)
+        logger.info(f"Created manifest.json with {manifest['statistics']['total_files']} files")
 
     buffer.seek(0)
     return buffer.read()

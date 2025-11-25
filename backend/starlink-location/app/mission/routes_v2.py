@@ -460,3 +460,43 @@ async def activate_leg(mission_id: str, leg_id: str) -> dict:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to activate leg",
         )
+
+
+@router.post("/{mission_id}/legs/deactivate", response_model=dict)
+async def deactivate_all_legs(mission_id: str) -> dict:
+    """Deactivate all legs in the mission.
+
+    Args:
+        mission_id: Mission ID
+
+    Returns:
+        Success response
+    """
+    try:
+        # Load mission
+        mission = load_mission_v2(mission_id)
+
+        if not mission:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Mission {mission_id} not found",
+            )
+
+        # Deactivate all legs
+        for leg in mission.legs:
+            leg.is_active = False
+
+        # Save updated mission
+        save_mission_v2(mission)
+
+        logger.info(f"Deactivated all legs in mission {mission_id}")
+
+        return {"status": "success", "message": "All legs deactivated"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to deactivate legs: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to deactivate legs",
+        )

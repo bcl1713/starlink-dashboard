@@ -8,7 +8,7 @@ import {
   CardContent,
 } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { useMission, useAddLeg, useDeleteLeg, useActivateLeg, useDeleteMission } from '../hooks/api/useMissions';
+import { useMission, useAddLeg, useDeleteLeg, useActivateLeg, useDeactivateAllLegs, useDeleteMission } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
 import type { MissionLeg } from '../types/mission';
 
@@ -21,6 +21,7 @@ export function MissionDetailPage() {
   const deleteLegMutation = useDeleteLeg(missionId || '');
   const deleteMissionMutation = useDeleteMission();
   const activateLeg = useActivateLeg();
+  const deactivateAllLegs = useDeactivateAllLegs(missionId || '');
 
   if (isLoading) {
     return (
@@ -83,6 +84,13 @@ export function MissionDetailPage() {
     activateLeg.mutate({ missionId: mission!.id, legId });
   };
 
+  const handleDeactivateAllLegs = () => {
+    const confirmed = window.confirm('Deactivate all legs?');
+    if (confirmed) {
+      deactivateAllLegs.mutate();
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-start">
@@ -108,12 +116,21 @@ export function MissionDetailPage() {
       <div className="border-t pt-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold">Mission Legs</h2>
-          <Button
-            onClick={() => setShowAddLegDialog(true)}
-            disabled={addLegMutation.isPending}
-          >
-            Add Leg
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleDeactivateAllLegs}
+              disabled={deactivateAllLegs.isPending || mission.legs.length === 0}
+              variant="outline"
+            >
+              {deactivateAllLegs.isPending ? 'Deactivating...' : 'Deactivate All'}
+            </Button>
+            <Button
+              onClick={() => setShowAddLegDialog(true)}
+              disabled={addLegMutation.isPending}
+            >
+              Add Leg
+            </Button>
+          </div>
         </div>
         {mission.legs.length === 0 ? (
           <p className="text-muted-foreground">No legs configured for this mission</p>

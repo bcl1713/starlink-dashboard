@@ -44,4 +44,8 @@ export const missionsApi = {
   activateLeg: async (missionId: string, legId: string): Promise<void> => {
     await apiClient.post(`/api/v2/missions/${missionId}/legs/${legId}/activate`);
   },
+
+  deactivateAllLegs: async (missionId: string): Promise<void> => {
+    await apiClient.post(`/api/v2/missions/${missionId}/legs/deactivate`);
+  },
 };
