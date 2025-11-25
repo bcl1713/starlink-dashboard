@@ -305,6 +305,19 @@ export function RouteMap({
     }));
   })();
 
+  // Normalize Ka transition coordinates to match route coordinate system
+  const normalizedKaTransitions = (() => {
+    if (!kaTransitions || !detectIDLCrossing()) {
+      return kaTransitions || []; // No normalization needed for non-IDL routes
+    }
+
+    // Normalize to 0-360 range for IDL-crossing routes
+    return kaTransitions.map(t => ({
+      ...t,
+      longitude: t.longitude < 0 ? t.longitude + 360 : t.longitude
+    }));
+  })();
+
   // Component to handle map interactions
   function MapController({ bounds: mapBounds }: { bounds: LatLngBoundsExpression | undefined }) {
     const map = useMap();
@@ -366,7 +379,7 @@ export function RouteMap({
             })}
 
             {/* Render Ka transition markers */}
-            {kaTransitions?.map((transition, idx) => (
+            {normalizedKaTransitions.map((transition, idx) => (
               <Marker
                 key={`ka-${idx}`}
                 position={[transition.latitude, transition.longitude]}
