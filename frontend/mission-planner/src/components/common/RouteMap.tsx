@@ -280,6 +280,19 @@ export function RouteMap({
     return segments;
   })();
 
+  // Normalize X-Band transition coordinates to match route coordinate system
+  const normalizedXBandTransitions = (() => {
+    if (!detectIDLCrossing()) {
+      return xbandTransitions; // No normalization needed for non-IDL routes
+    }
+
+    // Normalize to 0-360 range for IDL-crossing routes
+    return xbandTransitions.map(t => ({
+      ...t,
+      longitude: t.longitude < 0 ? t.longitude + 360 : t.longitude
+    }));
+  })();
+
   // Component to handle map interactions
   function MapController({ bounds: mapBounds }: { bounds: LatLngBoundsExpression | undefined }) {
     const map = useMap();
@@ -325,7 +338,7 @@ export function RouteMap({
             ))}
 
             {/* Render X-Band transition markers */}
-            {xbandTransitions.map((transition) => {
+            {normalizedXBandTransitions.map((transition) => {
               console.log('Rendering X-Band transition marker:', transition);
               return (
                 <Marker
