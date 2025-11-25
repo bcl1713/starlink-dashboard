@@ -11,8 +11,7 @@ import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { routesApi } from '../services/routes';
-import { satelliteService } from '../services/satellites';
-import type { Satellite } from '../types/satellite';
+import { satelliteService, type SatelliteResponse } from '../services/satellites';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{ missionId: string; legId: string }>();
@@ -46,8 +45,8 @@ export function LegDetailPage() {
   useEffect(() => {
     satelliteService
       .getAll()
-      .then((satellites: Satellite[]) =>
-        setAvailableSatellites(satellites.map((s: Satellite) => s.id))
+      .then((satellites: SatelliteResponse[]) =>
+        setAvailableSatellites(satellites.map((s: SatelliteResponse) => s.satellite_id))
       )
       .catch((err: Error) => console.error('Failed to load satellites:', err));
   }, []);
