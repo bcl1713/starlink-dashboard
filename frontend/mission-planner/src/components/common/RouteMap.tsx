@@ -222,23 +222,24 @@ export function RouteMap({
     return segments;
   })();
 
-  // Effect to fit bounds when route changes
-  useEffect(() => {
-    if (mapRef.current && bounds && coordinates.length > 0) {
+  // Callback when map is ready
+  const handleMapReady = (map: Map) => {
+    mapRef.current = map;
+    if (bounds && coordinates.length > 0) {
       try {
-        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+        map.fitBounds(bounds, { padding: [50, 50] });
       } catch (error) {
         console.warn('Could not fit bounds to map:', error);
       }
     }
-  }, [bounds, coordinates.length]);
+  };
 
   return (
     <div>
       <div style={{ height, width: '100%' }}>
         {coordinates.length > 0 ? (
           <MapContainer
-            ref={mapRef}
+            whenReady={(e) => handleMapReady(e.target)}
             bounds={bounds}
             center={center}
             style={{ height: '100%', width: '100%' }}
