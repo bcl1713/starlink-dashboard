@@ -239,7 +239,7 @@ export function RouteMap({
       <div style={{ height, width: '100%' }}>
         {coordinates.length > 0 ? (
           <MapContainer
-            whenReady={(e) => handleMapReady(e.target)}
+            whenReady={(e: LeafletEvent) => handleMapReady(e.target as Map)}
             bounds={bounds}
             center={center}
             style={{ height: '100%', width: '100%' }}
