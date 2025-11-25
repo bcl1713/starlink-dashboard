@@ -39,6 +39,7 @@ export function LegDetailPage() {
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
   const [availableWaypoints, setAvailableWaypoints] = useState<string[]>([]);
   const [availableSatellites, setAvailableSatellites] = useState<string[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Load satellites on component mount
   useEffect(() => {
@@ -95,6 +96,17 @@ export function LegDetailPage() {
     updates: Partial<SatelliteConfig>
   ) => {
     setSatelliteConfig({ ...satelliteConfig, ...updates });
+    setHasUnsavedChanges(true);
+  };
+
+  const handleBackClick = () => {
+    if (hasUnsavedChanges) {
+      if (window.confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        navigate(`/missions/${missionId}`);
+      }
+    } else {
+      navigate(`/missions/${missionId}`);
+    }
   };
 
   const handleSave = async () => {
@@ -114,6 +126,7 @@ export function LegDetailPage() {
         },
       });
       alert('Changes saved successfully!');
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Failed to save:', error);
       alert('Failed to save changes');
@@ -149,7 +162,7 @@ export function LegDetailPage() {
       <div>
         <Button
           variant="ghost"
-          onClick={() => navigate(`/missions/${missionId}`)}
+          onClick={handleBackClick}
           className="mb-4"
         >
           ← Back to Mission
@@ -229,9 +242,10 @@ export function LegDetailPage() {
                 </h2>
                 <AARSegmentEditor
                   segments={aarConfig.segments}
-                  onSegmentsChange={(segments) =>
-                    setAARConfig({ ...aarConfig, segments })
-                  }
+                  onSegmentsChange={(segments) => {
+                    setAARConfig({ ...aarConfig, segments });
+                    setHasUnsavedChanges(true);
+                  }}
                   availableWaypoints={availableWaypoints}
                 />
               </div>
