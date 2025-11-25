@@ -102,6 +102,48 @@ async def get_mission(mission_id: str) -> Mission:
     return mission
 
 
+@router.delete("/{mission_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_mission_endpoint(mission_id: str) -> None:
+    """Delete a mission by ID.
+
+    Args:
+        mission_id: Mission ID to delete
+
+    Raises:
+        HTTPException: 404 if mission not found
+    """
+    try:
+        from pathlib import Path
+
+        logger.info(f"Deleting mission {mission_id}")
+
+        # Check mission exists
+        mission = load_mission_v2(mission_id)
+        if not mission:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Mission {mission_id} not found",
+            )
+
+        # Delete mission directory
+        mission_dir = Path("data/missions") / mission_id
+        if mission_dir.exists():
+            import shutil
+            shutil.rmtree(mission_dir)
+            logger.info(f"Deleted mission directory {mission_dir}")
+
+        logger.info(f"Mission {mission_id} deleted successfully")
+        return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to delete mission: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete mission",
+        )
+
+
 @router.post("/{mission_id}/export")
 async def export_mission(mission_id: str) -> StreamingResponse:
     """Export mission as zip package."""
