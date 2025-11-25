@@ -84,13 +84,8 @@ export function LegDetailPage() {
   }, [leg?.transports]);
 
 
-  // Generate map coordinates: route + transition markers
+  // Generate map coordinates: route only (transitions handled separately as markers)
   const mapCoordinates = [...routeCoordinates];
-
-  // Add X-Band transition points to the map
-  satelliteConfig.xband_transitions.forEach((transition: any) => {
-    mapCoordinates.push([transition.latitude, transition.longitude]);
-  });
 
   const handleSatelliteConfigChange = (
     updates: Partial<SatelliteConfig>
@@ -272,10 +267,14 @@ export function LegDetailPage() {
         {/* Right Column: Map Visualization */}
         <div className="sticky top-6 h-fit">
           <h2 className="text-xl font-semibold mb-4">Route Visualization</h2>
-          <RouteMap coordinates={mapCoordinates} height="600px" />
+          <RouteMap
+            coordinates={mapCoordinates}
+            xbandTransitions={satelliteConfig.xband_transitions}
+            height="600px"
+          />
           <div className="mt-4 text-sm text-gray-600 space-y-1">
             <p>• Blue line: Flight route</p>
-            <p>• Markers: X-Band transition points</p>
+            <p>• Blue circles: X-Band transition points</p>
             <p className="text-gray-400">AAR segments visualization coming soon</p>
           </div>
         </div>

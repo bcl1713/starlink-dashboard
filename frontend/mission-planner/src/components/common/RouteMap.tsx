@@ -1,13 +1,28 @@
-import { MapContainer, TileLayer, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
+import type { XBandTransition } from '../../types/satellite';
 
 interface RouteMapProps {
   coordinates: LatLngExpression[];
   height?: string;
+  xbandTransitions?: XBandTransition[];
 }
 
-export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
+export function RouteMap({
+  coordinates,
+  height = '400px',
+  xbandTransitions = []
+}: RouteMapProps) {
+  // Create X-Band transition icon
+  const createXBandIcon = () => {
+    return L.divIcon({
+      className: 'xband-marker',
+      html: '<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>',
+      iconSize: [16, 16],
+    });
+  };
   // Split route into segments at International Date Line crossings
   const getRouteSegments = (): LatLngExpression[][] => {
     if (coordinates.length === 0) return [];
@@ -196,6 +211,19 @@ export function RouteMap({ coordinates, height = '400px' }: RouteMapProps) {
               color="blue"
               weight={3}
             />
+          ))}
+
+          {/* Render X-Band transition markers */}
+          {xbandTransitions.map((transition, idx) => (
+            <Marker
+              key={`xband-${idx}`}
+              position={[transition.latitude, transition.longitude]}
+              icon={createXBandIcon()}
+            >
+              <Popup>
+                X-Band Transition to {transition.target_satellite_id}
+              </Popup>
+            </Marker>
           ))}
         </MapContainer>
       ) : (
