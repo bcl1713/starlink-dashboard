@@ -1,9 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
-import type { Map } from 'leaflet';
+import type { LatLngExpression, LatLngBoundsExpression, Map, LeafletEvent } from 'leaflet';
 import type { XBandTransition, KaOutage, KuOutageOverride } from '../../types/satellite';
 import type { AARSegment } from '../../types/aar';
 
