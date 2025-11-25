@@ -26,6 +26,8 @@ services:
     extra_hosts:
       - "dish.starlink:${STARLINK_DISH_HOST:-192.168.100.1}"
     volumes:
+      - ./data/missions:/app/data/missions
+      - ./data/sat_coverage:/app/data/sat_coverage
       - route_data:/data/routes
       - sim_route_data:/data/sim_routes
       - poi_data:/data
