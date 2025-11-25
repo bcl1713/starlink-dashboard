@@ -17,12 +17,14 @@ This work introduces a hierarchical mission planning system where a **Mission** 
 
 ## Progress Updates (most recent first)
 
-- **2025-11-24 — Critical fixes session:** Added missing leg management API endpoints (POST/PUT/DELETE), created AddLegDialog with improved UX, fixed LegDetailPage Save/Cancel buttons, fixed route display to use cleaned points array, implemented IDL crossing detection and segment splitting, fixed map bounds/center for IDL routes, normalized coordinates to 0-360 for Pacific-centered view. **Remaining:** AAR waypoints hardcoded (need route API integration), satellite list may be hardcoded (need verification), leg cards should be fully clickable.
+- **2025-11-24 — Frontend API Contract Fixes completed:** All datetime conversion, type safety, and validation fixes complete. Applied toISO8601() conversion, marked required fields, removed legacy fields, added proper types to arrays, implemented comprehensive validation with error messages. Added missing DELETE endpoint. All end-to-end testing passed with zero validation errors.
+- **2025-11-24 — Missing features identified:** Six critical UX/feature gaps discovered: (1) No navigation from Leg Config back to Mission Details, (2) X-Band transitions show as route segments not point markers, (3) Map breaks on page refresh, (4) AAR/Ka/Ku not visualized on map, (5) No satellite manager page, (6) Cannot activate legs, (7) Export package missing CSV/XLS/PPT/PDF files. These need to be addressed before Phase 7.
+- **2025-11-24 — Critical fixes session:** Added missing leg management API endpoints (POST/PUT/DELETE), created AddLegDialog with improved UX, fixed LegDetailPage Save/Cancel buttons, fixed route display to use cleaned points array, implemented IDL crossing detection and segment splitting, fixed map bounds/center for IDL routes, normalized coordinates to 0-360 for Pacific-centered view.
 - **2025-11-23 — Phase 6 completed:** Export/Import UI fully implemented with backend API integration. ExportDialog and ImportDialog components complete with progress indicators and drag-and-drop. Backend export/import endpoints fully functional and tested with complete roundtrip verification (export → delete → import → verify identical data).
 - **2025-11-23 — Phase 5 completed:** Satellite & AAR configuration UI complete with X-Band transitions, Ka/Ku outages, AAR segment editor, and side-by-side map visualization.
 - **2025-11-23 — Phase 4 completed:** Core mission UI in the React planner is working (missions list + create dialog), with API client, types, React Query hooks, routing, Tailwind, and ShadCN components wired to the v2 backend.
 - **2025-11-23 — Phases 1-3 completed:** Backend models renamed to MissionLeg with new Mission container and hierarchical storage; v2 missions API and package export skeleton registered in FastAPI; frontend scaffolding created with Vite/TypeScript, ESLint/Prettier, Tailwind, and Docker Compose service.
-- **Next focus:** Frontend polish (AAR waypoints, satellite management, leg card UX), then Phase 7 — Testing & Documentation.
+- **Next focus:** Address missing features (navigation, map visualization, satellite manager, leg activation, complete export package), then Phase 7 — Testing & Documentation.
 
 ---
 
@@ -188,7 +190,62 @@ Write comprehensive tests for backend and frontend. Update project documentation
 
 ---
 
-### **Phase 8 — Wrap-Up & PR**
+### **Phase 6.5 — Missing Features & Polish** ⚠️ NEW
+
+**Description:**
+Address critical UX gaps and missing functionality discovered during frontend API contract verification. These features are essential for a complete user experience and must be implemented before Phase 7 testing.
+
+**Entry Criteria:**
+
+- Phase 6 complete
+- Frontend API contract fixes complete
+
+**Exit Criteria:**
+
+- Navigation: Back button from Leg Config page to Mission Details works
+- Map Visualization: X-Band transitions show as point markers (not route segments)
+- Map Stability: Page refresh doesn't break map display
+- Map Features: AAR segments, Ka outages, Ku outages visible on map
+- Map Features: Auto-calculated Ka transitions visible on map
+- Satellite Management: Satellite manager page exists and is accessible
+- Satellite Management: Links from home page and leg editor to satellite manager
+- Leg Activation: Can activate a leg from mission planner UI
+- Export Complete: Package includes CSV, XLS, PPT, PDF files for each leg
+
+**Tasks Breakdown:**
+
+1. **Navigation Improvements**
+   - Add "Back to Mission" button on Leg Config page
+   - Preserve changes when navigating back
+
+2. **Map Visualization Fixes**
+   - Fix X-Band transition rendering (point markers not segments)
+   - Fix map initialization on page refresh
+   - Add AAR segment overlays (colored route sections)
+   - Add Ka outage markers/overlays
+   - Add Ku outage markers/overlays
+   - Add auto-calculated Ka transition points
+
+3. **Satellite Manager**
+   - Create satellite manager page (CRUD operations)
+   - Add link from home page navigation
+   - Add "Manage Satellites" link from leg editor
+
+4. **Leg Activation**
+   - Add "Activate Leg" button to mission detail page
+   - Implement activation API call
+   - Show active leg indicator
+
+5. **Complete Export Package**
+   - Generate CSV timeline for each leg
+   - Generate XLS timeline for each leg
+   - Generate PPT slides for each leg
+   - Generate PDF report for each leg
+   - Include all files in zip export
+
+---
+
+### **Phase 7 — Testing & Documentation**
 
 **Description:**
 Finalize documentation, prepare PR, and hand off.
