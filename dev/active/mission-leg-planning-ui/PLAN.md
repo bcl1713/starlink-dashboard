@@ -210,7 +210,11 @@ Address critical UX gaps and missing functionality discovered during frontend AP
 - Satellite Management: Satellite manager page exists and is accessible
 - Satellite Management: Links from home page and leg editor to satellite manager
 - Leg Activation: Can activate a leg from mission planner UI
-- Export Complete: Package includes CSV, XLS, PPT, PDF files for each leg
+- Export Complete: Package includes per-leg CSV, XLS, PPT, PDF files
+- Export Complete: Package includes combined mission-level CSV, XLS, PPT, PDF files
+- Cascade Delete: Deleting mission removes all legs
+- Cascade Delete: Deleting leg removes all associated routes and POIs
+- Cascade Delete: Confirmation dialogs show what will be deleted
 
 **Tasks Breakdown:**
 
@@ -241,7 +245,17 @@ Address critical UX gaps and missing functionality discovered during frontend AP
    - Generate XLS timeline for each leg
    - Generate PPT slides for each leg
    - Generate PDF report for each leg
-   - Include all files in zip export
+   - Generate combined CSV timeline for entire mission
+   - Generate combined XLS timeline for entire mission
+   - Generate combined PPT slides for entire mission
+   - Generate combined PDF report for entire mission
+   - Include all files in zip export (per-leg + combined)
+
+6. **Cascade Deletion**
+   - Implement cascade delete: deleting mission deletes all associated legs
+   - Implement cascade delete: deleting leg deletes all associated routes and POIs
+   - Add confirmation dialogs for cascade deletions
+   - Show what will be deleted in confirmation message
 
 ---
 
