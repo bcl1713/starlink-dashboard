@@ -31,7 +31,7 @@ export function RouteMap({
   const createXBandIcon = () => {
     return L.divIcon({
       className: 'xband-marker',
-      html: '<div class="w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>',
+      html: '<div style="width: 16px; height: 16px; background: #3B82F6; border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
       iconSize: [16, 16],
     });
   };
@@ -276,17 +276,20 @@ export function RouteMap({
             ))}
 
             {/* Render X-Band transition markers */}
-            {xbandTransitions.map((transition, idx) => (
-              <Marker
-                key={`xband-${idx}`}
-                position={[transition.latitude, transition.longitude]}
-                icon={createXBandIcon()}
-              >
-                <Popup>
-                  X-Band Transition to {transition.target_satellite_id}
-                </Popup>
-              </Marker>
-            ))}
+            {xbandTransitions.map((transition) => {
+              console.log('Rendering X-Band transition marker:', transition);
+              return (
+                <Marker
+                  key={`xband-${transition.id}`}
+                  position={[transition.latitude, transition.longitude]}
+                  icon={createXBandIcon()}
+                >
+                  <Popup>
+                    X-Band Transition to {transition.target_satellite_id}
+                  </Popup>
+                </Marker>
+              );
+            })}
 
             {/* Render AAR segments */}
             {aarSegments.map((segment, idx) => {

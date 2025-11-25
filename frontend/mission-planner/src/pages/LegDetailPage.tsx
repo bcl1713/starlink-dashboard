@@ -90,7 +90,11 @@ export function LegDetailPage() {
   const handleSatelliteConfigChange = (
     updates: Partial<SatelliteConfig>
   ) => {
-    setSatelliteConfig({ ...satelliteConfig, ...updates });
+    const updatedConfig = { ...satelliteConfig, ...updates };
+    if (updates.xband_transitions) {
+      console.log('X-Band transitions updated:', updatedConfig.xband_transitions);
+    }
+    setSatelliteConfig(updatedConfig);
     setHasUnsavedChanges(true);
   };
 
@@ -272,6 +276,10 @@ export function LegDetailPage() {
         {/* Right Column: Map Visualization */}
         <div className="sticky top-6 h-fit">
           <h2 className="text-xl font-semibold mb-4">Route Visualization</h2>
+          {(() => {
+            console.log('Passing X-Band transitions to RouteMap:', satelliteConfig.xband_transitions);
+            return null;
+          })()}
           <RouteMap
             coordinates={mapCoordinates}
             xbandTransitions={satelliteConfig.xband_transitions}
