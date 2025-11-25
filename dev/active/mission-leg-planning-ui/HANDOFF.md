@@ -2,8 +2,8 @@
 
 **Branch:** `feat/mission-leg-planning-ui`
 **Folder:** `dev/active/mission-leg-planning-ui/`
-**Generated:** 2025-11-24 (Updated)
-**Status:** Phase 6 Complete + Frontend API Contract Fixes, Phase 6.5 (Missing Features) Ready to Execute
+**Generated:** 2025-11-24 (Updated after Phase 6.5 execution)
+**Status:** Phase 6.5 In Progress - Satellite System & AAR Visualization Need Fixes
 
 ---
 
@@ -17,12 +17,38 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Current Status
 
-- **Phase:** Phases 1-6 Complete + Frontend API Contract Fixes Complete
-- **Next Phase:** Phase 6.5 - Missing Features & Polish (~150 detailed checklist items)
-- **Checklist completion:** Core features ~95%, missing features/polish needed before Phase 7
-- **Progress:** All CRUD operations work, validation complete, export/import functional, map rendering fixed
+- **Phase:** Phase 6.5 Execution In Progress (11/12 major tasks complete)
+- **Checklist completion:** ~92% complete, 2 critical bugs need fixing
+- **Progress:** Navigation, maps, satellite manager, leg activation, exports, cascade deletion all implemented
+- **Blockers:** Satellite system broken (needs catalog integration fix), AAR segments turning entire route green
 
-### Major accomplishments (2025-11-24 latest session):
+### Session Summary (2025-11-24 Phase 6.5 execution):
+
+**✅ Completed (11/12 major tasks):**
+1. Navigation improvements (Back button, unsaved changes warning)
+2. X-Band transition markers (blue circles, not line segments)
+3. Map refresh fix (defensive checks, useEffect with useMap hook)
+4. AAR segment visualization (green dashed polylines) ⚠️ **BUG: turning whole route green**
+5. Ka/Ku outage visualization (info panel below map)
+6. Satellite manager page ⚠️ **BUG: broken, needs catalog integration**
+7. Leg activation (backend + frontend with visual indicators)
+8. Per-leg export files (CSV, XLSX, PPTX, PDF generation)
+9. Combined mission exports (aggregated timeline files)
+10. Cascade deletion (missions → legs → routes/POIs with confirmations)
+11. Map fixes (React error #310 resolved with useMap hook)
+
+**🐛 Critical Bugs to Fix:**
+1. **Satellite system broken:** Created incompatible CRUD system instead of using existing `/api/satellites` catalog. Need to restore proper satellite catalog integration (satellites are POIs with category="satellite" at lat=0, only longitude specified for X-Band geostationary).
+2. **AAR segments turning route green:** AAR segment polylines are rendering incorrectly and coloring the entire route instead of just the AAR portion between start/end waypoints.
+
+**Session Stats:**
+- Commits: 20+ (implementation + bugfixes)
+- Code added: ~1,200+ lines
+- Files modified: 16+ files
+- TypeScript errors fixed: 4 rounds
+- React errors fixed: MapContainer ref issue
+
+### Major accomplishments (2025-11-24 earlier sessions):
 
 ✅ **Frontend API Contract Fixes (COMPLETE)**
 1. Applied toISO8601() conversion to Ka/Ku outage datetime values
@@ -108,46 +134,33 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Next Actions
 
-**Phase 6.5 - Missing Features & Polish (START HERE)**
+**CRITICAL BUGFIXES (START HERE)**
 
-Execute tasks from `CHECKLIST-PHASE-6.5.md` (~150 detailed steps). Six major work areas:
+Fix these two issues before proceeding to Phase 7:
 
-1. **Navigation Improvements** (~4 tasks)
-   - Add "Back to Mission" button on LegDetailPage
-   - Handle unsaved changes warning
+1. **Fix Satellite System**
+   - Problem: Created incompatible CRUD satellite service instead of using existing catalog
+   - Solution: Restore `/api/satellites` catalog integration
+   - Details: X-Band satellites are stored as POIs with category="satellite", latitude=0 (equator), only longitude varies (geostationary)
+   - Backend already has working satellite catalog at `app/satellites/catalog.py`
+   - Frontend needs to use read-only catalog view, not CRUD operations
+   - Satellite manager page should show catalog satellites, link to POI system for adding custom X-Band satellites
 
-2. **Map Visualization Fixes** (~40 tasks)
-   - Fix X-Band transitions to show as point markers (not route segments) ⚠️ Critical
-   - Fix map initialization on page refresh (blue field issue) ⚠️ Critical
-   - Add AAR segment overlays (colored polylines)
-   - Add Ka outage indicators
-   - Add Ku outage indicators
-   - Add auto-calculated Ka transition markers
+2. **Fix AAR Segment Visualization**
+   - Problem: AAR segments are turning the entire route green instead of just the segment
+   - Solution: Debug AAR polyline rendering in RouteMap.tsx
+   - Check: `getRoutePointsBetween()` function logic
+   - Check: AAR segment coordinate mapping
+   - Expected: Green dashed line only between start_waypoint and end_waypoint
+   - Actual: Entire route showing as green
 
-3. **Satellite Manager** (~30 tasks)
-   - Create satellite manager page with CRUD operations
-   - Add satellite API service and React Query hooks
-   - Add navigation links from home page and leg editor
-   - Enable users to add/edit/delete satellites
+**After Bugfixes → Phase 7 - Testing & Documentation**
 
-4. **Leg Activation** (~8 tasks)
-   - Add "Activate Leg" button to mission detail page
-   - Implement activation API endpoint (if missing)
-   - Show active leg indicator
-
-5. **Complete Export Package** (~45 tasks) ⚠️ Critical
-   - Generate CSV/XLS/PPT/PDF for each leg
-   - Generate **combined** CSV/XLS/PPT/PDF for entire mission (NEW)
-   - Include all files in zip export
-
-6. **Cascade Deletion** (~20 tasks) ⚠️ Critical
-   - Deleting mission cascades to all legs, routes, POIs
-   - Deleting leg cascades to routes and POIs
-   - Add confirmation dialogs showing what will be deleted
-
-**After Phase 6.5 → Phase 7 - Testing & Documentation**
-
-Then move to testing and documentation (see CHECKLIST-PHASE-7.md)
+Then move to comprehensive testing:
+- Backend unit tests for new endpoints
+- Frontend component tests
+- E2E testing with Playwright
+- Documentation updates (CLAUDE.md, API docs)
 
 **After Phase 7 → Phase 8 - Wrap-Up & PR**
 
@@ -163,11 +176,11 @@ Then move to testing and documentation (see CHECKLIST-PHASE-7.md)
 - ✅ Roundtrip verification - Export → delete → import works perfectly
 
 ### Active Risks:
-1. **Phase 6.5 scope** - 150 tasks is substantial, may take 2-3 sessions to complete
-2. **Export file generation** - Generating combined mission-level files may be complex
-3. **Cascade deletion** - Must be careful not to accidentally delete data
-4. **Map visualization** - Multiple overlapping features (AAR, Ka, Ku, transitions) could clutter map
-5. **Test coverage** - No unit/component tests written yet (Phase 7 focus)
+1. **Satellite system architecture** - Need to properly integrate with existing catalog instead of creating parallel CRUD system
+2. **AAR visualization bug** - Must debug why segments are coloring entire route
+3. **Map clutter** - Multiple overlapping features (AAR, Ka, Ku, transitions) may need UX refinement
+4. **Test coverage** - No unit/component tests written yet (Phase 7 focus)
+5. **Export file content** - CSV/XLSX/PPTX/PDF generation uses placeholder implementations, may need enhancement
 
 ### Open Questions Answered:
 - ✅ Satellite manager location: Separate page at `/satellites` with nav links
@@ -179,10 +192,14 @@ Then move to testing and documentation (see CHECKLIST-PHASE-7.md)
 - Should AAR segments validate that waypoints exist in the route?
 - What level of test coverage is acceptable for Phase 7?
 
-### No Blockers:
-- All Phase 1-6 exit criteria met
-- Frontend API contract fixes complete (zero 422 errors)
-- CHECKLIST-PHASE-6.5.md ready for execution
+### Blockers:
+- ⚠️ **Satellite system broken** - needs catalog integration fix
+- ⚠️ **AAR segments coloring entire route green** - visualization bug
+
+### Previously Resolved:
+- ✅ All Phase 1-6 exit criteria met
+- ✅ Frontend API contract fixes complete (zero 422 errors)
+- ✅ CHECKLIST-PHASE-6.5.md executed (11/12 tasks complete)
 
 ---
 
@@ -246,10 +263,10 @@ Then move to testing and documentation (see CHECKLIST-PHASE-7.md)
 
 **Quick Start:**
 1. Read this HANDOFF.md first
-2. Review `CHECKLIST-PHASE-6.5.md` for ~150 detailed tasks ⚠️ **START HERE**
-3. Run `executing-plan-checklist` skill on Phase 6.5 checklist
-4. Or work independently through CHECKLIST-PHASE-6.5.md tasks
-5. After Phase 6.5 complete, move to CHECKLIST-PHASE-7.md
+2. Fix satellite system integration (use existing `/api/satellites` catalog, not CRUD)
+3. Debug AAR segment visualization (green line coloring entire route)
+4. Test both fixes thoroughly
+5. After bugfixes complete, move to Phase 7 (Testing & Documentation)
 
 **Testing the current state:**
 ```bash
@@ -270,10 +287,10 @@ open http://localhost:5173/missions
 ```
 
 **Expected Duration:**
-- Phase 6.5: 8-12 hours (missing features & polish - ~150 tasks)
+- Bugfixes: 2-4 hours (satellite integration + AAR visualization)
 - Phase 7: 6-8 hours (testing & documentation)
 - Phase 8: 2-3 hours (wrap-up & PR)
-- Total remaining: ~16-23 hours
+- Total remaining: ~10-15 hours
 
 **Tech Stack Summary:**
 - Backend: Python + FastAPI + Pydantic
