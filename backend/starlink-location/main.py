@@ -114,6 +114,7 @@ async def startup_event():
             routes.set_poi_manager(poi_manager)
             geojson.set_poi_manager(poi_manager)
             mission_routes.set_poi_manager(poi_manager)
+            satellite_routes.set_poi_manager(poi_manager)
             # Note: metrics_export also gets POIManager but via route_manager injection below
             logger.info_json("POIManager injected successfully")
         except Exception as e:

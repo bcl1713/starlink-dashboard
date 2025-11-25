@@ -324,7 +324,7 @@
 
 ### 3.1: Create satellite manager page component
 
-- [ ] Create new file: `frontend/mission-planner/src/pages/SatelliteManagerPage.tsx`
+- [x] Create new file: `frontend/mission-planner/src/pages/SatelliteManagerPage.tsx`
 - [ ] Add basic page structure:
 
   ```typescript
