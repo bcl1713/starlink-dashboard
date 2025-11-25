@@ -914,14 +914,14 @@ Critical mismatches found between frontend types and backend models that cause 4
   - [x] Validate duration > 0
   - [x] Add error messages for invalid input
 
-- [ ] Verify all fixes work correctly
-  - [ ] Create new mission with all transport configs
-  - [ ] Add Ka outage with duration (not end_time)
-  - [ ] Add Ku outage with duration (not end_time)
-  - [ ] Save leg configuration - verify no 422 errors
-  - [ ] Reload page - verify data persists correctly
-  - [ ] Export mission - verify all fields present
-  - [ ] Import mission - verify no validation errors
+- [x] Verify all fixes work correctly
+  - [x] Create new mission with all transport configs
+  - [x] Add Ka outage with duration (not end_time)
+  - [x] Add Ku outage with duration (not end_time)
+  - [x] Save leg configuration - verify no 422 errors
+  - [x] Reload page - verify data persists correctly
+  - [x] Export mission - verify all fields present
+  - [x] Import mission - verify no validation errors
 
 ---
 
