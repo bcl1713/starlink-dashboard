@@ -1,0 +1,31 @@
+{
+  "version": "2.0",
+  "mission_id": "26-02",
+  "mission_name": "26-02",
+  "mission_description": "",
+  "leg_count": 1,
+  "exported_at": "2025-11-25T13:12:15.454799+00:00",
+  "file_structure": {
+    "mission_data": [
+      "mission.json",
+      "manifest.json"
+    ],
+    "legs": [
+      "legs/leg-6.json"
+    ],
+    "routes": [
+      "routes/Leg 6 Rev 6.kml"
+    ],
+    "pois": [],
+    "mission_exports": [],
+    "per_leg_exports": []
+  },
+  "statistics": {
+    "total_files": 4,
+    "leg_files": 1,
+    "route_files": 1,
+    "poi_files": 0,
+    "mission_export_files": 0,
+    "per_leg_export_files": 0
+  }
+}

@@ -13,7 +13,7 @@ import type { KaTransition } from '../types/timeline';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { routesApi, type Waypoint } from '../services/routes';
 import { satelliteService, type SatelliteResponse } from '../services/satellites';
-import { timelineService } from '../services/timeline';
+import { poisService, type POI } from '../services/pois';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{ missionId: string; legId: string }>();
@@ -45,34 +45,49 @@ export function LegDetailPage() {
   const [kaTransitions, setKaTransitions] = useState<KaTransition[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // Extract Ka transitions from timeline segments
-  const extractKaTransitions = (
-    segments: Array<{ start_time: string; reasons?: string[]; latitude?: number; longitude?: number }>
-  ): KaTransition[] => {
-    const transitions: KaTransition[] = [];
+  // Convert Ka transition POIs to KaTransition format for map display
+  const convertPoiToKaTransition = (poi: POI): KaTransition | null => {
+    // Check if this is a CommKa transition POI
+    // The name format is "Ka Transition AOR → POR" (new format)
+    // or "CommKa\nSwap", "CommKa\nExit", "CommKa\nEnter" (fallback format)
 
-    segments.forEach((segment) => {
-      segment.reasons?.forEach((reason) => {
-        const match = reason.match(/Ka transition (\w+) → (\w+)/i);
-        if (match) {
-          // Only add transition if we have coordinates; skip if missing
-          if (segment.latitude !== undefined && segment.longitude !== undefined) {
-            transitions.push({
-              latitude: segment.latitude,
-              longitude: segment.longitude,
-              fromSatellite: match[1],
-              toSatellite: match[2],
-              timestamp: segment.start_time,
-            });
-          } else {
-            // Log for debugging - coordinates not yet available in timeline
-            console.log(`Ka transition found but coordinates missing: ${match[1]} → ${match[2]}`);
-          }
-        }
-      });
-    });
+    // Try to parse new format: "Ka Transition AOR → POR" (supports both → and → unicode)
+    const newFormatMatch = poi.name.match(/Ka\s+Transition\s+(\w+)\s*[\u2192→]\s*(\w+)/i);
+    if (newFormatMatch) {
+      return {
+        latitude: poi.latitude,
+        longitude: poi.longitude,
+        fromSatellite: newFormatMatch[1],
+        toSatellite: newFormatMatch[2],
+        timestamp: poi.created_at,
+      };
+    }
 
-    return transitions;
+    // Fallback to CommKa format check
+    if (!poi.name.includes('CommKa')) {
+      return null;
+    }
+
+    // For CommKa POIs, use generic satellite names since specific names aren't in the POI
+    const type = poi.name.split('\n')[1] || 'Swap';
+    let fromSat = 'Previous';
+    let toSat = 'Next';
+
+    if (type === 'Exit') {
+      fromSat = 'Available';
+      toSat = 'Unavailable';
+    } else if (type === 'Enter') {
+      fromSat = 'Unavailable';
+      toSat = 'Available';
+    }
+
+    return {
+      latitude: poi.latitude,
+      longitude: poi.longitude,
+      fromSatellite: fromSat,
+      toSatellite: toSat,
+      timestamp: poi.created_at,
+    };
   };
 
   // Load satellites on component mount
@@ -106,21 +121,30 @@ export function LegDetailPage() {
     }
   }, [leg?.route_id]);
 
-  // Load timeline data when leg changes to extract Ka transitions
+  // Load Ka transition POIs when mission changes
   useEffect(() => {
-    if (legId) {
-      timelineService
-        .getTimeline(legId)
-        .then((timeline) => {
-          if (timeline?.segments) {
-            const transitions = extractKaTransitions(timeline.segments);
-            setKaTransitions(transitions);
-            console.log('Extracted Ka transitions:', transitions);
-          }
+    if (missionId) {
+      poisService
+        .getPOIsByMission(missionId, false)
+        .then((pois) => {
+          // Filter for Ka transition POIs (category="mission-event", icon="satellite")
+          const kaPois = pois.filter(
+            (poi) => poi.category === 'mission-event' &&
+                     poi.icon === 'satellite' &&
+                     poi.name.toLowerCase().includes('ka transition')
+          );
+
+          // Convert POIs to KaTransition format
+          const transitions = kaPois
+            .map((poi) => convertPoiToKaTransition(poi))
+            .filter((t): t is KaTransition => t !== null);
+
+          setKaTransitions(transitions);
+          console.log('Loaded Ka transition POIs:', transitions);
         })
-        .catch((err) => console.error('Failed to load timeline:', err));
+        .catch((err) => console.error('Failed to load Ka transition POIs:', err));
     }
-  }, [legId]);
+  }, [missionId]);
 
   // Initialize state from leg data
   useEffect(() => {
