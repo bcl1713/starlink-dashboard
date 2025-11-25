@@ -11,7 +11,8 @@ import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { routesApi } from '../services/routes';
-import { satellitesApi } from '../services/satellites';
+import { satelliteService } from '../services/satellites';
+import type { Satellite } from '../types/satellite';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{ missionId: string; legId: string }>();
@@ -43,12 +44,12 @@ export function LegDetailPage() {
 
   // Load satellites on component mount
   useEffect(() => {
-    satellitesApi
-      .list()
-      .then((satellites) =>
-        setAvailableSatellites(satellites.map((s) => s.satellite_id))
+    satelliteService
+      .getAll()
+      .then((satellites: Satellite[]) =>
+        setAvailableSatellites(satellites.map((s: Satellite) => s.id))
       )
-      .catch((err) => console.error('Failed to load satellites:', err));
+      .catch((err: Error) => console.error('Failed to load satellites:', err));
   }, []);
 
   // Load route coordinates and waypoints when leg changes
