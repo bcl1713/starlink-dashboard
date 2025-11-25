@@ -10,7 +10,7 @@ import { RouteMap } from '../components/common/RouteMap';
 import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
-import { routesApi } from '../services/routes';
+import { routesApi, type Waypoint } from '../services/routes';
 import { satelliteService, type SatelliteResponse } from '../services/satellites';
 
 export function LegDetailPage() {
@@ -37,7 +37,8 @@ export function LegDetailPage() {
   });
 
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>([]);
-  const [availableWaypoints, setAvailableWaypoints] = useState<string[]>([]);
+  const [availableWaypoints, setAvailableWaypoints] = useState<Waypoint[]>([]);
+  const [waypointNames, setWaypointNames] = useState<string[]>([]);
   const [availableSatellites, setAvailableSatellites] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -61,10 +62,14 @@ export function LegDetailPage() {
 
       routesApi
         .getWaypoints(leg.route_id)
-        .then((waypoints) => setAvailableWaypoints(waypoints))
+        .then((waypoints) => {
+          setAvailableWaypoints(waypoints);
+          setWaypointNames(waypoints.map(wp => wp.name || '').filter(name => name !== ''));
+        })
         .catch((err) => console.error('Failed to load route waypoints:', err));
     } else {
       setAvailableWaypoints([]);
+      setWaypointNames([]);
     }
   }, [leg?.route_id]);
 
@@ -250,7 +255,7 @@ export function LegDetailPage() {
                     setAARConfig({ ...aarConfig, segments });
                     setHasUnsavedChanges(true);
                   }}
-                  availableWaypoints={availableWaypoints}
+                  availableWaypoints={waypointNames}
                 />
               </div>
             </TabsContent>
@@ -286,7 +291,8 @@ export function LegDetailPage() {
             aarSegments={aarConfig.segments}
             kaOutages={satelliteConfig.ka_outages || []}
             kuOutages={satelliteConfig.ku_outages || []}
-            waypoints={availableWaypoints}
+            waypoints={waypointNames}
+            waypointObjects={availableWaypoints}
             height="600px"
           />
           <div className="mt-4 text-sm text-gray-600 space-y-1">

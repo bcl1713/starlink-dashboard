@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression, LatLngBoundsExpression, Map } from 'leaflet';
 import type { XBandTransition, KaOutage, KuOutageOverride } from '../../types/satellite';
 import type { AARSegment } from '../../types/aar';
+import type { Waypoint } from '../../services/routes';
 
 interface RouteMapProps {
   coordinates: LatLngExpression[];
@@ -14,6 +15,7 @@ interface RouteMapProps {
   kaOutages?: KaOutage[];
   kuOutages?: KuOutageOverride[];
   waypoints?: string[];
+  waypointObjects?: Waypoint[];
 }
 
 export function RouteMap({
@@ -23,7 +25,8 @@ export function RouteMap({
   aarSegments = [],
   kaOutages = [],
   kuOutages = [],
-  waypoints = []
+  waypoints = [],
+  waypointObjects = []
 }: RouteMapProps) {
   const mapRef = useRef<Map>(null);
 
@@ -36,11 +39,57 @@ export function RouteMap({
     });
   };
 
-  // Find the index of a waypoint by name (case-insensitive, trimmed)
-  const getWaypointIndex = (name: string): number => {
-    if (!name || waypoints.length === 0) return -1;
-    const normalizedName = name.trim().toLowerCase();
-    return waypoints.findIndex(wp => wp.trim().toLowerCase() === normalizedName);
+  // Calculate haversine distance between two points in meters
+  const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371000; // Earth's radius in meters
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  };
+
+  // Find the index in coordinates array that matches a waypoint by name
+  // Uses the waypointObjects to find the actual coordinates, then matches to closest point
+  const getWaypointCoordinateIndex = (waypointName: string): number => {
+    if (!waypointName || waypoints.length === 0 || coordinates.length === 0) return -1;
+
+    // First, find the waypoint object by name
+    const normalizedName = waypointName.trim().toLowerCase();
+    const waypointObj = waypointObjects.find(wp => (wp.name || '').trim().toLowerCase() === normalizedName);
+
+    if (!waypointObj) {
+      console.warn(`Waypoint object not found: "${waypointName}"`);
+      return -1;
+    }
+
+    console.log(`Found waypoint "${waypointName}" at [${waypointObj.latitude}, ${waypointObj.longitude}]`);
+
+    // Now find the closest coordinate to this waypoint
+    let closestIndex = 0;
+    let minDistance = Number.MAX_SAFE_INTEGER;
+
+    for (let i = 0; i < coordinates.length; i++) {
+      const coord = coordinates[i];
+      const [lat, lon] = Array.isArray(coord)
+        ? [coord[0], coord[1]]
+        : [(coord as any).lat, (coord as any).lng];
+
+      const distance = haversineDistance(waypointObj.latitude, waypointObj.longitude, lat, lon);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = i;
+      }
+    }
+
+    console.log(`Matched waypoint to coordinate index ${closestIndex} (distance: ${minDistance.toFixed(0)}m)`);
+    return closestIndex;
   };
 
   // Split route into segments at International Date Line crossings
@@ -293,15 +342,26 @@ export function RouteMap({
 
             {/* Render AAR segments */}
             {aarSegments.map((segment, idx) => {
-              // Extract only the segment between start and end waypoints
-              const startIdx = getWaypointIndex(segment.start_waypoint_name);
-              const endIdx = getWaypointIndex(segment.end_waypoint_name);
+              // DEBUG: Log what we're working with
+              console.log(`\n===== AAR Segment ${idx} =====`);
+              console.log('Waypoint names:', waypoints);
+              console.log('Waypoint objects:', waypointObjects);
+              console.log(`Looking for: "${segment.start_waypoint_name}" → "${segment.end_waypoint_name}"`);
+
+              // Find the coordinate indices for this AAR segment
+              const startIdx = getWaypointCoordinateIndex(segment.start_waypoint_name);
+              const endIdx = getWaypointCoordinateIndex(segment.end_waypoint_name);
+
+              console.log(`Found coordinate indices: startIdx=${startIdx}, endIdx=${endIdx}`);
+              console.log(`Total waypoint objects: ${waypointObjects.length}`);
+              console.log(`Total coordinates: ${coordinates.length}`);
 
               // Skip if waypoints not found
               if (startIdx === -1 || endIdx === -1) {
                 console.warn(
                   `AAR segment ${idx}: Could not find waypoints "${segment.start_waypoint_name}" or "${segment.end_waypoint_name}"`
                 );
+                console.log('Available waypoint names:', waypoints);
                 return null;
               }
 
@@ -318,8 +378,21 @@ export function RouteMap({
               const coordsToUse = useNormalized ? normalizedCoordinates : coordinates;
               const segmentCoordinates = coordsToUse.slice(startIdx, endIdx + 1);
 
+              console.log(`Using ${useNormalized ? 'normalized' : 'original'} coordinates`);
+              console.log(`Slicing coords from index ${startIdx} to ${endIdx} (inclusive)`);
+              console.log(`Segment coordinates count: ${segmentCoordinates.length}`);
+              if (segmentCoordinates.length <= 10) {
+                console.log('Segment coordinates:', segmentCoordinates);
+              } else {
+                console.log(`Segment coordinates: [${segmentCoordinates.length} points, first 3 and last 3]`, {
+                  first3: segmentCoordinates.slice(0, 3),
+                  last3: segmentCoordinates.slice(-3),
+                });
+              }
+
               // Skip if no coordinates found
               if (segmentCoordinates.length === 0) {
+                console.warn(`AAR segment ${idx}: No coordinates found for slice [${startIdx}:${endIdx + 1}]`);
                 return null;
               }
 

@@ -7,6 +7,14 @@ export interface Route {
   waypoint_count?: number;
 }
 
+export interface Waypoint {
+  name?: string;
+  latitude: number;
+  longitude: number;
+  altitude?: number;
+  description?: string;
+}
+
 export const routesApi = {
   async list(): Promise<Route[]> {
     const response = await apiClient.get<{ routes: Route[]; total: number }>('/api/routes');
@@ -34,14 +42,19 @@ export const routesApi = {
     return [];
   },
 
-  async getWaypoints(routeId: string): Promise<string[]> {
+  async getWaypoints(routeId: string): Promise<Waypoint[]> {
     const response = await apiClient.get<any>(`/api/routes/${routeId}`);
-    // Extract waypoint names from the route detail response
+    // Extract full waypoint objects from the route detail response
     if (response.data.waypoints && Array.isArray(response.data.waypoints)) {
-      return response.data.waypoints
-        .map((waypoint: any) => waypoint.name)
-        .filter((name: string | undefined) => name !== undefined && name !== '');
+      return response.data.waypoints.filter(
+        (waypoint: any) => waypoint.name !== undefined && waypoint.name !== ''
+      );
     }
     return [];
+  },
+
+  async getWaypointNames(routeId: string): Promise<string[]> {
+    const waypoints = await this.getWaypoints(routeId);
+    return waypoints.map(wp => wp.name || '').filter(name => name !== '');
   },
 };
