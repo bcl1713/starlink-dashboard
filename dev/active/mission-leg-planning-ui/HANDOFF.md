@@ -24,26 +24,29 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ### Session Summary (2025-11-25 - Current Session):
 
-**✅ Issue #3 RESOLVED - Ka Transition Visualization (1 commit):**
+**✅ Issue #3 RESOLVED - Ka Transition Visualization (2 commits):**
 
-1. **`b46e5ca`** - Added Ka transition visualization on route map
-   - Created timeline service to fetch data from backend API
-   - Created timeline types (Timeline, TimelineSegment, KaTransition)
-   - Added v2 API endpoint for timeline access
-   - Extract Ka transitions from timeline segment reasons using regex
-   - Render Ka transitions as green circle markers on map
-   - Add interactive popups with transition details (from/to satellites, timestamp)
-   - Update map legend to document Ka transition visualization
+1. **`b46e5ca`** - Initial Ka transition visualization attempt (timeline-based)
+2. **`50b47b4`** - Fixed Ka transitions to use POI system (correct approach)
+   - **Root Cause:** Timeline segments don't include coordinates; Ka POIs were being created but not fetched
+   - Created POI service to fetch POIs by mission ID
+   - Filter POIs for `category='mission-event'` and `icon='satellite'`
+   - Parse satellite names from POI name using regex
+   - Convert POI objects to KaTransition format
+   - Render as green circle markers on map (already supported)
+   - Backend updated Ka label format: "Ka Transition {from} → {to}"
+   - Maintains backward compatibility with fallback parsing
 
 **Key Accomplishments This Session:**
-- ✅ Timeline service integrated with backend API endpoint
-- ✅ Ka transitions extracted from timeline segments (regex parsing)
-- ✅ Green circle markers rendering on map (distinct from blue X-Band markers)
-- ✅ Interactive popups showing transition details
-- ✅ Graceful handling for missing coordinates in timeline data
+- ✅ Identified architectural mismatch (timeline vs POI system)
+- ✅ Created POI service for frontend data fetching
+- ✅ Ka transitions now fetched from correct source (POI API)
+- ✅ Green circle markers rendering on map with actual coordinates
+- ✅ Interactive popups showing correct transition details
+- ✅ Backend label format improved for better parsing
 - ✅ **ALL POST-PHASE 6.5 ISSUES NOW RESOLVED**
 
-**Note:** Timeline segments don't currently include lat/lon coordinates. When backend adds these fields, markers will render at exact transition positions.
+**Technical Note:** The timeline-based approach (commit b46e5ca) was incorrect because TimelineSegment models don't include lat/lon fields. The POI system was the correct source all along, as `_sync_ka_pois()` creates properly geolocated POIs during timeline generation.
 
 ---
 
