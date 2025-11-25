@@ -17,8 +17,11 @@ from app.mission.storage import (
     load_mission,
     mission_exists,
     save_mission,
+    load_mission_v2,
+    MISSIONS_DIR,
 )
 from app.mission.storage import load_mission_timeline, save_mission_timeline
+from pathlib import Path
 from app.mission.timeline_service import (
     TimelineComputationError,
     TimelineSummary,
@@ -337,8 +340,26 @@ async def get_active_mission() -> MissionLeg:
                     _active_mission_id = m_id  # Update in-memory reference
                     return mission
 
+        # Also check v2 missions for active legs (v1/v2 API bridge)
+        # Scan the missions directory for v2 mission folders
+        missions_dir = Path(MISSIONS_DIR).parent / "missions"
+        if missions_dir.exists():
+            for mission_dir in missions_dir.iterdir():
+                if mission_dir.is_dir():
+                    try:
+                        v2_mission = load_mission_v2(mission_dir.name)
+                        if v2_mission:
+                            for leg in v2_mission.legs:
+                                if leg.is_active:
+                                    logger.info(f"Found active v2 leg {leg.id} in mission {v2_mission.id}")
+                                    _active_mission_id = leg.id  # Track the leg ID
+                                    return leg  # Return the active leg as a MissionLeg
+                    except Exception as e:
+                        logger.debug(f"Error loading v2 mission {mission_dir.name}: {e}")
+                        continue
+
         # No active mission found
-        logger.debug("No active mission found")
+        logger.debug("No active mission found in v1 or v2")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No mission is currently active",
