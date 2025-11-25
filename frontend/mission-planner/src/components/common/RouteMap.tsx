@@ -1,7 +1,9 @@
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
+import type { Map } from 'leaflet';
 import type { XBandTransition } from '../../types/satellite';
 
 interface RouteMapProps {
@@ -15,6 +17,8 @@ export function RouteMap({
   height = '400px',
   xbandTransitions = []
 }: RouteMapProps) {
+  const mapRef = useRef<Map>(null);
+
   // Create X-Band transition icon
   const createXBandIcon = () => {
     return L.divIcon({
@@ -140,9 +144,31 @@ export function RouteMap({
     return [centerLat, centerLng];
   };
 
+  // Defensive check: ensure we have valid coordinate data
+  if (!coordinates || coordinates.length === 0) {
+    return (
+      <div style={{ height, width: '100%' }}>
+        <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+          <p className="text-gray-500">No route data available</p>
+        </div>
+      </div>
+    );
+  }
+
   const bounds = getBounds();
   const center = getCenter();
   const routeSegments = getRouteSegments();
+
+  // Defensive check: ensure bounds and center are valid
+  if (!bounds || !center || routeSegments.length === 0) {
+    return (
+      <div style={{ height, width: '100%' }}>
+        <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+          <p className="text-gray-500">Error loading route map</p>
+        </div>
+      </div>
+    );
+  }
 
   // For IDL-crossing routes, we need to normalize coordinates to be on same side
   const normalizedCoordinates = (() => {
@@ -189,10 +215,22 @@ export function RouteMap({
     return segments;
   })();
 
+  // Effect to fit bounds when route changes
+  useEffect(() => {
+    if (mapRef.current && bounds && coordinates.length > 0) {
+      try {
+        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      } catch (error) {
+        console.warn('Could not fit bounds to map:', error);
+      }
+    }
+  }, [bounds, coordinates.length]);
+
   return (
     <div style={{ height, width: '100%' }}>
       {coordinates.length > 0 ? (
         <MapContainer
+          ref={mapRef}
           bounds={bounds}
           center={center}
           style={{ height: '100%', width: '100%' }}
