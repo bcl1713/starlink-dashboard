@@ -13,6 +13,7 @@ interface RouteMapProps {
   aarSegments?: AARSegment[];
   kaOutages?: KaOutage[];
   kuOutages?: KuOutageOverride[];
+  waypoints?: string[];
 }
 
 export function RouteMap({
@@ -21,7 +22,8 @@ export function RouteMap({
   xbandTransitions = [],
   aarSegments = [],
   kaOutages = [],
-  kuOutages = []
+  kuOutages = [],
+  waypoints = []
 }: RouteMapProps) {
   const mapRef = useRef<Map>(null);
 
@@ -33,6 +35,14 @@ export function RouteMap({
       iconSize: [16, 16],
     });
   };
+
+  // Find the index of a waypoint by name (case-insensitive, trimmed)
+  const getWaypointIndex = (name: string): number => {
+    if (!name || waypoints.length === 0) return -1;
+    const normalizedName = name.trim().toLowerCase();
+    return waypoints.findIndex(wp => wp.trim().toLowerCase() === normalizedName);
+  };
+
   // Split route into segments at International Date Line crossings
   const getRouteSegments = (): LatLngExpression[][] => {
     if (coordinates.length === 0) return [];
@@ -280,17 +290,43 @@ export function RouteMap({
 
             {/* Render AAR segments */}
             {aarSegments.map((segment, idx) => {
-              // For AAR visualization, we'll render a green overlay across the segment
-              // Since we don't have waypoint names in the coordinates array,
-              // we render the entire coordinates as an AAR segment indicator
-              // In a future enhancement, we could match segment names to coordinate indices
+              // Extract only the segment between start and end waypoints
+              const startIdx = getWaypointIndex(segment.start_waypoint_name);
+              const endIdx = getWaypointIndex(segment.end_waypoint_name);
+
+              // Skip if waypoints not found
+              if (startIdx === -1 || endIdx === -1) {
+                console.warn(
+                  `AAR segment ${idx}: Could not find waypoints "${segment.start_waypoint_name}" or "${segment.end_waypoint_name}"`
+                );
+                return null;
+              }
+
+              // Ensure valid order
+              if (startIdx > endIdx) {
+                console.warn(
+                  `AAR segment ${idx}: Start waypoint at index ${startIdx} is after end waypoint at index ${endIdx}`
+                );
+                return null;
+              }
+
+              // Get the correct coordinate array (use normalized for IDL routes)
+              const useNormalized = detectIDLCrossing();
+              const coordsToUse = useNormalized ? normalizedCoordinates : coordinates;
+              const segmentCoordinates = coordsToUse.slice(startIdx, endIdx + 1);
+
+              // Skip if no coordinates found
+              if (segmentCoordinates.length === 0) {
+                return null;
+              }
+
               return (
                 <Polyline
                   key={`aar-${idx}`}
-                  positions={(detectIDLCrossing() ? normalizedSegments : routeSegments).flat() as LatLngExpression[]}
-                  color="green"
+                  positions={segmentCoordinates}
+                  color="#FFC107"
                   weight={6}
-                  opacity={0.6}
+                  opacity={0.7}
                   dashArray="5, 5"
                 >
                   <Popup>
