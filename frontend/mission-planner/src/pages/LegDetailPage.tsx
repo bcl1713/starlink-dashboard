@@ -9,9 +9,11 @@ import { AARSegmentEditor } from '../components/aar/AARSegmentEditor';
 import { RouteMap } from '../components/common/RouteMap';
 import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
+import type { KaTransition } from '../types/timeline';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { routesApi, type Waypoint } from '../services/routes';
 import { satelliteService, type SatelliteResponse } from '../services/satellites';
+import { timelineService } from '../services/timeline';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{ missionId: string; legId: string }>();
@@ -40,7 +42,38 @@ export function LegDetailPage() {
   const [availableWaypoints, setAvailableWaypoints] = useState<Waypoint[]>([]);
   const [waypointNames, setWaypointNames] = useState<string[]>([]);
   const [availableSatellites, setAvailableSatellites] = useState<string[]>([]);
+  const [kaTransitions, setKaTransitions] = useState<KaTransition[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // Extract Ka transitions from timeline segments
+  const extractKaTransitions = (
+    segments: Array<{ start_time: string; reasons?: string[]; latitude?: number; longitude?: number }>
+  ): KaTransition[] => {
+    const transitions: KaTransition[] = [];
+
+    segments.forEach((segment) => {
+      segment.reasons?.forEach((reason) => {
+        const match = reason.match(/Ka transition (\w+) → (\w+)/i);
+        if (match) {
+          // Only add transition if we have coordinates; skip if missing
+          if (segment.latitude !== undefined && segment.longitude !== undefined) {
+            transitions.push({
+              latitude: segment.latitude,
+              longitude: segment.longitude,
+              fromSatellite: match[1],
+              toSatellite: match[2],
+              timestamp: segment.start_time,
+            });
+          } else {
+            // Log for debugging - coordinates not yet available in timeline
+            console.log(`Ka transition found but coordinates missing: ${match[1]} → ${match[2]}`);
+          }
+        }
+      });
+    });
+
+    return transitions;
+  };
 
   // Load satellites on component mount
   useEffect(() => {
@@ -72,6 +105,22 @@ export function LegDetailPage() {
       setWaypointNames([]);
     }
   }, [leg?.route_id]);
+
+  // Load timeline data when leg changes to extract Ka transitions
+  useEffect(() => {
+    if (legId) {
+      timelineService
+        .getTimeline(legId)
+        .then((timeline) => {
+          if (timeline?.segments) {
+            const transitions = extractKaTransitions(timeline.segments);
+            setKaTransitions(transitions);
+            console.log('Extracted Ka transitions:', transitions);
+          }
+        })
+        .catch((err) => console.error('Failed to load timeline:', err));
+    }
+  }, [legId]);
 
   // Initialize state from leg data
   useEffect(() => {
@@ -288,6 +337,7 @@ export function LegDetailPage() {
           <RouteMap
             coordinates={mapCoordinates}
             xbandTransitions={satelliteConfig.xband_transitions}
+            kaTransitions={kaTransitions}
             aarSegments={aarConfig.segments}
             kaOutages={satelliteConfig.ka_outages || []}
             kuOutages={satelliteConfig.ku_outages || []}
@@ -298,6 +348,7 @@ export function LegDetailPage() {
           <div className="mt-4 text-sm text-gray-600 space-y-1">
             <p>• Blue line: Flight route</p>
             <p>• Blue circles: X-Band transition points</p>
+            <p>• Green circles: Ka satellite transitions</p>
             <p>• Yellow dashed line: AAR segments</p>
             <p>• See below map for Ka/Ku outage timeline</p>
           </div>

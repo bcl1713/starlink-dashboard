@@ -563,3 +563,52 @@ async def deactivate_all_legs(mission_id: str) -> dict:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to deactivate legs",
         )
+
+
+@router.get("/{mission_id}/legs/{leg_id}/timeline")
+async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
+    """Get the computed timeline for a mission leg.
+
+    Args:
+        mission_id: Mission ID
+        leg_id: Leg ID
+
+    Returns:
+        Timeline object with segments and metadata
+    """
+    try:
+        from app.mission.storage import load_mission_timeline
+
+        # Load mission to verify it exists
+        mission = load_mission_v2(mission_id)
+        if not mission:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Mission {mission_id} not found",
+            )
+
+        # Verify leg exists
+        leg = next((l for l in mission.legs if l.id == leg_id), None)
+        if not leg:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Leg {leg_id} not found in mission {mission_id}",
+            )
+
+        # Load timeline for the leg
+        timeline = load_mission_timeline(leg_id)
+        if not timeline:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Timeline not found for leg {leg_id}",
+            )
+
+        return timeline.model_dump()
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get timeline for leg {leg_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve timeline",
+        )

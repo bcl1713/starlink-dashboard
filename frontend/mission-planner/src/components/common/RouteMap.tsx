@@ -6,11 +6,13 @@ import type { LatLngExpression, LatLngBoundsExpression, Map } from 'leaflet';
 import type { XBandTransition, KaOutage, KuOutageOverride } from '../../types/satellite';
 import type { AARSegment } from '../../types/aar';
 import type { Waypoint } from '../../services/routes';
+import type { KaTransition } from '../../types/timeline';
 
 interface RouteMapProps {
   coordinates: LatLngExpression[];
   height?: string;
   xbandTransitions?: XBandTransition[];
+  kaTransitions?: KaTransition[];
   aarSegments?: AARSegment[];
   kaOutages?: KaOutage[];
   kuOutages?: KuOutageOverride[];
@@ -22,6 +24,7 @@ export function RouteMap({
   coordinates,
   height = '400px',
   xbandTransitions = [],
+  kaTransitions = [],
   aarSegments = [],
   kaOutages = [],
   kuOutages = [],
@@ -35,6 +38,15 @@ export function RouteMap({
     return L.divIcon({
       className: 'xband-marker',
       html: '<div style="width: 16px; height: 16px; background: #3B82F6; border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
+      iconSize: [16, 16],
+    });
+  };
+
+  // Create Ka transition icon (green)
+  const createKaIcon = () => {
+    return L.divIcon({
+      className: 'ka-marker',
+      html: '<div style="width: 16px; height: 16px; background: #10B981; border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
       iconSize: [16, 16],
     });
   };
@@ -352,6 +364,24 @@ export function RouteMap({
                 </Marker>
               );
             })}
+
+            {/* Render Ka transition markers */}
+            {kaTransitions?.map((transition, idx) => (
+              <Marker
+                key={`ka-${idx}`}
+                position={[transition.latitude, transition.longitude]}
+                icon={createKaIcon()}
+              >
+                <Popup>
+                  <div>
+                    <strong>Ka Transition</strong><br/>
+                    From: {transition.fromSatellite}<br/>
+                    To: {transition.toSatellite}<br/>
+                    Time: {new Date(transition.timestamp).toLocaleString()}
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
 
             {/* Render AAR segments */}
             {aarSegments.map((segment, idx) => {
