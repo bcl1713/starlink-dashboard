@@ -1,3 +1,12 @@
+// Satellite manager interface for CRUD operations
+export interface Satellite {
+  id: string;
+  name: string;
+  type: 'X-Band' | 'Ka-Band' | 'Ku-Band';
+  description?: string;
+  created_at?: string;
+}
+
 export interface XBandTransition {
   id: string;
   latitude: number;
