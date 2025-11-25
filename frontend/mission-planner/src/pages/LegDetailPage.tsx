@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { XBandConfig } from '../components/satellites/XBandConfig';
@@ -181,9 +181,14 @@ export function LegDetailPage() {
 
             <TabsContent value="xband" className="space-y-4">
               <div className="rounded-lg border p-6">
-                <h2 className="text-xl font-semibold mb-4">
-                  X-Band Configuration
-                </h2>
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">
+                    X-Band Configuration
+                  </h2>
+                  <Link to="/satellites" className="text-sm text-blue-600 hover:underline">
+                    Manage Satellites →
+                  </Link>
+                </div>
                 <XBandConfig
                   startingSatellite={satelliteConfig.xband_starting_satellite}
                   transitions={satelliteConfig.xband_transitions}

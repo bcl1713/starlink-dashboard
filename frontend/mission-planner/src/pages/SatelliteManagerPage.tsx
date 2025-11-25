@@ -8,6 +8,7 @@ import {
   CardContent,
   CardFooter,
 } from '../components/ui/card';
+import { AddSatelliteDialog } from '../components/satellites/AddSatelliteDialog';
 import { useSatellites, useDeleteSatellite } from '../hooks/api/useSatellites';
 
 export default function SatelliteManagerPage() {
@@ -54,7 +55,12 @@ export default function SatelliteManagerPage() {
         ))}
       </div>
 
-      {/* TODO: Add create/edit dialog in next task */}
+      {showCreateDialog && (
+        <AddSatelliteDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+        />
+      )}
     </div>
   );
 }
