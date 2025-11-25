@@ -74,3 +74,15 @@ export function useUpdateLeg(missionId: string, legId: string) {
     },
   });
 }
+
+export function useActivateLeg() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ missionId, legId }: { missionId: string; legId: string }) =>
+      missionsApi.activateLeg(missionId, legId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['missions', variables.missionId] });
+    },
+  });
+}

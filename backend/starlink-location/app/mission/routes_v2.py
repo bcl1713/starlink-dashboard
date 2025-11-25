@@ -390,3 +390,55 @@ async def delete_leg(mission_id: str, leg_id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete leg",
         )
+
+
+@router.post("/{mission_id}/legs/{leg_id}/activate", response_model=dict)
+async def activate_leg(mission_id: str, leg_id: str) -> dict:
+    """Activate a specific leg (deactivates all others in the mission).
+
+    Args:
+        mission_id: Mission ID
+        leg_id: Leg ID to activate
+
+    Returns:
+        Success response with active leg ID
+    """
+    try:
+        # Load mission
+        mission = load_mission_v2(mission_id)
+
+        if not mission:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Mission {mission_id} not found",
+            )
+
+        # Find the target leg
+        leg_found = False
+        for leg in mission.legs:
+            if leg.id == leg_id:
+                leg.is_active = True
+                leg_found = True
+            else:
+                leg.is_active = False
+
+        if not leg_found:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Leg {leg_id} not found in mission {mission_id}",
+            )
+
+        # Save updated mission
+        save_mission_v2(mission)
+
+        logger.info(f"Activated leg {leg_id} in mission {mission_id}")
+
+        return {"status": "success", "active_leg_id": leg_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to activate leg: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to activate leg",
+        )

@@ -40,4 +40,8 @@ export const missionsApi = {
   deleteLeg: async (missionId: string, legId: string) => {
     await apiClient.delete(`/api/v2/missions/${missionId}/legs/${legId}`);
   },
+
+  activateLeg: async (missionId: string, legId: string): Promise<void> => {
+    await apiClient.post(`/api/v2/missions/${missionId}/legs/${legId}/activate`);
+  },
 };

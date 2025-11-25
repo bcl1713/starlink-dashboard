@@ -8,7 +8,7 @@ import {
   CardContent,
 } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { useMission, useAddLeg, useDeleteLeg } from '../hooks/api/useMissions';
+import { useMission, useAddLeg, useDeleteLeg, useActivateLeg } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
 import type { MissionLeg } from '../types/mission';
 
@@ -19,6 +19,7 @@ export function MissionDetailPage() {
   const { data: mission, isLoading, error } = useMission(missionId || '');
   const addLegMutation = useAddLeg(missionId || '');
   const deleteLegMutation = useDeleteLeg(missionId || '');
+  const activateLeg = useActivateLeg();
 
   if (isLoading) {
     return (
@@ -51,6 +52,10 @@ export function MissionDetailPage() {
     }
   };
 
+  const handleActivateLeg = (legId: string) => {
+    activateLeg.mutate({ missionId: mission!.id, legId });
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-start">
@@ -81,7 +86,9 @@ export function MissionDetailPage() {
             {mission.legs.map((leg) => (
               <Card
                 key={leg.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer"
+                className={`hover:shadow-lg transition-shadow cursor-pointer ${
+                  leg.is_active ? 'border-green-600 border-2' : ''
+                }`}
                 onClick={() =>
                   navigate(`/missions/${mission.id}/legs/${leg.id}`)
                 }
@@ -89,23 +96,46 @@ export function MissionDetailPage() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <CardTitle>{leg.name}</CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle>{leg.name}</CardTitle>
+                        {leg.is_active && (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-green-600 text-white">
+                            Active
+                          </span>
+                        )}
+                      </div>
                       {leg.description && (
                         <CardDescription>{leg.description}</CardDescription>
                       )}
                     </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteLeg(leg.id);
-                      }}
-                      disabled={deleteLegMutation.isPending}
-                      className="ml-2"
-                    >
-                      {deleteLegMutation.isPending ? 'Deleting...' : 'Delete'}
-                    </Button>
+                    <div className="flex gap-2 ml-2">
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleActivateLeg(leg.id);
+                        }}
+                        variant={leg.is_active ? 'default' : 'outline'}
+                        size="sm"
+                        disabled={activateLeg.isPending}
+                      >
+                        {activateLeg.isPending
+                          ? 'Activating...'
+                          : leg.is_active
+                            ? 'Active'
+                            : 'Activate'}
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteLeg(leg.id);
+                        }}
+                        disabled={deleteLegMutation.isPending}
+                      >
+                        {deleteLegMutation.isPending ? 'Deleting...' : 'Delete'}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
