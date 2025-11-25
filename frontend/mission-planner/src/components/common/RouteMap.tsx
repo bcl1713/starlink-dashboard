@@ -5,17 +5,20 @@ import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
 import type { Map } from 'leaflet';
 import type { XBandTransition } from '../../types/satellite';
+import type { AARSegment } from '../../types/aar';
 
 interface RouteMapProps {
   coordinates: LatLngExpression[];
   height?: string;
   xbandTransitions?: XBandTransition[];
+  aarSegments?: AARSegment[];
 }
 
 export function RouteMap({
   coordinates,
   height = '400px',
-  xbandTransitions = []
+  xbandTransitions = [],
+  aarSegments = []
 }: RouteMapProps) {
   const mapRef = useRef<Map>(null);
 
@@ -263,6 +266,28 @@ export function RouteMap({
               </Popup>
             </Marker>
           ))}
+
+          {/* Render AAR segments */}
+          {aarSegments.map((segment, idx) => {
+            // For AAR visualization, we'll render a green overlay across the segment
+            // Since we don't have waypoint names in the coordinates array,
+            // we render the entire coordinates as an AAR segment indicator
+            // In a future enhancement, we could match segment names to coordinate indices
+            return (
+              <Polyline
+                key={`aar-${idx}`}
+                positions={(detectIDLCrossing() ? normalizedSegments : routeSegments).flat() as LatLngExpression[]}
+                color="green"
+                weight={6}
+                opacity={0.6}
+                dashArray="5, 5"
+              >
+                <Popup>
+                  AAR Segment: {segment.start_waypoint_name} → {segment.end_waypoint_name}
+                </Popup>
+              </Polyline>
+            );
+          })}
         </MapContainer>
       ) : (
         <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">

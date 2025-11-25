@@ -270,12 +270,13 @@ export function LegDetailPage() {
           <RouteMap
             coordinates={mapCoordinates}
             xbandTransitions={satelliteConfig.xband_transitions}
+            aarSegments={aarConfig.segments}
             height="600px"
           />
           <div className="mt-4 text-sm text-gray-600 space-y-1">
             <p>• Blue line: Flight route</p>
             <p>• Blue circles: X-Band transition points</p>
-            <p className="text-gray-400">AAR segments visualization coming soon</p>
+            <p>• Green dashed line: AAR segments</p>
           </div>
         </div>
       </div>
