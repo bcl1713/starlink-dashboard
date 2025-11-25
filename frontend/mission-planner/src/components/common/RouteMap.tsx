@@ -1,8 +1,8 @@
-import { useRef } from 'react';
-import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
+import { useRef, useEffect } from 'react';
+import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { LatLngExpression, LatLngBoundsExpression, Map, LeafletEvent } from 'leaflet';
+import type { LatLngExpression, LatLngBoundsExpression, Map } from 'leaflet';
 import type { XBandTransition, KaOutage, KuOutageOverride } from '../../types/satellite';
 import type { AARSegment } from '../../types/aar';
 
@@ -221,30 +221,36 @@ export function RouteMap({
     return segments;
   })();
 
-  // Callback when map is ready
-  const handleMapReady = (map: Map) => {
-    mapRef.current = map;
-    if (bounds && coordinates.length > 0) {
-      try {
-        map.fitBounds(bounds, { padding: [50, 50] });
-      } catch (error) {
-        console.warn('Could not fit bounds to map:', error);
+  // Component to handle map interactions
+  function MapController({ bounds: mapBounds }: { bounds: LatLngBoundsExpression | undefined }) {
+    const map = useMap();
+
+    useEffect(() => {
+      mapRef.current = map;
+      if (mapBounds && coordinates.length > 0) {
+        try {
+          map.fitBounds(mapBounds, { padding: [50, 50] });
+        } catch (error) {
+          console.warn('Could not fit bounds to map:', error);
+        }
       }
-    }
-  };
+    }, [map, mapBounds]);
+
+    return null;
+  }
 
   return (
     <div>
       <div style={{ height, width: '100%' }}>
         {coordinates.length > 0 ? (
           <MapContainer
-            whenReady={(e: LeafletEvent) => handleMapReady(e.target as Map)}
             bounds={bounds}
             center={center}
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={false}
             worldCopyJump={true}
           >
+            <MapController bounds={bounds} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
