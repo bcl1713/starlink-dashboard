@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { LatLngExpression, LatLngBoundsExpression } from 'leaflet';
 import type { Map } from 'leaflet';
-import type { XBandTransition } from '../../types/satellite';
+import type { XBandTransition, KaOutage, KuOutageOverride } from '../../types/satellite';
 import type { AARSegment } from '../../types/aar';
 
 interface RouteMapProps {
@@ -12,13 +12,17 @@ interface RouteMapProps {
   height?: string;
   xbandTransitions?: XBandTransition[];
   aarSegments?: AARSegment[];
+  kaOutages?: KaOutage[];
+  kuOutages?: KuOutageOverride[];
 }
 
 export function RouteMap({
   coordinates,
   height = '400px',
   xbandTransitions = [],
-  aarSegments = []
+  aarSegments = [],
+  kaOutages = [],
+  kuOutages = []
 }: RouteMapProps) {
   const mapRef = useRef<Map>(null);
 
@@ -230,70 +234,102 @@ export function RouteMap({
   }, [bounds, coordinates.length]);
 
   return (
-    <div style={{ height, width: '100%' }}>
-      {coordinates.length > 0 ? (
-        <MapContainer
-          ref={mapRef}
-          bounds={bounds}
-          center={center}
-          style={{ height: '100%', width: '100%' }}
-          scrollWheelZoom={false}
-          worldCopyJump={true}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {/* Render normalized segments for IDL routes, original segments otherwise */}
-          {(detectIDLCrossing() ? normalizedSegments : routeSegments).map((segment, idx) => (
-            <Polyline
-              key={idx}
-              positions={segment}
-              color="blue"
-              weight={3}
+    <div>
+      <div style={{ height, width: '100%' }}>
+        {coordinates.length > 0 ? (
+          <MapContainer
+            ref={mapRef}
+            bounds={bounds}
+            center={center}
+            style={{ height: '100%', width: '100%' }}
+            scrollWheelZoom={false}
+            worldCopyJump={true}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-          ))}
-
-          {/* Render X-Band transition markers */}
-          {xbandTransitions.map((transition, idx) => (
-            <Marker
-              key={`xband-${idx}`}
-              position={[transition.latitude, transition.longitude]}
-              icon={createXBandIcon()}
-            >
-              <Popup>
-                X-Band Transition to {transition.target_satellite_id}
-              </Popup>
-            </Marker>
-          ))}
-
-          {/* Render AAR segments */}
-          {aarSegments.map((segment, idx) => {
-            // For AAR visualization, we'll render a green overlay across the segment
-            // Since we don't have waypoint names in the coordinates array,
-            // we render the entire coordinates as an AAR segment indicator
-            // In a future enhancement, we could match segment names to coordinate indices
-            return (
+            {/* Render normalized segments for IDL routes, original segments otherwise */}
+            {(detectIDLCrossing() ? normalizedSegments : routeSegments).map((segment, idx) => (
               <Polyline
-                key={`aar-${idx}`}
-                positions={(detectIDLCrossing() ? normalizedSegments : routeSegments).flat() as LatLngExpression[]}
-                color="green"
-                weight={6}
-                opacity={0.6}
-                dashArray="5, 5"
+                key={idx}
+                positions={segment}
+                color="blue"
+                weight={3}
+              />
+            ))}
+
+            {/* Render X-Band transition markers */}
+            {xbandTransitions.map((transition, idx) => (
+              <Marker
+                key={`xband-${idx}`}
+                position={[transition.latitude, transition.longitude]}
+                icon={createXBandIcon()}
               >
                 <Popup>
-                  AAR Segment: {segment.start_waypoint_name} → {segment.end_waypoint_name}
+                  X-Band Transition to {transition.target_satellite_id}
                 </Popup>
-              </Polyline>
-            );
-          })}
-        </MapContainer>
-      ) : (
-        <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-          <p className="text-gray-500">No route data available</p>
+              </Marker>
+            ))}
+
+            {/* Render AAR segments */}
+            {aarSegments.map((segment, idx) => {
+              // For AAR visualization, we'll render a green overlay across the segment
+              // Since we don't have waypoint names in the coordinates array,
+              // we render the entire coordinates as an AAR segment indicator
+              // In a future enhancement, we could match segment names to coordinate indices
+              return (
+                <Polyline
+                  key={`aar-${idx}`}
+                  positions={(detectIDLCrossing() ? normalizedSegments : routeSegments).flat() as LatLngExpression[]}
+                  color="green"
+                  weight={6}
+                  opacity={0.6}
+                  dashArray="5, 5"
+                >
+                  <Popup>
+                    AAR Segment: {segment.start_waypoint_name} → {segment.end_waypoint_name}
+                  </Popup>
+                </Polyline>
+              );
+            })}
+          </MapContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+            <p className="text-gray-500">No route data available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Outage Information Panel */}
+      {(kaOutages.length > 0) || (kuOutages.length > 0) ? (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <h3 className="text-lg font-semibold mb-2">Communication Outages</h3>
+
+          {kaOutages.length > 0 && (
+            <div className="mb-3">
+              <h4 className="font-medium text-sm mb-1">Ka-Band Outages</h4>
+              {kaOutages.map((outage, idx) => (
+                <div key={`ka-${idx}`} className="text-sm text-gray-700 ml-2">
+                  • {new Date(outage.start_time).toLocaleString()} ({outage.duration_seconds}s)
+                </div>
+              ))}
+            </div>
+          )}
+
+          {kuOutages.length > 0 && (
+            <div>
+              <h4 className="font-medium text-sm mb-1">Ku-Band Outages</h4>
+              {kuOutages.map((outage, idx) => (
+                <div key={`ku-${idx}`} className="text-sm text-gray-700 ml-2">
+                  • {new Date(outage.start_time).toLocaleString()} ({outage.duration_seconds}s)
+                  {outage.reason && ` - ${outage.reason}`}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

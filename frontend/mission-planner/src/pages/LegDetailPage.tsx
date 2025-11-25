@@ -271,12 +271,15 @@ export function LegDetailPage() {
             coordinates={mapCoordinates}
             xbandTransitions={satelliteConfig.xband_transitions}
             aarSegments={aarConfig.segments}
+            kaOutages={satelliteConfig.ka_outages || []}
+            kuOutages={satelliteConfig.ku_outages || []}
             height="600px"
           />
           <div className="mt-4 text-sm text-gray-600 space-y-1">
             <p>• Blue line: Flight route</p>
             <p>• Blue circles: X-Band transition points</p>
             <p>• Green dashed line: AAR segments</p>
+            <p>• See below map for Ka/Ku outage timeline</p>
           </div>
         </div>
       </div>
