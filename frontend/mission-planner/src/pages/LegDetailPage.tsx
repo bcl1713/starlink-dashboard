@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { XBandConfig } from '../components/satellites/XBandConfig';
 import { KaOutageConfig } from '../components/satellites/KaOutageConfig';
@@ -146,6 +147,13 @@ export function LegDetailPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div>
+        <Button
+          variant="ghost"
+          onClick={() => navigate(`/missions/${missionId}`)}
+          className="mb-4"
+        >
+          ← Back to Mission
+        </Button>
         <h1 className="text-3xl font-bold">Leg Configuration</h1>
         <p className="text-muted-foreground">
           Mission: {missionId} | Leg: {legId}
