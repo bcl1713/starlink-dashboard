@@ -2,8 +2,8 @@
 
 **Branch:** `feat/mission-leg-planning-ui`
 **Folder:** `dev/active/mission-leg-planning-ui/`
-**Generated:** 2025-11-24
-**Status:** Leg Management & Map Fixes Complete, Frontend Polish Needed
+**Generated:** 2025-11-24 (Updated)
+**Status:** Phase 6 Complete + Frontend API Contract Fixes, Phase 6.5 (Missing Features) Ready to Execute
 
 ---
 
@@ -17,11 +17,30 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Current Status
 
-- **Phase:** Phases 1-6 Complete + Critical Leg Management & Map Fixes (2025-11-24 session)
-- **Checklist completion:** ~90% (Phase 6 complete + additional fixes, Phase 7-8 + polish remaining)
-- **Progress:** Leg management fully functional, IDL-crossing routes render correctly, Save/Cancel work
+- **Phase:** Phases 1-6 Complete + Frontend API Contract Fixes Complete
+- **Next Phase:** Phase 6.5 - Missing Features & Polish (~150 detailed checklist items)
+- **Checklist completion:** Core features ~95%, missing features/polish needed before Phase 7
+- **Progress:** All CRUD operations work, validation complete, export/import functional, map rendering fixed
 
-### Major accomplishments (2025-11-24 session):
+### Major accomplishments (2025-11-24 latest session):
+
+✅ **Frontend API Contract Fixes (COMPLETE)**
+1. Applied toISO8601() conversion to Ka/Ku outage datetime values
+2. Marked required fields correctly (route_id, transports, initial_x_satellite_id)
+3. Removed legacy fields (satellite_config, aar_config from MissionLeg)
+4. Added proper types to TransportConfig arrays (replaced unknown[])
+5. Implemented comprehensive validation (satellite ID, lat/lon, datetime, duration)
+6. Added inline error messages and disabled submit on validation failure
+7. Verified all fixes with end-to-end testing (no 422 errors)
+8. Added missing DELETE endpoint for missions
+
+✅ **Phase 6.5 Planning Complete**
+1. Identified 6 critical UX/feature gaps during testing
+2. Created comprehensive PLAN.md Phase 6.5 section
+3. Created detailed CHECKLIST-PHASE-6.5.md (~150 tasks)
+4. Updated todo list with 24 pending tasks
+
+### Major accomplishments (2025-11-24 earlier session):
 
 ✅ **Leg Management (Critical Gap Fixed)**
 1. Added missing backend API endpoints: POST/PUT/DELETE legs
@@ -89,40 +108,48 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Next Actions
 
-**Immediate Frontend Polish (Before Phase 7):**
+**Phase 6.5 - Missing Features & Polish (START HERE)**
 
-Critical UX issues identified that should be fixed before testing:
+Execute tasks from `CHECKLIST-PHASE-6.5.md` (~150 detailed steps). Six major work areas:
 
-1. **AAR Segment Waypoints**: Currently using hardcoded waypoint list
-   - Need to fetch actual waypoints from the route API
-   - API endpoint: `GET /api/routes/{route_id}` returns waypoints array
-   - Update AARSegmentEditor to load route waypoints dynamically
+1. **Navigation Improvements** (~4 tasks)
+   - Add "Back to Mission" button on LegDetailPage
+   - Handle unsaved changes warning
 
-2. **X-Band Satellite Management**: Verify if satellites are hardcoded
-   - Check if satellite list needs to come from backend/config
-   - Implement add/remove satellite functionality
-   - Location: Either main dashboard or satellite management page
+2. **Map Visualization Fixes** (~40 tasks)
+   - Fix X-Band transitions to show as point markers (not route segments) ⚠️ Critical
+   - Fix map initialization on page refresh (blue field issue) ⚠️ Critical
+   - Add AAR segment overlays (colored polylines)
+   - Add Ka outage indicators
+   - Add Ku outage indicators
+   - Add auto-calculated Ka transition markers
 
-3. **Leg Card Navigation**: Make entire card clickable
-   - Currently requires clicking a specific link
-   - Should navigate to leg detail when clicking anywhere on the card
-   - Update MissionDetailPage leg card click handlers
+3. **Satellite Manager** (~30 tasks)
+   - Create satellite manager page with CRUD operations
+   - Add satellite API service and React Query hooks
+   - Add navigation links from home page and leg editor
+   - Enable users to add/edit/delete satellites
 
-4. **Verify X-Band Configuration**: Ensure satellite dropdown is dynamic
-   - Check availableSatellites array source in LegDetailPage
-   - May need backend endpoint for satellite list
+4. **Leg Activation** (~8 tasks)
+   - Add "Activate Leg" button to mission detail page
+   - Implement activation API endpoint (if missing)
+   - Show active leg indicator
 
-**Then Phase 7 - Testing & Documentation:**
+5. **Complete Export Package** (~45 tasks) ⚠️ Critical
+   - Generate CSV/XLS/PPT/PDF for each leg
+   - Generate **combined** CSV/XLS/PPT/PDF for entire mission (NEW)
+   - Include all files in zip export
 
-After frontend polish is complete:
-1. Review `CHECKLIST-PHASE-7.md` for complete task list
-2. Write backend unit tests (target >80% coverage)
-3. Write frontend component tests
-4. Create E2E test for full mission workflow
-5. Update CLAUDE.md with mission planning guide
-6. Update API documentation
+6. **Cascade Deletion** (~20 tasks) ⚠️ Critical
+   - Deleting mission cascades to all legs, routes, POIs
+   - Deleting leg cascades to routes and POIs
+   - Add confirmation dialogs showing what will be deleted
 
-**Then Phase 8 - Wrap-Up & PR**
+**After Phase 6.5 → Phase 7 - Testing & Documentation**
+
+Then move to testing and documentation (see CHECKLIST-PHASE-7.md)
+
+**After Phase 7 → Phase 8 - Wrap-Up & PR**
 
 ---
 
@@ -136,22 +163,26 @@ After frontend polish is complete:
 - ✅ Roundtrip verification - Export → delete → import works perfectly
 
 ### Active Risks:
-1. **Test coverage** - No unit/component tests written yet (Phase 7 focus)
-2. **AAR waypoints hardcoded** - Need to fetch from route API dynamically
-3. **Satellite list may be hardcoded** - Need to verify X-Band satellite source
-4. **Frontend performance** - Not yet tested with large missions (10+ legs)
-5. **350-line file limit** - Successfully maintained across all components
+1. **Phase 6.5 scope** - 150 tasks is substantial, may take 2-3 sessions to complete
+2. **Export file generation** - Generating combined mission-level files may be complex
+3. **Cascade deletion** - Must be careful not to accidentally delete data
+4. **Map visualization** - Multiple overlapping features (AAR, Ka, Ku, transitions) could clutter map
+5. **Test coverage** - No unit/component tests written yet (Phase 7 focus)
 
-### Open Questions:
-- Where should satellite management UI live (dashboard or separate page)?
-- Should satellite list come from backend config or database?
-- What level of test coverage is acceptable for Phase 7?
+### Open Questions Answered:
+- ✅ Satellite manager location: Separate page at `/satellites` with nav links
+- ✅ Export package contents: Both per-leg AND combined mission-level files
+- ✅ Cascade deletion: Yes, with confirmation dialogs showing details
+
+### Remaining Questions:
+- Auto-calculated Ka transitions: Does backend already calculate these?
 - Should AAR segments validate that waypoints exist in the route?
+- What level of test coverage is acceptable for Phase 7?
 
 ### No Blockers:
 - All Phase 1-6 exit criteria met
-- Phase 7 entry criteria satisfied (all features implemented)
-- Frontend and backend fully functional and deployed
+- Frontend API contract fixes complete (zero 422 errors)
+- CHECKLIST-PHASE-6.5.md ready for execution
 
 ---
 
@@ -164,8 +195,9 @@ After frontend polish is complete:
 - CHECKLIST-PHASE-4.md: (all tasks completed)
 - CHECKLIST-PHASE-5.md: (all tasks completed)
 - CHECKLIST-PHASE-6.md: (all tasks completed)
-- CHECKLIST-PHASE-7.md: (ready to execute)
-- CHECKLIST-PHASE-8.md: (ready to execute)
+- CHECKLIST-PHASE-6.5.md: `dev/active/mission-leg-planning-ui/CHECKLIST-PHASE-6.5.md` ⚠️ **START HERE**
+- CHECKLIST-PHASE-7.md: (ready to execute after 6.5)
+- CHECKLIST-PHASE-8.md: (ready to execute after 7)
 - LESSONS-LEARNED.md: `dev/LESSONS-LEARNED.md` (project-wide)
 
 **Key Code Files (Backend):**
@@ -202,10 +234,11 @@ After frontend polish is complete:
 **Branch:**
 - Repo: starlink-dashboard-dev
 - Branch: `feat/mission-leg-planning-ui`
-- Latest commit: IDL-crossing route fixes + leg management complete
-- Total commits: 70+ (covering Phases 1-6 + 2025-11-24 session fixes)
+- Latest commit: Phase 6.5 planning + detailed checklist created
+- Total commits: 80+ (covering Phases 1-6 + API contract fixes + 6.5 planning)
+- Session commits today: 15 (API contract fixes, Phase 6.5 setup)
 
-**PR:** Not yet created (will be created in Phase 8)
+**PR:** Not yet created (will be created in Phase 8 after all phases complete)
 
 ---
 
@@ -213,9 +246,10 @@ After frontend polish is complete:
 
 **Quick Start:**
 1. Read this HANDOFF.md first
-2. Review CHECKLIST-PHASE-7.md for Phase 7 tasks
-3. Run `executing-plan-checklist` skill to begin Phase 7 execution
-4. Or work independently through CHECKLIST-PHASE-7.md tasks
+2. Review `CHECKLIST-PHASE-6.5.md` for ~150 detailed tasks ⚠️ **START HERE**
+3. Run `executing-plan-checklist` skill on Phase 6.5 checklist
+4. Or work independently through CHECKLIST-PHASE-6.5.md tasks
+5. After Phase 6.5 complete, move to CHECKLIST-PHASE-7.md
 
 **Testing the current state:**
 ```bash
@@ -236,9 +270,10 @@ open http://localhost:5173/missions
 ```
 
 **Expected Duration:**
+- Phase 6.5: 8-12 hours (missing features & polish - ~150 tasks)
 - Phase 7: 6-8 hours (testing & documentation)
 - Phase 8: 2-3 hours (wrap-up & PR)
-- Total remaining: ~8-11 hours
+- Total remaining: ~16-23 hours
 
 **Tech Stack Summary:**
 - Backend: Python + FastAPI + Pydantic
