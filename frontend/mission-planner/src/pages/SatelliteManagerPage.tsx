@@ -19,43 +19,47 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '../components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 
 export default function SatelliteManagerPage() {
   const { data: satellites, isLoading, refetch } = useSatellites();
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [editingSatelliteId, setEditingSatelliteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     satellite_id: '',
-    transport: 'X',
     longitude: -120,
-    slot: '',
-    color: '#FF6B6B',
   });
   const [error, setError] = useState<string | null>(null);
 
   // Reset form when dialog closes
   useEffect(() => {
-    if (!isDialogOpen) {
+    if (!isAddDialogOpen) {
       setFormData({
         satellite_id: '',
-        transport: 'X',
         longitude: -120,
-        slot: '',
-        color: '#FF6B6B',
       });
       setError(null);
     }
-  }, [isDialogOpen]);
+  }, [isAddDialogOpen]);
+
+  // Reset edit form when dialog closes
+  useEffect(() => {
+    if (!isEditDialogOpen) {
+      setEditingSatelliteId(null);
+      setFormData({
+        satellite_id: '',
+        longitude: -120,
+      });
+      setError(null);
+    }
+  }, [isEditDialogOpen]);
 
   const handleCreate = async () => {
     if (!formData.satellite_id.trim()) {
       setError('Satellite ID is required');
-      return;
-    }
-    if (!formData.transport) {
-      setError('Transport type is required');
       return;
     }
     if (formData.longitude < -180 || formData.longitude > 180) {
@@ -68,12 +72,10 @@ export default function SatelliteManagerPage() {
     try {
       await satelliteService.create({
         satellite_id: formData.satellite_id.trim(),
-        transport: formData.transport,
+        transport: 'X', // Default to X-Band
         longitude: formData.longitude,
-        slot: formData.slot.trim() || undefined,
-        color: formData.color,
       });
-      setIsDialogOpen(false);
+      setIsAddDialogOpen(false);
       refetch();
     } catch (err) {
       setError(
@@ -81,6 +83,48 @@ export default function SatelliteManagerPage() {
       );
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleEdit = (satellite: any) => {
+    setEditingSatelliteId(satellite.satellite_id);
+    setFormData({
+      satellite_id: satellite.satellite_id,
+      longitude: satellite.longitude || -120,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!formData.satellite_id.trim()) {
+      setError('Satellite ID is required');
+      return;
+    }
+    if (formData.longitude < -180 || formData.longitude > 180) {
+      setError('Longitude must be between -180 and 180');
+      return;
+    }
+
+    if (!editingSatelliteId) {
+      setError('Satellite ID not found');
+      return;
+    }
+
+    setIsUpdating(true);
+    setError(null);
+    try {
+      await satelliteService.update(editingSatelliteId, {
+        satellite_id: formData.satellite_id.trim(),
+        longitude: formData.longitude,
+      });
+      setIsEditDialogOpen(false);
+      refetch();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Failed to update satellite'
+      );
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -109,10 +153,11 @@ export default function SatelliteManagerPage() {
           <h1 className="text-3xl font-bold mb-2">Satellite Manager</h1>
           <p className="text-gray-600">
             Manage X-Band, Ka-Band, and Ku-Band satellites. These are
-            geostationary satellites at the equator (latitude = 0).
+            geostationary satellites at the equator (latitude = 0). Click on a
+            satellite to edit.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>Add Satellite</Button>
           </DialogTrigger>
@@ -142,26 +187,6 @@ export default function SatelliteManagerPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Transport Type
-                </label>
-                <Select
-                  value={formData.transport}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, transport: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="X">X-Band</SelectItem>
-                    <SelectItem value="Ka">Ka-Band</SelectItem>
-                    <SelectItem value="Ku">Ku-Band</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
                   Longitude (-180 to 180)
                 </label>
                 <Input
@@ -178,45 +203,12 @@ export default function SatelliteManagerPage() {
                   }
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Orbital Slot (optional)
-                </label>
-                <Input
-                  value={formData.slot}
-                  onChange={(e) =>
-                    setFormData({ ...formData, slot: e.target.value })
-                  }
-                  placeholder="e.g., X-Slot-1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Display Color
-                </label>
-                <div className="flex gap-2">
-                  <Input
-                    type="color"
-                    value={formData.color}
-                    onChange={(e) =>
-                      setFormData({ ...formData, color: e.target.value })
-                    }
-                  />
-                  <Input
-                    type="text"
-                    value={formData.color}
-                    onChange={(e) =>
-                      setFormData({ ...formData, color: e.target.value })
-                    }
-                  />
-                </div>
-              </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
             </div>
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setIsDialogOpen(false)}
+                onClick={() => setIsAddDialogOpen(false)}
               >
                 Cancel
               </Button>
@@ -242,7 +234,11 @@ export default function SatelliteManagerPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
         {satellites?.map((satellite) => (
-          <Card key={satellite.satellite_id}>
+          <Card
+            key={satellite.satellite_id}
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleEdit(satellite)}
+          >
             <CardHeader>
               <CardTitle>{satellite.satellite_id}</CardTitle>
               <CardDescription>
@@ -256,23 +252,14 @@ export default function SatelliteManagerPage() {
                 <p>
                   <strong>Transport:</strong> {satellite.transport}-Band
                 </p>
-                {satellite.slot && (
-                  <p>
-                    <strong>Slot:</strong> {satellite.slot}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-2">
-                  <div
-                    className="w-6 h-6 rounded-full border border-gray-300"
-                    style={{ backgroundColor: satellite.color }}
-                  />
-                  <span className="text-xs text-gray-500">Display color</span>
-                </div>
               </div>
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => handleDelete(satellite.satellite_id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(satellite.satellite_id);
+                }}
                 disabled={isDeleting === satellite.satellite_id}
               >
                 {isDeleting === satellite.satellite_id
@@ -283,6 +270,64 @@ export default function SatelliteManagerPage() {
           </Card>
         ))}
       </div>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Satellite</DialogTitle>
+            <DialogDescription>
+              Update the satellite ID and longitude.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Satellite ID (e.g., X-1)
+              </label>
+              <Input
+                value={formData.satellite_id}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    satellite_id: e.target.value,
+                  })
+                }
+                placeholder="X-1"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                Longitude (-180 to 180)
+              </label>
+              <Input
+                type="number"
+                step="0.001"
+                min="-180"
+                max="180"
+                value={formData.longitude}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    longitude: parseFloat(e.target.value),
+                  })
+                }
+              />
+            </div>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleUpdate} disabled={isUpdating}>
+              {isUpdating ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
