@@ -13,12 +13,40 @@ from app.mission.storage import (
     load_mission_v2,
     delete_mission,
     mission_exists,
+    save_mission_timeline,
 )
 from app.mission.package_exporter import export_mission_package
+from app.mission.timeline_service import build_mission_timeline
+from app.services.route_manager import RouteManager
+from app.services.poi_manager import POIManager
+from app.satellites.coverage import CoverageSampler
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
+
+# Global manager instances (set by main.py during startup)
+_route_manager: Optional[RouteManager] = None
+_poi_manager: Optional[POIManager] = None
+_coverage_sampler: Optional[CoverageSampler] = None
+
+
+def set_route_manager(route_manager: RouteManager) -> None:
+    """Set the route manager instance (called by main.py during startup)."""
+    global _route_manager
+    _route_manager = route_manager
+
+
+def set_poi_manager(poi_manager: POIManager) -> None:
+    """Set the POI manager instance (called by main.py during startup)."""
+    global _poi_manager
+    _poi_manager = poi_manager
+
+
+def set_coverage_sampler(coverage_sampler: CoverageSampler) -> None:
+    """Set the coverage sampler instance (called by main.py during startup)."""
+    global _coverage_sampler
+    _coverage_sampler = coverage_sampler
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=Mission)
@@ -433,10 +461,12 @@ async def activate_leg(mission_id: str, leg_id: str) -> dict:
 
         # Find the target leg
         leg_found = False
+        active_leg = None
         for leg in mission.legs:
             if leg.id == leg_id:
                 leg.is_active = True
                 leg_found = True
+                active_leg = leg
             else:
                 leg.is_active = False
 
@@ -448,6 +478,23 @@ async def activate_leg(mission_id: str, leg_id: str) -> dict:
 
         # Save updated mission
         save_mission_v2(mission)
+
+        # Generate timeline for the activated leg
+        if active_leg and _route_manager:
+            try:
+                logger.info(f"Generating timeline for leg {leg_id}")
+                timeline, summary = build_mission_timeline(
+                    mission=active_leg,
+                    route_manager=_route_manager,
+                    poi_manager=_poi_manager,
+                    coverage_sampler=_coverage_sampler,
+                )
+                save_mission_timeline(leg_id, timeline)
+                logger.info(f"Timeline generated and saved for leg {leg_id}")
+            except Exception as e:
+                logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
+                # Don't fail activation if timeline generation fails
+                # Return success but note the timeline issue in logs
 
         logger.info(f"Activated leg {leg_id} in mission {mission_id}")
 

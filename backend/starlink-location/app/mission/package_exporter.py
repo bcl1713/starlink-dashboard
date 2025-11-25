@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from app.mission.models import Mission
+from app.mission.models import Mission, MissionLeg
 from app.mission.storage import load_mission_v2, get_mission_path, load_mission_timeline
 from app.mission.exporter import generate_timeline_export, TimelineExportFormat
 from app.services.route_manager import RouteManager
@@ -326,68 +326,69 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
                 except Exception as e:
                     logger.error(f"Failed to add POI data for leg {leg.id}: {e}")
 
-        # Load mission timeline for exports
-        timeline = load_mission_timeline(mission_id)
-        if not timeline:
-            logger.warning(f"No timeline found for mission {mission_id}, skipping exports")
-        else:
-            # Generate per-leg exports
-            for leg in mission.legs:
-                try:
-                    # CSV export
-                    csv_export = generate_timeline_export(
-                        export_format=TimelineExportFormat.CSV,
-                        mission=mission,
-                        timeline=timeline,
-                    )
-                    csv_path = f"exports/legs/{leg.id}/timeline.csv"
-                    zf.writestr(csv_path, csv_export.content)
-                    manifest_files["per_leg_exports"].append(csv_path)
-                    logger.info(f"Generated CSV for leg {leg.id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
+        # Generate per-leg exports (load timeline for each leg)
+        for leg in mission.legs:
+            # Load timeline for this specific leg
+            leg_timeline = load_mission_timeline(leg.id)
+            if not leg_timeline:
+                logger.warning(f"No timeline found for leg {leg.id}, skipping exports for this leg")
+                continue
 
-                try:
-                    # XLSX export
-                    xlsx_export = generate_timeline_export(
-                        export_format=TimelineExportFormat.XLSX,
-                        mission=mission,
-                        timeline=timeline,
-                    )
-                    xlsx_path = f"exports/legs/{leg.id}/timeline.xlsx"
-                    zf.writestr(xlsx_path, xlsx_export.content)
-                    manifest_files["per_leg_exports"].append(xlsx_path)
-                    logger.info(f"Generated XLSX for leg {leg.id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate XLSX for leg {leg.id}: {e}")
+            try:
+                # CSV export
+                csv_export = generate_timeline_export(
+                    export_format=TimelineExportFormat.CSV,
+                    mission=leg,  # Pass the leg as mission (MissionLeg has same fields)
+                    timeline=leg_timeline,
+                )
+                csv_path = f"exports/legs/{leg.id}/timeline.csv"
+                zf.writestr(csv_path, csv_export.content)
+                manifest_files["per_leg_exports"].append(csv_path)
+                logger.info(f"Generated CSV for leg {leg.id}")
+            except Exception as e:
+                logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
 
-                try:
-                    # PPTX export
-                    pptx_export = generate_timeline_export(
-                        export_format=TimelineExportFormat.PPTX,
-                        mission=mission,
-                        timeline=timeline,
-                    )
-                    pptx_path = f"exports/legs/{leg.id}/slides.pptx"
-                    zf.writestr(pptx_path, pptx_export.content)
-                    manifest_files["per_leg_exports"].append(pptx_path)
-                    logger.info(f"Generated PPTX for leg {leg.id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
+            try:
+                # XLSX export
+                xlsx_export = generate_timeline_export(
+                    export_format=TimelineExportFormat.XLSX,
+                    mission=leg,
+                    timeline=leg_timeline,
+                )
+                xlsx_path = f"exports/legs/{leg.id}/timeline.xlsx"
+                zf.writestr(xlsx_path, xlsx_export.content)
+                manifest_files["per_leg_exports"].append(xlsx_path)
+                logger.info(f"Generated XLSX for leg {leg.id}")
+            except Exception as e:
+                logger.error(f"Failed to generate XLSX for leg {leg.id}: {e}")
 
-                try:
-                    # PDF export
-                    pdf_export = generate_timeline_export(
-                        export_format=TimelineExportFormat.PDF,
-                        mission=mission,
-                        timeline=timeline,
-                    )
-                    pdf_path = f"exports/legs/{leg.id}/report.pdf"
-                    zf.writestr(pdf_path, pdf_export.content)
-                    manifest_files["per_leg_exports"].append(pdf_path)
-                    logger.info(f"Generated PDF for leg {leg.id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate PDF for leg {leg.id}: {e}")
+            try:
+                # PPTX export
+                pptx_export = generate_timeline_export(
+                    export_format=TimelineExportFormat.PPTX,
+                    mission=leg,
+                    timeline=leg_timeline,
+                )
+                pptx_path = f"exports/legs/{leg.id}/slides.pptx"
+                zf.writestr(pptx_path, pptx_export.content)
+                manifest_files["per_leg_exports"].append(pptx_path)
+                logger.info(f"Generated PPTX for leg {leg.id}")
+            except Exception as e:
+                logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
+
+            try:
+                # PDF export
+                pdf_export = generate_timeline_export(
+                    export_format=TimelineExportFormat.PDF,
+                    mission=leg,
+                    timeline=leg_timeline,
+                )
+                pdf_path = f"exports/legs/{leg.id}/report.pdf"
+                zf.writestr(pdf_path, pdf_export.content)
+                manifest_files["per_leg_exports"].append(pdf_path)
+                logger.info(f"Generated PDF for leg {leg.id}")
+            except Exception as e:
+                logger.error(f"Failed to generate PDF for leg {leg.id}: {e}")
 
             # Generate combined mission-level exports
             try:

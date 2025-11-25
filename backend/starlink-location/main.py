@@ -133,6 +133,8 @@ async def startup_event():
             routes.set_route_manager(_route_manager)
             pois.set_route_manager(_route_manager)
             mission_routes.set_route_manager(_route_manager)
+            mission_routes_v2.set_route_manager(_route_manager)
+            mission_routes_v2.set_poi_manager(poi_manager)
             exporter.set_route_manager(_route_manager)
             exporter.set_poi_manager(poi_manager)
             package_exporter.set_route_manager(_route_manager)
