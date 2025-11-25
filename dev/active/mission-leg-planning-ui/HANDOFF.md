@@ -2,8 +2,8 @@
 
 **Branch:** `feat/mission-leg-planning-ui`
 **Folder:** `dev/active/mission-leg-planning-ui/`
-**Generated:** 2025-11-25 (Updated after Phase 6.5 completion)
-**Status:** Phase 6.5 Complete + Issue #2 Fixed - 2 Issues Remaining
+**Generated:** 2025-11-25 (Updated after Issue #1 and #2 resolution)
+**Status:** Phase 6.5 Complete + Issues #1 & #2 Fixed - 1 Issue Remaining
 
 ---
 
@@ -17,14 +17,42 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Current Status
 
-- **Phase:** Addressing Post-Phase 6.5 Issues (2/3 partially complete)
+- **Phase:** Post-Phase 6.5 Issues (2/3 Complete, 1 Remaining)
 - **Checklist completion:** 100% of Phase 6.5 tasks complete
-- **Progress:** V1/V2 API bridge working, export infrastructure in place, timeline generation partially wired
+- **Progress:** Export package fully working, V1/V2 API bridge working, timeline generation working on save
 - **Remaining Issues:**
-  1. ⚠️ Export package documents (per-leg timelines + mission-level combined docs)
-  2. Ka transitions calculation & visualization
+  1. ⚠️ Ka transitions visualization (calculation working, needs frontend display)
 
-### Session Summary (2025-11-25 Post-Phase 6.5 Issue Resolution):
+### Session Summary (2025-11-25 - Latest Session):
+
+**✅ Issue #1 RESOLVED - Export Package Documents (2 commits):**
+
+1. **`f28cbf3`** - Fixed data/satellites volume mount to resolve timeline generation
+   - Root cause: Permission denied error when loading satellite catalog
+   - Solution: Added `./data/satellites:/app/data/satellites` volume mount
+   - Result: Timeline generation now succeeds on leg activation
+   - Export packages now include ALL documents (CSV, XLSX, PPTX, PDF)
+
+2. **`814c0f8`** - Generate timelines on leg save, not just activation
+   - UX improvement: Users no longer need to activate legs to get export documents
+   - Timeline automatically regenerates whenever leg configuration changes
+   - Export packages immediately include all documents after saving
+
+**Key Accomplishments This Session:**
+- ✅ Fixed satellite catalog permissions issue
+- ✅ Export packages now include all per-leg and mission-level documents
+- ✅ Timeline generation moved from activation to save (better UX)
+- ✅ All document types verified working (CSV, XLSX, PPTX, PDF)
+
+**Investigated Issue #3:**
+- ✅ Confirmed Ka transitions ARE being calculated in backend timeline
+- ✅ Found timeline API endpoint: `GET /api/missions/{leg_id}/timeline`
+- ⚠️ Frontend doesn't fetch or display Ka transitions yet
+- Next step: Create timeline service and visualize Ka transitions on map
+
+---
+
+### Previous Session Summary (2025-11-25 - Issues #1 & #2 Initial Work):
 
 **✅ Issue #2 Fixed - V1/V2 API Bridge (2 commits):**
 
@@ -117,22 +145,56 @@ This feature introduces a hierarchical mission planning system where a Mission i
 - Added imports: `load_mission_v2`, `MISSIONS_DIR`, `Path`
 - Commit: `b00ba30` - "fix: bridge v1/v2 APIs for active mission dashboard integration"
 
-### 🐛 Issue 3: Ka Transitions Not Calculating/Displaying
-**Problem:** Ka satellite transitions are not being calculated and displayed on the map
+### 🐛 Issue 3: Ka Transitions Not Displaying ⚠️ PARTIALLY COMPLETE
+**Status:** Backend calculation working, frontend visualization needed
 
-**Investigation Needed:**
-- Check if Ka transition calculation exists in backend
-- Verify CommKa.kmz coverage data is being used
-- Check if Ka transitions are being stored in mission data
-- Verify frontend RouteMap component has Ka transition rendering
-- May need to implement Ka transition calculation based on coverage zones
+**Investigation Results (2025-11-25):**
+- ✅ Ka transitions ARE being calculated by backend timeline service
+- ✅ Timeline segments include Ka transition data (e.g., "Ka transition AOR → POR")
+- ✅ Backend API endpoint exists: `GET /api/missions/{leg_id}/timeline`
+- ✅ Timeline JSON contains rich data about Ka coverage swaps
+- ❌ Frontend doesn't fetch timeline data
+- ❌ Frontend doesn't visualize Ka transitions on map
 
-**Files to Check:**
-- `backend/starlink-location/app/satellites/` - Ka coverage calculation
-- `backend/starlink-location/app/mission/models.py` - Ka transition storage
-- `frontend/mission-planner/src/components/common/RouteMap.tsx` - Ka transition markers
+**Example Timeline Data Found:**
+```json
+{
+  "start_time": "2025-10-27 11:22:00",
+  "end_time": "2025-10-27 11:52:00",
+  "status": "degraded",
+  "ka_state": "degraded",
+  "reasons": ["Ka transition AOR → POR"]
+}
+```
 
-**Note:** Issue may be compounded by Issue #2 (mission not activating) preventing verification of POI generation
+**Required Implementation:**
+1. **Frontend Timeline Service:**
+   - Create `frontend/mission-planner/src/services/timeline.ts`
+   - Add function: `async getTimeline(legId: string): Promise<Timeline>`
+   - Wire up to API endpoint: `GET /api/missions/{leg_id}/timeline`
+
+2. **Extract Ka Transitions:**
+   - Parse timeline segments for Ka transition events
+   - Extract coordinates from timeline (may need lat/lon in timeline data)
+   - Create KaTransition type similar to XBandTransition
+
+3. **Frontend Visualization:**
+   - Add `kaTransitions?: KaTransition[]` prop to RouteMap
+   - Render Ka transition markers (green circles, similar to X-Band blue circles)
+   - Add popup with transition details (from satellite → to satellite)
+
+4. **Integration:**
+   - Fetch timeline in LegDetailPage when leg loads
+   - Pass Ka transitions to RouteMap component
+   - Test visualization with active leg that has Ka transitions
+
+**Files to Modify:**
+- `frontend/mission-planner/src/services/timeline.ts` - NEW FILE
+- `frontend/mission-planner/src/types/timeline.ts` - NEW FILE (Timeline, KaTransition types)
+- `frontend/mission-planner/src/components/common/RouteMap.tsx` - Add Ka transition rendering
+- `frontend/mission-planner/src/pages/LegDetailPage.tsx` - Fetch and pass timeline data
+
+**Estimated Effort:** 1-2 hours
 
 ---
 
@@ -141,26 +203,27 @@ This feature introduces a hierarchical mission planning system where a Mission i
 **IMMEDIATE PRIORITIES (Before Phase 7):**
 
 1. **~~Complete Export Package Document Generation~~** ✅ COMPLETE
-   - ✅ Added per-leg timeline loading (using `leg.id`)
-   - ✅ Added timeline generation on leg activation
    - ✅ Fixed satellite catalog permissions (data/satellites volume mount)
-   - ✅ Timeline generation now working on leg activation
+   - ✅ Timeline generation now working on save and activation
    - ✅ Per-leg documents exporting (CSV, XLSX, PPTX, PDF)
    - ✅ Mission-level combined documents exporting (CSV, XLSX, PPTX, PDF)
-   - ✅ Tested with activated multi-leg mission
-   - Commit: `f28cbf3`
+   - ✅ UX improved: timelines generate on save, not just activation
+   - Commits: `f28cbf3`, `814c0f8`
 
 2. **~~Fix Mission Activation → Dashboard Integration~~** ✅ COMPLETE
    - ✅ V1/V2 API bridge implemented
    - ✅ Dashboard now displays activated v2 missions
-   - ✅ Tested and working (commit `b00ba30`)
+   - ✅ Tested and working
+   - Commits: `2d4d7ad`, `b00ba30`
 
-3. **Implement Ka Transition Calculation & Display** ⚠️ REMAINING
-   - Implement Ka coverage zone calculation (if missing)
-   - Store Ka transitions in mission data structure
-   - Add Ka transition markers to RouteMap (similar to X-Band)
-   - Use different color than X-Band (e.g., green circles)
-   - Test: verify Ka transitions appear on map
+3. **Implement Ka Transition Visualization** ⚠️ REMAINING (1-2 hours)
+   - ✅ Backend calculation confirmed working (timeline segments include Ka transitions)
+   - ✅ Backend API endpoint exists (`GET /api/missions/{leg_id}/timeline`)
+   - ❌ Create frontend timeline service
+   - ❌ Fetch timeline data in LegDetailPage
+   - ❌ Extract Ka transition coordinates from timeline
+   - ❌ Add Ka transition markers to RouteMap (green circles)
+   - ❌ Test visualization with leg that has Ka transitions
 
 **After Fixes → Phase 7 - Testing & Documentation**
 
