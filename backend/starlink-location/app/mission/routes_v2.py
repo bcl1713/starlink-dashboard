@@ -288,6 +288,13 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
         import tempfile
         import json
         from pathlib import Path
+        from app.models.poi import POI
+
+        warnings = []
+        routes_imported = 0
+        pois_imported = 0
+        satellites_imported = 0
+        satellites_updated = 0
 
         # Create temp directory for extraction
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -316,14 +323,110 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
 
                 # Save mission
                 save_mission_v2(mission)
-
                 logger.info(f"Mission {mission.id} imported successfully")
 
-                return {
+                # Import route KML files from routes/ folder
+                if _route_manager:
+                    route_files = [f for f in zf.namelist() if f.startswith("routes/") and f.endswith(".kml")]
+                    for route_file in route_files:
+                        try:
+                            route_id = Path(route_file).stem
+                            kml_content = zf.read(route_file)
+
+                            # Save route KML to routes directory
+                            routes_dir = Path(_route_manager.routes_dir)
+                            kml_path = routes_dir / f"{route_id}.kml"
+                            with open(kml_path, "wb") as f:
+                                f.write(kml_content)
+
+                            routes_imported += 1
+                            logger.info(f"Imported route: {route_id}")
+                        except Exception as e:
+                            logger.error(f"Failed to import route {route_file}: {e}")
+                            warnings.append(f"Route {route_file}: {str(e)}")
+                else:
+                    warnings.append("Route manager not available, routes not imported")
+
+                # Import POIs from pois/ folder
+                if _poi_manager:
+                    poi_files = [f for f in zf.namelist() if f.startswith("pois/") and f.endswith(".json")]
+
+                    # Process satellite POIs first (for deduplication)
+                    satellite_file = "pois/satellites.json"
+                    if satellite_file in zf.namelist():
+                        try:
+                            satellite_data = json.loads(zf.read(satellite_file))
+                            for poi_dict in satellite_data.get("pois", []):
+                                try:
+                                    poi = POI(**poi_dict)
+
+                                    # Check if satellite already exists by name
+                                    existing_pois = _poi_manager.list_pois()
+                                    existing_satellite = next(
+                                        (p for p in existing_pois if p.name == poi.name and p.category == "satellite"),
+                                        None
+                                    )
+
+                                    if existing_satellite:
+                                        # Update if orbital position (longitude) is different
+                                        if existing_satellite.longitude != poi.longitude:
+                                            _poi_manager.update_poi(existing_satellite.id, poi)
+                                            satellites_updated += 1
+                                            logger.info(f"Updated satellite POI: {poi.name} (orbital position changed)")
+                                        else:
+                                            logger.info(f"Satellite POI already exists with same position: {poi.name}")
+                                    else:
+                                        # Create new satellite POI
+                                        _poi_manager.create_poi(poi)
+                                        satellites_imported += 1
+                                        logger.info(f"Imported satellite POI: {poi.name}")
+                                except Exception as e:
+                                    logger.error(f"Failed to import satellite POI: {e}")
+                                    warnings.append(f"Satellite POI: {str(e)}")
+                        except Exception as e:
+                            logger.error(f"Failed to process satellite POIs: {e}")
+                            warnings.append(f"Satellites file: {str(e)}")
+
+                    # Process leg-specific POI files
+                    leg_poi_files = [f for f in poi_files if f != satellite_file]
+                    for poi_file in leg_poi_files:
+                        try:
+                            poi_data = json.loads(zf.read(poi_file))
+                            for poi_dict in poi_data.get("pois", []):
+                                try:
+                                    # Skip if this is a satellite POI (already processed)
+                                    if poi_dict.get("category") == "satellite":
+                                        continue
+
+                                    poi = POI(**poi_dict)
+                                    _poi_manager.create_poi(poi)
+                                    pois_imported += 1
+                                    logger.info(f"Imported POI: {poi.name}")
+                                except Exception as e:
+                                    logger.error(f"Failed to import POI from {poi_file}: {e}")
+                                    warnings.append(f"POI in {poi_file}: {str(e)}")
+                        except Exception as e:
+                            logger.error(f"Failed to process POI file {poi_file}: {e}")
+                            warnings.append(f"POI file {poi_file}: {str(e)}")
+                else:
+                    warnings.append("POI manager not available, POIs not imported")
+
+                result = {
                     "success": True,
                     "mission_id": mission.id,
-                    "warnings": []
+                    "mission_name": mission.name,
+                    "leg_count": len(mission.legs),
+                    "routes_imported": routes_imported,
+                    "pois_imported": pois_imported,
+                    "satellites_imported": satellites_imported,
+                    "satellites_updated": satellites_updated,
+                    "warnings": warnings
                 }
+
+                if warnings:
+                    logger.warning(f"Import completed with {len(warnings)} warnings")
+
+                return result
 
     except zipfile.BadZipFile:
         raise HTTPException(

@@ -30,7 +30,7 @@ export default function SatelliteManagerPage() {
   const [editingSatelliteId, setEditingSatelliteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     satellite_id: '',
-    longitude: -120,
+    longitude: '',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -39,7 +39,7 @@ export default function SatelliteManagerPage() {
     if (!isAddDialogOpen) {
       setFormData({
         satellite_id: '',
-        longitude: -120,
+        longitude: '',
       });
       setError(null);
     }
@@ -51,7 +51,7 @@ export default function SatelliteManagerPage() {
       setEditingSatelliteId(null);
       setFormData({
         satellite_id: '',
-        longitude: -120,
+        longitude: '',
       });
       setError(null);
     }
@@ -62,8 +62,13 @@ export default function SatelliteManagerPage() {
       setError('Satellite ID is required');
       return;
     }
-    if (formData.longitude < -180 || formData.longitude > 180) {
-      setError('Longitude must be between -180 and 180');
+    if (!formData.longitude.trim()) {
+      setError('Longitude is required');
+      return;
+    }
+    const longitude = parseFloat(formData.longitude);
+    if (isNaN(longitude) || longitude < -180 || longitude > 180) {
+      setError('Longitude must be a valid number between -180 and 180');
       return;
     }
 
@@ -73,7 +78,7 @@ export default function SatelliteManagerPage() {
       await satelliteService.create({
         satellite_id: formData.satellite_id.trim(),
         transport: 'X', // Default to X-Band
-        longitude: formData.longitude,
+        longitude: longitude,
       });
       setIsAddDialogOpen(false);
       refetch();
@@ -90,7 +95,7 @@ export default function SatelliteManagerPage() {
     setEditingSatelliteId(satellite.satellite_id);
     setFormData({
       satellite_id: satellite.satellite_id,
-      longitude: satellite.longitude || -120,
+      longitude: satellite.longitude !== null ? satellite.longitude.toString() : '',
     });
     setIsEditDialogOpen(true);
   };
@@ -100,8 +105,13 @@ export default function SatelliteManagerPage() {
       setError('Satellite ID is required');
       return;
     }
-    if (formData.longitude < -180 || formData.longitude > 180) {
-      setError('Longitude must be between -180 and 180');
+    if (!formData.longitude.trim()) {
+      setError('Longitude is required');
+      return;
+    }
+    const longitude = parseFloat(formData.longitude);
+    if (isNaN(longitude) || longitude < -180 || longitude > 180) {
+      setError('Longitude must be a valid number between -180 and 180');
       return;
     }
 
@@ -115,7 +125,7 @@ export default function SatelliteManagerPage() {
     try {
       await satelliteService.update(editingSatelliteId, {
         satellite_id: formData.satellite_id.trim(),
-        longitude: formData.longitude,
+        longitude: longitude,
       });
       setIsEditDialogOpen(false);
       refetch();
@@ -182,6 +192,11 @@ export default function SatelliteManagerPage() {
                       satellite_id: e.target.value,
                     })
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreate();
+                    }
+                  }}
                   placeholder="X-1"
                 />
               </div>
@@ -190,17 +205,20 @@ export default function SatelliteManagerPage() {
                   Longitude (-180 to 180)
                 </label>
                 <Input
-                  type="number"
-                  step="0.001"
-                  min="-180"
-                  max="180"
+                  type="text"
                   value={formData.longitude}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      longitude: parseFloat(e.target.value),
+                      longitude: e.target.value,
                     })
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreate();
+                    }
+                  }}
+                  placeholder="-120"
                 />
               </div>
               {error && <p className="text-sm text-red-600">{error}</p>}
@@ -292,6 +310,11 @@ export default function SatelliteManagerPage() {
                     satellite_id: e.target.value,
                   })
                 }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleUpdate();
+                  }
+                }}
                 placeholder="X-1"
               />
             </div>
@@ -300,17 +323,20 @@ export default function SatelliteManagerPage() {
                 Longitude (-180 to 180)
               </label>
               <Input
-                type="number"
-                step="0.001"
-                min="-180"
-                max="180"
+                type="text"
                 value={formData.longitude}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    longitude: parseFloat(e.target.value),
+                    longitude: e.target.value,
                   })
                 }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleUpdate();
+                  }
+                }}
+                placeholder="-120"
               />
             </div>
             {error && <p className="text-sm text-red-600">{error}</p>}

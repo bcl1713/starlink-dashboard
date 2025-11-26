@@ -48,35 +48,34 @@ export function MissionDetailPage() {
     await addLegMutation.mutateAsync(leg);
   };
 
-  const handleDeleteMission = async () => {
-    const legCount = mission?.legs.length || 0;
-    const confirmed = window.confirm(
-      `Are you sure you want to delete this mission?\n\n` +
-      `This will permanently delete:\n` +
-      `- ${legCount} leg(s)\n` +
-      `- All associated routes\n` +
-      `- All associated POIs\n\n` +
-      `This action cannot be undone.`
-    );
+  const handleDeleteMission = async (confirmed: boolean) => {
+    console.log('handleDeleteMission called for mission:', missionId, 'confirmed:', confirmed);
 
     if (confirmed) {
-      await deleteMissionMutation.mutateAsync(missionId || '');
-      navigate('/missions');
+      try {
+        console.log('Calling deleteMissionMutation.mutateAsync...');
+        await deleteMissionMutation.mutateAsync(missionId || '');
+        console.log('Mission deleted successfully, navigating to /missions');
+        navigate('/missions');
+      } catch (error) {
+        console.error('Failed to delete mission:', error);
+        alert('Failed to delete mission. Please try again.');
+      }
     }
   };
 
-  const handleDeleteLeg = (leg: MissionLeg) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete leg "${leg.name}"?\n\n` +
-      `This will permanently delete:\n` +
-      `- The leg configuration\n` +
-      `- Associated route (${leg.route_id || 'none'})\n` +
-      `- All associated POIs\n\n` +
-      `This action cannot be undone.`
-    );
+  const handleDeleteLeg = async (leg: MissionLeg, confirmed: boolean) => {
+    console.log('handleDeleteLeg called for leg:', leg.id, 'confirmed:', confirmed);
 
     if (confirmed) {
-      deleteLegMutation.mutate(leg.id);
+      try {
+        console.log('Calling deleteLegMutation.mutateAsync...');
+        await deleteLegMutation.mutateAsync(leg.id);
+        console.log('Leg deleted successfully');
+      } catch (error) {
+        console.error('Failed to delete leg:', error);
+        alert('Failed to delete leg. Please try again.');
+      }
     }
   };
 
@@ -182,7 +181,17 @@ export function MissionDetailPage() {
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteLeg(leg);
+                          const confirmed = window.confirm(
+                            `Are you sure you want to delete leg "${leg.name}"?\n\n` +
+                            `This will permanently delete:\n` +
+                            `- The leg configuration\n` +
+                            `- Associated route (${leg.route_id || 'none'})\n` +
+                            `- All associated POIs\n\n` +
+                            `This action cannot be undone.`
+                          );
+                          if (confirmed) {
+                            handleDeleteLeg(leg, confirmed);
+                          }
                         }}
                         disabled={deleteLegMutation.isPending}
                       >

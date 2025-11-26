@@ -308,23 +308,59 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
 
         # Add POI data for each leg
         if pm:
+            # Track all POI IDs we've seen to collect satellite POIs at the end
+            all_poi_ids = set()
+
             for leg in mission.legs:
                 try:
-                    # Get POIs associated with this leg/mission
-                    pois = pm.list_pois(mission_id=mission.id)
-                    if pois:
+                    # Get POIs associated with this leg's route and mission
+                    leg_pois = []
+
+                    # Get mission-scoped POIs
+                    mission_pois = pm.list_pois(mission_id=mission.id)
+                    leg_pois.extend(mission_pois)
+
+                    # Get route-specific POIs if leg has a route
+                    if leg.route_id:
+                        route_pois = pm.list_pois(route_id=leg.route_id)
+                        leg_pois.extend(route_pois)
+
+                    # Track POI IDs
+                    for poi in leg_pois:
+                        all_poi_ids.add(poi.id)
+
+                    if leg_pois:
                         pois_data = {
                             "leg_id": leg.id,
                             "mission_id": mission.id,
-                            "pois": [poi.model_dump(mode='json') for poi in pois],
-                            "count": len(pois),
+                            "route_id": leg.route_id,
+                            "pois": [poi.model_dump(mode='json') for poi in leg_pois],
+                            "count": len(leg_pois),
                         }
                         poi_path = f"pois/{leg.id}-pois.json"
                         zf.writestr(poi_path, json.dumps(pois_data, indent=2, default=str))
                         manifest_files["pois"].append(poi_path)
-                        logger.info(f"Added POI data: {poi_path} with {len(pois)} POIs")
+                        logger.info(f"Added POI data: {poi_path} with {len(leg_pois)} POIs")
                 except Exception as e:
                     logger.error(f"Failed to add POI data for leg {leg.id}: {e}")
+
+            # Export satellite POIs (category="satellite") separately
+            try:
+                all_pois = pm.list_pois()
+                satellite_pois = [poi for poi in all_pois if poi.category == "satellite"]
+
+                if satellite_pois:
+                    satellite_data = {
+                        "type": "satellite_pois",
+                        "pois": [poi.model_dump(mode='json') for poi in satellite_pois],
+                        "count": len(satellite_pois),
+                    }
+                    satellite_path = "pois/satellites.json"
+                    zf.writestr(satellite_path, json.dumps(satellite_data, indent=2, default=str))
+                    manifest_files["pois"].append(satellite_path)
+                    logger.info(f"Added satellite POI data: {satellite_path} with {len(satellite_pois)} satellites")
+            except Exception as e:
+                logger.error(f"Failed to add satellite POI data: {e}")
 
         # Generate per-leg exports (load timeline for each leg)
         for leg in mission.legs:

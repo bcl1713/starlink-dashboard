@@ -18,7 +18,10 @@ export const missionsApi = {
   },
 
   delete: async (id: string) => {
-    await apiClient.delete(`/api/v2/missions/${id}`);
+    console.log('Deleting mission:', id);
+    const response = await apiClient.delete(`/api/v2/missions/${id}`);
+    console.log('Mission deleted, response:', response.status);
+    return response.data;
   },
 
   addLeg: async (missionId: string, leg: Partial<MissionLeg>) => {
@@ -38,7 +41,10 @@ export const missionsApi = {
   },
 
   deleteLeg: async (missionId: string, legId: string) => {
-    await apiClient.delete(`/api/v2/missions/${missionId}/legs/${legId}`);
+    console.log('Deleting leg:', legId, 'from mission:', missionId);
+    const response = await apiClient.delete(`/api/v2/missions/${missionId}/legs/${legId}`);
+    console.log('Leg deleted, response:', response.status);
+    return response.data;
   },
 
   activateLeg: async (missionId: string, legId: string): Promise<void> => {

@@ -7,6 +7,7 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  validateStatus: (status) => status >= 200 && status < 300,
 });
 
 // Response interceptor for error handling
