@@ -2,8 +2,8 @@
 
 **Branch:** `feat/mission-leg-planning-ui`
 **Folder:** `dev/active/mission-leg-planning-ui/`
-**Generated:** 2025-11-25 (Updated after all post-Phase 6.5 issues resolved)
-**Status:** Phase 6.5 Complete + All Issues Fixed - Ready for Phase 7
+**Generated:** 2025-11-25 (Updated after dashboard integration fixes)
+**Status:** Dashboard Integration In Progress - 3 New Issues Identified
 
 ---
 
@@ -17,12 +17,54 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Current Status
 
-- **Phase:** Post-Phase 6.5 Issues (3/3 Complete - ALL RESOLVED)
-- **Checklist completion:** 100% of Phase 6.5 tasks complete
-- **Progress:** Export package fully working, V1/V2 API bridge working, timeline generation working on save, Ka transitions visualized on map
-- **Remaining Issues:** None - All post-Phase 6.5 issues resolved ✅
+- **Phase:** Dashboard Integration - Route Activation & POI Import Fixes
+- **Checklist completion:** 100% of Phase 6.5 tasks complete (prior work)
+- **Progress:** Route activation/deactivation fixes implemented, POI import default changed to true
+- **Remaining Issues:** 3 new integration issues identified (leg deactivation, deletion cleanup)
 
-### Session Summary (2025-11-25 - Current Session):
+### Session Summary (2025-11-25 - Dashboard Integration Session):
+
+**✅ COMPLETED - Route Activation/Deactivation & POI Import (3 commits):**
+
+1. **`ee05294`** - Route activation fix for dashboard display
+   - **Problem:** Activated legs didn't show routes on Grafana dashboard
+   - **Root Cause:** `activate_leg` endpoint set `leg.is_active = True` but didn't activate route in RouteManager
+   - **Solution:** Added `_route_manager.activate_route(active_leg.route_id)` to activation endpoint
+   - **Result:** Dashboard now displays routes when legs are activated
+
+2. **`904d77f`** - Route deactivation fix for dashboard clearing
+   - **Problem:** Deactivating legs didn't clear routes from Grafana dashboard
+   - **Root Cause:** `deactivate_all_legs` endpoint set `leg.is_active = False` but didn't deactivate routes
+   - **Solution:** Added route deactivation loop calling `_route_manager.deactivate_route(leg.route_id)`
+   - **Result:** Dashboard now clears routes when legs are deactivated
+
+3. **`f7431e3`** - Default POI import to true for all route uploads
+   - **Problem:** Route uploads via mission planner didn't create departure/arrival POIs
+   - **Root Cause:** Backend defaulted to `import_pois=False` and frontend didn't pass the parameter
+   - **Solution:** Changed backend default to `import_pois=True` and frontend explicitly passes `?import_pois=true`
+   - **Result:** Departure and arrival POIs now automatically created on route upload
+
+**Key Accomplishments This Session:**
+- ✅ Route activation now syncs with RouteManager for dashboard display
+- ✅ Route deactivation now clears dashboard visualization
+- ✅ POI import enabled by default (departure/arrival markers will appear)
+- ✅ Both backend and frontend layers ensure POI import
+- ⚠️ Docker rebuild timing issue: latest code requires final rebuild to activate
+
+**⚠️ NEW ISSUES IDENTIFIED FOR NEXT SESSION:**
+
+1. **Leg deactivation doesn't actually deactivate** - User reported leg deactivation ineffective
+2. **Leg deletion doesn't clean up routes and POIs** - Deleting a leg leaves orphaned data
+3. **Mission deletion doesn't clean up child resources** - Deleting a mission leaves routes/POIs
+
+**Technical Notes:**
+- POI import only works for NEW route uploads; existing routes need to be re-uploaded
+- Docker container must be rebuilt with `--no-cache` to pick up Python code changes
+- Route coordinates endpoint `/api/route/coordinates/west` verified working after activation
+
+---
+
+### Session Summary (2025-11-25 - Previous Session - Ka Transitions):
 
 **✅ Issue #3 RESOLVED - Ka Transition Visualization (2 commits):**
 
@@ -214,7 +256,29 @@ This feature introduces a hierarchical mission planning system where a Mission i
 
 ## Next Actions
 
-**IMMEDIATE PRIORITIES (Before Phase 7):**
+**IMMEDIATE PRIORITIES (Current Session Issues):**
+
+1. **Fix leg deactivation functionality**
+   - Issue: User reports leg deactivation doesn't work
+   - Investigate: Check if deactivation endpoint is being called correctly
+   - Verify: Route deactivation logic added in commit `904d77f` is working
+   - Test: Deactivate leg → check dashboard → verify route clears
+
+2. **Implement cascade delete for leg deletion**
+   - Issue: Deleting a leg doesn't remove its associated route and POIs
+   - Solution: Add cleanup logic to DELETE `/api/v2/missions/{id}/legs/{leg_id}` endpoint
+   - Delete route file: `_route_manager.delete_route(leg.route_id)`
+   - Delete POIs: `_poi_manager.delete_by_mission_id(leg.id)`
+   - Test: Delete leg → verify route and POIs are removed
+
+3. **Implement cascade delete for mission deletion**
+   - Issue: Deleting a mission doesn't remove associated routes and POIs
+   - Solution: Add cleanup logic to DELETE `/api/v2/missions/{id}` endpoint
+   - Loop through all legs and delete their routes and POIs
+   - Delete mission directory: `shutil.rmtree(missions_dir / mission_id)`
+   - Test: Delete mission → verify all routes and POIs are removed
+
+**COMPLETED (Previous Session):**
 
 1. **~~Complete Export Package Document Generation~~** ✅ COMPLETE
    - ✅ Fixed satellite catalog permissions (data/satellites volume mount)
