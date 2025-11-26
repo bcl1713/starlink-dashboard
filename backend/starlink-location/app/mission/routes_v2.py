@@ -564,6 +564,18 @@ async def deactivate_all_legs(mission_id: str) -> dict:
         # Save updated mission
         save_mission_v2(mission)
 
+        # Deactivate all routes associated with this mission's legs
+        if _route_manager:
+            try:
+                for leg in mission.legs:
+                    if leg.route_id:
+                        logger.info(f"Deactivating route {leg.route_id} for leg {leg.id}")
+                        _route_manager.deactivate_route(leg.route_id)
+                logger.info(f"Deactivated all routes for mission {mission_id}")
+            except Exception as e:
+                logger.error(f"Failed to deactivate routes: {e}")
+                # Don't fail the overall deactivation if route deactivation fails
+
         logger.info(f"Deactivated all legs in mission {mission_id}")
 
         return {"status": "success", "message": "All legs deactivated"}
