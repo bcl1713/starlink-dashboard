@@ -457,7 +457,7 @@ async def get_route_stats(route_id: str) -> RouteStatsResponse:
 @router.post("/upload", response_model=RouteResponse, status_code=status.HTTP_201_CREATED, summary="Upload KML route")
 async def upload_route(
     import_pois: bool = Query(
-        default=False,
+        default=True,
         description="Import POIs from waypoint placemarks in the uploaded KML",
     ),
     file: UploadFile = File(...),

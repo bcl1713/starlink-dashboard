@@ -24,7 +24,7 @@ export const routesApi = {
   async upload(file: File): Promise<Route> {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await apiClient.post<Route>('/api/routes/upload', formData, {
+    const response = await apiClient.post<Route>('/api/routes/upload?import_pois=true', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
