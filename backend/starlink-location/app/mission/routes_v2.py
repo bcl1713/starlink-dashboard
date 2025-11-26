@@ -496,6 +496,16 @@ async def activate_leg(mission_id: str, leg_id: str) -> dict:
         # Save updated mission
         save_mission_v2(mission)
 
+        # Activate the route in RouteManager so dashboard can display it
+        if active_leg and active_leg.route_id and _route_manager:
+            try:
+                logger.info(f"Activating route {active_leg.route_id} for leg {leg_id}")
+                _route_manager.activate_route(active_leg.route_id)
+                logger.info(f"Route {active_leg.route_id} activated successfully")
+            except Exception as e:
+                logger.error(f"Failed to activate route {active_leg.route_id}: {e}")
+                # Don't fail leg activation if route activation fails
+
         # Generate timeline for the activated leg
         if active_leg and _route_manager:
             try:
