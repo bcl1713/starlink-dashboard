@@ -1,5 +1,6 @@
 """Mission package export utilities for creating portable mission archives."""
 
+import copy
 import hashlib
 import io
 import json
@@ -86,44 +87,142 @@ def generate_mission_combined_xlsx(mission: Mission) -> bytes:
     """Generate combined XLSX timeline with one sheet per leg plus summary.
 
     Creates workbook with:
-    - Summary sheet (mission overview)
-    - One sheet per leg with timeline
+    - Mission Summary sheet (overview + leg index)
+    - Full sheets from each leg (Summary, Timeline, Advisories, Statistics)
     """
     import io
     try:
-        from openpyxl import Workbook
+        from openpyxl import Workbook, load_workbook
     except ImportError:
         logger.error("openpyxl not installed")
         return b""
 
-    wb = Workbook()
+    try:
+        # Create main workbook
+        wb = Workbook()
 
-    # Summary sheet
-    ws = wb.active
-    ws.title = "Mission Summary"
-    ws.append(["Mission Name", mission.name])
-    ws.append(["Mission ID", mission.id])
-    ws.append(["Total Legs", len(mission.legs)])
-    ws.append(["Generated", datetime.now(timezone.utc).isoformat()])
-    ws.append([])
-    ws.append(["Leg ID", "Leg Name", "Description"])
+        # Mission Summary sheet
+        ws = wb.active
+        ws.title = "Mission Summary"
+        ws.append(["Mission Name", mission.name])
+        ws.append(["Mission ID", mission.id])
+        ws.append(["Total Legs", len(mission.legs)])
+        ws.append(["Generated", datetime.now(timezone.utc).isoformat()])
+        ws.append([])
+        ws.append(["Leg #", "Leg ID", "Leg Name", "Description"])
 
-    for leg in mission.legs:
-        ws.append([leg.id, leg.name, leg.description or ""])
+        for idx, leg in enumerate(mission.legs, 1):
+            ws.append([idx, leg.id, leg.name, leg.description or ""])
 
-    # Individual leg sheets
-    for idx, leg in enumerate(mission.legs):
-        ws_leg = wb.create_sheet(title=f"Leg {idx+1}")
-        ws_leg.append(["Leg Name", leg.name])
-        ws_leg.append(["Leg ID", leg.id])
-        ws_leg.append([])
-        ws_leg.append(["Timeline", "TODO: Add timeline data"])
+        # Set column widths for better readability
+        ws.column_dimensions['A'].width = 10
+        ws.column_dimensions['B'].width = 25
+        ws.column_dimensions['C'].width = 30
+        ws.column_dimensions['D'].width = 50
 
-    # Save to bytes
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return output.read()
+        # Process each leg and import its sheets
+        for leg_idx, leg in enumerate(mission.legs):
+            # Load timeline for this leg
+            leg_timeline = load_mission_timeline(leg.id)
+            if not leg_timeline:
+                logger.warning(f"No timeline found for leg {leg.id}, adding summary sheet only")
+                # Add a simple sheet for this leg
+                ws_leg = wb.create_sheet(title=f"Leg {leg_idx + 1} - {leg.name[:20]}")
+                ws_leg.append(["Leg Name", leg.name])
+                ws_leg.append(["Leg ID", leg.id])
+                ws_leg.append(["Description", leg.description or "N/A"])
+                ws_leg.append([])
+                ws_leg.append(["Status", "No timeline data available"])
+                continue
+
+            try:
+                # Generate full XLSX export for this leg
+                leg_xlsx_bytes = generate_timeline_export(
+                    export_format=TimelineExportFormat.XLSX,
+                    mission=leg,
+                    timeline=leg_timeline,
+                )
+
+                # Load the leg workbook
+                leg_wb = load_workbook(io.BytesIO(leg_xlsx_bytes.content))
+
+                # Copy each sheet from leg workbook to main workbook with leg prefix
+                for sheet_name in leg_wb.sheetnames:
+                    leg_sheet = leg_wb[sheet_name]
+
+                    # Create new sheet name with leg prefix
+                    # Truncate leg name to fit Excel's 31 char limit for sheet names
+                    leg_prefix = f"L{leg_idx + 1}"
+                    if sheet_name == "Summary":
+                        new_sheet_name = f"{leg_prefix} {leg.name[:20]}"
+                    else:
+                        new_sheet_name = f"{leg_prefix} {sheet_name[:25]}"
+
+                    # Ensure sheet name is unique and under 31 chars
+                    new_sheet_name = new_sheet_name[:31]
+
+                    # Create new sheet
+                    new_sheet = wb.create_sheet(title=new_sheet_name)
+
+                    # Copy cell values, styles, and merged cells
+                    for row in leg_sheet.iter_rows():
+                        for cell in row:
+                            new_cell = new_sheet[cell.coordinate]
+                            new_cell.value = cell.value
+
+                            # Copy cell formatting
+                            if cell.has_style:
+                                new_cell.font = copy.copy(cell.font)
+                                new_cell.border = copy.copy(cell.border)
+                                new_cell.fill = copy.copy(cell.fill)
+                                new_cell.number_format = copy.copy(cell.number_format)
+                                new_cell.protection = copy.copy(cell.protection)
+                                new_cell.alignment = copy.copy(cell.alignment)
+
+                    # Copy column widths
+                    for col_letter, col_dim in leg_sheet.column_dimensions.items():
+                        new_sheet.column_dimensions[col_letter].width = col_dim.width
+
+                    # Copy row heights
+                    for row_num, row_dim in leg_sheet.row_dimensions.items():
+                        new_sheet.row_dimensions[row_num].height = row_dim.height
+
+                    # Copy merged cells
+                    for merged_cell_range in leg_sheet.merged_cells.ranges:
+                        new_sheet.merge_cells(str(merged_cell_range))
+
+                    # Copy images if any
+                    for image in leg_sheet._images:
+                        new_image = copy.copy(image)
+                        new_sheet.add_image(new_image, image.anchor)
+
+            except Exception as e:
+                logger.error(f"Failed to combine XLSX for leg {leg.id}: {e}")
+                # Add error sheet
+                ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
+                ws_error.append(["Leg Name", leg.name])
+                ws_error.append(["Leg ID", leg.id])
+                ws_error.append([])
+                ws_error.append(["Error", str(e)])
+
+        # Save to bytes
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return output.read()
+
+    except Exception as e:
+        logger.error(f"Failed to generate combined XLSX: {e}")
+        # Return a basic error workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Error"
+        ws.append(["Error generating combined Excel file"])
+        ws.append([str(e)])
+        output = io.BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return output.read()
 
 
 def generate_mission_combined_pptx(mission: Mission) -> bytes:
@@ -131,16 +230,24 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
 
     Creates presentation with:
     - Title slide (mission overview)
-    - One slide per leg
+    - All slides from each leg (map + timeline tables) - generated using the same code as individual leg exports
     - Summary slide
     """
     import io
     try:
         from pptx import Presentation
-        from pptx.util import Inches
+        from pptx.util import Inches, Pt
+        from pptx.enum.text import PP_ALIGN
     except ImportError:
         logger.error("python-pptx not installed")
         return b""
+
+    # Import the helper function from exporter that generates slides for a leg
+    from app.mission.exporter import _generate_route_map, _segment_rows, _generate_timeline_chart
+    from app.mission.exporter import TRANSPORT_DISPLAY, STATE_COLUMNS, Transport
+    from openpyxl.styles import PatternFill
+    from pptx.util import Pt
+    from pptx.enum.text import PP_ALIGN
 
     prs = Presentation()
 
@@ -149,15 +256,203 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
     title = title_slide.shapes.title
     subtitle = title_slide.placeholders[1]
     title.text = mission.name
-    subtitle.text = f"Mission ID: {mission.id}\n{len(mission.legs)} Legs"
+    subtitle.text = f"{len(mission.legs)} Legs"
 
-    # Leg slides
-    for leg in mission.legs:
-        slide = prs.slides.add_slide(prs.slide_layouts[1])
-        title = slide.shapes.title
-        content = slide.placeholders[1]
-        title.text = leg.name
-        content.text = f"Leg ID: {leg.id}\nDescription: {leg.description or 'N/A'}"
+    # For each leg, generate slides directly (same logic as generate_pptx_export)
+    for leg_idx, leg in enumerate(mission.legs):
+        # Load timeline for this leg
+        leg_timeline = load_mission_timeline(leg.id)
+        if not leg_timeline:
+            logger.warning(f"No timeline found for leg {leg.id}, adding summary slide only")
+            # Add a summary slide for this leg
+            slide = prs.slides.add_slide(prs.slide_layouts[1])
+            title_shape = slide.shapes.title
+            content = slide.placeholders[1]
+            title_shape.text = leg.name
+            content.text = f"Leg ID: {leg.id}\nDescription: {leg.description or 'N/A'}\n\nNo timeline data available."
+            continue
+
+        try:
+
+            # Generate slides for this leg using the same logic as generate_pptx_export
+            # Slide 1: Route Map
+            blank_slide_layout = prs.slide_layouts[6]
+            slide1 = prs.slides.add_slide(blank_slide_layout)
+
+            # Generate map image
+            try:
+                map_image_bytes = _generate_route_map(leg_timeline, leg)
+                map_image_stream = io.BytesIO(map_image_bytes)
+
+                # Add image to slide
+                left = Inches(0.5)
+                top = Inches(0.5)
+                width = Inches(9)
+                height = Inches(6.5)
+
+                slide1.shapes.add_picture(map_image_stream, left, top, width=width, height=height)
+
+                # Add title
+                title_box = slide1.shapes.add_textbox(Inches(0.5), Inches(0.1), Inches(9), Inches(0.5))
+                tf = title_box.text_frame
+                p = tf.paragraphs[0]
+                p.text = f"{leg.name} - Route Map"
+                p.font.bold = True
+                p.font.size = Pt(24)
+                p.alignment = PP_ALIGN.CENTER
+
+            except Exception as e:
+                logger.error(f"Failed to add map to PPTX for leg {leg.id}: {e}", exc_info=True)
+                textbox = slide1.shapes.add_textbox(Inches(1), Inches(1), Inches(8), Inches(1))
+                tf = textbox.text_frame
+                tf.text = f"Map generation failed: {str(e)}"
+
+            # Slide 2+: Timeline Table (Paginated) - using same logic as generate_pptx_export
+            timeline_df = _segment_rows(leg_timeline, leg)
+
+            if not timeline_df.empty:
+                from pptx.util import Pt
+                from pptx.dml.color import RGBColor
+
+                columns_to_show = [
+                    "Segment #", "Status", "Start Time", "End Time", "Duration",
+                    TRANSPORT_DISPLAY[Transport.X],
+                    TRANSPORT_DISPLAY[Transport.KA],
+                    TRANSPORT_DISPLAY[Transport.KU],
+                    "Reasons"
+                ]
+
+                # Pagination settings
+                ROWS_PER_SLIDE = 10
+                MIN_ROWS_LAST_SLIDE = 3
+
+                records = timeline_df.to_dict('records')
+                total_rows = len(records)
+
+                chunks = []
+                if total_rows <= ROWS_PER_SLIDE:
+                    chunks.append(timeline_df)
+                else:
+                    current_idx = 0
+                    while current_idx < total_rows:
+                        end_idx = min(current_idx + ROWS_PER_SLIDE, total_rows)
+                        chunks.append(timeline_df.iloc[current_idx:end_idx])
+                        current_idx = end_idx
+
+                    if len(chunks) > 1:
+                        last_chunk = chunks[-1]
+                        if len(last_chunk) < MIN_ROWS_LAST_SLIDE:
+                            needed = MIN_ROWS_LAST_SLIDE - len(last_chunk)
+                            base_chunks = chunks[:-2]
+                            remainder_count = len(chunks[-2]) + len(chunks[-1])
+                            split_idx = total_rows - remainder_count
+                            second_last_len = remainder_count - MIN_ROWS_LAST_SLIDE
+
+                            chunk_second_last = timeline_df.iloc[split_idx : split_idx + second_last_len]
+                            chunk_last = timeline_df.iloc[split_idx + second_last_len : ]
+
+                            chunks = base_chunks + [chunk_second_last, chunk_last]
+
+                for chunk_idx, chunk in enumerate(chunks):
+                    slide = prs.slides.add_slide(blank_slide_layout)
+
+                    # Add title
+                    title_box = slide.shapes.add_textbox(Inches(0.5), Inches(0.1), Inches(9), Inches(0.5))
+                    tf = title_box.text_frame
+                    p = tf.paragraphs[0]
+                    p.text = f"{leg.name} - Timeline" if chunk_idx == 0 else f"{leg.name} - Timeline (cont.)"
+                    p.font.bold = True
+                    p.font.size = Pt(24)
+                    p.alignment = PP_ALIGN.CENTER
+
+                    rows = len(chunk) + 1
+                    cols = len(columns_to_show)
+
+                    left = Inches(0.5)
+                    top = Inches(1.0)
+                    width = Inches(9.0)
+                    height = Inches(1.0)
+
+                    shape = slide.shapes.add_table(rows, cols, left, top, width, height)
+                    table = shape.table
+
+                    col_weights = [0.6, 1.0, 1.75, 1.75, 1.0, 1.0, 1.0, 1.0, 1.5]
+                    total_weight = sum(col_weights)
+                    for i, weight in enumerate(col_weights):
+                        table.columns[i].width = int(width * (weight / total_weight))
+
+                    # Header row
+                    for i, col_name in enumerate(columns_to_show):
+                        cell = table.cell(0, i)
+                        cell.text = col_name
+                        cell.fill.solid()
+                        cell.fill.fore_color.rgb = RGBColor(51, 102, 178)
+                        paragraph = cell.text_frame.paragraphs[0]
+                        paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                        paragraph.font.bold = True
+                        paragraph.font.size = Pt(8)
+                        paragraph.alignment = PP_ALIGN.CENTER
+
+                    # Data rows
+                    for row_idx, (_, row_data) in enumerate(chunk.iterrows(), start=1):
+                        bad_transports = []
+                        for col_name in STATE_COLUMNS:
+                            val = str(row_data[col_name] if row_data[col_name] else "").lower()
+                            if val in ("degraded", "warning", "offline"):
+                                bad_transports.append(col_name)
+
+                        is_critical_row = len(bad_transports) >= 2
+
+                        for col_idx, col_name in enumerate(columns_to_show):
+                            cell = table.cell(row_idx, col_idx)
+                            val = str(row_data[col_name] if row_data[col_name] is not None else "")
+
+                            if col_name == "Status" and is_critical_row:
+                                val = "CRITICAL"
+
+                            cell.text = val
+
+                            for paragraph in cell.text_frame.paragraphs:
+                                paragraph.font.size = Pt(7)
+                                paragraph.alignment = PP_ALIGN.LEFT
+
+                            cell.fill.solid()
+                            if row_idx % 2 == 0:
+                                cell.fill.fore_color.rgb = RGBColor(240, 240, 240)
+                            else:
+                                cell.fill.fore_color.rgb = RGBColor(255, 255, 255)
+
+                            if col_name in STATE_COLUMNS or col_name == "Status":
+                                val_lower = val.lower()
+
+                                is_sof = False
+                                reasons = str(row_data.get("Reasons", "")).lower()
+                                if "safety-of-flight" in reasons or "aar" in reasons:
+                                    is_sof = True
+
+                                if col_name == "Status" and is_sof and val_lower in ("available", "nominal", "warning"):
+                                     cell.text = "SOF"
+                                     for paragraph in cell.text_frame.paragraphs:
+                                        paragraph.font.size = Pt(7)
+                                        paragraph.alignment = PP_ALIGN.LEFT
+
+                                if val_lower in ("degraded", "warning", "offline") or is_sof:
+                                    cell.fill.solid()
+                                    if is_critical_row and not is_sof:
+                                         cell.fill.fore_color.rgb = RGBColor(255, 204, 204)
+                                    elif val_lower in ("degraded", "warning") or is_sof:
+                                        cell.fill.fore_color.rgb = RGBColor(255, 255, 204)
+                                    else:
+                                        cell.fill.fore_color.rgb = RGBColor(255, 204, 204)
+
+        except Exception as e:
+            logger.error(f"Failed to generate PPTX slides for leg {leg.id}: {e}")
+            # Add error slide
+            slide = prs.slides.add_slide(prs.slide_layouts[1])
+            title_shape = slide.shapes.title
+            content = slide.placeholders[1]
+            title_shape.text = f"{leg.name} - Export Error"
+            content.text = f"Leg ID: {leg.id}\n\nFailed to generate timeline: {str(e)}"
 
     # Save to bytes
     output = io.BytesIO()
@@ -171,41 +466,152 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
 
     Creates PDF with:
     - Cover page (mission overview)
-    - One section per leg
+    - Full PDF report for each leg (with maps and timelines)
     - Summary page
     """
     import io
     try:
+        from PyPDF2 import PdfMerger, PdfReader
         from reportlab.lib.pagesizes import letter
         from reportlab.pdfgen import canvas
     except ImportError:
-        logger.error("reportlab not installed")
+        logger.error("PyPDF2 or reportlab not installed")
         return b""
 
-    output = io.BytesIO()
-    c = canvas.Canvas(output, pagesize=letter)
-    width, height = letter
+    merger = PdfMerger()
 
-    # Cover page
-    c.setFont("Helvetica-Bold", 24)
-    c.drawString(100, height - 100, mission.name)
-    c.setFont("Helvetica", 12)
-    c.drawString(100, height - 140, f"Mission ID: {mission.id}")
-    c.drawString(100, height - 160, f"Total Legs: {len(mission.legs)}")
-    c.showPage()
+    try:
+        # Create cover page
+        cover_buffer = io.BytesIO()
+        c = canvas.Canvas(cover_buffer, pagesize=letter)
+        width, height = letter
 
-    # Leg pages
-    for leg in mission.legs:
-        c.setFont("Helvetica-Bold", 18)
-        c.drawString(100, height - 100, f"Leg: {leg.name}")
+        c.setFont("Helvetica-Bold", 24)
+        c.drawString(100, height - 100, mission.name)
         c.setFont("Helvetica", 12)
-        c.drawString(100, height - 140, f"Leg ID: {leg.id}")
-        c.drawString(100, height - 160, f"Description: {leg.description or 'N/A'}")
-        c.showPage()
+        c.drawString(100, height - 140, f"Mission ID: {mission.id}")
+        c.drawString(100, height - 160, f"Total Legs: {len(mission.legs)}")
+        c.drawString(100, height - 200, f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
 
-    c.save()
-    output.seek(0)
-    return output.read()
+        # Add table of contents
+        c.setFont("Helvetica-Bold", 14)
+        c.drawString(100, height - 250, "Table of Contents")
+        c.setFont("Helvetica", 10)
+        y_position = height - 280
+        for idx, leg in enumerate(mission.legs, 1):
+            c.drawString(120, y_position, f"{idx}. {leg.name}")
+            y_position -= 20
+
+        c.showPage()
+        c.save()
+        cover_buffer.seek(0)
+
+        # Add cover page to merger
+        merger.append(cover_buffer)
+
+        # Generate and add each leg's full PDF
+        for leg_idx, leg in enumerate(mission.legs):
+            # Load timeline for this leg
+            leg_timeline = load_mission_timeline(leg.id)
+            if not leg_timeline:
+                logger.warning(f"No timeline found for leg {leg.id}, adding summary page only")
+                # Create a simple page for this leg
+                leg_buffer = io.BytesIO()
+                c = canvas.Canvas(leg_buffer, pagesize=letter)
+                c.setFont("Helvetica-Bold", 18)
+                c.drawString(100, height - 100, f"Leg: {leg.name}")
+                c.setFont("Helvetica", 12)
+                c.drawString(100, height - 140, f"Leg ID: {leg.id}")
+                c.drawString(100, height - 160, f"Description: {leg.description or 'N/A'}")
+                c.drawString(100, height - 200, "No timeline data available.")
+                c.showPage()
+                c.save()
+                leg_buffer.seek(0)
+                merger.append(leg_buffer)
+                continue
+
+            try:
+                # Generate full PDF export for this leg
+                leg_pdf_bytes = generate_timeline_export(
+                    export_format=TimelineExportFormat.PDF,
+                    mission=leg,
+                    timeline=leg_timeline,
+                )
+
+                # Add section divider page before leg PDF (except for first leg)
+                if leg_idx > 0:
+                    divider_buffer = io.BytesIO()
+                    c = canvas.Canvas(divider_buffer, pagesize=letter)
+                    c.setFont("Helvetica-Bold", 20)
+                    c.drawString(100, height - 100, f"Leg {leg_idx + 1}")
+                    c.setFont("Helvetica-Bold", 16)
+                    c.drawString(100, height - 140, leg.name)
+                    c.showPage()
+                    c.save()
+                    divider_buffer.seek(0)
+                    merger.append(divider_buffer)
+
+                # Append the leg PDF
+                leg_pdf_buffer = io.BytesIO(leg_pdf_bytes.content)
+                merger.append(leg_pdf_buffer)
+
+            except Exception as e:
+                logger.error(f"Failed to combine PDF for leg {leg.id}: {e}")
+                # Add error page
+                error_buffer = io.BytesIO()
+                c = canvas.Canvas(error_buffer, pagesize=letter)
+                c.setFont("Helvetica-Bold", 18)
+                c.drawString(100, height - 100, f"Leg: {leg.name} - Export Error")
+                c.setFont("Helvetica", 12)
+                c.drawString(100, height - 140, f"Leg ID: {leg.id}")
+                c.drawString(100, height - 180, f"Error: {str(e)}")
+                c.showPage()
+                c.save()
+                error_buffer.seek(0)
+                merger.append(error_buffer)
+
+        # Create summary page
+        summary_buffer = io.BytesIO()
+        c = canvas.Canvas(summary_buffer, pagesize=letter)
+
+        c.setFont("Helvetica-Bold", 20)
+        c.drawString(100, height - 100, "Mission Summary")
+        c.setFont("Helvetica", 12)
+        c.drawString(100, height - 140, f"Total Legs: {len(mission.legs)}")
+
+        y_position = height - 180
+        for idx, leg in enumerate(mission.legs, 1):
+            c.drawString(100, y_position, f"{idx}. {leg.name} ({leg.id})")
+            y_position -= 20
+
+        c.showPage()
+        c.save()
+        summary_buffer.seek(0)
+
+        # Add summary page
+        merger.append(summary_buffer)
+
+        # Write final combined PDF
+        output = io.BytesIO()
+        merger.write(output)
+        merger.close()
+        output.seek(0)
+        return output.read()
+
+    except Exception as e:
+        logger.error(f"Failed to generate combined PDF: {e}")
+        # Return a basic error PDF
+        output = io.BytesIO()
+        c = canvas.Canvas(output, pagesize=letter)
+        width, height = letter
+        c.setFont("Helvetica-Bold", 18)
+        c.drawString(100, height - 100, "PDF Generation Error")
+        c.setFont("Helvetica", 12)
+        c.drawString(100, height - 140, str(e))
+        c.showPage()
+        c.save()
+        output.seek(0)
+        return output.read()
 
 
 def export_mission_package(mission_id: str, route_manager: Optional[RouteManager] = None, poi_manager: Optional[POIManager] = None) -> bytes:
@@ -426,38 +832,38 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
             except Exception as e:
                 logger.error(f"Failed to generate PDF for leg {leg.id}: {e}")
 
-            # Generate combined mission-level exports
-            try:
-                logger.info(f"Generating combined mission-level exports for {mission.id}")
+        # Generate combined mission-level exports (OUTSIDE the leg loop)
+        try:
+            logger.info(f"Generating combined mission-level exports for {mission.id}")
 
-                # Combined CSV
-                mission_csv = generate_mission_combined_csv(mission)
-                mission_csv_path = "exports/mission/mission-timeline.csv"
-                zf.writestr(mission_csv_path, mission_csv)
-                manifest_files["mission_exports"].append(mission_csv_path)
+            # Combined CSV
+            mission_csv = generate_mission_combined_csv(mission)
+            mission_csv_path = "exports/mission/mission-timeline.csv"
+            zf.writestr(mission_csv_path, mission_csv)
+            manifest_files["mission_exports"].append(mission_csv_path)
 
-                # Combined XLSX
-                mission_xlsx = generate_mission_combined_xlsx(mission)
-                mission_xlsx_path = "exports/mission/mission-timeline.xlsx"
-                zf.writestr(mission_xlsx_path, mission_xlsx)
-                manifest_files["mission_exports"].append(mission_xlsx_path)
+            # Combined XLSX
+            mission_xlsx = generate_mission_combined_xlsx(mission)
+            mission_xlsx_path = "exports/mission/mission-timeline.xlsx"
+            zf.writestr(mission_xlsx_path, mission_xlsx)
+            manifest_files["mission_exports"].append(mission_xlsx_path)
 
-                # Combined PPTX
-                mission_pptx = generate_mission_combined_pptx(mission)
-                mission_pptx_path = "exports/mission/mission-slides.pptx"
-                zf.writestr(mission_pptx_path, mission_pptx)
-                manifest_files["mission_exports"].append(mission_pptx_path)
+            # Combined PPTX
+            mission_pptx = generate_mission_combined_pptx(mission)
+            mission_pptx_path = "exports/mission/mission-slides.pptx"
+            zf.writestr(mission_pptx_path, mission_pptx)
+            manifest_files["mission_exports"].append(mission_pptx_path)
 
-                # Combined PDF
-                mission_pdf = generate_mission_combined_pdf(mission)
-                mission_pdf_path = "exports/mission/mission-report.pdf"
-                zf.writestr(mission_pdf_path, mission_pdf)
-                manifest_files["mission_exports"].append(mission_pdf_path)
+            # Combined PDF
+            mission_pdf = generate_mission_combined_pdf(mission)
+            mission_pdf_path = "exports/mission/mission-report.pdf"
+            zf.writestr(mission_pdf_path, mission_pdf)
+            manifest_files["mission_exports"].append(mission_pdf_path)
 
-                logger.info("Combined mission-level exports complete")
+            logger.info("Combined mission-level exports complete")
 
-            except Exception as e:
-                logger.error(f"Failed to generate combined mission exports: {e}")
+        except Exception as e:
+            logger.error(f"Failed to generate combined mission exports: {e}")
 
         # Create comprehensive manifest with file listing and statistics
         manifest = {
