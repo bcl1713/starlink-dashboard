@@ -134,6 +134,12 @@ async def get_mission(mission_id: str) -> Mission:
 async def delete_mission_endpoint(mission_id: str) -> None:
     """Delete a mission and all associated legs, routes, and POIs.
 
+    Cascade deletes all resources:
+    - All legs in the mission
+    - All routes associated with legs
+    - All POIs associated with routes and mission
+    - The entire mission directory
+
     Args:
         mission_id: Mission ID to delete
 
@@ -160,14 +166,80 @@ async def delete_mission_endpoint(mission_id: str) -> None:
             f"Cascade deletion: mission {mission_id} with {leg_count} leg(s)"
         )
 
-        # Delete mission directory (includes all legs, routes, and POIs)
+        # CASCADE DELETE: Process each leg and its associated resources
+        deleted_routes_count = 0
+        deleted_pois_count = 0
+
+        for leg in mission.legs:
+            route_id = leg.route_id or "none"
+            logger.info(f"Cascade deletion: processing leg {leg.id} with route {route_id}")
+
+            # Delete route if it exists
+            if leg.route_id and _route_manager:
+                try:
+                    parsed_route = _route_manager.get_route(leg.route_id)
+                    if parsed_route:
+                        # Delete POIs associated with this route
+                        if _poi_manager:
+                            route_pois_deleted = _poi_manager.delete_route_pois(
+                                leg.route_id
+                            )
+                            deleted_pois_count += route_pois_deleted
+                            logger.info(
+                                f"Deleted {route_pois_deleted} POIs for route {leg.route_id}"
+                            )
+
+                        # Delete KML file
+                        file_path = Path(parsed_route.metadata.file_path)
+                        if file_path.exists():
+                            try:
+                                file_path.unlink()
+                                logger.info(f"Deleted route file: {file_path}")
+                                deleted_routes_count += 1
+                            except OSError as e:
+                                logger.error(
+                                    f"Failed to delete route file {file_path}: {e}"
+                                )
+
+                        # Remove from route manager cache
+                        _route_manager._routes.pop(leg.route_id, None)
+                        logger.info(
+                            f"Deleted route {leg.route_id} associated with leg {leg.id}"
+                        )
+                except Exception as e:
+                    logger.error(f"Failed to delete route {leg.route_id}: {e}")
+                    # Don't fail entire mission deletion if route deletion fails
+
+            # Delete mission POIs
+            if _poi_manager:
+                try:
+                    mission_pois_deleted = _poi_manager.delete_mission_pois(
+                        mission_id
+                    )
+                    deleted_pois_count += mission_pois_deleted
+                    logger.info(
+                        f"Deleted {mission_pois_deleted} POIs for mission {mission_id}"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to delete mission POIs: {e}")
+                    # Don't fail entire mission deletion if POI deletion fails
+
+        # Delete entire mission directory
         mission_dir = Path("data/missions") / mission_id
         if mission_dir.exists():
-            shutil.rmtree(mission_dir)
-            logger.info(f"Deleted mission directory: {mission_dir}")
+            try:
+                shutil.rmtree(mission_dir)
+                logger.info(f"Deleted mission directory: {mission_dir}")
+            except OSError as e:
+                logger.error(f"Failed to delete mission directory {mission_dir}: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to delete mission directory",
+                )
 
         logger.info(
-            f"Mission {mission_id} deleted successfully with {leg_count} leg(s)"
+            f"Mission {mission_id} deleted successfully with {leg_count} leg(s), "
+            f"{deleted_routes_count} route(s), {deleted_pois_count} POI(s)"
         )
         return None
     except HTTPException:
