@@ -426,11 +426,44 @@ async def delete_leg(mission_id: str, leg_id: str):
             f"Cascade deletion: leg {leg_id} with route {route_id}"
         )
 
-        # Remove leg from mission
+        # CASCADE DELETE: Delete associated resources
+        # 1. Delete route if exists
+        if leg.route_id and _route_manager:
+            try:
+                parsed_route = _route_manager.get_route(leg.route_id)
+                if parsed_route:
+                    # Delete associated POIs for this route
+                    if _poi_manager:
+                        deleted_pois = _poi_manager.delete_route_pois(leg.route_id)
+                        logger.info(f"Deleted {deleted_pois} POIs for route {leg.route_id}")
+
+                    # Delete KML file
+                    file_path = Path(parsed_route.metadata.file_path)
+                    if file_path.exists():
+                        file_path.unlink()
+                        logger.info(f"Deleted route file: {file_path}")
+
+                    # Remove from route manager cache
+                    _route_manager._routes.pop(leg.route_id, None)
+                    logger.info(f"Deleted route {leg.route_id} associated with leg {leg_id}")
+            except Exception as e:
+                logger.error(f"Failed to delete route {leg.route_id}: {e}")
+                # Don't fail the entire leg deletion if route deletion fails
+
+        # 2. Delete POIs associated with this leg
+        if _poi_manager:
+            try:
+                deleted_leg_pois = _poi_manager.delete_mission_pois(mission_id)
+                logger.info(f"Deleted {deleted_leg_pois} mission POIs for mission {mission_id}")
+            except Exception as e:
+                logger.error(f"Failed to delete mission POIs: {e}")
+                # Don't fail the entire leg deletion if POI deletion fails
+
+        # 3. Remove leg from mission and save
         mission.legs = [l for l in mission.legs if l.id != leg_id]
         save_mission_v2(mission)
 
-        # Delete leg file from disk
+        # 4. Delete leg file from disk
         legs_dir = Path("data/missions") / mission_id / "legs"
         leg_file = legs_dir / f"{leg_id}.json"
         if leg_file.exists():
