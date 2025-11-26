@@ -248,17 +248,36 @@ class RouteManager:
             logger.debug("Failed to sync flight state on route activation: %s", exc)
         return True
 
-    def deactivate_route(self) -> None:
-        """Deactivate current route."""
-        if self._active_route_id:
-            logger.info(f"Deactivated route: {self._active_route_id}")
-            try:
-                from app.services.flight_state_manager import get_flight_state_manager
+    def deactivate_route(self, route_id: Optional[str] = None) -> None:
+        """Deactivate a specific route or the current active route.
 
-                get_flight_state_manager().clear_route_context(reason="route_deactivated")
-            except Exception as exc:  # pragma: no cover - defensive guard
-                logger.debug("Failed to clear flight state on route deactivation: %s", exc)
-        self._active_route_id = None
+        Args:
+            route_id: Route ID to deactivate. If None, deactivates the current active route.
+        """
+        # If specific route_id provided, only deactivate if it's the active route
+        if route_id is not None:
+            if self._active_route_id == route_id:
+                logger.info(f"Deactivated route: {route_id}")
+                self._active_route_id = None
+                try:
+                    from app.services.flight_state_manager import get_flight_state_manager
+
+                    get_flight_state_manager().clear_route_context(reason="route_deactivated")
+                except Exception as exc:  # pragma: no cover - defensive guard
+                    logger.debug("Failed to clear flight state on route deactivation: %s", exc)
+            else:
+                logger.debug(f"Route {route_id} is not active, skipping deactivation")
+        else:
+            # Deactivate current active route
+            if self._active_route_id:
+                logger.info(f"Deactivated route: {self._active_route_id}")
+                try:
+                    from app.services.flight_state_manager import get_flight_state_manager
+
+                    get_flight_state_manager().clear_route_context(reason="route_deactivated")
+                except Exception as exc:  # pragma: no cover - defensive guard
+                    logger.debug("Failed to clear flight state on route deactivation: %s", exc)
+            self._active_route_id = None
 
     def get_route_errors(self) -> dict[str, str]:
         """
