@@ -104,7 +104,20 @@ export function MissionDetailPage() {
           </Button>
           <Button
             variant="destructive"
-            onClick={handleDeleteMission}
+            onClick={() => {
+              const legCount = mission?.legs.length || 0;
+              const confirmed = window.confirm(
+                `Are you sure you want to delete this mission?\n\n` +
+                `This will permanently delete:\n` +
+                `- ${legCount} leg(s)\n` +
+                `- All associated routes\n` +
+                `- All associated POIs\n\n` +
+                `This action cannot be undone.`
+              );
+              if (confirmed) {
+                handleDeleteMission(confirmed);
+              }
+            }}
             disabled={deleteMissionMutation.isPending}
           >
             {deleteMissionMutation.isPending ? 'Deleting...' : 'Delete Mission'}
