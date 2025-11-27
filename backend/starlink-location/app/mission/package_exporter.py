@@ -141,6 +141,7 @@ def generate_mission_combined_xlsx(mission: Mission) -> bytes:
                     export_format=TimelineExportFormat.XLSX,
                     mission=leg,
                     timeline=leg_timeline,
+                    parent_mission_id=mission.id,
                 )
 
                 # Load the leg workbook
@@ -281,7 +282,7 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
 
             # Generate map image
             try:
-                map_image_bytes = _generate_route_map(leg_timeline, leg)
+                map_image_bytes = _generate_route_map(leg_timeline, leg, parent_mission_id=mission.id)
                 map_image_stream = io.BytesIO(map_image_bytes)
 
                 # Add image to slide
@@ -536,6 +537,7 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
                     export_format=TimelineExportFormat.PDF,
                     mission=leg,
                     timeline=leg_timeline,
+                    parent_mission_id=mission.id,
                 )
 
                 # Add section divider page before leg PDF (except for first leg)
@@ -796,6 +798,7 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
                     export_format=TimelineExportFormat.XLSX,
                     mission=leg,
                     timeline=leg_timeline,
+                    parent_mission_id=mission.id,
                 )
                 xlsx_path = f"exports/legs/{leg.id}/timeline.xlsx"
                 zf.writestr(xlsx_path, xlsx_export.content)
@@ -810,6 +813,7 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
                     export_format=TimelineExportFormat.PPTX,
                     mission=leg,
                     timeline=leg_timeline,
+                    parent_mission_id=mission.id,
                 )
                 pptx_path = f"exports/legs/{leg.id}/slides.pptx"
                 zf.writestr(pptx_path, pptx_export.content)
@@ -824,6 +828,7 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
                     export_format=TimelineExportFormat.PDF,
                     mission=leg,
                     timeline=leg_timeline,
+                    parent_mission_id=mission.id,
                 )
                 pdf_path = f"exports/legs/{leg.id}/report.pdf"
                 zf.writestr(pdf_path, pdf_export.content)

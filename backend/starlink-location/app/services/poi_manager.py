@@ -492,6 +492,53 @@ class POIManager:
             )
         return len(to_remove)
 
+    def delete_leg_pois(
+        self,
+        route_id: str,
+        mission_id: str,
+        categories: set[str] | None = None,
+        prefixes: Sequence[str] | None = None,
+    ) -> int:
+        """Delete POIs for a specific leg (route_id + mission_id combination).
+
+        Args:
+            route_id: Route ID for the leg
+            mission_id: Mission ID for the leg
+            categories: Optional set of categories to filter by
+            prefixes: Optional name prefixes to filter by
+
+        Returns:
+            Number of POIs deleted
+        """
+        if not route_id or not mission_id:
+            return 0
+
+        to_remove = []
+        for poi_id, poi in self._pois.items():
+            if poi.route_id == route_id and poi.mission_id == mission_id:
+                # Check category filter
+                if categories and poi.category not in categories:
+                    continue
+                # Check prefix filter
+                if prefixes and not any(poi.name.startswith(prefix) for prefix in prefixes):
+                    continue
+                to_remove.append(poi_id)
+
+        for poi_id in to_remove:
+            del self._pois[poi_id]
+
+        if to_remove:
+            self._save_pois()
+            logger.info(
+                "Deleted %d POIs for leg (route=%s, mission=%s, categories=%s, prefixes=%s)",
+                len(to_remove),
+                route_id,
+                mission_id,
+                categories,
+                prefixes,
+            )
+        return len(to_remove)
+
     def reload_pois(self) -> None:
         """Reload POIs from disk, discarding any unsaved changes."""
         self._load_pois()

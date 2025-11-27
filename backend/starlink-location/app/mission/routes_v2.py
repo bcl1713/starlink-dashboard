@@ -474,6 +474,23 @@ async def add_leg_to_mission(mission_id: str, leg: MissionLeg) -> MissionLeg:
         # Save updated mission
         save_mission_v2(mission)
 
+        # Generate timeline for the new leg
+        if _route_manager:
+            try:
+                logger.info(f"Generating timeline for new leg {leg.id}")
+                timeline, summary = build_mission_timeline(
+                    mission=leg,
+                    route_manager=_route_manager,
+                    poi_manager=_poi_manager,
+                    coverage_sampler=_coverage_sampler,
+                    parent_mission_id=mission_id,
+                )
+                save_mission_timeline(leg.id, timeline)
+                logger.info(f"Timeline generated and saved for new leg {leg.id}")
+            except Exception as e:
+                logger.error(f"Failed to generate timeline for new leg {leg.id}: {e}")
+                # Don't fail the save if timeline generation fails
+
         logger.info(f"Added leg {leg.id} to mission {mission_id}")
         return leg
     except HTTPException:

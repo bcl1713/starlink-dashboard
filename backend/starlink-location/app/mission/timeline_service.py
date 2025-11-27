@@ -991,13 +991,14 @@ def _format_azimuth_reason(
     debug_metadata: dict | None = None,
 ) -> str:
     abs_az = float((debug_metadata or {}).get("absolute_azimuth_degrees", azimuth))
+    rel_az = float((debug_metadata or {}).get("relative_azimuth_degrees", azimuth))
     elevation = float((debug_metadata or {}).get("elevation_degrees", 0.0))
 
     if aft_violation and not forward_violation and not in_aar_window:
-        return f"X-Ku Conflict az={abs_az:.0f}° el={elevation:.0f}°"
+        return f"X-Ku Conflict az={rel_az:.0f}° el={elevation:.0f}°"
 
     if forward_violation and not aft_violation and in_aar_window:
-        return f"X-AAR Conflict az={abs_az:.0f}° el={elevation:.0f}°"
+        return f"X-AAR Conflict az={rel_az:.0f}° el={elevation:.0f}°"
 
     if forward_violation and aft_violation:
         cone = "forward & aft cones"
@@ -1108,31 +1109,23 @@ def _sync_ka_pois(
     parent_mission_id: str | None = None,
 ) -> None:
     effective_mission_id = parent_mission_id or mission.id
-    deleted = poi_manager.delete_mission_pois_by_category(
-        effective_mission_id, KA_POI_CATEGORIES
-    )
-    deleted_prefix = poi_manager.delete_mission_pois_by_name_prefixes(
-        effective_mission_id, KA_POI_NAME_PREFIXES
-    )
-    route_cleanup = 0
+
+    # Delete Ka POIs for THIS specific leg only (route_id + mission_id combination)
+    deleted = 0
     if mission.route_id:
-        route_cleanup = poi_manager.delete_route_mission_pois_with_prefixes(
-            mission.route_id,
-            KA_POI_NAME_PREFIXES,
-            exclude_mission_id=mission.id,
+        deleted = poi_manager.delete_leg_pois(
+            route_id=mission.route_id,
+            mission_id=effective_mission_id,
+            categories=KA_POI_CATEGORIES,
+            prefixes=KA_POI_NAME_PREFIXES,
         )
-    if deleted or deleted_prefix:
-        logger.debug(
-            "Deleted %d existing Ka mission POIs (category=%d, prefix=%d)",
-            deleted + deleted_prefix,
-            deleted,
-            deleted_prefix,
-        )
-    if route_cleanup:
+
+    if deleted:
         logger.info(
-            "Deleted %d Ka mission POIs on route %s (other missions)",
-            route_cleanup,
+            "Deleted %d existing Ka POIs for leg (route=%s, mission=%s)",
+            deleted,
             mission.route_id,
+            effective_mission_id,
         )
 
     def create_poi(payload: POICreate):
@@ -1191,23 +1184,23 @@ def _sync_x_aar_pois(
     parent_mission_id: str | None = None,
 ) -> None:
     effective_mission_id = parent_mission_id or mission.id
-    deleted = poi_manager.delete_mission_pois_by_name_prefixes(
-        effective_mission_id, X_AAR_POI_PREFIXES
-    )
-    route_cleanup = 0
+
+    # Delete X/AAR POIs for THIS specific leg only (route_id + mission_id combination)
+    deleted = 0
     if mission.route_id:
-        route_cleanup = poi_manager.delete_route_mission_pois_with_prefixes(
-            mission.route_id,
-            X_AAR_POI_PREFIXES,
-            exclude_mission_id=mission.id,
+        deleted = poi_manager.delete_leg_pois(
+            route_id=mission.route_id,
+            mission_id=effective_mission_id,
+            categories=None,  # No category filter for X/AAR POIs
+            prefixes=X_AAR_POI_PREFIXES,
         )
+
     if deleted:
-        logger.debug("Deleted %d existing X/AAR mission POIs", deleted)
-    if route_cleanup:
         logger.info(
-            "Deleted %d X/AAR mission POIs on route %s (other missions)",
-            route_cleanup,
+            "Deleted %d existing X/AAR POIs for leg (route=%s, mission=%s)",
+            deleted,
             mission.route_id,
+            effective_mission_id,
         )
 
     transports = mission.transports

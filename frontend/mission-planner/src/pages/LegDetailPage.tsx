@@ -121,17 +121,19 @@ export function LegDetailPage() {
     }
   }, [leg?.route_id]);
 
-  // Load Ka transition POIs when mission changes
+  // Load Ka transition POIs when leg changes
   useEffect(() => {
-    if (missionId) {
+    if (leg?.route_id && missionId) {
       poisService
-        .getPOIsByMission(missionId, false)
+        .getPOIsByRoute(leg.route_id, false)
         .then((pois) => {
-          // Filter for Ka transition POIs (category="mission-event", icon="satellite")
+          // Filter for Ka transition POIs that belong to THIS mission AND route
           const kaPois = pois.filter(
             (poi) => poi.category === 'mission-event' &&
                      poi.icon === 'satellite' &&
-                     poi.name.toLowerCase().includes('ka transition')
+                     poi.name.toLowerCase().includes('ka transition') &&
+                     poi.mission_id === missionId &&
+                     poi.route_id === leg.route_id
           );
 
           // Convert POIs to KaTransition format
@@ -140,11 +142,13 @@ export function LegDetailPage() {
             .filter((t): t is KaTransition => t !== null);
 
           setKaTransitions(transitions);
-          console.log('Loaded Ka transition POIs:', transitions);
+          console.log('Loaded Ka transition POIs for leg:', legId, 'route:', leg.route_id, 'mission:', missionId, transitions);
         })
         .catch((err) => console.error('Failed to load Ka transition POIs:', err));
+    } else {
+      setKaTransitions([]);
     }
-  }, [missionId]);
+  }, [leg?.route_id, missionId, legId]);
 
   // Initialize state from leg data
   useEffect(() => {
