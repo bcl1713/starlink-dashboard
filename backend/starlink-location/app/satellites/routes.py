@@ -8,11 +8,12 @@ category="satellite" in the POI system.
 import logging
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
 
 from app.models.poi import POICreate, POIUpdate
 from app.services.poi_manager import POIManager
+from app.mission.dependencies import get_poi_manager
 
 logger = logging.getLogger(__name__)
 
@@ -52,22 +53,14 @@ class SatelliteUpdate(BaseModel):
     color: Optional[str] = Field(default=None, description="Display color in hex format")
 
 
-# Global POI manager instance (set by main.py)
-_poi_manager: Optional[POIManager] = None
-
-
-def set_poi_manager(manager: POIManager) -> None:
-    """Set the POI manager instance (called by main.py during startup)."""
-    global _poi_manager
-    _poi_manager = manager
-
-
 # Create router
 router = APIRouter(prefix="/api/satellites", tags=["satellites"])
 
 
 @router.get("", response_model=List[SatelliteResponse])
-async def list_satellites() -> List[SatelliteResponse]:
+async def list_satellites(
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> List[SatelliteResponse]:
     """List all available satellites in the catalog.
 
     Returns all satellites from the POI system where category="satellite".
@@ -88,14 +81,14 @@ async def list_satellites() -> List[SatelliteResponse]:
             }
         ]
     """
-    if not _poi_manager:
+    if not poi_manager:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="POI manager not initialized",
         )
 
     # Get all POIs with category="satellite"
-    pois = _poi_manager.list_pois()
+    pois = poi_manager.list_pois()
     satellites = [poi for poi in pois if poi.category == "satellite"]
 
     # Convert POIs to satellite response format
@@ -124,7 +117,10 @@ async def list_satellites() -> List[SatelliteResponse]:
 
 
 @router.post("", response_model=SatelliteResponse, status_code=status.HTTP_201_CREATED, summary="Create a new satellite")
-async def create_satellite(satellite_create: SatelliteCreate) -> SatelliteResponse:
+async def create_satellite(
+    satellite_create: SatelliteCreate,
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> SatelliteResponse:
     """Create a new satellite.
 
     Satellites are stored as POIs with category="satellite" and latitude=0 (equator).
@@ -143,7 +139,7 @@ async def create_satellite(satellite_create: SatelliteCreate) -> SatelliteRespon
         - 400: Invalid input data
         - 503: POI manager not initialized
     """
-    if not _poi_manager:
+    if not poi_manager:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="POI manager not initialized",
@@ -167,7 +163,7 @@ async def create_satellite(satellite_create: SatelliteCreate) -> SatelliteRespon
             description=satellite_create.slot,  # Store slot name in description
         )
 
-        poi = _poi_manager.create_poi(poi_create)
+        poi = poi_manager.create_poi(poi_create)
 
         # Get default color based on transport
         default_colors = {
@@ -193,7 +189,9 @@ async def create_satellite(satellite_create: SatelliteCreate) -> SatelliteRespon
 
 @router.put("/{satellite_id}", response_model=SatelliteResponse, summary="Update a satellite")
 async def update_satellite(
-    satellite_id: str, satellite_update: SatelliteUpdate
+    satellite_id: str,
+    satellite_update: SatelliteUpdate,
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> SatelliteResponse:
     """Update an existing satellite.
 
@@ -215,7 +213,7 @@ async def update_satellite(
         - 404: Satellite not found
         - 503: POI manager not initialized
     """
-    if not _poi_manager:
+    if not poi_manager:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="POI manager not initialized",
@@ -250,7 +248,7 @@ async def update_satellite(
             poi_update_data["description"] = satellite_update.slot
 
         poi_update = POIUpdate(**poi_update_data)
-        updated_poi = _poi_manager.update_poi(poi.id, poi_update)
+        updated_poi = poi_manager.update_poi(poi.id, poi_update)
 
         if not updated_poi:
             raise HTTPException(
@@ -284,7 +282,10 @@ async def update_satellite(
 
 
 @router.delete("/{satellite_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a satellite")
-async def delete_satellite(satellite_id: str) -> None:
+async def delete_satellite(
+    satellite_id: str,
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> None:
     """Delete a satellite.
 
     Path Parameters:
@@ -294,21 +295,21 @@ async def delete_satellite(satellite_id: str) -> None:
         - 404: Satellite not found
         - 503: POI manager not initialized
     """
-    if not _poi_manager:
+    if not poi_manager:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="POI manager not initialized",
         )
 
     # Find POI by satellite_id (name)
-    poi = _poi_manager.find_poi_by_name(satellite_id)
+    poi = poi_manager.find_poi_by_name(satellite_id)
     if not poi or poi.category != "satellite":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Satellite not found: {satellite_id}",
         )
 
-    success = _poi_manager.delete_poi(poi.id)
+    success = poi_manager.delete_poi(poi.id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

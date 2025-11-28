@@ -4,7 +4,7 @@ import io
 import logging
 from pathlib import Path
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, status, UploadFile, File
+from fastapi import APIRouter, HTTPException, Query, status, UploadFile, File, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,7 @@ from app.mission.package_exporter import export_mission_package
 from app.mission.timeline_service import build_mission_timeline
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
+from app.mission.dependencies import get_route_manager, get_poi_manager
 from app.satellites.coverage import CoverageSampler
 
 logger = logging.getLogger(__name__)
@@ -27,29 +28,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
 
 # Global manager instances (set by main.py during startup)
-_route_manager: Optional[RouteManager] = None
-_poi_manager: Optional[POIManager] = None
 _coverage_sampler: Optional[CoverageSampler] = None
-
-
-def safe_extract_path(zip_path: str, base_dir: Path) -> Path:
-    """Validate that extracted path stays within base directory."""
-    extracted = (base_dir / zip_path).resolve()
-    if not extracted.is_relative_to(base_dir):
-        raise ValueError(f"Invalid path in zip: {zip_path}")
-    return extracted
-
-
-def set_route_manager(route_manager: RouteManager) -> None:
-    """Set the route manager instance (called by main.py during startup)."""
-    global _route_manager
-    _route_manager = route_manager
-
-
-def set_poi_manager(poi_manager: POIManager) -> None:
-    """Set the POI manager instance (called by main.py during startup)."""
-    global _poi_manager
-    _poi_manager = poi_manager
 
 
 def set_coverage_sampler(coverage_sampler: CoverageSampler) -> None:
@@ -140,7 +119,11 @@ async def get_mission(mission_id: str) -> Mission:
 
 
 @router.delete("/{mission_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_mission_endpoint(mission_id: str) -> None:
+async def delete_mission_endpoint(
+    mission_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> None:
     """Delete a mission and all associated legs, routes, and POIs.
 
     Cascade deletes all resources:
@@ -184,13 +167,13 @@ async def delete_mission_endpoint(mission_id: str) -> None:
             logger.info(f"Cascade deletion: processing leg {leg.id} with route {route_id}")
 
             # Delete route if it exists
-            if leg.route_id and _route_manager:
+            if leg.route_id:
                 try:
-                    parsed_route = _route_manager.get_route(leg.route_id)
+                    parsed_route = route_manager.get_route(leg.route_id)
                     if parsed_route:
                         # Delete POIs associated with this route
-                        if _poi_manager:
-                            route_pois_deleted = _poi_manager.delete_route_pois(
+                        if poi_manager:
+                            route_pois_deleted = poi_manager.delete_route_pois(
                                 leg.route_id
                             )
                             deleted_pois_count += route_pois_deleted
@@ -211,7 +194,7 @@ async def delete_mission_endpoint(mission_id: str) -> None:
                                 )
 
                         # Remove from route manager cache
-                        _route_manager._routes.pop(leg.route_id, None)
+                        route_manager._routes.pop(leg.route_id, None)
                         logger.info(
                             f"Deleted route {leg.route_id} associated with leg {leg.id}"
                         )
@@ -220,9 +203,9 @@ async def delete_mission_endpoint(mission_id: str) -> None:
                     # Don't fail entire mission deletion if route deletion fails
 
             # Delete mission POIs
-            if _poi_manager:
+            if poi_manager:
                 try:
-                    mission_pois_deleted = _poi_manager.delete_mission_pois(
+                    mission_pois_deleted = poi_manager.delete_mission_pois(
                         mission_id
                     )
                     deleted_pois_count += mission_pois_deleted
@@ -262,10 +245,18 @@ async def delete_mission_endpoint(mission_id: str) -> None:
 
 
 @router.post("/{mission_id}/export")
-async def export_mission(mission_id: str) -> StreamingResponse:
+async def export_mission(
+    mission_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> StreamingResponse:
     """Export mission as zip package."""
     try:
-        zip_bytes = export_mission_package(mission_id)
+        zip_bytes = export_mission_package(
+            mission_id,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
 
         return StreamingResponse(
             io.BytesIO(zip_bytes),
@@ -283,7 +274,11 @@ async def export_mission(mission_id: str) -> StreamingResponse:
 
 
 @router.post("/import")
-async def import_mission(file: UploadFile = File(...)) -> dict:
+async def import_mission(
+    file: UploadFile = File(...),
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> dict:
     """Import mission from zip package.
 
     Args:
@@ -343,7 +338,7 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
                 logger.info(f"Mission {mission.id} imported successfully")
 
                 # Import route KML files from routes/ folder
-                if _route_manager:
+                if route_manager:
                     route_files = [f for f in zf.namelist() if f.startswith("routes/") and f.endswith(".kml")]
                     for route_file in route_files:
                         try:
@@ -354,7 +349,7 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
                             kml_content = zf.read(route_file)
 
                             # Save route KML to routes directory
-                            routes_dir = Path(_route_manager.routes_dir)
+                            routes_dir = Path(route_manager.routes_dir)
                             kml_path = routes_dir / f"{route_id}.kml"
                             with open(kml_path, "wb") as f:
                                 f.write(kml_content)
@@ -368,7 +363,7 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
                     warnings.append("Route manager not available, routes not imported")
 
                 # Import POIs from pois/ folder
-                if _poi_manager:
+                if poi_manager:
                     poi_files = [f for f in zf.namelist() if f.startswith("pois/") and f.endswith(".json")]
 
                     # Process satellite POIs first (for deduplication)
@@ -381,7 +376,7 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
                                     poi = POI(**poi_dict)
 
                                     # Check if satellite already exists by name
-                                    existing_pois = _poi_manager.list_pois()
+                                    existing_pois = poi_manager.list_pois()
                                     existing_satellite = next(
                                         (p for p in existing_pois if p.name == poi.name and p.category == "satellite"),
                                         None
@@ -390,14 +385,14 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
                                     if existing_satellite:
                                         # Update if orbital position (longitude) is different
                                         if existing_satellite.longitude != poi.longitude:
-                                            _poi_manager.update_poi(existing_satellite.id, poi)
+                                            poi_manager.update_poi(existing_satellite.id, poi)
                                             satellites_updated += 1
                                             logger.info(f"Updated satellite POI: {poi.name} (orbital position changed)")
                                         else:
                                             logger.info(f"Satellite POI already exists with same position: {poi.name}")
                                     else:
                                         # Create new satellite POI
-                                        _poi_manager.create_poi(poi)
+                                        poi_manager.create_poi(poi)
                                         satellites_imported += 1
                                         logger.info(f"Imported satellite POI: {poi.name}")
                                 except Exception as e:
@@ -422,7 +417,7 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
                                         continue
 
                                     poi = POI(**poi_dict)
-                                    _poi_manager.create_poi(poi)
+                                    poi_manager.create_poi(poi)
                                     pois_imported += 1
                                     logger.info(f"Imported POI: {poi.name}")
                                 except Exception as e:
@@ -465,7 +460,12 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
 
 
 @router.post("/{mission_id}/legs", status_code=status.HTTP_201_CREATED, response_model=MissionLeg)
-async def add_leg_to_mission(mission_id: str, leg: MissionLeg) -> MissionLeg:
+async def add_leg_to_mission(
+    mission_id: str,
+    leg: MissionLeg,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> MissionLeg:
     """Add a new leg to an existing mission.
 
     Args:
@@ -498,13 +498,13 @@ async def add_leg_to_mission(mission_id: str, leg: MissionLeg) -> MissionLeg:
         save_mission_v2(mission)
 
         # Generate timeline for the new leg
-        if _route_manager:
+        if route_manager:
             try:
                 logger.info(f"Generating timeline for new leg {leg.id}")
                 timeline, summary = build_mission_timeline(
                     mission=leg,
-                    route_manager=_route_manager,
-                    poi_manager=_poi_manager,
+                    route_manager=route_manager,
+                    poi_manager=poi_manager,
                     coverage_sampler=_coverage_sampler,
                     parent_mission_id=mission_id,
                 )
@@ -527,7 +527,13 @@ async def add_leg_to_mission(mission_id: str, leg: MissionLeg) -> MissionLeg:
 
 
 @router.put("/{mission_id}/legs/{leg_id}", response_model=MissionLeg)
-async def update_leg(mission_id: str, leg_id: str, updated_leg: MissionLeg) -> MissionLeg:
+async def update_leg(
+    mission_id: str,
+    leg_id: str,
+    updated_leg: MissionLeg,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> MissionLeg:
     """Update an existing leg in a mission.
 
     Args:
@@ -574,13 +580,13 @@ async def update_leg(mission_id: str, leg_id: str, updated_leg: MissionLeg) -> M
         save_mission_v2(mission)
 
         # Generate timeline for the updated leg
-        if _route_manager:
+        if route_manager:
             try:
                 logger.info(f"Generating timeline for leg {leg_id}")
                 timeline, summary = build_mission_timeline(
                     mission=updated_leg,
-                    route_manager=_route_manager,
-                    poi_manager=_poi_manager,
+                    route_manager=route_manager,
+                    poi_manager=poi_manager,
                     coverage_sampler=_coverage_sampler,
                     parent_mission_id=mission_id,
                 )
@@ -603,7 +609,12 @@ async def update_leg(mission_id: str, leg_id: str, updated_leg: MissionLeg) -> M
 
 
 @router.delete("/{mission_id}/legs/{leg_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_leg(mission_id: str, leg_id: str):
+async def delete_leg(
+    mission_id: str,
+    leg_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+):
     """Delete a leg from a mission (cascade deletes route and POIs).
 
     Args:
@@ -643,13 +654,13 @@ async def delete_leg(mission_id: str, leg_id: str):
 
         # CASCADE DELETE: Delete associated resources
         # 1. Delete route if exists
-        if leg.route_id and _route_manager:
+        if leg.route_id and route_manager:
             try:
-                parsed_route = _route_manager.get_route(leg.route_id)
+                parsed_route = route_manager.get_route(leg.route_id)
                 if parsed_route:
                     # Delete associated POIs for this route
-                    if _poi_manager:
-                        deleted_pois = _poi_manager.delete_route_pois(leg.route_id)
+                    if poi_manager:
+                        deleted_pois = poi_manager.delete_route_pois(leg.route_id)
                         logger.info(f"Deleted {deleted_pois} POIs for route {leg.route_id}")
 
                     # Delete KML file
@@ -659,16 +670,16 @@ async def delete_leg(mission_id: str, leg_id: str):
                         logger.info(f"Deleted route file: {file_path}")
 
                     # Remove from route manager cache
-                    _route_manager._routes.pop(leg.route_id, None)
+                    route_manager._routes.pop(leg.route_id, None)
                     logger.info(f"Deleted route {leg.route_id} associated with leg {leg_id}")
             except Exception as e:
                 logger.error(f"Failed to delete route {leg.route_id}: {e}")
                 # Don't fail the entire leg deletion if route deletion fails
 
         # 2. Delete POIs associated with this leg
-        if _poi_manager:
+        if poi_manager:
             try:
-                deleted_leg_pois = _poi_manager.delete_mission_pois(mission_id)
+                deleted_leg_pois = poi_manager.delete_mission_pois(mission_id)
                 logger.info(f"Deleted {deleted_leg_pois} mission POIs for mission {mission_id}")
             except Exception as e:
                 logger.error(f"Failed to delete mission POIs: {e}")
@@ -704,7 +715,12 @@ async def delete_leg(mission_id: str, leg_id: str):
 
 
 @router.post("/{mission_id}/legs/{leg_id}/activate", response_model=dict)
-async def activate_leg(mission_id: str, leg_id: str) -> dict:
+async def activate_leg(
+    mission_id: str,
+    leg_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> dict:
     """Activate a specific leg (deactivates all others in the mission).
 
     Args:
@@ -745,23 +761,23 @@ async def activate_leg(mission_id: str, leg_id: str) -> dict:
         save_mission_v2(mission)
 
         # Activate the route in RouteManager so dashboard can display it
-        if active_leg and active_leg.route_id and _route_manager:
+        if active_leg and active_leg.route_id and route_manager:
             try:
                 logger.info(f"Activating route {active_leg.route_id} for leg {leg_id}")
-                _route_manager.activate_route(active_leg.route_id)
+                route_manager.activate_route(active_leg.route_id)
                 logger.info(f"Route {active_leg.route_id} activated successfully")
             except Exception as e:
                 logger.error(f"Failed to activate route {active_leg.route_id}: {e}")
                 # Don't fail leg activation if route activation fails
 
         # Generate timeline for the activated leg
-        if active_leg and _route_manager:
+        if active_leg and route_manager:
             try:
                 logger.info(f"Generating timeline for leg {leg_id}")
                 timeline, summary = build_mission_timeline(
                     mission=active_leg,
-                    route_manager=_route_manager,
-                    poi_manager=_poi_manager,
+                    route_manager=route_manager,
+                    poi_manager=poi_manager,
                     coverage_sampler=_coverage_sampler,
                     parent_mission_id=mission_id,
                 )

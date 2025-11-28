@@ -6,7 +6,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -44,6 +44,7 @@ from app.core.metrics import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_route_manager, get_poi_manager
 
 logger = logging.getLogger(__name__)
 
@@ -52,28 +53,16 @@ router = APIRouter(prefix="/api/missions", tags=["missions"])
 
 # Global active mission ID (stored in memory; would be persisted in production)
 _active_mission_id: Optional[str] = None
-_poi_manager: Optional[POIManager] = None
-_route_manager: Optional[RouteManager] = None
-
-
-def set_poi_manager(poi_manager: POIManager) -> None:
-    """Inject POI manager for mission-scoped POI cleanup."""
-    global _poi_manager
-    _poi_manager = poi_manager
-
-
-def set_route_manager(route_manager: RouteManager) -> None:
-    """Inject RouteManager so mission activation can ensure matching route activation."""
-    global _route_manager
-    _route_manager = route_manager
 
 
 def _compute_and_store_timeline_for_mission(
     mission: MissionLeg,
     refresh_metrics: bool,
+    route_manager: RouteManager,
+    poi_manager: POIManager | None = None,
 ) -> tuple[MissionLegTimeline, TimelineSummary]:
     """Build, persist, and optionally publish metrics for a mission timeline."""
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager unavailable for timeline computation",
@@ -81,8 +70,8 @@ def _compute_and_store_timeline_for_mission(
 
     timeline, summary = build_mission_timeline(
         mission,
-        _route_manager,
-        _poi_manager,
+        route_manager,
+        poi_manager,
     )
     save_mission_timeline(mission.id, timeline)
     generated_ts = datetime.now(timezone.utc).timestamp()
@@ -108,7 +97,11 @@ def _compute_and_store_timeline_for_mission(
     return timeline, summary
 
 
-def _refresh_timeline_after_save(mission: MissionLeg) -> None:
+def _refresh_timeline_after_save(
+    mission: MissionLeg,
+    route_manager: RouteManager,
+    poi_manager: POIManager | None = None,
+) -> None:
     """Attempt to compute a fresh timeline immediately after save operations."""
     if not mission.route_id:
         return
@@ -116,6 +109,8 @@ def _refresh_timeline_after_save(mission: MissionLeg) -> None:
         _compute_and_store_timeline_for_mission(
             mission,
             refresh_metrics=False,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
         )
     except HTTPException as exc:
         logger.warning(
@@ -188,7 +183,11 @@ class MissionErrorResponse(BaseModel):
         }
     },
 )
-async def create_mission(mission: MissionLeg) -> MissionLeg:
+async def create_mission(
+    mission: MissionLeg,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> MissionLeg:
     """
     Create a new mission.
 
@@ -215,7 +214,8 @@ async def create_mission(mission: MissionLeg) -> MissionLeg:
 
         # Save mission to storage
         save_mission(mission)
-        _refresh_timeline_after_save(mission)
+        if route_manager:
+            _refresh_timeline_after_save(mission, route_manager, poi_manager)
 
         logger.info(
             "Mission created successfully",
@@ -597,6 +597,8 @@ async def get_mission_timeline_endpoint(mission_id: str) -> MissionLegTimeline:
 )
 async def recompute_mission_timeline_endpoint(
     mission_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> MissionLegTimeline:
     """Force a fresh mission timeline computation without altering activation."""
     mission = load_mission(mission_id)
@@ -610,6 +612,8 @@ async def recompute_mission_timeline_endpoint(
         timeline, _summary = _compute_and_store_timeline_for_mission(
             mission,
             refresh_metrics=mission.is_active,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
         )
     except TimelineComputationError as exc:
         logger.error(
@@ -647,6 +651,8 @@ async def recompute_mission_timeline_endpoint(
 async def export_mission_timeline_endpoint(
     mission_id: str,
     format: str = Query("csv", description="Export format: csv, xlsx, or pdf"),
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> StreamingResponse:
     """Generate a downloadable mission timeline export."""
     mission = load_mission(mission_id)
@@ -665,7 +671,13 @@ async def export_mission_timeline_endpoint(
 
     try:
         export_format = TimelineExportFormat.from_string(format)
-        artifact = generate_timeline_export(export_format, mission, timeline)
+        artifact = generate_timeline_export(
+            export_format,
+            mission,
+            timeline,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
     except ExportGenerationError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -700,6 +712,8 @@ async def export_mission_timeline_endpoint(
 async def update_mission(
     mission_id: str,
     mission_update: MissionLeg,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> MissionLeg:
     """
     Update an existing mission (merge logic).
@@ -746,7 +760,8 @@ async def update_mission(
 
         # Save merged mission
         save_mission(merged)
-        _refresh_timeline_after_save(merged)
+        if route_manager:
+            _refresh_timeline_after_save(merged, route_manager, poi_manager)
 
         logger.info(
             "Mission updated successfully",

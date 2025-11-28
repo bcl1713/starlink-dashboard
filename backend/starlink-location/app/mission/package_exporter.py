@@ -18,21 +18,7 @@ from app.services.poi_manager import POIManager
 
 logger = logging.getLogger(__name__)
 
-# Global manager instances (set by main.py during startup)
-_route_manager: Optional[RouteManager] = None
-_poi_manager: Optional[POIManager] = None
 
-
-def set_route_manager(route_manager: RouteManager) -> None:
-    """Set the route manager instance (called by main.py during startup)."""
-    global _route_manager
-    _route_manager = route_manager
-
-
-def set_poi_manager(poi_manager: POIManager) -> None:
-    """Set the POI manager instance (called by main.py during startup)."""
-    global _poi_manager
-    _poi_manager = poi_manager
 
 
 class ExportPackageError(RuntimeError):
@@ -131,7 +117,11 @@ def generate_mission_combined_csv(mission: Mission) -> bytes:
     return output.getvalue().encode("utf-8")
 
 
-def generate_mission_combined_xlsx(mission: Mission) -> bytes:
+def generate_mission_combined_xlsx(
+    mission: Mission,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
+) -> bytes:
     """Generate combined XLSX timeline with one sheet per leg plus summary.
 
     Creates workbook with:
@@ -193,6 +183,8 @@ def generate_mission_combined_xlsx(mission: Mission) -> bytes:
                     mission=leg,
                     timeline=leg_timeline,
                     parent_mission_id=mission.id,
+                    route_manager=route_manager,
+                    poi_manager=poi_manager,
                 )
 
                 # Load the leg workbook
@@ -277,7 +269,11 @@ def generate_mission_combined_xlsx(mission: Mission) -> bytes:
         return output.read()
 
 
-def generate_mission_combined_pptx(mission: Mission) -> bytes:
+def generate_mission_combined_pptx(
+    mission: Mission,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
+) -> bytes:
     """Generate combined PPTX slides for entire mission.
 
     Creates presentation with:
@@ -340,7 +336,11 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
             # Generate map image
             try:
                 map_image_bytes = _generate_route_map(
-                    leg_timeline, leg, parent_mission_id=mission.id
+                    leg_timeline,
+                    leg,
+                    parent_mission_id=mission.id,
+                    route_manager=route_manager,
+                    poi_manager=poi_manager,
                 )
                 map_image_stream = io.BytesIO(map_image_bytes)
 
@@ -560,7 +560,11 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
     return output.read()
 
 
-def generate_mission_combined_pdf(mission: Mission) -> bytes:
+def generate_mission_combined_pdf(
+    mission: Mission,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
+) -> bytes:
     """Generate combined PDF report for entire mission.
 
     Creates PDF with:
@@ -645,6 +649,8 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
                     mission=leg,
                     timeline=leg_timeline,
                     parent_mission_id=mission.id,
+                    route_manager=route_manager,
+                    poi_manager=poi_manager,
                 )
 
                 # Add section divider page before leg PDF (except for first leg)
@@ -725,8 +731,8 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
 
 def export_mission_package(
     mission_id: str,
-    route_manager: Optional[RouteManager] = None,
-    poi_manager: Optional[POIManager] = None,
+    route_manager: RouteManager,
+    poi_manager: POIManager,
 ) -> bytes:
     """Export complete mission as zip archive.
 
@@ -775,8 +781,8 @@ def export_mission_package(
         raise ExportPackageError(f"Mission {mission_id} not found")
 
     # Use global managers if not provided
-    rm = route_manager or _route_manager
-    pm = poi_manager or _poi_manager
+    rm = route_manager
+    pm = poi_manager
 
     buffer = io.BytesIO()
     manifest_files = {

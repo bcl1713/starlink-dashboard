@@ -2,35 +2,20 @@
 
 from typing import Any, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 
 from app.core.config import ConfigManager
 from app.models.telemetry import PositionData
 from app.services.geojson import GeoJSONBuilder
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_route_manager, get_poi_manager
 
 # Initialize services
 config_manager = ConfigManager()
 
-# Global manager instances (set by main.py)
-poi_manager: Optional[POIManager] = None
-_route_manager: Optional[RouteManager] = None
-
 # Create API router
 router = APIRouter(prefix="/api", tags=["geojson"])
-
-
-def set_poi_manager(manager: POIManager) -> None:
-    """Set the POI manager instance (called by main.py during startup)."""
-    global poi_manager
-    poi_manager = manager
-
-
-def set_route_manager(route_manager: RouteManager) -> None:
-    """Set the route manager instance (called by main.py during startup)."""
-    global _route_manager
-    _route_manager = route_manager
 
 
 @router.get("/route.geojson", response_model=dict, summary="Get route as GeoJSON")
@@ -38,6 +23,8 @@ async def get_route_geojson(
     include_pois: bool = Query(True, description="Include POIs in response"),
     include_position: bool = Query(False, description="Include current position"),
     route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict[str, Any]:
     """
     Get active route and optionally POIs as GeoJSON FeatureCollection.
@@ -67,13 +54,14 @@ async def get_route_geojson(
     position = None
 
     # Get route (specified or active)
+    # Get route (specified or active)
     if route_id:
-        route = _route_manager.get_route(route_id)
+        route = route_manager.get_route(route_id)
     else:
-        route = _route_manager.get_active_route()
+        route = route_manager.get_active_route()
 
     # Get POIs if requested
-    if include_pois:
+    if include_pois and poi_manager:
         route_id_for_pois = route.metadata.file_path.split("/")[-1].split(".")[0] if route else None
         pois = poi_manager.list_pois(route_id=route_id_for_pois)
 
@@ -101,7 +89,9 @@ async def get_route_geojson(
 
 
 def _get_route_coordinates_filtered(
-    route_id: Optional[str], hemisphere: Optional[str] = None
+    route_id: Optional[str],
+    route_manager: RouteManager,
+    hemisphere: Optional[str] = None,
 ) -> dict[str, Any]:
     """
     Helper function to get route coordinates, optionally filtered by hemisphere.
@@ -113,7 +103,7 @@ def _get_route_coordinates_filtered(
     Returns:
         Dictionary with coordinates, total, route_id, route_name
     """
-    if not _route_manager:
+    if not route_manager:
         return {
             "coordinates": [],
             "total": 0,
@@ -124,10 +114,11 @@ def _get_route_coordinates_filtered(
     route = None
 
     # Get route (specified or active)
+    # Get route (specified or active)
     if route_id:
-        route = _route_manager.get_route(route_id)
+        route = route_manager.get_route(route_id)
     else:
-        route = _route_manager.get_active_route()
+        route = route_manager.get_active_route()
 
     if not route:
         return {
@@ -224,6 +215,7 @@ def _get_route_coordinates_filtered(
 @router.get("/route/coordinates", response_model=dict, summary="Get route coordinates as tabular data")
 async def get_route_coordinates(
     route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict[str, Any]:
     """
     Get active route coordinates in tabular format for Grafana geomap route layer.
@@ -243,12 +235,13 @@ async def get_route_coordinates(
       - route_id: Route identifier
       - route_name: Route name
     """
-    return _get_route_coordinates_filtered(route_id, hemisphere=None)
+    return _get_route_coordinates_filtered(route_id, route_manager, hemisphere=None)
 
 
 @router.get("/route/coordinates/west", response_model=dict, summary="Get route coordinates in western hemisphere (IDL-safe)")
 async def get_route_coordinates_west(
     route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict[str, Any]:
     """
     Get active route coordinates in western hemisphere (longitude < 0) for Grafana geomap.
@@ -263,12 +256,13 @@ async def get_route_coordinates_west(
     Returns:
     - JSON object with coordinates in western hemisphere only (lon < 0)
     """
-    return _get_route_coordinates_filtered(route_id, hemisphere="west")
+    return _get_route_coordinates_filtered(route_id, route_manager, hemisphere="west")
 
 
 @router.get("/route/coordinates/east", response_model=dict, summary="Get route coordinates in eastern hemisphere (IDL-safe)")
 async def get_route_coordinates_east(
     route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict[str, Any]:
     """
     Get active route coordinates in eastern hemisphere (longitude >= 0) for Grafana geomap.
@@ -283,12 +277,13 @@ async def get_route_coordinates_east(
     Returns:
     - JSON object with coordinates in eastern hemisphere only (lon >= 0)
     """
-    return _get_route_coordinates_filtered(route_id, hemisphere="east")
+    return _get_route_coordinates_filtered(route_id, route_manager, hemisphere="east")
 
 
 @router.get("/route.json", response_model=dict, summary="Get route as JSON")
 async def get_route_json(
     route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict[str, Any]:
     """
     Get active route metadata as JSON.
@@ -309,15 +304,16 @@ async def get_route_json(
     route = None
 
     # Get route (specified or active)
+    # Get route (specified or active)
     if route_id:
-        route = _route_manager.get_route(route_id)
+        route = route_manager.get_route(route_id)
     else:
-        route = _route_manager.get_active_route()
+        route = route_manager.get_active_route()
 
     if not route:
         return {
             "error": "No active route",
-            "available_routes": list(_route_manager.list_routes().keys()),
+            "available_routes": list(route_manager.list_routes().keys()),
         }
 
     bounds = route.get_bounds()
@@ -342,6 +338,7 @@ async def get_route_json(
 @router.get("/pois.geojson", response_model=dict, summary="Get POIs as GeoJSON")
 async def get_pois_geojson(
     route_id: Optional[str] = Query(None, description="Filter POIs by route ID"),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict[str, Any]:
     """
     Get all POIs as GeoJSON FeatureCollection.
@@ -355,7 +352,9 @@ async def get_pois_geojson(
     - GeoJSON FeatureCollection with POI Point features
     - Each POI includes name, icon, category, and description
     """
-    pois = poi_manager.list_pois(route_id=route_id)
+    pois = []
+    if poi_manager:
+        pois = poi_manager.list_pois(route_id=route_id)
 
     feature_collection = GeoJSONBuilder.build_feature_collection(pois=pois)
 

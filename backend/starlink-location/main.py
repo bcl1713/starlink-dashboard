@@ -110,12 +110,8 @@ async def startup_event():
         # Inject POIManager singleton into all API modules
         logger.info_json("Injecting POIManager into API modules")
         try:
-            pois.set_poi_manager(poi_manager)
-            routes.set_poi_manager(poi_manager)
-            geojson.set_poi_manager(poi_manager)
-            mission_routes.set_poi_manager(poi_manager)
-            satellite_routes.set_poi_manager(poi_manager)
             # Note: metrics_export also gets POIManager but via route_manager injection below
+            app.state.poi_manager = poi_manager
             logger.info_json("POIManager injected successfully")
         except Exception as e:
             logger.warning_json(
@@ -129,20 +125,13 @@ async def startup_event():
         try:
             _route_manager = RouteManager()
             _route_manager.start_watching()
-            geojson.set_route_manager(_route_manager)
-            routes.set_route_manager(_route_manager)
-            pois.set_route_manager(_route_manager)
-            mission_routes.set_route_manager(_route_manager)
-            mission_routes_v2.set_route_manager(_route_manager)
-            mission_routes_v2.set_poi_manager(poi_manager)
-            exporter.set_route_manager(_route_manager)
-            exporter.set_poi_manager(poi_manager)
-            package_exporter.set_route_manager(_route_manager)
-            package_exporter.set_poi_manager(poi_manager)
+            # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
+            app.state.route_manager = _route_manager
+            
             # Inject into metrics_export as well
-            from app.api import metrics_export
-            metrics_export.set_route_manager(_route_manager)
-            metrics_export.set_poi_manager(poi_manager)
+            # from app.api import metrics_export
+            # metrics_export.set_route_manager(_route_manager)
+            # metrics_export.set_poi_manager(poi_manager)
 
             # Inject RouteManager into SimulationCoordinator (Phase 5 feature)
             if isinstance(_coordinator, SimulationCoordinator):
