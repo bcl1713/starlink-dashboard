@@ -312,6 +312,14 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
 
             # Save uploaded file
             contents = await file.read()
+
+            MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
+            if len(contents) > MAX_UPLOAD_SIZE:
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail="File too large"
+                )
+
             with open(zip_path, "wb") as f:
                 f.write(contents)
 
