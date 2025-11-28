@@ -210,6 +210,60 @@ def load_mission_v2(mission_id: str) -> Optional[Mission]:
     return mission
 
 
+def load_mission_metadata_v2(mission_id: str) -> Optional[Mission]:
+    """Load mission metadata with leg count but without full leg data.
+    
+    This is optimized for listing operations where full leg data is not needed.
+    Returns a Mission object with stub leg objects containing only IDs, allowing
+    the frontend to display accurate leg counts via legs.length.
+    
+    Args:
+        mission_id: ID of mission to load
+        
+    Returns:
+        Mission object with metadata and leg stubs (ID only), or None if not found
+    """
+    mission_file = get_mission_file_path(mission_id)
+    
+    if not mission_file.exists():
+        logger.warning(f"Mission {mission_id} not found at {mission_file}")
+        return None
+    
+    try:
+        # Load mission metadata only
+        with open(mission_file, "r") as f:
+            mission_data = json.load(f)
+        
+        # Count leg files and create stub leg objects with only IDs
+        legs_dir = get_mission_legs_dir(mission_id)
+        leg_stubs = []
+        
+        if legs_dir.exists():
+            for leg_file in sorted(legs_dir.glob("*.json")):
+                # Extract leg ID from filename (e.g., "leg-1.json" -> "leg-1")
+                leg_id = leg_file.stem
+                # Create minimal leg stub with only required fields
+                leg_stubs.append({
+                    "id": leg_id,
+                    "name": leg_id,  # Use ID as placeholder name
+                    "route_id": "",  # Empty placeholder
+                    "transports": {"initial_x_satellite_id": ""}  # Minimal placeholder
+                })
+        
+        mission_data["legs"] = [MissionLeg(**stub) for stub in leg_stubs]
+        mission = Mission(**mission_data)
+        
+        logger.debug(f"Mission {mission_id} metadata loaded with {len(leg_stubs)} leg stubs")
+        return mission
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse mission {mission_id}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to load mission metadata {mission_id}: {e}")
+        return None
+
+
 def load_mission(mission_id: str) -> Optional[MissionLeg]:
     """Load a mission leg from persistent storage.
 

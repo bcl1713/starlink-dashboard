@@ -16,6 +16,7 @@ from app.mission.storage import (
     mission_exists,
     save_mission_timeline,
     get_mission_lock,
+    load_mission_metadata_v2,
 )
 from app.mission.package_exporter import export_mission_package
 from app.mission.timeline_service import build_mission_timeline
@@ -89,14 +90,14 @@ async def list_missions(
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ) -> list[Mission]:
-    """List all missions.
+    """List all missions (metadata only, without legs).
 
     Args:
         limit: Maximum number to return
         offset: Number to skip
 
     Returns:
-        List of missions
+        List of missions with metadata only (empty legs arrays)
     """
     try:
         from pathlib import Path
@@ -108,7 +109,8 @@ async def list_missions(
         missions = []
         for mission_dir in sorted(missions_dir.iterdir()):
             if mission_dir.is_dir():
-                mission = load_mission_v2(mission_dir.name)
+                # Use metadata-only loading for efficiency
+                mission = load_mission_metadata_v2(mission_dir.name)
                 if mission:
                     missions.append(mission)
 

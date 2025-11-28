@@ -21,6 +21,7 @@ from app.mission.storage import (
     list_missions,
     load_mission,
     load_mission_v2,
+    load_mission_metadata_v2,
     mission_exists,
     save_mission,
     save_mission_v2,
@@ -637,3 +638,76 @@ class TestHierarchicalMissionStorageV2:
 
         loaded = load_mission_v2("incomplete-mission")
         assert loaded is None
+
+    def test_load_mission_metadata_v2_returns_leg_stubs(
+        self, sample_mission_with_legs, temp_missions_dir
+    ):
+        """Test that metadata loading returns mission with leg stubs."""
+        # Save mission with legs
+        save_mission_v2(sample_mission_with_legs)
+
+        # Load metadata only
+        loaded = load_mission_metadata_v2("operation-falcon")
+
+        assert loaded is not None
+        assert loaded.id == "operation-falcon"
+        assert loaded.name == "Operation Falcon"
+        assert loaded.description == "Multi-leg transcontinental mission"
+        assert loaded.metadata["customer"] == "Test Corp"
+        # Critical: legs should contain stubs with correct count
+        assert len(loaded.legs) == 2
+        # Verify stubs have IDs but minimal data
+        assert loaded.legs[0].id == "leg-1"
+        assert loaded.legs[1].id == "leg-2"
+
+    def test_load_mission_metadata_v2_not_found(self, temp_missions_dir):
+        """Test metadata loading for non-existent mission."""
+        loaded = load_mission_metadata_v2("nonexistent")
+        assert loaded is None
+
+    def test_load_mission_metadata_v2_preserves_metadata(
+        self, sample_mission_with_legs, temp_missions_dir
+    ):
+        """Test that all metadata fields are preserved."""
+        save_mission_v2(sample_mission_with_legs)
+
+        loaded = load_mission_metadata_v2("operation-falcon")
+
+        assert loaded is not None
+        assert loaded.id == sample_mission_with_legs.id
+        assert loaded.name == sample_mission_with_legs.name
+        assert loaded.description == sample_mission_with_legs.description
+        assert loaded.created_at == sample_mission_with_legs.created_at
+        assert loaded.updated_at == sample_mission_with_legs.updated_at
+        assert loaded.metadata == sample_mission_with_legs.metadata
+        # Verify leg count matches
+        assert len(loaded.legs) == len(sample_mission_with_legs.legs)
+
+    def test_load_mission_metadata_v2_handles_invalid_json(self, temp_missions_dir):
+        """Test that invalid JSON is handled gracefully."""
+        # Create mission directory with invalid JSON
+        mission_dir = temp_missions_dir / "invalid-mission"
+        mission_dir.mkdir(parents=True, exist_ok=True)
+
+        mission_file = mission_dir / "mission.json"
+        mission_file.write_text("{invalid json content")
+
+        loaded = load_mission_metadata_v2("invalid-mission")
+        assert loaded is None
+
+    def test_load_mission_metadata_v2_with_empty_mission(self, temp_missions_dir):
+        """Test loading metadata for mission with no legs."""
+        mission = Mission(
+            id="empty-mission",
+            name="Empty Mission",
+            description="Mission with no legs",
+            legs=[],
+        )
+
+        save_mission_v2(mission)
+        loaded = load_mission_metadata_v2("empty-mission")
+
+        assert loaded is not None
+        assert loaded.id == "empty-mission"
+        assert loaded.name == "Empty Mission"
+        assert loaded.legs == []
