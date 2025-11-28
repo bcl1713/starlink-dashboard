@@ -85,10 +85,10 @@ async def create_mission(
                         # Don't fail creation if timeline generation fails
         return mission
     except Exception as e:
-        logger.error(f"Failed to create mission: {e}")
+        logger.error(f"Failed to create mission: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create mission",
+            detail=f"Failed to create mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -123,10 +123,10 @@ async def list_missions(
 
         return missions[offset : offset + limit]
     except Exception as e:
-        logger.error(f"Failed to list missions: {e}")
+        logger.error(f"Failed to list missions: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to list missions",
+            detail=f"Failed to list missions: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -271,10 +271,10 @@ async def delete_mission_endpoint(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete mission {mission_id}: {e}")
+        logger.error(f"Failed to delete mission {mission_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete mission",
+            detail=f"Failed to delete mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -703,10 +703,10 @@ async def add_leg_to_mission(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to add leg to mission: {e}")
+        logger.error(f"Failed to add leg to mission: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to add leg to mission",
+            detail=f"Failed to add leg to mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -786,10 +786,10 @@ async def update_leg(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to update leg: {e}")
+        logger.error(f"Failed to update leg: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update leg",
+            detail=f"Failed to update leg: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -893,10 +893,10 @@ async def delete_leg(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to delete leg {leg_id}: {e}")
+        logger.error(f"Failed to delete leg {leg_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete leg",
+            detail=f"Failed to delete leg: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -981,10 +981,10 @@ async def activate_leg(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to activate leg: {e}")
+        logger.error(f"Failed to activate leg: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to activate leg",
+            detail=f"Failed to activate leg: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -1034,10 +1034,10 @@ async def deactivate_all_legs(mission_id: str) -> dict:
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to deactivate legs: {e}")
+        logger.error(f"Failed to deactivate legs: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to deactivate legs",
+            detail=f"Failed to deactivate legs: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -1083,8 +1083,8 @@ async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to get timeline for leg {leg_id}: {e}")
+        logger.error(f"Failed to get timeline for leg {leg_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve timeline",
+            detail=f"Failed to retrieve timeline: {type(e).__name__}: {str(e)}",
         )

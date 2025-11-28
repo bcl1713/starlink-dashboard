@@ -234,10 +234,11 @@ async def create_mission(
         logger.error(
             "Mission creation failed: %s",
             str(e),
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create mission",
+            detail=f"Failed to create mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -288,10 +289,11 @@ async def list_missions_endpoint(
     except Exception as e:
         logger.error(
             "Failed to list missions",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to list missions",
+            detail=f"Failed to list missions: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -369,10 +371,11 @@ async def get_active_mission() -> MissionLeg:
     except Exception as e:
         logger.error(
             "Failed to get active mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get active mission",
+            detail=f"Failed to get active mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -505,7 +508,7 @@ async def get_active_mission_satellites() -> dict:
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get active mission satellites",
+            detail=f"Failed to get active mission satellites: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -551,10 +554,11 @@ async def get_mission(mission_id: str) -> MissionLeg:
     except Exception as e:
         logger.error(
             "Failed to get mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get mission",
+            detail=f"Failed to get mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -621,7 +625,7 @@ async def recompute_mission_timeline_endpoint(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to compute mission timeline",
+            detail=f"Failed to compute mission timeline: {type(exc).__name__}: {str(exc)}",
         ) from exc
 
     return timeline
@@ -781,10 +785,11 @@ async def update_mission(
     except Exception as e:
         logger.error(
             "Failed to update mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update mission",
+            detail=f"Failed to update mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -883,10 +888,11 @@ async def delete_mission_endpoint(
     except Exception as e:
         logger.error(
             "Failed to delete mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete mission",
+            detail=f"Failed to delete mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -1029,7 +1035,7 @@ async def activate_mission(
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to compute mission timeline",
+                detail=f"Failed to compute mission timeline: {type(exc).__name__}: {str(exc)}",
             ) from exc
 
         # Update metrics for activated mission
@@ -1065,10 +1071,11 @@ async def activate_mission(
     except Exception as e:
         logger.error(
             "Failed to activate mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to activate mission",
+            detail=f"Failed to activate mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -1157,7 +1164,7 @@ async def deactivate_mission(
         logger.error("Failed to deactivate mission", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to deactivate mission",
+            detail=f"Failed to deactivate mission: {type(e).__name__}: {str(e)}",
         )
 
 
