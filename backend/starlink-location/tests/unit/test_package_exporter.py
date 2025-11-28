@@ -2,8 +2,10 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from app.mission.models import Mission, MissionLeg
-from app.mission.package_exporter import generate_mission_combined_xlsx
+from app.mission.package_exporter import generate_mission_combined_xlsx, export_mission_package
 from app.mission.exporter import ExportGenerationError, TimelineExportFormat
+import tempfile
+import os
 
 @pytest.fixture
 def mock_mission():
@@ -48,6 +50,70 @@ def test_generate_mission_combined_xlsx_export_error(mock_load_workbook, mock_ge
     
     # Verify that generate_timeline_export was called for both legs
     assert mock_generate_export.call_count == 2
+
+@patch("app.mission.package_exporter.load_mission_v2")
+def test_export_mission_package_returns_file_object(mock_load_mission, mock_mission):
+    # Setup
+    mock_load_mission.return_value = mock_mission
+    mock_route_manager = MagicMock()
+    mock_poi_manager = MagicMock()
     
-    # We can't easily inspect the resulting bytes without saving and opening, 
-    # but we can verify the code path didn't crash.
+    # Execute
+    # This will actually create a temp file and zip it, so we test the real logic mostly
+    # We mock load_mission_v2 to return our test mission
+    
+    zip_file = export_mission_package("mission1", mock_route_manager, mock_poi_manager)
+    
+    try:
+        # Verify
+        assert zip_file is not None
+        # Check if it's a file-like object
+        assert hasattr(zip_file, "read")
+        assert hasattr(zip_file, "seek")
+        
+        # Check content
+        import zipfile
+        with zipfile.ZipFile(zip_file, "r") as zf:
+            assert "mission.json" in zf.namelist()
+            assert "manifest.json" in zf.namelist()
+            # Check for leg files
+            assert "legs/leg1.json" in zf.namelist()
+            assert "legs/leg2.json" in zf.namelist()
+            
+    finally:
+        zip_file.close()
+
+@patch("app.mission.package_exporter.load_mission_v2")
+@patch("app.mission.package_exporter.generate_mission_combined_xlsx")
+def test_export_mission_package_uses_temp_files_for_large_exports(mock_gen_xlsx, mock_load_mission, mock_mission):
+    # Setup
+    mock_load_mission.return_value = mock_mission
+    mock_route_manager = MagicMock()
+    mock_poi_manager = MagicMock()
+    
+    # Mock generate_mission_combined_xlsx to write to the path it's given
+    def side_effect(mission, output_path=None, **kwargs):
+        if output_path:
+            with open(output_path, "w") as f:
+                f.write("dummy xlsx content")
+        return None
+    mock_gen_xlsx.side_effect = side_effect
+    
+    # Execute
+    zip_file = export_mission_package("mission1", mock_route_manager, mock_poi_manager)
+    
+    try:
+        # Verify
+        import zipfile
+        with zipfile.ZipFile(zip_file, "r") as zf:
+            assert "exports/mission/mission-timeline.xlsx" in zf.namelist()
+            content = zf.read("exports/mission/mission-timeline.xlsx")
+            assert content == b"dummy xlsx content"
+            
+        # Verify generate_mission_combined_xlsx was called with an output_path
+        assert mock_gen_xlsx.called
+        call_args = mock_gen_xlsx.call_args
+        assert "output_path" in call_args.kwargs or len(call_args.args) > 1
+        
+    finally:
+        zip_file.close()

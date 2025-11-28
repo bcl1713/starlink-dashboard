@@ -277,14 +277,14 @@ async def export_mission(
 ) -> StreamingResponse:
     """Export mission as zip package."""
     try:
-        zip_bytes = export_mission_package(
+        zip_file = export_mission_package(
             mission_id,
             route_manager=route_manager,
             poi_manager=poi_manager,
         )
 
         return StreamingResponse(
-            io.BytesIO(zip_bytes),
+            zip_file,
             media_type="application/zip",
             headers={
                 "Content-Disposition": f'attachment; filename="{mission_id}.zip"'

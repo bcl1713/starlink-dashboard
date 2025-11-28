@@ -471,26 +471,42 @@ def _generate_route_map(
 
     # Fetch route from manager
     route = route_manager.get_route(mission.route_id)
-    if route is None or not route.points:
-        # Return base canvas if route not found
+    if route is None:
+        # Log available routes to help diagnose mismatch
+        available_routes = route_manager.list_routes()
+        logger.error(f"Route '{mission.route_id}' not found in RouteManager!")
+        logger.error(f"Available routes: {list(available_routes.keys())}")
+        logger.error(f"Mission: {mission.id}, Leg: {mission.name}")
+        return _base_map_canvas()
+    
+    if not route.points:
+        logger.warning(f"Route '{mission.route_id}' has no points, returning base canvas")
         return _base_map_canvas()
 
-    # Extract waypoint coordinates
-    points = route.points
-    lats = [p.latitude for p in points]
-    lons = [p.longitude for p in points]
+    # Extract waypoint coordinates and filter invalid points
+    raw_points = route.points
+    valid_points = [p for p in raw_points if p.latitude is not None and p.longitude is not None]
+    
+    if len(valid_points) < len(raw_points):
+        logger.warning(f"Filtered {len(raw_points) - len(valid_points)} invalid points from route {mission.route_id}")
+
+    if not valid_points:
+        logger.warning(f"No valid points found for route {mission.route_id}, returning base canvas")
+        return _base_map_canvas()
+
+    lats = [p.latitude for p in valid_points]
+    lons = [p.longitude for p in valid_points]
+    
+    # Assign valid_points to points for downstream usage
+    points = valid_points
 
     # Debug logging
-    logger.info(f"Map generation - Route has {len(points)} points")
-
-    if not lats or not lons:
-        # Return base canvas if no valid waypoints
-        return _base_map_canvas()
+    logger.info(f"Map generation - Route has {len(points)} valid points")
 
     # Detect IDL (International Date Line) crossings
     idl_crossing_segments = set()
-    for i in range(len(points) - 1):
-        p1, p2 = points[i], points[i + 1]
+    for i in range(len(valid_points) - 1):
+        p1, p2 = valid_points[i], valid_points[i + 1]
         lon_diff = abs(p2.longitude - p1.longitude)
         if lon_diff > 180:
             idl_crossing_segments.add(i)
@@ -515,6 +531,10 @@ def _generate_route_map(
         # Calculate center of the route
         central_longitude = (min_lon + max_lon) / 2
         
+        # Ensure central_longitude is within -180 to 180 for PlateCarree
+        if central_longitude > 180:
+            central_longitude -= 360
+            
         logger.info(f"IDL Crossing Route - Dynamic Center: {central_longitude:.2f}")
         logger.info(f"Normalized Lon Range: {min_lon:.2f} to {max_lon:.2f}")
     else:
@@ -527,8 +547,22 @@ def _generate_route_map(
         logger.info(f"Standard Route - Central Lon: {central_longitude:.2f}")
 
     # Calculate route extent
-    lat_range = max_lat - min_lat if max_lat != min_lat else 1.0
-    lon_range = max_lon - min_lon if max_lon != min_lon else 1.0
+    lat_range = max_lat - min_lat
+    lon_range = max_lon - min_lon
+    
+    # Enforce minimum extent to prevent extreme zooming (which can cause memory errors)
+    MIN_EXTENT = 10.0
+    if lat_range < MIN_EXTENT:
+        center_lat = (min_lat + max_lat) / 2
+        min_lat = center_lat - (MIN_EXTENT / 2)
+        max_lat = center_lat + (MIN_EXTENT / 2)
+        lat_range = MIN_EXTENT
+        
+    if lon_range < MIN_EXTENT:
+        center_lon = (min_lon + max_lon) / 2
+        min_lon = center_lon - (MIN_EXTENT / 2)
+        max_lon = center_lon + (MIN_EXTENT / 2)
+        lon_range = MIN_EXTENT
 
     # Canvas aspect ratio: 3840 / 2160 = 1.778 (16:9)
     canvas_aspect = pixel_width / pixel_height
