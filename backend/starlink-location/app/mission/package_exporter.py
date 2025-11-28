@@ -70,9 +70,32 @@ def generate_mission_combined_csv(mission: Mission) -> bytes:
             # Add leg boundary marker
             writer.writerow([leg.id, leg.name, "LEG START", "---", "---"])
 
-            # Add timeline events (simplified - adjust based on actual timeline structure)
-            # This is a placeholder - you'll need to adapt based on MissionLegTimeline structure
-            writer.writerow([leg.id, leg.name, "TODO", "Extract timeline events", "..."])
+            # Add timeline segments
+            for segment in timeline.segments:
+                start_time = segment.start_time.isoformat() if isinstance(segment.start_time, datetime) else segment.start_time
+                end_time = segment.end_time.isoformat() if isinstance(segment.end_time, datetime) else segment.end_time
+                duration = (segment.end_time - segment.start_time).total_seconds() if isinstance(segment.end_time, datetime) else 0
+
+                reasons = ", ".join(segment.reasons) if segment.reasons else "---"
+
+                writer.writerow([
+                    leg.id,
+                    leg.name,
+                    start_time,
+                    segment.status.value,
+                    f"States: X={segment.x_state.value}, Ka={segment.ka_state.value}, Ku={segment.ku_state.value} | Duration: {duration}s | Reasons: {reasons}"
+                ])
+
+            # Add timeline advisories
+            for advisory in timeline.advisories:
+                timestamp = advisory.timestamp.isoformat() if isinstance(advisory.timestamp, datetime) else advisory.timestamp
+                writer.writerow([
+                    leg.id,
+                    leg.name,
+                    timestamp,
+                    f"ADVISORY ({advisory.event_type})",
+                    f"[{advisory.severity.upper()}] {advisory.message}"
+                ])
 
             writer.writerow([leg.id, leg.name, "LEG END", "---", "---"])
             writer.writerow([])  # Blank line between legs
