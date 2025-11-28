@@ -12,7 +12,7 @@ from typing import Optional
 
 from app.mission.models import Mission, MissionLeg
 from app.mission.storage import load_mission_v2, get_mission_path, load_mission_timeline
-from app.mission.exporter import generate_timeline_export, TimelineExportFormat
+from app.mission.exporter import generate_timeline_export, TimelineExportFormat, ExportGenerationError
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
 
@@ -240,14 +240,39 @@ def generate_mission_combined_xlsx(
                         new_image = copy.copy(image)
                         new_sheet.add_image(new_image, image.anchor)
 
-            except Exception as e:
-                logger.error(f"Failed to combine XLSX for leg {leg.id}: {e}")
+            except ExportGenerationError as e:
+                logger.error(f"Failed to generate XLSX export for leg {leg.id}: {e}")
                 # Add error sheet
                 ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
                 ws_error.append(["Leg Name", leg.name])
                 ws_error.append(["Leg ID", leg.id])
                 ws_error.append([])
-                ws_error.append(["Error", str(e)])
+                ws_error.append(["Export Error", str(e)])
+
+            except (ValueError, KeyError) as e:
+                logger.error(f"Sheet manipulation error for leg {leg.id}: {e}", exc_info=True)
+                ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
+                ws_error.append(["Leg Name", leg.name])
+                ws_error.append(["Leg ID", leg.id])
+                ws_error.append([])
+                ws_error.append(["Processing Error", str(e)])
+
+            except zipfile.BadZipFile as e:
+                logger.error(f"Invalid XLSX data generated for leg {leg.id}: {e}", exc_info=True)
+                ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
+                ws_error.append(["Leg Name", leg.name])
+                ws_error.append(["Leg ID", leg.id])
+                ws_error.append([])
+                ws_error.append(["File Error", "Generated Excel file was invalid"])
+
+            except Exception as e:
+                logger.error(f"Unexpected error combining XLSX for leg {leg.id}: {e}", exc_info=True)
+                # Add error sheet
+                ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
+                ws_error.append(["Leg Name", leg.name])
+                ws_error.append(["Leg ID", leg.id])
+                ws_error.append([])
+                ws_error.append(["Unexpected Error", str(e)])
 
         # Save to bytes
         output = io.BytesIO()
@@ -256,7 +281,7 @@ def generate_mission_combined_xlsx(
         return output.read()
 
     except Exception as e:
-        logger.error(f"Failed to generate combined XLSX: {e}")
+        logger.error(f"Failed to generate combined XLSX: {e}", exc_info=True)
         # Return a basic error workbook
         wb = Workbook()
         ws = wb.active
