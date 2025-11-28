@@ -19,6 +19,9 @@ from app.services.poi_manager import POIManager
 
 logger = logging.getLogger(__name__)
 
+# Constants
+EXCEL_SHEET_NAME_MAX_LENGTH = 31  # Excel's maximum sheet name length
+
 
 
 
@@ -208,15 +211,15 @@ def generate_mission_combined_xlsx(
                     leg_sheet = leg_wb[sheet_name]
 
                     # Create new sheet name with leg prefix
-                    # Truncate leg name to fit Excel's 31 char limit for sheet names
+                    # Truncate leg name to fit Excel's sheet name limit
                     leg_prefix = f"L{leg_idx + 1}"
                     if sheet_name == "Summary":
                         new_sheet_name = f"{leg_prefix} {leg.name[:20]}"
                     else:
                         new_sheet_name = f"{leg_prefix} {sheet_name[:25]}"
 
-                    # Ensure sheet name is unique and under 31 chars
-                    new_sheet_name = new_sheet_name[:31]
+                    # Ensure sheet name is unique and under limit
+                    new_sheet_name = new_sheet_name[:EXCEL_SHEET_NAME_MAX_LENGTH]
 
                     # Create new sheet
                     new_sheet = wb.create_sheet(title=new_sheet_name)

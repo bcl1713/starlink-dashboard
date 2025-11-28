@@ -27,6 +27,10 @@ from app.satellites.coverage import CoverageSampler
 
 logger = logging.getLogger(__name__)
 
+# Constants
+DEFAULT_PAGINATION_LIMIT = 10  # Default number of missions to return
+MAX_PAGINATION_LIMIT = 100     # Maximum number of missions to return
+
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
 
 # Global manager instances (set by main.py during startup)
@@ -87,7 +91,7 @@ async def create_mission(
 
 @router.get("", response_model=list[Mission])
 async def list_missions(
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(DEFAULT_PAGINATION_LIMIT, ge=1, le=MAX_PAGINATION_LIMIT),
     offset: int = Query(0, ge=0),
 ) -> list[Mission]:
     """List all missions (metadata only, without legs).
