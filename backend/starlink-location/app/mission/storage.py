@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,20 @@ TIMELINE_SUFFIX = ".timeline.json"
 def ensure_missions_directory():
     """Ensure the missions directory exists."""
     MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_mission_lock(mission_id: str) -> FileLock:
+    """Get a file lock for a mission to prevent concurrent modifications.
+
+    Args:
+        mission_id: ID of the mission to lock
+
+    Returns:
+        FileLock object
+    """
+    ensure_missions_directory()
+    lock_path = MISSIONS_DIR / f"{mission_id}.lock"
+    return FileLock(str(lock_path))
 
 
 def get_mission_path(mission_id: str) -> Path:

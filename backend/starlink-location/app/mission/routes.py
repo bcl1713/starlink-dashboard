@@ -798,12 +798,18 @@ async def update_mission(
         }
     },
 )
-async def delete_mission_endpoint(mission_id: str) -> None:
+async def delete_mission_endpoint(
+    mission_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> None:
     """
     Delete a mission by ID.
 
     Args:
         mission_id: Mission ID to delete
+        route_manager: Route manager dependency
+        poi_manager: POI manager dependency
 
     Raises:
         HTTPException: 404 if mission not found
@@ -828,11 +834,11 @@ async def delete_mission_endpoint(mission_id: str) -> None:
         mission = load_mission(mission_id)
 
         # Deactivate associated route if it's the active one
-        if mission.route_id and _route_manager:
+        if mission.route_id and route_manager:
             try:
                 # Only deactivate if this mission's route is the currently active route
-                if _route_manager._active_route_id == mission.route_id:
-                    _route_manager.deactivate_route()
+                if route_manager._active_route_id == mission.route_id:
+                    route_manager.deactivate_route()
                     logger.info(
                         "Deactivated route %s associated with mission %s",
                         mission.route_id,
@@ -848,9 +854,9 @@ async def delete_mission_endpoint(mission_id: str) -> None:
                 # Continue with mission deletion even if route deactivation fails
 
         # Remove related mission POIs
-        if _poi_manager:
+        if poi_manager:
             try:
-                removed = _poi_manager.delete_mission_pois(mission_id)
+                removed = poi_manager.delete_mission_pois(mission_id)
                 if removed:
                     logger.info("Deleted %d mission-scoped POIs for %s", removed, mission_id)
             except Exception as exc:  # pragma: no cover - defensive
@@ -898,7 +904,11 @@ async def delete_mission_endpoint(mission_id: str) -> None:
         },
     },
 )
-async def activate_mission(mission_id: str) -> MissionActivationResponse:
+async def activate_mission(
+    mission_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> MissionActivationResponse:
     """
     Activate a mission (set as active and trigger timeline recomputation).
 
@@ -910,6 +920,8 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
 
     Args:
         mission_id: Mission ID to activate
+        route_manager: Route manager dependency
+        poi_manager: POI manager dependency
 
     Returns:
         Activation response with timestamp and flight phase
@@ -975,9 +987,9 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
         _active_mission_id = mission_id
 
         # Ensure associated route is active
-        if mission.route_id and _route_manager:
+        if mission.route_id and route_manager:
             try:
-                _route_manager.activate_route(mission.route_id)
+                route_manager.activate_route(mission.route_id)
             except Exception as exc:
                 mission.is_active = False
                 mission.updated_at = datetime.now(timezone.utc)
@@ -998,6 +1010,8 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
             _compute_and_store_timeline_for_mission(
                 mission,
                 refresh_metrics=True,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
             )
         except HTTPException:
             mission.is_active = False
@@ -1068,7 +1082,9 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
         }
     },
 )
-async def deactivate_mission() -> MissionDeactivationResponse:
+async def deactivate_mission(
+    route_manager: RouteManager = Depends(get_route_manager),
+) -> MissionDeactivationResponse:
     """
     Deactivate the currently active mission.
 
@@ -1079,6 +1095,9 @@ async def deactivate_mission() -> MissionDeactivationResponse:
     - Clears mission metrics from Prometheus
     - Clears the active mission reference
     - Returns deactivation confirmation
+
+    Args:
+        route_manager: Route manager dependency
 
     Returns:
         Deactivation response with timestamp
@@ -1095,11 +1114,11 @@ async def deactivate_mission() -> MissionDeactivationResponse:
         mission = await get_active_mission()
 
         # Deactivate the associated route if it's the active one
-        if mission.route_id and _route_manager:
+        if mission.route_id and route_manager:
             try:
                 # Only deactivate if this mission's route is the currently active route
-                if _route_manager._active_route_id == mission.route_id:
-                    _route_manager.deactivate_route()
+                if route_manager._active_route_id == mission.route_id:
+                    route_manager.deactivate_route()
                     logger.info(
                         "Deactivated route %s associated with mission %s",
                         mission.route_id,

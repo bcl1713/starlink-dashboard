@@ -102,7 +102,7 @@ def stub_timeline_builder(monkeypatch):
             end_time=now + timedelta(hours=1),
             status=TimelineStatus.NOMINAL,
         )
-        timeline = MissionTimeline(mission_id=mission.id, segments=[segment])
+        timeline = MissionLegTimeline(mission_leg_id=mission.id, segments=[segment])
         summary = TimelineSummary(
             mission_start=now,
             mission_end=now + timedelta(hours=1),
@@ -689,7 +689,7 @@ class TestMissionTimelineEndpoints:
         response = client.get(f"/api/missions/{test_mission.id}/timeline")
         assert response.status_code == 200
         data = response.json()
-        assert data["mission_id"] == test_mission.id
+        assert data["mission_leg_id"] == test_mission.id
         assert len(data["segments"]) == 1
 
     def test_timeline_available_after_activation(
@@ -702,12 +702,12 @@ class TestMissionTimelineEndpoints:
         timeline_response = client.get(f"/api/missions/{test_mission.id}/timeline")
         assert timeline_response.status_code == 200
         data = timeline_response.json()
-        assert data["mission_id"] == test_mission.id
+        assert data["mission_leg_id"] == test_mission.id
         assert len(data["segments"]) == 1
 
         active_timeline = client.get("/api/missions/active/timeline")
         assert active_timeline.status_code == 200
-        assert active_timeline.json()["mission_id"] == test_mission.id
+        assert active_timeline.json()["mission_leg_id"] == test_mission.id
 
     def test_recompute_requires_existing_mission(self, client: TestClient):
         response = client.post("/api/missions/unknown-mission/timeline/recompute")
@@ -722,7 +722,7 @@ class TestMissionTimelineEndpoints:
         )
         assert recompute.status_code == 200
         data = recompute.json()
-        assert data["mission_id"] == test_mission.id
+        assert data["mission_leg_id"] == test_mission.id
         assert len(data["segments"]) == 1
 
         # Should now be retrievable via standard timeline endpoint

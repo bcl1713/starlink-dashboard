@@ -212,7 +212,7 @@ async def list_pois(
         # Calculate active status for this POI
         active_status = _calculate_poi_active_status(
             poi=poi,
-            route_manager=_route_manager,
+            route_manager=route_manager,
         )
 
         # If filtering is active, skip inactive POIs before creating the response object

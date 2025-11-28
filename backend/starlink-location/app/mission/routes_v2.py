@@ -15,6 +15,7 @@ from app.mission.storage import (
     delete_mission,
     mission_exists,
     save_mission_timeline,
+    get_mission_lock,
 )
 from app.mission.package_exporter import export_mission_package
 from app.mission.timeline_service import build_mission_timeline
@@ -38,7 +39,11 @@ def set_coverage_sampler(coverage_sampler: CoverageSampler) -> None:
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=Mission)
-async def create_mission(mission: Mission) -> Mission:
+async def create_mission(
+    mission: Mission,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> Mission:
     """Create a new hierarchical mission with legs.
 
     Args:
@@ -51,6 +56,25 @@ async def create_mission(mission: Mission) -> Mission:
         logger.info(f"Creating mission {mission.id}")
         save_mission_v2(mission)
         logger.info(f"Mission {mission.id} created successfully")
+
+        # Generate timeline for each leg
+        if route_manager:
+            for leg in mission.legs:
+                if leg.route_id:
+                    try:
+                        logger.info(f"Generating timeline for leg {leg.id}")
+                        timeline, summary = build_mission_timeline(
+                            mission=leg,
+                            route_manager=route_manager,
+                            poi_manager=poi_manager,
+                            coverage_sampler=_coverage_sampler,
+                            parent_mission_id=mission.id,
+                        )
+                        save_mission_timeline(leg.id, timeline)
+                        logger.info(f"Timeline generated and saved for leg {leg.id}")
+                    except Exception as e:
+                        logger.error(f"Failed to generate timeline for leg {leg.id}: {e}")
+                        # Don't fail creation if timeline generation fails
         return mission
     except Exception as e:
         logger.error(f"Failed to create mission: {e}")
@@ -144,96 +168,97 @@ async def delete_mission_endpoint(
 
         logger.info(f"Deleting mission {mission_id}")
 
-        # Check mission exists
-        mission = load_mission_v2(mission_id)
-        if not mission:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Mission {mission_id} not found",
-            )
-
-        # Log cascade deletion info
-        leg_count = len(mission.legs)
-        logger.info(
-            f"Cascade deletion: mission {mission_id} with {leg_count} leg(s)"
-        )
-
-        # CASCADE DELETE: Process each leg and its associated resources
-        deleted_routes_count = 0
-        deleted_pois_count = 0
-
-        for leg in mission.legs:
-            route_id = leg.route_id or "none"
-            logger.info(f"Cascade deletion: processing leg {leg.id} with route {route_id}")
-
-            # Delete route if it exists
-            if leg.route_id:
-                try:
-                    parsed_route = route_manager.get_route(leg.route_id)
-                    if parsed_route:
-                        # Delete POIs associated with this route
-                        if poi_manager:
-                            route_pois_deleted = poi_manager.delete_route_pois(
-                                leg.route_id
-                            )
-                            deleted_pois_count += route_pois_deleted
-                            logger.info(
-                                f"Deleted {route_pois_deleted} POIs for route {leg.route_id}"
-                            )
-
-                        # Delete KML file
-                        file_path = Path(parsed_route.metadata.file_path)
-                        if file_path.exists():
-                            try:
-                                file_path.unlink()
-                                logger.info(f"Deleted route file: {file_path}")
-                                deleted_routes_count += 1
-                            except OSError as e:
-                                logger.error(
-                                    f"Failed to delete route file {file_path}: {e}"
-                                )
-
-                        # Remove from route manager cache
-                        route_manager._routes.pop(leg.route_id, None)
-                        logger.info(
-                            f"Deleted route {leg.route_id} associated with leg {leg.id}"
-                        )
-                except Exception as e:
-                    logger.error(f"Failed to delete route {leg.route_id}: {e}")
-                    # Don't fail entire mission deletion if route deletion fails
-
-            # Delete mission POIs
-            if poi_manager:
-                try:
-                    mission_pois_deleted = poi_manager.delete_mission_pois(
-                        mission_id
-                    )
-                    deleted_pois_count += mission_pois_deleted
-                    logger.info(
-                        f"Deleted {mission_pois_deleted} POIs for mission {mission_id}"
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to delete mission POIs: {e}")
-                    # Don't fail entire mission deletion if POI deletion fails
-
-        # Delete entire mission directory
-        mission_dir = Path("data/missions") / mission_id
-        if mission_dir.exists():
-            try:
-                shutil.rmtree(mission_dir)
-                logger.info(f"Deleted mission directory: {mission_dir}")
-            except OSError as e:
-                logger.error(f"Failed to delete mission directory {mission_dir}: {e}")
+        with get_mission_lock(mission_id):
+            # Check mission exists
+            mission = load_mission_v2(mission_id)
+            if not mission:
                 raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to delete mission directory",
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Mission {mission_id} not found",
                 )
 
-        logger.info(
-            f"Mission {mission_id} deleted successfully with {leg_count} leg(s), "
-            f"{deleted_routes_count} route(s), {deleted_pois_count} POI(s)"
-        )
-        return None
+            # Log cascade deletion info
+            leg_count = len(mission.legs)
+            logger.info(
+                f"Cascade deletion: mission {mission_id} with {leg_count} leg(s)"
+            )
+
+            # CASCADE DELETE: Process each leg and its associated resources
+            deleted_routes_count = 0
+            deleted_pois_count = 0
+
+            for leg in mission.legs:
+                route_id = leg.route_id or "none"
+                logger.info(f"Cascade deletion: processing leg {leg.id} with route {route_id}")
+
+                # Delete route if it exists
+                if leg.route_id:
+                    try:
+                        parsed_route = route_manager.get_route(leg.route_id)
+                        if parsed_route:
+                            # Delete POIs associated with this route
+                            if poi_manager:
+                                route_pois_deleted = poi_manager.delete_route_pois(
+                                    leg.route_id
+                                )
+                                deleted_pois_count += route_pois_deleted
+                                logger.info(
+                                    f"Deleted {route_pois_deleted} POIs for route {leg.route_id}"
+                                )
+
+                            # Delete KML file
+                            file_path = Path(parsed_route.metadata.file_path)
+                            if file_path.exists():
+                                try:
+                                    file_path.unlink()
+                                    logger.info(f"Deleted route file: {file_path}")
+                                    deleted_routes_count += 1
+                                except OSError as e:
+                                    logger.error(
+                                        f"Failed to delete route file {file_path}: {e}"
+                                    )
+
+                            # Remove from route manager cache
+                            route_manager._routes.pop(leg.route_id, None)
+                            logger.info(
+                                f"Deleted route {leg.route_id} associated with leg {leg.id}"
+                            )
+                    except Exception as e:
+                        logger.error(f"Failed to delete route {leg.route_id}: {e}")
+                        # Don't fail entire mission deletion if route deletion fails
+
+                # Delete mission POIs
+                if poi_manager:
+                    try:
+                        mission_pois_deleted = poi_manager.delete_mission_pois(
+                            mission_id
+                        )
+                        deleted_pois_count += mission_pois_deleted
+                        logger.info(
+                            f"Deleted {mission_pois_deleted} POIs for mission {mission_id}"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to delete mission POIs: {e}")
+                        # Don't fail entire mission deletion if POI deletion fails
+
+            # Delete entire mission directory
+            mission_dir = Path("data/missions") / mission_id
+            if mission_dir.exists():
+                try:
+                    shutil.rmtree(mission_dir)
+                    logger.info(f"Deleted mission directory: {mission_dir}")
+                except OSError as e:
+                    logger.error(f"Failed to delete mission directory {mission_dir}: {e}")
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to delete mission directory",
+                    )
+
+            logger.info(
+                f"Mission {mission_id} deleted successfully with {leg_count} leg(s), "
+                f"{deleted_routes_count} route(s), {deleted_pois_count} POI(s)"
+            )
+            return None
     except HTTPException:
         raise
     except Exception as e:
@@ -441,6 +466,25 @@ async def import_mission(
                     "warnings": warnings
                 }
 
+                # Generate timelines for all imported legs to ensure derived data (like Ka transitions) is present
+                if route_manager:
+                    for leg in mission.legs:
+                        if leg.route_id:
+                            try:
+                                logger.info(f"Generating timeline for imported leg {leg.id}")
+                                timeline, summary = build_mission_timeline(
+                                    mission=leg,
+                                    route_manager=route_manager,
+                                    poi_manager=poi_manager,
+                                    coverage_sampler=_coverage_sampler,
+                                    parent_mission_id=mission.id,
+                                )
+                                save_mission_timeline(leg.id, timeline)
+                                logger.info(f"Timeline generated and saved for imported leg {leg.id}")
+                            except Exception as e:
+                                logger.error(f"Failed to generate timeline for imported leg {leg.id}: {e}")
+                                warnings.append(f"Timeline generation failed for leg {leg.id}: {str(e)}")
+
                 if warnings:
                     logger.warning(f"Import completed with {len(warnings)} warnings")
 
@@ -476,46 +520,47 @@ async def add_leg_to_mission(
         Created leg with 201 status
     """
     try:
-        # Load mission
-        mission = load_mission_v2(mission_id)
-        if not mission:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Mission {mission_id} not found",
-            )
-
-        # Check if leg ID already exists
-        if any(existing_leg.id == leg.id for existing_leg in mission.legs):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Leg {leg.id} already exists in mission",
-            )
-
-        # Add leg to mission
-        mission.legs.append(leg)
-
-        # Save updated mission
-        save_mission_v2(mission)
-
-        # Generate timeline for the new leg
-        if route_manager:
-            try:
-                logger.info(f"Generating timeline for new leg {leg.id}")
-                timeline, summary = build_mission_timeline(
-                    mission=leg,
-                    route_manager=route_manager,
-                    poi_manager=poi_manager,
-                    coverage_sampler=_coverage_sampler,
-                    parent_mission_id=mission_id,
+        with get_mission_lock(mission_id):
+            # Load mission
+            mission = load_mission_v2(mission_id)
+            if not mission:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Mission {mission_id} not found",
                 )
-                save_mission_timeline(leg.id, timeline)
-                logger.info(f"Timeline generated and saved for new leg {leg.id}")
-            except Exception as e:
-                logger.error(f"Failed to generate timeline for new leg {leg.id}: {e}")
-                # Don't fail the save if timeline generation fails
 
-        logger.info(f"Added leg {leg.id} to mission {mission_id}")
-        return leg
+            # Check if leg ID already exists
+            if any(existing_leg.id == leg.id for existing_leg in mission.legs):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Leg {leg.id} already exists in mission",
+                )
+
+            # Add leg to mission
+            mission.legs.append(leg)
+
+            # Save updated mission
+            save_mission_v2(mission)
+
+            # Generate timeline for the new leg
+            if route_manager:
+                try:
+                    logger.info(f"Generating timeline for new leg {leg.id}")
+                    timeline, summary = build_mission_timeline(
+                        mission=leg,
+                        route_manager=route_manager,
+                        poi_manager=poi_manager,
+                        coverage_sampler=_coverage_sampler,
+                        parent_mission_id=mission_id,
+                    )
+                    save_mission_timeline(leg.id, timeline)
+                    logger.info(f"Timeline generated and saved for new leg {leg.id}")
+                except Exception as e:
+                    logger.error(f"Failed to generate timeline for new leg {leg.id}: {e}")
+                    # Don't fail the save if timeline generation fails
+
+            logger.info(f"Added leg {leg.id} to mission {mission_id}")
+            return leg
     except HTTPException:
         raise
     except Exception as e:
@@ -545,59 +590,60 @@ async def update_leg(
         Updated leg
     """
     try:
-        # Load mission
-        mission = load_mission_v2(mission_id)
-        if not mission:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Mission {mission_id} not found",
-            )
-
-        # Find leg index
-        leg_index = None
-        for i, leg in enumerate(mission.legs):
-            if leg.id == leg_id:
-                leg_index = i
-                break
-
-        if leg_index is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Leg {leg_id} not found in mission",
-            )
-
-        # Ensure updated leg has correct ID
-        if updated_leg.id != leg_id:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Leg ID in path must match leg ID in body",
-            )
-
-        # Update leg
-        mission.legs[leg_index] = updated_leg
-
-        # Save updated mission
-        save_mission_v2(mission)
-
-        # Generate timeline for the updated leg
-        if route_manager:
-            try:
-                logger.info(f"Generating timeline for leg {leg_id}")
-                timeline, summary = build_mission_timeline(
-                    mission=updated_leg,
-                    route_manager=route_manager,
-                    poi_manager=poi_manager,
-                    coverage_sampler=_coverage_sampler,
-                    parent_mission_id=mission_id,
+        with get_mission_lock(mission_id):
+            # Load mission
+            mission = load_mission_v2(mission_id)
+            if not mission:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Mission {mission_id} not found",
                 )
-                save_mission_timeline(leg_id, timeline)
-                logger.info(f"Timeline generated and saved for leg {leg_id}")
-            except Exception as e:
-                logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
-                # Don't fail the save if timeline generation fails
 
-        logger.info(f"Updated leg {leg_id} in mission {mission_id}")
-        return updated_leg
+            # Find leg index
+            leg_index = None
+            for i, leg in enumerate(mission.legs):
+                if leg.id == leg_id:
+                    leg_index = i
+                    break
+
+            if leg_index is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Leg {leg_id} not found in mission",
+                )
+
+            # Ensure updated leg has correct ID
+            if updated_leg.id != leg_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Leg ID in path must match leg ID in body",
+                )
+
+            # Update leg
+            mission.legs[leg_index] = updated_leg
+
+            # Save updated mission
+            save_mission_v2(mission)
+
+            # Generate timeline for the updated leg
+            if route_manager:
+                try:
+                    logger.info(f"Generating timeline for leg {leg_id}")
+                    timeline, summary = build_mission_timeline(
+                        mission=updated_leg,
+                        route_manager=route_manager,
+                        poi_manager=poi_manager,
+                        coverage_sampler=_coverage_sampler,
+                        parent_mission_id=mission_id,
+                    )
+                    save_mission_timeline(leg_id, timeline)
+                    logger.info(f"Timeline generated and saved for leg {leg_id}")
+                except Exception as e:
+                    logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
+                    # Don't fail the save if timeline generation fails
+
+            logger.info(f"Updated leg {leg_id} in mission {mission_id}")
+            return updated_leg
     except HTTPException:
         raise
     except Exception as e:
@@ -630,80 +676,81 @@ async def delete_leg(
     try:
         from pathlib import Path
 
-        # Load mission
-        mission = load_mission_v2(mission_id)
-        if not mission:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Mission {mission_id} not found",
+        with get_mission_lock(mission_id):
+            # Load mission
+            mission = load_mission_v2(mission_id)
+            if not mission:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Mission {mission_id} not found",
+                )
+
+            # Find leg to get its route and POI info
+            leg = next((l for l in mission.legs if l.id == leg_id), None)
+            if not leg:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Leg {leg_id} not found in mission",
+                )
+
+            # Log cascade deletion info
+            route_id = leg.route_id or "none"
+            logger.info(
+                f"Cascade deletion: leg {leg_id} with route {route_id}"
             )
 
-        # Find leg to get its route and POI info
-        leg = next((l for l in mission.legs if l.id == leg_id), None)
-        if not leg:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Leg {leg_id} not found in mission",
+            # CASCADE DELETE: Delete associated resources
+            # 1. Delete route if exists
+            if leg.route_id and route_manager:
+                try:
+                    parsed_route = route_manager.get_route(leg.route_id)
+                    if parsed_route:
+                        # Delete associated POIs for this route
+                        if poi_manager:
+                            deleted_pois = poi_manager.delete_route_pois(leg.route_id)
+                            logger.info(f"Deleted {deleted_pois} POIs for route {leg.route_id}")
+
+                        # Delete KML file
+                        file_path = Path(parsed_route.metadata.file_path)
+                        if file_path.exists():
+                            file_path.unlink()
+                            logger.info(f"Deleted route file: {file_path}")
+
+                        # Remove from route manager cache
+                        route_manager._routes.pop(leg.route_id, None)
+                        logger.info(f"Deleted route {leg.route_id} associated with leg {leg_id}")
+                except Exception as e:
+                    logger.error(f"Failed to delete route {leg.route_id}: {e}")
+                    # Don't fail the entire leg deletion if route deletion fails
+
+            # 2. Delete POIs associated with this leg
+            if poi_manager:
+                try:
+                    deleted_leg_pois = poi_manager.delete_mission_pois(mission_id)
+                    logger.info(f"Deleted {deleted_leg_pois} mission POIs for mission {mission_id}")
+                except Exception as e:
+                    logger.error(f"Failed to delete mission POIs: {e}")
+                    # Don't fail the entire leg deletion if POI deletion fails
+
+            # 3. Remove leg from mission and save
+            mission.legs = [l for l in mission.legs if l.id != leg_id]
+            save_mission_v2(mission)
+
+            # 4. Delete leg file from disk
+            legs_dir = Path("data/missions") / mission_id / "legs"
+            leg_file = legs_dir / f"{leg_id}.json"
+            if leg_file.exists():
+                try:
+                    leg_file.unlink()
+                    logger.info(f"Deleted leg file: {leg_file}")
+                except OSError as e:
+                    logger.error(f"Failed to delete leg file {leg_file}: {e}")
+                    raise
+
+            logger.info(
+                f"Deleted leg {leg_id} from mission {mission_id} with route {route_id}"
             )
-
-        # Log cascade deletion info
-        route_id = leg.route_id or "none"
-        logger.info(
-            f"Cascade deletion: leg {leg_id} with route {route_id}"
-        )
-
-        # CASCADE DELETE: Delete associated resources
-        # 1. Delete route if exists
-        if leg.route_id and route_manager:
-            try:
-                parsed_route = route_manager.get_route(leg.route_id)
-                if parsed_route:
-                    # Delete associated POIs for this route
-                    if poi_manager:
-                        deleted_pois = poi_manager.delete_route_pois(leg.route_id)
-                        logger.info(f"Deleted {deleted_pois} POIs for route {leg.route_id}")
-
-                    # Delete KML file
-                    file_path = Path(parsed_route.metadata.file_path)
-                    if file_path.exists():
-                        file_path.unlink()
-                        logger.info(f"Deleted route file: {file_path}")
-
-                    # Remove from route manager cache
-                    route_manager._routes.pop(leg.route_id, None)
-                    logger.info(f"Deleted route {leg.route_id} associated with leg {leg_id}")
-            except Exception as e:
-                logger.error(f"Failed to delete route {leg.route_id}: {e}")
-                # Don't fail the entire leg deletion if route deletion fails
-
-        # 2. Delete POIs associated with this leg
-        if poi_manager:
-            try:
-                deleted_leg_pois = poi_manager.delete_mission_pois(mission_id)
-                logger.info(f"Deleted {deleted_leg_pois} mission POIs for mission {mission_id}")
-            except Exception as e:
-                logger.error(f"Failed to delete mission POIs: {e}")
-                # Don't fail the entire leg deletion if POI deletion fails
-
-        # 3. Remove leg from mission and save
-        mission.legs = [l for l in mission.legs if l.id != leg_id]
-        save_mission_v2(mission)
-
-        # 4. Delete leg file from disk
-        legs_dir = Path("data/missions") / mission_id / "legs"
-        leg_file = legs_dir / f"{leg_id}.json"
-        if leg_file.exists():
-            try:
-                leg_file.unlink()
-                logger.info(f"Deleted leg file: {leg_file}")
-            except OSError as e:
-                logger.error(f"Failed to delete leg file {leg_file}: {e}")
-                raise
-
-        logger.info(
-            f"Deleted leg {leg_id} from mission {mission_id} with route {route_id}"
-        )
-        return None
+            return None
     except HTTPException:
         raise
     except Exception as e:
@@ -731,66 +778,67 @@ async def activate_leg(
         Success response with active leg ID
     """
     try:
-        # Load mission
-        mission = load_mission_v2(mission_id)
+        with get_mission_lock(mission_id):
+            # Load mission
+            mission = load_mission_v2(mission_id)
 
-        if not mission:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Mission {mission_id} not found",
-            )
-
-        # Find the target leg
-        leg_found = False
-        active_leg = None
-        for leg in mission.legs:
-            if leg.id == leg_id:
-                leg.is_active = True
-                leg_found = True
-                active_leg = leg
-            else:
-                leg.is_active = False
-
-        if not leg_found:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Leg {leg_id} not found in mission {mission_id}",
-            )
-
-        # Save updated mission
-        save_mission_v2(mission)
-
-        # Activate the route in RouteManager so dashboard can display it
-        if active_leg and active_leg.route_id and route_manager:
-            try:
-                logger.info(f"Activating route {active_leg.route_id} for leg {leg_id}")
-                route_manager.activate_route(active_leg.route_id)
-                logger.info(f"Route {active_leg.route_id} activated successfully")
-            except Exception as e:
-                logger.error(f"Failed to activate route {active_leg.route_id}: {e}")
-                # Don't fail leg activation if route activation fails
-
-        # Generate timeline for the activated leg
-        if active_leg and route_manager:
-            try:
-                logger.info(f"Generating timeline for leg {leg_id}")
-                timeline, summary = build_mission_timeline(
-                    mission=active_leg,
-                    route_manager=route_manager,
-                    poi_manager=poi_manager,
-                    coverage_sampler=_coverage_sampler,
-                    parent_mission_id=mission_id,
+            if not mission:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Mission {mission_id} not found",
                 )
-                save_mission_timeline(leg_id, timeline)
-                logger.info(f"Timeline generated and saved for leg {leg_id}")
-            except Exception as e:
-                logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
-                # Don't fail activation if timeline generation fails
-                # Return success but note the timeline issue in logs
 
-        logger.info(f"Activated leg {leg_id} in mission {mission_id}")
+            # Find the target leg
+            leg_found = False
+            active_leg = None
+            for leg in mission.legs:
+                if leg.id == leg_id:
+                    leg.is_active = True
+                    leg_found = True
+                    active_leg = leg
+                else:
+                    leg.is_active = False
 
-        return {"status": "success", "active_leg_id": leg_id}
+            if not leg_found:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Leg {leg_id} not found in mission {mission_id}",
+                )
+
+            # Save updated mission
+            save_mission_v2(mission)
+
+            # Activate the route in RouteManager so dashboard can display it
+            if active_leg and active_leg.route_id and route_manager:
+                try:
+                    logger.info(f"Activating route {active_leg.route_id} for leg {leg_id}")
+                    route_manager.activate_route(active_leg.route_id)
+                    logger.info(f"Route {active_leg.route_id} activated successfully")
+                except Exception as e:
+                    logger.error(f"Failed to activate route {active_leg.route_id}: {e}")
+                    # Don't fail leg activation if route activation fails
+
+            # Generate timeline for the activated leg
+            if active_leg and route_manager:
+                try:
+                    logger.info(f"Generating timeline for leg {leg_id}")
+                    timeline, summary = build_mission_timeline(
+                        mission=active_leg,
+                        route_manager=route_manager,
+                        poi_manager=poi_manager,
+                        coverage_sampler=_coverage_sampler,
+                        parent_mission_id=mission_id,
+                    )
+                    save_mission_timeline(leg_id, timeline)
+                    logger.info(f"Timeline generated and saved for leg {leg_id}")
+                except Exception as e:
+                    logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
+                    # Don't fail activation if timeline generation fails
+                    # Return success but note the timeline issue in logs
+
+            logger.info(f"Activated leg {leg_id} in mission {mission_id}")
+
+            return {"status": "success", "active_leg_id": leg_id}
     except HTTPException:
         raise
     except Exception as e:
@@ -812,37 +860,38 @@ async def deactivate_all_legs(mission_id: str) -> dict:
         Success response
     """
     try:
-        # Load mission
-        mission = load_mission_v2(mission_id)
+        with get_mission_lock(mission_id):
+            # Load mission
+            mission = load_mission_v2(mission_id)
 
-        if not mission:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Mission {mission_id} not found",
-            )
+            if not mission:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Mission {mission_id} not found",
+                )
 
-        # Deactivate all legs
-        for leg in mission.legs:
-            leg.is_active = False
+            # Deactivate all legs
+            for leg in mission.legs:
+                leg.is_active = False
 
-        # Save updated mission
-        save_mission_v2(mission)
+            # Save updated mission
+            save_mission_v2(mission)
 
-        # Deactivate all routes associated with this mission's legs
-        if _route_manager:
-            try:
-                for leg in mission.legs:
-                    if leg.route_id:
-                        logger.info(f"Deactivating route {leg.route_id} for leg {leg.id}")
-                        _route_manager.deactivate_route(leg.route_id)
-                logger.info(f"Deactivated all routes for mission {mission_id}")
-            except Exception as e:
-                logger.error(f"Failed to deactivate routes: {e}")
-                # Don't fail the overall deactivation if route deactivation fails
+            # Deactivate all routes associated with this mission's legs
+            if _route_manager:
+                try:
+                    for leg in mission.legs:
+                        if leg.route_id:
+                            logger.info(f"Deactivating route {leg.route_id} for leg {leg.id}")
+                            _route_manager.deactivate_route(leg.route_id)
+                    logger.info(f"Deactivated all routes for mission {mission_id}")
+                except Exception as e:
+                    logger.error(f"Failed to deactivate routes: {e}")
+                    # Don't fail the overall deactivation if route deactivation fails
 
-        logger.info(f"Deactivated all legs in mission {mission_id}")
+            logger.info(f"Deactivated all legs in mission {mission_id}")
 
-        return {"status": "success", "message": "All legs deactivated"}
+            return {"status": "success", "message": "All legs deactivated"}
     except HTTPException:
         raise
     except Exception as e:
