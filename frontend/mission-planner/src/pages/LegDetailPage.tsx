@@ -142,7 +142,6 @@ export function LegDetailPage() {
             .filter((t): t is KaTransition => t !== null);
 
           setKaTransitions(transitions);
-          console.log('Loaded Ka transition POIs for leg:', legId, 'route:', leg.route_id, 'mission:', missionId, transitions);
         })
         .catch((err) => console.error('Failed to load Ka transition POIs:', err));
     } else {
@@ -173,9 +172,6 @@ export function LegDetailPage() {
     updates: Partial<SatelliteConfig>
   ) => {
     const updatedConfig = { ...satelliteConfig, ...updates };
-    if (updates.xband_transitions) {
-      console.log('X-Band transitions updated:', updatedConfig.xband_transitions);
-    }
     setSatelliteConfig(updatedConfig);
     setHasUnsavedChanges(true);
   };
@@ -358,10 +354,6 @@ export function LegDetailPage() {
         {/* Right Column: Map Visualization */}
         <div className="sticky top-6 h-fit">
           <h2 className="text-xl font-semibold mb-4">Route Visualization</h2>
-          {(() => {
-            console.log('Passing X-Band transitions to RouteMap:', satelliteConfig.xband_transitions);
-            return null;
-          })()}
           <RouteMap
             coordinates={mapCoordinates}
             xbandTransitions={satelliteConfig.xband_transitions}

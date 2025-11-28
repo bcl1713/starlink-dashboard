@@ -80,8 +80,6 @@ export function RouteMap({
       return -1;
     }
 
-    console.log(`Found waypoint "${waypointName}" at [${waypointObj.latitude}, ${waypointObj.longitude}]`);
-
     // Now find the closest coordinate to this waypoint
     let closestIndex = 0;
     let minDistance = Number.MAX_SAFE_INTEGER;
@@ -100,7 +98,6 @@ export function RouteMap({
       }
     }
 
-    console.log(`Matched waypoint to coordinate index ${closestIndex} (distance: ${minDistance.toFixed(0)}m)`);
     return closestIndex;
   };
 
@@ -364,7 +361,6 @@ export function RouteMap({
 
             {/* Render X-Band transition markers */}
             {normalizedXBandTransitions.map((transition) => {
-              console.log('Rendering X-Band transition marker:', transition);
               return (
                 <Marker
                   key={`xband-${transition.id}`}
@@ -398,26 +394,15 @@ export function RouteMap({
 
             {/* Render AAR segments */}
             {aarSegments.map((segment, idx) => {
-              // DEBUG: Log what we're working with
-              console.log(`\n===== AAR Segment ${idx} =====`);
-              console.log('Waypoint names:', waypoints);
-              console.log('Waypoint objects:', waypointObjects);
-              console.log(`Looking for: "${segment.start_waypoint_name}" → "${segment.end_waypoint_name}"`);
-
               // Find the coordinate indices for this AAR segment
               const startIdx = getWaypointCoordinateIndex(segment.start_waypoint_name);
               const endIdx = getWaypointCoordinateIndex(segment.end_waypoint_name);
-
-              console.log(`Found coordinate indices: startIdx=${startIdx}, endIdx=${endIdx}`);
-              console.log(`Total waypoint objects: ${waypointObjects.length}`);
-              console.log(`Total coordinates: ${coordinates.length}`);
 
               // Skip if waypoints not found
               if (startIdx === -1 || endIdx === -1) {
                 console.warn(
                   `AAR segment ${idx}: Could not find waypoints "${segment.start_waypoint_name}" or "${segment.end_waypoint_name}"`
                 );
-                console.log('Available waypoint names:', waypoints);
                 return null;
               }
 
@@ -433,18 +418,6 @@ export function RouteMap({
               const useNormalized = detectIDLCrossing();
               const coordsToUse = useNormalized ? normalizedCoordinates : coordinates;
               const segmentCoordinates = coordsToUse.slice(startIdx, endIdx + 1);
-
-              console.log(`Using ${useNormalized ? 'normalized' : 'original'} coordinates`);
-              console.log(`Slicing coords from index ${startIdx} to ${endIdx} (inclusive)`);
-              console.log(`Segment coordinates count: ${segmentCoordinates.length}`);
-              if (segmentCoordinates.length <= 10) {
-                console.log('Segment coordinates:', segmentCoordinates);
-              } else {
-                console.log(`Segment coordinates: [${segmentCoordinates.length} points, first 3 and last 3]`, {
-                  first3: segmentCoordinates.slice(0, 3),
-                  last3: segmentCoordinates.slice(-3),
-                });
-              }
 
               // Skip if no coordinates found
               if (segmentCoordinates.length === 0) {

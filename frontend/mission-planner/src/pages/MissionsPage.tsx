@@ -12,8 +12,7 @@ export function MissionsPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedMission, setSelectedMission] = useState<{ id: string; name: string } | null>(null);
 
-  const handleSelectMission = (id: string) => {
-    console.log('Selected mission:', id);
+  const handleSelectMission = (_id: string) => {
     // TODO: Navigate to mission detail view
   };
 
@@ -27,7 +26,6 @@ export function MissionsPage() {
   };
 
   const handleImportSuccess = (missionId: string) => {
-    console.log('Mission imported:', missionId);
     // Optionally navigate to the imported mission
     navigate(`/missions/${missionId}`);
   };

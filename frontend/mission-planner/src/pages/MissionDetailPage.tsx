@@ -49,13 +49,9 @@ export function MissionDetailPage() {
   };
 
   const handleDeleteMission = async (confirmed: boolean) => {
-    console.log('handleDeleteMission called for mission:', missionId, 'confirmed:', confirmed);
-
     if (confirmed) {
       try {
-        console.log('Calling deleteMissionMutation.mutateAsync...');
         await deleteMissionMutation.mutateAsync(missionId || '');
-        console.log('Mission deleted successfully, navigating to /missions');
         navigate('/missions');
       } catch (error) {
         console.error('Failed to delete mission:', error);
@@ -65,13 +61,9 @@ export function MissionDetailPage() {
   };
 
   const handleDeleteLeg = async (leg: MissionLeg, confirmed: boolean) => {
-    console.log('handleDeleteLeg called for leg:', leg.id, 'confirmed:', confirmed);
-
     if (confirmed) {
       try {
-        console.log('Calling deleteLegMutation.mutateAsync...');
         await deleteLegMutation.mutateAsync(leg.id);
-        console.log('Leg deleted successfully');
       } catch (error) {
         console.error('Failed to delete leg:', error);
         alert('Failed to delete leg. Please try again.');
