@@ -86,7 +86,7 @@ services:
     depends_on:
       - starlink-location
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://starlink-location:8000
     networks:
       - starlink-net
 
