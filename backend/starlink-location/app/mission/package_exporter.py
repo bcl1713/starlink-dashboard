@@ -29,6 +29,184 @@ class ExportPackageError(RuntimeError):
     """Raised when mission package export fails."""
 
 
+def _create_mission_summary_sheet(wb, mission: Mission):
+    """Create mission summary sheet with metadata and leg index.
+    
+    Args:
+        wb: Workbook to add sheet to
+        mission: Mission object with metadata
+        
+    Returns:
+        Worksheet with mission summary
+    """
+    ws = wb.active
+    ws.title = "Mission Summary"
+    ws.append(["Mission Name", mission.name])
+    ws.append(["Mission ID", mission.id])
+    ws.append(["Total Legs", len(mission.legs)])
+    ws.append(["Generated", datetime.now(timezone.utc).isoformat()])
+    ws.append([])
+    ws.append(["Leg #", "Leg ID", "Leg Name", "Description"])
+
+    for idx, leg in enumerate(mission.legs, 1):
+        ws.append([idx, leg.id, leg.name, leg.description or ""])
+
+    # Set column widths for better readability
+    ws.column_dimensions["A"].width = 10
+    ws.column_dimensions["B"].width = 25
+    ws.column_dimensions["C"].width = 30
+    ws.column_dimensions["D"].width = 50
+    
+    return ws
+
+
+def _copy_worksheet_content(source_sheet, target_sheet):
+    """Copy all content from source worksheet to target worksheet.
+    
+    Args:
+        source_sheet: Source worksheet to copy from
+        target_sheet: Target worksheet to copy to
+    """
+    # Copy cell values, styles, and merged cells
+    for row in source_sheet.iter_rows():
+        for cell in row:
+            new_cell = target_sheet[cell.coordinate]
+            new_cell.value = cell.value
+
+            # Copy cell formatting
+            if cell.has_style:
+                new_cell.font = copy.copy(cell.font)
+                new_cell.border = copy.copy(cell.border)
+                new_cell.fill = copy.copy(cell.fill)
+                new_cell.number_format = copy.copy(cell.number_format)
+                new_cell.protection = copy.copy(cell.protection)
+                new_cell.alignment = copy.copy(cell.alignment)
+
+    # Copy column widths
+    for col_letter, col_dim in source_sheet.column_dimensions.items():
+        target_sheet.column_dimensions[col_letter].width = col_dim.width
+
+    # Copy row heights
+    for row_num, row_dim in source_sheet.row_dimensions.items():
+        target_sheet.row_dimensions[row_num].height = row_dim.height
+
+    # Copy merged cells
+    for merged_cell_range in source_sheet.merged_cells.ranges:
+        target_sheet.merge_cells(str(merged_cell_range))
+
+    # Copy images if any
+    for image in source_sheet._images:
+        new_image = copy.copy(image)
+        target_sheet.add_image(new_image, image.anchor)
+
+
+def _add_error_sheet(wb, leg_idx: int, leg, error_message: str):
+    """Add an error sheet for a failed leg export.
+    
+    Args:
+        wb: Workbook to add sheet to
+        leg_idx: Leg index (0-based)
+        leg: Leg object
+        error_message: Error message to display
+        
+    Returns:
+        Worksheet with error information
+    """
+    ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
+    ws_error.append(["Leg Name", leg.name])
+    ws_error.append(["Leg ID", leg.id])
+    ws_error.append([])
+    ws_error.append(["Error", error_message])
+    return ws_error
+
+
+def _process_leg_xlsx_export(
+    wb,
+    leg,
+    leg_idx: int,
+    mission_id: str,
+    route_manager: RouteManager | None,
+    poi_manager: POIManager | None,
+):
+    """Process a single leg's XLSX export and add sheets to workbook.
+    
+    Args:
+        wb: Workbook to add sheets to
+        leg: Leg object to process
+        leg_idx: Leg index (0-based)
+        mission_id: Parent mission ID
+        route_manager: RouteManager instance
+        poi_manager: POIManager instance
+    """
+    from openpyxl import load_workbook
+    
+    # Load timeline for this leg
+    leg_timeline = load_mission_timeline(leg.id)
+    if not leg_timeline:
+        logger.warning(
+            f"No timeline found for leg {leg.id}, adding summary sheet only"
+        )
+        # Add a simple sheet for this leg
+        ws_leg = wb.create_sheet(title=f"Leg {leg_idx + 1} - {leg.name[:20]}")
+        ws_leg.append(["Leg Name", leg.name])
+        ws_leg.append(["Leg ID", leg.id])
+        ws_leg.append(["Description", leg.description or "N/A"])
+        ws_leg.append([])
+        ws_leg.append(["Status", "No timeline data available"])
+        return
+
+    try:
+        # Generate full XLSX export for this leg
+        leg_xlsx_bytes = generate_timeline_export(
+            export_format=TimelineExportFormat.XLSX,
+            mission=leg,
+            timeline=leg_timeline,
+            parent_mission_id=mission_id,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
+
+        # Load the leg workbook
+        leg_wb = load_workbook(io.BytesIO(leg_xlsx_bytes.content))
+
+        # Copy each sheet from leg workbook to main workbook with leg prefix
+        for sheet_name in leg_wb.sheetnames:
+            leg_sheet = leg_wb[sheet_name]
+
+            # Create new sheet name with leg prefix
+            # Truncate leg name to fit Excel's sheet name limit
+            leg_prefix = f"L{leg_idx + 1}"
+            if sheet_name == "Summary":
+                new_sheet_name = f"{leg_prefix} {leg.name[:20]}"
+            else:
+                new_sheet_name = f"{leg_prefix} {sheet_name[:25]}"
+
+            # Ensure sheet name is unique and under limit
+            new_sheet_name = new_sheet_name[:EXCEL_SHEET_NAME_MAX_LENGTH]
+
+            # Create new sheet
+            new_sheet = wb.create_sheet(title=new_sheet_name)
+
+            # Copy all content from leg sheet to new sheet
+            _copy_worksheet_content(leg_sheet, new_sheet)
+
+    except ExportGenerationError as e:
+        logger.error(f"Failed to generate XLSX export for leg {leg.id}: {e}")
+        _add_error_sheet(wb, leg_idx, leg, str(e))
+
+    except (ValueError, KeyError) as e:
+        logger.error(f"Sheet manipulation error for leg {leg.id}: {e}", exc_info=True)
+        _add_error_sheet(wb, leg_idx, leg, f"Processing Error: {str(e)}")
+
+    except zipfile.BadZipFile as e:
+        logger.error(f"Invalid XLSX data generated for leg {leg.id}: {e}", exc_info=True)
+        _add_error_sheet(wb, leg_idx, leg, "Generated Excel file was invalid")
+
+    except Exception as e:
+        logger.error(f"Unexpected error combining XLSX for leg {leg.id}: {e}", exc_info=True)
+        _add_error_sheet(wb, leg_idx, leg, f"Unexpected Error: {str(e)}")
+
+
 def generate_mission_combined_csv(mission: Mission, output_path: str | None = None) -> bytes | None:
     """Generate combined CSV timeline for all legs in mission.
 
@@ -144,10 +322,8 @@ def generate_mission_combined_xlsx(
     - Mission Summary sheet (overview + leg index)
     - Full sheets from each leg (Summary, Timeline, Advisories, Statistics)
     """
-    import io
-
     try:
-        from openpyxl import Workbook, load_workbook
+        from openpyxl import Workbook
     except ImportError:
         logger.error("openpyxl not installed")
         return b""
@@ -156,139 +332,14 @@ def generate_mission_combined_xlsx(
         # Create main workbook
         wb = Workbook()
 
-        # Mission Summary sheet
-        ws = wb.active
-        ws.title = "Mission Summary"
-        ws.append(["Mission Name", mission.name])
-        ws.append(["Mission ID", mission.id])
-        ws.append(["Total Legs", len(mission.legs)])
-        ws.append(["Generated", datetime.now(timezone.utc).isoformat()])
-        ws.append([])
-        ws.append(["Leg #", "Leg ID", "Leg Name", "Description"])
-
-        for idx, leg in enumerate(mission.legs, 1):
-            ws.append([idx, leg.id, leg.name, leg.description or ""])
-
-        # Set column widths for better readability
-        ws.column_dimensions["A"].width = 10
-        ws.column_dimensions["B"].width = 25
-        ws.column_dimensions["C"].width = 30
-        ws.column_dimensions["D"].width = 50
+        # Create mission summary sheet
+        _create_mission_summary_sheet(wb, mission)
 
         # Process each leg and import its sheets
         for leg_idx, leg in enumerate(mission.legs):
-            # Load timeline for this leg
-            leg_timeline = load_mission_timeline(leg.id)
-            if not leg_timeline:
-                logger.warning(
-                    f"No timeline found for leg {leg.id}, adding summary sheet only"
-                )
-                # Add a simple sheet for this leg
-                ws_leg = wb.create_sheet(title=f"Leg {leg_idx + 1} - {leg.name[:20]}")
-                ws_leg.append(["Leg Name", leg.name])
-                ws_leg.append(["Leg ID", leg.id])
-                ws_leg.append(["Description", leg.description or "N/A"])
-                ws_leg.append([])
-                ws_leg.append(["Status", "No timeline data available"])
-                continue
-
-            try:
-                # Generate full XLSX export for this leg
-                leg_xlsx_bytes = generate_timeline_export(
-                    export_format=TimelineExportFormat.XLSX,
-                    mission=leg,
-                    timeline=leg_timeline,
-                    parent_mission_id=mission.id,
-                    route_manager=route_manager,
-                    poi_manager=poi_manager,
-                )
-
-                # Load the leg workbook
-                leg_wb = load_workbook(io.BytesIO(leg_xlsx_bytes.content))
-
-                # Copy each sheet from leg workbook to main workbook with leg prefix
-                for sheet_name in leg_wb.sheetnames:
-                    leg_sheet = leg_wb[sheet_name]
-
-                    # Create new sheet name with leg prefix
-                    # Truncate leg name to fit Excel's sheet name limit
-                    leg_prefix = f"L{leg_idx + 1}"
-                    if sheet_name == "Summary":
-                        new_sheet_name = f"{leg_prefix} {leg.name[:20]}"
-                    else:
-                        new_sheet_name = f"{leg_prefix} {sheet_name[:25]}"
-
-                    # Ensure sheet name is unique and under limit
-                    new_sheet_name = new_sheet_name[:EXCEL_SHEET_NAME_MAX_LENGTH]
-
-                    # Create new sheet
-                    new_sheet = wb.create_sheet(title=new_sheet_name)
-
-                    # Copy cell values, styles, and merged cells
-                    for row in leg_sheet.iter_rows():
-                        for cell in row:
-                            new_cell = new_sheet[cell.coordinate]
-                            new_cell.value = cell.value
-
-                            # Copy cell formatting
-                            if cell.has_style:
-                                new_cell.font = copy.copy(cell.font)
-                                new_cell.border = copy.copy(cell.border)
-                                new_cell.fill = copy.copy(cell.fill)
-                                new_cell.number_format = copy.copy(cell.number_format)
-                                new_cell.protection = copy.copy(cell.protection)
-                                new_cell.alignment = copy.copy(cell.alignment)
-
-                    # Copy column widths
-                    for col_letter, col_dim in leg_sheet.column_dimensions.items():
-                        new_sheet.column_dimensions[col_letter].width = col_dim.width
-
-                    # Copy row heights
-                    for row_num, row_dim in leg_sheet.row_dimensions.items():
-                        new_sheet.row_dimensions[row_num].height = row_dim.height
-
-                    # Copy merged cells
-                    for merged_cell_range in leg_sheet.merged_cells.ranges:
-                        new_sheet.merge_cells(str(merged_cell_range))
-
-                    # Copy images if any
-                    for image in leg_sheet._images:
-                        new_image = copy.copy(image)
-                        new_sheet.add_image(new_image, image.anchor)
-
-            except ExportGenerationError as e:
-                logger.error(f"Failed to generate XLSX export for leg {leg.id}: {e}")
-                # Add error sheet
-                ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
-                ws_error.append(["Leg Name", leg.name])
-                ws_error.append(["Leg ID", leg.id])
-                ws_error.append([])
-                ws_error.append(["Export Error", str(e)])
-
-            except (ValueError, KeyError) as e:
-                logger.error(f"Sheet manipulation error for leg {leg.id}: {e}", exc_info=True)
-                ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
-                ws_error.append(["Leg Name", leg.name])
-                ws_error.append(["Leg ID", leg.id])
-                ws_error.append([])
-                ws_error.append(["Processing Error", str(e)])
-
-            except zipfile.BadZipFile as e:
-                logger.error(f"Invalid XLSX data generated for leg {leg.id}: {e}", exc_info=True)
-                ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
-                ws_error.append(["Leg Name", leg.name])
-                ws_error.append(["Leg ID", leg.id])
-                ws_error.append([])
-                ws_error.append(["File Error", "Generated Excel file was invalid"])
-
-            except Exception as e:
-                logger.error(f"Unexpected error combining XLSX for leg {leg.id}: {e}", exc_info=True)
-                # Add error sheet
-                ws_error = wb.create_sheet(title=f"L{leg_idx + 1} Error")
-                ws_error.append(["Leg Name", leg.name])
-                ws_error.append(["Leg ID", leg.id])
-                ws_error.append([])
-                ws_error.append(["Unexpected Error", str(e)])
+            _process_leg_xlsx_export(
+                wb, leg, leg_idx, mission.id, route_manager, poi_manager
+            )
 
         # Save to bytes or file
         if output_path:
@@ -796,6 +847,351 @@ def generate_mission_combined_pdf(
         return output_stream.read()
 
 
+def _add_mission_metadata_to_zip(zf: zipfile.ZipFile, mission: Mission, manifest_files: dict):
+    """Add mission.json and leg JSON files to zip archive.
+    
+    Args:
+        zf: ZipFile to add files to
+        mission: Mission object to export
+        manifest_files: Manifest dictionary to update
+    """
+    # Add mission metadata
+    zf.writestr(
+        "mission.json", json.dumps(mission.model_dump(), indent=2, default=str)
+    )
+    logger.info(f"Added mission.json for {mission.id}")
+
+    # Add leg JSON files
+    for leg in mission.legs:
+        leg_json = json.dumps(leg.model_dump(), indent=2, default=str)
+        leg_path = f"legs/{leg.id}.json"
+        zf.writestr(leg_path, leg_json)
+        manifest_files["legs"].append(leg_path)
+        logger.info(f"Added leg file: {leg_path}")
+
+
+def _add_route_kmls_to_zip(
+    zf: zipfile.ZipFile,
+    mission: Mission,
+    route_manager: RouteManager | None,
+    manifest_files: dict,
+):
+    """Add route KML files for all legs to zip archive.
+    
+    Args:
+        zf: ZipFile to add files to
+        mission: Mission object with legs
+        route_manager: RouteManager instance for fetching routes
+        manifest_files: Manifest dictionary to update
+    """
+    if not route_manager:
+        return
+
+    for leg in mission.legs:
+        if leg.route_id:
+            try:
+                route = route_manager.get_route(leg.route_id)
+                if route:
+                    # Try to read the KML file from disk
+                    routes_dir = Path(route_manager.routes_dir)
+                    kml_file = routes_dir / f"{leg.route_id}.kml"
+                    if kml_file.exists():
+                        with open(kml_file, "rb") as f:
+                            kml_content = f.read()
+                        route_path = f"routes/{leg.route_id}.kml"
+                        zf.writestr(route_path, kml_content)
+                        manifest_files["routes"].append(route_path)
+                        logger.info(f"Added route KML: {route_path}")
+                    else:
+                        logger.warning(
+                            f"Route KML file not found at {kml_file} for leg {leg.id}"
+                        )
+                else:
+                    logger.warning(
+                        f"Route {leg.route_id} not found for leg {leg.id}"
+                    )
+            except Exception as e:
+                logger.error(f"Failed to add route KML for leg {leg.id}: {e}")
+
+
+def _add_pois_to_zip(
+    zf: zipfile.ZipFile,
+    mission: Mission,
+    poi_manager: POIManager | None,
+    manifest_files: dict,
+):
+    """Add POI data (leg-specific and satellites) to zip archive.
+    
+    Args:
+        zf: ZipFile to add files to
+        mission: Mission object with legs
+        poi_manager: POIManager instance for fetching POIs
+        manifest_files: Manifest dictionary to update
+    """
+    if not poi_manager:
+        return
+
+    # Track all POI IDs we've seen to collect satellite POIs at the end
+    all_poi_ids = set()
+
+    for leg in mission.legs:
+        try:
+            # Get POIs associated with this leg's route and mission
+            leg_pois = []
+
+            # Get all POIs for the mission once to optimize
+            all_mission_pois = poi_manager.list_pois(mission_id=mission.id)
+
+            # Filter for POIs that are either mission-scoped (no route_id) or specific to this leg's route
+            for poi in all_mission_pois:
+                if poi.route_id is None or poi.route_id == leg.route_id:
+                    leg_pois.append(poi)
+
+            # Track POI IDs
+            for poi in leg_pois:
+                all_poi_ids.add(poi.id)
+
+            if leg_pois:
+                pois_data = {
+                    "leg_id": leg.id,
+                    "mission_id": mission.id,
+                    "route_id": leg.route_id,
+                    "pois": [poi.model_dump(mode="json") for poi in leg_pois],
+                    "count": len(leg_pois),
+                }
+                poi_path = f"pois/{leg.id}-pois.json"
+                zf.writestr(
+                    poi_path, json.dumps(pois_data, indent=2, default=str)
+                )
+                manifest_files["pois"].append(poi_path)
+                logger.info(
+                    f"Added POI data: {poi_path} with {len(leg_pois)} POIs"
+                )
+        except Exception as e:
+            logger.error(f"Failed to add POI data for leg {leg.id}: {e}")
+
+    # Export satellite POIs (category="satellite") separately
+    try:
+        all_pois = poi_manager.list_pois()
+        satellite_pois = [
+            poi for poi in all_pois if poi.category == "satellite"
+        ]
+
+        if satellite_pois:
+            satellite_data = {
+                "type": "satellite_pois",
+                "pois": [poi.model_dump(mode="json") for poi in satellite_pois],
+                "count": len(satellite_pois),
+            }
+            satellite_path = "pois/satellites.json"
+            zf.writestr(
+                satellite_path,
+                json.dumps(satellite_data, indent=2, default=str),
+            )
+            manifest_files["pois"].append(satellite_path)
+            logger.info(
+                f"Added satellite POI data: {satellite_path} with {len(satellite_pois)} satellites"
+            )
+    except Exception as e:
+        logger.error(f"Failed to add satellite POI data: {e}")
+
+
+def _add_per_leg_exports_to_zip(
+    zf: zipfile.ZipFile,
+    mission: Mission,
+    route_manager: RouteManager | None,
+    poi_manager: POIManager | None,
+    manifest_files: dict,
+):
+    """Generate and add per-leg exports (CSV, XLSX, PPTX, PDF) to zip archive.
+    
+    Args:
+        zf: ZipFile to add files to
+        mission: Mission object with legs
+        route_manager: RouteManager instance
+        poi_manager: POIManager instance
+        manifest_files: Manifest dictionary to update
+    """
+    for leg in mission.legs:
+        # Load timeline for this specific leg
+        leg_timeline = load_mission_timeline(leg.id)
+        if not leg_timeline:
+            logger.warning(
+                f"No timeline found for leg {leg.id}, skipping exports for this leg"
+            )
+            continue
+
+        try:
+            # CSV export
+            csv_export = generate_timeline_export(
+                export_format=TimelineExportFormat.CSV,
+                mission=leg,  # Pass the leg as mission (MissionLeg has same fields)
+                timeline=leg_timeline,
+            )
+            csv_path = f"exports/legs/{leg.id}/timeline.csv"
+            zf.writestr(csv_path, csv_export.content)
+            manifest_files["per_leg_exports"].append(csv_path)
+            logger.info(f"Generated CSV for leg {leg.id}")
+        except Exception as e:
+            logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
+
+        try:
+            # XLSX export
+            xlsx_export = generate_timeline_export(
+                export_format=TimelineExportFormat.XLSX,
+                mission=leg,
+                timeline=leg_timeline,
+                parent_mission_id=mission.id,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+            )
+            xlsx_path = f"exports/legs/{leg.id}/timeline.xlsx"
+            zf.writestr(xlsx_path, xlsx_export.content)
+            manifest_files["per_leg_exports"].append(xlsx_path)
+            logger.info(f"Generated XLSX for leg {leg.id}")
+        except Exception as e:
+            logger.error(f"Failed to generate XLSX for leg {leg.id}: {e}")
+
+        try:
+            # PPTX export
+            pptx_export = generate_timeline_export(
+                export_format=TimelineExportFormat.PPTX,
+                mission=leg,
+                timeline=leg_timeline,
+                parent_mission_id=mission.id,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+            )
+            pptx_path = f"exports/legs/{leg.id}/slides.pptx"
+            zf.writestr(pptx_path, pptx_export.content)
+            manifest_files["per_leg_exports"].append(pptx_path)
+            logger.info(f"Generated PPTX for leg {leg.id}")
+        except Exception as e:
+            logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
+
+        try:
+            # PDF export
+            pdf_export = generate_timeline_export(
+                export_format=TimelineExportFormat.PDF,
+                mission=leg,
+                timeline=leg_timeline,
+                parent_mission_id=mission.id,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+            )
+            pdf_path = f"exports/legs/{leg.id}/report.pdf"
+            zf.writestr(pdf_path, pdf_export.content)
+            manifest_files["per_leg_exports"].append(pdf_path)
+            logger.info(f"Generated PDF for leg {leg.id}")
+        except Exception as e:
+            logger.error(f"Failed to generate PDF for leg {leg.id}: {e}")
+
+
+def _add_combined_mission_exports_to_zip(
+    zf: zipfile.ZipFile,
+    mission: Mission,
+    route_manager: RouteManager | None,
+    poi_manager: POIManager | None,
+    manifest_files: dict,
+):
+    """Generate and add combined mission-level exports to zip archive.
+    
+    Args:
+        zf: ZipFile to add files to
+        mission: Mission object
+        route_manager: RouteManager instance
+        poi_manager: POIManager instance
+        manifest_files: Manifest dictionary to update
+    """
+    try:
+        logger.info(f"Generating combined mission-level exports for {mission.id}")
+
+        # Combined CSV - stream to temp file
+        with tempfile.NamedTemporaryFile(delete=True) as tmp_csv:
+            generate_mission_combined_csv(mission, output_path=tmp_csv.name)
+            zf.write(tmp_csv.name, "exports/mission/mission-timeline.csv")
+            manifest_files["mission_exports"].append("exports/mission/mission-timeline.csv")
+
+        # Combined XLSX - stream to temp file
+        with tempfile.NamedTemporaryFile(delete=True, suffix=".xlsx") as tmp_xlsx:
+            generate_mission_combined_xlsx(
+                mission,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+                output_path=tmp_xlsx.name,
+            )
+            zf.write(tmp_xlsx.name, "exports/mission/mission-timeline.xlsx")
+            manifest_files["mission_exports"].append("exports/mission/mission-timeline.xlsx")
+
+        with tempfile.NamedTemporaryFile(delete=True, suffix=".pptx") as tmp_pptx:
+            generate_mission_combined_pptx(
+                mission,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+                output_path=tmp_pptx.name,
+            )
+            zf.write(tmp_pptx.name, "exports/mission/mission-slides.pptx")
+            manifest_files["mission_exports"].append("exports/mission/mission-slides.pptx")
+
+        with tempfile.NamedTemporaryFile(delete=True, suffix=".pdf") as tmp_pdf:
+            generate_mission_combined_pdf(
+                mission,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+                output_path=tmp_pdf.name,
+            )
+            zf.write(tmp_pdf.name, "exports/mission/mission-report.pdf")
+            manifest_files["mission_exports"].append("exports/mission/mission-report.pdf")
+
+        logger.info("Combined mission-level exports complete")
+
+    except Exception as e:
+        logger.error(f"Failed to generate combined mission exports: {e}")
+
+
+def _create_export_manifest(mission: Mission, manifest_files: dict) -> dict:
+    """Create the manifest.json content for the export package.
+    
+    Args:
+        mission: Mission object
+        manifest_files: Dictionary with file lists by category
+        
+    Returns:
+        Manifest dictionary
+    """
+    return {
+        "version": "2.0",
+        "mission_id": mission.id,
+        "mission_name": mission.name,
+        "mission_description": mission.description or "",
+        "leg_count": len(mission.legs),
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "file_structure": {
+            "mission_data": manifest_files["mission_data"],
+            "legs": manifest_files["legs"],
+            "routes": manifest_files["routes"],
+            "pois": manifest_files["pois"],
+            "mission_exports": manifest_files["mission_exports"],
+            "per_leg_exports": manifest_files["per_leg_exports"],
+        },
+        "statistics": {
+            "total_files": (
+                len(manifest_files["mission_data"])
+                + len(manifest_files["legs"])
+                + len(manifest_files["routes"])
+                + len(manifest_files["pois"])
+                + len(manifest_files["mission_exports"])
+                + len(manifest_files["per_leg_exports"])
+            ),
+            "leg_files": len(manifest_files["legs"]),
+            "route_files": len(manifest_files["routes"]),
+            "poi_files": len(manifest_files["pois"]),
+            "mission_export_files": len(manifest_files["mission_exports"]),
+            "per_leg_export_files": len(manifest_files["per_leg_exports"]),
+        },
+    }
+
+
 def export_mission_package(
     mission_id: str,
     route_manager: RouteManager,
@@ -836,8 +1232,8 @@ def export_mission_package(
 
     Args:
         mission_id: Mission to export
-        route_manager: Optional RouteManager instance for fetching route KML files (uses global if not provided)
-        poi_manager: Optional POIManager instance for fetching mission POIs (uses global if not provided)
+        route_manager: RouteManager instance for fetching route KML files
+        poi_manager: POIManager instance for fetching mission POIs
 
     Returns:
         File-like object containing the zip archive. Caller must close it to delete the temp file.
@@ -846,10 +1242,6 @@ def export_mission_package(
 
     if not mission:
         raise ExportPackageError(f"Mission {mission_id} not found")
-
-    # Use global managers if not provided
-    rm = route_manager
-    pm = poi_manager
 
     # Create a temporary file for the zip archive
     # delete=True ensures it's deleted when closed by the caller (StreamingResponse)
@@ -866,269 +1258,23 @@ def export_mission_package(
 
     try:
         with zipfile.ZipFile(zip_temp, "w", zipfile.ZIP_DEFLATED) as zf:
-            # Add mission metadata
-            zf.writestr(
-                "mission.json", json.dumps(mission.model_dump(), indent=2, default=str)
-            )
-            logger.info(f"Added mission.json for {mission.id}")
+            # Add mission metadata and leg files
+            _add_mission_metadata_to_zip(zf, mission, manifest_files)
 
-            # Add leg JSON files
-            for leg in mission.legs:
-                leg_json = json.dumps(leg.model_dump(), indent=2, default=str)
-                leg_path = f"legs/{leg.id}.json"
-                zf.writestr(leg_path, leg_json)
-                manifest_files["legs"].append(leg_path)
-                logger.info(f"Added leg file: {leg_path}")
+            # Add route KML files
+            _add_route_kmls_to_zip(zf, mission, route_manager, manifest_files)
 
-            # Add route KML files for each leg
-            if rm:
-                for leg in mission.legs:
-                    if leg.route_id:
-                        try:
-                            route = rm.get_route(leg.route_id)
-                            if route:
-                                # Try to read the KML file from disk
-                                routes_dir = Path(rm.routes_dir)
-                                kml_file = routes_dir / f"{leg.route_id}.kml"
-                                if kml_file.exists():
-                                    with open(kml_file, "rb") as f:
-                                        kml_content = f.read()
-                                    route_path = f"routes/{leg.route_id}.kml"
-                                    zf.writestr(route_path, kml_content)
-                                    manifest_files["routes"].append(route_path)
-                                    logger.info(f"Added route KML: {route_path}")
-                                else:
-                                    logger.warning(
-                                        f"Route KML file not found at {kml_file} for leg {leg.id}"
-                                    )
-                            else:
-                                logger.warning(
-                                    f"Route {leg.route_id} not found for leg {leg.id}"
-                                )
-                        except Exception as e:
-                            logger.error(f"Failed to add route KML for leg {leg.id}: {e}")
+            # Add POI data (leg-specific and satellites)
+            _add_pois_to_zip(zf, mission, poi_manager, manifest_files)
 
-            # Add POI data for each leg
-            if pm:
-                # Track all POI IDs we've seen to collect satellite POIs at the end
-                all_poi_ids = set()
+            # Generate and add per-leg exports
+            _add_per_leg_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)
 
-                for leg in mission.legs:
-                    try:
-                        # Get POIs associated with this leg's route and mission
-                        leg_pois = []
+            # Generate and add combined mission-level exports
+            _add_combined_mission_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)
 
-                        # Get all POIs for the mission once to optimize
-                        all_mission_pois = pm.list_pois(mission_id=mission.id)
-
-                        # Filter for POIs that are either mission-scoped (no route_id) or specific to this leg's route
-
-                        for poi in all_mission_pois:
-                            if poi.route_id is None or poi.route_id == leg.route_id:
-                                leg_pois.append(poi)
-
-                        # Track POI IDs
-                        for poi in leg_pois:
-                            all_poi_ids.add(poi.id)
-
-                        if leg_pois:
-                            pois_data = {
-                                "leg_id": leg.id,
-                                "mission_id": mission.id,
-                                "route_id": leg.route_id,
-                                "pois": [poi.model_dump(mode="json") for poi in leg_pois],
-                                "count": len(leg_pois),
-                            }
-                            poi_path = f"pois/{leg.id}-pois.json"
-                            zf.writestr(
-                                poi_path, json.dumps(pois_data, indent=2, default=str)
-                            )
-                            manifest_files["pois"].append(poi_path)
-                            logger.info(
-                                f"Added POI data: {poi_path} with {len(leg_pois)} POIs"
-                            )
-                    except Exception as e:
-                        logger.error(f"Failed to add POI data for leg {leg.id}: {e}")
-
-                # Export satellite POIs (category="satellite") separately
-                try:
-                    all_pois = pm.list_pois()
-                    satellite_pois = [
-                        poi for poi in all_pois if poi.category == "satellite"
-                    ]
-
-                    if satellite_pois:
-                        satellite_data = {
-                            "type": "satellite_pois",
-                            "pois": [poi.model_dump(mode="json") for poi in satellite_pois],
-                            "count": len(satellite_pois),
-                        }
-                        satellite_path = "pois/satellites.json"
-                        zf.writestr(
-                            satellite_path,
-                            json.dumps(satellite_data, indent=2, default=str),
-                        )
-                        manifest_files["pois"].append(satellite_path)
-                        logger.info(
-                            f"Added satellite POI data: {satellite_path} with {len(satellite_pois)} satellites"
-                        )
-                except Exception as e:
-                    logger.error(f"Failed to add satellite POI data: {e}")
-
-            # Generate per-leg exports (load timeline for each leg)
-            for leg in mission.legs:
-                # Load timeline for this specific leg
-                leg_timeline = load_mission_timeline(leg.id)
-                if not leg_timeline:
-                    logger.warning(
-                        f"No timeline found for leg {leg.id}, skipping exports for this leg"
-                    )
-                    continue
-
-                try:
-                    # CSV export
-                    csv_export = generate_timeline_export(
-                        export_format=TimelineExportFormat.CSV,
-                        mission=leg,  # Pass the leg as mission (MissionLeg has same fields)
-                        timeline=leg_timeline,
-                    )
-                    csv_path = f"exports/legs/{leg.id}/timeline.csv"
-                    zf.writestr(csv_path, csv_export.content)
-                    manifest_files["per_leg_exports"].append(csv_path)
-                    logger.info(f"Generated CSV for leg {leg.id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
-
-                try:
-                    # XLSX export
-                    xlsx_export = generate_timeline_export(
-                        export_format=TimelineExportFormat.XLSX,
-                        mission=leg,
-                        timeline=leg_timeline,
-                        parent_mission_id=mission.id,
-                        route_manager=rm,
-                        poi_manager=pm,
-                    )
-                    xlsx_path = f"exports/legs/{leg.id}/timeline.xlsx"
-                    zf.writestr(xlsx_path, xlsx_export.content)
-                    manifest_files["per_leg_exports"].append(xlsx_path)
-                    logger.info(f"Generated XLSX for leg {leg.id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate XLSX for leg {leg.id}: {e}")
-
-                try:
-                    # PPTX export
-                    pptx_export = generate_timeline_export(
-                        export_format=TimelineExportFormat.PPTX,
-                        mission=leg,
-                        timeline=leg_timeline,
-                        parent_mission_id=mission.id,
-                        route_manager=rm,
-                        poi_manager=pm,
-                    )
-                    pptx_path = f"exports/legs/{leg.id}/slides.pptx"
-                    zf.writestr(pptx_path, pptx_export.content)
-                    manifest_files["per_leg_exports"].append(pptx_path)
-                    logger.info(f"Generated PPTX for leg {leg.id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
-
-                try:
-                    # PDF export
-                    pdf_export = generate_timeline_export(
-                        export_format=TimelineExportFormat.PDF,
-                        mission=leg,
-                        timeline=leg_timeline,
-                        parent_mission_id=mission.id,
-                        route_manager=rm,
-                        poi_manager=pm,
-                    )
-                    pdf_path = f"exports/legs/{leg.id}/report.pdf"
-                    zf.writestr(pdf_path, pdf_export.content)
-                    manifest_files["per_leg_exports"].append(pdf_path)
-                    logger.info(f"Generated PDF for leg {leg.id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate PDF for leg {leg.id}: {e}")
-
-            # Generate combined mission-level exports (OUTSIDE the leg loop)
-            try:
-                logger.info(f"Generating combined mission-level exports for {mission.id}")
-
-                # Combined CSV - stream to temp file
-                with tempfile.NamedTemporaryFile(delete=True) as tmp_csv:
-                    generate_mission_combined_csv(mission, output_path=tmp_csv.name)
-                    zf.write(tmp_csv.name, "exports/mission/mission-timeline.csv")
-                    manifest_files["mission_exports"].append("exports/mission/mission-timeline.csv")
-
-                # Combined XLSX - stream to temp file
-                with tempfile.NamedTemporaryFile(delete=True, suffix=".xlsx") as tmp_xlsx:
-                    generate_mission_combined_xlsx(
-                        mission,
-                        route_manager=rm,
-                        poi_manager=pm,
-                        output_path=tmp_xlsx.name,
-                    )
-                    zf.write(tmp_xlsx.name, "exports/mission/mission-timeline.xlsx")
-                    manifest_files["mission_exports"].append("exports/mission/mission-timeline.xlsx")
-
-                with tempfile.NamedTemporaryFile(delete=True, suffix=".pptx") as tmp_pptx:
-                    generate_mission_combined_pptx(
-                        mission,
-                        route_manager=rm,
-                        poi_manager=pm,
-                        output_path=tmp_pptx.name,
-                    )
-                    zf.write(tmp_pptx.name, "exports/mission/mission-slides.pptx")
-                    manifest_files["mission_exports"].append("exports/mission/mission-slides.pptx")
-
-                with tempfile.NamedTemporaryFile(delete=True, suffix=".pdf") as tmp_pdf:
-                    generate_mission_combined_pdf(
-                        mission,
-                        route_manager=rm,
-                        poi_manager=pm,
-                        output_path=tmp_pdf.name,
-                    )
-                    zf.write(tmp_pdf.name, "exports/mission/mission-report.pdf")
-                    manifest_files["mission_exports"].append("exports/mission/mission-report.pdf")
-
-                logger.info("Combined mission-level exports complete")
-
-            except Exception as e:
-                logger.error(f"Failed to generate combined mission exports: {e}")
-
-            # Create comprehensive manifest with file listing and statistics
-            manifest = {
-                "version": "2.0",
-                "mission_id": mission.id,
-                "mission_name": mission.name,
-                "mission_description": mission.description or "",
-                "leg_count": len(mission.legs),
-                "exported_at": datetime.now(timezone.utc).isoformat(),
-                "file_structure": {
-                    "mission_data": manifest_files["mission_data"],
-                    "legs": manifest_files["legs"],
-                    "routes": manifest_files["routes"],
-                    "pois": manifest_files["pois"],
-                    "mission_exports": manifest_files["mission_exports"],
-                    "per_leg_exports": manifest_files["per_leg_exports"],
-                },
-                "statistics": {
-                    "total_files": (
-                        len(manifest_files["mission_data"])
-                        + len(manifest_files["legs"])
-                        + len(manifest_files["routes"])
-                        + len(manifest_files["pois"])
-                        + len(manifest_files["mission_exports"])
-                        + len(manifest_files["per_leg_exports"])
-                    ),
-                    "leg_files": len(manifest_files["legs"]),
-                    "route_files": len(manifest_files["routes"]),
-                    "poi_files": len(manifest_files["pois"]),
-                    "mission_export_files": len(manifest_files["mission_exports"]),
-                    "per_leg_export_files": len(manifest_files["per_leg_exports"]),
-                },
-            }
-
+            # Create and add manifest
+            manifest = _create_export_manifest(mission, manifest_files)
             manifest_json = json.dumps(manifest, indent=2)
             zf.writestr("manifest.json", manifest_json)
             logger.info(
