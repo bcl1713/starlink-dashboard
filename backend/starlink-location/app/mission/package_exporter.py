@@ -50,11 +50,16 @@ def generate_mission_combined_csv(mission: Mission) -> bytes:
     writer = csv.writer(output)
 
     # Write header
-    writer.writerow([
-        "Mission", mission.name,
-        "Total Legs", len(mission.legs),
-        "Generated", datetime.now(timezone.utc).isoformat()
-    ])
+    writer.writerow(
+        [
+            "Mission",
+            mission.name,
+            "Total Legs",
+            len(mission.legs),
+            "Generated",
+            datetime.now(timezone.utc).isoformat(),
+        ]
+    )
     writer.writerow([])  # Blank line
 
     # Write combined timeline
@@ -72,30 +77,50 @@ def generate_mission_combined_csv(mission: Mission) -> bytes:
 
             # Add timeline segments
             for segment in timeline.segments:
-                start_time = segment.start_time.isoformat() if isinstance(segment.start_time, datetime) else segment.start_time
-                end_time = segment.end_time.isoformat() if isinstance(segment.end_time, datetime) else segment.end_time
-                duration = (segment.end_time - segment.start_time).total_seconds() if isinstance(segment.end_time, datetime) else 0
+                start_time = (
+                    segment.start_time.isoformat()
+                    if isinstance(segment.start_time, datetime)
+                    else segment.start_time
+                )
+                end_time = (
+                    segment.end_time.isoformat()
+                    if isinstance(segment.end_time, datetime)
+                    else segment.end_time
+                )
+                duration = (
+                    (segment.end_time - segment.start_time).total_seconds()
+                    if isinstance(segment.end_time, datetime)
+                    else 0
+                )
 
                 reasons = ", ".join(segment.reasons) if segment.reasons else "---"
 
-                writer.writerow([
-                    leg.id,
-                    leg.name,
-                    start_time,
-                    segment.status.value,
-                    f"States: X={segment.x_state.value}, Ka={segment.ka_state.value}, Ku={segment.ku_state.value} | Duration: {duration}s | Reasons: {reasons}"
-                ])
+                writer.writerow(
+                    [
+                        leg.id,
+                        leg.name,
+                        start_time,
+                        segment.status.value,
+                        f"States: X={segment.x_state.value}, Ka={segment.ka_state.value}, Ku={segment.ku_state.value} | Duration: {duration}s | Reasons: {reasons}",
+                    ]
+                )
 
             # Add timeline advisories
             for advisory in timeline.advisories:
-                timestamp = advisory.timestamp.isoformat() if isinstance(advisory.timestamp, datetime) else advisory.timestamp
-                writer.writerow([
-                    leg.id,
-                    leg.name,
-                    timestamp,
-                    f"ADVISORY ({advisory.event_type})",
-                    f"[{advisory.severity.upper()}] {advisory.message}"
-                ])
+                timestamp = (
+                    advisory.timestamp.isoformat()
+                    if isinstance(advisory.timestamp, datetime)
+                    else advisory.timestamp
+                )
+                writer.writerow(
+                    [
+                        leg.id,
+                        leg.name,
+                        timestamp,
+                        f"ADVISORY ({advisory.event_type})",
+                        f"[{advisory.severity.upper()}] {advisory.message}",
+                    ]
+                )
 
             writer.writerow([leg.id, leg.name, "LEG END", "---", "---"])
             writer.writerow([])  # Blank line between legs
@@ -103,7 +128,7 @@ def generate_mission_combined_csv(mission: Mission) -> bytes:
         except Exception as e:
             logger.error(f"Failed to include leg {leg.id} in combined CSV: {e}")
 
-    return output.getvalue().encode('utf-8')
+    return output.getvalue().encode("utf-8")
 
 
 def generate_mission_combined_xlsx(mission: Mission) -> bytes:
@@ -114,6 +139,7 @@ def generate_mission_combined_xlsx(mission: Mission) -> bytes:
     - Full sheets from each leg (Summary, Timeline, Advisories, Statistics)
     """
     import io
+
     try:
         from openpyxl import Workbook, load_workbook
     except ImportError:
@@ -138,17 +164,19 @@ def generate_mission_combined_xlsx(mission: Mission) -> bytes:
             ws.append([idx, leg.id, leg.name, leg.description or ""])
 
         # Set column widths for better readability
-        ws.column_dimensions['A'].width = 10
-        ws.column_dimensions['B'].width = 25
-        ws.column_dimensions['C'].width = 30
-        ws.column_dimensions['D'].width = 50
+        ws.column_dimensions["A"].width = 10
+        ws.column_dimensions["B"].width = 25
+        ws.column_dimensions["C"].width = 30
+        ws.column_dimensions["D"].width = 50
 
         # Process each leg and import its sheets
         for leg_idx, leg in enumerate(mission.legs):
             # Load timeline for this leg
             leg_timeline = load_mission_timeline(leg.id)
             if not leg_timeline:
-                logger.warning(f"No timeline found for leg {leg.id}, adding summary sheet only")
+                logger.warning(
+                    f"No timeline found for leg {leg.id}, adding summary sheet only"
+                )
                 # Add a simple sheet for this leg
                 ws_leg = wb.create_sheet(title=f"Leg {leg_idx + 1} - {leg.name[:20]}")
                 ws_leg.append(["Leg Name", leg.name])
@@ -258,6 +286,7 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
     - Summary slide
     """
     import io
+
     try:
         from pptx import Presentation
         from pptx.util import Inches, Pt
@@ -267,7 +296,11 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
         return b""
 
     # Import the helper function from exporter that generates slides for a leg
-    from app.mission.exporter import _generate_route_map, _segment_rows, _generate_timeline_chart
+    from app.mission.exporter import (
+        _generate_route_map,
+        _segment_rows,
+        _generate_timeline_chart,
+    )
     from app.mission.exporter import TRANSPORT_DISPLAY, STATE_COLUMNS, Transport
     from openpyxl.styles import PatternFill
     from pptx.util import Pt
@@ -287,7 +320,9 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
         # Load timeline for this leg
         leg_timeline = load_mission_timeline(leg.id)
         if not leg_timeline:
-            logger.warning(f"No timeline found for leg {leg.id}, adding summary slide only")
+            logger.warning(
+                f"No timeline found for leg {leg.id}, adding summary slide only"
+            )
             # Add a summary slide for this leg
             slide = prs.slides.add_slide(prs.slide_layouts[1])
             title_shape = slide.shapes.title
@@ -297,7 +332,6 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
             continue
 
         try:
-
             # Generate slides for this leg using the same logic as generate_pptx_export
             # Slide 1: Route Map
             blank_slide_layout = prs.slide_layouts[6]
@@ -305,7 +339,9 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
 
             # Generate map image
             try:
-                map_image_bytes = _generate_route_map(leg_timeline, leg, parent_mission_id=mission.id)
+                map_image_bytes = _generate_route_map(
+                    leg_timeline, leg, parent_mission_id=mission.id
+                )
                 map_image_stream = io.BytesIO(map_image_bytes)
 
                 # Add image to slide
@@ -314,10 +350,14 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
                 width = Inches(9)
                 height = Inches(6.5)
 
-                slide1.shapes.add_picture(map_image_stream, left, top, width=width, height=height)
+                slide1.shapes.add_picture(
+                    map_image_stream, left, top, width=width, height=height
+                )
 
                 # Add title
-                title_box = slide1.shapes.add_textbox(Inches(0.5), Inches(0.1), Inches(9), Inches(0.5))
+                title_box = slide1.shapes.add_textbox(
+                    Inches(0.5), Inches(0.1), Inches(9), Inches(0.5)
+                )
                 tf = title_box.text_frame
                 p = tf.paragraphs[0]
                 p.text = f"{leg.name} - Route Map"
@@ -326,8 +366,12 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
                 p.alignment = PP_ALIGN.CENTER
 
             except Exception as e:
-                logger.error(f"Failed to add map to PPTX for leg {leg.id}: {e}", exc_info=True)
-                textbox = slide1.shapes.add_textbox(Inches(1), Inches(1), Inches(8), Inches(1))
+                logger.error(
+                    f"Failed to add map to PPTX for leg {leg.id}: {e}", exc_info=True
+                )
+                textbox = slide1.shapes.add_textbox(
+                    Inches(1), Inches(1), Inches(8), Inches(1)
+                )
                 tf = textbox.text_frame
                 tf.text = f"Map generation failed: {str(e)}"
 
@@ -339,18 +383,22 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
                 from pptx.dml.color import RGBColor
 
                 columns_to_show = [
-                    "Segment #", "Status", "Start Time", "End Time", "Duration",
+                    "Segment #",
+                    "Status",
+                    "Start Time",
+                    "End Time",
+                    "Duration",
                     TRANSPORT_DISPLAY[Transport.X],
                     TRANSPORT_DISPLAY[Transport.KA],
                     TRANSPORT_DISPLAY[Transport.KU],
-                    "Reasons"
+                    "Reasons",
                 ]
 
                 # Pagination settings
                 ROWS_PER_SLIDE = 10
                 MIN_ROWS_LAST_SLIDE = 3
 
-                records = timeline_df.to_dict('records')
+                records = timeline_df.to_dict("records")
                 total_rows = len(records)
 
                 chunks = []
@@ -372,8 +420,10 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
                             split_idx = total_rows - remainder_count
                             second_last_len = remainder_count - MIN_ROWS_LAST_SLIDE
 
-                            chunk_second_last = timeline_df.iloc[split_idx : split_idx + second_last_len]
-                            chunk_last = timeline_df.iloc[split_idx + second_last_len : ]
+                            chunk_second_last = timeline_df.iloc[
+                                split_idx : split_idx + second_last_len
+                            ]
+                            chunk_last = timeline_df.iloc[split_idx + second_last_len :]
 
                             chunks = base_chunks + [chunk_second_last, chunk_last]
 
@@ -381,10 +431,16 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
                     slide = prs.slides.add_slide(blank_slide_layout)
 
                     # Add title
-                    title_box = slide.shapes.add_textbox(Inches(0.5), Inches(0.1), Inches(9), Inches(0.5))
+                    title_box = slide.shapes.add_textbox(
+                        Inches(0.5), Inches(0.1), Inches(9), Inches(0.5)
+                    )
                     tf = title_box.text_frame
                     p = tf.paragraphs[0]
-                    p.text = f"{leg.name} - Timeline" if chunk_idx == 0 else f"{leg.name} - Timeline (cont.)"
+                    p.text = (
+                        f"{leg.name} - Timeline"
+                        if chunk_idx == 0
+                        else f"{leg.name} - Timeline (cont.)"
+                    )
                     p.font.bold = True
                     p.font.size = Pt(24)
                     p.alignment = PP_ALIGN.CENTER
@@ -421,7 +477,9 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
                     for row_idx, (_, row_data) in enumerate(chunk.iterrows(), start=1):
                         bad_transports = []
                         for col_name in STATE_COLUMNS:
-                            val = str(row_data[col_name] if row_data[col_name] else "").lower()
+                            val = str(
+                                row_data[col_name] if row_data[col_name] else ""
+                            ).lower()
                             if val in ("degraded", "warning", "offline"):
                                 bad_transports.append(col_name)
 
@@ -429,7 +487,11 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
 
                         for col_idx, col_name in enumerate(columns_to_show):
                             cell = table.cell(row_idx, col_idx)
-                            val = str(row_data[col_name] if row_data[col_name] is not None else "")
+                            val = str(
+                                row_data[col_name]
+                                if row_data[col_name] is not None
+                                else ""
+                            )
 
                             if col_name == "Status" and is_critical_row:
                                 val = "CRITICAL"
@@ -454,20 +516,33 @@ def generate_mission_combined_pptx(mission: Mission) -> bytes:
                                 if "safety-of-flight" in reasons or "aar" in reasons:
                                     is_sof = True
 
-                                if col_name == "Status" and is_sof and val_lower in ("available", "nominal", "warning"):
-                                     cell.text = "SOF"
-                                     for paragraph in cell.text_frame.paragraphs:
+                                if (
+                                    col_name == "Status"
+                                    and is_sof
+                                    and val_lower in ("available", "nominal", "warning")
+                                ):
+                                    cell.text = "SOF"
+                                    for paragraph in cell.text_frame.paragraphs:
                                         paragraph.font.size = Pt(7)
                                         paragraph.alignment = PP_ALIGN.LEFT
 
-                                if val_lower in ("degraded", "warning", "offline") or is_sof:
+                                if (
+                                    val_lower in ("degraded", "warning", "offline")
+                                    or is_sof
+                                ):
                                     cell.fill.solid()
                                     if is_critical_row and not is_sof:
-                                         cell.fill.fore_color.rgb = RGBColor(255, 204, 204)
+                                        cell.fill.fore_color.rgb = RGBColor(
+                                            255, 204, 204
+                                        )
                                     elif val_lower in ("degraded", "warning") or is_sof:
-                                        cell.fill.fore_color.rgb = RGBColor(255, 255, 204)
+                                        cell.fill.fore_color.rgb = RGBColor(
+                                            255, 255, 204
+                                        )
                                     else:
-                                        cell.fill.fore_color.rgb = RGBColor(255, 204, 204)
+                                        cell.fill.fore_color.rgb = RGBColor(
+                                            255, 204, 204
+                                        )
 
         except Exception as e:
             logger.error(f"Failed to generate PPTX slides for leg {leg.id}: {e}")
@@ -494,6 +569,7 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
     - Summary page
     """
     import io
+
     try:
         from PyPDF2 import PdfMerger, PdfReader
         from reportlab.lib.pagesizes import letter
@@ -515,7 +591,11 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
         c.setFont("Helvetica", 12)
         c.drawString(100, height - 140, f"Mission ID: {mission.id}")
         c.drawString(100, height - 160, f"Total Legs: {len(mission.legs)}")
-        c.drawString(100, height - 200, f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+        c.drawString(
+            100,
+            height - 200,
+            f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
+        )
 
         # Add table of contents
         c.setFont("Helvetica-Bold", 14)
@@ -538,7 +618,9 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
             # Load timeline for this leg
             leg_timeline = load_mission_timeline(leg.id)
             if not leg_timeline:
-                logger.warning(f"No timeline found for leg {leg.id}, adding summary page only")
+                logger.warning(
+                    f"No timeline found for leg {leg.id}, adding summary page only"
+                )
                 # Create a simple page for this leg
                 leg_buffer = io.BytesIO()
                 c = canvas.Canvas(leg_buffer, pagesize=letter)
@@ -546,7 +628,9 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
                 c.drawString(100, height - 100, f"Leg: {leg.name}")
                 c.setFont("Helvetica", 12)
                 c.drawString(100, height - 140, f"Leg ID: {leg.id}")
-                c.drawString(100, height - 160, f"Description: {leg.description or 'N/A'}")
+                c.drawString(
+                    100, height - 160, f"Description: {leg.description or 'N/A'}"
+                )
                 c.drawString(100, height - 200, "No timeline data available.")
                 c.showPage()
                 c.save()
@@ -639,7 +723,11 @@ def generate_mission_combined_pdf(mission: Mission) -> bytes:
         return output.read()
 
 
-def export_mission_package(mission_id: str, route_manager: Optional[RouteManager] = None, poi_manager: Optional[POIManager] = None) -> bytes:
+def export_mission_package(
+    mission_id: str,
+    route_manager: Optional[RouteManager] = None,
+    poi_manager: Optional[POIManager] = None,
+) -> bytes:
     """Export complete mission as zip archive.
 
     Package structure:
@@ -702,7 +790,9 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
 
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         # Add mission metadata
-        zf.writestr("mission.json", json.dumps(mission.model_dump(), indent=2, default=str))
+        zf.writestr(
+            "mission.json", json.dumps(mission.model_dump(), indent=2, default=str)
+        )
         logger.info(f"Added mission.json for {mission.id}")
 
         # Add leg JSON files
@@ -731,9 +821,13 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
                                 manifest_files["routes"].append(route_path)
                                 logger.info(f"Added route KML: {route_path}")
                             else:
-                                logger.warning(f"Route KML file not found at {kml_file} for leg {leg.id}")
+                                logger.warning(
+                                    f"Route KML file not found at {kml_file} for leg {leg.id}"
+                                )
                         else:
-                            logger.warning(f"Route {leg.route_id} not found for leg {leg.id}")
+                            logger.warning(
+                                f"Route {leg.route_id} not found for leg {leg.id}"
+                            )
                     except Exception as e:
                         logger.error(f"Failed to add route KML for leg {leg.id}: {e}")
 
@@ -747,14 +841,14 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
                     # Get POIs associated with this leg's route and mission
                     leg_pois = []
 
-                    # Get mission-scoped POIs
-                    mission_pois = pm.list_pois(mission_id=mission.id)
-                    leg_pois.extend(mission_pois)
+                    # Get all POIs for the mission once to optimize
+                    all_mission_pois = pm.list_pois(mission_id=mission.id)
 
-                    # Get route-specific POIs if leg has a route
-                    if leg.route_id:
-                        route_pois = pm.list_pois(route_id=leg.route_id)
-                        leg_pois.extend(route_pois)
+                    # Filter for POIs that are either mission-scoped (no route_id) or specific to this leg's route
+
+                    for poi in all_mission_pois:
+                        if poi.route_id is None or poi.route_id == leg.route_id:
+                            leg_pois.append(poi)
 
                     # Track POI IDs
                     for poi in leg_pois:
@@ -765,31 +859,42 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
                             "leg_id": leg.id,
                             "mission_id": mission.id,
                             "route_id": leg.route_id,
-                            "pois": [poi.model_dump(mode='json') for poi in leg_pois],
+                            "pois": [poi.model_dump(mode="json") for poi in leg_pois],
                             "count": len(leg_pois),
                         }
                         poi_path = f"pois/{leg.id}-pois.json"
-                        zf.writestr(poi_path, json.dumps(pois_data, indent=2, default=str))
+                        zf.writestr(
+                            poi_path, json.dumps(pois_data, indent=2, default=str)
+                        )
                         manifest_files["pois"].append(poi_path)
-                        logger.info(f"Added POI data: {poi_path} with {len(leg_pois)} POIs")
+                        logger.info(
+                            f"Added POI data: {poi_path} with {len(leg_pois)} POIs"
+                        )
                 except Exception as e:
                     logger.error(f"Failed to add POI data for leg {leg.id}: {e}")
 
             # Export satellite POIs (category="satellite") separately
             try:
                 all_pois = pm.list_pois()
-                satellite_pois = [poi for poi in all_pois if poi.category == "satellite"]
+                satellite_pois = [
+                    poi for poi in all_pois if poi.category == "satellite"
+                ]
 
                 if satellite_pois:
                     satellite_data = {
                         "type": "satellite_pois",
-                        "pois": [poi.model_dump(mode='json') for poi in satellite_pois],
+                        "pois": [poi.model_dump(mode="json") for poi in satellite_pois],
                         "count": len(satellite_pois),
                     }
                     satellite_path = "pois/satellites.json"
-                    zf.writestr(satellite_path, json.dumps(satellite_data, indent=2, default=str))
+                    zf.writestr(
+                        satellite_path,
+                        json.dumps(satellite_data, indent=2, default=str),
+                    )
                     manifest_files["pois"].append(satellite_path)
-                    logger.info(f"Added satellite POI data: {satellite_path} with {len(satellite_pois)} satellites")
+                    logger.info(
+                        f"Added satellite POI data: {satellite_path} with {len(satellite_pois)} satellites"
+                    )
             except Exception as e:
                 logger.error(f"Failed to add satellite POI data: {e}")
 
@@ -798,7 +903,9 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
             # Load timeline for this specific leg
             leg_timeline = load_mission_timeline(leg.id)
             if not leg_timeline:
-                logger.warning(f"No timeline found for leg {leg.id}, skipping exports for this leg")
+                logger.warning(
+                    f"No timeline found for leg {leg.id}, skipping exports for this leg"
+                )
                 continue
 
             try:
@@ -911,12 +1018,12 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
             },
             "statistics": {
                 "total_files": (
-                    len(manifest_files["mission_data"]) +
-                    len(manifest_files["legs"]) +
-                    len(manifest_files["routes"]) +
-                    len(manifest_files["pois"]) +
-                    len(manifest_files["mission_exports"]) +
-                    len(manifest_files["per_leg_exports"])
+                    len(manifest_files["mission_data"])
+                    + len(manifest_files["legs"])
+                    + len(manifest_files["routes"])
+                    + len(manifest_files["pois"])
+                    + len(manifest_files["mission_exports"])
+                    + len(manifest_files["per_leg_exports"])
                 ),
                 "leg_files": len(manifest_files["legs"]),
                 "route_files": len(manifest_files["routes"]),
@@ -928,7 +1035,9 @@ def export_mission_package(mission_id: str, route_manager: Optional[RouteManager
 
         manifest_json = json.dumps(manifest, indent=2)
         zf.writestr("manifest.json", manifest_json)
-        logger.info(f"Created manifest.json with {manifest['statistics']['total_files']} files")
+        logger.info(
+            f"Created manifest.json with {manifest['statistics']['total_files']} files"
+        )
 
     buffer.seek(0)
     return buffer.read()
