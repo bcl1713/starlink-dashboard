@@ -2,6 +2,7 @@
 
 import io
 import logging
+from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query, status, UploadFile, File
 from fastapi.responses import StreamingResponse
@@ -29,6 +30,14 @@ router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
 _route_manager: Optional[RouteManager] = None
 _poi_manager: Optional[POIManager] = None
 _coverage_sampler: Optional[CoverageSampler] = None
+
+
+def safe_extract_path(zip_path: str, base_dir: Path) -> Path:
+    """Validate that extracted path stays within base directory."""
+    extracted = (base_dir / zip_path).resolve()
+    if not extracted.is_relative_to(base_dir):
+        raise ValueError(f"Invalid path in zip: {zip_path}")
+    return extracted
 
 
 def set_route_manager(route_manager: RouteManager) -> None:
@@ -287,7 +296,7 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
         import zipfile
         import tempfile
         import json
-        from pathlib import Path
+        # from pathlib import Path  <-- Moved to top-level
         from app.models.poi import POI
 
         warnings = []
@@ -330,6 +339,9 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
                     route_files = [f for f in zf.namelist() if f.startswith("routes/") and f.endswith(".kml")]
                     for route_file in route_files:
                         try:
+                            # Validate path safety
+                            safe_extract_path(route_file, tmppath)
+
                             route_id = Path(route_file).stem
                             kml_content = zf.read(route_file)
 
@@ -391,6 +403,9 @@ async def import_mission(file: UploadFile = File(...)) -> dict:
                     leg_poi_files = [f for f in poi_files if f != satellite_file]
                     for poi_file in leg_poi_files:
                         try:
+                            # Validate path safety
+                            safe_extract_path(poi_file, tmppath)
+
                             poi_data = json.loads(zf.read(poi_file))
                             for poi_dict in poi_data.get("pois", []):
                                 try:
