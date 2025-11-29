@@ -337,6 +337,14 @@ class MissionLeg(BaseModel):
         description="Planner notes or remarks",
     )
 
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v):
+        import re
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+            raise ValueError("ID must contain only alphanumeric characters, underscores, or hyphens")
+        return v
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -377,6 +385,14 @@ class Mission(BaseModel):
         description="When mission was last updated (UTC, ISO-8601)",
     )
     metadata: dict = Field(default_factory=dict, description="Custom metadata fields")
+
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v):
+        import re
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+            raise ValueError("ID must contain only alphanumeric characters, underscores, or hyphens")
+        return v
 
     model_config = {
         "json_schema_extra": {

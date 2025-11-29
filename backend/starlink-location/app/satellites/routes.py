@@ -220,7 +220,7 @@ async def update_satellite(
         )
 
     # Find POI by satellite_id (name)
-    poi = _poi_manager.find_poi_by_name(satellite_id)
+    poi = poi_manager.find_poi_by_name(satellite_id)
     if not poi or poi.category != "satellite":
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

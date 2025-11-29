@@ -989,7 +989,10 @@ async def activate_leg(
 
 
 @router.post("/{mission_id}/legs/deactivate", response_model=dict)
-async def deactivate_all_legs(mission_id: str) -> dict:
+async def deactivate_all_legs(
+    mission_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+) -> dict:
     """Deactivate all legs in the mission.
 
     Args:
@@ -1017,12 +1020,12 @@ async def deactivate_all_legs(mission_id: str) -> dict:
             save_mission_v2(mission)
 
             # Deactivate all routes associated with this mission's legs
-            if _route_manager:
+            if route_manager:
                 try:
                     for leg in mission.legs:
                         if leg.route_id:
                             logger.info(f"Deactivating route {leg.route_id} for leg {leg.id}")
-                            _route_manager.deactivate_route(leg.route_id)
+                            route_manager.deactivate_route(leg.route_id)
                     logger.info(f"Deactivated all routes for mission {mission_id}")
                 except Exception as e:
                     logger.error(f"Failed to deactivate routes: {e}")

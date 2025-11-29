@@ -243,6 +243,25 @@ class TestMission:
         assert mission.id == "mission-004"
         assert mission.name == "Deserialization Test"
 
+    def test_invalid_id_format(self):
+        """Test that invalid ID format raises validation error."""
+        with pytest.raises(ValueError, match="ID must contain only alphanumeric"):
+            MissionLeg(
+                id="mission 001",  # Invalid space
+                name="Leg 6 Rev 6",
+                route_id="leg-6-rev-6",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+
+        with pytest.raises(ValueError, match="ID must contain only alphanumeric"):
+            MissionLeg(
+                id="mission/001",  # Invalid slash
+                name="Leg 6 Rev 6",
+                route_id="leg-6-rev-6",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+
+
 
 class TestTimelineSegment:
     """Tests for TimelineSegment model."""

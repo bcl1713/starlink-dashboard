@@ -205,6 +205,13 @@ async def create_mission(
             "Creating mission",
         )
 
+        # Ensure route exists
+        if route_manager and not route_manager.get_route(mission.route_id):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Route {mission.route_id} not found",
+            )
+
         # Ensure timestamps are set
         now = datetime.now(timezone.utc)
         if not mission.created_at or mission.created_at.tzinfo is None:
@@ -222,6 +229,8 @@ async def create_mission(
         )
 
         return mission
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.warning(
             "Mission creation failed with validation error",
@@ -748,6 +757,13 @@ async def update_mission(
 
         # Load existing mission
         existing_mission = load_mission(mission_id)
+
+        # Ensure route exists
+        if route_manager and not route_manager.get_route(mission_update.route_id):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Route {mission_update.route_id} not found",
+            )
 
         # Merge: preserve original created_at, update updated_at
         merged = MissionLeg(

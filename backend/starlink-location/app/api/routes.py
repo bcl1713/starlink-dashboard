@@ -817,7 +817,7 @@ async def get_route_progress(
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -840,7 +840,9 @@ async def get_route_progress(
 
 
 @router.get("/active/timing")
-async def get_active_route_timing() -> dict:
+async def get_active_route_timing(
+    route_manager: RouteManager = Depends(get_route_manager),
+) -> dict:
     """
     Get timing profile data for the currently active route.
 
@@ -848,13 +850,13 @@ async def get_active_route_timing() -> dict:
     - Dictionary with timing profile information (departure_time, arrival_time, total_duration, etc.)
     - Empty dict if no route is active or route lacks timing data
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    active_route = _route_manager.get_active_route()
+    active_route = route_manager.get_active_route()
     if not active_route:
         return {
             "has_timing_data": False,
@@ -956,6 +958,7 @@ async def get_live_mode_active_route_eta(
     current_position_lat: float = Query(..., description="Current latitude"),
     current_position_lon: float = Query(..., description="Current longitude"),
     current_speed_knots: float = Query(default=500.0, description="Current speed in knots"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
     Get ETA calculations for the active route in live mode.
@@ -970,13 +973,13 @@ async def get_live_mode_active_route_eta(
     Returns:
     - Dictionary with ETA to next waypoint, remaining distance, and timing info
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_active_route()
+    parsed_route = route_manager.get_active_route()
     if not parsed_route:
         return {
             "has_active_route": False,

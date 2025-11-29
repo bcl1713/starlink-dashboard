@@ -220,7 +220,7 @@ async def startup_event():
 
         if _background_updates_enabled:
             logger.info_json("Starting background update task")
-            _background_task = asyncio.create_task(_background_update_loop())
+            _background_task = asyncio.create_task(_background_update_loop(poi_manager))
         else:
             logger.info_json("Background update task disabled via STARLINK_DISABLE_BACKGROUND_TASKS")
 
@@ -262,7 +262,7 @@ async def shutdown_event():
         )
 
 
-async def _background_update_loop():
+async def _background_update_loop(poi_manager=None):
     """Background task that updates simulator every interval."""
     global _coordinator, _simulation_config
 
@@ -296,7 +296,7 @@ async def _background_update_loop():
                             if hasattr(_coordinator, 'route_manager'):
                                 active_route = _coordinator.route_manager.get_active_route()
 
-                            update_metrics_from_telemetry(telemetry, _simulation_config, active_route)
+                            update_metrics_from_telemetry(telemetry, _simulation_config, active_route, poi_manager)
                             scrape_duration = time.time() - scrape_start
                             starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
                             starlink_metrics_last_update_timestamp_seconds.set(time.time())
