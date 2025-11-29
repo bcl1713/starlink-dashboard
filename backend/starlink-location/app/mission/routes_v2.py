@@ -7,9 +7,10 @@ import tempfile
 import zipfile
 from pathlib import Path
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, status, UploadFile, File, Depends
+from fastapi import APIRouter, HTTPException, Query, status, UploadFile, File, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from app.core.limiter import limiter
 
 from app.mission.models import Mission, MissionLeg
 from app.mission.storage import (
@@ -279,7 +280,9 @@ async def delete_mission_endpoint(
 
 
 @router.post("/{mission_id}/export")
+@limiter.limit("10/minute")
 async def export_mission(
+    request: Request,
     mission_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
     poi_manager: POIManager = Depends(get_poi_manager),
@@ -526,7 +529,9 @@ def _generate_timelines_for_imported_legs(
 
 
 @router.post("/import")
+@limiter.limit("5/minute")
 async def import_mission(
+    request: Request,
     file: UploadFile = File(...),
     route_manager: RouteManager = Depends(get_route_manager),
     poi_manager: POIManager = Depends(get_poi_manager),

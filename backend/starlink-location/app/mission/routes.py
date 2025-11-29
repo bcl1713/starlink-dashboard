@@ -6,9 +6,10 @@ import sys
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status, Depends
+from fastapi import APIRouter, HTTPException, Query, status, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from app.core.limiter import limiter
 
 from app.mission.models import Mission, MissionLeg, MissionPhase, MissionLegTimeline, TransportState
 from app.mission.storage import (
@@ -661,7 +662,9 @@ async def recompute_mission_timeline_endpoint(
         },
     },
 )
+@limiter.limit("10/minute")
 async def export_mission_timeline_endpoint(
+    request: Request,
     mission_id: str,
     format: str = Query("csv", description="Export format: csv, xlsx, or pdf"),
     route_manager: RouteManager = Depends(get_route_manager),

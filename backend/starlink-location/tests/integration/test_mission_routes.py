@@ -18,6 +18,8 @@ from app.mission.models import (
 )
 from app.mission.storage import delete_mission, delete_mission_timeline, mission_exists
 from app.mission.timeline_service import TimelineSummary
+from main import app
+from app.models.route import ParsedRoute, RouteMetadata
 
 
 # Fixtures for test missions
@@ -121,6 +123,26 @@ def stub_timeline_builder(monkeypatch):
         return timeline, summary
 
     monkeypatch.setattr("app.mission.routes.build_mission_timeline", _builder)
+
+
+@pytest.fixture(autouse=True)
+def setup_routes(client):
+    """Inject test route into RouteManager."""
+    
+    if hasattr(app.state, "route_manager"):
+        rm = app.state.route_manager
+        # Create a dummy route
+        route = ParsedRoute(
+            metadata=RouteMetadata(
+                name="Test Route",
+                file_path="/tmp/test_data/routes/test-route-001.kml",
+                last_modified=datetime.now(timezone.utc),
+                point_count=0,
+            ),
+            points=[],
+            segments=[]
+        )
+        rm._routes["test-route-001"] = route
 
 
 class TestMissionCreateEndpoint:

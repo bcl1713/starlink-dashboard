@@ -4,8 +4,9 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status, Depends
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status, Depends, Request
 from fastapi.responses import FileResponse
+from app.core.limiter import limiter
 
 from app.core.logging import get_logger
 from app.models.poi import POICreate
@@ -461,7 +462,9 @@ async def get_route_stats(
 
 
 @router.post("/upload", response_model=RouteResponse, status_code=status.HTTP_201_CREATED, summary="Upload KML route")
+@limiter.limit("10/minute")
 async def upload_route(
+    request: Request,
     import_pois: bool = Query(
         default=True,
         description="Import POIs from waypoint placemarks in the uploaded KML",
@@ -588,7 +591,9 @@ async def upload_route(
 
 
 @router.get("/{route_id}/download", summary="Download KML route")
+@limiter.limit("20/minute")
 async def download_route(
+    request: Request,
     route_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
 ):
