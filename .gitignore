@@ -40,3 +40,9 @@ volumes/
 
 # Environment variables
 .env
+
+# Frontend
+frontend/mission-planner/node_modules/*
+frontend/mission-planner/test-results/
+frontend/mission-planner/playwright-report/
+frontend/mission-planner/dist/

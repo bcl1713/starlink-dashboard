@@ -124,15 +124,18 @@ async def test_metrics_export_emits_eta_labels(monkeypatch: pytest.MonkeyPatch) 
     dummy_poi_manager = _DummyPOIManager(poi)
     dummy_route_manager = _DummyRouteManager(active_route=None)
 
-    metrics_export.set_poi_manager(dummy_poi_manager)
-    metrics_export.set_route_manager(dummy_route_manager)
+    # metrics_export.set_poi_manager(dummy_poi_manager)
+    # metrics_export.set_route_manager(dummy_route_manager)
 
     def _coordinator_factory(config: Any) -> _DummyCoordinator:
         return _DummyCoordinator(telemetry)
 
     monkeypatch.setattr(metrics_export, "SimulationCoordinator", _coordinator_factory)
 
-    output = await metrics_export.get_metrics()
+    output = await metrics_export.get_metrics(
+        route_manager=dummy_route_manager,
+        poi_manager=dummy_poi_manager,
+    )
 
     assert 'starlink_eta_poi_seconds' in output
     assert 'eta_type="' in output
@@ -153,8 +156,11 @@ async def test_metrics_export_includes_route_timing(monkeypatch: pytest.MonkeyPa
         route_id="unit-route",
     )
 
-    metrics_export.set_poi_manager(_DummyPOIManager(poi))
-    metrics_export.set_route_manager(_DummyRouteManager(active_route=_make_parsed_route(has_timing=True)))
+    dummy_poi_manager = _DummyPOIManager(poi)
+    dummy_route_manager = _DummyRouteManager(active_route=_make_parsed_route(has_timing=True))
+
+    # metrics_export.set_poi_manager(dummy_poi_manager)
+    # metrics_export.set_route_manager(dummy_route_manager)
 
     monkeypatch.setattr(
         metrics_export,
@@ -162,7 +168,10 @@ async def test_metrics_export_includes_route_timing(monkeypatch: pytest.MonkeyPa
         lambda config: _DummyCoordinator(telemetry),
     )
 
-    output = await metrics_export.get_metrics()
+    output = await metrics_export.get_metrics(
+        route_manager=dummy_route_manager,
+        poi_manager=dummy_poi_manager,
+    )
 
     assert "starlink_route_has_timing_data" in output
     assert "starlink_route_total_duration_seconds" in output

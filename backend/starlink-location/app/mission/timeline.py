@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Dict, List, Sequence
 
-from app.mission.models import MissionTimeline, TimelineSegment, TimelineStatus, Transport, TransportState
+from app.mission.models import MissionLegTimeline, TimelineSegment, TimelineStatus, Transport, TransportState
 from app.mission.state import TransportInterval
 
 
@@ -100,8 +100,8 @@ def assemble_mission_timeline(
     mission_start: datetime,
     mission_end: datetime,
     intervals: Dict[Transport, Sequence[TransportInterval]],
-) -> MissionTimeline:
-    """Create MissionTimeline model from interval data."""
+) -> MissionLegTimeline:
+    """Create MissionLegTimeline model from interval data."""
     segments = build_timeline_segments(
         mission_id=mission_id,
         mission_start=mission_start,
@@ -109,8 +109,8 @@ def assemble_mission_timeline(
         intervals=intervals,
     )
 
-    return MissionTimeline(
-        mission_id=mission_id,
+    return MissionLegTimeline(
+        mission_leg_id=mission_id,
         segments=segments,
         advisories=[],
     )

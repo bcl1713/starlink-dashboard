@@ -12,7 +12,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import config, flight_status, geojson, health, metrics, pois, routes, status, ui
-from app.mission import exporter, routes as mission_routes
+from app.mission import exporter, package_exporter, routes as mission_routes, routes_v2 as mission_routes_v2
+from app.satellites import routes as satellite_routes
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
@@ -21,6 +22,9 @@ from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+from app.core.limiter import limiter
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -109,11 +113,8 @@ async def startup_event():
         # Inject POIManager singleton into all API modules
         logger.info_json("Injecting POIManager into API modules")
         try:
-            pois.set_poi_manager(poi_manager)
-            routes.set_poi_manager(poi_manager)
-            geojson.set_poi_manager(poi_manager)
-            mission_routes.set_poi_manager(poi_manager)
             # Note: metrics_export also gets POIManager but via route_manager injection below
+            app.state.poi_manager = poi_manager
             logger.info_json("POIManager injected successfully")
         except Exception as e:
             logger.warning_json(
@@ -127,16 +128,13 @@ async def startup_event():
         try:
             _route_manager = RouteManager()
             _route_manager.start_watching()
-            geojson.set_route_manager(_route_manager)
-            routes.set_route_manager(_route_manager)
-            pois.set_route_manager(_route_manager)
-            mission_routes.set_route_manager(_route_manager)
-            exporter.set_route_manager(_route_manager)
-            exporter.set_poi_manager(poi_manager)
+            # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
+            app.state.route_manager = _route_manager
+            
             # Inject into metrics_export as well
-            from app.api import metrics_export
-            metrics_export.set_route_manager(_route_manager)
-            metrics_export.set_poi_manager(poi_manager)
+            # from app.api import metrics_export
+            # metrics_export.set_route_manager(_route_manager)
+            # metrics_export.set_poi_manager(poi_manager)
 
             # Inject RouteManager into SimulationCoordinator (Phase 5 feature)
             if isinstance(_coordinator, SimulationCoordinator):
@@ -225,7 +223,7 @@ async def startup_event():
 
         if _background_updates_enabled:
             logger.info_json("Starting background update task")
-            _background_task = asyncio.create_task(_background_update_loop())
+            _background_task = asyncio.create_task(_background_update_loop(poi_manager))
         else:
             logger.info_json("Background update task disabled via STARLINK_DISABLE_BACKGROUND_TASKS")
 
@@ -267,7 +265,7 @@ async def shutdown_event():
         )
 
 
-async def _background_update_loop():
+async def _background_update_loop(poi_manager=None):
     """Background task that updates simulator every interval."""
     global _coordinator, _simulation_config
 
@@ -301,7 +299,7 @@ async def _background_update_loop():
                             if hasattr(_coordinator, 'route_manager'):
                                 active_route = _coordinator.route_manager.get_active_route()
 
-                            update_metrics_from_telemetry(telemetry, _simulation_config, active_route)
+                            update_metrics_from_telemetry(telemetry, _simulation_config, active_route, poi_manager)
                             scrape_duration = time.time() - scrape_start
                             starlink_metrics_scrape_duration_seconds.observe(scrape_duration)
                             starlink_metrics_last_update_timestamp_seconds.set(time.time())
@@ -391,6 +389,9 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -445,6 +446,8 @@ app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
 app.include_router(mission_routes.router, tags=["Missions"])
+app.include_router(mission_routes_v2.router, tags=["Missions V2"])
+app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(ui.router, tags=["UI"])
 
 

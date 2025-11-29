@@ -1,0 +1,32 @@
+{
+  "id": "26-02",
+  "name": "26-02",
+  "description": null,
+  "legs": [
+    {
+      "id": "leg-6",
+      "name": "Leg 6",
+      "description": null,
+      "route_id": "Leg 6 Rev 6",
+      "transports": {
+        "initial_x_satellite_id": "X-1",
+        "initial_ka_satellite_ids": [
+          "AOR",
+          "POR",
+          "IOR"
+        ],
+        "x_transitions": [],
+        "ka_outages": [],
+        "aar_windows": [],
+        "ku_overrides": []
+      },
+      "created_at": "2025-11-25 12:23:29.002581+00:00",
+      "updated_at": "2025-11-25 12:23:29.002589+00:00",
+      "is_active": true,
+      "notes": null
+    }
+  ],
+  "created_at": "2025-11-25 12:23:18.587672+00:00",
+  "updated_at": "2025-11-25 12:23:18.587678+00:00",
+  "metadata": {}
+}

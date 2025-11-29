@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 from app.services.flight_state_manager import get_flight_state_manager
+from app.mission.dependencies import get_route_manager
 
 
 def test_pre_departure_other_poi_retains_eta(test_client, monkeypatch):
@@ -24,7 +25,9 @@ def test_pre_departure_other_poi_retains_eta(test_client, monkeypatch):
         timing_profile=SimpleNamespace(has_timing_data=False),
     )
     stub_route_manager = SimpleNamespace(get_active_route=lambda: stub_route)
-    monkeypatch.setattr("app.api.pois._route_manager", stub_route_manager, raising=False)
+    
+    # Override dependency instead of monkeypatching global
+    test_client.app.dependency_overrides[get_route_manager] = lambda: stub_route_manager
 
     # Create a standalone "other" POI
     create_response = test_client.post(
@@ -58,3 +61,6 @@ def test_pre_departure_other_poi_retains_eta(test_client, monkeypatch):
     # Cleanup created POI to avoid cross-test interference
     delete_response = test_client.delete(f"/api/pois/{poi_id}")
     assert delete_response.status_code in (200, 204), delete_response.text
+
+    # Clear overrides
+    test_client.app.dependency_overrides.clear()

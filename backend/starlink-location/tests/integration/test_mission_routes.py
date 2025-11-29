@@ -6,18 +6,20 @@ from uuid import uuid4
 from fastapi.testclient import TestClient
 
 from app.mission.models import (
-    Mission,
+    MissionLeg,
     Transport,
     TransportConfig,
     TransportState,
     TimelineSegment,
     TimelineStatus,
-    MissionTimeline,
+    MissionLegTimeline,
     XTransition,
     MissionPhase,
 )
 from app.mission.storage import delete_mission, delete_mission_timeline, mission_exists
 from app.mission.timeline_service import TimelineSummary
+from main import app
+from app.models.route import ParsedRoute, RouteMetadata
 
 
 # Fixtures for test missions
@@ -25,7 +27,7 @@ from app.mission.timeline_service import TimelineSummary
 def test_mission():
     """Create a test mission object with unique ID."""
     unique_id = f"test-mission-{uuid4().hex[:8]}"
-    return Mission(
+    return MissionLeg(
         id=unique_id,
         name="Test Mission",
         description="A test mission for unit tests",
@@ -47,7 +49,7 @@ def test_mission():
 def test_mission_with_transitions():
     """Create a test mission with satellite transitions and unique ID."""
     unique_id = f"test-mission-transitions-{uuid4().hex[:8]}"
-    return Mission(
+    return MissionLeg(
         id=unique_id,
         name="Mission with Transitions",
         description="Test mission with X transitions",
@@ -102,7 +104,7 @@ def stub_timeline_builder(monkeypatch):
             end_time=now + timedelta(hours=1),
             status=TimelineStatus.NOMINAL,
         )
-        timeline = MissionTimeline(mission_id=mission.id, segments=[segment])
+        timeline = MissionLegTimeline(mission_leg_id=mission.id, segments=[segment])
         summary = TimelineSummary(
             mission_start=now,
             mission_end=now + timedelta(hours=1),
@@ -121,6 +123,26 @@ def stub_timeline_builder(monkeypatch):
         return timeline, summary
 
     monkeypatch.setattr("app.mission.routes.build_mission_timeline", _builder)
+
+
+@pytest.fixture(autouse=True)
+def setup_routes(client):
+    """Inject test route into RouteManager."""
+    
+    if hasattr(app.state, "route_manager"):
+        rm = app.state.route_manager
+        # Create a dummy route
+        route = ParsedRoute(
+            metadata=RouteMetadata(
+                name="Test Route",
+                file_path="/tmp/test_data/routes/test-route-001.kml",
+                last_modified=datetime.now(timezone.utc),
+                point_count=0,
+            ),
+            points=[],
+            segments=[]
+        )
+        rm._routes["test-route-001"] = route
 
 
 class TestMissionCreateEndpoint:
@@ -689,7 +711,7 @@ class TestMissionTimelineEndpoints:
         response = client.get(f"/api/missions/{test_mission.id}/timeline")
         assert response.status_code == 200
         data = response.json()
-        assert data["mission_id"] == test_mission.id
+        assert data["mission_leg_id"] == test_mission.id
         assert len(data["segments"]) == 1
 
     def test_timeline_available_after_activation(
@@ -702,12 +724,12 @@ class TestMissionTimelineEndpoints:
         timeline_response = client.get(f"/api/missions/{test_mission.id}/timeline")
         assert timeline_response.status_code == 200
         data = timeline_response.json()
-        assert data["mission_id"] == test_mission.id
+        assert data["mission_leg_id"] == test_mission.id
         assert len(data["segments"]) == 1
 
         active_timeline = client.get("/api/missions/active/timeline")
         assert active_timeline.status_code == 200
-        assert active_timeline.json()["mission_id"] == test_mission.id
+        assert active_timeline.json()["mission_leg_id"] == test_mission.id
 
     def test_recompute_requires_existing_mission(self, client: TestClient):
         response = client.post("/api/missions/unknown-mission/timeline/recompute")
@@ -722,7 +744,7 @@ class TestMissionTimelineEndpoints:
         )
         assert recompute.status_code == 200
         data = recompute.json()
-        assert data["mission_id"] == test_mission.id
+        assert data["mission_leg_id"] == test_mission.id
         assert len(data["segments"]) == 1
 
         # Should now be retrievable via standard timeline endpoint

@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import pytest
 
 from app.mission.models import (
-    Mission,
+    MissionLeg,
     TransportConfig,
     XTransition,
 )
@@ -28,7 +28,7 @@ from app.services.poi_manager import POIManager
 from app.satellites.coverage import CoverageSampler
 
 
-def create_test_mission(mission_number: int) -> Mission:
+def create_test_mission(mission_number: int) -> MissionLeg:
     """Create a test mission with realistic parameters for benchmarking."""
     unique_id = f"bench-mission-{uuid4().hex[:12]}"
 
@@ -55,7 +55,7 @@ def create_test_mission(mission_number: int) -> Mission:
             ),
         ]
 
-    mission = Mission(
+    mission = MissionLeg(
         id=unique_id,
         name=f"Benchmark Mission {mission_number}",
         description=f"Auto-generated mission for performance benchmarking (instance {mission_number})",

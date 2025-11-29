@@ -4,8 +4,9 @@ import asyncio
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status, Depends, Request
 from fastapi.responses import FileResponse
+from app.core.limiter import limiter
 
 from app.core.logging import get_logger
 from app.models.poi import POICreate
@@ -19,6 +20,7 @@ from app.models.route import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_route_manager, get_poi_manager
 from app.services.route_eta_calculator import (
     RouteETACalculator,
     get_eta_cache_stats,
@@ -30,24 +32,8 @@ from app.services.kml_parser import parse_kml_file, KMLParseError
 
 logger = get_logger(__name__)
 
-# Global route manager instance (set by main.py)
-_route_manager: Optional[RouteManager] = None
-_poi_manager: Optional[POIManager] = None
-
 # Create API router
 router = APIRouter(prefix="/api/routes", tags=["routes"])
-
-
-def set_route_manager(route_manager: RouteManager) -> None:
-    """Set the route manager instance (called by main.py during startup)."""
-    global _route_manager
-    _route_manager = route_manager
-
-
-def set_poi_manager(poi_manager: POIManager) -> None:
-    """Set the POI manager instance (called by main.py during startup)."""
-    global _poi_manager
-    _poi_manager = poi_manager
 
 
 def _resolve_waypoint_metadata(
@@ -99,7 +85,11 @@ def _resolve_waypoint_metadata(
     return name, category, icon, description
 
 
-def _import_waypoints_as_pois(route_id: str, parsed_route: ParsedRoute) -> tuple[int, int]:
+def _import_waypoints_as_pois(
+    route_id: str,
+    parsed_route: ParsedRoute,
+    poi_manager: POIManager,
+) -> tuple[int, int]:
     """
     Create POIs for the supplied route using its waypoint metadata.
 
@@ -118,7 +108,7 @@ def _import_waypoints_as_pois(route_id: str, parsed_route: ParsedRoute) -> tuple
 
     # Remove any previously imported POIs for this route to avoid duplicates
     try:
-        removed = _poi_manager.delete_route_pois(route_id)
+        removed = poi_manager.delete_route_pois(route_id)
         if removed:
             logger.info(f"Removed {removed} existing POIs prior to re-import for route {route_id}")
     except Exception as exc:
@@ -150,7 +140,7 @@ def _import_waypoints_as_pois(route_id: str, parsed_route: ParsedRoute) -> tuple
                 description=description,
                 route_id=route_id,
             )
-            _poi_manager.create_poi(poi)
+            poi_manager.create_poi(poi)
             created += 1
         except Exception as exc:
             logger.error(f"Failed to create POI for waypoint {waypoint.name or idx} on route {route_id}: {exc}")
@@ -162,6 +152,7 @@ def _import_waypoints_as_pois(route_id: str, parsed_route: ParsedRoute) -> tuple
 @router.get("", response_model=RouteListResponse, summary="List all routes")
 async def list_routes(
     active: Optional[bool] = Query(None, description="Filter by active status"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> RouteListResponse:
     """
     List all available KML routes.
@@ -177,14 +168,14 @@ async def list_routes(
         curl http://localhost:8000/api/routes | jq '.routes[0]'
         ```
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    routes_dict = _route_manager.list_routes()
-    active_route_id = _route_manager._active_route_id
+    routes_dict = route_manager.list_routes()
+    active_route_id = route_manager._active_route_id
 
     flight_status_snapshot = None
     try:
@@ -206,7 +197,7 @@ async def list_routes(
         imported_at = datetime.fromisoformat(route_info["imported_at"])
 
         # Get parsed route to check for timing data
-        parsed_route = _route_manager.get_route(route_id)
+        parsed_route = route_manager.get_route(route_id)
         has_timing_data = False
         timing_profile = None
         flight_phase = None
@@ -238,7 +229,11 @@ async def list_routes(
 
 
 @router.get("/{route_id}", response_model=RouteDetailResponse, summary="Get route details")
-async def get_route_detail(route_id: str) -> RouteDetailResponse:
+async def get_route_detail(
+    route_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> RouteDetailResponse:
     """
     Get detailed information about a specific route.
 
@@ -253,25 +248,27 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
         curl http://localhost:8000/api/routes/{route_id} | jq '{name: .name, flight_phase: .flight_phase, eta_mode: .eta_mode}'
         ```
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Route not found: {route_id}",
         )
 
-    active_route_id = _route_manager._active_route_id
+    active_route_id = route_manager._active_route_id
     is_active = route_id == active_route_id
 
     distance_m = parsed_route.get_total_distance()
     bounds = parsed_route.get_bounds()
-    poi_count = _poi_manager.count_pois(route_id=route_id)
+    poi_count = 0
+    if poi_manager:
+        poi_count = poi_manager.count_pois(route_id=route_id)
 
     timing_profile = parsed_route.timing_profile
     has_timing_data = bool(timing_profile and timing_profile.has_timing_data)
@@ -312,7 +309,11 @@ async def get_route_detail(route_id: str) -> RouteDetailResponse:
 
 
 @router.post("/{route_id}/activate", response_model=RouteResponse, summary="Activate a route")
-async def activate_route(route_id: str) -> RouteResponse:
+async def activate_route(
+    route_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> RouteResponse:
     """
     Activate a route for tracking and visualization.
 
@@ -327,28 +328,28 @@ async def activate_route(route_id: str) -> RouteResponse:
         curl -X POST http://localhost:8000/api/routes/{route_id}/activate | jq '.eta_mode'
         ```
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Route not found: {route_id}",
         )
 
-    _route_manager.activate_route(route_id)
+    route_manager.activate_route(route_id)
 
     # Calculate POI projections for the newly activated route
-    if _poi_manager:
+    if poi_manager:
         try:
-            projected_count = _poi_manager.calculate_poi_projections(parsed_route)
+            projected_count = poi_manager.calculate_poi_projections(parsed_route)
             logger.info(f"Calculated projections for {projected_count} POIs on route activation")
             # Reload POIs to ensure in-memory cache has the projection data
-            _poi_manager.reload_pois()
+            poi_manager.reload_pois()
         except Exception as e:
             logger.error(f"Failed to calculate POI projections: {e}")
 
@@ -393,25 +394,28 @@ async def activate_route(route_id: str) -> RouteResponse:
 
 
 @router.post("/deactivate", response_model=dict, summary="Deactivate active route")
-async def deactivate_route() -> dict:
+async def deactivate_route(
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> dict:
     """
     Deactivate the currently active route.
 
     Returns:
     - Status message
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    _route_manager.deactivate_route()
+    route_manager.deactivate_route()
 
     # Clear POI projections on route deactivation
-    if _poi_manager:
+    if poi_manager:
         try:
-            cleared_count = _poi_manager.clear_poi_projections()
+            cleared_count = poi_manager.clear_poi_projections()
             logger.info(f"Cleared projections for {cleared_count} POIs on route deactivation")
         except Exception as e:
             logger.error(f"Failed to clear POI projections: {e}")
@@ -420,7 +424,10 @@ async def deactivate_route() -> dict:
 
 
 @router.get("/{route_id}/stats", response_model=RouteStatsResponse, summary="Get route statistics")
-async def get_route_stats(route_id: str) -> RouteStatsResponse:
+async def get_route_stats(
+    route_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+) -> RouteStatsResponse:
     """
     Get statistics for a specific route.
 
@@ -430,13 +437,13 @@ async def get_route_stats(route_id: str) -> RouteStatsResponse:
     Returns:
     - Route statistics (distance, point count, bounds)
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -455,12 +462,16 @@ async def get_route_stats(route_id: str) -> RouteStatsResponse:
 
 
 @router.post("/upload", response_model=RouteResponse, status_code=status.HTTP_201_CREATED, summary="Upload KML route")
+@limiter.limit("10/minute")
 async def upload_route(
+    request: Request,
     import_pois: bool = Query(
-        default=False,
+        default=True,
         description="Import POIs from waypoint placemarks in the uploaded KML",
     ),
     file: UploadFile = File(...),
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> RouteResponse:
     """
     Upload a new KML route file.
@@ -471,7 +482,7 @@ async def upload_route(
     Returns:
     - Route information for uploaded file
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
@@ -486,7 +497,7 @@ async def upload_route(
 
     try:
         # Ensure we write uploads to the active RouteManager directory
-        routes_dir = Path(getattr(_route_manager, "routes_dir", "/data/routes"))
+        routes_dir = Path(getattr(route_manager, "routes_dir", "/data/routes"))
         routes_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate unique filename (handle conflicts)
@@ -513,18 +524,18 @@ async def upload_route(
 
         # Explicitly load the route file (watchdog may not pick it up in tests)
         try:
-            _route_manager._load_route_file(file_path)
+            route_manager._load_route_file(file_path)
         except Exception as e:
             logger.error(f"Error loading route file {file_path}: {str(e)}")
 
-        parsed_route = _route_manager.get_route(route_id)
+        parsed_route = route_manager.get_route(route_id)
 
         if not parsed_route:
             # Fallback: parse synchronously to avoid race conditions with filesystem events
             try:
                 parsed_route = parse_kml_file(file_path)
                 if parsed_route:
-                    _route_manager.add_route(route_id, parsed_route)
+                    route_manager.add_route(route_id, parsed_route)
             except KMLParseError as exc:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -539,8 +550,8 @@ async def upload_route(
 
         created_pois = skipped_pois = None
 
-        if import_pois:
-            created_pois, skipped_pois = _import_waypoints_as_pois(route_id, parsed_route)
+        if import_pois and poi_manager:
+            created_pois, skipped_pois = _import_waypoints_as_pois(route_id, parsed_route, poi_manager)
             logger.info(
                 "Imported %d POIs (skipped %d) from KML placemarks for route %s",
                 created_pois,
@@ -580,7 +591,12 @@ async def upload_route(
 
 
 @router.get("/{route_id}/download", summary="Download KML route")
-async def download_route(route_id: str):
+@limiter.limit("20/minute")
+async def download_route(
+    request: Request,
+    route_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+):
     """
     Download a KML route file.
 
@@ -590,13 +606,13 @@ async def download_route(route_id: str):
     Returns:
     - KML file content
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -619,7 +635,11 @@ async def download_route(route_id: str):
 
 
 @router.delete("/{route_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a route")
-async def delete_route(route_id: str):
+async def delete_route(
+    route_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+):
     """
     Delete a route and its associated POIs.
 
@@ -629,13 +649,13 @@ async def delete_route(route_id: str):
     Returns:
     - No content (204)
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -644,8 +664,9 @@ async def delete_route(route_id: str):
 
     try:
         # Delete associated POIs (cascade delete)
-        deleted_pois = _poi_manager.delete_route_pois(route_id)
-        logger.info(f"Deleted {deleted_pois} POIs for route {route_id}")
+        if poi_manager:
+            deleted_pois = poi_manager.delete_route_pois(route_id)
+            logger.info(f"Deleted {deleted_pois} POIs for route {route_id}")
 
         # Delete KML file
         file_path = Path(parsed_route.metadata.file_path)
@@ -654,7 +675,7 @@ async def delete_route(route_id: str):
             logger.info(f"Deleted route file: {file_path} for route {route_id}")
 
         # Remove from route manager cache
-        _route_manager._routes.pop(route_id, None)
+        route_manager._routes.pop(route_id, None)
 
     except Exception as e:
         logger.error(f"Error deleting route {route_id}: {str(e)}")
@@ -670,6 +691,7 @@ async def calculate_eta_to_waypoint(
     waypoint_index: int,
     current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
     current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
     Calculate estimated time of arrival (ETA) to a specific waypoint.
@@ -685,13 +707,13 @@ async def calculate_eta_to_waypoint(
     Returns:
     - Dictionary with waypoint info and ETA details
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -727,6 +749,7 @@ async def calculate_eta_to_location(
     longitude: float = Query(..., description="Target longitude in decimal degrees"),
     current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
     current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
     Calculate estimated time of arrival (ETA) to an arbitrary location.
@@ -743,13 +766,13 @@ async def calculate_eta_to_location(
     Returns:
     - Dictionary with location info and ETA details
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -778,6 +801,7 @@ async def get_route_progress(
     route_id: str,
     current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
     current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
     Get route progress metrics including distance traveled and ETA to destination.
@@ -792,13 +816,13 @@ async def get_route_progress(
     Returns:
     - Dictionary with progress metrics
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_route(route_id)
+    parsed_route = route_manager.get_route(route_id)
     if not parsed_route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -821,7 +845,9 @@ async def get_route_progress(
 
 
 @router.get("/active/timing")
-async def get_active_route_timing() -> dict:
+async def get_active_route_timing(
+    route_manager: RouteManager = Depends(get_route_manager),
+) -> dict:
     """
     Get timing profile data for the currently active route.
 
@@ -829,13 +855,13 @@ async def get_active_route_timing() -> dict:
     - Dictionary with timing profile information (departure_time, arrival_time, total_duration, etc.)
     - Empty dict if no route is active or route lacks timing data
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    active_route = _route_manager.get_active_route()
+    active_route = route_manager.get_active_route()
     if not active_route:
         return {
             "has_timing_data": False,
@@ -937,6 +963,7 @@ async def get_live_mode_active_route_eta(
     current_position_lat: float = Query(..., description="Current latitude"),
     current_position_lon: float = Query(..., description="Current longitude"),
     current_speed_knots: float = Query(default=500.0, description="Current speed in knots"),
+    route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
     Get ETA calculations for the active route in live mode.
@@ -951,13 +978,13 @@ async def get_live_mode_active_route_eta(
     Returns:
     - Dictionary with ETA to next waypoint, remaining distance, and timing info
     """
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager not initialized",
         )
 
-    parsed_route = _route_manager.get_active_route()
+    parsed_route = route_manager.get_active_route()
     if not parsed_route:
         return {
             "has_active_route": False,

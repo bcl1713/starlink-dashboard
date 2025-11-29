@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from app.mission.models import Mission, MissionTimeline
+from app.mission.models import Mission, MissionLeg, MissionLegTimeline
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,20 @@ TIMELINE_SUFFIX = ".timeline.json"
 def ensure_missions_directory():
     """Ensure the missions directory exists."""
     MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_mission_lock(mission_id: str) -> FileLock:
+    """Get a file lock for a mission to prevent concurrent modifications.
+
+    Args:
+        mission_id: ID of the mission to lock
+
+    Returns:
+        FileLock object
+    """
+    ensure_missions_directory()
+    lock_path = MISSIONS_DIR / f"{mission_id}.lock"
+    return FileLock(str(lock_path))
 
 
 def get_mission_path(mission_id: str) -> Path:
@@ -40,6 +55,26 @@ def get_mission_timeline_path(mission_id: str) -> Path:
     return MISSIONS_DIR / f"{mission_id}{TIMELINE_SUFFIX}"
 
 
+def get_mission_directory(mission_id: str) -> Path:
+    """Get the directory path for a mission (for hierarchical v2 storage)."""
+    return MISSIONS_DIR / mission_id
+
+
+def get_mission_file_path(mission_id: str) -> Path:
+    """Get the file path for mission metadata."""
+    return get_mission_directory(mission_id) / "mission.json"
+
+
+def get_mission_legs_dir(mission_id: str) -> Path:
+    """Get the legs directory for a mission."""
+    return get_mission_directory(mission_id) / "legs"
+
+
+def get_mission_leg_file_path(mission_id: str, leg_id: str) -> Path:
+    """Get the file path for a specific leg."""
+    return get_mission_legs_dir(mission_id) / f"{leg_id}.json"
+
+
 def compute_file_checksum(file_path: Path) -> str:
     """Compute SHA256 checksum of a file."""
     sha256 = hashlib.sha256()
@@ -49,7 +84,7 @@ def compute_file_checksum(file_path: Path) -> str:
     return sha256.hexdigest()
 
 
-def compute_mission_checksum(mission: Mission) -> str:
+def compute_mission_checksum(mission) -> str:
     """Compute checksum of a mission object (JSON-serialized)."""
     # Use model_dump for consistent serialization with sorted keys
     mission_dict = mission.model_dump()
@@ -57,7 +92,7 @@ def compute_mission_checksum(mission: Mission) -> str:
     return hashlib.sha256(mission_json.encode()).hexdigest()
 
 
-def save_mission(mission: Mission) -> dict:
+def save_mission(mission: MissionLeg) -> dict:
     """Save a mission to persistent storage.
 
     Args:
@@ -101,14 +136,142 @@ def save_mission(mission: Mission) -> dict:
         raise
 
 
-def load_mission(mission_id: str) -> Optional[Mission]:
-    """Load a mission from persistent storage.
+def save_mission_v2(mission: Mission) -> dict:
+    """Save a hierarchical mission with nested legs.
+
+    Args:
+        mission: Mission object with legs
+
+    Returns:
+        Dictionary with save metadata
+    """
+    mission_dir = get_mission_directory(mission.id)
+    mission_dir.mkdir(parents=True, exist_ok=True)
+
+    legs_dir = get_mission_legs_dir(mission.id)
+    legs_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save mission metadata (without legs to avoid duplication)
+    mission_meta = mission.model_copy(update={"legs": []})
+    mission_file = get_mission_file_path(mission.id)
+
+    with open(mission_file, "w") as f:
+        json.dump(mission_meta.model_dump(), f, indent=2, default=str)
+
+    # Save each leg separately
+    for leg in mission.legs:
+        leg_file = get_mission_leg_file_path(mission.id, leg.id)
+        with open(leg_file, "w") as f:
+            json.dump(leg.model_dump(), f, indent=2, default=str)
+
+    logger.info(f"Mission {mission.id} saved with {len(mission.legs)} legs")
+
+    return {
+        "mission_id": mission.id,
+        "path": str(mission_dir),
+        "leg_count": len(mission.legs),
+        "saved_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def load_mission_v2(mission_id: str) -> Optional[Mission]:
+    """Load a hierarchical mission with all legs.
+
+    Args:
+        mission_id: ID of mission to load
+
+    Returns:
+        Mission object with legs loaded, or None if not found
+    """
+    mission_file = get_mission_file_path(mission_id)
+
+    if not mission_file.exists():
+        logger.warning(f"Mission {mission_id} not found at {mission_file}")
+        return None
+
+    # Load mission metadata
+    with open(mission_file, "r") as f:
+        mission_data = json.load(f)
+
+    # Load all legs
+    legs_dir = get_mission_legs_dir(mission_id)
+    legs = []
+
+    if legs_dir.exists():
+        for leg_file in sorted(legs_dir.glob("*.json")):
+            with open(leg_file, "r") as f:
+                leg_data = json.load(f)
+                legs.append(MissionLeg(**leg_data))
+
+    mission_data["legs"] = legs
+    mission = Mission(**mission_data)
+
+    logger.info(f"Mission {mission_id} loaded with {len(legs)} legs")
+    return mission
+
+
+def load_mission_metadata_v2(mission_id: str) -> Optional[Mission]:
+    """Load mission metadata with leg count but without full leg data.
+    
+    This is optimized for listing operations where full leg data is not needed.
+    Returns a Mission object with stub leg objects containing only IDs, allowing
+    the frontend to display accurate leg counts via legs.length.
+    
+    Args:
+        mission_id: ID of mission to load
+        
+    Returns:
+        Mission object with metadata and leg stubs (ID only), or None if not found
+    """
+    mission_file = get_mission_file_path(mission_id)
+    
+    if not mission_file.exists():
+        logger.warning(f"Mission {mission_id} not found at {mission_file}")
+        return None
+    
+    try:
+        # Load mission metadata only
+        with open(mission_file, "r") as f:
+            mission_data = json.load(f)
+        
+        # Count leg files and create stub leg objects with only IDs
+        legs_dir = get_mission_legs_dir(mission_id)
+        leg_stubs = []
+        
+        if legs_dir.exists():
+            for leg_file in sorted(legs_dir.glob("*.json")):
+                # Extract leg ID from filename (e.g., "leg-1.json" -> "leg-1")
+                leg_id = leg_file.stem
+                # Create minimal leg stub with only required fields
+                leg_stubs.append({
+                    "id": leg_id,
+                    "name": leg_id,  # Use ID as placeholder name
+                    "route_id": "",  # Empty placeholder
+                    "transports": {"initial_x_satellite_id": ""}  # Minimal placeholder
+                })
+        
+        mission_data["legs"] = [MissionLeg(**stub) for stub in leg_stubs]
+        mission = Mission(**mission_data)
+        
+        logger.debug(f"Mission {mission_id} metadata loaded with {len(leg_stubs)} leg stubs")
+        return mission
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse mission {mission_id}: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to load mission metadata {mission_id}: {e}")
+        return None
+
+
+def load_mission(mission_id: str) -> Optional[MissionLeg]:
+    """Load a mission leg from persistent storage.
 
     Args:
         mission_id: ID of the mission to load
 
     Returns:
-        Mission object if found and valid, None otherwise
+        MissionLeg object if found and valid, None otherwise
 
     Raises:
         ValueError: If loaded data doesn't match integrity check
@@ -125,7 +288,7 @@ def load_mission(mission_id: str) -> Optional[Mission]:
         with open(mission_path, "r") as f:
             mission_data = json.load(f)
 
-        mission = Mission(**mission_data)
+        mission = MissionLeg(**mission_data)
 
         # Verify checksum if it exists
         if checksum_path.exists():
@@ -232,7 +395,7 @@ def delete_mission(mission_id: str) -> bool:
     return deleted
 
 
-def save_mission_timeline(mission_id: str, timeline: MissionTimeline) -> Path:
+def save_mission_timeline(mission_id: str, timeline: MissionLegTimeline) -> Path:
     """Persist a mission timeline to disk."""
     ensure_missions_directory()
     timeline_path = get_mission_timeline_path(mission_id)
@@ -242,14 +405,14 @@ def save_mission_timeline(mission_id: str, timeline: MissionTimeline) -> Path:
     return timeline_path
 
 
-def load_mission_timeline(mission_id: str) -> MissionTimeline | None:
+def load_mission_timeline(mission_id: str) -> MissionLegTimeline | None:
     """Load a previously computed mission timeline."""
     timeline_path = get_mission_timeline_path(mission_id)
     if not timeline_path.exists():
         return None
     with open(timeline_path, "r") as handle:
         data = json.load(handle)
-    return MissionTimeline(**data)
+    return MissionLegTimeline(**data)
 
 
 def delete_mission_timeline(mission_id: str) -> None:

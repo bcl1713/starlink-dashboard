@@ -1,12 +1,15 @@
 """Prometheus metrics endpoint handler."""
 
 import time
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import Response, JSONResponse
 from prometheus_client import generate_latest
 
 from app.api import metrics_export
 from app.core.metrics import REGISTRY, _current_position
+from app.mission.dependencies import get_route_manager, get_poi_manager
+from app.services.route_manager import RouteManager
+from app.services.poi_manager import POIManager
 
 router = APIRouter()
 
@@ -26,7 +29,10 @@ def set_last_scrape_time(timestamp):
 
 
 @router.get("/metrics")
-async def metrics():
+async def metrics(
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+):
     """
     Prometheus metrics endpoint.
 
@@ -53,7 +59,7 @@ async def metrics():
 
     try:
         # Delegate to metrics_export for on-demand POI updates (handles pre-flight cases)
-        metrics_output = await metrics_export.get_metrics()
+        metrics_output = await metrics_export.get_metrics(route_manager, poi_manager)
     except Exception:
         # Fall back to direct registry scrape if export helper fails
         raw_output = generate_latest(REGISTRY)

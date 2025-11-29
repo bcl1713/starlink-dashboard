@@ -18,8 +18,8 @@ from app.mission.exporter import (
     generate_xlsx_export,
 )
 from app.mission.models import (
-    Mission,
-    MissionTimeline,
+    MissionLeg,
+    MissionLegTimeline,
     TimelineAdvisory,
     TimelineSegment,
     TimelineStatus,
@@ -29,8 +29,8 @@ from app.mission.models import (
 )
 
 
-def _build_test_mission() -> Mission:
-    return Mission(
+def _build_test_mission() -> MissionLeg:
+    return MissionLeg(
         id="mission-export-test",
         name="Export Test Mission",
         route_id="route-123",
@@ -45,7 +45,7 @@ def _build_test_mission() -> Mission:
     )
 
 
-def _build_test_timeline(mission_id: str) -> MissionTimeline:
+def _build_test_timeline(mission_id: str) -> MissionLegTimeline:
     start = datetime(2025, 11, 5, 0, 0, tzinfo=timezone.utc)
     segments = [
         TimelineSegment(
@@ -84,8 +84,8 @@ def _build_test_timeline(mission_id: str) -> MissionTimeline:
             metadata={"buffer_minutes": 15},
         )
     ]
-    return MissionTimeline(
-        mission_id=mission_id,
+    return MissionLegTimeline(
+        mission_leg_id=mission_id,
         segments=segments,
         advisories=advisories,
         statistics={
@@ -109,18 +109,18 @@ class TestTimelineExportFormat:
 
 class TestMissionTimelineExporters:
     @pytest.fixture
-    def mission(self) -> Mission:
+    def mission(self) -> MissionLeg:
         return _build_test_mission()
 
     @pytest.fixture
-    def timeline(self, mission: Mission) -> MissionTimeline:
+    def timeline(self, mission: MissionLeg) -> MissionLegTimeline:
         return _build_test_timeline(mission.id)
 
     def test_generate_csv_contains_expected_headers(self, mission, timeline):
         output = generate_csv_export(timeline, mission).decode("utf-8")
         assert "Segment #" in output
         assert "Mission ID" in output
-        assert timeline.mission_id in output
+        assert timeline.mission_leg_id in output
         assert "X-Band" in output
         assert "CommKa" in output
         assert "StarShield" in output
@@ -159,8 +159,8 @@ class TestMissionTimelineExporters:
             impacted_transports=[Transport.X],
             metadata={},
         )
-        timeline = MissionTimeline(
-            mission_id=mission.id,
+        timeline = MissionLegTimeline(
+            mission_leg_id=mission.id,
             segments=[warning_segment],
             advisories=[],
             statistics={},
@@ -188,8 +188,8 @@ class TestMissionTimelineExporters:
                 metadata={},
             )
         ]
-        timeline = MissionTimeline(
-            mission_id=mission.id,
+        timeline = MissionLegTimeline(
+            mission_leg_id=mission.id,
             segments=segments,
             advisories=[],
             statistics={

@@ -77,6 +77,7 @@ def update_eta_metrics(
     active_route=None,
     eta_mode=None,
     flight_phase=None,
+    poi_manager: Optional[POIManager] = None,
 ) -> dict:
     """Update ETA metrics for all POIs.
 
@@ -93,6 +94,8 @@ def update_eta_metrics(
         speed_knots: Current speed in knots
         active_route: Optional ParsedRoute with timing data for route-aware calculations
         eta_mode: Optional ETAMode for dual-mode calculation (defaults to ESTIMATED)
+        flight_phase: Optional flight phase for context
+        poi_manager: Optional POIManager instance to use instead of global singleton
 
     Returns:
         Dictionary mapping POI IDs to their ETA metrics
@@ -101,7 +104,10 @@ def update_eta_metrics(
         from app.models.flight_status import ETAMode
 
         eta_calculator = get_eta_calculator()
-        poi_manager = get_poi_manager()
+        
+        # Use provided manager or fall back to singleton
+        if poi_manager is None:
+            poi_manager = get_poi_manager()
 
         # Default to estimated mode if not specified
         if eta_mode is None:

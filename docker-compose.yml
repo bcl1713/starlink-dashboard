@@ -26,6 +26,9 @@ services:
     extra_hosts:
       - "dish.starlink:${STARLINK_DISH_HOST:-192.168.100.1}"
     volumes:
+      - ./data/missions:/app/data/missions
+      - ./data/satellites:/app/data/satellites
+      - ./data/sat_coverage:/app/data/sat_coverage
       - route_data:/data/routes
       - sim_route_data:/data/sim_routes
       - poi_data:/data
@@ -70,6 +73,20 @@ services:
       - ./monitoring/grafana/custom-icons/chevron-up.svg:/usr/share/grafana/public/img/icons/marker/chevron-up.svg:ro
     depends_on:
       - prometheus
+    networks:
+      - starlink-net
+
+  mission-planner:
+    build:
+      context: ./frontend/mission-planner
+      dockerfile: Dockerfile
+    container_name: mission-planner
+    ports:
+      - "5173:80"
+    depends_on:
+      - starlink-location
+    environment:
+      - VITE_API_URL=http://starlink-location:8000
     networks:
       - starlink-net
 

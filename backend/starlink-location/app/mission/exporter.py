@@ -1,6 +1,6 @@
 """Mission timeline export utilities.
 
-Transforms `MissionTimeline` data into CSV, XLSX, and PDF deliverables with
+Transforms `MissionLegTimeline` data into CSV, XLSX, and PDF deliverables with
 parallel timestamp formats (UTC, Eastern, and T+ offsets) suitable for
 customer-facing mission briefs.
 """
@@ -42,7 +42,7 @@ from pptx.enum.text import PP_ALIGN
 
 from app.mission.models import (
     Mission,
-    MissionTimeline,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
     Transport,
@@ -77,21 +77,7 @@ STATUS_COLORS = {
     'unknown': '#95a5a6'    # Gray (fallback)
 }
 
-# Global route manager instance (set by main.py)
-_route_manager: Optional[RouteManager] = None
-_poi_manager: Optional[POIManager] = None
 
-
-def set_route_manager(route_manager: RouteManager) -> None:
-    """Set the route manager instance (called by main.py during startup)."""
-    global _route_manager
-    _route_manager = route_manager
-
-
-def set_poi_manager(poi_manager: POIManager) -> None:
-    """Set the POI manager instance (called by main.py during startup)."""
-    global _poi_manager
-    _poi_manager = poi_manager
 
 
 def _load_logo_flowable() -> Image | None:
@@ -147,7 +133,7 @@ def _ensure_timezone(value: datetime) -> datetime:
     return value.astimezone(timezone.utc)
 
 
-def _mission_start_timestamp(timeline: MissionTimeline) -> datetime:
+def _mission_start_timestamp(timeline: MissionLegTimeline) -> datetime:
     """Infer the mission's zero point for T+ offsets."""
     if timeline.segments:
         earliest = min(_ensure_timezone(seg.start_time) for seg in timeline.segments)
@@ -215,7 +201,7 @@ def _display_transport_state(
 
 
 def _aar_block_rows(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     mission: Mission | None,
     mission_start: datetime,
 ) -> list[tuple[datetime, int, dict]]:
@@ -260,7 +246,7 @@ def _build_aar_record(
     start: datetime,
     end: datetime,
     mission: Mission | None,
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     mission_start: datetime,
 ) -> dict:
     duration = max((end - start).total_seconds(), 0)
@@ -298,7 +284,7 @@ def _build_aar_record(
 
 
 def _segment_at_time(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     timestamp: datetime,
 ) -> TimelineSegment | None:
     ts = _ensure_timezone(timestamp)
@@ -314,7 +300,7 @@ def _segment_at_time(
     return timeline.segments[-1] if timeline.segments else None
 
 
-def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, timeline: MissionTimeline) -> list[tuple[datetime, datetime, str]]:
+def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, timeline: MissionLegTimeline) -> list[tuple[datetime, datetime, str]]:
     if not timeline or not timeline.segments:
         return [(start_time, end_time, 'unknown')]
     
@@ -435,7 +421,13 @@ def _interpolate_position_at_time(target_time, p1, p2):
 
 
 
-def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def _generate_route_map(
+    timeline: MissionLegTimeline,
+    mission: Mission | None = None,
+    parent_mission_id: str | None = None,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
+) -> bytes:
     """Generate a 4K PNG image of the route map.
 
     Current phase: Route line drawing (Phase 9)
@@ -447,6 +439,9 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
     Args:
         timeline: The mission timeline with segments and timing data
         mission: The mission object containing route and POI information (optional)
+        parent_mission_id: Parent mission ID when exporting legs from a multi-leg mission (optional)
+        route_manager: RouteManager instance for fetching route data
+        poi_manager: POIManager instance for fetching POI data
 
     Returns:
         PNG image as bytes.
@@ -462,32 +457,56 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
     height_inches = pixel_height / dpi  # 7.2 inches
 
     # Check if we have valid mission and route data
-    if mission is None or not mission.route_id or not _route_manager:
-        # Return base canvas if no mission data
+    if mission is None:
+        logger.warning("_generate_route_map: mission is None, returning base canvas")
         return _base_map_canvas()
+    if not mission.route_id:
+        logger.warning(f"_generate_route_map: mission {mission.id} has no route_id, returning base canvas")
+        return _base_map_canvas()
+    if not route_manager:
+        logger.warning("_generate_route_map: route_manager is None, returning base canvas")
+        return _base_map_canvas()
+
+    logger.info(f"_generate_route_map: Generating map for mission={mission.id}, route={mission.route_id}")
 
     # Fetch route from manager
-    route = _route_manager.get_route(mission.route_id)
-    if route is None or not route.points:
-        # Return base canvas if route not found
+    route = route_manager.get_route(mission.route_id)
+    if route is None:
+        # Log available routes to help diagnose mismatch
+        available_routes = route_manager.list_routes()
+        logger.error(f"Route '{mission.route_id}' not found in RouteManager!")
+        logger.error(f"Available routes: {list(available_routes.keys())}")
+        logger.error(f"Mission: {mission.id}, Leg: {mission.name}")
+        return _base_map_canvas()
+    
+    if not route.points:
+        logger.warning(f"Route '{mission.route_id}' has no points, returning base canvas")
         return _base_map_canvas()
 
-    # Extract waypoint coordinates
-    points = route.points
-    lats = [p.latitude for p in points]
-    lons = [p.longitude for p in points]
+    # Extract waypoint coordinates and filter invalid points
+    raw_points = route.points
+    valid_points = [p for p in raw_points if p.latitude is not None and p.longitude is not None]
+    
+    if len(valid_points) < len(raw_points):
+        logger.warning(f"Filtered {len(raw_points) - len(valid_points)} invalid points from route {mission.route_id}")
+
+    if not valid_points:
+        logger.warning(f"No valid points found for route {mission.route_id}, returning base canvas")
+        return _base_map_canvas()
+
+    lats = [p.latitude for p in valid_points]
+    lons = [p.longitude for p in valid_points]
+    
+    # Assign valid_points to points for downstream usage
+    points = valid_points
 
     # Debug logging
-    logger.info(f"Map generation - Route has {len(points)} points")
-
-    if not lats or not lons:
-        # Return base canvas if no valid waypoints
-        return _base_map_canvas()
+    logger.info(f"Map generation - Route has {len(points)} valid points")
 
     # Detect IDL (International Date Line) crossings
     idl_crossing_segments = set()
-    for i in range(len(points) - 1):
-        p1, p2 = points[i], points[i + 1]
+    for i in range(len(valid_points) - 1):
+        p1, p2 = valid_points[i], valid_points[i + 1]
         lon_diff = abs(p2.longitude - p1.longitude)
         if lon_diff > 180:
             idl_crossing_segments.add(i)
@@ -512,6 +531,10 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
         # Calculate center of the route
         central_longitude = (min_lon + max_lon) / 2
         
+        # Ensure central_longitude is within -180 to 180 for PlateCarree
+        if central_longitude > 180:
+            central_longitude -= 360
+            
         logger.info(f"IDL Crossing Route - Dynamic Center: {central_longitude:.2f}")
         logger.info(f"Normalized Lon Range: {min_lon:.2f} to {max_lon:.2f}")
     else:
@@ -524,8 +547,22 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
         logger.info(f"Standard Route - Central Lon: {central_longitude:.2f}")
 
     # Calculate route extent
-    lat_range = max_lat - min_lat if max_lat != min_lat else 1.0
-    lon_range = max_lon - min_lon if max_lon != min_lon else 1.0
+    lat_range = max_lat - min_lat
+    lon_range = max_lon - min_lon
+    
+    # Enforce minimum extent to prevent extreme zooming (which can cause memory errors)
+    MIN_EXTENT = 10.0
+    if lat_range < MIN_EXTENT:
+        center_lat = (min_lat + max_lat) / 2
+        min_lat = center_lat - (MIN_EXTENT / 2)
+        max_lat = center_lat + (MIN_EXTENT / 2)
+        lat_range = MIN_EXTENT
+        
+    if lon_range < MIN_EXTENT:
+        center_lon = (min_lon + max_lon) / 2
+        min_lon = center_lon - (MIN_EXTENT / 2)
+        max_lon = center_lon + (MIN_EXTENT / 2)
+        lon_range = MIN_EXTENT
 
     # Canvas aspect ratio: 3840 / 2160 = 1.778 (16:9)
     canvas_aspect = pixel_width / pixel_height
@@ -762,10 +799,18 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
         # 2. Collect Mission Event POIs (AAR + Sat Swaps)
         mission_event_pois = []
 
-        if _poi_manager and mission:
-            # Use POI Manager to get all mission-scoped POIs
-            # This aligns with the API endpoint logic
-            pois = _poi_manager.list_pois(mission_id=mission.id)
+        if poi_manager and mission:
+            # Get POIs for this specific leg (route_id + mission_id)
+            # This ensures we only show POIs for the current leg, not all legs in the mission
+            # Use parent_mission_id if provided (for multi-leg mission exports), otherwise use mission.id
+            effective_mission_id = parent_mission_id if parent_mission_id else mission.id
+
+            if mission.route_id:
+                pois = poi_manager.list_pois(route_id=mission.route_id, mission_id=effective_mission_id)
+            else:
+                pois = poi_manager.list_pois(mission_id=effective_mission_id)
+
+            logger.info(f"Map generation: Found {len(pois)} POIs for route={mission.route_id}, mission={effective_mission_id} (parent={parent_mission_id})")
             for poi in pois:
                 mission_event_pois.append({
                     'lat': poi.latitude,
@@ -773,6 +818,7 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
                     'label': poi.name,
                     'type': 'mission_event'
                 })
+                logger.debug(f"  - Adding POI to map: {poi.name} at ({poi.latitude}, {poi.longitude})")
         else:
             # Fallback to manual extraction if POI manager not available
             # AAR Waypoints - Explicitly label Start and End
@@ -922,7 +968,7 @@ def _generate_route_map(timeline: MissionTimeline, mission: Mission | None = Non
     return buf.read()
 
 
-def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
+def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
     """Generate a PNG image of a horizontal bar chart showing transport timeline.
 
     Args:
@@ -1055,7 +1101,7 @@ def _generate_timeline_chart(timeline: MissionTimeline) -> bytes:
 
 
 def _segment_rows(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     mission: Mission | None,
 ) -> pd.DataFrame:
     """Convert timeline segments into a pandas DataFrame."""
@@ -1117,7 +1163,7 @@ def _segment_rows(
     return pd.DataFrame.from_records(ordered_records, columns=columns)
 
 
-def _advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame:
+def _advisory_rows(timeline: MissionLegTimeline, mission: Mission | None) -> pd.DataFrame:
     """Convert timeline advisories into a pandas DataFrame (may be empty)."""
     mission_start = _mission_start_timestamp(timeline)
     records: list[dict] = []
@@ -1148,7 +1194,7 @@ def _advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.Dat
     return pd.DataFrame.from_records(records, columns=columns)
 
 
-def _statistics_rows(timeline: MissionTimeline) -> pd.DataFrame:
+def _statistics_rows(timeline: MissionLegTimeline) -> pd.DataFrame:
     stats = timeline.statistics or {}
     if not stats:
         return pd.DataFrame(columns=["Metric", "Value"])
@@ -1190,7 +1236,7 @@ def _compose_time_block(moment: datetime, mission_start: datetime) -> str:
     return f"{utc}\n{eastern}\n{offset}"
 
 
-def generate_csv_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def generate_csv_export(timeline: MissionLegTimeline, mission: Mission | None = None) -> bytes:
     """Return CSV bytes for the mission timeline."""
     csv_buffer = io.StringIO()
     df = _segment_rows(timeline, mission)
@@ -1198,7 +1244,7 @@ def generate_csv_export(timeline: MissionTimeline, mission: Mission | None = Non
     return csv_buffer.getvalue().encode("utf-8")
 
 
-def _summary_table_rows(timeline: MissionTimeline, mission: Mission | None = None) -> pd.DataFrame:
+def _summary_table_rows(timeline: MissionLegTimeline, mission: Mission | None = None) -> pd.DataFrame:
     """Generate simplified summary table DataFrame with key columns for Sheet 1.
 
     Returns a DataFrame with columns: Start (UTC), Duration, Status, Systems Down
@@ -1233,7 +1279,13 @@ def _summary_table_rows(timeline: MissionTimeline, mission: Mission | None = Non
     return pd.DataFrame.from_records(records, columns=columns)
 
 
-def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def generate_xlsx_export(
+    timeline: MissionLegTimeline,
+    mission: Mission | None = None,
+    parent_mission_id: str | None = None,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
+) -> bytes:
     """Return XLSX bytes containing Summary sheet (with map, chart, table) plus Timeline, Advisory, and Statistics sheets."""
     workbook_bytes = io.BytesIO()
 
@@ -1242,7 +1294,13 @@ def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = No
     timeline_df = _segment_rows(timeline, mission)
     advisories_df = _advisory_rows(timeline, mission)
     stats_df = _statistics_rows(timeline)
-    map_image_bytes = _generate_route_map(timeline, mission)
+    map_image_bytes = _generate_route_map(
+        timeline,
+        mission,
+        parent_mission_id=parent_mission_id,
+        route_manager=route_manager,
+        poi_manager=poi_manager,
+    )
     chart_image_bytes = _generate_timeline_chart(timeline)
 
     # Write DataFrames to Excel sheets
@@ -1324,7 +1382,13 @@ def generate_xlsx_export(timeline: MissionTimeline, mission: Mission | None = No
     return final_bytes.read()
 
 
-def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def generate_pdf_export(
+    timeline: MissionLegTimeline,
+    mission: Mission | None = None,
+    parent_mission_id: str | None = None,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
+) -> bytes:
     """Render a PDF brief summarizing the mission timeline."""
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -1390,7 +1454,13 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
     # Add route map
     story.append(Paragraph("Route Map", styles["Heading2"]))
     try:
-        route_map_bytes = _generate_route_map(timeline, mission)
+        route_map_bytes = _generate_route_map(
+            timeline,
+            mission,
+            parent_mission_id=parent_mission_id,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
         route_map_stream = io.BytesIO(route_map_bytes)
         route_map_image = Image(route_map_stream, width=6.5 * inch, height=4.3 * inch)
         story.append(route_map_image)
@@ -1542,7 +1612,13 @@ def generate_pdf_export(timeline: MissionTimeline, mission: Mission | None = Non
     return buffer.read()
 
 
-def generate_pptx_export(timeline: MissionTimeline, mission: Mission | None = None) -> bytes:
+def generate_pptx_export(
+    timeline: MissionLegTimeline,
+    mission: Mission | None = None,
+    parent_mission_id: str | None = None,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
+) -> bytes:
     """Generate a PowerPoint presentation with map and timeline table."""
     prs = Presentation()
 
@@ -1553,7 +1629,13 @@ def generate_pptx_export(timeline: MissionTimeline, mission: Mission | None = No
 
     # Generate map image
     try:
-        map_image_bytes = _generate_route_map(timeline, mission)
+        map_image_bytes = _generate_route_map(
+            timeline,
+            mission,
+            parent_mission_id=parent_mission_id,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
         map_image_stream = io.BytesIO(map_image_bytes)
         
         # Add image to slide, scaled to fit
@@ -1804,21 +1886,42 @@ def _base_map_canvas() -> bytes:
 def generate_timeline_export(
     export_format: TimelineExportFormat,
     mission: Mission,
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
+    parent_mission_id: str | None = None,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
 ) -> ExportArtifact:
     """Generate the requested export artifact."""
     if export_format is TimelineExportFormat.CSV:
         content = generate_csv_export(timeline, mission)
         return ExportArtifact(content=content, media_type="text/csv", extension="csv")
     if export_format is TimelineExportFormat.XLSX:
-        content = generate_xlsx_export(timeline, mission)
+        content = generate_xlsx_export(
+            timeline,
+            mission,
+            parent_mission_id=parent_mission_id,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         return ExportArtifact(content=content, media_type=media_type, extension="xlsx")
     if export_format is TimelineExportFormat.PDF:
-        content = generate_pdf_export(timeline, mission)
+        content = generate_pdf_export(
+            timeline,
+            mission,
+            parent_mission_id=parent_mission_id,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
         return ExportArtifact(content=content, media_type="application/pdf", extension="pdf")
     if export_format is TimelineExportFormat.PPTX:
-        content = generate_pptx_export(timeline, mission)
+        content = generate_pptx_export(
+            timeline,
+            mission,
+            parent_mission_id=parent_mission_id,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
         return ExportArtifact(content=content, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", extension="pptx")
 
     raise ExportGenerationError(f"Unsupported export format: {export_format}")

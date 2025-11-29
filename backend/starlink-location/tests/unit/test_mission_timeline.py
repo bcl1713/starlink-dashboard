@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta, timezone
 
 from app.mission.models import (
-    MissionTimeline,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
     Transport,
@@ -161,8 +161,8 @@ def test_annotate_aar_markers_appends_reasons():
             metadata={},
         ),
     ]
-    timeline = MissionTimeline(
-        mission_id="mission-1",
+    timeline = MissionLegTimeline(
+        mission_leg_id="mission-1",
         segments=segments,
         advisories=[],
         statistics={},

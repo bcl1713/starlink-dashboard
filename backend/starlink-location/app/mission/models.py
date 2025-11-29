@@ -291,10 +291,10 @@ class TimelineAdvisory(BaseModel):
     }
 
 
-class Mission(BaseModel):
-    """Complete mission configuration for communication planning.
+class MissionLeg(BaseModel):
+    """Complete mission leg configuration for communication planning.
 
-    A mission ties together a timed flight route with transport assignments,
+    A mission leg ties together a timed flight route with transport assignments,
     satellite transitions, operational constraints (AAR, buffers), and
     produces a communication timeline for planning and customer delivery.
     """
@@ -337,6 +337,14 @@ class Mission(BaseModel):
         description="Planner notes or remarks",
     )
 
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v):
+        import re
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+            raise ValueError("ID must contain only alphanumeric characters, underscores, or hyphens")
+        return v
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -356,6 +364,46 @@ class Mission(BaseModel):
                 "updated_at": "2025-10-20T10:30:00Z",
                 "is_active": False,
                 "notes": "Customer ready for briefing after timeline validation",
+            }
+        }
+    }
+
+
+class Mission(BaseModel):
+    """Top-level mission container holding multiple mission legs."""
+
+    id: str = Field(..., description="Unique mission identifier (UUID or slug)")
+    name: str = Field(..., description="Human-readable mission name", min_length=1)
+    description: Optional[str] = Field(default=None, description="Detailed mission description")
+    legs: list[MissionLeg] = Field(default_factory=list, description="Ordered list of mission legs")
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When mission was created (UTC, ISO-8601)",
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="When mission was last updated (UTC, ISO-8601)",
+    )
+    metadata: dict = Field(default_factory=dict, description="Custom metadata fields")
+
+    @field_validator("id")
+    @classmethod
+    def validate_id(cls, v):
+        import re
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
+            raise ValueError("ID must contain only alphanumeric characters, underscores, or hyphens")
+        return v
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "id": "operation-falcon-2025",
+                "name": "Operation Falcon",
+                "description": "Multi-leg transcontinental mission",
+                "legs": [],
+                "created_at": "2025-11-23T10:00:00Z",
+                "updated_at": "2025-11-23T10:00:00Z",
+                "metadata": {},
             }
         }
     }
@@ -420,10 +468,10 @@ class TimelineSegment(BaseModel):
     }
 
 
-class MissionTimeline(BaseModel):
-    """Complete timeline for a mission showing communication state evolution."""
+class MissionLegTimeline(BaseModel):
+    """Complete timeline for a mission leg showing communication state evolution."""
 
-    mission_id: str = Field(..., description="Associated mission ID")
+    mission_leg_id: str = Field(..., description="Associated mission leg ID")
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="When timeline was computed (UTC, ISO-8601)",
@@ -444,7 +492,7 @@ class MissionTimeline(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "mission_id": "mission-001",
+                "mission_leg_id": "mission-leg-001",
                 "created_at": "2025-10-27T10:00:00Z",
                 "segments": [],
                 "advisories": [],

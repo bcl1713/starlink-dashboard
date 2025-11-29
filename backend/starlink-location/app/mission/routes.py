@@ -6,19 +6,23 @@ import sys
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+from app.core.limiter import limiter
 
-from app.mission.models import Mission, MissionPhase, MissionTimeline, TransportState
+from app.mission.models import Mission, MissionLeg, MissionPhase, MissionLegTimeline, TransportState
 from app.mission.storage import (
     delete_mission,
     list_missions,
     load_mission,
     mission_exists,
     save_mission,
+    load_mission_v2,
+    MISSIONS_DIR,
 )
 from app.mission.storage import load_mission_timeline, save_mission_timeline
+from pathlib import Path
 from app.mission.timeline_service import (
     TimelineComputationError,
     TimelineSummary,
@@ -41,6 +45,7 @@ from app.core.metrics import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_route_manager, get_poi_manager
 
 logger = logging.getLogger(__name__)
 
@@ -49,28 +54,16 @@ router = APIRouter(prefix="/api/missions", tags=["missions"])
 
 # Global active mission ID (stored in memory; would be persisted in production)
 _active_mission_id: Optional[str] = None
-_poi_manager: Optional[POIManager] = None
-_route_manager: Optional[RouteManager] = None
-
-
-def set_poi_manager(poi_manager: POIManager) -> None:
-    """Inject POI manager for mission-scoped POI cleanup."""
-    global _poi_manager
-    _poi_manager = poi_manager
-
-
-def set_route_manager(route_manager: RouteManager) -> None:
-    """Inject RouteManager so mission activation can ensure matching route activation."""
-    global _route_manager
-    _route_manager = route_manager
 
 
 def _compute_and_store_timeline_for_mission(
-    mission: Mission,
+    mission: MissionLeg,
     refresh_metrics: bool,
-) -> tuple[MissionTimeline, TimelineSummary]:
+    route_manager: RouteManager,
+    poi_manager: POIManager | None = None,
+) -> tuple[MissionLegTimeline, TimelineSummary]:
     """Build, persist, and optionally publish metrics for a mission timeline."""
-    if not _route_manager:
+    if not route_manager:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Route manager unavailable for timeline computation",
@@ -78,8 +71,8 @@ def _compute_and_store_timeline_for_mission(
 
     timeline, summary = build_mission_timeline(
         mission,
-        _route_manager,
-        _poi_manager,
+        route_manager,
+        poi_manager,
     )
     save_mission_timeline(mission.id, timeline)
     generated_ts = datetime.now(timezone.utc).timestamp()
@@ -105,7 +98,11 @@ def _compute_and_store_timeline_for_mission(
     return timeline, summary
 
 
-def _refresh_timeline_after_save(mission: Mission) -> None:
+def _refresh_timeline_after_save(
+    mission: MissionLeg,
+    route_manager: RouteManager,
+    poi_manager: POIManager | None = None,
+) -> None:
     """Attempt to compute a fresh timeline immediately after save operations."""
     if not mission.route_id:
         return
@@ -113,6 +110,8 @@ def _refresh_timeline_after_save(mission: Mission) -> None:
         _compute_and_store_timeline_for_mission(
             mission,
             refresh_metrics=False,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
         )
     except HTTPException as exc:
         logger.warning(
@@ -177,7 +176,7 @@ class MissionErrorResponse(BaseModel):
 @router.post(
     "",
     status_code=status.HTTP_201_CREATED,
-    response_model=Mission,
+    response_model=MissionLeg,
     responses={
         422: {
             "model": MissionErrorResponse,
@@ -185,7 +184,11 @@ class MissionErrorResponse(BaseModel):
         }
     },
 )
-async def create_mission(mission: Mission) -> Mission:
+async def create_mission(
+    mission: MissionLeg,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> MissionLeg:
     """
     Create a new mission.
 
@@ -203,6 +206,13 @@ async def create_mission(mission: Mission) -> Mission:
             "Creating mission",
         )
 
+        # Ensure route exists
+        if route_manager and not route_manager.get_route(mission.route_id):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Route {mission.route_id} not found",
+            )
+
         # Ensure timestamps are set
         now = datetime.now(timezone.utc)
         if not mission.created_at or mission.created_at.tzinfo is None:
@@ -212,13 +222,16 @@ async def create_mission(mission: Mission) -> Mission:
 
         # Save mission to storage
         save_mission(mission)
-        _refresh_timeline_after_save(mission)
+        if route_manager:
+            _refresh_timeline_after_save(mission, route_manager, poi_manager)
 
         logger.info(
             "Mission created successfully",
         )
 
         return mission
+    except HTTPException:
+        raise
     except ValueError as e:
         logger.warning(
             "Mission creation failed with validation error",
@@ -229,11 +242,13 @@ async def create_mission(mission: Mission) -> Mission:
         )
     except Exception as e:
         logger.error(
-            "Mission creation failed",
+            "Mission creation failed: %s",
+            str(e),
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create mission",
+            detail=f"Failed to create mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -284,16 +299,17 @@ async def list_missions_endpoint(
     except Exception as e:
         logger.error(
             "Failed to list missions",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to list missions",
+            detail=f"Failed to list missions: {type(e).__name__}: {str(e)}",
         )
 
 
 @router.get(
     "/active",
-    response_model=Mission,
+    response_model=MissionLeg,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -301,7 +317,7 @@ async def list_missions_endpoint(
         }
     },
 )
-async def get_active_mission() -> Mission:
+async def get_active_mission() -> MissionLeg:
     """
     Get the currently active mission.
 
@@ -336,8 +352,26 @@ async def get_active_mission() -> Mission:
                     _active_mission_id = m_id  # Update in-memory reference
                     return mission
 
+        # Also check v2 missions for active legs (v1/v2 API bridge)
+        # Scan the missions directory for v2 mission folders
+        missions_dir = Path(MISSIONS_DIR).parent / "missions"
+        if missions_dir.exists():
+            for mission_dir in missions_dir.iterdir():
+                if mission_dir.is_dir():
+                    try:
+                        v2_mission = load_mission_v2(mission_dir.name)
+                        if v2_mission:
+                            for leg in v2_mission.legs:
+                                if leg.is_active:
+                                    logger.info(f"Found active v2 leg {leg.id} in mission {v2_mission.id}")
+                                    _active_mission_id = leg.id  # Track the leg ID
+                                    return leg  # Return the active leg as a MissionLeg
+                    except Exception as e:
+                        logger.debug(f"Error loading v2 mission {mission_dir.name}: {e}")
+                        continue
+
         # No active mission found
-        logger.debug("No active mission found")
+        logger.debug("No active mission found in v1 or v2")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No mission is currently active",
@@ -347,16 +381,17 @@ async def get_active_mission() -> Mission:
     except Exception as e:
         logger.error(
             "Failed to get active mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get active mission",
+            detail=f"Failed to get active mission: {type(e).__name__}: {str(e)}",
         )
 
 
 @router.get(
     "/active/timeline",
-    response_model=MissionTimeline,
+    response_model=MissionLegTimeline,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -364,7 +399,7 @@ async def get_active_mission() -> Mission:
         }
     },
 )
-async def get_active_mission_timeline() -> MissionTimeline:
+async def get_active_mission_timeline() -> MissionLegTimeline:
     mission = await get_active_mission()
     timeline = load_mission_timeline(mission.id)
     if not timeline:
@@ -483,13 +518,13 @@ async def get_active_mission_satellites() -> dict:
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get active mission satellites",
+            detail=f"Failed to get active mission satellites: {type(e).__name__}: {str(e)}",
         )
 
 
 @router.get(
     "/{mission_id}",
-    response_model=Mission,
+    response_model=MissionLeg,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -497,7 +532,7 @@ async def get_active_mission_satellites() -> dict:
         }
     },
 )
-async def get_mission(mission_id: str) -> Mission:
+async def get_mission(mission_id: str) -> MissionLeg:
     """
     Get a specific mission by ID.
 
@@ -529,16 +564,17 @@ async def get_mission(mission_id: str) -> Mission:
     except Exception as e:
         logger.error(
             "Failed to get mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to get mission",
+            detail=f"Failed to get mission: {type(e).__name__}: {str(e)}",
         )
 
 
 @router.get(
     "/{mission_id}/timeline",
-    response_model=MissionTimeline,
+    response_model=MissionLegTimeline,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -546,7 +582,7 @@ async def get_mission(mission_id: str) -> Mission:
         }
     },
 )
-async def get_mission_timeline_endpoint(mission_id: str) -> MissionTimeline:
+async def get_mission_timeline_endpoint(mission_id: str) -> MissionLegTimeline:
     if not mission_exists(mission_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -565,7 +601,7 @@ async def get_mission_timeline_endpoint(mission_id: str) -> MissionTimeline:
 
 @router.post(
     "/{mission_id}/timeline/recompute",
-    response_model=MissionTimeline,
+    response_model=MissionLegTimeline,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -575,7 +611,9 @@ async def get_mission_timeline_endpoint(mission_id: str) -> MissionTimeline:
 )
 async def recompute_mission_timeline_endpoint(
     mission_id: str,
-) -> MissionTimeline:
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> MissionLegTimeline:
     """Force a fresh mission timeline computation without altering activation."""
     mission = load_mission(mission_id)
     if not mission:
@@ -588,6 +626,8 @@ async def recompute_mission_timeline_endpoint(
         timeline, _summary = _compute_and_store_timeline_for_mission(
             mission,
             refresh_metrics=mission.is_active,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
         )
     except TimelineComputationError as exc:
         logger.error(
@@ -595,7 +635,7 @@ async def recompute_mission_timeline_endpoint(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to compute mission timeline",
+            detail=f"Failed to compute mission timeline: {type(exc).__name__}: {str(exc)}",
         ) from exc
 
     return timeline
@@ -622,9 +662,13 @@ async def recompute_mission_timeline_endpoint(
         },
     },
 )
+@limiter.limit("10/minute")
 async def export_mission_timeline_endpoint(
+    request: Request,
     mission_id: str,
     format: str = Query("csv", description="Export format: csv, xlsx, or pdf"),
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> StreamingResponse:
     """Generate a downloadable mission timeline export."""
     mission = load_mission(mission_id)
@@ -643,7 +687,13 @@ async def export_mission_timeline_endpoint(
 
     try:
         export_format = TimelineExportFormat.from_string(format)
-        artifact = generate_timeline_export(export_format, mission, timeline)
+        artifact = generate_timeline_export(
+            export_format,
+            mission,
+            timeline,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+        )
     except ExportGenerationError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -663,7 +713,7 @@ async def export_mission_timeline_endpoint(
 
 @router.put(
     "/{mission_id}",
-    response_model=Mission,
+    response_model=MissionLeg,
     responses={
         404: {
             "model": MissionErrorResponse,
@@ -677,8 +727,10 @@ async def export_mission_timeline_endpoint(
 )
 async def update_mission(
     mission_id: str,
-    mission_update: Mission,
-) -> Mission:
+    mission_update: MissionLeg,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> MissionLeg:
     """
     Update an existing mission (merge logic).
 
@@ -709,8 +761,15 @@ async def update_mission(
         # Load existing mission
         existing_mission = load_mission(mission_id)
 
+        # Ensure route exists
+        if route_manager and not route_manager.get_route(mission_update.route_id):
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"Route {mission_update.route_id} not found",
+            )
+
         # Merge: preserve original created_at, update updated_at
-        merged = Mission(
+        merged = MissionLeg(
             id=mission_id,
             name=mission_update.name,
             description=mission_update.description,
@@ -724,7 +783,8 @@ async def update_mission(
 
         # Save merged mission
         save_mission(merged)
-        _refresh_timeline_after_save(merged)
+        if route_manager:
+            _refresh_timeline_after_save(merged, route_manager, poi_manager)
 
         logger.info(
             "Mission updated successfully",
@@ -744,10 +804,11 @@ async def update_mission(
     except Exception as e:
         logger.error(
             "Failed to update mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update mission",
+            detail=f"Failed to update mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -761,12 +822,18 @@ async def update_mission(
         }
     },
 )
-async def delete_mission_endpoint(mission_id: str) -> None:
+async def delete_mission_endpoint(
+    mission_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> None:
     """
     Delete a mission by ID.
 
     Args:
         mission_id: Mission ID to delete
+        route_manager: Route manager dependency
+        poi_manager: POI manager dependency
 
     Raises:
         HTTPException: 404 if mission not found
@@ -791,11 +858,11 @@ async def delete_mission_endpoint(mission_id: str) -> None:
         mission = load_mission(mission_id)
 
         # Deactivate associated route if it's the active one
-        if mission.route_id and _route_manager:
+        if mission.route_id and route_manager:
             try:
                 # Only deactivate if this mission's route is the currently active route
-                if _route_manager._active_route_id == mission.route_id:
-                    _route_manager.deactivate_route()
+                if route_manager._active_route_id == mission.route_id:
+                    route_manager.deactivate_route()
                     logger.info(
                         "Deactivated route %s associated with mission %s",
                         mission.route_id,
@@ -811,9 +878,9 @@ async def delete_mission_endpoint(mission_id: str) -> None:
                 # Continue with mission deletion even if route deactivation fails
 
         # Remove related mission POIs
-        if _poi_manager:
+        if poi_manager:
             try:
-                removed = _poi_manager.delete_mission_pois(mission_id)
+                removed = poi_manager.delete_mission_pois(mission_id)
                 if removed:
                     logger.info("Deleted %d mission-scoped POIs for %s", removed, mission_id)
             except Exception as exc:  # pragma: no cover - defensive
@@ -840,10 +907,11 @@ async def delete_mission_endpoint(mission_id: str) -> None:
     except Exception as e:
         logger.error(
             "Failed to delete mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete mission",
+            detail=f"Failed to delete mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -861,7 +929,11 @@ async def delete_mission_endpoint(mission_id: str) -> None:
         },
     },
 )
-async def activate_mission(mission_id: str) -> MissionActivationResponse:
+async def activate_mission(
+    mission_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> MissionActivationResponse:
     """
     Activate a mission (set as active and trigger timeline recomputation).
 
@@ -873,6 +945,8 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
 
     Args:
         mission_id: Mission ID to activate
+        route_manager: Route manager dependency
+        poi_manager: POI manager dependency
 
     Returns:
         Activation response with timestamp and flight phase
@@ -938,9 +1012,9 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
         _active_mission_id = mission_id
 
         # Ensure associated route is active
-        if mission.route_id and _route_manager:
+        if mission.route_id and route_manager:
             try:
-                _route_manager.activate_route(mission.route_id)
+                route_manager.activate_route(mission.route_id)
             except Exception as exc:
                 mission.is_active = False
                 mission.updated_at = datetime.now(timezone.utc)
@@ -961,6 +1035,8 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
             _compute_and_store_timeline_for_mission(
                 mission,
                 refresh_metrics=True,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
             )
         except HTTPException:
             mission.is_active = False
@@ -978,7 +1054,7 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to compute mission timeline",
+                detail=f"Failed to compute mission timeline: {type(exc).__name__}: {str(exc)}",
             ) from exc
 
         # Update metrics for activated mission
@@ -1014,10 +1090,11 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
     except Exception as e:
         logger.error(
             "Failed to activate mission",
+            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to activate mission",
+            detail=f"Failed to activate mission: {type(e).__name__}: {str(e)}",
         )
 
 
@@ -1031,7 +1108,9 @@ async def activate_mission(mission_id: str) -> MissionActivationResponse:
         }
     },
 )
-async def deactivate_mission() -> MissionDeactivationResponse:
+async def deactivate_mission(
+    route_manager: RouteManager = Depends(get_route_manager),
+) -> MissionDeactivationResponse:
     """
     Deactivate the currently active mission.
 
@@ -1042,6 +1121,9 @@ async def deactivate_mission() -> MissionDeactivationResponse:
     - Clears mission metrics from Prometheus
     - Clears the active mission reference
     - Returns deactivation confirmation
+
+    Args:
+        route_manager: Route manager dependency
 
     Returns:
         Deactivation response with timestamp
@@ -1058,11 +1140,11 @@ async def deactivate_mission() -> MissionDeactivationResponse:
         mission = await get_active_mission()
 
         # Deactivate the associated route if it's the active one
-        if mission.route_id and _route_manager:
+        if mission.route_id and route_manager:
             try:
                 # Only deactivate if this mission's route is the currently active route
-                if _route_manager._active_route_id == mission.route_id:
-                    _route_manager.deactivate_route()
+                if route_manager._active_route_id == mission.route_id:
+                    route_manager.deactivate_route()
                     logger.info(
                         "Deactivated route %s associated with mission %s",
                         mission.route_id,
@@ -1101,7 +1183,7 @@ async def deactivate_mission() -> MissionDeactivationResponse:
         logger.error("Failed to deactivate mission", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to deactivate mission",
+            detail=f"Failed to deactivate mission: {type(e).__name__}: {str(e)}",
         )
 
 

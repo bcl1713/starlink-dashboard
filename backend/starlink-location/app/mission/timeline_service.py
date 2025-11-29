@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Iterable, Sequence
 
 from app.mission.models import (
-    Mission,
-    MissionTimeline,
+    MissionLeg,
+    MissionLegTimeline,
     TimelineStatus,
     Transport,
     TransportState,
@@ -143,11 +143,12 @@ class TimelineSummary:
 
 
 def build_mission_timeline(
-    mission: Mission,
+    mission: MissionLeg,
     route_manager: RouteManager,
     poi_manager: POIManager | None = None,
     coverage_sampler: CoverageSampler | None = None,
-) -> tuple[MissionTimeline, TimelineSummary]:
+    parent_mission_id: str | None = None,
+) -> tuple[MissionLegTimeline, TimelineSummary]:
     """Compute the mission communication timeline and derived summary."""
 
     if not mission.route_id:
@@ -225,9 +226,9 @@ def build_mission_timeline(
     )
 
     if poi_manager and (coverage_result.gaps or coverage_result.swaps):
-        _sync_ka_pois(mission, route, poi_manager, coverage_result)
+        _sync_ka_pois(mission, route, poi_manager, coverage_result, parent_mission_id)
     if poi_manager:
-        _sync_x_aar_pois(mission, route, poi_manager)
+        _sync_x_aar_pois(mission, route, poi_manager, parent_mission_id)
 
     _apply_manual_outages(rule_engine, mission.transports.ka_outages, Transport.KA)
     _apply_manual_outages(rule_engine, mission.transports.ku_overrides, Transport.KU)
@@ -275,7 +276,7 @@ def build_mission_timeline(
 
 
 def _annotate_aar_markers(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     events: Sequence[MissionEvent],
 ) -> None:
     """Persist AAR window intervals for export consumers."""
@@ -990,13 +991,14 @@ def _format_azimuth_reason(
     debug_metadata: dict | None = None,
 ) -> str:
     abs_az = float((debug_metadata or {}).get("absolute_azimuth_degrees", azimuth))
+    rel_az = float((debug_metadata or {}).get("relative_azimuth_degrees", azimuth))
     elevation = float((debug_metadata or {}).get("elevation_degrees", 0.0))
 
     if aft_violation and not forward_violation and not in_aar_window:
-        return f"X-Ku Conflict az={abs_az:.0f}° el={elevation:.0f}°"
+        return f"X-Ku Conflict az={rel_az:.0f}° el={elevation:.0f}°"
 
     if forward_violation and not aft_violation and in_aar_window:
-        return f"X-AAR Conflict az={abs_az:.0f}° el={elevation:.0f}°"
+        return f"X-AAR Conflict az={rel_az:.0f}° el={elevation:.0f}°"
 
     if forward_violation and aft_violation:
         cone = "forward & aft cones"
@@ -1100,36 +1102,30 @@ def _format_gap_reason(event: str, lost: str | None, regain: str | None) -> str:
 
 
 def _sync_ka_pois(
-    mission: Mission,
+    mission: MissionLeg,
     route: ParsedRoute,
     poi_manager: POIManager,
     coverage: CoverageAnalysisResult,
+    parent_mission_id: str | None = None,
 ) -> None:
-    deleted = poi_manager.delete_mission_pois_by_category(
-        mission.id, KA_POI_CATEGORIES
-    )
-    deleted_prefix = poi_manager.delete_mission_pois_by_name_prefixes(
-        mission.id, KA_POI_NAME_PREFIXES
-    )
-    route_cleanup = 0
+    effective_mission_id = parent_mission_id or mission.id
+
+    # Delete Ka POIs for THIS specific leg only (route_id + mission_id combination)
+    deleted = 0
     if mission.route_id:
-        route_cleanup = poi_manager.delete_route_mission_pois_with_prefixes(
-            mission.route_id,
-            KA_POI_NAME_PREFIXES,
-            exclude_mission_id=mission.id,
+        deleted = poi_manager.delete_leg_pois(
+            route_id=mission.route_id,
+            mission_id=effective_mission_id,
+            categories=KA_POI_CATEGORIES,
+            prefixes=KA_POI_NAME_PREFIXES,
         )
-    if deleted or deleted_prefix:
-        logger.debug(
-            "Deleted %d existing Ka mission POIs (category=%d, prefix=%d)",
-            deleted + deleted_prefix,
-            deleted,
-            deleted_prefix,
-        )
-    if route_cleanup:
+
+    if deleted:
         logger.info(
-            "Deleted %d Ka mission POIs on route %s (other missions)",
-            route_cleanup,
+            "Deleted %d existing Ka POIs for leg (route=%s, mission=%s)",
+            deleted,
             mission.route_id,
+            effective_mission_id,
         )
 
     def create_poi(payload: POICreate):
@@ -1146,7 +1142,7 @@ def _sync_ka_pois(
                     category=MISSION_EVENT_CATEGORY,
                     description=f"Loss at {gap.start.timestamp.isoformat()}",
                     route_id=mission.route_id,
-                    mission_id=mission.id,
+                    mission_id=effective_mission_id,
                 )
             )
         if gap.end:
@@ -1159,7 +1155,7 @@ def _sync_ka_pois(
                     category=MISSION_EVENT_CATEGORY,
                     description=f"Regain at {gap.end.timestamp.isoformat()}",
                     route_id=mission.route_id,
-                    mission_id=mission.id,
+                    mission_id=effective_mission_id,
                 )
             )
 
@@ -1176,33 +1172,35 @@ def _sync_ka_pois(
                 category=MISSION_EVENT_CATEGORY,
                 description=f"Recommended swap near {midpoint.timestamp.isoformat()}",
                 route_id=mission.route_id,
-                mission_id=mission.id,
+                mission_id=effective_mission_id,
             )
         )
 
 
 def _sync_x_aar_pois(
-    mission: Mission,
+    mission: MissionLeg,
     route: ParsedRoute,
     poi_manager: POIManager,
+    parent_mission_id: str | None = None,
 ) -> None:
-    deleted = poi_manager.delete_mission_pois_by_name_prefixes(
-        mission.id, X_AAR_POI_PREFIXES
-    )
-    route_cleanup = 0
+    effective_mission_id = parent_mission_id or mission.id
+
+    # Delete X/AAR POIs for THIS specific leg only (route_id + mission_id combination)
+    deleted = 0
     if mission.route_id:
-        route_cleanup = poi_manager.delete_route_mission_pois_with_prefixes(
-            mission.route_id,
-            X_AAR_POI_PREFIXES,
-            exclude_mission_id=mission.id,
+        deleted = poi_manager.delete_leg_pois(
+            route_id=mission.route_id,
+            mission_id=effective_mission_id,
+            categories=None,  # No category filter for X/AAR POIs
+            prefixes=X_AAR_POI_PREFIXES,
         )
+
     if deleted:
-        logger.debug("Deleted %d existing X/AAR mission POIs", deleted)
-    if route_cleanup:
         logger.info(
-            "Deleted %d X/AAR mission POIs on route %s (other missions)",
-            route_cleanup,
+            "Deleted %d existing X/AAR POIs for leg (route=%s, mission=%s)",
+            deleted,
             mission.route_id,
+            effective_mission_id,
         )
 
     transports = mission.transports
@@ -1230,7 +1228,7 @@ def _sync_x_aar_pois(
                 category=MISSION_EVENT_CATEGORY,
                 description=f"X transition target {transition.target_satellite_id or 'Unknown'}",
                 route_id=mission.route_id,
-                mission_id=mission.id,
+                mission_id=effective_mission_id,
             )
         )
         if (
@@ -1251,7 +1249,7 @@ def _sync_x_aar_pois(
                     category=MISSION_EVENT_CATEGORY,
                     description=f"AAR window start ({window.start_waypoint_name})",
                     route_id=mission.route_id,
-                    mission_id=mission.id,
+                    mission_id=effective_mission_id,
                 )
             )
         end_coords = _find_waypoint_coordinates(route, window.end_waypoint_name)
@@ -1265,7 +1263,7 @@ def _sync_x_aar_pois(
                     category=MISSION_EVENT_CATEGORY,
                     description=f"AAR window end ({window.end_waypoint_name})",
                     route_id=mission.route_id,
-                    mission_id=mission.id,
+                    mission_id=effective_mission_id,
                 )
             )
 
@@ -1287,7 +1285,7 @@ def _apply_manual_outages(
 
 
 def _attach_statistics(
-    timeline: MissionTimeline, mission_start: datetime, mission_end: datetime
+    timeline: MissionLegTimeline, mission_start: datetime, mission_end: datetime
 ) -> None:
     total_seconds = max((mission_end - mission_start).total_seconds(), 1.0)
     degraded_seconds = 0.0
@@ -1313,7 +1311,7 @@ def _attach_statistics(
 
 
 def _summarize_timeline(
-    timeline: MissionTimeline,
+    timeline: MissionLegTimeline,
     mission_start: datetime,
     mission_end: datetime,
     sample_count: int,
@@ -1404,7 +1402,9 @@ def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
 def _format_commka_transition_label(
     from_satellite: str | None, to_satellite: str | None
 ) -> str:
-    # Simplified: all CommKa swaps show as "CommKa\nSwap"
+    # Format: "Ka Transition AOR → POR" for display and frontend parsing
+    if from_satellite and to_satellite:
+        return f"Ka Transition {from_satellite} → {to_satellite}"
     return "CommKa\nSwap"
 
 

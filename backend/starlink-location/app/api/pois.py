@@ -5,7 +5,7 @@ import math
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status, Depends
 
 from app.models.poi import (
     POI,
@@ -20,34 +20,18 @@ from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.mission.routes import get_active_mission_id
 from app.mission.storage import load_mission
+from app.mission.dependencies import get_route_manager, get_poi_manager
 
 logger = logging.getLogger(__name__)
 
 # Global coordinator reference for accessing telemetry
 _coordinator: Optional[object] = None
 
-# Global POI manager instance (set by main.py)
-poi_manager: Optional[POIManager] = None
-# Global route manager (optional; set when available)
-_route_manager: Optional[RouteManager] = None
-
 
 def set_coordinator(coordinator):
     """Set the simulation coordinator reference."""
     global _coordinator
     _coordinator = coordinator
-
-
-def set_poi_manager(manager: POIManager) -> None:
-    """Set the POI manager instance (called by main.py during startup)."""
-    global poi_manager
-    poi_manager = manager
-
-
-def set_route_manager(route_manager: RouteManager) -> None:
-    """Set the RouteManager instance for route-aware ETA calculations."""
-    global _route_manager
-    _route_manager = route_manager
 
 # Create API router
 router = APIRouter(prefix="/api/pois", tags=["pois"])
@@ -113,7 +97,7 @@ def calculate_course_status(heading: float, bearing: float) -> str:
 
 def _calculate_poi_active_status(
     poi: POI,
-    route_manager: RouteManager,
+    route_manager: RouteManager | None,
 ) -> bool:
     """
     Calculate whether a POI is currently active based on its associated
@@ -136,7 +120,7 @@ def _calculate_poi_active_status(
         return True
 
     # Check route-based POIs
-    if poi.route_id is not None:
+    if poi.route_id is not None and route_manager:
         active_route = route_manager.get_active_route()
         if active_route is not None:
             # Extract route ID from metadata file_path (e.g., "/data/routes/route-name.kml" -> "route-name")
@@ -169,6 +153,8 @@ async def list_pois(
         True,
         description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
     ),
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> POIListResponse:
     """
     Get list of all POIs, optionally filtered by route.
@@ -180,6 +166,18 @@ async def list_pois(
     Returns:
     - List of POI objects and total count
     """
+    if not poi_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="POI manager not initialized",
+        )
+
+    if not poi_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="POI manager not initialized",
+        )
+
     if mission_id:
         # If a specific mission is requested, filter by it.
         pois = poi_manager.list_pois(route_id=route_id, mission_id=mission_id)
@@ -214,7 +212,7 @@ async def list_pois(
         # Calculate active status for this POI
         active_status = _calculate_poi_active_status(
             poi=poi,
-            route_manager=_route_manager,
+            route_manager=route_manager,
         )
 
         # If filtering is active, skip inactive POIs before creating the response object
@@ -257,6 +255,8 @@ async def get_pois_with_etas(
         True,
         description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
     ),
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> POIETAListResponse:
     """
     Get all POIs with real-time ETA and distance data.
@@ -314,9 +314,9 @@ async def get_pois_with_etas(
                 longitude = None
                 speed_knots = None
 
-        # If coordinator doesn't have route manager or is unavailable, try _route_manager directly
-        if not active_route and _route_manager:
-            active_route = _route_manager.get_active_route()
+        # If coordinator doesn't have route manager or is unavailable, try route_manager directly
+        if not active_route and route_manager:
+            active_route = route_manager.get_active_route()
 
         active_route_id = None
         if active_route and active_route.metadata and active_route.metadata.file_path:
@@ -377,6 +377,12 @@ async def get_pois_with_etas(
         category_filter = set()
         if category:
             category_filter = set(c.strip() for c in category.split(",") if c.strip())
+
+        if not poi_manager:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="POI manager not initialized",
+            )
 
         pois = poi_manager.list_pois(route_id=route_id)
 
@@ -529,7 +535,7 @@ async def get_pois_with_etas(
             # Calculate active status for this POI
             active_status = _calculate_poi_active_status(
                 poi=poi,
-                route_manager=_route_manager,
+                route_manager=route_manager,
             )
 
             # If filtering is active, skip inactive POIs before creating the response object
@@ -574,7 +580,10 @@ async def get_pois_with_etas(
 
 
 @router.get("/count/total", response_model=dict, summary="Get POI count")
-async def count_pois(route_id: Optional[str] = Query(None, description="Filter by route ID")) -> dict:
+async def count_pois(
+    route_id: Optional[str] = Query(None, description="Filter by route ID"),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> dict:
     """
     Get count of POIs, optionally filtered by route.
 
@@ -584,6 +593,12 @@ async def count_pois(route_id: Optional[str] = Query(None, description="Filter b
     Returns:
     - JSON object with count
     """
+    if not poi_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="POI manager not initialized",
+        )
+
     count = poi_manager.count_pois(route_id=route_id)
     return {"count": count, "route_id": route_id}
 
@@ -593,6 +608,7 @@ async def get_next_destination(
     latitude: Optional[str] = Query(None),
     longitude: Optional[str] = Query(None),
     speed_knots: Optional[str] = Query(None),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict:
     """
     Get the name of the closest POI (next destination).
@@ -627,6 +643,12 @@ async def get_next_destination(
             speed = float(speed_knots) if speed_knots else 67.0
     except (ValueError, TypeError):
         lat, lon, speed = 41.6, -74.0, 67.0
+
+    if not poi_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="POI manager not initialized",
+        )
 
     pois = poi_manager.list_pois()
     if not pois:
@@ -684,6 +706,7 @@ async def get_next_eta(
     latitude: Optional[str] = Query(None),
     longitude: Optional[str] = Query(None),
     speed_knots: Optional[str] = Query(None),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict:
     """
     Get the ETA in seconds to the closest POI.
@@ -722,6 +745,12 @@ async def get_next_eta(
             speed = float(speed_knots) if speed_knots else 67.0
     except (ValueError, TypeError):
         lat, lon, speed = 41.6, -74.0, 67.0
+
+    if not poi_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="POI manager not initialized",
+        )
 
     pois = poi_manager.list_pois()
     if not pois:
@@ -775,6 +804,7 @@ async def get_approaching_pois(
     latitude: Optional[str] = Query(None),
     longitude: Optional[str] = Query(None),
     speed_knots: Optional[str] = Query(None),
+    poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict:
     """
     Get count of POIs that will be reached within 30 minutes.
@@ -830,7 +860,11 @@ async def get_approaching_pois(
 
 
 @router.get("/{poi_id}", response_model=POIResponse, summary="Get a specific POI")
-async def get_poi(poi_id: str) -> POIResponse:
+async def get_poi(
+    poi_id: str,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> POIResponse:
     """
     Get a specific POI by ID.
 
@@ -843,6 +877,12 @@ async def get_poi(poi_id: str) -> POIResponse:
     Raises:
     - 404: POI not found
     """
+    if not poi_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="POI manager not initialized",
+        )
+
     poi = poi_manager.get_poi(poi_id)
     if not poi:
         raise HTTPException(
@@ -853,7 +893,7 @@ async def get_poi(poi_id: str) -> POIResponse:
     # Calculate active status for this POI
     active_status = _calculate_poi_active_status(
         poi=poi,
-        route_manager=_route_manager,
+        route_manager=route_manager,
     )
 
     return POIResponse(
@@ -877,7 +917,11 @@ async def get_poi(poi_id: str) -> POIResponse:
 
 
 @router.post("", response_model=POIResponse, status_code=status.HTTP_201_CREATED, summary="Create a new POI")
-async def create_poi(poi_create: POICreate) -> POIResponse:
+async def create_poi(
+    poi_create: POICreate,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> POIResponse:
     """
     Create a new POI.
 
@@ -906,12 +950,18 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
             except Exception:
                 pass
 
+        if not poi_manager:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="POI manager not initialized",
+            )
+
         poi = poi_manager.create_poi(poi_create, active_route=active_route)
 
         # Calculate active status for this POI
         active_status = _calculate_poi_active_status(
             poi=poi,
-            route_manager=_route_manager,
+            route_manager=route_manager,
         )
 
         return POIResponse(
@@ -940,7 +990,12 @@ async def create_poi(poi_create: POICreate) -> POIResponse:
 
 
 @router.put("/{poi_id}", response_model=POIResponse, summary="Update a POI")
-async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
+async def update_poi(
+    poi_id: str,
+    poi_update: POIUpdate,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> POIResponse:
     """
     Update an existing POI.
 
@@ -963,8 +1018,14 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
     - 400: Invalid update data
     """
     try:
-        poi = poi_manager.update_poi(poi_id, poi_update)
-        if not poi:
+        if not poi_manager:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="POI manager not initialized",
+            )
+
+        updated_poi = poi_manager.update_poi(poi_id, poi_update)
+        if not updated_poi:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"POI not found: {poi_id}",
@@ -972,23 +1033,27 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
 
         # Calculate active status for this POI
         active_status = _calculate_poi_active_status(
-            poi=poi,
-            route_manager=_route_manager,
+            poi=updated_poi,
+            route_manager=route_manager,
         )
 
         return POIResponse(
-            id=poi.id,
-            name=poi.name,
-            latitude=poi.latitude,
-            longitude=poi.longitude,
-            icon=poi.icon,
-            category=poi.category,
+            id=updated_poi.id,
+            name=updated_poi.name,
+            latitude=updated_poi.latitude,
+            longitude=updated_poi.longitude,
+            icon=updated_poi.icon,
+            category=updated_poi.category,
             active=active_status,
-            description=poi.description,
-            route_id=poi.route_id,
-            mission_id=poi.mission_id,
-            created_at=poi.created_at,
-            updated_at=poi.updated_at,
+            description=updated_poi.description,
+            route_id=updated_poi.route_id,
+            mission_id=updated_poi.mission_id,
+            created_at=updated_poi.created_at,
+            updated_at=updated_poi.updated_at,
+            projected_latitude=updated_poi.projected_latitude,
+            projected_longitude=updated_poi.projected_longitude,
+            projected_waypoint_index=updated_poi.projected_waypoint_index,
+            projected_route_progress=updated_poi.projected_route_progress,
         )
     except HTTPException:
         raise
@@ -1000,7 +1065,10 @@ async def update_poi(poi_id: str, poi_update: POIUpdate) -> POIResponse:
 
 
 @router.delete("/{poi_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a POI")
-async def delete_poi(poi_id: str) -> None:
+async def delete_poi(
+    poi_id: str,
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> None:
     """
     Delete a POI.
 
@@ -1010,6 +1078,12 @@ async def delete_poi(poi_id: str) -> None:
     Raises:
     - 404: POI not found
     """
+    if not poi_manager:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="POI manager not initialized",
+        )
+
     success = poi_manager.delete_poi(poi_id)
     if not success:
         raise HTTPException(

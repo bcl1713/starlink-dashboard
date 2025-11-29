@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, Depends
 
 from app.core.config import ConfigManager
 from app.core.metrics import (
@@ -19,32 +19,20 @@ from app.services.eta_calculator import ETACalculator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
+from app.mission.dependencies import get_route_manager, get_poi_manager
 
 # Initialize services
 config_manager = ConfigManager()
-
-# Global manager instances (set by main.py)
-route_manager: Optional[RouteManager] = None
-poi_manager: Optional[POIManager] = None
 
 # Create API router
 router = APIRouter(tags=["metrics"])
 
 
-def set_route_manager(manager: RouteManager) -> None:
-    """Set the route manager instance (called by main.py during startup)."""
-    global route_manager
-    route_manager = manager
-
-
-def set_poi_manager(manager: POIManager) -> None:
-    """Set the POI manager instance (called by main.py during startup)."""
-    global poi_manager
-    poi_manager = manager
-
-
 @router.get("/metrics", status_code=status.HTTP_200_OK)
-async def get_metrics() -> str:
+async def get_metrics(
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> str:
     """
     Get Prometheus metrics in OpenMetrics text format.
 
