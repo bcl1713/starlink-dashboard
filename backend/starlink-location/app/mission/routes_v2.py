@@ -865,10 +865,16 @@ async def delete_leg(
             # 2. Delete POIs associated with this leg
             if poi_manager:
                 try:
-                    deleted_leg_pois = poi_manager.delete_mission_pois(mission_id)
-                    logger.info(f"Deleted {deleted_leg_pois} mission POIs for mission {mission_id}")
+                    if leg.route_id:
+                        deleted_leg_pois = poi_manager.delete_leg_pois(
+                            route_id=leg.route_id,
+                            mission_id=mission_id
+                        )
+                        logger.info(f"Deleted {deleted_leg_pois} POIs for leg {leg_id} (route {leg.route_id})")
+                    else:
+                        logger.info(f"No route associated with leg {leg_id}, skipping POI deletion")
                 except Exception as e:
-                    logger.error(f"Failed to delete mission POIs: {e}")
+                    logger.error(f"Failed to delete leg POIs: {e}")
                     # Don't fail the entire leg deletion if POI deletion fails
 
             # 3. Remove leg from mission and save
