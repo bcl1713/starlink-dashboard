@@ -100,7 +100,7 @@
 - [X] T020 [US1] Refactor backend/starlink-location/app/api/pois.py - split into pois/ module with crud.py, etas.py, stats.py, helpers.py
 - [X] T021 [US1] Smoke test POI endpoints - verify /api/pois (create, read, update, delete, list with ETAs, next destination)
 - [X] T022 [US1] Run Black and ruff on backend/starlink-location/app/api/pois/ module
-- [ ] T023 [US1] Create PR for POI refactoring (commits 9aaec05, 479d41e ready for PR)
+- [X] T023 [US1] Create PR for POI refactoring - PR #16 created
 
 ### Backend Critical Files (>1000 lines) - Group 3: Mission Routes
 
