@@ -34,7 +34,8 @@ RUN mkdir -p /data/routes /data/sim_routes /home/appuser/.local/share/cartopy /h
     chown -R appuser:appuser /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache && \
     chmod -R 755 /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache
 
-USER appuser
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["entrypoint.sh"]
 
 # Set PATH to include user's local bin
 ENV PATH=/home/appuser/.local/bin:$PATH
