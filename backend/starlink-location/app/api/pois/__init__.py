@@ -6,10 +6,12 @@ from . import crud, etas, stats
 
 # Create the main POI router by combining all sub-routers
 # Set prefix here so all sub-routers share the same /api/pois prefix
+# IMPORTANT: Include more specific routes (etas, stats) BEFORE less specific ones (crud)
+# to prevent the /{poi_id} route from catching /etas and /count/total paths
 router = APIRouter(prefix="/api/pois")
-router.include_router(crud.router)
 router.include_router(etas.router)
 router.include_router(stats.router)
+router.include_router(crud.router)
 
 
 def set_coordinator(coordinator):
