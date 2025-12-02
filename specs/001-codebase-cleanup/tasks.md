@@ -12,9 +12,9 @@
 ### Overall Status
 - **Phase 1 (Setup)**: ✅ COMPLETE - All 10 tasks done
 - **Phase 3 (User Story 1 - File Size Compliance)**: 🚀 IN PROGRESS
-  - **Completed**: 7 of 174 tasks (4%)
-  - **Files Refactored**: 1 of 26 (ui.py)
-  - **Files Under 300 Lines**: 1 of 26 (ui/__init__.py at 30 lines)
+  - **Completed**: 12 of 174 tasks (7%)
+  - **Files Refactored**: 2 of 26 (ui.py, routes.py)
+  - **Files Under 300 Lines**: 10 of 26 (ui/__init__.py at 30 lines + 9 routes modules all <300 lines)
   - **Deferred with FR-004**: 1 of 26 (ui/templates.py at 885 lines - template content exception)
   - **Target**: 21 of 26 files under 300 lines (80% compliance)
 
@@ -22,13 +22,14 @@
 - `934429a` - Phase 1: Linting infrastructure setup
 - `5a7c46c` - ui.py refactoring (3995 → 945 lines)
 - `36750fe` - Added FR-004 justification for ui/templates.py
+- `778f048` - routes.py refactoring (1114 → 1211 lines across 9 modules, all <300 lines)
 
 ### Next Priority (Recommended Order)
-1. **T024-T030**: timeline_service.py (1439 lines) - Complex but important
-2. **T031-T037**: exporter.py (1927 lines) - Large file with clear boundaries
-3. **T019-T023**: pois.py (1092 lines) - High refactoring priority
-4. **T014-T018**: routes.py (1046 lines) - Moderate complexity
-5. **T038-T045**: Additional critical files (kml_parser, etc.)
+1. **T019-T023**: pois.py (1092 lines) - High refactoring priority
+2. **T024-T030**: timeline_service.py (1439 lines) - Complex but important
+3. **T031-T037**: exporter.py (1927 lines) - Large file with clear boundaries
+4. **T038-T045**: Additional critical files (kml_parser, etc.)
+5. **T046-T053**: Services and frontend components (can run in parallel)
 
 ### Known Issues Fixed
 - Fixed missing `CollectorRegistry` import in app/core/metrics.py (not part of original issue)
@@ -86,11 +87,11 @@
 - [X] T011 [US1] Assess backend/starlink-location/app/api/ui.py (3995 lines) - analyzed structure
 - [X] T012 [US1] Refactor backend/starlink-location/app/api/ui.py - created ui/ module with __init__.py (30 lines), templates.py (885 lines, FR-004 deferred)
 - [X] T013 [US1] Smoke test UI endpoints - verified /ui/pois, /ui/routes, /ui/mission-planner all functional
-- [ ] T014 [US1] Assess backend/starlink-location/app/api/routes.py (1046 lines) - analyze route structure
-- [ ] T015 [US1] Refactor backend/starlink-location/app/api/routes.py - split into routes/ module with management.py, upload.py, stats.py, timing.py, cache.py
-- [ ] T016 [US1] Smoke test route endpoints - verify /api/routes (list, activate, deactivate, upload, download, delete)
-- [X] T017 [US1] Run Black and ruff on backend/starlink-location/app/api/ui/ modules - all checks passed
-- [X] T018 [US1] Create PR for UI refactoring - commits 5a7c46c, 36750fe (ui.py + FR-004 justification)
+- [X] T014 [US1] Assess backend/starlink-location/app/api/routes.py (1046 lines) - analyze route structure
+- [X] T015 [US1] Refactor backend/starlink-location/app/api/routes.py - split into routes/ module with 9 modules (management, upload, download, delete, stats, eta, timing, cache, __init__)
+- [X] T016 [US1] Smoke test route endpoints - verified /api/routes list, /api/routes/metrics/eta-cache and other endpoints all functional
+- [X] T017 [US1] Run Black and ruff on backend/starlink-location/app/api/routes/ modules - all checks passed
+- [X] T018 [US1] Create commit for routes refactoring - commit 778f048 (routes.py refactoring with 9 sub-modules)
 
 ### Backend Critical Files (>1000 lines) - Group 2: POI Management
 
