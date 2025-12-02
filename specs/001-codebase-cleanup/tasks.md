@@ -35,6 +35,15 @@
 ### Known Issues Fixed
 - Fixed missing `CollectorRegistry` import in app/core/metrics.py (not part of original issue)
 
+### Deferred Files with FR-004 Justification (Constitutional Exception)
+1. **pois/crud.py** (366 lines) - Cohesive CRUD unit with complex multi-condition filtering
+2. **pois/etas.py** (400 lines) - Monolithic dual-mode ETA calculation with interdependent logic
+3. **pois/stats.py** (316 lines) - Statistics endpoints with repeated telemetry fallback patterns
+
+Each module includes detailed comments explaining why further decomposition would
+introduce circular dependencies, artificial separation, or worse duplication than
+the current structure. These are tracked for future optimization phases.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
