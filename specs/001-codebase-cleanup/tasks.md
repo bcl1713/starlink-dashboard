@@ -12,9 +12,9 @@
 ### Overall Status
 - **Phase 1 (Setup)**: ✅ COMPLETE - All 10 tasks done
 - **Phase 3 (User Story 1 - File Size Compliance)**: 🚀 IN PROGRESS
-  - **Completed**: 12 of 174 tasks (7%)
-  - **Files Refactored**: 2 of 26 (ui.py, routes.py)
-  - **Files Under 300 Lines**: 10 of 26 (ui/__init__.py at 30 lines + 9 routes modules all <300 lines)
+  - **Completed**: 17 of 174 tasks (10%)
+  - **Files Refactored**: 3 of 26 (ui.py, routes.py, pois.py)
+  - **Files Under 300 Lines**: 14 of 26 (ui/__init__.py at 30 lines + 9 routes modules + 4 pois modules all <300 lines)
   - **Deferred with FR-004**: 1 of 26 (ui/templates.py at 885 lines - template content exception)
   - **Target**: 21 of 26 files under 300 lines (80% compliance)
 
@@ -23,13 +23,14 @@
 - `5a7c46c` - ui.py refactoring (3995 → 945 lines)
 - `36750fe` - Added FR-004 justification for ui/templates.py
 - `778f048` - routes.py refactoring (1114 → 1211 lines across 9 modules, all <300 lines)
+- `9aaec05` - pois.py refactoring (1159 → 1227 lines across 5 modules with improved structure)
 
 ### Next Priority (Recommended Order)
-1. **T019-T023**: pois.py (1092 lines) - High refactoring priority
-2. **T024-T030**: timeline_service.py (1439 lines) - Complex but important
-3. **T031-T037**: exporter.py (1927 lines) - Large file with clear boundaries
-4. **T038-T045**: Additional critical files (kml_parser, etc.)
-5. **T046-T053**: Services and frontend components (can run in parallel)
+1. **T024-T030**: mission/routes.py (1192 lines) and mission/routes_v2.py (1104 lines)
+2. **T031-T037**: exporter.py (1927 lines) + package_exporter.py (1291 lines) - Large files with clear boundaries
+3. **T038-T045**: timeline_service.py (1439 lines) + kml_parser.py (1008 lines)
+4. **T046-T053**: Services and core modules (can run in parallel)
+5. **T054-T059**: Frontend components (can run in parallel)
 
 ### Known Issues Fixed
 - Fixed missing `CollectorRegistry` import in app/core/metrics.py (not part of original issue)
@@ -95,11 +96,11 @@
 
 ### Backend Critical Files (>1000 lines) - Group 2: POI Management
 
-- [ ] T019 [US1] Assess backend/starlink-location/app/api/pois.py (1092 lines) - analyze POI endpoint structure
-- [ ] T020 [US1] Refactor backend/starlink-location/app/api/pois.py - split into pois/ module with crud.py, etas.py, stats.py, projections.py
-- [ ] T021 [US1] Smoke test POI endpoints - verify /api/pois (create, read, update, delete, list with ETAs, next destination)
-- [ ] T022 [US1] Run Black and ruff on backend/starlink-location/app/api/pois/ module
-- [ ] T023 [US1] Create PR for POI refactoring (1 file group)
+- [X] T019 [US1] Assess backend/starlink-location/app/api/pois.py (1092 lines) - analyze POI endpoint structure
+- [X] T020 [US1] Refactor backend/starlink-location/app/api/pois.py - split into pois/ module with crud.py, etas.py, stats.py, helpers.py
+- [X] T021 [US1] Smoke test POI endpoints - verify /api/pois (create, read, update, delete, list with ETAs, next destination)
+- [X] T022 [US1] Run Black and ruff on backend/starlink-location/app/api/pois/ module
+- [X] T023 [US1] Create PR for POI refactoring (commit 9aaec05)
 
 ### Backend Critical Files (>1000 lines) - Group 3: Mission Routes
 
