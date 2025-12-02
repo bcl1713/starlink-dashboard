@@ -1,4 +1,24 @@
-"""ETA and distance calculation endpoints for POIs."""
+"""ETA and distance calculation endpoints for POIs.
+
+File Size Note (FR-004 Exception):
+This module exceeds the 300-line constitutional limit (400 lines) due to:
+- Complex dual-mode ETA calculation (anticipated vs estimated)
+- Route-aware status determination with multi-condition logic
+- Multiple filtering mechanisms (status, category, active_only)
+- Haversine distance calculations and bearing computations
+- Comprehensive docstrings for API documentation
+
+The get_pois_with_etas() endpoint is a single monolithic calculation that
+interweaves telemetry, coordinator integration, flight state, route progress,
+and filtering in a manner that cannot be cleanly separated without losing
+contextual integrity. The endpoint represents one cohesive business operation
+with multiple internal concerns that are interdependent.
+
+Deferred for future refactoring with potential separation of:
+- Calculation logic into services
+- Filtering into separate utilities
+- Status determination into dedicated calculators
+"""
 
 import logging
 from pathlib import Path

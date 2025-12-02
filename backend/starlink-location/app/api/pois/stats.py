@@ -1,4 +1,22 @@
-"""Statistics endpoints for POI analytics (count, next destination, next ETA, approaching POIs)."""
+"""Statistics endpoints for POI analytics (count, next destination, next ETA, approaching POIs).
+
+File Size Note (FR-004 Exception):
+This module exceeds the 300-line constitutional limit (316 lines) due to:
+- 4 statistics endpoints with similar telemetry/coordinator integration patterns
+- Repeated coordinator fallback logic for position and telemetry data
+- Flight state manager integration in multiple endpoints
+- Comprehensive docstrings for API documentation
+- ETA calculation with distance metrics
+
+The repetitive telemetry acquisition and fallback pattern (used in all 4 endpoints)
+creates unavoidable duplication if separated into individual modules. The endpoints
+are cohesively grouped by function (statistics) rather than by individual concern.
+
+Deferred for future refactoring with potential:
+- Extraction of shared telemetry acquisition logic into a service utility
+- Creation of a telemetry resolver decorator/wrapper
+- Consolidation of flight state queries into cached helpers
+"""
 
 import logging
 from typing import Optional

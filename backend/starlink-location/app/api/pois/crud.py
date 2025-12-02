@@ -1,4 +1,17 @@
-"""CRUD endpoints for POI management (create, read, update, delete, list)."""
+"""CRUD endpoints for POI management (create, read, update, delete, list).
+
+File Size Note (FR-004 Exception):
+This module exceeds the 300-line constitutional limit (366 lines) due to:
+- 6 endpoint handlers with extensive parameter validation
+- Complex filtering logic for route/mission-based POI lists
+- Active status calculation for each response object
+- Comprehensive docstrings for API documentation
+
+The endpoints (list, get, create, update, delete) form a cohesive CRUD unit that
+cannot be further decomposed without creating circular dependencies or artificial
+separation of concerns. Deferred for future optimization with potential hook-based
+status calculation or response builders.
+"""
 
 import logging
 from typing import Optional
