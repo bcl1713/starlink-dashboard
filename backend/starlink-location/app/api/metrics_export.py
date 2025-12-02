@@ -1,7 +1,5 @@
 """Metrics export endpoint for integration with Prometheus and monitoring."""
 
-from typing import Optional
-
 from fastapi import APIRouter, status, Depends
 
 from app.core.config import ConfigManager
@@ -14,7 +12,6 @@ from app.core.metrics import (
     starlink_route_segment_count_with_timing,
 )
 from app.models.flight_status import ETAMode
-from app.models.telemetry import TelemetryData
 from app.services.eta_calculator import ETACalculator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
@@ -69,14 +66,20 @@ async def get_metrics(
 
             if timing_profile.departure_time:
                 import time as time_module
-                departure_unix = time_module.mktime(timing_profile.departure_time.timetuple())
+
+                departure_unix = time_module.mktime(
+                    timing_profile.departure_time.timetuple()
+                )
                 starlink_route_departure_time_unix.labels(route_name=route_name).set(
                     departure_unix
                 )
 
             if timing_profile.arrival_time:
                 import time as time_module
-                arrival_unix = time_module.mktime(timing_profile.arrival_time.timetuple())
+
+                arrival_unix = time_module.mktime(
+                    timing_profile.arrival_time.timetuple()
+                )
                 starlink_route_arrival_time_unix.labels(route_name=route_name).set(
                     arrival_unix
                 )
@@ -109,7 +112,9 @@ async def get_metrics(
             except Exception:
                 status_snapshot = None
 
-            eta_mode = status_snapshot.eta_mode if status_snapshot else ETAMode.ESTIMATED
+            eta_mode = (
+                status_snapshot.eta_mode if status_snapshot else ETAMode.ESTIMATED
+            )
             flight_phase = status_snapshot.phase if status_snapshot else None
 
             metrics = eta_calc.calculate_poi_metrics(
@@ -127,8 +132,12 @@ async def get_metrics(
                 poi = poi_manager.get_poi(poi_id)
                 if poi:
                     # Set POI distance gauge
-                    distance_gauge = REGISTRY._names_to_collectors.get("starlink_distance_to_poi_meters")
-                    eta_gauge = REGISTRY._names_to_collectors.get("starlink_eta_poi_seconds")
+                    distance_gauge = REGISTRY._names_to_collectors.get(
+                        "starlink_distance_to_poi_meters"
+                    )
+                    eta_gauge = REGISTRY._names_to_collectors.get(
+                        "starlink_eta_poi_seconds"
+                    )
 
                     label_kwargs = {
                         "name": poi.name,
@@ -137,7 +146,9 @@ async def get_metrics(
                     }
 
                     if distance_gauge:
-                        distance_gauge.labels(**label_kwargs).set(metric["distance_meters"])
+                        distance_gauge.labels(**label_kwargs).set(
+                            metric["distance_meters"]
+                        )
 
                     if eta_gauge:
                         eta_seconds = metric["eta_seconds"]

@@ -3,7 +3,6 @@
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -577,9 +576,7 @@ class TestHierarchicalMissionStorageV2:
         assert len(loaded_leg.transports.x_transitions) == 1
         assert len(loaded_leg.transports.aar_windows) == 1
         assert len(loaded_leg.transports.ka_outages) == 1
-        assert (
-            loaded_leg.transports.x_transitions[0].target_satellite_id == "X-2"
-        )
+        assert loaded_leg.transports.x_transitions[0].target_satellite_id == "X-2"
 
     def test_get_mission_directory_path(self):
         """Test get_mission_directory returns correct path."""

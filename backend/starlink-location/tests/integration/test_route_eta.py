@@ -19,7 +19,10 @@ class TestRouteTimingIntegration:
             Path("/kml-route-import"),
             Path("/data/kml-route-import"),
             # From local development
-            Path(__file__).parent.parent.parent.parent.parent / "dev" / "completed" / "kml-route-import",
+            Path(__file__).parent.parent.parent.parent.parent
+            / "dev"
+            / "completed"
+            / "kml-route-import",
         ]
 
         for path in possible_paths:
@@ -32,6 +35,7 @@ class TestRouteTimingIntegration:
     def test_kml_routes_directory_exists(self, kml_routes_dir):
         """Verify test KML files are available."""
         import pytest
+
         if not kml_routes_dir.exists():
             pytest.skip(f"KML routes directory not found: {kml_routes_dir}")
         kml_files = list(kml_routes_dir.glob("*.kml"))
@@ -52,12 +56,18 @@ class TestRouteTimingIntegration:
         assert len(parsed_route.waypoints) > 0
 
         # Verify timing profile was created
-        assert parsed_route.timing_profile is not None, "Timing profile should be populated"
+        assert (
+            parsed_route.timing_profile is not None
+        ), "Timing profile should be populated"
         assert parsed_route.timing_profile.has_timing_data, "Should have timing data"
 
         # Verify waypoint timestamps were extracted
-        waypoints_with_times = [wp for wp in parsed_route.waypoints if wp.expected_arrival_time]
-        assert len(waypoints_with_times) > 0, "Should have waypoints with extracted timestamps"
+        waypoints_with_times = [
+            wp for wp in parsed_route.waypoints if wp.expected_arrival_time
+        ]
+        assert (
+            len(waypoints_with_times) > 0
+        ), "Should have waypoints with extracted timestamps"
 
         # Verify points have timestamps assigned
         points_with_times = [p for p in parsed_route.points if p.expected_arrival_time]
@@ -99,7 +109,9 @@ class TestRouteTimingIntegration:
 
         # Should have calculated total duration
         assert parsed_route.timing_profile.total_expected_duration_seconds is not None
-        assert isinstance(parsed_route.timing_profile.total_expected_duration_seconds, (int, float))
+        assert isinstance(
+            parsed_route.timing_profile.total_expected_duration_seconds, (int, float)
+        )
         assert parsed_route.timing_profile.total_expected_duration_seconds > 0
 
     def test_parse_leg_1_segment_speeds(self, kml_routes_dir):
@@ -111,14 +123,18 @@ class TestRouteTimingIntegration:
         parsed_route = parse_kml_file(leg1_path)
 
         # Should have calculated speeds for some segments
-        points_with_speed = [p for p in parsed_route.points if p.expected_segment_speed_knots is not None]
+        points_with_speed = [
+            p for p in parsed_route.points if p.expected_segment_speed_knots is not None
+        ]
         assert len(points_with_speed) > 0, "Should have calculated segment speeds"
 
         # Verify speeds are reasonable for flight (typically 400-500 knots for commercial aircraft)
         for point in points_with_speed:
             assert point.expected_segment_speed_knots > 0, "Speed should be positive"
             # Reasonable range: 100-600 knots (includes approach/climb speeds)
-            assert point.expected_segment_speed_knots < 600, f"Speed too high: {point.expected_segment_speed_knots}"
+            assert (
+                point.expected_segment_speed_knots < 600
+            ), f"Speed too high: {point.expected_segment_speed_knots}"
 
     def test_parse_all_legs_without_crash(self, kml_routes_dir):
         """Parse all available leg KML files to verify robustness."""
@@ -137,7 +153,9 @@ class TestRouteTimingIntegration:
             except Exception as e:
                 pytest.fail(f"Failed to parse {kml_file.name}: {e}")
 
-        assert len(parsed_routes) > 0, "Should have successfully parsed at least one leg"
+        assert (
+            len(parsed_routes) > 0
+        ), "Should have successfully parsed at least one leg"
 
     def test_timing_profile_metadata(self, kml_routes_dir):
         """Verify timing profile includes expected metadata."""
@@ -164,7 +182,10 @@ class TestTimingDataAccuracy:
         possible_paths = [
             Path("/kml-route-import"),
             Path("/data/kml-route-import"),
-            Path(__file__).parent.parent.parent.parent.parent / "dev" / "completed" / "kml-route-import",
+            Path(__file__).parent.parent.parent.parent.parent
+            / "dev"
+            / "completed"
+            / "kml-route-import",
         ]
         for path in possible_paths:
             if path.exists():
@@ -215,13 +236,18 @@ class TestTimingDataAccuracy:
                     curr_point.longitude,
                 )
 
-                time_delta = curr_point.expected_arrival_time - prev_point.expected_arrival_time
+                time_delta = (
+                    curr_point.expected_arrival_time - prev_point.expected_arrival_time
+                )
                 time_s = time_delta.total_seconds()
 
                 if time_s > 0:
                     expected_speed = (distance_m / time_s) * (3600 / 1852)
                     # Allow small floating point difference
-                    assert abs(curr_point.expected_segment_speed_knots - expected_speed) < 0.1
+                    assert (
+                        abs(curr_point.expected_segment_speed_knots - expected_speed)
+                        < 0.1
+                    )
 
     def test_total_duration_calculation(self, kml_routes_dir):
         """Verify total route duration is calculated correctly."""
@@ -256,7 +282,10 @@ class TestRouteResponseIntegration:
         possible_paths = [
             Path("/kml-route-import"),
             Path("/data/kml-route-import"),
-            Path(__file__).parent.parent.parent.parent.parent / "dev" / "completed" / "kml-route-import",
+            Path(__file__).parent.parent.parent.parent.parent
+            / "dev"
+            / "completed"
+            / "kml-route-import",
         ]
         for path in possible_paths:
             if path.exists():
@@ -272,7 +301,10 @@ class TestRouteResponseIntegration:
         parsed_route = parse_kml_file(leg1_path)
 
         # Create a mock route response structure
-        has_timing = parsed_route.timing_profile is not None and parsed_route.timing_profile.has_timing_data
+        has_timing = (
+            parsed_route.timing_profile is not None
+            and parsed_route.timing_profile.has_timing_data
+        )
 
         assert has_timing, "Route should have timing data in response"
 
@@ -298,7 +330,10 @@ class TestEdgeCasesAndRobustness:
         possible_paths = [
             Path("/kml-route-import"),
             Path("/data/kml-route-import"),
-            Path(__file__).parent.parent.parent.parent.parent / "dev" / "completed" / "kml-route-import",
+            Path(__file__).parent.parent.parent.parent.parent
+            / "dev"
+            / "completed"
+            / "kml-route-import",
         ]
         for path in possible_paths:
             if path.exists():
@@ -348,7 +383,10 @@ class TestRealWorldFlight:
         possible_paths = [
             Path("/kml-route-import"),
             Path("/data/kml-route-import"),
-            Path(__file__).parent.parent.parent.parent.parent / "dev" / "completed" / "kml-route-import",
+            Path(__file__).parent.parent.parent.parent.parent
+            / "dev"
+            / "completed"
+            / "kml-route-import",
         ]
         for path in possible_paths:
             if path.exists():
@@ -364,11 +402,15 @@ class TestRealWorldFlight:
         parsed_route = parse_kml_file(leg1_path)
 
         # KADW to PHNL is a long overwater flight
-        assert "KADW" in parsed_route.metadata.name or "PHNL" in parsed_route.metadata.name
+        assert (
+            "KADW" in parsed_route.metadata.name or "PHNL" in parsed_route.metadata.name
+        )
         # Should have substantial distance and time
         assert len(parsed_route.points) >= 49  # Long flight
         assert parsed_route.timing_profile.total_expected_duration_seconds is not None
-        assert parsed_route.timing_profile.total_expected_duration_seconds > 3600  # More than 1 hour
+        assert (
+            parsed_route.timing_profile.total_expected_duration_seconds > 3600
+        )  # More than 1 hour
 
     def test_segment_speeds_within_flight_envelope(self, kml_routes_dir):
         """Verify calculated speeds are realistic for aircraft."""
@@ -380,8 +422,11 @@ class TestRealWorldFlight:
 
         # For a real flight, typical cruise is 400-500 knots
         # Climb/descent may be slower
-        speeds = [p.expected_segment_speed_knots for p in parsed_route.points
-                  if p.expected_segment_speed_knots is not None]
+        speeds = [
+            p.expected_segment_speed_knots
+            for p in parsed_route.points
+            if p.expected_segment_speed_knots is not None
+        ]
 
         if speeds:
             avg_speed = sum(speeds) / len(speeds)

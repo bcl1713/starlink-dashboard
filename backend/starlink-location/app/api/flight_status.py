@@ -5,7 +5,6 @@ from fastapi import APIRouter, HTTPException
 from app.models.flight_status import (
     ArrivalUpdateRequest,
     DepartureUpdateRequest,
-    FlightPhase,
     FlightStatusResponse,
     ManualFlightPhaseTransition,
 )
@@ -33,7 +32,9 @@ def _build_response() -> FlightStatusResponse:
     )
 
 
-@router.get("", response_model=FlightStatusResponse, summary="Get current flight status")
+@router.get(
+    "", response_model=FlightStatusResponse, summary="Get current flight status"
+)
 async def get_flight_status() -> FlightStatusResponse:
     """
     Get the current flight status including phase, ETA mode, countdowns, and route metadata.
@@ -96,7 +97,9 @@ async def manual_departure(
         manager = get_flight_state_manager()
         triggered = manager.trigger_departure(update.timestamp, update.reason)
         if not triggered:
-            raise HTTPException(status_code=400, detail="Flight already in-flight or beyond")
+            raise HTTPException(
+                status_code=400, detail="Flight already in-flight or beyond"
+            )
         return _build_response()
     except HTTPException:
         raise

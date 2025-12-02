@@ -42,11 +42,11 @@ def test_cache_key_rounding():
     # Adjust lat/lon/speed within rounding tolerance (0.01 for coords, 0.1 for speed)
     adjusted_args = (
         "route-xyz",
-        40.124,   # rounds to 40.12
+        40.124,  # rounds to 40.12
         -73.986,  # rounds to -73.99
-        40.547,   # rounds to 40.55
+        40.547,  # rounds to 40.55
         -74.114,  # rounds to -74.11
-        150.04,   # rounds to 150.0
+        150.04,  # rounds to 150.0
     )
     assert cache.get(*adjusted_args) == {"eta": 10}
 

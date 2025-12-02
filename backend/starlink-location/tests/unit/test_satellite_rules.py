@@ -191,13 +191,25 @@ class TestRuleEngine:
         # Should have 12 events (start/end for each buffer across 3 transports)
         assert len(engine.events) == 12
 
-        takeoff_events = [e for e in engine.events if e.event_type == EventType.TAKEOFF_BUFFER]
-        landing_events = [e for e in engine.events if e.event_type == EventType.LANDING_BUFFER]
+        takeoff_events = [
+            e for e in engine.events if e.event_type == EventType.TAKEOFF_BUFFER
+        ]
+        landing_events = [
+            e for e in engine.events if e.event_type == EventType.LANDING_BUFFER
+        ]
 
         assert len(takeoff_events) == 6
         assert len(landing_events) == 6
-        assert {e.transport for e in takeoff_events} == {Transport.X, Transport.KA, Transport.KU}
-        assert {e.transport for e in landing_events} == {Transport.X, Transport.KA, Transport.KU}
+        assert {e.transport for e in takeoff_events} == {
+            Transport.X,
+            Transport.KA,
+            Transport.KU,
+        }
+        assert {e.transport for e in landing_events} == {
+            Transport.X,
+            Transport.KA,
+            Transport.KU,
+        }
         assert any("Safety-of-Flight" in e.reason for e in takeoff_events)
         assert any("Safety-of-Flight" in e.reason for e in landing_events)
 
@@ -222,7 +234,9 @@ class TestRuleEngine:
         base_time = datetime.utcnow()
 
         # Add events out of order
-        engine.add_aar_window_events(base_time + timedelta(hours=2), base_time + timedelta(hours=3))
+        engine.add_aar_window_events(
+            base_time + timedelta(hours=2), base_time + timedelta(hours=3)
+        )
         engine.add_takeoff_landing_buffers(base_time, base_time + timedelta(hours=10))
 
         sorted_events = engine.get_sorted_events()
@@ -261,7 +275,9 @@ class TestRuleEngine:
         now = datetime.utcnow()
 
         engine.add_x_transition_events(now, "X-1")
-        engine.add_ka_coverage_events(now + timedelta(hours=1), now + timedelta(hours=2), "POR")
+        engine.add_ka_coverage_events(
+            now + timedelta(hours=1), now + timedelta(hours=2), "POR"
+        )
         engine.add_manual_outage_events(
             now + timedelta(hours=3),
             now + timedelta(hours=4),

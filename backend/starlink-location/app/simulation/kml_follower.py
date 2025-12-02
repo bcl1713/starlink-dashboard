@@ -98,11 +98,17 @@ class KMLRouteFollower:
                     alt = p2.altitude
 
                 # Calculate heading based on direction to next point
-                heading = self._calculate_heading(p1.latitude, p1.longitude, p2.latitude, p2.longitude)
+                heading = self._calculate_heading(
+                    p1.latitude, p1.longitude, p2.latitude, p2.longitude
+                )
 
                 # Add realistic deviation
-                lat_dev = random.uniform(-self.deviation_degrees, self.deviation_degrees)
-                lon_dev = random.uniform(-self.deviation_degrees, self.deviation_degrees)
+                lat_dev = random.uniform(
+                    -self.deviation_degrees, self.deviation_degrees
+                )
+                lon_dev = random.uniform(
+                    -self.deviation_degrees, self.deviation_degrees
+                )
 
                 return {
                     "latitude": lat + lat_dev,
@@ -126,7 +132,9 @@ class KMLRouteFollower:
             "progress": progress,
         }
 
-    def _calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    def _calculate_distance(
+        self, lat1: float, lon1: float, lat2: float, lon2: float
+    ) -> float:
         """Calculate distance between two points using Haversine formula."""
         earth_radius_m = 6371000.0
         lat1_rad = math.radians(lat1)
@@ -145,7 +153,9 @@ class KMLRouteFollower:
 
         return earth_radius_m * c
 
-    def _calculate_heading(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    def _calculate_heading(
+        self, lat1: float, lon1: float, lat2: float, lon2: float
+    ) -> float:
         """Calculate heading (bearing) from point 1 to point 2."""
         lat1_rad = math.radians(lat1)
         lon1_rad = math.radians(lon1)
@@ -155,7 +165,9 @@ class KMLRouteFollower:
         dlon = lon2_rad - lon1_rad
 
         y = math.sin(dlon) * math.cos(lat2_rad)
-        x = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(lat2_rad) * math.cos(dlon)
+        x = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(
+            lat2_rad
+        ) * math.cos(dlon)
 
         heading_rad = math.atan2(y, x)
         heading_deg = math.degrees(heading_rad)
@@ -224,7 +236,7 @@ class KMLRouteFollower:
 
         return None
 
-    def get_route_timing_profile(self) -> Optional['RouteTimingProfile']:
+    def get_route_timing_profile(self) -> Optional["RouteTimingProfile"]:
         """
         Get route timing profile if available (Phase 5 timing integration).
 

@@ -11,18 +11,18 @@ import io
 import json
 import logging
 import matplotlib
-matplotlib.use('Agg')  # Headless mode for Docker
+
+matplotlib.use("Agg")  # Headless mode for Docker
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib.lines import Line2D
-from matplotlib.patches import Patch
 from PIL import Image
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -34,7 +34,15 @@ from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import LETTER, landscape
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle, PageBreak
+from reportlab.platypus import (
+    Image,
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+    PageBreak,
+)
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
@@ -71,13 +79,11 @@ LOGO_PATH = Path(__file__).with_name("assets").joinpath("logo.png")
 # Status colors for route visualization and legends
 # Using standard traffic light colors for clear status indication
 STATUS_COLORS = {
-    'nominal': '#2ecc71',   # Green
-    'degraded': '#f1c40f',  # Yellow/Orange
-    'critical': '#e74c3c',  # Red
-    'unknown': '#95a5a6'    # Gray (fallback)
+    "nominal": "#2ecc71",  # Green
+    "degraded": "#f1c40f",  # Yellow/Orange
+    "critical": "#e74c3c",  # Red
+    "unknown": "#95a5a6",  # Gray (fallback)
 }
-
-
 
 
 def _load_logo_flowable() -> Image | None:
@@ -180,10 +186,7 @@ def _is_x_ku_conflict_reason(reason: str | None) -> bool:
 def _segment_is_x_ku_warning(segment: TimelineSegment) -> bool:
     if segment.x_state != TransportState.DEGRADED:
         return False
-    if any(
-        transport != Transport.X
-        for transport in segment.impacted_transports
-    ):
+    if any(transport != Transport.X for transport in segment.impacted_transports):
         return False
     if not segment.reasons:
         return False
@@ -251,25 +254,15 @@ def _build_aar_record(
 ) -> dict:
     duration = max((end - start).total_seconds(), 0)
     segment = _segment_at_time(timeline, start)
-    x_state = (
-        _display_transport_state(segment.x_state)
-        if segment
-        else ""
-    )
-    ka_state = (
-        _display_transport_state(segment.ka_state)
-        if segment
-        else ""
-    )
-    ku_state = (
-        _display_transport_state(segment.ku_state)
-        if segment
-        else ""
-    )
+    x_state = _display_transport_state(segment.x_state) if segment else ""
+    ka_state = _display_transport_state(segment.ka_state) if segment else ""
+    ku_state = _display_transport_state(segment.ku_state) if segment else ""
     return {
         "Segment #": "AAR",
         "Mission ID": mission.id if mission else timeline.mission_id,
-        "Mission Name": mission.name if mission and mission.name else timeline.mission_id,
+        "Mission Name": (
+            mission.name if mission and mission.name else timeline.mission_id
+        ),
         "Status": "WARNING",
         "Start Time": _compose_time_block(start, mission_start),
         "End Time": _compose_time_block(end, mission_start),
@@ -300,24 +293,30 @@ def _segment_at_time(
     return timeline.segments[-1] if timeline.segments else None
 
 
-def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, timeline: MissionLegTimeline) -> list[tuple[datetime, datetime, str]]:
+def _get_detailed_segment_statuses(
+    start_time: datetime, end_time: datetime, timeline: MissionLegTimeline
+) -> list[tuple[datetime, datetime, str]]:
     if not timeline or not timeline.segments:
-        return [(start_time, end_time, 'unknown')]
-    
+        return [(start_time, end_time, "unknown")]
+
     intervals = []
     current_time = start_time
-    
+
     # Optimization: Filter relevant segments first
     relevant_segments = []
     for seg in timeline.segments:
         s_start = _ensure_timezone(seg.start_time)
-        s_end = _ensure_timezone(seg.end_time) if seg.end_time else datetime.max.replace(tzinfo=timezone.utc)
+        s_end = (
+            _ensure_timezone(seg.end_time)
+            if seg.end_time
+            else datetime.max.replace(tzinfo=timezone.utc)
+        )
         if s_end > start_time and s_start < end_time:
             relevant_segments.append((s_start, s_end, seg))
-    
+
     # Sort by start time
     relevant_segments.sort(key=lambda x: x[0])
-    
+
     # Also check for AAR blocks
     aar_blocks = []
     if timeline.statistics and "_aar_blocks" in timeline.statistics:
@@ -329,12 +328,12 @@ def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, tim
                 aar_end = _parse_iso_timestamp(aar_end_raw)
                 if aar_end > start_time and aar_start < end_time:
                     aar_blocks.append((aar_start, aar_end))
-    
+
     while current_time < end_time:
         # Find the segment that covers current_time
         active_seg = None
         next_change = end_time
-        
+
         for s_start, s_end, seg in relevant_segments:
             if s_start <= current_time < s_end:
                 active_seg = seg
@@ -344,7 +343,7 @@ def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, tim
                 # This is a future segment, it might define the end of a gap
                 next_change = min(end_time, s_start)
                 break
-        
+
         # Check if current_time falls within an AAR block
         in_aar_block = False
         for aar_start, aar_end in aar_blocks:
@@ -356,69 +355,74 @@ def _get_detailed_segment_statuses(start_time: datetime, end_time: datetime, tim
             elif aar_start > current_time:
                 # Future AAR block might start before next_change
                 next_change = min(next_change, aar_start)
-        
+
         # Determine status
-        status = 'nominal' # Default if no segment found (gap) or segment has no status
+        status = "nominal"  # Default if no segment found (gap) or segment has no status
         if active_seg:
             raw_status = active_seg.status.value
             reasons = str(active_seg.reasons).lower()
             is_sof = "safety-of-flight" in reasons or "aar" in reasons
-            
-            if raw_status == 'critical':
-                status = 'critical'
-            elif raw_status == 'degraded' or is_sof or in_aar_block:
-                status = 'degraded'
-            elif raw_status == 'warning':
-                status = 'degraded'
+
+            if raw_status == "critical":
+                status = "critical"
+            elif raw_status == "degraded" or is_sof or in_aar_block:
+                status = "degraded"
+            elif raw_status == "warning":
+                status = "degraded"
             else:
-                    status = 'nominal'
+                status = "nominal"
         else:
-                status = 'unknown' # Gap in timeline
-        
+            status = "unknown"  # Gap in timeline
+
         # Override to degraded if in AAR block (even if segment is nominal)
-        if in_aar_block and status == 'nominal':
-            status = 'degraded'
-        
+        if in_aar_block and status == "nominal":
+            status = "degraded"
+
         intervals.append((current_time, next_change, status))
         current_time = next_change
-        
+
     return intervals
 
 
 def _interpolate_position_at_time(target_time, p1, p2):
     if not p1.expected_arrival_time or not p2.expected_arrival_time:
         return p1
-    
+
     t1 = _ensure_timezone(p1.expected_arrival_time)
     t2 = _ensure_timezone(p2.expected_arrival_time)
-    
-    if target_time <= t1: return p1
-    if target_time >= t2: return p2
-    
+
+    if target_time <= t1:
+        return p1
+    if target_time >= t2:
+        return p2
+
     total_duration = (t2 - t1).total_seconds()
-    if total_duration == 0: return p1
-    
+    if total_duration == 0:
+        return p1
+
     elapsed = (target_time - t1).total_seconds()
     fraction = elapsed / total_duration
-    
+
     lat = p1.latitude + (p2.latitude - p1.latitude) * fraction
-    
+
     # Handle IDL for Longitude
     lon1 = p1.longitude
     lon2 = p2.longitude
-    
+
     if abs(lon2 - lon1) > 180:
         # Crosses IDL
-        if lon1 < 0: lon1 += 360
-        if lon2 < 0: lon2 += 360
-        
+        if lon1 < 0:
+            lon1 += 360
+        if lon2 < 0:
+            lon2 += 360
+
         lon = lon1 + (lon2 - lon1) * fraction
-        if lon > 180: lon -= 360
+        if lon > 180:
+            lon -= 360
     else:
         lon = lon1 + (lon2 - lon1) * fraction
-        
-    return type('Point', (), {'latitude': lat, 'longitude': lon})
 
+    return type("Point", (), {"latitude": lat, "longitude": lon})
 
 
 def _generate_route_map(
@@ -461,13 +465,19 @@ def _generate_route_map(
         logger.warning("_generate_route_map: mission is None, returning base canvas")
         return _base_map_canvas()
     if not mission.route_id:
-        logger.warning(f"_generate_route_map: mission {mission.id} has no route_id, returning base canvas")
+        logger.warning(
+            f"_generate_route_map: mission {mission.id} has no route_id, returning base canvas"
+        )
         return _base_map_canvas()
     if not route_manager:
-        logger.warning("_generate_route_map: route_manager is None, returning base canvas")
+        logger.warning(
+            "_generate_route_map: route_manager is None, returning base canvas"
+        )
         return _base_map_canvas()
 
-    logger.info(f"_generate_route_map: Generating map for mission={mission.id}, route={mission.route_id}")
+    logger.info(
+        f"_generate_route_map: Generating map for mission={mission.id}, route={mission.route_id}"
+    )
 
     # Fetch route from manager
     route = route_manager.get_route(mission.route_id)
@@ -478,25 +488,33 @@ def _generate_route_map(
         logger.error(f"Available routes: {list(available_routes.keys())}")
         logger.error(f"Mission: {mission.id}, Leg: {mission.name}")
         return _base_map_canvas()
-    
+
     if not route.points:
-        logger.warning(f"Route '{mission.route_id}' has no points, returning base canvas")
+        logger.warning(
+            f"Route '{mission.route_id}' has no points, returning base canvas"
+        )
         return _base_map_canvas()
 
     # Extract waypoint coordinates and filter invalid points
     raw_points = route.points
-    valid_points = [p for p in raw_points if p.latitude is not None and p.longitude is not None]
-    
+    valid_points = [
+        p for p in raw_points if p.latitude is not None and p.longitude is not None
+    ]
+
     if len(valid_points) < len(raw_points):
-        logger.warning(f"Filtered {len(raw_points) - len(valid_points)} invalid points from route {mission.route_id}")
+        logger.warning(
+            f"Filtered {len(raw_points) - len(valid_points)} invalid points from route {mission.route_id}"
+        )
 
     if not valid_points:
-        logger.warning(f"No valid points found for route {mission.route_id}, returning base canvas")
+        logger.warning(
+            f"No valid points found for route {mission.route_id}, returning base canvas"
+        )
         return _base_map_canvas()
 
     lats = [p.latitude for p in valid_points]
     lons = [p.longitude for p in valid_points]
-    
+
     # Assign valid_points to points for downstream usage
     points = valid_points
 
@@ -512,7 +530,7 @@ def _generate_route_map(
             idl_crossing_segments.add(i)
 
     is_idl_crossing = bool(idl_crossing_segments)
-    
+
     # Determine projection center
     if is_idl_crossing:
         # For IDL crossing routes, center on the route's midpoint in normalized space
@@ -523,25 +541,25 @@ def _generate_route_map(
                 norm_lons.append(lon + 360)
             else:
                 norm_lons.append(lon)
-        
+
         min_lon = min(norm_lons)
         max_lon = max(norm_lons)
         min_lat, max_lat = min(lats), max(lats)
-        
+
         # Calculate center of the route
         central_longitude = (min_lon + max_lon) / 2
-        
+
         # Ensure central_longitude is within -180 to 180 for PlateCarree
         if central_longitude > 180:
             central_longitude -= 360
-            
+
         logger.info(f"IDL Crossing Route - Dynamic Center: {central_longitude:.2f}")
         logger.info(f"Normalized Lon Range: {min_lon:.2f} to {max_lon:.2f}")
     else:
         # Standard route
         min_lon, max_lon = min(lons), max(lons)
         min_lat, max_lat = min(lats), max(lats)
-        
+
         # Center on the route midpoint
         central_longitude = (min_lon + max_lon) / 2
         logger.info(f"Standard Route - Central Lon: {central_longitude:.2f}")
@@ -549,7 +567,7 @@ def _generate_route_map(
     # Calculate route extent
     lat_range = max_lat - min_lat
     lon_range = max_lon - min_lon
-    
+
     # Enforce minimum extent to prevent extreme zooming (which can cause memory errors)
     MIN_EXTENT = 10.0
     if lat_range < MIN_EXTENT:
@@ -557,7 +575,7 @@ def _generate_route_map(
         min_lat = center_lat - (MIN_EXTENT / 2)
         max_lat = center_lat + (MIN_EXTENT / 2)
         lat_range = MIN_EXTENT
-        
+
     if lon_range < MIN_EXTENT:
         center_lon = (min_lon + max_lon) / 2
         min_lon = center_lon - (MIN_EXTENT / 2)
@@ -597,37 +615,41 @@ def _generate_route_map(
     # Geographic aspect ratio (lon / lat)
     geographic_aspect = padded_lon_range / padded_lat_range
 
-    logger.info(f"Canvas aspect: {canvas_aspect:.3f}, Geographic aspect: {geographic_aspect:.3f}")
+    logger.info(
+        f"Canvas aspect: {canvas_aspect:.3f}, Geographic aspect: {geographic_aspect:.3f}"
+    )
 
     # Adjust bounds to match canvas aspect ratio without stretching
     if geographic_aspect < canvas_aspect:
         # Geographic bounds are taller than canvas - add padding to longitude
         needed_lon_range = padded_lat_range * canvas_aspect
         lon_excess = needed_lon_range - padded_lon_range
-        bounds_west -= (lon_excess / 2)
-        bounds_east += (lon_excess / 2)
+        bounds_west -= lon_excess / 2
+        bounds_east += lon_excess / 2
         logger.info(f"Added longitude padding: {lon_excess:.2f}°")
     elif geographic_aspect > canvas_aspect:
         # Geographic bounds are wider than canvas - add padding to latitude
         needed_lat_range = padded_lon_range / canvas_aspect
         lat_excess = needed_lat_range - padded_lat_range
-        bounds_south -= (lat_excess / 2)
-        bounds_north += (lat_excess / 2)
+        bounds_south -= lat_excess / 2
+        bounds_north += lat_excess / 2
         logger.info(f"Added latitude padding: {lat_excess:.2f}°")
 
     # Clamp latitude to valid ranges
     bounds_south = max(-90, bounds_south)
     bounds_north = min(90, bounds_north)
-    
+
     # For longitude, if we are in 0-360 space (IDL crossing), we might go beyond 0 or 360 with padding
-    # We'll handle this by transforming back to -180/180 for set_extent if needed, 
+    # We'll handle this by transforming back to -180/180 for set_extent if needed,
     # OR just pass the values if using a shifted projection.
-    
-    logger.info(f"Calculated Bounds: W={bounds_west:.2f}, E={bounds_east:.2f}, S={bounds_south:.2f}, N={bounds_north:.2f}")
+
+    logger.info(
+        f"Calculated Bounds: W={bounds_west:.2f}, E={bounds_east:.2f}, S={bounds_south:.2f}, N={bounds_north:.2f}"
+    )
 
     # Create 4K figure with custom projection
-    fig = plt.figure(figsize=(width_inches, height_inches), dpi=dpi, facecolor='white')
-    
+    fig = plt.figure(figsize=(width_inches, height_inches), dpi=dpi, facecolor="white")
+
     # Use PlateCarree with the calculated central longitude
     projection = ccrs.PlateCarree(central_longitude=central_longitude)
     ax = fig.add_subplot(111, projection=projection)
@@ -638,7 +660,7 @@ def _generate_route_map(
     # Set map extent
     # Note: set_extent expects coordinates in the CRS provided by the `crs` argument.
     # If we use the SAME projection as the axis, we can pass the bounds we calculated in that space.
-    
+
     if is_idl_crossing:
         # For IDL crossing, our bounds are in normalized 0-360 space.
         # The projection is centered at central_longitude.
@@ -646,8 +668,10 @@ def _generate_route_map(
         # e.g. if Center=180, and Bounds=[170, 190], Extent should be [-10, 10].
         extent_west = bounds_west - central_longitude
         extent_east = bounds_east - central_longitude
-        
-        ax.set_extent([extent_west, extent_east, bounds_south, bounds_north], crs=projection)
+
+        ax.set_extent(
+            [extent_west, extent_east, bounds_south, bounds_north], crs=projection
+        )
     else:
         # Standard case - bounds are standard -180..180
         # Projection is centered on route midpoint
@@ -657,59 +681,68 @@ def _generate_route_map(
         # e.g. Center=10, Bounds=[0, 20]. Extent=[-10, 10].
         extent_west = bounds_west - central_longitude
         extent_east = bounds_east - central_longitude
-        
-        ax.set_extent([extent_west, extent_east, bounds_south, bounds_north], crs=projection)
+
+        ax.set_extent(
+            [extent_west, extent_east, bounds_south, bounds_north], crs=projection
+        )
 
     # Add map features
-    ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
-    ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
-    ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
-    ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
+    ax.coastlines(resolution="50m", linewidth=0.5, color="#2c3e50")
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, color="#bdc3c7")
+    ax.add_feature(cfeature.LAND, facecolor="#ecf0f1", edgecolor="none")
+    ax.add_feature(cfeature.OCEAN, facecolor="#d5e8f7", edgecolor="none")
 
     # Subtle gridlines without labels
-    ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
+    ax.gridlines(
+        draw_labels=False, alpha=0.1, linestyle="-", linewidth=0.3, color="#95a5a6"
+    )
 
     # Remove axis ticks and spines for clean appearance
-    ax.spines['geo'].set_visible(False)
+    ax.spines["geo"].set_visible(False)
     ax.set_xticks([])
     ax.set_yticks([])
 
     # Phase 10: Draw route with color-coded segments based on timeline status
     if points:
         # Default to unknown/gray if no timeline data
-        default_color = STATUS_COLORS['unknown']
+        default_color = STATUS_COLORS["unknown"]
 
         # For each route segment (between consecutive waypoints), determine its color
         for i in range(len(points) - 1):
             p1 = points[i]
             p2 = points[i + 1]
-            
+
             # If we lack timing, fall back to simple coloring (whole segment)
             if not p1.expected_arrival_time or not p2.expected_arrival_time:
                 # ... (Existing fallback logic could go here, or just default to unknown)
                 # For now, let's just draw it as unknown if no times
-                 ax.plot([p1.longitude, p2.longitude], [p1.latitude, p2.latitude],
-                       color=STATUS_COLORS['unknown'], linewidth=1.5,
-                       transform=ccrs.PlateCarree(), zorder=5)
-                 continue
+                ax.plot(
+                    [p1.longitude, p2.longitude],
+                    [p1.latitude, p2.latitude],
+                    color=STATUS_COLORS["unknown"],
+                    linewidth=1.5,
+                    transform=ccrs.PlateCarree(),
+                    zorder=5,
+                )
+                continue
 
             t1 = _ensure_timezone(p1.expected_arrival_time)
             t2 = _ensure_timezone(p2.expected_arrival_time)
-            
+
             # Get sub-segments based on status
             sub_segments = _get_detailed_segment_statuses(t1, t2, timeline)
-            
+
             for sub_start, sub_end, status in sub_segments:
                 # Interpolate positions
                 sp1 = _interpolate_position_at_time(sub_start, p1, p2)
                 sp2 = _interpolate_position_at_time(sub_end, p1, p2)
-                
+
                 color = STATUS_COLORS.get(status, default_color)
-                
+
                 # Draw this sub-segment
                 # Check for IDL crossing within this sub-segment
                 if abs(sp2.longitude - sp1.longitude) > 180:
-                     # Handle International Date Line crossings: split route into segments at ±180° boundaries
+                    # Handle International Date Line crossings: split route into segments at ±180° boundaries
                     d_lon_short_path = 360 - abs(sp1.longitude - sp2.longitude)
 
                     if d_lon_short_path == 0:
@@ -720,24 +753,36 @@ def _generate_route_map(
 
                     # Segment 1: P1 to Meridian
                     target_lon1 = 180 if sp1.longitude > 0 else -180
-                    ax.plot([sp1.longitude, target_lon1],
-                           [sp1.latitude, lat_at_180],
-                           color=color, linewidth=1.5,
-                           transform=ccrs.PlateCarree(), zorder=5)
+                    ax.plot(
+                        [sp1.longitude, target_lon1],
+                        [sp1.latitude, lat_at_180],
+                        color=color,
+                        linewidth=1.5,
+                        transform=ccrs.PlateCarree(),
+                        zorder=5,
+                    )
 
                     # Segment 2: Meridian to P2
                     target_lon2 = 180 if sp2.longitude > 0 else -180
-                    ax.plot([target_lon2, sp2.longitude],
-                           [lat_at_180, sp2.latitude],
-                           color=color, linewidth=1.5,
-                           transform=ccrs.PlateCarree(), zorder=5)
+                    ax.plot(
+                        [target_lon2, sp2.longitude],
+                        [lat_at_180, sp2.latitude],
+                        color=color,
+                        linewidth=1.5,
+                        transform=ccrs.PlateCarree(),
+                        zorder=5,
+                    )
                 else:
                     # Normal segment
-                    ax.plot([sp1.longitude, sp2.longitude],
-                           [sp1.latitude, sp2.latitude],
-                           color=color, linewidth=1.5,
-                           transform=ccrs.PlateCarree(), zorder=5)
-                   
+                    ax.plot(
+                        [sp1.longitude, sp2.longitude],
+                        [sp1.latitude, sp2.latitude],
+                        color=color,
+                        linewidth=1.5,
+                        transform=ccrs.PlateCarree(),
+                        zorder=5,
+                    )
+
             # Add rounded caps for smooth joins (optional, but matplotlib lines usually join well)
             # For individual segments, we might see gaps if linewidth is large.
             # Adding a point marker at p1 can help smooth it, but might be overkill.
@@ -748,52 +793,54 @@ def _generate_route_map(
         # 1. Resolve Labels for Departure and Arrival
         start_label = "DEP"
         end_label = "ARR"
-        
+
         # Build a map of waypoint names to coordinates for easy lookup
         waypoint_map = {}
         if route.waypoints:
             for wp in route.waypoints:
                 if wp.name:
                     waypoint_map[wp.name] = wp
-                
+
                 # Also resolve Dep/Arr labels
-                if wp.role == 'departure' and wp.name:
+                if wp.role == "departure" and wp.name:
                     start_label = wp.name
-                elif wp.role == 'arrival' and wp.name:
+                elif wp.role == "arrival" and wp.name:
                     end_label = wp.name
 
         # Helper to interpolate position from timestamp
         def interpolate_position(target_time):
             if not points:
                 return None
-            
+
             # Find surrounding points
             for i in range(len(points) - 1):
                 p1 = points[i]
-                p2 = points[i+1]
+                p2 = points[i + 1]
                 if not p1.expected_arrival_time or not p2.expected_arrival_time:
                     continue
-                    
+
                 if p1.expected_arrival_time <= target_time <= p2.expected_arrival_time:
                     # Linear interpolation
-                    total_duration = (p2.expected_arrival_time - p1.expected_arrival_time).total_seconds()
+                    total_duration = (
+                        p2.expected_arrival_time - p1.expected_arrival_time
+                    ).total_seconds()
                     if total_duration == 0:
                         return p1
-                    
+
                     elapsed = (target_time - p1.expected_arrival_time).total_seconds()
                     fraction = elapsed / total_duration
-                    
+
                     lat = p1.latitude + (p2.latitude - p1.latitude) * fraction
                     lon = p1.longitude + (p2.longitude - p1.longitude) * fraction
-                    
+
                     # Handle IDL crossing for interpolation if needed (simplified here)
                     if abs(p2.longitude - p1.longitude) > 180:
-                        # If crossing IDL, simple linear interp on lon is wrong, but for POI placement 
+                        # If crossing IDL, simple linear interp on lon is wrong, but for POI placement
                         # on a fine-grained route, it's usually close enough or we can skip.
                         # For now, return p1 to be safe.
                         return p1
-                        
-                    return type('Point', (), {'latitude': lat, 'longitude': lon})
+
+                    return type("Point", (), {"latitude": lat, "longitude": lon})
             return None
 
         # 2. Collect Mission Event POIs (AAR + Sat Swaps)
@@ -803,22 +850,32 @@ def _generate_route_map(
             # Get POIs for this specific leg (route_id + mission_id)
             # This ensures we only show POIs for the current leg, not all legs in the mission
             # Use parent_mission_id if provided (for multi-leg mission exports), otherwise use mission.id
-            effective_mission_id = parent_mission_id if parent_mission_id else mission.id
+            effective_mission_id = (
+                parent_mission_id if parent_mission_id else mission.id
+            )
 
             if mission.route_id:
-                pois = poi_manager.list_pois(route_id=mission.route_id, mission_id=effective_mission_id)
+                pois = poi_manager.list_pois(
+                    route_id=mission.route_id, mission_id=effective_mission_id
+                )
             else:
                 pois = poi_manager.list_pois(mission_id=effective_mission_id)
 
-            logger.info(f"Map generation: Found {len(pois)} POIs for route={mission.route_id}, mission={effective_mission_id} (parent={parent_mission_id})")
+            logger.info(
+                f"Map generation: Found {len(pois)} POIs for route={mission.route_id}, mission={effective_mission_id} (parent={parent_mission_id})"
+            )
             for poi in pois:
-                mission_event_pois.append({
-                    'lat': poi.latitude,
-                    'lon': poi.longitude,
-                    'label': poi.name,
-                    'type': 'mission_event'
-                })
-                logger.debug(f"  - Adding POI to map: {poi.name} at ({poi.latitude}, {poi.longitude})")
+                mission_event_pois.append(
+                    {
+                        "lat": poi.latitude,
+                        "lon": poi.longitude,
+                        "label": poi.name,
+                        "type": "mission_event",
+                    }
+                )
+                logger.debug(
+                    f"  - Adding POI to map: {poi.name} at ({poi.latitude}, {poi.longitude})"
+                )
         else:
             # Fallback to manual extraction if POI manager not available
             # AAR Waypoints - Explicitly label Start and End
@@ -827,34 +884,40 @@ def _generate_route_map(
                     # AAR Start
                     if aar.start_waypoint_name in waypoint_map:
                         wp = waypoint_map[aar.start_waypoint_name]
-                        mission_event_pois.append({
-                            'lat': wp.latitude,
-                            'lon': wp.longitude,
-                            'label': "AAR Start",
-                            'type': 'aar_start'
-                        })
-                    
+                        mission_event_pois.append(
+                            {
+                                "lat": wp.latitude,
+                                "lon": wp.longitude,
+                                "label": "AAR Start",
+                                "type": "aar_start",
+                            }
+                        )
+
                     # AAR End
                     if aar.end_waypoint_name in waypoint_map:
                         wp = waypoint_map[aar.end_waypoint_name]
-                        mission_event_pois.append({
-                            'lat': wp.latitude,
-                            'lon': wp.longitude,
-                            'label': "AAR End",
-                            'type': 'aar_end'
-                        })
+                        mission_event_pois.append(
+                            {
+                                "lat": wp.latitude,
+                                "lon": wp.longitude,
+                                "label": "AAR End",
+                                "type": "aar_end",
+                            }
+                        )
 
             # Satellite Transitions (X Swaps) - Configured
             if mission and mission.transports and mission.transports.x_transitions:
                 for trans in mission.transports.x_transitions:
                     # Create a label for the transition (e.g., "Swap to X-2")
                     label = f"Swap {trans.target_satellite_id}"
-                    mission_event_pois.append({
-                        'lat': trans.latitude,
-                        'lon': trans.longitude,
-                        'label': label,
-                        'type': 'transition'
-                    })
+                    mission_event_pois.append(
+                        {
+                            "lat": trans.latitude,
+                            "lon": trans.longitude,
+                            "label": label,
+                            "type": "transition",
+                        }
+                    )
 
             # Ka Transitions (Auto-calculated from Timeline)
             # Iterate segments to detect changes in Ka satellites
@@ -862,15 +925,23 @@ def _generate_route_map(
                 current_ka = set()
                 # Initialize with first segment's Ka state if available
                 first_seg = timeline.segments[0]
-                if first_seg.metadata and 'satellites' in first_seg.metadata and 'Ka' in first_seg.metadata['satellites']:
-                    current_ka = set(first_seg.metadata['satellites']['Ka'])
-                
+                if (
+                    first_seg.metadata
+                    and "satellites" in first_seg.metadata
+                    and "Ka" in first_seg.metadata["satellites"]
+                ):
+                    current_ka = set(first_seg.metadata["satellites"]["Ka"])
+
                 for i in range(1, len(timeline.segments)):
                     seg = timeline.segments[i]
                     next_ka = set()
-                    if seg.metadata and 'satellites' in seg.metadata and 'Ka' in seg.metadata['satellites']:
-                        next_ka = set(seg.metadata['satellites']['Ka'])
-                    
+                    if (
+                        seg.metadata
+                        and "satellites" in seg.metadata
+                        and "Ka" in seg.metadata["satellites"]
+                    ):
+                        next_ka = set(seg.metadata["satellites"]["Ka"])
+
                     # Check for change
                     if current_ka != next_ka:
                         # Transition detected at seg.start_time
@@ -879,90 +950,170 @@ def _generate_route_map(
                             # Construct label: "Swap POR to AOR"
                             added = next_ka - current_ka
                             removed = current_ka - next_ka
-                            
+
                             label_parts = []
                             if removed:
                                 label_parts.append(f"{'/'.join(removed)}")
                             if added:
                                 label_parts.append(f"{'/'.join(added)}")
-                            
+
                             if label_parts:
                                 label = f"Swap {' to '.join(label_parts)}"
-                                mission_event_pois.append({
-                                    'lat': pos.latitude,
-                                    'lon': pos.longitude,
-                                    'label': label,
-                                    'type': 'ka_transition'
-                                })
-                        
+                                mission_event_pois.append(
+                                    {
+                                        "lat": pos.latitude,
+                                        "lon": pos.longitude,
+                                        "label": label,
+                                        "type": "ka_transition",
+                                    }
+                                )
+
                         current_ka = next_ka
 
         # 3. Plot Departure Point (Start)
         start_point = points[0]
-        ax.plot(start_point.longitude, start_point.latitude, marker='o', color='#2ecc71', 
-                markersize=12, markeredgecolor='white', markeredgewidth=2, 
-                transform=ccrs.PlateCarree(), zorder=10)
-        
+        ax.plot(
+            start_point.longitude,
+            start_point.latitude,
+            marker="o",
+            color="#2ecc71",
+            markersize=12,
+            markeredgecolor="white",
+            markeredgewidth=2,
+            transform=ccrs.PlateCarree(),
+            zorder=10,
+        )
+
         # Label for Departure
-        ax.text(start_point.longitude + 0.5, start_point.latitude + 0.5, start_label,
-                transform=ccrs.PlateCarree(), fontsize=10, fontweight='bold', 
-                color='#2c3e50', zorder=11,
-                bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=1))
+        ax.text(
+            start_point.longitude + 0.5,
+            start_point.latitude + 0.5,
+            start_label,
+            transform=ccrs.PlateCarree(),
+            fontsize=10,
+            fontweight="bold",
+            color="#2c3e50",
+            zorder=11,
+            bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", pad=1),
+        )
 
         # 4. Plot Arrival Point (End)
         end_point = points[-1]
-        ax.plot(end_point.longitude, end_point.latitude, marker='o', color='#e74c3c', 
-                markersize=12, markeredgecolor='white', markeredgewidth=2, 
-                transform=ccrs.PlateCarree(), zorder=10)
-        
+        ax.plot(
+            end_point.longitude,
+            end_point.latitude,
+            marker="o",
+            color="#e74c3c",
+            markersize=12,
+            markeredgecolor="white",
+            markeredgewidth=2,
+            transform=ccrs.PlateCarree(),
+            zorder=10,
+        )
+
         # Label for Arrival
-        ax.text(end_point.longitude + 0.5, end_point.latitude + 0.5, end_label,
-                transform=ccrs.PlateCarree(), fontsize=10, fontweight='bold', 
-                color='#2c3e50', zorder=11,
-                bbox=dict(facecolor='white', alpha=0.7, edgecolor='none', pad=1))
+        ax.text(
+            end_point.longitude + 0.5,
+            end_point.latitude + 0.5,
+            end_label,
+            transform=ccrs.PlateCarree(),
+            fontsize=10,
+            fontweight="bold",
+            color="#2c3e50",
+            zorder=11,
+            bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", pad=1),
+        )
 
         # 5. Plot Mission Event POIs
         for poi in mission_event_pois:
             # No proximity filtering for mission events - they are critical to show
             # even if they overlap (though rare).
-            
-            # Plot waypoint marker (Blue Diamond)
-            ax.plot(poi['lon'], poi['lat'], marker='D', color='#3498db', 
-                    markersize=8, markeredgecolor='white', markeredgewidth=1.5, 
-                    transform=ccrs.PlateCarree(), zorder=10)
-            
-            # Label with waypoint name
-            if poi['label']:
-                ax.text(poi['lon'] + 0.5, poi['lat'] + 0.5, poi['label'],
-                        transform=ccrs.PlateCarree(), fontsize=8, fontweight='bold', 
-                        color='#2c3e50', zorder=11,
-                        bbox=dict(facecolor='white', alpha=0.6, edgecolor='none', pad=0.5))
 
+            # Plot waypoint marker (Blue Diamond)
+            ax.plot(
+                poi["lon"],
+                poi["lat"],
+                marker="D",
+                color="#3498db",
+                markersize=8,
+                markeredgecolor="white",
+                markeredgewidth=1.5,
+                transform=ccrs.PlateCarree(),
+                zorder=10,
+            )
+
+            # Label with waypoint name
+            if poi["label"]:
+                ax.text(
+                    poi["lon"] + 0.5,
+                    poi["lat"] + 0.5,
+                    poi["label"],
+                    transform=ccrs.PlateCarree(),
+                    fontsize=8,
+                    fontweight="bold",
+                    color="#2c3e50",
+                    zorder=11,
+                    bbox=dict(facecolor="white", alpha=0.6, edgecolor="none", pad=0.5),
+                )
 
     # Phase 12: Add legend inset to map
     legend_elements = [
         # Route status colors
-        Line2D([0], [0], color=STATUS_COLORS['nominal'], linewidth=3, label='Nominal'),
-        Line2D([0], [0], color=STATUS_COLORS['degraded'], linewidth=3, label='Degraded'),
-        Line2D([0], [0], color=STATUS_COLORS['critical'], linewidth=3, label='Critical'),
+        Line2D([0], [0], color=STATUS_COLORS["nominal"], linewidth=3, label="Nominal"),
+        Line2D(
+            [0], [0], color=STATUS_COLORS["degraded"], linewidth=3, label="Degraded"
+        ),
+        Line2D(
+            [0], [0], color=STATUS_COLORS["critical"], linewidth=3, label="Critical"
+        ),
         # Marker types
-        Line2D([0], [0], marker='o', color='w', markerfacecolor='#2ecc71',
-               markersize=8, label='Departure', linestyle='None'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor='#e74c3c',
-               markersize=8, label='Arrival', linestyle='None'),
-        Line2D([0], [0], marker='D', color='w', markerfacecolor='#3498db',
-               markersize=8, label='POI', linestyle='None'),
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#2ecc71",
+            markersize=8,
+            label="Departure",
+            linestyle="None",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="o",
+            color="w",
+            markerfacecolor="#e74c3c",
+            markersize=8,
+            label="Arrival",
+            linestyle="None",
+        ),
+        Line2D(
+            [0],
+            [0],
+            marker="D",
+            color="w",
+            markerfacecolor="#3498db",
+            markersize=8,
+            label="POI",
+            linestyle="None",
+        ),
     ]
 
     # Add legend inset at lower-right, positioned to not extend beyond figure
-    legend = ax.legend(handles=legend_elements, loc='lower right', fontsize=9,
-                      framealpha=0.95, edgecolor='#2c3e50', fancybox=True)
+    legend = ax.legend(
+        handles=legend_elements,
+        loc="lower right",
+        fontsize=9,
+        framealpha=0.95,
+        edgecolor="#2c3e50",
+        fancybox=True,
+    )
     # Ensure legend is drawn on top and doesn't extend beyond axes
     legend.set_zorder(100)
 
     # Save to PNG bytes
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=dpi, bbox_inches='tight', pad_inches=0)
+    plt.savefig(buf, format="png", dpi=dpi, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
     buf.seek(0)
     return buf.read()
@@ -982,42 +1133,51 @@ def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
 
     # Handle empty timeline
     if not timeline.segments:
-        fig, ax = plt.subplots(figsize=(16, 5), dpi=200, facecolor='white')
-        ax.text(0.5, 0.5, 'No timeline segments available',
-                ha='center', va='center', fontsize=14, transform=ax.transAxes,
-                color='#666')
+        fig, ax = plt.subplots(figsize=(16, 5), dpi=200, facecolor="white")
+        ax.text(
+            0.5,
+            0.5,
+            "No timeline segments available",
+            ha="center",
+            va="center",
+            fontsize=14,
+            transform=ax.transAxes,
+            color="#666",
+        )
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1)
-        ax.set_facecolor('#f8f9fa')
-        ax.axis('off')
+        ax.set_facecolor("#f8f9fa")
+        ax.axis("off")
 
         buffer = io.BytesIO()
-        fig.savefig(buffer, format='png', dpi=200, bbox_inches='tight', facecolor='white')
+        fig.savefig(
+            buffer, format="png", dpi=200, bbox_inches="tight", facecolor="white"
+        )
         plt.close(fig)
         buffer.seek(0)
         return buffer.read()
 
     # Get mission duration from last segment end time
     mission_end_seconds = (
-        _ensure_timezone(timeline.segments[-1].end_time) -
-        _ensure_timezone(timeline.segments[0].start_time)
+        _ensure_timezone(timeline.segments[-1].end_time)
+        - _ensure_timezone(timeline.segments[0].start_time)
     ).total_seconds()
 
     # Create figure with better aspect ratio (16:5 instead of 14:4)
-    fig, ax = plt.subplots(figsize=(16, 5), dpi=200, facecolor='white')
+    fig, ax = plt.subplots(figsize=(16, 5), dpi=200, facecolor="white")
 
     # Modern state to color mapping
     state_colors = {
-        'AVAILABLE': '#27ae60',    # Modern green
-        'DEGRADED': '#f39c12',     # Modern amber
-        'OFFLINE': '#e74c3c',      # Modern red
+        "AVAILABLE": "#27ae60",  # Modern green
+        "DEGRADED": "#f39c12",  # Modern amber
+        "OFFLINE": "#e74c3c",  # Modern red
     }
 
     # Transport configuration: (y_position, name, state_getter)
     transports = [
-        (0, 'Ku (StarShield)', lambda seg: seg.ku_state),
-        (1, 'Ka (CommKa)', lambda seg: seg.ka_state),
-        (2, 'X-Band', lambda seg: seg.x_state),
+        (0, "Ku (StarShield)", lambda seg: seg.ku_state),
+        (1, "Ka (CommKa)", lambda seg: seg.ka_state),
+        (2, "X-Band", lambda seg: seg.x_state),
     ]
 
     mission_start = _ensure_timezone(timeline.segments[0].start_time)
@@ -1034,26 +1194,39 @@ def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
 
             # Get state and color
             state = state_getter(segment)
-            state_str = state.value.upper() if hasattr(state, 'value') else str(state).upper()
-            color = state_colors.get(state_str, '#808080')
+            state_str = (
+                state.value.upper() if hasattr(state, "value") else str(state).upper()
+            )
+            color = state_colors.get(state_str, "#808080")
 
             # Draw horizontal bar with modern styling
-            ax.barh(y_pos, duration, left=start_offset, height=0.7,
-                   color=color, edgecolor='#2c3e50', linewidth=1,
-                   alpha=0.95)
+            ax.barh(
+                y_pos,
+                duration,
+                left=start_offset,
+                height=0.7,
+                color=color,
+                edgecolor="#2c3e50",
+                linewidth=1,
+                alpha=0.95,
+            )
 
     # Configure y-axis with better spacing and readability
     ax.set_ylim(-0.6, 2.6)
     ax.set_yticks([0, 1, 2])
-    ax.set_yticklabels(['Ku (StarShield)', 'Ka (CommKa)', 'X-Band'],
-                       fontsize=11, fontweight='semibold', color='#2c3e50')
-    ax.tick_params(axis='y', labelsize=11, colors='#2c3e50')
+    ax.set_yticklabels(
+        ["Ku (StarShield)", "Ka (CommKa)", "X-Band"],
+        fontsize=11,
+        fontweight="semibold",
+        color="#2c3e50",
+    )
+    ax.tick_params(axis="y", labelsize=11, colors="#2c3e50")
 
     # Configure x-axis with T+ formatting
     def format_time_label(seconds, pos):
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
-        return f'T+{hours:02d}:{minutes:02d}'
+        return f"T+{hours:02d}:{minutes:02d}"
 
     ax.xaxis.set_major_formatter(FuncFormatter(format_time_label))
     ax.set_xlim(0, mission_end_seconds)
@@ -1061,40 +1234,51 @@ def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
     # Add vertical grid lines at 1-hour intervals with modern styling
     for hour in range(0, int(mission_end_seconds) + 1, 3600):
         if hour <= mission_end_seconds:
-            ax.axvline(x=hour, color='#bdc3c7', linestyle='-', linewidth=0.5, alpha=0.4)
+            ax.axvline(x=hour, color="#bdc3c7", linestyle="-", linewidth=0.5, alpha=0.4)
 
     # Configure grid and labels with modern styling
-    ax.grid(True, axis='x', alpha=0.2, linestyle='-', color='#bdc3c7')
+    ax.grid(True, axis="x", alpha=0.2, linestyle="-", color="#bdc3c7")
     ax.set_axisbelow(True)
-    ax.set_xlabel('Mission Time', fontsize=12, fontweight='bold', color='#2c3e50')
-    ax.set_title('Transport State Timeline', fontsize=14, fontweight='bold',
-                 pad=20, color='#2c3e50')
+    ax.set_xlabel("Mission Time", fontsize=12, fontweight="bold", color="#2c3e50")
+    ax.set_title(
+        "Transport State Timeline",
+        fontsize=14,
+        fontweight="bold",
+        pad=20,
+        color="#2c3e50",
+    )
 
     # Style x-axis
-    ax.tick_params(axis='x', labelsize=10, colors='#2c3e50')
+    ax.tick_params(axis="x", labelsize=10, colors="#2c3e50")
 
     # Add modern legend
     legend_elements = [
-        Line2D([0], [0], color='#27ae60', lw=12, label='Available', alpha=0.95),
-        Line2D([0], [0], color='#f39c12', lw=12, label='Degraded', alpha=0.95),
-        Line2D([0], [0], color='#e74c3c', lw=12, label='Offline', alpha=0.95),
+        Line2D([0], [0], color="#27ae60", lw=12, label="Available", alpha=0.95),
+        Line2D([0], [0], color="#f39c12", lw=12, label="Degraded", alpha=0.95),
+        Line2D([0], [0], color="#e74c3c", lw=12, label="Offline", alpha=0.95),
     ]
-    ax.legend(handles=legend_elements, loc='upper right', fontsize=10,
-              framealpha=0.95, edgecolor='#bdc3c7', fancybox=True)
+    ax.legend(
+        handles=legend_elements,
+        loc="upper right",
+        fontsize=10,
+        framealpha=0.95,
+        edgecolor="#bdc3c7",
+        fancybox=True,
+    )
 
     # Style the plot background
-    ax.set_facecolor('#f8f9fa')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_color('#bdc3c7')
-    ax.spines['bottom'].set_color('#bdc3c7')
+    ax.set_facecolor("#f8f9fa")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color("#bdc3c7")
+    ax.spines["bottom"].set_color("#bdc3c7")
 
     # Adjust layout
     plt.tight_layout()
 
     # Save to buffer with high quality
     buffer = io.BytesIO()
-    fig.savefig(buffer, format='png', dpi=200, bbox_inches='tight', facecolor='white')
+    fig.savefig(buffer, format="png", dpi=200, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     buffer.seek(0)
     return buffer.read()
@@ -1115,7 +1299,9 @@ def _segment_rows(
         duration_seconds = max((end_utc - start_utc).total_seconds(), 0)
         warning_only = _segment_is_x_ku_warning(segment)
         status_value = (
-            segment.status.value if isinstance(segment.status, TimelineStatus) else str(segment.status)
+            segment.status.value
+            if isinstance(segment.status, TimelineStatus)
+            else str(segment.status)
         )
         status_value = status_value.upper()
         impacted_display = _serialize_transport_list(segment.impacted_transports)
@@ -1125,7 +1311,9 @@ def _segment_rows(
         record = {
             "Segment #": idx,
             "Mission ID": mission.id if mission else timeline.mission_id,
-            "Mission Name": mission.name if mission and mission.name else timeline.mission_id,
+            "Mission Name": (
+                mission.name if mission and mission.name else timeline.mission_id
+            ),
             "Status": status_value,
             "Start Time": _compose_time_block(start_utc, mission_start),
             "End Time": _compose_time_block(end_utc, mission_start),
@@ -1137,7 +1325,9 @@ def _segment_rows(
             TRANSPORT_DISPLAY[Transport.KU]: segment.ku_state.value.upper(),
             "Impacted Transports": impacted_display,
             "Reasons": ", ".join(segment.reasons),
-            "Metadata": json.dumps(segment.metadata, sort_keys=True) if segment.metadata else "",
+            "Metadata": (
+                json.dumps(segment.metadata, sort_keys=True) if segment.metadata else ""
+            ),
         }
         rows.append((start_utc, 1, record))
 
@@ -1159,27 +1349,41 @@ def _segment_rows(
         "Metadata",
     ]
 
-    ordered_records = [row for _, _, row in sorted(rows, key=lambda item: (item[0], item[1]))]
+    ordered_records = [
+        row for _, _, row in sorted(rows, key=lambda item: (item[0], item[1]))
+    ]
     return pd.DataFrame.from_records(ordered_records, columns=columns)
 
 
-def _advisory_rows(timeline: MissionLegTimeline, mission: Mission | None) -> pd.DataFrame:
+def _advisory_rows(
+    timeline: MissionLegTimeline, mission: Mission | None
+) -> pd.DataFrame:
     """Convert timeline advisories into a pandas DataFrame (may be empty)."""
     mission_start = _mission_start_timestamp(timeline)
     records: list[dict] = []
     for advisory in timeline.advisories:
         ts_utc = _ensure_timezone(advisory.timestamp)
-        records.append({
-            "Mission ID": mission.id if mission else timeline.mission_id,
-            "Timestamp (UTC)": _format_utc(ts_utc),
-            "Timestamp (Eastern)": _format_eastern(ts_utc),
-            "T Offset": _format_offset(ts_utc - mission_start),
-            "Transport": advisory.transport.value if isinstance(advisory.transport, Transport) else advisory.transport,
-            "Severity": advisory.severity,
-            "Event Type": advisory.event_type,
-            "Message": advisory.message,
-            "Metadata": json.dumps(advisory.metadata, sort_keys=True) if advisory.metadata else "",
-        })
+        records.append(
+            {
+                "Mission ID": mission.id if mission else timeline.mission_id,
+                "Timestamp (UTC)": _format_utc(ts_utc),
+                "Timestamp (Eastern)": _format_eastern(ts_utc),
+                "T Offset": _format_offset(ts_utc - mission_start),
+                "Transport": (
+                    advisory.transport.value
+                    if isinstance(advisory.transport, Transport)
+                    else advisory.transport
+                ),
+                "Severity": advisory.severity,
+                "Event Type": advisory.event_type,
+                "Message": advisory.message,
+                "Metadata": (
+                    json.dumps(advisory.metadata, sort_keys=True)
+                    if advisory.metadata
+                    else ""
+                ),
+            }
+        )
     columns = [
         "Mission ID",
         "Timestamp (UTC)",
@@ -1236,7 +1440,9 @@ def _compose_time_block(moment: datetime, mission_start: datetime) -> str:
     return f"{utc}\n{eastern}\n{offset}"
 
 
-def generate_csv_export(timeline: MissionLegTimeline, mission: Mission | None = None) -> bytes:
+def generate_csv_export(
+    timeline: MissionLegTimeline, mission: Mission | None = None
+) -> bytes:
     """Return CSV bytes for the mission timeline."""
     csv_buffer = io.StringIO()
     df = _segment_rows(timeline, mission)
@@ -1244,7 +1450,9 @@ def generate_csv_export(timeline: MissionLegTimeline, mission: Mission | None = 
     return csv_buffer.getvalue().encode("utf-8")
 
 
-def _summary_table_rows(timeline: MissionLegTimeline, mission: Mission | None = None) -> pd.DataFrame:
+def _summary_table_rows(
+    timeline: MissionLegTimeline, mission: Mission | None = None
+) -> pd.DataFrame:
     """Generate simplified summary table DataFrame with key columns for Sheet 1.
 
     Returns a DataFrame with columns: Start (UTC), Duration, Status, Systems Down
@@ -1260,7 +1468,9 @@ def _summary_table_rows(timeline: MissionLegTimeline, mission: Mission | None = 
 
         # Get segment status
         status_value = (
-            segment.status.value if isinstance(segment.status, TimelineStatus) else str(segment.status)
+            segment.status.value
+            if isinstance(segment.status, TimelineStatus)
+            else str(segment.status)
         )
         status_value = status_value.upper()
 
@@ -1318,10 +1528,10 @@ def generate_xlsx_export(
         ws_summary = writer.sheets["Summary"]
 
         # Set column widths for summary sheet
-        ws_summary.column_dimensions['A'].width = 25
-        ws_summary.column_dimensions['B'].width = 15
-        ws_summary.column_dimensions['C'].width = 12
-        ws_summary.column_dimensions['D'].width = 30
+        ws_summary.column_dimensions["A"].width = 25
+        ws_summary.column_dimensions["B"].width = 15
+        ws_summary.column_dimensions["C"].width = 12
+        ws_summary.column_dimensions["D"].width = 30
 
         # Insert rows at top to accommodate map and chart images
         # Map will be at A1 (approximately 30 rows tall)
@@ -1335,7 +1545,7 @@ def generate_xlsx_export(
             map_image = OpenpyxlImage(map_image_stream)
             map_image.width = 750  # pixels
             map_image.height = 500  # pixels
-            ws_summary.add_image(map_image, 'A1')
+            ws_summary.add_image(map_image, "A1")
         except Exception as e:
             logger.error("Failed to embed map image in Excel: %s", e, exc_info=True)
 
@@ -1345,16 +1555,24 @@ def generate_xlsx_export(
             chart_image = OpenpyxlImage(chart_image_stream)
             chart_image.width = 850  # pixels
             chart_image.height = 300  # pixels
-            ws_summary.add_image(chart_image, 'A32')
+            ws_summary.add_image(chart_image, "A32")
         except Exception as e:
-            logger.error("Failed to embed timeline chart in Excel: %s", e, exc_info=True)
+            logger.error(
+                "Failed to embed timeline chart in Excel: %s", e, exc_info=True
+            )
 
         # Apply color formatting to summary table rows (starting at row 49)
         # Header is at row 49, data starts at row 50
         color_map = {
-            "NOMINAL": PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid"),
-            "DEGRADED": PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid"),
-            "CRITICAL": PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid"),
+            "NOMINAL": PatternFill(
+                start_color="00FF00", end_color="00FF00", fill_type="solid"
+            ),
+            "DEGRADED": PatternFill(
+                start_color="FFFF00", end_color="FFFF00", fill_type="solid"
+            ),
+            "CRITICAL": PatternFill(
+                start_color="FF0000", end_color="FF0000", fill_type="solid"
+            ),
         }
 
         # Apply color to data rows (skip header row)
@@ -1370,8 +1588,8 @@ def generate_xlsx_export(
     wb_final = openpyxl.load_workbook(workbook_bytes)
 
     # Reorder sheets: move Summary to position 0 (first)
-    if 'Summary' in wb_final.sheetnames:
-        summary_sheet = wb_final['Summary']
+    if "Summary" in wb_final.sheetnames:
+        summary_sheet = wb_final["Summary"]
         wb_final._sheets.remove(summary_sheet)
         wb_final._sheets.insert(0, summary_sheet)
 
@@ -1408,8 +1626,14 @@ def generate_pdf_export(
         logo_width = logo_flow.drawWidth
         header_table = Table(
             [
-                [Paragraph("Mission Communication Timeline", styles["Title"]), logo_flow],
-                [Paragraph(f"Mission: {mission_name}", styles["Heading2"]), Spacer(1, 0)],
+                [
+                    Paragraph("Mission Communication Timeline", styles["Title"]),
+                    logo_flow,
+                ],
+                [
+                    Paragraph(f"Mission: {mission_name}", styles["Heading2"]),
+                    Spacer(1, 0),
+                ],
             ],
             colWidths=[doc.width - logo_width, logo_width],
         )
@@ -1480,13 +1704,17 @@ def generate_pdf_export(
         story.append(chart_image)
     except Exception as e:
         logger.error("Failed to generate timeline chart for PDF: %s", e, exc_info=True)
-        story.append(Paragraph(f"[Timeline chart unavailable: {str(e)}]", styles["Normal"]))
+        story.append(
+            Paragraph(f"[Timeline chart unavailable: {str(e)}]", styles["Normal"])
+        )
 
     story.append(Spacer(1, 0.2 * inch))
 
     timeline_df = _segment_rows(timeline, mission)
     if timeline_df.empty:
-        story.append(Paragraph("No timeline segments were generated.", styles["Normal"]))
+        story.append(
+            Paragraph("No timeline segments were generated.", styles["Normal"])
+        )
     else:
         story.append(Paragraph("Timeline Segments", styles["Heading2"]))
         table_columns = [
@@ -1505,10 +1733,10 @@ def generate_pdf_export(
         body_style.leading = 9.5
         # Pre-calculate status overrides and identify critical rows
         # We need to modify the data *before* creating the Table if we want to change text
-        
+
         # Create a map of row_idx -> is_critical for styling later
         critical_rows = {}
-        
+
         # Rebuild data with overrides
         data = [[header for header, _ in table_columns]]
         for row_idx, row in timeline_df.iterrows():
@@ -1518,7 +1746,7 @@ def generate_pdf_export(
                 val = str(row[name]).strip().lower()
                 if val in ("degraded", "warning", "offline"):
                     bad_cols_count += 1
-            
+
             is_critical = bad_cols_count >= 2
             critical_rows[row_idx] = is_critical
 
@@ -1529,14 +1757,18 @@ def generate_pdf_export(
             row_values = []
             for header, key in table_columns:
                 value = row[key]
-                
+
                 # Override Status text
                 if key == "Status":
                     if is_critical:
                         value = "CRITICAL"
-                    elif is_sof_row and str(value).lower() in ("nominal", "available", "warning"):
+                    elif is_sof_row and str(value).lower() in (
+                        "nominal",
+                        "available",
+                        "warning",
+                    ):
                         value = "SOF"
-                
+
                 if key in {"Start Time", "End Time"}:
                     display = (value or "-").replace("\n", "<br/>")
                     row_values.append(Paragraph(display, body_style))
@@ -1567,7 +1799,7 @@ def generate_pdf_export(
 
         for row_idx in range(len(timeline_df)):
             is_critical = critical_rows.get(row_idx, False)
-            
+
             # Check for SoF/AAR reasons
             reasons = str(timeline_df.iloc[row_idx]["Reasons"]).lower()
             is_sof_row = "safety-of-flight" in reasons or "aar" in reasons
@@ -1576,28 +1808,49 @@ def generate_pdf_export(
             if status_col_idx is not None:
                 status_val = str(timeline_df.iloc[row_idx]["Status"]).upper()
                 if is_critical:
-                     style_commands.append(("BACKGROUND", (status_col_idx, row_idx+1), (status_col_idx, row_idx+1), LIGHT_RED))
+                    style_commands.append(
+                        (
+                            "BACKGROUND",
+                            (status_col_idx, row_idx + 1),
+                            (status_col_idx, row_idx + 1),
+                            LIGHT_RED,
+                        )
+                    )
                 elif status_val in ("DEGRADED", "WARNING") or is_sof_row:
-                     style_commands.append(("BACKGROUND", (status_col_idx, row_idx+1), (status_col_idx, row_idx+1), LIGHT_YELLOW))
+                    style_commands.append(
+                        (
+                            "BACKGROUND",
+                            (status_col_idx, row_idx + 1),
+                            (status_col_idx, row_idx + 1),
+                            LIGHT_YELLOW,
+                        )
+                    )
 
             # Color Transport columns
             for name in STATE_COLUMNS:
                 val = str(timeline_df.iloc[row_idx][name]).strip().lower()
                 col_idx = state_column_indices[name]
-                
+
                 # Check if this specific cell is SoF (AVAILABLE but needs yellow)
                 # SoF applies if the row is SoF and this cell is AVAILABLE/NOMINAL
                 cell_is_sof = is_sof_row and val in ("available", "nominal")
-                
+
                 if val in ("degraded", "warning", "offline") or cell_is_sof:
                     if is_critical and not cell_is_sof:
                         color = LIGHT_RED
                     elif val in ("degraded", "warning") or cell_is_sof:
                         color = LIGHT_YELLOW
                     else:
-                        color = LIGHT_RED # Offline
-                    
-                    style_commands.append(("BACKGROUND", (col_idx, row_idx+1), (col_idx, row_idx+1), color))
+                        color = LIGHT_RED  # Offline
+
+                    style_commands.append(
+                        (
+                            "BACKGROUND",
+                            (col_idx, row_idx + 1),
+                            (col_idx, row_idx + 1),
+                            color,
+                        )
+                    )
 
         table.setStyle(TableStyle(style_commands))
         story.append(table)
@@ -1605,7 +1858,11 @@ def generate_pdf_export(
     footer_style = styles["Normal"].clone("Footer")
     footer_style.alignment = TA_RIGHT
     story.append(Spacer(1, 0.2 * inch))
-    story.append(Paragraph(f"Timeline generated: {_format_utc(timeline.created_at)}", footer_style))
+    story.append(
+        Paragraph(
+            f"Timeline generated: {_format_utc(timeline.created_at)}", footer_style
+        )
+    )
 
     doc.build(story)
     buffer.seek(0)
@@ -1637,7 +1894,7 @@ def generate_pptx_export(
             poi_manager=poi_manager,
         )
         map_image_stream = io.BytesIO(map_image_bytes)
-        
+
         # Add image to slide, scaled to fit
         # Default slide size is 10x7.5 inches
         # We want to maximize the map visibility
@@ -1645,11 +1902,15 @@ def generate_pptx_export(
         top = Inches(0.5)
         width = Inches(9)
         height = Inches(6.5)
-        
-        slide1.shapes.add_picture(map_image_stream, left, top, width=width, height=height)
-        
+
+        slide1.shapes.add_picture(
+            map_image_stream, left, top, width=width, height=height
+        )
+
         # Add title
-        title_box = slide1.shapes.add_textbox(Inches(0.5), Inches(0.1), Inches(9), Inches(0.5))
+        title_box = slide1.shapes.add_textbox(
+            Inches(0.5), Inches(0.1), Inches(9), Inches(0.5)
+        )
         tf = title_box.text_frame
         p = tf.paragraphs[0]
         p.text = "Mission Route Map"
@@ -1665,26 +1926,30 @@ def generate_pptx_export(
     # Slide 2: Timeline Table
     # Slide 2+: Timeline Table (Paginated)
     timeline_df = _segment_rows(timeline, mission)
-    
+
     if not timeline_df.empty:
         # Define columns to show
         columns_to_show = [
-            "Segment #", "Status", "Start Time", "End Time", "Duration",
+            "Segment #",
+            "Status",
+            "Start Time",
+            "End Time",
+            "Duration",
             TRANSPORT_DISPLAY[Transport.X],
             TRANSPORT_DISPLAY[Transport.KA],
             TRANSPORT_DISPLAY[Transport.KU],
-            "Reasons"
+            "Reasons",
         ]
-        
+
         # Pagination settings
         ROWS_PER_SLIDE = 10
         MIN_ROWS_LAST_SLIDE = 3
-        
+
         # Convert to list of dicts for easier manipulation if needed, or just slice dataframe
         # Slicing dataframe is easier but we need to handle the orphan logic
-        records = timeline_df.to_dict('records')
+        records = timeline_df.to_dict("records")
         total_rows = len(records)
-        
+
         chunks = []
         if total_rows <= ROWS_PER_SLIDE:
             chunks.append(timeline_df)
@@ -1695,7 +1960,7 @@ def generate_pptx_export(
                 end_idx = min(current_idx + ROWS_PER_SLIDE, total_rows)
                 chunks.append(timeline_df.iloc[current_idx:end_idx])
                 current_idx = end_idx
-            
+
             # Check last chunk
             if len(chunks) > 1:
                 last_chunk = chunks[-1]
@@ -1705,16 +1970,16 @@ def generate_pptx_export(
                     # Re-slice the last two chunks
                     # We need to go back to the source dataframe indices
                     # Let's recalculate the split point for the last page
-                    
+
                     # Total items excluding the last "naive" chunk's items
                     # Actually, let's just do it numerically
                     # If we have 11 items. 10, 1.
                     # We want 8, 3.
                     # Split point should be total - 3.
-                    
+
                     # If we have 21 items. 10, 10, 1.
                     # We want 10, 8, 3.
-                    
+
                     # So we only adjust the boundary between the last two chunks.
                     # The start of the last chunk is currently `total_rows - len(last_chunk)`
                     # We want the start to be `total_rows - 3` (or whatever min is)
@@ -1722,51 +1987,59 @@ def generate_pptx_export(
                     # We must ensure the second to last chunk doesn't fall below min?
                     # If max=10, min=3.
                     # Worst case for prev chunk: It had 10. We take 2. It has 8. Safe.
-                    
+
                     # Re-build chunks
                     # Everything up to the second to last chunk stays same
                     base_chunks = chunks[:-2]
-                    
+
                     # Combine last two
                     remainder_count = len(chunks[-2]) + len(chunks[-1])
                     # We want last chunk to have MIN_ROWS_LAST_SLIDE
                     # So second to last has remainder_count - MIN_ROWS_LAST_SLIDE
-                    
-                    split_idx = total_rows - remainder_count # Start of the second-to-last chunk
+
+                    split_idx = (
+                        total_rows - remainder_count
+                    )  # Start of the second-to-last chunk
                     second_last_len = remainder_count - MIN_ROWS_LAST_SLIDE
-                    
-                    chunk_second_last = timeline_df.iloc[split_idx : split_idx + second_last_len]
-                    chunk_last = timeline_df.iloc[split_idx + second_last_len : ]
-                    
+
+                    chunk_second_last = timeline_df.iloc[
+                        split_idx : split_idx + second_last_len
+                    ]
+                    chunk_last = timeline_df.iloc[split_idx + second_last_len :]
+
                     chunks = base_chunks + [chunk_second_last, chunk_last]
 
         for chunk_idx, chunk in enumerate(chunks):
             # Add new slide for each chunk
             slide = prs.slides.add_slide(blank_slide_layout)
-            
+
             # Add title
-            title_box = slide.shapes.add_textbox(Inches(0.5), Inches(0.1), Inches(9), Inches(0.5))
+            title_box = slide.shapes.add_textbox(
+                Inches(0.5), Inches(0.1), Inches(9), Inches(0.5)
+            )
             tf = title_box.text_frame
             p = tf.paragraphs[0]
-            p.text = "Mission Timeline" if chunk_idx == 0 else "Mission Timeline (cont.)"
+            p.text = (
+                "Mission Timeline" if chunk_idx == 0 else "Mission Timeline (cont.)"
+            )
             p.font.bold = True
             p.font.size = Pt(24)
             p.alignment = PP_ALIGN.CENTER
 
             rows = len(chunk) + 1  # +1 for header
             cols = len(columns_to_show)
-            
+
             # Create table
             left = Inches(0.5)
             top = Inches(1.0)
             width = Inches(9.0)
             # Use a minimal height so rows don't stretch to fill a large area
             # The table will expand as needed
-            height = Inches(1.0) 
-            
+            height = Inches(1.0)
+
             shape = slide.shapes.add_table(rows, cols, left, top, width, height)
             table = shape.table
-            
+
             # Set column widths (adjusted for wider times)
             # Total width 9 inches
             # Old weights: [0.6, 1.0, 1.5, 1.5, 1.0, 1.0, 1.0, 1.0, 2.0]
@@ -1783,7 +2056,7 @@ def generate_pptx_export(
                 cell.fill.solid()
                 cell.fill.fore_color.rgb = RGBColor(51, 102, 178)  # Dark Blue
                 paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.color.rgb = RGBColor(255, 255, 255) # White
+                paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White
                 paragraph.font.bold = True
                 paragraph.font.size = Pt(10)
                 paragraph.alignment = PP_ALIGN.CENTER
@@ -1796,35 +2069,37 @@ def generate_pptx_export(
                     val = str(row_data[col_name] if row_data[col_name] else "").lower()
                     if val in ("degraded", "warning", "offline"):
                         bad_transports.append(col_name)
-            
+
                 is_critical_row = len(bad_transports) >= 2
 
                 for col_idx, col_name in enumerate(columns_to_show):
                     cell = table.cell(row_idx, col_idx)
-                    val = str(row_data[col_name] if row_data[col_name] is not None else "")
-                    
+                    val = str(
+                        row_data[col_name] if row_data[col_name] is not None else ""
+                    )
+
                     # Override Status text if critical
                     if col_name == "Status" and is_critical_row:
                         val = "CRITICAL"
-                    
+
                     cell.text = val
-                    
+
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.size = Pt(9)
                         paragraph.alignment = PP_ALIGN.LEFT
-                    
+
                     # Alternating row colors
                     cell.fill.solid()
                     if row_idx % 2 == 0:
-                        cell.fill.fore_color.rgb = RGBColor(240, 240, 240) # Light Gray
+                        cell.fill.fore_color.rgb = RGBColor(240, 240, 240)  # Light Gray
                     else:
-                        cell.fill.fore_color.rgb = RGBColor(255, 255, 255) # White
+                        cell.fill.fore_color.rgb = RGBColor(255, 255, 255)  # White
 
                     # Status coloring for transport columns and Status column
                     # Status coloring for transport columns and Status column
                     if col_name in STATE_COLUMNS or col_name == "Status":
                         val_lower = val.lower()
-                        
+
                         # Check for Safety-of-Flight in reasons if available/nominal/warning
                         is_sof = False
                         # We check reasons regardless of status, but only apply SOF override if appropriate
@@ -1836,21 +2111,31 @@ def generate_pptx_export(
                         # User request: "baseline for both should just be SOF"
                         # If status is WARNING (e.g. due to AAR) or NOMINAL/AVAILABLE, show SOF.
                         # If DEGRADED or OFFLINE, show that.
-                        if col_name == "Status" and is_sof and val_lower in ("available", "nominal", "warning"):
-                             cell.text = "SOF"
-                             # Re-apply font size since setting text resets it
-                             for paragraph in cell.text_frame.paragraphs:
+                        if (
+                            col_name == "Status"
+                            and is_sof
+                            and val_lower in ("available", "nominal", "warning")
+                        ):
+                            cell.text = "SOF"
+                            # Re-apply font size since setting text resets it
+                            for paragraph in cell.text_frame.paragraphs:
                                 paragraph.font.size = Pt(9)
                                 paragraph.alignment = PP_ALIGN.LEFT
 
                         if val_lower in ("degraded", "warning", "offline") or is_sof:
                             cell.fill.solid()
                             if is_critical_row and not is_sof:
-                                 cell.fill.fore_color.rgb = RGBColor(255, 204, 204) # Light Red
+                                cell.fill.fore_color.rgb = RGBColor(
+                                    255, 204, 204
+                                )  # Light Red
                             elif val_lower in ("degraded", "warning") or is_sof:
-                                cell.fill.fore_color.rgb = RGBColor(255, 255, 204) # Light Yellow
+                                cell.fill.fore_color.rgb = RGBColor(
+                                    255, 255, 204
+                                )  # Light Yellow
                             else:
-                                cell.fill.fore_color.rgb = RGBColor(255, 204, 204) # Light Red
+                                cell.fill.fore_color.rgb = RGBColor(
+                                    255, 204, 204
+                                )  # Light Red
 
     buffer = io.BytesIO()
     prs.save(buffer)
@@ -1863,21 +2148,23 @@ def _base_map_canvas() -> bytes:
     width_inches = 3840 / 300
     height_inches = 2880 / 300
 
-    fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor='white')
+    fig = plt.figure(figsize=(width_inches, height_inches), dpi=300, facecolor="white")
     ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
     fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
     ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())
-    ax.coastlines(resolution='50m', linewidth=0.5, color='#2c3e50')
-    ax.add_feature(cfeature.BORDERS, linewidth=0.5, color='#bdc3c7')
-    ax.add_feature(cfeature.LAND, facecolor='#ecf0f1', edgecolor='none')
-    ax.add_feature(cfeature.OCEAN, facecolor='#d5e8f7', edgecolor='none')
-    ax.gridlines(draw_labels=False, alpha=0.1, linestyle='-', linewidth=0.3, color='#95a5a6')
-    ax.spines['geo'].set_visible(False)
+    ax.coastlines(resolution="50m", linewidth=0.5, color="#2c3e50")
+    ax.add_feature(cfeature.BORDERS, linewidth=0.5, color="#bdc3c7")
+    ax.add_feature(cfeature.LAND, facecolor="#ecf0f1", edgecolor="none")
+    ax.add_feature(cfeature.OCEAN, facecolor="#d5e8f7", edgecolor="none")
+    ax.gridlines(
+        draw_labels=False, alpha=0.1, linestyle="-", linewidth=0.3, color="#95a5a6"
+    )
+    ax.spines["geo"].set_visible(False)
     ax.set_xticks([])
     ax.set_yticks([])
 
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=300, bbox_inches='tight', pad_inches=0)
+    plt.savefig(buf, format="png", dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
     buf.seek(0)
     return buf.read()
@@ -1913,7 +2200,9 @@ def generate_timeline_export(
             route_manager=route_manager,
             poi_manager=poi_manager,
         )
-        return ExportArtifact(content=content, media_type="application/pdf", extension="pdf")
+        return ExportArtifact(
+            content=content, media_type="application/pdf", extension="pdf"
+        )
     if export_format is TimelineExportFormat.PPTX:
         content = generate_pptx_export(
             timeline,
@@ -1922,6 +2211,10 @@ def generate_timeline_export(
             route_manager=route_manager,
             poi_manager=poi_manager,
         )
-        return ExportArtifact(content=content, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", extension="pptx")
+        return ExportArtifact(
+            content=content,
+            media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            extension="pptx",
+        )
 
     raise ExportGenerationError(f"Unsupported export format: {export_format}")

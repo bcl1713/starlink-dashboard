@@ -170,7 +170,10 @@ def test_eta_modes_fallback_without_timing_data(test_client):
     assert detail_resp.status_code == 200
     detail = detail_resp.json()
     assert detail["has_timing_data"] is False
-    assert detail.get("timing_profile") in (None, {}) or detail["timing_profile"].get("has_timing_data") is False
+    assert (
+        detail.get("timing_profile") in (None, {})
+        or detail["timing_profile"].get("has_timing_data") is False
+    )
 
     # Cleanup to avoid leaking state into unrelated tests
     delete_resp = test_client.delete(f"/api/pois/{poi_id}")

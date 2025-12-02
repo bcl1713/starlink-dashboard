@@ -1,6 +1,5 @@
 """Unit tests for ETA calculator with speed smoothing."""
 
-import math
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -45,14 +44,38 @@ def route_with_timing():
         point_count=3,
     )
     points = [
-        RoutePoint(latitude=0.0, longitude=0.0, sequence=0, expected_segment_speed_knots=180.0),
-        RoutePoint(latitude=0.0, longitude=1.0, sequence=1, expected_segment_speed_knots=200.0),
-        RoutePoint(latitude=0.0, longitude=2.0, sequence=2, expected_segment_speed_knots=210.0),
+        RoutePoint(
+            latitude=0.0, longitude=0.0, sequence=0, expected_segment_speed_knots=180.0
+        ),
+        RoutePoint(
+            latitude=0.0, longitude=1.0, sequence=1, expected_segment_speed_knots=200.0
+        ),
+        RoutePoint(
+            latitude=0.0, longitude=2.0, sequence=2, expected_segment_speed_knots=210.0
+        ),
     ]
     waypoints = [
-        RouteWaypoint(name="WP1", latitude=0.0, longitude=0.0, order=0, expected_arrival_time=now + timedelta(minutes=30)),
-        RouteWaypoint(name="WP2", latitude=0.0, longitude=1.0, order=1, expected_arrival_time=now + timedelta(hours=1, minutes=10)),
-        RouteWaypoint(name="WP3", latitude=0.0, longitude=2.0, order=2, expected_arrival_time=now + timedelta(hours=2)),
+        RouteWaypoint(
+            name="WP1",
+            latitude=0.0,
+            longitude=0.0,
+            order=0,
+            expected_arrival_time=now + timedelta(minutes=30),
+        ),
+        RouteWaypoint(
+            name="WP2",
+            latitude=0.0,
+            longitude=1.0,
+            order=1,
+            expected_arrival_time=now + timedelta(hours=1, minutes=10),
+        ),
+        RouteWaypoint(
+            name="WP3",
+            latitude=0.0,
+            longitude=2.0,
+            order=2,
+            expected_arrival_time=now + timedelta(hours=2),
+        ),
     ]
     timing_profile = RouteTimingProfile(
         departure_time=now + timedelta(minutes=5),
@@ -60,7 +83,12 @@ def route_with_timing():
         has_timing_data=True,
         segment_count_with_timing=2,
     )
-    return ParsedRoute(metadata=metadata, points=points, waypoints=waypoints, timing_profile=timing_profile)
+    return ParsedRoute(
+        metadata=metadata,
+        points=points,
+        waypoints=waypoints,
+        timing_profile=timing_profile,
+    )
 
 
 @pytest.fixture
@@ -78,7 +106,12 @@ def route_without_timing():
         RoutePoint(latitude=0.0, longitude=0.0, sequence=0),
         RoutePoint(latitude=0.0, longitude=1.0, sequence=1),
     ]
-    return ParsedRoute(metadata=metadata, points=points, waypoints=[], timing_profile=RouteTimingProfile(has_timing_data=False))
+    return ParsedRoute(
+        metadata=metadata,
+        points=points,
+        waypoints=[],
+        timing_profile=RouteTimingProfile(has_timing_data=False),
+    )
 
 
 class TestETACalculator:
@@ -230,7 +263,9 @@ class TestETACalculator:
         """Test that POI distances are correctly calculated."""
         current_lat, current_lon = 40.7128, -74.0060
 
-        metrics = eta_calculator.calculate_poi_metrics(current_lat, current_lon, sample_pois)
+        metrics = eta_calculator.calculate_poi_metrics(
+            current_lat, current_lon, sample_pois
+        )
 
         # POI 1 is at current position (distance ~0)
         assert metrics["poi-1"]["distance_meters"] < 1000  # < 1km
@@ -349,7 +384,9 @@ class TestETACalculator:
         smoothed = eta_calculator.get_smoothed_speed()
         assert 120.0 <= smoothed <= 140.0  # Should be in range of recent values
 
-    def test_route_aware_eta_estimated_blends_speed(self, eta_calculator, route_with_timing):
+    def test_route_aware_eta_estimated_blends_speed(
+        self, eta_calculator, route_with_timing
+    ):
         """Estimated mode should blend current speed with segment speed for route waypoints."""
         current_lat, current_lon = 0.0, 0.0
         poi = POI(
@@ -379,11 +416,15 @@ class TestETACalculator:
 
         # Expected time is based on blended speed between current and segment speed
         segment_distance = eta_calculator.calculate_distance(0.0, 0.0, 0.0, 1.0)
-        expected_speed = (current_speed + route_with_timing.points[0].expected_segment_speed_knots) / 2.0
+        expected_speed = (
+            current_speed + route_with_timing.points[0].expected_segment_speed_knots
+        ) / 2.0
         expected_eta = (segment_distance / 1852.0) / expected_speed * 3600.0
         assert eta_seconds == pytest.approx(expected_eta, rel=0.05)
 
-    def test_route_aware_eta_anticipated_uses_waypoint_times(self, eta_calculator, route_with_timing):
+    def test_route_aware_eta_anticipated_uses_waypoint_times(
+        self, eta_calculator, route_with_timing
+    ):
         """Anticipated mode should honour planned arrival timestamps."""
         current_lat, current_lon = 0.0, 0.0
         poi = POI(
@@ -416,7 +457,9 @@ class TestETACalculator:
         lower_bound = (expected_arrival - after_call).total_seconds()
         assert lower_bound <= eta_seconds <= upper_bound
 
-    def test_route_without_timing_falls_back_to_distance(self, eta_calculator, route_without_timing):
+    def test_route_without_timing_falls_back_to_distance(
+        self, eta_calculator, route_without_timing
+    ):
         """When no timing data is present, calculator should fall back to distance/speed ETA."""
         current_lat, current_lon = 0.0, 0.0
         poi = POI(
@@ -467,14 +510,18 @@ class TestETACalculator:
         for poi_id in anticipated:
             assert anticipated[poi_id]["eta_type"] == ETAMode.ANTICIPATED.value
             assert anticipated[poi_id]["is_pre_departure"] is True
-            assert anticipated[poi_id]["flight_phase"] == FlightPhase.PRE_DEPARTURE.value
+            assert (
+                anticipated[poi_id]["flight_phase"] == FlightPhase.PRE_DEPARTURE.value
+            )
 
         for poi_id in estimated:
             assert estimated[poi_id]["eta_type"] == ETAMode.ESTIMATED.value
             assert estimated[poi_id]["is_pre_departure"] is False
             assert estimated[poi_id]["flight_phase"] == FlightPhase.IN_FLIGHT.value
 
-    def test_route_projection_in_anticipated_mode(self, eta_calculator, route_with_timing):
+    def test_route_projection_in_anticipated_mode(
+        self, eta_calculator, route_with_timing
+    ):
         """Off-route POIs with projections should reuse waypoint arrival time in anticipated mode."""
         projection_index = 2
         projected_waypoint = route_with_timing.waypoints[projection_index]
@@ -509,7 +556,9 @@ class TestETACalculator:
         assert metrics["projected"]["eta_type"] == ETAMode.ANTICIPATED.value
         assert metrics["projected"]["is_pre_departure"] is True
 
-    def test_route_projection_estimated_blends_speed(self, eta_calculator, route_with_timing):
+    def test_route_projection_estimated_blends_speed(
+        self, eta_calculator, route_with_timing
+    ):
         """Projection path in estimated mode should fall back to route-aware blending."""
         poi = POI(
             id="projected",
@@ -540,7 +589,12 @@ class TestETACalculator:
 
         # Since projection lands near the second segment, ensure ETA is shorter than pure distance fallback.
         fallback_eta = eta_calculator.calculate_eta(
-            eta_calculator.calculate_distance(0.0, 0.5, route_with_timing.points[2].latitude, route_with_timing.points[2].longitude),
+            eta_calculator.calculate_distance(
+                0.0,
+                0.5,
+                route_with_timing.points[2].latitude,
+                route_with_timing.points[2].longitude,
+            ),
             speed_knots=current_speed,
         )
         assert eta_seconds < fallback_eta

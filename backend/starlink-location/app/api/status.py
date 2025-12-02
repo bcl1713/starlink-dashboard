@@ -53,10 +53,7 @@ async def status():
     ```
     """
     if _coordinator is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Service not yet initialized"
-        )
+        raise HTTPException(status_code=503, detail="Service not yet initialized")
 
     try:
         telemetry = _coordinator.get_current_telemetry()
@@ -68,13 +65,13 @@ async def status():
                 "longitude": telemetry.position.longitude,
                 "altitude": telemetry.position.altitude,
                 "speed": telemetry.position.speed,
-                "heading": telemetry.position.heading
+                "heading": telemetry.position.heading,
             },
             "network": {
                 "latency_ms": telemetry.network.latency_ms,
                 "throughput_down_mbps": telemetry.network.throughput_down_mbps,
                 "throughput_up_mbps": telemetry.network.throughput_up_mbps,
-                "packet_loss_percent": telemetry.network.packet_loss_percent
+                "packet_loss_percent": telemetry.network.packet_loss_percent,
             },
             "obstruction": {
                 "obstruction_percent": telemetry.obstruction.obstruction_percent
@@ -82,11 +79,8 @@ async def status():
             "environmental": {
                 "signal_quality_percent": telemetry.environmental.signal_quality_percent,
                 "uptime_seconds": telemetry.environmental.uptime_seconds,
-                "temperature_celsius": telemetry.environmental.temperature_celsius
-            }
+                "temperature_celsius": telemetry.environmental.temperature_celsius,
+            },
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get status: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")

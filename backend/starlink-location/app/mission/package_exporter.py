@@ -1,7 +1,6 @@
 """Mission package export utilities for creating portable mission archives."""
 
 import copy
-import hashlib
 import io
 import json
 import logging
@@ -9,11 +8,15 @@ import zipfile
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Generator, IO, Any
+from typing import IO
 
-from app.mission.models import Mission, MissionLeg
-from app.mission.storage import load_mission_v2, get_mission_path, load_mission_timeline
-from app.mission.exporter import generate_timeline_export, TimelineExportFormat, ExportGenerationError
+from app.mission.models import Mission
+from app.mission.storage import load_mission_v2, load_mission_timeline
+from app.mission.exporter import (
+    generate_timeline_export,
+    TimelineExportFormat,
+    ExportGenerationError,
+)
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
 
@@ -23,19 +26,17 @@ logger = logging.getLogger(__name__)
 EXCEL_SHEET_NAME_MAX_LENGTH = 31  # Excel's maximum sheet name length
 
 
-
-
 class ExportPackageError(RuntimeError):
     """Raised when mission package export fails."""
 
 
 def _create_mission_summary_sheet(wb, mission: Mission):
     """Create mission summary sheet with metadata and leg index.
-    
+
     Args:
         wb: Workbook to add sheet to
         mission: Mission object with metadata
-        
+
     Returns:
         Worksheet with mission summary
     """
@@ -56,13 +57,13 @@ def _create_mission_summary_sheet(wb, mission: Mission):
     ws.column_dimensions["B"].width = 25
     ws.column_dimensions["C"].width = 30
     ws.column_dimensions["D"].width = 50
-    
+
     return ws
 
 
 def _copy_worksheet_content(source_sheet, target_sheet):
     """Copy all content from source worksheet to target worksheet.
-    
+
     Args:
         source_sheet: Source worksheet to copy from
         target_sheet: Target worksheet to copy to
@@ -102,13 +103,13 @@ def _copy_worksheet_content(source_sheet, target_sheet):
 
 def _add_error_sheet(wb, leg_idx: int, leg, error_message: str):
     """Add an error sheet for a failed leg export.
-    
+
     Args:
         wb: Workbook to add sheet to
         leg_idx: Leg index (0-based)
         leg: Leg object
         error_message: Error message to display
-        
+
     Returns:
         Worksheet with error information
     """
@@ -129,7 +130,7 @@ def _process_leg_xlsx_export(
     poi_manager: POIManager | None,
 ):
     """Process a single leg's XLSX export and add sheets to workbook.
-    
+
     Args:
         wb: Workbook to add sheets to
         leg: Leg object to process
@@ -139,13 +140,11 @@ def _process_leg_xlsx_export(
         poi_manager: POIManager instance
     """
     from openpyxl import load_workbook
-    
+
     # Load timeline for this leg
     leg_timeline = load_mission_timeline(leg.id)
     if not leg_timeline:
-        logger.warning(
-            f"No timeline found for leg {leg.id}, adding summary sheet only"
-        )
+        logger.warning(f"No timeline found for leg {leg.id}, adding summary sheet only")
         # Add a simple sheet for this leg
         ws_leg = wb.create_sheet(title=f"Leg {leg_idx + 1} - {leg.name[:20]}")
         ws_leg.append(["Leg Name", leg.name])
@@ -199,15 +198,21 @@ def _process_leg_xlsx_export(
         _add_error_sheet(wb, leg_idx, leg, f"Processing Error: {str(e)}")
 
     except zipfile.BadZipFile as e:
-        logger.error(f"Invalid XLSX data generated for leg {leg.id}: {e}", exc_info=True)
+        logger.error(
+            f"Invalid XLSX data generated for leg {leg.id}: {e}", exc_info=True
+        )
         _add_error_sheet(wb, leg_idx, leg, "Generated Excel file was invalid")
 
     except Exception as e:
-        logger.error(f"Unexpected error combining XLSX for leg {leg.id}: {e}", exc_info=True)
+        logger.error(
+            f"Unexpected error combining XLSX for leg {leg.id}: {e}", exc_info=True
+        )
         _add_error_sheet(wb, leg_idx, leg, f"Unexpected Error: {str(e)}")
 
 
-def generate_mission_combined_csv(mission: Mission, output_path: str | None = None) -> bytes | None:
+def generate_mission_combined_csv(
+    mission: Mission, output_path: str | None = None
+) -> bytes | None:
     """Generate combined CSV timeline for all legs in mission.
 
     Combines all leg timelines into a single CSV with leg boundaries marked.
@@ -345,7 +350,7 @@ def generate_mission_combined_xlsx(
         if output_path:
             wb.save(output_path)
             return None
-        
+
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
@@ -359,11 +364,11 @@ def generate_mission_combined_xlsx(
         ws.title = "Error"
         ws.append(["Error generating combined Excel file"])
         ws.append([str(e)])
-        
+
         if output_path:
             wb.save(output_path)
             return None
-            
+
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
@@ -397,10 +402,8 @@ def generate_mission_combined_pptx(
     from app.mission.exporter import (
         _generate_route_map,
         _segment_rows,
-        _generate_timeline_chart,
     )
     from app.mission.exporter import TRANSPORT_DISPLAY, STATE_COLUMNS, Transport
-    from openpyxl.styles import PatternFill
     from pptx.util import Pt
     from pptx.enum.text import PP_ALIGN
 
@@ -838,27 +841,27 @@ def generate_mission_combined_pdf(
         c.showPage()
         c.save()
         output_stream.seek(0)
-        
+
         if output_path:
             with open(output_path, "wb") as f:
                 f.write(output_stream.read())
             return None
-            
+
         return output_stream.read()
 
 
-def _add_mission_metadata_to_zip(zf: zipfile.ZipFile, mission: Mission, manifest_files: dict):
+def _add_mission_metadata_to_zip(
+    zf: zipfile.ZipFile, mission: Mission, manifest_files: dict
+):
     """Add mission.json and leg JSON files to zip archive.
-    
+
     Args:
         zf: ZipFile to add files to
         mission: Mission object to export
         manifest_files: Manifest dictionary to update
     """
     # Add mission metadata
-    zf.writestr(
-        "mission.json", json.dumps(mission.model_dump(), indent=2, default=str)
-    )
+    zf.writestr("mission.json", json.dumps(mission.model_dump(), indent=2, default=str))
     logger.info(f"Added mission.json for {mission.id}")
 
     # Add leg JSON files
@@ -877,7 +880,7 @@ def _add_route_kmls_to_zip(
     manifest_files: dict,
 ):
     """Add route KML files for all legs to zip archive.
-    
+
     Args:
         zf: ZipFile to add files to
         mission: Mission object with legs
@@ -907,9 +910,7 @@ def _add_route_kmls_to_zip(
                             f"Route KML file not found at {kml_file} for leg {leg.id}"
                         )
                 else:
-                    logger.warning(
-                        f"Route {leg.route_id} not found for leg {leg.id}"
-                    )
+                    logger.warning(f"Route {leg.route_id} not found for leg {leg.id}")
             except Exception as e:
                 logger.error(f"Failed to add route KML for leg {leg.id}: {e}")
 
@@ -921,7 +922,7 @@ def _add_pois_to_zip(
     manifest_files: dict,
 ):
     """Add POI data (leg-specific and satellites) to zip archive.
-    
+
     Args:
         zf: ZipFile to add files to
         mission: Mission object with legs
@@ -960,22 +961,16 @@ def _add_pois_to_zip(
                     "count": len(leg_pois),
                 }
                 poi_path = f"pois/{leg.id}-pois.json"
-                zf.writestr(
-                    poi_path, json.dumps(pois_data, indent=2, default=str)
-                )
+                zf.writestr(poi_path, json.dumps(pois_data, indent=2, default=str))
                 manifest_files["pois"].append(poi_path)
-                logger.info(
-                    f"Added POI data: {poi_path} with {len(leg_pois)} POIs"
-                )
+                logger.info(f"Added POI data: {poi_path} with {len(leg_pois)} POIs")
         except Exception as e:
             logger.error(f"Failed to add POI data for leg {leg.id}: {e}")
 
     # Export satellite POIs (category="satellite") separately
     try:
         all_pois = poi_manager.list_pois()
-        satellite_pois = [
-            poi for poi in all_pois if poi.category == "satellite"
-        ]
+        satellite_pois = [poi for poi in all_pois if poi.category == "satellite"]
 
         if satellite_pois:
             satellite_data = {
@@ -1004,7 +999,7 @@ def _add_per_leg_exports_to_zip(
     manifest_files: dict,
 ):
     """Generate and add per-leg exports (CSV, XLSX, PPTX, PDF) to zip archive.
-    
+
     Args:
         zf: ZipFile to add files to
         mission: Mission object with legs
@@ -1095,7 +1090,7 @@ def _add_combined_mission_exports_to_zip(
     manifest_files: dict,
 ):
     """Generate and add combined mission-level exports to zip archive.
-    
+
     Args:
         zf: ZipFile to add files to
         mission: Mission object
@@ -1110,7 +1105,9 @@ def _add_combined_mission_exports_to_zip(
         with tempfile.NamedTemporaryFile(delete=True) as tmp_csv:
             generate_mission_combined_csv(mission, output_path=tmp_csv.name)
             zf.write(tmp_csv.name, "exports/mission/mission-timeline.csv")
-            manifest_files["mission_exports"].append("exports/mission/mission-timeline.csv")
+            manifest_files["mission_exports"].append(
+                "exports/mission/mission-timeline.csv"
+            )
 
         # Combined XLSX - stream to temp file
         with tempfile.NamedTemporaryFile(delete=True, suffix=".xlsx") as tmp_xlsx:
@@ -1121,7 +1118,9 @@ def _add_combined_mission_exports_to_zip(
                 output_path=tmp_xlsx.name,
             )
             zf.write(tmp_xlsx.name, "exports/mission/mission-timeline.xlsx")
-            manifest_files["mission_exports"].append("exports/mission/mission-timeline.xlsx")
+            manifest_files["mission_exports"].append(
+                "exports/mission/mission-timeline.xlsx"
+            )
 
         with tempfile.NamedTemporaryFile(delete=True, suffix=".pptx") as tmp_pptx:
             generate_mission_combined_pptx(
@@ -1131,7 +1130,9 @@ def _add_combined_mission_exports_to_zip(
                 output_path=tmp_pptx.name,
             )
             zf.write(tmp_pptx.name, "exports/mission/mission-slides.pptx")
-            manifest_files["mission_exports"].append("exports/mission/mission-slides.pptx")
+            manifest_files["mission_exports"].append(
+                "exports/mission/mission-slides.pptx"
+            )
 
         with tempfile.NamedTemporaryFile(delete=True, suffix=".pdf") as tmp_pdf:
             generate_mission_combined_pdf(
@@ -1141,7 +1142,9 @@ def _add_combined_mission_exports_to_zip(
                 output_path=tmp_pdf.name,
             )
             zf.write(tmp_pdf.name, "exports/mission/mission-report.pdf")
-            manifest_files["mission_exports"].append("exports/mission/mission-report.pdf")
+            manifest_files["mission_exports"].append(
+                "exports/mission/mission-report.pdf"
+            )
 
         logger.info("Combined mission-level exports complete")
 
@@ -1151,11 +1154,11 @@ def _add_combined_mission_exports_to_zip(
 
 def _create_export_manifest(mission: Mission, manifest_files: dict) -> dict:
     """Create the manifest.json content for the export package.
-    
+
     Args:
         mission: Mission object
         manifest_files: Dictionary with file lists by category
-        
+
     Returns:
         Manifest dictionary
     """
@@ -1268,10 +1271,14 @@ def export_mission_package(
             _add_pois_to_zip(zf, mission, poi_manager, manifest_files)
 
             # Generate and add per-leg exports
-            _add_per_leg_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)
+            _add_per_leg_exports_to_zip(
+                zf, mission, route_manager, poi_manager, manifest_files
+            )
 
             # Generate and add combined mission-level exports
-            _add_combined_mission_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)
+            _add_combined_mission_exports_to_zip(
+                zf, mission, route_manager, poi_manager, manifest_files
+            )
 
             # Create and add manifest
             manifest = _create_export_manifest(mission, manifest_files)

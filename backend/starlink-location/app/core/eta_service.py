@@ -48,7 +48,9 @@ def get_eta_calculator() -> ETACalculator:
     global _eta_calculator
 
     if _eta_calculator is None:
-        raise RuntimeError("ETA service not initialized. Call initialize_eta_service() first.")
+        raise RuntimeError(
+            "ETA service not initialized. Call initialize_eta_service() first."
+        )
 
     return _eta_calculator
 
@@ -65,7 +67,9 @@ def get_poi_manager() -> POIManager:
     global _poi_manager
 
     if _poi_manager is None:
-        raise RuntimeError("ETA service not initialized. Call initialize_eta_service() first.")
+        raise RuntimeError(
+            "ETA service not initialized. Call initialize_eta_service() first."
+        )
 
     return _poi_manager
 
@@ -104,7 +108,7 @@ def update_eta_metrics(
         from app.models.flight_status import ETAMode
 
         eta_calculator = get_eta_calculator()
-        
+
         # Use provided manager or fall back to singleton
         if poi_manager is None:
             poi_manager = get_poi_manager()

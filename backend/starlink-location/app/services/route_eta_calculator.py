@@ -3,9 +3,8 @@
 import math
 import logging
 from typing import Optional
-from datetime import datetime
 
-from app.models.route import ParsedRoute, RoutePoint, RouteWaypoint
+from app.models.route import ParsedRoute
 from app.services.eta_cache import ETACache, ETAHistoryTracker
 
 logger = logging.getLogger(__name__)
@@ -63,7 +62,11 @@ def project_point_to_line_segment(
 
     # Parametric projection using spherical geometry approximation
     # For small segments, use planar approximation
-    cos_angle = (dist_a_b ** 2 + dist_a_p ** 2 - dist_b_p ** 2) / (2 * dist_a_b * dist_a_p) if dist_a_p > 0 else 1
+    cos_angle = (
+        (dist_a_b**2 + dist_a_p**2 - dist_b_p**2) / (2 * dist_a_b * dist_a_p)
+        if dist_a_p > 0
+        else 1
+    )
     cos_angle = max(-1, min(1, cos_angle))  # Clamp to [-1, 1]
 
     t = dist_a_p * math.cos(math.acos(cos_angle)) / dist_a_b if dist_a_p > 0 else 0
@@ -74,7 +77,9 @@ def project_point_to_line_segment(
     proj_lon = seg_start_lon + t * (seg_end_lon - seg_start_lon)
 
     # Distance from point to projected point
-    dist_to_proj = haversine(p_lat, p_lon, math.radians(proj_lat), math.radians(proj_lon))
+    dist_to_proj = haversine(
+        p_lat, p_lon, math.radians(proj_lat), math.radians(proj_lon)
+    )
 
     return proj_lat, proj_lon, dist_to_proj
 
@@ -167,11 +172,14 @@ class RouteETACalculator:
                 best_proj_lat = proj_lat
                 best_proj_lon = proj_lon
                 best_waypoint_index = i
-                best_distance_along_route = distance_along_route + self._haversine_distance(
-                    p1.latitude,
-                    p1.longitude,
-                    proj_lat,
-                    proj_lon,
+                best_distance_along_route = (
+                    distance_along_route
+                    + self._haversine_distance(
+                        p1.latitude,
+                        p1.longitude,
+                        proj_lat,
+                        proj_lon,
+                    )
                 )
 
             # Add segment distance for next iteration
@@ -227,9 +235,7 @@ class RouteETACalculator:
 
         a = (
             math.sin(dlat / 2) ** 2
-            + math.cos(lat1_rad)
-            * math.cos(lat2_rad)
-            * math.sin(dlon / 2) ** 2
+            + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
         )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
@@ -360,16 +366,17 @@ class RouteETACalculator:
 
         # If we have a timing profile with departure and arrival times,
         # use the expected arrival time from the profile
-        if (self.route.timing_profile.arrival_time and
-            self.route.timing_profile.departure_time):
+        if (
+            self.route.timing_profile.arrival_time
+            and self.route.timing_profile.departure_time
+        ):
             # Get the expected arrival time for the route
             arrival_time = self.route.timing_profile.arrival_time
 
             # Calculate time from current point to final destination
             if self.route.points[start_index].expected_arrival_time:
                 time_delta = (
-                    arrival_time -
-                    self.route.points[start_index].expected_arrival_time
+                    arrival_time - self.route.points[start_index].expected_arrival_time
                 ).total_seconds()
                 if time_delta > 0:
                     return time_delta
@@ -467,7 +474,9 @@ class RouteETACalculator:
             ),
             "distance_remaining_meters": distance_to_waypoint,
             "distance_remaining_km": distance_to_waypoint / 1000.0,
-            "estimated_time_remaining_seconds": eta_seconds if eta_seconds >= 0 else None,
+            "estimated_time_remaining_seconds": (
+                eta_seconds if eta_seconds >= 0 else None
+            ),
             "estimated_speed_knots": speed_knots,
         }
 
@@ -514,7 +523,9 @@ class RouteETACalculator:
             "target_lon": target_lon,
             "distance_to_target_meters": distance_to_target,
             "distance_to_target_km": distance_to_target / 1000.0,
-            "estimated_time_remaining_seconds": eta_seconds if eta_seconds >= 0 else None,
+            "estimated_time_remaining_seconds": (
+                eta_seconds if eta_seconds >= 0 else None
+            ),
             "estimated_speed_knots": speed_knots,
         }
 
@@ -560,9 +571,7 @@ class RouteETACalculator:
                     nearest_waypoint_idx = idx
 
         nearest_waypoint = (
-            self.route.waypoints[nearest_waypoint_idx]
-            if self.route.waypoints
-            else None
+            self.route.waypoints[nearest_waypoint_idx] if self.route.waypoints else None
         )
 
         # Calculate progress
@@ -571,18 +580,14 @@ class RouteETACalculator:
         distance_remaining = total_distance - distance_completed
 
         progress_percent = (
-            (distance_completed / total_distance * 100)
-            if total_distance > 0
-            else 0.0
+            (distance_completed / total_distance * 100) if total_distance > 0 else 0.0
         )
 
         # Get timing information
         expected_total_duration = None
         expected_duration_remaining = None
         if self.route.timing_profile:
-            expected_total_duration = (
-                self.route.timing_profile.get_total_duration()
-            )
+            expected_total_duration = self.route.timing_profile.get_total_duration()
 
         # Calculate remaining duration using segment-aware method if available
         # This ensures multi-leg routes with varying speeds calculate correct ETAs
@@ -597,7 +602,11 @@ class RouteETACalculator:
             average_speed = (total_distance / expected_total_duration) * (3600 / 1852)
 
             # If we couldn't calculate segment-aware duration, fall back to average speed
-            if not expected_duration_remaining and average_speed > 0 and distance_remaining > 0:
+            if (
+                not expected_duration_remaining
+                and average_speed > 0
+                and distance_remaining > 0
+            ):
                 expected_duration_remaining = (
                     distance_remaining / 1852.0 / average_speed
                 ) * 3600.0

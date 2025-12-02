@@ -6,7 +6,7 @@ import tempfile
 import yaml
 from pathlib import Path
 
-from app.core.config import ConfigManager, _override_from_env, _convert_env_value
+from app.core.config import ConfigManager, _convert_env_value
 from app.models.config import SimulationConfig, HeadingTrackerConfig
 
 
@@ -48,7 +48,7 @@ class TestConfigLoading:
 
     def test_load_from_file(self, default_config):
         """Test loading configuration from YAML file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(default_config.model_dump(), f)
             temp_path = Path(f.name)
 
@@ -94,30 +94,22 @@ class TestConfigValidation:
     def test_invalid_radius_negative(self):
         """Test that negative radius raises validation error."""
         with pytest.raises(Exception):  # ValidationError
-            SimulationConfig(
-                route={"radius_km": -50.0}
-            )
+            SimulationConfig(route={"radius_km": -50.0})
 
     def test_invalid_latency_spike_probability(self):
         """Test that invalid spike probability raises error."""
         with pytest.raises(Exception):  # ValidationError
-            SimulationConfig(
-                network={"spike_probability": 1.5}
-            )
+            SimulationConfig(network={"spike_probability": 1.5})
 
     def test_invalid_packet_loss_percent(self):
         """Test that invalid packet loss percentage raises error."""
         with pytest.raises(Exception):  # ValidationError
-            SimulationConfig(
-                network={"packet_loss_max_percent": 150.0}
-            )
+            SimulationConfig(network={"packet_loss_max_percent": 150.0})
 
     def test_invalid_update_interval(self):
         """Test that invalid update interval raises error."""
         with pytest.raises(Exception):  # ValidationError
-            SimulationConfig(
-                update_interval_seconds=-1.0
-            )
+            SimulationConfig(update_interval_seconds=-1.0)
 
 
 class TestConfigManager:
@@ -139,7 +131,7 @@ class TestConfigManager:
 
     def test_reload_resets_config(self, default_config):
         """Test that reload resets cached config."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(default_config.model_dump(), f)
             temp_path = Path(f.name)
 
@@ -161,10 +153,7 @@ class TestConfigManager:
         manager = ConfigManager()
         manager.load()
 
-        new_config = SimulationConfig(
-            mode="live",
-            route=default_config.route
-        )
+        new_config = SimulationConfig(mode="live", route=default_config.route)
         updated = manager.update_config({"mode": "live"})
         assert updated.mode == "live"
 
@@ -193,10 +182,7 @@ class TestHeadingTrackerConfig:
 
     def test_custom_values(self):
         """Test creating HeadingTrackerConfig with custom values."""
-        config = HeadingTrackerConfig(
-            min_distance_meters=25.0,
-            max_age_seconds=60.0
-        )
+        config = HeadingTrackerConfig(min_distance_meters=25.0, max_age_seconds=60.0)
         assert config.min_distance_meters == 25.0
         assert config.max_age_seconds == 60.0
 
@@ -223,7 +209,7 @@ class TestHeadingTrackerConfig:
     def test_heading_tracker_in_simulation_config(self):
         """Test that SimulationConfig includes heading_tracker."""
         config = SimulationConfig()
-        assert hasattr(config, 'heading_tracker')
+        assert hasattr(config, "heading_tracker")
         assert isinstance(config.heading_tracker, HeadingTrackerConfig)
         assert config.heading_tracker.min_distance_meters == 10.0
         assert config.heading_tracker.max_age_seconds == 30.0
@@ -231,10 +217,7 @@ class TestHeadingTrackerConfig:
     def test_heading_tracker_custom_in_simulation_config(self):
         """Test SimulationConfig with custom heading tracker."""
         config = SimulationConfig(
-            heading_tracker={
-                "min_distance_meters": 50.0,
-                "max_age_seconds": 120.0
-            }
+            heading_tracker={"min_distance_meters": 50.0, "max_age_seconds": 120.0}
         )
         assert config.heading_tracker.min_distance_meters == 50.0
         assert config.heading_tracker.max_age_seconds == 120.0
@@ -256,13 +239,10 @@ class TestHeadingTrackerConfig:
         """Test loading heading tracker config from YAML file."""
         config_data = {
             "mode": "simulation",
-            "heading_tracker": {
-                "min_distance_meters": 20.0,
-                "max_age_seconds": 90.0
-            }
+            "heading_tracker": {"min_distance_meters": 20.0, "max_age_seconds": 90.0},
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config_data, f)
             temp_path = Path(f.name)
 
@@ -276,13 +256,10 @@ class TestHeadingTrackerConfig:
     def test_heading_tracker_yaml_with_env_override(self):
         """Test YAML config with environment variable override."""
         config_data = {
-            "heading_tracker": {
-                "min_distance_meters": 10.0,
-                "max_age_seconds": 30.0
-            }
+            "heading_tracker": {"min_distance_meters": 10.0, "max_age_seconds": 30.0}
         }
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(config_data, f)
             temp_path = Path(f.name)
 

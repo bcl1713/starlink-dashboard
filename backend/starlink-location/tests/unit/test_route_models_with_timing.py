@@ -19,7 +19,9 @@ class TestRoutePointWithTiming:
 
     def test_route_point_creation_without_timing(self):
         """Test that existing RoutePoint creation still works (backward compat)."""
-        point = RoutePoint(latitude=40.7128, longitude=-74.0060, altitude=100, sequence=0)
+        point = RoutePoint(
+            latitude=40.7128, longitude=-74.0060, altitude=100, sequence=0
+        )
         assert point.latitude == 40.7128
         assert point.longitude == -74.0060
         assert point.altitude == 100
@@ -231,7 +233,9 @@ class TestRouteTimingProfile:
         assert profile.is_in_flight() is False
 
         profile.flight_status = "pre_departure"
-        profile.actual_departure_time = datetime(2025, 10, 27, 15, 45, 0, tzinfo=timezone.utc)
+        profile.actual_departure_time = datetime(
+            2025, 10, 27, 15, 45, 0, tzinfo=timezone.utc
+        )
         assert profile.is_departed() is True
         assert profile.is_in_flight() is False
 
@@ -462,7 +466,9 @@ class TestTimingFieldTypes:
         point2 = RoutePoint(
             latitude=40.0,
             longitude=-74.0,
-            expected_arrival_time=datetime(2025, 10, 27, 16, 57, 55, tzinfo=timezone.utc),
+            expected_arrival_time=datetime(
+                2025, 10, 27, 16, 57, 55, tzinfo=timezone.utc
+            ),
         )
         assert isinstance(point2.expected_arrival_time, datetime)
 

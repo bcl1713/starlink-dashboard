@@ -4,7 +4,6 @@ from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
-from app.core.config import ConfigManager
 from app.models.config import SimulationConfig
 
 router = APIRouter()
@@ -67,18 +66,14 @@ async def get_config():
     ```
     """
     if _coordinator is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Service not yet initialized"
-        )
+        raise HTTPException(status_code=503, detail="Service not yet initialized")
 
     try:
         config = _coordinator.get_config()
         return config.model_dump()
     except Exception as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get configuration: {str(e)}"
+            status_code=500, detail=f"Failed to get configuration: {str(e)}"
         )
 
 
@@ -95,10 +90,7 @@ async def update_config(new_config: SimulationConfig):
     Returns the updated configuration.
     """
     if _coordinator is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Service not yet initialized"
-        )
+        raise HTTPException(status_code=503, detail="Service not yet initialized")
 
     try:
         # Validate the new config (Pydantic will do this automatically)
@@ -106,8 +98,7 @@ async def update_config(new_config: SimulationConfig):
         return new_config.model_dump()
     except Exception as e:
         raise HTTPException(
-            status_code=400,
-            detail=f"Failed to update configuration: {str(e)}"
+            status_code=400, detail=f"Failed to update configuration: {str(e)}"
         )
 
 
@@ -122,10 +113,7 @@ async def replace_config(new_config: SimulationConfig):
     Returns the updated configuration.
     """
     if _coordinator is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Service not yet initialized"
-        )
+        raise HTTPException(status_code=503, detail="Service not yet initialized")
 
     try:
         # Validate the new config (Pydantic will do this automatically)
@@ -133,6 +121,5 @@ async def replace_config(new_config: SimulationConfig):
         return new_config.model_dump()
     except Exception as e:
         raise HTTPException(
-            status_code=400,
-            detail=f"Failed to update configuration: {str(e)}"
+            status_code=400, detail=f"Failed to update configuration: {str(e)}"
         )

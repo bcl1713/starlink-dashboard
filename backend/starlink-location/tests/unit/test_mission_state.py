@@ -2,7 +2,6 @@
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
 
 from app.mission.models import Transport, TransportState
 from app.mission.state import generate_transport_intervals

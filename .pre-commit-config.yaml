@@ -1,0 +1,79 @@
+# Pre-commit hooks configuration for Starlink Dashboard
+# Ensures code quality across Python, TypeScript, JavaScript, and Markdown files
+
+repos:
+  # Python code formatting with Black
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        name: Black - Python code formatter
+        language_version: python3.13
+        entry: black
+        files: ^backend/
+        types: [python]
+        exclude: ^(backend/.venv|backend/.*migrations)
+
+  # Python linting with ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.2
+    hooks:
+      - id: ruff
+        name: Ruff - Python linter
+        args: [--fix]
+        files: ^backend/
+        types: [python]
+        exclude: ^(backend/.venv|backend/.*migrations)
+
+  # TypeScript/JavaScript formatting with Prettier (via npm)
+  - repo: local
+    hooks:
+      - id: prettier
+        name: Prettier - JavaScript/TypeScript/Markdown formatter
+        entry: bash -c 'cd frontend/mission-planner && npx prettier --check'
+        language: system
+        files: \.(js|jsx|ts|tsx|md|json|yaml|yml)$
+        exclude: ^(frontend/mission-planner/node_modules|frontend/mission-planner/dist|\.venv)
+        stages: [commit]
+
+  # ESLint for TypeScript/JavaScript linting (via npm)
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint - JavaScript/TypeScript linter
+        entry: bash -c 'cd frontend/mission-planner && npx eslint'
+        language: system
+        files: ^frontend/mission-planner/src/.*\.(js|jsx|ts|tsx)$
+        exclude: ^(frontend/mission-planner/node_modules|frontend/mission-planner/dist)
+        stages: [commit]
+
+  # Markdown linting with markdownlint-cli2
+  - repo: local
+    hooks:
+      - id: markdownlint
+        name: Markdownlint - Markdown linter
+        entry: bash -c 'markdownlint-cli2 --ignore ".markdownlintignore" "$@"' --
+        language: system
+        files: \.md$
+        exclude: ^(node_modules|\.venv|__pycache__|specs/)
+        stages: [commit]
+
+# Global pre-commit settings
+default_language_version:
+  python: python3.13
+  node: 18.17.1
+
+# Fail fast if any hook fails
+fail_fast: false
+
+# Exclude patterns that apply to all hooks
+exclude: |
+  (?x)^(
+    backend/starlink-location/.venv/|
+    backend/starlink-location/__pycache__|
+    backend/starlink-location/.*migrations|
+    frontend/mission-planner/node_modules/|
+    frontend/mission-planner/dist/|
+    \.venv/|
+    __pycache__/
+  )

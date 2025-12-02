@@ -5,9 +5,7 @@ against known reference values.
 """
 
 import math
-from datetime import datetime
 
-import pytest
 
 from app.satellites.geometry import (
     GEOSTATIONARY_ALTITUDE,
@@ -164,7 +162,9 @@ class TestLookAngles:
         )
 
         # At polar regions, geostationary satellites are typically below horizon
-        assert elevation < 0.0, "Geostationary sat should be below horizon at high latitude"
+        assert (
+            elevation < 0.0
+        ), "Geostationary sat should be below horizon at high latitude"
 
 
 class TestAzimuthElevationFromEcef:
@@ -313,7 +313,9 @@ class TestPerformance:
         elapsed = time.time() - start
 
         # Should complete 1000 calculations in less than 500ms
-        assert elapsed < 0.5, f"Performance degradation: {elapsed:.3f}s for 1000 calculations"
+        assert (
+            elapsed < 0.5
+        ), f"Performance degradation: {elapsed:.3f}s for 1000 calculations"
 
     def test_ecef_conversion_performance(self):
         """Test that ECEF conversion completes quickly."""
@@ -329,4 +331,6 @@ class TestPerformance:
         elapsed = time.time() - start
 
         # Should complete 1000 conversions in less than 200ms
-        assert elapsed < 0.2, f"Performance degradation: {elapsed:.3f}s for 1000 conversions"
+        assert (
+            elapsed < 0.2
+        ), f"Performance degradation: {elapsed:.3f}s for 1000 conversions"

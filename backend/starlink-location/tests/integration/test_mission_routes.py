@@ -81,6 +81,7 @@ def cleanup_test_missions():
     yield
     # Clean up after test - delete all missions that start with our test prefixes
     from app.mission.storage import list_missions
+
     missions_to_delete = []
     for m in list_missions():
         mission_id = m.get("id", "")
@@ -128,7 +129,7 @@ def stub_timeline_builder(monkeypatch):
 @pytest.fixture(autouse=True)
 def setup_routes(client):
     """Inject test route into RouteManager."""
-    
+
     if hasattr(app.state, "route_manager"):
         rm = app.state.route_manager
         # Create a dummy route
@@ -140,7 +141,7 @@ def setup_routes(client):
                 point_count=0,
             ),
             points=[],
-            segments=[]
+            segments=[],
         )
         rm._routes["test-route-001"] = route
 
@@ -161,9 +162,7 @@ class TestMissionCreateEndpoint:
         assert data["route_id"] == test_mission.route_id
         assert data["is_active"] is False
 
-    def test_create_mission_persists_to_storage(
-        self, client: TestClient, test_mission
-    ):
+    def test_create_mission_persists_to_storage(self, client: TestClient, test_mission):
         """Test that created mission is saved to storage."""
         response = client.post(
             "/api/missions",
@@ -176,9 +175,7 @@ class TestMissionCreateEndpoint:
         assert stored_response.status_code == 200
         assert stored_response.json()["id"] == test_mission.id
 
-    def test_create_mission_sets_timestamps(
-        self, client: TestClient, test_mission
-    ):
+    def test_create_mission_sets_timestamps(self, client: TestClient, test_mission):
         """Test that created_at and updated_at are set."""
         response = client.post(
             "/api/missions",
@@ -204,9 +201,7 @@ class TestMissionCreateEndpoint:
         assert len(data["transports"]["x_transitions"]) == 1
         assert data["transports"]["x_transitions"][0]["id"] == "transition-1"
 
-    def test_create_mission_invalid_data_returns_422(
-        self, client: TestClient
-    ):
+    def test_create_mission_invalid_data_returns_422(self, client: TestClient):
         """Test that invalid mission data returns 422."""
         invalid_mission = {
             "id": "invalid-mission",
@@ -278,9 +273,7 @@ class TestMissionListEndpoint:
         data = response.json()
         assert data["total"] == 2
 
-    def test_list_missions_includes_metadata(
-        self, client: TestClient, test_mission
-    ):
+    def test_list_missions_includes_metadata(self, client: TestClient, test_mission):
         """Test that list returns mission metadata."""
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
 
@@ -384,9 +377,7 @@ class TestMissionUpdateEndpoint:
         assert update_response.status_code == 200
         assert update_response.json()["created_at"] == original_created_at
 
-    def test_update_mission_updates_updated_at(
-        self, client: TestClient, test_mission
-    ):
+    def test_update_mission_updates_updated_at(self, client: TestClient, test_mission):
         """Test that update changes updated_at timestamp."""
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
 
@@ -520,9 +511,7 @@ class TestMissionActivateEndpoint:
         )
 
         # Activate second mission
-        client.post(
-            f"/api/missions/{test_mission_with_transitions.id}/activate"
-        )
+        client.post(f"/api/missions/{test_mission_with_transitions.id}/activate")
 
         # Verify first mission is no longer active
         response = client.get(f"/api/missions/{test_mission.id}")
@@ -530,9 +519,7 @@ class TestMissionActivateEndpoint:
         assert response.json()["is_active"] is False
 
         # Verify second mission is active
-        response = client.get(
-            f"/api/missions/{test_mission_with_transitions.id}"
-        )
+        response = client.get(f"/api/missions/{test_mission_with_transitions.id}")
         assert response.status_code == 200
         assert response.json()["is_active"] is True
 
@@ -545,9 +532,7 @@ class TestMissionActivateEndpoint:
         data = response.json()
         assert data["flight_phase"] == MissionPhase.PRE_DEPARTURE.value
 
-    def test_activate_updates_mission_timestamp(
-        self, client: TestClient, test_mission
-    ):
+    def test_activate_updates_mission_timestamp(self, client: TestClient, test_mission):
         """Test that activation updates mission updated_at."""
         create_response = client.post(
             "/api/missions", json=test_mission.model_dump(mode="json")
@@ -555,9 +540,7 @@ class TestMissionActivateEndpoint:
         created_updated_at = create_response.json()["updated_at"]
 
         # Activate mission
-        activate_response = client.post(
-            f"/api/missions/{test_mission.id}/activate"
-        )
+        activate_response = client.post(f"/api/missions/{test_mission.id}/activate")
         assert activate_response.status_code == 200
 
         # Verify updated_at was changed
@@ -569,16 +552,12 @@ class TestMissionActivateEndpoint:
 class TestMissionGetActiveEndpoint:
     """Tests for GET /api/missions/active endpoint."""
 
-    def test_get_active_mission_when_none_active_returns_404(
-        self, client: TestClient
-    ):
+    def test_get_active_mission_when_none_active_returns_404(self, client: TestClient):
         """Test getting active mission when none is active returns 404."""
         response = client.get("/api/missions/active")
         assert response.status_code == 404
 
-    def test_get_active_mission_returns_200(
-        self, client: TestClient, test_mission
-    ):
+    def test_get_active_mission_returns_200(self, client: TestClient, test_mission):
         """Test getting active mission returns 200."""
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
         client.post(f"/api/missions/{test_mission.id}/activate")
@@ -597,9 +576,7 @@ class TestMissionGetActiveEndpoint:
             "/api/missions",
             json=test_mission_with_transitions.model_dump(mode="json"),
         )
-        client.post(
-            f"/api/missions/{test_mission_with_transitions.id}/activate"
-        )
+        client.post(f"/api/missions/{test_mission_with_transitions.id}/activate")
 
         response = client.get("/api/missions/active")
         assert response.status_code == 200
@@ -632,9 +609,7 @@ class TestMissionRoundtrip:
         assert created_data["name"] == retrieved_data["name"]
         assert created_data["route_id"] == retrieved_data["route_id"]
 
-    def test_create_update_get_roundtrip(
-        self, client: TestClient, test_mission
-    ):
+    def test_create_update_get_roundtrip(self, client: TestClient, test_mission):
         """Test create, update, get returns updated data."""
         # Create
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
@@ -682,10 +657,7 @@ class TestMissionRoundtrip:
         # Get active mission
         active_response = client.get("/api/missions/active")
         assert active_response.status_code == 200
-        assert (
-            active_response.json()["id"]
-            == test_mission_with_transitions.id
-        )
+        assert active_response.json()["id"] == test_mission_with_transitions.id
 
         # Delete mission
         delete_response = client.delete(
@@ -694,9 +666,7 @@ class TestMissionRoundtrip:
         assert delete_response.status_code == 204
 
         # Verify deleted
-        get_response = client.get(
-            f"/api/missions/{test_mission_with_transitions.id}"
-        )
+        get_response = client.get(f"/api/missions/{test_mission_with_transitions.id}")
         assert get_response.status_code == 404
 
 
@@ -739,9 +709,7 @@ class TestMissionTimelineEndpoints:
         self, client: TestClient, test_mission
     ):
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
-        recompute = client.post(
-            f"/api/missions/{test_mission.id}/timeline/recompute"
-        )
+        recompute = client.post(f"/api/missions/{test_mission.id}/timeline/recompute")
         assert recompute.status_code == 200
         data = recompute.json()
         assert data["mission_leg_id"] == test_mission.id
@@ -763,9 +731,7 @@ class TestMissionExportEndpoint:
         response = client.post(f"/api/missions/{test_mission.id}/export")
         assert response.status_code == 404
 
-    def test_export_supports_multiple_formats(
-        self, client: TestClient, test_mission
-    ):
+    def test_export_supports_multiple_formats(self, client: TestClient, test_mission):
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
         activate = client.post(f"/api/missions/{test_mission.id}/activate")
         assert activate.status_code == 200
@@ -785,7 +751,7 @@ class TestMissionExportEndpoint:
             assert response.status_code == 200
             assert response.headers["content-type"].startswith(media)
             disposition = response.headers.get("content-disposition", "")
-            assert disposition.endswith(f".{fmt}\"")
+            assert disposition.endswith(f'.{fmt}"')
             assert len(response.content) > 0
 
 
@@ -798,9 +764,7 @@ class TestMissionDeactivateEndpoint:
         """Test deactivating an active mission returns 200."""
         # Create and activate mission
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
-        activate_response = client.post(
-            f"/api/missions/{test_mission.id}/activate"
-        )
+        activate_response = client.post(f"/api/missions/{test_mission.id}/activate")
         assert activate_response.status_code == 200
 
         # Deactivate mission
@@ -810,18 +774,14 @@ class TestMissionDeactivateEndpoint:
         assert data["mission_id"] == test_mission.id
         assert data["is_active"] is False
 
-    def test_deactivate_no_active_mission_returns_404(
-        self, client: TestClient
-    ):
+    def test_deactivate_no_active_mission_returns_404(self, client: TestClient):
         """Test deactivating when no mission is active returns 404."""
         response = client.post("/api/missions/active/deactivate")
         assert response.status_code == 404
         data = response.json()
         assert "detail" in data
 
-    def test_deactivate_sets_mission_inactive(
-        self, client: TestClient, test_mission
-    ):
+    def test_deactivate_sets_mission_inactive(self, client: TestClient, test_mission):
         """Test that deactivation sets is_active to False."""
         # Create and activate mission
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
@@ -859,18 +819,14 @@ class TestMissionDeactivateEndpoint:
         active_response = client.get("/api/missions/active")
         assert active_response.status_code == 404
 
-    def test_deactivate_clears_mission_metrics(
-        self, client: TestClient, test_mission
-    ):
+    def test_deactivate_clears_mission_metrics(self, client: TestClient, test_mission):
         """Test that deactivation clears mission metrics."""
         # Create and activate mission
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
         client.post(f"/api/missions/{test_mission.id}/activate")
 
         # Deactivate mission
-        deactivate_response = client.post(
-            "/api/missions/active/deactivate"
-        )
+        deactivate_response = client.post("/api/missions/active/deactivate")
         assert deactivate_response.status_code == 200
         data = deactivate_response.json()
 
@@ -887,15 +843,11 @@ class TestMissionDeactivateEndpoint:
         """Test that deleting active mission deactivates its route."""
         # Create and activate mission
         client.post("/api/missions", json=test_mission.model_dump(mode="json"))
-        activate_response = client.post(
-            f"/api/missions/{test_mission.id}/activate"
-        )
+        activate_response = client.post(f"/api/missions/{test_mission.id}/activate")
         assert activate_response.status_code == 200
 
         # Delete the active mission
-        delete_response = client.delete(
-            f"/api/missions/{test_mission.id}"
-        )
+        delete_response = client.delete(f"/api/missions/{test_mission.id}")
         assert delete_response.status_code == 204
 
         # Verify mission is gone

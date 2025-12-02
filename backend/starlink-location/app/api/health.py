@@ -16,7 +16,9 @@ _coordinator: Optional[object] = None
 _last_metrics_scrape_time = None
 
 # Health check thresholds
-PROMETHEUS_SCRAPE_TIMEOUT_SECONDS = 30  # If scrape hasn't happened in 30s, degrade health
+PROMETHEUS_SCRAPE_TIMEOUT_SECONDS = (
+    30  # If scrape hasn't happened in 30s, degrade health
+)
 
 
 def set_coordinator(coordinator):
@@ -29,6 +31,7 @@ def get_last_scrape_time():
     """Get the last metrics scrape time from the metrics module."""
     try:
         from app.api.metrics import get_last_scrape_time as get_scrape_time
+
         return get_scrape_time()
     except Exception:
         return None
@@ -38,6 +41,7 @@ def _get_metrics_count():
     """Count the number of metrics in the registry."""
     try:
         from app.core.metrics import REGISTRY
+
         return len(list(REGISTRY.collect()))
     except Exception:
         return 0
@@ -67,7 +71,9 @@ def _ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
     return dt.astimezone(timezone.utc)
 
 
-def _compute_time_until_departure(now: datetime, status_snapshot, timing_profile) -> Optional[float]:
+def _compute_time_until_departure(
+    now: datetime, status_snapshot, timing_profile
+) -> Optional[float]:
     """Compute seconds until departure using flight status and timing profile."""
     departure_time = None
     if status_snapshot:
@@ -103,10 +109,7 @@ async def health():
     plus current flight-state metadata when available.
     """
     if _coordinator is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Service not yet initialized"
-        )
+        raise HTTPException(status_code=503, detail="Service not yet initialized")
 
     try:
         uptime = _coordinator.get_uptime_seconds()
@@ -125,7 +128,9 @@ async def health():
             is_scraping = time_since_scrape < PROMETHEUS_SCRAPE_TIMEOUT_SECONDS
 
             # Format last scrape time as ISO 8601
-            scrape_iso_time = datetime.fromtimestamp(last_scrape, tz=timezone.utc).isoformat()
+            scrape_iso_time = datetime.fromtimestamp(
+                last_scrape, tz=timezone.utc
+            ).isoformat()
 
             if not is_scraping:
                 detail = f"Prometheus has not scraped metrics in the last {PROMETHEUS_SCRAPE_TIMEOUT_SECONDS} seconds"
@@ -139,7 +144,11 @@ async def health():
         # Determine message based on mode and connection status
         if actual_mode == "live":
             dish_connected = bool(_coordinator.is_connected())
-            message = "Live mode: connected to dish" if dish_connected else "Live mode: waiting for dish connection"
+            message = (
+                "Live mode: connected to dish"
+                if dish_connected
+                else "Live mode: waiting for dish connection"
+            )
         else:
             dish_connected = None
             message = "Simulation mode: generating test data"
@@ -181,17 +190,29 @@ async def health():
                 response["active_route_name"] = status_snapshot.active_route_name
             response["has_route_timing_data"] = status_snapshot.has_timing_data
             if status_snapshot.scheduled_departure_time:
-                response["scheduled_departure_time"] = _safe_isoformat(status_snapshot.scheduled_departure_time)
+                response["scheduled_departure_time"] = _safe_isoformat(
+                    status_snapshot.scheduled_departure_time
+                )
             if status_snapshot.scheduled_arrival_time:
-                response["scheduled_arrival_time"] = _safe_isoformat(status_snapshot.scheduled_arrival_time)
+                response["scheduled_arrival_time"] = _safe_isoformat(
+                    status_snapshot.scheduled_arrival_time
+                )
             if status_snapshot.departure_time:
-                response["actual_departure_time"] = _safe_isoformat(status_snapshot.departure_time)
+                response["actual_departure_time"] = _safe_isoformat(
+                    status_snapshot.departure_time
+                )
             if status_snapshot.arrival_time:
-                response["actual_arrival_time"] = _safe_isoformat(status_snapshot.arrival_time)
+                response["actual_arrival_time"] = _safe_isoformat(
+                    status_snapshot.arrival_time
+                )
             if status_snapshot.time_until_departure_seconds is not None:
-                response["time_until_departure_seconds"] = status_snapshot.time_until_departure_seconds
+                response["time_until_departure_seconds"] = (
+                    status_snapshot.time_until_departure_seconds
+                )
             if status_snapshot.time_since_departure_seconds is not None:
-                response["time_since_departure_seconds"] = status_snapshot.time_since_departure_seconds
+                response["time_since_departure_seconds"] = (
+                    status_snapshot.time_since_departure_seconds
+                )
 
         if timing_profile:
             if timing_profile.departure_time:
@@ -227,7 +248,9 @@ async def health():
                 response["has_route_timing_data"] = bool(timing_profile.has_timing_data)
 
         if "time_until_departure_seconds" not in response:
-            time_until_departure = _compute_time_until_departure(now, status_snapshot, timing_profile)
+            time_until_departure = _compute_time_until_departure(
+                now, status_snapshot, timing_profile
+            )
             if time_until_departure is not None:
                 response["time_until_departure_seconds"] = time_until_departure
 
@@ -243,7 +266,4 @@ async def health():
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Health check failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")

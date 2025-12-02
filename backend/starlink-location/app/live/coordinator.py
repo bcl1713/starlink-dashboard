@@ -2,7 +2,6 @@
 
 import logging
 import time
-from datetime import datetime
 from typing import Optional
 
 import starlink_grpc
@@ -138,7 +137,11 @@ class LiveCoordinator:
         speed = self.speed_tracker.update(
             latitude=telemetry.position.latitude,
             longitude=telemetry.position.longitude,
-            timestamp=telemetry.timestamp.timestamp() if hasattr(telemetry.timestamp, 'timestamp') else time.time(),
+            timestamp=(
+                telemetry.timestamp.timestamp()
+                if hasattr(telemetry.timestamp, "timestamp")
+                else time.time()
+            ),
         )
 
         # Update position with calculated heading and speed
@@ -168,9 +171,7 @@ class LiveCoordinator:
             RuntimeError: If no telemetry has been collected yet
         """
         if self._last_valid_telemetry is None:
-            raise RuntimeError(
-                "No telemetry available. Call update() first."
-            )
+            raise RuntimeError("No telemetry available. Call update() first.")
         return self._last_valid_telemetry
 
     def reset(self) -> None:

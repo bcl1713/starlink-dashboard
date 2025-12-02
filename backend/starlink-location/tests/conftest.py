@@ -1,12 +1,10 @@
 """Shared test fixtures and configuration."""
 
-import asyncio
 import os
 import shutil
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-import sys
+from unittest.mock import MagicMock
 
 os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
 
@@ -19,7 +17,9 @@ TEST_MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Monkey-patch RouteManager and POIManager before any imports
 import app.services.route_manager as route_manager_module
+
 original_route_init = route_manager_module.RouteManager.__init__
+
 
 def patched_route_init(self, routes_dir="/tmp/test_data/routes"):
     self.routes_dir = Path(routes_dir)
@@ -29,12 +29,14 @@ def patched_route_init(self, routes_dir="/tmp/test_data/routes"):
     self._observer = None
     self._errors = {}
 
+
 route_manager_module.RouteManager.__init__ = patched_route_init
 
 import app.services.poi_manager as poi_manager_module
 import json
 
 original_poi_init = poi_manager_module.POIManager.__init__
+
 
 def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
     self.pois_file = Path(pois_file)
@@ -50,6 +52,7 @@ def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
 
     # Call the original _load_pois to properly load from the file
     self._load_pois()
+
 
 poi_manager_module.POIManager.__init__ = patched_poi_init
 
@@ -72,7 +75,7 @@ from app.models.telemetry import (
     TelemetryData,
 )
 from app.simulation.coordinator import SimulationCoordinator
-from main import app, startup_event, shutdown_event
+from main import app
 
 
 @pytest.fixture
@@ -86,7 +89,7 @@ def default_config():
             latitude_start=40.7128,
             longitude_start=-74.0060,
             radius_km=100.0,
-            distance_km=500.0
+            distance_km=500.0,
         ),
         network=NetworkConfig(
             latency_min_ms=20.0,
@@ -99,20 +102,18 @@ def default_config():
             throughput_up_min_mbps=10.0,
             throughput_up_max_mbps=40.0,
             packet_loss_min_percent=0.0,
-            packet_loss_max_percent=5.0
+            packet_loss_max_percent=5.0,
         ),
         obstruction=ObstructionConfig(
-            min_percent=0.0,
-            max_percent=30.0,
-            variation_rate=0.5
+            min_percent=0.0, max_percent=30.0, variation_rate=0.5
         ),
         position=PositionConfig(
             speed_min_knots=0.0,
             speed_max_knots=100.0,
             altitude_min_feet=328.0,
             altitude_max_feet=32808.0,
-            heading_variation_rate=5.0
-        )
+            heading_variation_rate=5.0,
+        ),
     )
 
 
@@ -233,9 +234,9 @@ def reset_prometheus_registry():
         from prometheus_client.core import Gauge
 
         # Reset the custom position collector data
-        metrics._current_position['latitude'] = 0.0
-        metrics._current_position['longitude'] = 0.0
-        metrics._current_position['altitude'] = 0.0
+        metrics._current_position["latitude"] = 0.0
+        metrics._current_position["longitude"] = 0.0
+        metrics._current_position["altitude"] = 0.0
 
         # Get the registry and iterate through all collectors
         # Find all Gauge collectors and reset their values
@@ -243,7 +244,7 @@ def reset_prometheus_registry():
             if isinstance(collector, Gauge):
                 try:
                     # Gauges without labels: can call set() directly
-                    if not hasattr(collector, '_metrics') or not collector._metrics:
+                    if not hasattr(collector, "_metrics") or not collector._metrics:
                         try:
                             collector.set(0)
                         except Exception:
@@ -332,6 +333,7 @@ def mock_starlink_client_factory():
     This is used by live coordinator tests to mock the gRPC client without
     having actual hardware available.
     """
+
     def create_mock_client(telemetry=None, fail_on_init=False):
         """Create a mock StarlinkClient.
 

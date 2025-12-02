@@ -101,17 +101,17 @@ async def test_metrics_format_is_valid(test_client):
     text = response.text
 
     # Prometheus format has # for comments and name{labels} value for metrics
-    lines = text.strip().split('\n')
-    metric_lines = [l for l in lines if not l.startswith('#')]
+    lines = text.strip().split("\n")
+    metric_lines = [l for l in lines if not l.startswith("#")]
 
     # Should have some metric lines
     assert len(metric_lines) > 0
 
     # Check basic format
     for line in metric_lines:
-        if line and not line.startswith('TYPE') and not line.startswith('HELP'):
+        if line and not line.startswith("TYPE") and not line.startswith("HELP"):
             # Should have at least a space separating metric from value
-            assert ' ' in line
+            assert " " in line
 
 
 @pytest.mark.asyncio
@@ -122,11 +122,11 @@ async def test_metrics_values_are_numeric(test_client):
     response = test_client.get("/metrics")
     text = response.text
 
-    lines = text.strip().split('\n')
-    metric_lines = [l for l in lines if not l.startswith('#')]
+    lines = text.strip().split("\n")
+    metric_lines = [l for l in lines if not l.startswith("#")]
 
     for line in metric_lines:
-        if line and not any(x in line for x in ['TYPE', 'HELP']):
+        if line and not any(x in line for x in ["TYPE", "HELP"]):
             parts = line.split()
             if len(parts) >= 2:
                 try:
@@ -146,8 +146,8 @@ async def test_metrics_update_over_time(test_client):
     text1 = response1.text
 
     # Extract a metric value
-    for line in text1.split('\n'):
-        if 'starlink_dish_latitude_degrees ' in line and not line.startswith('#'):
+    for line in text1.split("\n"):
+        if "starlink_dish_latitude_degrees " in line and not line.startswith("#"):
             lat1 = float(line.split()[-1])
             break
 
@@ -156,8 +156,8 @@ async def test_metrics_update_over_time(test_client):
     response2 = test_client.get("/metrics")
     text2 = response2.text
 
-    for line in text2.split('\n'):
-        if 'starlink_dish_latitude_degrees ' in line and not line.startswith('#'):
+    for line in text2.split("\n"):
+        if "starlink_dish_latitude_degrees " in line and not line.startswith("#"):
             lat2 = float(line.split()[-1])
             break
 

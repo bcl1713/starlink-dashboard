@@ -2,7 +2,6 @@
 
 import pytest
 from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock
 
 from app.models.route import (
     RoutePoint,
@@ -245,9 +244,7 @@ class TestPositionSimulatorTimingAware:
         # with small drift (±0.5 knots)
         assert 499.5 <= simulator.current_speed <= 550.5
 
-    def test_speed_fallback_without_timing_data(
-        self, position_config, route_config
-    ):
+    def test_speed_fallback_without_timing_data(self, position_config, route_config):
         """Test that simulator uses default speed when no timing data."""
         simulator = PositionSimulator(route_config, position_config)
 

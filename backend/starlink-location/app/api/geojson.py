@@ -5,7 +5,6 @@ from typing import Any, Optional
 from fastapi import APIRouter, Query, Depends
 
 from app.core.config import ConfigManager
-from app.models.telemetry import PositionData
 from app.services.geojson import GeoJSONBuilder
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
@@ -22,7 +21,9 @@ router = APIRouter(prefix="/api", tags=["geojson"])
 async def get_route_geojson(
     include_pois: bool = Query(True, description="Include POIs in response"),
     include_position: bool = Query(False, description="Include current position"),
-    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_id: Optional[str] = Query(
+        None, description="Specific route ID (uses active if not provided)"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
     poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict[str, Any]:
@@ -62,7 +63,9 @@ async def get_route_geojson(
 
     # Get POIs if requested
     if include_pois and poi_manager:
-        route_id_for_pois = route.metadata.file_path.split("/")[-1].split(".")[0] if route else None
+        route_id_for_pois = (
+            route.metadata.file_path.split("/")[-1].split(".")[0] if route else None
+        )
         pois = poi_manager.list_pois(route_id=route_id_for_pois)
 
     # Get current position if requested
@@ -131,29 +134,31 @@ def _get_route_coordinates_filtered(
     # Convert route points to tabular format with IDL handling
     coordinates = []
     points = route.points
-    
+
     for i in range(len(points)):
         p1 = points[i]
-        
+
         # Determine if we should include p1 based on hemisphere
         include_p1 = True
         if hemisphere == "west" and p1.longitude >= 0:
             include_p1 = False
         if hemisphere == "east" and p1.longitude < 0:
             include_p1 = False
-            
+
         if include_p1:
-            coordinates.append({
-                "latitude": p1.latitude,
-                "longitude": p1.longitude,
-                "altitude": p1.altitude,
-                "sequence": p1.sequence,
-            })
-            
+            coordinates.append(
+                {
+                    "latitude": p1.latitude,
+                    "longitude": p1.longitude,
+                    "altitude": p1.altitude,
+                    "sequence": p1.sequence,
+                }
+            )
+
         # Check for IDL crossing to next point
         if i < len(points) - 1:
             p2 = points[i + 1]
-            
+
             # Detect crossing: longitude difference > 180
             if abs(p2.longitude - p1.longitude) > 180:
                 # Calculate intersection point at 180/-180
@@ -161,13 +166,17 @@ def _get_route_coordinates_filtered(
                 if d_lon > 0:
                     fraction = (180 - abs(p1.longitude)) / d_lon
                     lat_at_180 = p1.latitude + (p2.latitude - p1.latitude) * fraction
-                    
+
                     # Calculate interpolated altitude (handle None values)
                     if p1.altitude is not None and p2.altitude is not None:
-                        alt_at_180 = p1.altitude + (p2.altitude - p1.altitude) * fraction
+                        alt_at_180 = (
+                            p1.altitude + (p2.altitude - p1.altitude) * fraction
+                        )
                     else:
-                        alt_at_180 = p1.altitude if p1.altitude is not None else p2.altitude
-                    
+                        alt_at_180 = (
+                            p1.altitude if p1.altitude is not None else p2.altitude
+                        )
+
                     # If we are in the hemisphere that the segment is LEAVING, add the exit point
                     # If we are in the hemisphere that the segment is ENTERING, add the entry point
 
@@ -194,12 +203,14 @@ def _get_route_coordinates_filtered(
 
                     # Add interpolated boundary point if determined
                     if lon_to_add is not None:
-                        coordinates.append({
-                            "latitude": lat_at_180,
-                            "longitude": lon_to_add,
-                            "altitude": alt_at_180,
-                            "sequence": p1.sequence + fraction,
-                        })
+                        coordinates.append(
+                            {
+                                "latitude": lat_at_180,
+                                "longitude": lon_to_add,
+                                "altitude": alt_at_180,
+                                "sequence": p1.sequence + fraction,
+                            }
+                        )
 
     # Extract route ID from file path (e.g., "test_fix.kml" -> "test_fix")
     route_id_str = route.metadata.file_path.split("/")[-1].split(".")[0]
@@ -212,9 +223,15 @@ def _get_route_coordinates_filtered(
     }
 
 
-@router.get("/route/coordinates", response_model=dict, summary="Get route coordinates as tabular data")
+@router.get(
+    "/route/coordinates",
+    response_model=dict,
+    summary="Get route coordinates as tabular data",
+)
 async def get_route_coordinates(
-    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_id: Optional[str] = Query(
+        None, description="Specific route ID (uses active if not provided)"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict[str, Any]:
     """
@@ -238,9 +255,15 @@ async def get_route_coordinates(
     return _get_route_coordinates_filtered(route_id, route_manager, hemisphere=None)
 
 
-@router.get("/route/coordinates/west", response_model=dict, summary="Get route coordinates in western hemisphere (IDL-safe)")
+@router.get(
+    "/route/coordinates/west",
+    response_model=dict,
+    summary="Get route coordinates in western hemisphere (IDL-safe)",
+)
 async def get_route_coordinates_west(
-    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_id: Optional[str] = Query(
+        None, description="Specific route ID (uses active if not provided)"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict[str, Any]:
     """
@@ -259,9 +282,15 @@ async def get_route_coordinates_west(
     return _get_route_coordinates_filtered(route_id, route_manager, hemisphere="west")
 
 
-@router.get("/route/coordinates/east", response_model=dict, summary="Get route coordinates in eastern hemisphere (IDL-safe)")
+@router.get(
+    "/route/coordinates/east",
+    response_model=dict,
+    summary="Get route coordinates in eastern hemisphere (IDL-safe)",
+)
 async def get_route_coordinates_east(
-    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_id: Optional[str] = Query(
+        None, description="Specific route ID (uses active if not provided)"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict[str, Any]:
     """
@@ -282,7 +311,9 @@ async def get_route_coordinates_east(
 
 @router.get("/route.json", response_model=dict, summary="Get route as JSON")
 async def get_route_json(
-    route_id: Optional[str] = Query(None, description="Specific route ID (uses active if not provided)"),
+    route_id: Optional[str] = Query(
+        None, description="Specific route ID (uses active if not provided)"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict[str, Any]:
     """
@@ -361,7 +392,9 @@ async def get_pois_geojson(
     return feature_collection
 
 
-@router.get("/position.geojson", response_model=dict, summary="Get current position as GeoJSON")
+@router.get(
+    "/position.geojson", response_model=dict, summary="Get current position as GeoJSON"
+)
 async def get_position_geojson() -> dict[str, Any]:
     """
     Get current position as GeoJSON Point feature.
@@ -383,6 +416,8 @@ async def get_position_geojson() -> dict[str, Any]:
         # If coordinator not available, return empty collection
         pass
 
-    feature_collection = GeoJSONBuilder.build_feature_collection(current_position=position)
+    feature_collection = GeoJSONBuilder.build_feature_collection(
+        current_position=position
+    )
 
     return feature_collection

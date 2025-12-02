@@ -11,10 +11,7 @@ class TestObstructionSimulator:
     @pytest.fixture
     def simulator(self, default_config):
         """Create an obstruction simulator for tests."""
-        return ObstructionSimulator(
-            default_config.obstruction,
-            default_config.network
-        )
+        return ObstructionSimulator(default_config.obstruction, default_config.network)
 
     def test_simulator_initialization(self, simulator):
         """Test that simulator initializes properly."""
@@ -74,9 +71,7 @@ class TestObstructionSimulator:
         simulator.reset()
 
         # Should be back to initial state
-        expected_obstruction = (
-            config.min_percent + config.max_percent
-        ) / 2.0
+        expected_obstruction = (config.min_percent + config.max_percent) / 2.0
         assert simulator.current_obstruction == expected_obstruction
 
     def test_multiple_updates_consistency(self, simulator):

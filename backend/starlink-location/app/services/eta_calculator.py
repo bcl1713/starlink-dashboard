@@ -27,7 +27,11 @@ class ETACalculator:
     - Tracking of passed POIs
     """
 
-    def __init__(self, smoothing_duration_seconds: float = 120.0, default_speed_knots: float = 150.0):
+    def __init__(
+        self,
+        smoothing_duration_seconds: float = 120.0,
+        default_speed_knots: float = 150.0,
+    ):
         """
         Initialize ETA calculator.
 
@@ -41,7 +45,9 @@ class ETACalculator:
 
         # Speed smoothing using time-based rolling window
         # Store tuples of (speed, timestamp) to enable time-based windowing
-        self._speed_history: deque[tuple[float, float]] = deque()  # (speed_knots, timestamp)
+        self._speed_history: deque[tuple[float, float]] = (
+            deque()
+        )  # (speed_knots, timestamp)
         self._smoothed_speed: float = default_speed_knots
         self._last_update_time: Optional[datetime] = None
 
@@ -69,7 +75,9 @@ class ETACalculator:
 
         # Calculate average of samples within window
         if len(self._speed_history) > 0:
-            self._smoothed_speed = sum(speed for speed, _ in self._speed_history) / len(self._speed_history)
+            self._smoothed_speed = sum(speed for speed, _ in self._speed_history) / len(
+                self._speed_history
+            )
         else:
             self._smoothed_speed = self.default_speed_knots
 
@@ -88,7 +96,9 @@ class ETACalculator:
         """
         return self._smoothed_speed
 
-    def calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    def calculate_distance(
+        self, lat1: float, lon1: float, lat2: float, lon2: float
+    ) -> float:
         """
         Calculate great-circle distance between two points using Haversine formula.
 
@@ -109,12 +119,17 @@ class ETACalculator:
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
 
-        a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         return self.earth_radius_m * c
 
-    def calculate_eta(self, distance_meters: float, speed_knots: Optional[float] = None) -> float:
+    def calculate_eta(
+        self, distance_meters: float, speed_knots: Optional[float] = None
+    ) -> float:
         """
         Calculate estimated time to arrival (ETA) for a given distance and speed.
 
@@ -175,14 +190,22 @@ class ETACalculator:
         """
         metrics = {}
         phase_value = flight_phase.value if flight_phase else None
-        is_pre_departure = flight_phase == FlightPhase.PRE_DEPARTURE if flight_phase else False
+        is_pre_departure = (
+            flight_phase == FlightPhase.PRE_DEPARTURE if flight_phase else False
+        )
 
         for poi in pois:
-            distance = self.calculate_distance(current_lat, current_lon, poi.latitude, poi.longitude)
+            distance = self.calculate_distance(
+                current_lat, current_lon, poi.latitude, poi.longitude
+            )
 
             # Try route-aware ETA calculation if active route available
             eta = None
-            if active_route and poi.route_id and poi.route_id == active_route.metadata.file_path:
+            if (
+                active_route
+                and poi.route_id
+                and poi.route_id == active_route.metadata.file_path
+            ):
                 if eta_mode == ETAMode.ESTIMATED:
                     # In estimated mode, use speed blending for more accurate ETAs
                     eta = self._calculate_route_aware_eta_estimated(
@@ -198,7 +221,9 @@ class ETACalculator:
             if eta is None:
                 # Both modes fall back to distance-based calculation
                 # In anticipated mode, use a conservative default speed if no timing data available
-                fallback_speed = speed_knots if speed_knots is not None else self.default_speed_knots
+                fallback_speed = (
+                    speed_knots if speed_knots is not None else self.default_speed_knots
+                )
                 eta = self.calculate_eta(distance, fallback_speed)
 
             # Determine if POI has been passed
@@ -211,7 +236,8 @@ class ETACalculator:
 
             metrics[poi.id] = {
                 "poi_name": poi.name,
-                "poi_category": poi.category or "",  # Use empty string for null categories
+                "poi_category": poi.category
+                or "",  # Use empty string for null categories
                 "distance_meters": distance,
                 "eta_seconds": eta,
                 "eta_type": eta_mode.value,
@@ -234,7 +260,9 @@ class ETACalculator:
 
         This method is kept for backward compatibility but delegates to estimated mode.
         """
-        return self._calculate_route_aware_eta_estimated(current_lat, current_lon, poi, active_route)
+        return self._calculate_route_aware_eta_estimated(
+            current_lat, current_lon, poi, active_route
+        )
 
     def _calculate_route_aware_eta_estimated(
         self,
@@ -268,7 +296,10 @@ class ETACalculator:
             ETA in seconds if route-aware calculation succeeds, None to fall back to distance/speed
         """
         # Early return if no timing data on route
-        if not active_route.timing_profile or not active_route.timing_profile.has_timing_data:
+        if (
+            not active_route.timing_profile
+            or not active_route.timing_profile.has_timing_data
+        ):
             return None
 
         # Try to find matching waypoint on route by name (on-route POI case)
@@ -283,13 +314,19 @@ class ETACalculator:
         # If POI is on the route, use direct route-aware calculation
         if matching_waypoint:
             return self._calculate_on_route_eta_estimated(
-                current_lat, current_lon, matching_waypoint, active_route, current_speed_knots
+                current_lat,
+                current_lon,
+                matching_waypoint,
+                active_route,
+                current_speed_knots,
             )
 
         # If POI is not on route but has projection data, use projection-based calculation
-        if (poi.projected_latitude is not None and
-            poi.projected_longitude is not None and
-            poi.projected_route_progress is not None):
+        if (
+            poi.projected_latitude is not None
+            and poi.projected_longitude is not None
+            and poi.projected_route_progress is not None
+        ):
             return self._calculate_off_route_eta_with_projection_estimated(
                 current_lat, current_lon, poi, active_route, current_speed_knots
             )
@@ -325,7 +362,10 @@ class ETACalculator:
             ETA in seconds (time until expected arrival) if available, None to fall back
         """
         # Early return if no timing data on route
-        if not active_route.timing_profile or not active_route.timing_profile.has_timing_data:
+        if (
+            not active_route.timing_profile
+            or not active_route.timing_profile.has_timing_data
+        ):
             return None
 
         # Check if route has departure time for reference
@@ -342,7 +382,9 @@ class ETACalculator:
                     # Found matching waypoint with expected arrival time
                     if waypoint.expected_arrival_time:
                         # Calculate time until expected arrival
-                        time_until_arrival = waypoint.expected_arrival_time - current_time
+                        time_until_arrival = (
+                            waypoint.expected_arrival_time - current_time
+                        )
                         eta_seconds = time_until_arrival.total_seconds()
 
                         # Return positive ETA or -1 if time has passed
@@ -359,7 +401,9 @@ class ETACalculator:
                     waypoint = active_route.waypoints[waypoint_idx]
                     if waypoint.expected_arrival_time:
                         # Calculate time until expected arrival at projected waypoint
-                        time_until_arrival = waypoint.expected_arrival_time - current_time
+                        time_until_arrival = (
+                            waypoint.expected_arrival_time - current_time
+                        )
                         eta_seconds = time_until_arrival.total_seconds()
 
                         # Return positive ETA or -1 if time has passed
@@ -402,14 +446,20 @@ class ETACalculator:
             ETA in seconds if calculation succeeds, None otherwise
         """
         try:
-            speed = current_speed_knots if current_speed_knots is not None else self._smoothed_speed
+            speed = (
+                current_speed_knots
+                if current_speed_knots is not None
+                else self._smoothed_speed
+            )
 
             # Find nearest route point to current position
             nearest_point_index = 0
-            nearest_distance = float('inf')
+            nearest_distance = float("inf")
 
             for idx, point in enumerate(active_route.points):
-                dist = self.calculate_distance(current_lat, current_lon, point.latitude, point.longitude)
+                dist = self.calculate_distance(
+                    current_lat, current_lon, point.latitude, point.longitude
+                )
                 if dist < nearest_distance:
                     nearest_distance = dist
                     nearest_point_index = idx
@@ -423,14 +473,18 @@ class ETACalculator:
                 next_point = active_route.points[idx + 1]
 
                 # Check if we've reached the destination waypoint
-                if (current_point.latitude == destination_waypoint.latitude and
-                    current_point.longitude == destination_waypoint.longitude):
+                if (
+                    current_point.latitude == destination_waypoint.latitude
+                    and current_point.longitude == destination_waypoint.longitude
+                ):
                     break
 
                 # Calculate segment distance
                 segment_distance = self.calculate_distance(
-                    current_point.latitude, current_point.longitude,
-                    next_point.latitude, next_point.longitude
+                    current_point.latitude,
+                    current_point.longitude,
+                    next_point.latitude,
+                    next_point.longitude,
                 )
 
                 # Determine speed for this segment with blending for current segment
@@ -441,7 +495,9 @@ class ETACalculator:
                     segment_speed_knots = blended_speed
                 else:
                     # Future segments: use expected speed if available
-                    segment_speed_knots = current_point.expected_segment_speed_knots or speed
+                    segment_speed_knots = (
+                        current_point.expected_segment_speed_knots or speed
+                    )
 
                 # Calculate time for this segment (avoid division by zero)
                 if segment_speed_knots > 0.5:
@@ -521,14 +577,20 @@ class ETACalculator:
             ETA in seconds if calculation succeeds, None otherwise
         """
         try:
-            speed = current_speed_knots if current_speed_knots is not None else self._smoothed_speed
+            speed = (
+                current_speed_knots
+                if current_speed_knots is not None
+                else self._smoothed_speed
+            )
 
             # Find nearest route point to current position
             nearest_point_index = 0
-            nearest_distance = float('inf')
+            nearest_distance = float("inf")
 
             for idx, point in enumerate(active_route.points):
-                dist = self.calculate_distance(current_lat, current_lon, point.latitude, point.longitude)
+                dist = self.calculate_distance(
+                    current_lat, current_lon, point.latitude, point.longitude
+                )
                 if dist < nearest_distance:
                     nearest_distance = dist
                     nearest_point_index = idx
@@ -541,12 +603,17 @@ class ETACalculator:
 
                 # Check if projection point lies on this segment
                 dist_to_segment = self._distance_to_line_segment(
-                    poi.projected_latitude, poi.projected_longitude,
-                    p1.latitude, p1.longitude,
-                    p2.latitude, p2.longitude
+                    poi.projected_latitude,
+                    poi.projected_longitude,
+                    p1.latitude,
+                    p1.longitude,
+                    p2.latitude,
+                    p2.longitude,
                 )
 
-                if dist_to_segment < 1000:  # Within 1km of segment (projection tolerance)
+                if (
+                    dist_to_segment < 1000
+                ):  # Within 1km of segment (projection tolerance)
                     projection_segment_index = idx
                     break
 
@@ -564,8 +631,10 @@ class ETACalculator:
 
                 # Calculate segment distance
                 segment_distance = self.calculate_distance(
-                    current_point.latitude, current_point.longitude,
-                    next_point.latitude, next_point.longitude
+                    current_point.latitude,
+                    current_point.longitude,
+                    next_point.latitude,
+                    next_point.longitude,
                 )
 
                 # Determine speed for this segment with blending for current segment
@@ -576,7 +645,9 @@ class ETACalculator:
                     segment_speed_knots = blended_speed
                 else:
                     # Future segments: use expected speed if available
-                    segment_speed_knots = current_point.expected_segment_speed_knots or speed
+                    segment_speed_knots = (
+                        current_point.expected_segment_speed_knots or speed
+                    )
 
                 # Calculate time for this segment (avoid division by zero)
                 if segment_speed_knots > 0.5:
@@ -591,7 +662,9 @@ class ETACalculator:
             return None
 
         except Exception as e:
-            logger.debug(f"Off-route estimated ETA calculation with projection failed for {poi.name}: {e}")
+            logger.debug(
+                f"Off-route estimated ETA calculation with projection failed for {poi.name}: {e}"
+            )
             return None
 
     def _calculate_off_route_eta_with_projection(
@@ -654,20 +727,17 @@ class ETACalculator:
 
         # Distance from point to segment start
         dist_to_start = self.calculate_distance(
-            point_lat, point_lon,
-            seg_start_lat, seg_start_lon
+            point_lat, point_lon, seg_start_lat, seg_start_lon
         )
 
         # Distance from point to segment end
         dist_to_end = self.calculate_distance(
-            point_lat, point_lon,
-            seg_end_lat, seg_end_lon
+            point_lat, point_lon, seg_end_lat, seg_end_lon
         )
 
         # Distance along segment
         segment_length = self.calculate_distance(
-            seg_start_lat, seg_start_lon,
-            seg_end_lat, seg_end_lon
+            seg_start_lat, seg_start_lon, seg_end_lat, seg_end_lon
         )
 
         # If segment is very short, return distance to start
@@ -683,7 +753,9 @@ class ETACalculator:
         # Perpendicular distance approximation
         if dist_to_start + dist_to_end > segment_length:
             # Point is roughly perpendicular to segment
-            perp_dist = (dist_to_start ** 2 + dist_to_end ** 2 - segment_length ** 2) / (2 * segment_length)
+            perp_dist = (
+                dist_to_start**2 + dist_to_end**2 - segment_length**2
+            ) / (2 * segment_length)
             return abs(perp_dist)
         else:
             # Point is outside segment bounds
@@ -695,7 +767,9 @@ class ETACalculator:
         self._smoothed_speed = self.default_speed_knots
         self._passed_pois.clear()
         self._last_update_time = None
-        logger.info(f"ETA calculator reset (smoothing window: {self.smoothing_duration_seconds}s)")
+        logger.info(
+            f"ETA calculator reset (smoothing window: {self.smoothing_duration_seconds}s)"
+        )
 
     def get_passed_pois(self) -> set[str]:
         """
@@ -731,5 +805,7 @@ class ETACalculator:
             "smoothing_window_seconds": self.smoothing_duration_seconds,
             "current_window_coverage_seconds": window_coverage_seconds,
             "passed_pois_count": len(self._passed_pois),
-            "last_update": self._last_update_time.isoformat() if self._last_update_time else None,
+            "last_update": (
+                self._last_update_time.isoformat() if self._last_update_time else None
+            ),
         }

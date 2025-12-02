@@ -37,15 +37,9 @@ class SimulationCoordinator:
         self.start_time = time.time()
 
         # Initialize all simulators
-        self.position_sim = PositionSimulator(
-            config.route,
-            config.position
-        )
+        self.position_sim = PositionSimulator(config.route, config.position)
         self.network_sim = NetworkSimulator(config.network)
-        self.obstruction_sim = ObstructionSimulator(
-            config.obstruction,
-            config.network
-        )
+        self.obstruction_sim = ObstructionSimulator(config.obstruction, config.network)
 
         # Initialize speed tracker for GPS-based speed calculation
         # Uses 120-second smoothing window to match ETA calculator
@@ -77,7 +71,7 @@ class SimulationCoordinator:
             telemetry = self._generate_telemetry()
             self._last_valid_telemetry = telemetry
             return telemetry
-        except Exception as e:
+        except Exception:
             # Graceful degradation: return last known good state
             if self._last_valid_telemetry:
                 # Update timestamp but return old data
@@ -86,7 +80,7 @@ class SimulationCoordinator:
                     position=self._last_valid_telemetry.position,
                     network=self._last_valid_telemetry.network,
                     obstruction=self._last_valid_telemetry.obstruction,
-                    environmental=self._last_valid_telemetry.environmental
+                    environmental=self._last_valid_telemetry.environmental,
                 )
             else:
                 # Re-raise if no fallback available
@@ -108,7 +102,9 @@ class SimulationCoordinator:
         if current_route_id != self._previous_active_route_id:
             if active_route:
                 # New route activated
-                logger.info(f"Route activated in simulator: {active_route.metadata.name}")
+                logger.info(
+                    f"Route activated in simulator: {active_route.metadata.name}"
+                )
                 follower = KMLRouteFollower(active_route)
                 completion_behavior = self.config.route.completion_behavior
                 self.position_sim.set_route_follower(follower, completion_behavior)
@@ -168,8 +164,10 @@ class SimulationCoordinator:
         # 2. The route has timing data at current position
         use_route_timing_speed = False
         if self.position_sim.route_follower:
-            expected_speed = self.position_sim.route_follower.get_segment_speed_at_progress(
-                self.position_sim.progress
+            expected_speed = (
+                self.position_sim.route_follower.get_segment_speed_at_progress(
+                    self.position_sim.progress
+                )
             )
             if expected_speed is not None:
                 # Route has timing data - use it directly
@@ -194,9 +192,7 @@ class SimulationCoordinator:
         network_data = self.network_sim.update()
 
         # Update obstruction (with network latency correlation)
-        obstruction_data = self.obstruction_sim.update(
-            network_data.latency_ms
-        )
+        obstruction_data = self.obstruction_sim.update(network_data.latency_ms)
 
         # Calculate environmental data
         uptime_seconds = time.time() - self.start_time
@@ -207,7 +203,7 @@ class SimulationCoordinator:
         environmental_data = EnvironmentalData(
             signal_quality_percent=signal_quality,
             uptime_seconds=uptime_seconds,
-            temperature_celsius=None  # Could be added to config
+            temperature_celsius=None,  # Could be added to config
         )
 
         # Update route progress metrics if route following is active
@@ -218,7 +214,7 @@ class SimulationCoordinator:
             position=position_data,
             network=network_data,
             obstruction=obstruction_data,
-            environmental=environmental_data
+            environmental=environmental_data,
         )
 
     def get_current_telemetry(self) -> TelemetryData:
@@ -288,14 +284,10 @@ class SimulationCoordinator:
         self.config = new_config
 
         # Reinitialize simulators with new config
-        self.position_sim = PositionSimulator(
-            new_config.route,
-            new_config.position
-        )
+        self.position_sim = PositionSimulator(new_config.route, new_config.position)
         self.network_sim = NetworkSimulator(new_config.network)
         self.obstruction_sim = ObstructionSimulator(
-            new_config.obstruction,
-            new_config.network
+            new_config.obstruction, new_config.network
         )
 
         # Reset start time

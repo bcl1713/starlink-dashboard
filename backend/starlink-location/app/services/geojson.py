@@ -150,7 +150,9 @@ class GeoJSONBuilder:
 
         # Add current position if available
         if current_position:
-            features.append(GeoJSONBuilder.build_current_position_feature(current_position))
+            features.append(
+                GeoJSONBuilder.build_current_position_feature(current_position)
+            )
 
         feature_collection = {
             "type": "FeatureCollection",

@@ -69,14 +69,7 @@ class StructuredLogger(logging.Logger):
         """
         if self.isEnabledFor(level):
             record = self.makeRecord(
-                self.name,
-                level,
-                "(unknown file)",
-                0,
-                msg,
-                args,
-                exc_info,
-                **kwargs
+                self.name, level, "(unknown file)", 0, msg, args, exc_info, **kwargs
             )
 
             if extra_fields:
@@ -85,66 +78,50 @@ class StructuredLogger(logging.Logger):
             self.handle(record)
 
     def debug_json(
-        self,
-        message: str,
-        extra_fields: Optional[Dict[str, Any]] = None
+        self, message: str, extra_fields: Optional[Dict[str, Any]] = None
     ) -> None:
         """Log debug message with optional extra fields."""
         self._log_with_extras(logging.DEBUG, message, (), extra_fields=extra_fields)
 
     def info_json(
-        self,
-        message: str,
-        extra_fields: Optional[Dict[str, Any]] = None
+        self, message: str, extra_fields: Optional[Dict[str, Any]] = None
     ) -> None:
         """Log info message with optional extra fields."""
         self._log_with_extras(logging.INFO, message, (), extra_fields=extra_fields)
 
     def warning_json(
-        self,
-        message: str,
-        extra_fields: Optional[Dict[str, Any]] = None
+        self, message: str, extra_fields: Optional[Dict[str, Any]] = None
     ) -> None:
         """Log warning message with optional extra fields."""
-        self._log_with_extras(
-            logging.WARNING, message, (), extra_fields=extra_fields
-        )
+        self._log_with_extras(logging.WARNING, message, (), extra_fields=extra_fields)
 
     def error_json(
         self,
         message: str,
         extra_fields: Optional[Dict[str, Any]] = None,
-        exc_info: bool = False
+        exc_info: bool = False,
     ) -> None:
         """Log error message with optional extra fields."""
         self._log_with_extras(
-            logging.ERROR,
-            message,
-            (),
-            exc_info=exc_info,
-            extra_fields=extra_fields
+            logging.ERROR, message, (), exc_info=exc_info, extra_fields=extra_fields
         )
 
     def critical_json(
         self,
         message: str,
         extra_fields: Optional[Dict[str, Any]] = None,
-        exc_info: bool = False
+        exc_info: bool = False,
     ) -> None:
         """Log critical message with optional extra fields."""
         self._log_with_extras(
-            logging.CRITICAL,
-            message,
-            (),
-            exc_info=exc_info,
-            extra_fields=extra_fields
+            logging.CRITICAL, message, (), exc_info=exc_info, extra_fields=extra_fields
         )
 
 
 def setup_logging(
     level: str = LOG_LEVEL_INFO,
     json_format: bool = True,
-    log_file: Optional[str] = None
+    log_file: Optional[str] = None,
 ) -> None:
     """
     Configure structured logging.
@@ -173,7 +150,7 @@ def setup_logging(
         formatter = JSONFormatter()
     else:
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
 
     console_handler.setFormatter(formatter)

@@ -229,7 +229,9 @@ class TestKMLRouteFollower:
             abs(pos1["latitude"] - pos2["latitude"]) > 0.00001
             for pos1, pos2 in positions
         )
-        assert differ or True  # Allow test to pass if randomness doesn't show difference
+        assert (
+            differ or True
+        )  # Allow test to pass if randomness doesn't show difference
 
     def test_edge_case_single_point(self):
         """Test handling of route with single point."""

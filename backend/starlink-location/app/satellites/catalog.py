@@ -41,7 +41,10 @@ class Satellite:
                 if geojson_data.get("type") == "Feature":
                     self.coverage_polygon = geojson_data
                 elif geojson_data.get("type") == "Polygon":
-                    self.coverage_polygon = {"type": "Feature", "geometry": geojson_data}
+                    self.coverage_polygon = {
+                        "type": "Feature",
+                        "geometry": geojson_data,
+                    }
                 else:
                     logger.warning(
                         f"Unexpected GeoJSON type for {self.satellite_id}: "
@@ -87,7 +90,9 @@ class SatelliteCatalog:
             self._transport_index[satellite.transport] = []
         self._transport_index[satellite.transport].append(satellite.satellite_id)
 
-        logger.debug(f"Added satellite {satellite.satellite_id} ({satellite.transport})")
+        logger.debug(
+            f"Added satellite {satellite.satellite_id} ({satellite.transport})"
+        )
 
     def get_satellite(self, satellite_id: str) -> Optional[Satellite]:
         """Retrieve satellite metadata by ID."""
@@ -160,9 +165,7 @@ def get_satellite_catalog() -> SatelliteCatalog:
     return _catalog
 
 
-def _add_default_satellites(
-    catalog: SatelliteCatalog, sat_coverage_dir: Path
-) -> None:
+def _add_default_satellites(catalog: SatelliteCatalog, sat_coverage_dir: Path) -> None:
     """Add default X, Ka, and Ku satellite definitions."""
 
     # X transport: Fixed geostationary

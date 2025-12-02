@@ -1,0 +1,888 @@
+# Validation Schema: Codebase Cleanup and Refactoring
+# Feature: 001-codebase-cleanup
+# Created: 2025-12-02
+# Version: 1.0
+#
+# This file defines JSON Schema/OpenAPI-compatible schemas for validation
+# entities used in the refactoring process. These schemas support automated
+# validation of requirements FR-001 through FR-031 from spec.md.
+
+openapi: 3.1.0
+info:
+  title: Codebase Cleanup Validation Schemas
+  version: 1.0.0
+  description: |
+    Validation contracts for tracking and verifying codebase refactoring
+    compliance with constitutional principles and functional requirements.
+
+components:
+  schemas:
+    # =========================================================================
+    # Code File Schema (Data Model Entity 1)
+    # =========================================================================
+    CodeFile:
+      type: object
+      required:
+        - file_id
+        - path
+        - line_count
+        - original_line_count
+        - language
+        - module_type
+        - violation_status
+        - refactoring_priority
+        - violation_severity
+        - created_at
+        - updated_at
+      properties:
+        file_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the code file
+          example: "cf-001"
+        path:
+          type: string
+          pattern: "^[a-zA-Z0-9_/-]+\\.(py|ts|tsx|js|jsx|md)$"
+          description: Absolute path from repository root
+          example: "backend/starlink-location/app/api/ui.py"
+        line_count:
+          type: integer
+          minimum: 0
+          description: Current number of lines in file
+          example: 3995
+        original_line_count:
+          type: integer
+          minimum: 0
+          description: Line count before any refactoring (baseline)
+          example: 3995
+        language:
+          type: string
+          enum:
+            - python
+            - typescript
+            - javascript
+            - markdown
+          description: Primary language of the file
+        module_type:
+          type: string
+          enum:
+            - api
+            - service
+            - component
+            - documentation
+            - configuration
+          description: Functional category of the file
+        violation_status:
+          type: string
+          enum:
+            - unassessed
+            - violating
+            - in_progress
+            - refactored
+            - validated
+            - deferred
+          description: Current refactoring state (see data-model.md state machine)
+        refactoring_priority:
+          type: string
+          enum:
+            - P0_critical
+            - P1_high
+            - P2_medium
+            - P3_low
+          description: Priority derived from violation severity and module type
+        violation_severity:
+          type: string
+          enum:
+            - critical
+            - moderate
+            - none
+          description: |
+            Severity based on line count:
+            - critical: >1000 lines
+            - moderate: 300-1000 lines
+            - none: <300 lines
+        estimated_effort:
+          type: string
+          enum:
+            - small
+            - medium
+            - large
+            - xlarge
+          nullable: true
+          description: |
+            Effort estimation:
+            - small: <4 hours
+            - medium: 4-8 hours
+            - large: 8-16 hours
+            - xlarge: >16 hours
+        has_justification:
+          type: boolean
+          nullable: true
+          description: True if FR-004 deferral comment exists in file
+        justification_reason:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Explanation for deferral (e.g., "Generated code", "Migration file")
+        assigned_to:
+          type: string
+          nullable: true
+          description: Developer or AI agent assigned to refactor
+        created_at:
+          type: string
+          format: date-time
+          description: When file was first assessed
+        updated_at:
+          type: string
+          format: date-time
+          description: Last modification time
+        metadata:
+          type: object
+          nullable: true
+          description: Additional context (dependencies, complexity metrics, etc.)
+          additionalProperties: true
+
+    # =========================================================================
+    # Refactoring Task Schema (Data Model Entity 2)
+    # =========================================================================
+    RefactoringTask:
+      type: object
+      required:
+        - task_id
+        - title
+        - target_files
+        - violation_type
+        - estimated_effort
+        - status
+        - priority
+        - created_at
+        - updated_at
+      properties:
+        task_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the task
+          example: "task-001"
+        title:
+          type: string
+          minLength: 10
+          maxLength: 200
+          description: Human-readable task description
+          example: "Split ui.py into route modules (< 300 lines each)"
+        target_files:
+          type: array
+          items:
+            type: string
+            pattern: "^[a-zA-Z0-9_/-]+\\.(py|ts|tsx|js|jsx|md)$"
+          minItems: 1
+          maxItems: 3
+          description: Array of file paths this task addresses (1-3 files per spec)
+        violation_type:
+          type: string
+          enum:
+            - size
+            - documentation
+            - solid_design
+            - linting
+            - type_coverage
+          description: Primary constitutional violation being addressed
+        estimated_effort:
+          type: string
+          enum:
+            - small
+            - medium
+            - large
+            - xlarge
+          description: Estimated time to complete
+        actual_effort:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Hours spent (tracked post-completion)
+        status:
+          type: string
+          enum:
+            - pending
+            - blocked
+            - in_progress
+            - in_review
+            - completed
+            - rework
+            - deferred
+          description: Current task state (see data-model.md state machine)
+        priority:
+          type: string
+          enum:
+            - P0_critical
+            - P1_high
+            - P2_medium
+            - P3_low
+          description: Task priority (typically matches highest priority target file)
+        assigned_to:
+          type: string
+          nullable: true
+          description: Developer or AI agent responsible
+        pr_number:
+          type: integer
+          nullable: true
+          minimum: 1
+          description: GitHub PR number when task is submitted
+        dependencies:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+          description: Array of task_id values that must complete first
+        blocked_by:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+          description: Array of task_id values currently blocking this task
+        blocks:
+          type: array
+          items:
+            type: string
+            format: uuid
+          uniqueItems: true
+          description: Array of task_id values that depend on this task
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When work began
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When task was marked complete
+        created_at:
+          type: string
+          format: date-time
+          description: Task creation time
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update time
+        notes:
+          type: string
+          nullable: true
+          maxLength: 2000
+          description: Implementation notes, blockers, decisions
+
+    # =========================================================================
+    # Validation Check Schema (Data Model Entity 3)
+    # =========================================================================
+    ValidationCheck:
+      type: object
+      required:
+        - check_id
+        - requirement_id
+        - check_type
+        - target_entity
+        - target_id
+        - status
+        - automated
+        - created_at
+        - updated_at
+      properties:
+        check_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the validation check
+          example: "vc-001"
+        requirement_id:
+          type: string
+          pattern: "^(FR|SC)-\\d{3}$"
+          description: Reference to spec.md requirement (e.g., "FR-001", "SC-004")
+          example: "FR-001"
+        check_type:
+          type: string
+          enum:
+            - line_count
+            - black_formatting
+            - prettier_formatting
+            - eslint_validation
+            - markdownlint_validation
+            - type_coverage
+            - docstring_coverage
+            - jsdoc_coverage
+            - documentation_accuracy
+            - smoke_test
+            - solid_compliance
+          description: Type of validation being performed (see data-model.md)
+        target_entity:
+          type: string
+          enum:
+            - code_file
+            - refactoring_task
+            - pull_request
+          description: Entity type being validated
+        target_id:
+          type: string
+          description: ID of the entity being validated (file_id, task_id, or pr_id)
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - passed
+            - failed
+            - skipped
+          description: Current check state
+        automated:
+          type: boolean
+          description: True if automated (linter/CI), false if manual (smoke test)
+        evidence:
+          type: object
+          nullable: true
+          description: Supporting data (lint output, test results, metrics)
+          additionalProperties: true
+        error_message:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Failure reason if status = failed
+        executed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When check was run
+        executed_by:
+          type: string
+          nullable: true
+          enum:
+            - ci_system
+            - developer
+            - ai_agent
+          description: Who/what executed the check
+        created_at:
+          type: string
+          format: date-time
+          description: Check creation time
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update time
+
+    # =========================================================================
+    # Pull Request Schema (Data Model Entity 4)
+    # =========================================================================
+    PullRequest:
+      type: object
+      required:
+        - pr_id
+        - pr_number
+        - branch_name
+        - base_branch
+        - title
+        - file_count
+        - status
+        - ci_status
+        - approval_status
+        - created_at
+        - updated_at
+      properties:
+        pr_id:
+          type: string
+          format: uuid
+          description: Internal unique identifier
+          example: "pr-001"
+        pr_number:
+          type: integer
+          minimum: 1
+          description: GitHub PR number
+          example: 42
+        branch_name:
+          type: string
+          pattern: "^refactor/[a-z0-9-]+$"
+          description: Feature branch name
+          example: "refactor/ui-py-split"
+        base_branch:
+          type: string
+          description: Target branch (typically "001-codebase-cleanup")
+          default: "001-codebase-cleanup"
+        title:
+          type: string
+          minLength: 10
+          maxLength: 200
+          description: PR title
+          example: "Refactor: Split ui.py into route modules"
+        description:
+          type: string
+          nullable: true
+          maxLength: 5000
+          description: PR body/description
+        file_count:
+          type: integer
+          minimum: 1
+          maximum: 3
+          description: Number of files changed in PR (per spec 1-3 files)
+        lines_added:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Git diff lines added
+        lines_removed:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Git diff lines removed
+        status:
+          type: string
+          enum:
+            - draft
+            - open
+            - ci_pending
+            - ci_failed
+            - review
+            - approved
+            - rework
+            - merged
+            - closed
+          description: Current PR state (see data-model.md state machine)
+        smoke_test_results:
+          type: object
+          nullable: true
+          description: Manual test results per file/feature
+          additionalProperties:
+            type: string
+            enum:
+              - passed
+              - failed
+              - not_tested
+        ci_status:
+          type: string
+          enum:
+            - pending
+            - running
+            - passed
+            - failed
+          description: Automated CI check status
+        approval_status:
+          type: string
+          enum:
+            - pending
+            - approved
+            - changes_requested
+          description: Human reviewer approval status
+        approved_by:
+          type: string
+          nullable: true
+          description: Reviewer who approved
+        created_at:
+          type: string
+          format: date-time
+          description: PR creation time
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update time
+        merged_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When PR was merged
+        closed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When PR was closed (merged or abandoned)
+
+    # =========================================================================
+    # Line Count Validation Result
+    # =========================================================================
+    LineCountValidationResult:
+      type: object
+      required:
+        - file_path
+        - current_line_count
+        - threshold
+        - passes
+        - violation_severity
+      properties:
+        file_path:
+          type: string
+          description: Path of file being validated
+        current_line_count:
+          type: integer
+          minimum: 0
+          description: Actual line count
+        threshold:
+          type: integer
+          default: 300
+          description: Maximum allowed lines (FR-001, FR-002, FR-003)
+        passes:
+          type: boolean
+          description: True if line_count <= threshold OR has_justification = true
+        violation_severity:
+          type: string
+          enum:
+            - critical
+            - moderate
+            - none
+          description: Severity classification
+        has_justification:
+          type: boolean
+          description: Whether FR-004 justification comment exists
+        justification_reason:
+          type: string
+          nullable: true
+          description: Extracted justification text
+
+    # =========================================================================
+    # Linting Validation Result
+    # =========================================================================
+    LintingValidationResult:
+      type: object
+      required:
+        - file_path
+        - linter
+        - passes
+        - violations
+      properties:
+        file_path:
+          type: string
+          description: Path of file being validated
+        linter:
+          type: string
+          enum:
+            - black
+            - prettier
+            - eslint
+            - markdownlint-cli2
+          description: Which linter was run
+        passes:
+          type: boolean
+          description: True if no violations found
+        violations:
+          type: array
+          items:
+            type: object
+            properties:
+              line:
+                type: integer
+                description: Line number of violation
+              column:
+                type: integer
+                nullable: true
+                description: Column number (if applicable)
+              rule:
+                type: string
+                description: Rule identifier (e.g., "E501", "no-unused-vars")
+              message:
+                type: string
+                description: Human-readable violation description
+              severity:
+                type: string
+                enum:
+                  - error
+                  - warning
+                description: Violation severity
+        executed_at:
+          type: string
+          format: date-time
+          description: When linter was run
+
+    # =========================================================================
+    # Type Coverage Validation Result
+    # =========================================================================
+    TypeCoverageValidationResult:
+      type: object
+      required:
+        - file_path
+        - language
+        - functions_checked
+        - functions_with_types
+        - coverage_percent
+        - passes
+      properties:
+        file_path:
+          type: string
+          description: Path of file being validated
+        language:
+          type: string
+          enum:
+            - python
+            - typescript
+          description: Language for type checking (FR-005, FR-008)
+        functions_checked:
+          type: integer
+          minimum: 0
+          description: Total number of functions analyzed
+        functions_with_types:
+          type: integer
+          minimum: 0
+          description: Number with complete type annotations
+        coverage_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Percentage of functions with types
+        passes:
+          type: boolean
+          description: True if coverage_percent = 100 (per SC-004, SC-005)
+        missing_types:
+          type: array
+          items:
+            type: object
+            properties:
+              function_name:
+                type: string
+              line_number:
+                type: integer
+              missing_annotations:
+                type: array
+                items:
+                  type: string
+                  enum:
+                    - parameter_types
+                    - return_type
+          description: Details of functions lacking type annotations
+
+    # =========================================================================
+    # Documentation Coverage Validation Result
+    # =========================================================================
+    DocumentationCoverageValidationResult:
+      type: object
+      required:
+        - file_path
+        - language
+        - functions_checked
+        - functions_with_docs
+        - coverage_percent
+        - passes
+      properties:
+        file_path:
+          type: string
+          description: Path of file being validated
+        language:
+          type: string
+          enum:
+            - python
+            - typescript
+            - javascript
+          description: Language for doc checking (FR-006, FR-007)
+        functions_checked:
+          type: integer
+          minimum: 0
+          description: Total number of functions analyzed
+        functions_with_docs:
+          type: integer
+          minimum: 0
+          description: Number with proper docstrings/JSDoc
+        coverage_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Percentage of functions with documentation
+        passes:
+          type: boolean
+          description: True if coverage_percent = 100 (per SC-004, SC-005)
+        missing_docs:
+          type: array
+          items:
+            type: object
+            properties:
+              function_name:
+                type: string
+              line_number:
+                type: integer
+              doc_type_expected:
+                type: string
+                enum:
+                  - pep257_docstring
+                  - jsdoc_comment
+          description: Details of functions lacking documentation
+
+    # =========================================================================
+    # Smoke Test Result
+    # =========================================================================
+    SmokeTestResult:
+      type: object
+      required:
+        - test_category
+        - test_name
+        - passes
+        - tested_at
+        - tested_by
+      properties:
+        test_category:
+          type: string
+          enum:
+            - backend_api
+            - frontend_component
+            - documentation
+          description: Category of smoke test performed
+        test_name:
+          type: string
+          description: Specific test performed (e.g., "Health endpoint responds")
+        passes:
+          type: boolean
+          description: True if test passed
+        details:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Additional context or failure details
+        tested_at:
+          type: string
+          format: date-time
+          description: When test was performed
+        tested_by:
+          type: string
+          description: Who performed the test
+
+    # =========================================================================
+    # PR Requirements Checklist
+    # =========================================================================
+    PRRequirementsChecklist:
+      type: object
+      required:
+        - pr_number
+        - file_count_valid
+        - all_files_under_300_lines
+        - all_linters_pass
+        - all_types_complete
+        - all_docs_complete
+        - smoke_tests_pass
+        - ready_to_merge
+      properties:
+        pr_number:
+          type: integer
+          description: GitHub PR number being validated
+        file_count_valid:
+          type: boolean
+          description: True if file_count <= 3 (per spec)
+        all_files_under_300_lines:
+          type: boolean
+          description: True if all modified files meet FR-001/002/003 or have FR-004 justification
+        all_linters_pass:
+          type: boolean
+          description: True if Black, Prettier, ESLint, markdownlint all pass (FR-024-031)
+        all_types_complete:
+          type: boolean
+          description: True if 100% type coverage in refactored code (FR-005, FR-008)
+        all_docs_complete:
+          type: boolean
+          description: True if 100% docstring/JSDoc coverage (FR-006, FR-007)
+        smoke_tests_pass:
+          type: boolean
+          description: True if manual smoke tests completed successfully
+        ready_to_merge:
+          type: boolean
+          description: True if ALL above criteria are met
+        blocking_issues:
+          type: array
+          items:
+            type: string
+          description: List of requirements not yet met
+
+# =============================================================================
+# Validation Rules and Constraints
+# =============================================================================
+
+# These rules enforce data integrity across entities. Implementations should
+# validate these constraints before persisting data.
+
+x-validation-rules:
+  code_file:
+    - rule: "line_count_threshold"
+      description: "Files in validated state must have line_count <= 300 OR has_justification = true"
+      applies_to: ["FR-001", "FR-002", "FR-003", "FR-004"]
+    - rule: "path_uniqueness"
+      description: "No two CodeFile entities can have the same path"
+      applies_to: ["data-model.md"]
+    - rule: "priority_calculation"
+      description: |
+        refactoring_priority derived from violation_severity and module_type:
+        - P0_critical: violation_severity = critical AND module_type IN (api, service)
+        - P1_high: violation_severity = critical OR (moderate AND module_type IN (api, service))
+        - P2_medium: violation_severity = moderate AND module_type IN (component, documentation)
+        - P3_low: violation_severity = none
+      applies_to: ["data-model.md"]
+
+  refactoring_task:
+    - rule: "acyclic_dependencies"
+      description: "dependencies[] must form a Directed Acyclic Graph (no circular dependencies)"
+      applies_to: ["data-model.md"]
+    - rule: "blocking_transition"
+      description: "Task with status = blocked cannot transition to in_progress if any task in dependencies[] has status NOT IN (completed, deferred)"
+      applies_to: ["data-model.md"]
+    - rule: "pr_association"
+      description: "Task with status IN (in_review, completed) must have non-null pr_number"
+      applies_to: ["data-model.md"]
+    - rule: "file_ownership"
+      description: "All target_files[] must exist as CodeFile entities"
+      applies_to: ["data-model.md"]
+    - rule: "completion_evidence"
+      description: "Task with status = completed must have associated ValidationCheck entities with status = passed"
+      applies_to: ["data-model.md"]
+
+  validation_check:
+    - rule: "target_existence"
+      description: "target_id must reference an existing CodeFile, RefactoringTask, or PullRequest"
+      applies_to: ["data-model.md"]
+    - rule: "type_applicability"
+      description: |
+        check_type must be valid for target entity's language:
+        - black_formatting: only for language = python
+        - prettier_formatting: for language IN (typescript, javascript, markdown)
+        - eslint_validation: for language IN (typescript, javascript)
+        - markdownlint_validation: only for language = markdown
+        - type_coverage: for language IN (python, typescript)
+        - docstring_coverage: only for language = python
+        - jsdoc_coverage: for language IN (typescript, javascript)
+      applies_to: ["FR-024", "FR-025", "FR-026", "FR-027"]
+    - rule: "evidence_requirement"
+      description: "status = passed or status = failed must have non-null evidence"
+      applies_to: ["data-model.md"]
+    - rule: "automated_consistency"
+      description: "automated = true checks must have executed_by = ci_system"
+      applies_to: ["data-model.md"]
+
+  pull_request:
+    - rule: "file_count_limit"
+      description: "file_count must be <= 3 (per spec clarification)"
+      applies_to: ["spec.md clarifications"]
+    - rule: "ci_merge_blocker"
+      description: "Cannot merge if ci_status != passed"
+      applies_to: ["FR-031"]
+    - rule: "approval_merge_blocker"
+      description: "Cannot merge if approval_status != approved"
+      applies_to: ["spec.md assumptions"]
+    - rule: "smoke_test_requirement"
+      description: "smoke_test_results must be non-null for status = approved"
+      applies_to: ["spec.md assumptions"]
+    - rule: "task_completion_blocker"
+      description: "All RefactoringTask entities linked to PR must have status = completed before PR merge"
+      applies_to: ["data-model.md"]
+
+# =============================================================================
+# Success Criteria Validation
+# =============================================================================
+
+x-success-criteria:
+  SC-001:
+    description: "At least 80% of Python files under 300 lines"
+    validation_query: "(COUNT(CodeFile WHERE language=python AND line_count<=300) / COUNT(CodeFile WHERE language=python)) >= 0.80"
+  SC-002:
+    description: "At least 80% of TypeScript/JavaScript files under 300 lines"
+    validation_query: "(COUNT(CodeFile WHERE language IN (typescript,javascript) AND line_count<=300) / COUNT(CodeFile WHERE language IN (typescript,javascript))) >= 0.80"
+  SC-003:
+    description: "At least 80% of Markdown files under 300 lines"
+    validation_query: "(COUNT(CodeFile WHERE language=markdown AND line_count<=300) / COUNT(CodeFile WHERE language=markdown)) >= 0.80"
+  SC-004:
+    description: "100% of Python functions in refactored files have type hints and docstrings"
+    validation_query: "ALL(ValidationCheck WHERE requirement_id=SC-004 AND target_entity=refactoring_task AND status=passed)"
+  SC-005:
+    description: "100% of exported TS/JS functions have JSDoc"
+    validation_query: "ALL(ValidationCheck WHERE requirement_id=SC-005 AND target_entity=refactoring_task AND status=passed)"
+  SC-006:
+    description: "0 files contain inline lint-disable comments"
+    validation_query: "COUNT(ValidationCheck WHERE check_type=eslint_validation AND evidence.disable_comments_found > 0) = 0"
+  SC-011:
+    description: "Remaining non-compliant files have FR-004 justifications"
+    validation_query: "ALL(CodeFile WHERE violation_status=deferred MUST have has_justification=true)"

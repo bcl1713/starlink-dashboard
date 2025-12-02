@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 from uuid import uuid4
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import pytest
 
 from app.mission.models import (
     MissionLeg,
@@ -25,7 +24,6 @@ from app.mission.models import (
 from app.mission.timeline_service import build_mission_timeline
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
-from app.satellites.coverage import CoverageSampler
 
 
 def create_test_mission(mission_number: int) -> MissionLeg:
@@ -73,9 +71,7 @@ def create_test_mission(mission_number: int) -> MissionLeg:
     return mission
 
 
-def benchmark_timeline_recompute(
-    mission_count: int = 10, max_workers: int = 4
-) -> dict:
+def benchmark_timeline_recompute(mission_count: int = 10, max_workers: int = 4) -> dict:
     """
     Measure timeline recompute time and memory for N concurrent missions.
 
@@ -87,7 +83,7 @@ def benchmark_timeline_recompute(
         Dictionary with benchmark results (time, memory, per-mission stats)
     """
     print(f"\n{'='*70}")
-    print(f"Mission Timeline Performance Benchmark")
+    print("Mission Timeline Performance Benchmark")
     print(f"{'='*70}")
     print(f"Missions to process: {mission_count}")
     print(f"Max concurrent workers: {max_workers}")
@@ -98,47 +94,53 @@ def benchmark_timeline_recompute(
     process = psutil.Process(os.getpid())
 
     # Initialize managers needed for timeline computation
-    print(f"[0/4] Initializing route and POI managers...")
+    print("[0/4] Initializing route and POI managers...")
     try:
         route_manager = RouteManager()
         poi_manager = POIManager()
 
         # Create a test route if it doesn't exist
-        from app.models.route import ParsedRoute, RoutePoint, RouteMetadata, RouteTimingProfile
+        from app.models.route import (
+            ParsedRoute,
+            RoutePoint,
+            RouteMetadata,
+            RouteTimingProfile,
+        )
 
         test_route_id = "test-route-cross-country"
         if test_route_id not in route_manager._routes:
             # Create a simple test route with 10 waypoints
             points = [
                 RoutePoint(
-                    latitude=40.0 + i*0.5,
-                    longitude=-100.0 + i*0.5,
+                    latitude=40.0 + i * 0.5,
+                    longitude=-100.0 + i * 0.5,
                     altitude=10000.0,
-                    sequence=i
-                ) for i in range(10)
+                    sequence=i,
+                )
+                for i in range(10)
             ]
             metadata = RouteMetadata(
                 name="Test Cross-Country Route",
                 file_path="/tmp/test-route.kml",
                 point_count=len(points),
-                imported_at=datetime.now(timezone.utc)
+                imported_at=datetime.now(timezone.utc),
             )
             # Create timing profile with departure/arrival times
             timing_profile = RouteTimingProfile(
                 departure_time=datetime(2025, 11, 16, 10, 0, 0, tzinfo=timezone.utc),
                 arrival_time=datetime(2025, 11, 16, 16, 0, 0, tzinfo=timezone.utc),
                 flight_status="in_flight",
-                has_timing_data=True
+                has_timing_data=True,
             )
             test_route = ParsedRoute(
                 metadata=metadata,
                 points=points,
                 waypoints=[],
-                timing_profile=timing_profile
+                timing_profile=timing_profile,
             )
             route_manager._routes[test_route_id] = test_route
 
-        print(f"      ✓ Managers initialized")
+        print("      ✓ Managers initialized")
     except Exception as e:
         print(f"      ✗ Failed to initialize managers: {e}")
         raise
@@ -149,7 +151,7 @@ def benchmark_timeline_recompute(
     print(f"      ✓ Created {len(missions)} missions")
 
     # Measure memory before computation
-    print(f"\n[2/4] Measuring baseline memory usage...")
+    print("\n[2/4] Measuring baseline memory usage...")
     mem_before = process.memory_info().rss / 1024 / 1024  # Convert to MB
     print(f"      Baseline memory: {mem_before:.2f} MB")
 
@@ -180,12 +182,16 @@ def benchmark_timeline_recompute(
             try:
                 timeline = future.result()
                 results.append(timeline)
-                mission_times[mission.id] = future._start_time if hasattr(future, "_start_time") else 0
+                mission_times[mission.id] = (
+                    future._start_time if hasattr(future, "_start_time") else 0
+                )
                 completed += 1
                 # Show progress every 2 missions
                 if completed % 2 == 0:
                     elapsed = time.time() - start_time
-                    print(f"      Progress: {completed}/{mission_count} missions ({elapsed:.2f}s)")
+                    print(
+                        f"      Progress: {completed}/{mission_count} missions ({elapsed:.2f}s)"
+                    )
             except Exception as e:
                 print(f"      ✗ Error processing mission {mission.id}: {e}")
 
@@ -201,13 +207,13 @@ def benchmark_timeline_recompute(
     print(f"\n      ✓ Completed {len(results)} missions in {total_duration:.3f}s")
 
     # Measure memory and resources
-    print(f"\n[4/4] Analyzing results...")
+    print("\n[4/4] Analyzing results...")
     print(f"      ✓ Memory before: {mem_before:.2f} MB")
     print(f"      ✓ Memory after:  {mem_after:.2f} MB")
     print(f"      ✓ Memory delta:  {mem_delta:+.2f} MB")
 
     print(f"\n{'='*70}")
-    print(f"Benchmark Results")
+    print("Benchmark Results")
     print(f"{'='*70}")
     print(f"Total missions:           {mission_count}")
     print(f"Concurrent workers:       {max_workers}")
@@ -227,8 +233,10 @@ def benchmark_timeline_recompute(
     print(f"Status: {status}\n")
 
     if total_duration >= target_time:
-        print(f"⚠️  Performance threshold exceeded by {total_duration - target_time:.3f}s")
-        print(f"    Consider profiling hot paths or optimizing timeline computation\n")
+        print(
+            f"⚠️  Performance threshold exceeded by {total_duration - target_time:.3f}s"
+        )
+        print("    Consider profiling hot paths or optimizing timeline computation\n")
 
     return {
         "mission_count": mission_count,

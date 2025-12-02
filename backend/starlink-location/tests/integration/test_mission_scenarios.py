@@ -135,7 +135,8 @@ def test_mission_multi_transport_critical():
             ka_outages=[
                 KaOutage(
                     id="ka-outage-1-multi-crit",
-                    start_time=now + timedelta(minutes=51),  # Overlaps with X degradation
+                    start_time=now
+                    + timedelta(minutes=51),  # Overlaps with X degradation
                     duration_seconds=1800,  # 30 minutes
                 )
             ],
@@ -260,7 +261,9 @@ def stub_timeline_builder(monkeypatch):
                     start_time=now + timedelta(minutes=24),
                     end_time=now + timedelta(minutes=72),
                     status=TimelineStatus.DEGRADED,
-                    reasons=["X-Band azimuth conflict during AAR window (inverted constraint: 315-45°)"],
+                    reasons=[
+                        "X-Band azimuth conflict during AAR window (inverted constraint: 315-45°)"
+                    ],
                     impacted_transports=[Transport.X],
                 ),
                 TimelineSegment(
@@ -406,7 +409,9 @@ class TestMissionScenarioNormalOps:
         degraded_segments = [
             s for s in segments if s.get("status") == TimelineStatus.DEGRADED
         ]
-        assert len(degraded_segments) > 0, "Expected degraded segments for X transitions"
+        assert (
+            len(degraded_segments) > 0
+        ), "Expected degraded segments for X transitions"
 
         # Verify reasons mention X transitions
         all_reasons = []
@@ -431,19 +436,25 @@ class TestMissionScenarioNormalOps:
         assert "end_time" in last_segment
 
         # Test export to CSV
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "csv"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "csv"}
+        )
         assert response.status_code == 200
         csv_data = response.text
         assert len(csv_data) > 0
         assert "Time" in csv_data or "time" in csv_data.lower()
 
         # Test export to XLSX
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "xlsx"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "xlsx"}
+        )
         assert response.status_code == 200
         assert len(response.content) > 0
 
         # Test export to PDF
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "pdf"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "pdf"}
+        )
         assert response.status_code == 200
         assert len(response.content) > 0
 
@@ -514,9 +525,7 @@ class TestMissionScenarioNormalOps:
             if "reasons" in segment and segment["reasons"]:
                 all_reasons.extend(segment["reasons"])
 
-        ka_related_reasons = [
-            r for r in all_reasons if "Ka" in r or "transition" in r
-        ]
+        ka_related_reasons = [r for r in all_reasons if "Ka" in r or "transition" in r]
         assert (
             len(ka_related_reasons) > 0
         ), "Expected Ka transition reasons in degraded segments"
@@ -528,9 +537,9 @@ class TestMissionScenarioNormalOps:
             if "ka" in segment.get("status", "").lower():
                 # Ka is degraded, verify message mentions Ka
                 reasons = segment.get("reasons", [])
-                assert any("Ka" in r or "transition" in r for r in reasons), (
-                    f"Expected Ka-related reason in degraded segment, got {reasons}"
-                )
+                assert any(
+                    "Ka" in r or "transition" in r for r in reasons
+                ), f"Expected Ka-related reason in degraded segment, got {reasons}"
 
         # Verify timeline has valid metadata
         assert "mission_id" in timeline_data
@@ -544,25 +553,33 @@ class TestMissionScenarioNormalOps:
         assert "end_time" in last_segment
 
         # Test export to CSV
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "csv"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "csv"}
+        )
         assert response.status_code == 200
         csv_data = response.text
         assert len(csv_data) > 0
         assert "Time" in csv_data or "time" in csv_data.lower()
 
         # Test export to XLSX
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "xlsx"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "xlsx"}
+        )
         assert response.status_code == 200
         assert len(response.content) > 0
 
         # Test export to PDF
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "pdf"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "pdf"}
+        )
         assert response.status_code == 200
         assert len(response.content) > 0
 
         print("✅ Ka coverage swap scenario test PASSED")
 
-    def test_aar_azimuth_inversion(self, client: TestClient, test_mission_aar_azimuth_inversion):
+    def test_aar_azimuth_inversion(
+        self, client: TestClient, test_mission_aar_azimuth_inversion
+    ):
         """
         Test AAR window with X-Band azimuth inversion scenario.
 
@@ -622,7 +639,9 @@ class TestMissionScenarioNormalOps:
         degraded_segments = [
             s for s in segments if s.get("status") == TimelineStatus.DEGRADED
         ]
-        assert len(degraded_segments) > 0, "Expected degraded segment for AAR azimuth conflict"
+        assert (
+            len(degraded_segments) > 0
+        ), "Expected degraded segment for AAR azimuth conflict"
 
         # Verify reasons mention X azimuth conflict during AAR
         all_reasons = []
@@ -631,18 +650,16 @@ class TestMissionScenarioNormalOps:
                 all_reasons.extend(segment["reasons"])
 
         aar_related_reasons = [
-            r for r in all_reasons
-            if ("azimuth" in r.lower() or "AAR" in r)
-            and ("X" in r or "X-Band" in r)
+            r
+            for r in all_reasons
+            if ("azimuth" in r.lower() or "AAR" in r) and ("X" in r or "X-Band" in r)
         ]
         assert (
             len(aar_related_reasons) > 0
         ), f"Expected X azimuth/AAR reasons in degraded segments, got {all_reasons}"
 
         # Verify Ka and Ku remain unaffected (no Ka/Ku in reasons)
-        ka_ku_reasons = [
-            r for r in all_reasons if ("Ka" in r or "Ku" in r)
-        ]
+        ka_ku_reasons = [r for r in all_reasons if ("Ka" in r or "Ku" in r)]
         assert (
             len(ka_ku_reasons) == 0
         ), f"Expected Ka and Ku to remain unaffected during AAR, but found: {ka_ku_reasons}"
@@ -659,25 +676,33 @@ class TestMissionScenarioNormalOps:
         assert "end_time" in last_segment
 
         # Test export to CSV
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "csv"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "csv"}
+        )
         assert response.status_code == 200
         csv_data = response.text
         assert len(csv_data) > 0
         assert "Time" in csv_data or "time" in csv_data.lower()
 
         # Test export to XLSX
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "xlsx"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "xlsx"}
+        )
         assert response.status_code == 200
         assert len(response.content) > 0
 
         # Test export to PDF
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "pdf"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "pdf"}
+        )
         assert response.status_code == 200
         assert len(response.content) > 0
 
         print("✅ AAR azimuth inversion scenario test PASSED")
 
-    def test_multi_transport_critical(self, client: TestClient, test_mission_multi_transport_critical):
+    def test_multi_transport_critical(
+        self, client: TestClient, test_mission_multi_transport_critical
+    ):
         """
         Test multi-transport degradation with critical status scenario.
 
@@ -747,29 +772,31 @@ class TestMissionScenarioNormalOps:
                 critical_reasons.extend(segment["reasons"])
 
         has_x_reason = any("X" in r or "transition" in r for r in critical_reasons)
-        has_ka_reason = any("Ka" in r or "coverage" in r or "gap" in r for r in critical_reasons)
-        assert has_x_reason and has_ka_reason, (
-            f"Critical segment should have both X and Ka reasons, got: {critical_reasons}"
+        has_ka_reason = any(
+            "Ka" in r or "coverage" in r or "gap" in r for r in critical_reasons
         )
+        assert (
+            has_x_reason and has_ka_reason
+        ), f"Critical segment should have both X and Ka reasons, got: {critical_reasons}"
 
         # Verify Ka and X are both degraded during critical period
         for segment in critical_segments:
             impacted = segment.get("impacted_transports", [])
             # Both X and Ka should be impacted in critical segment
-            assert Transport.X in impacted or "X" in impacted, (
-                f"Expected X in impacted_transports during critical segment"
-            )
-            assert Transport.KA in impacted or "Ka" in impacted, (
-                f"Expected Ka in impacted_transports during critical segment"
-            )
+            assert (
+                Transport.X in impacted or "X" in impacted
+            ), "Expected X in impacted_transports during critical segment"
+            assert (
+                Transport.KA in impacted or "Ka" in impacted
+            ), "Expected Ka in impacted_transports during critical segment"
 
         # Verify Ku remains unaffected (not in reasons or impacted)
         for segment in segments:
             reasons = segment.get("reasons", [])
             ku_reasons = [r for r in reasons if "Ku" in r or "Ku" in r]
-            assert len(ku_reasons) == 0, (
-                f"Expected Ku to remain unaffected, but found: {ku_reasons}"
-            )
+            assert (
+                len(ku_reasons) == 0
+            ), f"Expected Ku to remain unaffected, but found: {ku_reasons}"
 
         # Verify timeline has valid metadata
         assert "mission_id" in timeline_data
@@ -783,19 +810,25 @@ class TestMissionScenarioNormalOps:
         assert "end_time" in last_segment
 
         # Test export to CSV
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "csv"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "csv"}
+        )
         assert response.status_code == 200
         csv_data = response.text
         assert len(csv_data) > 0
         assert "Time" in csv_data or "time" in csv_data.lower()
 
         # Test export to XLSX
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "xlsx"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "xlsx"}
+        )
         assert response.status_code == 200
         assert len(response.content) > 0
 
         # Test export to PDF
-        response = client.post(f"/api/missions/{mission.id}/export", json={"format": "pdf"})
+        response = client.post(
+            f"/api/missions/{mission.id}/export", json={"format": "pdf"}
+        )
         assert response.status_code == 200
         assert len(response.content) > 0
 

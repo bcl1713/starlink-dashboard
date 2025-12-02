@@ -20,7 +20,11 @@ class SpeedTracker:
     a configurable duration (default: 120 seconds = 2 minutes).
     """
 
-    def __init__(self, smoothing_duration_seconds: float = 120.0, min_distance_meters: float = 10.0):
+    def __init__(
+        self,
+        smoothing_duration_seconds: float = 120.0,
+        min_distance_meters: float = 10.0,
+    ):
         """
         Initialize speed tracker.
 
@@ -37,10 +41,7 @@ class SpeedTracker:
         self._last_speed: float = 0.0
 
     def update(
-        self,
-        latitude: float,
-        longitude: float,
-        timestamp: Optional[float] = None
+        self, latitude: float, longitude: float, timestamp: Optional[float] = None
     ) -> float:
         """
         Update with new position and calculate speed.
@@ -74,7 +75,9 @@ class SpeedTracker:
         newest_lat, newest_lon, newest_time = self._position_history[-1]
 
         # Calculate distance and time delta
-        distance_meters = self._calculate_distance(oldest_lat, oldest_lon, newest_lat, newest_lon)
+        distance_meters = self._calculate_distance(
+            oldest_lat, oldest_lon, newest_lat, newest_lon
+        )
         time_delta_seconds = newest_time - oldest_time
 
         # Avoid division by zero and very small time deltas
@@ -103,11 +106,7 @@ class SpeedTracker:
         return self._last_speed
 
     def _calculate_distance(
-        self,
-        lat1: float,
-        lon1: float,
-        lat2: float,
-        lon2: float
+        self, lat1: float, lon1: float, lat2: float, lon2: float
     ) -> float:
         """
         Calculate great-circle distance between two points in meters using Haversine formula.
@@ -134,8 +133,10 @@ class SpeedTracker:
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
 
-        a = (math.sin(dlat / 2) ** 2 +
-             math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2)
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         return R * c

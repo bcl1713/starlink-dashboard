@@ -5,7 +5,7 @@ import math
 import random
 import time
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional
 
 from app.models.config import PositionConfig, RouteConfig
 from app.models.telemetry import PositionData
@@ -23,11 +23,7 @@ class PositionSimulator:
     # when reversing direction at route endpoints
     _PROGRESS_EPSILON = 0.01
 
-    def __init__(
-        self,
-        route_config: RouteConfig,
-        position_config: PositionConfig
-    ):
+    def __init__(self, route_config: RouteConfig, position_config: PositionConfig):
         """
         Initialize position simulator.
 
@@ -44,15 +40,14 @@ class PositionSimulator:
             latitude_start=route_config.latitude_start,
             longitude_start=route_config.longitude_start,
             radius_km=route_config.radius_km,
-            distance_km=route_config.distance_km
+            distance_km=route_config.distance_km,
         )
 
         # Initialize state
         self.progress = 0.0  # 0.0 to 1.0 along route
         self.current_speed = 0.0  # knots
         self.current_altitude = (
-            position_config.altitude_min_feet +
-            position_config.altitude_max_feet
+            position_config.altitude_min_feet + position_config.altitude_max_feet
         ) / 2.0
 
         # Time tracking for accurate delta calculation
@@ -61,8 +56,8 @@ class PositionSimulator:
 
         # Initialize heading tracker (simulates live mode behavior)
         self.heading_tracker = HeadingTracker(
-            min_distance_meters=5.0,   # Lower threshold for simulation
-            max_age_seconds=30.0
+            min_distance_meters=5.0,  # Lower threshold for simulation
+            max_age_seconds=30.0,
         )
 
         # Route following support (Phase 5 feature)
@@ -70,7 +65,9 @@ class PositionSimulator:
         self.route_completion_behavior = "loop"  # loop, stop, or reverse
         self._previous_route_name = None  # Track route changes
         self._route_direction = 1  # 1 = forward, -1 = backward (for reverse mode)
-        self._movement_stopped = False  # Flag to explicitly stop movement at route end (for 'stop' mode)
+        self._movement_stopped = (
+            False  # Flag to explicitly stop movement at route end (for 'stop' mode)
+        )
 
     def update(self) -> PositionData:
         """
@@ -101,7 +98,9 @@ class PositionSimulator:
         # Extract position data
         lat = position_dict["latitude"]
         lon = position_dict["longitude"]
-        alt = position_dict["altitude"] or self.current_altitude  # Fallback if no altitude
+        alt = (
+            position_dict["altitude"] or self.current_altitude
+        )  # Fallback if no altitude
         heading = position_dict["heading"]
 
         # Adjust heading if moving backward
@@ -147,7 +146,7 @@ class PositionSimulator:
             longitude=lon,
             altitude=alt,
             speed=self.current_speed,
-            heading=heading  # Use calculated heading from route (adjusted for direction)
+            heading=heading,  # Use calculated heading from route (adjusted for direction)
         )
 
     def _update_with_default_route(self) -> PositionData:
@@ -172,9 +171,7 @@ class PositionSimulator:
         # Calculate heading from movement using HeadingTracker
         # This simulates how heading will be calculated in live mode!
         calculated_heading = self.heading_tracker.update(
-            latitude=lat,
-            longitude=lon,
-            timestamp=datetime.now()
+            latitude=lat, longitude=lon, timestamp=datetime.now()
         )
 
         return PositionData(
@@ -182,7 +179,7 @@ class PositionSimulator:
             longitude=lon,
             altitude=self.current_altitude,
             speed=self.current_speed,
-            heading=calculated_heading  # ✅ Using movement-based heading calculation!
+            heading=calculated_heading,  # ✅ Using movement-based heading calculation!
         )
 
     def _update_progress(self) -> None:
@@ -202,9 +199,13 @@ class PositionSimulator:
         if self._movement_stopped:
             return
 
-        self._update_progress_generic(direction=self._route_direction, use_route_length=True)
+        self._update_progress_generic(
+            direction=self._route_direction, use_route_length=True
+        )
 
-    def _update_progress_generic(self, direction: int = 1, use_route_length: bool = False) -> None:
+    def _update_progress_generic(
+        self, direction: int = 1, use_route_length: bool = False
+    ) -> None:
         """Generic method to update progress with configurable behavior.
 
         Eliminates code duplication between default and route-following updates.
@@ -231,12 +232,14 @@ class PositionSimulator:
         # Determine route length based on context
         if use_route_length and self.route_follower:
             # Using KML route: get total distance
-            route_length_km = self.route_follower.get_total_distance() / 1000.0  # Convert meters to km
+            route_length_km = (
+                self.route_follower.get_total_distance() / 1000.0
+            )  # Convert meters to km
         else:
             # Using default route: estimate circumference/length for progress calculation
             # For circular route: 2 * pi * radius
             # For straight route: total distance
-            if hasattr(self.route, 'radius_km'):
+            if hasattr(self.route, "radius_km"):
                 # Circular route
                 route_length_km = 2 * math.pi * self.route.radius_km
             else:
@@ -244,7 +247,7 @@ class PositionSimulator:
                 route_length_km = self.route.distance_km
 
         # Update progress based on actual distance traveled and direction
-        self.progress += (direction * km_traveled / route_length_km)
+        self.progress += direction * km_traveled / route_length_km
 
     def _update_speed(self) -> None:
         """
@@ -258,7 +261,9 @@ class PositionSimulator:
 
         # Phase 5: Check if we're following a route with timing data
         if self.route_follower:
-            expected_speed = self.route_follower.get_segment_speed_at_progress(self.progress)
+            expected_speed = self.route_follower.get_segment_speed_at_progress(
+                self.progress
+            )
             if expected_speed is not None:
                 # Route has timing data - use expected speed from route
                 # Add small drift (±0.5 knots) to simulate realistic variations
@@ -293,8 +298,7 @@ class PositionSimulator:
 
         # Clamp to valid range
         self.current_speed = max(
-            config.speed_min_knots,
-            min(config.speed_max_knots, self.current_speed)
+            config.speed_min_knots, min(config.speed_max_knots, self.current_speed)
         )
 
     def _update_altitude(self) -> None:
@@ -308,7 +312,7 @@ class PositionSimulator:
         # Clamp to valid range
         self.current_altitude = max(
             config.altitude_min_feet,
-            min(config.altitude_max_feet, self.current_altitude)
+            min(config.altitude_max_feet, self.current_altitude),
         )
 
     def set_progress(self, progress: float) -> None:
@@ -320,7 +324,9 @@ class PositionSimulator:
         """
         self.progress = progress % 1.0
 
-    def set_route_follower(self, follower: Optional['KMLRouteFollower'], completion_behavior: str = "loop") -> None:
+    def set_route_follower(
+        self, follower: Optional["KMLRouteFollower"], completion_behavior: str = "loop"
+    ) -> None:
         """
         Set a KML route follower for this simulator.
 
@@ -349,8 +355,8 @@ class PositionSimulator:
         self.progress = 0.0
         self.current_speed = 0.0
         self.current_altitude = (
-            self.position_config.altitude_min_feet +
-            self.position_config.altitude_max_feet
+            self.position_config.altitude_min_feet
+            + self.position_config.altitude_max_feet
         ) / 2.0
         self.last_update_time = time.time()
         self.heading_tracker.reset()

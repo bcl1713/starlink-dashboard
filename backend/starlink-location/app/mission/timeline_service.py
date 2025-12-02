@@ -302,7 +302,9 @@ def _annotate_aar_markers(
         blocks.append(
             {
                 "start": pending_start.isoformat(),
-                "end": _ensure_datetime(timeline.segments[-1].end_time or pending_start).isoformat(),
+                "end": _ensure_datetime(
+                    timeline.segments[-1].end_time or pending_start
+                ).isoformat(),
             }
         )
     if blocks:
@@ -404,7 +406,11 @@ class RouteTemporalProjector:
                 timestamp=self.start_time,
                 latitude=point.latitude,
                 longitude=point.longitude,
-                altitude=point.altitude if point.altitude is not None else DEFAULT_CRUISE_ALTITUDE_M,
+                altitude=(
+                    point.altitude
+                    if point.altitude is not None
+                    else DEFAULT_CRUISE_ALTITUDE_M
+                ),
                 heading=None,
             )
 
@@ -583,9 +589,8 @@ def _analyze_ka_coverage(
                 gap_state.lost_satellite
                 and gap_state.lost_satellite == gap_state.regained_satellite
             )
-            if (
-                is_same_satellite
-                and _looks_like_idl_gap(gap_state.start, gap_state.end)
+            if is_same_satellite and _looks_like_idl_gap(
+                gap_state.start, gap_state.end
             ):
                 gap_state = None
                 continue
@@ -606,9 +611,7 @@ def _analyze_ka_coverage(
                 continue
 
         if overlap_state and len(curr_set) == 1 and curr_set == {overlap_state["to"]}:
-            end_boundary = _interpolate_sample(
-                projector, prev_sample, curr_sample
-            )
+            end_boundary = _interpolate_sample(projector, prev_sample, curr_sample)
             start_boundary = overlap_state.get("start", prev_sample)
             midpoint_distance = (
                 start_boundary.distance_meters + end_boundary.distance_meters
@@ -751,7 +754,9 @@ def _apply_ka_events(
                 transport=Transport.KA,
                 affected_transport=Transport.KA,
                 severity="warning",
-                reason=_format_gap_reason("exit", gap.lost_satellite, gap.regained_satellite),
+                reason=_format_gap_reason(
+                    "exit", gap.lost_satellite, gap.regained_satellite
+                ),
                 satellite_id=gap.lost_satellite,
             )
         )
@@ -764,7 +769,9 @@ def _apply_ka_events(
                     transport=Transport.KA,
                     affected_transport=Transport.KA,
                     severity="info",
-                    reason=_format_gap_reason("entry", gap.lost_satellite, gap.regained_satellite),
+                    reason=_format_gap_reason(
+                        "entry", gap.lost_satellite, gap.regained_satellite
+                    ),
                     satellite_id=gap.regained_satellite,
                 )
             )
@@ -846,7 +853,11 @@ def _apply_x_azimuth_events(
         if satellite_longitude is None:
             continue
 
-        altitude = sample.altitude if sample.altitude is not None else DEFAULT_CRUISE_ALTITUDE_M
+        altitude = (
+            sample.altitude
+            if sample.altitude is not None
+            else DEFAULT_CRUISE_ALTITUDE_M
+        )
         aft_violation, relative_azimuth, debug = rule_engine.evaluate_x_azimuth_window(
             aircraft_lat=sample.latitude,
             aircraft_lon=sample.longitude,
@@ -1037,9 +1048,10 @@ def _format_elevation_reason(
         abs_az = debug_metadata.get("absolute_azimuth_degrees")
         if abs_az is not None:
             extras.append(f"abs={float(abs_az):.1f}°")
-        if debug_metadata.get("sample_latitude") is not None and debug_metadata.get(
-            "sample_longitude"
-        ) is not None:
+        if (
+            debug_metadata.get("sample_latitude") is not None
+            and debug_metadata.get("sample_longitude") is not None
+        ):
             extras.append(
                 "sample="
                 f"{float(debug_metadata['sample_latitude']):.2f},"
@@ -1050,10 +1062,14 @@ def _format_elevation_reason(
         if debug_metadata.get("nearest_waypoint_name"):
             extras.append(f"wp={debug_metadata['nearest_waypoint_name']}")
         if debug_metadata.get("satellite_longitude") is not None:
-            extras.append(f"sat_lon={float(debug_metadata['satellite_longitude']):.1f}°")
+            extras.append(
+                f"sat_lon={float(debug_metadata['satellite_longitude']):.1f}°"
+            )
         if extras:
             reason = f"{reason} [{' | '.join(extras)}]"
     return reason
+
+
 def _nearest_waypoint_name(route: ParsedRoute, sample: RouteSample) -> str | None:
     """Return nearest waypoint name for debugging."""
     if not route.waypoints:
@@ -1078,9 +1094,7 @@ def _nearest_waypoint_name(route: ParsedRoute, sample: RouteSample) -> str | Non
     return closest_name
 
 
-def _haversine_meters(
-    lat1: float, lon1: float, lat2: float, lon2: float
-) -> float:
+def _haversine_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Compute haversine distance between two points in meters."""
     import math
 
@@ -1090,7 +1104,10 @@ def _haversine_meters(
     dphi = math.radians(lat2 - lat1)
     dlambda = math.radians(lon2 - lon1)
 
-    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    a = (
+        math.sin(dphi / 2) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return R * c
 
@@ -1394,6 +1411,8 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
         _COVERAGE_SAMPLER = None
 
     return _COVERAGE_SAMPLER
+
+
 def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
     # Simplified: no satellite name, just Exit or Entry
     return f"CommKa\n{kind}"
@@ -1425,7 +1444,11 @@ def _find_waypoint_coordinates(
     normalized = waypoint_name.strip().lower()
     for waypoint in route.waypoints or []:
         name = (waypoint.name or f"waypoint-{waypoint.order}").strip().lower()
-        if name == normalized and waypoint.latitude is not None and waypoint.longitude is not None:
+        if (
+            name == normalized
+            and waypoint.latitude is not None
+            and waypoint.longitude is not None
+        ):
             return waypoint.latitude, waypoint.longitude
     return None
 

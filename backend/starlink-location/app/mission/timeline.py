@@ -10,7 +10,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Dict, List, Sequence
 
-from app.mission.models import MissionLegTimeline, TimelineSegment, TimelineStatus, Transport, TransportState
+from app.mission.models import (
+    MissionLegTimeline,
+    TimelineSegment,
+    TimelineStatus,
+    Transport,
+    TransportState,
+)
 from app.mission.state import TransportInterval
 
 
@@ -156,7 +162,9 @@ def _derive_status(
     ku_state: TransportState,
 ) -> TimelineStatus:
     impacted = sum(
-        1 for state in (x_state, ka_state, ku_state) if state != TransportState.AVAILABLE
+        1
+        for state in (x_state, ka_state, ku_state)
+        if state != TransportState.AVAILABLE
     )
     if impacted == 0:
         return TimelineStatus.NOMINAL

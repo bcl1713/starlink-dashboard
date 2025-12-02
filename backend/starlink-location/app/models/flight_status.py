@@ -107,12 +107,8 @@ class FlightStatus(BaseModel):
 class FlightStatusResponse(BaseModel):
     """Response model for flight status API endpoint."""
 
-    phase: FlightPhase = Field(
-        ..., description="Current flight phase"
-    )
-    eta_mode: ETAMode = Field(
-        ..., description="Current ETA calculation mode"
-    )
+    phase: FlightPhase = Field(..., description="Current flight phase")
+    eta_mode: ETAMode = Field(..., description="Current ETA calculation mode")
     active_route_id: Optional[str] = Field(
         default=None,
         description="Identifier of the active route associated with this flight, if any",

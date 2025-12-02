@@ -3,8 +3,6 @@
 import pytest
 import asyncio
 
-from app.models.config import SimulationConfig
-
 
 @pytest.mark.asyncio
 async def test_config_get_returns_200(test_client):
@@ -65,10 +63,7 @@ async def test_config_post_returns_200(test_client, default_config):
     """Test that POST config endpoint returns 200."""
     await asyncio.sleep(0.1)
 
-    response = test_client.post(
-        "/api/config",
-        json=default_config.model_dump()
-    )
+    response = test_client.post("/api/config", json=default_config.model_dump())
     assert response.status_code == 200
 
 
@@ -81,10 +76,7 @@ async def test_config_post_updates_config(test_client, default_config):
     new_config = default_config.model_copy()
     new_config.mode = "live"
 
-    response = test_client.post(
-        "/api/config",
-        json=new_config.model_dump()
-    )
+    response = test_client.post("/api/config", json=new_config.model_dump())
     assert response.status_code == 200
 
     # Verify the update
@@ -97,10 +89,7 @@ async def test_config_put_returns_200(test_client, default_config):
     """Test that PUT config endpoint returns 200."""
     await asyncio.sleep(0.1)
 
-    response = test_client.put(
-        "/api/config",
-        json=default_config.model_dump()
-    )
+    response = test_client.put("/api/config", json=default_config.model_dump())
     assert response.status_code == 200
 
 
@@ -113,10 +102,7 @@ async def test_config_put_updates_config(test_client, default_config):
     new_config = default_config.model_copy()
     new_config.update_interval_seconds = 2.0
 
-    response = test_client.put(
-        "/api/config",
-        json=new_config.model_dump()
-    )
+    response = test_client.put("/api/config", json=new_config.model_dump())
     assert response.status_code == 200
 
     data = response.json()
@@ -130,13 +116,10 @@ async def test_config_post_invalid_data_returns_400(test_client):
 
     invalid_config = {
         "mode": "invalid_mode",  # Invalid mode
-        "update_interval_seconds": 1.0
+        "update_interval_seconds": 1.0,
     }
 
-    response = test_client.post(
-        "/api/config",
-        json=invalid_config
-    )
+    response = test_client.post("/api/config", json=invalid_config)
     # Should return 400 or 422 for validation error
     assert response.status_code >= 400
 
@@ -155,10 +138,7 @@ async def test_config_preserves_all_sections(test_client, default_config):
     """Test that all config sections are preserved on update."""
     await asyncio.sleep(0.1)
 
-    response = test_client.post(
-        "/api/config",
-        json=default_config.model_dump()
-    )
+    response = test_client.post("/api/config", json=default_config.model_dump())
     data = response.json()
 
     # All sections should be present
@@ -169,4 +149,7 @@ async def test_config_preserves_all_sections(test_client, default_config):
 
     # Values should be preserved
     assert data["route"]["radius_km"] == default_config.route.radius_km
-    assert data["network"]["latency_typical_ms"] == default_config.network.latency_typical_ms
+    assert (
+        data["network"]["latency_typical_ms"]
+        == default_config.network.latency_typical_ms
+    )

@@ -1,9 +1,7 @@
 """Synthetic route generator for position simulation."""
 
 import math
-from typing import List, Tuple
-
-import numpy as np
+from typing import Tuple
 
 
 def degrees_to_radians(degrees: float) -> float:
@@ -16,12 +14,7 @@ def radians_to_degrees(radians: float) -> float:
     return radians * (180.0 / math.pi)
 
 
-def calculate_bearing(
-    lat1: float,
-    lon1: float,
-    lat2: float,
-    lon2: float
-) -> float:
+def calculate_bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Calculate bearing (heading) from point 1 to point 2.
 
@@ -54,8 +47,9 @@ def calculate_bearing(
     dlon = lon2_rad - lon1_rad
 
     y = math.sin(dlon) * math.cos(lat2_rad)
-    x = (math.cos(lat1_rad) * math.sin(lat2_rad) -
-         math.sin(lat1_rad) * math.cos(lat2_rad) * math.cos(dlon))
+    x = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(
+        lat2_rad
+    ) * math.cos(dlon)
 
     bearing_rad = math.atan2(y, x)
     bearing_deg = radians_to_degrees(bearing_rad)
@@ -65,10 +59,7 @@ def calculate_bearing(
 
 
 def calculate_destination(
-    start_lat: float,
-    start_lon: float,
-    bearing: float,
-    distance_km: float
+    start_lat: float, start_lon: float, bearing: float, distance_km: float
 ) -> Tuple[float, float]:
     """
     Calculate destination point given start, bearing, and distance.
@@ -91,13 +82,18 @@ def calculate_destination(
     bearing_rad = degrees_to_radians(bearing)
 
     lat2_rad = math.asin(
-        math.sin(lat1_rad) * math.cos(distance_km / earth_radius_km) +
-        math.cos(lat1_rad) * math.sin(distance_km / earth_radius_km) * math.cos(bearing_rad)
+        math.sin(lat1_rad) * math.cos(distance_km / earth_radius_km)
+        + math.cos(lat1_rad)
+        * math.sin(distance_km / earth_radius_km)
+        * math.cos(bearing_rad)
     )
 
     lon2_rad = lon1_rad + math.atan2(
-        math.sin(bearing_rad) * math.sin(distance_km / earth_radius_km) * math.cos(lat1_rad),
-        math.cos(distance_km / earth_radius_km) - math.sin(lat1_rad) * math.sin(lat2_rad)
+        math.sin(bearing_rad)
+        * math.sin(distance_km / earth_radius_km)
+        * math.cos(lat1_rad),
+        math.cos(distance_km / earth_radius_km)
+        - math.sin(lat1_rad) * math.sin(lat2_rad),
     )
 
     return (radians_to_degrees(lat2_rad), radians_to_degrees(lon2_rad))
@@ -111,7 +107,7 @@ class CircularRoute:
         center_lat: float,
         center_lon: float,
         radius_km: float,
-        num_points: int = 360
+        num_points: int = 360,
     ):
         """
         Initialize circular route.
@@ -138,10 +134,7 @@ class CircularRoute:
 
             # Calculate point position
             lat, lon = calculate_destination(
-                self.center_lat,
-                self.center_lon,
-                bearing_from_center,
-                self.radius_km
+                self.center_lat, self.center_lon, bearing_from_center, self.radius_km
             )
 
             # Heading is tangent to circle (perpendicular to radius)
@@ -209,11 +202,7 @@ class StraightRoute:
     """Generator for straight line route patterns."""
 
     def __init__(
-        self,
-        start_lat: float,
-        start_lon: float,
-        end_lat: float,
-        end_lon: float
+        self, start_lat: float, start_lon: float, end_lat: float, end_lon: float
     ):
         """
         Initialize straight line route.
@@ -244,13 +233,18 @@ class StraightRoute:
         # Haversine distance
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
-        a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
         self.distance_km = earth_radius_km * c
 
         # Calculate bearing
         y = math.sin(dlon) * math.cos(lat2_rad)
-        x = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(lat2_rad) * math.cos(dlon)
+        x = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(
+            lat2_rad
+        ) * math.cos(dlon)
         self.bearing = radians_to_degrees(math.atan2(y, x))
         self.bearing = (self.bearing + 360) % 360
 
@@ -272,10 +266,7 @@ class StraightRoute:
 
         # Calculate position
         lat, lon = calculate_destination(
-            self.start_lat,
-            self.start_lon,
-            self.bearing,
-            distance_along
+            self.start_lat, self.start_lon, self.bearing, distance_along
         )
 
         return (lat, lon, self.bearing)
@@ -286,7 +277,7 @@ def create_route(
     latitude_start: float,
     longitude_start: float,
     radius_km: float = 100.0,
-    distance_km: float = 500.0
+    distance_km: float = 500.0,
 ) -> CircularRoute | StraightRoute:
     """
     Create a route generator.
@@ -309,10 +300,7 @@ def create_route(
     elif pattern == "straight":
         # Calculate end point for straight route
         end_lat, end_lon = calculate_destination(
-            latitude_start,
-            longitude_start,
-            45.0,  # Northeast direction
-            distance_km
+            latitude_start, longitude_start, 45.0, distance_km  # Northeast direction
         )
         return StraightRoute(latitude_start, longitude_start, end_lat, end_lon)
     else:

@@ -1,8 +1,6 @@
 """Unit tests for mission metrics integration."""
 
-import pytest
 from datetime import datetime, timezone
-import math
 
 from app.core.metrics import (
     mission_active_info,
@@ -23,22 +21,25 @@ class TestMissionMetrics:
     def test_mission_active_info_metric_exists(self):
         """Verify mission_active_info metric is registered."""
         assert mission_active_info is not None
-        assert mission_active_info._name == 'mission_active_info'
+        assert mission_active_info._name == "mission_active_info"
 
     def test_mission_phase_state_metric_exists(self):
         """Verify mission_phase_state metric is registered."""
         assert mission_phase_state is not None
-        assert mission_phase_state._name == 'mission_phase_state'
+        assert mission_phase_state._name == "mission_phase_state"
 
     def test_mission_next_conflict_seconds_metric_exists(self):
         """Verify mission_next_conflict_seconds metric is registered."""
         assert mission_next_conflict_seconds is not None
-        assert mission_next_conflict_seconds._name == 'mission_next_conflict_seconds'
+        assert mission_next_conflict_seconds._name == "mission_next_conflict_seconds"
 
     def test_mission_timeline_generated_timestamp_metric_exists(self):
         """Verify mission_timeline_generated_timestamp metric is registered."""
         assert mission_timeline_generated_timestamp is not None
-        assert mission_timeline_generated_timestamp._name == 'mission_timeline_generated_timestamp'
+        assert (
+            mission_timeline_generated_timestamp._name
+            == "mission_timeline_generated_timestamp"
+        )
 
     def test_update_mission_active_metric(self):
         """Test updating mission active metric."""
@@ -66,10 +67,10 @@ class TestMissionMetrics:
     def test_metrics_in_registry(self):
         """Verify mission metrics are in the registry."""
         metric_names = [m.name for m in REGISTRY.collect()]
-        assert 'mission_active_info' in metric_names
-        assert 'mission_phase_state' in metric_names
-        assert 'mission_next_conflict_seconds' in metric_names
-        assert 'mission_timeline_generated_timestamp' in metric_names
+        assert "mission_active_info" in metric_names
+        assert "mission_phase_state" in metric_names
+        assert "mission_next_conflict_seconds" in metric_names
+        assert "mission_timeline_generated_timestamp" in metric_names
 
     def test_mission_phase_metric_values(self):
         """Test that phase metric maps correctly."""

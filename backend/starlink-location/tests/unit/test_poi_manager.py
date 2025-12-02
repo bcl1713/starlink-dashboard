@@ -2,7 +2,6 @@
 
 import json
 import tempfile
-from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -216,7 +215,9 @@ class TestPOIManager:
     def test_delete_scoped_pois_by_names(self, poi_manager):
         """Delete mission/route scoped POIs matching satellite names."""
         poi_manager.create_poi(
-            POICreate(name="X-Band-7", latitude=1.0, longitude=1.0, mission_id="mission-1")
+            POICreate(
+                name="X-Band-7", latitude=1.0, longitude=1.0, mission_id="mission-1"
+            )
         )
         poi_manager.create_poi(
             POICreate(name="X-Band-8", latitude=2.0, longitude=2.0, route_id="route-1")

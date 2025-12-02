@@ -54,7 +54,8 @@ def generate_transport_intervals(
     transports = list(transports or [Transport.X, Transport.KA, Transport.KU])
 
     active_conditions: Dict[Transport, Dict[str, Dict[str, str]]] = {
-        transport: {"degraded": {}, "offline": {}, "safety": {}} for transport in transports
+        transport: {"degraded": {}, "offline": {}, "safety": {}}
+        for transport in transports
     }
 
     intervals: Dict[Transport, List[TransportInterval]] = {}
@@ -124,7 +125,9 @@ def _clamp_timestamp(ts: datetime, start: datetime, end: datetime) -> datetime:
     return ts
 
 
-def _close_interval(intervals: List[TransportInterval], transition_time: datetime) -> None:
+def _close_interval(
+    intervals: List[TransportInterval], transition_time: datetime
+) -> None:
     """Close the current interval at the provided timestamp."""
     if not intervals:
         return
@@ -136,16 +139,21 @@ def _close_interval(intervals: List[TransportInterval], transition_time: datetim
         current.end = transition_time
 
 
-def _derive_state(condition_state: Dict[str, Dict[str, str]]) -> tuple[TransportState, List[str]]:
+def _derive_state(
+    condition_state: Dict[str, Dict[str, str]]
+) -> tuple[TransportState, List[str]]:
     """Return (state, reasons) based on active degraded/offline conditions."""
     offline_reasons = [
-        condition_state["offline"][key] for key in sorted(condition_state["offline"].keys())
+        condition_state["offline"][key]
+        for key in sorted(condition_state["offline"].keys())
     ]
     degraded_reasons = [
-        condition_state["degraded"][key] for key in sorted(condition_state["degraded"].keys())
+        condition_state["degraded"][key]
+        for key in sorted(condition_state["degraded"].keys())
     ]
     safety_reasons = [
-        condition_state["safety"][key] for key in sorted(condition_state["safety"].keys())
+        condition_state["safety"][key]
+        for key in sorted(condition_state["safety"].keys())
     ]
 
     if offline_reasons:
@@ -191,7 +199,7 @@ def _apply_event(
     if event.event_type == EventType.TAKEOFF_BUFFER:
         key = "takeoff_buffer"
         if event.severity == "safety":
-             return activate("safety", key, reason or "Takeoff buffer")
+            return activate("safety", key, reason or "Takeoff buffer")
         if event.severity in ("warning", "critical"):
             return activate("degraded", key, reason or "Takeoff buffer")
         d1 = deactivate("degraded", key)
@@ -204,11 +212,11 @@ def _apply_event(
             return activate("safety", prep_key, reason or "Landing buffer")
         if event.severity == "warning":
             return activate("degraded", prep_key, reason or "Landing buffer")
-        
+
         d1 = deactivate("degraded", prep_key)
         d2 = deactivate("safety", prep_key)
         changed = d1 or d2
-        
+
         offline_key = "landing_complete"
         offline_reason = reason or "Landing complete - X offline"
         return activate("offline", offline_key, offline_reason) or changed

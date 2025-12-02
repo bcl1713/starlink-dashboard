@@ -2,7 +2,6 @@
 
 import pytest
 
-from app.models.config import NetworkConfig
 from app.simulation.network import NetworkSimulator
 
 
@@ -38,7 +37,11 @@ class TestNetworkSimulator:
 
         for _ in range(20):
             data = simulator.update()
-            assert config.throughput_down_min_mbps <= data.throughput_down_mbps <= config.throughput_down_max_mbps
+            assert (
+                config.throughput_down_min_mbps
+                <= data.throughput_down_mbps
+                <= config.throughput_down_max_mbps
+            )
 
     def test_throughput_up_in_range(self, simulator):
         """Test that upload throughput stays in range."""
@@ -46,7 +49,11 @@ class TestNetworkSimulator:
 
         for _ in range(20):
             data = simulator.update()
-            assert config.throughput_up_min_mbps <= data.throughput_up_mbps <= config.throughput_up_max_mbps
+            assert (
+                config.throughput_up_min_mbps
+                <= data.throughput_up_mbps
+                <= config.throughput_up_max_mbps
+            )
 
     def test_packet_loss_in_range(self, simulator):
         """Test that packet loss stays in range."""
@@ -54,7 +61,11 @@ class TestNetworkSimulator:
 
         for _ in range(20):
             data = simulator.update()
-            assert config.packet_loss_min_percent <= data.packet_loss_percent <= config.packet_loss_max_percent
+            assert (
+                config.packet_loss_min_percent
+                <= data.packet_loss_percent
+                <= config.packet_loss_max_percent
+            )
 
     def test_latency_variation(self, simulator):
         """Test that latency varies."""
@@ -126,8 +137,7 @@ class TestNetworkSimulator:
         # Should be back to initial values
         assert simulator.current_latency == config.latency_typical_ms
         expected_down = (
-            config.throughput_down_min_mbps +
-            config.throughput_down_max_mbps
+            config.throughput_down_min_mbps + config.throughput_down_max_mbps
         ) / 2.0
         assert simulator.current_throughput_down == expected_down
 

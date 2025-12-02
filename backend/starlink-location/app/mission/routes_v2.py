@@ -1,23 +1,28 @@
 """Mission v2 API endpoints for hierarchical mission management."""
 
-import io
 import json
 import logging
 import tempfile
 import zipfile
 from pathlib import Path
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query, status, UploadFile, File, Depends, Request
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Query,
+    status,
+    UploadFile,
+    File,
+    Depends,
+    Request,
+)
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
 from app.core.limiter import limiter
 
 from app.mission.models import Mission, MissionLeg
 from app.mission.storage import (
     save_mission_v2,
     load_mission_v2,
-    delete_mission,
-    mission_exists,
     save_mission_timeline,
     get_mission_lock,
     load_mission_metadata_v2,
@@ -33,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_PAGINATION_LIMIT = 10  # Default number of missions to return
-MAX_PAGINATION_LIMIT = 100     # Maximum number of missions to return
+MAX_PAGINATION_LIMIT = 100  # Maximum number of missions to return
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
 
@@ -82,7 +87,9 @@ async def create_mission(
                         save_mission_timeline(leg.id, timeline)
                         logger.info(f"Timeline generated and saved for leg {leg.id}")
                     except Exception as e:
-                        logger.error(f"Failed to generate timeline for leg {leg.id}: {e}")
+                        logger.error(
+                            f"Failed to generate timeline for leg {leg.id}: {e}"
+                        )
                         # Don't fail creation if timeline generation fails
         return mission
     except Exception as e:
@@ -109,6 +116,7 @@ async def list_missions(
     """
     try:
         from pathlib import Path
+
         missions_dir = Path("data/missions")
 
         if not missions_dir.exists():
@@ -199,7 +207,9 @@ async def delete_mission_endpoint(
 
             for leg in mission.legs:
                 route_id = leg.route_id or "none"
-                logger.info(f"Cascade deletion: processing leg {leg.id} with route {route_id}")
+                logger.info(
+                    f"Cascade deletion: processing leg {leg.id} with route {route_id}"
+                )
 
                 # Delete route if it exists
                 if leg.route_id:
@@ -258,7 +268,9 @@ async def delete_mission_endpoint(
                     shutil.rmtree(mission_dir)
                     logger.info(f"Deleted mission directory: {mission_dir}")
                 except OSError as e:
-                    logger.error(f"Failed to delete mission directory {mission_dir}: {e}")
+                    logger.error(
+                        f"Failed to delete mission directory {mission_dir}: {e}"
+                    )
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                         detail="Failed to delete mission directory",
@@ -298,9 +310,7 @@ async def export_mission(
         return StreamingResponse(
             zip_file,
             media_type="application/zip",
-            headers={
-                "Content-Disposition": f'attachment; filename="{mission_id}.zip"'
-            },
+            headers={"Content-Disposition": f'attachment; filename="{mission_id}.zip"'},
         )
     except Exception as e:
         logger.error(f"Export failed: {e}")
@@ -312,27 +322,27 @@ async def export_mission(
 
 def safe_extract_path(zip_path: str, base_path: Path) -> Path:
     """Validate that a zip extraction path is safe (prevents directory traversal attacks).
-    
+
     Args:
         zip_path: Path from zip file
         base_path: Base directory for extraction
-        
+
     Returns:
         Validated absolute path
-        
+
     Raises:
         HTTPException: If path attempts directory traversal
     """
     # Resolve the absolute path
     absolute_path = (base_path / zip_path).resolve()
-    
+
     # Ensure the path is within the base directory
     if not str(absolute_path).startswith(str(base_path.resolve())):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid path in zip: {zip_path} (directory traversal attempt)"
+            detail=f"Invalid path in zip: {zip_path} (directory traversal attempt)",
         )
-    
+
     return absolute_path
 
 
@@ -342,19 +352,21 @@ def _import_routes_from_zip(
     tmppath: Path,
 ) -> tuple[int, list[str]]:
     """Import route KML files from zip archive.
-    
+
     Args:
         zf: ZipFile to read from
         route_manager: RouteManager instance
         tmppath: Temporary directory path
-        
+
     Returns:
         Tuple of (routes_imported, warnings)
     """
     routes_imported = 0
     warnings = []
-    
-    route_files = [f for f in zf.namelist() if f.startswith("routes/") and f.endswith(".kml")]
+
+    route_files = [
+        f for f in zf.namelist() if f.startswith("routes/") and f.endswith(".kml")
+    ]
     for route_file in route_files:
         try:
             # Validate path safety
@@ -374,7 +386,7 @@ def _import_routes_from_zip(
         except Exception as e:
             logger.error(f"Failed to import route {route_file}: {e}")
             warnings.append(f"Route {route_file}: {str(e)}")
-    
+
     return routes_imported, warnings
 
 
@@ -383,24 +395,24 @@ def _import_satellite_pois(
     poi_manager: POIManager,
 ) -> tuple[int, int, list[str]]:
     """Import and deduplicate satellite POIs from zip archive.
-    
+
     Args:
         zf: ZipFile to read from
         poi_manager: POIManager instance
-        
+
     Returns:
         Tuple of (satellites_imported, satellites_updated, warnings)
     """
     from app.models.poi import POI
-    
+
     satellites_imported = 0
     satellites_updated = 0
     warnings = []
-    
+
     satellite_file = "pois/satellites.json"
     if satellite_file not in zf.namelist():
         return satellites_imported, satellites_updated, warnings
-    
+
     try:
         satellite_data = json.loads(zf.read(satellite_file))
         for poi_dict in satellite_data.get("pois", []):
@@ -410,8 +422,12 @@ def _import_satellite_pois(
                 # Check if satellite already exists by name
                 existing_pois = poi_manager.list_pois()
                 existing_satellite = next(
-                    (p for p in existing_pois if p.name == poi.name and p.category == "satellite"),
-                    None
+                    (
+                        p
+                        for p in existing_pois
+                        if p.name == poi.name and p.category == "satellite"
+                    ),
+                    None,
                 )
 
                 if existing_satellite:
@@ -419,9 +435,13 @@ def _import_satellite_pois(
                     if existing_satellite.longitude != poi.longitude:
                         poi_manager.update_poi(existing_satellite.id, poi)
                         satellites_updated += 1
-                        logger.info(f"Updated satellite POI: {poi.name} (orbital position changed)")
+                        logger.info(
+                            f"Updated satellite POI: {poi.name} (orbital position changed)"
+                        )
                     else:
-                        logger.info(f"Satellite POI already exists with same position: {poi.name}")
+                        logger.info(
+                            f"Satellite POI already exists with same position: {poi.name}"
+                        )
                 else:
                     # Create new satellite POI
                     poi_manager.create_poi(poi)
@@ -433,7 +453,7 @@ def _import_satellite_pois(
     except Exception as e:
         logger.error(f"Failed to process satellite POIs: {e}")
         warnings.append(f"Satellites file: {str(e)}")
-    
+
     return satellites_imported, satellites_updated, warnings
 
 
@@ -445,22 +465,22 @@ def _import_leg_pois(
     tmppath: Path,
 ) -> tuple[int, list[str]]:
     """Import leg-specific POIs from zip archive.
-    
+
     Args:
         zf: ZipFile to read from
         poi_manager: POIManager instance
         poi_files: List of POI file paths in zip
         satellite_file: Path to satellite POI file (to skip)
         tmppath: Temporary directory path
-        
+
     Returns:
         Tuple of (pois_imported, warnings)
     """
     from app.models.poi import POI
-    
+
     pois_imported = 0
     warnings = []
-    
+
     # Process leg-specific POI files
     leg_poi_files = [f for f in poi_files if f != satellite_file]
     for poi_file in leg_poi_files:
@@ -485,7 +505,7 @@ def _import_leg_pois(
         except Exception as e:
             logger.error(f"Failed to process POI file {poi_file}: {e}")
             warnings.append(f"POI file {poi_file}: {str(e)}")
-    
+
     return pois_imported, warnings
 
 
@@ -496,18 +516,18 @@ def _generate_timelines_for_imported_legs(
     coverage_sampler,
 ) -> list[str]:
     """Generate timelines for all imported legs.
-    
+
     Args:
         mission: Imported mission
         route_manager: RouteManager instance
         poi_manager: POIManager instance
         coverage_sampler: CoverageSampler instance
-        
+
     Returns:
         List of warnings
     """
     warnings = []
-    
+
     for leg in mission.legs:
         if leg.route_id:
             try:
@@ -522,9 +542,13 @@ def _generate_timelines_for_imported_legs(
                 save_mission_timeline(leg.id, timeline)
                 logger.info(f"Timeline generated and saved for imported leg {leg.id}")
             except Exception as e:
-                logger.error(f"Failed to generate timeline for imported leg {leg.id}: {e}")
-                warnings.append(f"Timeline generation failed for leg {leg.id}: {str(e)}")
-    
+                logger.error(
+                    f"Failed to generate timeline for imported leg {leg.id}: {e}"
+                )
+                warnings.append(
+                    f"Timeline generation failed for leg {leg.id}: {str(e)}"
+                )
+
     return warnings
 
 
@@ -563,7 +587,7 @@ async def import_mission(
             if len(contents) > MAX_UPLOAD_SIZE:
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail="File too large"
+                    detail="File too large",
                 )
 
             with open(zip_path, "wb") as f:
@@ -575,7 +599,7 @@ async def import_mission(
                 if "mission.json" not in zf.namelist():
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Invalid package: missing mission.json"
+                        detail="Invalid package: missing mission.json",
                     )
 
                 # Extract mission.json
@@ -590,22 +614,32 @@ async def import_mission(
 
                 # Import route KML files from routes/ folder
                 if route_manager:
-                    routes_imported, route_warnings = _import_routes_from_zip(zf, route_manager, tmppath)
+                    routes_imported, route_warnings = _import_routes_from_zip(
+                        zf, route_manager, tmppath
+                    )
                     warnings.extend(route_warnings)
                 else:
                     warnings.append("Route manager not available, routes not imported")
 
                 # Import POIs from pois/ folder
                 if poi_manager:
-                    poi_files = [f for f in zf.namelist() if f.startswith("pois/") and f.endswith(".json")]
+                    poi_files = [
+                        f
+                        for f in zf.namelist()
+                        if f.startswith("pois/") and f.endswith(".json")
+                    ]
                     satellite_file = "pois/satellites.json"
-                    
+
                     # Process satellite POIs first (for deduplication)
-                    satellites_imported, satellites_updated, sat_warnings = _import_satellite_pois(zf, poi_manager)
+                    satellites_imported, satellites_updated, sat_warnings = (
+                        _import_satellite_pois(zf, poi_manager)
+                    )
                     warnings.extend(sat_warnings)
 
                     # Process leg-specific POI files
-                    pois_imported, poi_warnings = _import_leg_pois(zf, poi_manager, poi_files, satellite_file, tmppath)
+                    pois_imported, poi_warnings = _import_leg_pois(
+                        zf, poi_manager, poi_files, satellite_file, tmppath
+                    )
                     warnings.extend(poi_warnings)
                 else:
                     warnings.append("POI manager not available, POIs not imported")
@@ -619,7 +653,7 @@ async def import_mission(
                     "pois_imported": pois_imported,
                     "satellites_imported": satellites_imported,
                     "satellites_updated": satellites_updated,
-                    "warnings": warnings
+                    "warnings": warnings,
                 }
 
                 # Generate timelines for all imported legs to ensure derived data (like Ka transitions) is present
@@ -636,18 +670,19 @@ async def import_mission(
 
     except zipfile.BadZipFile:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid zip file"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid zip file"
         )
     except Exception as e:
         logger.error(f"Import failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Import failed: {str(e)}"
+            detail=f"Import failed: {str(e)}",
         )
 
 
-@router.post("/{mission_id}/legs", status_code=status.HTTP_201_CREATED, response_model=MissionLeg)
+@router.post(
+    "/{mission_id}/legs", status_code=status.HTTP_201_CREATED, response_model=MissionLeg
+)
 async def add_leg_to_mission(
     mission_id: str,
     leg: MissionLeg,
@@ -700,7 +735,9 @@ async def add_leg_to_mission(
                     save_mission_timeline(leg.id, timeline)
                     logger.info(f"Timeline generated and saved for new leg {leg.id}")
                 except Exception as e:
-                    logger.error(f"Failed to generate timeline for new leg {leg.id}: {e}")
+                    logger.error(
+                        f"Failed to generate timeline for new leg {leg.id}: {e}"
+                    )
                     # Don't fail the save if timeline generation fails
 
             logger.info(f"Added leg {leg.id} to mission {mission_id}")
@@ -839,9 +876,7 @@ async def delete_leg(
 
             # Log cascade deletion info
             route_id = leg.route_id or "none"
-            logger.info(
-                f"Cascade deletion: leg {leg_id} with route {route_id}"
-            )
+            logger.info(f"Cascade deletion: leg {leg_id} with route {route_id}")
 
             # CASCADE DELETE: Delete associated resources
             # 1. Delete route if exists
@@ -852,7 +887,9 @@ async def delete_leg(
                         # Delete associated POIs for this route
                         if poi_manager:
                             deleted_pois = poi_manager.delete_route_pois(leg.route_id)
-                            logger.info(f"Deleted {deleted_pois} POIs for route {leg.route_id}")
+                            logger.info(
+                                f"Deleted {deleted_pois} POIs for route {leg.route_id}"
+                            )
 
                         # Delete KML file
                         file_path = Path(parsed_route.metadata.file_path)
@@ -862,7 +899,9 @@ async def delete_leg(
 
                         # Remove from route manager cache
                         route_manager._routes.pop(leg.route_id, None)
-                        logger.info(f"Deleted route {leg.route_id} associated with leg {leg_id}")
+                        logger.info(
+                            f"Deleted route {leg.route_id} associated with leg {leg_id}"
+                        )
                 except Exception as e:
                     logger.error(f"Failed to delete route {leg.route_id}: {e}")
                     # Don't fail the entire leg deletion if route deletion fails
@@ -872,12 +911,15 @@ async def delete_leg(
                 try:
                     if leg.route_id:
                         deleted_leg_pois = poi_manager.delete_leg_pois(
-                            route_id=leg.route_id,
-                            mission_id=mission_id
+                            route_id=leg.route_id, mission_id=mission_id
                         )
-                        logger.info(f"Deleted {deleted_leg_pois} POIs for leg {leg_id} (route {leg.route_id})")
+                        logger.info(
+                            f"Deleted {deleted_leg_pois} POIs for leg {leg_id} (route {leg.route_id})"
+                        )
                     else:
-                        logger.info(f"No route associated with leg {leg_id}, skipping POI deletion")
+                        logger.info(
+                            f"No route associated with leg {leg_id}, skipping POI deletion"
+                        )
                 except Exception as e:
                     logger.error(f"Failed to delete leg POIs: {e}")
                     # Don't fail the entire leg deletion if POI deletion fails
@@ -961,7 +1003,9 @@ async def activate_leg(
             # Activate the route in RouteManager so dashboard can display it
             if active_leg and active_leg.route_id and route_manager:
                 try:
-                    logger.info(f"Activating route {active_leg.route_id} for leg {leg_id}")
+                    logger.info(
+                        f"Activating route {active_leg.route_id} for leg {leg_id}"
+                    )
                     route_manager.activate_route(active_leg.route_id)
                     logger.info(f"Route {active_leg.route_id} activated successfully")
                 except Exception as e:
@@ -1035,7 +1079,9 @@ async def deactivate_all_legs(
                 try:
                     for leg in mission.legs:
                         if leg.route_id:
-                            logger.info(f"Deactivating route {leg.route_id} for leg {leg.id}")
+                            logger.info(
+                                f"Deactivating route {leg.route_id} for leg {leg.id}"
+                            )
                             route_manager.deactivate_route(leg.route_id)
                     logger.info(f"Deactivated all routes for mission {mission_id}")
                 except Exception as e:

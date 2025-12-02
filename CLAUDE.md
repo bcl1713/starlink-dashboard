@@ -471,3 +471,10 @@ once available.
 - **API endpoints:** Section 4 of design document lists all backend endpoints
 - **Grafana integration:** See Phase 5 of development plan for dashboard
   requirements
+
+## Active Technologies
+- Python 3.13 (backend), TypeScript/React (frontend), Markdown (docs) + FastAPI (backend), React/Vite (frontend), Black, Prettier, ESLint, markdownlint-cli2 (001-codebase-cleanup)
+- N/A (refactoring existing code, no new data storage) (001-codebase-cleanup)
+
+## Recent Changes
+- 001-codebase-cleanup: Added Python 3.13 (backend), TypeScript/React (frontend), Markdown (docs) + FastAPI (backend), React/Vite (frontend), Black, Prettier, ESLint, markdownlint-cli2

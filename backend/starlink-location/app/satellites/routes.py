@@ -17,6 +17,7 @@ from app.mission.dependencies import get_poi_manager
 
 logger = logging.getLogger(__name__)
 
+
 # Define response model for satellite data
 class SatelliteResponse(BaseModel):
     """Response model for satellite data."""
@@ -36,9 +37,15 @@ class SatelliteResponse(BaseModel):
 class SatelliteCreate(BaseModel):
     """Request model for creating a satellite."""
 
-    satellite_id: str = Field(..., description="Satellite ID (e.g., 'X-1')", min_length=1)
-    transport: str = Field(..., description="Transport type (X, Ka, or Ku)", min_length=1)
-    longitude: float = Field(..., description="Longitude in decimal degrees (-180 to 180)")
+    satellite_id: str = Field(
+        ..., description="Satellite ID (e.g., 'X-1')", min_length=1
+    )
+    transport: str = Field(
+        ..., description="Transport type (X, Ka, or Ku)", min_length=1
+    )
+    longitude: float = Field(
+        ..., description="Longitude in decimal degrees (-180 to 180)"
+    )
     slot: Optional[str] = Field(default=None, description="Orbital slot name")
     color: str = Field(default="#FFFFFF", description="Display color in hex format")
 
@@ -48,9 +55,13 @@ class SatelliteUpdate(BaseModel):
 
     satellite_id: Optional[str] = Field(default=None, description="Satellite ID")
     transport: Optional[str] = Field(default=None, description="Transport type")
-    longitude: Optional[float] = Field(default=None, description="Longitude (-180 to 180)")
+    longitude: Optional[float] = Field(
+        default=None, description="Longitude (-180 to 180)"
+    )
     slot: Optional[str] = Field(default=None, description="Orbital slot name")
-    color: Optional[str] = Field(default=None, description="Display color in hex format")
+    color: Optional[str] = Field(
+        default=None, description="Display color in hex format"
+    )
 
 
 # Create router
@@ -116,7 +127,12 @@ async def list_satellites(
     return response_data
 
 
-@router.post("", response_model=SatelliteResponse, status_code=status.HTTP_201_CREATED, summary="Create a new satellite")
+@router.post(
+    "",
+    response_model=SatelliteResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new satellite",
+)
 async def create_satellite(
     satellite_create: SatelliteCreate,
     poi_manager: POIManager = Depends(get_poi_manager),
@@ -171,7 +187,9 @@ async def create_satellite(
             "Ka": "#4CAF50",
             "Ku": "#00BCD4",
         }
-        color = satellite_create.color or default_colors.get(satellite_create.transport, "#FFFFFF")
+        color = satellite_create.color or default_colors.get(
+            satellite_create.transport, "#FFFFFF"
+        )
 
         return SatelliteResponse(
             satellite_id=poi.name,
@@ -187,7 +205,9 @@ async def create_satellite(
         )
 
 
-@router.put("/{satellite_id}", response_model=SatelliteResponse, summary="Update a satellite")
+@router.put(
+    "/{satellite_id}", response_model=SatelliteResponse, summary="Update a satellite"
+)
 async def update_satellite(
     satellite_id: str,
     satellite_update: SatelliteUpdate,
@@ -281,7 +301,11 @@ async def update_satellite(
         )
 
 
-@router.delete("/{satellite_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a satellite")
+@router.delete(
+    "/{satellite_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete a satellite",
+)
 async def delete_satellite(
     satellite_id: str,
     poi_manager: POIManager = Depends(get_poi_manager),
