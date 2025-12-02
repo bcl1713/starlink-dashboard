@@ -8,6 +8,7 @@ from prometheus_client import (
     Gauge,
     Counter,
     Histogram,
+    CollectorRegistry,
 )
 from prometheus_client.core import GaugeMetricFamily
 
