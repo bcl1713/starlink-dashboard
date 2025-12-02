@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.venv/
+venv/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Coverage
+coverage/
+.coverage
+.nyc_output/
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test outputs
+.pytest_cache/
+test-results/
+playwright-report/
+
+# Logs
+*.log
+
+# Generated and compiled files
+**/*.min.js
