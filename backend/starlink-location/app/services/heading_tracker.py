@@ -1,7 +1,7 @@
 """Heading tracker for calculating heading from GPS position updates."""
 
 from typing import Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from app.simulation.route import calculate_bearing
 
@@ -14,7 +14,9 @@ class HeadingTracker:
     since the Starlink API may not provide heading directly.
     """
 
-    def __init__(self, min_distance_meters: float = 10.0, max_age_seconds: float = 30.0):
+    def __init__(
+        self, min_distance_meters: float = 10.0, max_age_seconds: float = 30.0
+    ):
         """
         Initialize heading tracker.
 
@@ -30,10 +32,7 @@ class HeadingTracker:
         self._last_heading: float = 0.0
 
     def update(
-        self,
-        latitude: float,
-        longitude: float,
-        timestamp: Optional[datetime] = None
+        self, latitude: float, longitude: float, timestamp: Optional[datetime] = None
     ) -> float:
         """
         Update with new position and calculate heading.
@@ -77,11 +76,7 @@ class HeadingTracker:
         return self._last_heading
 
     def _calculate_distance(
-        self,
-        lat1: float,
-        lon1: float,
-        lat2: float,
-        lon2: float
+        self, lat1: float, lon1: float, lat2: float, lon2: float
     ) -> float:
         """
         Calculate approximate distance between two points in meters.
@@ -112,8 +107,10 @@ class HeadingTracker:
         dlat = lat2_rad - lat1_rad
         dlon = lon2_rad - lon1_rad
 
-        a = (math.sin(dlat / 2) ** 2 +
-             math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2)
+        a = (
+            math.sin(dlat / 2) ** 2
+            + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+        )
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         return R * c

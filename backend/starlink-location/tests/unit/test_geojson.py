@@ -81,7 +81,7 @@ class TestGeoJSONBuilder:
 
         # First coordinate should be [longitude, latitude]
         assert coords[0][0] == -74.0060  # longitude
-        assert coords[0][1] == 40.7128   # latitude
+        assert coords[0][1] == 40.7128  # latitude
 
     def test_route_feature_properties(self, sample_route):
         """Test route feature properties."""
@@ -113,7 +113,7 @@ class TestGeoJSONBuilder:
         coords = feature["geometry"]["coordinates"]
 
         assert coords[0] == -74.0060  # longitude
-        assert coords[1] == 40.7128   # latitude
+        assert coords[1] == 40.7128  # latitude
 
     def test_poi_feature_properties(self, sample_pois):
         """Test POI feature properties."""
@@ -141,7 +141,7 @@ class TestGeoJSONBuilder:
         coords = feature["geometry"]["coordinates"]
 
         assert coords[0] == -74.0070  # longitude
-        assert coords[1] == 40.7138   # latitude
+        assert coords[1] == 40.7138  # latitude
 
     def test_position_feature_properties(self, sample_position):
         """Test position feature properties."""
@@ -154,7 +154,9 @@ class TestGeoJSONBuilder:
         assert props["heading_degrees"] == 45.0
         assert "timestamp" in props
 
-    def test_build_feature_collection_all(self, sample_route, sample_pois, sample_position):
+    def test_build_feature_collection_all(
+        self, sample_route, sample_pois, sample_position
+    ):
         """Test building a feature collection with all components."""
         collection = GeoJSONBuilder.build_feature_collection(
             route=sample_route,
@@ -191,7 +193,9 @@ class TestGeoJSONBuilder:
 
     def test_build_feature_collection_position_only(self, sample_position):
         """Test building a feature collection with only position."""
-        collection = GeoJSONBuilder.build_feature_collection(current_position=sample_position)
+        collection = GeoJSONBuilder.build_feature_collection(
+            current_position=sample_position
+        )
 
         assert len(collection["features"]) == 1
         assert collection["features"][0]["properties"]["type"] == "current_position"

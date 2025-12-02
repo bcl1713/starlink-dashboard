@@ -1,6 +1,5 @@
 """Unit tests for timestamp extraction utility."""
 
-import pytest
 from datetime import datetime
 from app.services.kml_parser import extract_timestamp_from_description
 
@@ -40,7 +39,9 @@ class TestTimestampExtraction:
 
     def test_timestamp_in_multiline_description(self):
         """Extract timestamp from multiline description."""
-        description = "Daniel K Inouye International\n Time Over Waypoint: 2025-10-27 16:51:13Z"
+        description = (
+            "Daniel K Inouye International\n Time Over Waypoint: 2025-10-27 16:51:13Z"
+        )
         result = extract_timestamp_from_description(description)
 
         assert result is not None
@@ -131,9 +132,18 @@ class TestTimestampExtraction:
     def test_timestamp_different_years(self):
         """Extract timestamps from different years."""
         test_cases = [
-            ("Time Over Waypoint: 2024-06-15 12:00:00Z", datetime(2024, 6, 15, 12, 0, 0)),
-            ("Time Over Waypoint: 2025-06-15 12:00:00Z", datetime(2025, 6, 15, 12, 0, 0)),
-            ("Time Over Waypoint: 2026-06-15 12:00:00Z", datetime(2026, 6, 15, 12, 0, 0)),
+            (
+                "Time Over Waypoint: 2024-06-15 12:00:00Z",
+                datetime(2024, 6, 15, 12, 0, 0),
+            ),
+            (
+                "Time Over Waypoint: 2025-06-15 12:00:00Z",
+                datetime(2025, 6, 15, 12, 0, 0),
+            ),
+            (
+                "Time Over Waypoint: 2026-06-15 12:00:00Z",
+                datetime(2026, 6, 15, 12, 0, 0),
+            ),
         ]
 
         for description, expected in test_cases:
@@ -210,7 +220,9 @@ class TestTimestampExtractionRealWorldExamples:
 
     def test_phnl_destination_timestamp(self):
         """Extract from real PHNL destination waypoint."""
-        description = "Daniel K Inouye International\n Time Over Waypoint: 2025-10-27 16:51:13Z"
+        description = (
+            "Daniel K Inouye International\n Time Over Waypoint: 2025-10-27 16:51:13Z"
+        )
         result = extract_timestamp_from_description(description)
 
         assert result is not None
@@ -242,7 +254,9 @@ class TestTimestampExtractionRealWorldExamples:
 
     def test_kadw_departure_timestamp(self):
         """Extract from real KADW (departure) waypoint."""
-        description = "Andrews Air Force Base\n Time Over Waypoint: 2025-10-27 15:45:00Z"
+        description = (
+            "Andrews Air Force Base\n Time Over Waypoint: 2025-10-27 15:45:00Z"
+        )
         result = extract_timestamp_from_description(description)
 
         assert result is not None

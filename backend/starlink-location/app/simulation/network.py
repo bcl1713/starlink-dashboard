@@ -21,16 +21,13 @@ class NetworkSimulator:
         # Initialize state
         self.current_latency = config.latency_typical_ms
         self.current_throughput_down = (
-            config.throughput_down_min_mbps +
-            config.throughput_down_max_mbps
+            config.throughput_down_min_mbps + config.throughput_down_max_mbps
         ) / 2.0
         self.current_throughput_up = (
-            config.throughput_up_min_mbps +
-            config.throughput_up_max_mbps
+            config.throughput_up_min_mbps + config.throughput_up_max_mbps
         ) / 2.0
         self.current_packet_loss = (
-            config.packet_loss_min_percent +
-            config.packet_loss_max_percent
+            config.packet_loss_min_percent + config.packet_loss_max_percent
         ) / 2.0
 
     def update(self) -> NetworkData:
@@ -49,7 +46,7 @@ class NetworkSimulator:
             latency_ms=self.current_latency,
             throughput_down_mbps=self.current_throughput_down,
             throughput_up_mbps=self.current_throughput_up,
-            packet_loss_percent=self.current_packet_loss
+            packet_loss_percent=self.current_packet_loss,
         )
 
     def _update_latency(self) -> None:
@@ -60,22 +57,17 @@ class NetworkSimulator:
         if random.random() < config.spike_probability:
             # Spike to higher latency
             self.current_latency = random.uniform(
-                config.latency_max_ms,
-                config.latency_spike_max_ms
+                config.latency_max_ms, config.latency_spike_max_ms
             )
         else:
             # Normal latency with some variation
             latency_range = config.latency_max_ms - config.latency_min_ms
             variation = random.gauss(0, latency_range * 0.1)
-            self.current_latency = (
-                config.latency_typical_ms +
-                variation
-            )
+            self.current_latency = config.latency_typical_ms + variation
 
             # Clamp to normal range
             self.current_latency = max(
-                config.latency_min_ms,
-                min(config.latency_max_ms, self.current_latency)
+                config.latency_min_ms, min(config.latency_max_ms, self.current_latency)
             )
 
     def _update_throughput_down(self) -> None:
@@ -89,7 +81,7 @@ class NetworkSimulator:
         # Clamp to valid range
         self.current_throughput_down = max(
             config.throughput_down_min_mbps,
-            min(config.throughput_down_max_mbps, self.current_throughput_down)
+            min(config.throughput_down_max_mbps, self.current_throughput_down),
         )
 
     def _update_throughput_up(self) -> None:
@@ -103,7 +95,7 @@ class NetworkSimulator:
         # Clamp to valid range
         self.current_throughput_up = max(
             config.throughput_up_min_mbps,
-            min(config.throughput_up_max_mbps, self.current_throughput_up)
+            min(config.throughput_up_max_mbps, self.current_throughput_up),
         )
 
     def _update_packet_loss(self) -> None:
@@ -117,21 +109,18 @@ class NetworkSimulator:
         # Clamp to valid range
         self.current_packet_loss = max(
             config.packet_loss_min_percent,
-            min(config.packet_loss_max_percent, self.current_packet_loss)
+            min(config.packet_loss_max_percent, self.current_packet_loss),
         )
 
     def reset(self) -> None:
         """Reset simulator to initial state."""
         self.current_latency = self.config.latency_typical_ms
         self.current_throughput_down = (
-            self.config.throughput_down_min_mbps +
-            self.config.throughput_down_max_mbps
+            self.config.throughput_down_min_mbps + self.config.throughput_down_max_mbps
         ) / 2.0
         self.current_throughput_up = (
-            self.config.throughput_up_min_mbps +
-            self.config.throughput_up_max_mbps
+            self.config.throughput_up_min_mbps + self.config.throughput_up_max_mbps
         ) / 2.0
         self.current_packet_loss = (
-            self.config.packet_loss_min_percent +
-            self.config.packet_loss_max_percent
+            self.config.packet_loss_min_percent + self.config.packet_loss_max_percent
         ) / 2.0

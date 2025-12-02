@@ -123,7 +123,7 @@ class POIManager:
                 data["pois"] = pois_section
 
                 # Atomic write pattern: write to temp file, then atomic rename
-                temp_file = self.pois_file.with_suffix('.tmp')
+                temp_file = self.pois_file.with_suffix(".tmp")
                 try:
                     with open(temp_file, "w") as f:
                         json.dump(data, f, indent=2)
@@ -140,7 +140,9 @@ class POIManager:
         except Exception as e:
             logger.error(f"Failed to acquire lock for writing POI file: {e}")
 
-    def list_pois(self, route_id: Optional[str] = None, mission_id: Optional[str] = None) -> list[POI]:
+    def list_pois(
+        self, route_id: Optional[str] = None, mission_id: Optional[str] = None
+    ) -> list[POI]:
         """
         Get list of POIs, optionally filtered by route or mission.
 
@@ -283,8 +285,11 @@ class POIManager:
         if active_route and active_route.points:
             try:
                 from app.services.route_eta_calculator import RouteETACalculator
+
                 calculator = RouteETACalculator(active_route)
-                projection = calculator.project_poi_to_route(poi.latitude, poi.longitude)
+                projection = calculator.project_poi_to_route(
+                    poi.latitude, poi.longitude
+                )
 
                 poi.projected_latitude = projection["projected_lat"]
                 poi.projected_longitude = projection["projected_lon"]
@@ -293,7 +298,9 @@ class POIManager:
 
                 logger.info(f"Projected new POI {poi_id} onto active route")
             except Exception as e:
-                logger.warning(f"Failed to project new POI {poi_id} onto active route: {e}")
+                logger.warning(
+                    f"Failed to project new POI {poi_id} onto active route: {e}"
+                )
 
         self._pois[poi_id] = poi
         self._save_pois()
@@ -380,7 +387,9 @@ class POIManager:
         Returns:
             Number of POIs deleted
         """
-        pois_to_delete = [poi_id for poi_id, poi in self._pois.items() if poi.route_id == route_id]
+        pois_to_delete = [
+            poi_id for poi_id, poi in self._pois.items() if poi.route_id == route_id
+        ]
 
         for poi_id in pois_to_delete:
             del self._pois[poi_id]
@@ -401,7 +410,9 @@ class POIManager:
         Returns:
             Number of POIs deleted
         """
-        pois_to_delete = [poi_id for poi_id, poi in self._pois.items() if poi.mission_id == mission_id]
+        pois_to_delete = [
+            poi_id for poi_id, poi in self._pois.items() if poi.mission_id == mission_id
+        ]
 
         for poi_id in pois_to_delete:
             del self._pois[poi_id]
@@ -412,7 +423,9 @@ class POIManager:
 
         return len(pois_to_delete)
 
-    def delete_mission_pois_by_category(self, mission_id: str, categories: set[str]) -> int:
+    def delete_mission_pois_by_category(
+        self, mission_id: str, categories: set[str]
+    ) -> int:
         """Delete mission-scoped POIs that match one of the provided categories."""
         if not categories:
             return 0
@@ -520,7 +533,9 @@ class POIManager:
                 if categories and poi.category not in categories:
                     continue
                 # Check prefix filter
-                if prefixes and not any(poi.name.startswith(prefix) for prefix in prefixes):
+                if prefixes and not any(
+                    poi.name.startswith(prefix) for prefix in prefixes
+                ):
                     continue
                 to_remove.append(poi_id)
 
@@ -571,7 +586,9 @@ class POIManager:
 
         for poi_id, poi in list(self._pois.items()):
             try:
-                projection = calculator.project_poi_to_route(poi.latitude, poi.longitude)
+                projection = calculator.project_poi_to_route(
+                    poi.latitude, poi.longitude
+                )
 
                 # Update POI with projection data
                 poi.projected_latitude = projection["projected_lat"]

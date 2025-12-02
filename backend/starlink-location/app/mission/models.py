@@ -64,10 +64,12 @@ class XTransition(BaseModel):
         ..., description="Target satellite ID (e.g., 'X-1', 'X-2')"
     )
     target_beam_id: Optional[str] = Field(
-        default=None, description="Optional target beam ID for same-satellite transitions"
+        default=None,
+        description="Optional target beam ID for same-satellite transitions",
     )
     is_same_satellite_transition: bool = Field(
-        default=False, description="True if transitioning to different beam on same satellite"
+        default=False,
+        description="True if transitioning to different beam on same satellite",
     )
 
     @field_validator("latitude")
@@ -341,8 +343,11 @@ class MissionLeg(BaseModel):
     @classmethod
     def validate_id(cls, v):
         import re
+
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError("ID must contain only alphanumeric characters, underscores, or hyphens")
+            raise ValueError(
+                "ID must contain only alphanumeric characters, underscores, or hyphens"
+            )
         return v
 
     model_config = {
@@ -374,8 +379,12 @@ class Mission(BaseModel):
 
     id: str = Field(..., description="Unique mission identifier (UUID or slug)")
     name: str = Field(..., description="Human-readable mission name", min_length=1)
-    description: Optional[str] = Field(default=None, description="Detailed mission description")
-    legs: list[MissionLeg] = Field(default_factory=list, description="Ordered list of mission legs")
+    description: Optional[str] = Field(
+        default=None, description="Detailed mission description"
+    )
+    legs: list[MissionLeg] = Field(
+        default_factory=list, description="Ordered list of mission legs"
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="When mission was created (UTC, ISO-8601)",
@@ -390,8 +399,11 @@ class Mission(BaseModel):
     @classmethod
     def validate_id(cls, v):
         import re
+
         if not re.match(r"^[a-zA-Z0-9_-]+$", v):
-            raise ValueError("ID must contain only alphanumeric characters, underscores, or hyphens")
+            raise ValueError(
+                "ID must contain only alphanumeric characters, underscores, or hyphens"
+            )
         return v
 
     model_config = {

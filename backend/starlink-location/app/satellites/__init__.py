@@ -7,7 +7,11 @@ This module provides:
 - Rule evaluation for communication constraints
 """
 
-from app.satellites.catalog import SatelliteCatalog, get_satellite_catalog, load_satellite_catalog
+from app.satellites.catalog import (
+    SatelliteCatalog,
+    get_satellite_catalog,
+    load_satellite_catalog,
+)
 from app.satellites.coverage import CoverageEvent, CoverageSampler
 from app.satellites.geometry import (
     azimuth_elevation_from_ecef,

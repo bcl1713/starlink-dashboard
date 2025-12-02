@@ -4,7 +4,11 @@ import logging
 import math
 from datetime import datetime, timezone
 
-from prometheus_client import CollectorRegistry, Gauge, Counter, Histogram, CollectorRegistry as PrometheusCollectorRegistry
+from prometheus_client import (
+    Gauge,
+    Counter,
+    Histogram,
+)
 from prometheus_client.core import GaugeMetricFamily
 
 logger = logging.getLogger(__name__)
@@ -14,10 +18,11 @@ REGISTRY = CollectorRegistry()
 
 # Current position data for custom collector
 _current_position = {
-    'latitude': 0.0,
-    'longitude': 0.0,
-    'altitude': 0.0,
+    "latitude": 0.0,
+    "longitude": 0.0,
+    "altitude": 0.0,
 }
+
 
 class PositionCollector:
     """Custom collector that exports position as a single metric with all values."""
@@ -25,16 +30,17 @@ class PositionCollector:
     def collect(self):
         # Create a gauge metric with the position data
         position_metric = GaugeMetricFamily(
-            'starlink_aircraft_position',
-            'Current aircraft position with latitude, longitude, and altitude',
-            labels=['dimension']
+            "starlink_aircraft_position",
+            "Current aircraft position with latitude, longitude, and altitude",
+            labels=["dimension"],
         )
 
-        position_metric.add_metric(['latitude'], _current_position['latitude'])
-        position_metric.add_metric(['longitude'], _current_position['longitude'])
-        position_metric.add_metric(['altitude'], _current_position['altitude'])
+        position_metric.add_metric(["latitude"], _current_position["latitude"])
+        position_metric.add_metric(["longitude"], _current_position["longitude"])
+        position_metric.add_metric(["altitude"], _current_position["altitude"])
 
         yield position_metric
+
 
 # Register the custom collector
 REGISTRY.register(PositionCollector())
@@ -46,67 +52,65 @@ REGISTRY.register(PositionCollector())
 # This single metric with latitude/longitude as labels is what Grafana
 # expects for rendering geographic positions
 starlink_device_location = Gauge(
-    'starlink_device_location',
-    'Device location with latitude and longitude as labels',
-    labelnames=['lat', 'lon', 'altitude'],
-    registry=REGISTRY
+    "starlink_device_location",
+    "Device location with latitude and longitude as labels",
+    labelnames=["lat", "lon", "altitude"],
+    registry=REGISTRY,
 )
 
 starlink_dish_latitude_degrees = Gauge(
-    'starlink_dish_latitude_degrees',
-    'Dish latitude in decimal degrees',
-    registry=REGISTRY
+    "starlink_dish_latitude_degrees",
+    "Dish latitude in decimal degrees",
+    registry=REGISTRY,
 )
 
 starlink_dish_longitude_degrees = Gauge(
-    'starlink_dish_longitude_degrees',
-    'Dish longitude in decimal degrees',
-    registry=REGISTRY
+    "starlink_dish_longitude_degrees",
+    "Dish longitude in decimal degrees",
+    registry=REGISTRY,
 )
 
 starlink_dish_altitude_feet = Gauge(
-    'starlink_dish_altitude_feet',
-    'Dish altitude in feet above sea level',
-    registry=REGISTRY
+    "starlink_dish_altitude_feet",
+    "Dish altitude in feet above sea level",
+    registry=REGISTRY,
 )
 
 starlink_dish_speed_knots = Gauge(
-    'starlink_dish_speed_knots',
-    'Dish speed in knots',
-    registry=REGISTRY
+    "starlink_dish_speed_knots", "Dish speed in knots", registry=REGISTRY
 )
 
 starlink_dish_heading_degrees = Gauge(
-    'starlink_dish_heading_degrees',
-    'Dish heading in degrees (0=North, 90=East)',
-    registry=REGISTRY
+    "starlink_dish_heading_degrees",
+    "Dish heading in degrees (0=North, 90=East)",
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Network metrics - Current values (Gauges)
 # ============================================================================
 starlink_network_latency_ms_current = Gauge(
-    'starlink_network_latency_ms_current',
-    'Network round-trip latency in milliseconds (current value)',
-    registry=REGISTRY
+    "starlink_network_latency_ms_current",
+    "Network round-trip latency in milliseconds (current value)",
+    registry=REGISTRY,
 )
 
 starlink_network_throughput_down_mbps_current = Gauge(
-    'starlink_network_throughput_down_mbps_current',
-    'Download throughput in Megabits per second (current value)',
-    registry=REGISTRY
+    "starlink_network_throughput_down_mbps_current",
+    "Download throughput in Megabits per second (current value)",
+    registry=REGISTRY,
 )
 
 starlink_network_throughput_up_mbps_current = Gauge(
-    'starlink_network_throughput_up_mbps_current',
-    'Upload throughput in Megabits per second (current value)',
-    registry=REGISTRY
+    "starlink_network_throughput_up_mbps_current",
+    "Upload throughput in Megabits per second (current value)",
+    registry=REGISTRY,
 )
 
 starlink_network_packet_loss_percent = Gauge(
-    'starlink_network_packet_loss_percent',
-    'Packet loss as percentage (0-100)',
-    registry=REGISTRY
+    "starlink_network_packet_loss_percent",
+    "Packet loss as percentage (0-100)",
+    registry=REGISTRY,
 )
 
 # ============================================================================
@@ -116,335 +120,327 @@ starlink_network_packet_loss_percent = Gauge(
 # Starlink latency typically ranges 25-150ms (median ~50ms)
 # Buckets: 20, 40, 60, 80, 100, 150, 200, 500 capture low/normal/degraded/poor ranges
 starlink_network_latency_ms = Histogram(
-    'starlink_network_latency_ms',
-    'Network round-trip latency in milliseconds (histogram for percentile analysis)',
-    labelnames=['mode', 'status'],
+    "starlink_network_latency_ms",
+    "Network round-trip latency in milliseconds (histogram for percentile analysis)",
+    labelnames=["mode", "status"],
     buckets=[20, 40, 60, 80, 100, 150, 200, 500],
-    registry=REGISTRY
+    registry=REGISTRY,
 )
 
 # Download throughput histogram: buckets for typical Starlink speeds
 # Starlink download typically 50-300 Mbps depending on conditions
 # Buckets: 50, 100, 150, 200, 250, 300 capture performance ranges
 starlink_network_throughput_down_mbps = Histogram(
-    'starlink_network_throughput_down_mbps',
-    'Download throughput in Megabits per second (histogram for percentile analysis)',
-    labelnames=['mode', 'status'],
+    "starlink_network_throughput_down_mbps",
+    "Download throughput in Megabits per second (histogram for percentile analysis)",
+    labelnames=["mode", "status"],
     buckets=[50, 100, 150, 200, 250, 300],
-    registry=REGISTRY
+    registry=REGISTRY,
 )
 
 # Upload throughput histogram: buckets for typical Starlink upload speeds
 # Starlink upload typically 10-50 Mbps depending on conditions
 # Buckets: 10, 20, 30, 40, 50 capture the typical performance range
 starlink_network_throughput_up_mbps = Histogram(
-    'starlink_network_throughput_up_mbps',
-    'Upload throughput in Megabits per second (histogram for percentile analysis)',
-    labelnames=['mode', 'status'],
+    "starlink_network_throughput_up_mbps",
+    "Upload throughput in Megabits per second (histogram for percentile analysis)",
+    labelnames=["mode", "status"],
     buckets=[10, 20, 30, 40, 50],
-    registry=REGISTRY
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Obstruction and signal metrics
 # ============================================================================
 starlink_dish_obstruction_percent = Gauge(
-    'starlink_dish_obstruction_percent',
-    'Dish obstruction as percentage (0-100)',
-    registry=REGISTRY
+    "starlink_dish_obstruction_percent",
+    "Dish obstruction as percentage (0-100)",
+    registry=REGISTRY,
 )
 
 starlink_signal_quality_percent = Gauge(
-    'starlink_signal_quality_percent',
-    'Signal quality as percentage (0-100)',
-    registry=REGISTRY
+    "starlink_signal_quality_percent",
+    "Signal quality as percentage (0-100)",
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Status metrics
 # ============================================================================
 starlink_service_info = Gauge(
-    'starlink_service_info',
-    'Starlink service information',
-    ['version', 'mode'],
-    registry=REGISTRY
+    "starlink_service_info",
+    "Starlink service information",
+    ["version", "mode"],
+    registry=REGISTRY,
 )
 
 starlink_mode_info = Gauge(
-    'starlink_mode_info',
-    'Starlink operating mode indicator',
-    labelnames=['mode'],
-    registry=REGISTRY
+    "starlink_mode_info",
+    "Starlink operating mode indicator",
+    labelnames=["mode"],
+    registry=REGISTRY,
 )
 
 starlink_uptime_seconds = Gauge(
-    'starlink_uptime_seconds',
-    'Service uptime in seconds',
-    registry=REGISTRY
+    "starlink_uptime_seconds", "Service uptime in seconds", registry=REGISTRY
 )
 
 starlink_dish_uptime_seconds = Gauge(
-    'starlink_dish_uptime_seconds',
-    'Dish uptime in seconds',
-    registry=REGISTRY
+    "starlink_dish_uptime_seconds", "Dish uptime in seconds", registry=REGISTRY
 )
 
 starlink_dish_thermal_throttle = Gauge(
-    'starlink_dish_thermal_throttle',
-    'Dish thermal throttle state (0=normal, 1=throttled)',
-    registry=REGISTRY
+    "starlink_dish_thermal_throttle",
+    "Dish thermal throttle state (0=normal, 1=throttled)",
+    registry=REGISTRY,
 )
 
 starlink_dish_outage_active = Gauge(
-    'starlink_dish_outage_active',
-    'Dish outage state (0=connected, 1=outage)',
-    registry=REGISTRY
+    "starlink_dish_outage_active",
+    "Dish outage state (0=connected, 1=outage)",
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Event counters
 # ============================================================================
 starlink_connection_attempts_total = Counter(
-    'starlink_connection_attempts_total',
-    'Total number of connection attempts',
-    registry=REGISTRY
+    "starlink_connection_attempts_total",
+    "Total number of connection attempts",
+    registry=REGISTRY,
 )
 
 starlink_connection_failures_total = Counter(
-    'starlink_connection_failures_total',
-    'Total number of failed connection attempts',
-    registry=REGISTRY
+    "starlink_connection_failures_total",
+    "Total number of failed connection attempts",
+    registry=REGISTRY,
 )
 
 starlink_outage_events_total = Counter(
-    'starlink_outage_events_total',
-    'Total number of outage events',
-    registry=REGISTRY
+    "starlink_outage_events_total", "Total number of outage events", registry=REGISTRY
 )
 
 starlink_thermal_events_total = Counter(
-    'starlink_thermal_events_total',
-    'Total number of thermal throttle events',
-    registry=REGISTRY
+    "starlink_thermal_events_total",
+    "Total number of thermal throttle events",
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # POI and ETA metrics
 # ============================================================================
 starlink_eta_poi_seconds = Gauge(
-    'starlink_eta_poi_seconds',
-    'Estimated time of arrival to point of interest in seconds (anticipated or estimated)',
-    labelnames=['name', 'category', 'eta_type'],
-    registry=REGISTRY
+    "starlink_eta_poi_seconds",
+    "Estimated time of arrival to point of interest in seconds (anticipated or estimated)",
+    labelnames=["name", "category", "eta_type"],
+    registry=REGISTRY,
 )
 
 starlink_distance_to_poi_meters = Gauge(
-    'starlink_distance_to_poi_meters',
-    'Distance to point of interest in meters',
-    labelnames=['name', 'category', 'eta_type'],
-    registry=REGISTRY
+    "starlink_distance_to_poi_meters",
+    "Distance to point of interest in meters",
+    labelnames=["name", "category", "eta_type"],
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Flight Status metrics (Phase 0 - ETA Timing Modes)
 # ============================================================================
 starlink_flight_phase = Gauge(
-    'starlink_flight_phase',
-    'Current flight phase (0=pre_departure, 1=in_flight, 2=post_arrival)',
-    registry=REGISTRY
+    "starlink_flight_phase",
+    "Current flight phase (0=pre_departure, 1=in_flight, 2=post_arrival)",
+    registry=REGISTRY,
 )
 
 starlink_eta_mode = Gauge(
-    'starlink_eta_mode',
-    'Current ETA calculation mode (0=anticipated, 1=estimated)',
-    registry=REGISTRY
+    "starlink_eta_mode",
+    "Current ETA calculation mode (0=anticipated, 1=estimated)",
+    registry=REGISTRY,
 )
 
 starlink_flight_departure_time_unix = Gauge(
-    'starlink_flight_departure_time_unix',
-    'Detected departure time (Unix timestamp), 0 if not yet departed',
-    registry=REGISTRY
+    "starlink_flight_departure_time_unix",
+    "Detected departure time (Unix timestamp), 0 if not yet departed",
+    registry=REGISTRY,
 )
 
 starlink_flight_arrival_time_unix = Gauge(
-    'starlink_flight_arrival_time_unix',
-    'Detected arrival time (Unix timestamp), 0 if not yet arrived',
-    registry=REGISTRY
+    "starlink_flight_arrival_time_unix",
+    "Detected arrival time (Unix timestamp), 0 if not yet arrived",
+    registry=REGISTRY,
 )
 
 starlink_time_until_departure_seconds = Gauge(
-    'starlink_time_until_departure_seconds',
-    'Seconds remaining until scheduled or detected departure (0 once departed, negative if scheduled time is in the past and departure not detected)',
-    registry=REGISTRY
+    "starlink_time_until_departure_seconds",
+    "Seconds remaining until scheduled or detected departure (0 once departed, negative if scheduled time is in the past and departure not detected)",
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Route following metrics (Phase 5 - Simulation mode route following)
 # ============================================================================
 starlink_route_progress_percent = Gauge(
-    'starlink_route_progress_percent',
-    'Current progress along active KML route (0-100%)',
-    labelnames=['route_name'],
-    registry=REGISTRY
+    "starlink_route_progress_percent",
+    "Current progress along active KML route (0-100%)",
+    labelnames=["route_name"],
+    registry=REGISTRY,
 )
 
 starlink_current_waypoint_index = Gauge(
-    'starlink_current_waypoint_index',
-    'Index of current waypoint in active route (0-indexed)',
-    labelnames=['route_name'],
-    registry=REGISTRY
+    "starlink_current_waypoint_index",
+    "Index of current waypoint in active route (0-indexed)",
+    labelnames=["route_name"],
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Route timing metrics (Phase 3 - ETA Route Timing)
 # ============================================================================
 starlink_route_has_timing_data = Gauge(
-    'starlink_route_has_timing_data',
-    'Binary flag indicating if route has embedded timing data (1=has timing, 0=no timing)',
-    labelnames=['route_name'],
-    registry=REGISTRY
+    "starlink_route_has_timing_data",
+    "Binary flag indicating if route has embedded timing data (1=has timing, 0=no timing)",
+    labelnames=["route_name"],
+    registry=REGISTRY,
 )
 
 starlink_route_total_duration_seconds = Gauge(
-    'starlink_route_total_duration_seconds',
-    'Expected total flight duration for active route in seconds',
-    labelnames=['route_name'],
-    registry=REGISTRY
+    "starlink_route_total_duration_seconds",
+    "Expected total flight duration for active route in seconds",
+    labelnames=["route_name"],
+    registry=REGISTRY,
 )
 
 starlink_route_departure_time_unix = Gauge(
-    'starlink_route_departure_time_unix',
-    'Expected departure time for active route (Unix timestamp)',
-    labelnames=['route_name'],
-    registry=REGISTRY
+    "starlink_route_departure_time_unix",
+    "Expected departure time for active route (Unix timestamp)",
+    labelnames=["route_name"],
+    registry=REGISTRY,
 )
 
 starlink_route_arrival_time_unix = Gauge(
-    'starlink_route_arrival_time_unix',
-    'Expected arrival time for active route (Unix timestamp)',
-    labelnames=['route_name'],
-    registry=REGISTRY
+    "starlink_route_arrival_time_unix",
+    "Expected arrival time for active route (Unix timestamp)",
+    labelnames=["route_name"],
+    registry=REGISTRY,
 )
 
 starlink_route_segment_count_with_timing = Gauge(
-    'starlink_route_segment_count_with_timing',
-    'Number of route segments with calculated expected speeds',
-    labelnames=['route_name'],
-    registry=REGISTRY
+    "starlink_route_segment_count_with_timing",
+    "Number of route segments with calculated expected speeds",
+    labelnames=["route_name"],
+    registry=REGISTRY,
 )
 
 starlink_eta_to_waypoint_seconds = Gauge(
-    'starlink_eta_to_waypoint_seconds',
-    'Estimated time to arrival at specific waypoint in seconds',
-    labelnames=['route_name', 'waypoint_name'],
-    registry=REGISTRY
+    "starlink_eta_to_waypoint_seconds",
+    "Estimated time to arrival at specific waypoint in seconds",
+    labelnames=["route_name", "waypoint_name"],
+    registry=REGISTRY,
 )
 
 starlink_distance_to_waypoint_meters = Gauge(
-    'starlink_distance_to_waypoint_meters',
-    'Distance to specific waypoint in meters',
-    labelnames=['route_name', 'waypoint_name'],
-    registry=REGISTRY
+    "starlink_distance_to_waypoint_meters",
+    "Distance to specific waypoint in meters",
+    labelnames=["route_name", "waypoint_name"],
+    registry=REGISTRY,
 )
 
 starlink_route_segment_speed_knots = Gauge(
-    'starlink_route_segment_speed_knots',
-    'Expected speed for route segment in knots',
-    labelnames=['route_name', 'segment_index'],
-    registry=REGISTRY
+    "starlink_route_segment_speed_knots",
+    "Expected speed for route segment in knots",
+    labelnames=["route_name", "segment_index"],
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Meta-metrics for monitoring the monitoring system
 # ============================================================================
 starlink_metrics_scrape_duration_seconds = Histogram(
-    'starlink_metrics_scrape_duration_seconds',
-    'Time spent collecting metrics in seconds',
+    "starlink_metrics_scrape_duration_seconds",
+    "Time spent collecting metrics in seconds",
     buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5],
-    registry=REGISTRY
+    registry=REGISTRY,
 )
 
 starlink_metrics_generation_errors_total = Counter(
-    'starlink_metrics_generation_errors_total',
-    'Total number of metric generation errors',
-    registry=REGISTRY
+    "starlink_metrics_generation_errors_total",
+    "Total number of metric generation errors",
+    registry=REGISTRY,
 )
 
 starlink_metrics_last_update_timestamp_seconds = Gauge(
-    'starlink_metrics_last_update_timestamp_seconds',
-    'Timestamp of last successful metric update (Unix epoch)',
-    registry=REGISTRY
+    "starlink_metrics_last_update_timestamp_seconds",
+    "Timestamp of last successful metric update (Unix epoch)",
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Mission planning metrics (Phase 1 Continuation)
 # ============================================================================
 mission_active_info = Gauge(
-    'mission_active_info',
-    'Currently active mission information (1 when active, 0 when not)',
-    labelnames=['mission_id', 'route_id'],
-    registry=REGISTRY
+    "mission_active_info",
+    "Currently active mission information (1 when active, 0 when not)",
+    labelnames=["mission_id", "route_id"],
+    registry=REGISTRY,
 )
 
 mission_phase_state = Gauge(
-    'mission_phase_state',
-    'Current mission phase state (0=pre_departure, 1=in_flight, 2=post_arrival)',
-    labelnames=['mission_id'],
-    registry=REGISTRY
+    "mission_phase_state",
+    "Current mission phase state (0=pre_departure, 1=in_flight, 2=post_arrival)",
+    labelnames=["mission_id"],
+    registry=REGISTRY,
 )
 
 mission_next_conflict_seconds = Gauge(
-    'mission_next_conflict_seconds',
-    'Seconds until next degraded/critical event in mission timeline (-1 if none)',
-    labelnames=['mission_id'],
-    registry=REGISTRY
+    "mission_next_conflict_seconds",
+    "Seconds until next degraded/critical event in mission timeline (-1 if none)",
+    labelnames=["mission_id"],
+    registry=REGISTRY,
 )
 
 mission_timeline_generated_timestamp = Gauge(
-    'mission_timeline_generated_timestamp',
-    'Unix timestamp of last mission timeline computation',
-    labelnames=['mission_id'],
-    registry=REGISTRY
+    "mission_timeline_generated_timestamp",
+    "Unix timestamp of last mission timeline computation",
+    labelnames=["mission_id"],
+    registry=REGISTRY,
 )
 
 mission_comm_state = Gauge(
-    'mission_comm_state',
-    'Planned state per transport (0=available, 1=degraded, 2=offline)',
-    labelnames=['mission_id', 'transport'],
-    registry=REGISTRY
+    "mission_comm_state",
+    "Planned state per transport (0=available, 1=degraded, 2=offline)",
+    labelnames=["mission_id", "transport"],
+    registry=REGISTRY,
 )
 
 mission_degraded_seconds = Gauge(
-    'mission_degraded_seconds',
-    'Planned degraded duration for mission timeline (seconds)',
-    labelnames=['mission_id'],
-    registry=REGISTRY
+    "mission_degraded_seconds",
+    "Planned degraded duration for mission timeline (seconds)",
+    labelnames=["mission_id"],
+    registry=REGISTRY,
 )
 
 mission_critical_seconds = Gauge(
-    'mission_critical_seconds',
-    'Planned critical duration for mission timeline (seconds)',
-    labelnames=['mission_id'],
-    registry=REGISTRY
+    "mission_critical_seconds",
+    "Planned critical duration for mission timeline (seconds)",
+    labelnames=["mission_id"],
+    registry=REGISTRY,
 )
 
 # ============================================================================
 # Simulation metrics (only in simulation mode)
 # ============================================================================
 simulation_updates_total = Counter(
-    'simulation_updates_total',
-    'Total number of simulation updates',
-    registry=REGISTRY
+    "simulation_updates_total", "Total number of simulation updates", registry=REGISTRY
 )
 
 simulation_errors_total = Counter(
-    'simulation_errors_total',
-    'Total number of simulation errors',
-    registry=REGISTRY
+    "simulation_errors_total", "Total number of simulation errors", registry=REGISTRY
 )
 
 
-def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi_manager=None):
+def update_metrics_from_telemetry(
+    telemetry, config=None, active_route=None, poi_manager=None
+):
     """
     Update all Prometheus metrics from telemetry data.
 
@@ -467,16 +463,15 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi
     # Compute labels if config provided
     mode_label = get_mode_label(config) if config else "unknown"
     status_label = get_status_label(
-        telemetry.network.latency_ms,
-        telemetry.network.packet_loss_percent
+        telemetry.network.latency_ms, telemetry.network.packet_loss_percent
     )
 
     # Position metrics
     # Update custom collector's position data
     global _current_position
-    _current_position['latitude'] = telemetry.position.latitude
-    _current_position['longitude'] = telemetry.position.longitude
-    _current_position['altitude'] = telemetry.position.altitude
+    _current_position["latitude"] = telemetry.position.latitude
+    _current_position["longitude"] = telemetry.position.longitude
+    _current_position["altitude"] = telemetry.position.altitude
 
     # Also set individual metrics for backward compatibility
     starlink_dish_latitude_degrees.set(telemetry.position.latitude)
@@ -493,32 +488,23 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi
     starlink_network_throughput_up_mbps_current.set(
         telemetry.network.throughput_up_mbps
     )
-    starlink_network_packet_loss_percent.set(
-        telemetry.network.packet_loss_percent
-    )
+    starlink_network_packet_loss_percent.set(telemetry.network.packet_loss_percent)
 
     # Network metrics - Histograms (for percentile analysis)
     # Record observations for histogram buckets with labels
-    starlink_network_latency_ms.labels(
-        mode=mode_label,
-        status=status_label
-    ).observe(telemetry.network.latency_ms)
+    starlink_network_latency_ms.labels(mode=mode_label, status=status_label).observe(
+        telemetry.network.latency_ms
+    )
     starlink_network_throughput_down_mbps.labels(
-        mode=mode_label,
-        status=status_label
+        mode=mode_label, status=status_label
     ).observe(telemetry.network.throughput_down_mbps)
     starlink_network_throughput_up_mbps.labels(
-        mode=mode_label,
-        status=status_label
+        mode=mode_label, status=status_label
     ).observe(telemetry.network.throughput_up_mbps)
 
     # Obstruction and signal metrics
-    starlink_dish_obstruction_percent.set(
-        telemetry.obstruction.obstruction_percent
-    )
-    starlink_signal_quality_percent.set(
-        telemetry.environmental.signal_quality_percent
-    )
+    starlink_dish_obstruction_percent.set(telemetry.obstruction.obstruction_percent)
+    starlink_signal_quality_percent.set(telemetry.environmental.signal_quality_percent)
 
     # Status metrics
     starlink_uptime_seconds.set(telemetry.environmental.uptime_seconds)
@@ -549,7 +535,9 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi
                 )
                 distance_remaining = progress_info.get("distance_remaining_meters")
                 if distance_remaining is not None:
-                    flight_state.check_arrival(distance_remaining, telemetry.position.speed)
+                    flight_state.check_arrival(
+                        distance_remaining, telemetry.position.speed
+                    )
             except Exception as arrival_error:  # pragma: no cover - defensive guard
                 logger.debug(f"Arrival detection skipped: {arrival_error}")
 
@@ -562,40 +550,44 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi
         if flight_status is None:
             if flight_state is None:
                 from app.services.flight_state_manager import get_flight_state_manager
+
                 flight_state = get_flight_state_manager()
             flight_status = flight_state.get_status()
 
         # Map phase to numeric value
-        phase_value = {
-            'pre_departure': 0,
-            'in_flight': 1,
-            'post_arrival': 2
-        }.get(flight_status.phase.value, 0)
+        phase_value = {"pre_departure": 0, "in_flight": 1, "post_arrival": 2}.get(
+            flight_status.phase.value, 0
+        )
 
         # Map ETA mode to numeric value
-        mode_value = {
-            'anticipated': 0,
-            'estimated': 1
-        }.get(flight_status.eta_mode.value, 0)
+        mode_value = {"anticipated": 0, "estimated": 1}.get(
+            flight_status.eta_mode.value, 0
+        )
 
         starlink_flight_phase.set(phase_value)
         starlink_eta_mode.set(mode_value)
 
         # Set timestamp metrics (0 if not set)
         if flight_status.departure_time:
-            starlink_flight_departure_time_unix.set(flight_status.departure_time.timestamp())
+            starlink_flight_departure_time_unix.set(
+                flight_status.departure_time.timestamp()
+            )
         else:
             starlink_flight_departure_time_unix.set(0)
 
         if flight_status.arrival_time:
-            starlink_flight_arrival_time_unix.set(flight_status.arrival_time.timestamp())
+            starlink_flight_arrival_time_unix.set(
+                flight_status.arrival_time.timestamp()
+            )
         else:
             starlink_flight_arrival_time_unix.set(0)
 
         # Synchronize active route timing profile with live flight status
         if active_route is not None and flight_status is not None:
             try:
-                from app.models.route import RouteTimingProfile  # Local import to avoid cycle
+                from app.models.route import (
+                    RouteTimingProfile,
+                )  # Local import to avoid cycle
 
                 timing_profile = active_route.timing_profile
                 if timing_profile is None:
@@ -606,7 +598,9 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi
                 timing_profile.actual_departure_time = flight_status.departure_time
                 timing_profile.actual_arrival_time = flight_status.arrival_time
             except Exception as sync_error:  # pragma: no cover - defensive guard
-                logger.debug(f"Failed to sync route timing profile with flight status: {sync_error}")
+                logger.debug(
+                    f"Failed to sync route timing profile with flight status: {sync_error}"
+                )
 
         # Update time-until-departure gauge
         time_until_departure = 0.0
@@ -615,10 +609,18 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi
 
             departure_time = getattr(flight_status, "departure_time", None)
             if departure_time:
-                departure_time = departure_time.astimezone(timezone.utc) if departure_time.tzinfo else departure_time.replace(tzinfo=timezone.utc)
+                departure_time = (
+                    departure_time.astimezone(timezone.utc)
+                    if departure_time.tzinfo
+                    else departure_time.replace(tzinfo=timezone.utc)
+                )
                 delta = (departure_time - now).total_seconds()
                 time_until_departure = max(0.0, delta)
-            elif active_route and active_route.timing_profile and active_route.timing_profile.departure_time:
+            elif (
+                active_route
+                and active_route.timing_profile
+                and active_route.timing_profile.departure_time
+            ):
                 scheduled_departure = active_route.timing_profile.departure_time
                 if scheduled_departure:
                     scheduled_departure = (
@@ -642,10 +644,13 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi
         if flight_status is None:
             if flight_state is None:
                 from app.services.flight_state_manager import get_flight_state_manager
+
                 flight_state = get_flight_state_manager()
             flight_status = flight_state.get_status()
 
-        current_eta_mode = flight_status.eta_mode if flight_status else ETAMode.ESTIMATED
+        current_eta_mode = (
+            flight_status.eta_mode if flight_status else ETAMode.ESTIMATED
+        )
 
         eta_metrics = update_eta_metrics(
             telemetry.position.latitude,
@@ -663,19 +668,17 @@ def update_metrics_from_telemetry(telemetry, config=None, active_route=None, poi
             poi_category = metrics_data.get("poi_category", "")
             eta_seconds = metrics_data.get("eta_seconds", -1)
             distance_meters = metrics_data.get("distance_meters", 0)
-            eta_type = metrics_data.get("eta_type", current_eta_mode.value if current_eta_mode else "estimated")
+            eta_type = metrics_data.get(
+                "eta_type", current_eta_mode.value if current_eta_mode else "estimated"
+            )
 
             # Only set valid ETA values (skip -1 which means no speed)
             if eta_seconds >= 0:
                 starlink_eta_poi_seconds.labels(
-                    name=poi_name,
-                    category=poi_category,
-                    eta_type=eta_type
+                    name=poi_name, category=poi_category, eta_type=eta_type
                 ).set(eta_seconds)
             starlink_distance_to_poi_meters.labels(
-                name=poi_name,
-                category=poi_category,
-                eta_type=eta_type
+                name=poi_name, category=poi_category, eta_type=eta_type
             ).set(distance_meters)
 
     except Exception as e:
@@ -723,9 +726,9 @@ def clear_telemetry_metrics():
 
     # Clear custom position collector data
     global _current_position
-    _current_position['latitude'] = math.nan
-    _current_position['longitude'] = math.nan
-    _current_position['altitude'] = math.nan
+    _current_position["latitude"] = math.nan
+    _current_position["longitude"] = math.nan
+    _current_position["altitude"] = math.nan
 
 
 def set_service_info(version: str, mode: str):
@@ -744,7 +747,7 @@ def set_service_info(version: str, mode: str):
 
     # Set mode indicator metric - only the active mode will be set to 1
     # This allows easy filtering by mode in Prometheus queries
-    for possible_mode in ['simulation', 'live']:
+    for possible_mode in ["simulation", "live"]:
         if possible_mode == mode:
             starlink_mode_info.labels(mode=possible_mode).set(1)
         else:
@@ -783,8 +786,10 @@ def clear_mission_metrics(mission_id: str):
         # For mission_active_info, we need to set to 0 for all label combinations
         # Since we don't track all combinations, we'll just set to 0 with empty route_id
         mission_active_info.labels(mission_id=mission_id, route_id="").set(0)
-        for transport in ['X', 'Ka', 'Ku']:
-            mission_comm_state.labels(mission_id=mission_id, transport=transport).set(math.nan)
+        for transport in ["X", "Ka", "Ku"]:
+            mission_comm_state.labels(mission_id=mission_id, transport=transport).set(
+                math.nan
+            )
         mission_degraded_seconds.labels(mission_id=mission_id).set(math.nan)
         mission_critical_seconds.labels(mission_id=mission_id).set(math.nan)
     except Exception as e:  # pragma: no cover - defensive guard
@@ -800,11 +805,7 @@ def update_mission_phase_metric(mission_id: str, phase: str):
         phase: Mission phase ('pre_departure', 'in_flight', 'post_arrival')
     """
     try:
-        phase_map = {
-            'pre_departure': 0,
-            'in_flight': 1,
-            'post_arrival': 2
-        }
+        phase_map = {"pre_departure": 0, "in_flight": 1, "post_arrival": 2}
         phase_value = phase_map.get(phase, 0)
         mission_phase_state.labels(mission_id=mission_id).set(phase_value)
     except Exception as e:  # pragma: no cover - defensive guard
@@ -820,7 +821,9 @@ def update_mission_timeline_timestamp(mission_id: str, timestamp: float):
         timestamp: Unix timestamp of timeline generation
     """
     try:
-        mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(timestamp)
+        mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(
+            timestamp
+        )
     except Exception as e:  # pragma: no cover - defensive guard
         logger.warning(f"Failed to update mission timeline timestamp metric: {e}")
 
@@ -828,12 +831,16 @@ def update_mission_timeline_timestamp(mission_id: str, timestamp: float):
 def update_mission_comm_state_metric(mission_id: str, transport: str, state_value: int):
     """Update mission communication state metric for a given transport."""
     try:
-        mission_comm_state.labels(mission_id=mission_id, transport=transport).set(state_value)
+        mission_comm_state.labels(mission_id=mission_id, transport=transport).set(
+            state_value
+        )
     except Exception as e:  # pragma: no cover
         logger.warning(f"Failed to update mission comm state metric: {e}")
 
 
-def update_mission_duration_metrics(mission_id: str, degraded_seconds: float, critical_seconds: float):
+def update_mission_duration_metrics(
+    mission_id: str, degraded_seconds: float, critical_seconds: float
+):
     """Update degraded/critical mission duration gauges."""
     try:
         mission_degraded_seconds.labels(mission_id=mission_id).set(degraded_seconds)

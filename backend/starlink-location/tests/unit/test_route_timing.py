@@ -1,6 +1,5 @@
 """Unit tests for route timing functionality."""
 
-import pytest
 from datetime import datetime, timedelta
 from app.models.route import RoutePoint, RouteWaypoint
 from app.services.kml_parser import (
@@ -268,7 +267,9 @@ class TestTimestampExtraction:
 
     def test_extract_from_flight_plan_description(self):
         """Extract timestamp from flight plan waypoint description."""
-        description = "Daniel K Inouye International\n Time Over Waypoint: 2025-10-27 16:51:13Z"
+        description = (
+            "Daniel K Inouye International\n Time Over Waypoint: 2025-10-27 16:51:13Z"
+        )
         timestamp = extract_timestamp_from_description(description)
 
         assert timestamp is not None

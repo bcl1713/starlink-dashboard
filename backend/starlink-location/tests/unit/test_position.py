@@ -2,7 +2,6 @@
 
 import pytest
 
-from app.models.config import PositionConfig, RouteConfig
 from app.simulation.position import PositionSimulator
 
 
@@ -41,10 +40,10 @@ class TestPositionSimulator:
 
         # At least one value should change over multiple updates
         position_changed = (
-            pos1.latitude != pos2.latitude or
-            pos1.longitude != pos2.longitude or
-            pos1.speed != pos2.speed or
-            pos1.heading != pos2.heading
+            pos1.latitude != pos2.latitude
+            or pos1.longitude != pos2.longitude
+            or pos1.speed != pos2.speed
+            or pos1.heading != pos2.heading
         )
         assert position_changed
 
@@ -119,9 +118,7 @@ class TestPositionSimulator:
         assert simulator.current_speed == 0.0
         # Altitude should be reset to middle value
         config = simulator.position_config
-        expected_altitude = (
-            config.altitude_min_feet + config.altitude_max_feet
-        ) / 2.0
+        expected_altitude = (config.altitude_min_feet + config.altitude_max_feet) / 2.0
         assert simulator.current_altitude == expected_altitude
         # Heading tracker should be reset
         assert simulator.heading_tracker is not None

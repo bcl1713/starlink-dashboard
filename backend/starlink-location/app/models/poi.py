@@ -14,10 +14,18 @@ class POI(BaseModel):
     latitude: float = Field(..., description="Latitude in decimal degrees")
     longitude: float = Field(..., description="Longitude in decimal degrees")
     icon: str = Field(default="marker", description="Icon identifier for mapping")
-    category: Optional[str] = Field(default=None, description="POI category (e.g., 'airport', 'city')")
-    description: Optional[str] = Field(default=None, description="Detailed description of the POI")
-    route_id: Optional[str] = Field(default=None, description="Associated route ID if route-specific")
-    mission_id: Optional[str] = Field(default=None, description="Associated mission ID if mission-scoped")
+    category: Optional[str] = Field(
+        default=None, description="POI category (e.g., 'airport', 'city')"
+    )
+    description: Optional[str] = Field(
+        default=None, description="Detailed description of the POI"
+    )
+    route_id: Optional[str] = Field(
+        default=None, description="Associated route ID if route-specific"
+    )
+    mission_id: Optional[str] = Field(
+        default=None, description="Associated mission ID if mission-scoped"
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="When POI was created",
@@ -27,10 +35,19 @@ class POI(BaseModel):
         description="When POI was last updated",
     )
     # Route projection fields (calculated when route is active, cleared on deactivation)
-    projected_latitude: Optional[float] = Field(default=None, description="Latitude of projection point on active route")
-    projected_longitude: Optional[float] = Field(default=None, description="Longitude of projection point on active route")
-    projected_waypoint_index: Optional[int] = Field(default=None, description="Index of closest route point")
-    projected_route_progress: Optional[float] = Field(default=None, description="Progress percentage (0-100) where POI projects on route")
+    projected_latitude: Optional[float] = Field(
+        default=None, description="Latitude of projection point on active route"
+    )
+    projected_longitude: Optional[float] = Field(
+        default=None, description="Longitude of projection point on active route"
+    )
+    projected_waypoint_index: Optional[int] = Field(
+        default=None, description="Index of closest route point"
+    )
+    projected_route_progress: Optional[float] = Field(
+        default=None,
+        description="Progress percentage (0-100) where POI projects on route",
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -58,7 +75,9 @@ class POICreate(BaseModel):
 
     name: str = Field(..., description="Name of the POI", min_length=1)
     latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
-    longitude: float = Field(..., description="Longitude in decimal degrees (-180 to 180)")
+    longitude: float = Field(
+        ..., description="Longitude in decimal degrees (-180 to 180)"
+    )
     icon: str = Field(default="marker", description="Icon identifier")
     category: Optional[str] = Field(default=None, description="POI category")
     description: Optional[str] = Field(default=None, description="POI description")
@@ -104,7 +123,9 @@ class POIUpdate(BaseModel):
 
     name: Optional[str] = Field(default=None, description="Name of the POI")
     latitude: Optional[float] = Field(default=None, description="Latitude (-90 to 90)")
-    longitude: Optional[float] = Field(default=None, description="Longitude (-180 to 180)")
+    longitude: Optional[float] = Field(
+        default=None, description="Longitude (-180 to 180)"
+    )
     icon: Optional[str] = Field(default=None, description="Icon identifier")
     category: Optional[str] = Field(default=None, description="POI category")
     description: Optional[str] = Field(default=None, description="POI description")
@@ -190,8 +211,12 @@ class POIListResponse(BaseModel):
 
     pois: list[POIResponse] = Field(default_factory=list, description="List of POIs")
     total: int = Field(default=0, description="Total number of POIs")
-    route_id: Optional[str] = Field(default=None, description="Filter by route_id if applicable")
-    mission_id: Optional[str] = Field(default=None, description="Filter by mission_id if applicable")
+    route_id: Optional[str] = Field(
+        default=None, description="Filter by route_id if applicable"
+    )
+    mission_id: Optional[str] = Field(
+        default=None, description="Filter by mission_id if applicable"
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -218,7 +243,9 @@ class POIWithETA(BaseModel):
         ...,
         description="Whether this POI is currently active (based on associated route/mission active status)",
     )
-    eta_seconds: float = Field(..., description="Estimated time to arrival in seconds (-1 if no speed)")
+    eta_seconds: float = Field(
+        ..., description="Estimated time to arrival in seconds (-1 if no speed)"
+    )
     eta_type: str = Field(
         default="estimated",
         description="ETA type: 'anticipated' (pre-departure, based on flight plan) or 'estimated' (post-departure, based on telemetry)",
@@ -232,20 +259,32 @@ class POIWithETA(BaseModel):
         description="Flight phase associated with this ETA (pre_departure, in_flight, post_arrival)",
     )
     distance_meters: float = Field(..., description="Distance to POI in meters")
-    bearing_degrees: Optional[float] = Field(default=None, description="Bearing to POI in degrees (0=North)")
+    bearing_degrees: Optional[float] = Field(
+        default=None, description="Bearing to POI in degrees (0=North)"
+    )
     course_status: Optional[str] = Field(
         default=None,
-        description="Course status relative to heading: 'on_course' (<45°), 'slightly_off' (45-90°), 'off_track' (90-135°), 'behind' (>135°)"
+        description="Course status relative to heading: 'on_course' (<45°), 'slightly_off' (45-90°), 'off_track' (90-135°), 'behind' (>135°)",
     )
     # Route-aware projection fields (populated when active route exists)
-    is_on_active_route: bool = Field(default=False, description="Whether POI projects to active route")
-    projected_latitude: Optional[float] = Field(default=None, description="Projected point on route")
-    projected_longitude: Optional[float] = Field(default=None, description="Projected point on route")
-    projected_waypoint_index: Optional[int] = Field(default=None, description="Index of closest route point")
-    projected_route_progress: Optional[float] = Field(default=None, description="Progress % where POI projects on route")
+    is_on_active_route: bool = Field(
+        default=False, description="Whether POI projects to active route"
+    )
+    projected_latitude: Optional[float] = Field(
+        default=None, description="Projected point on route"
+    )
+    projected_longitude: Optional[float] = Field(
+        default=None, description="Projected point on route"
+    )
+    projected_waypoint_index: Optional[int] = Field(
+        default=None, description="Index of closest route point"
+    )
+    projected_route_progress: Optional[float] = Field(
+        default=None, description="Progress % where POI projects on route"
+    )
     route_aware_status: Optional[str] = Field(
         default=None,
-        description="Route awareness status: 'ahead_on_route', 'already_passed', 'not_on_route', 'pre_departure', or None if no active route"
+        description="Route awareness status: 'ahead_on_route', 'already_passed', 'not_on_route', 'pre_departure', or None if no active route",
     )
 
     model_config = {
@@ -278,7 +317,9 @@ class POIWithETA(BaseModel):
 class POIETAListResponse(BaseModel):
     """Response model for POI ETA list endpoint."""
 
-    pois: list[POIWithETA] = Field(default_factory=list, description="List of POIs with ETA data")
+    pois: list[POIWithETA] = Field(
+        default_factory=list, description="List of POIs with ETA data"
+    )
     total: int = Field(default=0, description="Total number of POIs")
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

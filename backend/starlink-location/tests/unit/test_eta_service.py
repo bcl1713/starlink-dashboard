@@ -78,7 +78,9 @@ def test_getters_raise_when_uninitialized():
         eta_service.get_poi_manager()
 
 
-def test_initialize_eta_service_logs_and_raises_on_failure(monkeypatch: pytest.MonkeyPatch):
+def test_initialize_eta_service_logs_and_raises_on_failure(
+    monkeypatch: pytest.MonkeyPatch,
+):
     class BoomManager:
         def __init__(self):
             raise RuntimeError("boom")

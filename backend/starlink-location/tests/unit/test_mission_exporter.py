@@ -139,9 +139,7 @@ class TestMissionTimelineExporters:
         assert output.startswith(b"%PDF")
 
     def test_generate_timeline_export_router(self, mission, timeline):
-        artifact = generate_timeline_export(
-            TimelineExportFormat.CSV, mission, timeline
-        )
+        artifact = generate_timeline_export(TimelineExportFormat.CSV, mission, timeline)
         assert artifact.extension == "csv"
         assert artifact.media_type == "text/csv"
 

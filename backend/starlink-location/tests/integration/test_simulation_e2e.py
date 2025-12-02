@@ -91,10 +91,7 @@ async def test_configuration_affects_simulation(test_client, default_config):
     modified = default_config.model_copy()
     modified.network.latency_min_ms = 30.0  # Different from default
 
-    update_response = test_client.post(
-        "/api/config",
-        json=modified.model_dump()
-    )
+    update_response = test_client.post("/api/config", json=modified.model_dump())
     assert update_response.status_code == 200
 
     # Verify update was applied

@@ -25,7 +25,7 @@ def test_pre_departure_other_poi_retains_eta(test_client, monkeypatch):
         timing_profile=SimpleNamespace(has_timing_data=False),
     )
     stub_route_manager = SimpleNamespace(get_active_route=lambda: stub_route)
-    
+
     # Override dependency instead of monkeypatching global
     test_client.app.dependency_overrides[get_route_manager] = lambda: stub_route_manager
 

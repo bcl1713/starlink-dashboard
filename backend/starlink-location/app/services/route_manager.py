@@ -1,6 +1,5 @@
 """Route manager with file watching for KML route loading and management."""
 
-import asyncio
 import logging
 from pathlib import Path
 from typing import Optional
@@ -120,12 +119,18 @@ class RouteManager:
             # Clear any previous error for this route
             if route_id in self._errors:
                 del self._errors[route_id]
-            logger.info(f"Loaded route: {route_id} with {len(parsed_route.points)} points")
+            logger.info(
+                f"Loaded route: {route_id} with {len(parsed_route.points)} points"
+            )
             if self._active_route_id == route_id:
                 try:
-                    from app.services.flight_state_manager import get_flight_state_manager
+                    from app.services.flight_state_manager import (
+                        get_flight_state_manager,
+                    )
 
-                    get_flight_state_manager().update_route_context(parsed_route, auto_reset=False, reason="route_reloaded")
+                    get_flight_state_manager().update_route_context(
+                        parsed_route, auto_reset=False, reason="route_reloaded"
+                    )
                 except Exception as exc:  # pragma: no cover - defensive guard
                     logger.debug("Failed to sync flight state on route reload: %s", exc)
         except KMLParseError as e:
@@ -147,7 +152,9 @@ class RouteManager:
         self._routes[route_id] = parsed_route
         if route_id in self._errors:
             del self._errors[route_id]
-        logger.info(f"Registered route: {route_id} with {len(parsed_route.points)} points via add_route()")
+        logger.info(
+            f"Registered route: {route_id} with {len(parsed_route.points)} points via add_route()"
+        )
 
     def _remove_route(self, route_id: str) -> None:
         """
@@ -172,7 +179,9 @@ class RouteManager:
 
                 get_flight_state_manager().clear_route_context(reason="route_removed")
             except Exception as exc:  # pragma: no cover - defensive guard
-                logger.debug("Failed to clear flight state after route removal: %s", exc)
+                logger.debug(
+                    "Failed to clear flight state after route removal: %s", exc
+                )
 
     def list_routes(self) -> dict[str, dict]:
         """
@@ -243,7 +252,9 @@ class RouteManager:
 
             parsed_route = self._routes.get(route_id)
             if parsed_route:
-                get_flight_state_manager().update_route_context(parsed_route, auto_reset=True, reason="route_activated")
+                get_flight_state_manager().update_route_context(
+                    parsed_route, auto_reset=True, reason="route_activated"
+                )
         except Exception as exc:  # pragma: no cover - defensive guard
             logger.debug("Failed to sync flight state on route activation: %s", exc)
         return True
@@ -260,11 +271,17 @@ class RouteManager:
                 logger.info(f"Deactivated route: {route_id}")
                 self._active_route_id = None
                 try:
-                    from app.services.flight_state_manager import get_flight_state_manager
+                    from app.services.flight_state_manager import (
+                        get_flight_state_manager,
+                    )
 
-                    get_flight_state_manager().clear_route_context(reason="route_deactivated")
+                    get_flight_state_manager().clear_route_context(
+                        reason="route_deactivated"
+                    )
                 except Exception as exc:  # pragma: no cover - defensive guard
-                    logger.debug("Failed to clear flight state on route deactivation: %s", exc)
+                    logger.debug(
+                        "Failed to clear flight state on route deactivation: %s", exc
+                    )
             else:
                 logger.debug(f"Route {route_id} is not active, skipping deactivation")
         else:
@@ -272,11 +289,17 @@ class RouteManager:
             if self._active_route_id:
                 logger.info(f"Deactivated route: {self._active_route_id}")
                 try:
-                    from app.services.flight_state_manager import get_flight_state_manager
+                    from app.services.flight_state_manager import (
+                        get_flight_state_manager,
+                    )
 
-                    get_flight_state_manager().clear_route_context(reason="route_deactivated")
+                    get_flight_state_manager().clear_route_context(
+                        reason="route_deactivated"
+                    )
                 except Exception as exc:  # pragma: no cover - defensive guard
-                    logger.debug("Failed to clear flight state on route deactivation: %s", exc)
+                    logger.debug(
+                        "Failed to clear flight state on route deactivation: %s", exc
+                    )
             self._active_route_id = None
 
     def get_route_errors(self) -> dict[str, str]:

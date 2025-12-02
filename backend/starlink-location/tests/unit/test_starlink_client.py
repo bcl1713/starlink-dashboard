@@ -4,17 +4,12 @@ Tests cover connection management, telemetry collection, and error handling
 using mocked gRPC responses.
 """
 
-from datetime import datetime
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from app.live.client import StarlinkClient
 from app.models.telemetry import (
-    EnvironmentalData,
-    NetworkData,
-    ObstructionData,
-    PositionData,
     TelemetryData,
 )
 
@@ -111,9 +106,7 @@ class TestStarlinkClientConnection:
         """Test connection failure with gRPC error."""
         import starlink_grpc
 
-        mock_context_class.side_effect = starlink_grpc.GrpcError(
-            "Connection failed"
-        )
+        mock_context_class.side_effect = starlink_grpc.GrpcError("Connection failed")
 
         # With connect_immediately=True, error is raised during init
         with pytest.raises(starlink_grpc.GrpcError):
@@ -203,9 +196,7 @@ class TestStarlinkClientConnectionTest:
 
     @patch("app.live.client.starlink_grpc.status_data")
     @patch("app.live.client.starlink_grpc.ChannelContext")
-    def test_test_connection_unexpected_error(
-        self, mock_context_class, mock_status
-    ):
+    def test_test_connection_unexpected_error(self, mock_context_class, mock_status):
         """Test connection test handles unexpected errors."""
         mock_context = MagicMock()
         mock_context_class.return_value = mock_context
@@ -242,9 +233,7 @@ class TestStarlinkClientStatusData:
 
     @patch("app.live.client.starlink_grpc.status_data")
     @patch("app.live.client.starlink_grpc.ChannelContext")
-    def test_get_status_data_auto_connect(
-        self, mock_context_class, mock_status
-    ):
+    def test_get_status_data_auto_connect(self, mock_context_class, mock_status):
         """Test status data retrieval auto-connects if needed."""
         mock_context = MagicMock()
         mock_context_class.return_value = mock_context
@@ -260,9 +249,7 @@ class TestStarlinkClientStatusData:
 
     @patch("app.live.client.starlink_grpc.status_data")
     @patch("app.live.client.starlink_grpc.ChannelContext")
-    def test_get_status_data_grpc_error(
-        self, mock_context_class, mock_status
-    ):
+    def test_get_status_data_grpc_error(self, mock_context_class, mock_status):
         """Test status data retrieval fails gracefully."""
         import starlink_grpc
 
@@ -280,9 +267,7 @@ class TestStarlinkClientLocationData:
 
     @patch("app.live.client.starlink_grpc.location_data")
     @patch("app.live.client.starlink_grpc.ChannelContext")
-    def test_get_location_data_success(
-        self, mock_context_class, mock_location
-    ):
+    def test_get_location_data_success(self, mock_context_class, mock_location):
         """Test successful location data retrieval."""
         mock_context = MagicMock()
         mock_context_class.return_value = mock_context
@@ -301,9 +286,7 @@ class TestStarlinkClientLocationData:
 
     @patch("app.live.client.starlink_grpc.location_data")
     @patch("app.live.client.starlink_grpc.ChannelContext")
-    def test_get_location_data_auto_connect(
-        self, mock_context_class, mock_location
-    ):
+    def test_get_location_data_auto_connect(self, mock_context_class, mock_location):
         """Test location data retrieval auto-connects if needed."""
         mock_context = MagicMock()
         mock_context_class.return_value = mock_context
@@ -320,9 +303,7 @@ class TestStarlinkClientHistoryStats:
 
     @patch("app.live.client.starlink_grpc.history_stats")
     @patch("app.live.client.starlink_grpc.ChannelContext")
-    def test_get_history_stats_success(
-        self, mock_context_class, mock_history
-    ):
+    def test_get_history_stats_success(self, mock_context_class, mock_history):
         """Test successful history stats retrieval."""
         mock_context = MagicMock()
         mock_context_class.return_value = mock_context
@@ -333,15 +314,11 @@ class TestStarlinkClientHistoryStats:
         result = client.get_history_stats()
 
         assert len(result) == 7
-        mock_history.assert_called_once_with(
-            parse_samples=-1, context=mock_context
-        )
+        mock_history.assert_called_once_with(parse_samples=-1, context=mock_context)
 
     @patch("app.live.client.starlink_grpc.history_stats")
     @patch("app.live.client.starlink_grpc.ChannelContext")
-    def test_get_history_stats_custom_samples(
-        self, mock_context_class, mock_history
-    ):
+    def test_get_history_stats_custom_samples(self, mock_context_class, mock_history):
         """Test history stats with custom sample count."""
         mock_context = MagicMock()
         mock_context_class.return_value = mock_context
@@ -350,9 +327,7 @@ class TestStarlinkClientHistoryStats:
         client = StarlinkClient()
         client.get_history_stats(parse_samples=50)
 
-        mock_history.assert_called_once_with(
-            parse_samples=50, context=mock_context
-        )
+        mock_history.assert_called_once_with(parse_samples=50, context=mock_context)
 
 
 class TestStarlinkClientTelemetry:

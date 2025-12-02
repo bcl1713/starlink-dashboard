@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from app.models.poi import POICreate
-from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.geojson import GeoJSONBuilder
 from app.services.kml_parser import parse_kml_file
 from app.services.poi_manager import POIManager
@@ -315,7 +314,13 @@ class TestKMLPOIIntegration:
             """
         ).strip()
 
-        files = {"file": ("ksea-klax.kml", kml_content, "application/vnd.google-earth.kml+xml")}
+        files = {
+            "file": (
+                "ksea-klax.kml",
+                kml_content,
+                "application/vnd.google-earth.kml+xml",
+            )
+        }
 
         response = test_client.post("/api/routes/upload?import_pois=true", files=files)
         assert response.status_code == 201
@@ -340,7 +345,9 @@ class TestKMLPOIIntegration:
         assert detail_payload["poi_count"] == 2
         assert len(detail_payload["waypoints"]) == 2
 
-    def test_complete_workflow_simulation(self, sample_kml_file, poi_manager_instance, route_manager_instance):
+    def test_complete_workflow_simulation(
+        self, sample_kml_file, poi_manager_instance, route_manager_instance
+    ):
         """Test complete workflow: KML load -> Route follow -> POI proximity."""
         # Load and manage route
         route_manager_instance._load_route_file(sample_kml_file)

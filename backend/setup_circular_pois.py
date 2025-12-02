@@ -15,7 +15,9 @@ from app.models.poi import POICreate
 from app.services.poi_manager import POIManager
 
 
-def haversine_destination(lat: float, lon: float, bearing: float, distance_km: float) -> tuple[float, float]:
+def haversine_destination(
+    lat: float, lon: float, bearing: float, distance_km: float
+) -> tuple[float, float]:
     """
     Calculate destination coordinates from a starting point, bearing, and distance.
 
@@ -41,14 +43,14 @@ def haversine_destination(lat: float, lon: float, bearing: float, distance_km: f
 
     # Destination latitude
     lat2_rad = math.asin(
-        math.sin(lat_rad) * math.cos(angular_distance) +
-        math.cos(lat_rad) * math.sin(angular_distance) * math.cos(bearing_rad)
+        math.sin(lat_rad) * math.cos(angular_distance)
+        + math.cos(lat_rad) * math.sin(angular_distance) * math.cos(bearing_rad)
     )
 
     # Destination longitude
     lon2_rad = lon_rad + math.atan2(
         math.sin(bearing_rad) * math.sin(angular_distance) * math.cos(lat_rad),
-        math.cos(angular_distance) - math.sin(lat_rad) * math.sin(lat2_rad)
+        math.cos(angular_distance) - math.sin(lat_rad) * math.sin(lat2_rad),
     )
 
     return (math.degrees(lat2_rad), math.degrees(lon2_rad))
@@ -101,7 +103,7 @@ def setup_circular_pois():
             longitude=lon,
             icon="marker",
             category="waypoint",
-            description=f"Test waypoint at {bearing:.0f}° bearing"
+            description=f"Test waypoint at {bearing:.0f}° bearing",
         )
 
         poi = poi_manager.create_poi(poi_create)
@@ -109,7 +111,7 @@ def setup_circular_pois():
 
     print()
     print(f"✓ Successfully created {NUM_POIS} evenly-spaced POIs")
-    print(f"✓ POIs saved to /data/pois.json")
+    print("✓ POIs saved to /data/pois.json")
     print()
     print("POIs are now ready for course tracking tests!")
 

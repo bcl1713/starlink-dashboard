@@ -1,10 +1,18 @@
 """Routes API endpoints for KML route management."""
 
-import asyncio
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status, Depends, Request
+from fastapi import (
+    APIRouter,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+    Depends,
+    Request,
+)
 from fastapi.responses import FileResponse
 from app.core.limiter import limiter
 
@@ -110,7 +118,9 @@ def _import_waypoints_as_pois(
     try:
         removed = poi_manager.delete_route_pois(route_id)
         if removed:
-            logger.info(f"Removed {removed} existing POIs prior to re-import for route {route_id}")
+            logger.info(
+                f"Removed {removed} existing POIs prior to re-import for route {route_id}"
+            )
     except Exception as exc:
         logger.error(f"Failed to delete existing POIs for route {route_id}: {exc}")
 
@@ -123,9 +133,15 @@ def _import_waypoints_as_pois(
                 skipped += 1
                 continue
 
-            name, category, icon, description = _resolve_waypoint_metadata(waypoint, idx)
+            name, category, icon, description = _resolve_waypoint_metadata(
+                waypoint, idx
+            )
 
-            route_note = f"Imported from route {parsed_route.metadata.name}" if parsed_route.metadata.name else "Imported from uploaded KML"
+            route_note = (
+                f"Imported from route {parsed_route.metadata.name}"
+                if parsed_route.metadata.name
+                else "Imported from uploaded KML"
+            )
             if description:
                 description = f"{description} | {route_note}"
             else:
@@ -143,7 +159,9 @@ def _import_waypoints_as_pois(
             poi_manager.create_poi(poi)
             created += 1
         except Exception as exc:
-            logger.error(f"Failed to create POI for waypoint {waypoint.name or idx} on route {route_id}: {exc}")
+            logger.error(
+                f"Failed to create POI for waypoint {waypoint.name or idx} on route {route_id}: {exc}"
+            )
             skipped += 1
 
     return created, skipped
@@ -194,6 +212,7 @@ async def list_routes(
             continue
 
         from datetime import datetime
+
         imported_at = datetime.fromisoformat(route_info["imported_at"])
 
         # Get parsed route to check for timing data
@@ -228,7 +247,9 @@ async def list_routes(
     return RouteListResponse(routes=routes_list, total=len(routes_list))
 
 
-@router.get("/{route_id}", response_model=RouteDetailResponse, summary="Get route details")
+@router.get(
+    "/{route_id}", response_model=RouteDetailResponse, summary="Get route details"
+)
 async def get_route_detail(
     route_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
@@ -308,7 +329,9 @@ async def get_route_detail(
     )
 
 
-@router.post("/{route_id}/activate", response_model=RouteResponse, summary="Activate a route")
+@router.post(
+    "/{route_id}/activate", response_model=RouteResponse, summary="Activate a route"
+)
 async def activate_route(
     route_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
@@ -347,7 +370,9 @@ async def activate_route(
     if poi_manager:
         try:
             projected_count = poi_manager.calculate_poi_projections(parsed_route)
-            logger.info(f"Calculated projections for {projected_count} POIs on route activation")
+            logger.info(
+                f"Calculated projections for {projected_count} POIs on route activation"
+            )
             # Reload POIs to ensure in-memory cache has the projection data
             poi_manager.reload_pois()
         except Exception as e:
@@ -416,14 +441,20 @@ async def deactivate_route(
     if poi_manager:
         try:
             cleared_count = poi_manager.clear_poi_projections()
-            logger.info(f"Cleared projections for {cleared_count} POIs on route deactivation")
+            logger.info(
+                f"Cleared projections for {cleared_count} POIs on route deactivation"
+            )
         except Exception as e:
             logger.error(f"Failed to clear POI projections: {e}")
 
     return {"message": "Route deactivated successfully"}
 
 
-@router.get("/{route_id}/stats", response_model=RouteStatsResponse, summary="Get route statistics")
+@router.get(
+    "/{route_id}/stats",
+    response_model=RouteStatsResponse,
+    summary="Get route statistics",
+)
 async def get_route_stats(
     route_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
@@ -461,7 +492,12 @@ async def get_route_stats(
     )
 
 
-@router.post("/upload", response_model=RouteResponse, status_code=status.HTTP_201_CREATED, summary="Upload KML route")
+@router.post(
+    "/upload",
+    response_model=RouteResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload KML route",
+)
 @limiter.limit("10/minute")
 async def upload_route(
     request: Request,
@@ -515,9 +551,7 @@ async def upload_route(
         with open(file_path, "wb") as f:
             f.write(content)
 
-        logger.info(
-            f"KML file uploaded: {file.filename} (size: {len(content)} bytes)"
-        )
+        logger.info(f"KML file uploaded: {file.filename} (size: {len(content)} bytes)")
 
         # Get parsed route
         route_id = file_path.stem
@@ -551,7 +585,9 @@ async def upload_route(
         created_pois = skipped_pois = None
 
         if import_pois and poi_manager:
-            created_pois, skipped_pois = _import_waypoints_as_pois(route_id, parsed_route, poi_manager)
+            created_pois, skipped_pois = _import_waypoints_as_pois(
+                route_id, parsed_route, poi_manager
+            )
             logger.info(
                 "Imported %d POIs (skipped %d) from KML placemarks for route %s",
                 created_pois,
@@ -634,7 +670,9 @@ async def download_route(
     )
 
 
-@router.delete("/{route_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a route")
+@router.delete(
+    "/{route_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a route"
+)
 async def delete_route(
     route_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
@@ -685,12 +723,18 @@ async def delete_route(
         )
 
 
-@router.get("/{route_id}/eta/waypoint/{waypoint_index}", summary="Calculate ETA to waypoint")
+@router.get(
+    "/{route_id}/eta/waypoint/{waypoint_index}", summary="Calculate ETA to waypoint"
+)
 async def calculate_eta_to_waypoint(
     route_id: str,
     waypoint_index: int,
-    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
-    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+    current_position_lat: float = Query(
+        ..., description="Current latitude in decimal degrees"
+    ),
+    current_position_lon: float = Query(
+        ..., description="Current longitude in decimal degrees"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
@@ -747,8 +791,12 @@ async def calculate_eta_to_location(
     route_id: str,
     latitude: float = Query(..., description="Target latitude in decimal degrees"),
     longitude: float = Query(..., description="Target longitude in decimal degrees"),
-    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
-    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+    current_position_lat: float = Query(
+        ..., description="Current latitude in decimal degrees"
+    ),
+    current_position_lon: float = Query(
+        ..., description="Current longitude in decimal degrees"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
@@ -799,8 +847,12 @@ async def calculate_eta_to_location(
 @router.get("/{route_id}/progress", summary="Get route progress metrics")
 async def get_route_progress(
     route_id: str,
-    current_position_lat: float = Query(..., description="Current latitude in decimal degrees"),
-    current_position_lon: float = Query(..., description="Current longitude in decimal degrees"),
+    current_position_lat: float = Query(
+        ..., description="Current latitude in decimal degrees"
+    ),
+    current_position_lon: float = Query(
+        ..., description="Current longitude in decimal degrees"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
@@ -863,16 +915,10 @@ async def get_active_route_timing(
 
     active_route = route_manager.get_active_route()
     if not active_route:
-        return {
-            "has_timing_data": False,
-            "message": "No active route"
-        }
+        return {"has_timing_data": False, "message": "No active route"}
 
     if not active_route.timing_profile:
-        return {
-            "has_timing_data": False,
-            "message": "Active route has no timing data"
-        }
+        return {"has_timing_data": False, "message": "Active route has no timing data"}
 
     timing = active_route.timing_profile
     flight_status = timing.flight_status
@@ -882,16 +928,32 @@ async def get_active_route_timing(
     return {
         "route_name": active_route.metadata.name or "Unknown",
         "has_timing_data": timing.has_timing_data,
-        "departure_time": timing.departure_time.isoformat() if timing.departure_time else None,
-        "arrival_time": timing.arrival_time.isoformat() if timing.arrival_time else None,
-        "actual_departure_time": timing.actual_departure_time.isoformat() if timing.actual_departure_time else None,
-        "actual_arrival_time": timing.actual_arrival_time.isoformat() if timing.actual_arrival_time else None,
+        "departure_time": (
+            timing.departure_time.isoformat() if timing.departure_time else None
+        ),
+        "arrival_time": (
+            timing.arrival_time.isoformat() if timing.arrival_time else None
+        ),
+        "actual_departure_time": (
+            timing.actual_departure_time.isoformat()
+            if timing.actual_departure_time
+            else None
+        ),
+        "actual_arrival_time": (
+            timing.actual_arrival_time.isoformat()
+            if timing.actual_arrival_time
+            else None
+        ),
         "flight_status": flight_status,
         "is_departed": is_departed,
         "is_in_flight": is_in_flight,
         "total_expected_duration_seconds": timing.total_expected_duration_seconds,
         "segment_count_with_timing": timing.segment_count_with_timing,
-        "total_duration_readable": _format_duration(timing.total_expected_duration_seconds) if timing.total_expected_duration_seconds else None
+        "total_duration_readable": (
+            _format_duration(timing.total_expected_duration_seconds)
+            if timing.total_expected_duration_seconds
+            else None
+        ),
     }
 
 
@@ -939,7 +1001,7 @@ async def cleanup_eta_cache_endpoint() -> dict:
     return {
         "status": "success",
         "entries_removed": removed,
-        "message": f"Cleaned up {removed} expired cache entries"
+        "message": f"Cleaned up {removed} expired cache entries",
     }
 
 
@@ -952,17 +1014,16 @@ async def clear_eta_cache_endpoint() -> dict:
     - Dictionary with status
     """
     clear_eta_cache()
-    return {
-        "status": "success",
-        "message": "ETA cache cleared"
-    }
+    return {"status": "success", "message": "ETA cache cleared"}
 
 
 @router.get("/live-mode/active-route-eta", summary="Get active route ETA for live mode")
 async def get_live_mode_active_route_eta(
     current_position_lat: float = Query(..., description="Current latitude"),
     current_position_lon: float = Query(..., description="Current longitude"),
-    current_speed_knots: float = Query(default=500.0, description="Current speed in knots"),
+    current_speed_knots: float = Query(
+        default=500.0, description="Current speed in knots"
+    ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
     """
@@ -986,16 +1047,15 @@ async def get_live_mode_active_route_eta(
 
     parsed_route = route_manager.get_active_route()
     if not parsed_route:
-        return {
-            "has_active_route": False,
-            "message": "No active route"
-        }
+        return {"has_active_route": False, "message": "No active route"}
 
     try:
         calculator = RouteETACalculator(parsed_route)
 
         # Get progress metrics
-        progress = calculator.get_route_progress(current_position_lat, current_position_lon)
+        progress = calculator.get_route_progress(
+            current_position_lat, current_position_lon
+        )
 
         # Get timing profile
         timing_info = {}
@@ -1004,18 +1064,26 @@ async def get_live_mode_active_route_eta(
                 "has_timing_data": parsed_route.timing_profile.has_timing_data,
                 "departure_time": (
                     parsed_route.timing_profile.departure_time.isoformat()
-                    if parsed_route.timing_profile.departure_time else None
+                    if parsed_route.timing_profile.departure_time
+                    else None
                 ),
                 "arrival_time": (
                     parsed_route.timing_profile.arrival_time.isoformat()
-                    if parsed_route.timing_profile.arrival_time else None
+                    if parsed_route.timing_profile.arrival_time
+                    else None
                 ),
                 "total_duration_seconds": parsed_route.timing_profile.total_expected_duration_seconds,
             }
 
         # Find next waypoint and calculate ETA
-        nearest_idx, _ = calculator.find_nearest_point(current_position_lat, current_position_lon)
-        next_waypoint_idx = nearest_idx + 1 if nearest_idx < len(parsed_route.waypoints) - 1 else nearest_idx
+        nearest_idx, _ = calculator.find_nearest_point(
+            current_position_lat, current_position_lon
+        )
+        next_waypoint_idx = (
+            nearest_idx + 1
+            if nearest_idx < len(parsed_route.waypoints) - 1
+            else nearest_idx
+        )
 
         next_eta = None
         if next_waypoint_idx < len(parsed_route.waypoints):

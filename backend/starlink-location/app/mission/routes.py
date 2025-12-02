@@ -2,7 +2,6 @@
 
 import io
 import logging
-import sys
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -11,7 +10,12 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from app.core.limiter import limiter
 
-from app.mission.models import Mission, MissionLeg, MissionPhase, MissionLegTimeline, TransportState
+from app.mission.models import (
+    MissionLeg,
+    MissionPhase,
+    MissionLegTimeline,
+    TransportState,
+)
 from app.mission.storage import (
     delete_mission,
     list_missions,
@@ -142,9 +146,7 @@ class MissionListResponse(BaseModel):
     total: int = Field(..., description="Total number of missions")
     limit: int = Field(..., description="Pagination limit")
     offset: int = Field(..., description="Pagination offset")
-    missions: list[dict] = Field(
-        ..., description="List of mission metadata"
-    )
+    missions: list[dict] = Field(..., description="List of mission metadata")
 
 
 class MissionActivationResponse(BaseModel):
@@ -363,11 +365,15 @@ async def get_active_mission() -> MissionLeg:
                         if v2_mission:
                             for leg in v2_mission.legs:
                                 if leg.is_active:
-                                    logger.info(f"Found active v2 leg {leg.id} in mission {v2_mission.id}")
+                                    logger.info(
+                                        f"Found active v2 leg {leg.id} in mission {v2_mission.id}"
+                                    )
                                     _active_mission_id = leg.id  # Track the leg ID
                                     return leg  # Return the active leg as a MissionLeg
                     except Exception as e:
-                        logger.debug(f"Error loading v2 mission {mission_dir.name}: {e}")
+                        logger.debug(
+                            f"Error loading v2 mission {mission_dir.name}: {e}"
+                        )
                         continue
 
         # No active mission found
@@ -630,9 +636,7 @@ async def recompute_mission_timeline_endpoint(
             poi_manager=poi_manager,
         )
     except TimelineComputationError as exc:
-        logger.error(
-            "Failed to recompute timeline for %s", mission_id, exc_info=True
-        )
+        logger.error("Failed to recompute timeline for %s", mission_id, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to compute mission timeline: {type(exc).__name__}: {str(exc)}",
@@ -882,9 +886,13 @@ async def delete_mission_endpoint(
             try:
                 removed = poi_manager.delete_mission_pois(mission_id)
                 if removed:
-                    logger.info("Deleted %d mission-scoped POIs for %s", removed, mission_id)
+                    logger.info(
+                        "Deleted %d mission-scoped POIs for %s", removed, mission_id
+                    )
             except Exception as exc:  # pragma: no cover - defensive
-                logger.warning("Failed to delete mission POIs for %s: %s", mission_id, exc)
+                logger.warning(
+                    "Failed to delete mission POIs for %s: %s", mission_id, exc
+                )
 
         # Remove from storage
         delete_mission(mission_id)
@@ -1000,7 +1008,7 @@ async def activate_mission(
                         logger.debug(
                             "Deactivated mission",
                         )
-                except Exception as e:  # pragma: no cover
+                except Exception:  # pragma: no cover
                     logger.warning(
                         "Failed to deactivate mission",
                     )
@@ -1015,7 +1023,7 @@ async def activate_mission(
         if mission.route_id and route_manager:
             try:
                 route_manager.activate_route(mission.route_id)
-            except Exception as exc:
+            except Exception:
                 mission.is_active = False
                 mission.updated_at = datetime.now(timezone.utc)
                 save_mission(mission)
@@ -1064,11 +1072,13 @@ async def activate_mission(
         # Reset flight state to pre_departure
         try:
             flight_state = get_flight_state_manager()
-            flight_state.reset_to_pre_departure(reason=f"mission_activated:{mission_id}")
+            flight_state.reset_to_pre_departure(
+                reason=f"mission_activated:{mission_id}"
+            )
             logger.info(
                 "Reset flight state to pre_departure",
             )
-        except Exception as e:
+        except Exception:
             logger.warning(
                 "Failed to reset flight state",
             )

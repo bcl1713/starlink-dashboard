@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import starlink_grpc
-from grpc import RpcError
 
 from app.live.coordinator import LiveCoordinator
 from app.models.config import (
@@ -92,7 +91,6 @@ class TestLiveCoordinatorInitialization:
         # No valid telemetry initially
         assert coordinator._last_valid_telemetry is None
 
-
     @patch("app.live.coordinator.StarlinkClient")
     def test_update_returns_none_when_disconnected(self, mock_client_class):
         """Test update returns None when disconnected to prevent publishing invalid data."""
@@ -163,7 +161,9 @@ class TestLiveCoordinatorUpdate:
 
         # Use a generator to return different telemetry on each call
         # Need 3 values: 1 for init, 2 for the update() calls
-        telemetry_values = iter([initial_telemetry, initial_telemetry, second_telemetry])
+        telemetry_values = iter(
+            [initial_telemetry, initial_telemetry, second_telemetry]
+        )
         mock_client.get_telemetry.side_effect = lambda: next(telemetry_values)
 
         config = SimulationConfig()
@@ -314,8 +314,11 @@ class TestLiveCoordinatorUptime:
 
         # Use itertools.cycle to create an infinite generator
         from itertools import cycle
+
         time_values = cycle([1000.0, 1050.0])
-        with patch("app.live.coordinator.time.time", side_effect=lambda: next(time_values)):
+        with patch(
+            "app.live.coordinator.time.time", side_effect=lambda: next(time_values)
+        ):
             config = SimulationConfig()
             coordinator = LiveCoordinator(config)
 
@@ -418,7 +421,9 @@ class TestLiveCoordinatorConnection:
         """Test shutdown handles disconnect errors gracefully."""
         mock_client = MagicMock()
         mock_client.connect.return_value = False  # Skip initial connection
-        mock_client.disconnect.side_effect = starlink_grpc.GrpcError("Disconnect failed")
+        mock_client.disconnect.side_effect = starlink_grpc.GrpcError(
+            "Disconnect failed"
+        )
         mock_client_class.return_value = mock_client
 
         config = SimulationConfig()

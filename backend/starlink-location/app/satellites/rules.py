@@ -8,9 +8,9 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from app.mission.models import MissionPhase, TimelineStatus, Transport, TransportState
+from app.mission.models import Transport
 from app.satellites.geometry import is_in_azimuth_range, look_angles
 
 logger = logging.getLogger(__name__)
@@ -373,7 +373,6 @@ class RuleEngine:
     def clear_events(self) -> None:
         """Clear all accumulated events."""
         self.events = []
-
 
     def _emit_comm_safety_window(
         self,

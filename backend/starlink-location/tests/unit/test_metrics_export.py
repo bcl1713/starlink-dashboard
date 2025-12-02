@@ -137,13 +137,15 @@ async def test_metrics_export_emits_eta_labels(monkeypatch: pytest.MonkeyPatch) 
         poi_manager=dummy_poi_manager,
     )
 
-    assert 'starlink_eta_poi_seconds' in output
+    assert "starlink_eta_poi_seconds" in output
     assert 'eta_type="' in output
-    assert 'starlink_distance_to_poi_meters' in output
+    assert "starlink_distance_to_poi_meters" in output
 
 
 @pytest.mark.anyio("asyncio")
-async def test_metrics_export_includes_route_timing(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_metrics_export_includes_route_timing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Route timing metrics are exported when active route has timing data."""
 
     telemetry = _make_telemetry()
@@ -157,7 +159,9 @@ async def test_metrics_export_includes_route_timing(monkeypatch: pytest.MonkeyPa
     )
 
     dummy_poi_manager = _DummyPOIManager(poi)
-    dummy_route_manager = _DummyRouteManager(active_route=_make_parsed_route(has_timing=True))
+    dummy_route_manager = _DummyRouteManager(
+        active_route=_make_parsed_route(has_timing=True)
+    )
 
     # metrics_export.set_poi_manager(dummy_poi_manager)
     # metrics_export.set_route_manager(dummy_route_manager)

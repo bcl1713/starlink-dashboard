@@ -67,7 +67,9 @@ class ETACache:
         Returns:
             Cached ETA dict or None if not found/expired
         """
-        key = self._make_key(route_id, target_lat, target_lon, current_lat, current_lon, current_speed)
+        key = self._make_key(
+            route_id, target_lat, target_lon, current_lat, current_lon, current_speed
+        )
 
         if key not in self._cache:
             return None
@@ -97,7 +99,9 @@ class ETACache:
         Args:
             value: Dictionary with ETA calculation results
         """
-        key = self._make_key(route_id, target_lat, target_lon, current_lat, current_lon, current_speed)
+        key = self._make_key(
+            route_id, target_lat, target_lon, current_lat, current_lon, current_speed
+        )
         self._cache[key] = (value, time.time())
 
     def clear(self) -> None:
@@ -113,7 +117,8 @@ class ETACache:
         """
         now = time.time()
         expired_keys = [
-            key for key, (_, timestamp) in self._cache.items()
+            key
+            for key, (_, timestamp) in self._cache.items()
             if (now - timestamp) > self.ttl_seconds
         ]
 
@@ -189,7 +194,7 @@ class ETAHistoryTracker:
 
         # Trim history if needed
         if len(self._history) > self.max_history:
-            self._history = self._history[-self.max_history:]
+            self._history = self._history[-self.max_history :]
 
     def record_arrival(
         self,
@@ -208,14 +213,20 @@ class ETAHistoryTracker:
 
         # Find matching prediction (most recent for this waypoint)
         for record in reversed(self._history):
-            if (record["waypoint_id"] == waypoint_id and
-                record["actual_arrival_time"] is None):
+            if (
+                record["waypoint_id"] == waypoint_id
+                and record["actual_arrival_time"] is None
+            ):
                 record["actual_arrival_time"] = actual_arrival_time
                 # Calculate error
                 predicted_time = record["prediction_time"]
                 time_delta = (actual_arrival_time - predicted_time).total_seconds()
-                expected_arrival = predicted_time.timestamp() + record["predicted_eta_seconds"]
-                record["accuracy_error_seconds"] = actual_arrival_time.timestamp() - expected_arrival
+                expected_arrival = (
+                    predicted_time.timestamp() + record["predicted_eta_seconds"]
+                )
+                record["accuracy_error_seconds"] = (
+                    actual_arrival_time.timestamp() - expected_arrival
+                )
                 break
 
     def get_accuracy_stats(self) -> dict:
@@ -225,10 +236,7 @@ class ETAHistoryTracker:
         Returns:
             Dictionary with accuracy metrics
         """
-        completed = [
-            r for r in self._history
-            if r["actual_arrival_time"] is not None
-        ]
+        completed = [r for r in self._history if r["actual_arrival_time"] is not None]
 
         if not completed:
             return {
@@ -246,7 +254,9 @@ class ETAHistoryTracker:
             "average_error_seconds": sum(errors) / len(errors),
             "max_error_seconds": max(errors),
             "min_error_seconds": min(errors),
-            "accuracy_percentage": (len(completed) / len(self._history) * 100) if self._history else 0,
+            "accuracy_percentage": (
+                (len(completed) / len(self._history) * 100) if self._history else 0
+            ),
         }
 
     def clear(self) -> None:

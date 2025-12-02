@@ -41,7 +41,7 @@ def _override_from_env(config_dict: dict) -> dict:
             continue
 
         # Remove prefix and convert to lowercase
-        config_key = env_key[len(env_prefix):].lower()
+        config_key = env_key[len(env_prefix) :].lower()
 
         # Handle nested keys (e.g., ROUTE_LATITUDE_START -> route.latitude_start)
         if "_" in config_key:
@@ -49,10 +49,16 @@ def _override_from_env(config_dict: dict) -> dict:
 
             # Try to find which section this belongs to
             section = None
-            for known_section in ["route", "network", "obstruction", "position", "heading_tracker"]:
+            for known_section in [
+                "route",
+                "network",
+                "obstruction",
+                "position",
+                "heading_tracker",
+            ]:
                 if config_key.startswith(f"{known_section}_"):
                     section = known_section
-                    key = config_key[len(f"{known_section}_"):]
+                    key = config_key[len(f"{known_section}_") :]
                     break
 
             if section and section in config_dict:
@@ -160,7 +166,13 @@ class ConfigManager:
             raise yaml.YAMLError(f"Failed to parse YAML configuration: {e}")
 
         # Ensure nested dicts exist for section overrides
-        for section in ["route", "network", "obstruction", "position", "heading_tracker"]:
+        for section in [
+            "route",
+            "network",
+            "obstruction",
+            "position",
+            "heading_tracker",
+        ]:
             if section not in data:
                 data[section] = {}
 
@@ -196,7 +208,13 @@ class ConfigManager:
             ValidationError: If configuration is invalid
         """
         # Ensure nested dicts exist for section overrides
-        for section in ["route", "network", "obstruction", "position", "heading_tracker"]:
+        for section in [
+            "route",
+            "network",
+            "obstruction",
+            "position",
+            "heading_tracker",
+        ]:
             if section not in data:
                 data[section] = {}
 

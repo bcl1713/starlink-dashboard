@@ -98,9 +98,7 @@ class StarlinkClient:
         try:
             self.context = starlink_grpc.ChannelContext(target=self.target)
             self._connected = True
-            self.logger.info(
-                f"Connected to Starlink dish at {self.target}"
-            )
+            self.logger.info(f"Connected to Starlink dish at {self.target}")
             return True
         except (starlink_grpc.GrpcError, RpcError) as e:
             self.logger.error(
@@ -144,9 +142,7 @@ class StarlinkClient:
             return True
 
         except (starlink_grpc.GrpcError, RpcError) as e:
-            self.logger.warning(
-                f"Connection test failed: {type(e).__name__}: {e}"
-            )
+            self.logger.warning(f"Connection test failed: {type(e).__name__}: {e}")
             self._connected = False
             return False
         except Exception as e:
@@ -250,8 +246,8 @@ class StarlinkClient:
             # Get all required data
             status, obstruction, alerts = self.get_status_data()
             location = self.get_location_data()
-            general, drop, run, latency, loaded, usage, power = (
-                self.get_history_stats(parse_samples=10)
+            general, drop, run, latency, loaded, usage, power = self.get_history_stats(
+                parse_samples=10
             )
 
             # Extract position data
@@ -261,9 +257,7 @@ class StarlinkClient:
 
             # Handle missing GPS data
             if lat is None or lon is None:
-                self.logger.warning(
-                    "GPS location data not available from dish"
-                )
+                self.logger.warning("GPS location data not available from dish")
                 lat = lat or 0.0
                 lon = lon or 0.0
 
@@ -294,9 +288,7 @@ class StarlinkClient:
             )
 
             # Extract obstruction data
-            obstruction_fraction = obstruction.get(
-                "fraction_obstructed", 0.0
-            )
+            obstruction_fraction = obstruction.get("fraction_obstructed", 0.0)
             obstruction_pct = ObstructionData(
                 obstruction_percent=float(obstruction_fraction * 100)
             )

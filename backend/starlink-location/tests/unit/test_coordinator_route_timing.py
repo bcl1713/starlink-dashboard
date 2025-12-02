@@ -2,7 +2,6 @@
 
 import pytest
 from datetime import datetime
-from unittest.mock import Mock
 
 from app.models.route import (
     RoutePoint,
@@ -28,7 +27,7 @@ class TestCoordinatorRouteTiming:
             position=PositionConfig(
                 speed_min_knots=0.0,
                 speed_max_knots=1000.0,  # Allow 1600 knots
-            )
+            ),
         )
 
         # Create coordinator
@@ -108,7 +107,9 @@ class TestCoordinatorRouteTiming:
         coordinator, follower = timed_route_coordinator
 
         # Set the route follower
-        coordinator.position_sim.set_route_follower(follower, completion_behavior="loop")
+        coordinator.position_sim.set_route_follower(
+            follower, completion_behavior="loop"
+        )
 
         # Generate telemetry several times to accumulate speed history in SpeedTracker
         for _ in range(10):
@@ -134,7 +135,7 @@ class TestCoordinatorRouteTiming:
             position=PositionConfig(
                 speed_min_knots=0.0,
                 speed_max_knots=100.0,
-            )
+            ),
         )
 
         coordinator = SimulationCoordinator(config)
@@ -180,7 +181,9 @@ class TestCoordinatorRouteTiming:
         )
 
         follower = KMLRouteFollower(route)
-        coordinator.position_sim.set_route_follower(follower, completion_behavior="loop")
+        coordinator.position_sim.set_route_follower(
+            follower, completion_behavior="loop"
+        )
 
         # Generate telemetry
         for _ in range(5):
@@ -195,14 +198,14 @@ class TestCoordinatorRouteTiming:
             f"got {speed}"
         )
 
-    def test_speed_transition_from_timing_to_no_timing(
-        self, timed_route_coordinator
-    ):
+    def test_speed_transition_from_timing_to_no_timing(self, timed_route_coordinator):
         """Test speed behavior transitions correctly when timing data is available/unavailable."""
         coordinator, follower = timed_route_coordinator
 
         # Initially with timing data
-        coordinator.position_sim.set_route_follower(follower, completion_behavior="loop")
+        coordinator.position_sim.set_route_follower(
+            follower, completion_behavior="loop"
+        )
 
         speeds_with_timing = []
         for _ in range(10):
@@ -222,20 +225,18 @@ class TestCoordinatorRouteTiming:
         avg_without_timing = sum(speeds_without_timing) / len(speeds_without_timing)
 
         # With timing data, speed should be around 450 knots
-        assert 430 <= avg_with_timing <= 470, (
-            f"With timing: expected ~450 knots, got {avg_with_timing}"
-        )
+        assert (
+            430 <= avg_with_timing <= 470
+        ), f"With timing: expected ~450 knots, got {avg_with_timing}"
 
         # Without timing data, speed can be anything in the default range
         # (This is because SpeedTracker accumulates position changes)
         # Just verify it's not using the 1600 knot config value
-        assert avg_without_timing < 200, (
-            f"Without timing: should use default simulator, not arbitrary 1600 knots"
-        )
+        assert (
+            avg_without_timing < 200
+        ), "Without timing: should use default simulator, not arbitrary 1600 knots"
 
-    def test_route_timing_speeds_override_config_limits(
-        self, timed_route_coordinator
-    ):
+    def test_route_timing_speeds_override_config_limits(self, timed_route_coordinator):
         """Test that route timing speeds take precedence over config speed limits."""
         coordinator, follower = timed_route_coordinator
 
@@ -243,7 +244,9 @@ class TestCoordinatorRouteTiming:
         # Route speeds are ~450 knots, config max is 400
         coordinator.config.position.speed_max_knots = 400.0
 
-        coordinator.position_sim.set_route_follower(follower, completion_behavior="loop")
+        coordinator.position_sim.set_route_follower(
+            follower, completion_behavior="loop"
+        )
 
         for _ in range(10):
             telemetry = coordinator.update()
@@ -251,6 +254,6 @@ class TestCoordinatorRouteTiming:
         # Route timing data (~450 knots) should NOT be clamped by config max (400)
         # The route's expected speeds take precedence
         speed = telemetry.position.speed
-        assert speed > 400, (
-            f"Route timing speed (~450 knots) should override config limit (400), got {speed}"
-        )
+        assert (
+            speed > 400
+        ), f"Route timing speed (~450 knots) should override config limit (400), got {speed}"

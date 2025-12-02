@@ -120,7 +120,9 @@ def test_eta_calculator_large_route_and_poi_batch_performance():
     assert len(metrics) == len(pois)
 
     avg_per_poi = elapsed / len(pois)
-    assert avg_per_poi < 0.05, f"Average ETA computation exceeded 50ms per POI ({avg_per_poi:.4f}s)"
+    assert (
+        avg_per_poi < 0.05
+    ), f"Average ETA computation exceeded 50ms per POI ({avg_per_poi:.4f}s)"
 
 
 def test_flight_state_manager_check_departure_overhead():
@@ -135,7 +137,9 @@ def test_flight_state_manager_check_departure_overhead():
     elapsed = perf_counter() - start
 
     avg_call_time = elapsed / iterations
-    assert avg_call_time < 0.001, f"Average check_departure exceeded 1ms ({avg_call_time:.6f}s)"
+    assert (
+        avg_call_time < 0.001
+    ), f"Average check_departure exceeded 1ms ({avg_call_time:.6f}s)"
 
     manager.reset()
 

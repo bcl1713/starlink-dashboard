@@ -2,9 +2,7 @@
 
 import pytest
 import asyncio
-from datetime import datetime, timezone
-from pathlib import Path
-import json
+from datetime import datetime
 
 
 @pytest.mark.asyncio
@@ -175,13 +173,19 @@ async def test_route_response_timing_profile_structure(test_client):
         if timing_profile["departure_time"]:
             assert isinstance(timing_profile["departure_time"], str)
             # Should be ISO 8601 format
-            datetime.fromisoformat(timing_profile["departure_time"].replace("Z", "+00:00"))
+            datetime.fromisoformat(
+                timing_profile["departure_time"].replace("Z", "+00:00")
+            )
 
         if timing_profile["arrival_time"]:
             assert isinstance(timing_profile["arrival_time"], str)
-            datetime.fromisoformat(timing_profile["arrival_time"].replace("Z", "+00:00"))
+            datetime.fromisoformat(
+                timing_profile["arrival_time"].replace("Z", "+00:00")
+            )
 
-        assert isinstance(timing_profile["total_expected_duration_seconds"], (int, float, type(None)))
+        assert isinstance(
+            timing_profile["total_expected_duration_seconds"], (int, float, type(None))
+        )
         assert isinstance(timing_profile["has_timing_data"], bool)
         assert isinstance(timing_profile["segment_count_with_timing"], int)
 

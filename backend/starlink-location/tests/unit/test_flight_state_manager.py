@@ -147,7 +147,9 @@ def test_check_departure_ignored_when_already_in_flight(flight_state_manager):
 
 def test_speed_persistence_triggers_departure(flight_state_manager):
     with flight_state_manager._lock:
-        flight_state_manager._above_threshold_start_time = datetime.now(timezone.utc) - timedelta(
+        flight_state_manager._above_threshold_start_time = datetime.now(
+            timezone.utc
+        ) - timedelta(
             seconds=flight_state_manager.DEPARTURE_SPEED_PERSISTENCE_SECONDS + 1
         )
     triggered = flight_state_manager.check_departure(
@@ -177,9 +179,9 @@ def test_transition_phase_updates_eta_mode(flight_state_manager):
 def test_arrival_detection_sets_post_arrival(flight_state_manager):
     flight_state_manager.transition_phase(FlightPhase.IN_FLIGHT)
     with flight_state_manager._lock:
-        flight_state_manager._arrival_start_time = datetime.now(timezone.utc) - timedelta(
-            seconds=flight_state_manager.ARRIVAL_DWELL_TIME_SECONDS + 1
-        )
+        flight_state_manager._arrival_start_time = datetime.now(
+            timezone.utc
+        ) - timedelta(seconds=flight_state_manager.ARRIVAL_DWELL_TIME_SECONDS + 1)
         flight_state_manager._arrival_distance_at_start = 80.0
 
     triggered = flight_state_manager.check_arrival(
@@ -209,7 +211,9 @@ def test_reset_returns_to_pre_departure(flight_state_manager):
 
 
 def test_update_route_context_sets_metadata(flight_state_manager, sample_route):
-    flight_state_manager.update_route_context(sample_route, auto_reset=True, reason="test")
+    flight_state_manager.update_route_context(
+        sample_route, auto_reset=True, reason="test"
+    )
     status = flight_state_manager.get_status()
 
     assert status.active_route_id == Path(sample_route.metadata.file_path).stem
@@ -222,10 +226,14 @@ def test_update_route_context_sets_metadata(flight_state_manager, sample_route):
 
 
 def test_update_route_context_same_route_no_reset(flight_state_manager, sample_route):
-    flight_state_manager.update_route_context(sample_route, auto_reset=True, reason="initial")
+    flight_state_manager.update_route_context(
+        sample_route, auto_reset=True, reason="initial"
+    )
     flight_state_manager.transition_phase(FlightPhase.IN_FLIGHT)
 
-    flight_state_manager.update_route_context(sample_route, auto_reset=False, reason="reload")
+    flight_state_manager.update_route_context(
+        sample_route, auto_reset=False, reason="reload"
+    )
     status = flight_state_manager.get_status()
 
     assert status.phase == FlightPhase.IN_FLIGHT
@@ -243,9 +251,13 @@ def test_clear_route_context(flight_state_manager, sample_route):
     assert status.has_timing_data is False
 
 
-def test_update_route_context_without_timing_data(flight_state_manager, route_without_timing):
+def test_update_route_context_without_timing_data(
+    flight_state_manager, route_without_timing
+):
     """Routes lacking timing metadata should not populate schedule fields."""
-    flight_state_manager.update_route_context(route_without_timing, auto_reset=True, reason="no-timing")
+    flight_state_manager.update_route_context(
+        route_without_timing, auto_reset=True, reason="no-timing"
+    )
     status = flight_state_manager.get_status()
 
     assert status.active_route_id == Path(route_without_timing.metadata.file_path).stem

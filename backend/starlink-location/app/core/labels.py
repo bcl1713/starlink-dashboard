@@ -100,17 +100,15 @@ def apply_common_labels(telemetry, config) -> dict:
     """
     mode = get_mode_label(config)
     status = get_status_label(
-        telemetry.network.latency_ms,
-        telemetry.network.packet_loss_percent
+        telemetry.network.latency_ms, telemetry.network.packet_loss_percent
     )
     geo_labels = get_geographic_labels(
-        telemetry.position.latitude,
-        telemetry.position.longitude
+        telemetry.position.latitude, telemetry.position.longitude
     )
 
     return {
         "mode": mode,
         "status": status,
         "region": geo_labels["region"],
-        "zone": geo_labels["zone"]
+        "zone": geo_labels["zone"],
     }

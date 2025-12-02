@@ -69,7 +69,7 @@ async def metrics(
 
     return Response(
         content=metrics_output,
-        media_type="application/openmetrics-text; version=1.0.0; charset=utf-8"
+        media_type="application/openmetrics-text; version=1.0.0; charset=utf-8",
     )
 
 
@@ -101,19 +101,21 @@ async def position_table():
     }
     ```
     """
-    return JSONResponse({
-        "columns": [
-            {"text": "aircraft_id", "type": "string"},
-            {"text": "latitude", "type": "number"},
-            {"text": "longitude", "type": "number"},
-            {"text": "altitude", "type": "number"}
-        ],
-        "rows": [
-            [
-                "starlink-dish",
-                _current_position['latitude'],
-                _current_position['longitude'],
-                _current_position['altitude']
-            ]
-        ]
-    })
+    return JSONResponse(
+        {
+            "columns": [
+                {"text": "aircraft_id", "type": "string"},
+                {"text": "latitude", "type": "number"},
+                {"text": "longitude", "type": "number"},
+                {"text": "altitude", "type": "number"},
+            ],
+            "rows": [
+                [
+                    "starlink-dish",
+                    _current_position["latitude"],
+                    _current_position["longitude"],
+                    _current_position["altitude"],
+                ]
+            ],
+        }
+    )

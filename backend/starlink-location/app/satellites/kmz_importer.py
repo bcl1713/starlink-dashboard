@@ -119,7 +119,9 @@ def extract_polygon_from_kml(
             continue
 
         # Extract outer boundary coordinates
-        outer = polygon.find("kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", KML_NS)
+        outer = polygon.find(
+            "kml:outerBoundaryIs/kml:LinearRing/kml:coordinates", KML_NS
+        )
         if outer is None or outer.text is None:
             logger.warning(f"Polygon {polygon_name} has no outer boundary")
             continue
@@ -228,7 +230,9 @@ def kmz_to_geojson(
             properties={"satellite_id": satellite_id, "coverage_region": polygon_name},
         )
         features.append(feature)
-        logger.info(f"Extracted {polygon_name} for {satellite_id} ({len(coords)} points)")
+        logger.info(
+            f"Extracted {polygon_name} for {satellite_id} ({len(coords)} points)"
+        )
 
     if not features:
         logger.error("No polygons extracted from KML")

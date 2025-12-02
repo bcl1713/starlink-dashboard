@@ -16,10 +16,14 @@ logger = logging.getLogger(__name__)
 KML_NS = {"kml": "http://www.opengis.net/kml/2.2"}
 
 # Regex pattern for extracting timestamps from waypoint descriptions
-TIMESTAMP_PATTERN = re.compile(r'Time Over Waypoint:\s*(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})Z')
+TIMESTAMP_PATTERN = re.compile(
+    r"Time Over Waypoint:\s*(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})Z"
+)
 
 
-def extract_timestamp_from_description(description: Optional[str]) -> Optional[datetime]:
+def extract_timestamp_from_description(
+    description: Optional[str],
+) -> Optional[datetime]:
     """
     Extract timestamp from waypoint description.
 
@@ -173,9 +177,7 @@ def parse_kml_file(file_path: str | Path) -> Optional[ParsedRoute]:
     route_description = doc_description
 
     placemarks = _extract_placemarks(root)
-    logger.debug(
-        "Parsed %d placemarks from %s", len(placemarks), file_path.name
-    )
+    logger.debug("Parsed %d placemarks from %s", len(placemarks), file_path.name)
 
     waypoints, route_segments = _partition_placemarks(placemarks)
     logger.debug(
@@ -188,8 +190,14 @@ def parse_kml_file(file_path: str | Path) -> Optional[ParsedRoute]:
 
     primary_coords = _build_primary_route(
         route_segments=route_segments,
-        start_coord=departure_wp.coordinate if departure_wp and departure_wp.coordinate else None,
-        end_coord=arrival_wp.coordinate if arrival_wp and arrival_wp.coordinate else None,
+        start_coord=(
+            departure_wp.coordinate
+            if departure_wp and departure_wp.coordinate
+            else None
+        ),
+        end_coord=(
+            arrival_wp.coordinate if arrival_wp and arrival_wp.coordinate else None
+        ),
     )
 
     if not primary_coords:
@@ -251,7 +259,10 @@ def parse_kml_file(file_path: str | Path) -> Optional[ParsedRoute]:
 
     # Create ParsedRoute with timing profile
     parsed_route = ParsedRoute(
-        metadata=metadata, points=points, waypoints=route_waypoints, timing_profile=timing_profile
+        metadata=metadata,
+        points=points,
+        waypoints=route_waypoints,
+        timing_profile=timing_profile,
     )
 
     logger.info(
@@ -378,7 +389,9 @@ def _parse_coordinates(coords_text: str) -> list[CoordinateTriple]:
         except ValueError:
             logger.warning("Failed to parse coordinate: %s", coord_str)
             continue
-        coordinates.append(CoordinateTriple(longitude=lon, latitude=lat, altitude=altitude))
+        coordinates.append(
+            CoordinateTriple(longitude=lon, latitude=lat, altitude=altitude)
+        )
 
     return coordinates
 
@@ -447,9 +460,7 @@ def _identify_primary_waypoints(
         match = re.search(r"\b([A-Z0-9]{3,5})[-→]+([A-Z0-9]{3,5})\b", route_name_upper)
         if match:
             departure_code, arrival_code = match.group(1), match.group(2)
-            logger.info(
-                "Parsed route name: %s → %s", departure_code, arrival_code
-            )
+            logger.info("Parsed route name: %s → %s", departure_code, arrival_code)
 
     # Try to match waypoints by code
     departure_wp = _match_waypoint_by_code(waypoints, departure_code, prefer_last=False)
@@ -458,16 +469,26 @@ def _identify_primary_waypoints(
     # Fallback: find first/last waypoint with #destWaypointIcon style
     if departure_wp is None:
         departure_wp = next(
-            (wp for wp in waypoints if wp.coordinate is not None and
-             wp.style_url and "dest" in wp.style_url.lower()),
-            None
+            (
+                wp
+                for wp in waypoints
+                if wp.coordinate is not None
+                and wp.style_url
+                and "dest" in wp.style_url.lower()
+            ),
+            None,
         )
 
     if arrival_wp is None:
         arrival_wp = next(
-            (wp for wp in reversed(waypoints) if wp.coordinate is not None and
-             wp.style_url and "dest" in wp.style_url.lower()),
-            None
+            (
+                wp
+                for wp in reversed(waypoints)
+                if wp.coordinate is not None
+                and wp.style_url
+                and "dest" in wp.style_url.lower()
+            ),
+            None,
         )
 
     # Final fallback: use first/last waypoint with any coordinate
@@ -504,9 +525,7 @@ def _match_waypoint_by_code(
     return None
 
 
-def _haversine_distance(
-    lat1: float, lon1: float, lat2: float, lon2: float
-) -> float:
+def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
     Calculate approximate distance between two points using haversine formula.
 
@@ -550,10 +569,14 @@ def _assign_waypoint_timestamps_to_points(
     timed_waypoints = [wp for wp in waypoints if wp.expected_arrival_time is not None]
 
     if not timed_waypoints:
-        logger.debug("No waypoints with timestamps found; skipping timestamp assignment")
+        logger.debug(
+            "No waypoints with timestamps found; skipping timestamp assignment"
+        )
         return
 
-    logger.debug(f"Assigning timestamps from {len(timed_waypoints)} waypoints to route points")
+    logger.debug(
+        f"Assigning timestamps from {len(timed_waypoints)} waypoints to route points"
+    )
 
     # For each timed waypoint, find the nearest route point
     for waypoint in timed_waypoints:
@@ -564,7 +587,10 @@ def _assign_waypoint_timestamps_to_points(
 
             for point in points:
                 distance = _haversine_distance(
-                    waypoint.latitude, waypoint.longitude, point.latitude, point.longitude
+                    waypoint.latitude,
+                    waypoint.longitude,
+                    point.latitude,
+                    point.longitude,
                 )
                 if distance < min_distance:
                     min_distance = distance
@@ -605,7 +631,10 @@ def _calculate_segment_speeds(points: list[RoutePoint]) -> None:
         curr_point = points[i]
 
         # Both points must have timestamps to calculate speed
-        if prev_point.expected_arrival_time is None or curr_point.expected_arrival_time is None:
+        if (
+            prev_point.expected_arrival_time is None
+            or curr_point.expected_arrival_time is None
+        ):
             continue
 
         # Calculate time delta in seconds
@@ -667,6 +696,7 @@ def _build_route_timing_profile(
     # Extract airport codes from route name (format: "...XXXX-YYYY" or "XXXX-YYYY")
     # Look for pattern like "KADW-PHNL" in the route name
     import re
+
     airport_pattern = re.search(r"([A-Z]{3,4})-([A-Z]{3,4})", route_name)
 
     if not airport_pattern:
@@ -824,9 +854,11 @@ def _filter_segments_by_style(
         logger.debug("Segment colors: %s", color_counts)
 
     main_segments = [
-        seg for seg in segments
-        if seg.style and seg.style.color and
-           seg.style.color.lower() == main_route_color.lower()
+        seg
+        for seg in segments
+        if seg.style
+        and seg.style.color
+        and seg.style.color.lower() == main_route_color.lower()
     ]
 
     if main_segments:
@@ -881,7 +913,11 @@ def _build_primary_route(
                 "Color-filtered segments did not chain properly; "
                 "%d segments remaining, current=%s",
                 len(segments_remaining),
-                f"({current.latitude:.6f},{current.longitude:.6f})" if current else "None",
+                (
+                    f"({current.latitude:.6f},{current.longitude:.6f})"
+                    if current
+                    else "None"
+                ),
             )
             return []
 
@@ -976,7 +1012,9 @@ def _deduplicate_coordinates(
     return deduped
 
 
-def _flatten_route_segments(route_segments: list[RouteSegmentData]) -> list[CoordinateTriple]:
+def _flatten_route_segments(
+    route_segments: list[RouteSegmentData],
+) -> list[CoordinateTriple]:
     """Fallback: concatenate all segment coordinates in document order."""
     combined: list[CoordinateTriple] = []
 

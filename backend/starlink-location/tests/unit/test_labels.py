@@ -6,9 +6,15 @@ from app.core.labels import (
     get_mode_label,
     get_status_label,
     get_geographic_labels,
-    apply_common_labels
+    apply_common_labels,
 )
-from app.models.telemetry import TelemetryData, PositionData, NetworkData, ObstructionData, EnvironmentalData
+from app.models.telemetry import (
+    TelemetryData,
+    PositionData,
+    NetworkData,
+    ObstructionData,
+    EnvironmentalData,
+)
 
 
 class TestGetModeLabel:
@@ -16,6 +22,7 @@ class TestGetModeLabel:
 
     def test_simulation_mode(self):
         """Test mode label for simulation config."""
+
         class MockConfig:
             mode = "simulation"
 
@@ -23,6 +30,7 @@ class TestGetModeLabel:
 
     def test_live_mode(self):
         """Test mode label for live config."""
+
         class MockConfig:
             mode = "live"
 
@@ -102,29 +110,29 @@ class TestApplyCommonLabels:
                 longitude=-74.0060,
                 altitude=100.0,
                 speed=10.0,
-                heading=90.0
+                heading=90.0,
             ),
             network=NetworkData(
                 latency_ms=50.0,
                 throughput_down_mbps=100.0,
                 throughput_up_mbps=20.0,
-                packet_loss_percent=1.0
+                packet_loss_percent=1.0,
             ),
             obstruction=ObstructionData(
-                obstruction_percent=0.0,
-                potential_obstructions=0
+                obstruction_percent=0.0, potential_obstructions=0
             ),
             environmental=EnvironmentalData(
-                signal_quality_percent=90.0,
-                uptime_seconds=3600.0
-            )
+                signal_quality_percent=90.0, uptime_seconds=3600.0
+            ),
         )
 
     @pytest.fixture
     def mock_config(self):
         """Create a mock config object."""
+
         class MockConfig:
             mode = "simulation"
+
         return MockConfig()
 
     def test_labels_structure(self, mock_telemetry, mock_config):

@@ -262,7 +262,6 @@ class TestMission:
             )
 
 
-
 class TestTimelineSegment:
     """Tests for TimelineSegment model."""
 

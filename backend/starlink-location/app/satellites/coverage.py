@@ -139,9 +139,7 @@ class CoverageSampler:
             self.coverage_data = None
             self.satellite_polygons = {}
 
-    def check_coverage_at_point(
-        self, latitude: float, longitude: float
-    ) -> List[str]:
+    def check_coverage_at_point(self, latitude: float, longitude: float) -> List[str]:
         """Check which satellites cover a given point.
 
         Handles multi-ring polygons (e.g., coverage split by International Date Line).
@@ -250,7 +248,9 @@ class CoverageSampler:
         azimuth, elevation = look_angles(aircraft_lat, aircraft_lon, 0, satellite_lon)
         return elevation
 
-    def save_coverage_events(self, events: List[CoverageEvent], output_path: Path) -> None:
+    def save_coverage_events(
+        self, events: List[CoverageEvent], output_path: Path
+    ) -> None:
         """Save coverage events to JSON for caching/analysis.
 
         Args:

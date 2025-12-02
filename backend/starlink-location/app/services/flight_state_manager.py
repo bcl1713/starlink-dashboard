@@ -90,7 +90,9 @@ class FlightStateManager:
         self._arrival_distance_at_start: Optional[float] = None
 
         # Callbacks for state changes
-        self._phase_change_callbacks: list[Callable[[FlightPhase, FlightPhase], None]] = []
+        self._phase_change_callbacks: list[
+            Callable[[FlightPhase, FlightPhase], None]
+        ] = []
         self._mode_change_callbacks: list[Callable[[ETAMode, ETAMode], None]] = []
 
         logger.info(
@@ -122,20 +124,28 @@ class FlightStateManager:
 
         now_utc = datetime.now(timezone.utc)
         departure_utc = _normalize_to_utc(status_copy.departure_time)
-        scheduled_departure_utc = _normalize_to_utc(status_copy.scheduled_departure_time)
+        scheduled_departure_utc = _normalize_to_utc(
+            status_copy.scheduled_departure_time
+        )
 
         # Compute time since departure (only positive values)
         if departure_utc and now_utc >= departure_utc:
-            status_copy.time_since_departure_seconds = (now_utc - departure_utc).total_seconds()
+            status_copy.time_since_departure_seconds = (
+                now_utc - departure_utc
+            ).total_seconds()
         else:
             status_copy.time_since_departure_seconds = None
 
         # Compute countdown until departure (pre-departure only)
         if status_copy.phase == FlightPhase.PRE_DEPARTURE:
             if departure_utc and departure_utc > now_utc:
-                status_copy.time_until_departure_seconds = (departure_utc - now_utc).total_seconds()
+                status_copy.time_until_departure_seconds = (
+                    departure_utc - now_utc
+                ).total_seconds()
             elif scheduled_departure_utc:
-                status_copy.time_until_departure_seconds = (scheduled_departure_utc - now_utc).total_seconds()
+                status_copy.time_until_departure_seconds = (
+                    scheduled_departure_utc - now_utc
+                ).total_seconds()
             else:
                 status_copy.time_until_departure_seconds = None
         else:
@@ -181,7 +191,9 @@ class FlightStateManager:
 
                 # Check if speed has been above threshold long enough
                 if self._above_threshold_start_time is not None:
-                    persistence_seconds = (now - self._above_threshold_start_time).total_seconds()
+                    persistence_seconds = (
+                        now - self._above_threshold_start_time
+                    ).total_seconds()
                     self._status.speed_persistence_seconds = persistence_seconds
 
                     if persistence_seconds >= self.DEPARTURE_SPEED_PERSISTENCE_SECONDS:
@@ -264,14 +276,16 @@ class FlightStateManager:
                 # Aircraft left arrival zone, reset tracking
                 if self._arrival_start_time is not None:
                     logger.debug(
-                        f"Aircraft left arrival zone, resetting dwell time check"
+                        "Aircraft left arrival zone, resetting dwell time check"
                     )
                     self._arrival_start_time = None
                     self._arrival_distance_at_start = None
 
             return False
 
-    def transition_phase(self, new_phase: FlightPhase, reason: Optional[str] = None) -> bool:
+    def transition_phase(
+        self, new_phase: FlightPhase, reason: Optional[str] = None
+    ) -> bool:
         """
         Manually transition to a new flight phase.
 
@@ -284,15 +298,23 @@ class FlightStateManager:
         """
         with self._lock:
             if new_phase == self._status.phase:
-                logger.debug(f"Already in {new_phase.value} phase, no transition needed")
+                logger.debug(
+                    f"Already in {new_phase.value} phase, no transition needed"
+                )
                 return False
 
             old_phase = self._status.phase
 
             # Prepare timestamps based on target phase before transition
-            if new_phase == FlightPhase.IN_FLIGHT and self._status.departure_time is None:
+            if (
+                new_phase == FlightPhase.IN_FLIGHT
+                and self._status.departure_time is None
+            ):
                 self._status.departure_time = datetime.now(timezone.utc)
-            elif new_phase == FlightPhase.POST_ARRIVAL and self._status.arrival_time is None:
+            elif (
+                new_phase == FlightPhase.POST_ARRIVAL
+                and self._status.arrival_time is None
+            ):
                 self._status.arrival_time = datetime.now(timezone.utc)
             elif new_phase == FlightPhase.PRE_DEPARTURE:
                 # Manual reset clears arrival tracking
@@ -371,7 +393,9 @@ class FlightStateManager:
         if route is not None:
             try:
                 file_path = route.metadata.file_path
-                new_route_id = Path(file_path).stem if file_path else route.metadata.name
+                new_route_id = (
+                    Path(file_path).stem if file_path else route.metadata.name
+                )
             except Exception:  # pragma: no cover - defensive guard
                 new_route_id = route.metadata.name
             new_route_name = route.metadata.name
@@ -411,7 +435,9 @@ class FlightStateManager:
                     route.timing_profile.flight_status = self._status.phase.value
 
         if reset_needed:
-            reset_reason = reason or ("route_cleared" if route is None else f"route_changed:{new_route_id}")
+            reset_reason = reason or (
+                "route_cleared" if route is None else f"route_changed:{new_route_id}"
+            )
             logger.info(
                 "Flight state reset due to route context change (route_id=%s, reason=%s)",
                 new_route_id,
@@ -421,13 +447,17 @@ class FlightStateManager:
 
     def clear_route_context(self, reason: Optional[str] = None) -> None:
         """Convenience wrapper for clearing the active route context."""
-        self.update_route_context(None, auto_reset=True, reason=reason or "route_cleared")
+        self.update_route_context(
+            None, auto_reset=True, reason=reason or "route_cleared"
+        )
 
     # ------------------------------------------------------------------ #
     # Manual triggers
     # ------------------------------------------------------------------ #
 
-    def trigger_departure(self, timestamp: Optional[datetime] = None, reason: Optional[str] = None) -> bool:
+    def trigger_departure(
+        self, timestamp: Optional[datetime] = None, reason: Optional[str] = None
+    ) -> bool:
         """
         Manually trigger departure and transition to IN_FLIGHT phase.
 
@@ -460,7 +490,9 @@ class FlightStateManager:
         )
         return True
 
-    def trigger_arrival(self, timestamp: Optional[datetime] = None, reason: Optional[str] = None) -> bool:
+    def trigger_arrival(
+        self, timestamp: Optional[datetime] = None, reason: Optional[str] = None
+    ) -> bool:
         """
         Manually trigger arrival and transition to POST_ARRIVAL phase.
 

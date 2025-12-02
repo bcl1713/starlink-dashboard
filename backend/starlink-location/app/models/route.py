@@ -10,37 +10,61 @@ class RoutePoint(BaseModel):
     """Represents a single point in a route (from KML coordinate)."""
 
     latitude: float = Field(..., description="Latitude in decimal degrees (-90 to 90)")
-    longitude: float = Field(..., description="Longitude in decimal degrees (-180 to 180)")
+    longitude: float = Field(
+        ..., description="Longitude in decimal degrees (-180 to 180)"
+    )
     altitude: Optional[float] = Field(
         default=None, description="Altitude in meters above sea level"
     )
     sequence: int = Field(default=0, description="Order of point in route (0-indexed)")
     expected_arrival_time: Optional[datetime] = Field(
-        default=None, description="Expected arrival time at this waypoint (UTC, ISO-8601)"
+        default=None,
+        description="Expected arrival time at this waypoint (UTC, ISO-8601)",
     )
     expected_segment_speed_knots: Optional[float] = Field(
-        default=None, description="Expected speed for segment ending at this point (in knots)"
+        default=None,
+        description="Expected speed for segment ending at this point (in knots)",
     )
 
-    model_config = {"json_schema_extra": {"example": {"latitude": 40.7128, "longitude": -74.0060, "altitude": 100, "sequence": 0, "expected_arrival_time": "2025-10-27T16:57:55Z", "expected_segment_speed_knots": 598.0}}}
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "latitude": 40.7128,
+                "longitude": -74.0060,
+                "altitude": 100,
+                "sequence": 0,
+                "expected_arrival_time": "2025-10-27T16:57:55Z",
+                "expected_segment_speed_knots": 598.0,
+            }
+        }
+    }
 
 
 class RouteWaypoint(BaseModel):
     """Represents a waypoint parsed from a KML Placemark."""
 
-    name: Optional[str] = Field(default=None, description="Waypoint name as defined in KML")
-    description: Optional[str] = Field(default=None, description="Waypoint description text")
-    style_url: Optional[str] = Field(default=None, description="Referenced style URL for icon/styling")
+    name: Optional[str] = Field(
+        default=None, description="Waypoint name as defined in KML"
+    )
+    description: Optional[str] = Field(
+        default=None, description="Waypoint description text"
+    )
+    style_url: Optional[str] = Field(
+        default=None, description="Referenced style URL for icon/styling"
+    )
     latitude: float = Field(..., description="Waypoint latitude in decimal degrees")
     longitude: float = Field(..., description="Waypoint longitude in decimal degrees")
-    altitude: Optional[float] = Field(default=None, description="Waypoint altitude if provided")
+    altitude: Optional[float] = Field(
+        default=None, description="Waypoint altitude if provided"
+    )
     order: int = Field(..., description="Document order index of this waypoint")
     role: Optional[str] = Field(
         default=None,
         description="Semantic role (e.g., 'departure', 'arrival', 'waypoint', 'alternate')",
     )
     expected_arrival_time: Optional[datetime] = Field(
-        default=None, description="Expected arrival time at this waypoint (UTC, ISO-8601), parsed from description"
+        default=None,
+        description="Expected arrival time at this waypoint (UTC, ISO-8601), parsed from description",
     )
 
     model_config = {
@@ -86,10 +110,12 @@ class RouteTimingProfile(BaseModel):
         default=None, description="Total expected flight duration in seconds"
     )
     actual_departure_time: Optional[datetime] = Field(
-        default=None, description="Observed departure time when flight state transitioned from PRE_DEPARTURE"
+        default=None,
+        description="Observed departure time when flight state transitioned from PRE_DEPARTURE",
     )
     actual_arrival_time: Optional[datetime] = Field(
-        default=None, description="Observed arrival time when flight state transitioned to POST_ARRIVAL"
+        default=None,
+        description="Observed arrival time when flight state transitioned to POST_ARRIVAL",
     )
     flight_status: str = Field(
         default="pre_departure",
@@ -164,7 +190,9 @@ class ParsedRoute(BaseModel):
 
         earth_radius_m = 6371000.0  # Earth's radius in meters
 
-        def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        def haversine_distance(
+            lat1: float, lon1: float, lat2: float, lon2: float
+        ) -> float:
             """Calculate distance between two points using Haversine formula."""
             lat1_rad = math.radians(lat1)
             lon1_rad = math.radians(lon1)
@@ -174,7 +202,10 @@ class ParsedRoute(BaseModel):
             dlat = lat2_rad - lat1_rad
             dlon = lon2_rad - lon1_rad
 
-            a = math.sin(dlat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+            a = (
+                math.sin(dlat / 2) ** 2
+                + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2
+            )
             c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
             return earth_radius_m * c
 
@@ -182,7 +213,9 @@ class ParsedRoute(BaseModel):
         for i in range(len(self.points) - 1):
             p1 = self.points[i]
             p2 = self.points[i + 1]
-            distance = haversine_distance(p1.latitude, p1.longitude, p2.latitude, p2.longitude)
+            distance = haversine_distance(
+                p1.latitude, p1.longitude, p2.latitude, p2.longitude
+            )
             total_distance += distance
 
         return total_distance
@@ -211,11 +244,15 @@ class ParsedRoute(BaseModel):
 class RouteResponse(BaseModel):
     """Response model for route API endpoints."""
 
-    id: str = Field(..., description="Unique route identifier (filename without extension)")
+    id: str = Field(
+        ..., description="Unique route identifier (filename without extension)"
+    )
     name: str = Field(..., description="Route name from KML")
     description: Optional[str] = Field(default=None, description="Route description")
     point_count: int = Field(..., description="Number of points in route")
-    is_active: bool = Field(default=False, description="Whether this is the active route")
+    is_active: bool = Field(
+        default=False, description="Whether this is the active route"
+    )
     imported_at: datetime = Field(..., description="When route was imported")
     imported_poi_count: Optional[int] = Field(
         default=None,
@@ -256,7 +293,9 @@ class RouteDetailResponse(BaseModel):
     name: str = Field(..., description="Route name from KML")
     description: Optional[str] = Field(default=None, description="Route description")
     point_count: int = Field(..., description="Number of points in route")
-    is_active: bool = Field(default=False, description="Whether this is the active route")
+    is_active: bool = Field(
+        default=False, description="Whether this is the active route"
+    )
     imported_at: datetime = Field(..., description="When route was imported")
     file_path: str = Field(..., description="Path to KML file")
     points: list[RoutePoint] = Field(..., description="All route points")
@@ -272,7 +311,8 @@ class RouteDetailResponse(BaseModel):
         default=None, description="Timing profile if route has embedded timing data"
     )
     has_timing_data: bool = Field(
-        default=False, description="Whether the timing profile contains schedule metadata"
+        default=False,
+        description="Whether the timing profile contains schedule metadata",
     )
     flight_phase: Optional[str] = Field(
         default=None,

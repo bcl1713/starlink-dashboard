@@ -52,9 +52,7 @@ def ecef_from_geodetic(
     return x, y, z
 
 
-def geodetic_from_ecef(
-    x: float, y: float, z: float
-) -> Tuple[float, float, float]:
+def geodetic_from_ecef(x: float, y: float, z: float) -> Tuple[float, float, float]:
     """Convert ECEF coordinates to geodetic coordinates.
 
     Uses iterative method for improved accuracy.
@@ -89,10 +87,12 @@ def geodetic_from_ecef(
     # Calculate altitude
     sin_lat = math.sin(latitude)
     cos_lat = math.cos(latitude)
-    n = WGS84_SEMI_MAJOR_AXIS / math.sqrt(
-        1 - WGS84_ECCENTRICITY_SQUARED * sin_lat**2
+    n = WGS84_SEMI_MAJOR_AXIS / math.sqrt(1 - WGS84_ECCENTRICITY_SQUARED * sin_lat**2)
+    altitude = (
+        p / cos_lat - n
+        if abs(cos_lat) > 1e-10
+        else z / sin_lat - n * (1 - WGS84_ECCENTRICITY_SQUARED)
     )
-    altitude = p / cos_lat - n if abs(cos_lat) > 1e-10 else z / sin_lat - n * (1 - WGS84_ECCENTRICITY_SQUARED)
 
     latitude = math.degrees(latitude)
 
@@ -138,9 +138,7 @@ def azimuth_elevation_from_ecef(
 
     # Rotation matrix from ECEF to SEZ (South-East-Zenith)
     # This transforms the ECEF vector to local horizon coordinates
-    south = (
-        sin_lat * cos_lon * dx + sin_lat * sin_lon * dy - cos_lat * dz
-    )
+    south = sin_lat * cos_lon * dx + sin_lat * sin_lon * dy - cos_lat * dz
     east = -sin_lon * dx + cos_lon * dy
     zenith = cos_lat * cos_lon * dx + cos_lat * sin_lon * dy + sin_lat * dz
 
@@ -189,7 +187,9 @@ def look_angles(
         For LEO satellites, use azimuth_elevation_from_ecef() directly.
     """
     # Convert observer and target to ECEF
-    observer_ecef = ecef_from_geodetic(aircraft_lat_deg, aircraft_lon_deg, aircraft_alt_m)
+    observer_ecef = ecef_from_geodetic(
+        aircraft_lat_deg, aircraft_lon_deg, aircraft_alt_m
+    )
 
     # Satellite at equator (lat=0) with given longitude
     target_ecef = ecef_from_geodetic(0.0, satellite_lon_deg, satellite_alt_m)
@@ -199,9 +199,7 @@ def look_angles(
     )
 
 
-def is_in_azimuth_range(
-    azimuth: float, min_azimuth: float, max_azimuth: float
-) -> bool:
+def is_in_azimuth_range(azimuth: float, min_azimuth: float, max_azimuth: float) -> bool:
     """Check if azimuth is within a specified range (handles wraparound).
 
     Useful for checking forbidden cones that may wrap around North (0°).
