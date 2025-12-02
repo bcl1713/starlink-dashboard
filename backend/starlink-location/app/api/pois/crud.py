@@ -43,10 +43,11 @@ def set_coordinator(coordinator):
 
 
 # Create API router for CRUD operations
-router = APIRouter(prefix="/api/pois", tags=["pois"])
+# NOTE: Prefix is NOT set here - it's handled at the module level in __init__.py
+router = APIRouter(tags=["pois"])
 
 
-@router.get("", response_model=POIListResponse, summary="List all POIs")
+@router.get("/", response_model=POIListResponse, summary="List all POIs")
 async def list_pois(
     route_id: Optional[str] = Query(None, description="Filter by route ID"),
     mission_id: Optional[str] = Query(None, description="Filter by mission ID"),
@@ -200,7 +201,7 @@ async def get_poi(
 
 
 @router.post(
-    "",
+    "/",
     response_model=POIResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new POI",

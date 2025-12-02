@@ -5,7 +5,8 @@ from fastapi import APIRouter
 from . import crud, etas, stats
 
 # Create the main POI router by combining all sub-routers
-router = APIRouter()
+# Set prefix here so all sub-routers share the same /api/pois prefix
+router = APIRouter(prefix="/api/pois")
 router.include_router(crud.router)
 router.include_router(etas.router)
 router.include_router(stats.router)

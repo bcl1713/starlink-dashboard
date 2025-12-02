@@ -39,7 +39,8 @@ def set_coordinator(coordinator):
 
 
 # Create API router for stats endpoints
-router = APIRouter(prefix="/api/pois", tags=["pois"])
+# NOTE: Prefix is NOT set here - it's handled at the module level in __init__.py
+router = APIRouter(tags=["pois"])
 
 
 @router.get("/count/total", response_model=dict, summary="Get POI count")
