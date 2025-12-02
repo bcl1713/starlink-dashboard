@@ -16,8 +16,7 @@ eggs/
 lib/
 lib64/
 parts/
-sdist/
-var/
+sdist/var/
 wheels/
 *.egg-info/
 .installed.cfg
@@ -46,3 +45,6 @@ frontend/mission-planner/node_modules/*
 frontend/mission-planner/test-results/
 frontend/mission-planner/playwright-report/
 frontend/mission-planner/dist/
+
+# Exceptions
+!frontend/mission-planner/src/lib/
