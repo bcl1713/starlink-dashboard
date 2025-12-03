@@ -43,8 +43,15 @@ logger = logging.getLogger(__name__)
 _coordinator: Optional[object] = None
 
 
-def set_coordinator(coordinator):
-    """Set the simulation coordinator reference."""
+def set_coordinator(coordinator: object) -> None:
+    """Set the simulation coordinator reference for POI ETA calculations.
+
+    Stores a reference to the coordinator to enable access to real-time
+    telemetry data for ETA and distance calculations.
+
+    Args:
+        coordinator: Simulation coordinator instance providing telemetry
+    """
     global _coordinator
     _coordinator = coordinator
 

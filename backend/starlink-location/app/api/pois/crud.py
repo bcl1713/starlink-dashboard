@@ -36,8 +36,15 @@ logger = logging.getLogger(__name__)
 _coordinator: Optional[object] = None
 
 
-def set_coordinator(coordinator):
-    """Set the simulation coordinator reference."""
+def set_coordinator(coordinator: object) -> None:
+    """Set the simulation coordinator reference for POI CRUD operations.
+
+    Stores a reference to the coordinator to enable access to route and
+    telemetry information during POI creation and updates.
+
+    Args:
+        coordinator: Simulation coordinator instance
+    """
     global _coordinator
     _coordinator = coordinator
 

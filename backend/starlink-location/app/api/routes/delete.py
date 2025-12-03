@@ -21,15 +21,20 @@ async def delete_route(
     route_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
     poi_manager: POIManager = Depends(get_poi_manager),
-):
-    """
-    Delete a route and its associated POIs.
+) -> None:
+    """Delete a route and its associated POIs.
 
-    Path Parameters:
-    - route_id: Route identifier
+    Removes the route file from disk, deletes all POIs associated with the route,
+    and removes the route from the manager's cache. This is a cascade delete
+    operation.
 
-    Returns:
-    - No content (204)
+    Args:
+        route_id: Unique identifier of the route to delete
+        route_manager: Injected RouteManager dependency for route operations
+        poi_manager: Injected POIManager dependency for POI cascade deletion
+
+    Raises:
+        HTTPException: 404 if route not found, 500 if deletion fails
     """
     if not route_manager:
         raise HTTPException(
