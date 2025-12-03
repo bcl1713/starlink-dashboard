@@ -4,10 +4,7 @@ import logging
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
-
-if TYPE_CHECKING:
-    from app.services.kml.geometry import PlacemarkGeometry, LineStyleInfo
+from typing import Optional, Any
 
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.kml.geometry import (
@@ -43,8 +40,8 @@ class PlacemarkData:
     name: Optional[str]
     description: Optional[str]
     style_url: Optional[str]
-    geometry: Optional[PlacemarkGeometry]
-    line_style: Optional[LineStyleInfo]
+    geometry: Optional[Any]  # PlacemarkGeometry
+    line_style: Optional[Any]  # LineStyleInfo
     order: int
 
 

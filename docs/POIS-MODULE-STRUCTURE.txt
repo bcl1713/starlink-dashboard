@@ -1,0 +1,205 @@
+================================================================================
+POIs MODULE STRUCTURE - VISUAL REFERENCE
+================================================================================
+
+CURRENT STATE (MONOLITHIC):
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ app/api/pois.py (1159 lines)                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│ [Setup] set_coordinator()                                                   │
+│ [Router] router = APIRouter()                                               │
+│                                                                              │
+│ [Math Helpers]                                                              │
+│   ├─ calculate_bearing()          (26 lines)                                │
+│   └─ calculate_course_status()    (28 lines)                                │
+│                                                                              │
+│ [Status Helpers]                                                            │
+│   └─ _calculate_poi_active_status()  (56 lines)                             │
+│       Used by: list, etas, get, create, update                             │
+│                                                                              │
+│ [CRUD Endpoints] (450 lines)                                                │
+│   ├─ list_pois()      [156-256] GET /api/pois                              │
+│   ├─ get_poi()        [922-976] GET /api/pois/{id}                          │
+│   ├─ create_poi()     [979-1054] POST /api/pois                             │
+│   ├─ update_poi()     [1057-1129] PUT /api/pois/{id}                        │
+│   ├─ delete_poi()     [1132-1159] DELETE /api/pois/{id}                     │
+│   └─ count_pois()     [627-648] GET /api/pois/count/total                   │
+│                                                                              │
+│ [ETA Endpoint] (365 lines) ⚠️ TOO LARGE                                    │
+│   └─ get_pois_with_etas()  [259-624] GET /api/pois/etas                     │
+│       Complex logic:                                                        │
+│       - Telemetry extraction (40 lines)                                     │
+│       - Parameter parsing (40 lines)                                        │
+│       - Route progress (15 lines)                                           │
+│       - Filter parsing (10 lines)                                           │
+│       - POI loop & ETA calc (160 lines)                                     │
+│                                                                              │
+│ [Stats Endpoints] (245 lines)                                               │
+│   ├─ get_next_destination()  [651-751] GET /api/pois/stats/next-destination│
+│   ├─ get_next_eta()          [754-854] GET /api/pois/stats/next-eta        │
+│   └─ get_approaching_pois()  [857-919] GET /api/pois/stats/approaching     │
+│                                                                              │
+│ [DUPLICATED CODE] (160+ lines)                                              │
+│   ├─ Telemetry extraction (3x)   60 lines                                   │
+│   ├─ Flight state snapshot (4x)  32 lines                                   │
+│   ├─ POI response building (5x)  90 lines                                   │
+│   └─ Find closest POI (2x)       18 lines                                   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+PROPOSED STATE (MODULAR):
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ app/api/pois/                                                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │ __init__.py (50 lines)                                               │   │
+│  ├──────────────────────────────────────────────────────────────────────┤   │
+│  │ • _coordinator: Optional[object] = None  (global state)              │   │
+│  │ • set_coordinator(coordinator)  (exposed function)                   │   │
+│  │ • router = APIRouter(prefix="/api/pois", tags=["pois"])              │   │
+│  │ • router.include_router(crud_router)                                 │   │
+│  │ • router.include_router(etas_router)                                 │   │
+│  │ • router.include_router(stats_router)                                │   │
+│  │ • __all__ = ["router", "set_coordinator"]                            │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │ helpers.py (150 lines)  ⭐ FOUNDATION LAYER                         │   │
+│  ├──────────────────────────────────────────────────────────────────────┤   │
+│  │ Pure Functions:                                                       │   │
+│  │ • calculate_bearing(lat1, lon1, lat2, lon2)                          │   │
+│  │ • calculate_course_status(heading, bearing)                          │   │
+│  │                                                                       │   │
+│  │ Extracted Utilities:                                                 │   │
+│  │ • extract_telemetry(_coordinator, lat, lon, speed)  [NEW]            │   │
+│  │ • get_flight_state_snapshot()  [NEW]                                 │   │
+│  │ • find_closest_poi(pois, lat, lon, speed, eta_calc)  [NEW]           │   │
+│  │ • poi_to_response(poi, active_status)  [NEW]                         │   │
+│  │                                                                       │   │
+│  │ Service Helpers:                                                     │   │
+│  │ • _calculate_poi_active_status(poi, route_manager)  [MOVED]          │   │
+│  │                                                                       │   │
+│  │ Dependencies: NO INTERNAL (safe foundation layer)                    │   │
+│  │ Used by: crud, etas, stats                                           │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│         ↑                                                                     │
+│         │ (imports)                                                          │
+│         │                                                                     │
+│  ┌──────┴─────────────────────────────────────────────────────────────────┐  │
+│  │                                                                        │  │
+│  │  ┌──────────────────────────┐  ┌──────────────────────────┐           │  │
+│  │  │ crud.py (220 lines)      │  │ etas.py (280 lines)      │           │  │
+│  │  ├──────────────────────────┤  ├──────────────────────────┤           │  │
+│  │  │ Endpoints:               │  │ Endpoint:                │           │  │
+│  │  │ • list_pois()            │  │ • get_pois_with_etas()   │           │  │
+│  │  │ • get_poi()              │  │                          │           │  │
+│  │  │ • create_poi()           │  │ Complex Logic:           │           │  │
+│  │  │ • update_poi()           │  │ • Telemetry extraction   │           │  │
+│  │  │ • delete_poi()           │  │ • Param parsing & validation          │  │
+│  │  │ • count_pois()           │  │ • Route progress calc    │           │  │
+│  │  │                          │  │ • Dual-mode ETA calc     │           │  │
+│  │  │ Helpers Used:            │  │ • Filter application     │           │  │
+│  │  │ • _calculate_poi_active_ │  │                          │           │  │
+│  │  │   status()               │  │ Helpers Used:            │           │  │
+│  │  │ • poi_to_response()      │  │ • calculate_bearing()    │           │  │
+│  │  │                          │  │ • calculate_course_      │           │  │
+│  │  │                          │  │   status()               │           │  │
+│  │  │                          │  │ • _calculate_poi_active_ │           │  │
+│  │  │                          │  │   status()               │           │  │
+│  │  └──────────────────────────┘  └──────────────────────────┘           │  │
+│  │                                                                        │  │
+│  │  ┌──────────────────────────┐                                          │  │
+│  │  │ stats.py (230 lines)     │                                          │  │
+│  │  ├──────────────────────────┤                                          │  │
+│  │  │ Endpoints:               │                                          │  │
+│  │  │ • count_pois()           │                                          │  │
+│  │  │ • get_next_destination() │                                          │  │
+│  │  │ • get_next_eta()         │                                          │  │
+│  │  │ • get_approaching_pois() │                                          │  │
+│  │  │                          │                                          │  │
+│  │  │ Helpers Used:            │                                          │  │
+│  │  │ • extract_telemetry()    │                                          │  │
+│  │  │ • get_flight_state_snap()│                                          │  │
+│  │  │ • find_closest_poi()     │                                          │  │
+│  │  └──────────────────────────┘                                          │  │
+│  │                                                                        │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+ENDPOINT ROUTING TABLE:
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ New Module    │ HTTP   │ Path                              │ Function          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│               │        │                                   │                  │
+│ crud.py       │ GET    │ /api/pois                         │ list_pois         │
+│               │ GET    │ /api/pois/{poi_id}                │ get_poi           │
+│               │ POST   │ /api/pois                         │ create_poi        │
+│               │ PUT    │ /api/pois/{poi_id}                │ update_poi        │
+│               │ DELETE │ /api/pois/{poi_id}                │ delete_poi        │
+│               │ GET    │ /api/pois/count/total             │ count_pois        │
+│               │        │                                   │                  │
+│ etas.py       │ GET    │ /api/pois/etas                    │ get_pois_with_etas│
+│               │        │                                   │                  │
+│ stats.py      │ GET    │ /api/pois/stats/next-destination  │ get_next_dest.    │
+│               │ GET    │ /api/pois/stats/next-eta          │ get_next_eta      │
+│               │ GET    │ /api/pois/stats/approaching       │ get_approaching   │
+│               │        │                                   │                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+DEPENDENCY FLOW:
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                              │
+│  External Services (POIManager, RouteManager, ETACalculator)                │
+│       ↑                                                                      │
+│       │                                                                      │
+│  ┌────┴──────────────────────────────────────────────────────────────────┐  │
+│  │                                                                        │  │
+│  │  helpers.py                                                           │  │
+│  │  ├─ calculate_bearing()                                              │  │
+│  │  ├─ calculate_course_status()                                        │  │
+│  │  ├─ extract_telemetry()                                              │  │
+│  │  ├─ get_flight_state_snapshot()                                      │  │
+│  │  ├─ find_closest_poi()                                               │  │
+│  │  ├─ poi_to_response()                                                │  │
+│  │  └─ _calculate_poi_active_status()                                   │  │
+│  │       ↑                                                                │  │
+│  │       │ (imports)                                                      │  │
+│  │       │                                                                │  │
+│  │  ┌────┴───────────────┬─────────────────┬──────────────────────────┐  │  │
+│  │  │                    │                 │                          │  │  │
+│  │  │                    │                 │                          │  │  │
+│  │  │ crud.py            │ etas.py         │ stats.py                 │  │  │
+│  │  │ 6 endpoints        │ 1 endpoint      │ 3 endpoints              │  │  │
+│  │  │                    │                 │                          │  │  │
+│  │  └────────────────────┴─────────────────┴──────────────────────────┘  │  │
+│  │                    ↑                                                    │  │
+│  │                    │ (includes routers)                                │  │
+│  │  ┌─────────────────┴───────────────────────────────────────────────┐  │  │
+│  │  │ __init__.py                                                     │  │  │
+│  │  │ • Main APIRouter with prefix="/api/pois"                        │  │  │
+│  │  │ • Global _coordinator reference                                 │  │  │
+│  │  │ • set_coordinator() function                                    │  │  │
+│  │  └─────────────────────────────────────────────────────────────────┘  │  │
+│  │                                                                        │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+KEY IMPROVEMENTS:
+✓ Reduced from 1159 to 930 lines (-20%)
+✓ Maximum file size reduced from 1159 to 280 lines (-76%)
+✓ Eliminated 160 lines of duplication
+✓ All files now <300 lines (project standard)
+✓ Clear separation of concerns
+✓ Enhanced reusability of helper functions
+✓ No circular dependencies
+✓ Follows existing project patterns (see routes/ for similar structure)
+✓ Easier to test, maintain, and extend
+

@@ -478,3 +478,4 @@ once available.
 
 ## Recent Changes
 - 001-codebase-cleanup: Added Python 3.13 (backend), TypeScript/React (frontend), Markdown (docs) + FastAPI (backend), React/Vite (frontend), Black, Prettier, ESLint, markdownlint-cli2
+- docker builds should always be delegated to a sub agent.  they use a huge amount of context

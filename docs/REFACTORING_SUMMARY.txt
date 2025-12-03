@@ -1,0 +1,315 @@
+================================================================================
+POIs.py REFACTORING ANALYSIS - EXECUTIVE SUMMARY
+================================================================================
+
+FILE LOCATION: /home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/api/pois.py
+CURRENT SIZE: 1159 lines
+TARGET: Split into modular components <300 lines each
+
+================================================================================
+1. ENDPOINTS (10 total)
+================================================================================
+
+READ ENDPOINTS (7):
+  GET /api/pois                  → list_pois()              [156-256]
+  GET /api/pois/{poi_id}         → get_poi()               [922-976]
+  GET /api/pois/etas             → get_pois_with_etas()    [259-624] ⚠️ 365 lines
+  GET /api/pois/count/total      → count_pois()            [627-648]
+  GET /api/pois/stats/next-destination → get_next_destination() [651-751]
+  GET /api/pois/stats/next-eta   → get_next_eta()          [754-854]
+  GET /api/pois/stats/approaching → get_approaching_pois() [857-919]
+
+WRITE ENDPOINTS (3):
+  POST /api/pois                 → create_poi()            [979-1054]
+  PUT /api/pois/{poi_id}         → update_poi()            [1057-1129]
+  DELETE /api/pois/{poi_id}      → delete_poi()            [1132-1159]
+
+================================================================================
+2. HELPER FUNCTIONS (4 total, 98 lines)
+================================================================================
+
+calculate_bearing(lat1, lon1, lat2, lon2) → float
+  • Purpose: Calculate bearing between two points
+  • Pure function (math only)
+  • Lines: 40-65 (26 lines)
+
+calculate_course_status(heading, bearing) → str
+  • Purpose: Categorize heading vs bearing (on_course, slightly_off, off_track, behind)
+  • Pure function (math only)
+  • Lines: 68-95 (28 lines)
+
+_calculate_poi_active_status(poi, route_manager) → bool
+  • Purpose: Determine if POI is active based on route/mission
+  • Side effects: logging, file I/O
+  • Lines: 98-153 (56 lines)
+  • Called by: list_pois(), get_pois_with_etas(), get_poi(), create_poi(), update_poi()
+
+set_coordinator(coordinator)
+  • Purpose: Set global coordinator reference
+  • Lines: 30-33 (4 lines)
+
+================================================================================
+3. CRITICAL ISSUES IDENTIFIED
+================================================================================
+
+ISSUE 1: DUPLICATED CODE (165+ lines)
+  • Telemetry extraction pattern: Lines 675-694, 782-801, 881-900 (3x)
+  • Flight state snapshot pattern: Lines 706-713, 736-743, 812-820, 839-848 (4x)
+  • POI response construction: Lines 234-251, 959-976, 1032-1048, 1105-1121 (5x)
+  • Closest POI finding: Lines 725-733, 831-837 (2x)
+
+ISSUE 2: OVERSIZED ENDPOINT
+  • get_pois_with_etas(): 365 lines (should be <300)
+  • Contains multiple distinct concerns:
+    - Telemetry extraction (40 lines)
+    - Parameter parsing (40 lines)
+    - Route progress calculation (15 lines)
+    - Filter parsing (10 lines)
+    - POI loop with ETA calculations (160 lines)
+    - Sorting (3 lines)
+
+ISSUE 3: MIXED CONCERNS
+  • CRUD operations mixed with ETA calculations
+  • Statistics endpoints mixed with status calculations
+  • Math helpers mixed with service-dependent helpers
+
+================================================================================
+4. PROPOSED MODULE STRUCTURE
+================================================================================
+
+NEW DIRECTORY: app/api/pois/
+
+File                Size      Responsibility
+─────────────────────────────────────────────────────────────────
+__init__.py         50 lines  Module composition, set_coordinator()
+helpers.py          150 lines Foundation layer (math, extraction, utilities)
+crud.py             220 lines CRUD endpoints + active status
+etas.py             280 lines ETA calculation endpoint
+stats.py            230 lines Statistics endpoints
+
+TOTAL:              930 lines (vs 1159 = -20% + clarity gain)
+
+================================================================================
+5. MODULE BREAKDOWN
+================================================================================
+
+MODULE: helpers.py (150 lines)
+─────────────────────────────────────────────────────────────────
+Pure/Utility Functions:
+  • calculate_bearing()              [EXISTING]
+  • calculate_course_status()        [EXISTING]
+  • _calculate_poi_active_status()   [MOVED from main]
+  • extract_telemetry()              [NEW - EXTRACTED]
+  • get_flight_state_snapshot()      [NEW - EXTRACTED]
+  • find_closest_poi()               [NEW - EXTRACTED]
+  • poi_to_response()                [NEW - EXTRACTED]
+
+Dependencies: logging, math, pathlib, typing, app.models, app.services
+Usage: Imported by crud.py, etas.py, stats.py
+
+MODULE: crud.py (220 lines)
+─────────────────────────────────────────────────────────────────
+Endpoints:
+  • list_pois()      → GET /api/pois
+  • get_poi()        → GET /api/pois/{poi_id}
+  • create_poi()     → POST /api/pois
+  • update_poi()     → PUT /api/pois/{poi_id}
+  • delete_poi()     → DELETE /api/pois/{poi_id}
+  • count_pois()     → GET /api/pois/count/total
+
+Dependencies: fastapi, app.models, app.services.poi_manager, app.services.route_manager
+Helpers Used: _calculate_poi_active_status(), poi_to_response()
+
+MODULE: etas.py (280 lines)
+─────────────────────────────────────────────────────────────────
+Endpoints:
+  • get_pois_with_etas()  → GET /api/pois/etas
+
+Complex Logic:
+  • Telemetry extraction and fallback
+  • Parameter parsing and validation
+  • Route progress calculation
+  • Dual-mode ETA (estimated vs anticipated)
+  • Route-aware status determination
+  • Filter application
+  • Response construction
+
+Dependencies: fastapi, app.models, app.services, app.core.eta_service
+Helpers Used: calculate_bearing(), calculate_course_status(), _calculate_poi_active_status()
+
+MODULE: stats.py (230 lines)
+─────────────────────────────────────────────────────────────────
+Endpoints:
+  • count_pois()          → GET /api/pois/count/total
+  • get_next_destination()   → GET /api/pois/stats/next-destination
+  • get_next_eta()           → GET /api/pois/stats/next-eta
+  • get_approaching_pois()   → GET /api/pois/stats/approaching
+
+Aggregate Statistics:
+  • Find closest POI by ETA
+  • Count approaching POIs (30-min threshold)
+  • Get next destination name
+
+Dependencies: fastapi, app.services.poi_manager, app.core.eta_service
+Helpers Used: extract_telemetry(), get_flight_state_snapshot(), find_closest_poi()
+
+MODULE: __init__.py (50 lines)
+─────────────────────────────────────────────────────────────────
+Composition:
+  • Global _coordinator reference
+  • set_coordinator(coordinator) function
+  • Main APIRouter with prefix="/api/pois"
+  • Include sub-routers from crud, etas, stats
+
+Interface: Exported as pois.router and pois.set_coordinator()
+
+================================================================================
+6. DEPENDENCY TREE
+================================================================================
+
+External Services (Injected via Depends):
+  ├─ POIManager
+  ├─ RouteManager
+  ├─ ETACalculator (singleton)
+  └─ FlightStateManager (singleton)
+
+helpers.py (FOUNDATION - no internal dependencies)
+  └─ Functions: calculate_bearing(), calculate_course_status(),
+     _calculate_poi_active_status(), extract_telemetry(),
+     get_flight_state_snapshot(), find_closest_poi(), poi_to_response()
+
+crud.py (depends on helpers.py)
+  ├─ Imports: _calculate_poi_active_status(), poi_to_response()
+  └─ Endpoints: list_pois, get_poi, create_poi, update_poi, delete_poi, count_pois
+
+etas.py (depends on helpers.py)
+  ├─ Imports: calculate_bearing(), calculate_course_status(),
+     _calculate_poi_active_status()
+  └─ Endpoints: get_pois_with_etas
+
+stats.py (depends on helpers.py)
+  ├─ Imports: extract_telemetry(), get_flight_state_snapshot(),
+     find_closest_poi()
+  └─ Endpoints: count_pois, get_next_destination, get_next_eta, get_approaching_pois
+
+__init__.py (composes all modules)
+  ├─ Imports: crud_router, etas_router, stats_router
+  └─ Sets _coordinator, exports router, set_coordinator
+
+NO CIRCULAR DEPENDENCIES (safe structure)
+
+================================================================================
+7. CODE EXTRACTION PATTERNS
+================================================================================
+
+PATTERN 1: Telemetry Extraction (DUPLICATED 3x)
+Current: Lines 675-694, 782-801, 881-900
+Extract to: helpers.extract_telemetry(_coordinator, latitude, longitude, speed_knots)
+Reduction: 60 lines → 1 function call
+
+PATTERN 2: Flight State Snapshot (DUPLICATED 4x)
+Current: Lines 706-713, 736-743, 812-820, 839-848
+Extract to: helpers.get_flight_state_snapshot()
+Reduction: 32 lines → 1 function call
+
+PATTERN 3: POI Response Construction (DUPLICATED 5x)
+Current: Lines 234-251, 959-976, 1032-1048, 1105-1121
+Extract to: helpers.poi_to_response(poi, active_status)
+Reduction: 90 lines → 1 function call
+
+PATTERN 4: Find Closest POI (DUPLICATED 2x)
+Current: Lines 725-733, 831-837
+Extract to: helpers.find_closest_poi(pois, lat, lon, speed, eta_calc)
+Reduction: 18 lines → 1 function call
+
+TOTAL CODE ELIMINATED: ~160 lines of duplication
+
+================================================================================
+8. MIGRATION CHECKLIST
+================================================================================
+
+PHASE 1: Create Module Structure
+  [ ] Create /app/api/pois/ directory
+  [ ] Create __init__.py
+  [ ] Create helpers.py with extracted functions
+  [ ] Create crud.py stub
+  [ ] Create etas.py stub
+  [ ] Create stats.py stub
+
+PHASE 2: Move & Extract Code
+  [ ] Move math helpers to helpers.py
+  [ ] Extract telemetry extraction logic
+  [ ] Extract flight state snapshot logic
+  [ ] Extract POI response construction logic
+  [ ] Extract closest POI logic
+
+PHASE 3: Implement CRUD Module
+  [ ] Move CRUD endpoints to crud.py
+  [ ] Update imports
+  [ ] Test endpoints
+
+PHASE 4: Implement ETA Module
+  [ ] Move get_pois_with_etas() to etas.py
+  [ ] Update imports
+  [ ] Test endpoint
+
+PHASE 5: Implement Stats Module
+  [ ] Move stats endpoints to stats.py
+  [ ] Update imports
+  [ ] Test endpoints
+
+PHASE 6: Integration & Cleanup
+  [ ] Update pois/__init__.py to include all routers
+  [ ] Update app/main.py to import from new location
+  [ ] Verify set_coordinator() is accessible
+  [ ] Remove old pois.py
+  [ ] Test all endpoints
+  [ ] Run test suite
+
+================================================================================
+9. REFACTORING BENEFITS
+================================================================================
+
+BEFORE: 1159 lines
+  ❌ Monolithic single file
+  ❌ Mixed concerns (CRUD, ETA, stats, math)
+  ❌ Code duplication (160+ lines)
+  ❌ Hard to test individual concerns
+  ❌ Difficult to modify without side effects
+  ❌ Slow to navigate (~1200 lines to search through)
+
+AFTER: 930 lines total (21% reduction)
+  ✓ Clear separation of concerns
+  ✓ Reduced duplication
+  ✓ Each module <300 lines
+  ✓ Better testability
+  ✓ Easier maintenance
+  ✓ Faster navigation (50-280 lines per file)
+  ✓ Reusable helpers
+  ✓ Scalability for new endpoints
+
+ESTIMATED TIME SAVINGS:
+  • Development: +20% (faster to locate and modify)
+  • Testing: +30% (clearer test scope)
+  • Debugging: +40% (smaller search space)
+  • Onboarding: +50% (simpler to understand)
+
+================================================================================
+10. FILES TO CREATE/MODIFY
+================================================================================
+
+CREATE:
+  • /app/api/pois/__init__.py
+  • /app/api/pois/helpers.py
+  • /app/api/pois/crud.py
+  • /app/api/pois/etas.py
+  • /app/api/pois/stats.py
+
+MODIFY:
+  • /app/main.py (update import from pois to pois.router)
+  • /app/api/__init__.py (update if needed)
+
+DELETE:
+  • /app/api/pois.py (after migration complete)
+
+================================================================================
