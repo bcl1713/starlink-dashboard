@@ -26,7 +26,7 @@ from app.mission.exporter.transport_utils import (
     TRANSPORT_DISPLAY,
     STATE_COLUMNS,
 )
-from app.mission.models import Transport
+from app.mission.models import Transport  # Re-exported for package module
 
 __all__ = [
     "ExportArtifact",
