@@ -3,6 +3,13 @@
 import logging
 import math
 from datetime import datetime, timezone
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.telemetry import TelemetryData
+    from app.models.route import ParsedRoute
+    from app.services.poi_manager import POIManager
+    from app.core.config import ConfigManager
 
 from app.core.metrics.prometheus_metrics import (
     _current_position,
@@ -47,19 +54,35 @@ logger = logging.getLogger(__name__)
 
 
 def update_metrics_from_telemetry(
-    telemetry, config=None, active_route=None, poi_manager=None
-):
-    """
-    Update all Prometheus metrics from telemetry data.
+    telemetry: Optional["TelemetryData"],
+    config: Optional["ConfigManager"] = None,
+    active_route: Optional["ParsedRoute"] = None,
+    poi_manager: Optional["POIManager"] = None,
+) -> None:
+    """Update all Prometheus metrics from telemetry data.
+
+    This is the primary function for publishing telemetry data to Prometheus. It updates
+    position, network, obstruction, and flight status metrics, and optionally calculates
+    POI/ETA metrics if a route and POI manager are provided. The function performs
+    automatic flight phase transitions (departure/arrival detection) based on speed and
+    position relative to the active route.
 
     Args:
-        telemetry: TelemetryData instance or None
-        config: Optional ConfigManager instance for label computation
-        active_route: Optional ParsedRoute with timing data for route-aware ETA calculations
-        poi_manager: Optional POIManager instance for POI calculations
+        telemetry: TelemetryData instance containing current sensor readings. If None,
+            the function returns early to prevent publishing invalid/stale data.
+        config: Optional ConfigManager for computing mode and status labels applied to
+            histogram metrics (e.g., "simulation" vs "live", "normal" vs "degraded").
+        active_route: Optional ParsedRoute with timing profile for route-aware ETA
+            calculations and automatic arrival detection.
+        poi_manager: Optional POIManager for calculating distances and ETAs to all
+            configured points of interest.
 
     Returns:
-        None. Does nothing if telemetry is None (prevents publishing invalid data).
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. All errors are logged and handled gracefully to
+        ensure metrics collection continues even if individual updates fail.
     """
     # Defensive check: do not publish metrics if telemetry is None
     # This prevents pollution of Prometheus with zero/invalid values
@@ -296,16 +319,27 @@ def update_metrics_from_telemetry(
     simulation_updates_total.inc()
 
 
-def clear_telemetry_metrics():
-    """
-    Clear all telemetry metrics by setting them to NaN.
+def clear_telemetry_metrics() -> None:
+    """Clear all telemetry metrics by setting them to NaN.
 
-    This is used when the dish is disconnected in live mode to prevent
-    publishing stale or zero values to Prometheus. NaN values are not
-    stored by Prometheus, effectively removing the metrics from the database.
+    This is called when the Starlink dish is disconnected in live mode to prevent
+    publishing stale or zero values to Prometheus. Setting metrics to NaN causes
+    Prometheus to treat them as absent, effectively removing them from the time series
+    database until new valid data arrives.
 
-    Note: Service info, uptime, and counter metrics are NOT cleared as they
-    represent the backend service state, not dish telemetry.
+    Note: Service info, uptime, and counter metrics are intentionally NOT cleared
+    because they represent the backend service state rather than dish telemetry.
+    Counters are monotonic and should never decrease, so they continue tracking
+    lifetime totals even during disconnections.
+
+    Args:
+        None
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. This is a fire-and-forget operation.
     """
     # Position metrics
     starlink_dish_latitude_degrees.set(math.nan)
@@ -339,16 +373,29 @@ def clear_telemetry_metrics():
     _current_position["altitude"] = math.nan
 
 
-def set_service_info(version: str, mode: str):
-    """
-    Set service info metrics.
+def set_service_info(version: str, mode: str) -> None:
+    """Set service info metrics for backend service identification.
 
-    Sets both the composite starlink_service_info metric and the individual
-    starlink_mode_info metric for better filtering and observability.
+    This function publishes metadata about the backend service to Prometheus for
+    monitoring and debugging purposes. It sets two related metrics: a composite
+    service info metric with version and mode as labels, and individual mode
+    indicator metrics that can be easily filtered in queries.
+
+    The mode indicators use a binary encoding where only the active mode is set
+    to 1, and all other modes are set to 0. This allows Prometheus queries like
+    `starlink_mode_info{mode="simulation"} == 1` to efficiently filter time series.
 
     Args:
-        version: Service version string
-        mode: Operating mode (simulation or live)
+        version: Service version string (e.g., "1.0.0" or git commit hash).
+        mode: Operating mode, either "simulation" (synthetic data) or "live"
+            (connected to real Starlink dish).
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. Failures are silently ignored to prevent
+        disrupting service startup.
     """
     # Set composite service info metric with version and mode labels
     starlink_service_info.labels(version=version, mode=mode).set(1)
@@ -362,13 +409,24 @@ def set_service_info(version: str, mode: str):
             starlink_mode_info.labels(mode=possible_mode).set(0)
 
 
-def update_mission_active_metric(mission_id: str, route_id: str):
-    """
-    Update mission active info metric when a mission is activated.
+def update_mission_active_metric(mission_id: str, route_id: str) -> None:
+    """Update mission active info metric when a mission is activated.
+
+    This function sets the mission_active_info gauge to 1 for the specified mission
+    and route combination, indicating that this mission is currently active. Only one
+    mission should be active at a time; activating a new mission should deactivate
+    the previous one (handled by caller).
 
     Args:
-        mission_id: ID of the activated mission
-        route_id: Route ID associated with the mission
+        mission_id: Unique identifier of the activated mission.
+        route_id: Unique identifier of the route associated with this mission.
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. Failures are logged and ignored to prevent
+        disrupting mission activation workflows.
     """
     try:
         mission_active_info.labels(mission_id=mission_id, route_id=route_id).set(1)
@@ -376,12 +434,23 @@ def update_mission_active_metric(mission_id: str, route_id: str):
         logger.warning(f"Failed to update mission active metric: {e}")
 
 
-def clear_mission_metrics(mission_id: str):
-    """
-    Clear mission metrics when a mission is deactivated or deleted.
+def clear_mission_metrics(mission_id: str) -> None:
+    """Clear mission metrics when a mission is deactivated or deleted.
+
+    This function resets all mission-related metrics to NaN or 0 to indicate they
+    are no longer active. Prometheus doesn't support deleting label combinations
+    directly, so we use NaN for gauges (making them absent in queries) and 0 for
+    the active info metric (explicitly showing inactive state).
 
     Args:
-        mission_id: ID of the mission to clear metrics for
+        mission_id: Unique identifier of the mission to clear metrics for.
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. Failures are logged and ignored to prevent
+        disrupting mission deactivation workflows.
     """
     try:
         # Clear all mission metrics with this mission_id label
@@ -404,13 +473,23 @@ def clear_mission_metrics(mission_id: str):
         logger.warning(f"Failed to clear mission metrics: {e}")
 
 
-def update_mission_phase_metric(mission_id: str, phase: str):
-    """
-    Update mission phase state metric.
+def update_mission_phase_metric(mission_id: str, phase: str) -> None:
+    """Update mission phase state metric.
+
+    This function encodes the mission phase as a numeric value for Prometheus
+    gauges. The encoding allows time series queries to track phase transitions
+    and calculate time spent in each phase.
 
     Args:
-        mission_id: ID of the mission
-        phase: Mission phase ('pre_departure', 'in_flight', 'post_arrival')
+        mission_id: Unique identifier of the mission.
+        phase: Mission phase as a string. Valid values are 'pre_departure' (0),
+            'in_flight' (1), or 'post_arrival' (2). Unknown phases default to 0.
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. Failures are logged and ignored.
     """
     try:
         phase_map = {"pre_departure": 0, "in_flight": 1, "post_arrival": 2}
@@ -420,13 +499,22 @@ def update_mission_phase_metric(mission_id: str, phase: str):
         logger.warning(f"Failed to update mission phase metric: {e}")
 
 
-def update_mission_timeline_timestamp(mission_id: str, timestamp: float):
-    """
-    Update mission timeline generation timestamp.
+def update_mission_timeline_timestamp(mission_id: str, timestamp: float) -> None:
+    """Update mission timeline generation timestamp.
+
+    This function records when the mission's communication timeline was last computed,
+    allowing operators to track timeline freshness and identify when recomputation
+    may be needed.
 
     Args:
-        mission_id: ID of the mission
-        timestamp: Unix timestamp of timeline generation
+        mission_id: Unique identifier of the mission.
+        timestamp: Unix timestamp (seconds since epoch) of timeline generation.
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. Failures are logged and ignored.
     """
     try:
         mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(
@@ -436,8 +524,26 @@ def update_mission_timeline_timestamp(mission_id: str, timestamp: float):
         logger.warning(f"Failed to update mission timeline timestamp metric: {e}")
 
 
-def update_mission_comm_state_metric(mission_id: str, transport: str, state_value: int):
-    """Update mission communication state metric for a given transport."""
+def update_mission_comm_state_metric(
+    mission_id: str, transport: str, state_value: int
+) -> None:
+    """Update mission communication state metric for a given transport.
+
+    This function tracks the planned state of each communication transport (X, Ka, Ku)
+    throughout the mission timeline. States are encoded numerically to allow queries
+    that track availability windows and identify degraded/offline periods.
+
+    Args:
+        mission_id: Unique identifier of the mission.
+        transport: Transport band identifier ('X', 'Ka', or 'Ku').
+        state_value: Numeric state encoding: 0=available, 1=degraded, 2=offline.
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. Failures are logged and ignored.
+    """
     try:
         mission_comm_state.labels(mission_id=mission_id, transport=transport).set(
             state_value
@@ -448,8 +554,25 @@ def update_mission_comm_state_metric(mission_id: str, transport: str, state_valu
 
 def update_mission_duration_metrics(
     mission_id: str, degraded_seconds: float, critical_seconds: float
-):
-    """Update degraded/critical mission duration gauges."""
+) -> None:
+    """Update degraded/critical mission duration gauges.
+
+    This function publishes the total planned durations for degraded and critical
+    communication states in the mission timeline. These metrics help operators
+    understand mission risk profile and assess whether communication constraints
+    are acceptable.
+
+    Args:
+        mission_id: Unique identifier of the mission.
+        degraded_seconds: Total seconds when one or more transports are degraded.
+        critical_seconds: Total seconds when all transports are offline (critical state).
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. Failures are logged and ignored.
+    """
     try:
         mission_degraded_seconds.labels(mission_id=mission_id).set(degraded_seconds)
         mission_critical_seconds.labels(mission_id=mission_id).set(critical_seconds)
@@ -457,8 +580,24 @@ def update_mission_duration_metrics(
         logger.warning(f"Failed to update mission duration metrics: {e}")
 
 
-def update_mission_next_conflict_metric(mission_id: str, seconds: float):
-    """Update countdown to next degraded/critical event (-1 if none)."""
+def update_mission_next_conflict_metric(mission_id: str, seconds: float) -> None:
+    """Update countdown to next degraded/critical event.
+
+    This function tracks the time remaining until the next communication degradation
+    or outage in the mission timeline. This allows real-time alerting and helps
+    operators prepare for upcoming communication constraints.
+
+    Args:
+        mission_id: Unique identifier of the mission.
+        seconds: Seconds until next degraded/critical event. Set to -1 if no
+            upcoming events are scheduled in the timeline.
+
+    Returns:
+        None. The function updates Prometheus metrics in-place as a side effect.
+
+    Raises:
+        Does not raise exceptions. Failures are logged and ignored.
+    """
     try:
         mission_next_conflict_seconds.labels(mission_id=mission_id).set(seconds)
     except Exception as e:  # pragma: no cover

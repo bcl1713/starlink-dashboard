@@ -1,6 +1,8 @@
 """Prometheus metrics registry and definitions."""
 
 import logging
+from typing import Dict, Generator
+
 from prometheus_client import (
     Gauge,
     Counter,
@@ -12,10 +14,11 @@ from prometheus_client.core import GaugeMetricFamily
 logger = logging.getLogger(__name__)
 
 # Create a dedicated registry for our metrics
-REGISTRY = CollectorRegistry()
+REGISTRY: CollectorRegistry = CollectorRegistry()
 
 # Current position data for custom collector
-_current_position = {
+# This is updated by metric_updater functions and read by PositionCollector
+_current_position: Dict[str, float] = {
     "latitude": 0.0,
     "longitude": 0.0,
     "altitude": 0.0,
@@ -23,9 +26,21 @@ _current_position = {
 
 
 class PositionCollector:
-    """Custom collector that exports position as a single metric with all values."""
+    """Custom collector that exports position as a single metric with all values.
 
-    def collect(self):
+    This collector is registered with Prometheus and yields a GaugeMetricFamily
+    containing the current aircraft position with three dimensions (latitude,
+    longitude, altitude). The position data is read from the module-level
+    _current_position dictionary which is updated by metric_updater functions.
+    """
+
+    def collect(self) -> Generator[GaugeMetricFamily, None, None]:
+        """Collect and yield position metrics for Prometheus scraping.
+
+        Returns:
+            Generator[GaugeMetricFamily, None, None]: A generator yielding a single
+                GaugeMetricFamily with position data labeled by dimension.
+        """
         # Create a gauge metric with the position data
         position_metric = GaugeMetricFamily(
             "starlink_aircraft_position",
