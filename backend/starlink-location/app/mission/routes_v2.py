@@ -27,7 +27,7 @@ from app.mission.storage import (
     get_mission_lock,
     load_mission_metadata_v2,
 )
-from app.mission.package_exporter import export_mission_package
+from app.mission.package import export_mission_package
 from app.mission.timeline_service import build_mission_timeline
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
@@ -867,7 +867,7 @@ async def delete_leg(
                 )
 
             # Find leg to get its route and POI info
-            leg = next((l for l in mission.legs if l.id == leg_id), None)
+            leg = next((m for m in mission.legs if m.id == leg_id), None)
             if not leg:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -925,7 +925,7 @@ async def delete_leg(
                     # Don't fail the entire leg deletion if POI deletion fails
 
             # 3. Remove leg from mission and save
-            mission.legs = [l for l in mission.legs if l.id != leg_id]
+            mission.legs = [m for m in mission.legs if m.id != leg_id]
             save_mission_v2(mission)
 
             # 4. Delete leg file from disk
@@ -1124,7 +1124,7 @@ async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
             )
 
         # Verify leg exists
-        leg = next((l for l in mission.legs if l.id == leg_id), None)
+        leg = next((m for m in mission.legs if m.id == leg_id), None)
         if not leg:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

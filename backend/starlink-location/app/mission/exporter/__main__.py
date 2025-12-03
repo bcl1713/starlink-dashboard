@@ -17,12 +17,10 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from matplotlib.lines import Line2D
-from PIL import Image
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Iterable
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -54,7 +52,24 @@ from app.mission.models import (
     TimelineSegment,
     TimelineStatus,
     Transport,
-    TransportState,
+)
+from app.mission.exporter.formatting import (
+    compose_time_block,
+    ensure_timezone,
+    format_eastern,
+    format_offset,
+    format_seconds_hms,
+    format_utc,
+    humanize_metric_name,
+    mission_start_timestamp,
+)
+from app.mission.exporter.transport_utils import (
+    TRANSPORT_DISPLAY,
+    STATE_COLUMNS,
+    STATUS_COLORS,
+    display_transport_state,
+    segment_is_x_ku_warning,
+    serialize_transport_list,
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
@@ -64,26 +79,7 @@ logger = logging.getLogger(__name__)
 EASTERN_TZ = ZoneInfo("America/New_York")
 LIGHT_YELLOW = colors.Color(1.0, 1.0, 0.85)
 LIGHT_RED = colors.Color(1.0, 0.85, 0.85)
-TRANSPORT_DISPLAY = {
-    Transport.X: "X-Band",
-    Transport.KA: "CommKa",
-    Transport.KU: "StarShield",
-}
-STATE_COLUMNS = [
-    TRANSPORT_DISPLAY[Transport.X],
-    TRANSPORT_DISPLAY[Transport.KA],
-    TRANSPORT_DISPLAY[Transport.KU],
-]
-LOGO_PATH = Path(__file__).with_name("assets").joinpath("logo.png")
-
-# Status colors for route visualization and legends
-# Using standard traffic light colors for clear status indication
-STATUS_COLORS = {
-    "nominal": "#2ecc71",  # Green
-    "degraded": "#f1c40f",  # Yellow/Orange
-    "critical": "#e74c3c",  # Red
-    "unknown": "#95a5a6",  # Gray (fallback)
-}
+LOGO_PATH = Path(__file__).parent.with_name("assets").joinpath("logo.png")
 
 
 def _load_logo_flowable() -> Image | None:
@@ -132,75 +128,10 @@ class ExportArtifact:
     extension: str
 
 
-def _ensure_timezone(value: datetime) -> datetime:
-    """Return a timezone-aware UTC datetime."""
-    if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc)
-
-
-def _mission_start_timestamp(timeline: MissionLegTimeline) -> datetime:
-    """Infer the mission's zero point for T+ offsets."""
-    if timeline.segments:
-        earliest = min(_ensure_timezone(seg.start_time) for seg in timeline.segments)
-        return earliest
-    return _ensure_timezone(timeline.created_at)
-
-
-def _format_utc(dt: datetime) -> str:
-    """Return UTC string without seconds (timezone suffix indicates Z)."""
-    return _ensure_timezone(dt).strftime("%Y-%m-%d %H:%MZ")
-
-
-def _format_eastern(dt: datetime) -> str:
-    """Return Eastern time with timezone abbreviation (DST-aware)."""
-    eastern = _ensure_timezone(dt).astimezone(EASTERN_TZ)
-    return eastern.strftime("%Y-%m-%d %H:%M%Z")
-
-
-def _format_offset(delta: timedelta) -> str:
-    """Format timedelta as T+/-HH:MM."""
-    total_minutes = int(delta.total_seconds() // 60)
-    sign = "+" if total_minutes >= 0 else "-"
-    total_minutes = abs(total_minutes)
-    hours, minutes = divmod(total_minutes, 60)
-    return f"T{sign}{hours:02d}:{minutes:02d}"
-
-
-def _serialize_transport_list(transports: Iterable[Transport]) -> str:
-    labels: list[str] = []
-    for transport in transports:
-        if isinstance(transport, Transport):
-            labels.append(TRANSPORT_DISPLAY.get(transport, transport.value))
-        else:
-            labels.append(str(transport))
-    return ", ".join(labels)
-
-
-def _is_x_ku_conflict_reason(reason: str | None) -> bool:
-    if not reason:
-        return False
-    return reason.startswith("X-Ku Conflict")
-
-
-def _segment_is_x_ku_warning(segment: TimelineSegment) -> bool:
-    if segment.x_state != TransportState.DEGRADED:
-        return False
-    if any(transport != Transport.X for transport in segment.impacted_transports):
-        return False
-    if not segment.reasons:
-        return False
-    return all(_is_x_ku_conflict_reason(reason) for reason in segment.reasons)
-
-
-def _display_transport_state(
-    state: TransportState,
-    *,
-    warning_override: bool = False,
-) -> str:
-    if warning_override and state == TransportState.DEGRADED:
-        return "WARNING"
-    return state.value.upper()
+# Utility functions imported from exporter modules above
+# - ensure_timezone, format_utc, format_eastern, format_offset from formatting
+# - serialize_transport_list, is_x_ku_conflict_reason, segment_is_x_ku_warning,
+#   display_transport_state from transport_utils
 
 
 def _aar_block_rows(
@@ -242,7 +173,7 @@ def _parse_iso_timestamp(raw: str) -> datetime:
         dt = datetime.fromisoformat(raw)
     except ValueError:
         dt = datetime.fromtimestamp(0, tz=timezone.utc)
-    return _ensure_timezone(dt)
+    return ensure_timezone(dt)
 
 
 def _build_aar_record(
@@ -254,9 +185,9 @@ def _build_aar_record(
 ) -> dict:
     duration = max((end - start).total_seconds(), 0)
     segment = _segment_at_time(timeline, start)
-    x_state = _display_transport_state(segment.x_state) if segment else ""
-    ka_state = _display_transport_state(segment.ka_state) if segment else ""
-    ku_state = _display_transport_state(segment.ku_state) if segment else ""
+    x_state = display_transport_state(segment.x_state) if segment else ""
+    ka_state = display_transport_state(segment.ka_state) if segment else ""
+    ku_state = display_transport_state(segment.ku_state) if segment else ""
     return {
         "Segment #": "AAR",
         "Mission ID": mission.id if mission else timeline.mission_id,
@@ -264,9 +195,9 @@ def _build_aar_record(
             mission.name if mission and mission.name else timeline.mission_id
         ),
         "Status": "WARNING",
-        "Start Time": _compose_time_block(start, mission_start),
-        "End Time": _compose_time_block(end, mission_start),
-        "Duration": _format_seconds_hms(duration),
+        "Start Time": compose_time_block(start, mission_start),
+        "End Time": compose_time_block(end, mission_start),
+        "Duration": format_seconds_hms(duration),
         TRANSPORT_DISPLAY[Transport.X]: x_state,
         TRANSPORT_DISPLAY[Transport.KA]: ka_state,
         TRANSPORT_DISPLAY[Transport.KU]: ku_state,
@@ -280,11 +211,11 @@ def _segment_at_time(
     timeline: MissionLegTimeline,
     timestamp: datetime,
 ) -> TimelineSegment | None:
-    ts = _ensure_timezone(timestamp)
+    ts = ensure_timezone(timestamp)
     for segment in timeline.segments:
-        start = _ensure_timezone(segment.start_time)
+        start = ensure_timezone(segment.start_time)
         end = (
-            _ensure_timezone(segment.end_time)
+            ensure_timezone(segment.end_time)
             if segment.end_time
             else datetime.max.replace(tzinfo=timezone.utc)
         )
@@ -305,9 +236,9 @@ def _get_detailed_segment_statuses(
     # Optimization: Filter relevant segments first
     relevant_segments = []
     for seg in timeline.segments:
-        s_start = _ensure_timezone(seg.start_time)
+        s_start = ensure_timezone(seg.start_time)
         s_end = (
-            _ensure_timezone(seg.end_time)
+            ensure_timezone(seg.end_time)
             if seg.end_time
             else datetime.max.replace(tzinfo=timezone.utc)
         )
@@ -388,8 +319,8 @@ def _interpolate_position_at_time(target_time, p1, p2):
     if not p1.expected_arrival_time or not p2.expected_arrival_time:
         return p1
 
-    t1 = _ensure_timezone(p1.expected_arrival_time)
-    t2 = _ensure_timezone(p2.expected_arrival_time)
+    t1 = ensure_timezone(p1.expected_arrival_time)
+    t2 = ensure_timezone(p2.expected_arrival_time)
 
     if target_time <= t1:
         return p1
@@ -726,8 +657,8 @@ def _generate_route_map(
                 )
                 continue
 
-            t1 = _ensure_timezone(p1.expected_arrival_time)
-            t2 = _ensure_timezone(p2.expected_arrival_time)
+            t1 = ensure_timezone(p1.expected_arrival_time)
+            t2 = ensure_timezone(p2.expected_arrival_time)
 
             # Get sub-segments based on status
             sub_segments = _get_detailed_segment_statuses(t1, t2, timeline)
@@ -1159,8 +1090,8 @@ def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
 
     # Get mission duration from last segment end time
     mission_end_seconds = (
-        _ensure_timezone(timeline.segments[-1].end_time)
-        - _ensure_timezone(timeline.segments[0].start_time)
+        ensure_timezone(timeline.segments[-1].end_time)
+        - ensure_timezone(timeline.segments[0].start_time)
     ).total_seconds()
 
     # Create figure with better aspect ratio (16:5 instead of 14:4)
@@ -1180,13 +1111,13 @@ def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
         (2, "X-Band", lambda seg: seg.x_state),
     ]
 
-    mission_start = _ensure_timezone(timeline.segments[0].start_time)
+    mission_start = ensure_timezone(timeline.segments[0].start_time)
 
     # Draw segments for each transport
     for y_pos, transport_name, state_getter in transports:
         for segment in timeline.segments:
-            seg_start = _ensure_timezone(segment.start_time)
-            seg_end = _ensure_timezone(segment.end_time)
+            seg_start = ensure_timezone(segment.start_time)
+            seg_end = ensure_timezone(segment.end_time)
 
             # Calculate position and width in mission seconds
             start_offset = (seg_start - mission_start).total_seconds()
@@ -1289,22 +1220,22 @@ def _segment_rows(
     mission: Mission | None,
 ) -> pd.DataFrame:
     """Convert timeline segments into a pandas DataFrame."""
-    mission_start = _mission_start_timestamp(timeline)
+    mission_start = mission_start_timestamp(timeline)
     rows: list[tuple[datetime, int, dict]] = []
 
     for idx, segment in enumerate(timeline.segments, start=1):
-        start_utc = _ensure_timezone(segment.start_time)
+        start_utc = ensure_timezone(segment.start_time)
         end_value = segment.end_time if segment.end_time else segment.start_time
-        end_utc = _ensure_timezone(end_value)
+        end_utc = ensure_timezone(end_value)
         duration_seconds = max((end_utc - start_utc).total_seconds(), 0)
-        warning_only = _segment_is_x_ku_warning(segment)
+        warning_only = segment_is_x_ku_warning(segment)
         status_value = (
             segment.status.value
             if isinstance(segment.status, TimelineStatus)
             else str(segment.status)
         )
         status_value = status_value.upper()
-        impacted_display = _serialize_transport_list(segment.impacted_transports)
+        impacted_display = serialize_transport_list(segment.impacted_transports)
         if warning_only:
             status_value = TimelineStatus.NOMINAL.value.upper()
             impacted_display = ""
@@ -1315,10 +1246,10 @@ def _segment_rows(
                 mission.name if mission and mission.name else timeline.mission_id
             ),
             "Status": status_value,
-            "Start Time": _compose_time_block(start_utc, mission_start),
-            "End Time": _compose_time_block(end_utc, mission_start),
-            "Duration": _format_seconds_hms(duration_seconds),
-            TRANSPORT_DISPLAY[Transport.X]: _display_transport_state(
+            "Start Time": compose_time_block(start_utc, mission_start),
+            "End Time": compose_time_block(end_utc, mission_start),
+            "Duration": format_seconds_hms(duration_seconds),
+            TRANSPORT_DISPLAY[Transport.X]: display_transport_state(
                 segment.x_state, warning_override=warning_only
             ),
             TRANSPORT_DISPLAY[Transport.KA]: segment.ka_state.value.upper(),
@@ -1359,16 +1290,16 @@ def _advisory_rows(
     timeline: MissionLegTimeline, mission: Mission | None
 ) -> pd.DataFrame:
     """Convert timeline advisories into a pandas DataFrame (may be empty)."""
-    mission_start = _mission_start_timestamp(timeline)
+    mission_start = mission_start_timestamp(timeline)
     records: list[dict] = []
     for advisory in timeline.advisories:
-        ts_utc = _ensure_timezone(advisory.timestamp)
+        ts_utc = ensure_timezone(advisory.timestamp)
         records.append(
             {
                 "Mission ID": mission.id if mission else timeline.mission_id,
-                "Timestamp (UTC)": _format_utc(ts_utc),
-                "Timestamp (Eastern)": _format_eastern(ts_utc),
-                "T Offset": _format_offset(ts_utc - mission_start),
+                "Timestamp (UTC)": format_utc(ts_utc),
+                "Timestamp (Eastern)": format_eastern(ts_utc),
+                "T Offset": format_offset(ts_utc - mission_start),
                 "Transport": (
                     advisory.transport.value
                     if isinstance(advisory.transport, Transport)
@@ -1406,38 +1337,16 @@ def _statistics_rows(timeline: MissionLegTimeline) -> pd.DataFrame:
     for key, value in stats.items():
         if key.startswith("_"):
             continue
-        display_name = _humanize_metric_name(key)
+        display_name = humanize_metric_name(key)
         display_value = value
         if isinstance(value, (int, float)) and key.endswith("seconds"):
-            display_value = _format_seconds_hms(value)
+            display_value = format_seconds_hms(value)
         rows.append({"Metric": display_name, "Value": display_value})
     return pd.DataFrame(rows, columns=["Metric", "Value"])
 
 
-def _format_seconds_hms(value: float | int) -> str:
-    total_seconds = int(round(value))
-    sign = "-" if total_seconds < 0 else ""
-    total_seconds = abs(total_seconds)
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f"{sign}{hours:02d}:{minutes:02d}:{seconds:02d}"
-
-
-def _humanize_metric_name(key: str) -> str:
-    label = key.replace("_", " ").strip()
-    if key.endswith("seconds"):
-        label = label[: -len("seconds")].strip()
-        if not label.lower().endswith("duration"):
-            label = f"{label} duration"
-    label = label.title()
-    return label or key
-
-
-def _compose_time_block(moment: datetime, mission_start: datetime) -> str:
-    utc = _format_utc(moment)
-    eastern = _format_eastern(moment)
-    offset = _format_offset(moment - mission_start)
-    return f"{utc}\n{eastern}\n{offset}"
+# Note: format_seconds_hms, humanize_metric_name, and compose_time_block are now
+# imported from exporter.formatting module above
 
 
 def generate_csv_export(
@@ -1457,13 +1366,12 @@ def _summary_table_rows(
 
     Returns a DataFrame with columns: Start (UTC), Duration, Status, Systems Down
     """
-    mission_start = _mission_start_timestamp(timeline)
     records: list[dict] = []
 
     for segment in timeline.segments:
-        start_utc = _ensure_timezone(segment.start_time)
+        start_utc = ensure_timezone(segment.start_time)
         end_value = segment.end_time if segment.end_time else segment.start_time
-        end_utc = _ensure_timezone(end_value)
+        end_utc = ensure_timezone(end_value)
         duration_seconds = max((end_utc - start_utc).total_seconds(), 0)
 
         # Get segment status
@@ -1475,11 +1383,11 @@ def _summary_table_rows(
         status_value = status_value.upper()
 
         # Get systems down (impacted transports)
-        systems_down = _serialize_transport_list(segment.impacted_transports)
+        systems_down = serialize_transport_list(segment.impacted_transports)
 
         record = {
-            "Start (UTC)": _format_utc(start_utc),
-            "Duration": _format_seconds_hms(duration_seconds),
+            "Start (UTC)": format_utc(start_utc),
+            "Duration": format_seconds_hms(duration_seconds),
             "Status": status_value,
             "Systems Down": systems_down,
         }
@@ -1524,7 +1432,6 @@ def generate_xlsx_export(
             stats_df.to_excel(writer, sheet_name="Statistics", index=False)
 
         # Access openpyxl workbook for image embedding and formatting
-        wb = writer.book
         ws_summary = writer.sheets["Summary"]
 
         # Set column widths for summary sheet
@@ -1860,7 +1767,7 @@ def generate_pdf_export(
     story.append(Spacer(1, 0.2 * inch))
     story.append(
         Paragraph(
-            f"Timeline generated: {_format_utc(timeline.created_at)}", footer_style
+            f"Timeline generated: {format_utc(timeline.created_at)}", footer_style
         )
     )
 
@@ -1966,7 +1873,6 @@ def generate_pptx_export(
                 last_chunk = chunks[-1]
                 if len(last_chunk) < MIN_ROWS_LAST_SLIDE:
                     # Need to move items from second to last chunk
-                    needed = MIN_ROWS_LAST_SLIDE - len(last_chunk)
                     # Re-slice the last two chunks
                     # We need to go back to the source dataframe indices
                     # Let's recalculate the split point for the last page
