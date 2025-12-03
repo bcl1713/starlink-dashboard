@@ -68,6 +68,12 @@ class StructuredLogger(logging.Logger):
             extra_fields: Additional JSON fields
         """
         if self.isEnabledFor(level):
+            if exc_info:
+                if isinstance(exc_info, BaseException):
+                    exc_info = (type(exc_info), exc_info, exc_info.__traceback__)
+                elif not isinstance(exc_info, tuple):
+                    exc_info = sys.exc_info()
+
             record = self.makeRecord(
                 self.name, level, "(unknown file)", 0, msg, args, exc_info, **kwargs
             )
@@ -90,10 +96,15 @@ class StructuredLogger(logging.Logger):
         self._log_with_extras(logging.INFO, message, (), extra_fields=extra_fields)
 
     def warning_json(
-        self, message: str, extra_fields: Optional[Dict[str, Any]] = None
+        self,
+        message: str,
+        extra_fields: Optional[Dict[str, Any]] = None,
+        exc_info: bool = False,
     ) -> None:
         """Log warning message with optional extra fields."""
-        self._log_with_extras(logging.WARNING, message, (), extra_fields=extra_fields)
+        self._log_with_extras(
+            logging.WARNING, message, (), exc_info=exc_info, extra_fields=extra_fields
+        )
 
     def error_json(
         self,
