@@ -19,11 +19,23 @@ from app.mission.exporter.__main__ import (
     ExportGenerationError,
     TimelineExportFormat,
     generate_timeline_export,
+    _generate_route_map,
+    _segment_rows,
 )
+from app.mission.exporter.transport_utils import (
+    TRANSPORT_DISPLAY,
+    STATE_COLUMNS,
+)
+from app.mission.models import Transport
 
 __all__ = [
     "ExportArtifact",
     "ExportGenerationError",
     "TimelineExportFormat",
     "generate_timeline_export",
+    "_generate_route_map",
+    "_segment_rows",
+    "TRANSPORT_DISPLAY",
+    "STATE_COLUMNS",
+    "Transport",
 ]
