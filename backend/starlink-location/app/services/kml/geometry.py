@@ -39,7 +39,14 @@ class LineStyleInfo:
 
 
 def parse_geometry(placemark_elem: ET.Element) -> Optional[PlacemarkGeometry]:
-    """Parse geometry for a Placemark."""
+    """Parse geometry for a Placemark.
+
+    Args:
+        placemark_elem: XML element representing a KML Placemark
+
+    Returns:
+        PlacemarkGeometry object if geometry found, None otherwise
+    """
     point_elem = placemark_elem.find("kml:Point", KML_NS)
     if point_elem is not None:
         coords_elem = point_elem.find("kml:coordinates", KML_NS)
@@ -71,7 +78,14 @@ def parse_geometry(placemark_elem: ET.Element) -> Optional[PlacemarkGeometry]:
 
 
 def parse_line_style(placemark_elem: ET.Element) -> Optional[LineStyleInfo]:
-    """Parse inline LineStyle data if present on the Placemark."""
+    """Parse inline LineStyle data if present on the Placemark.
+
+    Args:
+        placemark_elem: XML element representing a KML Placemark
+
+    Returns:
+        LineStyleInfo object if line style found, None otherwise
+    """
     linestring_style = placemark_elem.find("kml:Style/kml:LineStyle", KML_NS)
     if linestring_style is None:
         return None
@@ -98,7 +112,14 @@ def parse_line_style(placemark_elem: ET.Element) -> Optional[LineStyleInfo]:
 
 
 def parse_coordinates(coords_text: str) -> list[CoordinateTriple]:
-    """Parse a whitespace-separated coordinate string into triples."""
+    """Parse a whitespace-separated coordinate string into triples.
+
+    Args:
+        coords_text: Whitespace-separated coordinate string from KML
+
+    Returns:
+        List of CoordinateTriple objects parsed from the text
+    """
     coordinates: list[CoordinateTriple] = []
     text = coords_text.strip()
     for coord_str in text.split():
@@ -169,7 +190,14 @@ def coordinates_match(
 def deduplicate_coordinates(
     coordinates: list[CoordinateTriple],
 ) -> list[CoordinateTriple]:
-    """Remove consecutive duplicate coordinates."""
+    """Remove consecutive duplicate coordinates.
+
+    Args:
+        coordinates: List of CoordinateTriple objects
+
+    Returns:
+        List with consecutive duplicates removed
+    """
     deduped: list[CoordinateTriple] = []
 
     for coord in coordinates:

@@ -336,7 +336,10 @@ class FlightStateManager:
             return True
 
     def reset(self) -> None:
-        """Reset flight state to initial PRE_DEPARTURE phase."""
+        """Reset flight state to initial PRE_DEPARTURE phase.
+
+        Clears all departure/arrival timestamps and tracking state.
+        """
         self.transition_phase(FlightPhase.PRE_DEPARTURE, reason="reset")
 
     def register_phase_change_callback(
@@ -446,7 +449,11 @@ class FlightStateManager:
             self.transition_phase(FlightPhase.PRE_DEPARTURE, reason=reset_reason)
 
     def clear_route_context(self, reason: Optional[str] = None) -> None:
-        """Convenience wrapper for clearing the active route context."""
+        """Convenience wrapper for clearing the active route context.
+
+        Args:
+            reason: Optional reason for clearing (for logging)
+        """
         self.update_route_context(
             None, auto_reset=True, reason=reason or "route_cleared"
         )
@@ -568,5 +575,9 @@ class FlightStateManager:
 
 # Singleton instance access
 def get_flight_state_manager() -> FlightStateManager:
-    """Get the singleton FlightStateManager instance."""
+    """Get the singleton FlightStateManager instance.
+
+    Returns:
+        The singleton FlightStateManager instance
+    """
     return FlightStateManager()

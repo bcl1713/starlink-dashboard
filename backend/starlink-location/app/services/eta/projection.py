@@ -9,7 +9,7 @@ from app.models.flight_status import ETAMode, FlightPhase
 from app.services.eta.calculator import ETACalculator
 
 if TYPE_CHECKING:
-    from app.models.route import ParsedRoute
+    from app.models.route import ParsedRoute, RouteWaypoint
 
 logger = logging.getLogger(__name__)
 
@@ -165,11 +165,9 @@ class ETAProjection:
 
         # Try to find matching waypoint on route by name (on-route POI case)
         matching_waypoint = None
-        matching_waypoint_index = None
-        for idx, waypoint in enumerate(active_route.waypoints):
+        for waypoint in active_route.waypoints:
             if waypoint.name.upper() == poi.name.upper():
                 matching_waypoint = waypoint
-                matching_waypoint_index = idx
                 break
 
         # If POI is on the route, use direct route-aware calculation

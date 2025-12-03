@@ -40,7 +40,10 @@ class POIManager:
         self._load_pois()
 
     def _ensure_file_exists(self) -> None:
-        """Create pois file if it doesn't exist with empty structure."""
+        """Create pois file if it doesn't exist with empty structure.
+
+        Creates parent directories if needed and initializes file with empty JSON structure.
+        """
         if not self.pois_file.exists():
             # Create parent directory if needed
             self.pois_file.parent.mkdir(parents=True, exist_ok=True)
@@ -55,7 +58,11 @@ class POIManager:
                 logger.error(f"Failed to create POI file: {e}")
 
     def _load_pois(self) -> None:
-        """Load POIs from JSON file with file locking."""
+        """Load POIs from JSON file with file locking.
+
+        Reads POIs from the pois section of the JSON file and converts
+        timestamp strings to datetime objects with UTC timezone.
+        """
         self._ensure_file_exists()
 
         lock = FileLock(self.lock_file, timeout=5)
@@ -98,7 +105,11 @@ class POIManager:
         logger.info(f"Loaded {len(self._pois)} POIs from {self.pois_file}")
 
     def _save_pois(self) -> None:
-        """Save POIs to JSON file with file locking and atomic writes."""
+        """Save POIs to JSON file with file locking and atomic writes.
+
+        Uses atomic write pattern (write to temp file, then rename) to prevent corruption.
+        Preserves route data from existing file structure.
+        """
         lock = FileLock(self.lock_file, timeout=5)
         try:
             with lock.acquire(timeout=5):
@@ -426,7 +437,15 @@ class POIManager:
     def delete_mission_pois_by_category(
         self, mission_id: str, categories: set[str]
     ) -> int:
-        """Delete mission-scoped POIs that match one of the provided categories."""
+        """Delete mission-scoped POIs that match one of the provided categories.
+
+        Args:
+            mission_id: Mission identifier
+            categories: Set of category names to match
+
+        Returns:
+            Number of POIs deleted
+        """
         if not categories:
             return 0
         to_remove = [
@@ -452,7 +471,15 @@ class POIManager:
     def delete_mission_pois_by_name_prefixes(
         self, mission_id: str, prefixes: Sequence[str]
     ) -> int:
-        """Delete mission POIs whose names start with any of the provided prefixes."""
+        """Delete mission POIs whose names start with any of the provided prefixes.
+
+        Args:
+            mission_id: Mission identifier
+            prefixes: Sequence of name prefixes to match
+
+        Returns:
+            Number of POIs deleted
+        """
         if not prefixes:
             return 0
         normalized = tuple(prefixes)
@@ -480,7 +507,16 @@ class POIManager:
         prefixes: Sequence[str],
         exclude_mission_id: str | None = None,
     ) -> int:
-        """Delete mission POIs on a route whose names start with prefixes."""
+        """Delete mission POIs on a route whose names start with prefixes.
+
+        Args:
+            route_id: Route identifier
+            prefixes: Sequence of name prefixes to match
+            exclude_mission_id: Optional mission ID to exclude from deletion
+
+        Returns:
+            Number of POIs deleted
+        """
         if not route_id or not prefixes:
             return 0
         normalized = tuple(prefixes)
@@ -555,7 +591,10 @@ class POIManager:
         return len(to_remove)
 
     def reload_pois(self) -> None:
-        """Reload POIs from disk, discarding any unsaved changes."""
+        """Reload POIs from disk, discarding any unsaved changes.
+
+        Useful for refreshing state when external processes modify the POI file.
+        """
         self._load_pois()
         logger.info("Reloaded POIs from disk")
 

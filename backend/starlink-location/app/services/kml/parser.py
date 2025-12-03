@@ -193,7 +193,14 @@ def parse_kml_file(file_path: str | Path) -> Optional[ParsedRoute]:
 
 
 def extract_placemarks(root: ET.Element) -> list[PlacemarkData]:
-    """Extract placemarks in document order into structured data."""
+    """Extract placemarks in document order into structured data.
+
+    Args:
+        root: Root XML element of the KML document
+
+    Returns:
+        List of PlacemarkData objects extracted from the document
+    """
     placemarks: list[PlacemarkData] = []
 
     for index, placemark_elem in enumerate(root.findall(".//kml:Placemark", KML_NS)):
@@ -220,7 +227,14 @@ def extract_placemarks(root: ET.Element) -> list[PlacemarkData]:
 def partition_placemarks(
     placemarks: list[PlacemarkData],
 ) -> tuple[list[WaypointData], list[RouteSegmentData]]:
-    """Split placemarks into waypoint and route segment collections."""
+    """Split placemarks into waypoint and route segment collections.
+
+    Args:
+        placemarks: List of PlacemarkData objects to partition
+
+    Returns:
+        Tuple of (waypoints, route_segments) extracted from placemarks
+    """
     waypoints: list[WaypointData] = []
     segments: list[RouteSegmentData] = []
 

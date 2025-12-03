@@ -27,14 +27,17 @@ class WaypointData:
 def identify_primary_waypoints(
     route_name: Optional[str], waypoints: list[WaypointData]
 ) -> tuple[Optional[WaypointData], Optional[WaypointData]]:
-    """
-    Identify departure and arrival waypoints from route name.
+    """Identify departure and arrival waypoints from route name.
 
     Parses route name in format "DEPARTURE-ARRIVAL" (e.g., "RKSO-KADW").
     Falls back to first/last waypoint with #destWaypointIcon style if parsing fails.
 
+    Args:
+        route_name: Route name string, may contain airport codes
+        waypoints: List of WaypointData objects to search
+
     Returns:
-        Tuple of (departure_wp, arrival_wp)
+        Tuple of (departure_waypoint, arrival_waypoint), either may be None
     """
     departure_code: Optional[str] = None
     arrival_code: Optional[str] = None
@@ -95,7 +98,16 @@ def match_waypoint_by_code(
     *,
     prefer_last: bool,
 ) -> Optional[WaypointData]:
-    """Find a waypoint whose name matches the supplied code."""
+    """Find a waypoint whose name matches the supplied code.
+
+    Args:
+        waypoints: List of WaypointData objects to search
+        code: Airport or waypoint code to match (case-insensitive)
+        prefer_last: If True, search from end of list; if False, from beginning
+
+    Returns:
+        Matching WaypointData object or None if not found
+    """
     if not code:
         return None
 
@@ -115,7 +127,16 @@ def build_route_waypoints(
     departure_wp: Optional[WaypointData],
     arrival_wp: Optional[WaypointData],
 ) -> list[RouteWaypoint]:
-    """Convert waypoint data into RouteWaypoint models with basic role tagging and timing extraction."""
+    """Convert waypoint data into RouteWaypoint models with basic role tagging and timing extraction.
+
+    Args:
+        waypoints: List of WaypointData objects to convert
+        departure_wp: Identified departure waypoint for role tagging
+        arrival_wp: Identified arrival waypoint for role tagging
+
+    Returns:
+        List of RouteWaypoint objects with roles and timing data
+    """
     route_waypoints: list[RouteWaypoint] = []
 
     for waypoint in waypoints:

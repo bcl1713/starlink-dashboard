@@ -31,7 +31,16 @@ def build_primary_route(
     start_coord: Optional[CoordinateTriple],
     end_coord: Optional[CoordinateTriple],
 ) -> list[CoordinateTriple]:
-    """Construct the primary coordinate chain from the available segments."""
+    """Construct the primary coordinate chain from the available segments.
+
+    Args:
+        route_segments: List of RouteSegmentData objects to chain
+        start_coord: Optional starting coordinate to match
+        end_coord: Optional ending coordinate to match
+
+    Returns:
+        List of chained CoordinateTriple objects representing primary route
+    """
     # Filter segments to only include the main route (by color/style)
     filtered_segments = filter_segments_by_style(route_segments)
 
@@ -155,7 +164,16 @@ def find_next_segment_index(
     segments: list[RouteSegmentData],
     current: Optional[CoordinateTriple],
 ) -> tuple[Optional[int], bool]:
-    """Locate the next segment that connects to the current coordinate."""
+    """Locate the next segment that connects to the current coordinate.
+
+    Args:
+        segments: List of RouteSegmentData objects to search
+        current: Current coordinate to match against segment endpoints
+
+    Returns:
+        Tuple of (segment_index, needs_reversal) where needs_reversal indicates
+        if the segment coordinates should be reversed to maintain chain continuity
+    """
     if current is None:
         return None, False
 
@@ -178,7 +196,14 @@ def find_next_segment_index(
 def flatten_route_segments(
     route_segments: list[RouteSegmentData],
 ) -> list[CoordinateTriple]:
-    """Fallback: concatenate all segment coordinates in document order."""
+    """Fallback: concatenate all segment coordinates in document order.
+
+    Args:
+        route_segments: List of RouteSegmentData objects to flatten
+
+    Returns:
+        List of all coordinates concatenated in document order with duplicates removed
+    """
     combined: list[CoordinateTriple] = []
 
     for segment in sorted(route_segments, key=lambda seg: seg.order):

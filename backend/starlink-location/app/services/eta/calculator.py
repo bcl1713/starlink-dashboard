@@ -247,7 +247,6 @@ class ETACalculator:
         # Use triangle inequality: perpendicular distance is approximate
         # For a point on the segment, sum of distances to ends equals segment length
         # Deviation from this tells us how far off the segment the point is
-        max_dist = max(dist_to_start, dist_to_end)
         min_dist = min(dist_to_start, dist_to_end)
 
         # Perpendicular distance approximation
