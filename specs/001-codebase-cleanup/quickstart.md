@@ -2282,7 +2282,8 @@ find . -name "*.py" -exec sed -i 's/[[:space:]]*$//' {} \;
   Validation rules
 - [contracts/smoke-test-checklist.md](./contracts/smoke-test-checklist.md) -
   Testing procedures
-- [contracts/linting-config-requirements.md](./contracts/linting-config-requirements.md) \
+- [contracts/linting-config-requirements.md](./contracts/linting-config-requirements.md)
+  \
   - Linter setup
 
 ### External Resources

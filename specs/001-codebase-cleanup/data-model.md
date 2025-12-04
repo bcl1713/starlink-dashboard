@@ -18,24 +18,24 @@ principles and refactoring requirements.
 
 #### Code File: Attributes
 
-| Attribute              | Type          | Required | Description                      |
-| ---------------------- | ------------- | -------- | -------------------------------- |
-| `file_id`              | string (UUID) | Yes      | Unique identifier                |
-| `path`                 | string        | Yes      | Absolute path from repo root     |
-| `line_count`           | integer       | Yes      | Current line count               |
-| `original_line_count`  | integer       | Yes      | Original line count              |
-| `language`             | enum          | Yes      | `python`, `ts`, `js`, `md`       |
-| `module_type`          | enum          | Yes      | `api`, `service`, `component`... |
-| `violation_status`     | enum          | Yes      | Current state (see State Mach.)  |
-| `refactoring_priority` | enum          | Yes      | `P0` to `P3` (see Rules)         |
-| `violation_severity`   | enum          | Yes      | `critical`, `moderate`, `none`   |
+| Attribute              | Type          | Required | Description                           |
+| ---------------------- | ------------- | -------- | ------------------------------------- |
+| `file_id`              | string (UUID) | Yes      | Unique identifier                     |
+| `path`                 | string        | Yes      | Absolute path from repo root          |
+| `line_count`           | integer       | Yes      | Current line count                    |
+| `original_line_count`  | integer       | Yes      | Original line count                   |
+| `language`             | enum          | Yes      | `python`, `ts`, `js`, `md`            |
+| `module_type`          | enum          | Yes      | `api`, `service`, `component`...      |
+| `violation_status`     | enum          | Yes      | Current state (see State Mach.)       |
+| `refactoring_priority` | enum          | Yes      | `P0` to `P3` (see Rules)              |
+| `violation_severity`   | enum          | Yes      | `critical`, `moderate`, `none`        |
 | `estimated_effort`     | enum          | No       | `small` to `xlarge` (see definitions) |
-| `has_justification`    | boolean       | No       | True if deferred (FR-004)        |
-| `justification_reason` | string        | No       | Reason for deferral              |
-| `assigned_to`          | string        | No       | Assignee                         |
-| `created_at`           | timestamp     | Yes      | Assessment time                  |
-| `updated_at`           | timestamp     | Yes      | Last update                      |
-| `metadata`             | JSON          | No       | Extra context (complexity etc.)  |
+| `has_justification`    | boolean       | No       | True if deferred (FR-004)             |
+| `justification_reason` | string        | No       | Reason for deferral                   |
+| `assigned_to`          | string        | No       | Assignee                              |
+| `created_at`           | timestamp     | Yes      | Assessment time                       |
+| `updated_at`           | timestamp     | Yes      | Last update                           |
+| `metadata`             | JSON          | No       | Extra context (complexity etc.)       |
 
 #### Code File: Relationships
 
@@ -143,26 +143,26 @@ constitutional compliance.
 
 #### Refactoring Task: Attributes
 
-| Attribute          | Type          | Required | Description                      |
-| ------------------ | ------------- | -------- | -------------------------------- |
-| `task_id`          | string (UUID) | Yes      | Unique identifier                |
-| `title`            | string        | Yes      | Task description                 |
-| `target_files`     | string[]      | Yes      | Target file paths                |
-| `violation_type`   | enum          | Yes      | `size`, `doc`, `solid`...        |
-| `estimated_effort` | enum          | Yes      | `small` to `xlarge`              |
-| `actual_effort`    | integer       | No       | Hours spent                      |
-| `status`           | enum          | Yes      | Current state (see Machine)      |
-| `priority`         | enum          | Yes      | `P0` to `P3`                     |
-| `assigned_to`      | string        | No       | Assignee                         |
-| `pr_number`        | integer       | No       | GitHub PR number                 |
-| `dependencies`     | string[]      | No       | IDs of prerequisite tasks        |
-| `blocked_by`       | string[]      | No       | IDs blocking this task           |
-| `blocks`           | string[]      | No       | IDs dependent on this task       |
-| `started_at`       | timestamp     | No       | Work start time                  |
-| `completed_at`     | timestamp     | No       | Completion time                  |
-| `created_at`       | timestamp     | Yes      | Creation time                    |
-| `updated_at`       | timestamp     | Yes      | Last update                      |
-| `notes`            | string        | No       | Implementation notes             |
+| Attribute          | Type          | Required | Description                 |
+| ------------------ | ------------- | -------- | --------------------------- |
+| `task_id`          | string (UUID) | Yes      | Unique identifier           |
+| `title`            | string        | Yes      | Task description            |
+| `target_files`     | string[]      | Yes      | Target file paths           |
+| `violation_type`   | enum          | Yes      | `size`, `doc`, `solid`...   |
+| `estimated_effort` | enum          | Yes      | `small` to `xlarge`         |
+| `actual_effort`    | integer       | No       | Hours spent                 |
+| `status`           | enum          | Yes      | Current state (see Machine) |
+| `priority`         | enum          | Yes      | `P0` to `P3`                |
+| `assigned_to`      | string        | No       | Assignee                    |
+| `pr_number`        | integer       | No       | GitHub PR number            |
+| `dependencies`     | string[]      | No       | IDs of prerequisite tasks   |
+| `blocked_by`       | string[]      | No       | IDs blocking this task      |
+| `blocks`           | string[]      | No       | IDs dependent on this task  |
+| `started_at`       | timestamp     | No       | Work start time             |
+| `completed_at`     | timestamp     | No       | Completion time             |
+| `created_at`       | timestamp     | Yes      | Creation time               |
+| `updated_at`       | timestamp     | Yes      | Last update                 |
+| `notes`            | string        | No       | Implementation notes        |
 
 #### Refactoring Task: Relationships
 

@@ -154,11 +154,11 @@ smaller sub-components, and using component composition patterns.
 
 ### React: Alternatives Considered
 
-| Approach                                | Pros                      | Cons                                              |
-| --------------------------------------- | ------------------------- | ------------------------------------------------- |
-| Keep monolithic components              | No refactoring effort     | Difficult to maintain and test                    |
-| Full component rewrite                  | Clean slate               | High risk, breaks existing functionality          |
-| State management library                | Centralized state         | Overkill for current complexity                   |
+| Approach                            | Pros                       | Cons                                          |
+| ----------------------------------- | -------------------------- | --------------------------------------------- |
+| Keep monolithic components          | No refactoring effort      | Difficult to maintain and test                |
+| Full component rewrite              | Clean slate                | High risk, breaks existing functionality      |
+| State management library            | Centralized state          | Overkill for current complexity               |
 | Custom hooks + composition (CHOSEN) | Balances risk and progress | Requires discipline to avoid over-abstraction |
 
 ### React: Implementation Notes

@@ -135,12 +135,17 @@ arrival times and calculating realistic ETAs.
 
 ## Development Investment
 
-| Feature          | Sessions | Phases | Tests | Status         |
-| ---------------- | -------- | ------ | ----- | -------------- |
-| KML Route Import | 16       | 1      | 100+  | ✅ Complete    |
-| POI Management   | 10       | 1      | Full  | ✅ Complete    |
-| ETA Route Timing | 24       | 5      | 451   | ✅ Complete    |
-| **Total**        | **50**   | **7**  | 451+  | **Production** |
+| Feature | Sessions | Phases | Tests | Status |
+
+|:---------------------|:---------|:-------|:-------|:-------------|
+
+| KML Route Import | 16 | 1 | 100+ | [x] Complete |
+
+| POI Management | 10 | 1 | Full | [x] Complete |
+
+| ETA Route Timing | 24 | 5 | 451 | [x] Complete |
+
+| Total | 50 | 7 | 451+ | Production |
 
 ---
 
@@ -173,12 +178,12 @@ arrival times and calculating realistic ETAs.
 ### Recommended Enhancements
 
 1. **WebSocket Integration:** Real-time updates without polling
-2. **Historical Playback:** Replay past flights from stored metrics
-3. **Alert System:** Automated notifications for anomalies
-4. **Multi-Terminal Support:** Monitor multiple Starlink units
-5. **Weather Overlays:** Integrate weather data on map
-6. **Mobile App:** Native mobile companion app
-7. **Advanced Analytics:** ML-based predictions and insights
+1. **Historical Playback:** Replay past flights from stored metrics
+1. **Alert System:** Automated notifications for anomalies
+1. **Multi-Terminal Support:** Monitor multiple Starlink units
+1. **Weather Overlays:** Integrate weather data on map
+1. **Mobile App:** Native mobile companion app
+1. **Advanced Analytics:** ML-based predictions and insights
 
 ### Technical Debt
 
@@ -190,11 +195,15 @@ arrival times and calculating realistic ETAs.
 
 ## Version History
 
-| Version | Date       | Features Added              | Tests |
-| ------- | ---------- | --------------------------- | ----- |
-| 0.1.0   | 2025-10-29 | Phase 0 Foundation          | 350+  |
-| 0.2.0   | 2025-10-31 | KML Routes + POI Management | 400+  |
-| 0.3.0   | 2025-11-04 | ETA Route Timing (5 phases) | 451   |
+| Version | Date | Features Added | Tests |
+
+|:--------|:------------|:----------------------------|:-------|
+
+| 0.1.0 | 2025-10-29 | Phase 0 Foundation | 350+ |
+
+| 0.2.0 | 2025-10-31 | KML Routes + POI Management | 400+ |
+
+| 0.3.0 | 2025-11-04 | ETA Route Timing (5 phases) | 451 |
 
 ---
 

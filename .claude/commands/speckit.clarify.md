@@ -146,7 +146,6 @@ Execution steps:
      | B      | Option B description                             |
      | C      | Option C description (add D/E as needed up to 5) |
      | Short  | Provide a different short answer (<=5 words)     |
-
      - After the table, add: Instructions for user reply format (letter,
        "yes"/"recommended", or custom answer)
 
