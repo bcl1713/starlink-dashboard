@@ -20,7 +20,7 @@ during validation of the Starlink Location Backend.
 ### Prometheus shows "DOWN" status
 
 1. Check if starlink-location is healthy: `docker compose ps`
-2. Verify health endpoint works: `curl <http://localhost:8000/health`>
+2. Verify health endpoint works: `curl <http://localhost:8000/health>`
 3. Check Prometheus config: `cat monitoring/prometheus/prometheus.yml`
 
 ### Configuration changes not applied
