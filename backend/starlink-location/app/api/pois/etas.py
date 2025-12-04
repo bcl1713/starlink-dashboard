@@ -421,8 +421,8 @@ async def get_pois_with_etas(
 
         return POIETAListResponse(pois=pois_with_eta, total=len(pois_with_eta))
 
-    except Exception as e:
+    except Exception as calculation_error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to calculate ETA: {str(e)}",
+            detail=f"Failed to calculate ETA: {str(calculation_error)}",
         )

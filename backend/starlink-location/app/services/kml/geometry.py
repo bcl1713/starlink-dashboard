@@ -211,23 +211,49 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
     """
     Calculate approximate distance between two points using haversine formula.
 
+    This function uses the haversine formula to calculate the great-circle distance
+    between two points on Earth given their latitude and longitude in degrees.
+    The formula accurately handles the spherical shape of Earth and is robust for
+    navigation calculations.
+
     Args:
-        lat1, lon1: First point coordinates in degrees
-        lat2, lon2: Second point coordinates in degrees
+        lat1: Latitude of starting point in decimal degrees
+        lon1: Longitude of starting point in decimal degrees
+        lat2: Latitude of ending point in decimal degrees
+        lon2: Longitude of ending point in decimal degrees
 
     Returns:
         Distance in meters (approximate, using Earth radius = 6371 km)
+
+    Example:
+        >>> distance = haversine_distance(40.7128, -74.0060, 34.0522, -118.2437)
+        >>> # Distance from New York to Los Angeles: ~3,944 km
     """
     from math import radians, cos, sin, asin, sqrt
 
-    # Convert degrees to radians
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    # Convert all coordinates from degrees to radians for trigonometric calculations
+    lat1_rad = radians(lat1)
+    lon1_rad = radians(lon1)
+    lat2_rad = radians(lat2)
+    lon2_rad = radians(lon2)
 
-    # Haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-    c = 2 * asin(sqrt(a))
-    r = 6371000  # Earth radius in meters
+    # Calculate angle differences between the two points in radians
+    longitude_delta_rad = lon2_rad - lon1_rad
+    latitude_delta_rad = lat2_rad - lat1_rad
 
-    return c * r
+    # Haversine formula: a = sin²(Δφ/2) + cos(φ1) * cos(φ2) * sin²(Δλ/2)
+    # where φ is latitude, λ is longitude, Δ is difference
+    haversine_component = (
+        sin(latitude_delta_rad / 2) ** 2
+        + cos(lat1_rad) * cos(lat2_rad) * sin(longitude_delta_rad / 2) ** 2
+    )
+
+    # Calculate central angle: c = 2 * atan2(√a, √(1−a))
+    # Simplified to: c = 2 * asin(√a)
+    central_angle_rad = 2 * asin(sqrt(haversine_component))
+
+    # Earth's mean radius in meters
+    earth_radius_m = 6371000
+
+    # Distance = radius × central angle
+    return central_angle_rad * earth_radius_m
