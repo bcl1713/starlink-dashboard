@@ -357,7 +357,7 @@ STATE_COLUMNS = [
 
 #### \_segment_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
 
-**Lines 271-331 - Converts segments to exportable rows**
+##### Lines 271-331 - Converts segments to exportable rows
 
 ```python
 # Returns DataFrame with columns:
@@ -374,9 +374,10 @@ STATE_COLUMNS = [
 # - AAR rows inserted in chronological order
 ```
 
-#### \_segment_at_time(timeline: MissionTimeline, timestamp: datetime) -> TimelineSegment | None
+#### \_segment_at_time
 
 ```python
+# (timeline: MissionTimeline, timestamp: datetime) -> TimelineSegment | None
 # Returns segment containing the given timestamp, or last segment if not found
 ```
 
@@ -450,7 +451,7 @@ class XTransition(BaseModel):
     id: str                              # Unique transition identifier
     latitude: float                      # Actual transition latitude
     longitude: float                     # Actual transition longitude
-    target_satellite_id: str             # Target satellite ID (e.g., "X-1", "X-2")
+    target_satellite_id: str             # Target satellite ID (e.g., "X-1")
     target_beam_id: Optional[str]        # Optional target beam ID
     is_same_satellite_transition: bool   # True if different beam, same satellite
 ```

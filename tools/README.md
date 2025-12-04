@@ -41,7 +41,7 @@ Edit the script's configuration section to customize:
 
 **Example Output:**
 
-```
+```bash
 Deleting 20 existing POIs...
   Deleted: Waypoint 01
   ...
@@ -85,7 +85,7 @@ python3 tools/setup_pois.py
 
 **Troubleshooting:**
 
-**"Connection refused"**
+#### "Connection refused"
 
 ```bash
 # Ensure backend is running
@@ -93,13 +93,13 @@ docker compose logs -f starlink-location
 curl <http://localhost:8000/health>
 ```
 
-**"No module named requests"**
+#### "No module named requests"
 
 ```bash
 pip install requests
 ```
 
-**POIs don't appear in Grafana**
+#### POIs don't appear in Grafana
 
 - Check that the Infinity datasource is configured correctly
 - Verify POI API endpoint returns data: `curl <http://localhost:8000/api/pois`>

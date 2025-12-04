@@ -75,8 +75,9 @@ Complete, Phase 3 In Progress
    are fundamentally hard to split further without losing maintainability
 1. **Refactoring Pattern Established**: Assessment → Decomposition → Testing →
    Documentation → Commit
-1. **Quality Gates Working**: All linting tools integrated and enforced via
-   pre-commit + CI/CD
+
+- **Quality Gates Working**: All linting tools integrated and enforced via
+  pre-commit + CI/CD
 
 ---
 

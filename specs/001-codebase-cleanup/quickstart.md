@@ -296,8 +296,10 @@ app/services/
      --body "$(cat <<EOF
    ## Summary
 
-   Refactors \`app/api/routes.py\` (1046 lines) into 5 focused modules
-   (<300 lines each) to achieve FR-001 compliance.
+   Refactors \`app/api/routes.py\` (1046 lines) \
+   into 5 focused modules
+   (<300 lines each) \
+   to achieve FR-001 compliance.
 
    **Addresses**: FR-001, FR-005, FR-018, SC-001
    **Target Structure**:
@@ -1593,7 +1595,7 @@ Compatibility layer (app/api/routes/**init**.py): from app.api.routes.management
 import list_routes, get_route, activate_route from app.api.routes.upload import
 upload_route, delete_route
 
-# External code still works
+## External code still works
 
 from app.api.routes import list_routes, get_route, activate_route
 
@@ -1700,7 +1702,7 @@ pydeps app/api/routes/ --max-depth 2
 
 **Solution**:
 
-**Option 1: Use Dependency Injection**
+#### Option 1: Use Dependency Injection
 
 ```python
 
@@ -1734,7 +1736,7 @@ route_mgr = RouteManager(poi_manager=poi_mgr)
 
 ```
 
-**Option 2: Extract Shared Interface**
+#### Option 2: Extract Shared Interface
 
 ```python
 
@@ -1873,7 +1875,7 @@ docker compose logs starlink-location | rg "ERROR|WARNING"
 
 **Common Causes & Fixes**:
 
-**1. Router not included in main app**
+#### 1. Router not included in main app
 
 ```python
 
@@ -1883,7 +1885,7 @@ app.include_router(routes_router)  # Add this
 
 ```
 
-**2. Incorrect prefix in sub-router**
+#### 2. Incorrect prefix in sub-router
 
 ```python
 
@@ -1901,7 +1903,7 @@ composite_router.include_router(router)
 
 ```
 
-**3. Missing dependency injection**
+#### 3. Missing dependency injection
 
 ```python
 
@@ -2280,8 +2282,8 @@ find . -name "*.py" -exec sed -i 's/[[:space:]]*$//' {} \;
   Validation rules
 - [contracts/smoke-test-checklist.md](./contracts/smoke-test-checklist.md) -
   Testing procedures
-- [contracts/linting-config-requirements.md](./contracts/linting-config-requirements.md) -
-  Linter setup
+- [contracts/linting-config-requirements.md](./contracts/linting-config-requirements.md) \
+  - Linter setup
 
 ### External Resources
 

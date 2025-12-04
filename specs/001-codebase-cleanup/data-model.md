@@ -18,23 +18,24 @@ principles and refactoring requirements.
 
 #### Code File: Attributes
 
-| Attribute              | Type          | Required | Description                                                      |
-| ---------------------- | ------------- | -------- | ---------------------------------------------------------------- | --- | ------ | ------ | --- | ---------------------------------- |
-| `file_id`              | string (UUID) | Yes      | Unique identifier                                                |     | `path` | string | Yes | Absolute path from repository root |
-| `line_count`           | integer       | Yes      | Current number of lines in file                                  |
-| `original_line_count`  | integer       | Yes      | Line count before any refactoring                                |
-| `language`             | enum          | Yes      | `python`, `typescript`, `javascript`, `markdown`                 |
-| `module_type`          | enum          | Yes      | `api`, `service`, `component`, `documentation`, `configuration`  |
-| `violation_status`     | enum          | Yes      | Current state (see State Machine below)                          |
-| `refactoring_priority` | enum          | Yes      | `P0_critical`, `P1_high`, `P2_medium`, `P3_low`                  |
-| `violation_severity`   | enum          | Yes      | `critical` (>1000 lines), `moderate` (300-1000), `none` (<300)   |
-| `estimated_effort`     | enum          | No       | `small` (<4h), `medium` (4-8h), `large` (8-16h), `xlarge` (>16h) |
-| `has_justification`    | boolean       | No       | True if FR-004 deferral comment exists                           |
-| `justification_reason` | string        | No       | Explanation for deferral (e.g., "Generated code")                |
-| `assigned_to`          | string        | No       | Developer or AI agent assigned to refactor                       |
-| `created_at`           | timestamp     | Yes      | When file was first assessed                                     |
-| `updated_at`           | timestamp     | Yes      | Last modification time                                           |
-| `metadata`             | JSON          | No       | Additional context (dependencies, cyclomatic complexity, etc.)   |
+| Attribute              | Type          | Required | Description                      |
+| ---------------------- | ------------- | -------- | -------------------------------- |
+| `file_id`              | string (UUID) | Yes      | Unique identifier                |
+| `path`                 | string        | Yes      | Absolute path from repo root     |
+| `line_count`           | integer       | Yes      | Current line count               |
+| `original_line_count`  | integer       | Yes      | Original line count              |
+| `language`             | enum          | Yes      | `python`, `ts`, `js`, `md`       |
+| `module_type`          | enum          | Yes      | `api`, `service`, `component`... |
+| `violation_status`     | enum          | Yes      | Current state (see State Mach.)  |
+| `refactoring_priority` | enum          | Yes      | `P0` to `P3` (see Rules)         |
+| `violation_severity`   | enum          | Yes      | `critical`, `moderate`, `none`   |
+| `estimated_effort`     | enum          | No       | `small` to `xlarge` (see definitions) |
+| `has_justification`    | boolean       | No       | True if deferred (FR-004)        |
+| `justification_reason` | string        | No       | Reason for deferral              |
+| `assigned_to`          | string        | No       | Assignee                         |
+| `created_at`           | timestamp     | Yes      | Assessment time                  |
+| `updated_at`           | timestamp     | Yes      | Last update                      |
+| `metadata`             | JSON          | No       | Extra context (complexity etc.)  |
 
 #### Code File: Relationships
 
@@ -106,7 +107,7 @@ principles and refactoring requirements.
 4. **Effort Estimation**: Based on line count, complexity, and dependency
    analysis
 
-#### Example Data
+#### Code File: Example Data
 
 ```json
 {
@@ -142,25 +143,26 @@ constitutional compliance.
 
 #### Refactoring Task: Attributes
 
-| Attribute          | Type          | Required | Description                                                         |
-| ------------------ | ------------- | -------- | ------------------------------------------------------------------- | --- | ------- | ------ | --- | ------------------------------- |
-| `task_id`          | string (UUID) | Yes      | Unique identifier                                                   |     | `title` | string | Yes | Human-readable task description |
-| `target_files`     | string[]      | Yes      | Array of file paths this task addresses                             |
-| `violation_type`   | enum          | Yes      | `size`, `documentation`, `solid_design`, `linting`, `type_coverage` |
-| `estimated_effort` | enum          | Yes      | `small`, `medium`, `large`, `xlarge` (matches Code File)            |
-| `actual_effort`    | integer       | No       | Hours spent (tracked post-completion)                               |
-| `status`           | enum          | Yes      | Current state (see State Machine below)                             |
-| `priority`         | enum          | Yes      | `P0_critical`, `P1_high`, `P2_medium`, `P3_low`                     |
-| `assigned_to`      | string        | No       | Developer or AI agent                                               |
-| `pr_number`        | integer       | No       | GitHub PR number when task is submitted                             |
-| `dependencies`     | string[]      | No       | Array of `task_id` values that must complete first                  |
-| `blocked_by`       | string[]      | No       | Array of `task_id` values currently blocking this task              |
-| `blocks`           | string[]      | No       | Array of `task_id` values that depend on this task                  |
-| `started_at`       | timestamp     | No       | When work began                                                     |
-| `completed_at`     | timestamp     | No       | When task was marked complete                                       |
-| `created_at`       | timestamp     | Yes      | Task creation time                                                  |
-| `updated_at`       | timestamp     | Yes      | Last update time                                                    |
-| `notes`            | string        | No       | Implementation notes, blockers, decisions                           |
+| Attribute          | Type          | Required | Description                      |
+| ------------------ | ------------- | -------- | -------------------------------- |
+| `task_id`          | string (UUID) | Yes      | Unique identifier                |
+| `title`            | string        | Yes      | Task description                 |
+| `target_files`     | string[]      | Yes      | Target file paths                |
+| `violation_type`   | enum          | Yes      | `size`, `doc`, `solid`...        |
+| `estimated_effort` | enum          | Yes      | `small` to `xlarge`              |
+| `actual_effort`    | integer       | No       | Hours spent                      |
+| `status`           | enum          | Yes      | Current state (see Machine)      |
+| `priority`         | enum          | Yes      | `P0` to `P3`                     |
+| `assigned_to`      | string        | No       | Assignee                         |
+| `pr_number`        | integer       | No       | GitHub PR number                 |
+| `dependencies`     | string[]      | No       | IDs of prerequisite tasks        |
+| `blocked_by`       | string[]      | No       | IDs blocking this task           |
+| `blocks`           | string[]      | No       | IDs dependent on this task       |
+| `started_at`       | timestamp     | No       | Work start time                  |
+| `completed_at`     | timestamp     | No       | Completion time                  |
+| `created_at`       | timestamp     | Yes      | Creation time                    |
+| `updated_at`       | timestamp     | Yes      | Last update                      |
+| `notes`            | string        | No       | Implementation notes             |
 
 #### Refactoring Task: Relationships
 
@@ -239,7 +241,7 @@ constitutional compliance.
 5. **Completion Evidence**: Task with `status = completed` must have associated
    Validation Checks with `status = passed`
 
-#### Example Data
+#### Refactoring Task: Example Data
 
 ```json
 {
@@ -273,21 +275,21 @@ for a Code File or Refactoring Task.
 
 #### Validation Check: Attributes
 
-| Attribute        | Type          | Required | Description                                                 |
-| ---------------- | ------------- | -------- | ----------------------------------------------------------- |
-| `check_id`       | string (UUID) | Yes      | Unique identifier                                           |
-| `requirement_id` | string        | Yes      | Reference to spec.md requirement (e.g., "FR-001", "SC-004") |
-| `check_type`     | enum          | Yes      | Type of validation (see Check Types below)                  |
-| `target_entity`  | enum          | Yes      | `code_file`, `refactoring_task`, `pull_request`             |
-| `target_id`      | string        | Yes      | ID of the entity being validated                            |
-| `status`         | enum          | Yes      | `pending`, `running`, `passed`, `failed`, `skipped`         |
-| `automated`      | boolean       | Yes      | True if automated (linter), false if manual (smoke test)    |
-| `evidence`       | JSON          | No       | Supporting data (lint output, test results, line counts)    |
-| `error_message`  | string        | No       | Failure reason if `status = failed`                         |
-| `executed_at`    | timestamp     | No       | When check was run                                          |
-| `executed_by`    | string        | No       | CI system, developer, or AI agent                           |
-| `created_at`     | timestamp     | Yes      | Check creation time                                         |
-| `updated_at`     | timestamp     | Yes      | Last update time                                            |
+| Attribute        | Type          | Required | Description                      |
+| ---------------- | ------------- | -------- | -------------------------------- |
+| `check_id`       | string (UUID) | Yes      | Unique identifier                |
+| `requirement_id` | string        | Yes      | Spec requirement ID              |
+| `check_type`     | enum          | Yes      | Validation type (see table)      |
+| `target_entity`  | enum          | Yes      | Entity type validated            |
+| `target_id`      | string        | Yes      | Entity ID                        |
+| `status`         | enum          | Yes      | `pending`, `passed`, `failed`... |
+| `automated`      | boolean       | Yes      | True if automated                |
+| `evidence`       | JSON          | No       | Supporting data                  |
+| `error_message`  | string        | No       | Failure reason                   |
+| `executed_at`    | timestamp     | No       | Execution time                   |
+| `executed_by`    | string        | No       | Executor (CI, Agent, User)       |
+| `created_at`     | timestamp     | Yes      | Creation time                    |
+| `updated_at`     | timestamp     | Yes      | Last update                      |
 
 #### Check Types
 
@@ -308,8 +310,9 @@ for a Code File or Refactoring Task.
 #### Validation Check: Relationships
 
 - **Belongs To** `Code File` OR `Refactoring Task` OR `Pull Request` (N:1) - A
-  check validates one entity- **Triggered By** `Refactoring Task` (N:1) - Tasks
-  trigger checks upon completion
+  check validates one entity
+- **Triggered By** `Refactoring Task` (N:1) - Tasks trigger checks upon
+  completion
 
 #### Validation Check: State Machine
 
@@ -359,7 +362,7 @@ for a Code File or Refactoring Task.
 4. **Automated Consistency**: `automated = true` checks must have
    `executed_by = ci_system`
 
-#### Example Data
+#### Validation Check: Example Data
 
 ```json
 {
@@ -414,26 +417,26 @@ subject to validation checks before merge.
 
 #### Attributes
 
-| Attribute            | Type          | Required | Description                                        |
-| -------------------- | ------------- | -------- | -------------------------------------------------- |
-| `pr_id`              | string (UUID) | Yes      | Internal unique identifier                         |
-| `pr_number`          | integer       | Yes      | GitHub PR number                                   |
-| `branch_name`        | string        | Yes      | Feature branch name (e.g., "refactor/ui-py-split") |
-| `base_branch`        | string        | Yes      | Target branch (typically "001-codebase-cleanup")   |
-| `title`              | string        | Yes      | PR title                                           |
-| `description`        | string        | No       | PR body/description                                |
-| `file_count`         | integer       | Yes      | Number of files changed in PR                      |
-| `lines_added`        | integer       | No       | Git diff lines added                               |
-| `lines_removed`      | integer       | No       | Git diff lines removed                             |
-| `status`             | enum          | Yes      | Current PR state (see State Machine below)         |
-| `smoke_test_results` | JSON          | No       | Manual test results per file                       |
-| `ci_status`          | enum          | Yes      | `pending`, `running`, `passed`, `failed`           |
-| `approval_status`    | enum          | Yes      | `pending`, `approved`, `changes_requested`         |
-| `approved_by`        | string        | No       | Reviewer who approved                              |
-| `created_at`         | timestamp     | Yes      | PR creation time                                   |
-| `updated_at`         | timestamp     | Yes      | Last update time                                   |
-| `merged_at`          | timestamp     | No       | When PR was merged                                 |
-| `closed_at`          | timestamp     | No       | When PR was closed (merged or abandoned)           |
+| Attribute            | Type          | Required | Description                      |
+| -------------------- | ------------- | -------- | -------------------------------- |
+| `pr_id`              | string (UUID) | Yes      | Internal unique ID               |
+| `pr_number`          | integer       | Yes      | GitHub PR number                 |
+| `branch_name`        | string        | Yes      | Feature branch name              |
+| `base_branch`        | string        | Yes      | Target branch                    |
+| `title`              | string        | Yes      | PR title                         |
+| `description`        | string        | No       | PR body/description              |
+| `file_count`         | integer       | Yes      | Changed file count               |
+| `lines_added`        | integer       | No       | Lines added                      |
+| `lines_removed`      | integer       | No       | Lines removed                    |
+| `status`             | enum          | Yes      | Current PR state                 |
+| `smoke_test_results` | JSON          | No       | Manual test results              |
+| `ci_status`          | enum          | Yes      | `pending`, `passed`, `failed`... |
+| `approval_status`    | enum          | Yes      | Approval state                   |
+| `approved_by`        | string        | No       | Reviewer                         |
+| `created_at`         | timestamp     | Yes      | Creation time                    |
+| `updated_at`         | timestamp     | Yes      | Last update                      |
+| `merged_at`          | timestamp     | No       | Merge time                       |
+| `closed_at`          | timestamp     | No       | Close time                       |
 
 #### Relationships
 
@@ -523,7 +526,7 @@ subject to validation checks before merge.
 5. **Task Completion**: All Refactoring Tasks in `contains` relationship must
    have `status = completed` before PR merge
 
-#### Example Data
+#### Pull Request: Example Data
 
 ```json
 {

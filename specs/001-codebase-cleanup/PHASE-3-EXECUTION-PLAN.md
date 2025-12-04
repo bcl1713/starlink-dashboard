@@ -245,7 +245,7 @@ curl <http://localhost:8000/api/[endpoin>t]  # Main endpoint for module
 
 ## Next Action
 
-**Start Week 1, Day 1: Refactor ui.py**
+#### Start Week 1, Day 1: Refactor ui.py
 
 ```bash
 # 1. Create ui/ module directory

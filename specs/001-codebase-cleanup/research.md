@@ -40,35 +40,8 @@ systematic refactoring.
 We will decompose large FastAPI route files by grouping related endpoints into
 separate modules, extracting shared business logic into dedicated service
 modules, and maintaining backward compatibility through careful import
-management.
 
-### Rationale
-
-1. **Separation of Concerns:** Large route files (`routes.py` at 1,047 lines,
-   `pois.py` at 1,093 lines) mix HTTP handling, business logic, and data
-   transformation. Splitting by functional domain improves readability and
-   testability.
-
-1. **FastAPI Best Practices:** The FastAPI documentation recommends organizing
-   routes into multiple routers and using dependency injection for shared
-   services.
-
-1. **Maintainability:** Smaller files (200-300 lines) are easier to understand,
-   review, and modify without introducing bugs.
-
-1. **Team Velocity:** Reduces merge conflicts when multiple developers work on
-   different API endpoints.
-
-### Alternatives Considered
-
-| Approach                  | Pros                             | Cons                                        |
-| ------------------------- | -------------------------------- | ------------------------------------------- |
-| Keep monolithic files     | No refactoring effort            | Continues to accrue technical debt          |
-| Split by HTTP method      | Simple mechanical split          | Breaks logical grouping of related features |
-| Full domain-driven design | Ideal long-term architecture     | Overly complex for current project size     |
-| **Route-based (CHOSEN)**  | **Balances clarity with effort** | **Requires careful dependency management**  |
-
-### Implementation Notes
+### Python: Implementation Notes
 
 **Target Structure for `/api/routes`:**
 
@@ -164,7 +137,7 @@ We will decompose large React components (400+ lines) by extracting state
 management and side effects into custom hooks, splitting UI sections into
 smaller sub-components, and using component composition patterns.
 
-### Rationale
+### React: Rationale
 
 1. **React Best Practices:** The React documentation emphasizes "composition
    over inheritance" and encourages extracting logic into custom hooks for
@@ -179,16 +152,16 @@ smaller sub-components, and using component composition patterns.
 
 1. **Testing:** Smaller components and isolated hooks are easier to unit test.
 
-### Alternatives Considered
+### React: Alternatives Considered
 
 | Approach                                | Pros                      | Cons                                              |
 | --------------------------------------- | ------------------------- | ------------------------------------------------- |
 | Keep monolithic components              | No refactoring effort     | Difficult to maintain and test                    |
 | Full component rewrite                  | Clean slate               | High risk, breaks existing functionality          |
 | State management library                | Centralized state         | Overkill for current complexity                   |
-| **Custom hooks + composition (CHOSEN)** | **Incremental, low-risk** | **Requires discipline to avoid over-abstraction** |
+| Custom hooks + composition (CHOSEN) | Balances risk and progress | Requires discipline to avoid over-abstraction |
 
-### Implementation Notes
+### React: Implementation Notes
 
 **Target Structure for Large Components:**
 
@@ -281,7 +254,7 @@ We will split large markdown files (1,000+ lines) into focused sub-documents
 organized by topic, maintain a centralized index with clear navigation, and use
 relative paths for internal linking.
 
-### Rationale
+### Docs: Rationale
 
 1. **Cognitive Load:** Documents exceeding 500 lines are difficult to navigate,
    even with a table of contents. Readers often miss important sections.
@@ -295,7 +268,7 @@ relative paths for internal linking.
 1. **Version Control:** Smaller files produce cleaner git diffs and make it
    easier to track changes over time.
 
-### Alternatives Considered
+### Docs: Alternatives Considered
 
 | Approach                         | Pros                                   | Cons                                        |
 | -------------------------------- | -------------------------------------- | ------------------------------------------- |
@@ -304,7 +277,7 @@ relative paths for internal linking.
 | Docusaurus/MkDocs                | Professional documentation site        | Overkill for current needs, adds complexity |
 | **Sub-docs with index (CHOSEN)** | **Balances structure with simplicity** | **Requires consistent linking discipline**  |
 
-### Implementation Notes
+### Docs: Implementation Notes
 
 **Current Documentation Structure:**
 
@@ -372,7 +345,7 @@ docs/
 3. **Sub-document split:** For documents > 500 lines, split into multiple files
    rather than generating complex TOC
 
-**Example: Splitting a Large Document**
+#### Example: Splitting a Large Document
 
 ```markdown
 # Before: design-document.md (1,500 lines)
@@ -457,7 +430,7 @@ isolated changes with comprehensive test coverage before and after each
 refactoring step. Use feature branches with focused PRs and never refactor
 without a safety net of passing tests.
 
-### Rationale
+### Safe Refactor: Rationale
 
 1. **Risk Mitigation:** Large refactoring efforts often introduce subtle bugs
    that are difficult to trace. Incremental changes limit the blast radius.
@@ -471,7 +444,7 @@ without a safety net of passing tests.
 1. **Team Confidence:** Developers are more likely to approve and merge small,
    well-tested refactorings than large, risky changes.
 
-### Alternatives Considered
+### Safe Refactor: Alternatives Considered
 
 | Approach                         | Pros                           | Cons                                   |
 | -------------------------------- | ------------------------------ | -------------------------------------- |
@@ -480,7 +453,7 @@ without a safety net of passing tests.
 | Opportunistic refactoring        | Low overhead                   | Inconsistent, may never complete       |
 | **Incremental + tests (CHOSEN)** | **Balances risk and progress** | **Requires discipline and automation** |
 
-### Implementation Notes
+### Safe Refactor: Implementation Notes
 
 **Incremental Refactoring Techniques:**
 
@@ -643,7 +616,7 @@ local development and CI/CD checks for pull requests. Use Black for Python,
 Prettier for JavaScript/TypeScript/Markdown, ESLint for JS/TS, and markdownlint
 for documentation.
 
-### Rationale
+### Linting: Rationale
 
 1. **Consistency:** Automated formatting eliminates style debates and ensures a
    consistent codebase.
@@ -901,7 +874,7 @@ jobs:
 
 **Handling Linting Violations in Existing Code:**
 
-**Option 1: Fix All at Once (Recommended for Small Codebases)**
+#### Option 1: Fix All at Once (Recommended for Small Codebases)
 
 ```bash
 # Format all Python files
@@ -918,7 +891,7 @@ git add .
 git commit -m "style: apply automated formatting to entire codebase"
 ```
 
-**Option 2: Incremental Fixing (Recommended for Large Codebases)**
+#### Option 2: Incremental Fixing (Recommended for Large Codebases)
 
 ```yaml
 # .pre-commit-config.yaml (temporary configuration)
@@ -1166,4 +1139,4 @@ Examples:
 
 ---
 
-**Document End**
+Document End

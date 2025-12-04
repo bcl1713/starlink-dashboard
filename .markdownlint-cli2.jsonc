@@ -1,0 +1,23 @@
+{
+  "gitignore": ".gitignore",
+
+  "ignores": [
+    "specs/**",
+    ".specify/**",
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".git/**",
+    ".venv/**",
+    "__pycache__/**"
+  ],
+
+  "config": {
+    "MD013": {
+      "tables": false,
+      "code_blocks": false
+    },
+    "MD060": false,
+    "default": true
+  }
+}

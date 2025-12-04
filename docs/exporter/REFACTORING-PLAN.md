@@ -187,7 +187,8 @@ def mission_start_timestamp(timeline) -> datetime: ...
 
 **Candidates:**
 
-- `generate_route_map(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
+- `generate_route_map`
+  `(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
 
 **Keep As:** Public function (currently `_generate_route_map()`)
 
@@ -247,7 +248,9 @@ def mission_start_timestamp(timeline) -> datetime: ...
 
 **Candidates:**
 
-- `generate_xlsx_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
+```python
+generate_xlsx_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes
+```
 
 **Dependencies:**
 
@@ -261,7 +264,9 @@ def mission_start_timestamp(timeline) -> datetime: ...
 
 **Candidates:**
 
-- `generate_pdf_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
+```python
+generate_pdf_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes
+```
 
 **Dependencies:**
 
@@ -279,7 +284,9 @@ def mission_start_timestamp(timeline) -> datetime: ...
 
 **Candidates:**
 
-- `generate_pptx_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
+```python
+generate_pptx_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes
+```
 
 **Dependencies:**
 
@@ -306,8 +313,17 @@ def mission_start_timestamp(timeline) -> datetime: ...
 - `_add_mission_metadata_to_zip(zf, mission, manifest_files)`
 - `_add_route_kmls_to_zip(zf, mission, route_manager, manifest_files)`
 - `_add_pois_to_zip(zf, mission, poi_manager, manifest_files)`
-- `_add_per_leg_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)`
-- `_add_combined_mission_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)`
+
+  ```python
+  _add_per_leg_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)
+  ```
+
+  ```python
+  _add_combined_mission_exports_to_zip(
+      zf, mission, route_manager, poi_manager, manifest_files
+  )
+  ```
+
 - `_create_export_manifest(mission, manifest_files) -> dict`
 
 **Dependencies:**
@@ -350,9 +366,18 @@ def mission_start_timestamp(timeline) -> datetime: ...
 **Candidates:**
 
 - `generate_mission_combined_csv(mission, output_path) -> bytes | None`
-- `generate_mission_combined_xlsx(mission, route_manager, poi_manager, output_path) -> bytes | None`
-- `generate_mission_combined_pptx(mission, route_manager, poi_manager, output_path) -> bytes | None`
-- `generate_mission_combined_pdf(mission, route_manager, poi_manager, output_path) -> bytes | None`
+
+  ```python
+  generate_mission_combined_xlsx(mission, route_manager, poi_manager, output_path) -> bytes | None
+  ```
+
+  ```python
+  generate_mission_combined_pptx(mission, route_manager, poi_manager, output_path) -> bytes | None
+  ```
+
+  ```python
+  generate_mission_combined_pdf(mission, route_manager, poi_manager, output_path) -> bytes | None
+  ```
 
 **Dependencies:**
 
@@ -440,7 +465,7 @@ def mission_start_timestamp(timeline) -> datetime: ...
 | ------------------------- | ---------- | ---------------------------- |
 | formatting.py             | 100        | exporter.py 135-177 + utils  |
 | transport_utils.py        | 70         | exporter.py 67-194           |
-| excel_utils.py            | 130        | package_exporter.py 33-122   |
+| excel_utils.py            | 130        | pkg_exporter.py 33-122       |
 | data_builders.py          | 200        | exporter.py 1287-1414        |
 | segment_processing.py     | 220        | exporter.py 206-385          |
 | map_utils.py              | 300        | exporter.py helpers          |
@@ -450,8 +475,8 @@ def mission_start_timestamp(timeline) -> datetime: ...
 | export_xlsx.py            | 180        | exporter.py 1492-1600        |
 | export_pdf.py             | 400        | exporter.py 1603-1869        |
 | export_pptx.py            | 400        | exporter.py 1872-2143        |
-| archive_builder.py        | 300        | package_exporter.py 853-1152 |
-| combined_exports.py       | 550        | package_exporter.py 213-669  |
+| archive_builder.py        | 300        | pkg_exporter.py 853-1152     |
+| combined_exports.py       | 550        | pkg_exporter.py 213-669      |
 | exporter.py (new)         | 50         | Dispatcher only              |
 | package_exporter.py (new) | 80         | Orchestration only           |
 | **Total**                 | **3620**   | ~100 lines added for imports |
