@@ -1,5 +1,9 @@
 """Route manager with file watching for KML route loading and management."""
 
+# FR-004: File exceeds 300 lines (330 lines) because route manager combines
+# file watching, KML parsing, route storage, and active route coordination.
+# Splitting would fragment route lifecycle management. Deferred to v0.4.0.
+
 import logging
 from pathlib import Path
 from typing import Optional
@@ -124,7 +128,7 @@ class RouteManager:
             )
             if self._active_route_id == route_id:
                 try:
-                    from app.services.flight_state_manager import (
+                    from app.services.flight_state import (
                         get_flight_state_manager,
                     )
 
@@ -175,7 +179,7 @@ class RouteManager:
             self._active_route_id = None
             logger.info("Cleared active route due to deletion")
             try:
-                from app.services.flight_state_manager import get_flight_state_manager
+                from app.services.flight_state import get_flight_state_manager
 
                 get_flight_state_manager().clear_route_context(reason="route_removed")
             except Exception as exc:  # pragma: no cover - defensive guard
@@ -248,7 +252,7 @@ class RouteManager:
         logger.info(f"Activated route: {route_id}")
 
         try:
-            from app.services.flight_state_manager import get_flight_state_manager
+            from app.services.flight_state import get_flight_state_manager
 
             parsed_route = self._routes.get(route_id)
             if parsed_route:
@@ -271,7 +275,7 @@ class RouteManager:
                 logger.info(f"Deactivated route: {route_id}")
                 self._active_route_id = None
                 try:
-                    from app.services.flight_state_manager import (
+                    from app.services.flight_state import (
                         get_flight_state_manager,
                     )
 
@@ -289,7 +293,7 @@ class RouteManager:
             if self._active_route_id:
                 logger.info(f"Deactivated route: {self._active_route_id}")
                 try:
-                    from app.services.flight_state_manager import (
+                    from app.services.flight_state import (
                         get_flight_state_manager,
                     )
 
@@ -323,7 +327,7 @@ class RouteManager:
         self._load_existing_routes()
         logger.info("Reloaded all routes from disk")
         try:
-            from app.services.flight_state_manager import get_flight_state_manager
+            from app.services.flight_state import get_flight_state_manager
 
             get_flight_state_manager().clear_route_context(reason="routes_reloaded")
         except Exception as exc:  # pragma: no cover - defensive guard

@@ -47,7 +47,7 @@ async def list_routes(
 
     flight_status_snapshot = None
     try:
-        from app.services.flight_state_manager import get_flight_state_manager
+        from app.services.flight_state import get_flight_state_manager
 
         flight_status_snapshot = get_flight_state_manager().get_status()
     except Exception as state_error:  # pragma: no cover - defensive guard
@@ -133,7 +133,7 @@ async def get_route_detail(
 
     if is_active:
         try:
-            from app.services.flight_state_manager import get_flight_state_manager
+            from app.services.flight_state import get_flight_state_manager
 
             status_snapshot = get_flight_state_manager().get_status()
             flight_phase = status_snapshot.phase.value
@@ -224,7 +224,7 @@ async def activate_route(
         flight_phase = parsed_route.timing_profile.flight_status
 
     try:
-        from app.services.flight_state_manager import get_flight_state_manager
+        from app.services.flight_state import get_flight_state_manager
         from app.models.route import RouteTimingProfile
 
         status_snapshot = get_flight_state_manager().get_status()

@@ -1,5 +1,10 @@
 """Position simulator for realistic movement along a route."""
 
+# FR-004: File exceeds 300 lines (365 lines) because position simulation
+# coordinates route following, telemetry generation, noise/jitter injection, and
+# speed calculation. Splitting would fragment the simulation pipeline.
+# Deferred to v0.4.0.
+
 import logging
 import math
 import random

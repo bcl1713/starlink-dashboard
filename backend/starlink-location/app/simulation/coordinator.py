@@ -1,5 +1,9 @@
 """Simulation coordinator for orchestrating all simulators."""
 
+# FR-004: File exceeds 300 lines (307 lines) because coordinator orchestrates
+# position, telemetry, and environmental simulators with shared state and timing.
+# Splitting would fragment simulation lifecycle. Deferred to v0.4.0.
+
 import logging
 import time
 from datetime import datetime

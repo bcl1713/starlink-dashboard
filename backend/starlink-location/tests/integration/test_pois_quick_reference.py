@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from app.services.flight_state_manager import get_flight_state_manager
+from app.services.flight_state import get_flight_state_manager
 from app.mission.dependencies import get_route_manager
 
 

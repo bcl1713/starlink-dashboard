@@ -168,7 +168,7 @@ async def startup_event():
         # Initialize Flight State Manager for flight phase and ETA mode tracking
         logger.info_json("Initializing Flight State Manager")
         try:
-            from app.services.flight_state_manager import get_flight_state_manager
+            from app.services.flight_state import get_flight_state_manager
 
             flight_state = get_flight_state_manager()
             # Sync existing active route (if any) without forcing reset during startup

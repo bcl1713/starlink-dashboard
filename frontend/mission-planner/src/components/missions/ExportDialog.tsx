@@ -25,7 +25,11 @@ export function ExportDialog({
 
   const handleExport = async () => {
     try {
-      setProgress({ status: 'exporting', message: 'Exporting mission...', progress: 50 });
+      setProgress({
+        status: 'exporting',
+        message: 'Exporting mission...',
+        progress: 50,
+      });
 
       const blob = await exportImportApi.exportMission(missionId);
 
@@ -39,7 +43,11 @@ export function ExportDialog({
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      setProgress({ status: 'complete', message: 'Export complete!', progress: 100 });
+      setProgress({
+        status: 'complete',
+        message: 'Export complete!',
+        progress: 100,
+      });
 
       setTimeout(() => {
         onClose();
@@ -62,7 +70,8 @@ export function ExportDialog({
 
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Export will include all legs, routes, POIs, and pre-generated documents.
+            Export will include all legs, routes, POIs, and pre-generated
+            documents.
           </p>
 
           {progress.status !== 'preparing' && (
@@ -75,12 +84,19 @@ export function ExportDialog({
           )}
 
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose} disabled={progress.status === 'exporting'}>
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={progress.status === 'exporting'}
+            >
               Cancel
             </Button>
             <Button
               onClick={handleExport}
-              disabled={progress.status === 'exporting' || progress.status === 'complete'}
+              disabled={
+                progress.status === 'exporting' ||
+                progress.status === 'complete'
+              }
             >
               {progress.status === 'exporting' ? 'Exporting...' : 'Export'}
             </Button>

@@ -10,7 +10,10 @@ interface CreateMissionDialogProps {
   onClose: () => void;
 }
 
-export function CreateMissionDialog({ open, onClose }: CreateMissionDialogProps) {
+export function CreateMissionDialog({
+  open,
+  onClose,
+}: CreateMissionDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const createMission = useCreateMission();

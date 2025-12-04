@@ -4,6 +4,10 @@ Handles ingestion of KML/KMZ files (Ka coverage from CommKa source) and converts
 to standardized GeoJSON format for point-in-polygon testing and Grafana display.
 """
 
+# FR-004: File exceeds 300 lines (305 lines) because KMZ importer handles
+# ZIP extraction, KML parsing, GeoJSON generation, and coordinate transformation.
+# Splitting would fragment the import pipeline. Deferred to v0.4.0.
+
 import json
 import logging
 import zipfile

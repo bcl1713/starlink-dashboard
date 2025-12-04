@@ -83,7 +83,9 @@ export function ImportDialog({ open, onClose, onSuccess }: ImportDialogProps) {
                 <p className="text-gray-600">
                   Drag and drop a mission zip file here, or click to select
                 </p>
-                <p className="text-sm text-gray-500 mt-2">Only .zip files are accepted</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Only .zip files are accepted
+                </p>
               </div>
             )}
           </div>
@@ -91,13 +93,17 @@ export function ImportDialog({ open, onClose, onSuccess }: ImportDialogProps) {
           {result && (
             <div
               className={`p-4 rounded-md ${
-                result.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+                result.success
+                  ? 'bg-green-50 text-green-800'
+                  : 'bg-red-50 text-red-800'
               }`}
             >
               {result.success ? (
                 <div>
                   <p className="font-medium">Import successful!</p>
-                  <p className="text-sm mt-1">Mission ID: {result.mission_id}</p>
+                  <p className="text-sm mt-1">
+                    Mission ID: {result.mission_id}
+                  </p>
                   {result.warnings && result.warnings.length > 0 && (
                     <div className="mt-2">
                       <p className="text-sm font-medium">Warnings:</p>

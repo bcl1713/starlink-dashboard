@@ -16,7 +16,7 @@ refactoring. These requirements implement **FR-024 through FR-031** from
 **Requirement**: FR-024 - All Python code MUST pass Black formatting (line
 length 88)
 
-### Configuration File
+### Black: Configuration File
 
 **Location**: `pyproject.toml` (project root)
 
@@ -42,19 +42,7 @@ extend-exclude = '''
 '''
 ```
 
-### Execution Contract
-
-**CLI Command**:
-
-```bash
-black --check --diff backend/starlink-location/app/
-```
-
-**Expected Behavior**:
-
-- Exit code 0: All files compliant
-- Exit code 1: Formatting violations detected
-- Output: Diff of required changes (if any)
+### Black: Execution Contract
 
 **CI Integration**:
 
@@ -63,7 +51,7 @@ black --check --diff backend/starlink-location/app/
 - **Runs on**: All `.py` files in `backend/starlink-location/app/` (excluding
   `.venv`, `migrations/`)
 
-### Validation Criteria
+### Black: Validation Criteria
 
 - Line length MUST NOT exceed 88 characters
 - String quotes: Double quotes preferred by Black's defaults
@@ -79,7 +67,7 @@ black --check --diff backend/starlink-location/app/
 formatting (print width 80, prose wrap always) **Requirement**: FR-028 - All
 Markdown MUST pass Prettier formatting (prose wrap always)
 
-### Configuration File
+### Prettier: Configuration File
 
 **Location**: `.prettierrc` (project root)
 
@@ -113,7 +101,7 @@ Markdown MUST pass Prettier formatting (prose wrap always)
 
 **Required Exclusions**:
 
-```
+```text
 # Dependencies
 node_modules/
 .venv/
@@ -128,7 +116,7 @@ package-lock.json
 /data/
 ```
 
-### Execution Contract
+### Prettier: Execution Contract
 
 **CLI Commands**:
 
@@ -154,7 +142,7 @@ prettier --check "docs/**/*.md" "*.md"
   - All `.ts`, `.tsx`, `.js`, `.jsx` files in `frontend/mission-planner/src/`
   - All `.md` files in `docs/` and project root
 
-### Validation Criteria
+### Prettier: Validation Criteria
 
 - Print width: 80 characters for code, enforced prose wrap for Markdown
 - Indentation: 2 spaces for TS/JS/JSON/YAML
@@ -171,7 +159,7 @@ prettier --check "docs/**/*.md" "*.md"
 **Requirement**: FR-026 - All TypeScript/JavaScript code MUST pass ESLint
 validation
 
-### Configuration File
+### ESLint: Configuration File
 
 **Location**: `frontend/mission-planner/.eslintrc.json` (or project root if
 shared)
@@ -224,7 +212,7 @@ shared)
 
 **Required Exclusions**:
 
-```
+```text
 node_modules/
 dist/
 build/
@@ -232,7 +220,7 @@ build/
 *.config.ts
 ```
 
-### Execution Contract
+### ESLint: Execution Contract
 
 **CLI Command**:
 
@@ -253,7 +241,7 @@ eslint "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
 - **Runs on**: All `.ts`, `.tsx`, `.js`, `.jsx` files in
   `frontend/mission-planner/src/`
 
-### Validation Criteria
+### ESLint: Validation Criteria
 
 - **FR-008**: No `any` type usage (enforced by
   `@typescript-eslint/no-explicit-any: error`)
@@ -272,7 +260,7 @@ eslint "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
 
 **Requirement**: FR-027 - All Markdown MUST pass markdownlint-cli2 validation
 
-### Configuration File
+### markdownlint-cli2: Configuration File
 
 **Location**: `.markdownlint-cli2.jsonc` (project root)
 
@@ -288,23 +276,23 @@ eslint "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
       // Line length - allow long lines (Prettier handles prose wrap)
       "line_length": 200,
       "code_blocks": false,
-      "tables": false
+      "tables": false,
     },
     "MD033": false, // Allow inline HTML (needed for technical docs)
-    "MD041": false // First line doesn't need to be H1 (allow front matter)
+    "MD041": false, // First line doesn't need to be H1 (allow front matter)
   },
   "globs": ["docs/**/*.md", "*.md", "specs/**/*.md"],
   "ignores": [
     "node_modules/**",
-    "**/node_modules/**",
+    ### /node_modules/
     ".venv/**",
     "data/**",
-    "dev/archive/**"
-  ]
+    "dev/archive/**",
+  ],
 }
 ```
 
-### Execution Contract
+### markdownlint-cli2: Execution Contract
 
 **CLI Command**:
 
@@ -324,7 +312,7 @@ markdownlint-cli2 "docs/**/*.md" "*.md" "specs/**/*.md"
 - **Blocking**: PR merge MUST be blocked if exit code != 0
 - **Runs on**: All `.md` files in `docs/`, `specs/`, and project root
 
-### Validation Criteria
+### markdownlint-cli2: Validation Criteria
 
 - Headings must follow ATX style (`#`, `##`, not underlines)
 - No trailing spaces
@@ -460,18 +448,19 @@ jobs:
 To ensure consistency across development and CI environments, the following tool
 versions MUST be used:
 
-| Tool               | Version  | Install Command                       |
-| ------------------ | -------- | ------------------------------------- |
-| Black              | 24.4.2   | `pip install black==24.4.2`           |
-| Prettier           | 3.2.5    | `npm install -g prettier@3.2.5`       |
-| ESLint             | 8.57.0   | `npm install eslint@8.57.0`           |
-| markdownlint-cli2  | 0.12.1   | `npm install -g markdownlint-cli2@0.12.1` |
-| Python             | 3.13     | (system Python or via pyenv)          |
-| Node.js            | 20.x LTS | (via nvm or system package manager)   |
+| Tool              | Version  | Install Command                           |
+| ----------------- | -------- | ----------------------------------------- |
+| Black             | 24.4.2   | `pip install black==24.4.2`               |
+| Prettier          | 3.2.5    | `npm install -g prettier@3.2.5`           |
+| ESLint            | 8.57.0   | `npm install eslint@8.57.0`               |
+| markdownlint-cli2 | 0.12.1   | `npm install -g markdownlint-cli2@0.12.1` |
+| Python            | 3.13     | (system Python or via pyenv)              |
+| Node.js           | 20.x LTS | (via nvm or system package manager)       |
 
 **Version Pinning Strategy**:
 
-- Python: Pin in `requirements-dev.txt` or `pyproject.toml` `[tool.poetry.dev-dependencies]`
+- Python: Pin in `requirements-dev.txt` or `pyproject.toml`
+  `[tool.poetry.dev-dependencies]`
 - Node.js: Pin in `frontend/mission-planner/package.json` `devDependencies`
 - CI: Pin explicitly in workflow YAML files
 
@@ -489,22 +478,21 @@ Developers MUST run linters locally before pushing changes:
 
 ```yaml
 repos:
-  - repo: https://github.com/psf/black
+  - repo: <https://github.com/psf/black>
     rev: 24.4.2
     hooks:
       - id: black
         language_version: python3.13
         files: ^backend/starlink-location/app/.*\.py$
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
+  - repo: <https://github.com/pre-commit/mirrors-prettier>
     rev: v3.2.5
     hooks:
       - id: prettier
         types_or: [typescript, tsx, javascript, jsx, markdown]
-        files:
-          ^(frontend/mission-planner/src/.*\.(ts|tsx|js|jsx)|docs/.*\.md|.*\.md)$
+        files: ^(frontend/mission-planner/src/.*\.(ts|tsx|js|jsx)|docs/.*\.md|.*\.md)$
 
-  - repo: https://github.com/pre-commit/mirrors-eslint
+  - repo: <https://github.com/pre-commit/mirrors-eslint>
     rev: v8.57.0
     hooks:
       - id: eslint
@@ -514,7 +502,7 @@ repos:
           - "@typescript-eslint/parser@7.0.0"
           - "@typescript-eslint/eslint-plugin@7.0.0"
 
-  - repo: https://github.com/DavidAnson/markdownlint-cli2
+  - repo: <https://github.com/DavidAnson/markdownlint-cli2>
     rev: v0.12.1
     hooks:
       - id: markdownlint-cli2

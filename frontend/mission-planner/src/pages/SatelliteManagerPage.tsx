@@ -1,159 +1,33 @@
-import { useState, useEffect } from 'react';
-import { useSatellites } from '../hooks/api/useSatellites';
-import { satelliteService } from '../services/satellites';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '../components/ui/dialog';
+import { useState } from 'react';
+import { useSatelliteData } from './SatelliteManagerPage/useSatelliteData';
+import { SatelliteList } from './SatelliteManagerPage/SatelliteList';
+import { SatelliteDialogs } from './SatelliteManagerPage/SatelliteDialogs';
 
 export default function SatelliteManagerPage() {
-  const { data: satellites, isLoading, refetch } = useSatellites();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [editingSatelliteId, setEditingSatelliteId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    satellite_id: '',
-    longitude: '',
-  });
-  const [error, setError] = useState<string | null>(null);
 
-  // Reset form when dialog closes
-  useEffect(() => {
-    if (!isAddDialogOpen) {
-      setFormData({
-        satellite_id: '',
-        longitude: '',
-      });
-      setError(null);
-    }
-  }, [isAddDialogOpen]);
+  const {
+    satellites,
+    isLoading,
+    refetch,
+    formData,
+    setFormData,
+    error,
+    setError,
+    isCreating,
+    isUpdating,
+    isDeleting,
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+    handleEdit,
+  } = useSatelliteData();
 
-  // Reset edit form when dialog closes
-  useEffect(() => {
-    if (!isEditDialogOpen) {
-      setEditingSatelliteId(null);
-      setFormData({
-        satellite_id: '',
-        longitude: '',
-      });
-      setError(null);
-    }
-  }, [isEditDialogOpen]);
-
-  const handleCreate = async () => {
-    if (!formData.satellite_id.trim()) {
-      setError('Satellite ID is required');
-      return;
-    }
-    if (!formData.longitude.trim()) {
-      setError('Longitude is required');
-      return;
-    }
-    const longitude = parseFloat(formData.longitude);
-    if (isNaN(longitude) || longitude < -180 || longitude > 180) {
-      setError('Longitude must be a valid number between -180 and 180');
-      return;
-    }
-
-    setIsCreating(true);
-    setError(null);
-    try {
-      await satelliteService.create({
-        satellite_id: formData.satellite_id.trim(),
-        transport: 'X', // Default to X-Band
-        longitude: longitude,
-      });
-      setIsAddDialogOpen(false);
-      refetch();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to create satellite'
-      );
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleEdit = (satellite: any) => {
-    setEditingSatelliteId(satellite.satellite_id);
-    setFormData({
-      satellite_id: satellite.satellite_id,
-      longitude: satellite.longitude !== null ? satellite.longitude.toString() : '',
-    });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onEdit = (satellite: any) => {
+    handleEdit(satellite);
     setIsEditDialogOpen(true);
-  };
-
-  const handleUpdate = async () => {
-    if (!formData.satellite_id.trim()) {
-      setError('Satellite ID is required');
-      return;
-    }
-    if (!formData.longitude.trim()) {
-      setError('Longitude is required');
-      return;
-    }
-    const longitude = parseFloat(formData.longitude);
-    if (isNaN(longitude) || longitude < -180 || longitude > 180) {
-      setError('Longitude must be a valid number between -180 and 180');
-      return;
-    }
-
-    if (!editingSatelliteId) {
-      setError('Satellite ID not found');
-      return;
-    }
-
-    setIsUpdating(true);
-    setError(null);
-    try {
-      await satelliteService.update(editingSatelliteId, {
-        satellite_id: formData.satellite_id.trim(),
-        longitude: longitude,
-      });
-      setIsEditDialogOpen(false);
-      refetch();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to update satellite'
-      );
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleDelete = async (satelliteId: string) => {
-    if (!confirm(`Delete satellite ${satelliteId}?`)) {
-      return;
-    }
-
-    setIsDeleting(satelliteId);
-    try {
-      await satelliteService.delete(satelliteId);
-      refetch();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to delete satellite'
-      );
-    } finally {
-      setIsDeleting(null);
-    }
   };
 
   return (
@@ -167,75 +41,22 @@ export default function SatelliteManagerPage() {
             satellite to edit.
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>Add Satellite</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Satellite</DialogTitle>
-              <DialogDescription>
-                Create a new satellite entry. Satellites are geostationary at
-                the equator.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Satellite ID (e.g., X-1)
-                </label>
-                <Input
-                  value={formData.satellite_id}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      satellite_id: e.target.value,
-                    })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleCreate();
-                    }
-                  }}
-                  placeholder="X-1"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  Longitude (-180 to 180)
-                </label>
-                <Input
-                  type="text"
-                  value={formData.longitude}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      longitude: e.target.value,
-                    })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleCreate();
-                    }
-                  }}
-                  placeholder="-120"
-                />
-              </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsAddDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleCreate} disabled={isCreating}>
-                {isCreating ? 'Creating...' : 'Create Satellite'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <SatelliteDialogs
+          isAddDialogOpen={isAddDialogOpen}
+          setIsAddDialogOpen={setIsAddDialogOpen}
+          isCreating={isCreating}
+          onCreateSuccess={refetch}
+          isEditDialogOpen={isEditDialogOpen}
+          setIsEditDialogOpen={setIsEditDialogOpen}
+          isUpdating={isUpdating}
+          onUpdateSuccess={refetch}
+          formData={formData}
+          setFormData={setFormData}
+          error={error}
+          setError={setError}
+          onCreate={handleCreate}
+          onUpdate={handleUpdate}
+        />
       </div>
 
       {error && (
@@ -244,116 +65,13 @@ export default function SatelliteManagerPage() {
         </div>
       )}
 
-      {isLoading && <p className="mt-4">Loading satellites...</p>}
-
-      {!isLoading && satellites && satellites.length === 0 && (
-        <p className="mt-4 text-gray-500">No satellites in catalog.</p>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-        {satellites?.map((satellite) => (
-          <Card
-            key={satellite.satellite_id}
-            className="cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => handleEdit(satellite)}
-          >
-            <CardHeader>
-              <CardTitle>{satellite.satellite_id}</CardTitle>
-              <CardDescription>
-                {satellite.longitude !== null
-                  ? `${satellite.longitude > 0 ? satellite.longitude + '°E' : Math.abs(satellite.longitude) + '°W'}`
-                  : 'Position TBD'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm mb-4">
-                <p>
-                  <strong>Transport:</strong> {satellite.transport}-Band
-                </p>
-              </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete(satellite.satellite_id);
-                }}
-                disabled={isDeleting === satellite.satellite_id}
-              >
-                {isDeleting === satellite.satellite_id
-                  ? 'Deleting...'
-                  : 'Delete'}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Satellite</DialogTitle>
-            <DialogDescription>
-              Update the satellite ID and longitude.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Satellite ID (e.g., X-1)
-              </label>
-              <Input
-                value={formData.satellite_id}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    satellite_id: e.target.value,
-                  })
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleUpdate();
-                  }
-                }}
-                placeholder="X-1"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Longitude (-180 to 180)
-              </label>
-              <Input
-                type="text"
-                value={formData.longitude}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    longitude: e.target.value,
-                  })
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleUpdate();
-                  }
-                }}
-                placeholder="-120"
-              />
-            </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleUpdate} disabled={isUpdating}>
-              {isUpdating ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SatelliteList
+        satellites={satellites}
+        isLoading={isLoading}
+        isDeleting={isDeleting}
+        onEdit={onEdit}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

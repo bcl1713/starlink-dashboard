@@ -32,8 +32,15 @@ logger = logging.getLogger(__name__)
 _coordinator: Optional[object] = None
 
 
-def set_coordinator(coordinator):
-    """Set the simulation coordinator reference."""
+def set_coordinator(coordinator: object) -> None:
+    """Set the simulation coordinator reference for POI statistics.
+
+    Stores a reference to the coordinator to enable access to real-time
+    telemetry data for POI statistics calculations.
+
+    Args:
+        coordinator: Simulation coordinator instance providing telemetry
+    """
     global _coordinator
     _coordinator = coordinator
 
@@ -121,7 +128,7 @@ async def get_next_destination(
         status_eta_mode = "estimated"
         status_phase = None
         try:
-            from app.services.flight_state_manager import get_flight_state_manager
+            from app.services.flight_state import get_flight_state_manager
 
             snapshot = get_flight_state_manager().get_status()
             status_eta_mode = snapshot.eta_mode.value
@@ -152,7 +159,7 @@ async def get_next_destination(
     status_eta_mode = "estimated"
     status_phase = None
     try:
-        from app.services.flight_state_manager import get_flight_state_manager
+        from app.services.flight_state import get_flight_state_manager
 
         snapshot = get_flight_state_manager().get_status()
         status_eta_mode = snapshot.eta_mode.value
@@ -228,7 +235,7 @@ async def get_next_eta(
         status_eta_mode = "estimated"
         status_phase = None
         try:
-            from app.services.flight_state_manager import get_flight_state_manager
+            from app.services.flight_state import get_flight_state_manager
 
             snapshot = get_flight_state_manager().get_status()
             status_eta_mode = snapshot.eta_mode.value
@@ -256,7 +263,7 @@ async def get_next_eta(
     status_eta_mode = "estimated"
     status_phase = None
     try:
-        from app.services.flight_state_manager import get_flight_state_manager
+        from app.services.flight_state import get_flight_state_manager
 
         snapshot = get_flight_state_manager().get_status()
         status_eta_mode = snapshot.eta_mode.value

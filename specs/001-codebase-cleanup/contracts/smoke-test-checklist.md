@@ -40,9 +40,9 @@ following format:
 ```markdown
 ## Smoke Test Results
 
-**Test Category**: [Backend API / Frontend Component / Documentation]
-**Tested By**: [Your Name/Handle] **Date**: [YYYY-MM-DD] **Environment**:
-Docker (simulation mode)
+**Test Category**: [Backend API / Frontend Component / Documentation] **Tested
+By**: [Your Name/Handle] **Date**: [YYYY-MM-DD] **Environment**: Docker
+(simulation mode)
 
 ### Tests Performed
 
@@ -84,7 +84,7 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 1. **Health Endpoint Responds**
 
    ```bash
-   curl http://localhost:8000/health
+   curl <http://localhost:8000/health>
    ```
 
    **Expected**: HTTP 200 with JSON response including:
@@ -99,27 +99,27 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **Prometheus Metrics Endpoint Responds**
+1. **Prometheus Metrics Endpoint Responds**
 
    ```bash
-   curl http://localhost:8000/metrics
+   curl <http://localhost:8000/metrics>
    ```
 
    **Expected**: HTTP 200 with Prometheus text format (starts with `# HELP`)
 
    **Result**: [ ] PASSED [ ] FAILED
 
-3. **API Docs Endpoint Responds**
+1. **API Docs Endpoint Responds**
 
    ```bash
-   curl http://localhost:8000/docs
+   curl <http://localhost:8000/docs>
    ```
 
    **Expected**: HTTP 200 with HTML content (OpenAPI/Swagger UI)
 
    **Result**: [ ] PASSED [ ] FAILED
 
-4. **Container Logs Show No Errors**
+1. **Container Logs Show No Errors**
 
    ```bash
    docker logs starlink-location --tail 50
@@ -137,27 +137,27 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 **Applies to**: Refactoring `app/api/routes.py`, `app/services/kml_parser.py`,
 `app/services/route_eta_calculator.py`
 
-**Prerequisites**: Ensure sample routes exist in `/data/sample_routes/`
-(already present in repo)
+**Prerequisites**: Ensure sample routes exist in `/data/sample_routes/` (already
+present in repo)
 
 **Test Steps**:
 
 1. **List All Routes**
 
    ```bash
-   curl http://localhost:8000/api/routes
+   curl <http://localhost:8000/api/routes>
    ```
 
    **Expected**: HTTP 200 with JSON array of routes (may be empty initially)
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **Upload a Sample Route**
+1. **Upload a Sample Route**
 
    ```bash
    curl -X POST \
      -F "file=@data/sample_routes/simple-circular.kml" \
-     http://localhost:8000/api/routes/upload
+     <http://localhost:8000/api/routes/upload>
    ```
 
    **Expected**: HTTP 201 with JSON response containing `route_id` and success
@@ -165,11 +165,11 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-3. **Get Route Details**
+1. **Get Route Details**
 
    ```bash
    # Use route_id from previous step
-   curl http://localhost:8000/api/routes/{route_id}
+   curl <http://localhost:8000/api/routes/{route_id}>
    ```
 
    **Expected**: HTTP 200 with JSON object containing route metadata (waypoint
@@ -177,20 +177,20 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-4. **Activate Route**
+1. **Activate Route**
 
    ```bash
-   curl -X POST http://localhost:8000/api/routes/{route_id}/activate
+   curl -X POST <http://localhost:8000/api/routes/{route_id}/activate>
    ```
 
    **Expected**: HTTP 200 with success message
 
    **Result**: [ ] PASSED [ ] FAILED
 
-5. **Verify Route Metrics in Prometheus**
+1. **Verify Route Metrics in Prometheus**
 
    ```bash
-   curl 'http://localhost:9090/api/v1/query?query=starlink_route_progress_percent'
+   curl '<http://localhost:9090/api/v1/query?query=starlink_route_progress_percent'>
    ```
 
    **Expected**: HTTP 200 with JSON response; `result[0].value[1]` shows
@@ -198,20 +198,20 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-6. **Download Route KML**
+1. **Download Route KML**
 
    ```bash
-   curl -O http://localhost:8000/api/routes/{route_id}/download
+   curl -O <http://localhost:8000/api/routes/{route_id}/download>
    ```
 
    **Expected**: HTTP 200 with KML file downloaded; file is valid XML
 
    **Result**: [ ] PASSED [ ] FAILED
 
-7. **Delete Route**
+1. **Delete Route**
 
    ```bash
-   curl -X DELETE http://localhost:8000/api/routes/{route_id}
+   curl -X DELETE <http://localhost:8000/api/routes/{route_id}>
    ```
 
    **Expected**: HTTP 204 (no content) or HTTP 200 with success message
@@ -231,17 +231,17 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 1. **List All POIs**
 
    ```bash
-   curl http://localhost:8000/api/pois
+   curl <http://localhost:8000/api/pois>
    ```
 
    **Expected**: HTTP 200 with JSON array of POIs (may be empty)
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **Create a POI**
+1. **Create a POI**
 
    ```bash
-   curl -X POST http://localhost:8000/api/pois \
+   curl -X POST <http://localhost:8000/api/pois> \
      -H "Content-Type: application/json" \
      -d '{
        "name": "Test Waypoint",
@@ -255,20 +255,20 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-3. **Get POI Details**
+1. **Get POI Details**
 
    ```bash
-   curl http://localhost:8000/api/pois/{poi_id}
+   curl <http://localhost:8000/api/pois/{poi_id}>
    ```
 
    **Expected**: HTTP 200 with JSON object containing POI data
 
    **Result**: [ ] PASSED [ ] FAILED
 
-4. **Get POI ETAs (with active route)**
+1. **Get POI ETAs (with active route)**
 
    ```bash
-   curl http://localhost:8000/api/pois/etas
+   curl <http://localhost:8000/api/pois/etas>
    ```
 
    **Expected**: HTTP 200 with JSON array; each POI has `eta_seconds`,
@@ -276,10 +276,10 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-5. **Update POI**
+1. **Update POI**
 
    ```bash
-   curl -X PUT http://localhost:8000/api/pois/{poi_id} \
+   curl -X PUT <http://localhost:8000/api/pois/{poi_id}> \
      -H "Content-Type: application/json" \
      -d '{
        "name": "Updated Waypoint",
@@ -292,10 +292,10 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-6. **Delete POI**
+1. **Delete POI**
 
    ```bash
-   curl -X DELETE http://localhost:8000/api/pois/{poi_id}
+   curl -X DELETE <http://localhost:8000/api/pois/{poi_id}>
    ```
 
    **Expected**: HTTP 204 or HTTP 200 with success message
@@ -315,17 +315,17 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 1. **List Missions**
 
    ```bash
-   curl http://localhost:8000/api/missions
+   curl <http://localhost:8000/api/missions>
    ```
 
    **Expected**: HTTP 200 with JSON array (may be empty)
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **Create Mission (if endpoint exists)**
+1. **Create Mission (if endpoint exists)**
 
    ```bash
-   curl -X POST http://localhost:8000/api/missions \
+   curl -X POST <http://localhost:8000/api/missions> \
      -H "Content-Type: application/json" \
      -d '{
        "name": "Test Mission",
@@ -337,30 +337,30 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-3. **Get Mission Details**
+1. **Get Mission Details**
 
    ```bash
-   curl http://localhost:8000/api/missions/{mission_id}
+   curl <http://localhost:8000/api/missions/{mission_id}>
    ```
 
    **Expected**: HTTP 200 with mission data (or 404 if none exist)
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-4. **Export Mission (if endpoint exists)**
+1. **Export Mission (if endpoint exists)**
 
    ```bash
-   curl http://localhost:8000/api/missions/{mission_id}/export
+   curl <http://localhost:8000/api/missions/{mission_id}/export>
    ```
 
    **Expected**: HTTP 200 with exported file (KML, JSON, or package)
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-5. **Get Flight Status**
+1. **Get Flight Status**
 
    ```bash
-   curl http://localhost:8000/api/flight-status
+   curl <http://localhost:8000/api/flight-status>
    ```
 
    **Expected**: HTTP 200 with JSON containing `flight_phase`, `eta_mode`,
@@ -368,10 +368,10 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-6. **Trigger Departure (Manual Override)**
+1. **Trigger Departure (Manual Override)**
 
    ```bash
-   curl -X POST http://localhost:8000/api/flight-status/depart
+   curl -X POST <http://localhost:8000/api/flight-status/depart>
    ```
 
    **Expected**: HTTP 200 with confirmation; subsequent `/api/flight-status`
@@ -379,10 +379,10 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
    **Result**: [ ] PASSED [ ] FAILED
 
-7. **Trigger Arrival (Manual Override)**
+1. **Trigger Arrival (Manual Override)**
 
    ```bash
-   curl -X POST http://localhost:8000/api/flight-status/arrive
+   curl -X POST <http://localhost:8000/api/flight-status/arrive>
    ```
 
    **Expected**: HTTP 200 with confirmation; `/api/flight-status` shows
@@ -400,32 +400,32 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
 1. **Route Management UI**
 
-   Open in browser: `http://localhost:8000/ui/routes`
+   Open in browser: `<http://localhost:8000/ui/routes`>
 
    **Expected**: HTML page loads with route management interface (list, upload
    form, activate buttons)
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **POI Management UI**
+1. **POI Management UI**
 
-   Open in browser: `http://localhost:8000/ui/pois`
+   Open in browser: `<http://localhost:8000/ui/pois`>
 
    **Expected**: HTML page loads with POI management interface
 
    **Result**: [ ] PASSED [ ] FAILED
 
-3. **Mission Planning UI** (if exists)
+1. **Mission Planning UI** (if exists)
 
-   Open in browser: `http://localhost:8000/ui/missions`
+   Open in browser: `<http://localhost:8000/ui/missions`>
 
    **Expected**: HTML page loads (or 404 if not implemented)
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-4. **Dashboard/Home UI** (if exists)
+1. **Dashboard/Home UI** (if exists)
 
-   Open in browser: `http://localhost:8000/` or `http://localhost:8000/ui`
+   Open in browser: `<http://localhost:8000/`> or `<http://localhost:8000/ui`>
 
    **Expected**: HTML page loads with navigation or dashboard
 
@@ -448,20 +448,20 @@ Use these checklists when refactoring TypeScript/React files in
 cd frontend/mission-planner
 npm install
 npm start
-# Wait for dev server to start (typically http://localhost:3000)
+# Wait for dev server to start (typically <http://localhost:300>0)
 ```
 
 **Test Steps**:
 
 1. **Home Page Loads Without Errors**
 
-   Open in browser: `http://localhost:3000/`
+   Open in browser: `<http://localhost:3000/`>
 
    **Expected**: Page loads successfully; no console errors in browser DevTools
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **Navigation Works**
+1. **Navigation Works**
 
    Click through main navigation links
 
@@ -469,11 +469,12 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED
 
-3. **No TypeScript Compilation Errors**
+1. **No TypeScript Compilation Errors**
 
    Check terminal running `npm start`
 
-   **Expected**: No TypeScript errors shown; only "Compiled successfully" message
+   **Expected**: No TypeScript errors shown; only "Compiled successfully"
+   message
 
    **Result**: [ ] PASSED [ ] FAILED
 
@@ -493,7 +494,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **Map Controls Work**
+1. **Map Controls Work**
 
    Interact with zoom buttons, pan map by dragging
 
@@ -501,7 +502,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED
 
-3. **Route Displays on Map (if active route exists)**
+1. **Route Displays on Map (if active route exists)**
 
    With an active route in backend, verify map shows route
 
@@ -510,7 +511,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-4. **Current Position Marker Displays**
+1. **Current Position Marker Displays**
 
    Verify current position marker shows on map
 
@@ -518,7 +519,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED
 
-5. **POI Markers Display (if POIs exist)**
+1. **POI Markers Display (if POIs exist)**
 
    With POIs in backend, verify markers show on map
 
@@ -542,7 +543,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-2. **Leg Data Displays Correctly**
+1. **Leg Data Displays Correctly**
 
    Verify leg name, start/end locations, distance, ETA, etc., are shown
 
@@ -550,7 +551,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-3. **Edit Leg Functionality (if present)**
+1. **Edit Leg Functionality (if present)**
 
    Click "Edit" button (if exists) and modify leg data
 
@@ -558,7 +559,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-4. **Delete Leg Functionality (if present)**
+1. **Delete Leg Functionality (if present)**
 
    Click "Delete" button and confirm deletion
 
@@ -582,7 +583,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-2. **Satellite List Displays**
+1. **Satellite List Displays**
 
    Verify list of satellites (if any) is shown
 
@@ -590,7 +591,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-3. **Add Satellite Functionality (if present)**
+1. **Add Satellite Functionality (if present)**
 
    Click "Add Satellite" button and fill form
 
@@ -598,7 +599,7 @@ npm start
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-4. **Satellite Status Updates (if real-time)**
+1. **Satellite Status Updates (if real-time)**
 
    Observe satellite statuses for updates (if live data)
 
@@ -634,7 +635,7 @@ npm install -g markdown-link-check@3.12.1
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **Manual Link Click-Through (for split documents)**
+1. **Manual Link Click-Through (for split documents)**
 
    If document was split into multiple files, manually click all links between
    sections
@@ -647,7 +648,8 @@ npm install -g markdown-link-check@3.12.1
 
 ### 4.2 Build Verification (if using doc generator)
 
-**Applies to**: If project uses a documentation generator (e.g., MkDocs, Docusaurus)
+**Applies to**: If project uses a documentation generator (e.g., MkDocs,
+Docusaurus)
 
 **Test Steps**:
 
@@ -665,7 +667,7 @@ npm install -g markdown-link-check@3.12.1
 
    **Result**: [ ] PASSED [ ] FAILED [ ] N/A
 
-2. **Generated Docs Display Correctly**
+1. **Generated Docs Display Correctly**
 
    Open built documentation in browser
 
@@ -683,19 +685,19 @@ npm install -g markdown-link-check@3.12.1
 
 1. **Code Examples Execute Successfully**
 
-   Copy code examples from documentation and execute them (for bash commands, API
-   calls)
+   Copy code examples from documentation and execute them (for bash commands,
+   API calls)
 
    ```bash
    # Example: Test a curl command from docs
-   curl http://localhost:8000/health
+   curl <http://localhost:8000/health>
    ```
 
    **Expected**: Commands work as documented; outputs match documentation
 
    **Result**: [ ] PASSED [ ] FAILED
 
-2. **Configuration Examples Are Valid**
+1. **Configuration Examples Are Valid**
 
    If documentation includes config file snippets (e.g., `.env`, YAML), validate
    syntax

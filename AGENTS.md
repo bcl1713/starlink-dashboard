@@ -104,15 +104,15 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 
 **Connection Behavior:** If the system fails to connect to the dish on startup,
 it initializes successfully but begins serving without metrics. The service
-remains in live mode and attempts to reconnect on each update cycle. This
-allows the system to continue running and be ready when the dish becomes
-available. Check the `/health` endpoint to see current connection status.
+remains in live mode and attempts to reconnect on each update cycle. This allows
+the system to continue running and be ready when the dish becomes available.
+Check the `/health` endpoint to see current connection status.
 
 **Testing Connection:**
 
 ```bash
 # Once running, check health endpoint to see actual mode and connection status
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # Example response (connected):
 # {
@@ -148,9 +148,11 @@ The backend exposes Prometheus metrics including:
 
 ## Storage Requirements
 
-With the default 1-year retention period, Prometheus will store approximately **2.4 GB** of telemetry data.
+With the default 1-year retention period, Prometheus will store approximately
+**2.4 GB** of telemetry data.
 
 **Storage Calculation:**
+
 - **Number of unique metrics:** 45 (collected from live backend)
 - **Scrape interval:** 1 second
 - **Retention period:** 1 year (31,536,000 seconds)
@@ -158,12 +160,14 @@ With the default 1-year retention period, Prometheus will store approximately **
 - **Compression overhead:** ~1.2x
 
 **Formula:**
-```
+
+```text
 Storage_GB = (45 metrics × 31,536,000 seconds × 1.5 bytes × 1.2 overhead) / 1,073,741,824
 Storage_GB ≈ 2.4 GB
 ```
 
 **To adjust retention**, modify `PROMETHEUS_RETENTION` in `.env`:
+
 - `1y` - 1 year (~2.4 GB) - default for long-term analysis
 - `90d` - 90 days (~600 MB)
 - `30d` - 30 days (~200 MB)
@@ -204,10 +208,13 @@ always, auto line endings).
 
 ## File Naming Conventions
 
-When creating documentation or task management files, follow these naming standards:
+When creating documentation or task management files, follow these naming
+standards:
 
-- **Status/session files:** ALL CAPS with hyphens (SESSION-NOTES.md, CONTEXT-HANDOFF.md)
-- **Task planning files:** kebab-case (poi-management-plan.md, feature-context.md)
+- **Status/session files:** ALL CAPS with hyphens (SESSION-NOTES.md,
+  CONTEXT-HANDOFF.md)
+- **Task planning files:** kebab-case (poi-management-plan.md,
+  feature-context.md)
 - **Never use underscores** for multi-word filenames (use hyphens instead)
 
 See `.claude/NAMING-CONVENTIONS.md` for complete guidelines.

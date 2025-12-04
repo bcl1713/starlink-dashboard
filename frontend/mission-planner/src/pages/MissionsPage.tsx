@@ -10,7 +10,10 @@ export function MissionsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [selectedMission, setSelectedMission] = useState<{ id: string; name: string } | null>(null);
+  const [selectedMission, setSelectedMission] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   const handleSelectMission = (_id: string) => {
     // TODO: Navigate to mission detail view

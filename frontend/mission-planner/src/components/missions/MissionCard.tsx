@@ -1,5 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '../ui/card';
 import { Button } from '../ui/button';
 import type { Mission } from '../../types/mission';
 
@@ -10,7 +16,12 @@ interface MissionCardProps {
   onExport: (id: string, name: string) => void;
 }
 
-export function MissionCard({ mission, onSelect, onDelete, onExport }: MissionCardProps) {
+export function MissionCard({
+  mission,
+  onSelect,
+  onDelete,
+  onExport,
+}: MissionCardProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -22,7 +33,9 @@ export function MissionCard({ mission, onSelect, onDelete, onExport }: MissionCa
     <Card className="cursor-pointer hover:shadow-lg transition-shadow">
       <CardHeader onClick={handleClick}>
         <CardTitle>{mission.name}</CardTitle>
-        <CardDescription>{mission.description || 'No description'}</CardDescription>
+        <CardDescription>
+          {mission.description || 'No description'}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex justify-between items-center">

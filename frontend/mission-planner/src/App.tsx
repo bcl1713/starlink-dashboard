@@ -24,7 +24,10 @@ function App() {
         <Routes>
           <Route path="/missions" element={<MissionsPage />} />
           <Route path="/missions/:missionId" element={<MissionDetailPage />} />
-          <Route path="/missions/:missionId/legs/:legId" element={<LegDetailPage />} />
+          <Route
+            path="/missions/:missionId/legs/:legId"
+            element={<LegDetailPage />}
+          />
           <Route path="/satellites" element={<SatelliteManagerPage />} />
           <Route path="/" element={<Navigate to="/missions" replace />} />
         </Routes>

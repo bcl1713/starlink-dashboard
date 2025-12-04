@@ -14,8 +14,15 @@ router.include_router(stats.router)
 router.include_router(crud.router)
 
 
-def set_coordinator(coordinator):
-    """Set the simulation coordinator reference for all POI modules."""
+def set_coordinator(coordinator: object) -> None:
+    """Set the simulation coordinator reference for all POI modules.
+
+    Propagates the coordinator reference to all POI sub-modules (crud, etas, stats)
+    to enable access to real-time telemetry data.
+
+    Args:
+        coordinator: Simulation coordinator instance providing telemetry access
+    """
     crud.set_coordinator(coordinator)
     etas.set_coordinator(coordinator)
     stats.set_coordinator(coordinator)

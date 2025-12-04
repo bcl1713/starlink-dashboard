@@ -5,6 +5,10 @@ position, and other configuration data. Satellites are stored as POIs with
 category="satellite" in the POI system.
 """
 
+# FR-004: File exceeds 300 lines (341 lines) because satellite API bridges POI
+# storage, satellite metadata, rule evaluation, and coverage calculations.
+# Splitting would fragment satellite domain logic. Deferred to v0.4.0.
+
 import logging
 from typing import List, Optional
 

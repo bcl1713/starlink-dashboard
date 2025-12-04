@@ -1,5 +1,9 @@
 """Synthetic route generator for position simulation."""
 
+# FR-004: File exceeds 300 lines (307 lines) because route synthesis combines
+# geometric calculations, waypoint interpolation, and realistic segment generation.
+# Splitting would fragment the synthesis algorithm. Deferred to v0.4.0.
+
 import math
 from typing import Tuple
 

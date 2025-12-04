@@ -21,15 +21,22 @@ async def download_route(
     request: Request,
     route_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
-):
-    """
-    Download a KML route file.
+) -> FileResponse:
+    """Download a KML route file.
 
-    Path Parameters:
-    - route_id: Route identifier
+    Retrieves the KML file for a specific route and returns it as a
+    downloadable file with the appropriate MIME type.
+
+    Args:
+        request: FastAPI request object (required for rate limiting)
+        route_id: Unique identifier of the route to download
+        route_manager: Injected RouteManager dependency for route operations
 
     Returns:
-    - KML file content
+        FileResponse containing the KML file with proper headers and MIME type
+
+    Raises:
+        HTTPException: 404 if route or file not found, 500 if manager not initialized
     """
     if not route_manager:
         raise HTTPException(

@@ -1,0 +1,29 @@
+{
+  "gitignore": ".gitignore",
+
+  "ignores": [
+    "specs/**",
+    ".claude/**",
+    ".specify/**",
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    ".git/**",
+    ".venv/**",
+    "__pycache__/**",
+  ],
+  "customRules": [".markdownlint.custom/max-lines.js"],
+  "config": {
+    "MD013": {
+      "line_length": 80,
+      "tables": false,
+      "code_blocks": false,
+      "links": false,
+      "headings": false,
+    },
+    "MD060": {
+      "style": "aligned",
+    },
+    "default": true,
+  },
+}

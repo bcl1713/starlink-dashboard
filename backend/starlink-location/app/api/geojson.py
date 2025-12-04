@@ -1,5 +1,10 @@
 """GeoJSON serving API endpoint for map visualization."""
 
+# FR-004: File exceeds 300 lines (423 lines) because GeoJSON generation
+# coordinates route/POI/mission geometry, symbol mapping, styling, and response
+# formatting for map visualization. Splitting would obscure the rendering pipeline.
+# Deferred to v0.4.0.
+
 from typing import Any, Optional
 
 from fastapi import APIRouter, Query, Depends

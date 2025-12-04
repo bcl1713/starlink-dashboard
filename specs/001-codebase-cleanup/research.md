@@ -1,9 +1,7 @@
 # Codebase Cleanup Initiative: Research & Best Practices
 
-**Document Status:** Research Complete
-**Created:** 2025-12-02
-**Last Updated:** 2025-12-02
-**Project:** Starlink Dashboard
+**Document Status:** Research Complete **Created:** 2025-12-02 **Last Updated:**
+2025-12-02 **Project:** Starlink Dashboard
 
 ---
 
@@ -42,39 +40,12 @@ systematic refactoring.
 We will decompose large FastAPI route files by grouping related endpoints into
 separate modules, extracting shared business logic into dedicated service
 modules, and maintaining backward compatibility through careful import
-management.
 
-### Rationale
-
-1. **Separation of Concerns:** Large route files (`routes.py` at 1,047 lines,
-   `pois.py` at 1,093 lines) mix HTTP handling, business logic, and data
-   transformation. Splitting by functional domain improves readability and
-   testability.
-
-2. **FastAPI Best Practices:** The FastAPI documentation recommends organizing
-   routes into multiple routers and using dependency injection for shared
-   services.
-
-3. **Maintainability:** Smaller files (200-300 lines) are easier to understand,
-   review, and modify without introducing bugs.
-
-4. **Team Velocity:** Reduces merge conflicts when multiple developers work on
-   different API endpoints.
-
-### Alternatives Considered
-
-| Approach                     | Pros                                      | Cons                                        |
-| ---------------------------- | ----------------------------------------- | ------------------------------------------- |
-| Keep monolithic files        | No refactoring effort                     | Continues to accrue technical debt          |
-| Split by HTTP method         | Simple mechanical split                   | Breaks logical grouping of related features |
-| Full domain-driven design    | Ideal long-term architecture              | Overly complex for current project size     |
-| **Route-based (CHOSEN)**     | **Balances clarity with effort**          | **Requires careful dependency management**  |
-
-### Implementation Notes
+### Python: Implementation Notes
 
 **Target Structure for `/api/routes`:**
 
-```
+```text
 app/api/routes/
 ├── __init__.py           # Re-export routers for backward compatibility
 ├── management.py         # List, get, activate, deactivate routes
@@ -86,7 +57,7 @@ app/api/routes/
 
 **Target Structure for `/api/pois`:**
 
-```
+```text
 app/api/pois/
 ├── __init__.py           # Re-export routers
 ├── crud.py               # Create, read, update, delete POIs
@@ -99,7 +70,8 @@ app/api/pois/
 
 1. **Create new module structure** (e.g., `app/api/routes/management.py`)
 2. **Copy endpoints** to new files with router prefixes
-3. **Extract shared logic** into service layer (e.g., `app/services/route_stats.py`)
+3. **Extract shared logic** into service layer (e.g.,
+   `app/services/route_stats.py`)
 4. **Update imports** in `__init__.py` to re-export all routers
 5. **Run tests** to verify no regressions
 6. **Update main.py** to include all sub-routers
@@ -165,35 +137,35 @@ We will decompose large React components (400+ lines) by extracting state
 management and side effects into custom hooks, splitting UI sections into
 smaller sub-components, and using component composition patterns.
 
-### Rationale
+### React: Rationale
 
 1. **React Best Practices:** The React documentation emphasizes "composition
    over inheritance" and encourages extracting logic into custom hooks for
    reusability and testability.
 
-2. **Cognitive Load:** Components exceeding 300 lines become difficult to
+1. **Cognitive Load:** Components exceeding 300 lines become difficult to
    understand and modify. Splitting into focused sub-components improves
    developer experience.
 
-3. **Reusability:** Custom hooks can be shared across multiple components,
+1. **Reusability:** Custom hooks can be shared across multiple components,
    reducing code duplication.
 
-4. **Testing:** Smaller components and isolated hooks are easier to unit test.
+1. **Testing:** Smaller components and isolated hooks are easier to unit test.
 
-### Alternatives Considered
+### React: Alternatives Considered
 
-| Approach                     | Pros                                      | Cons                                        |
-| ---------------------------- | ----------------------------------------- | ------------------------------------------- |
-| Keep monolithic components   | No refactoring effort                     | Difficult to maintain and test              |
-| Full component rewrite       | Clean slate                               | High risk, breaks existing functionality    |
-| State management library     | Centralized state                         | Overkill for current complexity             |
-| **Custom hooks + composition (CHOSEN)** | **Incremental, low-risk** | **Requires discipline to avoid over-abstraction** |
+| Approach                            | Pros                       | Cons                                          |
+| ----------------------------------- | -------------------------- | --------------------------------------------- |
+| Keep monolithic components          | No refactoring effort      | Difficult to maintain and test                |
+| Full component rewrite              | Clean slate                | High risk, breaks existing functionality      |
+| State management library            | Centralized state          | Overkill for current complexity               |
+| Custom hooks + composition (CHOSEN) | Balances risk and progress | Requires discipline to avoid over-abstraction |
 
-### Implementation Notes
+### React: Implementation Notes
 
 **Target Structure for Large Components:**
 
-```
+```text
 MissionDetailPage.tsx (400+ lines)
 ↓
 MissionDetailPage.tsx (150 lines)          # Main component, layout
@@ -282,34 +254,34 @@ We will split large markdown files (1,000+ lines) into focused sub-documents
 organized by topic, maintain a centralized index with clear navigation, and use
 relative paths for internal linking.
 
-### Rationale
+### Docs: Rationale
 
 1. **Cognitive Load:** Documents exceeding 500 lines are difficult to navigate,
    even with a table of contents. Readers often miss important sections.
 
-2. **Maintenance:** Smaller documents are easier to update without introducing
+1. **Maintenance:** Smaller documents are easier to update without introducing
    inconsistencies or merge conflicts.
 
-3. **Discoverability:** A well-structured index improves documentation
+1. **Discoverability:** A well-structured index improves documentation
    discoverability for new team members.
 
-4. **Version Control:** Smaller files produce cleaner git diffs and make it
+1. **Version Control:** Smaller files produce cleaner git diffs and make it
    easier to track changes over time.
 
-### Alternatives Considered
+### Docs: Alternatives Considered
 
-| Approach                     | Pros                                      | Cons                                        |
-| ---------------------------- | ----------------------------------------- | ------------------------------------------- |
-| Single large markdown file   | Simple navigation (Ctrl+F)                | Overwhelming, hard to maintain              |
-| Wiki/separate platform       | Better search, versioning                 | Disconnected from codebase, sync issues     |
-| Docusaurus/MkDocs            | Professional documentation site           | Overkill for current needs, adds complexity |
-| **Sub-docs with index (CHOSEN)** | **Balances structure with simplicity** | **Requires consistent linking discipline** |
+| Approach                         | Pros                                   | Cons                                        |
+| -------------------------------- | -------------------------------------- | ------------------------------------------- |
+| Single large markdown file       | Simple navigation (Ctrl+F)             | Overwhelming, hard to maintain              |
+| Wiki/separate platform           | Better search, versioning              | Disconnected from codebase, sync issues     |
+| Docusaurus/MkDocs                | Professional documentation site        | Overkill for current needs, adds complexity |
+| **Sub-docs with index (CHOSEN)** | **Balances structure with simplicity** | **Requires consistent linking discipline**  |
 
-### Implementation Notes
+### Docs: Implementation Notes
 
 **Current Documentation Structure:**
 
-```
+```text
 docs/
 ├── INDEX.md                               # 20 files, ~10K lines total
 ├── design-document.md                     # Large, general architecture
@@ -321,7 +293,7 @@ docs/
 
 **Proposed Reorganized Structure:**
 
-```
+```text
 docs/
 ├── README.md                              # Project overview + quick start
 ├── INDEX.md                               # Master index with all docs
@@ -368,37 +340,54 @@ docs/
 **Table of Contents Generation:**
 
 1. **Manual TOC:** For documents < 200 lines, manually maintain TOC
-2. **Auto-generated TOC:** For documents 200-500 lines, use
-   `markdown-toc` or similar tools
+2. **Auto-generated TOC:** For documents 200-500 lines, use `markdown-toc` or
+   similar tools
 3. **Sub-document split:** For documents > 500 lines, split into multiple files
    rather than generating complex TOC
 
-**Example: Splitting a Large Document**
+#### Example: Splitting a Large Document
 
 ```markdown
 # Before: design-document.md (1,500 lines)
 
 ## 1. Introduction
+
 ## 2. Architecture
+
 ### 2.1 Backend
+
 ### 2.2 Frontend
+
 ### 2.3 Database
+
 ## 3. API Endpoints
+
 ### 3.1 Routes API
+
 ### 3.2 POIs API
+
 ## 4. Deployment
+
 ## 5. Monitoring
 
 # After: Split into focused documents
 
 ## docs/README.md (overview + quick start)
+
 ## docs/architecture/overview.md (introduction + high-level)
+
 ## docs/architecture/backend.md (section 2.1)
+
 ## docs/architecture/frontend.md (section 2.2)
+
 ## docs/architecture/database.md (section 2.3)
+
 ## docs/api/routes.md (section 3.1)
+
 ## docs/api/pois.md (section 3.2)
+
 ## docs/operations/deployment.md (section 4)
+
 ## docs/operations/monitoring.md (section 5)
 ```
 
@@ -406,13 +395,18 @@ docs/
 
 ```markdown
 <!-- Good: Descriptive link text with context -->
-For detailed API specifications, see the [Routes API documentation](../api/routes.md).
+
+For detailed API specifications, see the
+[Routes API documentation](../api/routes.md).
 
 <!-- Bad: Generic link text -->
+
 For more information, click [here](../api/routes.md).
 
 <!-- Good: Deep link to specific section -->
-Review the [ETA calculation algorithm](../features/eta-timing.md#calculation-algorithm).
+
+Review the
+[ETA calculation algorithm](../features/eta-timing.md#calculation-algorithm).
 ```
 
 **Migration Strategy:**
@@ -436,30 +430,30 @@ isolated changes with comprehensive test coverage before and after each
 refactoring step. Use feature branches with focused PRs and never refactor
 without a safety net of passing tests.
 
-### Rationale
+### Safe Refactor: Rationale
 
 1. **Risk Mitigation:** Large refactoring efforts often introduce subtle bugs
    that are difficult to trace. Incremental changes limit the blast radius.
 
-2. **Continuous Integration:** Smaller changes integrate more easily, reducing
+1. **Continuous Integration:** Smaller changes integrate more easily, reducing
    merge conflicts and enabling faster code reviews.
 
-3. **Rollback Safety:** If a refactoring introduces issues, it's easier to
+1. **Rollback Safety:** If a refactoring introduces issues, it's easier to
    revert a small change than to unwind a massive rewrite.
 
-4. **Team Confidence:** Developers are more likely to approve and merge small,
+1. **Team Confidence:** Developers are more likely to approve and merge small,
    well-tested refactorings than large, risky changes.
 
-### Alternatives Considered
+### Safe Refactor: Alternatives Considered
 
-| Approach                     | Pros                                      | Cons                                        |
-| ---------------------------- | ----------------------------------------- | ------------------------------------------- |
-| Big-bang rewrite             | Clean slate, modern patterns              | High risk, long integration time            |
-| No refactoring               | No risk                                   | Technical debt accumulates                  |
-| Opportunistic refactoring    | Low overhead                              | Inconsistent, may never complete            |
-| **Incremental + tests (CHOSEN)** | **Balances risk and progress**       | **Requires discipline and automation**      |
+| Approach                         | Pros                           | Cons                                   |
+| -------------------------------- | ------------------------------ | -------------------------------------- |
+| Big-bang rewrite                 | Clean slate, modern patterns   | High risk, long integration time       |
+| No refactoring                   | No risk                        | Technical debt accumulates             |
+| Opportunistic refactoring        | Low overhead                   | Inconsistent, may never complete       |
+| **Incremental + tests (CHOSEN)** | **Balances risk and progress** | **Requires discipline and automation** |
 
-### Implementation Notes
+### Safe Refactor: Implementation Notes
 
 **Incremental Refactoring Techniques:**
 
@@ -490,7 +484,7 @@ without a safety net of passing tests.
 
 **Refactoring Workflow:**
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ 1. IDENTIFY REFACTORING TARGET                              │
 │    - Code smell: long functions, duplicated logic, etc.     │
@@ -618,43 +612,44 @@ If a refactoring introduces production issues:
 ### Decision: Pre-Commit Hooks with CI/CD Integration
 
 We will implement automated linting and formatting using pre-commit hooks for
-local development and CI/CD checks for pull requests. Use Black for Python, Prettier for JavaScript/TypeScript/Markdown, ESLint for JS/TS, and markdownlint
+local development and CI/CD checks for pull requests. Use Black for Python,
+Prettier for JavaScript/TypeScript/Markdown, ESLint for JS/TS, and markdownlint
 for documentation.
 
-### Rationale
+### Linting: Rationale
 
 1. **Consistency:** Automated formatting eliminates style debates and ensures a
    consistent codebase.
 
-2. **Quality Gates:** Pre-commit hooks catch issues before they reach code
+1. **Quality Gates:** Pre-commit hooks catch issues before they reach code
    review, reducing review time.
 
-3. **Developer Experience:** Automatic formatting reduces cognitive load,
+1. **Developer Experience:** Automatic formatting reduces cognitive load,
    allowing developers to focus on logic rather than style.
 
-4. **CI/CD Integration:** Enforcing checks in CI prevents non-compliant code
+1. **CI/CD Integration:** Enforcing checks in CI prevents non-compliant code
    from merging.
 
 ### Alternatives Considered
 
-| Approach                     | Pros                                      | Cons                                        |
-| ---------------------------- | ----------------------------------------- | ------------------------------------------- |
-| Manual formatting            | No tooling setup required                 | Inconsistent style, wasted review time      |
-| Editor-only formatting       | Works for individual developers           | Not enforced, leads to inconsistency        |
-| CI-only checks               | Catches issues eventually                 | Slows feedback loop, wastes CI time         |
-| **Pre-commit + CI (CHOSEN)** | **Fast feedback + enforcement**           | **Requires initial setup and training**     |
+| Approach                     | Pros                            | Cons                                    |
+| ---------------------------- | ------------------------------- | --------------------------------------- |
+| Manual formatting            | No tooling setup required       | Inconsistent style, wasted review time  |
+| Editor-only formatting       | Works for individual developers | Not enforced, leads to inconsistency    |
+| CI-only checks               | Catches issues eventually       | Slows feedback loop, wastes CI time     |
+| **Pre-commit + CI (CHOSEN)** | **Fast feedback + enforcement** | **Requires initial setup and training** |
 
 ### Implementation Notes
 
 **Tool Selection:**
 
-| Language/File Type | Linter              | Formatter        | Rationale                               |
-| ------------------ | ------------------- | ---------------- | --------------------------------------- |
-| Python             | ruff (replaces flake8/pylint) | Black | Fast, modern, PEP 8 compliant     |
-| TypeScript/JS      | ESLint              | Prettier         | Industry standard, extensible           |
-| Markdown           | markdownlint        | Prettier         | Ensures documentation consistency       |
-| JSON/YAML          | -                   | Prettier         | Consistent configuration files          |
-| CSS/SCSS           | Stylelint           | Prettier         | Enforces best practices                 |
+| Language/File Type | Linter                        | Formatter | Rationale                         |
+| ------------------ | ----------------------------- | --------- | --------------------------------- |
+| Python             | ruff (replaces flake8/pylint) | Black     | Fast, modern, PEP 8 compliant     |
+| TypeScript/JS      | ESLint                        | Prettier  | Industry standard, extensible     |
+| Markdown           | markdownlint                  | Prettier  | Ensures documentation consistency |
+| JSON/YAML          | -                             | Prettier  | Consistent configuration files    |
+| CSS/SCSS           | Stylelint                     | Prettier  | Enforces best practices           |
 
 **Pre-Commit Hook Setup:**
 
@@ -674,21 +669,21 @@ pre-commit install
 # .pre-commit-config.yaml
 repos:
   # Python formatting and linting
-  - repo: https://github.com/psf/black
+  - repo: <https://github.com/psf/black>
     rev: 24.10.0
     hooks:
       - id: black
         language_version: python3.12
         args: [--line-length=100]
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
+  - repo: <https://github.com/astral-sh/ruff-pre-commit>
     rev: v0.8.0
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
 
   # JavaScript/TypeScript/Markdown formatting
-  - repo: https://github.com/pre-commit/mirrors-prettier
+  - repo: <https://github.com/pre-commit/mirrors-prettier>
     rev: v4.0.0-alpha.8
     hooks:
       - id: prettier
@@ -696,14 +691,14 @@ repos:
         args: [--config, .prettierrc]
 
   # Markdown linting
-  - repo: https://github.com/igorshubovych/markdownlint-cli
+  - repo: <https://github.com/igorshubovych/markdownlint-cli>
     rev: v0.43.0
     hooks:
       - id: markdownlint
         args: [--fix, --config, .markdownlint.json]
 
   # General file cleanup
-  - repo: https://github.com/pre-commit/pre-commit-hooks
+  - repo: <https://github.com/pre-commit/pre-commit-hooks>
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
@@ -715,7 +710,7 @@ repos:
         args: [--maxkb=500]
 
   # Python import sorting
-  - repo: https://github.com/pycqa/isort
+  - repo: <https://github.com/pycqa/isort>
     rev: 5.13.2
     hooks:
       - id: isort
@@ -799,7 +794,10 @@ ignore = [
   },
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_" }
+    ],
     "@typescript-eslint/explicit-module-boundary-types": "off"
   },
   "settings": {
@@ -841,7 +839,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
       - name: Install dependencies
         run: |
           pip install black ruff
@@ -856,7 +854,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
       - name: Install dependencies
         run: cd frontend/mission-planner && npm ci
       - name: Run ESLint
@@ -876,7 +874,7 @@ jobs:
 
 **Handling Linting Violations in Existing Code:**
 
-**Option 1: Fix All at Once (Recommended for Small Codebases)**
+#### Option 1: Fix All at Once (Recommended for Small Codebases)
 
 ```bash
 # Format all Python files
@@ -893,12 +891,12 @@ git add .
 git commit -m "style: apply automated formatting to entire codebase"
 ```
 
-**Option 2: Incremental Fixing (Recommended for Large Codebases)**
+#### Option 2: Incremental Fixing (Recommended for Large Codebases)
 
 ```yaml
 # .pre-commit-config.yaml (temporary configuration)
 repos:
-  - repo: https://github.com/psf/black
+  - repo: <https://github.com/psf/black>
     rev: 24.10.0
     hooks:
       - id: black
@@ -907,6 +905,7 @@ repos:
 ```
 
 Strategy:
+
 - Enable pre-commit hooks for new changes only
 - Create a backlog of "fix formatting" tasks
 - Fix one module/directory per PR
@@ -916,8 +915,8 @@ Strategy:
 
 1. **Onboarding Document:** Create `docs/development/formatting-guide.md`
 2. **Team Meeting:** 15-minute demo of pre-commit hooks
-3. **PR Template:** Add checklist item: "[ ] Code is formatted (pre-commit
-   hooks passed)"
+3. **PR Template:** Add checklist item: "[ ] Code is formatted (pre-commit hooks
+   passed)"
 4. **Grace Period:** Give team 2 weeks to adapt before enforcing CI checks
 
 **Bypassing Hooks (Emergency Only):**
@@ -931,12 +930,12 @@ git commit --no-verify -m "emergency fix"
 
 **Common Issues and Solutions:**
 
-| Issue                        | Solution                                  |
-| ---------------------------- | ----------------------------------------- |
-| Pre-commit hooks slow        | Reduce scope to only changed files        |
-| Black and ruff conflict      | Use `--profile black` for isort/ruff      |
-| Prettier breaks markdown     | Configure `proseWrap: always` in `.prettierrc` |
-| ESLint too strict            | Customize rules in `.eslintrc.json`       |
+| Issue                    | Solution                                       |
+| ------------------------ | ---------------------------------------------- |
+| Pre-commit hooks slow    | Reduce scope to only changed files             |
+| Black and ruff conflict  | Use `--profile black` for isort/ruff           |
+| Prettier breaks markdown | Configure `proseWrap: always` in `.prettierrc` |
+| ESLint too strict        | Customize rules in `.eslintrc.json`            |
 
 ---
 
@@ -1028,13 +1027,12 @@ git commit --no-verify -m "emergency fix"
 ### Official Documentation
 
 - **FastAPI Best Practices:**
-  https://fastapi.tiangolo.com/tutorial/bigger-applications/
-- **React Component Design:**
-  https://react.dev/learn/thinking-in-react
-- **Black Formatter:** https://black.readthedocs.io/
-- **Ruff Linter:** https://docs.astral.sh/ruff/
-- **Prettier:** https://prettier.io/docs/en/
-- **Pre-Commit Framework:** https://pre-commit.com/
+  <https://fastapi.tiangolo.com/tutorial/bigger-applications/>
+- **React Component Design:** <https://react.dev/learn/thinking-in-react>
+- **Black Formatter:** <https://black.readthedocs.io/>
+- **Ruff Linter:** <https://docs.astral.sh/ruff/>
+- **Prettier:** <https://prettier.io/docs/en/>
+- **Pre-Commit Framework:** <https://pre-commit.com/>
 
 ### Books and Articles
 
@@ -1045,11 +1043,11 @@ git commit --no-verify -m "emergency fix"
 
 ### Tools
 
-- **pytest:** https://docs.pytest.org/ (Python testing)
-- **React Testing Library:** https://testing-library.com/react (React testing)
-- **markdownlint:** https://github.com/DavidAnson/markdownlint (Markdown
+- **pytest:** <https://docs.pytest.org/> (Python testing)
+- **React Testing Library:** <https://testing-library.com/react> (React testing)
+- **markdownlint:** <https://github.com/DavidAnson/markdownlint> (Markdown
   linting)
-- **Conventional Commits:** https://www.conventionalcommits.org/
+- **Conventional Commits:** <https://www.conventionalcommits.org/>
 
 ---
 
@@ -1057,7 +1055,7 @@ git commit --no-verify -m "emergency fix"
 
 ### Cheat Sheet: Refactoring Decision Tree
 
-```
+```text
 Is the file > 300 lines?
 ├─ YES → Consider splitting
 │   ├─ Python API file? → Route-based decomposition
@@ -1100,7 +1098,7 @@ cd frontend/mission-planner && npm test
 
 **Refactoring PR Title Format:**
 
-```
+```text
 refactor(scope): brief description
 
 Examples:
@@ -1141,4 +1139,4 @@ Examples:
 
 ---
 
-**Document End**
+Document End

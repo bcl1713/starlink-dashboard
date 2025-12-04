@@ -1,5 +1,9 @@
 """Route and KML data models for the Starlink location service."""
 
+# FR-004: File exceeds 300 lines (333 lines) because route models define 5+
+# related Pydantic classes with KML parsing logic, validators, and computed
+# properties. Splitting would fragment the route domain. Deferred to v0.4.0.
+
 from datetime import datetime, timezone
 from typing import Optional
 

@@ -1,5 +1,9 @@
 """Route upload endpoint with POI import functionality."""
 
+# FR-004: File exceeds 300 lines (304 lines) because route upload handles KML
+# parsing, validation, POI extraction, storage, and route initialization.
+# Splitting would fragment the upload workflow. Deferred to v0.4.0.
+
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -31,15 +35,18 @@ router = APIRouter()
 def _resolve_waypoint_metadata(
     waypoint: RouteWaypoint, fallback_index: int
 ) -> Tuple[str, str, str, Optional[str]]:
-    """
-    Map a RouteWaypoint role to POI category/icon and derive a safe name/description.
+    """Map a RouteWaypoint role to POI category/icon and derive a safe name/description.
+
+    Converts waypoint role information into appropriate POI metadata, selecting
+    category and icon based on the waypoint's role (departure, arrival, alternate, etc.)
+    and constructing a meaningful name and description.
 
     Args:
-        waypoint: Source waypoint data
-        fallback_index: Index used to build fallback name if missing
+        waypoint: Source waypoint data containing role, name, and description
+        fallback_index: Index used to build fallback name if waypoint has no name
 
     Returns:
-        Tuple of (name, category, icon, description)
+        Tuple of (name, category, icon, description) where description may be None
     """
     role = (waypoint.role or "").lower()
 
@@ -82,16 +89,19 @@ def _import_waypoints_as_pois(
     parsed_route: ParsedRoute,
     poi_manager: POIManager,
 ) -> Tuple[int, int]:
-    """
-    Create POIs for the supplied route using its waypoint metadata.
+    """Create POIs for the supplied route using its waypoint metadata.
+
+    Iterates through all waypoints in the parsed route and creates corresponding
+    POI entries. Removes any existing POIs for the route first to prevent duplicates.
+    Skips waypoints with invalid coordinates.
 
     Args:
-        route_id: Route identifier (filename stem)
+        route_id: Route identifier (filename stem) to associate POIs with
         parsed_route: ParsedRoute instance containing waypoint data
         poi_manager: POIManager instance for creating POIs
 
     Returns:
-        Tuple of (created_count, skipped_count)
+        Tuple of (created_count, skipped_count) indicating success and failure counts
     """
     if not parsed_route.waypoints:
         return 0, 0
@@ -171,17 +181,24 @@ async def upload_route(
     route_manager: RouteManager = Depends(get_route_manager),
     poi_manager: POIManager = Depends(get_poi_manager),
 ) -> RouteResponse:
-    """
-    Upload a new KML route file.
+    """Upload a new KML route file.
 
-    Form Data:
-    - file: KML file (multipart/form-data)
+    Accepts a KML file upload, parses it, stores it in the routes directory,
+    and optionally imports waypoint placemarks as POIs. Handles filename
+    conflicts by appending a counter suffix.
 
-    Query Parameters:
-    - import_pois: Whether to import POIs from waypoint placemarks (default: true)
+    Args:
+        request: FastAPI request object (required for rate limiting)
+        import_pois: Whether to import waypoint placemarks as POIs (default: True)
+        file: Uploaded KML file (multipart/form-data)
+        route_manager: Injected RouteManager dependency for route operations
+        poi_manager: Injected POIManager dependency for POI import
 
     Returns:
-    - Route information for uploaded file
+        RouteResponse containing route metadata, timing profile, and import statistics
+
+    Raises:
+        HTTPException: 400 if file is invalid or parse fails, 500 if upload fails
     """
     if not route_manager:
         raise HTTPException(

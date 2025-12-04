@@ -12,7 +12,17 @@ router = APIRouter()
 
 
 def _format_duration(seconds: float) -> str:
-    """Format duration in seconds to human-readable format."""
+    """Format duration in seconds to human-readable HH:MM:SS format.
+
+    Converts a duration in seconds to a formatted string in the format
+    HH:MM:SS. Returns "Unknown" for negative or None values.
+
+    Args:
+        seconds: Duration in seconds to format
+
+    Returns:
+        Formatted string in HH:MM:SS format, or "Unknown" if invalid
+    """
     if not seconds or seconds < 0:
         return "Unknown"
     hours = int(seconds // 3600)
@@ -25,13 +35,22 @@ def _format_duration(seconds: float) -> str:
 async def get_active_route_timing(
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
-    """
-    Get timing profile data for the currently active route.
+    """Get timing profile data for the currently active route.
+
+    Retrieves comprehensive timing information including planned and actual
+    departure/arrival times, flight status, and duration calculations for
+    the currently active route.
+
+    Args:
+        route_manager: Injected RouteManager dependency for route operations
 
     Returns:
-    - Dictionary with timing profile information (departure_time, arrival_time,
-      total_duration, etc.)
-    - Empty dict if no route is active or route lacks timing data
+        Dictionary containing timing profile with keys including has_timing_data,
+        departure_time, arrival_time, flight_status, total_expected_duration_seconds.
+        Returns minimal dict with has_timing_data=False if no active route.
+
+    Raises:
+        HTTPException: 500 if route manager not initialized
     """
     if not route_manager:
         raise HTTPException(

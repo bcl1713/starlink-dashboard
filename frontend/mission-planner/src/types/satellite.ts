@@ -17,16 +17,16 @@ export interface XBandTransition {
 }
 
 export interface KaOutage {
-  id: string;                      // Unique identifier (required)
-  start_time: string;              // ISO 8601 datetime string
-  duration_seconds: number;        // Duration in seconds (required)
+  id: string; // Unique identifier (required)
+  start_time: string; // ISO 8601 datetime string
+  duration_seconds: number; // Duration in seconds (required)
 }
 
 export interface KuOutageOverride {
-  id: string;                      // Unique identifier (required)
-  start_time: string;              // ISO 8601 datetime string
-  duration_seconds: number;        // Duration in seconds (required)
-  reason?: string;                 // Optional reason for outage
+  id: string; // Unique identifier (required)
+  start_time: string; // ISO 8601 datetime string
+  duration_seconds: number; // Duration in seconds (required)
+  reason?: string; // Optional reason for outage
 }
 
 export interface SatelliteConfig {

@@ -43,7 +43,8 @@ export function useAddLeg(missionId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (leg: Partial<MissionLeg>) => missionsApi.addLeg(missionId, leg),
+    mutationFn: (leg: Partial<MissionLeg>) =>
+      missionsApi.addLeg(missionId, leg),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
@@ -67,7 +68,8 @@ export function useUpdateLeg(missionId: string, legId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (leg: MissionLeg) => missionsApi.updateLeg(missionId, legId, leg),
+    mutationFn: (leg: MissionLeg) =>
+      missionsApi.updateLeg(missionId, legId, leg),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
@@ -82,7 +84,9 @@ export function useActivateLeg() {
     mutationFn: ({ missionId, legId }: { missionId: string; legId: string }) =>
       missionsApi.activateLeg(missionId, legId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['missions', variables.missionId] });
+      queryClient.invalidateQueries({
+        queryKey: ['missions', variables.missionId],
+      });
     },
   });
 }

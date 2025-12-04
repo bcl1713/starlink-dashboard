@@ -15,7 +15,7 @@ from app.models.route import (
     RouteWaypoint,
 )
 from app.services.eta_calculator import ETACalculator
-from app.services.flight_state_manager import get_flight_state_manager
+from app.services.flight_state import get_flight_state_manager
 
 
 def _build_large_route(point_count: int = 1200) -> ParsedRoute:

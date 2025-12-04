@@ -1,5 +1,9 @@
 """Route ETA calculation endpoints."""
 
+# FR-004: File exceeds 300 lines (311 lines) because route ETA API combines
+# multiple ETA calculation modes, status filtering, and distance metrics.
+# Splitting would fragment related ETA calculation endpoints. Deferred to v0.4.0.
+
 from fastapi import APIRouter, HTTPException, Query, Depends, status
 
 from app.core.logging import get_logger
@@ -27,19 +31,25 @@ async def calculate_eta_to_waypoint(
     ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
-    """
-    Calculate estimated time of arrival (ETA) to a specific waypoint.
+    """Calculate estimated time of arrival (ETA) to a specific waypoint.
 
-    Path Parameters:
-    - route_id: Route identifier
-    - waypoint_index: Index of the waypoint in the route
+    Computes the ETA from current position to a specific waypoint on the route
+    using route-aware calculations that account for the path along the route.
 
-    Query Parameters:
-    - current_position_lat: Current latitude
-    - current_position_lon: Current longitude
+    Args:
+        route_id: Unique identifier of the route
+        waypoint_index: Zero-based index of the target waypoint
+        current_position_lat: Current latitude in decimal degrees
+        current_position_lon: Current longitude in decimal degrees
+        route_manager: Injected RouteManager dependency for route operations
 
     Returns:
-    - Dictionary with waypoint info and ETA details
+        Dictionary containing waypoint details, eta_seconds, distance_meters,
+        and route progress information
+
+    Raises:
+        HTTPException: 404 if route not found, 400 if waypoint index invalid,
+                      500 if calculation fails
     """
     if not route_manager:
         raise HTTPException(
@@ -92,20 +102,25 @@ async def calculate_eta_to_location(
     ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
-    """
-    Calculate estimated time of arrival (ETA) to an arbitrary location.
+    """Calculate estimated time of arrival (ETA) to an arbitrary location.
 
-    Path Parameters:
-    - route_id: Route identifier
+    Computes ETA from current position to any specified coordinate using
+    route-aware calculation that projects the location onto the route path.
 
-    Query Parameters:
-    - latitude: Target latitude
-    - longitude: Target longitude
-    - current_position_lat: Current latitude
-    - current_position_lon: Current longitude
+    Args:
+        route_id: Unique identifier of the route
+        latitude: Target latitude in decimal degrees
+        longitude: Target longitude in decimal degrees
+        current_position_lat: Current latitude in decimal degrees
+        current_position_lon: Current longitude in decimal degrees
+        route_manager: Injected RouteManager dependency for route operations
 
     Returns:
-    - Dictionary with location info and ETA details
+        Dictionary containing target location details, eta_seconds, distance_meters,
+        and projected route information
+
+    Raises:
+        HTTPException: 404 if route not found, 500 if calculation fails
     """
     if not route_manager:
         raise HTTPException(
@@ -148,18 +163,24 @@ async def get_route_progress(
     ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
-    """
-    Get route progress metrics including distance traveled and ETA to destination.
+    """Get route progress metrics including distance traveled and ETA to destination.
 
-    Path Parameters:
-    - route_id: Route identifier
+    Calculates comprehensive progress information including percentage complete,
+    distance traveled, distance remaining, current waypoint, and ETA to final
+    destination.
 
-    Query Parameters:
-    - current_position_lat: Current latitude
-    - current_position_lon: Current longitude
+    Args:
+        route_id: Unique identifier of the route
+        current_position_lat: Current latitude in decimal degrees
+        current_position_lon: Current longitude in decimal degrees
+        route_manager: Injected RouteManager dependency for route operations
 
     Returns:
-    - Dictionary with progress metrics
+        Dictionary with progress_percent, distance_traveled_meters,
+        distance_remaining_meters, current_waypoint_index, and eta_to_destination_seconds
+
+    Raises:
+        HTTPException: 404 if route not found, 500 if calculation fails
     """
     if not route_manager:
         raise HTTPException(
@@ -198,18 +219,25 @@ async def get_live_mode_active_route_eta(
     ),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> dict:
-    """
-    Get ETA calculations for the active route in live mode.
+    """Get ETA calculations for the active route in live mode.
 
-    Useful for real-time position updates from Starlink terminal.
+    Designed for real-time position updates from Starlink terminal. Provides
+    comprehensive route progress, timing profile, and next waypoint ETA
+    information for the currently active route.
 
-    Query Parameters:
-    - current_position_lat: Current latitude
-    - current_position_lon: Current longitude
-    - current_speed_knots: Current speed in knots (default: 500)
+    Args:
+        current_position_lat: Current latitude in decimal degrees
+        current_position_lon: Current longitude in decimal degrees
+        current_speed_knots: Current speed in knots (default: 500.0)
+        route_manager: Injected RouteManager dependency for route operations
 
     Returns:
-    - Dictionary with ETA to next waypoint, remaining distance, and timing info
+        Dictionary with has_active_route flag, route_name, current_position,
+        progress metrics, timing_profile, and next_waypoint_eta. Returns
+        minimal dict with has_active_route=False if no route is active.
+
+    Raises:
+        HTTPException: 500 if calculation fails or manager not initialized
     """
     if not route_manager:
         raise HTTPException(

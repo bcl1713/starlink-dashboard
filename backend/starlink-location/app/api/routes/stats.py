@@ -21,14 +21,20 @@ async def get_route_stats(
     route_id: str,
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> RouteStatsResponse:
-    """
-    Get statistics for a specific route.
+    """Get statistics for a specific route.
 
-    Path Parameters:
-    - route_id: Route identifier
+    Calculates and returns key statistics including total distance, point count,
+    and geographic bounding box for the specified route.
+
+    Args:
+        route_id: Unique identifier of the route to analyze
+        route_manager: Injected RouteManager dependency for route operations
 
     Returns:
-    - Route statistics (distance, point count, bounds)
+        RouteStatsResponse with distance metrics, point count, and coordinate bounds
+
+    Raises:
+        HTTPException: 404 if route not found, 500 if manager not initialized
     """
     if not route_manager:
         raise HTTPException(
