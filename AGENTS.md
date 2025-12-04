@@ -27,10 +27,10 @@ docker compose build           # Build images (use --no-cache to force rebuild)
 
 ### Access Points
 
-- **Grafana:** <<http://localhost:3000>> (default: admin/admin)
-- **Prometheus:** <<http://localhost:9090>>
-- **Backend health:** <<http://localhost:8000/health>>
-- **Prometheus metrics:** <<http://localhost:8000/metrics>>
+- **Grafana:** <http://localhost:3000> (default: admin/admin)
+- **Prometheus:** <http://localhost:9090>
+- **Backend health:** <http://localhost:8000/health>
+- **Prometheus metrics:** <http://localhost:8000/metrics>
 
 ## Configuration
 
