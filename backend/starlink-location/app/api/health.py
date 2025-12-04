@@ -170,7 +170,7 @@ async def health():
         # Attach flight status metadata
         status_snapshot = None
         try:
-            from app.services.flight_state_manager import get_flight_state_manager
+            from app.services.flight_state import get_flight_state_manager
 
             flight_state_manager = get_flight_state_manager()
             status_snapshot = flight_state_manager.get_status()

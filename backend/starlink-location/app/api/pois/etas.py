@@ -228,7 +228,7 @@ async def get_pois_with_etas(
 
         # Calculate ETA and distance for each POI
         from app.core.eta_service import get_eta_calculator
-        from app.services.flight_state_manager import get_flight_state_manager
+        from app.services.flight_state import get_flight_state_manager
         from app.models.flight_status import ETAMode, FlightPhase
 
         eta_calc = get_eta_calculator()

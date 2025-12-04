@@ -1,5 +1,5 @@
 """POI management service."""
 
-from app.services.poi_manager import POIManager
+from app.services.poi.manager import POIManager
 
 __all__ = ["POIManager"]

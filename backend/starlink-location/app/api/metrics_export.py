@@ -106,7 +106,7 @@ async def get_metrics(
 
             status_snapshot = None
             try:
-                from app.services.flight_state_manager import get_flight_state_manager
+                from app.services.flight_state import get_flight_state_manager
 
                 status_snapshot = get_flight_state_manager().get_status()
             except Exception:

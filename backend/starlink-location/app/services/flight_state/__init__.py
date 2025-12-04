@@ -1,6 +1,6 @@
 """Flight state management service."""
 
-from app.services.flight_state_manager import (
+from app.services.flight_state.manager import (
     FlightStateManager,
     get_flight_state_manager,
 )

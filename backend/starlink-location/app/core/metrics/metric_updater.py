@@ -149,7 +149,7 @@ def update_metrics_from_telemetry(
     flight_state = None
     flight_status = None
     try:
-        from app.services.flight_state_manager import get_flight_state_manager
+        from app.services.flight_state import get_flight_state_manager
 
         flight_state = get_flight_state_manager()
 
@@ -185,7 +185,7 @@ def update_metrics_from_telemetry(
     try:
         if flight_status is None:
             if flight_state is None:
-                from app.services.flight_state_manager import get_flight_state_manager
+                from app.services.flight_state import get_flight_state_manager
 
                 flight_state = get_flight_state_manager()
             flight_status = flight_state.get_status()
@@ -279,7 +279,7 @@ def update_metrics_from_telemetry(
 
         if flight_status is None:
             if flight_state is None:
-                from app.services.flight_state_manager import get_flight_state_manager
+                from app.services.flight_state import get_flight_state_manager
 
                 flight_state = get_flight_state_manager()
             flight_status = flight_state.get_status()

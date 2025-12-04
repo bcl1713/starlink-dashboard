@@ -19,7 +19,7 @@ from app.mission.storage import (
     save_mission,
     load_mission_timeline,
 )
-from app.services.flight_state_manager import get_flight_state_manager
+from app.services.flight_state import get_flight_state_manager
 from app.core.metrics import (
     update_mission_active_metric,
     clear_mission_metrics,

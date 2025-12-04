@@ -8,7 +8,7 @@ from app.models.flight_status import (
     FlightStatusResponse,
     ManualFlightPhaseTransition,
 )
-from app.services.flight_state_manager import get_flight_state_manager
+from app.services.flight_state import get_flight_state_manager
 
 router = APIRouter(prefix="/api/flight-status", tags=["flight-status"])
 
