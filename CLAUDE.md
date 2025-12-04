@@ -46,11 +46,28 @@ rebuilds images without layer caching.
 - `PROMETHEUS_RETENTION=1y` (~2.4 GB)
 - `GRAFANA_ADMIN_PASSWORD=admin`
 
-**Module Paths:**
+**Module Paths (Refactored - Phase 001-codebase-cleanup):**
 
 - Backend: `backend/starlink-location/` (main service)
-- Refactored modules: `backend/starlink-location/app/api/`, `app/services/`,
-  `app/mission/`, etc.
+- API Layer:
+  - Routes: `app/api/routes/` (management, upload, download, stats, eta,
+    timing, cache)
+  - POIs: `app/api/pois/` (crud, etas, stats, helpers)
+  - UI: `app/api/ui/` (routes, templates)
+- Mission Layer:
+  - Routes: `app/mission/routes/` (missions, legs, waypoints, operations)
+  - Timeline: `app/mission/timeline_builder/` (calculator, state,
+    validators)
+  - Exporter: `app/mission/exporter/` (formatting, excel_utils,
+    transport_utils)
+  - Package: `app/mission/package/` (mission export/import)
+- Services:
+  - KML Parser: `app/services/kml/` (parser, geometry, validators)
+  - ETA: `app/services/eta/` (core calculations, bearing, distance)
+  - Route ETA: `app/services/route_eta/` (route-specific timing)
+  - POI Manager: `app/services/poi_manager.py` (consolidated)
+  - Flight State: `app/services/flight_state_manager.py` (flight tracking)
+- Core: `app/core/metrics/` (Prometheus metrics)
 - Config: `monitoring/prometheus/`, `monitoring/grafana/`
 - Data: `/data/routes/` (KML files), `/data/sim_routes/` (simulator)
 
@@ -125,8 +142,8 @@ kebab-case (poi-management-plan.md). No underscores. See
 `.claude/NAMING-CONVENTIONS.md`.
 
 **File Size:** Target 300 lines max per file (FR-004 justification required if
-exceeded). Python 70%+ compliance (80/113 files), TypeScript 100% (52/52),
-Markdown 100% (60+).
+exceeded). Phase 001-codebase-cleanup: 88-92% backend compliance (23-24 of 26),
+100% frontend (3/3), 100% documentation refactored into subdirectories.
 
 **Type Safety:** Python (mypy strict), TypeScript (strict mode). All refactored
 code fully typed and documented.
