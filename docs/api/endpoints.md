@@ -11,9 +11,10 @@
 3. [Metrics Endpoints](#metrics-endpoints)
 4. [Configuration Endpoints](#configuration-endpoints)
 5. [POI Management Endpoints](#poi-management-endpoints)
-6. [Route & Geographic Endpoints](#route--geographic-endpoints)
-7. [ETA Route Timing Endpoints](#eta-route-timing-endpoints)
-8. [UI Endpoints](#ui-endpoints)
+6. [Flight Status Endpoints](#flight-status-endpoints)
+7. [Route & Geographic Endpoints](#route--geographic-endpoints)
+8. [ETA Route Timing Endpoints](#eta-route-timing-endpoints)
+9. [UI Endpoints](#ui-endpoints)
 
 ---
 
@@ -126,7 +127,7 @@ with Prometheus scraper configuration.
 
 **Response:** Text format (sample):
 
-```
+```text
 # HELP starlink_dish_latitude_degrees Dish latitude in decimal degrees
 # TYPE starlink_dish_latitude_degrees gauge
 starlink_dish_latitude_degrees 40.7128
@@ -492,6 +493,189 @@ Delete a POI.
 - `500 Internal Server Error` - Deletion error
 
 **Use Case:** POI removal, cleanup operations.
+
+---
+
+## Flight Status Endpoints
+
+Flight status endpoints manage the current flight phase (pre-departure, in-flight,
+or post-arrival) and control ETA mode (anticipated vs. estimated). These
+endpoints are essential for integration with Grafana dashboards and route
+tracking systems.
+
+### GET `/api/flight-status`
+
+Get the current flight status including phase, ETA mode, countdowns, and route metadata.
+
+**Description:** Returns comprehensive flight state information including current
+phase, ETA calculation mode, active route context, timing information, and
+countdown timers.
+
+**Response:**
+
+```json
+{
+  "phase": "in_flight",
+  "eta_mode": "estimated",
+  "active_route_id": "route-001",
+  "active_route_name": "Cross-country Route",
+  "has_timing_data": true,
+  "scheduled_departure_time": "2025-12-03T14:00:00Z",
+  "scheduled_arrival_time": "2025-12-03T18:30:00Z",
+  "departure_time": "2025-12-03T14:05:00Z",
+  "arrival_time": null,
+  "time_until_departure_seconds": null,
+  "time_since_departure_seconds": 300
+}
+```
+
+**Status Codes:**
+
+- `200 OK` - Flight status retrieved
+- `500 Internal Server Error` - Cannot retrieve status
+
+**Flight Phases:**
+
+- `pre_departure` - Flight not yet started (uses `anticipated` ETA mode)
+- `in_flight` - Flight is active (uses `estimated` ETA mode)
+- `post_arrival` - Flight has completed
+
+**Use Case:** Grafana dashboard updates, flight phase monitoring, ETA mode verification.
+
+---
+
+### POST `/api/flight-status/transition`
+
+Manually transition to a new flight phase.
+
+**Description:** Allows manual control of the flight state machine. Useful for
+testing, correcting automatic detection errors, or triggering transitions that
+don't depend on timing.
+
+**Request Body:**
+
+```json
+{
+  "phase": "in_flight",
+  "reason": "Manual test transition"
+}
+```
+
+**Response:** Current flight status (same as GET `/api/flight-status`)
+
+**Status Codes:**
+
+- `200 OK` - Transition successful
+- `400 Bad Request` - Invalid phase transition
+- `500 Internal Server Error` - Transition error
+
+**Valid Transitions:**
+
+- `pre_departure` → `in_flight` → `post_arrival`
+- Invalid transitions are rejected
+
+**Use Case:** Testing, state machine verification, error recovery.
+
+---
+
+### POST `/api/flight-status/depart`
+
+Manually trigger departure, transitioning to IN_FLIGHT phase.
+
+**Description:** Forces the flight into IN_FLIGHT phase with an optional
+departure timestamp. Automatically switches ETA mode from `anticipated` to
+`estimated`.
+
+**Request Body (Optional):**
+
+```json
+{
+  "timestamp": "2025-12-03T14:05:00Z",
+  "reason": "Manual departure trigger for testing"
+}
+```
+
+**Response:** Current flight status (same as GET `/api/flight-status`)
+
+**Status Codes:**
+
+- `200 OK` - Departure triggered successfully
+- `400 Bad Request` - Flight already in-flight or post-arrival
+- `500 Internal Server Error` - Departure error
+
+**Behavior:**
+
+- Sets `phase` to `in_flight`
+- Switches `eta_mode` to `estimated`
+- Records departure timestamp if provided
+- Clears `time_until_departure_seconds`
+- Initializes `time_since_departure_seconds`
+
+**Use Case:** Manual flight start triggers, simulation testing, recovery from
+detection failures.
+
+---
+
+### POST `/api/flight-status/arrive`
+
+Manually trigger arrival, transitioning to POST_ARRIVAL phase.
+
+**Description:** Forces the flight into POST_ARRIVAL phase with an optional
+arrival timestamp. Freezes timing calculations and metrics.
+
+**Request Body (Optional):**
+
+```json
+{
+  "timestamp": "2025-12-03T18:30:00Z",
+  "reason": "Manual arrival trigger for testing"
+}
+```
+
+**Response:** Current flight status (same as GET `/api/flight-status`)
+
+**Status Codes:**
+
+- `200 OK` - Arrival triggered successfully
+- `400 Bad Request` - Flight already post-arrival
+- `500 Internal Server Error` - Arrival error
+
+**Behavior:**
+
+- Sets `phase` to `post_arrival`
+- Records arrival timestamp if provided
+- Freezes all timing metrics
+- Disables further phase transitions until reset
+
+**Use Case:** Manual flight completion, simulation testing, metrics finalization.
+
+---
+
+### POST `/api/flight-status`
+
+Reset flight status to PRE_DEPARTURE phase and clear timing metadata.
+
+**Description:** Resets the entire flight state to initial conditions. Useful
+for starting a new mission or clearing test data.
+
+**Request Body:** Empty
+
+**Response:** Current flight status (same as GET `/api/flight-status`)
+
+**Status Codes:**
+
+- `200 OK` - Reset successful
+- `500 Internal Server Error` - Reset error
+
+**Behavior:**
+
+- Sets `phase` to `pre_departure`
+- Switches `eta_mode` to `anticipated`
+- Clears all timing information
+- Resets all countdown timers
+- Allows new transitions
+
+**Use Case:** Mission reset, test cleanup, state machine initialization.
 
 ---
 
@@ -907,6 +1091,51 @@ including:
 
 ### cURL Examples
 
+**Get Flight Status:**
+
+```bash
+curl http://localhost:8000/api/flight-status | jq .
+```
+
+**Trigger Departure:**
+
+```bash
+curl -X POST http://localhost:8000/api/flight-status/depart \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp": "2025-12-03T14:05:00Z",
+    "reason": "Manual departure trigger"
+  }'
+```
+
+**Trigger Arrival:**
+
+```bash
+curl -X POST http://localhost:8000/api/flight-status/arrive \
+  -H "Content-Type: application/json" \
+  -d '{
+    "timestamp": "2025-12-03T18:30:00Z",
+    "reason": "Manual arrival trigger"
+  }'
+```
+
+**Transition Flight Phase:**
+
+```bash
+curl -X POST http://localhost:8000/api/flight-status/transition \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phase": "in_flight",
+    "reason": "Manual test transition"
+  }'
+```
+
+**Reset Flight Status:**
+
+```bash
+curl -X POST http://localhost:8000/api/flight-status
+```
+
 **Get Health Status:**
 
 ```bash
@@ -954,6 +1183,37 @@ curl -X POST http://localhost:8000/api/config \
 
 ```python
 import requests
+
+# Get flight status
+response = requests.get('http://localhost:8000/api/flight-status')
+flight_status = response.json()
+print(f"Phase: {flight_status['phase']}")
+print(f"ETA Mode: {flight_status['eta_mode']}")
+print(f"Active Route: {flight_status['active_route_name']}")
+
+# Trigger departure
+response = requests.post(
+    'http://localhost:8000/api/flight-status/depart',
+    json={
+        'timestamp': '2025-12-03T14:05:00Z',
+        'reason': 'Manual departure'
+    }
+)
+print(f"Phase after departure: {response.json()['phase']}")
+
+# Trigger arrival
+response = requests.post(
+    'http://localhost:8000/api/flight-status/arrive',
+    json={
+        'timestamp': '2025-12-03T18:30:00Z',
+        'reason': 'Manual arrival'
+    }
+)
+print(f"Phase after arrival: {response.json()['phase']}")
+
+# Reset flight status
+response = requests.post('http://localhost:8000/api/flight-status')
+print(f"Phase after reset: {response.json()['phase']}")
 
 # Get current status
 response = requests.get('http://localhost:8000/api/status')
