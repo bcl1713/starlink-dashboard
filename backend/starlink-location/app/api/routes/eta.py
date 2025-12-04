@@ -1,5 +1,9 @@
 """Route ETA calculation endpoints."""
 
+# FR-004: File exceeds 300 lines (311 lines) because route ETA API combines
+# multiple ETA calculation modes, status filtering, and distance metrics.
+# Splitting would fragment related ETA calculation endpoints. Deferred to v0.4.0.
+
 from fastapi import APIRouter, HTTPException, Query, Depends, status
 
 from app.core.logging import get_logger

@@ -1,5 +1,10 @@
 """Flight state management service with automatic phase detection and transition."""
 
+# FR-004: File exceeds 300 lines (583 lines) because flight state management
+# coordinates phase transitions, ETA mode switching, file persistence, and event
+# callbacks. Splitting would fragment related state logic across multiple modules.
+# Deferred to v0.4.0.
+
 import logging
 import threading
 from datetime import datetime, timezone

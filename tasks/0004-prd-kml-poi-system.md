@@ -1,9 +1,7 @@
 # PRD: KML Route Loader & POI System
 
-**Phase:** 4
-**Feature Name:** KML Route Loader & POI System
-**Created:** 2025-10-23
-**Status:** Draft
+**Phase:** 4 **Feature Name:** KML Route Loader & POI System **Created:**
+2025-10-23 **Status:** Draft
 
 ---
 
@@ -33,15 +31,15 @@ calculations.
 
 1. **Support KML route uploads** for trajectory visualization on Grafana map
    panels
-2. **Enable POI definition** with labels, icons, and optional metadata
+1. **Enable POI definition** with labels, icons, and optional metadata
    (categories, descriptions)
-3. **Calculate and expose real-time ETA and distance metrics** for all defined
+1. **Calculate and expose real-time ETA and distance metrics** for all defined
    POIs
-4. **Support multiple routes** with leg-based selection (e.g., "Day 1", "Day 2",
+1. **Support multiple routes** with leg-based selection (e.g., "Day 1", "Day 2",
    "Return Trip")
-5. **Integrate with simulation mode** so simulated positions can follow uploaded
+1. **Integrate with simulation mode** so simulated positions can follow uploaded
    routes with realistic deviations
-6. **Serve route and POI data** in GeoJSON format for Grafana consumption
+1. **Serve route and POI data** in GeoJSON format for Grafana consumption
 
 ---
 
@@ -49,60 +47,48 @@ calculations.
 
 ### 3.1 Route Management
 
-**As a** mobile Starlink operator,
-**I want to** upload a KML file containing my planned route,
-**So that** I can see my intended path overlaid on the live map and compare it
-to my actual trajectory.
+**As a** mobile Starlink operator, **I want to** upload a KML file containing my
+planned route, **So that** I can see my intended path overlaid on the live map
+and compare it to my actual trajectory.
 
-**As a** user planning a multi-day trip,
-**I want to** upload multiple KML routes and select which one is active for the
-current leg,
-**So that** I can track different segments of my journey separately.
+**As a** user planning a multi-day trip, **I want to** upload multiple KML
+routes and select which one is active for the current leg, **So that** I can
+track different segments of my journey separately.
 
 ### 3.2 POI Tracking
 
-**As a** user,
-**I want to** define Points of Interest (destinations, waypoints, fuel stops,
-etc.),
-**So that** I can see how far away they are and when I'll arrive.
+**As a** user, **I want to** define Points of Interest (destinations, waypoints,
+fuel stops, etc.), **So that** I can see how far away they are and when I'll
+arrive.
 
-**As a** user,
-**I want to** assign icons and categories to my POIs,
-**So that** I can quickly identify different types of waypoints on the map
-(e.g., airport, campsite, destination).
+**As a** user, **I want to** assign icons and categories to my POIs, **So that**
+I can quickly identify different types of waypoints on the map (e.g., airport,
+campsite, destination).
 
-**As a** user,
-**I want to** see both global POIs (valid for all routes) and route-specific
-POIs,
-**So that** I can have general waypoints plus journey-specific markers.
+**As a** user, **I want to** see both global POIs (valid for all routes) and
+route-specific POIs, **So that** I can have general waypoints plus
+journey-specific markers.
 
 ### 3.3 ETA and Distance
 
-**As a** user in motion,
-**I want to** see real-time ETA to all my POIs,
-**So that** I can plan fuel stops, meal breaks, and arrival notifications.
+**As a** user in motion, **I want to** see real-time ETA to all my POIs, **So
+that** I can plan fuel stops, meal breaks, and arrival notifications.
 
-**As a** user,
-**I want** ETA calculations to be based on smoothed average speed (not
-instantaneous speed),
-**So that** the estimates are stable and realistic, not jumping erratically.
+**As a** user, **I want** ETA calculations to be based on smoothed average speed
+(not instantaneous speed), **So that** the estimates are stable and realistic,
+not jumping erratically.
 
-**As a** user who has passed a waypoint,
-**I want** the POI to show negative ETA values,
-**So that** I know how long ago I passed it (useful for logging).
+**As a** user who has passed a waypoint, **I want** the POI to show negative ETA
+values, **So that** I know how long ago I passed it (useful for logging).
 
 ### 3.4 Simulation Integration
 
-**As a** developer or demo user,
-**I want** the simulator to follow uploaded KML routes with realistic
-deviations,
-**So that** I can test the system behavior on real flight paths without needing
-a live Starlink terminal.
+**As a** developer or demo user, **I want** the simulator to follow uploaded KML
+routes with realistic deviations, **So that** I can test the system behavior on
+real flight paths without needing a live Starlink terminal.
 
-**As a** developer,
-**I want** configurable simulation speed,
-**So that** I can quickly test long routes or slow down to debug specific
-segments.
+**As a** developer, **I want** configurable simulation speed, **So that** I can
+quickly test long routes or slow down to debug specific segments.
 
 ---
 
@@ -142,11 +128,11 @@ files.
 - All POIs (both global and route-specific) as Point features
 - Current position as a Point feature with distinct properties
 
-**REQ-4.1.11:** The system MUST use the `fastkml` or `simplekml` library for
-KML parsing.
+**REQ-4.1.11:** The system MUST use the `fastkml` or `simplekml` library for KML
+parsing.
 
-**REQ-4.1.12:** The system MUST handle invalid or corrupted KML files
-gracefully by:
+**REQ-4.1.12:** The system MUST handle invalid or corrupted KML files gracefully
+by:
 
 - Logging an error with the filename and reason
 - Notifying the user (via API status or health endpoint)
@@ -215,7 +201,7 @@ appropriate time window (see REQ-4.3.3).
 **REQ-4.3.5:** The system MUST expose the following Prometheus metrics for each
 POI:
 
-```
+```text
 starlink_eta_poi_seconds{name="POI_Name", id="POI_ID"}
 starlink_distance_to_poi_meters{name="POI_Name", id="POI_ID"}
 ```
@@ -277,8 +263,7 @@ reaches the end (looping behavior).
 - Skip POI metrics (not export empty metrics)
 - Continue normal operation without errors
 
-**REQ-4.5.3:** If an active route file is deleted while in use, the system
-MUST:
+**REQ-4.5.3:** If an active route file is deleted while in use, the system MUST:
 
 - Log a warning
 - Clear the route overlay from `/route.geojson`
@@ -292,17 +277,17 @@ The following are **explicitly excluded** from Phase 4:
 
 1. **Route-aware ETA calculations** (following the path of the route, not
    straight-line) — deferred to future phase
-2. **Automatic route selection based on time or position** — manual activation
+1. **Automatic route selection based on time or position** — manual activation
    only
-3. **Route editing or modification within the application** — users must edit
+1. **Route editing or modification within the application** — users must edit
    KML files externally
-4. **Multi-terminal support** (multiple dishes on one dashboard) — future
+1. **Multi-terminal support** (multiple dishes on one dashboard) — future
    enhancement
-5. **3D altitude profiles** or terrain awareness
-6. **Integration with external mapping services** (Google Maps, Mapbox) beyond
+1. **3D altitude profiles** or terrain awareness
+1. **Integration with external mapping services** (Google Maps, Mapbox) beyond
    OpenStreetMap
-7. **Offline map caching** (beyond browser caching)
-8. **User authentication or multi-user POI sharing** (single-user system for
+1. **Offline map caching** (beyond browser caching)
+1. **User authentication or multi-user POI sharing** (single-user system for
    now)
 
 ---
@@ -449,15 +434,15 @@ The feature will be considered successful when:
 
 1. **Route Visibility:** Users can upload a KML file and see it rendered on the
    Grafana map within 10 seconds.
-2. **POI Accuracy:** ETA calculations are within ±10% of actual arrival time
+1. **POI Accuracy:** ETA calculations are within ±10% of actual arrival time
    (tested via simulation playback).
-3. **Performance:** The system handles 50 POIs with <100ms latency for ETA/distance
-   calculations.
-4. **Resilience:** The system continues operating normally when:
+1. **Performance:** The system handles 50 POIs with <100ms latency for
+   ETA/distance calculations.
+1. **Resilience:** The system continues operating normally when:
    - Invalid KML files are uploaded (logs error, doesn't crash)
    - Routes are deleted mid-operation (clears overlay, continues tracking)
    - No POIs are defined (no metrics errors)
-5. **Simulation Realism:** Simulated tracks follow KML routes with realistic
+1. **Simulation Realism:** Simulated tracks follow KML routes with realistic
    deviations (visible on Grafana map).
 
 ---
@@ -466,28 +451,24 @@ The feature will be considered successful when:
 
 1. **Route File Naming Convention:** Should route files have a specific naming
    pattern to auto-detect metadata (e.g., `2025-10-23_day1.kml`)?
-
    - **Resolution:** Not required for Phase 4; filenames can be arbitrary.
 
-2. **POI Icons:** Should the system provide a predefined icon library, or allow
+1. **POI Icons:** Should the system provide a predefined icon library, or allow
    arbitrary emoji/text?
-
    - **Resolution:** Start with emoji support (🏠✈️⛽🏁), add Font Awesome in
      future phase if needed.
 
-3. **Route Activation API:** Should activation return the full route GeoJSON
+1. **Route Activation API:** Should activation return the full route GeoJSON
    immediately, or just a success message?
-
    - **Resolution:** Return success message with route metadata (name, point
      count); client fetches GeoJSON separately.
 
-4. **Distance Threshold for "Passing":** Is 100 meters appropriate for all
-   use cases (aircraft, maritime, ground)?
-
+1. **Distance Threshold for "Passing":** Is 100 meters appropriate for all use
+   cases (aircraft, maritime, ground)?
    - **Resolution:** Start with 100m; make configurable per POI in future phase
      if needed.
 
-5. **Negative ETA Format:** Should negative ETAs be displayed as "-5m" (5
+1. **Negative ETA Format:** Should negative ETAs be displayed as "-5m" (5
    minutes ago) or "+5m" (5 minutes past)?
    - **Resolution:** Use negative values (`-300` seconds) in metrics; Grafana
      dashboard handles formatting.
@@ -523,4 +504,4 @@ Phase 4 is **complete** when:
 
 ---
 
-**End of PRD**
+## End of PRD

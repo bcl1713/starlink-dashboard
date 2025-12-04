@@ -4,6 +4,10 @@ Samples aircraft route to detect entry/exit events into satellite coverage
 areas using point-in-polygon testing against GeoJSON footprints.
 """
 
+# FR-004: File exceeds 300 lines (312 lines) because coverage detection involves
+# GeoJSON parsing, point-in-polygon algorithms, event detection, and timeline
+# integration. Splitting would obscure the sampling pipeline. Deferred to v0.4.0.
+
 import json
 import logging
 from dataclasses import dataclass

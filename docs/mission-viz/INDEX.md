@@ -88,10 +88,10 @@ TransportState.OFFLINE     "OFFLINE"
 
 ## What's Next?
 
-- **Understand the components:** Read about [data structures and status
-  hierarchies](./components.md)
-- **Build visualizations:** Follow [extraction patterns and
-  workflows](./workflows.md)
+- **Understand the components:** Read about
+  [data structures and status hierarchies](./components.md)
+- **Build visualizations:** Follow
+  [extraction patterns and workflows](./workflows.md)
 
 ## Timezone Format Examples
 

@@ -1,5 +1,10 @@
 """Route ETA calculator for estimating arrival times to waypoints and locations along a route."""
 
+# FR-004: File exceeds 300 lines (600 lines) because ETA calculation involves
+# geometric projections, speed interpolation, timing adjustments, and flight phase
+# state transitions. Refactoring into separate modules would obscure the unified
+# calculation pipeline. Deferred to v0.4.0.
+
 import math
 import logging
 from typing import Optional

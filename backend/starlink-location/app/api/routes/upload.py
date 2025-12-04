@@ -1,5 +1,9 @@
 """Route upload endpoint with POI import functionality."""
 
+# FR-004: File exceeds 300 lines (304 lines) because route upload handles KML
+# parsing, validation, POI extraction, storage, and route initialization.
+# Splitting would fragment the upload workflow. Deferred to v0.4.0.
+
 from pathlib import Path
 from typing import Optional, Tuple
 

@@ -21,7 +21,7 @@ For experienced users, here's the fast track:
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/starlink-dashboard.git
+git clone <https://github.com/your-repo/starlink-dashboard.git>
 cd starlink-dashboard
 
 # Set up environment
@@ -32,10 +32,10 @@ docker compose build
 docker compose up -d
 
 # Verify
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
-**Access:** Grafana at <http://localhost:3000> (admin/admin)
+**Access:** Grafana at <<http://localhost:3000>> (admin/admin)
 
 ---
 
@@ -48,7 +48,7 @@ curl http://localhost:8000/health
 cd ~/Projects  # or your preferred location
 
 # Clone the repository
-git clone https://github.com/your-repo/starlink-dashboard.git
+git clone <https://github.com/your-repo/starlink-dashboard.git>
 
 # Enter directory
 cd starlink-dashboard
@@ -59,7 +59,7 @@ ls -la
 
 **Expected files:**
 
-```
+```text
 backend/
 monitoring/
 docker-compose.yml
@@ -115,7 +115,7 @@ docker compose build
 
 **Expected output:**
 
-```
+```json
 [+] Building 45.2s (23/23) FINISHED
  => [starlink-location] ...
  => => naming to docker.io/library/starlink-location:latest
@@ -129,7 +129,7 @@ docker compose images
 
 **Expected output:**
 
-```
+```text
 CONTAINER           IMAGE                    SIZE
 starlink-location   starlink-location:latest 500MB
 prometheus          prom/prometheus:latest   200MB
@@ -148,7 +148,7 @@ docker compose up -d
 
 **Expected output:**
 
-```
+```json
 [+] Running 4/4
  ✔ Network starlink-dashboard-dev_starlink-net  Created
  ✔ Container prometheus                         Started
@@ -164,7 +164,7 @@ docker compose ps
 
 **Expected output:**
 
-```
+```text
 NAME                STATUS              PORTS
 starlink-location   Up 10 seconds       0.0.0.0:8000->8000/tcp
 prometheus          Up 12 seconds       0.0.0.0:9090->9090/tcp
@@ -180,7 +180,7 @@ All services should show "Up" status.
 **Backend health check:**
 
 ```bash
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 **Expected response:**
@@ -218,7 +218,7 @@ docker compose logs -f starlink-location
 **1. Backend API:**
 
 ```bash
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 ```
 
 ✅ Should return `"status": "ok"`
@@ -228,7 +228,7 @@ curl http://localhost:8000/health | jq .
 **2. Prometheus targets:**
 
 ```bash
-curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
+curl <http://localhost:9090/api/v1/targets> | jq '.data.activeTargets[].health'
 ```
 
 ✅ Should return `"up"` for all targets
@@ -238,7 +238,7 @@ curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets[].health'
 **3. Grafana:**
 
 ```bash
-curl -s http://localhost:3000/api/health | jq .
+curl -s <http://localhost:3000/api/health> | jq .
 ```
 
 ✅ Should return `"database": "ok"`
@@ -250,7 +250,7 @@ curl -s http://localhost:3000/api/health | jq .
 **1. Backend generating metrics:**
 
 ```bash
-curl http://localhost:8000/api/status | jq '.position'
+curl <http://localhost:8000/api/status> | jq '.position'
 ```
 
 ✅ Should show current position data
@@ -260,7 +260,7 @@ curl http://localhost:8000/api/status | jq '.position'
 **2. Prometheus scraping backend:**
 
 ```bash
-curl 'http://localhost:9090/api/v1/query?query=starlink_dish_latitude_degrees' | jq .
+curl '<http://localhost:9090/api/v1/query?query=starlink_dish_latitude_degrees'> | jq .
 ```
 
 ✅ Should return metric value
@@ -283,7 +283,7 @@ After successful installation:
 
 ### Grafana (Dashboards)
 
-**URL:** <http://localhost:3000>
+**URL:** <<http://localhost:3000>>
 
 **Login:**
 
@@ -300,19 +300,19 @@ After successful installation:
 
 ### Prometheus (Metrics Database)
 
-**URL:** <http://localhost:9090>
+**URL:** <<http://localhost:9090>>
 
 **Usage:**
 
 - No login required
-- View targets: <http://localhost:9090/targets>
-- Run queries: <http://localhost:9090/graph>
+- View targets: <<http://localhost:9090/targets>>
+- Run queries: <<http://localhost:9090/graph>>
 
 ---
 
 ### Backend API (Interactive Documentation)
 
-**URL:** <http://localhost:8000/docs>
+**URL:** <<http://localhost:8000/docs>>
 
 **Usage:**
 
@@ -330,12 +330,12 @@ Sample routes are available in `/data/sample_routes/`:
 
 ```bash
 # Via UI
-open http://localhost:8000/ui/routes
+open <http://localhost:8000/ui/routes>
 
 # Or via API
 curl -X POST \
   -F "file=@data/sample_routes/simple-circular.kml" \
-  http://localhost:8000/api/routes/upload
+  <http://localhost:8000/api/routes/upload>
 ```
 
 ---
@@ -345,13 +345,13 @@ curl -X POST \
 **Via UI:**
 
 ```bash
-open http://localhost:8000/ui/pois
+open <http://localhost:8000/ui/pois>
 ```
 
 **Via API:**
 
 ```bash
-curl -X POST http://localhost:8000/api/pois \
+curl -X POST <http://localhost:8000/api/pois> \
   -H "Content-Type: application/json" \
   -d '{
     "name": "New York City",
@@ -427,9 +427,9 @@ docker compose ps
 **Test from host:**
 
 ```bash
-curl http://localhost:8000/health
-curl http://localhost:9090/-/healthy
-curl http://localhost:3000/api/health
+curl <http://localhost:8000/health>
+curl <http://localhost:9090/-/healthy>
+curl <http://localhost:3000/api/health>
 ```
 
 ---
@@ -464,13 +464,13 @@ docker compose up -d
 **Check Prometheus targets:**
 
 ```bash
-open http://localhost:9090/targets
+open <http://localhost:9090/targets>
 ```
 
 **Verify backend reachable from Prometheus:**
 
 ```bash
-docker compose exec prometheus curl http://starlink-location:8000/health
+docker compose exec prometheus curl <http://starlink-location:8000/health>
 ```
 
 ---
@@ -479,7 +479,7 @@ docker compose exec prometheus curl http://starlink-location:8000/health
 
 **Verify data source:**
 
-1. Go to <http://localhost:3000>
+1. Go to <<http://localhost:3000>>
 2. Configuration → Data Sources → Prometheus
 3. Click "Test" button
 4. Should show green "Data source is working"
@@ -491,7 +491,7 @@ docker compose exec prometheus curl http://starlink-location:8000/health
 docker compose ps prometheus
 
 # Test from Grafana container
-docker compose exec grafana curl http://prometheus:9090
+docker compose exec grafana curl <http://prometheus:9090>
 ```
 
 ---
@@ -519,7 +519,8 @@ Installation complete! Now proceed to:
 
 1. **[Configuration](./configuration.md)** - Customize for your use case
 2. **[API Reference](../api/README.md)** - Explore available endpoints
-3. **[Route Management](../../CLAUDE.md#route-management)** - Upload flight routes
+3. **[Route Management](../../CLAUDE.md#route-management)** - Upload flight
+   routes
 
 **Need help?** Check the [Troubleshooting Guide](../troubleshooting/README.md)
 

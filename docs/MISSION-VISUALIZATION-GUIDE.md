@@ -1,11 +1,12 @@
 # Mission Visualization Guide
+
 ## Data Structures and Implementation Patterns for Map/Chart Generation
 
 ---
 
 ## Visual Data Model Overview
 
-```
+```text
 Mission
   ├── route_id ──> ParsedRoute
   │                  ├── metadata (name, point_count)
@@ -37,7 +38,8 @@ Mission
 ## Timeline Segment Status Visualization
 
 ### Status Hierarchy
-```
+
+```text
 TimelineStatus (overall segment status)
 ├── NOMINAL     → All three transports AVAILABLE
 ├── DEGRADED    → One transport DEGRADED/OFFLINE
@@ -50,7 +52,8 @@ Transport States (per-transport detail)
 ```
 
 ### Color Mapping
-```
+
+```text
 Status          Recommended Color    LIGHT_* Constant
 ─────────────────────────────────────────────────────
 NOMINAL         Green (#00AA00)      N/A
@@ -59,7 +62,8 @@ CRITICAL        Red (#FF0000)        LIGHT_RED (RGB: 1.0, 0.85, 0.85)
 ```
 
 ### Transport State Display Names
-```
+
+```text
 Transport Enum          Display Name
 ──────────────────────────────────────
 Transport.X = "X"       "X-Band"
@@ -75,48 +79,49 @@ TransportState.OFFLINE     "OFFLINE"
 
 ---
 
-## Data Extraction Pattern: _segment_rows() Example
+## Data Extraction Pattern: \_segment_rows() Example
 
-The exporter's `_segment_rows()` function (lines 271-331) demonstrates the proper way to extract timeline data:
+The exporter's `_segment_rows()` function (lines 271-331) demonstrates the
+proper way to extract timeline data:
 
 ```python
 def extract_timeline_data(timeline: MissionTimeline, mission: Mission | None):
     """Template for extracting timeline data for visualization."""
-    
+
     mission_start = _mission_start_timestamp(timeline)  # Get zero point
-    
+
     # Sort segments chronologically
     for segment in timeline.segments:
         start_utc = _ensure_timezone(segment.start_time)
         end_utc = _ensure_timezone(segment.end_time)
-        
+
         # Calculate duration
         duration_seconds = max((end_utc - start_utc).total_seconds(), 0)
         duration_hms = _format_seconds_hms(duration_seconds)
-        
+
         # Get status
         status = segment.status.value.upper()  # "NOMINAL", "DEGRADED", "CRITICAL"
-        
+
         # Check for special cases (X-Ku warnings)
         if _segment_is_x_ku_warning(segment):
             status = "WARNING"  # Override display status
             impacted = ""  # Don't show impacted transports
         else:
             impacted = _serialize_transport_list(segment.impacted_transports)
-        
+
         # Format timestamps (three formats)
         time_block = _compose_time_block(start_utc, mission_start)
         # Returns: "2025-10-27 18:25Z\n2025-10-27 14:25EDT\nT+01:40"
-        
+
         # Extract transport states
         x_state = segment.x_state.value.upper()      # "AVAILABLE", "DEGRADED", "OFFLINE"
         ka_state = segment.ka_state.value.upper()
         ku_state = segment.ku_state.value.upper()
-        
+
         # Get reasons and metadata
         reasons_text = ", ".join(segment.reasons)  # Comma-separated reason codes
         metadata_json = json.dumps(segment.metadata)  # Serialize for export
-        
+
         # Access satellite information
         satellites = segment.metadata.get("satellites", {})
         current_x_satellite = satellites.get("X")
@@ -135,51 +140,51 @@ def align_timeline_to_route(
     route: ParsedRoute
 ) -> list[dict]:
     """Align timeline segments to route points for map visualization."""
-    
+
     aligned_segments = []
     mission_start = _mission_start_timestamp(timeline)
-    
+
     for segment in timeline.segments:
         start_time = _ensure_timezone(segment.start_time)
-        
+
         # Find route position at segment start
         route_position = find_route_position_at_time(
             route,
             start_time,
             mission_start
         )
-        
+
         if route_position is None:
             continue
-        
+
         # Calculate segment duration
         end_time = _ensure_timezone(segment.end_time)
         duration_seconds = (end_time - start_time).total_seconds()
-        
+
         # Create visualization object
         aligned_segments.append({
             "segment_id": segment.id,
             "timeline_status": segment.status.value,           # "nominal", "degraded", "critical"
             "duration_seconds": duration_seconds,
             "duration_display": _format_seconds_hms(duration_seconds),
-            
+
             # Position on route
             "waypoint_index": route_position["waypoint_index"],
             "route_progress_percent": route_position["progress_percent"],
             "latitude": route_position["latitude"],
             "longitude": route_position["longitude"],
-            
+
             # Transport states for stacked bar chart
             "x_state": segment.x_state.value,
             "ka_state": segment.ka_state.value,
             "ku_state": segment.ku_state.value,
-            
+
             # Metadata for tooltips
             "impacted_transports": [t.value for t in segment.impacted_transports],
             "reasons": segment.reasons,
             "satellites": segment.metadata.get("satellites", {}),
         })
-    
+
     return aligned_segments
 ```
 
@@ -193,20 +198,20 @@ def extract_advisories_for_timeline(
     mission: Mission | None
 ) -> list[dict]:
     """Extract advisories for overlay on timeline chart."""
-    
+
     mission_start = _mission_start_timestamp(timeline)
     advisory_markers = []
-    
+
     for advisory in timeline.advisories:
         ts_utc = _ensure_timezone(advisory.timestamp)
-        
+
         # Calculate position relative to mission start
         offset = ts_utc - mission_start
         t_offset = _format_offset(offset)  # "T+HH:MM" or "T-HH:MM"
-        
+
         # Map transport to display name
         transport_display = TRANSPORT_DISPLAY.get(advisory.transport, advisory.transport.value)
-        
+
         # Create marker
         advisory_markers.append({
             "id": advisory.id,
@@ -218,10 +223,10 @@ def extract_advisories_for_timeline(
             "message": advisory.message,
             "metadata": advisory.metadata,
         })
-    
+
     # Sort by timestamp for chart ordering
     advisory_markers.sort(key=lambda x: x["timestamp"])
-    
+
     return advisory_markers
 ```
 
@@ -235,9 +240,9 @@ def extract_pois_for_visualization(
     route: ParsedRoute | None
 ) -> list[dict]:
     """Extract POI data for map markers and ETA labels."""
-    
+
     poi_markers = []
-    
+
     for poi in pois_with_eta:
         marker = {
             # Core identification
@@ -245,32 +250,32 @@ def extract_pois_for_visualization(
             "name": poi.name,
             "category": poi.category,
             "icon": poi.icon,
-            
+
             # Position on map
             "latitude": poi.latitude,
             "longitude": poi.longitude,
-            
+
             # ETA information
             "eta_seconds": poi.eta_seconds,
             "eta_display": format_eta(poi.eta_seconds),     # "18 min 45 sec", "-1" if no speed
             "eta_type": poi.eta_type,                        # "anticipated" or "estimated"
             "is_pre_departure": poi.is_pre_departure,
             "flight_phase": poi.flight_phase,                # "pre_departure", "in_flight", "post_arrival"
-            
+
             # Navigation
             "distance_meters": poi.distance_meters,
             "bearing_degrees": poi.bearing_degrees,
             "course_status": poi.course_status,              # "on_course", "slightly_off", etc.
-            
+
             # Route awareness (only if active route)
             "is_on_active_route": poi.is_on_active_route,
             "route_aware_status": poi.route_aware_status,    # "ahead_on_route", "already_passed", etc.
             "projected_waypoint_index": poi.projected_waypoint_index,
             "projected_route_progress": poi.projected_route_progress,
         }
-        
+
         poi_markers.append(marker)
-    
+
     return poi_markers
 ```
 
@@ -283,35 +288,35 @@ def extract_timeline_statistics(
     timeline: MissionTimeline
 ) -> dict:
     """Extract summary statistics for dashboard display."""
-    
+
     stats_df = _statistics_rows(timeline)  # Uses existing exporter function
-    
+
     # Custom interpretation
     stats = {
         "total_duration_seconds": timeline.statistics.get("total_duration_seconds", 0),
         "total_duration_display": _format_seconds_hms(
             timeline.statistics.get("total_duration_seconds", 0)
         ),
-        
+
         "nominal_seconds": timeline.statistics.get("nominal_seconds", 0),
         "nominal_percent": (
-            timeline.statistics.get("nominal_seconds", 0) / 
+            timeline.statistics.get("nominal_seconds", 0) /
             max(timeline.statistics.get("total_duration_seconds", 1), 1) * 100
         ),
-        
+
         "degraded_seconds": timeline.statistics.get("degraded_seconds", 0),
         "degraded_percent": (
-            timeline.statistics.get("degraded_seconds", 0) / 
+            timeline.statistics.get("degraded_seconds", 0) /
             max(timeline.statistics.get("total_duration_seconds", 1), 1) * 100
         ),
-        
+
         "critical_seconds": timeline.statistics.get("critical_seconds", 0),
         "critical_percent": (
-            timeline.statistics.get("critical_seconds", 0) / 
+            timeline.statistics.get("critical_seconds", 0) /
             max(timeline.statistics.get("total_duration_seconds", 1), 1) * 100
         ),
     }
-    
+
     return stats
 ```
 
@@ -322,14 +327,14 @@ def extract_timeline_statistics(
 ```python
 def extract_route_for_map(route: ParsedRoute) -> dict:
     """Extract route geometry and metadata for map rendering."""
-    
+
     # Get route bounds
     bounds = route.get_bounds()
-    
+
     # Get total distance
     total_distance_m = route.get_total_distance()
     total_distance_km = total_distance_m / 1000.0
-    
+
     # Extract all points for linestring
     route_line = [
         {
@@ -342,7 +347,7 @@ def extract_route_for_map(route: ParsedRoute) -> dict:
         }
         for point in route.points
     ]
-    
+
     # Extract waypoints for markers
     waypoint_markers = [
         {
@@ -354,7 +359,7 @@ def extract_route_for_map(route: ParsedRoute) -> dict:
         }
         for wp in route.waypoints
     ]
-    
+
     return {
         "name": route.metadata.name,
         "description": route.metadata.description,
@@ -378,7 +383,7 @@ def extract_route_for_map(route: ParsedRoute) -> dict:
 
 All examples use UTC input (as stored in database):
 
-```
+```text
 Input datetime: 2025-10-27T18:25:00Z (UTC)
 Mission start: 2025-10-27T16:45:00Z
 
@@ -402,6 +407,7 @@ _compose_time_block(input, mission_start)
 ## Special Cases and Edge Handling
 
 ### X-Ku Conflict Warnings
+
 ```python
 # When segment.x_state == DEGRADED and only reason is "X-Ku Conflict*"
 # Display as "WARNING" instead of "DEGRADED"
@@ -416,6 +422,7 @@ else:
 ```
 
 ### Missing Route Timing
+
 ```python
 # If route doesn't have timing_profile or has_timing_data = False
 # Cannot use expected_arrival_time for time-position mapping
@@ -430,6 +437,7 @@ else:
 ```
 
 ### AAR Windows
+
 ```python
 # AAR blocks are stored in timeline.statistics["_aar_blocks"]
 # They're internal (underscore prefix) and not included in standard statistics
@@ -448,16 +456,16 @@ for aar in aar_windows:
 ```python
 async def generate_mission_visualization(mission_id: str) -> dict:
     """Complete flow for map and chart generation."""
-    
+
     # 1. Fetch core data
     mission = await mission_service.get_mission(mission_id)
     timeline = await mission_service.get_timeline(mission_id)
     route = await route_manager.get_route(mission.route_id)
     pois = await poi_service.list_pois(route_id=mission.route_id)
-    
+
     # 2. Prepare timeline base
     mission_start = _mission_start_timestamp(timeline)
-    
+
     # 3. Extract visualization data
     timeline_segments = []
     for segment in timeline.segments:
@@ -466,7 +474,7 @@ async def generate_mission_visualization(mission_id: str) -> dict:
             "start": _ensure_timezone(segment.start_time),
             "end": _ensure_timezone(segment.end_time),
             "duration_seconds": (
-                _ensure_timezone(segment.end_time) - 
+                _ensure_timezone(segment.end_time) -
                 _ensure_timezone(segment.start_time)
             ).total_seconds(),
             "status": segment.status.value,
@@ -476,7 +484,7 @@ async def generate_mission_visualization(mission_id: str) -> dict:
             "reasons": segment.reasons,
             "satellites": segment.metadata.get("satellites", {}),
         })
-    
+
     advisories = []
     for advisory in timeline.advisories:
         advisories.append({
@@ -487,14 +495,14 @@ async def generate_mission_visualization(mission_id: str) -> dict:
             "severity": advisory.severity,
             "message": advisory.message,
         })
-    
+
     # 4. Prepare route geometry
     route_bounds = route.get_bounds()
     route_line = [
         {"lat": p.latitude, "lon": p.longitude}
         for p in route.points
     ]
-    
+
     # 5. Prepare POI data
     poi_list = [
         {
@@ -507,24 +515,24 @@ async def generate_mission_visualization(mission_id: str) -> dict:
         }
         for poi in pois
     ]
-    
+
     # 6. Prepare statistics
     stats = {
         "total_duration_seconds": timeline.statistics.get("total_duration_seconds", 0),
         "nominal_percent": (
-            timeline.statistics.get("nominal_seconds", 0) / 
+            timeline.statistics.get("nominal_seconds", 0) /
             max(timeline.statistics.get("total_duration_seconds", 1), 1) * 100
         ),
         "degraded_percent": (
-            timeline.statistics.get("degraded_seconds", 0) / 
+            timeline.statistics.get("degraded_seconds", 0) /
             max(timeline.statistics.get("total_duration_seconds", 1), 1) * 100
         ),
         "critical_percent": (
-            timeline.statistics.get("critical_seconds", 0) / 
+            timeline.statistics.get("critical_seconds", 0) /
             max(timeline.statistics.get("total_duration_seconds", 1), 1) * 100
         ),
     }
-    
+
     # 7. Return unified visualization object
     return {
         "mission": {
@@ -563,4 +571,3 @@ Key takeaways for map/chart visualization implementation:
 8. Special case: X-Ku conflict warnings display as "WARNING"
 9. Color coding: Green (NOMINAL), Yellow (DEGRADED), Red (CRITICAL)
 10. Transport display names: X→"X-Band", Ka→"CommKa", Ku→"StarShield"
-

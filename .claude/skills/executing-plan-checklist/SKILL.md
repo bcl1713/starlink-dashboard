@@ -177,12 +177,12 @@ After the sub-agent returns:
 
 1. Change the corresponding `- [ ]` to `- [x]` in CHECKLIST.md (and any relevant
    subtasks).
-2. If PLAN.md or CONTEXT.md should be updated (per the task or lesson), do so
+1. If PLAN.md or CONTEXT.md should be updated (per the task or lesson), do so
    now.
-3. Stage all changed files (code from sub-agent + updated docs).
-4. Commit with a message like:
+1. Stage all changed files (code from sub-agent + updated docs).
+1. Commit with a message like:
    - `chore: complete checklist step: <short summary>`
-5. Push the current feature branch to the remote.
+1. Push the current feature branch to the remote.
 
 Show the updated snippet of CHECKLIST.md to the user for visibility.
 

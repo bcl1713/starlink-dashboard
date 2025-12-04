@@ -1,7 +1,7 @@
 # Contributing to Starlink Dashboard
 
-This guide outlines the development workflow, code quality standards, and linting
-setup for the Starlink Dashboard project.
+This guide outlines the development workflow, code quality standards, and
+linting setup for the Starlink Dashboard project.
 
 ## Code Quality Standards
 
@@ -86,8 +86,8 @@ markdownlint-cli2 "docs/**/*.md"
 
 ## Pre-commit Hooks
 
-The project uses pre-commit hooks to automatically run linting tools before
-each commit, ensuring code quality is enforced locally.
+The project uses pre-commit hooks to automatically run linting tools before each
+commit, ensuring code quality is enforced locally.
 
 ### Installation
 
@@ -253,12 +253,15 @@ Types: feat, fix, refactor, docs, test, chore
 
 ```markdown
 ## Changes
+
 Brief description of what changed and why.
 
 ## Testing
+
 How was this tested? Include manual smoke tests or automated test commands.
 
 ## Checklist
+
 - [ ] Code passes linting (Black, Ruff, Prettier, ESLint)
 - [ ] Existing tests pass
 - [ ] New tests added (if applicable)

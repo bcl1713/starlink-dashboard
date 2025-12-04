@@ -1,8 +1,7 @@
 # Route Timing Feature Guide
 
-**Version:** 0.4.0
-**Last Updated:** 2025-11-05
-**Status:** Complete - All 451 tests passing
+**Version:** 0.4.0 **Last Updated:** 2025-11-05 **Status:** Complete - All 451
+tests passing
 
 ## Overview
 
@@ -30,8 +29,8 @@ three sections:
 
 ### Core Capabilities
 
-- Extracts timing from KML descriptions: `Time Over Waypoint: YYYY-MM-DD
-  HH:MM:SSZ`
+- Extracts timing from KML descriptions:
+  `Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ`
 - Calculates distances using haversine formula for Earth-based accuracy
 - Provides granular (waypoint-level) and aggregate (route-level) timing metrics
 - Exposes timing data through REST API and Prometheus metrics
@@ -44,10 +43,10 @@ three sections:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
+<kml xmlns="<http://www.opengis.net/kml/2.2">>
   <Document>
     <Placemark>
-      <name>Flight Route KADW-PHNL</name>
+      `name`Flight Route KADW-PHNL</name>
       <LineString>
         <coordinates>
           -76.9,38.8,1000 Time Over Waypoint: 2025-10-27 16:45:00Z
@@ -65,7 +64,7 @@ three sections:
 ```bash
 curl -X POST \
   -F "file=@your-timed-route.kml" \
-  http://localhost:8000/api/routes/upload
+  <http://localhost:8000/api/routes/upload>
 ```
 
 Response includes `has_timing_data: true` if timing was found.
@@ -73,19 +72,19 @@ Response includes `has_timing_data: true` if timing was found.
 ### 3. Activate the Route
 
 ```bash
-curl -X POST http://localhost:8000/api/routes/{route_id}/activate
+curl -X POST <http://localhost:8000/api/routes/{route_id}/activate>
 ```
 
 ### 4. Check Timing Profile
 
 ```bash
-curl http://localhost:8000/api/routes/active/timing | jq .
+curl <http://localhost:8000/api/routes/active/timing> | jq .
 ```
 
 ## What's Next?
 
-- **Learn the concepts:** Read about [ETA modes and flight
-  phases](./concepts.md)
+- **Learn the concepts:** Read about
+  [ETA modes and flight phases](./concepts.md)
 - **Start using it:** See [implementation examples](./implementation.md)
 - **Having issues?:** Check the [troubleshooting guide](./troubleshooting.md)
 
@@ -94,7 +93,7 @@ curl http://localhost:8000/api/routes/active/timing | jq .
 ### Cache Statistics
 
 ```bash
-curl http://localhost:8000/api/routes/metrics/eta-cache
+curl <http://localhost:8000/api/routes/metrics/eta-cache>
 ```
 
 Typical output:
@@ -126,5 +125,5 @@ For routes with 1000+ waypoints:
 
 ---
 
-**Feature Status:** Complete and Production Ready
-**Test Coverage:** 451 tests passing (100%)
+**Feature Status:** Complete and Production Ready **Test Coverage:** 451 tests
+passing (100%)

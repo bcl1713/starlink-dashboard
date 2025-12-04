@@ -1,7 +1,6 @@
 # Starlink Dashboard Setup Guide
 
-**Last Updated:** 2025-10-31
-**Project Version:** 0.2.0
+**Last Updated:** 2025-10-31 **Project Version:** 0.2.0
 
 [Back to main docs](../INDEX.md)
 
@@ -70,7 +69,7 @@ For those who want to jump right in:
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/starlink-dashboard.git
+git clone <https://github.com/your-repo/starlink-dashboard.git>
 cd starlink-dashboard
 
 # Copy environment file
@@ -80,14 +79,14 @@ cp .env.example .env
 docker compose up -d
 
 # Verify
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 **Access points:**
 
-- Grafana: <http://localhost:3000> (admin/admin)
-- Prometheus: <http://localhost:9090>
-- Backend API: <http://localhost:8000/docs>
+- Grafana: <<http://localhost:3000>> (admin/admin)
+- Prometheus: <<http://localhost:9090>>
+- Backend API: <<http://localhost:8000/docs>>
 
 ---
 
@@ -128,13 +127,13 @@ After setup, verify everything works:
 docker compose ps
 
 # 2. Check backend health
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # 3. Check Prometheus targets
-curl http://localhost:9090/api/v1/targets
+curl <http://localhost:9090/api/v1/targets>
 
 # 4. Access Grafana
-open http://localhost:3000
+open <http://localhost:3000>
 ```
 
 All services should show "Up" or "healthy" status.
@@ -145,8 +144,8 @@ All services should show "Up" or "healthy" status.
 
 After successful setup:
 
-1. **Explore the API** - Interactive docs at <http://localhost:8000/docs>
-2. **View Dashboards** - Grafana at <http://localhost:3000>
+1. **Explore the API** - Interactive docs at <<http://localhost:8000/docs>>
+2. **View Dashboards** - Grafana at <<http://localhost:3000>>
 3. **Upload Routes** - Use route management UI
 4. **Create POIs** - Add points of interest for tracking
 

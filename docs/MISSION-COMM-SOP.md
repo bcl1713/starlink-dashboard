@@ -1,7 +1,6 @@
 # Mission Communication Operations SOP
 
-**Last Updated:** 2025-11-16
-**Phase:** 5.3 (Comprehensive Documentation)
+**Last Updated:** 2025-11-16 **Phase:** 5.3 (Comprehensive Documentation)
 **Status:** Production Ready
 
 ---
@@ -20,16 +19,21 @@
 
 ## Overview
 
-This Standard Operating Procedure (SOP) guides mission operations teams to **monitor communication status** during flight, respond to alerts, and ensure crew connectivity through predicted degradation windows.
+This Standard Operating Procedure (SOP) guides mission operations teams to
+**monitor communication status** during flight, respond to alerts, and ensure
+crew connectivity through predicted degradation windows.
 
 **Key Responsibilities:**
+
 - **Pre-flight:** Validate timeline predictions
 - **During-flight:** Monitor Grafana dashboards
 - **Alert:** Respond to degradation warnings
 - **Post-flight:** Document and archive mission results
 
 **Success Criteria:**
-- Crew receives X-Band/Ka/Ku status updates ≥ 15 min before predicted degradation
+
+- Crew receives X-Band/Ka/Ku status updates ≥ 15 min before predicted
+  degradation
 - All critical windows (2+ systems down) acknowledged within 5 minutes
 - Mission timeline exported and delivered to stakeholders before departure
 
@@ -41,7 +45,7 @@ This Standard Operating Procedure (SOP) guides mission operations teams to **mon
 
 **Timeline Creation (T-5 to T-2 days before flight)**
 
-1. Open mission planner: `http://<dashboard>/ui/mission-planner`
+1. Open mission planner: `<http://<dashboard>/ui/mission-planner`>
 2. Upload flight route (KML from flight planning)
 3. Configure communication systems:
    - X-Band: Enter manual transitions (coordinates from flight plan)
@@ -60,15 +64,16 @@ This Standard Operating Procedure (SOP) guides mission operations teams to **mon
 
 Review exported timeline and identify:
 
-| Window Type | Threshold | Action |
-|---|---|---|
-| CRITICAL (2+ systems down) | Any duration | Escalate to Ops Chief |
-| DEGRADED (1 system down) | > 30 minutes | Brief crew on primary system |
-| X-Band Transition | 30 min total | Assign Ka as primary |
-| Ka Coverage Gap | > 15 min | Plan Ku usage |
+| Window Type                | Threshold    | Action                       |
+| -------------------------- | ------------ | ---------------------------- |
+| CRITICAL (2+ systems down) | Any duration | Escalate to Ops Chief        |
+| DEGRADED (1 system down)   | > 30 minutes | Brief crew on primary system |
+| X-Band Transition          | 30 min total | Assign Ka as primary         |
+| Ka Coverage Gap            | > 15 min     | Plan Ku usage                |
 
 **Example flag:**
-```
+
+```text
 CRITICAL window: 14:25-14:40 UTC (15 min)
 Root cause: X-Band transition overlaps Ka coverage gap
 Crew action: Defer non-critical comms; use Ku only if both X and Ka fail
@@ -85,7 +90,8 @@ Notify: CNRC, Flight Lead, Air Boss
    - Ka coverage gaps (if > 5 min)
    - AAR window times
 3. Crew reads timeline and confirms understanding
-4. Document crew sign-off: "_____ (name) acknowledged comm plan on _____ (date)"
+4. Document crew sign-off: "**\_** (name) acknowledged comm plan on **\_**
+   (date)"
 
 ---
 
@@ -94,8 +100,9 @@ Notify: CNRC, Flight Lead, Air Boss
 ### 1. Access Grafana Dashboard
 
 **Dashboard Location:**
-```
-http://<dashboard>/d/starlink/fullscreen-overview
+
+```text
+<http://<dashboard>/d/starlink/fullscreen-overview>
 ```
 
 **Login:** admin / <configured-password> (default: admin)
@@ -105,26 +112,31 @@ http://<dashboard>/d/starlink/fullscreen-overview
 The dashboard auto-updates with mission metrics. Key panels:
 
 #### Panel: Active Mission Status
+
 - **What it shows:** Current mission name, activation status, timeline state
 - **Metric:** `mission_is_active{mission_id="<id>"}`
 - **Update interval:** 1 second
 
 #### Panel: Communication Status (Real-time)
+
 - **What it shows:** Current status of X-Band, Ka, Ku (green/yellow/red)
 - **Metrics:**
   - `mission_status{transport="x_band"}`
   - `mission_status{transport="ka"}`
   - `mission_status{transport="ku"}`
 - **Update interval:** 1 second
-- **Action:** If any system shows red unexpectedly, check timeline and investigation log
+- **Action:** If any system shows red unexpectedly, check timeline and
+  investigation log
 
 #### Panel: Next Degradation Window
+
 - **What it shows:** Time until next DEGRADED or CRITICAL status
 - **Metric:** `mission_next_conflict_seconds`
 - **Update interval:** 10 seconds
 - **Action:** When < 900 sec (15 min), alert crew per section below
 
 #### Panel: Metrics Gauges
+
 - **Total Nominal Time (minutes):** Time remaining in NOMINAL status
 - **Total Degraded Time (minutes):** Remaining degradation windows
 - **Total Critical Time (minutes):** Remaining high-risk windows (usually 0)
@@ -136,21 +148,25 @@ The dashboard auto-updates with mission metrics. Key panels:
 Two alert rules fire automatically:
 
 **Alert 1: DegradedWindowApproaching**
+
 ```yaml
 expr: mission_next_conflict_seconds{status="degraded"} < 900
 for: 1m
 severity: warning
 ```
+
 - Fires when degradation window < 15 min away
 - Severity: **WARNING** (yellow in dashboard)
 - Action: Notify crew, confirm Ka/Ku readiness
 
 **Alert 2: CriticalWindowApproaching**
+
 ```yaml
 expr: mission_next_conflict_seconds{status="critical"} < 900
 for: 1m
 severity: critical
 ```
+
 - Fires when critical window (2+ systems down) < 15 min away
 - Severity: **CRITICAL** (red in dashboard)
 - Action: Immediate escalation (see Alert Response below)
@@ -158,7 +174,8 @@ severity: critical
 ### 4. View Alert History
 
 **Alert Rule Status:**
-1. Navigate to Prometheus: `http://<dashboard>:9090`
+
+1. Navigate to Prometheus: `<http://<dashboard>:9090`>
 2. Go to **Alerts**
 3. Look for:
    - `MissionDegradedWindowApproaching`
@@ -180,18 +197,22 @@ severity: critical
 
 1. **Check timeline PDF:** Confirm predicted degradation type (X-Band? Ka? AAR?)
 2. **Send crew message:**
-   ```
-   "COMM PLAN UPDATE: Degradation window T-15 minutes. [Description].
-   Primary system: [X-Band/Ka/Ku]. Secondary: [backup]. Confirm receipt."
-   ```
-3. **Verify crew acknowledges** (within 2 minutes)
-4. **Log in mission journal:**
-   ```
-   14:10 UTC - Degradation alert issued for 14:25-14:40 window
-   14:12 UTC - Crew acknowledged (pilot confirmed Ka primary)
-   ```
+
+```text
+"COMM PLAN UPDATE: Degradation window T-15 minutes. [Description].
+Primary system: [X-Band/Ka/Ku]. Secondary: [backup]. Confirm receipt."
+```
+
+1. **Verify crew acknowledges** (within 2 minutes)
+2. **Log in mission journal:**
+
+```text
+14:10 UTC - Degradation alert issued for 14:25-14:40 window
+14:12 UTC - Crew acknowledged (pilot confirmed Ka primary)
+```
 
 **Crew Actions (provided in briefing):**
+
 - Reduce non-critical data usage
 - Avoid large file transfers
 - Keep voice comms ready (lower bandwidth)
@@ -211,28 +232,32 @@ severity: critical
    - Air Boss (if applicable)
 
 2. **Brief message:**
-   ```
-   "CRITICAL COMM ALERT: In [time], both X-Band and Ka will be degraded simultaneously
-   for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation plan."
-   ```
 
-3. **Crew Mitigation Options:**
-   - **Option A (Default):** Continue on Ku (lower bandwidth, latency acceptable)
+```text
+"CRITICAL COMM ALERT: In [time], both X-Band and Ka will be degraded simultaneously
+for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation plan."
+```
+
+1. **Crew Mitigation Options:**
+   - **Option A (Default):** Continue on Ku (lower bandwidth, latency
+     acceptable)
    - **Option B:** Delay flight departure by 30 min (reschedule window)
    - **Option C:** Reroute to avoid critical window (if feasible)
 
-4. **Decision & Log:**
+1. **Decision & Log:**
    - Ops Chief decides course of action
    - Log decision and reasoning:
-     ```
-     13:55 UTC - CRITICAL alert: Ka gap + X transition overlap 14:25-14:40
-     14:00 UTC - Ops Chief decision: Accept, crew briefed on Ku contingency
-     14:03 UTC - Flight Lead acknowledges mitigation plan
-     ```
 
-5. **Ongoing Monitoring (during window):**
+```text
+13:55 UTC - CRITICAL alert: Ka gap + X transition overlap 14:25-14:40
+14:00 UTC - Ops Chief decision: Accept, crew briefed on Ku contingency
+14:03 UTC - Flight Lead acknowledges mitigation plan
+```
+
+1. **Ongoing Monitoring (during window):**
    - Assign one operator to watch Grafana
-   - If Ku also degrades unexpectedly: Emergency escalation (call Flight Lead immediately)
+   - If Ku also degrades unexpectedly: Emergency escalation (call Flight Lead
+     immediately)
    - Ku should stay GREEN (always available) in timeline
 
 ---
@@ -254,12 +279,13 @@ severity: critical
    - Document discrepancy and notify lead
 
 3. **Log status snapshot** (every 30 min):
-   ```
-   15:30 UTC - Status: X-NOMINAL, Ka-NOMINAL, Ku-NOMINAL, Next-window@16:45
-   16:00 UTC - Status: X-NOMINAL, Ka-NOMINAL, Ku-NOMINAL, Next-window@16:45
-   16:30 UTC - Status: X-DEGRADED (transition), Ka-NOMINAL, Ku-NOMINAL
-              Crew briefed, using Ka primary, expected to end 16:45
-   ```
+
+```text
+15:30 UTC - Status: X-NOMINAL, Ka-NOMINAL, Ku-NOMINAL, Next-window@16:45
+16:00 UTC - Status: X-NOMINAL, Ka-NOMINAL, Ku-NOMINAL, Next-window@16:45
+16:30 UTC - Status: X-DEGRADED (transition), Ka-NOMINAL, Ku-NOMINAL
+           Crew briefed, using Ka primary, expected to end 16:45
+```
 
 ### Handling Unexpected Status Changes
 
@@ -278,17 +304,18 @@ severity: critical
 
 **Scenario: Timeline shows one system down, but crew reports both down**
 
-1. **Inform Ops Chief immediately.**
-2. **Get crew details:**
+4. **Inform Ops Chief immediately.**
+5. **Get crew details:**
    - Which systems unavailable? (X? Ka? Both?)
    - Any error messages?
    - Current aircraft position (lat/lon)?
-3. **Verify against timeline:**
+6. **Verify against timeline:**
    - Is this a CRITICAL window? (If yes, explain Ku should be available)
    - Check Prometheus metric: `mission_status{transport="ku"}`
-4. **Action:**
+7. **Action:**
    - If Ku also degraded: Escalate to System Ops (possible infrastructure issue)
-   - If Ku working: Advise crew to check antenna selection, restart comms equipment
+   - If Ku working: Advise crew to check antenna selection, restart comms
+     equipment
 
 ---
 
@@ -299,24 +326,27 @@ severity: critical
 **Delivery timeline: T-2 to T-1 day before flight**
 
 1. **Generate final timeline:**
-   ```
-   http://localhost:8000/ui/mission-planner → Select mission → Click "Export"
-   ```
 
-2. **Export all three formats:**
+```text
+<http://localhost:8000/ui/mission-planner> → Select mission → Click "Export"
+```
+
+1. **Export all three formats:**
    - ✅ PDF: For crew briefing handout
    - ✅ Excel: For mission planning team analysis
    - ✅ CSV: For integration with flight ops database
 
-3. **Filename convention:**
-   ```
-   mission-<name>-<departure-date>-<version>.pdf
-   mission-<name>-<departure-date>-<version>.xlsx
-   mission-<name>-<departure-date>-<version>.csv
-   ```
-   Example: `mission-Leg6Rev6-2025-03-15-final.pdf`
+2. **Filename convention:**
 
-4. **Delivery checklist:**
+```text
+mission-`name`-<departure-date>-<version>.pdf
+mission-`name`-<departure-date>-<version>.xlsx
+mission-`name`-<departure-date>-<version>.csv
+```
+
+Example: `mission-Leg6Rev6-2025-03-15-final.pdf`
+
+1. **Delivery checklist:**
    - [ ] PDF printed and placed in crew briefing packet
    - [ ] Excel file emailed to mission planning (with notes on CRITICAL windows)
    - [ ] CSV loaded into mission tracking database
@@ -328,27 +358,30 @@ severity: critical
 **After landing:**
 
 1. **Capture final metrics:**
-   ```bash
-   curl http://localhost:8000/api/missions/active/timeline
-   ```
-   Save as `mission-<name>-<date>-actual-timeline.json`
 
-2. **Compare predicted vs. actual:**
+   ```bash
+   curl <http://localhost:8000/api/missions/active/timeline>
+   ```
+
+   Save as `mission-`name`-<date>-actual-timeline.json`
+
+1. **Compare predicted vs. actual:**
    - How close did predictions match?
    - Were there unexpected degradations?
    - Did crew respond effectively?
 
-3. **Archive folder:**
-   ```
-   /archive/missions/<year>/<month>/<mission-name>/
-     ├── mission-brief.pdf
-     ├── predicted-timeline.json
-     ├── actual-timeline.json
-     ├── grafana-screenshots/
-     └── ops-log.txt
-   ```
+1. **Archive folder:**
 
-4. **Document lessons learned:**
+```text
+/archive/missions/<year>/<month>/<mission-name>/
+  ├── mission-brief.pdf
+  ├── predicted-timeline.json
+  ├── actual-timeline.json
+  ├── grafana-screenshots/
+  └── ops-log.txt
+```
+
+1. **Document lessons learned:**
    - Any timeline inaccuracies? Report to mission planner
    - Did alerts fire correctly? Note for future tuning
    - Crew feedback on comms plan? Archive for next flight
@@ -359,9 +392,11 @@ severity: critical
 
 ### Incident: Unexpected Degradation
 
-**Definition:** System(s) degrade outside predicted window or for longer than predicted.
+**Definition:** System(s) degrade outside predicted window or for longer than
+predicted.
 
 **Detection:**
+
 - Crew reports comms loss
 - Dashboard shows RED/DEGRADED unexpectedly
 - Timeline shows no corresponding window
@@ -376,9 +411,10 @@ severity: critical
    - Aircraft position (lat/lon) if available
 
 2. **Check Grafana & logs:**
+
    ```bash
    # Check Prometheus for anomalies
-   curl 'http://localhost:9090/api/v1/query?query=mission_status'
+   curl '<http://localhost:9090/api/v1/query?query=mission_status'>
 
    # Check backend logs for errors
    docker logs starlink-location | grep -i error | tail -20
@@ -391,30 +427,33 @@ severity: critical
 
 **Response (Follow-up - 5-30 min):**
 
-1. **Notify stakeholders:**
+2. **Notify stakeholders:**
    - Flight Lead (situation update)
    - Ops Chief (decision on continue vs. contingency)
    - Mission Planner (event for investigation)
 
-2. **Provide crew with:**
+3. **Provide crew with:**
    - Next time system should recover (if predictable)
    - Backup system status (Ku should always be available)
    - Instructions if incident affects mission (e.g., delay non-critical work)
 
-3. **Log incident:**
-   ```
-   14:25 UTC - INCIDENT: X-Band and Ka both lost, crew reports no signal
-   14:26 UTC - Checked: Timeline predicted X-transition 14:25-14:40, within window
-   14:27 UTC - Confirmed with crew: They received pre-briefing, expected window
-   14:28 UTC - System recovered as predicted, crew confirmed Ka available
-   14:30 UTC - Status: RESOLVED. Incident was within predicted timeline, no action needed
-   ```
+4. **Log incident:**
+
+```text
+14:25 UTC - INCIDENT: X-Band and Ka both lost, crew reports no signal
+14:26 UTC - Checked: Timeline predicted X-transition 14:25-14:40, within window
+14:27 UTC - Confirmed with crew: They received pre-briefing, expected window
+14:28 UTC - System recovered as predicted, crew confirmed Ka available
+14:30 UTC - Status: RESOLVED. Incident was within predicted timeline, no action needed
+```
 
 ### Incident: Equipment Failure
 
-**Definition:** System becomes unavailable outside normal predictions (e.g., transmitter hardware failure).
+**Definition:** System becomes unavailable outside normal predictions (e.g.,
+transmitter hardware failure).
 
 **Detection:**
+
 - Dashboard shows system stuck in DEGRADED/RED
 - Status doesn't recover after predicted window ends
 - Crew unable to establish connection despite timeline showing available
@@ -429,36 +468,39 @@ severity: critical
 
 **Analysis & Escalation (5-30 min):**
 
-1. **Check infrastructure logs:**
+4. **Check infrastructure logs:**
+
    ```bash
    docker compose logs > /tmp/incident-$(date +%s).log
    # Send to system engineer
    ```
 
-2. **Verify metrics:**
+1. **Verify metrics:**
+
    ```bash
-   curl http://localhost:8000/metrics | grep mission
+   curl <http://localhost:8000/metrics> | grep mission
    ```
 
-3. **Escalate to:**
+1. **Escalate to:**
    - System Operations (infrastructure investigation)
    - Mission Planner (next-flight impact analysis)
    - Flight Safety (incident report)
 
 **Recovery:**
 
-1. **Restart services if safe:**
+2. **Restart services if safe:**
+
    ```bash
    docker compose down
    docker compose up -d
    # Verify mission re-activates and metrics resume
    ```
 
-2. **Verify crew comms restored:**
+1. **Verify crew comms restored:**
    - Dashboard shows system NOMINAL
    - Crew confirms signal and data rates normal
 
-3. **Post-incident review:**
+1. **Post-incident review:**
    - Root cause analysis (hardware? software? config?)
    - Design improvements (redundancy? failover?)
    - Documentation update (incident log, lessons learned)
@@ -468,34 +510,37 @@ severity: critical
 ## Appendix A: Quick Reference Card
 
 **Pre-Flight (T-2 days):**
+
 1. Generate timeline (mission planner)
 2. Identify risk windows (CRITICAL: escalate)
 3. Export PDF, Excel, CSV
 4. Deliver to crew + stakeholders
 
 **During Flight:**
-1. Monitor Grafana every 15 min
-2. Match dashboard to timeline predictions
-3. Alert crew 15 min before any degradation
-4. Log status snapshots every 30 min
+
+5. Monitor Grafana every 15 min
+6. Match dashboard to timeline predictions
+7. Alert crew 15 min before any degradation
+8. Log status snapshots every 30 min
 
 **Post-Flight:**
-1. Archive actual timeline
-2. Compare to predictions (notes for planner)
-3. Document lessons learned
-4. Close mission
+
+9. Archive actual timeline
+10. Compare to predictions (notes for planner)
+11. Document lessons learned
+12. Close mission
 
 ---
 
 ## Appendix B: Useful URLs
 
-| Resource | URL |
-|---|---|
-| Mission Planner | `http://<dashboard>/ui/mission-planner` |
-| Grafana Dashboard | `http://<dashboard>:3000/d/starlink/fullscreen-overview` |
-| Prometheus Metrics | `http://<dashboard>:9090` |
-| API Documentation | `http://<dashboard>:8000/docs` |
-| Health Check | `http://<dashboard>:8000/health` |
+| Resource           | URL                                                        |
+| ------------------ | ---------------------------------------------------------- |
+| Mission Planner    | `<http://<dashboard>/ui/mission-planner`>                  |
+| Grafana Dashboard  | `<http://<dashboard>:3000/d/starlink/fullscreen-overview`> |
+| Prometheus Metrics | `<http://<dashboard>:9090`>                                |
+| API Documentation  | `<http://<dashboard>:8000/docs`>                           |
+| Health Check       | `<http://<dashboard>:8000/health`>                         |
 
 ---
 
@@ -508,6 +553,5 @@ severity: critical
 
 ---
 
-**Document Version:** 1.0
-**Effective Date:** 2025-11-16
-**Next Review:** 2026-02-16
+**Document Version:** 1.0 **Effective Date:** 2025-11-16 **Next Review:**
+2026-02-16

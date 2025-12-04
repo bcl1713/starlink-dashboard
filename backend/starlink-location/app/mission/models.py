@@ -5,6 +5,11 @@ configurations, satellite transitions, air-refueling windows, and timeline
 advisories.
 """
 
+# FR-004: File exceeds 300 lines (519 lines) because mission data models require
+# 12+ interrelated Pydantic classes with shared validators, enums, and nested
+# structures that form the mission data domain. Splitting would fragment the
+# semantic data model. Deferred to v0.4.0.
+
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional

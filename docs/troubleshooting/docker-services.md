@@ -135,11 +135,11 @@ docker compose restart
 **Check health endpoint:**
 
 ```bash
-curl -v http://localhost:8000/health
+curl -v <http://localhost:8000/health>
 # Should return 200 with {"status": "ok"}
 
 # Check extended info
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 ```
 
 **View logs:**
@@ -175,15 +175,15 @@ docker compose config | rg STARLINK
 
 ```bash
 # Check API status endpoint
-curl http://localhost:8000/api/status | jq '.position'
+curl <http://localhost:8000/api/status> | jq '.position'
 
 # Check raw metrics
-curl http://localhost:8000/metrics | rg "starlink_dish_" | head -5
+curl <http://localhost:8000/metrics> | rg "starlink_dish_" | head -5
 
 # Check update frequency
 # Should see changes every 1 second
 for i in {1..3}; do
-  curl -s http://localhost:8000/api/status | jq '.position.latitude'
+  curl -s <http://localhost:8000/api/status> | jq '.position.latitude'
   sleep 1
 done
 ```
@@ -211,7 +211,7 @@ docker compose restart starlink-location
 
 # Wait 10 seconds and check health
 sleep 10
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 ### Issue: POI file locked or inaccessible

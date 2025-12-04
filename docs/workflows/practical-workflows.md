@@ -19,11 +19,11 @@ project.
 
    This creates a detailed plan in `dev/active/signal-quality-metric/`
 
-2. **Implement the metric:**
+1. **Implement the metric:**
 
    Edit `backend/starlink-location/app/api/metrics.py` and add your metric code.
 
-3. **Review the implementation:**
+1. **Review the implementation:**
 
    ```text
    "Review the new signal quality metric I just added"
@@ -31,7 +31,7 @@ project.
 
    The `code-architecture-reviewer` agent examines your code.
 
-4. **Document the metric:**
+1. **Document the metric:**
 
    ```text
    "Update docs/METRICS.md to include the new signal quality metric"
@@ -39,7 +39,7 @@ project.
 
    Or use the `documentation-architect` agent for comprehensive docs.
 
-5. **Update task tracking:**
+1. **Update task tracking:**
 
    ```text
    /dev-docs-update Completed signal quality metric implementation
@@ -49,7 +49,8 @@ project.
 
 ## Workflow 2: Creating a New Grafana Dashboard
 
-**Scenario:** You want to create a new dashboard for satellite health monitoring.
+**Scenario:** You want to create a new dashboard for satellite health
+monitoring.
 
 **Steps:**
 
@@ -61,23 +62,23 @@ project.
 
    The `web-research-specialist` agent finds examples and patterns.
 
-2. **Plan the dashboard:**
+1. **Plan the dashboard:**
 
    ```text
    /dev-docs Create satellite health monitoring dashboard
    ```
 
-3. **Create the dashboard JSON:**
+1. **Create the dashboard JSON:**
 
    Edit a file in `monitoring/grafana/provisioning/dashboards/`
 
    The `grafana-dashboard` skill auto-activates and provides guidance.
 
-4. **Test the dashboard:**
+1. **Test the dashboard:**
 
-   Load it in Grafana at <http://localhost:3000>
+   Load it in Grafana at <<http://localhost:3000>>
 
-5. **Document the dashboard:**
+1. **Document the dashboard:**
 
    ```text
    "Add documentation for the satellite health dashboard to docs/grafana-setup.md"
@@ -87,7 +88,8 @@ project.
 
 ## Workflow 3: Refactoring Existing Code
 
-**Scenario:** The metrics collection code is getting messy and needs refactoring.
+**Scenario:** The metrics collection code is getting messy and needs
+refactoring.
 
 **Steps:**
 
@@ -99,7 +101,7 @@ project.
 
    The `refactor-planner` agent analyzes the code and creates a detailed plan.
 
-2. **Review the plan:**
+1. **Review the plan:**
 
    ```text
    "Review this refactoring plan before I start implementation"
@@ -107,17 +109,17 @@ project.
 
    The `plan-reviewer` agent validates the approach.
 
-3. **Execute the refactoring:**
+1. **Execute the refactoring:**
 
    Follow the plan step-by-step, making changes incrementally.
 
-4. **Review each significant change:**
+1. **Review each significant change:**
 
    ```text
    "Review the metrics collector refactoring I just completed"
    ```
 
-5. **Update documentation:**
+1. **Update documentation:**
 
    ```text
    /dev-docs-update Completed metrics collector refactoring
@@ -139,29 +141,29 @@ project.
 
    The `web-research-specialist` agent searches for solutions.
 
-2. **Create a debugging plan:**
+1. **Create a debugging plan:**
 
    ```text
    /dev-docs Debug and fix Prometheus scrape timeout issues
    ```
 
-3. **Document findings as you debug:**
+1. **Document findings as you debug:**
 
    Keep notes in `dev/active/scrape-timeout-debug/[task]-context.md`
 
-4. **Review the fix:**
+1. **Review the fix:**
 
    ```text
    "Review my fix for the Prometheus timeout issue"
    ```
 
-5. **Document the solution:**
+1. **Document the solution:**
 
    ```text
    "Add this to troubleshooting docs so we don't hit this again"
    ```
 
-6. **Update task tracking:**
+1. **Update task tracking:**
 
    ```text
    /dev-docs-update Fixed Prometheus timeout by optimizing metrics calculation
@@ -182,7 +184,7 @@ below a threshold.
    /dev-docs Implement real-time alerting system for satellite signal quality
    ```
 
-2. **Review the plan before starting:**
+1. **Review the plan before starting:**
 
    ```text
    "Review the alerting system plan"
@@ -190,13 +192,13 @@ below a threshold.
 
    The `plan-reviewer` agent validates the approach.
 
-3. **Research implementation patterns:**
+1. **Research implementation patterns:**
 
    ```text
    "Research best practices for implementing alerting with Prometheus and Grafana"
    ```
 
-4. **Implement in phases:**
+1. **Implement in phases:**
 
    Follow the tasks in `dev/active/alerting-system/alerting-system-tasks.md`
 
@@ -206,7 +208,7 @@ below a threshold.
    "Review the alert rule configuration I just added"
    ```
 
-5. **Document the system:**
+1. **Document the system:**
 
    ```text
    "Create comprehensive documentation for the alerting system"
@@ -214,7 +216,7 @@ below a threshold.
 
    The `documentation-architect` agent creates detailed docs.
 
-6. **Update progress regularly:**
+1. **Update progress regularly:**
 
    ```text
    /dev-docs-update Completed phase 1 of alerting system (alert rules)
@@ -230,7 +232,7 @@ When adding new metrics, always:
 
 1. Use `web-research-specialist` to verify naming conventions
 2. Document in `docs/METRICS.md`
-3. Test scraping with `curl http://localhost:8000/metrics`
+3. Test scraping with `curl <http://localhost:8000/metrics`>
 4. Review with `code-architecture-reviewer`
 
 ### Grafana Dashboards
@@ -247,7 +249,7 @@ When creating dashboards:
 When modifying backend code:
 
 1. Simulation mode makes testing easier - use it!
-2. Check health endpoint: `curl http://localhost:8000/health`
+2. Check health endpoint: `curl <http://localhost:8000/health`>
 3. Review FastAPI docs for async patterns
 4. Use type hints consistently
 

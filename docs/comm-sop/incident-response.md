@@ -29,7 +29,7 @@ predicted.
 
    ```bash
    # Check Prometheus for anomalies
-   curl 'http://localhost:9090/api/v1/query?query=mission_status'
+   curl '<http://localhost:9090/api/v1/query?query=mission_status'>
    # (truncated for brevity)
 
    # Check backend logs for errors
@@ -96,13 +96,13 @@ transmitter hardware failure).
    # Send to system engineer
    ```
 
-2. **Verify metrics:**
+1. **Verify metrics:**
 
    ```bash
-   curl http://localhost:8000/metrics | rg mission
+   curl <http://localhost:8000/metrics> | rg mission
    ```
 
-3. **Escalate to:**
+1. **Escalate to:**
    - System Operations (infrastructure investigation)
    - Mission Planner (next-flight impact analysis)
    - Flight Safety (incident report)
@@ -117,11 +117,11 @@ transmitter hardware failure).
    # Verify mission re-activates and metrics resume
    ```
 
-2. **Verify crew comms restored:**
+1. **Verify crew comms restored:**
    - Dashboard shows system NOMINAL
    - Crew confirms signal and data rates normal
 
-3. **Post-incident review:**
+1. **Post-incident review:**
    - Root cause analysis (hardware? software? config?)
    - Design improvements (redundancy? failover?)
    - Documentation update (incident log, lessons learned)

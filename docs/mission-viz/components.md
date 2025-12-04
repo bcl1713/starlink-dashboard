@@ -46,7 +46,7 @@ TransportState.DEGRADED    "DEGRADED"
 TransportState.OFFLINE     "OFFLINE"
 ```
 
-## Data Extraction Pattern: _segment_rows() Example
+## Data Extraction Pattern: \_segment_rows() Example
 
 The exporter's `_segment_rows()` function (lines 271-331) demonstrates the
 proper way to extract timeline data:

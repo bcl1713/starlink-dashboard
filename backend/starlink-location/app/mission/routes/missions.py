@@ -1,5 +1,10 @@
 """Mission CRUD operations endpoints."""
 
+# FR-004: File exceeds 300 lines (408 lines) because mission CRUD combines
+# storage operations, timeline building, export handling, and state validation.
+# Separation would create circular dependencies with exporter and storage modules.
+# Deferred to v0.4.0.
+
 import logging
 from datetime import datetime, timezone
 from typing import Optional

@@ -1,7 +1,6 @@
 # Starlink Dashboard Setup Guide
 
-**Last Updated:** 2025-10-31
-**Project Version:** 0.2.0
+**Last Updated:** 2025-10-31 **Project Version:** 0.2.0
 
 ## Quick Navigation
 
@@ -19,16 +18,19 @@
 ### System Requirements
 
 - **Docker:** Version 20.10 or higher
+
   ```bash
   docker --version  # Should be >= 20.10
   ```
 
 - **Docker Compose:** Version 2.0 or higher
+
   ```bash
   docker compose version  # Should be >= 2.0
   ```
 
 - **Git:** For version control
+
   ```bash
   git --version
   ```
@@ -49,14 +51,17 @@
 ### OS-Specific Notes
 
 **Linux:**
+
 - ✅ Full feature support including host network mode
 - Firewall may need port 3000, 8000, 9090 open
 
 **macOS (Intel or Apple Silicon):**
+
 - ✅ Full feature support via Docker Desktop
 - Uses bridge network mode (cross-platform compatible)
 
 **Windows:**
+
 - ✅ Full feature support via Docker Desktop
 - WSL 2 recommended for better performance
 - Uses bridge network mode (cross-platform compatible)
@@ -69,7 +74,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/starlink-dashboard.git
+git clone <https://github.com/your-repo/starlink-dashboard.git>
 cd starlink-dashboard
 
 # Verify directory structure
@@ -111,7 +116,8 @@ docker compose ps
 ```
 
 **Expected output:**
-```
+
+```text
 CONTAINER ID   IMAGE                        STATUS
 xxxxx          starlink-location:latest     Up 2 seconds (healthy)
 xxxxx          prom/prometheus:latest       Up 3 seconds
@@ -122,7 +128,7 @@ xxxxx          grafana/grafana:latest       Up 4 seconds
 
 ```bash
 # Check backend health
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # View container logs (useful for debugging)
 docker compose logs -f
@@ -139,6 +145,7 @@ docker compose logs -f
 The system is configured for simulation mode by default:
 
 **`.env` file:**
+
 ```bash
 STARLINK_MODE=simulation          # Default mode
 PROMETHEUS_RETENTION=1y           # 1 year of data
@@ -155,7 +162,7 @@ cat .env | grep STARLINK_MODE
 docker compose up -d
 
 # Verify backend is running in simulation mode
-curl http://localhost:8000/health | jq '.mode'
+curl <http://localhost:8000/health> | jq '.mode'
 # Output: "simulation"
 ```
 
@@ -163,20 +170,21 @@ curl http://localhost:8000/health | jq '.mode'
 
 The system automatically generates realistic Starlink telemetry:
 
-| Metric | Simulation Behavior |
-|--------|-------------------|
-| **Position** | Circular or straight route following KML route if available |
-| **Speed** | 0-100 knots with realistic variation |
-| **Latency** | 20-80ms typical, occasional 200ms spikes |
-| **Throughput** | Download 50-200 Mbps, Upload 10-40 Mbps |
-| **Obstructions** | 0-30% with smooth variation |
-| **Altitude** | 100-10,000 meters with small variations |
+| Metric           | Simulation Behavior                                         |
+| ---------------- | ----------------------------------------------------------- |
+| **Position**     | Circular or straight route following KML route if available |
+| **Speed**        | 0-100 knots with realistic variation                        |
+| **Latency**      | 20-80ms typical, occasional 200ms spikes                    |
+| **Throughput**   | Download 50-200 Mbps, Upload 10-40 Mbps                     |
+| **Obstructions** | 0-30% with smooth variation                                 |
+| **Altitude**     | 100-10,000 meters with small variations                     |
 
 ### Route Configuration
 
 The simulator can follow pre-recorded KML routes or generate circular paths:
 
 **Using Default Circular Route:**
+
 ```bash
 # Edit config for route parameters
 # Location: backend/starlink-location/config.yaml
@@ -186,16 +194,19 @@ The simulator can follow pre-recorded KML routes or generate circular paths:
 **Using Custom KML Route:**
 
 1. Place KML file in `/data/sim_routes/`:
+
 ```bash
 cp your-route.kml /data/sim_routes/my-route.kml
 ```
 
-2. Restart backend:
+1. Restart backend:
+
 ```bash
 docker compose restart starlink-location
 ```
 
-3. Check logs:
+1. Check logs:
+
 ```bash
 docker compose logs starlink-location | grep -i "kml\|route"
 ```
@@ -204,28 +215,28 @@ docker compose logs starlink-location | grep -i "kml\|route"
 
 Once running in simulation mode:
 
-| Service | URL | Notes |
-|---------|-----|-------|
-| **Grafana** | http://localhost:3000 | admin / admin |
-| **Prometheus** | http://localhost:9090 | Metrics database |
-| **Backend Health** | http://localhost:8000/health | Service status |
-| **Backend API** | http://localhost:8000/docs | Interactive docs |
-| **Metrics** | http://localhost:8000/metrics | Raw Prometheus metrics |
+| Service            | URL                             | Notes                  |
+| ------------------ | ------------------------------- | ---------------------- |
+| **Grafana**        | <http://localhost:3000>         | admin / admin          |
+| **Prometheus**     | <http://localhost:9090>         | Metrics database       |
+| **Backend Health** | <http://localhost:8000/health>  | Service status         |
+| **Backend API**    | <http://localhost:8000/docs>    | Interactive docs       |
+| **Metrics**        | <http://localhost:8000/metrics> | Raw Prometheus metrics |
 
 ### Testing Simulation Mode
 
 ```bash
 # Check current status
-curl http://localhost:8000/api/status | jq .
+curl <http://localhost:8000/api/status> | jq .
 
 # List configured POIs
-curl http://localhost:8000/api/pois | jq .
+curl <http://localhost:8000/api/pois> | jq .
 
 # Get ETAs to all POIs
-curl http://localhost:8000/api/pois/etas | jq .
+curl <http://localhost:8000/api/pois/etas> | jq .
 
 # View available metrics
-curl http://localhost:8000/metrics | head -20
+curl <http://localhost:8000/metrics> | head -20
 ```
 
 ---
@@ -279,13 +290,13 @@ Directly access the host network. More efficient but Linux-only.
 ```yaml
 # In docker-compose.yml - uncomment this:
 network_mode: host
-
 # And comment out the extra_hosts section
 # extra_hosts:
 #   - "dish.starlink:${STARLINK_DISH_HOST:-192.168.100.1}"
 ```
 
 After changing network mode:
+
 ```bash
 docker compose down
 docker compose up -d
@@ -303,7 +314,7 @@ docker compose down
 docker compose up -d --build
 
 # 3. Check connection status
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 
 # Expected: "dish_connected": true
 ```
@@ -312,7 +323,7 @@ curl http://localhost:8000/health | jq .
 
 ```bash
 # Check health endpoint
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 
 # Look for:
 # "mode": "live"
@@ -348,6 +359,7 @@ docker inspect starlink-location | grep -A 5 NetworkMode
 **If Using Custom IP:**
 
 Update `.env` and restart:
+
 ```bash
 STARLINK_DISH_HOST=192.168.1.100  # Your custom IP
 docker compose down
@@ -358,6 +370,7 @@ docker compose logs -f starlink-location
 ### Live Mode Features
 
 Once connected:
+
 - Real-time position updates from terminal
 - Actual network metrics (latency, throughput)
 - Real obstruction readings
@@ -374,6 +387,7 @@ The system is designed to gracefully handle connection issues:
 - **Health Check:** Shows actual connection status
 
 This allows:
+
 - Continuous operation even if dish loses power
 - Seamless reconnection without restarting service
 - Accurate health monitoring via `/health` endpoint
@@ -391,19 +405,19 @@ docker compose ps
 # Expected: All services "Up"
 
 # 2. Check backend health
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 # Expected: {"status": "ok", ...}
 
 # 3. Check Prometheus scraping
-curl http://localhost:9090/api/v1/targets
+curl <http://localhost:9090/api/v1/targets>
 # Expected: All targets "UP"
 
 # 4. Verify metrics available
-curl http://localhost:8000/metrics | head -5
+curl <http://localhost:8000/metrics> | head -5
 # Expected: Prometheus format with TYPE comments
 
 # 5. Access Grafana
-open http://localhost:3000
+open <http://localhost:3000>
 # Expected: Login page (admin/admin)
 ```
 
@@ -411,13 +425,13 @@ open http://localhost:3000
 
 ```bash
 # 1. Backend generating metrics
-curl http://localhost:8000/api/status | jq '.position'
+curl <http://localhost:8000/api/status> | jq '.position'
 
 # 2. Prometheus scraping backend
-curl http://localhost:9090/api/v1/query?query=starlink_dish_latitude_degrees
+curl <http://localhost:9090/api/v1/query?query=starlink_dish_latitude_degrees>
 
 # 3. Grafana querying Prometheus
-# Open http://localhost:3000
+# Open <http://localhost:3000>
 # Check Starlink Overview dashboard for live data
 ```
 
@@ -465,6 +479,7 @@ docker compose down && docker compose up -d
 ### Can't Connect to Services
 
 **Backend unreachable:**
+
 ```bash
 # Check if container is running
 docker compose ps starlink-location
@@ -479,18 +494,20 @@ docker compose up -d
 ```
 
 **Prometheus not scraping:**
+
 ```bash
 # Check Prometheus targets
-open http://localhost:9090/targets
+open <http://localhost:9090/targets>
 
 # Verify backend health from Prometheus container
-docker compose exec prometheus curl http://starlink-location:8000/health
+docker compose exec prometheus curl <http://starlink-location:8000/health>
 ```
 
 **Grafana data empty:**
+
 ```bash
 # Verify data source is connected
-# 1. Go to http://localhost:3000
+# 1. Go to <http://localhost:3000>
 # 2. Settings > Data Sources > Prometheus
 # 3. Click "Test" button
 # 4. Should say "Data source is working"
@@ -521,7 +538,7 @@ docker compose build --no-cache
 docker compose up -d
 
 # 3. Check if changes took effect
-curl http://localhost:8000/health | jq '.mode'
+curl <http://localhost:8000/health> | jq '.mode'
 ```
 
 ### High CPU/Memory Usage
@@ -543,20 +560,20 @@ docker compose logs prometheus | tail -20
 
 ## Environment Variables Reference
 
-| Variable | Default | Description | Mode |
-|----------|---------|-------------|------|
-| `STARLINK_MODE` | `simulation` | `simulation` or `live` | Both |
-| `STARLINK_DISH_HOST` | `192.168.100.1` | Dish IP address | Live |
-| `STARLINK_DISH_PORT` | `9200` | Dish gRPC port | Live |
-| `PROMETHEUS_RETENTION` | `1y` | Data retention period | Both |
-| `GRAFANA_ADMIN_PASSWORD` | `admin` | Grafana password | Both |
-| `STARLINK_LOCATION_PORT` | `8000` | Backend service port | Both |
-| `PROMETHEUS_PORT` | `9090` | Prometheus UI port | Both |
-| `GRAFANA_PORT` | `3000` | Grafana UI port | Both |
-| `TIMEZONE_TAKEOFF` | `America/Los_Angeles` | Timezone for displays | Both |
-| `TIMEZONE_LANDING` | `Europe/London` | Timezone for displays | Both |
-| `LOG_LEVEL` | `INFO` | Backend logging level | Both |
-| `JSON_LOGS` | `true` | JSON-formatted logs | Both |
+| Variable                 | Default               | Description            | Mode |
+| ------------------------ | --------------------- | ---------------------- | ---- |
+| `STARLINK_MODE`          | `simulation`          | `simulation` or `live` | Both |
+| `STARLINK_DISH_HOST`     | `192.168.100.1`       | Dish IP address        | Live |
+| `STARLINK_DISH_PORT`     | `9200`                | Dish gRPC port         | Live |
+| `PROMETHEUS_RETENTION`   | `1y`                  | Data retention period  | Both |
+| `GRAFANA_ADMIN_PASSWORD` | `admin`               | Grafana password       | Both |
+| `STARLINK_LOCATION_PORT` | `8000`                | Backend service port   | Both |
+| `PROMETHEUS_PORT`        | `9090`                | Prometheus UI port     | Both |
+| `GRAFANA_PORT`           | `3000`                | Grafana UI port        | Both |
+| `TIMEZONE_TAKEOFF`       | `America/Los_Angeles` | Timezone for displays  | Both |
+| `TIMEZONE_LANDING`       | `Europe/London`       | Timezone for displays  | Both |
+| `LOG_LEVEL`              | `INFO`                | Backend logging level  | Both |
+| `JSON_LOGS`              | `true`                | JSON-formatted logs    | Both |
 
 ---
 
@@ -613,15 +630,16 @@ scrape_timeout: 10s   # Increase from default
 ## Next Steps
 
 1. **Setup POIs:** Create Points of Interest for navigation
-   - See [Backend README - POI Management](../backend/starlink-location/README.md#poi-management)
+   - See
+     [Backend README - POI Management](../backend/starlink-location/README.md#poi-management)
 
-2. **Explore Dashboards:** Customize Grafana dashboards
+1. **Explore Dashboards:** Customize Grafana dashboards
    - See [Grafana Setup Guide](./grafana-setup.md)
 
-3. **Develop Features:** Start working on new features
+1. **Develop Features:** Start working on new features
    - See [Development Guide](../dev/README.md)
 
-4. **Monitor System:** Set up alerts and monitoring
+1. **Monitor System:** Set up alerts and monitoring
    - See [METRICS documentation](./METRICS.md)
 
 ---

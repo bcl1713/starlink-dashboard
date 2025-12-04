@@ -1,12 +1,13 @@
 # Starlink Dashboard Documentation Index
 
-**Last Updated:** 2025-11-16
-**Complete Documentation Map**
-**Status:** Comprehensive coverage including Mission Communication Planning (720+ tests passing)
+**Last Updated:** 2025-11-16 **Complete Documentation Map** **Status:**
+Comprehensive coverage including Mission Communication Planning (720+ tests
+passing)
 
 ## Navigation Guide
 
-This page provides a complete map of all documentation in the Starlink Dashboard project. Use this to quickly find what you're looking for.
+This page provides a complete map of all documentation in the Starlink Dashboard
+project. Use this to quickly find what you're looking for.
 
 ---
 
@@ -16,7 +17,7 @@ Start here if you're new to the project:
 
 1. **[README.md](../README.md)** - Project overview and quick start
 2. **[SETUP-GUIDE.md](./SETUP-GUIDE.md)** - Detailed installation instructions
-3. Access: http://localhost:3000 (Grafana)
+3. Access: <http://localhost:3000> (Grafana)
 
 ---
 
@@ -26,50 +27,50 @@ Start here if you're new to the project:
 
 #### Set up the project
 
-| Goal | Document | Time |
-|------|----------|------|
-| Get it running in 3 minutes | [Quick Start (README)](../README.md#quick-start) | 3 min |
-| Understand all setup options | [SETUP-GUIDE.md](./SETUP-GUIDE.md) | 10 min |
-| Configure simulation mode | [SETUP-GUIDE.md - Simulation](./SETUP-GUIDE.md#simulation-mode-setup) | 5 min |
-| Connect to real hardware | [SETUP-GUIDE.md - Live Mode](./SETUP-GUIDE.md#live-mode-setup) | 10 min |
-| Fix setup problems | [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | varies |
+| Goal                         | Document                                                              | Time   |
+| ---------------------------- | --------------------------------------------------------------------- | ------ |
+| Get it running in 3 minutes  | [Quick Start (README)](../README.md#quick-start)                      | 3 min  |
+| Understand all setup options | [SETUP-GUIDE.md](./SETUP-GUIDE.md)                                    | 10 min |
+| Configure simulation mode    | [SETUP-GUIDE.md - Simulation](./SETUP-GUIDE.md#simulation-mode-setup) | 5 min  |
+| Connect to real hardware     | [SETUP-GUIDE.md - Live Mode](./SETUP-GUIDE.md#live-mode-setup)        | 10 min |
+| Fix setup problems           | [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)                            | varies |
 
 #### Use the dashboards
 
-| Goal | Document | Time |
-|------|----------|------|
-| Understand available dashboards | [README.md - Dashboards](../README.md#grafana-dashboards) | 5 min |
-| Learn dashboard features | [grafana-setup.md](./grafana-setup.md) | 15 min |
-| Create custom dashboards | [grafana-setup.md](./grafana-setup.md) | 20 min |
-| Understand the metrics | [METRICS.md](./METRICS.md) | 10 min |
+| Goal                            | Document                                                  | Time   |
+| ------------------------------- | --------------------------------------------------------- | ------ |
+| Understand available dashboards | [README.md - Dashboards](../README.md#grafana-dashboards) | 5 min  |
+| Learn dashboard features        | [grafana-setup.md](./grafana-setup.md)                    | 15 min |
+| Create custom dashboards        | [grafana-setup.md](./grafana-setup.md)                    | 20 min |
+| Understand the metrics          | [METRICS.md](./METRICS.md)                                | 10 min |
 
 #### Plan missions
 
-| Goal | Document | Time |
-|------|----------|------|
+| Goal                            | Document                                                 | Time   |
+| ------------------------------- | -------------------------------------------------------- | ------ |
 | Learn mission planning workflow | [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) | 20 min |
-| Set up for mission operations | [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) | 15 min |
-| Understand performance targets | [PERFORMANCE-NOTES.md](./PERFORMANCE-NOTES.md) | 10 min |
+| Set up for mission operations   | [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md)             | 15 min |
+| Understand performance targets  | [PERFORMANCE-NOTES.md](./PERFORMANCE-NOTES.md)           | 10 min |
 
 #### Develop features
 
-| Goal | Document | Time |
-|------|----------|------|
-| Understand architecture | [design-document.md](./design-document.md) | 15 min |
-| See implementation plan | [phased-development-plan.md](./phased-development-plan.md) | 10 min |
-| Contribute code | [CONTRIBUTING.md](../CONTRIBUTING.md) | 15 min |
-| Current development status | [dev/STATUS.md](../dev/STATUS.md) | 5 min |
-| Review API endpoints | [API-REFERENCE.md](./API-REFERENCE.md) | 15 min |
+| Goal                       | Document                                                   | Time   |
+| -------------------------- | ---------------------------------------------------------- | ------ |
+| Understand architecture    | [design-document.md](./design-document.md)                 | 15 min |
+| See implementation plan    | [phased-development-plan.md](./phased-development-plan.md) | 10 min |
+| Contribute code            | [CONTRIBUTING.md](../CONTRIBUTING.md)                      | 15 min |
+| Current development status | [dev/STATUS.md](../dev/STATUS.md)                          | 5 min  |
+| Review API endpoints       | [API-REFERENCE.md](./API-REFERENCE.md)                     | 15 min |
 
 #### Debug issues
 
-| Goal | Document | Time |
-|------|----------|------|
-| Service won't start | [TROUBLESHOOTING.md - Service Won't Start](./TROUBLESHOOTING.md#service-wont-start) | 10 min |
-| Can't access Grafana | [TROUBLESHOOTING.md - Service Issues](./TROUBLESHOOTING.md#service-wont-start) | 5 min |
-| No data appearing | [TROUBLESHOOTING.md - Backend Issues](./TROUBLESHOOTING.md#backend-issues) | 15 min |
-| Live mode won't connect | [TROUBLESHOOTING.md - Live Mode](./TROUBLESHOOTING.md#live-mode-issues) | 10 min |
-| Port conflicts | [TROUBLESHOOTING.md - Port Conflicts](./TROUBLESHOOTING.md#port-conflicts) | 5 min |
+| Goal                    | Document                                                                            | Time   |
+| ----------------------- | ----------------------------------------------------------------------------------- | ------ |
+| Service won't start     | [TROUBLESHOOTING.md - Service Won't Start](./TROUBLESHOOTING.md#service-wont-start) | 10 min |
+| Can't access Grafana    | [TROUBLESHOOTING.md - Service Issues](./TROUBLESHOOTING.md#service-wont-start)      | 5 min  |
+| No data appearing       | [TROUBLESHOOTING.md - Backend Issues](./TROUBLESHOOTING.md#backend-issues)          | 15 min |
+| Live mode won't connect | [TROUBLESHOOTING.md - Live Mode](./TROUBLESHOOTING.md#live-mode-issues)             | 10 min |
+| Port conflicts          | [TROUBLESHOOTING.md - Port Conflicts](./TROUBLESHOOTING.md#port-conflicts)          | 5 min  |
 
 ---
 
@@ -77,63 +78,63 @@ Start here if you're new to the project:
 
 ### Project Root
 
-| File | Purpose | Audience |
-|------|---------|----------|
-| [README.md](../README.md) | Project overview, quick start, navigation | Everyone |
-| [CLAUDE.md](../CLAUDE.md) | AI development guide, configuration reference | Developers |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | How to contribute, development workflow | Contributors |
-| [.env.example](../.env.example) | Configuration template with defaults | Everyone |
-| [docker-compose.yml](../docker-compose.yml) | Service definition and composition | DevOps |
+| File                                        | Purpose                                       | Audience     |
+| ------------------------------------------- | --------------------------------------------- | ------------ |
+| [README.md](../README.md)                   | Project overview, quick start, navigation     | Everyone     |
+| [CLAUDE.md](../CLAUDE.md)                   | AI development guide, configuration reference | Developers   |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)       | How to contribute, development workflow       | Contributors |
+| [.env.example](../.env.example)             | Configuration template with defaults          | Everyone     |
+| [docker-compose.yml](../docker-compose.yml) | Service definition and composition            | DevOps       |
 
 ### Documentation (docs/)
 
 #### Setup & Installation
 
-| File | Purpose | When to read |
-|------|---------|--------------|
-| [SETUP-GUIDE.md](./SETUP-GUIDE.md) | Complete setup instructions for all modes | Setting up the project |
-| [API-REFERENCE.md](./API-REFERENCE.md) | All REST API endpoints with examples | Using the API |
-| [ROUTE-TIMING-GUIDE.md](./ROUTE-TIMING-GUIDE.md) | Route timing feature complete guide | Using route timing features |
+| File                                             | Purpose                                   | When to read                |
+| ------------------------------------------------ | ----------------------------------------- | --------------------------- |
+| [SETUP-GUIDE.md](./SETUP-GUIDE.md)               | Complete setup instructions for all modes | Setting up the project      |
+| [API-REFERENCE.md](./API-REFERENCE.md)           | All REST API endpoints with examples      | Using the API               |
+| [ROUTE-TIMING-GUIDE.md](./ROUTE-TIMING-GUIDE.md) | Route timing feature complete guide       | Using route timing features |
 
 #### Mission Communication Planning
 
-| File | Purpose | When to read |
-|------|---------|--------------|
-| [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) | Mission planning interface and workflow guide | Using mission planner |
-| [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) | Operations playbook for mission planning and monitoring | Planning and executing missions |
-| [PERFORMANCE-NOTES.md](./PERFORMANCE-NOTES.md) | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
+| File                                                     | Purpose                                                    | When to read                              |
+| -------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------- |
+| [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) | Mission planning interface and workflow guide              | Using mission planner                     |
+| [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md)             | Operations playbook for mission planning and monitoring    | Planning and executing missions           |
+| [PERFORMANCE-NOTES.md](./PERFORMANCE-NOTES.md)           | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
 
 #### Reference
 
-| File | Purpose | When to read |
-|------|---------|--------------|
-| [METRICS.md](./METRICS.md) | Complete Prometheus metrics documentation | Understanding metrics |
-| [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | Problem diagnosis and solutions | Troubleshooting |
+| File                                       | Purpose                                   | When to read          |
+| ------------------------------------------ | ----------------------------------------- | --------------------- |
+| [METRICS.md](./METRICS.md)                 | Complete Prometheus metrics documentation | Understanding metrics |
+| [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) | Problem diagnosis and solutions           | Troubleshooting       |
 
 #### Architecture & Design
 
-| File | Purpose | When to read |
-|------|---------|--------------|
-| [design-document.md](./design-document.md) | System architecture and design decisions | Understanding architecture |
-| [phased-development-plan.md](./phased-development-plan.md) | Implementation roadmap and phases | Understanding plan |
-| [grafana-setup.md](./grafana-setup.md) | Dashboard configuration and usage | Learning Grafana dashboards |
-| [claude-code-workflows.md](./claude-code-workflows.md) | Claude-specific development workflows | AI-assisted development |
+| File                                                       | Purpose                                  | When to read                |
+| ---------------------------------------------------------- | ---------------------------------------- | --------------------------- |
+| [design-document.md](./design-document.md)                 | System architecture and design decisions | Understanding architecture  |
+| [phased-development-plan.md](./phased-development-plan.md) | Implementation roadmap and phases        | Understanding plan          |
+| [grafana-setup.md](./grafana-setup.md)                     | Dashboard configuration and usage        | Learning Grafana dashboards |
+| [claude-code-workflows.md](./claude-code-workflows.md)     | Claude-specific development workflows    | AI-assisted development     |
 
 ### Backend (backend/starlink-location/)
 
-| File | Purpose | When to read |
-|------|---------|--------------|
-| [README.md](../backend/starlink-location/README.md) | Backend service overview and API | Developing backend |
-| [VALIDATION.md](../backend/starlink-location/VALIDATION.md) | Testing and validation guide | Testing |
-| [config.yaml](../backend/starlink-location/config.yaml) | Default configuration | Understanding defaults |
-| [requirements.txt](../backend/starlink-location/requirements.txt) | Python dependencies | Dependency management |
+| File                                                              | Purpose                          | When to read           |
+| ----------------------------------------------------------------- | -------------------------------- | ---------------------- |
+| [README.md](../backend/starlink-location/README.md)               | Backend service overview and API | Developing backend     |
+| [VALIDATION.md](../backend/starlink-location/VALIDATION.md)       | Testing and validation guide     | Testing                |
+| [config.yaml](../backend/starlink-location/config.yaml)           | Default configuration            | Understanding defaults |
+| [requirements.txt](../backend/starlink-location/requirements.txt) | Python dependencies              | Dependency management  |
 
 ### Development (dev/)
 
-| File | Purpose | When to read |
-|------|---------|--------------|
-| [STATUS.md](../dev/STATUS.md) | Current development status and progress | Understanding current work |
-| [README.md](../dev/README.md) | Development workflow and task management | Starting development |
+| File                            | Purpose                                    | When to read                 |
+| ------------------------------- | ------------------------------------------ | ---------------------------- |
+| [STATUS.md](../dev/STATUS.md)   | Current development status and progress    | Understanding current work   |
+| [README.md](../dev/README.md)   | Development workflow and task management   | Starting development         |
 | [completed/](../dev/completed/) | Archived completed tasks and documentation | Learning from completed work |
 
 ---
@@ -159,7 +160,8 @@ Start here if you're new to the project:
 - [design-document.md](./design-document.md) - Full architecture
 - [API-REFERENCE.md](./API-REFERENCE.md) - Complete API specification
 - [METRICS.md](./METRICS.md) - All metrics reference
-- [phased-development-plan.md](./phased-development-plan.md) - Implementation plan
+- [phased-development-plan.md](./phased-development-plan.md) - Implementation
+  plan
 - [Backend README](../backend/starlink-location/README.md) - Service details
 
 ### Planning & Status
@@ -175,6 +177,7 @@ Start here if you're new to the project:
 ### For First-Time Users
 
 Read in order:
+
 1. [README.md](../README.md) - Overview (5 min)
 2. [SETUP-GUIDE.md](./SETUP-GUIDE.md) - Setup (15 min)
 3. [grafana-setup.md](./grafana-setup.md) - Using dashboards (10 min)
@@ -182,6 +185,7 @@ Read in order:
 ### For Contributors
 
 Read in order:
+
 1. [README.md](../README.md) - Overview (5 min)
 2. [CLAUDE.md](../CLAUDE.md) - Development config (10 min)
 3. [design-document.md](./design-document.md) - Architecture (15 min)
@@ -191,9 +195,11 @@ Read in order:
 ### For API Users
 
 Read in order:
+
 1. [API-REFERENCE.md](./API-REFERENCE.md) - API endpoints (20 min)
-2. [Backend README](../backend/starlink-location/README.md) - Service details (10 min)
-3. http://localhost:8000/docs - Interactive docs (5 min)
+2. [Backend README](../backend/starlink-location/README.md) - Service details
+   (10 min)
+3. <http://localhost:8000/docs> - Interactive docs (5 min)
 
 ### For Troubleshooting
 
@@ -204,34 +210,40 @@ Read in order:
 ### For Operations/DevOps
 
 Read in order:
+
 1. [SETUP-GUIDE.md](./SETUP-GUIDE.md) - Installation (10 min)
-2. [SETUP-GUIDE.md - Performance](./SETUP-GUIDE.md#performance-tuning) - Tuning (10 min)
+2. [SETUP-GUIDE.md - Performance](./SETUP-GUIDE.md#performance-tuning) - Tuning
+   (10 min)
 3. [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Monitoring (15 min)
 
 ### For Mission Planners
 
 Read in order:
-1. [README.md#mission-communication-planning](../README.md#mission-communication-planning) - Overview (5 min)
-2. [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) - User guide (20 min)
-3. [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) - Operations procedures (15 min)
-4. [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning) - Dashboard setup (10 min)
+
+1. [README.md#mission-communication-planning](../README.md#mission-communication-planning) -
+   Overview (5 min)
+1. [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) - User guide (20
+   min)
+1. [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) - Operations procedures (15 min)
+1. [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning) -
+   Dashboard setup (10 min)
 
 ---
 
 ## Documentation Statistics
 
-| Category | Count | Total Pages |
-|----------|-------|------------|
-| Setup & Getting Started | 2 | ~40 pages |
-| API & Integration | 3 | ~60 pages |
-| Mission Communication Planning | 3 | ~180 pages |
-| Troubleshooting & Reference | 2 | ~40 pages |
-| Feature Guides | 2 | ~100 pages |
-| Architecture & Design | 4 | ~50 pages |
-| Development & Contributing | 4 | ~30 pages |
-| Backend Service | 2 | ~20 pages |
-| Monitoring & Operations | 1 | ~50 pages |
-| **Total** | **23** | **~570 pages** |
+| Category                       | Count  | Total Pages    |
+| ------------------------------ | ------ | -------------- |
+| Setup & Getting Started        | 2      | ~40 pages      |
+| API & Integration              | 3      | ~60 pages      |
+| Mission Communication Planning | 3      | ~180 pages     |
+| Troubleshooting & Reference    | 2      | ~40 pages      |
+| Feature Guides                 | 2      | ~100 pages     |
+| Architecture & Design          | 4      | ~50 pages      |
+| Development & Contributing     | 4      | ~30 pages      |
+| Backend Service                | 2      | ~20 pages      |
+| Monitoring & Operations        | 1      | ~50 pages      |
+| **Total**                      | **23** | **~570 pages** |
 
 ---
 
@@ -240,38 +252,52 @@ Read in order:
 ### By Topic
 
 **Installation & Setup:**
+
 - Quick Start: [README.md#quick-start](../README.md#quick-start)
 - Detailed Setup: [SETUP-GUIDE.md](./SETUP-GUIDE.md)
-- Simulation Mode: [SETUP-GUIDE.md#simulation-mode-setup](./SETUP-GUIDE.md#simulation-mode-setup)
+- Simulation Mode:
+  [SETUP-GUIDE.md#simulation-mode-setup](./SETUP-GUIDE.md#simulation-mode-setup)
 - Live Mode: [SETUP-GUIDE.md#live-mode-setup](./SETUP-GUIDE.md#live-mode-setup)
 - Verification: [SETUP-GUIDE.md#verification](./SETUP-GUIDE.md#verification)
-- Troubleshooting Setup: [TROUBLESHOOTING.md#service-wont-start](./TROUBLESHOOTING.md#service-wont-start)
+- Troubleshooting Setup:
+  [TROUBLESHOOTING.md#service-wont-start](./TROUBLESHOOTING.md#service-wont-start)
 
 **Configuration:**
+
 - Environment Variables: [README.md#configuration](../README.md#configuration)
 - .env Reference: [CLAUDE.md#configuration](../CLAUDE.md#configuration)
-- Backend Config: [backend/README.md#environment-variables](../backend/starlink-location/README.md#environment-variables)
+- Backend Config:
+  [backend/README.md#environment-variables](../backend/starlink-location/README.md#environment-variables)
 - Docker Compose: [docker-compose.yml](../docker-compose.yml)
 
 **API & Endpoints:**
+
 - Quick Reference: [API-REFERENCE.md](./API-REFERENCE.md)
 - Backend Service: [backend/README.md](../backend/starlink-location/README.md)
-- Examples: [API-REFERENCE.md#api-usage-examples](./API-REFERENCE.md#api-usage-examples)
+- Examples:
+  [API-REFERENCE.md#api-usage-examples](./API-REFERENCE.md#api-usage-examples)
 
 **Monitoring & Metrics:**
+
 - Metrics Reference: [METRICS.md](./METRICS.md)
-- Prometheus Config: [monitoring/prometheus/prometheus.yml](../monitoring/prometheus/prometheus.yml)
+- Prometheus Config:
+  [monitoring/prometheus/prometheus.yml](../monitoring/prometheus/prometheus.yml)
 - Grafana Setup: [grafana-setup.md](./grafana-setup.md)
-- Dashboard Features: [README.md#grafana-dashboards](../README.md#grafana-dashboards)
-- Mission Monitoring: [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning)
+- Dashboard Features:
+  [README.md#grafana-dashboards](../README.md#grafana-dashboards)
+- Mission Monitoring:
+  [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning)
 
 **Mission Communication Planning:**
+
 - User Guide: [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md)
 - Operations Playbook: [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md)
 - Performance Analysis: [PERFORMANCE-NOTES.md](./PERFORMANCE-NOTES.md)
-- Monitoring Setup: [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning)
+- Monitoring Setup:
+  [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning)
 
 **Development & Contributing:**
+
 - How to Contribute: [CONTRIBUTING.md](../CONTRIBUTING.md)
 - Architecture: [design-document.md](./design-document.md)
 - Development Status: [dev/STATUS.md](../dev/STATUS.md)
@@ -279,50 +305,60 @@ Read in order:
 - Development Config: [CLAUDE.md](../CLAUDE.md)
 
 **Troubleshooting:**
+
 - Common Issues: [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
-- Port Conflicts: [TROUBLESHOOTING.md#port-conflicts](./TROUBLESHOOTING.md#port-conflicts)
-- Backend Issues: [TROUBLESHOOTING.md#backend-issues](./TROUBLESHOOTING.md#backend-issues)
-- Network Issues: [TROUBLESHOOTING.md#network--connectivity](./TROUBLESHOOTING.md#network--connectivity)
-- Live Mode Issues: [TROUBLESHOOTING.md#live-mode-issues](./TROUBLESHOOTING.md#live-mode-issues)
+- Port Conflicts:
+  [TROUBLESHOOTING.md#port-conflicts](./TROUBLESHOOTING.md#port-conflicts)
+- Backend Issues:
+  [TROUBLESHOOTING.md#backend-issues](./TROUBLESHOOTING.md#backend-issues)
+- Network Issues:
+  [TROUBLESHOOTING.md#network--connectivity](./TROUBLESHOOTING.md#network--connectivity)
+- Live Mode Issues:
+  [TROUBLESHOOTING.md#live-mode-issues](./TROUBLESHOOTING.md#live-mode-issues)
 
 ### By Audience
 
 **First-Time Users:**
+
 - Start here: [README.md](../README.md)
 - Then read: [SETUP-GUIDE.md](./SETUP-GUIDE.md)
 
 **Operators/DevOps:**
+
 - Setup: [SETUP-GUIDE.md](./SETUP-GUIDE.md)
 - Troubleshooting: [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 - Configuration: [CLAUDE.md](../CLAUDE.md)
 
 **Developers:**
+
 - Architecture: [design-document.md](./design-document.md)
 - Contributing: [CONTRIBUTING.md](../CONTRIBUTING.md)
 - API Reference: [API-REFERENCE.md](./API-REFERENCE.md)
 
 **API Consumers:**
+
 - Quick Start: [API-REFERENCE.md#quick-start](./API-REFERENCE.md)
-- Examples: [API-REFERENCE.md#api-usage-examples](./API-REFERENCE.md#api-usage-examples)
-- Interactive Docs: http://localhost:8000/docs
+- Examples:
+  [API-REFERENCE.md#api-usage-examples](./API-REFERENCE.md#api-usage-examples)
+- Interactive Docs: <http://localhost:8000/docs>
 
 ---
 
 ## File Size Reference
 
-| File | Size | Type | Purpose |
-|------|------|------|---------|
-| README.md | 14 KB | Overview | Project entry point |
-| SETUP-GUIDE.md | 18 KB | How-to | Detailed setup instructions |
-| API-REFERENCE.md | 22 KB | Reference | Complete API documentation |
-| TROUBLESHOOTING.md | 24 KB | Reference | Problem diagnosis and solutions |
-| design-document.md | 9 KB | Design | Architecture and design |
-| CONTRIBUTING.md | 18 KB | Process | Contribution guidelines |
-| grafana-setup.md | 12 KB | How-to | Dashboard configuration |
-| METRICS.md | 8 KB | Reference | Prometheus metrics |
-| phased-development-plan.md | 7 KB | Plan | Implementation roadmap |
-| CLAUDE.md | 8 KB | Config | Development configuration |
-| Backend README | 14 KB | Overview | Service documentation |
+| File                       | Size  | Type      | Purpose                         |
+| -------------------------- | ----- | --------- | ------------------------------- |
+| README.md                  | 14 KB | Overview  | Project entry point             |
+| SETUP-GUIDE.md             | 18 KB | How-to    | Detailed setup instructions     |
+| API-REFERENCE.md           | 22 KB | Reference | Complete API documentation      |
+| TROUBLESHOOTING.md         | 24 KB | Reference | Problem diagnosis and solutions |
+| design-document.md         | 9 KB  | Design    | Architecture and design         |
+| CONTRIBUTING.md            | 18 KB | Process   | Contribution guidelines         |
+| grafana-setup.md           | 12 KB | How-to    | Dashboard configuration         |
+| METRICS.md                 | 8 KB  | Reference | Prometheus metrics              |
+| phased-development-plan.md | 7 KB  | Plan      | Implementation roadmap          |
+| CLAUDE.md                  | 8 KB  | Config    | Development configuration       |
+| Backend README             | 14 KB | Overview  | Service documentation           |
 
 **Total Documentation:** ~154 KB of comprehensive guides
 
@@ -347,9 +383,9 @@ Read in order:
 
 ### Interactive Documentation
 
-- Backend API Docs: http://localhost:8000/docs
-- Prometheus UI: http://localhost:9090
-- Grafana Dashboards: http://localhost:3000
+- Backend API Docs: <http://localhost:8000/docs>
+- Prometheus UI: <http://localhost:9090>
+- Grafana Dashboards: <http://localhost:3000>
 
 ---
 
@@ -364,6 +400,7 @@ The documentation follows these principles:
 5. **Discoverable:** Multiple ways to find what you need
 
 Each document has:
+
 - Clear title and purpose
 - Table of contents
 - Navigation links
@@ -375,6 +412,7 @@ Each document has:
 ## Maintaining Documentation
 
 Documentation is updated when:
+
 - New features are added
 - Architecture changes
 - Setup procedures change
@@ -382,6 +420,7 @@ Documentation is updated when:
 - User feedback indicates gaps
 
 All documentation uses:
+
 - Clear, technical language
 - Markdown formatting
 - Consistent structure
@@ -393,13 +432,14 @@ All documentation uses:
 ## Feedback & Contributions
 
 Found an issue in the documentation?
+
 - Check [CONTRIBUTING.md](../CONTRIBUTING.md) for how to contribute
 - See [dev/STATUS.md](../dev/STATUS.md) for current work
 - Reference specific file and line number
 
 ---
 
-**Last Updated:** 2025-11-16
-**Total Documentation:** 23 files, ~570 pages
-**Comprehensive Coverage:** Setup, API, Troubleshooting, Architecture, Development, Route Timing, Mission Communication Planning
-**Feature Status:** Mission Communication Planning complete (720+ tests passing)
+**Last Updated:** 2025-11-16 **Total Documentation:** 23 files, ~570 pages
+**Comprehensive Coverage:** Setup, API, Troubleshooting, Architecture,
+Development, Route Timing, Mission Communication Planning **Feature Status:**
+Mission Communication Planning complete (720+ tests passing)

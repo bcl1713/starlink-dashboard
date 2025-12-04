@@ -15,14 +15,19 @@
 
 - [ ] Ensure you are on the correct branch:
   - [ ] Run:
+
     ```bash
     git branch
     ```
+
   - [ ] Confirm that the current branch line is:
+
     ```text
     * {{branch_name}}
     ```
+
   - [ ] If you are on a different branch, switch with:
+
     ```bash
     git checkout {{branch_name}}
     ```
@@ -55,9 +60,11 @@
 ## Verification Tasks
 
 - [ ] Run test suite:
+
   ```bash
   npm test
   ```
+
 - [ ] Manually verify flows described in CONTEXT.md -> Testing Strategy.
 - [ ] Confirm acceptance criteria from PLAN.md -> Objectives.
 

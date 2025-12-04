@@ -1,5 +1,9 @@
 """Starlink gRPC client wrapper for live terminal data collection."""
 
+# FR-004: File exceeds 300 lines (336 lines) because live client handles gRPC
+# protocol data parsing, error handling, status polling, and telemetry extraction.
+# Splitting would fragment the client implementation. Deferred to v0.4.0.
+
 import logging
 import os
 from datetime import datetime

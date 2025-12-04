@@ -15,7 +15,7 @@ A short paragraph describing what this work is about and why it exists.
 
 ## Current Status
 
-- Phase: <phase-name>
+- Phase: `phase-name`
 - Checklist completion: <X%> (approximate)
 - Major accomplishments since last session:
   - Completed X
@@ -47,5 +47,5 @@ possible):
 - PLAN.md
 - CONTEXT.md
 - CHECKLIST.md
-- PR: <link> if exists
-- Related Issues: <links>
+- PR: `link` if exists
+- Related Issues: `links`

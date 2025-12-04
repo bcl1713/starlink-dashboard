@@ -113,7 +113,10 @@ export function RouteLayer({
         }
 
         // Get the correct coordinate array (use normalized for IDL routes)
-        const segmentCoordinates = normalizedCoordinates.slice(startIdx, endIdx + 1);
+        const segmentCoordinates = normalizedCoordinates.slice(
+          startIdx,
+          endIdx + 1
+        );
 
         // Skip if no coordinates found
         if (segmentCoordinates.length === 0) {

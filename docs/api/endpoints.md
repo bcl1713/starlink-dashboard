@@ -67,7 +67,8 @@ connection status.
 - `200 OK` - Service is healthy
 - `500 Internal Server Error` - Service error
 
-**Use Case:** Docker health checks, load balancer monitoring, uptime verification.
+**Use Case:** Docker health checks, load balancer monitoring, uptime
+verification.
 
 ---
 
@@ -85,7 +86,7 @@ environmental metrics.
   "timestamp": "2025-10-31T10:30:00.000000",
   "position": {
     "latitude": 40.7128,
-    "longitude": -74.0060,
+    "longitude": -74.006,
     "altitude": 5000.0,
     "speed": 25.5,
     "heading": 45.0
@@ -165,7 +166,7 @@ Raw metrics data as JSON (alternative to Prometheus format).
 {
   "position": {
     "latitude_degrees": 40.7128,
-    "longitude_degrees": -74.0060,
+    "longitude_degrees": -74.006,
     "altitude_meters": 5000.0,
     "speed_knots": 25.5,
     "heading_degrees": 45.0
@@ -209,7 +210,7 @@ Retrieve current service configuration.
   "route": {
     "pattern": "circular",
     "latitude_start": 40.7128,
-    "longitude_start": -74.0060,
+    "longitude_start": -74.006,
     "radius_km": 100.0,
     "distance_km": 500.0
   },
@@ -298,7 +299,7 @@ List all Points of Interest.
     "id": "poi-1",
     "name": "LaGuardia Airport",
     "latitude": 40.7769,
-    "longitude": -73.8740,
+    "longitude": -73.874,
     "description": "LGA - Major NYC airport",
     "created_at": "2025-10-30T10:00:00",
     "updated_at": "2025-10-30T10:00:00"
@@ -354,7 +355,7 @@ Calculate real-time ETA to all POIs.
     "poi_id": "poi-1",
     "name": "LaGuardia Airport",
     "latitude": 40.7769,
-    "longitude": -73.8740,
+    "longitude": -73.874,
     "distance_meters": 8500,
     "eta_seconds": 2640,
     "bearing_degrees": 45.5,
@@ -373,7 +374,7 @@ Calculate real-time ETA to all POIs.
 
 - **Distance:** Haversine formula (great-circle distance)
 - **Bearing:** Inverse bearing calculation
-- **ETA:** distance_meters / (speed_knots * 0.51444) seconds
+- **ETA:** distance_meters / (speed_knots \* 0.51444) seconds
 - **Speed Default:** 67 knots (fallback if not available)
 
 **Use Case:** Grafana ETA tooltips, real-time navigation.
@@ -395,7 +396,7 @@ Get specific POI details.
   "id": "poi-1",
   "name": "LaGuardia Airport",
   "latitude": 40.7769,
-  "longitude": -73.8740,
+  "longitude": -73.874,
   "description": "LGA - Major NYC airport",
   "created_at": "2025-10-30T10:00:00",
   "updated_at": "2025-10-30T10:00:00"
@@ -498,18 +499,19 @@ Delete a POI.
 
 ## Flight Status Endpoints
 
-Flight status endpoints manage the current flight phase (pre-departure, in-flight,
-or post-arrival) and control ETA mode (anticipated vs. estimated). These
-endpoints are essential for integration with Grafana dashboards and route
+Flight status endpoints manage the current flight phase (pre-departure,
+in-flight, or post-arrival) and control ETA mode (anticipated vs. estimated).
+These endpoints are essential for integration with Grafana dashboards and route
 tracking systems.
 
 ### GET `/api/flight-status`
 
-Get the current flight status including phase, ETA mode, countdowns, and route metadata.
+Get the current flight status including phase, ETA mode, countdowns, and route
+metadata.
 
-**Description:** Returns comprehensive flight state information including current
-phase, ETA calculation mode, active route context, timing information, and
-countdown timers.
+**Description:** Returns comprehensive flight state information including
+current phase, ETA calculation mode, active route context, timing information,
+and countdown timers.
 
 **Response:**
 
@@ -540,7 +542,8 @@ countdown timers.
 - `in_flight` - Flight is active (uses `estimated` ETA mode)
 - `post_arrival` - Flight has completed
 
-**Use Case:** Grafana dashboard updates, flight phase monitoring, ETA mode verification.
+**Use Case:** Grafana dashboard updates, flight phase monitoring, ETA mode
+verification.
 
 ---
 
@@ -647,7 +650,8 @@ arrival timestamp. Freezes timing calculations and metrics.
 - Freezes all timing metrics
 - Disables further phase transitions until reset
 
-**Use Case:** Manual flight completion, simulation testing, metrics finalization.
+**Use Case:** Manual flight completion, simulation testing, metrics
+finalization.
 
 ---
 
@@ -699,9 +703,9 @@ suitable for rendering on Grafana Geomap panels.
       "geometry": {
         "type": "LineString",
         "coordinates": [
-          [-74.0060, 40.7128],
-          [-74.0050, 40.7138],
-          [-74.0040, 40.7148]
+          [-74.006, 40.7128],
+          [-74.005, 40.7138],
+          [-74.004, 40.7148]
         ]
       },
       "properties": {
@@ -766,7 +770,8 @@ current position and available timing data.
 - `400 Bad Request` - Invalid parameters
 - `404 Not Found` - Route not found
 
-**Use Case:** Real-time waypoint ETAs, flight plan tracking, progress monitoring.
+**Use Case:** Real-time waypoint ETAs, flight plan tracking, progress
+monitoring.
 
 ---
 
@@ -789,7 +794,7 @@ supporting routes with or without timing data.
 
 ```json
 {
-  "target_location": {"latitude": 40.7128, "longitude": -74.0060},
+  "target_location": { "latitude": 40.7128, "longitude": -74.006 },
   "eta_seconds": 1800,
   "eta_minutes": 30.0,
   "distance_meters": 75000,
@@ -960,7 +965,8 @@ predicted vs actual arrivals.
 
 - `200 OK` - Accuracy metrics retrieved
 
-**Use Case:** ETA algorithm validation, accuracy tracking, continuous improvement.
+**Use Case:** ETA algorithm validation, accuracy tracking, continuous
+improvement.
 
 ---
 
@@ -1024,7 +1030,7 @@ position update, ideal for Starlink terminal position feeds.
 ```json
 {
   "latitude": 40.7128,
-  "longitude": -74.0060,
+  "longitude": -74.006,
   "altitude": 5000.0,
   "timestamp": "2025-11-04T10:30:00Z"
 }
@@ -1034,7 +1040,7 @@ position update, ideal for Starlink terminal position feeds.
 
 ```json
 {
-  "current_position": {"latitude": 40.7128, "longitude": -74.0060},
+  "current_position": { "latitude": 40.7128, "longitude": -74.006 },
   "route_progress": {
     "progress_percent": 45.5,
     "waypoints_remaining": 20,
@@ -1059,7 +1065,8 @@ position update, ideal for Starlink terminal position feeds.
 - `400 Bad Request` - Invalid position data
 - `404 Not Found` - No active route
 
-**Use Case:** Live aircraft tracking, real-time ETA updates, Starlink integration.
+**Use Case:** Live aircraft tracking, real-time ETA updates, Starlink
+integration.
 
 ---
 
@@ -1069,8 +1076,8 @@ position update, ideal for Starlink terminal position feeds.
 
 POI management web interface.
 
-**Description:** Returns a complete HTML page with interactive POI management UI,
-including:
+**Description:** Returns a complete HTML page with interactive POI management
+UI, including:
 
 - Interactive map for click-to-place coordinates
 - POI creation/editing/deletion form
@@ -1094,13 +1101,13 @@ including:
 **Get Flight Status:**
 
 ```bash
-curl http://localhost:8000/api/flight-status | jq .
+curl <http://localhost:8000/api/flight-status> | jq .
 ```
 
 **Trigger Departure:**
 
 ```bash
-curl -X POST http://localhost:8000/api/flight-status/depart \
+curl -X POST <http://localhost:8000/api/flight-status/depart> \
   -H "Content-Type: application/json" \
   -d '{
     "timestamp": "2025-12-03T14:05:00Z",
@@ -1111,7 +1118,7 @@ curl -X POST http://localhost:8000/api/flight-status/depart \
 **Trigger Arrival:**
 
 ```bash
-curl -X POST http://localhost:8000/api/flight-status/arrive \
+curl -X POST <http://localhost:8000/api/flight-status/arrive> \
   -H "Content-Type: application/json" \
   -d '{
     "timestamp": "2025-12-03T18:30:00Z",
@@ -1122,7 +1129,7 @@ curl -X POST http://localhost:8000/api/flight-status/arrive \
 **Transition Flight Phase:**
 
 ```bash
-curl -X POST http://localhost:8000/api/flight-status/transition \
+curl -X POST <http://localhost:8000/api/flight-status/transition> \
   -H "Content-Type: application/json" \
   -d '{
     "phase": "in_flight",
@@ -1133,25 +1140,25 @@ curl -X POST http://localhost:8000/api/flight-status/transition \
 **Reset Flight Status:**
 
 ```bash
-curl -X POST http://localhost:8000/api/flight-status
+curl -X POST <http://localhost:8000/api/flight-status>
 ```
 
 **Get Health Status:**
 
 ```bash
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 ```
 
 **Get Current Status:**
 
 ```bash
-curl http://localhost:8000/api/status | jq .
+curl <http://localhost:8000/api/status> | jq .
 ```
 
 **Create POI:**
 
 ```bash
-curl -X POST http://localhost:8000/api/pois \
+curl -X POST <http://localhost:8000/api/pois> \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Central Park",
@@ -1164,13 +1171,13 @@ curl -X POST http://localhost:8000/api/pois \
 **Get ETAs with Custom Location:**
 
 ```bash
-curl "http://localhost:8000/api/pois/etas?latitude=40.7128&longitude=-74.0060&speed_knots=50"
+curl "<http://localhost:8000/api/pois/etas?latitude=40.7128&longitude=-74.0060&speed_knots=50">
 ```
 
 **Update Configuration:**
 
 ```bash
-curl -X POST http://localhost:8000/api/config \
+curl -X POST <http://localhost:8000/api/config> \
   -H "Content-Type: application/json" \
   -d '{
     "route": {"pattern": "straight"}
@@ -1185,7 +1192,7 @@ curl -X POST http://localhost:8000/api/config \
 import requests
 
 # Get flight status
-response = requests.get('http://localhost:8000/api/flight-status')
+response = requests.get('<http://localhost:8000/api/flight-status>')
 flight_status = response.json()
 print(f"Phase: {flight_status['phase']}")
 print(f"ETA Mode: {flight_status['eta_mode']}")
@@ -1193,7 +1200,7 @@ print(f"Active Route: {flight_status['active_route_name']}")
 
 # Trigger departure
 response = requests.post(
-    'http://localhost:8000/api/flight-status/depart',
+    '<http://localhost:8000/api/flight-status/depart',>
     json={
         'timestamp': '2025-12-03T14:05:00Z',
         'reason': 'Manual departure'
@@ -1203,7 +1210,7 @@ print(f"Phase after departure: {response.json()['phase']}")
 
 # Trigger arrival
 response = requests.post(
-    'http://localhost:8000/api/flight-status/arrive',
+    '<http://localhost:8000/api/flight-status/arrive',>
     json={
         'timestamp': '2025-12-03T18:30:00Z',
         'reason': 'Manual arrival'
@@ -1212,11 +1219,11 @@ response = requests.post(
 print(f"Phase after arrival: {response.json()['phase']}")
 
 # Reset flight status
-response = requests.post('http://localhost:8000/api/flight-status')
+response = requests.post('<http://localhost:8000/api/flight-status>')
 print(f"Phase after reset: {response.json()['phase']}")
 
 # Get current status
-response = requests.get('http://localhost:8000/api/status')
+response = requests.get('<http://localhost:8000/api/status>')
 status = response.json()
 print(f"Position: {status['position']['latitude']}, {status['position']['longitude']}")
 
@@ -1226,12 +1233,12 @@ poi_data = {
     "latitude": 40.7829,
     "longitude": -73.9654
 }
-response = requests.post('http://localhost:8000/api/pois', json=poi_data)
+response = requests.post('<http://localhost:8000/api/pois',> json=poi_data)
 poi = response.json()
 print(f"Created POI: {poi['id']}")
 
 # Get ETAs
-response = requests.get('http://localhost:8000/api/pois/etas')
+response = requests.get('<http://localhost:8000/api/pois/etas>')
 etas = response.json()
 for poi in etas:
     print(f"{poi['name']}: {poi['eta_seconds']} seconds")

@@ -1,7 +1,9 @@
 # POIs.py Refactoring Analysis
 
 ## File Overview
-- **Current Location:** `/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/api/pois.py`
+
+- **Current Location:**
+  `/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/api/pois.py`
 - **Current Size:** 1159 lines
 - **Target Max Size:** 300 lines per module
 - **Total Functions/Endpoints:** 13 items (9 endpoints + 4 helper functions)
@@ -10,25 +12,28 @@
 
 ## 1. ENDPOINTS (API Routes)
 
-All endpoints are registered with `@router.get()`, `@router.post()`, `@router.put()`, or `@router.delete()`.
+All endpoints are registered with `@router.get()`, `@router.post()`,
+`@router.put()`, or `@router.delete()`.
 
 ### READ Endpoints (GET)
-| Line | Endpoint | Function | Response Model | Purpose |
-|------|----------|----------|-----------------|---------|
-| 156 | `GET /api/pois` | `list_pois()` | `POIListResponse` | List all POIs, optionally filtered by route/mission |
-| 259 | `GET /api/pois/etas` | `get_pois_with_etas()` | `POIETAListResponse` | Get all POIs with real-time ETA data |
-| 627 | `GET /api/pois/count/total` | `count_pois()` | `dict` | Get total POI count |
-| 651 | `GET /api/pois/stats/next-destination` | `get_next_destination()` | `dict` | Get closest POI name |
-| 754 | `GET /api/pois/stats/next-eta` | `get_next_eta()` | `dict` | Get ETA to closest POI |
-| 857 | `GET /api/pois/stats/approaching` | `get_approaching_pois()` | `dict` | Get count of POIs within 30 minutes |
-| 922 | `GET /api/pois/{poi_id}` | `get_poi()` | `POIResponse` | Get specific POI by ID |
+
+| Line | Endpoint                               | Function                 | Response Model       | Purpose                                             |
+| ---- | -------------------------------------- | ------------------------ | -------------------- | --------------------------------------------------- |
+| 156  | `GET /api/pois`                        | `list_pois()`            | `POIListResponse`    | List all POIs, optionally filtered by route/mission |
+| 259  | `GET /api/pois/etas`                   | `get_pois_with_etas()`   | `POIETAListResponse` | Get all POIs with real-time ETA data                |
+| 627  | `GET /api/pois/count/total`            | `count_pois()`           | `dict`               | Get total POI count                                 |
+| 651  | `GET /api/pois/stats/next-destination` | `get_next_destination()` | `dict`               | Get closest POI name                                |
+| 754  | `GET /api/pois/stats/next-eta`         | `get_next_eta()`         | `dict`               | Get ETA to closest POI                              |
+| 857  | `GET /api/pois/stats/approaching`      | `get_approaching_pois()` | `dict`               | Get count of POIs within 30 minutes                 |
+| 922  | `GET /api/pois/{poi_id}`               | `get_poi()`              | `POIResponse`        | Get specific POI by ID                              |
 
 ### WRITE Endpoints (POST/PUT/DELETE)
-| Line | Endpoint | Function | Response Model | Purpose |
-|------|----------|----------|-----------------|---------|
-| 979 | `POST /api/pois` | `create_poi()` | `POIResponse` | Create new POI |
-| 1057 | `PUT /api/pois/{poi_id}` | `update_poi()` | `POIResponse` | Update existing POI |
-| 1132 | `DELETE /api/pois/{poi_id}` | `delete_poi()` | `None` | Delete POI |
+
+| Line | Endpoint                    | Function       | Response Model | Purpose             |
+| ---- | --------------------------- | -------------- | -------------- | ------------------- |
+| 979  | `POST /api/pois`            | `create_poi()` | `POIResponse`  | Create new POI      |
+| 1057 | `PUT /api/pois/{poi_id}`    | `update_poi()` | `POIResponse`  | Update existing POI |
+| 1132 | `DELETE /api/pois/{poi_id}` | `delete_poi()` | `None`         | Delete POI          |
 
 **Total Endpoints:** 10 (7 read + 3 write)
 
@@ -37,20 +42,23 @@ All endpoints are registered with `@router.get()`, `@router.post()`, `@router.pu
 ## 2. HELPER FUNCTIONS
 
 ### Math/Navigation Helpers
-| Line | Function | Lines | Input | Output | Purpose |
-|------|----------|-------|-------|--------|---------|
-| 40 | `calculate_bearing()` | 40-65 (26 lines) | lat1, lon1, lat2, lon2 | float (0-360°) | Calculate bearing between two points |
-| 68 | `calculate_course_status()` | 68-95 (28 lines) | heading, bearing | str | Determine course status (on_course, slightly_off, off_track, behind) |
+
+| Line | Function                    | Lines            | Input                  | Output         | Purpose                                                              |
+| ---- | --------------------------- | ---------------- | ---------------------- | -------------- | -------------------------------------------------------------------- |
+| 40   | `calculate_bearing()`       | 40-65 (26 lines) | lat1, lon1, lat2, lon2 | float (0-360°) | Calculate bearing between two points                                 |
+| 68   | `calculate_course_status()` | 68-95 (28 lines) | heading, bearing       | str            | Determine course status (on_course, slightly_off, off_track, behind) |
 
 ### Status Calculation
-| Line | Function | Lines | Input | Output | Purpose |
-|------|----------|-------|-------|--------|---------|
-| 98 | `_calculate_poi_active_status()` | 98-153 (56 lines) | poi, route_manager | bool | Calculate if POI is active based on route/mission |
+
+| Line | Function                         | Lines             | Input              | Output | Purpose                                           |
+| ---- | -------------------------------- | ----------------- | ------------------ | ------ | ------------------------------------------------- |
+| 98   | `_calculate_poi_active_status()` | 98-153 (56 lines) | poi, route_manager | bool   | Calculate if POI is active based on route/mission |
 
 ### Module Setup
-| Line | Function | Lines | Input | Output | Purpose |
-|------|----------|-------|-------|--------|---------|
-| 30 | `set_coordinator()` | 30-33 (4 lines) | coordinator | None | Set global coordinator reference |
+
+| Line | Function            | Lines           | Input       | Output | Purpose                          |
+| ---- | ------------------- | --------------- | ----------- | ------ | -------------------------------- |
+| 30   | `set_coordinator()` | 30-33 (4 lines) | coordinator | None   | Set global coordinator reference |
 
 **Total Helpers:** 4 functions (98 lines total)
 
@@ -60,7 +68,7 @@ All endpoints are registered with `@router.get()`, `@router.post()`, `@router.pu
 
 ### Function Call Graph
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │ GLOBAL STATE                                                    │
 ├─────────────────────────────────────────────────────────────────┤
@@ -176,7 +184,8 @@ All endpoints are registered with `@router.get()`, `@router.post()`, `@router.pu
 ```
 
 ### External Dependencies
-```
+
+```text
 IMPORTS:
 ├─ logging
 ├─ math
@@ -208,8 +217,9 @@ GLOBAL STATE:
 ## 4. CODE PATTERNS & DUPLICATION
 
 ### Telemetry Extraction Pattern (DUPLICATED 3x)
-**Lines:** 675-694, 782-801, 881-900
-**Pattern:**
+
+**Lines:** 675-694, 782-801, 881-900 **Pattern:**
+
 ```python
 try:
     if _coordinator:
@@ -229,11 +239,13 @@ try:
 except (ValueError, TypeError):
     lat, lon, speed = 41.6, -74.0, 67.0
 ```
+
 **Can be extracted to:** `helpers.extract_telemetry()`
 
 ### Flight State Snapshot Pattern (DUPLICATED 3x)
-**Lines:** 706-713, 736-743, 812-820, 839-848
-**Pattern:**
+
+**Lines:** 706-713, 736-743, 812-820, 839-848 **Pattern:**
+
 ```python
 status_eta_mode = "estimated"
 status_phase = None
@@ -245,11 +257,13 @@ try:
 except Exception:
     pass
 ```
+
 **Can be extracted to:** `helpers.get_flight_state_snapshot()`
 
 ### POI Response Construction (DUPLICATED 5x)
-**Lines:** 234-251, 959-976, 1032-1048, 1105-1121
-**Pattern:**
+
+**Lines:** 234-251, 959-976, 1032-1048, 1105-1121 **Pattern:**
+
 ```python
 POIResponse(
     id=poi.id,
@@ -270,11 +284,13 @@ POIResponse(
     projected_route_progress=poi.projected_route_progress,
 )
 ```
+
 **Can be extracted to:** `converters.poi_to_response()`
 
 ### Closest POI Finding Pattern (DUPLICATED 2x)
-**Lines:** 725-733, 831-837
-**Pattern:**
+
+**Lines:** 725-733, 831-837 **Pattern:**
+
 ```python
 closest = None
 closest_eta = float("inf")
@@ -286,6 +302,7 @@ for poi in pois:
         closest_eta = eta_seconds
         closest = poi
 ```
+
 **Can be extracted to:** `helpers.find_closest_poi()`
 
 ---
@@ -295,8 +312,9 @@ for poi in pois:
 Based on analysis, here's the optimal grouping:
 
 ### Module A: CRUD Operations (`pois/crud.py`) - ~220 lines
-**Purpose:** Core POI create, read, update, delete operations
-**Functions:**
+
+**Purpose:** Core POI create, read, update, delete operations **Functions:**
+
 - `list_pois()` - list all POIs with filters
 - `get_poi()` - get single POI
 - `create_poi()` - create new POI
@@ -306,20 +324,25 @@ Based on analysis, here's the optimal grouping:
 - `_calculate_poi_active_status()` - determine if POI is active
 
 **Dependencies:**
+
 - POIManager (Depends)
 - RouteManager (Depends)
-- _coordinator (global)
+- \_coordinator (global)
 - POIResponse, POIListResponse (models)
 - POICreate, POIUpdate (models)
 
-**Reasoning:** These are cohesive CRUD operations that work directly with POI management.
+**Reasoning:** These are cohesive CRUD operations that work directly with POI
+management.
 
 ### Module B: ETA Calculations (`pois/etas.py`) - ~280 lines
-**Purpose:** Real-time ETA and distance calculations with flight state integration
-**Functions:**
+
+**Purpose:** Real-time ETA and distance calculations with flight state
+integration **Functions:**
+
 - `get_pois_with_etas()` - calculate ETA for all POIs
 
 **Dependencies:**
+
 - RouteManager (Depends)
 - POIManager (Depends)
 - ETACalculator (service)
@@ -331,19 +354,23 @@ Based on analysis, here's the optimal grouping:
 - `calculate_course_status()` - import from helpers
 - `_calculate_poi_active_status()` - import from crud
 
-**Reasoning:** Large, complex endpoint that combines multiple concerns (ETA, flight state, route awareness).
+**Reasoning:** Large, complex endpoint that combines multiple concerns (ETA,
+flight state, route awareness).
 
 ### Module C: Statistics Endpoints (`pois/stats.py`) - ~230 lines
-**Purpose:** Aggregate POI statistics (next destination, approaching count, etc.)
-**Functions:**
+
+**Purpose:** Aggregate POI statistics (next destination, approaching count,
+etc.) **Functions:**
+
 - `get_next_destination()` - closest POI name
 - `get_next_eta()` - ETA to closest POI
 - `get_approaching_pois()` - count POIs within 30 min threshold
 - (keep `count_pois()` here or in crud - RECOMMEND HERE for stats context)
 
 **Dependencies:**
+
 - POIManager (Depends)
-- _coordinator (global)
+- \_coordinator (global)
 - ETACalculator (service)
 - FlightStateManager (service)
 - `extract_telemetry()` - import from helpers
@@ -353,8 +380,9 @@ Based on analysis, here's the optimal grouping:
 **Reasoning:** These are aggregate statistics endpoints with similar patterns.
 
 ### Module D: Helpers & Utilities (`pois/helpers.py`) - ~150 lines
-**Purpose:** Reusable math, navigation, and utility functions
-**Functions:**
+
+**Purpose:** Reusable math, navigation, and utility functions **Functions:**
+
 - `calculate_bearing()` - math: bearing between two points
 - `calculate_course_status()` - categorize heading vs bearing
 - `extract_telemetry()` - EXTRACTED from crud/stats duplication
@@ -363,16 +391,20 @@ Based on analysis, here's the optimal grouping:
 - `poi_to_response()` - EXTRACTED from response construction duplication
 
 **Dependencies:**
+
 - math (stdlib)
 - POIResponse (model)
 - ETACalculator (service)
 - FlightStateManager (service)
 
-**Reasoning:** Pure functions with no endpoint concerns. Reusable across modules.
+**Reasoning:** Pure functions with no endpoint concerns. Reusable across
+modules.
 
 ### Module E: Router & Initialization (`pois/__init__.py`) - ~50 lines
+
 **Purpose:** Create and configure the POI API router with all endpoints
 **Contents:**
+
 - `set_coordinator()` - global coordinator setter
 - `router` - APIRouter instance
 - Import and register all endpoints from submodules
@@ -383,7 +415,7 @@ Based on analysis, here's the optimal grouping:
 
 ## 6. PROPOSED MODULE STRUCTURE
 
-```
+```text
 backend/starlink-location/app/api/pois/
 ├── __init__.py              (50 lines)  Main router, set_coordinator
 ├── crud.py                  (220 lines) CRUD endpoints + active status
@@ -392,13 +424,15 @@ backend/starlink-location/app/api/pois/
 └── helpers.py               (150 lines) Math, telemetry, extraction helpers
 ```
 
-**Total Estimated Lines:** ~930 lines (vs 1159 currently = 20% reduction + clarity)
+**Total Estimated Lines:** ~930 lines (vs 1159 currently = 20% reduction +
+clarity)
 
 ---
 
 ## 7. DEPENDENCY IMPORT MAP
 
 ### `pois/__init__.py`
+
 ```python
 from fastapi import APIRouter
 from app.mission.dependencies import get_route_manager, get_poi_manager
@@ -424,6 +458,7 @@ def set_coordinator(coordinator):
 ```
 
 ### `pois/helpers.py`
+
 ```python
 import logging
 import math
@@ -434,12 +469,13 @@ from app.core.eta_service import get_eta_calculator
 from app.services.flight_state_manager import get_flight_state_manager
 from app.models.flight_status import ETAMode, FlightPhase
 
-# Functions: calculate_bearing, calculate_course_status, 
+# Functions: calculate_bearing, calculate_course_status,
 #           extract_telemetry, get_flight_state_snapshot,
 #           find_closest_poi, poi_to_response
 ```
 
 ### `pois/crud.py`
+
 ```python
 from pathlib import Path
 from typing import Optional
@@ -456,11 +492,12 @@ from .helpers import _calculate_poi_active_status, poi_to_response
 
 router = APIRouter()
 
-# Functions: list_pois, get_poi, create_poi, update_poi, 
+# Functions: list_pois, get_poi, create_poi, update_poi,
 #           delete_poi, count_pois, _calculate_poi_active_status
 ```
 
 ### `pois/etas.py`
+
 ```python
 from pathlib import Path
 from typing import Optional
@@ -488,6 +525,7 @@ router = APIRouter()
 ```
 
 ### `pois/stats.py`
+
 ```python
 from typing import Optional
 
@@ -512,50 +550,59 @@ router = APIRouter()
 
 ## 8. ENDPOINT DISTRIBUTION IN NEW MODULES
 
-| Module | Endpoint | Method | Path | Function |
-|--------|----------|--------|------|----------|
-| **crud.py** | GET | `/api/pois` | `list_pois()` |
-| **crud.py** | GET | `/api/pois/{poi_id}` | `get_poi()` |
-| **crud.py** | POST | `/api/pois` | `create_poi()` |
-| **crud.py** | PUT | `/api/pois/{poi_id}` | `update_poi()` |
-| **crud.py** | DELETE | `/api/pois/{poi_id}` | `delete_poi()` |
-| **stats.py** | GET | `/api/pois/count/total` | `count_pois()` |
-| **stats.py** | GET | `/api/pois/stats/next-destination` | `get_next_destination()` |
-| **stats.py** | GET | `/api/pois/stats/next-eta` | `get_next_eta()` |
-| **stats.py** | GET | `/api/pois/stats/approaching` | `get_approaching_pois()` |
-| **etas.py** | GET | `/api/pois/etas` | `get_pois_with_etas()` |
+| Module       | Endpoint | Method                             | Path                     | Function |
+| ------------ | -------- | ---------------------------------- | ------------------------ | -------- |
+| **crud.py**  | GET      | `/api/pois`                        | `list_pois()`            |
+| **crud.py**  | GET      | `/api/pois/{poi_id}`               | `get_poi()`              |
+| **crud.py**  | POST     | `/api/pois`                        | `create_poi()`           |
+| **crud.py**  | PUT      | `/api/pois/{poi_id}`               | `update_poi()`           |
+| **crud.py**  | DELETE   | `/api/pois/{poi_id}`               | `delete_poi()`           |
+| **stats.py** | GET      | `/api/pois/count/total`            | `count_pois()`           |
+| **stats.py** | GET      | `/api/pois/stats/next-destination` | `get_next_destination()` |
+| **stats.py** | GET      | `/api/pois/stats/next-eta`         | `get_next_eta()`         |
+| **stats.py** | GET      | `/api/pois/stats/approaching`      | `get_approaching_pois()` |
+| **etas.py**  | GET      | `/api/pois/etas`                   | `get_pois_with_etas()`   |
 
 ---
 
 ## 9. CODE MIGRATION CHECKLIST
 
 ### Phase 1: Create New Module Structure
+
 - [ ] Create `/app/api/pois/` directory
 - [ ] Create `__init__.py` with router composition
 - [ ] Create `helpers.py` with extracted functions
 
 ### Phase 2: Create CRUD Module
+
 - [ ] Create `crud.py`
-- [ ] Move CRUD endpoints (list_pois, get_poi, create_poi, update_poi, delete_poi)
+- [ ] Move CRUD endpoints (list_pois, get_poi, create_poi, update_poi,
+      delete_poi)
 - [ ] Move `_calculate_poi_active_status()` helper
 - [ ] Update imports
 
 ### Phase 3: Create ETA Module
+
 - [ ] Create `etas.py`
 - [ ] Move `get_pois_with_etas()` endpoint
 - [ ] Update imports to use helpers
 
 ### Phase 4: Create Stats Module
+
 - [ ] Create `stats.py`
-- [ ] Move stats endpoints (count_pois, get_next_destination, get_next_eta, get_approaching_pois)
+- [ ] Move stats endpoints (count_pois, get_next_destination, get_next_eta,
+      get_approaching_pois)
 - [ ] Update imports to use helpers
 
 ### Phase 5: Update Main App
-- [ ] Update `/app/main.py` or router initialization to include new module router
+
+- [ ] Update `/app/main.py` or router initialization to include new module
+      router
 - [ ] Ensure `set_coordinator()` is accessible from new location
 - [ ] Test all endpoints
 
 ### Phase 6: Cleanup
+
 - [ ] Remove old `pois.py` file
 - [ ] Verify no remaining imports from old location
 - [ ] Run test suite
@@ -565,6 +612,7 @@ router = APIRouter()
 ## 10. REFACTORING BENEFITS
 
 ### Before (1159 lines)
+
 - Single monolithic file
 - Mixed concerns (CRUD, ETA, stats, math)
 - Code duplication (telemetry extraction, flight state snapshot)
@@ -572,6 +620,7 @@ router = APIRouter()
 - Difficult to modify without affecting everything
 
 ### After (~930 lines total)
+
 - **Separation of Concerns:** CRUD, ETA, Stats, Helpers
 - **Reduced Duplication:** Shared helpers extracted
 - **Better Testability:** Each module has clear responsibilities
@@ -581,8 +630,8 @@ router = APIRouter()
 - **Scalability:** Easy to add new endpoints to appropriate module
 
 ### Estimated Time Savings
+
 - Development: Faster to locate and modify code
 - Testing: Clearer which tests apply to which module
 - Debugging: Smaller scope to search when errors occur
 - Onboarding: New developers understand structure faster
-

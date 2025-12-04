@@ -2,12 +2,13 @@
 
 **Status:** Phase 0 Complete + Multiple Major Features Delivered
 
-This plan structures **incremental, LLM-assisted development**, ensuring
-each phase is implemented, tested, and validated before proceeding.
-Each phase produces working code and Docker configurations, building toward a
-full, production-ready stack.
+This plan structures **incremental, LLM-assisted development**, ensuring each
+phase is implemented, tested, and validated before proceeding. Each phase
+produces working code and Docker configurations, building toward a full,
+production-ready stack.
 
-**Project Timeline:** Foundation phase complete (2025-10-29), followed by 24 sessions of intensive feature development (2025-10-30 to 2025-11-04)
+**Project Timeline:** Foundation phase complete (2025-10-29), followed by 24
+sessions of intensive feature development (2025-10-30 to 2025-11-04)
 
 ---
 
@@ -18,22 +19,25 @@ full, production-ready stack.
 **Tasks:**
 
 1. Initialize a monorepo structure:
-   ```
-   starlink-monitor/
-   ├── backend/
-   │   └── starlink-location/
-   ├── monitoring/
-   │   ├── prometheus/
-   │   └── grafana/
-   ├── docker-compose.yml
-   └── .env
-   ```
-2. Create the base `docker-compose.yml` with stub services:
+
+```text
+starlink-monitor/
+├── backend/
+│   └── starlink-location/
+├── monitoring/
+│   ├── prometheus/
+│   └── grafana/
+├── docker-compose.yml
+└── .env
+```
+
+1. Create the base `docker-compose.yml` with stub services:
    - `starlink-location` (placeholder container)
    - `prometheus`
    - `grafana`
-3. Add shared Docker network and persistent volumes.
-4. Set up `.env` with default values:
+2. Add shared Docker network and persistent volumes.
+3. Set up `.env` with default values:
+
    ```bash
    SIMULATION_MODE=true
    PROMETHEUS_RETENTION=15d
@@ -58,9 +62,11 @@ endpoint.
 1. Scaffold a FastAPI app in `backend/starlink-location/app.py`.
 2. Implement `/health` and `/metrics` endpoints.
 3. Add Prometheus client integration:
+
    ```python
    from prometheus_client import Gauge, generate_latest
    ```
+
 4. Create placeholder gauges for:
    - `starlink_dish_latitude_degrees`
    - `starlink_dish_longitude_degrees`
@@ -251,15 +257,19 @@ endpoint.
 ## COMPLETED BEYOND PHASE 0: Major Features Delivered
 
 ### Feature 1: KML Route Import and Management (16 Sessions)
+
 **Status:** COMPLETE and MERGED ✅
 
-Comprehensive system for importing, managing, and visualizing KML flight routes with full simulation mode support.
+Comprehensive system for importing, managing, and visualizing KML flight routes
+with full simulation mode support.
 
 **Key Deliverables:**
+
 - Web UI and REST API for KML route upload and management
 - File-based route storage with automatic watchdog detection
 - Route visualization on Grafana map (dark orange line)
-- Progress metrics: `starlink_route_progress_percent`, `starlink_current_waypoint_index`
+- Progress metrics: `starlink_route_progress_percent`,
+  `starlink_current_waypoint_index`
 - Completion behavior modes: loop, stop, reverse
 - Route-POI integration with cascade deletion
 - Simulation mode: position automatically follows active route
@@ -268,11 +278,14 @@ Comprehensive system for importing, managing, and visualizing KML flight routes 
 **Test Coverage:** 100+ tests passing
 
 ### Feature 2: POI Interactive Management (10 Sessions)
+
 **Status:** COMPLETE and MERGED ✅
 
-Full CRUD system for Points of Interest with real-time ETA calculations and interactive Grafana visualization.
+Full CRUD system for Points of Interest with real-time ETA calculations and
+interactive Grafana visualization.
 
 **Key Deliverables:**
+
 - Interactive POI markers on Grafana map with ETA tooltips
 - Full REST API for POI management
 - Real-time ETA calculations with bearing and distance
@@ -283,46 +296,54 @@ Full CRUD system for Points of Interest with real-time ETA calculations and inte
 **Test Coverage:** Full integration testing
 
 ### Feature 3: ETA Route Timing from KML (24 Sessions, 5 Phases)
+
 **Status:** COMPLETE - ALL 451 TESTS PASSING ✅
 
-Advanced timing-aware system for parsing flight plans with expected waypoint arrival times and calculating realistic ETAs.
+Advanced timing-aware system for parsing flight plans with expected waypoint
+arrival times and calculating realistic ETAs.
 
 **Key Deliverables:**
 
 **Phase 1: Data Models** ✅
+
 - Extended route models with timing fields
 - Optional arrival times and segment speeds
 - RouteTimingProfile for aggregate timing metadata
 - 28 unit tests for model validation
 
 **Phase 2: KML Parser Enhancements** ✅
-- Timestamp extraction from KML descriptions: `Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ`
+
+- Timestamp extraction from KML descriptions:
+  `Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ`
 - Haversine distance calculations for accuracy
 - Segment speed calculations from timing data
 - Route timing profile population
 - 45+ unit and integration tests
 
 **Phase 3: API Integration** ✅
+
 - ETA calculation endpoints for waypoints and locations
 - Route progress metrics endpoint
 - Timing profile exposure in API responses
 - 12 integration tests for endpoints
 
 **Phase 4: Grafana Dashboard & Caching** ✅
+
 - 4 new Grafana dashboard panels for timing visualization
 - ETA caching system (5-second TTL)
 - ETA accuracy tracking and historical metrics
 - Live mode support for real-time position feeds
 
 **Phase 5: Simulator Timing Integration** ✅
+
 - Simulator respects route timing speeds
 - Realistic movement matching expected flight profile
 - Speed override logic for timed routes
 - Backward compatibility with untimed routes
 - Critical bug fix: Route timing speeds take precedence over config defaults
 
-**Test Coverage:** 451 tests passing (100%)
-**Key Metrics Added:**
+**Test Coverage:** 451 tests passing (100%) **Key Metrics Added:**
+
 - `starlink_route_timing_has_data`
 - `starlink_route_timing_total_duration_seconds`
 - `starlink_route_timing_departure_unix`
@@ -333,9 +354,10 @@ Advanced timing-aware system for parsing flight plans with expected waypoint arr
 
 ---
 
-**End Goal:**
-A robust, portable Starlink monitoring system that can run fully simulated in
-any environment, then transition seamlessly to live data when connected to a
-terminal.
+**End Goal:** A robust, portable Starlink monitoring system that can run fully
+simulated in any environment, then transition seamlessly to live data when
+connected to a terminal.
 
-**Current Achievement:** Foundation complete with three major features fully implemented, tested (451 tests), and integrated. System ready for production deployment or continuation with additional enhancements.
+**Current Achievement:** Foundation complete with three major features fully
+implemented, tested (451 tests), and integrated. System ready for production
+deployment or continuation with additional enhancements.

@@ -35,7 +35,9 @@ export function AARSegmentEditor({
     if (!newSegment.start_waypoint_name) {
       return [];
     }
-    const startIndex = availableWaypoints.indexOf(newSegment.start_waypoint_name);
+    const startIndex = availableWaypoints.indexOf(
+      newSegment.start_waypoint_name
+    );
     if (startIndex === -1) {
       return [];
     }

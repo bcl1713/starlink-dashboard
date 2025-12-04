@@ -1,4 +1,5 @@
 # Mission Data Structures Reference
+
 ## For Map and Chart Generation in Mission Exporter
 
 ---
@@ -8,6 +9,7 @@
 **Location:** `backend/starlink-location/app/mission/models.py`
 
 ### Mission Fields
+
 ```python
 class Mission(BaseModel):
     id: str                              # Unique mission identifier
@@ -22,6 +24,7 @@ class Mission(BaseModel):
 ```
 
 ### Key Relationships:
+
 - **route_id** → Links to a ParsedRoute (via route manager)
 - **transports** → Contains transport configuration with satellite transitions
 
@@ -32,6 +35,7 @@ class Mission(BaseModel):
 **Location:** `backend/starlink-location/app/mission/models.py`
 
 ### MissionTimeline Fields
+
 ```python
 class MissionTimeline(BaseModel):
     mission_id: str                      # Associated mission ID
@@ -42,6 +46,7 @@ class MissionTimeline(BaseModel):
 ```
 
 ### Statistics Dict Keys
+
 ```python
 {
     "total_duration_seconds": float,     # Total mission duration
@@ -59,6 +64,7 @@ class MissionTimeline(BaseModel):
 **Location:** `backend/starlink-location/app/mission/models.py`
 
 ### TimelineSegment Fields
+
 ```python
 class TimelineSegment(BaseModel):
     id: str                              # Unique segment identifier
@@ -74,6 +80,7 @@ class TimelineSegment(BaseModel):
 ```
 
 ### Metadata Dict Structure
+
 ```python
 {
     "satellites": {
@@ -89,6 +96,7 @@ class TimelineSegment(BaseModel):
 ## 4. ENUMS
 
 ### TimelineStatus
+
 ```python
 class TimelineStatus(str, Enum):
     NOMINAL = "nominal"      # All transports available
@@ -97,6 +105,7 @@ class TimelineStatus(str, Enum):
 ```
 
 ### TransportState
+
 ```python
 class TransportState(str, Enum):
     AVAILABLE = "available"
@@ -105,6 +114,7 @@ class TransportState(str, Enum):
 ```
 
 ### Transport
+
 ```python
 class Transport(str, Enum):
     X = "X"      # Fixed geostationary satellite
@@ -113,6 +123,7 @@ class Transport(str, Enum):
 ```
 
 ### MissionPhase
+
 ```python
 class MissionPhase(str, Enum):
     PRE_DEPARTURE = "pre_departure"
@@ -127,6 +138,7 @@ class MissionPhase(str, Enum):
 **Location:** `backend/starlink-location/app/models/route.py`
 
 ### ParsedRoute Fields
+
 ```python
 class ParsedRoute(BaseModel):
     metadata: RouteMetadata              # Route metadata
@@ -136,6 +148,7 @@ class ParsedRoute(BaseModel):
 ```
 
 ### RoutePoint Fields (Sequence of Geographic Points)
+
 ```python
 class RoutePoint(BaseModel):
     latitude: float                      # Decimal degrees (-90 to 90)
@@ -147,6 +160,7 @@ class RoutePoint(BaseModel):
 ```
 
 ### RouteWaypoint Fields (Named Points)
+
 ```python
 class RouteWaypoint(BaseModel):
     name: Optional[str]                  # Waypoint name from KML
@@ -161,6 +175,7 @@ class RouteWaypoint(BaseModel):
 ```
 
 ### RouteMetadata Fields
+
 ```python
 class RouteMetadata(BaseModel):
     name: str                            # Route name from KML
@@ -171,6 +186,7 @@ class RouteMetadata(BaseModel):
 ```
 
 ### RouteTimingProfile Fields
+
 ```python
 class RouteTimingProfile(BaseModel):
     departure_time: Optional[datetime]   # Expected departure (UTC)
@@ -184,6 +200,7 @@ class RouteTimingProfile(BaseModel):
 ```
 
 ### Important ParsedRoute Methods
+
 ```python
 def get_total_distance(self) -> float:   # Haversine calculation in meters
 def get_bounds(self) -> dict:            # Returns {"min_lat", "max_lat", "min_lon", "max_lon"}
@@ -196,6 +213,7 @@ def get_bounds(self) -> dict:            # Returns {"min_lat", "max_lat", "min_l
 **Location:** `backend/starlink-location/app/models/poi.py`
 
 ### POI Fields (Core Data)
+
 ```python
 class POI(BaseModel):
     id: str                              # Unique POI identifier
@@ -217,6 +235,7 @@ class POI(BaseModel):
 ```
 
 ### POIWithETA Fields (For Real-Time ETA)
+
 ```python
 class POIWithETA(BaseModel):
     # Core POI data
@@ -227,18 +246,18 @@ class POIWithETA(BaseModel):
     category: Optional[str]
     icon: str
     active: bool                         # Based on route/mission active status
-    
+
     # ETA information
     eta_seconds: float                   # Time to arrival in seconds (-1 if no speed)
     eta_type: str                        # "anticipated" or "estimated"
     is_pre_departure: bool               # True if flight hasn't departed yet
     flight_phase: Optional[str]          # pre_departure | in_flight | post_arrival
-    
+
     # Navigation information
     distance_meters: float               # Distance to POI
     bearing_degrees: Optional[float]     # Bearing to POI (0=North)
     course_status: Optional[str]         # on_course | slightly_off | off_track | behind
-    
+
     # Route awareness (populated when active route exists)
     is_on_active_route: bool             # Whether POI projects to active route
     projected_latitude: Optional[float]  # Projected point on route
@@ -255,12 +274,14 @@ class POIWithETA(BaseModel):
 **Location:** `backend/starlink-location/app/mission/exporter.py`
 
 ### Color Constants (Lines 37-48)
+
 ```python
 LIGHT_YELLOW = colors.Color(1.0, 1.0, 0.85)  # For degraded transport highlighting
 LIGHT_RED = colors.Color(1.0, 0.85, 0.85)    # For critical transport highlighting
 ```
 
 ### Transport Display Mapping
+
 ```python
 TRANSPORT_DISPLAY = {
     Transport.X: "X-Band",
@@ -277,20 +298,23 @@ STATE_COLUMNS = [
 
 ### Key Helper Functions
 
-#### _format_seconds_hms(value: float | int) -> str
+#### \_format_seconds_hms(value: float | int) -> str
+
 ```python
 # Formats seconds as HH:MM:SS (handles negative values)
 # Example: 3661 -> "01:01:01"
 # Example: -3661 -> "-01:01:01"
 ```
 
-#### _serialize_transport_list(transports: Iterable[Transport]) -> str
+#### \_serialize_transport_list(transports: Iterable[Transport]) -> str
+
 ```python
 # Converts Transport enums to display names, joined by ", "
 # Example: [Transport.X, Transport.KA] -> "X-Band, CommKa"
 ```
 
-#### _compose_time_block(moment: datetime, mission_start: datetime) -> str
+#### \_compose_time_block(moment: datetime, mission_start: datetime) -> str
+
 ```python
 # Returns multiline string: "UTC time\nEastern time\nT+/-HH:MM"
 # Example output:
@@ -299,35 +323,42 @@ STATE_COLUMNS = [
 #  T+01:40"
 ```
 
-#### _format_utc(dt: datetime) -> str
+#### \_format_utc(dt: datetime) -> str
+
 ```python
 # Returns "YYYY-MM-DD HH:MZ" (no seconds, Z suffix indicates UTC)
 ```
 
-#### _format_eastern(dt: datetime) -> str
+#### \_format_eastern(dt: datetime) -> str
+
 ```python
 # Returns "YYYY-MM-DD HH:MMTZE" (with DST-aware timezone abbreviation)
 ```
 
-#### _format_offset(delta: timedelta) -> str
+#### \_format_offset(delta: timedelta) -> str
+
 ```python
 # Formats as "T+/-HH:MM"
 # Example: timedelta(minutes=100) -> "T+01:40"
 # Example: timedelta(minutes=-30) -> "T-00:30"
 ```
 
-#### _ensure_timezone(value: datetime) -> datetime
+#### \_ensure_timezone(value: datetime) -> datetime
+
 ```python
 # Ensures datetime is UTC-aware; converts to UTC if needed
 ```
 
-#### _mission_start_timestamp(timeline: MissionTimeline) -> datetime
+#### \_mission_start_timestamp(timeline: MissionTimeline) -> datetime
+
 ```python
 # Returns mission's zero point (earliest segment start or timeline.created_at)
 ```
 
-#### _segment_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
+#### \_segment_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
+
 **Lines 271-331 - Converts segments to exportable rows**
+
 ```python
 # Returns DataFrame with columns:
 # - "Segment #", "Mission ID", "Mission Name", "Status"
@@ -343,19 +374,22 @@ STATE_COLUMNS = [
 # - AAR rows inserted in chronological order
 ```
 
-#### _segment_at_time(timeline: MissionTimeline, timestamp: datetime) -> TimelineSegment | None
+#### \_segment_at_time(timeline: MissionTimeline, timestamp: datetime) -> TimelineSegment | None
+
 ```python
 # Returns segment containing the given timestamp, or last segment if not found
 ```
 
-#### _advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
+#### \_advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
+
 ```python
 # Converts advisories to DataFrame with columns:
 # - "Mission ID", "Timestamp (UTC)", "Timestamp (Eastern)", "T Offset"
 # - "Transport", "Severity", "Event Type", "Message", "Metadata"
 ```
 
-#### _statistics_rows(timeline: MissionTimeline) -> pd.DataFrame
+#### \_statistics_rows(timeline: MissionTimeline) -> pd.DataFrame
+
 ```python
 # Converts timeline.statistics to DataFrame, humanizing metric names
 # Skips keys starting with "_" (internal only)
@@ -368,6 +402,7 @@ STATE_COLUMNS = [
 **Location:** `backend/starlink-location/app/mission/models.py`
 
 ### TimelineAdvisory Fields
+
 ```python
 class TimelineAdvisory(BaseModel):
     id: str                              # Unique advisory identifier
@@ -380,6 +415,7 @@ class TimelineAdvisory(BaseModel):
 ```
 
 ### Advisory Metadata Example
+
 ```python
 {
     "reason": "transition",
@@ -396,6 +432,7 @@ class TimelineAdvisory(BaseModel):
 **Location:** `backend/starlink-location/app/mission/models.py`
 
 ### TransportConfig Fields
+
 ```python
 class TransportConfig(BaseModel):
     initial_x_satellite_id: str          # Initial X satellite (e.g., "X-1")
@@ -407,6 +444,7 @@ class TransportConfig(BaseModel):
 ```
 
 ### XTransition Fields
+
 ```python
 class XTransition(BaseModel):
     id: str                              # Unique transition identifier
@@ -422,6 +460,7 @@ class XTransition(BaseModel):
 ## 10. KEY DATA FLOW FOR MAP/CHART GENERATION
 
 ### To Build a Map Visualization:
+
 1. Get Mission from database
 2. Use mission.route_id to fetch ParsedRoute via route manager
 3. Extract ParsedRoute.points for route geometry
@@ -430,16 +469,18 @@ class XTransition(BaseModel):
 6. Project timeline segments onto route via time-distance analysis
 
 ### To Build a Timeline Chart:
+
 1. Get MissionTimeline with segments and advisories
-2. Use _mission_start_timestamp() to establish timeline zero
+2. Use \_mission_start_timestamp() to establish timeline zero
 3. Process segments:
    - Extract start_time, end_time, status, transport states
-   - Use _format_seconds_hms() for durations
+   - Use \_format_seconds_hms() for durations
    - Check impacted_transports for visual highlighting
-4. Use _compose_time_block() for multi-format timestamps
+4. Use \_compose_time_block() for multi-format timestamps
 5. Include advisories as overlays on timeline
 
 ### To Combine Data:
+
 1. Create data structure mapping:
    - Route points (lat/lon/time) → Map geometry
    - Timeline segments (start/end/status) → Timeline bars
@@ -451,28 +492,35 @@ class XTransition(BaseModel):
 ## 11. IMPORTANT NOTES FOR IMPLEMENTATION
 
 ### Timezone Handling
+
 - All stored times are UTC (ISO-8601 format)
 - Use EASTERN_TZ = ZoneInfo("America/New_York") for Eastern display
-- Always use _ensure_timezone() to make datetimes UTC-aware
+- Always use \_ensure_timezone() to make datetimes UTC-aware
 
 ### Duration Formatting
-- Use _format_seconds_hms() for all duration displays
+
+- Use \_format_seconds_hms() for all duration displays
 - Handles negative values with "-" prefix
 - Format: "HH:MM:SS"
 
 ### Transport State Visualization
+
 - X-Ku conflict warnings display as "WARNING" even though state is "DEGRADED"
-- Use _segment_is_x_ku_warning() to detect this special case
-- Color degraded/offline states using LIGHT_YELLOW (1 transport) or LIGHT_RED (2+ transports)
+- Use \_segment_is_x_ku_warning() to detect this special case
+- Color degraded/offline states using LIGHT_YELLOW (1 transport) or LIGHT_RED
+  (2+ transports)
 
 ### Route Integration
+
 - ParsedRoute.get_total_distance() returns meters via Haversine formula
 - ParsedRoute.get_bounds() returns geographic bounding box
 - RoutePoints have expected_arrival_time for timeline alignment
-- Use projected_waypoint_index and projected_route_progress to position segments on route
+- Use projected_waypoint_index and projected_route_progress to position segments
+  on route
 
 ### POI Integration
-- POI.projected_* fields only populated when route is active
-- POIWithETA includes route_aware_status for visualization logic
-- eta_type switches between "anticipated" (pre-departure) and "estimated" (in-flight)
 
+- POI.projected\_\* fields only populated when route is active
+- POIWithETA includes route_aware_status for visualization logic
+- eta_type switches between "anticipated" (pre-departure) and "estimated"
+  (in-flight)

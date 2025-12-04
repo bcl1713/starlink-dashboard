@@ -1,13 +1,16 @@
 # Export Module Analysis Documentation
 
-This directory contains comprehensive analysis and refactoring plans for the mission export system (exporter.py and package_exporter.py).
+This directory contains comprehensive analysis and refactoring plans for the
+mission export system (exporter.py and package_exporter.py).
 
 ## Documents
 
 ### 1. EXPORTER-SUMMARY.md (13 KB, 392 lines)
+
 **START HERE** - Executive overview of the export system
 
 **Contents:**
+
 - Component overview (exporter.py vs package_exporter.py)
 - Data flow diagram
 - Current architecture issues
@@ -17,14 +20,17 @@ This directory contains comprehensive analysis and refactoring plans for the mis
 - Integration points
 - Deployment notes
 
-**Best for:** Quick understanding, architecture review, stakeholder communication
+**Best for:** Quick understanding, architecture review, stakeholder
+communication
 
 ---
 
 ### 2. EXPORTER-ARCHITECTURE-ANALYSIS.md (22 KB, 541 lines)
+
 **DETAILED REFERENCE** - In-depth architectural breakdown
 
 **Contents:**
+
 - Complete function-by-function analysis
 - Classes and data structures
 - Import/dependency documentation
@@ -39,9 +45,11 @@ This directory contains comprehensive analysis and refactoring plans for the mis
 ---
 
 ### 3. EXPORTER-REFACTORING-PLAN.md (14 KB, 494 lines)
+
 **IMPLEMENTATION GUIDE** - Step-by-step refactoring roadmap
 
 **Contents:**
+
 - Quick reference of issues
 - 6-phase refactoring plan:
   - Phase 1: Pure utilities (formatting, transport utils, excel utils)
@@ -63,11 +71,13 @@ This directory contains comprehensive analysis and refactoring plans for the mis
 ## Quick Facts
 
 ### Files Being Analyzed
+
 - **exporter.py** - 2,220 lines
 - **package_exporter.py** - 1,298 lines
 - **Total** - 3,518 lines
 
 ### Key Issues Identified
+
 1. Mixed concerns (4 different responsibilities in 2 files)
 2. Visualization bloat (~700 lines just for maps/charts)
 3. Code duplication in package_exporter (pagination/styling logic)
@@ -75,7 +85,9 @@ This directory contains comprehensive analysis and refactoring plans for the mis
 5. Difficult error handling
 
 ### Proposed Solution
+
 Decompose into 16 focused modules:
+
 - 3 utility modules (formatting, transport, excel)
 - 2 data processing modules
 - 3 visualization modules
@@ -90,22 +102,27 @@ Decompose into 16 focused modules:
 ## How to Use This Documentation
 
 ### For Code Review
-1. Read EXPORTER-SUMMARY.md sections on "Current Architecture Issues" and "Critical Dependencies"
-2. Reference EXPORTER-ARCHITECTURE-ANALYSIS.md for specific function details
-3. Use dependency graph to understand impact of changes
+
+1. Read EXPORTER-SUMMARY.md sections on "Current Architecture Issues" and
+   "Critical Dependencies"
+1. Reference EXPORTER-ARCHITECTURE-ANALYSIS.md for specific function details
+1. Use dependency graph to understand impact of changes
 
 ### For Refactoring Planning
+
 1. Start with EXPORTER-REFACTORING-PLAN.md "Quick Reference"
 2. Review "Refactoring Sequence" for implementation order
 3. Check "Risk Assessment" before starting each phase
 4. Reference phase details for module specifications
 
 ### For New Feature Development
+
 1. Consult EXPORTER-SUMMARY.md "Export Format Details" for format specifics
 2. Use "Integration Points" section to understand manager interactions
 3. Reference EXPORTER-ARCHITECTURE-ANALYSIS.md "Dependency Graph"
 
 ### For Performance Optimization
+
 1. Review "Performance Characteristics" in EXPORTER-SUMMARY.md
 2. Check EXPORTER-ARCHITECTURE-ANALYSIS.md for heavy operations
 3. Consider lazy loading/streaming opportunities from refactoring plan
@@ -115,7 +132,8 @@ Decompose into 16 focused modules:
 ## Key Takeaways
 
 ### Current Architecture
-```
+
+```text
 exporter.py (2220 lines)
   - Timestamp formatting (8 functions)
   - Transport display logic (4 functions)
@@ -135,7 +153,8 @@ package_exporter.py (1298 lines)
 ```
 
 ### Post-Refactoring Architecture
-```
+
+```text
 Pure Utilities (300 lines)
   ├─ formatting.py (100 lines)
   ├─ transport_utils.py (70 lines)
@@ -172,9 +191,10 @@ TOTAL: 3,750 lines (+232 for imports, minimal change)
 ## Contact & Questions
 
 Refer to the respective document sections:
+
 - Architecture questions → EXPORTER-ARCHITECTURE-ANALYSIS.md
 - Refactoring questions → EXPORTER-REFACTORING-PLAN.md
 - High-level overview → EXPORTER-SUMMARY.md
 
-All documents include detailed section headers and table of contents for easy navigation.
-
+All documents include detailed section headers and table of contents for easy
+navigation.

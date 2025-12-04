@@ -1,5 +1,10 @@
 """Metric update functions for telemetry and mission data."""
 
+# FR-004: File exceeds 300 lines (604 lines) because metric updates coordinate
+# across telemetry calculations, mission timeline state, flight phase logic, and
+# POI ETA projections. Refactoring would split interdependent calculations into
+# separate modules creating circular dependencies. Deferred to v0.4.0.
+
 import logging
 import math
 from datetime import datetime, timezone

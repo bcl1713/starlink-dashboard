@@ -11,7 +11,7 @@ communications monitoring and management.
 
 #### Timeline Creation (T-5 to T-2 days before flight)
 
-1. Open mission planner: `http://<dashboard>/ui/mission-planner`
+1. Open mission planner: `<http://<dashboard>/ui/mission-planner`>
 2. Upload flight route (KML from flight planning)
 3. Configure communication systems:
    - X-Band: Enter manual transitions (coordinates from flight plan)
@@ -56,7 +56,8 @@ Notify: CNRC, Flight Lead, Air Boss
    - Ka coverage gaps (if > 5 min)
    - AAR window times
 3. Crew reads timeline and confirms understanding
-4. Document crew sign-off: "_____ (name) acknowledged comm plan on _____ (date)"
+4. Document crew sign-off: "**\_** (name) acknowledged comm plan on **\_**
+   (date)"
 
 ---
 
@@ -67,7 +68,7 @@ Notify: CNRC, Flight Lead, Air Boss
 **Dashboard Location:**
 
 ```text
-http://<dashboard>/d/starlink/fullscreen-overview
+<http://<dashboard>/d/starlink/fullscreen-overview>
 ```
 
 **Login:** admin / [configured-password] (default: admin)
@@ -140,7 +141,7 @@ severity: critical
 
 **Alert Rule Status:**
 
-1. Navigate to Prometheus: `http://<dashboard>:9090`
+1. Navigate to Prometheus: `<http://<dashboard>:9090`>
 2. Go to **Alerts**
 3. Look for:
    - `MissionDegradedWindowApproaching`
@@ -205,7 +206,8 @@ severity: critical
    ```
 
 3. **Crew Mitigation Options:**
-   - **Option A (Default):** Continue on Ku (lower bandwidth, latency acceptable)
+   - **Option A (Default):** Continue on Ku (lower bandwidth, latency
+     acceptable)
    - **Option B:** Delay flight departure by 30 min (reschedule window)
    - **Option C:** Reroute to avoid critical window (if feasible)
 
@@ -293,25 +295,25 @@ severity: critical
 1. **Generate final timeline:**
 
    ```text
-   http://localhost:8000/ui/mission-planner → Select mission → Click "Export"
+   <http://localhost:8000/ui/mission-planner> → Select mission → Click "Export"
    ```
 
-2. **Export all three formats:**
+1. **Export all three formats:**
    - PDF: For crew briefing handout
    - Excel: For mission planning team analysis
    - CSV: For integration with flight ops database
 
-3. **Filename convention:**
+1. **Filename convention:**
 
    ```text
-   mission-<name>-<departure-date>-<version>.pdf
-   mission-<name>-<departure-date>-<version>.xlsx
-   mission-<name>-<departure-date>-<version>.csv
+   mission-`name`-<departure-date>-<version>.pdf
+   mission-`name`-<departure-date>-<version>.xlsx
+   mission-`name`-<departure-date>-<version>.csv
    ```
 
    Example: `mission-Leg6Rev6-2025-03-15-final.pdf`
 
-4. **Delivery checklist:**
+1. **Delivery checklist:**
    - [ ] PDF printed and placed in crew briefing packet
    - [ ] Excel file emailed to mission planning (with notes on CRITICAL windows)
    - [ ] CSV loaded into mission tracking database
@@ -325,17 +327,17 @@ severity: critical
 1. **Capture final metrics:**
 
    ```bash
-   curl http://localhost:8000/api/missions/active/timeline
+   curl <http://localhost:8000/api/missions/active/timeline>
    ```
 
-   Save as `mission-<name>-<date>-actual-timeline.json`
+   Save as `mission-`name`-<date>-actual-timeline.json`
 
-2. **Compare predicted vs. actual:**
+1. **Compare predicted vs. actual:**
    - How close did predictions match?
    - Were there unexpected degradations?
    - Did crew respond effectively?
 
-3. **Archive folder:**
+1. **Archive folder:**
 
    ```text
    /archive/missions/<year>/<month>/<mission-name>/
@@ -346,7 +348,7 @@ severity: critical
      └── ops-log.txt
    ```
 
-4. **Document lessons learned:**
+1. **Document lessons learned:**
    - Any timeline inaccuracies? Report to mission planner
    - Did alerts fire correctly? Note for future tuning
    - Crew feedback on comms plan? Archive for next flight

@@ -1,5 +1,9 @@
 """Configuration management and loading system."""
 
+# FR-004: File exceeds 300 lines (305 lines) because config management handles
+# environment variable loading, YAML parsing, validation, and cached config state.
+# Splitting would fragment configuration lifecycle. Deferred to v0.4.0.
+
 import os
 from pathlib import Path
 from typing import Optional, Any

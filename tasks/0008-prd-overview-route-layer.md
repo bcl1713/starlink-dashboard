@@ -2,54 +2,86 @@
 
 ## 1. Introduction/Overview
 
-This feature adds a visual route layer to the Fullscreen Overview dashboard's Geomap panel, displaying the Starlink terminal's position history over the dashboard's selected time range. The implementation will be done entirely through provisioned configuration files (JSON/YAML), modifying `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`.
+This feature adds a visual route layer to the Fullscreen Overview dashboard's
+Geomap panel, displaying the Starlink terminal's position history over the
+dashboard's selected time range. The implementation will be done entirely
+through provisioned configuration files (JSON/YAML), modifying
+`monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`.
 
-**Problem Statement:** The current Fullscreen Overview dashboard only shows the terminal's current position with a marker. Users cannot visualize where the terminal has been over time. The existing Position & Movement dashboard was intended to solve this but doesn't work as expected and may be deprecated.
+**Problem Statement:** The current Fullscreen Overview dashboard only shows the
+terminal's current position with a marker. Users cannot visualize where the
+terminal has been over time. The existing Position & Movement dashboard was
+intended to solve this but doesn't work as expected and may be deprecated.
 
-**Goal:** Add a route layer to the existing Geomap panel in the provisioned dashboard JSON to display both the current position marker and a route showing position history, using the dashboard's time range (respecting 1-second data sampling intervals).
+**Goal:** Add a route layer to the existing Geomap panel in the provisioned
+dashboard JSON to display both the current position marker and a route showing
+position history, using the dashboard's time range (respecting 1-second data
+sampling intervals).
 
 ## 2. Goals
 
-1. Display a route line showing position history over the dashboard's selected time range
-2. Maintain 1-second sampling intervals consistent with other overview dashboard panels
-3. Show the current position marker on top of the historical route
-4. Use a simple single-color route line (with future capability to add metric-based coloring)
-5. Start with no interactivity (tooltips), with plans to add detailed telemetry tooltips later
-6. Handle data gaps with straight-line interpolation
-7. Implement entirely through JSON/YAML configuration edits (no UI clicking)
-8. Use Grafana's Route layer if feasible, fallback to alternative approaches if needed
+1. Display a route line showing position history over the dashboard's selected
+   time range
+1. Maintain 1-second sampling intervals consistent with other overview dashboard
+   panels
+1. Show the current position marker on top of the historical route
+1. Use a simple single-color route line (with future capability to add
+   metric-based coloring)
+1. Start with no interactivity (tooltips), with plans to add detailed telemetry
+   tooltips later
+1. Handle data gaps with straight-line interpolation
+1. Implement entirely through JSON/YAML configuration edits (no UI clicking)
+1. Use Grafana's Route layer if feasible, fallback to alternative approaches if
+   needed
 
 ## 3. User Stories
 
-1. **As a user viewing the overview dashboard**, I want to see where my Starlink terminal has traveled during the selected time range so that I can understand my movement patterns alongside real-time metrics.
+1. **As a user viewing the overview dashboard**, I want to see where my Starlink
+   terminal has traveled during the selected time range so that I can understand
+   my movement patterns alongside real-time metrics.
 
-2. **As a user analyzing terminal performance**, I want the route to use the same time range as all other dashboard panels so that I can correlate position history with network metrics over the same period.
+1. **As a user analyzing terminal performance**, I want the route to use the
+   same time range as all other dashboard panels so that I can correlate
+   position history with network metrics over the same period.
 
-3. **As a user monitoring in real-time**, I want to see the current position marker clearly visible on top of the route so that I can distinguish between where I am now and where I've been.
+1. **As a user monitoring in real-time**, I want to see the current position
+   marker clearly visible on top of the route so that I can distinguish between
+   where I am now and where I've been.
 
-4. **As a user with intermittent connectivity**, I want data gaps to be interpolated with straight lines so that my route remains continuous even when the terminal was offline.
+1. **As a user with intermittent connectivity**, I want data gaps to be
+   interpolated with straight lines so that my route remains continuous even
+   when the terminal was offline.
 
-5. **As a future user**, I want the system designed to eventually support metric-based route coloring (altitude, speed, latency) so that I can visualize additional context on the route.
+1. **As a future user**, I want the system designed to eventually support
+   metric-based route coloring (altitude, speed, latency) so that I can
+   visualize additional context on the route.
 
 ## 4. Functional Requirements
 
 ### 4.1 Route Visualization
 
-1. The system must add a new layer to the existing Geomap panel in `fullscreen-overview.json`
-2. The route layer must render position history as a continuous line/path
-3. The route line must use a **single solid color** that provides good contrast on the map
-4. The route line must not interfere with or obscure the current position marker
-5. The current position marker layer must be ordered **after** the route layer in the layers array (rendered on top)
-6. The route line should have a **width of 2-3 pixels**
-7. The route must update automatically as new position data arrives from Prometheus
-8. When data gaps exist, the system must **interpolate linearly** with a solid line
+1. The system must add a new layer to the existing Geomap panel in
+   `fullscreen-overview.json`
+1. The route layer must render position history as a continuous line/path
+1. The route line must use a **single solid color** that provides good contrast
+   on the map
+1. The route line must not interfere with or obscure the current position marker
+1. The current position marker layer must be ordered **after** the route layer
+   in the layers array (rendered on top)
+1. The route line should have a **width of 2-3 pixels**
+1. The route must update automatically as new position data arrives from
+   Prometheus
+1. When data gaps exist, the system must **interpolate linearly** with a solid
+   line
 
 ### 4.2 Time Range Integration
 
-1. The route must use **range queries** (not instant queries) to fetch historical data
-2. The queries must respect the **dashboard's global time range selector**
-3. When the user changes the dashboard time range, the route must update automatically
-4. The system must work with any time range (5 minutes to 15 days)
+1. The route must use **range queries** (not instant queries) to fetch
+   historical data
+1. The queries must respect the **dashboard's global time range selector**
+1. When the user changes the dashboard time range, the route must update
+   automatically
+1. The system must work with any time range (5 minutes to 15 days)
 
 ### 4.3 Data Requirements
 
@@ -58,7 +90,8 @@ This feature adds a visual route layer to the Fullscreen Overview dashboard's Ge
    - Longitude time series (`starlink_dish_longitude_degrees`)
 2. Use **range queries** (not instant queries) with 1-second interval
 3. The existing instant queries for current position marker remain unchanged
-4. Transformations must merge historical lat/lon data into fields for the route layer
+4. Transformations must merge historical lat/lon data into fields for the route
+   layer
 
 ### 4.4 JSON Configuration Structure
 
@@ -70,10 +103,13 @@ This feature adds a visual route layer to the Fullscreen Overview dashboard's Ge
 
 ### 4.5 Implementation Approach
 
-1. **Primary approach:** Use Grafana's Route layer type in the layers configuration
-2. **Fallback approach:** If Route layer has issues, use alternative layer type or configuration
-3. All work done through direct JSON editing of the provisioned dashboard file
-4. Test by reloading the dashboard in Grafana (dashboard auto-updates from provisioned files)
+1. **Primary approach:** Use Grafana's Route layer type in the layers
+   configuration
+1. **Fallback approach:** If Route layer has issues, use alternative layer type
+   or configuration
+1. All work done through direct JSON editing of the provisioned dashboard file
+1. Test by reloading the dashboard in Grafana (dashboard auto-updates from
+   provisioned files)
 
 ### 4.6 Performance
 
@@ -84,19 +120,22 @@ This feature adds a visual route layer to the Fullscreen Overview dashboard's Ge
 
 ### 4.7 Compatibility
 
-1. Must work with current Grafana version (12.2.1 based on pluginVersion in JSON)
-2. Must work in both simulation mode and live mode
-3. Must not break existing dashboard functionality
-4. Must maintain compatibility with existing provisioning setup
+1. Must work with current Grafana version (12.2.1 based on pluginVersion in
+   JSON)
+1. Must work in both simulation mode and live mode
+1. Must not break existing dashboard functionality
+1. Must maintain compatibility with existing provisioning setup
 
 ## 5. Non-Goals (Out of Scope)
 
 1. **Separate time range selector:** Use dashboard's global time range only
 2. **Toggle control:** No show/hide toggle in initial implementation
-3. **Altitude-based color gradient:** Initial implementation uses single solid color
+3. **Altitude-based color gradient:** Initial implementation uses single solid
+   color
 4. **Interactive tooltips:** Not included initially (planned for future)
 5. **Dashed line styling for gaps:** Use solid lines (Grafana limitation)
-6. **Multiple discontinuous route segments:** All points connected as single route
+6. **Multiple discontinuous route segments:** All points connected as single
+   route
 7. **UI-based configuration:** No clicking around Grafana UI (pure JSON/YAML)
 8. **Preserving Position & Movement dashboard:** May be deprecated
 
@@ -126,36 +165,50 @@ This feature adds a visual route layer to the Fullscreen Overview dashboard's Ge
 ]
 ```
 
-**Important:** In Grafana's Geomap, layers array is rendered in order. First layer is bottom, last layer is on top. So route should come **before** marker in the array.
+**Important:** In Grafana's Geomap, layers array is rendered in order. First
+layer is bottom, last layer is on top. So route should come **before** marker in
+the array.
 
 ### 6.3 Query Structure
 
 **Existing queries (keep as-is):**
-- Query A: `starlink_dish_latitude_degrees` (instant: true) - for current position
-- Query B: `starlink_dish_longitude_degrees` (instant: true) - for current position
+
+- Query A: `starlink_dish_latitude_degrees` (instant: true) - for current
+  position
+- Query B: `starlink_dish_longitude_degrees` (instant: true) - for current
+  position
 - Query C: `starlink_dish_altitude_feet` (instant: true)
 - Query D: `starlink_dish_heading_degrees` (instant: true)
 
 **New queries to add:**
-- Query E: `starlink_dish_latitude_degrees` (instant: false, range: true) - for route
-- Query F: `starlink_dish_longitude_degrees` (instant: false, range: true) - for route
+
+- Query E: `starlink_dish_latitude_degrees` (instant: false, range: true) - for
+  route
+- Query F: `starlink_dish_longitude_degrees` (instant: false, range: true) - for
+  route
 
 ### 6.4 Transformation Strategy
 
-The panel currently has a `joinByField` transformation to merge instant queries. Need to extend this to handle both instant (current position) and range (historical route) queries.
+The panel currently has a `joinByField` transformation to merge instant queries.
+Need to extend this to handle both instant (current position) and range
+(historical route) queries.
 
 **Approach:**
+
 1. Keep existing transformation for current position marker data
-2. Route layer can reference the range query data directly (if Grafana Route layer supports this)
+2. Route layer can reference the range query data directly (if Grafana Route
+   layer supports this)
 3. OR add additional transformations to format route data separately
 
-**Note:** This will be determined during implementation based on Grafana's layer data binding capabilities.
+**Note:** This will be determined during implementation based on Grafana's layer
+data binding capabilities.
 
 ## 7. Technical Considerations
 
 ### 7.1 Current Panel Structure
 
 The Geomap panel (ID 1) currently has:
+
 - **Type:** `geomap`
 - **Queries:** 4 instant queries (A, B, C, D)
 - **Transformations:** `joinByField` with `byField: "Time"`, `mode: "outer"`
@@ -164,7 +217,8 @@ The Geomap panel (ID 1) currently has:
 
 ### 7.2 Route Layer Configuration (Grafana 12.x)
 
-Based on Grafana Geomap Route layer documentation, the configuration should look like:
+Based on Grafana Geomap Route layer documentation, the configuration should look
+like:
 
 ```json
 {
@@ -181,35 +235,41 @@ Based on Grafana Geomap Route layer documentation, the configuration should look
   },
   "location": {
     "mode": "coords",
-    "latitude": "latitude_history",  // field name from query/transformation
-    "longitude": "longitude_history"  // field name from query/transformation
+    "latitude": "latitude_history", // field name from query/transformation
+    "longitude": "longitude_history" // field name from query/transformation
   },
   "tooltip": false
 }
 ```
 
-**Note:** Field names and exact structure may need adjustment during implementation based on actual Grafana behavior.
+**Note:** Field names and exact structure may need adjustment during
+implementation based on actual Grafana behavior.
 
 ### 7.3 Alternative Approach: Path Layer
 
-If Route layer doesn't work well, Grafana also supports a "path" layer type or line-based visualization:
+If Route layer doesn't work well, Grafana also supports a "path" layer type or
+line-based visualization:
 
 ```json
 {
-  "type": "line",  // or "path"
-  "name": "Position History",
+  "type": "line", // or "path"
+  "name": "Position History"
   // ... similar configuration
 }
 ```
 
 ### 7.4 Data Binding Strategy
 
-**Challenge:** How to bind range query data to the route layer while keeping instant query data for the marker layer.
+**Challenge:** How to bind range query data to the route layer while keeping
+instant query data for the marker layer.
 
 **Possible solutions:**
+
 1. **Data links:** Each layer can filter/select which query data it uses
-2. **Multiple transformations:** Create separate data frames for route vs. marker
-3. **Field naming:** Use distinct field names for route lat/lon vs. marker lat/lon
+2. **Multiple transformations:** Create separate data frames for route vs.
+   marker
+3. **Field naming:** Use distinct field names for route lat/lon vs. marker
+   lat/lon
 
 **Decision:** To be determined during implementation through testing.
 
@@ -231,12 +291,14 @@ If Route layer doesn't work well, Grafana also supports a "path" layer type or l
 ### 7.7 JSON Validation
 
 Before reloading in Grafana:
+
 1. Validate JSON syntax using `jq` or online validator
 2. Check that all brackets/braces are balanced
 3. Ensure no trailing commas in arrays/objects
 4. Verify string escaping is correct
 
 **Command to validate:**
+
 ```bash
 jq empty monitoring/grafana/provisioning/dashboards/fullscreen-overview.json
 # No output = valid JSON
@@ -246,12 +308,14 @@ jq empty monitoring/grafana/provisioning/dashboards/fullscreen-overview.json
 ### 7.8 Grafana Documentation References
 
 For implementation, consult:
+
 - Grafana Geomap panel documentation
 - Grafana Route layer (beta) documentation
 - Grafana panel JSON schema
 - Grafana provisioning documentation
 
 The Grafana bot's response mentioned these key points:
+
 - Use coords location mode with lat/lon field names
 - Route layer can display path with optional arrows
 - Transformations can extract and organize fields
@@ -349,6 +413,7 @@ Add another query to the `targets` array:
 5. Confirm data is time-series (not instant) with ~1-second intervals
 
 **Validation command:**
+
 ```bash
 # Verify JSON is still valid after edits
 jq empty monitoring/grafana/provisioning/dashboards/fullscreen-overview.json
@@ -359,6 +424,7 @@ jq empty monitoring/grafana/provisioning/dashboards/fullscreen-overview.json
 **Task 3.1: Understand Current Layers Structure**
 
 Current structure (simplified):
+
 ```json
 "layers": [
   {
@@ -372,6 +438,7 @@ Current structure (simplified):
 **Task 3.2: Add Route Layer Before Marker Layer**
 
 Modify the `layers` array to:
+
 ```json
 "layers": [
   {
@@ -403,14 +470,18 @@ Modify the `layers` array to:
 ```
 
 **Notes:**
-- Field names may be `"Value #E"` and `"Value #F"` (Grafana's default naming for query results)
-- May need to be `"latitude_history"` and `"longitude_history"` depending on how Grafana processes the `legendFormat`
+
+- Field names may be `"Value #E"` and `"Value #F"` (Grafana's default naming for
+  query results)
+- May need to be `"latitude_history"` and `"longitude_history"` depending on how
+  Grafana processes the `legendFormat`
 - This will require testing to determine correct field names
 
 **Task 3.3: Save and Test**
 
 1. Save JSON file
-2. Validate: `jq empty monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
+2. Validate:
+   `jq empty monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
 3. Reload dashboard in browser
 4. Check if route appears
 5. If route doesn't appear, check browser console for errors
@@ -430,6 +501,7 @@ If route doesn't appear:
 **Task 4.1: Review Current Transformation**
 
 Current transformation:
+
 ```json
 "transformations": [
   {
@@ -447,14 +519,17 @@ This joins all instant queries by timestamp.
 **Task 4.2: Determine if Additional Transformations are Needed**
 
 **Scenario A:** Route layer can read range query data directly
+
 - No additional transformations needed
 - Route layer just needs correct field names
 
 **Scenario B:** Route layer needs data in specific format
+
 - May need to add transformations to organize/rename fields
 - Possible transformations: "organize fields", "filter fields by name"
 
-**Action:** Test Scenario A first. If route doesn't render, investigate Scenario B.
+**Action:** Test Scenario A first. If route doesn't render, investigate Scenario
+B.
 
 **Task 4.3: Add Field Organization if Needed**
 
@@ -498,6 +573,7 @@ Once route renders, fine-tune in JSON:
 **Task 5.2: Test with Different Time Ranges**
 
 In Grafana UI:
+
 1. Change dashboard time range to "Last 5 minutes"
 2. Verify route updates and shows last 5 minutes of movement
 3. Try "Last 1 hour"
@@ -506,19 +582,23 @@ In Grafana UI:
 
 **Task 5.3: Test in Both Operating Modes**
 
-1. **Simulation mode:**
+6. **Simulation mode:**
+
    ```bash
    # Ensure STARLINK_MODE=simulation in .env
    docker compose restart backend
    ```
+
    - Wait for simulated data to accumulate
    - Verify route displays simulated movement
 
-2. **Live mode (if available):**
+1. **Live mode (if available):**
+
    ```bash
    # Set STARLINK_MODE=live in .env
    docker compose restart backend
    ```
+
    - Verify route displays actual movement
 
 **Task 5.4: Verify Layer Ordering**
@@ -530,19 +610,21 @@ In Grafana UI:
 
 **Task 5.5: Test Edge Cases**
 
-1. **No data:**
+3. **No data:**
+
    ```bash
    docker compose stop backend
    ```
+
    - Reload dashboard
    - Verify it shows "No data" gracefully (no errors)
    - Restart: `docker compose start backend`
 
-2. **Very short time range:**
+1. **Very short time range:**
    - Set to "Last 30 seconds"
    - Verify route displays correctly (may be very short or single point)
 
-3. **Very long time range:**
+1. **Very long time range:**
    - Set to "Last 7 days"
    - Verify route loads and renders (may take a few seconds)
 
@@ -556,8 +638,8 @@ Change layer type from `"route"` to `"heatmap"` or another supported type:
 
 ```json
 {
-  "type": "heatmap",  // or "markers" with special styling
-  "name": "Position History",
+  "type": "heatmap", // or "markers" with special styling
+  "name": "Position History"
   // ... adapt configuration
 }
 ```
@@ -579,6 +661,7 @@ If route layer is not available in this Grafana version:
 **Task 6.4: Document Findings**
 
 If route layer doesn't work:
+
 - Document the issue in a comment or separate file
 - Note the Grafana version and limitation
 - Propose alternative solution or upgrade path
@@ -603,9 +686,11 @@ Add section documenting the new feature:
 ```markdown
 ### Position History Route (Fullscreen Overview)
 
-The Fullscreen Overview dashboard's map panel displays both current position and historical route.
+The Fullscreen Overview dashboard's map panel displays both current position and
+historical route.
 
 **Features:**
+
 - Route shows position history over the selected dashboard time range
 - Uses 1-second sampling intervals matching other overview panels
 - Simple blue route line (future: metric-based coloring)
@@ -613,11 +698,14 @@ The Fullscreen Overview dashboard's map panel displays both current position and
 - Data gaps interpolated with straight lines
 
 **Implementation:**
-- Configured in `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
+
+- Configured in
+  `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
 - Uses Grafana Geomap Route layer (or alternative if Route layer unavailable)
 - Queries Prometheus for historical lat/lon time series
 
 **Known Limitations:**
+
 - No interactive tooltips in initial version (planned future enhancement)
 - Single solid color (no gradient or metric-based coloring yet)
 - All points connected as continuous route (no segment breaks)
@@ -666,35 +754,39 @@ git commit -m "Add position history route layer to fullscreen overview dashboard
 
 Once basic route is working, future work could include:
 
-1. **Add tooltips:** Configure route layer with `"tooltip": true` and add telemetry data
-2. **Metric-based coloring:** Use altitude, speed, or latency to color the route
-3. **Dynamic sampling:** Adjust interval based on time range for better performance
-4. **Separate route segments:** Detect gaps and create multiple layers
-5. **Export functionality:** Add buttons to export route as GPX/KML
+1. **Add tooltips:** Configure route layer with `"tooltip": true` and add
+   telemetry data
+1. **Metric-based coloring:** Use altitude, speed, or latency to color the route
+1. **Dynamic sampling:** Adjust interval based on time range for better
+   performance
+1. **Separate route segments:** Detect gaps and create multiple layers
+1. **Export functionality:** Add buttons to export route as GPX/KML
 
 ## 9. Success Metrics
 
 1. **Functionality:**
-   - Route displays correctly when dashboard time range is set to various intervals (5m, 1h, 24h)
+   - Route displays correctly when dashboard time range is set to various
+     intervals (5m, 1h, 24h)
    - Current position marker remains visible on top
    - Route updates automatically when time range changes
 
-2. **Performance:**
+1. **Performance:**
    - Dashboard loads in <5 seconds with route enabled (24-hour time range)
    - No browser lag or freezing when rendering route
    - JSON file is well-formed and loads without Grafana errors
 
-3. **Data Accuracy:**
+1. **Data Accuracy:**
    - Route visualization matches Prometheus data
-   - All available position points are displayed (no missing segments except data gaps)
+   - All available position points are displayed (no missing segments except
+     data gaps)
    - Route interpolates gaps as expected
 
-4. **Maintainability:**
+1. **Maintainability:**
    - Changes are made entirely through JSON configuration (no manual UI changes)
    - JSON structure is clean and well-organized
    - Documentation clearly explains the configuration
 
-5. **Compatibility:**
+1. **Compatibility:**
    - Works in both simulation and live modes
    - Works with current Grafana version (12.2.1)
    - Doesn't break existing dashboard functionality
@@ -703,30 +795,40 @@ Once basic route is working, future work could include:
 
 **To be resolved during implementation:**
 
-1. **Exact field names:** What are the actual field names that the route layer should reference?
+1. **Exact field names:** What are the actual field names that the route layer
+   should reference?
    - Likely: `"Value #E"`, `"Value #F"`
    - Or: `"latitude_history"`, `"longitude_history"` (from legendFormat)
-   - **Action:** Inspect query results in Grafana's Transform tab to determine exact names
+   - **Action:** Inspect query results in Grafana's Transform tab to determine
+     exact names
 
-2. **Route layer support:** Does Grafana 12.2.1 fully support the "route" layer type?
-   - **Action:** Test by adding route layer configuration and checking if it renders
-   - **Fallback:** If not supported, use alternative layer type or visualization method
+1. **Route layer support:** Does Grafana 12.2.1 fully support the "route" layer
+   type?
+   - **Action:** Test by adding route layer configuration and checking if it
+     renders
+   - **Fallback:** If not supported, use alternative layer type or visualization
+     method
 
-3. **Transformation requirements:** Does the route layer need data in a specific format?
-   - **Action:** Test if route renders with current transformation (joinByField only)
+1. **Transformation requirements:** Does the route layer need data in a specific
+   format?
+   - **Action:** Test if route renders with current transformation (joinByField
+     only)
    - If not, add organize/filter transformations to prepare data correctly
 
-4. **Performance at scale:** How does performance degrade with long time ranges (7+ days)?
+1. **Performance at scale:** How does performance degrade with long time ranges
+   (7+ days)?
    - **Action:** Test with 7-day and 15-day time ranges
    - If slow, implement dynamic interval or document limitation
 
-5. **Color choice:** What color provides best visibility on the default OpenStreetMap basemap?
+1. **Color choice:** What color provides best visibility on the default
+   OpenStreetMap basemap?
    - Suggested: blue (contrasts with green marker)
    - **Action:** Test blue, dark-blue, purple and choose best option
 
 ## 11. Grafana Reference: Route Layer Configuration
 
-Based on Grafana documentation and community examples, Route layer configuration structure:
+Based on Grafana documentation and community examples, Route layer configuration
+structure:
 
 ```json
 {
@@ -735,36 +837,37 @@ Based on Grafana documentation and community examples, Route layer configuration
   "config": {
     "style": {
       "color": {
-        "field": "fieldname",  // for dynamic coloring
-        "fixed": "colorname"    // for static color (use this)
+        "field": "fieldname", // for dynamic coloring
+        "fixed": "colorname" // for static color (use this)
       },
-      "opacity": 0.8,           // 0.0 to 1.0
-      "lineWidth": 3,           // pixels
-      "lineCap": "round",       // optional
-      "lineJoin": "round"       // optional
+      "opacity": 0.8, // 0.0 to 1.0
+      "lineWidth": 3, // pixels
+      "lineCap": "round", // optional
+      "lineJoin": "round" // optional
     },
-    "showLegend": true         // show in layer legend
+    "showLegend": true // show in layer legend
   },
   "location": {
-    "mode": "coords",           // use lat/lon coordinates
-    "latitude": "lat_field",    // field name for latitude
-    "longitude": "lon_field"    // field name for longitude
+    "mode": "coords", // use lat/lon coordinates
+    "latitude": "lat_field", // field name for latitude
+    "longitude": "lon_field" // field name for longitude
   },
-  "tooltip": true              // enable/disable tooltips
+  "tooltip": true // enable/disable tooltips
 }
 ```
 
 **Key points:**
+
 - `color.fixed` for single static color
 - `color.field` for dynamic coloring based on data (future enhancement)
 - `location.mode` must be `"coords"` for lat/lon data
-- `latitude` and `longitude` must reference actual field names from query/transformation results
+- `latitude` and `longitude` must reference actual field names from
+  query/transformation results
 
 ---
 
-**Document Version:** 1.0
-**Created:** 2025-10-28
-**Status:** Ready for Implementation
-**Implementation Method:** Pure JSON/YAML configuration (no UI)
-**Target File:** `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-**Related PRD:** PRD-0007 (Position & Movement dashboard, may be deprecated)
+**Document Version:** 1.0 **Created:** 2025-10-28 **Status:** Ready for
+Implementation **Implementation Method:** Pure JSON/YAML configuration (no UI)
+**Target File:**
+`monitoring/grafana/provisioning/dashboards/fullscreen-overview.json` **Related
+PRD:** PRD-0007 (Position & Movement dashboard, may be deprecated)

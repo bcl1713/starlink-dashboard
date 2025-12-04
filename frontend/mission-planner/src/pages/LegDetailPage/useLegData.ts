@@ -32,6 +32,44 @@ interface UseLegDataReturn {
 }
 
 /**
+ * Initialize satellite config from leg transports data
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function initializeSatelliteConfig(legTransports?: any): SatelliteConfig {
+  if (!legTransports) {
+    return {
+      xband_starting_satellite: undefined,
+      xband_transitions: [],
+      ka_outages: [],
+      ku_outages: [],
+    };
+  }
+  return {
+    xband_starting_satellite: legTransports.initial_x_satellite_id,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    xband_transitions: (legTransports.x_transitions as any[]) || [],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ka_outages: (legTransports.ka_outages as any[]) || [],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ku_outages: (legTransports.ku_overrides as any[]) || [],
+  };
+}
+
+/**
+ * Initialize AAR config from leg transports data
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function initializeAARConfig(legTransports?: any): AARConfig {
+  if (!legTransports) {
+    return { segments: [] };
+  }
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    segments: (legTransports.aar_windows as any[]) || [],
+  };
+}
+
+/**
  * Custom hook for managing leg data, including routes, satellites, and configurations
  */
 export function useLegData({
@@ -40,16 +78,13 @@ export function useLegData({
   legTransports,
 }: UseLegDataProps): UseLegDataReturn {
   // State for configurations
-  const [satelliteConfig, setSatelliteConfig] = useState<SatelliteConfig>({
-    xband_starting_satellite: undefined,
-    xband_transitions: [],
-    ka_outages: [],
-    ku_outages: [],
-  });
+  const [satelliteConfig, setSatelliteConfig] = useState<SatelliteConfig>(() =>
+    initializeSatelliteConfig(legTransports)
+  );
 
-  const [aarConfig, setAARConfig] = useState<AARConfig>({
-    segments: [],
-  });
+  const [aarConfig, setAARConfig] = useState<AARConfig>(() =>
+    initializeAARConfig(legTransports)
+  );
 
   const [routeCoordinates, setRouteCoordinates] = useState<[number, number][]>(
     []
@@ -116,77 +151,74 @@ export function useLegData({
 
   // Load route coordinates and waypoints when routeId changes
   useEffect(() => {
-    if (routeId) {
-      routesApi
-        .getCoordinates(routeId)
-        .then((coords) => setRouteCoordinates(coords))
-        .catch((err) =>
-          console.error('Failed to load route coordinates:', err)
-        );
+    if (!routeId) {
+      return;
+    }
 
-      routesApi
-        .getWaypoints(routeId)
-        .then((waypoints) => {
-          setAvailableWaypoints(waypoints);
-          setWaypointNames(
-            waypoints.map((wp) => wp.name || '').filter((name) => name !== '')
-          );
-        })
-        .catch((err) => console.error('Failed to load route waypoints:', err));
-    } else {
+    routesApi
+      .getCoordinates(routeId)
+      .then((coords) => setRouteCoordinates(coords))
+      .catch((err) =>
+        console.error('Failed to load route coordinates:', err)
+      );
+
+    routesApi
+      .getWaypoints(routeId)
+      .then((waypoints) => {
+        setAvailableWaypoints(waypoints);
+        setWaypointNames(
+          waypoints.map((wp) => wp.name || '').filter((name) => name !== '')
+        );
+      })
+      .catch((err) => console.error('Failed to load route waypoints:', err));
+
+    // Cleanup: clear waypoints when effect unmounts or routeId changes
+    return () => {
       setAvailableWaypoints([]);
       setWaypointNames([]);
-    }
+    };
   }, [routeId]);
 
   // Load Ka transition POIs when routeId or missionId changes
   useEffect(() => {
-    if (routeId && missionId) {
-      poisService
-        .getPOIsByRoute(routeId, false)
-        .then((pois) => {
-          // Filter for Ka transition POIs that belong to THIS mission AND route
-          const kaPois = pois.filter(
-            (poi) =>
-              poi.category === 'mission-event' &&
-              poi.icon === 'satellite' &&
-              poi.name.toLowerCase().includes('ka transition') &&
-              poi.mission_id === missionId &&
-              poi.route_id === routeId
-          );
-
-          // Convert POIs to KaTransition format
-          const transitions = kaPois
-            .map((poi) => convertPoiToKaTransition(poi))
-            .filter((t): t is KaTransition => t !== null);
-
-          setKaTransitions(transitions);
-        })
-        .catch((err) =>
-          console.error('Failed to load Ka transition POIs:', err)
-        );
-    } else {
-      setKaTransitions([]);
+    if (!routeId || !missionId) {
+      return;
     }
+
+    poisService
+      .getPOIsByRoute(routeId, false)
+      .then((pois) => {
+        // Filter for Ka transition POIs that belong to THIS mission AND route
+        const kaPois = pois.filter(
+          (poi) =>
+            poi.category === 'mission-event' &&
+            poi.icon === 'satellite' &&
+            poi.name.toLowerCase().includes('ka transition') &&
+            poi.mission_id === missionId &&
+            poi.route_id === routeId
+        );
+
+        // Convert POIs to KaTransition format
+        const transitions = kaPois
+          .map((poi) => convertPoiToKaTransition(poi))
+          .filter((t): t is KaTransition => t !== null);
+
+        setKaTransitions(transitions);
+      })
+      .catch((err) =>
+        console.error('Failed to load Ka transition POIs:', err)
+      );
+
+    // Cleanup: clear Ka transitions when effect unmounts or dependencies change
+    return () => {
+      setKaTransitions([]);
+    };
   }, [routeId, missionId]);
 
-  // Initialize state from leg transports data
+  // Sync state when leg transports data changes
   useEffect(() => {
-    if (legTransports) {
-      setSatelliteConfig({
-        xband_starting_satellite: legTransports.initial_x_satellite_id,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        xband_transitions: (legTransports.x_transitions as any[]) || [],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ka_outages: (legTransports.ka_outages as any[]) || [],
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ku_outages: (legTransports.ku_overrides as any[]) || [],
-      });
-      setAARConfig({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        segments: (legTransports.aar_windows as any[]) || [],
-      });
-    }
+    setSatelliteConfig(initializeSatelliteConfig(legTransports));
+    setAARConfig(initializeAARConfig(legTransports));
   }, [legTransports]);
 
   return {

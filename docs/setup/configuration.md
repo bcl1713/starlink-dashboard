@@ -21,20 +21,20 @@ All configuration is done via the `.env` file in the project root.
 
 ### Complete Reference
 
-| Variable | Default | Description | Mode |
-|----------|---------|-------------|------|
-| `STARLINK_MODE` | `simulation` | `simulation` or `live` | Both |
-| `STARLINK_DISH_HOST` | `192.168.100.1` | Dish IP address | Live |
-| `STARLINK_DISH_PORT` | `9200` | Dish gRPC port | Live |
-| `PROMETHEUS_RETENTION` | `1y` | Data retention period | Both |
-| `GRAFANA_ADMIN_PASSWORD` | `admin` | Grafana password | Both |
-| `STARLINK_LOCATION_PORT` | `8000` | Backend port | Both |
-| `PROMETHEUS_PORT` | `9090` | Prometheus port | Both |
-| `GRAFANA_PORT` | `3000` | Grafana port | Both |
-| `TIMEZONE_TAKEOFF` | `America/Los_Angeles` | Takeoff timezone | Both |
-| `TIMEZONE_LANDING` | `Europe/London` | Landing timezone | Both |
-| `LOG_LEVEL` | `INFO` | Backend log level | Both |
-| `JSON_LOGS` | `true` | JSON log format | Both |
+| Variable                 | Default               | Description            | Mode |
+| ------------------------ | --------------------- | ---------------------- | ---- |
+| `STARLINK_MODE`          | `simulation`          | `simulation` or `live` | Both |
+| `STARLINK_DISH_HOST`     | `192.168.100.1`       | Dish IP address        | Live |
+| `STARLINK_DISH_PORT`     | `9200`                | Dish gRPC port         | Live |
+| `PROMETHEUS_RETENTION`   | `1y`                  | Data retention period  | Both |
+| `GRAFANA_ADMIN_PASSWORD` | `admin`               | Grafana password       | Both |
+| `STARLINK_LOCATION_PORT` | `8000`                | Backend port           | Both |
+| `PROMETHEUS_PORT`        | `9090`                | Prometheus port        | Both |
+| `GRAFANA_PORT`           | `3000`                | Grafana port           | Both |
+| `TIMEZONE_TAKEOFF`       | `America/Los_Angeles` | Takeoff timezone       | Both |
+| `TIMEZONE_LANDING`       | `Europe/London`       | Landing timezone       | Both |
+| `LOG_LEVEL`              | `INFO`                | Backend log level      | Both |
+| `JSON_LOGS`              | `true`                | JSON log format        | Both |
 
 ---
 
@@ -58,14 +58,14 @@ STARLINK_MODE=simulation
 
 The simulator generates realistic Starlink telemetry:
 
-| Metric | Simulation Behavior |
-|--------|-------------------|
-| **Position** | Circular or route-following movement |
-| **Speed** | 0-100 knots with realistic variation |
-| **Latency** | 20-80ms typical, occasional 200ms spikes |
-| **Throughput** | Download 50-200 Mbps, Upload 10-40 Mbps |
-| **Obstructions** | 0-30% with smooth variation |
-| **Altitude** | 100-10,000 meters |
+| Metric           | Simulation Behavior                      |
+| ---------------- | ---------------------------------------- |
+| **Position**     | Circular or route-following movement     |
+| **Speed**        | 0-100 knots with realistic variation     |
+| **Latency**      | 20-80ms typical, occasional 200ms spikes |
+| **Throughput**   | Download 50-200 Mbps, Upload 10-40 Mbps  |
+| **Obstructions** | 0-30% with smooth variation              |
+| **Altitude**     | 100-10,000 meters                        |
 
 ### Route Configuration
 
@@ -81,13 +81,13 @@ The simulator uses a circular pattern by default. No configuration needed.
    cp your-route.kml data/sim_routes/my-route.kml
    ```
 
-2. Restart backend:
+1. Restart backend:
 
    ```bash
    docker compose restart starlink-location
    ```
 
-3. Check logs:
+1. Check logs:
 
    ```bash
    docker compose logs starlink-location | rg -i "kml|route"
@@ -97,13 +97,13 @@ The simulator uses a circular pattern by default. No configuration needed.
 
 ```bash
 # Check status
-curl http://localhost:8000/api/status | jq '.position'
+curl <http://localhost:8000/api/status> | jq '.position'
 
 # Monitor position updates (should change every second)
-watch -n 1 'curl -s http://localhost:8000/api/status | jq .position.latitude'
+watch -n 1 'curl -s <http://localhost:8000/api/status> | jq .position.latitude'
 
 # View metrics
-curl http://localhost:8000/metrics | rg starlink_dish_latitude
+curl <http://localhost:8000/metrics> | rg starlink_dish_latitude
 ```
 
 ---
@@ -193,7 +193,7 @@ The system gracefully handles connection issues:
 **Health Check:**
 
 ```bash
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 ```
 
 **Connected response:**
@@ -242,7 +242,7 @@ docker compose logs -f starlink-location | rg -i "dish|connect"
 **4. Verify metrics:**
 
 ```bash
-curl http://localhost:8000/metrics | rg starlink_dish
+curl <http://localhost:8000/metrics> | rg starlink_dish
 ```
 
 ### Custom IP Configuration
@@ -261,7 +261,7 @@ docker compose down
 docker compose up -d
 
 # Verify
-curl http://localhost:8000/health | jq '.dish_connected'
+curl <http://localhost:8000/health> | jq '.dish_connected'
 ```
 
 ---
@@ -342,8 +342,8 @@ For slow networks, increase scrape intervals:
 
 ```yaml
 global:
-  scrape_interval: 15s  # Increase from default 10s
-  scrape_timeout: 10s   # Increase from default 5s
+  scrape_interval: 15s # Increase from default 10s
+  scrape_timeout: 10s # Increase from default 5s
 ```
 
 **Restart Prometheus:**
@@ -383,9 +383,9 @@ docker compose up -d
 
 **Access new ports:**
 
-- Backend: <http://localhost:8001>
-- Prometheus: <http://localhost:9091>
-- Grafana: <http://localhost:3001>
+- Backend: <<http://localhost:8001>>
+- Prometheus: <<http://localhost:9091>>
+- Grafana: <<http://localhost:3001>>
 
 ---
 
@@ -423,7 +423,7 @@ sudo firewall-cmd --reload
 
 **Storage calculation:**
 
-```
+```text
 Number of metrics: 45
 Scrape interval: 1 second
 Retention period: 1 year (31,536,000 seconds)
@@ -435,13 +435,13 @@ Storage = (45 × 31,536,000 × 1.5 × 1.2) / 1,073,741,824 ≈ 2.4 GB
 
 **Common retention periods:**
 
-| Retention | Storage | Use Case |
-|-----------|---------|----------|
-| `1y` | ~2.4 GB | Long-term analysis |
-| `90d` | ~600 MB | Quarterly reviews |
-| `30d` | ~200 MB | Monthly monitoring |
-| `15d` | ~100 MB | Development/testing |
-| `7d` | ~50 MB | Minimal storage |
+| Retention | Storage | Use Case            |
+| --------- | ------- | ------------------- |
+| `1y`      | ~2.4 GB | Long-term analysis  |
+| `90d`     | ~600 MB | Quarterly reviews   |
+| `30d`     | ~200 MB | Monthly monitoring  |
+| `15d`     | ~100 MB | Development/testing |
+| `7d`      | ~50 MB  | Minimal storage     |
 
 ---
 
@@ -628,7 +628,7 @@ docker compose down
 docker compose up -d
 
 # 3. Verify changes
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 ---
@@ -654,7 +654,7 @@ nano monitoring/prometheus/prometheus.yml
 docker compose restart prometheus
 
 # Verify
-curl http://localhost:9090/-/healthy
+curl <http://localhost:9090/-/healthy>
 ```
 
 ---
@@ -668,9 +668,9 @@ After configuration changes, verify:
 docker compose ps
 
 # 2. Health checks
-curl http://localhost:8000/health
-curl http://localhost:9090/-/healthy
-curl http://localhost:3000/api/health
+curl <http://localhost:8000/health>
+curl <http://localhost:9090/-/healthy>
+curl <http://localhost:3000/api/health>
 
 # 3. Logs for errors
 docker compose logs | rg -i error

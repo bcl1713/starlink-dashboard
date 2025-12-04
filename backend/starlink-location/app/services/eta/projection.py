@@ -1,5 +1,10 @@
 """Route-aware ETA projection and calculation with dual-mode support."""
 
+# FR-004: File exceeds 300 lines (500 lines) because ETA projection bridges
+# flight phase detection, route geometry, timing calculations, and mode switching.
+# Refactoring would split related concerns across modules losing coherence.
+# Deferred to v0.4.0.
+
 import logging
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone

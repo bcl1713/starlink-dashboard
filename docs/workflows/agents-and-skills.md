@@ -1,7 +1,7 @@
 # Agents and Skills Reference
 
-This document provides a complete reference for all Claude Code agents and skills
-available in this project.
+This document provides a complete reference for all Claude Code agents and
+skills available in this project.
 
 ---
 
@@ -263,8 +263,9 @@ This will analyze your current position tracking code, design a
 forecasting system, and create a complete implementation plan with tasks.
 ```
 
-**Best Practice:** Use this AFTER exiting plan mode when you have a clear vision.
-The files persist across context resets, so you can pick up where you left off.
+**Best Practice:** Use this AFTER exiting plan mode when you have a clear
+vision. The files persist across context resets, so you can pick up where you
+left off.
 
 ---
 

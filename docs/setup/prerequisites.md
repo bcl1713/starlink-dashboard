@@ -50,15 +50,17 @@ docker --version
 
 **Expected output:**
 
-```
+```text
 Docker version 20.10.x, build xxxxx
 ```
 
 **Installation:**
 
 - **Linux:** [Install Docker Engine](https://docs.docker.com/engine/install/)
-- **macOS:** [Install Docker Desktop](https://docs.docker.com/desktop/install/mac-install/)
-- **Windows:** [Install Docker Desktop](https://docs.docker.com/desktop/install/windows-install/)
+- **macOS:**
+  [Install Docker Desktop](https://docs.docker.com/desktop/install/mac-install/)
+- **Windows:**
+  [Install Docker Desktop](https://docs.docker.com/desktop/install/windows-install/)
 
 ---
 
@@ -76,7 +78,7 @@ docker compose version
 
 **Expected output:**
 
-```
+```text
 Docker Compose version v2.x.x
 ```
 
@@ -127,7 +129,7 @@ While not required, jq makes testing API endpoints much easier.
 **Test:**
 
 ```bash
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 ```
 
 ---
@@ -151,14 +153,14 @@ curl http://localhost:8000/health | jq .
    newgrp docker
    ```
 
-2. **Start Docker service:**
+1. **Start Docker service:**
 
    ```bash
    sudo systemctl start docker
    sudo systemctl enable docker  # Start on boot
    ```
 
-3. **Firewall configuration:**
+1. **Firewall configuration:**
 
    Open ports if using firewall:
 
@@ -204,13 +206,13 @@ curl http://localhost:8000/health | jq .
    wsl --install
    ```
 
-2. **Install Docker Desktop** with WSL 2 backend enabled
+1. **Install Docker Desktop** with WSL 2 backend enabled
 
-3. **Configure Docker Desktop:**
+1. **Configure Docker Desktop:**
    - Settings → Resources → WSL Integration
    - Enable integration with your WSL distribution
 
-4. **Run commands from WSL terminal** for best experience
+1. **Run commands from WSL terminal** for best experience
 
 ---
 
@@ -228,11 +230,11 @@ Required for:
 
 The following ports must be available on localhost:
 
-| Port | Service | Protocol |
-|------|---------|----------|
-| 3000 | Grafana | HTTP |
-| 8000 | Backend API | HTTP |
-| 9090 | Prometheus | HTTP |
+| Port | Service     | Protocol |
+| ---- | ----------- | -------- |
+| 3000 | Grafana     | HTTP     |
+| 8000 | Backend API | HTTP     |
+| 9090 | Prometheus  | HTTP     |
 
 **Check port availability:**
 

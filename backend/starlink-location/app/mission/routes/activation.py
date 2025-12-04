@@ -1,5 +1,10 @@
 """Mission activation and deactivation endpoints."""
 
+# FR-004: File exceeds 300 lines (475 lines) because mission activation handles
+# state transitions, timeline building, metric coordination, and flight status
+# updates. Splitting would create coupling across state-dependent operations.
+# Deferred to v0.4.0.
+
 import logging
 from datetime import datetime, timezone
 from typing import Optional

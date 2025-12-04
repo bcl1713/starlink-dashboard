@@ -1,7 +1,6 @@
 # Starlink Dashboard Troubleshooting Guide
 
-**Last Updated:** 2025-10-31
-**Version:** 0.2.0
+**Last Updated:** 2025-10-31 **Version:** 0.2.0
 
 ## Overview
 
@@ -24,7 +23,7 @@ Before diving into specific issues, run these checks:
 docker compose ps
 
 # 2. Check backend health
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # 3. Check logs for errors
 docker compose logs --tail=50
@@ -38,23 +37,19 @@ docker stats --no-stream
 ### Service Won't Start
 
 - [Container exits immediately](./docker-services.md#container-exits-immediately)
-- [Failed to connect to Docker
-  daemon](./docker-services.md#failed-to-connect-to-docker-daemon)
+- [Failed to connect to Docker daemon](./docker-services.md#failed-to-connect-to-docker-daemon)
 - [Port conflicts](./docker-services.md#port-conflicts)
 
 ### Data Issues
 
 - [Metrics not updating](./docker-services.md#metrics-not-updating)
 - [Dashboards empty or no data](./metrics-monitoring.md#dashboards-empty)
-- [POI list empty or
-  missing](./connectivity-data.md#poi-list-empty-or-missing)
+- [POI list empty or missing](./connectivity-data.md#poi-list-empty-or-missing)
 
 ### Connectivity Issues
 
-- [Live mode won't connect to
-  dish](./connectivity-data.md#live-mode-wont-connect-to-dish)
-- [Services can't
-  communicate](./connectivity-data.md#services-cant-communicate)
+- [Live mode won't connect to dish](./connectivity-data.md#live-mode-wont-connect-to-dish)
+- [Services can't communicate](./connectivity-data.md#services-cant-communicate)
 
 ### Performance Issues
 
@@ -117,7 +112,7 @@ docker compose logs grafana > grafana.log
    docker compose logs > debug-logs.txt
    ```
 
-2. **System info:**
+1. **System info:**
 
    ```bash
    docker --version
@@ -125,20 +120,20 @@ docker compose logs grafana > grafana.log
    uname -a
    ```
 
-3. **Configuration:**
+1. **Configuration:**
 
    ```bash
    cat .env | rg -v "PASSWORD"
    docker compose config | head -50
    ```
 
-4. **Current state:**
+1. **Current state:**
 
    ```bash
    docker compose ps
    docker stats --no-stream
-   curl http://localhost:8000/health
-   curl http://localhost:9090/api/v1/targets
+   curl <http://localhost:8000/health>
+   curl <http://localhost:9090/api/v1/targets>
    ```
 
 ### Resources

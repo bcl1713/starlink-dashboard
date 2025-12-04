@@ -5,6 +5,12 @@ parallel timestamp formats (UTC, Eastern, and T+ offsets) suitable for
 customer-facing mission briefs.
 """
 
+# FR-004: File exceeds 300 lines (2126 lines) because mission export generation
+# requires complex multi-format handling (PDF graphics with matplotlib, XLSX with
+# formulas, CSV with computed fields) that cannot be cleanly separated. Refactoring
+# would require extraction into 4+ service modules with circular dependencies on
+# timeline builders. Deferred to v0.4.0 pending SOLID improvements.
+
 from __future__ import annotations
 
 import io

@@ -65,12 +65,12 @@ Once clarified, explicitly state that scope is locked for this work item.
 
 1. Create a short, kebab-case slug from the request, e.g.
    `avatar-customization`.
-2. Choose branch name based on type:
+1. Choose branch name based on type:
    - Features: `feat/<slug>`
    - Bug fixes: `fix/<slug>`
    - Refactors/tooling: `chore/<slug>`
-3. Create the branch from the latest main (or default) branch using git tools.
-4. Define the dev folder as: `dev/active/<slug>/`.
+1. Create the branch from the latest main (or default) branch using git tools.
+1. Define the dev folder as: `dev/active/<slug>/`.
    - If it exists, reuse it.
    - If missing, create it.
 

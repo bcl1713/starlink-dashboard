@@ -1,9 +1,8 @@
 # Quickstart Guide: Codebase Refactoring Workflow
 
-**Feature**: 001-codebase-cleanup
-**Created**: 2025-12-02
-**Version**: 1.0
-**Purpose**: Practical, step-by-step guide for executing constitutional refactoring
+**Feature**: 001-codebase-cleanup **Created**: 2025-12-02 **Version**: 1.0
+**Purpose**: Practical, step-by-step guide for executing constitutional
+refactoring
 
 ---
 
@@ -52,16 +51,16 @@ pip install pre-commit
    git branch
    ```
 
-2. **Ensure Docker environment works**:
+1. **Ensure Docker environment works**:
 
    ```bash
    docker compose up -d
    docker compose ps  # All containers should be healthy
-   curl http://localhost:8000/health
+   curl <http://localhost:8000/health>
    docker compose down
    ```
 
-3. **Set up refactoring branch**:
+1. **Set up refactoring branch**:
 
    ```bash
    git checkout main
@@ -74,13 +73,14 @@ pip install pre-commit
 - [spec.md](./spec.md) - Feature requirements and success criteria
 - [research.md](./research.md) - Refactoring strategies and best practices
 - [data-model.md](./data-model.md) - Entity definitions and state machines
-- [contracts/smoke-test-checklist.md](./contracts/smoke-test-checklist.md) - Testing procedures
+- [contracts/smoke-test-checklist.md](./contracts/smoke-test-checklist.md) -
+  Testing procedures
 
 ---
 
 ## 2. Workflow Overview
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                    REFACTORING WORKFLOW                        │
 └────────────────────────────────────────────────────────────────┘
@@ -90,41 +90,41 @@ pip install pre-commit
    ├─ Start with P0 critical (>1000 lines, backend API/service)
    └─ Check for dependencies (avoid files with circular refs)
         ↓
-2. ASSESS & PLAN
+1. ASSESS & PLAN
    ├─ Read file, understand structure
    ├─ Identify logical boundaries (routes, services, helpers)
    ├─ Plan split strategy (see research.md Section 1 or 2)
    └─ Document plan in task notes
         ↓
-3. CREATE FEATURE BRANCH & PR (DRAFT)
+1. CREATE FEATURE BRANCH & PR (DRAFT)
    ├─ Branch: refactor/[scope]-[filename]
    ├─ Create draft PR immediately (enables CI feedback)
    └─ Add PR description with smoke test checklist
         ↓
-4. REFACTOR CODE
+1. REFACTOR CODE
    ├─ Split file into logical modules (<300 lines each)
    ├─ Extract shared logic to service layer
    ├─ Maintain backward compatibility (re-export in __init__.py)
    └─ Commit frequently with descriptive messages
         ↓
-5. RUN LINTERS (LOCAL)
+1. RUN LINTERS (LOCAL)
    ├─ Black/ruff (Python) or Prettier/ESLint (TS/JS)
    ├─ Fix all violations (no suppression comments)
    └─ Commit formatting fixes separately
         ↓
-6. REBUILD & SMOKE TEST
+1. REBUILD & SMOKE TEST
    ├─ Docker rebuild: down → build --no-cache → up -d
    ├─ Execute smoke tests from contracts/smoke-test-checklist.md
    ├─ Document results in PR description
    └─ Fix any failures, repeat until all pass
         ↓
-7. FINALIZE PR
+1. FINALIZE PR
    ├─ Mark PR ready for review
    ├─ Verify CI passes (linters, type checks)
    ├─ Request review from team/self-review
    └─ Address feedback if any
         ↓
-8. MERGE & TRACK
+1. MERGE & TRACK
    ├─ Squash merge to 001-codebase-cleanup
    ├─ Update tracking files (code-files.json, tasks.json)
    └─ Delete feature branch
@@ -142,7 +142,8 @@ REPEAT for next file until 80% compliance reached
 
 **Procedure**:
 
-1. **Review violation list** in [spec.md](./spec.md#known-violations-pre-refactoring-assessment):
+1. **Review violation list** in
+   [spec.md](./spec.md#known-violations-pre-refactoring-assessment):
 
    ```bash
    # Backend critical violations (start here)
@@ -156,7 +157,7 @@ REPEAT for next file until 80% compliance reached
    frontend/mission-planner/src/components/common/RouteMap.tsx  # 482 lines
    ```
 
-2. **Check dependencies** (avoid circular references):
+1. **Check dependencies** (avoid circular references):
 
    ```bash
    # Find imports in target file
@@ -167,7 +168,7 @@ REPEAT for next file until 80% compliance reached
    rg "from app.api.routes import" backend/starlink-location/app/
    ```
 
-3. **Select file** with:
+1. **Select file** with:
    - Highest priority (P0 critical > P1 high > P2 medium)
    - No circular dependencies
    - Clear logical boundaries
@@ -195,11 +196,12 @@ REPEAT for next file until 80% compliance reached
    rg "@router\.(get|post|put|delete)" backend/starlink-location/app/api/routes.py | wc -l
    ```
 
-2. **Identify logical boundaries**:
+1. **Identify logical boundaries**:
 
    For FastAPI route files, group by:
    - **CRUD operations**: List, Get, Create, Update, Delete
-   - **Functional domains**: Route management, uploads, statistics, timing, cache
+   - **Functional domains**: Route management, uploads, statistics, timing,
+     cache
 
    For React components, split by:
    - **Custom hooks**: Data fetching, action handlers, form state
@@ -211,26 +213,27 @@ REPEAT for next file until 80% compliance reached
    - **External dependencies**: API clients, file I/O
    - **Core logic**: Business rules, state management
 
-3. **Plan split strategy** (refer to [research.md](./research.md)):
+1. **Plan split strategy** (refer to [research.md](./research.md)):
 
    **Example for routes.py (1046 lines)**:
-   ```
-   Target Structure:
-   app/api/routes/
-   ├── __init__.py           # Re-export all routers (backward compatibility)
-   ├── management.py         # List, get, activate, deactivate (200-250 lines)
-   ├── upload.py             # Upload, download, delete (150-200 lines)
-   ├── stats.py              # Stats, progress, ETA calculations (200-250 lines)
-   ├── timing.py             # Route timing profile endpoints (150 lines)
-   └── cache.py              # ETA cache management (100 lines)
 
-   Service Layer (if needed):
-   app/services/
-   ├── route_stats.py        # Extract shared statistics logic
-   └── route_validator.py    # Extract validation logic
-   ```
+```text
+Target Structure:
+app/api/routes/
+├── __init__.py           # Re-export all routers (backward compatibility)
+├── management.py         # List, get, activate, deactivate (200-250 lines)
+├── upload.py             # Upload, download, delete (150-200 lines)
+├── stats.py              # Stats, progress, ETA calculations (200-250 lines)
+├── timing.py             # Route timing profile endpoints (150 lines)
+└── cache.py              # ETA cache management (100 lines)
 
-4. **Document plan** in task notes:
+Service Layer (if needed):
+app/services/
+├── route_stats.py        # Extract shared statistics logic
+└── route_validator.py    # Extract validation logic
+```
+
+1. **Document plan** in task notes:
 
    ```bash
    # Create task tracking file (optional but recommended)
@@ -281,7 +284,7 @@ REPEAT for next file until 80% compliance reached
    git checkout -b refactor/api-routes-py
    ```
 
-2. **Create draft PR immediately** (enables early CI feedback):
+1. **Create draft PR immediately** (enables early CI feedback):
 
    ```bash
    # Push empty branch to create PR
@@ -367,7 +370,7 @@ REPEAT for next file until 80% compliance reached
    mkdir -p backend/starlink-location/app/api/routes
    ```
 
-2. **Extract first logical group** (e.g., management endpoints):
+1. **Extract first logical group** (e.g., management endpoints):
 
    ```bash
    # Create new file
@@ -423,7 +426,7 @@ REPEAT for next file until 80% compliance reached
    EOF
    ```
 
-3. **Copy and adapt logic** from original file:
+1. **Copy and adapt logic** from original file:
 
    ```bash
    # Open original file in editor
@@ -433,7 +436,7 @@ REPEAT for next file until 80% compliance reached
    # Add/update docstrings
    ```
 
-4. **Extract shared logic to services** (if functions used in multiple places):
+1. **Extract shared logic to services** (if functions used in multiple places):
 
    ```bash
    # Example: Extract route statistics calculation
@@ -473,7 +476,7 @@ REPEAT for next file until 80% compliance reached
    EOF
    ```
 
-5. **Create backward-compatible aggregator**:
+1. **Create backward-compatible aggregator**:
 
    ```bash
    cat > backend/starlink-location/app/api/routes/__init__.py <<'EOF'
@@ -506,7 +509,7 @@ REPEAT for next file until 80% compliance reached
    EOF
    ```
 
-6. **Update main application** to use new structure:
+1. **Update main application** to use new structure:
 
    ```bash
    # Edit backend/starlink-location/app/main.py
@@ -517,7 +520,7 @@ REPEAT for next file until 80% compliance reached
    # No other changes needed if __init__.py maintains compatibility
    ```
 
-7. **Verify all files under 300 lines**:
+1. **Verify all files under 300 lines**:
 
    ```bash
    find backend/starlink-location/app/api/routes -name "*.py" -exec wc -l {} \; | sort -n
@@ -531,7 +534,7 @@ REPEAT for next file until 80% compliance reached
    # Total: ~900 lines (vs. original 1046)
    ```
 
-8. **Commit work incrementally**:
+1. **Commit work incrementally**:
 
    ```bash
    git add backend/starlink-location/app/api/routes/management.py
@@ -576,7 +579,7 @@ REPEAT for next file until 80% compliance reached
    git commit -m "style(api): apply Black formatting to routes module"
    ```
 
-2. **Run ruff linter** (Python files):
+1. **Run ruff linter** (Python files):
 
    ```bash
    # Check for linting issues
@@ -598,7 +601,7 @@ REPEAT for next file until 80% compliance reached
    git commit -m "style(api): fix ruff linting issues in routes module"
    ```
 
-3. **Run Prettier** (TypeScript/JavaScript files):
+1. **Run Prettier** (TypeScript/JavaScript files):
 
    ```bash
    cd frontend/mission-planner
@@ -614,7 +617,7 @@ REPEAT for next file until 80% compliance reached
    git commit -m "style(frontend): apply Prettier formatting"
    ```
 
-4. **Run ESLint** (TypeScript/JavaScript files):
+1. **Run ESLint** (TypeScript/JavaScript files):
 
    ```bash
    cd frontend/mission-planner
@@ -630,7 +633,7 @@ REPEAT for next file until 80% compliance reached
    git commit -m "style(frontend): fix ESLint issues"
    ```
 
-5. **Verify type coverage** (Python):
+1. **Verify type coverage** (Python):
 
    ```bash
    # Install mypy if not present
@@ -645,7 +648,7 @@ REPEAT for next file until 80% compliance reached
    git commit -m "fix(api): add missing type hints to routes module"
    ```
 
-6. **Verify no suppression comments**:
+1. **Verify no suppression comments**:
 
    ```bash
    # Check for lint-disable comments (should return nothing)
@@ -680,23 +683,24 @@ REPEAT for next file until 80% compliance reached
    # Press Ctrl+C when all show "healthy"
    ```
 
-2. **Verify basic health**:
+1. **Verify basic health**:
 
    ```bash
    # Health check
-   curl http://localhost:8000/health
+   curl <http://localhost:8000/health>
 
    # Expected: {"status":"ok","mode":"simulation",...}
 
    # Prometheus metrics
-   curl http://localhost:8000/metrics | head -20
+   curl <http://localhost:8000/metrics> | head -20
 
    # API docs accessible
-   curl -I http://localhost:8000/docs
+   curl -I <http://localhost:8000/docs>
    # Expected: HTTP/1.1 200 OK
    ```
 
-3. **Execute smoke tests** from [contracts/smoke-test-checklist.md](./contracts/smoke-test-checklist.md):
+1. **Execute smoke tests** from
+   [contracts/smoke-test-checklist.md](./contracts/smoke-test-checklist.md):
 
    **For Backend API Refactoring** (routes.py example):
 
@@ -704,34 +708,34 @@ REPEAT for next file until 80% compliance reached
    # 2.3 Routes API Tests
 
    # List all routes
-   curl -s http://localhost:8000/api/routes | jq '.'
+   curl -s <http://localhost:8000/api/routes> | jq '.'
    # Verify: Returns array of routes
 
    # Get specific route (use ID from list above)
-   ROUTE_ID=$(curl -s http://localhost:8000/api/routes | jq -r '.[0].id')
-   curl -s http://localhost:8000/api/routes/$ROUTE_ID | jq '.'
+   ROUTE_ID=$(curl -s <http://localhost:8000/api/routes> | jq -r '.[0].id')
+   curl -s <http://localhost:8000/api/routes/$ROUTE_ID> | jq '.'
    # Verify: Returns route details with waypoints
 
    # Upload KML file (use sample)
    curl -X POST \
      -F "file=@data/sample_routes/simple-circular.kml" \
-     http://localhost:8000/api/routes/upload | jq '.'
+     <http://localhost:8000/api/routes/upload> | jq '.'
    # Verify: Returns success with new route ID
 
    # Activate route
-   curl -X POST http://localhost:8000/api/routes/$ROUTE_ID/activate | jq '.'
+   curl -X POST <http://localhost:8000/api/routes/$ROUTE_ID/activate> | jq '.'
    # Verify: Returns success message
 
    # Get route statistics
-   curl -s http://localhost:8000/api/routes/$ROUTE_ID/stats | jq '.'
+   curl -s <http://localhost:8000/api/routes/$ROUTE_ID/stats> | jq '.'
    # Verify: Returns stats with progress, distance, ETA
 
    # Deactivate all routes
-   curl -X POST http://localhost:8000/api/routes/deactivate | jq '.'
+   curl -X POST <http://localhost:8000/api/routes/deactivate> | jq '.'
    # Verify: Returns success message
 
    # Delete route
-   curl -X DELETE http://localhost:8000/api/routes/$ROUTE_ID | jq '.'
+   curl -X DELETE <http://localhost:8000/api/routes/$ROUTE_ID> | jq '.'
    # Verify: Returns success message
    ```
 
@@ -739,7 +743,7 @@ REPEAT for next file until 80% compliance reached
 
    ```bash
    # Navigate to component in browser
-   open http://localhost:3000/routes
+   open <http://localhost:3000/routes>
 
    # Manual verification checklist:
    # - [ ] Component renders without errors
@@ -750,7 +754,7 @@ REPEAT for next file until 80% compliance reached
    # - [ ] No console errors in browser DevTools
    ```
 
-4. **Document smoke test results** in PR description:
+1. **Document smoke test results** in PR description:
 
    ```bash
    # Update PR with test results
@@ -787,7 +791,7 @@ REPEAT for next file until 80% compliance reached
    )"
    ```
 
-5. **If tests fail**:
+1. **If tests fail**:
 
    ```bash
    # Analyze failure
@@ -819,13 +823,13 @@ REPEAT for next file until 80% compliance reached
    git commit -m "refactor(api): remove original monolithic routes.py"
    ```
 
-2. **Push all changes**:
+1. **Push all changes**:
 
    ```bash
    git push origin refactor/api-routes-py
    ```
 
-3. **Mark PR ready for review**:
+1. **Mark PR ready for review**:
 
    ```bash
    # Convert from draft to ready
@@ -834,7 +838,7 @@ REPEAT for next file until 80% compliance reached
    # Or via web UI: Click "Ready for review" button
    ```
 
-4. **Verify CI passes**:
+1. **Verify CI passes**:
 
    ```bash
    # Check CI status
@@ -848,7 +852,7 @@ REPEAT for next file until 80% compliance reached
    # If CI fails, fix issues and push again
    ```
 
-5. **Request review** (if working with team):
+1. **Request review** (if working with team):
 
    ```bash
    gh pr review --request-reviewer @teammate
@@ -857,7 +861,7 @@ REPEAT for next file until 80% compliance reached
    gh pr review --approve
    ```
 
-6. **Address feedback** (if changes requested):
+1. **Address feedback** (if changes requested):
 
    ```bash
    # Make requested changes
@@ -888,7 +892,7 @@ REPEAT for next file until 80% compliance reached
    # Or via web UI: Click "Squash and merge"
    ```
 
-2. **Update tracking files**:
+1. **Update tracking files**:
 
    ```bash
    git checkout 001-codebase-cleanup
@@ -934,7 +938,7 @@ REPEAT for next file until 80% compliance reached
    git push origin 001-codebase-cleanup
    ```
 
-3. **Calculate progress**:
+1. **Calculate progress**:
 
    ```bash
    # Count remaining violations
@@ -944,7 +948,7 @@ REPEAT for next file until 80% compliance reached
    echo "Refactoring Progress: 1/26 files complete (3.8%)"
    ```
 
-4. **Select next file** and repeat workflow.
+1. **Select next file** and repeat workflow.
 
 **Output**: Changes merged, tracking updated, ready for next file.
 
@@ -1152,19 +1156,19 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 docker compose ps
 
 # Smoke test routes
-curl http://localhost:8000/api/routes | jq '.'
+curl <http://localhost:8000/api/routes> | jq '.'
 # ✓ Returns route list
 
-curl http://localhost:8000/api/routes/simple-circular | jq '.'
+curl <http://localhost:8000/api/routes/simple-circular> | jq '.'
 # ✓ Returns route details
 
-curl -X POST http://localhost:8000/api/routes/simple-circular/activate | jq '.'
+curl -X POST <http://localhost:8000/api/routes/simple-circular/activate> | jq '.'
 # ✓ Activates route
 
-curl http://localhost:8000/api/routes/simple-circular/stats | jq '.'
+curl <http://localhost:8000/api/routes/simple-circular/stats> | jq '.'
 # ✓ Returns statistics
 
-curl -X POST http://localhost:8000/api/routes/deactivate | jq '.'
+curl -X POST <http://localhost:8000/api/routes/deactivate> | jq '.'
 # ✓ Deactivates all routes
 
 # ALL TESTS PASS ✓
@@ -1208,7 +1212,8 @@ git push origin 001-codebase-cleanup
 # Select next file: app/api/pois.py (1092 lines)
 ```
 
-**Result**: Successfully reduced 1046-line file to 5 modules (95, 145, 198, 215, 245 lines). All tests pass, behavior unchanged.
+**Result**: Successfully reduced 1046-line file to 5 modules (95, 145, 198, 215,
+245 lines). All tests pass, behavior unchanged.
 
 ---
 
@@ -1220,7 +1225,7 @@ git push origin 001-codebase-cleanup
 
 **Strategy**:
 
-```
+```text
 Original: app/api/routes.py (1000+ lines)
 Target:   app/api/routes/ directory
 
@@ -1286,7 +1291,7 @@ router.include_router(upload_router)
 
 **Strategy**:
 
-```
+```text
 Original: MissionDetailPage.tsx (450 lines)
 Target:   Split into hooks + sub-components
 
@@ -1311,7 +1316,7 @@ components/mission/
 
 ```typescript
 // hooks/useMissionData.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 export const useMissionData = (missionId: string) => {
   const [mission, setMission] = useState<Mission | null>(null);
@@ -1359,7 +1364,7 @@ export const MissionDetailPage = () => {
 
 **Strategy**:
 
-```
+```text
 Extract shared logic from multiple route/component files into services.
 
 Before:
@@ -1448,7 +1453,7 @@ async def get_route_eta(route_id: str, ...):
 
 **Strategy**:
 
-```
+```text
 Original: docs/API-REFERENCE.md (999 lines)
 Target:   Focused sub-documents
 
@@ -1467,8 +1472,9 @@ docs/api/
 
 **Template**:
 
-```markdown
+````markdown
 <!-- docs/api/README.md -->
+
 # API Reference
 
 ## Overview
@@ -1478,12 +1484,16 @@ This directory contains API documentation for all backend endpoints.
 ## Quick Start
 
 ```bash
+
 # Start services
 docker compose up -d
 
 # Access API docs
-open http://localhost:8000/docs
+open <http://localhost:8000/docs>
+
 ```
+
+```text
 
 ## API Domains
 
@@ -1495,16 +1505,20 @@ open http://localhost:8000/docs
 ## Common Patterns
 
 All API endpoints follow these conventions:
-- Base URL: `http://localhost:8000`
+
+- Base URL: `<http://localhost:8000`>
 - Authentication: None (development mode)
 - Response format: JSON
 - Error codes: Standard HTTP status codes
 
 For detailed endpoint specifications, see the linked domain documentation.
-```
 
-```markdown
+```
+````
+
+````markdown
 <!-- docs/api/routes.md -->
+
 # Routes API
 
 Complete reference for route management endpoints.
@@ -1518,6 +1532,7 @@ Complete reference for route management endpoints.
 Returns array of all available routes (uploaded and simulation).
 
 **Response**:
+
 ```json
 [
   {
@@ -1529,6 +1544,7 @@ Returns array of all available routes (uploaded and simulation).
   }
 ]
 ```
+````
 
 ### Get Route by ID
 
@@ -1537,9 +1553,11 @@ Returns array of all available routes (uploaded and simulation).
 Returns detailed route information including waypoints.
 
 **Parameters**:
+
 - `route_id` (path, required): Route identifier
 
 **Response**:
+
 ```json
 {
   "id": "simple-circular",
@@ -1550,7 +1568,8 @@ Returns detailed route information including waypoints.
 ```
 
 [Continue with remaining endpoints...]
-```
+
+```text
 
 ---
 
@@ -1561,27 +1580,29 @@ Returns detailed route information including waypoints.
 **Strategy**:
 
 ```
+
 Problem: External code imports functions from original monolithic file.
-Solution: Create __init__.py that re-exports all public APIs.
+Solution: Create **init**.py that re-exports all public APIs.
 
-Before:
-from app.api.routes import list_routes, get_route, activate_route
+Before: from app.api.routes import list_routes, get_route, activate_route
 
-After (split):
-from app.api.routes.management import list_routes, get_route, activate_route
-from app.api.routes.upload import upload_route, delete_route
+After (split): from app.api.routes.management import list_routes, get_route,
+activate_route from app.api.routes.upload import upload_route, delete_route
 
-Compatibility layer (app/api/routes/__init__.py):
-from app.api.routes.management import list_routes, get_route, activate_route
-from app.api.routes.upload import upload_route, delete_route
+Compatibility layer (app/api/routes/**init**.py): from app.api.routes.management
+import list_routes, get_route, activate_route from app.api.routes.upload import
+upload_route, delete_route
 
 # External code still works:
+
 from app.api.routes import list_routes, get_route, activate_route
-```
+
+````text
 
 **Template**:
 
 ```python
+
 # app/api/routes/__init__.py
 """
 Routes API - Backward compatibility layer.
@@ -1608,7 +1629,8 @@ __all__ = [
     "RouteResponse",       # Model
     "RouteListResponse",   # Model
 ]
-```
+
+````
 
 ---
 
@@ -1617,6 +1639,7 @@ __all__ = [
 ### Issue 1: Docker Not Reflecting Code Changes
 
 **Symptoms**:
+
 - Code changes don't affect API behavior
 - Old errors persist after fixes
 - Tests pass locally but fail in Docker
@@ -1626,6 +1649,7 @@ __all__ = [
 **Solution**:
 
 ```bash
+
 # ALWAYS use this full rebuild sequence after Python changes
 docker compose down && \
   docker compose build --no-cache && \
@@ -1636,9 +1660,11 @@ docker compose exec starlink-location cat /app/app/api/routes/management.py | he
 
 # Check container logs for errors
 docker compose logs -f starlink-location
+
 ```
 
 **Prevention**: Add to your workflow muscle memory:
+
 - Edit Python file → Full rebuild → Test
 - Never skip `--no-cache` flag
 - Never use `docker compose restart` for code changes
@@ -1648,8 +1674,11 @@ docker compose logs -f starlink-location
 ### Issue 2: Circular Import Errors
 
 **Symptoms**:
-```
+
+```text
+
 ImportError: cannot import name 'RouteManager' from partially initialized module 'app.services.route_manager'
+
 ```
 
 **Root Cause**: Module A imports Module B, which imports Module A.
@@ -1657,6 +1686,7 @@ ImportError: cannot import name 'RouteManager' from partially initialized module
 **Diagnosis**:
 
 ```bash
+
 # Find circular dependencies
 rg "from app\." backend/starlink-location/app/ -n | \
   awk '{print $2}' | \
@@ -1665,12 +1695,15 @@ rg "from app\." backend/starlink-location/app/ -n | \
 # Visualize import graph (requires pydeps)
 pip install pydeps
 pydeps app/api/routes/ --max-depth 2
+
 ```
 
 **Solution**:
 
 **Option 1: Use Dependency Injection**
+
 ```python
+
 # Before (circular)
 # app/services/route_manager.py
 from app.services.poi_manager import POIManager
@@ -1698,10 +1731,13 @@ from app.services.poi_manager import POIManager
 
 poi_mgr = POIManager()
 route_mgr = RouteManager(poi_manager=poi_mgr)
+
 ```
 
 **Option 2: Extract Shared Interface**
+
 ```python
+
 # Create shared interface module
 # app/interfaces/manager_protocol.py
 from typing import Protocol
@@ -1719,6 +1755,7 @@ from app.interfaces.manager_protocol import POIManagerProtocol
 class RouteManager:
     def __init__(self, poi_manager: POIManagerProtocol):
         self.poi_manager = poi_manager
+
 ```
 
 ---
@@ -1726,8 +1763,11 @@ class RouteManager:
 ### Issue 3: Import Errors After Splitting Files
 
 **Symptoms**:
-```
+
+```text
+
 ModuleNotFoundError: No module named 'app.api.routes.management'
+
 ```
 
 **Root Cause**: Missing `__init__.py` or incorrect import paths.
@@ -1735,6 +1775,7 @@ ModuleNotFoundError: No module named 'app.api.routes.management'
 **Solution**:
 
 ```bash
+
 # Ensure __init__.py exists in all directories
 find backend/starlink-location/app -type d -exec touch {}/__init__.py \;
 
@@ -1747,6 +1788,7 @@ docker compose exec starlink-location python -c "import sys; print('\n'.join(sys
 # Expected output should include:
 # /app
 # /app/app
+
 ```
 
 ---
@@ -1754,8 +1796,11 @@ docker compose exec starlink-location python -c "import sys; print('\n'.join(sys
 ### Issue 4: Type Checking Errors with MyPy
 
 **Symptoms**:
-```
+
+```text
+
 error: Incompatible return value type (got "Optional[Route]", expected "Route")
+
 ```
 
 **Root Cause**: Missing type hints or incorrect type annotations.
@@ -1763,6 +1808,7 @@ error: Incompatible return value type (got "Optional[Route]", expected "Route")
 **Solution**:
 
 ```python
+
 # Before (incorrect)
 def get_route(route_id: str):  # Missing return type
     route = route_manager.get(route_id)
@@ -1785,11 +1831,15 @@ def get_route_optional(route_id: str) -> Optional[Route]:
 route: Optional[Route] = get_route_optional("id")
 assert route is not None  # Type narrows to Route
 print(route.name)  # No type error
+
 ```
 
 **Run type checker**:
+
 ```bash
+
 mypy app/api/routes/ --strict --show-error-codes
+
 ```
 
 ---
@@ -1797,6 +1847,7 @@ mypy app/api/routes/ --strict --show-error-codes
 ### Issue 5: Smoke Tests Fail After Refactoring
 
 **Symptoms**:
+
 - API returns 404 for existing endpoints
 - Response schema doesn't match expected
 - Timeout errors
@@ -1804,8 +1855,9 @@ mypy app/api/routes/ --strict --show-error-codes
 **Diagnosis**:
 
 ```bash
+
 # Check if endpoint exists in OpenAPI schema
-curl http://localhost:8000/openapi.json | jq '.paths'
+curl <http://localhost:8000/openapi.json> | jq '.paths'
 
 # Check exact route registration
 docker compose exec starlink-location python -c "
@@ -1816,19 +1868,25 @@ for route in app.routes:
 
 # Check logs for startup errors
 docker compose logs starlink-location | rg "ERROR|WARNING"
+
 ```
 
 **Common Causes & Fixes**:
 
 **1. Router not included in main app**
+
 ```python
+
 # app/main.py - Missing include_router
 from app.api.routes import router as routes_router  # Forgot this line
 app.include_router(routes_router)  # Add this
+
 ```
 
 **2. Incorrect prefix in sub-router**
+
 ```python
+
 # Before (double prefix: /api/routes/api/routes/...)
 router = APIRouter(prefix="/api/routes", tags=["routes"])
 # In __init__.py:
@@ -1840,10 +1898,13 @@ router = APIRouter(tags=["routes"])  # No prefix in sub-router
 # In __init__.py:
 composite_router = APIRouter(prefix="/api/routes")  # Prefix only here
 composite_router.include_router(router)
+
 ```
 
 **3. Missing dependency injection**
+
 ```python
+
 # Before (fails at runtime)
 @router.get("/")
 async def list_routes():
@@ -1856,6 +1917,7 @@ async def list_routes(
 ):
     routes = await route_manager.list_routes()
     return routes
+
 ```
 
 ---
@@ -1863,6 +1925,7 @@ async def list_routes(
 ### Issue 6: Linter/Formatter Conflicts
 
 **Symptoms**:
+
 - Black formats code, ruff complains
 - ESLint and Prettier conflict
 - Pre-commit hooks fail with conflicting rules
@@ -1870,7 +1933,9 @@ async def list_routes(
 **Solution**:
 
 **Python (Black + ruff)**:
+
 ```toml
+
 # pyproject.toml
 [tool.black]
 line-length = 88
@@ -1883,27 +1948,32 @@ ignore = ["E501"]  # Black handles line length
 
 [tool.ruff.lint.isort]
 profile = "black"  # Compatible with Black
+
 ```
 
 **TypeScript/JavaScript (ESLint + Prettier)**:
+
 ```json
 // .eslintrc.json
 {
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "prettier"  // Must be last - disables conflicting ESLint rules
+    "prettier" // Must be last - disables conflicting ESLint rules
   ]
 }
 ```
 
 **Run formatters before linters**:
+
 ```bash
+
 # Python
 black app/ && ruff check --fix app/
 
 # TypeScript
 npx prettier --write src/ && npx eslint --fix src/
+
 ```
 
 ---
@@ -1911,12 +1981,14 @@ npx prettier --write src/ && npx eslint --fix src/
 ### Issue 7: Git Merge Conflicts During Refactoring
 
 **Symptoms**:
+
 - Multiple refactoring PRs conflict with each other
 - Base branch changed while working on refactoring
 
 **Prevention**:
 
 ```bash
+
 # 1. Keep PRs small (1-3 files)
 # 2. Merge frequently (don't let PRs sit open)
 # 3. Rebase before finalizing PR
@@ -1928,11 +2000,13 @@ git rebase origin/001-codebase-cleanup
 # Resolve conflicts if any
 # Then force-push (safe for feature branches)
 git push --force-with-lease origin refactor/api-routes-py
+
 ```
 
 **Resolution**:
 
 ```bash
+
 # If conflict occurs during merge
 git checkout 001-codebase-cleanup
 git pull origin 001-codebase-cleanup
@@ -1950,6 +2024,7 @@ nano app/main.py
 git add app/main.py
 git commit -m "merge: resolve conflict in main.py imports"
 git push origin 001-codebase-cleanup
+
 ```
 
 ---
@@ -1959,6 +2034,7 @@ git push origin 001-codebase-cleanup
 ### Quick Command Cheat Sheet
 
 ```bash
+
 # ============================================================================
 # PROJECT SETUP
 # ============================================================================
@@ -2080,29 +2156,29 @@ rg "from app.api.routes import" backend/
 # ============================================================================
 
 # Health check
-curl http://localhost:8000/health | jq '.'
+curl <http://localhost:8000/health> | jq '.'
 
 # List routes
-curl http://localhost:8000/api/routes | jq '.'
+curl <http://localhost:8000/api/routes> | jq '.'
 
 # Get specific route
-curl http://localhost:8000/api/routes/{route_id} | jq '.'
+curl <http://localhost:8000/api/routes/{route_id}> | jq '.'
 
 # Upload KML
 curl -X POST -F "file=@data/sample_routes/simple-circular.kml" \
-  http://localhost:8000/api/routes/upload | jq '.'
+  <http://localhost:8000/api/routes/upload> | jq '.'
 
 # Activate route
-curl -X POST http://localhost:8000/api/routes/{route_id}/activate | jq '.'
+curl -X POST <http://localhost:8000/api/routes/{route_id}/activate> | jq '.'
 
 # Get route stats
-curl http://localhost:8000/api/routes/{route_id}/stats | jq '.'
+curl <http://localhost:8000/api/routes/{route_id}/stats> | jq '.'
 
 # Deactivate routes
-curl -X POST http://localhost:8000/api/routes/deactivate | jq '.'
+curl -X POST <http://localhost:8000/api/routes/deactivate> | jq '.'
 
 # Delete route
-curl -X DELETE http://localhost:8000/api/routes/{route_id} | jq '.'
+curl -X DELETE <http://localhost:8000/api/routes/{route_id}> | jq '.'
 
 # ============================================================================
 # DEBUGGING
@@ -2125,7 +2201,7 @@ for route in app.routes:
 "
 
 # View OpenAPI schema
-curl http://localhost:8000/openapi.json | jq '.paths | keys'
+curl <http://localhost:8000/openapi.json> | jq '.paths | keys'
 
 # Watch logs for errors
 docker compose logs -f starlink-location | rg "ERROR|WARNING|Traceback"
@@ -2145,11 +2221,13 @@ gh pr list --label "refactoring" --state all
 
 # View PR for specific file
 gh pr list --search "routes.py" --state all
+
 ```
 
 ### Pre-Commit Hook Commands
 
 ```bash
+
 # Install pre-commit framework
 pip install pre-commit
 
@@ -2165,11 +2243,13 @@ pre-commit run ruff --all-files
 
 # Skip hooks for emergency commit (use sparingly)
 git commit --no-verify -m "emergency fix"
+
 ```
 
 ### Batch Operations
 
 ```bash
+
 # Format all Python files
 find backend/starlink-location/app -name "*.py" -exec black {} \;
 
@@ -2184,6 +2264,7 @@ rg "# TODO:|# FIXME:|# HACK:" backend/ docs/ frontend/
 
 # Remove trailing whitespace
 find . -name "*.py" -exec sed -i 's/[[:space:]]*$//' {} \;
+
 ```
 
 ---
@@ -2195,19 +2276,23 @@ find . -name "*.py" -exec sed -i 's/[[:space:]]*$//' {} \;
 - [spec.md](./spec.md) - Complete feature requirements
 - [research.md](./research.md) - Detailed refactoring strategies
 - [data-model.md](./data-model.md) - Entity definitions and workflows
-- [contracts/validation-schema.yaml](./contracts/validation-schema.yaml) - Validation rules
-- [contracts/smoke-test-checklist.md](./contracts/smoke-test-checklist.md) - Testing procedures
-- [contracts/linting-config-requirements.md](./contracts/linting-config-requirements.md) - Linter setup
+- [contracts/validation-schema.yaml](./contracts/validation-schema.yaml) -
+  Validation rules
+- [contracts/smoke-test-checklist.md](./contracts/smoke-test-checklist.md) -
+  Testing procedures
+- [contracts/linting-config-requirements.md](./contracts/linting-config-requirements.md) -
+  Linter setup
 
 ### External Resources
 
-- **FastAPI Best Practices**: https://fastapi.tiangolo.com/tutorial/bigger-applications/
-- **React Component Design**: https://react.dev/learn/thinking-in-react
-- **Black Formatter**: https://black.readthedocs.io/
-- **Ruff Linter**: https://docs.astral.sh/ruff/
-- **Prettier**: https://prettier.io/docs/
-- **ESLint**: https://eslint.org/docs/latest/
-- **Conventional Commits**: https://www.conventionalcommits.org/
+- **FastAPI Best Practices**:
+  <https://fastapi.tiangolo.com/tutorial/bigger-applications/>
+- **React Component Design**: <https://react.dev/learn/thinking-in-react>
+- **Black Formatter**: <https://black.readthedocs.io/>
+- **Ruff Linter**: <https://docs.astral.sh/ruff/>
+- **Prettier**: <https://prettier.io/docs/>
+- **ESLint**: <https://eslint.org/docs/latest/>
+- **Conventional Commits**: <https://www.conventionalcommits.org/>
 
 ### Books
 
@@ -2217,6 +2302,5 @@ find . -name "*.py" -exec sed -i 's/[[:space:]]*$//' {} \;
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-12-02
-**Maintained By**: Claude Code Agent
+**Document Version**: 1.0 **Last Updated**: 2025-12-02 **Maintained By**: Claude
+Code Agent

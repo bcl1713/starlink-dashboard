@@ -23,22 +23,22 @@ historical context through altitude-colored route visualization.
 
 1. Display a continuous route line showing position history over a configurable
    time window (6h, 12h, 24h, up to 15 days)
-2. Use color gradients on the route line to represent altitude changes with a
+1. Use color gradients on the route line to represent altitude changes with a
    fixed color palette and auto-scaling altitude range
-3. Allow users to toggle the history layer on/off without affecting the current
+1. Allow users to toggle the history layer on/off without affecting the current
    position marker
-4. Enable users to adjust the time window for history display
-5. Provide interactive hover/click functionality to display detailed information
+1. Enable users to adjust the time window for history display
+1. Provide interactive hover/click functionality to display detailed information
    at any point on the route
-6. Leverage existing Prometheus time-series data for historical position and
+1. Leverage existing Prometheus time-series data for historical position and
    telemetry
-7. Sample position data at 10-second intervals for optimal performance across
+1. Sample position data at 10-second intervals for optimal performance across
    all time ranges
-8. Ensure the feature works in both simulation and live modes
-9. Handle data gaps gracefully by interpolating between points (Note: dashed
+1. Ensure the feature works in both simulation and live modes
+1. Handle data gaps gracefully by interpolating between points (Note: dashed
    lines are not technically feasible in Grafana Geomap)
-10. Support display of multiple discontinuous route segments when the terminal
-    has moved non-continuously
+1. Support display of multiple discontinuous route segments when the terminal
+   has moved non-continuously
 
 ## 3. User Stories
 
@@ -46,24 +46,24 @@ historical context through altitude-colored route visualization.
    traveled over the last 24 hours so that I can review my journey and see the
    route I took.
 
-2. **As a mobile user**, I want to see altitude changes visualized through color
+1. **As a mobile user**, I want to see altitude changes visualized through color
    on my route so that I can understand the elevation profile of my travel
    without checking individual data points.
 
-3. **As a data analyst**, I want to toggle the position history layer on/off so
+1. **As a data analyst**, I want to toggle the position history layer on/off so
    that I can focus on real-time data when needed or review historical patterns
    when analyzing usage.
 
-4. **As a user monitoring network performance**, I want to hover over points on
+1. **As a user monitoring network performance**, I want to hover over points on
    my route to see telemetry data (speed, latency, throughput) at that specific
    time and location so that I can correlate network performance with location
    and conditions.
 
-5. **As a user reviewing recent travel**, I want to filter the history by time
+1. **As a user reviewing recent travel**, I want to filter the history by time
    window (6h, 12h, 24h, etc.) so that I can focus on specific time periods
    without visual clutter.
 
-6. **As a user who travels discontinuously**, I want to see separate route
+1. **As a user who travels discontinuously**, I want to see separate route
    segments when my terminal has been powered off or moved non-continuously so
    that my route visualization accurately reflects actual travel patterns.
 
@@ -73,7 +73,7 @@ historical context through altitude-colored route visualization.
 
 1. The system must render position history as a continuous line/path using
    Grafana's **Route layer** (Beta feature) on the Geomap panel.
-2. The route line must use a **fixed color gradient** based on altitude:
+1. The route line must use a **fixed color gradient** based on altitude:
    - Use a perceptually uniform color scale (e.g., "Viridis", "Turbo", or
      similar)
    - Color mapping must **auto-scale** based on the min/max altitude values in
@@ -81,13 +81,13 @@ historical context through altitude-colored route visualization.
    - Lower altitudes map to the cool end of the spectrum (blue/green)
    - Higher altitudes map to the warm end of the spectrum (yellow/red)
    - The color mapping should be smooth and continuous across the altitude range
-3. The route line must not interfere with or obscure the existing current
+1. The route line must not interfere with or obscure the existing current
    position marker layer.
-4. The route line should have a **fixed width of 3-4 pixels** to ensure
+1. The route line should have a **fixed width of 3-4 pixels** to ensure
    visibility without overwhelming the map.
-5. The route line must update automatically as new position data arrives from
+1. The route line must update automatically as new position data arrives from
    Prometheus.
-6. When data gaps exist (e.g., terminal offline), the system must **interpolate
+1. When data gaps exist (e.g., terminal offline), the system must **interpolate
    linearly** between the last known position and the next position.
    - **Note:** Dashed line styling is NOT supported in Grafana Geomap Route
      layer as of current versions. Gaps will appear as regular solid lines
@@ -101,17 +101,17 @@ historical context through altitude-colored route visualization.
    - Longitude (`starlink_dish_longitude_degrees`)
    - Altitude (`starlink_dish_altitude_meters`)
    - Timestamp
-2. The system must query Prometheus for associated telemetry data at the same
+1. The system must query Prometheus for associated telemetry data at the same
    10-second intervals:
    - Speed (`starlink_dish_speed_knots`)
    - Heading (`starlink_dish_heading_degrees`)
-3. The system must query Prometheus for network metrics at each sampled
+1. The system must query Prometheus for network metrics at each sampled
    position:
    - Latency (`starlink_network_latency_ms`)
    - Download throughput (`starlink_network_throughput_down_mbps`)
    - Upload throughput (`starlink_network_throughput_up_mbps`)
    - Obstructions (`starlink_dish_obstruction_percent`)
-4. The system must combine these separate Prometheus time series into a single
+1. The system must combine these separate Prometheus time series into a single
    table/dataframe format with the following columns:
    - `time` (timestamp)
    - `latitude` (number)
@@ -123,7 +123,7 @@ historical context through altitude-colored route visualization.
    - `throughput_down` (number)
    - `throughput_up` (number)
    - `obstructions` (number)
-5. Position samples must be taken at 10-second intervals across the entire
+1. Position samples must be taken at 10-second intervals across the entire
    configurable time range (up to 15 days, the Prometheus retention period).
 
 ### 4.3 User Controls
@@ -134,7 +134,7 @@ historical context through altitude-colored route visualization.
    - Implementation: Use a Grafana dashboard variable with type "Custom" and
      values "show" and "hide"
    - The toggle must be clearly labeled (e.g., "Position History")
-2. The system must provide a **time window selector** with at least the
+1. The system must provide a **time window selector** with at least the
    following options:
    - Last 6 hours
    - Last 12 hours
@@ -142,11 +142,11 @@ historical context through altitude-colored route visualization.
    - Last 3 days
    - Last 7 days
    - Last 15 days (maximum, based on Prometheus retention)
-3. Implementation: Use a Grafana dashboard variable with type "Interval" or
+1. Implementation: Use a Grafana dashboard variable with type "Interval" or
    "Custom"
-4. The time window selector must immediately update the displayed route when
+1. The time window selector must immediately update the displayed route when
    changed.
-5. All controls must be accessible at the top of the Grafana dashboard as
+1. All controls must be accessible at the top of the Grafana dashboard as
    dashboard variables.
 
 ### 4.4 Interactivity
@@ -162,20 +162,20 @@ historical context through altitude-colored route visualization.
    - Download throughput (Mbps, formatted to 2 decimal places)
    - Upload throughput (Mbps, formatted to 2 decimal places)
    - Obstruction percentage (%, formatted to 1 decimal place)
-2. The tooltip must use Grafana's native tooltip styling for consistency with
+1. The tooltip must use Grafana's native tooltip styling for consistency with
    the rest of the dashboard.
-3. The tooltip must appear near the cursor and not obscure critical parts of the
+1. The tooltip must appear near the cursor and not obscure critical parts of the
    route.
-4. The tooltip must disappear when the cursor moves away from the route line.
+1. The tooltip must disappear when the cursor moves away from the route line.
 
 ### 4.5 Multiple Routes / Discontinuous Travel
 
 1. The system should handle discontinuous travel (e.g., terminal powered off and
    moved to a new location) by displaying **separate route segments**.
-2. **Technical limitation:** Grafana's Route layer currently connects all data
+1. **Technical limitation:** Grafana's Route layer currently connects all data
    points in a single layer, creating unwanted lines between discontinuous
    segments.
-3. **Workaround approaches:**
+1. **Workaround approaches:**
    - **Option A (Recommended):** Accept the limitation and display all points as
      a single route. Document this behavior in user documentation.
    - **Option B (Advanced):** Implement logic to detect large gaps in position
@@ -188,12 +188,12 @@ historical context through altitude-colored route visualization.
 
 1. The system must efficiently query and render up to 15 days of position data
    at 10-second sampling intervals.
-2. Data must be downsampled to 10-second intervals using Prometheus query
+1. Data must be downsampled to 10-second intervals using Prometheus query
    functions (e.g., `avg_over_time()`) to ensure smooth rendering and
    performance.
-3. The route rendering must not cause noticeable lag or delay in the Grafana
+1. The route rendering must not cause noticeable lag or delay in the Grafana
    dashboard (target: <2 seconds to render route on dashboard load).
-4. Prometheus queries should use appropriate step parameters to match the
+1. Prometheus queries should use appropriate step parameters to match the
    10-second sampling requirement.
 
 ### 4.7 Compatibility
@@ -208,21 +208,21 @@ historical context through altitude-colored route visualization.
 
 1. **Historical data export:** This feature will not include the ability to
    export position history to files (GPX, KML, CSV).
-2. **Playback/animation:** The route will be displayed statically; there will be
+1. **Playback/animation:** The route will be displayed statically; there will be
    no "playback" or animated replay of the journey.
-3. **Route editing:** Users cannot manually edit or modify the displayed route.
-4. **Offline storage beyond Prometheus:** Position history will only be
+1. **Route editing:** Users cannot manually edit or modify the displayed route.
+1. **Offline storage beyond Prometheus:** Position history will only be
    available from Prometheus; no separate offline cache or database will be
    created for this feature.
-5. **Multi-vehicle tracking:** This feature only displays history for a single
+1. **Multi-vehicle tracking:** This feature only displays history for a single
    Starlink terminal, not multiple terminals.
-6. **Route statistics panel:** While hover tooltips show data, this PRD does not
+1. **Route statistics panel:** While hover tooltips show data, this PRD does not
    include a separate statistics panel summarizing the entire route (total
    distance, average speed, etc.).
-7. **Dashed line styling for gaps:** Due to Grafana Geomap Route layer technical
+1. **Dashed line styling for gaps:** Due to Grafana Geomap Route layer technical
    limitations, dashed lines cannot be used to indicate interpolated gaps in
    data.
-8. **User-customizable color palettes:** The altitude color gradient will use a
+1. **User-customizable color palettes:** The altitude color gradient will use a
    fixed color scheme (e.g., Viridis) and cannot be customized by users in the
    initial implementation.
 
@@ -259,7 +259,8 @@ historical context through altitude-colored route visualization.
 
 - Use Grafana's native Geomap tooltip styling.
 - Format example:
-  ```
+
+  ```text
   Time: 2025-10-24 14:30:15
   Position: Lat: 45.5234°, Lon: -122.6762°
   Altitude: 125.3 m
@@ -346,7 +347,7 @@ for the Route layer:
      - Mode: Outer join (to preserve all timestamps even if some metrics are
        missing)
 
-2. **Organize fields** (Optional but recommended)
+1. **Organize fields** (Optional but recommended)
    - Purpose: Rename fields to more user-friendly names
    - Mappings:
      - `starlink_dish_latitude_degrees` → `latitude`
@@ -359,7 +360,7 @@ for the Route layer:
      - `starlink_network_throughput_up_mbps` → `throughput_up`
      - `starlink_dish_obstruction_percent` → `obstructions`
 
-3. **Convert field type** (if needed)
+1. **Convert field type** (if needed)
    - Purpose: Ensure latitude and longitude are recognized as numbers
    - Settings:
      - Field: `latitude` → Type: `number`
@@ -367,7 +368,7 @@ for the Route layer:
      - Field: `altitude` → Type: `number`
      - (Repeat for all numeric fields)
 
-4. **Filter data by values** (Optional)
+1. **Filter data by values** (Optional)
    - Purpose: Remove rows where latitude or longitude are missing/null
    - Settings:
      - Include rows where `latitude` is not empty AND `longitude` is not empty
@@ -376,11 +377,11 @@ for the Route layer:
 
 After transformations, data should be in table format:
 
-| Time                | latitude | longitude  | altitude | speed | heading | latency | throughput_down | throughput_up | obstructions |
-| ------------------- | -------- | ---------- | -------- | ----- | ------- | ------- | --------------- | ------------- | ------------ |
-| 2025-10-24 14:30:00 | 45.5234  | -122.6762  | 125.3    | 35.2  | 287     | 42.5    | 125.34          | 12.45         | 2.3          |
-| 2025-10-24 14:30:10 | 45.5235  | -122.6763  | 126.1    | 35.5  | 288     | 41.2    | 127.12          | 12.67         | 2.1          |
-| ...                 | ...      | ...        | ...      | ...   | ...     | ...     | ...             | ...           | ...          |
+| Time                | latitude | longitude | altitude | speed | heading | latency | throughput_down | throughput_up | obstructions |
+| ------------------- | -------- | --------- | -------- | ----- | ------- | ------- | --------------- | ------------- | ------------ |
+| 2025-10-24 14:30:00 | 45.5234  | -122.6762 | 125.3    | 35.2  | 287     | 42.5    | 125.34          | 12.45         | 2.3          |
+| 2025-10-24 14:30:10 | 45.5235  | -122.6763 | 126.1    | 35.5  | 288     | 41.2    | 127.12          | 12.67         | 2.1          |
+| ...                 | ...      | ...       | ...      | ...   | ...     | ...     | ...             | ...           | ...          |
 
 ### 7.4 Route Layer Configuration (Step-by-Step)
 
@@ -393,15 +394,15 @@ After transformations, data should be in table format:
 
 **Step 2: Configure Layer Type**
 
-1. In the new layer settings, set **"Layer type"** to **"Route"** (Beta)
-2. The layer will now render data points as connected line segments
+5. In the new layer settings, set **"Layer type"** to **"Route"** (Beta)
+6. The layer will now render data points as connected line segments
 
 **Step 3: Configure Layer Location**
 
-1. Under **"Location"** settings:
+7. Under **"Location"** settings:
    - **Latitude field:** Select `latitude`
    - **Longitude field:** Select `longitude`
-2. If these fields don't appear, verify that your transformations correctly
+8. If these fields don't appear, verify that your transformations correctly
    created these columns
 
 **Step 4: Configure Layer Style**
@@ -417,12 +418,12 @@ After transformations, data should be in table format:
 
 **Step 5: Configure Color Gradient**
 
-1. Scroll down to **"Standard options"** in the panel settings (applies to the
+2. Scroll down to **"Standard options"** in the panel settings (applies to the
    entire panel, not just the layer)
-2. Under **"Color scheme"**, select **"Turbo"** (or **"Viridis"** for
+1. Under **"Color scheme"**, select **"Turbo"** (or **"Viridis"** for
    colorblind-friendly)
-3. Under **"Color mode"**, ensure it's set to **"Continuous (gradient)"**
-4. The color will now automatically scale based on the min/max altitude values
+1. Under **"Color mode"**, ensure it's set to **"Continuous (gradient)"**
+1. The color will now automatically scale based on the min/max altitude values
    in the current dataset
 
 **Step 6: Configure Tooltip**
@@ -465,7 +466,8 @@ After transformations, data should be in table format:
    - **Type:** Custom
    - **Label:** History Window
    - **Custom options:**
-     ```
+
+     ```text
      6h : Last 6 hours,
      12h : Last 12 hours,
      24h : Last 24 hours,
@@ -473,7 +475,9 @@ After transformations, data should be in table format:
      7d : Last 7 days,
      15d : Last 15 days
      ```
+
    - **Default:** `24h`
+
 4. Save the variable
 5. In the Geomap panel queries, set the time range to:
    - **From:** `now-${history_time_window}`
@@ -485,12 +489,12 @@ After transformations, data should be in table format:
    reduce the number of data points:
    - 24 hours at 10s intervals = 8,640 points
    - 15 days at 10s intervals = 129,600 points
-2. **Query efficiency:** Use Prometheus's `step` parameter set to `10s` to match
+1. **Query efficiency:** Use Prometheus's `step` parameter set to `10s` to match
    the desired sampling rate.
-3. **Caching:** Grafana automatically caches query results based on time range
+1. **Caching:** Grafana automatically caches query results based on time range
    and refresh settings. Set dashboard refresh to manual or 30s+ to avoid
    excessive re-querying.
-4. **Progressive loading (future enhancement):** For very long time ranges,
+1. **Progressive loading (future enhancement):** For very long time ranges,
    consider implementing client-side progressive loading or using lower
    resolution for older data.
 
@@ -521,23 +525,23 @@ After transformations, data should be in table format:
 
 1. **Prometheus** must be running and retaining at least the configured time
    window of data (up to 15 days per `PROMETHEUS_RETENTION=15d`).
-2. **Backend** must expose position and telemetry metrics with consistent
+1. **Backend** must expose position and telemetry metrics with consistent
    timestamps.
-3. **Grafana version:** Requires Grafana 9.0+ (for Geomap Route layer Beta
+1. **Grafana version:** Requires Grafana 9.0+ (for Geomap Route layer Beta
    support).
-4. **Route layer availability:** The Route layer is in **Beta** as of Grafana
+1. **Route layer availability:** The Route layer is in **Beta** as of Grafana
    10.x. Monitor for changes in future versions.
 
 ### 7.8 Known Limitations
 
 1. **Route layer is Beta:** The feature may change or have bugs in future
    Grafana versions.
-2. **No dashed line support:** Cannot visually distinguish interpolated gaps
+1. **No dashed line support:** Cannot visually distinguish interpolated gaps
    from actual travel segments using line styles.
-3. **Single continuous route:** Cannot automatically split discontinuous routes
+1. **Single continuous route:** Cannot automatically split discontinuous routes
    into separate visual segments within a single layer. All points will be
    connected.
-4. **Color gradient applies to entire dataset:** Auto-scaling is global; cannot
+1. **Color gradient applies to entire dataset:** Auto-scaling is global; cannot
    have different altitude ranges for different time periods in the same view.
 
 ## 8. Implementation Steps for Junior Developer
@@ -549,8 +553,9 @@ layer. Follow these steps in order.
 
 **Task 1.1: Verify Prometheus Data Availability**
 
-1. Open Prometheus UI at `http://localhost:9090`
+1. Open Prometheus UI at `<http://localhost:9090`>
 2. In the query box, run each of these queries to verify data exists:
+
    ```promql
    starlink_dish_latitude_degrees
    starlink_dish_longitude_degrees
@@ -562,13 +567,14 @@ layer. Follow these steps in order.
    starlink_network_throughput_up_mbps
    starlink_dish_obstruction_percent
    ```
+
 3. Verify that each query returns data points
 4. If any metrics are missing, check that the backend is running and exporting
    metrics
 
 **Task 1.2: Verify Grafana Geomap Panel Exists**
 
-1. Open Grafana at `http://localhost:3000`
+1. Open Grafana at `<http://localhost:3000`>
 2. Navigate to the Starlink dashboard
 3. Locate the existing Geomap panel that shows the current position
 4. Note the panel name/ID (you'll be adding a layer to this panel)
@@ -585,7 +591,8 @@ layer. Follow these steps in order.
    - **Label:** History Window
    - **Type:** Custom
    - **Custom options:**
-     ```
+
+     ```text
      6h : Last 6 hours,
      12h : Last 12 hours,
      24h : Last 24 hours,
@@ -593,9 +600,11 @@ layer. Follow these steps in order.
      7d : Last 7 days,
      15d : Last 15 days
      ```
+
    - **Selection options:**
      - Enable "Include All option": No
      - Default value: `24h`
+
 5. Click **"Apply"**
 6. Click **"Save dashboard"** (floppy disk icon at top)
 
@@ -623,36 +632,39 @@ rely on the layer's built-in visibility toggle instead._
 
 **Task 3.2: Add Query for Latitude**
 
-1. In the **Query** tab at the bottom, you should see existing queries (e.g.,
+3. In the **Query** tab at the bottom, you should see existing queries (e.g.,
    for current position)
-2. Click **"+ Query"** to add a new query
-3. Configure the new query:
+1. Click **"+ Query"** to add a new query
+1. Configure the new query:
    - **Data source:** Prometheus
    - **Query (PromQL):**
+
      ```promql
      avg_over_time(starlink_dish_latitude_degrees[10s])
      ```
+
    - **Legend:** `latitude`
    - **Min step:** `10s`
    - **Format:** Time series
-4. Note the **Query letter** (e.g., "B", "C", etc.) - you'll need this for
+
+1. Note the **Query letter** (e.g., "B", "C", etc.) - you'll need this for
    transformations
 
 **Task 3.3: Add Queries for Other Metrics**
 
 Repeat the above steps to add queries for each metric. Here's the full list:
 
-| Metric        | PromQL Query                                                 | Legend            | Query Letter |
-| ------------- | ------------------------------------------------------------ | ----------------- | ------------ |
-| Latitude      | `avg_over_time(starlink_dish_latitude_degrees[10s])`        | `latitude`        | (e.g., B)    |
-| Longitude     | `avg_over_time(starlink_dish_longitude_degrees[10s])`       | `longitude`       | (e.g., C)    |
-| Altitude      | `avg_over_time(starlink_dish_altitude_meters[10s])`         | `altitude`        | (e.g., D)    |
-| Speed         | `avg_over_time(starlink_dish_speed_knots[10s])`             | `speed`           | (e.g., E)    |
-| Heading       | `avg_over_time(starlink_dish_heading_degrees[10s])`         | `heading`         | (e.g., F)    |
-| Latency       | `avg_over_time(starlink_network_latency_ms[10s])`           | `latency`         | (e.g., G)    |
-| Download      | `avg_over_time(starlink_network_throughput_down_mbps[10s])` | `throughput_down` | (e.g., H)    |
-| Upload        | `avg_over_time(starlink_network_throughput_up_mbps[10s])`   | `throughput_up`   | (e.g., I)    |
-| Obstructions  | `avg_over_time(starlink_dish_obstruction_percent[10s])`     | `obstructions`    | (e.g., J)    |
+| Metric       | PromQL Query                                                | Legend            | Query Letter |
+| ------------ | ----------------------------------------------------------- | ----------------- | ------------ |
+| Latitude     | `avg_over_time(starlink_dish_latitude_degrees[10s])`        | `latitude`        | (e.g., B)    |
+| Longitude    | `avg_over_time(starlink_dish_longitude_degrees[10s])`       | `longitude`       | (e.g., C)    |
+| Altitude     | `avg_over_time(starlink_dish_altitude_meters[10s])`         | `altitude`        | (e.g., D)    |
+| Speed        | `avg_over_time(starlink_dish_speed_knots[10s])`             | `speed`           | (e.g., E)    |
+| Heading      | `avg_over_time(starlink_dish_heading_degrees[10s])`         | `heading`         | (e.g., F)    |
+| Latency      | `avg_over_time(starlink_network_latency_ms[10s])`           | `latency`         | (e.g., G)    |
+| Download     | `avg_over_time(starlink_network_throughput_down_mbps[10s])` | `throughput_down` | (e.g., H)    |
+| Upload       | `avg_over_time(starlink_network_throughput_up_mbps[10s])`   | `throughput_up`   | (e.g., I)    |
+| Obstructions | `avg_over_time(starlink_dish_obstruction_percent[10s])`     | `obstructions`    | (e.g., J)    |
 
 _Tip: You can duplicate an existing query by clicking the duplicate icon, then
 edit the PromQL and legend._
@@ -661,9 +673,9 @@ edit the PromQL and legend._
 
 1. At the top of the panel editor, look for **"Time range"** or **"Query
    options"**
-2. Set **"From"** to: `now-${history_time_window}`
-3. Set **"To"** to: `now`
-4. This makes the panel respect the time window variable
+1. Set **"From"** to: `now-${history_time_window}`
+1. Set **"To"** to: `now`
+1. This makes the panel respect the time window variable
 
 ### Phase 4: Apply Transformations
 
@@ -678,9 +690,9 @@ edit the PromQL and legend._
 
 **Task 4.2: Add Organize Fields Transformation (Optional)**
 
-1. Click **"+ Add transformation"** again
-2. Select **"Organize fields"**
-3. Rename fields to match expected names:
+6. Click **"+ Add transformation"** again
+7. Select **"Organize fields"**
+8. Rename fields to match expected names:
    - `Value #B` (or whatever your latitude query was) → `latitude`
    - `Value #C` → `longitude`
    - `Value #D` → `altitude`
@@ -690,43 +702,48 @@ edit the PromQL and legend._
    - `Value #H` → `throughput_down`
    - `Value #I` → `throughput_up`
    - `Value #J` → `obstructions`
-4. Hide any fields you don't need (e.g., metric names, labels)
+9. Hide any fields you don't need (e.g., metric names, labels)
 
 **Task 4.3: Convert Field Types**
 
-1. Click **"+ Add transformation"**
-2. Select **"Convert field type"**
-3. Set each field to the correct type:
-   - `latitude` → `Number`
-   - `longitude` → `Number`
-   - `altitude` → `Number`
-   - `speed` → `Number`
-   - `heading` → `Number`
-   - `latency` → `Number`
-   - `throughput_down` → `Number`
-   - `throughput_up` → `Number`
-   - `obstructions` → `Number`
+10. Click **"+ Add transformation"**
+11. Select **"Convert field type"**
+12. Set each field to the correct type:
+
+- `latitude` → `Number`
+- `longitude` → `Number`
+- `altitude` → `Number`
+- `speed` → `Number`
+- `heading` → `Number`
+- `latency` → `Number`
+- `throughput_down` → `Number`
+- `throughput_up` → `Number`
+- `obstructions` → `Number`
 
 **Task 4.4: Filter Out Empty Rows**
 
-1. Click **"+ Add transformation"**
-2. Select **"Filter data by values"**
-3. Add a condition:
-   - **Field:** `latitude`
-   - **Match:** `Is not null`
-4. Add another condition (click "+ Add condition"):
-   - **Field:** `longitude`
-   - **Match:** `Is not null`
-5. This removes rows where position data is missing
+13. Click **"+ Add transformation"**
+14. Select **"Filter data by values"**
+15. Add a condition:
+
+- **Field:** `latitude`
+- **Match:** `Is not null`
+
+16. Add another condition (click "+ Add condition"):
+
+- **Field:** `longitude`
+- **Match:** `Is not null`
+
+17. This removes rows where position data is missing
 
 **Task 4.5: Verify Transformation Output**
 
-1. At the bottom of the Transform tab, click **"Table view"** to see the
-   transformed data
-2. You should see a table with columns: `Time`, `latitude`, `longitude`,
+18. At the bottom of the Transform tab, click **"Table view"** to see the
+    transformed data
+1. You should see a table with columns: `Time`, `latitude`, `longitude`,
    `altitude`, `speed`, `heading`, `latency`, `throughput_down`,
    `throughput_up`, `obstructions`
-3. Verify that data looks correct (numbers in each column, timestamps in Time)
+1. Verify that data looks correct (numbers in each column, timestamps in Time)
 
 ### Phase 5: Add Route Layer to Geomap
 
@@ -734,14 +751,14 @@ edit the PromQL and legend._
 
 1. In the panel editor, click the **panel settings icon** (rightmost tab, looks
    like a sliders icon)
-2. Scroll down to **"Data layers"** section
-3. You should see the existing layer (e.g., "Markers" for current position)
-4. Click **"+ Add layer"**
-5. Name the new layer: `Position History Route`
+1. Scroll down to **"Data layers"** section
+1. You should see the existing layer (e.g., "Markers" for current position)
+1. Click **"+ Add layer"**
+1. Name the new layer: `Position History Route`
 
 **Task 5.2: Configure Layer Type and Location**
 
-1. In the new layer's settings:
+5. In the new layer's settings:
    - **Layer type:** Select **"Route"** (Beta)
    - **Location Mode:** Select `Coords` (latitude/longitude)
    - **Latitude field:** Select `latitude` from the dropdown
@@ -749,7 +766,7 @@ edit the PromQL and legend._
 
 **Task 5.3: Configure Route Style**
 
-1. Still in the layer settings, find the **"Style"** section:
+6. Still in the layer settings, find the **"Style"** section:
    - **Size:** Set to `3` (or `4` for thicker lines)
    - **Color:** Click the color box, then:
      - Change from "Single color" to **"By value"**
@@ -759,28 +776,28 @@ edit the PromQL and legend._
 
 **Task 5.4: Configure Color Gradient**
 
-1. Scroll up to the panel-level **"Standard options"** section (not layer
+7. Scroll up to the panel-level **"Standard options"** section (not layer
    settings)
-2. Find **"Color scheme"**:
+1. Find **"Color scheme"**:
    - Click the dropdown
    - Select **"Turbo"** (or **"Viridis"**)
-3. Ensure **"Color mode"** is set to **"Continuous (gradient)"** or similar
-4. The route should now display with altitude-based colors
+1. Ensure **"Color mode"** is set to **"Continuous (gradient)"** or similar
+1. The route should now display with altitude-based colors
 
 **Task 5.5: Configure Tooltip**
 
-1. In the layer settings or under **"Tooltip"** in panel options:
+4. In the layer settings or under **"Tooltip"** in panel options:
    - Ensure tooltips are **enabled**
    - Grafana will automatically show all fields when hovering over the route
 
 **Task 5.6: Test the Route Layer**
 
-1. Click **"Apply"** at the top right to apply changes
-2. The Geomap should now show:
+5. Click **"Apply"** at the top right to apply changes
+6. The Geomap should now show:
    - Your existing current position marker
    - A new colored route line showing position history
-3. Hover over the route to verify the tooltip shows all data fields
-4. Try changing the `history_time_window` variable at the top - the route should
+7. Hover over the route to verify the tooltip shows all data fields
+8. Try changing the `history_time_window` variable at the top - the route should
    update
 
 ### Phase 6: Fine-Tuning and Testing
@@ -804,10 +821,10 @@ edit the PromQL and legend._
 
 **Task 6.3: Test Toggle (If Implemented)**
 
-1. If you created the `show_position_history` variable:
+2. If you created the `show_position_history` variable:
    - Toggle between "Show" and "Hide"
    - The route layer should appear/disappear accordingly
-2. If not implemented, use the **eye icon** next to the layer name in the panel
+3. If not implemented, use the **eye icon** next to the layer name in the panel
    editor to toggle visibility
 
 **Task 6.4: Test in Simulation and Live Modes**
@@ -823,12 +840,12 @@ edit the PromQL and legend._
 
 **Task 6.5: Verify Performance**
 
-1. Load the dashboard with a 24-hour time window
-2. Measure load time (should be <2 seconds)
-3. If slow, check:
+3. Load the dashboard with a 24-hour time window
+4. Measure load time (should be <2 seconds)
+5. If slow, check:
    - Prometheus query performance in Prometheus UI
    - Number of data points (should be ~8,640 for 24h at 10s intervals)
-4. If necessary, increase the sampling interval to 30s or 60s to reduce data
+6. If necessary, increase the sampling interval to 30s or 60s to reduce data
    points
 
 **Task 6.6: Test Edge Cases**
@@ -839,7 +856,7 @@ edit the PromQL and legend._
    - Verify that the panel shows "No data" or gracefully handles the absence of
      data
    - Restart backend: `docker compose start backend`
-2. **Data gaps:**
+1. **Data gaps:**
    - If you have historical data with gaps (e.g., terminal offline), verify that
      the route interpolates with straight lines between gaps
 
@@ -863,6 +880,7 @@ edit the PromQL and legend._
 **Task 7.2: Commit Changes to Git**
 
 1. If dashboard is provisioned via JSON files:
+
    ```bash
    git add monitoring/grafana/dashboards/starlink-dashboard.json
    git commit -m "feat: add position history layer with altitude-based coloring"
@@ -893,25 +911,25 @@ edit the PromQL and legend._
    - At least 70% of active users interact with the position history layer
      (toggle it or change time window) within the first week of release.
 
-2. **Performance:**
+1. **Performance:**
    - Dashboard load time with position history enabled does not increase by more
      than 15% compared to baseline.
    - Route rendering completes within 2 seconds for 24-hour time windows on
      typical hardware.
 
-3. **Data Accuracy:**
+1. **Data Accuracy:**
    - Route visualization matches Prometheus data with 100% accuracy (no missing
      segments or incorrect positions, excluding expected data gaps).
    - Altitude-based color gradient correctly reflects the altitude range in the
      dataset.
 
-4. **Usability:**
+1. **Usability:**
    - User testing or feedback shows that 80% of users can successfully toggle
      the layer and change the time window without assistance.
    - Users report that the altitude-based coloring is intuitive and helps
      understand elevation changes.
 
-5. **System Stability:**
+1. **System Stability:**
    - No new errors or crashes related to the position history feature.
    - Prometheus query load remains within acceptable limits (<10% increase in
      query volume).
@@ -922,29 +940,29 @@ The user has provided answers to all open questions:
 
 1. **Color scale configuration:**
    - ✅ **Resolved:** Use a **fixed color palette** (Turbo or Viridis).
-   - ✅ **Resolved:** Altitude range will **auto-scale** based on current dataset
-     min/max values.
+   - ✅ **Resolved:** Altitude range will **auto-scale** based on current
+     dataset min/max values.
 
-2. **Downsampling strategy:**
+1. **Downsampling strategy:**
    - ✅ **Resolved:** Sample at **10-second intervals** for all time ranges (6h
      to 15 days).
 
-3. **Grafana panel type:**
+1. **Grafana panel type:**
    - ✅ **Resolved:** Implement in the **existing Geomap panel** using the
      **Route layer** (Beta).
    - ✅ **Resolved:** No limitations identified for altitude-based gradient
      rendering.
 
-4. **Handling data gaps:**
+1. **Handling data gaps:**
    - ✅ **Resolved:** **Interpolate gaps with straight lines** (solid, not
      dashed due to technical limitations).
 
-5. **Multiple routes:**
+1. **Multiple routes:**
    - ✅ **Resolved:** Display **separate route segments** if there are
      discontinuous journeys. Accept limitation that all points connect; consider
      multi-layer approach as future enhancement if needed.
 
-6. **Future enhancements:**
+1. **Future enhancements:**
    - Noted: The system can be expanded in the future to support other color
      coding options (speed, latency, signal strength).
 
@@ -954,16 +972,14 @@ The user has provided answers to all open questions:
 
 1. **Dashed line styling is NOT supported** in Grafana Geomap Route layer (as of
    Grafana 10.x). Data gaps will be interpolated with regular solid lines.
-2. **Route layer is in Beta** and may have breaking changes in future Grafana
+1. **Route layer is in Beta** and may have breaking changes in future Grafana
    versions.
-3. **Multiple discontinuous routes** will be connected unless separate layers
+1. **Multiple discontinuous routes** will be connected unless separate layers
    are created (workaround available but not in initial scope).
-4. **Color gradient auto-scaling** is global; cannot have different altitude
+1. **Color gradient auto-scaling** is global; cannot have different altitude
    ranges for different time periods within the same view.
 
 ---
 
-**Document Version:** 1.0
-**Created:** 2025-10-24
-**Author:** Generated via /create-prd
-**Status:** Final - Ready for Implementation
+**Document Version:** 1.0 **Created:** 2025-10-24 **Author:** Generated via
+/create-prd **Status:** Final - Ready for Implementation

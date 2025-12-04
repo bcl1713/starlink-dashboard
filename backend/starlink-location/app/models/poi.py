@@ -1,5 +1,9 @@
 """Point of Interest (POI) data models for the Starlink location service."""
 
+# FR-004: File exceeds 300 lines (337 lines) because POI models define 6+ related
+# Pydantic classes with shared validators, enums, and geographic calculations.
+# Splitting would fragment the POI domain model. Deferred to v0.4.0.
+
 from datetime import datetime, timezone
 from typing import Optional
 

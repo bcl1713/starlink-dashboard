@@ -11,10 +11,10 @@ Minimum valid KML with timing data:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
+<kml xmlns="<http://www.opengis.net/kml/2.2">>
   <Document>
     <Placemark>
-      <name>Route Name</name>
+      `name`Route Name</name>
       <LineString>
         <coordinates>
           longitude,latitude,altitude Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ
@@ -61,7 +61,7 @@ Minimum valid KML with timing data:
 
 ```xml
 <Placemark>
-  <name>Waypoint Name</name>
+  `name`Waypoint Name</name>
   <Point>
     <coordinates>-76.9,38.8,1000 Time Over Waypoint: 2025-10-27 16:45:00Z</coordinates>
   </Point>
@@ -73,7 +73,7 @@ Minimum valid KML with timing data:
 ### Get Route Timing Profile
 
 ```bash
-curl http://localhost:8000/api/routes/active/timing
+curl <http://localhost:8000/api/routes/active/timing>
 ```
 
 Response:
@@ -95,7 +95,7 @@ Response:
 
 ```bash
 # ETA to waypoint index 15
-curl "http://localhost:8000/api/routes/{route_id}/eta/waypoint/15?current_position_lat=40.7&current_position_lon=-74.0"
+curl "<http://localhost:8000/api/routes/{route_id}/eta/waypoint/15?current_position_lat=40.7&current_position_lon=-74.0">
 ```
 
 Response:
@@ -116,13 +116,13 @@ Response:
 ### Calculate ETA to Arbitrary Location
 
 ```bash
-curl "http://localhost:8000/api/routes/{route_id}/eta/location?target_lat=40.7128&target_lon=-74.0060"
+curl "<http://localhost:8000/api/routes/{route_id}/eta/location?target_lat=40.7128&target_lon=-74.0060">
 ```
 
 ### Get Route Progress
 
 ```bash
-curl "http://localhost:8000/api/routes/{route_id}/progress"
+curl "<http://localhost:8000/api/routes/{route_id}/progress">
 ```
 
 Response:
@@ -162,7 +162,7 @@ curl -X POST \
     "altitude": 5000.0,
     "timestamp": "2025-11-04T10:30:00Z"
   }' \
-  "http://localhost:8000/api/routes/live-mode/active-route-eta"
+  "<http://localhost:8000/api/routes/live-mode/active-route-eta">
 ```
 
 ## Examples
@@ -173,17 +173,17 @@ KML file with complete timing data:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
+<kml xmlns="<http://www.opengis.net/kml/2.2">>
   <Document>
-    <name>KADW-PHNL</name>
+    `name`KADW-PHNL</name>
     <Placemark>
-      <name>Departure Point - Andrews AFB</name>
+      `name`Departure Point - Andrews AFB</name>
       <Point>
         <coordinates>-76.9,38.8,1000 Time Over Waypoint: 2025-10-27 16:45:00Z</coordinates>
       </Point>
     </Placemark>
     <Placemark>
-      <name>Flight Path</name>
+      `name`Flight Path</name>
       <LineString>
         <coordinates>
           -76.9,38.8,1000 Time Over Waypoint: 2025-10-27 16:45:00Z
@@ -196,7 +196,7 @@ KML file with complete timing data:
       </LineString>
     </Placemark>
     <Placemark>
-      <name>Arrival Point - Honolulu</name>
+      `name`Arrival Point - Honolulu</name>
       <Point>
         <coordinates>-157.9,21.3,500 Time Over Waypoint: 2025-10-27 18:30:00Z</coordinates>
       </Point>
@@ -209,16 +209,16 @@ Upload and use:
 
 ```bash
 # Upload
-curl -X POST -F "file=@kadw-phnl.kml" http://localhost:8000/api/routes/upload
+curl -X POST -F "file=@kadw-phnl.kml" <http://localhost:8000/api/routes/upload>
 
 # Activate
-curl -X POST http://localhost:8000/api/routes/route-001/activate
+curl -X POST <http://localhost:8000/api/routes/route-001/activate>
 
 # Check profile
-curl http://localhost:8000/api/routes/active/timing
+curl <http://localhost:8000/api/routes/active/timing>
 
 # Monitor progress
-curl http://localhost:8000/api/routes/route-001/progress
+curl <http://localhost:8000/api/routes/route-001/progress>
 ```
 
 ### Example 2: Querying ETA During Flight
@@ -227,20 +227,20 @@ At any point during a simulated or live flight:
 
 ```bash
 # Get progress
-curl http://localhost:8000/api/routes/route-001/progress | jq '.progress_percent'
+curl <http://localhost:8000/api/routes/route-001/progress> | jq '.progress_percent'
 # Output: 45.5
 
 # Get ETA to next waypoint
-curl "http://localhost:8000/api/routes/route-001/eta/waypoint/15" | jq '.eta_minutes'
+curl "<http://localhost:8000/api/routes/route-001/eta/waypoint/15"> | jq '.eta_minutes'
 # Output: 30.0
 
 # Get ETA to specific location
-curl "http://localhost:8000/api/routes/route-001/eta/location?\
+curl "<http://localhost:8000/api/routes/route-001/eta/location?\>
 target_lat=157.9&target_lon=21.3" | jq '.eta_minutes'
 # Output: 45.0
 
 # Monitor accuracy
-curl http://localhost:8000/api/routes/metrics/eta-accuracy | jq '.accuracy_stats.average_error_seconds'
+curl <http://localhost:8000/api/routes/metrics/eta-accuracy> | jq '.accuracy_stats.average_error_seconds'
 # Output: 45.3
 ```
 
@@ -258,7 +258,7 @@ curl -X POST \
     "altitude": 5000.0,
     "timestamp": "2025-11-04T10:30:00Z"
   }' \
-  "http://localhost:8000/api/routes/live-mode/active-route-eta"
+  "<http://localhost:8000/api/routes/live-mode/active-route-eta">
 
 # Response includes current progress and next waypoint ETA
 ```

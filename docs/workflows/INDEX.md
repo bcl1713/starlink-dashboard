@@ -9,8 +9,8 @@ installed in this project to enhance your development workflow.
 
 ## Overview
 
-This project uses Claude Code's advanced infrastructure to provide specialized AI
-assistance for common development tasks. The system consists of three main
+This project uses Claude Code's advanced infrastructure to provide specialized
+AI assistance for common development tasks. The system consists of three main
 components:
 
 ### Agents
@@ -20,8 +20,8 @@ Think of them as expert teammates you can call on for specific jobs.
 
 ### Slash Commands
 
-Quick commands you type in chat to trigger specific workflows (e.g., `/dev-docs`,
-`/dev-docs-update`).
+Quick commands you type in chat to trigger specific workflows (e.g.,
+`/dev-docs`, `/dev-docs-update`).
 
 ### Skills
 
@@ -117,8 +117,8 @@ Creates detailed documentation via `documentation-architect`
 
 **For Claude Code itself:**
 
-- Documentation: <https://docs.claude.com/en/docs/claude-code>
-- Issues: <https://github.com/anthropics/claude-code/issues>
+- Documentation: <<https://docs.claude.com/en/docs/claude-code>>
+- Issues: <<https://github.com/anthropics/claude-code/issues>>
 
 **For this project:**
 

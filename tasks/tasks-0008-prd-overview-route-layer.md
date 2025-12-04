@@ -40,7 +40,7 @@ which prevents the route from rendering correctly.
 
 1. **Pipeline 1 (Marker):** Filter queries A-D → Join by Time → Output instant
    position data
-2. **Pipeline 2 (Route):** Filter queries E-F → Join by Time → Output
+1. **Pipeline 2 (Route):** Filter queries E-F → Join by Time → Output
    time-series position history
 
 Each layer then references its specific pipeline via the `filterData` field:
@@ -75,7 +75,7 @@ without interference from the other queries.
         (you should see 1 marker layer)
   - [x] 1.7 Ensure Grafana is running: `docker compose ps grafana` (status
         should be "Up")
-  - [x] 1.8 Open Grafana in browser at `http://localhost:3000` and navigate to
+  - [x] 1.8 Open Grafana in browser at `<http://localhost:3000`> and navigate to
         the Fullscreen Overview dashboard to see current state (only current
         position marker, no route)
 

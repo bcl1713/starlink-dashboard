@@ -119,12 +119,12 @@ Using GitHub (or equivalent) tools:
 
 1. Check if a PR already exists for this branch targeting the main/default
    branch.
-2. If a PR exists:
+1. If a PR exists:
    - Update its description to reference:
      - PLAN.md outcome.
      - Completed checklist.
      - Key implementation notes from CONTEXT.md.
-3. If a PR does not exist:
+1. If a PR does not exist:
    - Create one with:
      - Title:
        - `feat: <summary>` for feature branches.

@@ -1,5 +1,10 @@
 """Event application logic for mission timeline generation."""
 
+# FR-004: File exceeds 300 lines (392 lines) because event application coordinates
+# multiple timeline event types (SAT transitions, AAR windows, coverage events,
+# altitude changes) with state machine logic. Splitting would create circular
+# dependencies with resolver modules. Deferred to v0.4.0.
+
 from __future__ import annotations
 
 import logging

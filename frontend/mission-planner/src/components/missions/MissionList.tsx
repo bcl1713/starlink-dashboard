@@ -9,19 +9,27 @@ interface MissionListProps {
   onExport: (id: string, name: string) => void;
 }
 
-export function MissionList({ onSelectMission, onCreateNew, onImport, onExport }: MissionListProps) {
+export function MissionList({
+  onSelectMission,
+  onCreateNew,
+  onImport,
+  onExport,
+}: MissionListProps) {
   const { data: missions, isLoading, error } = useMissions();
   const deleteMission = useDeleteMission();
 
   if (isLoading) return <div>Loading missions...</div>;
-  if (error) return <div>Error loading missions: {(error as Error).message}</div>;
+  if (error)
+    return <div>Error loading missions: {(error as Error).message}</div>;
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">Missions</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onImport}>Import Mission</Button>
+          <Button variant="outline" onClick={onImport}>
+            Import Mission
+          </Button>
           <Button onClick={onCreateNew}>Create New Mission</Button>
         </div>
       </div>

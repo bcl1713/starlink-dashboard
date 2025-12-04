@@ -1,7 +1,6 @@
 # Mission Communication Operations SOP
 
-**Last Updated:** 2025-11-16
-**Phase:** 5.3 (Comprehensive Documentation)
+**Last Updated:** 2025-11-16 **Phase:** 5.3 (Comprehensive Documentation)
 **Status:** Production Ready
 
 ---
@@ -36,8 +35,8 @@ This SOP is organized into the following sections:
 
 Complete operational procedures for mission communications:
 
-- **Pre-Flight Planning** - Timeline generation, risk window identification, crew
-  briefing
+- **Pre-Flight Planning** - Timeline generation, risk window identification,
+  crew briefing
 - **Grafana Monitoring Setup** - Dashboard configuration, panel descriptions,
   alert thresholds
 - **Alert Response** - Degraded and critical window response procedures
@@ -81,15 +80,15 @@ Comprehensive incident handling procedures:
 
 ## Useful URLs
 
-| Resource           | URL                                     |
-| ------------------ | --------------------------------------- |
-| Mission Planner    | `http://<dashboard>/ui/mission-planner` |
-| Grafana Dashboard  | `http://<dashboard>:3000/d/starlink/*`  |
-| Prometheus Metrics | `http://<dashboard>:9090`               |
-| API Documentation  | `http://<dashboard>:8000/docs`          |
-| Health Check       | `http://<dashboard>:8000/health`        |
+| Resource           | URL                                       |
+| ------------------ | ----------------------------------------- |
+| Mission Planner    | `<http://<dashboard>/ui/mission-planner`> |
+| Grafana Dashboard  | `<http://<dashboard>:3000/d/starlink/*`>  |
+| Prometheus Metrics | `<http://<dashboard>:9090`>               |
+| API Documentation  | `<http://<dashboard>:8000/docs`>          |
+| Health Check       | `<http://<dashboard>:8000/health`>        |
 
-(* = fullscreen-overview)
+(\* = fullscreen-overview)
 
 ---
 
@@ -102,6 +101,5 @@ Comprehensive incident handling procedures:
 
 ---
 
-**Document Version:** 1.0
-**Effective Date:** 2025-11-16
-**Next Review:** 2026-02-16
+**Document Version:** 1.0 **Effective Date:** 2025-11-16 **Next Review:**
+2026-02-16

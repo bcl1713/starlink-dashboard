@@ -1,5 +1,10 @@
 """Prometheus metrics registry and definitions."""
 
+# FR-004: File exceeds 300 lines (451 lines) because metrics registry defines
+# 40+ metric instances with type-specific exports (gauges, counters, histograms)
+# and accessor functions. Splitting would fragment metric definitions reducing
+# discoverability. Deferred to v0.4.0.
+
 import logging
 from typing import Dict, Generator
 

@@ -1,7 +1,6 @@
 # Starlink Dashboard Troubleshooting Guide
 
-**Last Updated:** 2025-10-31
-**Version:** 0.2.0
+**Last Updated:** 2025-10-31 **Version:** 0.2.0
 
 ## Quick Diagnostics
 
@@ -12,7 +11,7 @@ Before diving into specific issues, run these checks:
 docker compose ps
 
 # 2. Check backend health
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # 3. Check logs for errors
 docker compose logs --tail=50
@@ -43,6 +42,7 @@ docker stats --no-stream
 ### Symptom: Container exits immediately
 
 **Check logs:**
+
 ```bash
 docker compose logs starlink-location
 docker compose logs prometheus
@@ -52,6 +52,7 @@ docker compose logs grafana
 **Common Causes & Solutions:**
 
 **1. Configuration Error**
+
 ```bash
 # Check syntax of .env
 cat .env | grep -E "^[A-Z_]+=.*"
@@ -63,6 +64,7 @@ docker compose up -d
 ```
 
 **2. Port Binding Failed**
+
 ```bash
 # Find what's using the port
 lsof -i :8000  # Backend
@@ -74,6 +76,7 @@ kill -9 <PID>
 ```
 
 **3. Insufficient Disk Space**
+
 ```bash
 # Check available space
 df -h
@@ -84,6 +87,7 @@ docker volume prune      # Remove unused volumes
 ```
 
 **4. Memory Issues**
+
 ```bash
 # Check system memory
 free -h
@@ -113,6 +117,7 @@ sudo systemctl start docker
 ### Symptom: "Address already in use"
 
 **Find process using port:**
+
 ```bash
 # Linux/macOS
 lsof -i :3000
@@ -124,6 +129,7 @@ netstat -ano | findstr :3000
 ```
 
 **Solution 1: Kill process**
+
 ```bash
 # Linux/macOS
 kill -9 <PID>
@@ -133,6 +139,7 @@ taskkill /PID <PID> /F
 ```
 
 **Solution 2: Change port in .env**
+
 ```bash
 # Edit .env
 nano .env
@@ -148,6 +155,7 @@ docker compose up -d
 ```
 
 **Solution 3: Check if service is running**
+
 ```bash
 # See what's actually bound to the port
 netstat -tlnp | grep 3000  # Linux
@@ -165,15 +173,17 @@ docker compose restart
 ### Symptom: Backend unhealthy or crashing
 
 **Check health endpoint:**
+
 ```bash
-curl -v http://localhost:8000/health
+curl -v <http://localhost:8000/health>
 # Should return 200 with {"status": "ok"}
 
 # Check extended info
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 ```
 
 **View logs:**
+
 ```bash
 docker compose logs -f starlink-location
 # Look for errors or warnings
@@ -201,19 +211,21 @@ docker compose config | grep STARLINK
 ### Issue: Metrics not updating
 
 **Verify data is being generated:**
+
 ```bash
 # Check API status endpoint
-curl http://localhost:8000/api/status | jq '.position'
+curl <http://localhost:8000/api/status> | jq '.position'
 
 # Check raw metrics
-curl http://localhost:8000/metrics | grep "starlink_dish_" | head -5
+curl <http://localhost:8000/metrics> | grep "starlink_dish_" | head -5
 
 # Check update frequency
 # Should see changes every 1 second
-for i in {1..3}; do curl -s http://localhost:8000/api/status | jq '.position.latitude'; sleep 1; done
+for i in {1..3}; do curl -s <http://localhost:8000/api/status> | jq '.position.latitude'; sleep 1; done
 ```
 
 **If no updates:**
+
 ```bash
 # Rebuild backend
 docker compose down
@@ -235,7 +247,7 @@ docker compose restart starlink-location
 
 # Wait 10 seconds and check health
 sleep 10
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 ### Issue: POI file locked or inaccessible
@@ -258,23 +270,26 @@ docker compose exec starlink-location sh -c 'echo "[]" > /app/data/pois.json'
 ### Symptom: Prometheus not collecting metrics
 
 **Check Prometheus targets:**
+
 ```bash
 # Open browser
-open http://localhost:9090/targets
+open <http://localhost:9090/targets>
 # Or use curl
-curl http://localhost:9090/api/v1/targets | jq '.data.activeTargets'
+curl <http://localhost:9090/api/v1/targets> | jq '.data.activeTargets'
 ```
 
 **Verify backend is reachable:**
+
 ```bash
 # From Prometheus container
-docker compose exec prometheus curl http://starlink-location:8000/health
+docker compose exec prometheus curl <http://starlink-location:8000/health>
 
 # From host
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 **Check scrape config:**
+
 ```bash
 # View prometheus.yml
 cat monitoring/prometheus/prometheus.yml
@@ -298,6 +313,7 @@ docker compose restart prometheus
 ### Issue: High disk usage
 
 **Check storage:**
+
 ```bash
 # Size of prometheus volume
 docker volume inspect prometheus_data
@@ -320,6 +336,7 @@ docker compose logs prometheus | tail -20
 ### Symptom: Can't access Grafana
 
 **Verify container running:**
+
 ```bash
 docker compose ps grafana
 
@@ -327,43 +344,47 @@ docker compose ps grafana
 docker compose logs grafana
 
 # Verify port
-curl http://localhost:3000
+curl <http://localhost:3000>
 ```
 
 ### Issue: "Data source not working"
 
 **Test data source connection:**
-1. Go to http://localhost:3000
+
+1. Go to <http://localhost:3000>
 2. Settings > Data Sources > Prometheus
 3. Click "Test" button
 4. Should see green "Data source is working"
 
 **If test fails:**
+
 ```bash
 # Check if Prometheus is running
 docker compose ps prometheus
 
 # Test from Grafana container
-docker compose exec grafana curl http://prometheus:9090
+docker compose exec grafana curl <http://prometheus:9090>
 ```
 
 ### Issue: Dashboards empty or no data
 
 **Verify data exists:**
+
 ```bash
 # Check Prometheus has data
-curl http://localhost:9090/api/v1/query?query=starlink_dish_latitude_degrees
+curl <http://localhost:9090/api/v1/query?query=starlink_dish_latitude_degrees>
 
 # Should return something like:
 # "result": [{"metric": {...}, "value": ["timestamp", "40.7128"]}]
 
 # If empty, backend may not be exporting metrics
-curl http://localhost:8000/metrics | grep starlink_dish_latitude
+curl <http://localhost:8000/metrics> | grep starlink_dish_latitude
 ```
 
 **Reload dashboards:**
+
 ```bash
-# Go to http://localhost:3000
+# Go to <http://localhost:3000>
 # Click refresh icon in browser
 # Or restart grafana
 docker compose restart grafana
@@ -401,14 +422,16 @@ grafana-cli admin reset-admin-password newpassword
 ### Symptom: Services can't communicate
 
 **Verify network connectivity:**
+
 ```bash
 # Check if containers can reach each other
-docker compose exec starlink-location curl http://prometheus:9090
-docker compose exec prometheus curl http://starlink-location:8000/health
-docker compose exec grafana curl http://prometheus:9090
+docker compose exec starlink-location curl <http://prometheus:9090>
+docker compose exec prometheus curl <http://starlink-location:8000/health>
+docker compose exec grafana curl <http://prometheus:9090>
 ```
 
 **Check network configuration:**
+
 ```bash
 # View network
 docker network inspect starlink-dashboard-dev_starlink-net
@@ -420,6 +443,7 @@ docker network inspect starlink-dashboard-dev_starlink-net | grep -A 10 "Contain
 ### Symptom: Live mode won't connect to dish
 
 **Test network connectivity:**
+
 ```bash
 # From host
 ping 192.168.100.1
@@ -431,6 +455,7 @@ docker compose exec starlink-location timeout 5 bash -c 'cat < /dev/null > /dev/
 ```
 
 **Check network mode:**
+
 ```bash
 # Verify bridge vs host mode
 docker inspect starlink-location | grep -A 2 NetworkMode
@@ -440,6 +465,7 @@ docker inspect starlink-location | grep -A 5 extra_hosts
 ```
 
 **Update IP if needed:**
+
 ```bash
 # Edit .env
 nano .env
@@ -457,6 +483,7 @@ docker compose up -d
 ### Symptom: POI list empty or missing
 
 **Check POI file:**
+
 ```bash
 # File exists?
 ls -la backend/starlink-location/data/pois.json
@@ -472,9 +499,10 @@ docker compose restart starlink-location
 ### Issue: Can't create/edit POIs
 
 **Check API:**
+
 ```bash
 # Test POI creation
-curl -X POST http://localhost:8000/api/pois \
+curl -X POST <http://localhost:8000/api/pois> \
   -H "Content-Type: application/json" \
   -d '{"name": "Test", "latitude": 40.7, "longitude": -74.0}'
 
@@ -484,6 +512,7 @@ docker compose logs starlink-location | tail -20
 ```
 
 **Check file permissions:**
+
 ```bash
 # POI file writable?
 docker compose exec starlink-location ls -la /app/data/pois.json
@@ -495,6 +524,7 @@ docker compose exec starlink-location chmod 666 /app/data/pois.json
 ### Symptom: Data not persisting after restart
 
 **Verify volumes mounted:**
+
 ```bash
 # Check volume mounts in docker-compose.yml
 grep -A 5 "volumes:" docker-compose.yml
@@ -515,6 +545,7 @@ docker run -v poi_data:/data alpine ls -la /data
 ### Symptom: High CPU usage
 
 **Identify process:**
+
 ```bash
 docker stats --no-stream
 
@@ -525,6 +556,7 @@ docker stats --no-stream
 ```
 
 **Backend high CPU:**
+
 ```bash
 # Check update interval in .env or config
 grep "update_interval" backend/starlink-location/config.yaml
@@ -535,6 +567,7 @@ docker compose restart starlink-location
 ```
 
 **Prometheus high CPU:**
+
 ```bash
 # Reduce retention
 PROMETHEUS_RETENTION=7d
@@ -548,6 +581,7 @@ docker compose down && docker compose up -d
 ### Symptom: High memory usage
 
 **Check memory consumption:**
+
 ```bash
 docker stats --no-stream
 
@@ -556,6 +590,7 @@ docker stats <container-name>
 ```
 
 **Reduce Prometheus data:**
+
 ```bash
 # Lower retention period
 PROMETHEUS_RETENTION=15d
@@ -563,6 +598,7 @@ docker compose down && docker compose up -d
 ```
 
 **Restart to clear memory:**
+
 ```bash
 docker compose down
 docker system prune -a  # Remove unused images
@@ -572,9 +608,10 @@ docker compose up -d
 ### Symptom: Slow dashboard loading
 
 **Check query performance:**
+
 ```bash
 # Open Prometheus
-open http://localhost:9090/graph
+open <http://localhost:9090/graph>
 
 # Run a query and check execution time
 # Enter: starlink_dish_latitude_degrees[5m]
@@ -583,6 +620,7 @@ open http://localhost:9090/graph
 ```
 
 **Optimize if slow:**
+
 ```bash
 # If > 1 second, either:
 # 1. Reduce time range (less data)
@@ -599,9 +637,10 @@ open http://localhost:9090/graph
 **This is normal!** The system is designed to wait for the dish.
 
 **Verify dish status:**
+
 ```bash
 # Check health endpoint
-curl http://localhost:8000/health | jq '.dish_connected'
+curl <http://localhost:8000/health> | jq '.dish_connected'
 
 # Should be false initially, true when connected
 
@@ -612,12 +651,14 @@ docker compose logs -f starlink-location | grep -i "dish\|connect"
 **Troubleshoot connection:**
 
 1. **Verify dish IP:**
+
    ```bash
    ping 192.168.100.1
    # If not reachable, update .env with correct IP
    ```
 
-2. **Check network mode:**
+1. **Check network mode:**
+
    ```bash
    # Bridge mode (cross-platform)
    docker inspect starlink-location | grep -A 5 extra_hosts
@@ -626,14 +667,16 @@ docker compose logs -f starlink-location | grep -i "dish\|connect"
    docker inspect starlink-location | grep NetworkMode
    ```
 
-3. **Test from container:**
+1. **Test from container:**
+
    ```bash
    docker compose exec starlink-location \
      timeout 5 bash -c 'cat < /dev/null > /dev/tcp/192.168.100.1/9200'
    # Should succeed if reachable
    ```
 
-4. **Check firewall:**
+1. **Check firewall:**
+
    ```bash
    # Linux: check firewall rules
    sudo ufw status
@@ -648,7 +691,7 @@ docker compose logs -f starlink-location | grep -i "dish\|connect"
 ```bash
 # Check update frequency
 for i in {1..5}; do
-  curl -s http://localhost:8000/api/status | jq '.timestamp'
+  curl -s <http://localhost:8000/api/status> | jq '.timestamp'
   sleep 2
 done
 
@@ -668,27 +711,30 @@ docker compose restart starlink-location
 ### Issue: ETA calculations incorrect
 
 **Verify POI coordinates:**
+
 ```bash
 # List POIs
-curl http://localhost:8000/api/pois | jq '.[] | {name, latitude, longitude}'
+curl <http://localhost:8000/api/pois> | jq '.[] | {name, latitude, longitude}'
 
 # Manually calculate distance
 # Using Haversine formula to NYC (40.7128, -74.0060)
 
 # Verify ETAs
-curl http://localhost:8000/api/pois/etas | jq '.[] | {name, distance_meters, eta_seconds}'
+curl <http://localhost:8000/api/pois/etas> | jq '.[] | {name, distance_meters, eta_seconds}'
 ```
 
 **Check speed used in calculation:**
+
 ```bash
 # If not specified, uses fallback 67 knots
 # To use current speed:
-curl "http://localhost:8000/api/pois/etas?speed_knots=50"
+curl "<http://localhost:8000/api/pois/etas?speed_knots=50">
 ```
 
 ### Issue: POI table not updating in Grafana
 
 **Verify Infinity datasource:**
+
 ```bash
 # Check datasource configured
 # Grafana > Settings > Data Sources
@@ -701,15 +747,16 @@ curl "http://localhost:8000/api/pois/etas?speed_knots=50"
 ```
 
 **Check POI endpoint:**
+
 ```bash
 # Verify endpoint accessible
-curl http://localhost:8000/api/pois/etas | jq length
+curl <http://localhost:8000/api/pois/etas> | jq length
 # Should return count of POIs
 
 # Test Infinity query manually
 # In Grafana > Explore
 # Set Data source to Infinity
-# Enter URL: http://starlink-location:8000/api/pois/etas
+# Enter URL: <http://starlink-location:8000/api/pois/etas>
 # Click Run Query
 ```
 
@@ -767,29 +814,33 @@ docker compose logs grafana > grafana.log
 ### Before asking for help, gather:
 
 1. **Log output:**
+
    ```bash
    docker compose logs > debug-logs.txt
    ```
 
-2. **System info:**
+1. **System info:**
+
    ```bash
    docker --version
    docker compose version
    uname -a
    ```
 
-3. **Configuration:**
+1. **Configuration:**
+
    ```bash
    cat .env | grep -v "PASSWORD"
    docker compose config | head -50
    ```
 
-4. **Current state:**
+1. **Current state:**
+
    ```bash
    docker compose ps
    docker stats --no-stream
-   curl http://localhost:8000/health
-   curl http://localhost:9090/api/v1/targets
+   curl <http://localhost:8000/health>
+   curl <http://localhost:9090/api/v1/targets>
    ```
 
 ### Resources:
@@ -807,6 +858,7 @@ docker compose logs grafana > grafana.log
 ## Still Need Help?
 
 Check:
+
 1. Related documentation files
 2. Backend/Prometheus/Grafana container logs
 3. System resource usage

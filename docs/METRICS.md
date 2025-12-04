@@ -2,9 +2,12 @@
 
 ## Overview
 
-This document describes all Prometheus metrics exposed by the Starlink Location Backend. The metrics are available at `http://localhost:8000/metrics` in Prometheus text format.
+This document describes all Prometheus metrics exposed by the Starlink Location
+Backend. The metrics are available at `<http://localhost:8000/metrics`> in
+Prometheus text format.
 
 **Metrics Scrape Configuration:**
+
 - Interval: 10 seconds (configurable via `PROMETHEUS_SCRAPE_INTERVAL` in `.env`)
 - Timeout: 5 seconds
 - Format: OpenMetrics 1.0.0
@@ -41,7 +44,8 @@ This document describes all Prometheus metrics exposed by the Starlink Location 
 
 - **Metric:** `starlink_dish_heading_degrees`
 - **Type:** Gauge
-- **Description:** Dish heading in degrees (0=North, 90=East, 180=South, 270=West)
+- **Description:** Dish heading in degrees (0=North, 90=East, 180=South,
+  270=West)
 - **Range:** 0 to 360 degrees
 - **Example:** `135.5`
 
@@ -233,18 +237,21 @@ Meta-metrics monitor the metrics system itself.
 - **Type:** Gauge
 - **Description:** Unix timestamp of last successful metric update
 - **Unit:** Seconds (Unix epoch)
-- **Usage:** Health check - if current_time - value > 30s, metrics collection is stalled
+- **Usage:** Health check - if current_time - value > 30s, metrics collection is
+  stalled
 
 ## Metric Labels
 
 Labels allow filtering and aggregating metrics in PromQL queries.
 
 ### Mode Label
+
 - **Values:** `simulation`, `live`
 - **Usage:** Filter queries by operation mode
 - **Applies to:** Network histograms, position metrics (implicit)
 
 ### Status Label
+
 - **Values:** `excellent`, `good`, `degraded`, `poor`
 - **Thresholds:**
   - **excellent:** latency < 50ms AND packet loss < 1%
@@ -254,12 +261,14 @@ Labels allow filtering and aggregating metrics in PromQL queries.
 - **Applies to:** Network histograms
 
 ### POI Name Label
+
 - **Values:** Custom POI names/identifiers
 - **Applies to:** `starlink_eta_poi_seconds`, `starlink_distance_to_poi_meters`
 
 ## Example Prometheus Queries
 
 ### Current Network Status
+
 ```promql
 # Current latency
 starlink_network_latency_ms_current
@@ -272,6 +281,7 @@ starlink_network_throughput_up_mbps_current
 ```
 
 ### Percentile Analysis
+
 ```promql
 # 95th percentile latency over last 5 minutes
 histogram_quantile(0.95, rate(starlink_network_latency_ms_bucket[5m]))
@@ -284,6 +294,7 @@ histogram_quantile(0.99, rate(starlink_network_throughput_down_mbps_bucket[5m]))
 ```
 
 ### Network Performance by Status
+
 ```promql
 # Average latency for "good" status connections
 rate(starlink_network_latency_ms_sum{status="good"}[5m]) / rate(starlink_network_latency_ms_count{status="good"}[5m])
@@ -293,6 +304,7 @@ rate(starlink_network_throughput_down_mbps_sum{status="excellent"}[5m]) / rate(s
 ```
 
 ### Availability and Reliability
+
 ```promql
 # Connection failure rate
 rate(starlink_connection_failures_total[1h]) / rate(starlink_connection_attempts_total[1h])
@@ -305,6 +317,7 @@ starlink_dish_uptime_seconds / (24 * 3600)  # For 24-hour window
 ```
 
 ### Service Health
+
 ```promql
 # Is metrics collection active? (should be 1 for healthy systems)
 time() - starlink_metrics_last_update_timestamp_seconds < 30
@@ -317,6 +330,7 @@ starlink_metrics_scrape_duration_seconds
 ```
 
 ### Position Tracking
+
 ```promql
 # Current position
 {starlink_dish_latitude_degrees, starlink_dish_longitude_degrees}
@@ -329,6 +343,7 @@ starlink_dish_obstruction_percent
 ```
 
 ### POI Navigation
+
 ```promql
 # ETA to New York
 starlink_eta_poi_seconds{name="NYC"}
@@ -362,7 +377,8 @@ Starlink metrics follow Prometheus naming conventions:
 - **`_degrees`** suffix: Gauges for angles/coordinates
   - Example: `starlink_dish_heading_degrees`
 
-- **`_current`** suffix: Current/instantaneous values (distinguishes from histograms)
+- **`_current`** suffix: Current/instantaneous values (distinguishes from
+  histograms)
   - Example: `starlink_network_latency_ms_current`
 
 - **`_info`** suffix: Information metrics (always value=1)
@@ -373,6 +389,7 @@ Starlink metrics follow Prometheus naming conventions:
 ### Health Endpoint
 
 The `/health` endpoint returns:
+
 ```json
 {
   "status": "ok",
@@ -387,8 +404,10 @@ The `/health` endpoint returns:
 ```
 
 **Status values:**
+
 - `"ok"`: Prometheus is actively scraping (last scrape < 30 seconds ago)
-- `"degraded"`: Prometheus hasn't scraped in > 30 seconds (includes initial startup)
+- `"degraded"`: Prometheus hasn't scraped in > 30 seconds (includes initial
+  startup)
 
 ### Prometheus Scrape Status Query
 
@@ -417,7 +436,8 @@ PROMETHEUS_RETENTION=15d
 
 ## Integration with Grafana
 
-All metrics are automatically available in Grafana dashboards. Use the Prometheus data source at `http://prometheus:9090` to create visualizations:
+All metrics are automatically available in Grafana dashboards. Use the
+Prometheus data source at `<http://prometheus:9090`> to create visualizations:
 
 - **Gauges:** Position, altitude, speed, heading, network performance
 - **Graphs:** Throughput trends, latency over time, obstruction changes
@@ -428,14 +448,16 @@ All metrics are automatically available in Grafana dashboards. Use the Prometheu
 
 ### Metrics Not Appearing
 
-1. Check if backend is running: `curl http://localhost:8000/health`
-2. Check metrics endpoint: `curl http://localhost:8000/metrics`
-3. Check Prometheus targets: Visit `http://localhost:9090/targets`
-4. Check last scrape time: `curl http://localhost:8000/health | jq .prometheus_last_scrape`
+1. Check if backend is running: `curl <http://localhost:8000/health`>
+2. Check metrics endpoint: `curl <http://localhost:8000/metrics`>
+3. Check Prometheus targets: Visit `<http://localhost:9090/targets`>
+4. Check last scrape time:
+   `curl <http://localhost:8000/health> | jq .prometheus_last_scrape`
 
 ### High Latency or Packet Loss
 
 Use status labels to filter:
+
 ```promql
 # Queries when network is degraded
 starlink_network_latency_ms{status="degraded"}
@@ -445,6 +467,7 @@ starlink_network_throughput_down_mbps{status="poor"}
 ### Memory Usage
 
 Meta-metrics help identify collection issues:
+
 ```promql
 # Collection duration (should be < 1 second typically)
 starlink_metrics_scrape_duration_seconds

@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { toISO8601 } from '@/lib/utils';
@@ -109,9 +116,18 @@ export function KaOutageConfig({
           <TableBody>
             {outages.map((outage, index) => (
               <TableRow key={outage.id}>
-                <TableCell>{new Date(outage.start_time).toLocaleString()}</TableCell>
-                <TableCell>{(outage.duration_seconds / 3600).toFixed(2)}</TableCell>
-                <TableCell>{new Date(new Date(outage.start_time).getTime() + outage.duration_seconds * 1000).toLocaleString()}</TableCell>
+                <TableCell>
+                  {new Date(outage.start_time).toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  {(outage.duration_seconds / 3600).toFixed(2)}
+                </TableCell>
+                <TableCell>
+                  {new Date(
+                    new Date(outage.start_time).getTime() +
+                      outage.duration_seconds * 1000
+                  ).toLocaleString()}
+                </TableCell>
                 <TableCell>
                   <Button
                     variant="destructive"
@@ -138,14 +154,19 @@ export function KaOutageConfig({
                       setStartTimeError(validateDatetime(value));
                       // Re-validate duration if end time exists
                       if (newOutage.end_time) {
-                        const dur = calculateDuration(value, newOutage.end_time);
+                        const dur = calculateDuration(
+                          value,
+                          newOutage.end_time
+                        );
                         setDurationError(validateDuration(dur));
                       }
                     }}
                     className={startTimeError ? 'border-red-500' : ''}
                   />
                   {startTimeError && (
-                    <p className="text-sm text-red-500 mt-1">{startTimeError}</p>
+                    <p className="text-sm text-red-500 mt-1">
+                      {startTimeError}
+                    </p>
                   )}
                 </div>
               </TableCell>
@@ -153,10 +174,17 @@ export function KaOutageConfig({
                 {newOutage.start_time && newOutage.end_time && (
                   <div>
                     <span>
-                      {(calculateDuration(newOutage.start_time, newOutage.end_time) / 3600).toFixed(2)}
+                      {(
+                        calculateDuration(
+                          newOutage.start_time,
+                          newOutage.end_time
+                        ) / 3600
+                      ).toFixed(2)}
                     </span>
                     {durationError && (
-                      <p className="text-sm text-red-500 mt-1">{durationError}</p>
+                      <p className="text-sm text-red-500 mt-1">
+                        {durationError}
+                      </p>
                     )}
                   </div>
                 )}
@@ -175,7 +203,10 @@ export function KaOutageConfig({
                       setEndTimeError(validateDatetime(value));
                       // Re-validate duration if start time exists
                       if (newOutage.start_time) {
-                        const dur = calculateDuration(newOutage.start_time, value);
+                        const dur = calculateDuration(
+                          newOutage.start_time,
+                          value
+                        );
                         setDurationError(validateDuration(dur));
                       }
                     }}
@@ -189,7 +220,9 @@ export function KaOutageConfig({
               <TableCell>
                 <Button
                   onClick={handleAddOutage}
-                  disabled={!!startTimeError || !!endTimeError || !!durationError}
+                  disabled={
+                    !!startTimeError || !!endTimeError || !!durationError
+                  }
                 >
                   Add
                 </Button>

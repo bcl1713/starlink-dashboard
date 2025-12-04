@@ -122,7 +122,7 @@ backend/starlink-location/app/
 
 ### POI Integration
 
-- POI.projected_* fields only populated when route is active
+- POI.projected\_\* fields only populated when route is active
 - POIWithETA includes `route_aware_status` for visualization logic
 - `eta_type` switches between "anticipated" (pre-departure) and "estimated"
   (in-flight)

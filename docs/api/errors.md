@@ -40,25 +40,25 @@ The API uses standard HTTP status codes to indicate success or failure.
 
 ### Success Codes (2xx)
 
-| Code | Name | Description | Use Case |
-|------|------|-------------|----------|
-| `200` | OK | Request successful | GET, POST, PUT operations |
-| `201` | Created | Resource created successfully | POST operations |
+| Code  | Name       | Description                              | Use Case                           |
+| ----- | ---------- | ---------------------------------------- | ---------------------------------- |
+| `200` | OK         | Request successful                       | GET, POST, PUT operations          |
+| `201` | Created    | Resource created successfully            | POST operations                    |
 | `204` | No Content | Request successful, no content to return | DELETE operations, empty responses |
 
 ### Client Error Codes (4xx)
 
-| Code | Name | Description | Use Case |
-|------|------|-------------|----------|
-| `400` | Bad Request | Invalid input data or parameters | Validation failures, malformed requests |
-| `404` | Not Found | Requested resource doesn't exist | POI not found, route not found |
-| `409` | Conflict | Resource conflict (e.g., duplicate name) | POI name already exists |
-| `422` | Unprocessable Entity | Semantic validation error | Invalid coordinate ranges, type errors |
+| Code  | Name                 | Description                              | Use Case                                |
+| ----- | -------------------- | ---------------------------------------- | --------------------------------------- |
+| `400` | Bad Request          | Invalid input data or parameters         | Validation failures, malformed requests |
+| `404` | Not Found            | Requested resource doesn't exist         | POI not found, route not found          |
+| `409` | Conflict             | Resource conflict (e.g., duplicate name) | POI name already exists                 |
+| `422` | Unprocessable Entity | Semantic validation error                | Invalid coordinate ranges, type errors  |
 
 ### Server Error Codes (5xx)
 
-| Code | Name | Description | Use Case |
-|------|------|-------------|----------|
+| Code  | Name                  | Description             | Use Case                              |
+| ----- | --------------------- | ----------------------- | ------------------------------------- |
 | `500` | Internal Server Error | Unexpected server error | System failures, unhandled exceptions |
 
 ---
@@ -72,7 +72,7 @@ The API uses standard HTTP status codes to indicate success or failure.
 **Request:**
 
 ```bash
-curl -X POST http://localhost:8000/api/pois \
+curl -X POST <http://localhost:8000/api/pois> \
   -H "Content-Type: application/json" \
   -d '{"name": "Test", "latitude": 100, "longitude": -74.0}'
 ```
@@ -98,7 +98,7 @@ curl -X POST http://localhost:8000/api/pois \
 **Request:**
 
 ```bash
-curl http://localhost:8000/api/pois/nonexistent-poi-id
+curl <http://localhost:8000/api/pois/nonexistent-poi-id>
 ```
 
 **Response (404 Not Found):**
@@ -122,7 +122,7 @@ curl http://localhost:8000/api/pois/nonexistent-poi-id
 **Request:**
 
 ```bash
-curl -X POST http://localhost:8000/api/pois \
+curl -X POST <http://localhost:8000/api/pois> \
   -H "Content-Type: application/json" \
   -d '{"name": "LaGuardia Airport", "latitude": 40.77, "longitude": -73.87}'
 ```
@@ -148,7 +148,7 @@ curl -X POST http://localhost:8000/api/pois \
 **Request:**
 
 ```bash
-curl -X POST http://localhost:8000/api/config \
+curl -X POST <http://localhost:8000/api/config> \
   -H "Content-Type: application/json" \
   -d '{"route": {"radius_km": -50}}'
 ```
@@ -180,7 +180,7 @@ curl -X POST http://localhost:8000/api/config \
 **Request:**
 
 ```bash
-curl http://localhost:8000/api/routes/nonexistent-route/progress
+curl <http://localhost:8000/api/routes/nonexistent-route/progress>
 ```
 
 **Response (404 Not Found):**
@@ -204,7 +204,7 @@ curl http://localhost:8000/api/routes/nonexistent-route/progress
 **Request:**
 
 ```bash
-curl http://localhost:8000/api/routes/active/timing
+curl <http://localhost:8000/api/routes/active/timing>
 ```
 
 **Response (404 Not Found):**
@@ -228,7 +228,7 @@ curl http://localhost:8000/api/routes/active/timing
 **Request:**
 
 ```bash
-curl "http://localhost:8000/api/routes/route-001/eta/location"
+curl "<http://localhost:8000/api/routes/route-001/eta/location">
 ```
 
 **Response (400 Bad Request):**
@@ -252,7 +252,7 @@ curl "http://localhost:8000/api/routes/route-001/eta/location"
 **Request:**
 
 ```bash
-curl "http://localhost:8000/api/pois/etas?speed_knots=-50"
+curl "<http://localhost:8000/api/pois/etas?speed_knots=-50">
 ```
 
 **Response (400 Bad Request):**
@@ -276,7 +276,7 @@ curl "http://localhost:8000/api/pois/etas?speed_knots=-50"
 **Request:**
 
 ```bash
-curl http://localhost:8000/api/status
+curl <http://localhost:8000/api/status>
 ```
 
 **Response (500 Internal Server Error):**
@@ -297,55 +297,55 @@ curl http://localhost:8000/api/status
 
 ### Coordinate Errors
 
-| Code | Description | HTTP Status |
-|------|-------------|-------------|
-| `INVALID_COORDINATES` | Coordinates outside valid range | 400 |
-| `INVALID_LATITUDE` | Latitude not in -90 to 90 | 400 |
-| `INVALID_LONGITUDE` | Longitude not in -180 to 180 | 400 |
+| Code                  | Description                     | HTTP Status |
+| --------------------- | ------------------------------- | ----------- |
+| `INVALID_COORDINATES` | Coordinates outside valid range | 400         |
+| `INVALID_LATITUDE`    | Latitude not in -90 to 90       | 400         |
+| `INVALID_LONGITUDE`   | Longitude not in -180 to 180    | 400         |
 
 ### POI Errors
 
-| Code | Description | HTTP Status |
-|------|-------------|-------------|
-| `POI_NOT_FOUND` | POI doesn't exist | 404 |
-| `POI_NAME_CONFLICT` | POI name already taken | 409 |
-| `POI_CREATION_FAILED` | Failed to create POI | 500 |
-| `POI_UPDATE_FAILED` | Failed to update POI | 500 |
-| `POI_DELETE_FAILED` | Failed to delete POI | 500 |
+| Code                  | Description            | HTTP Status |
+| --------------------- | ---------------------- | ----------- |
+| `POI_NOT_FOUND`       | POI doesn't exist      | 404         |
+| `POI_NAME_CONFLICT`   | POI name already taken | 409         |
+| `POI_CREATION_FAILED` | Failed to create POI   | 500         |
+| `POI_UPDATE_FAILED`   | Failed to update POI   | 500         |
+| `POI_DELETE_FAILED`   | Failed to delete POI   | 500         |
 
 ### Route Errors
 
-| Code | Description | HTTP Status |
-|------|-------------|-------------|
-| `ROUTE_NOT_FOUND` | Route doesn't exist | 404 |
-| `NO_ACTIVE_ROUTE` | No route is currently active | 404 |
-| `ROUTE_LOAD_FAILED` | Failed to load route | 500 |
-| `NO_TIMING_DATA` | Route has no timing information | 404 |
+| Code                | Description                     | HTTP Status |
+| ------------------- | ------------------------------- | ----------- |
+| `ROUTE_NOT_FOUND`   | Route doesn't exist             | 404         |
+| `NO_ACTIVE_ROUTE`   | No route is currently active    | 404         |
+| `ROUTE_LOAD_FAILED` | Failed to load route            | 500         |
+| `NO_TIMING_DATA`    | Route has no timing information | 404         |
 
 ### Configuration Errors
 
-| Code | Description | HTTP Status |
-|------|-------------|-------------|
-| `VALIDATION_ERROR` | Configuration validation failed | 422 |
-| `INVALID_CONFIGURATION` | Configuration format invalid | 400 |
-| `CONFIG_UPDATE_FAILED` | Failed to update configuration | 500 |
+| Code                    | Description                     | HTTP Status |
+| ----------------------- | ------------------------------- | ----------- |
+| `VALIDATION_ERROR`      | Configuration validation failed | 422         |
+| `INVALID_CONFIGURATION` | Configuration format invalid    | 400         |
+| `CONFIG_UPDATE_FAILED`  | Failed to update configuration  | 500         |
 
 ### Request Errors
 
-| Code | Description | HTTP Status |
-|------|-------------|-------------|
-| `INVALID_REQUEST` | Malformed request | 400 |
-| `MISSING_PARAMETER` | Required parameter missing | 400 |
-| `INVALID_PARAMETER` | Parameter value invalid | 400 |
-| `INVALID_SPEED` | Speed value out of range | 400 |
+| Code                | Description                | HTTP Status |
+| ------------------- | -------------------------- | ----------- |
+| `INVALID_REQUEST`   | Malformed request          | 400         |
+| `MISSING_PARAMETER` | Required parameter missing | 400         |
+| `INVALID_PARAMETER` | Parameter value invalid    | 400         |
+| `INVALID_SPEED`     | Speed value out of range   | 400         |
 
 ### Service Errors
 
-| Code | Description | HTTP Status |
-|------|-------------|-------------|
-| `SERVICE_ERROR` | General service error | 500 |
-| `INITIALIZATION_ERROR` | Service not properly initialized | 500 |
-| `CALCULATION_ERROR` | Calculation failed | 500 |
+| Code                   | Description                      | HTTP Status |
+| ---------------------- | -------------------------------- | ----------- |
+| `SERVICE_ERROR`        | General service error            | 500         |
+| `INITIALIZATION_ERROR` | Service not properly initialized | 500         |
+| `CALCULATION_ERROR`    | Calculation failed               | 500         |
 
 ---
 
@@ -356,7 +356,7 @@ curl http://localhost:8000/api/status
 Always start by checking service health:
 
 ```bash
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 If this fails, the backend may be down or unreachable.
@@ -426,12 +426,12 @@ docker compose restart starlink-location
 
 ```bash
 # Ensure JSON is properly formatted
-curl -X POST http://localhost:8000/api/pois \
+curl -X POST <http://localhost:8000/api/pois> \
   -H "Content-Type: application/json" \
   -d @poi_data.json  # Use file input for complex data
 
 # Check request headers
-curl -v http://localhost:8000/api/pois  # Verbose output
+curl -v <http://localhost:8000/api/pois>  # Verbose output
 ```
 
 ---
@@ -444,10 +444,10 @@ curl -v http://localhost:8000/api/pois  # Verbose output
 
 ```bash
 # List all POIs to get correct IDs
-curl http://localhost:8000/api/pois | jq '.[] | {id, name}'
+curl <http://localhost:8000/api/pois> | jq '.[] | {id, name}'
 
 # Check active routes
-curl http://localhost:8000/api/routes
+curl <http://localhost:8000/api/routes>
 ```
 
 ---
@@ -485,7 +485,7 @@ import requests
 
 try:
     response = requests.post(
-        'http://localhost:8000/api/pois',
+        '<http://localhost:8000/api/pois',>
         json={
             "name": "Test POI",
             "latitude": 40.7128,
@@ -510,10 +510,10 @@ except requests.exceptions.RequestException as e:
 ```javascript
 async function createPOI(data) {
   try {
-    const response = await fetch('http://localhost:8000/api/pois', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(data)
+    const response = await fetch("<http://localhost:8000/api/pois",> {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
@@ -522,9 +522,8 @@ async function createPOI(data) {
     }
 
     return await response.json();
-
   } catch (error) {
-    console.error('POI creation failed:', error);
+    console.error("POI creation failed:", error);
     throw error;
   }
 }
@@ -581,7 +580,7 @@ def create_poi(name, lat, lon, description=None):
     if description:
         data["description"] = description
 
-    response = requests.post('http://localhost:8000/api/pois', json=data)
+    response = requests.post('<http://localhost:8000/api/pois',> json=data)
     response.raise_for_status()
     return response.json()
 ```

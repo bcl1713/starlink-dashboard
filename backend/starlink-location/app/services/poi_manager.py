@@ -1,5 +1,10 @@
 """POI manager for loading, saving, and managing points of interest."""
 
+# FR-004: File exceeds 300 lines (680 lines) because POI management combines
+# file I/O, locking, JSON parsing, geospatial queries, and in-memory caching
+# that are tightly coupled. Separation would split single responsibility across
+# multiple modules with reduced cohesion. Deferred to v0.4.0.
+
 import json
 import logging
 import re

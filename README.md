@@ -1,21 +1,25 @@
 # Starlink Dashboard
 
-A Docker-based monitoring system for Starlink terminals with real-time metrics visualization through Prometheus and Grafana. Supports both live monitoring of physical Starlink hardware and simulation mode for offline development.
+A Docker-based monitoring system for Starlink terminals with real-time metrics
+visualization through Prometheus and Grafana. Supports both live monitoring of
+physical Starlink hardware and simulation mode for offline development.
 
 **Status:** Phase 0 Complete (Foundation) + ETA Route Timing Feature Complete
-**Version:** 0.3.0
-**Last Updated:** 2025-11-04
-**Branch:** feature/eta-route-timing (ready for merge to main)
+**Version:** 0.3.0 **Last Updated:** 2025-11-04 **Branch:**
+feature/eta-route-timing (ready for merge to main)
 
 ## Quick Navigation
 
 **For Users:**
+
 - [Quick Start](#quick-start)
-- [Setup Guide](./docs/SETUP-GUIDE.md) - Detailed setup for simulation and live modes
+- [Setup Guide](./docs/SETUP-GUIDE.md) - Detailed setup for simulation and live
+  modes
 - [Grafana Dashboards](#grafana-dashboards)
 - [Troubleshooting](./docs/TROUBLESHOOTING.md)
 
 **For Developers:**
+
 - [Contributing Guide](./CONTRIBUTING.md)
 - [API Reference](./docs/API-REFERENCE.md)
 - [Development Status](./dev/STATUS.md)
@@ -35,7 +39,7 @@ A Docker-based monitoring system for Starlink terminals with real-time metrics v
 
 ```bash
 # 1. Clone and enter directory
-git clone https://github.com/your-repo/starlink-dashboard.git
+git clone <https://github.com/your-repo/starlink-dashboard.git>
 cd starlink-dashboard
 
 # 2. Set up configuration
@@ -45,8 +49,8 @@ cp .env.example .env
 docker compose up -d
 
 # 4. Verify and access
-curl http://localhost:8000/health        # Backend health
-open http://localhost:3000                # Grafana (admin/admin)
+curl <http://localhost:8000/health>        # Backend health
+open <http://localhost:3000>                # Grafana (admin/admin)
 ```
 
 **Detailed setup:** See [Setup Guide](./docs/SETUP-GUIDE.md)
@@ -57,13 +61,13 @@ open http://localhost:3000                # Grafana (admin/admin)
 
 Once services are running:
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| **Grafana** | http://localhost:3000 | Dashboards (admin/admin) |
-| **Prometheus** | http://localhost:9090 | Metrics database |
-| **Backend API** | http://localhost:8000/docs | Interactive API docs |
-| **Health Check** | http://localhost:8000/health | Service status |
-| **Metrics** | http://localhost:8000/metrics | Raw Prometheus metrics |
+| Service          | URL                             | Purpose                  |
+| ---------------- | ------------------------------- | ------------------------ |
+| **Grafana**      | <http://localhost:3000>         | Dashboards (admin/admin) |
+| **Prometheus**   | <http://localhost:9090>         | Metrics database         |
+| **Backend API**  | <http://localhost:8000/docs>    | Interactive API docs     |
+| **Health Check** | <http://localhost:8000/health>  | Service status           |
+| **Metrics**      | <http://localhost:8000/metrics> | Raw Prometheus metrics   |
 
 ---
 
@@ -71,16 +75,17 @@ Once services are running:
 
 Three pre-configured dashboards provide comprehensive monitoring:
 
-| Dashboard | Purpose | Key Features |
-|-----------|---------|--------------|
-| **Starlink Overview** | Main monitoring dashboard | Live position map, POI ETA table, network latency gauge, throughput graph |
-| **Network Metrics** | Detailed network performance | Latency analysis, throughput breakdown, packet loss, signal quality |
-| **Position & Movement** | Location tracking | Live map with history, altitude profile, speed/heading trends |
+| Dashboard               | Purpose                      | Key Features                                                              |
+| ----------------------- | ---------------------------- | ------------------------------------------------------------------------- |
+| **Starlink Overview**   | Main monitoring dashboard    | Live position map, POI ETA table, network latency gauge, throughput graph |
+| **Network Metrics**     | Detailed network performance | Latency analysis, throughput breakdown, packet loss, signal quality       |
+| **Position & Movement** | Location tracking            | Live map with history, altitude profile, speed/heading trends             |
 
 **Dashboard Access:**
-- Starlink Overview: http://localhost:3000/d/starlink-overview
-- Network Metrics: http://localhost:3000/d/starlink-network
-- Position & Movement: http://localhost:3000/d/starlink-position
+
+- Starlink Overview: <http://localhost:3000/d/starlink-overview>
+- Network Metrics: <http://localhost:3000/d/starlink-network>
+- Position & Movement: <http://localhost:3000/d/starlink-position>
 
 **Dashboard Guide:** See [Grafana Setup Documentation](./docs/grafana-setup.md)
 
@@ -99,12 +104,14 @@ PROMETHEUS_RETENTION=1y           # 1 year of data
 ```
 
 **Features:**
+
 - Generates realistic Starlink telemetry
 - Follows KML routes or circular paths
 - Simulates network metrics with realistic patterns
 - Useful for UI development and testing
 
-**See:** [Setup Guide - Simulation Mode](./docs/SETUP-GUIDE.md#simulation-mode-setup)
+**See:**
+[Setup Guide - Simulation Mode](./docs/SETUP-GUIDE.md#simulation-mode-setup)
 
 ### Live Mode
 
@@ -118,6 +125,7 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 ```
 
 **Requirements:**
+
 - Starlink terminal on local network
 - Network access to terminal's gRPC port
 - Proper Docker networking configuration
@@ -132,16 +140,16 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 
 All configuration via `.env` file:
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `STARLINK_MODE` | `simulation` | Operating mode (simulation or live) |
-| `STARLINK_DISH_HOST` | `192.168.100.1` | Dish IP address (live mode) |
-| `STARLINK_DISH_PORT` | `9200` | Dish gRPC port (live mode) |
-| `PROMETHEUS_RETENTION` | `1y` | Metrics retention period |
-| `GRAFANA_ADMIN_PASSWORD` | `admin` | Grafana password (change in production!) |
-| `STARLINK_LOCATION_PORT` | `8000` | Backend port |
-| `PROMETHEUS_PORT` | `9090` | Prometheus port |
-| `GRAFANA_PORT` | `3000` | Grafana port |
+| Variable                 | Default         | Purpose                                  |
+| ------------------------ | --------------- | ---------------------------------------- |
+| `STARLINK_MODE`          | `simulation`    | Operating mode (simulation or live)      |
+| `STARLINK_DISH_HOST`     | `192.168.100.1` | Dish IP address (live mode)              |
+| `STARLINK_DISH_PORT`     | `9200`          | Dish gRPC port (live mode)               |
+| `PROMETHEUS_RETENTION`   | `1y`            | Metrics retention period                 |
+| `GRAFANA_ADMIN_PASSWORD` | `admin`         | Grafana password (change in production!) |
+| `STARLINK_LOCATION_PORT` | `8000`          | Backend port                             |
+| `PROMETHEUS_PORT`        | `9090`          | Prometheus port                          |
+| `GRAFANA_PORT`           | `3000`          | Grafana port                             |
 
 **Complete reference:** See [CLAUDE.md](./CLAUDE.md#configuration)
 
@@ -149,7 +157,8 @@ All configuration via `.env` file:
 
 ## Key Features
 
-- **Real-time Monitoring:** Live position tracking and metrics on interactive maps
+- **Real-time Monitoring:** Live position tracking and metrics on interactive
+  maps
 - **Dual Mode:** Works with real hardware or in simulation mode
 - **Historical Data:** Full 1-year metrics retention (configurable)
 - **POI Management:** Create and track points of interest with real-time ETAs
@@ -161,7 +170,7 @@ All configuration via `.env` file:
 
 ## Project Structure
 
-```
+```text
 starlink-dashboard/
 ├── backend/                       # Python FastAPI backend
 │   └── starlink-location/
@@ -225,19 +234,19 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 
 ```bash
 # Check backend health
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # Get current status
-curl http://localhost:8000/api/status | jq .
+curl <http://localhost:8000/api/status> | jq .
 
 # List all POIs
-curl http://localhost:8000/api/pois | jq .
+curl <http://localhost:8000/api/pois> | jq .
 
 # Get ETA to POIs
-curl http://localhost:8000/api/pois/etas | jq .
+curl <http://localhost:8000/api/pois/etas> | jq .
 
 # View available metrics
-curl http://localhost:8000/metrics | head -20
+curl <http://localhost:8000/metrics> | head -20
 ```
 
 ---
@@ -246,7 +255,7 @@ curl http://localhost:8000/metrics | head -20
 
 The system consists of three main components:
 
-```
+```text
 ┌─────────────────────────────────────────────────┐
 │  Grafana (Port 3000)                            │
 │  - Starlink Overview Dashboard                  │
@@ -284,21 +293,25 @@ The system consists of three main components:
 Comprehensive documentation is organized by topic:
 
 ### For Getting Started
+
 - [Setup Guide](./docs/SETUP-GUIDE.md) - Installation and configuration
 - [Quick Start](#quick-start) - 3-minute setup
 
 ### For Using the System
+
 - [Grafana Setup](./docs/grafana-setup.md) - Dashboard usage
 - [API Reference](./docs/API-REFERENCE.md) - REST API endpoints
 - [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues
 
 ### For Development
+
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 - [CLAUDE.md](./CLAUDE.md) - Development configuration
 - [Design Document](./docs/design-document.md) - Architecture
 - [Development Status](./dev/STATUS.md) - Current progress
 
 ### For Reference
+
 - [METRICS.md](./docs/METRICS.md) - Prometheus metrics
 - [Backend README](./backend/starlink-location/README.md) - Service details
 
@@ -307,18 +320,22 @@ Comprehensive documentation is organized by topic:
 ## Getting Help
 
 **Setup Issues:**
+
 - See [Setup Guide](./docs/SETUP-GUIDE.md)
 - Check [Troubleshooting Guide](./docs/TROUBLESHOOTING.md)
 
 **API Questions:**
+
 - See [API Reference](./docs/API-REFERENCE.md)
-- Visit http://localhost:8000/docs (interactive documentation)
+- Visit <http://localhost:8000/docs> (interactive documentation)
 
 **Development Questions:**
+
 - See [Contributing Guide](./CONTRIBUTING.md)
 - Check [Development Status](./dev/STATUS.md)
 
 **Specific Issues:**
+
 - See [Troubleshooting Guide](./docs/TROUBLESHOOTING.md)
 - Run diagnostic commands in [Quick Start](#testing--verification)
 
@@ -336,21 +353,36 @@ Want to help improve Starlink Dashboard?
 
 ## Mission Communication Planning
 
-Pre-flight mission communication analysis for predicting and managing satellite communication degradation across three onboard transports (X-Band, Ka, StarShield/Ku). Essential for flight operations planning, crew briefing, and communication contingency preparation.
+Pre-flight mission communication analysis for predicting and managing satellite
+communication degradation across three onboard transports (X-Band, Ka,
+StarShield/Ku). Essential for flight operations planning, crew briefing, and
+communication contingency preparation.
 
 **Features:**
-- **Mission Planning Interface:** Create and manage missions with transport configurations, timing windows, and operational constraints
-- **Satellite Geometry Engine:** Analyzes 3D satellite positions, azimuth angles, and elevation constraints for real-time communication status
-- **Timeline Generation:** Predicts communication degradation windows across mission flight phases
-- **Multi-Format Exports:** Generate PDF briefings, CSV logs, and Excel reports for crew and ground operators
-- **Grafana Integration:** Real-time mission timeline visualization, alert rules for approaching degradation windows, satellite coverage overlays
-- **Performance Optimized:** Benchmark-tested recomputation at <0.12s per mission with concurrent support
+
+- **Mission Planning Interface:** Create and manage missions with transport
+  configurations, timing windows, and operational constraints
+- **Satellite Geometry Engine:** Analyzes 3D satellite positions, azimuth
+  angles, and elevation constraints for real-time communication status
+- **Timeline Generation:** Predicts communication degradation windows across
+  mission flight phases
+- **Multi-Format Exports:** Generate PDF briefings, CSV logs, and Excel reports
+  for crew and ground operators
+- **Grafana Integration:** Real-time mission timeline visualization, alert rules
+  for approaching degradation windows, satellite coverage overlays
+- **Performance Optimized:** Benchmark-tested recomputation at <0.12s per
+  mission with concurrent support
 
 **Documentation:**
-- [Mission Planning Guide](./docs/MISSION-PLANNING-GUIDE.md) - Complete user guide with UI walkthrough
-- [Mission Communication SOP](./docs/MISSION-COMM-SOP.md) - Operations playbook for mission planning and monitoring
-- [Performance Notes](./docs/PERFORMANCE-NOTES.md) - Benchmark results and optimization guidance
-- [Monitoring Setup](./monitoring/README.md#mission-communication-planning) - Dashboard and alert configuration
+
+- [Mission Planning Guide](./docs/MISSION-PLANNING-GUIDE.md) - Complete user
+  guide with UI walkthrough
+- [Mission Communication SOP](./docs/MISSION-COMM-SOP.md) - Operations playbook
+  for mission planning and monitoring
+- [Performance Notes](./docs/PERFORMANCE-NOTES.md) - Benchmark results and
+  optimization guidance
+- [Monitoring Setup](./monitoring/README.md#mission-communication-planning) -
+  Dashboard and alert configuration
 
 **Status:** Phase 5 Complete ✅ (All tests passing, production-ready)
 
@@ -361,6 +393,7 @@ Pre-flight mission communication analysis for predicting and managing satellite 
 **Current Phase:** Foundation Complete + Major Features Complete
 
 **Completed Work:**
+
 - Phase 0: Core infrastructure, metrics, dashboards ✅
 - POI Interactive Management: Complete ✅ (10 sessions)
 - KML Route Import and Management: Complete ✅ (16 sessions)
@@ -380,23 +413,27 @@ Pre-flight mission communication analysis for predicting and managing satellite 
 
 **Branch Status:** feature/mission-comm-planning (ready for merge to main)
 
-**Next Steps:** See [Phased Development Plan](./docs/phased-development-plan.md) for future enhancements
+**Next Steps:** See [Phased Development Plan](./docs/phased-development-plan.md)
+for future enhancements
 
 ---
 
 ## Performance & Storage
 
 **Resource Requirements:**
+
 - Minimum RAM: 4 GB
 - Minimum Disk: 5 GB
 - Storage usage: ~2.4 GB per year (configurable)
 
 **Performance:**
+
 - Backend response time: <50ms
 - Prometheus query time: <1s
 - Grafana dashboard load: <2s
 
-**See:** [Setup Guide - Performance Tuning](./docs/SETUP-GUIDE.md#performance-tuning)
+**See:**
+[Setup Guide - Performance Tuning](./docs/SETUP-GUIDE.md#performance-tuning)
 
 ---
 

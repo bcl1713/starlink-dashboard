@@ -1,9 +1,7 @@
 # Starlink Dashboard API Reference
 
-**Last Updated:** 2025-11-04
-**Backend Version:** 0.3.0
-**Base URL:** `http://localhost:8000`
-**Status:** Complete with ETA Route Timing endpoints
+**Last Updated:** 2025-11-04 **Backend Version:** 0.3.0 **Base URL:**
+`<http://localhost:8000`> **Status:** Complete with ETA Route Timing endpoints
 
 ## Table of Contents
 
@@ -26,6 +24,7 @@
 Returns welcome message and API documentation links.
 
 **Response:**
+
 ```json
 {
   "message": "Welcome to Starlink Location Backend",
@@ -45,9 +44,11 @@ Returns welcome message and API documentation links.
 
 Health check endpoint for service availability monitoring.
 
-**Description:** Returns service status, uptime, mode information, and dish connection status.
+**Description:** Returns service status, uptime, mode information, and dish
+connection status.
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -61,10 +62,12 @@ Health check endpoint for service availability monitoring.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Service is healthy
 - `500 Internal Server Error` - Service error
 
-**Use Case:** Docker health checks, load balancer monitoring, uptime verification.
+**Use Case:** Docker health checks, load balancer monitoring, uptime
+verification.
 
 ---
 
@@ -72,15 +75,17 @@ Health check endpoint for service availability monitoring.
 
 Current telemetry status in human-readable JSON format.
 
-**Description:** Returns comprehensive current state of position, network, and environmental metrics.
+**Description:** Returns comprehensive current state of position, network, and
+environmental metrics.
 
 **Response:**
+
 ```json
 {
   "timestamp": "2025-10-31T10:30:00.000000",
   "position": {
     "latitude": 40.7128,
-    "longitude": -74.0060,
+    "longitude": -74.006,
     "altitude": 5000.0,
     "speed": 25.5,
     "heading": 45.0
@@ -103,6 +108,7 @@ Current telemetry status in human-readable JSON format.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Current status available
 - `500 Internal Server Error` - Cannot retrieve status
 
@@ -116,10 +122,12 @@ Current telemetry status in human-readable JSON format.
 
 Prometheus metrics in standard text format (OpenMetrics 1.0.0).
 
-**Description:** Exports all metrics in Prometheus-compatible format. Compatible with Prometheus scraper configuration.
+**Description:** Exports all metrics in Prometheus-compatible format. Compatible
+with Prometheus scraper configuration.
 
 **Response:** Text format (sample):
-```
+
+```text
 # HELP starlink_dish_latitude_degrees Dish latitude in decimal degrees
 # TYPE starlink_dish_latitude_degrees gauge
 starlink_dish_latitude_degrees 40.7128
@@ -136,10 +144,12 @@ starlink_network_latency_ms 45.2
 ```
 
 **Status Codes:**
+
 - `200 OK` - Metrics available
 - `500 Internal Server Error` - Cannot generate metrics
 
 **Configuration:**
+
 - Scrape interval: 1 second (backend update)
 - Prometheus interval: 10 seconds (by default)
 
@@ -152,11 +162,12 @@ starlink_network_latency_ms 45.2
 Raw metrics data as JSON (alternative to Prometheus format).
 
 **Response:**
+
 ```json
 {
   "position": {
     "latitude_degrees": 40.7128,
-    "longitude_degrees": -74.0060,
+    "longitude_degrees": -74.006,
     "altitude_meters": 5000.0,
     "speed_knots": 25.5,
     "heading_degrees": 45.0
@@ -178,6 +189,7 @@ Raw metrics data as JSON (alternative to Prometheus format).
 ```
 
 **Status Codes:**
+
 - `200 OK` - Metrics available
 
 **Use Case:** JSON API clients, custom integrations.
@@ -191,6 +203,7 @@ Raw metrics data as JSON (alternative to Prometheus format).
 Retrieve current service configuration.
 
 **Response:**
+
 ```json
 {
   "mode": "simulation",
@@ -198,7 +211,7 @@ Retrieve current service configuration.
   "route": {
     "pattern": "circular",
     "latitude_start": 40.7128,
-    "longitude_start": -74.0060,
+    "longitude_start": -74.006,
     "radius_km": 100.0,
     "distance_km": 500.0
   },
@@ -218,6 +231,7 @@ Retrieve current service configuration.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Configuration retrieved
 
 **Use Case:** Configuration verification, admin dashboards.
@@ -229,6 +243,7 @@ Retrieve current service configuration.
 Update service configuration at runtime.
 
 **Request Body:**
+
 ```json
 {
   "route": {
@@ -244,6 +259,7 @@ Update service configuration at runtime.
 **Response:** Updated configuration (same as GET)
 
 **Status Codes:**
+
 - `200 OK` - Configuration updated
 - `400 Bad Request` - Invalid configuration
 - `422 Unprocessable Entity` - Validation error
@@ -261,6 +277,7 @@ Replace entire service configuration.
 **Response:** Updated configuration
 
 **Status Codes:**
+
 - `200 OK` - Configuration replaced
 - `400 Bad Request` - Invalid configuration
 - `422 Unprocessable Entity` - Validation error
@@ -276,13 +293,14 @@ Replace entire service configuration.
 List all Points of Interest.
 
 **Response:**
+
 ```json
 [
   {
     "id": "poi-1",
     "name": "LaGuardia Airport",
     "latitude": 40.7769,
-    "longitude": -73.8740,
+    "longitude": -73.874,
     "description": "LGA - Major NYC airport",
     "created_at": "2025-10-30T10:00:00",
     "updated_at": "2025-10-30T10:00:00"
@@ -298,6 +316,7 @@ List all Points of Interest.
 ```
 
 **Status Codes:**
+
 - `200 OK` - POI list retrieved
 - `500 Internal Server Error` - Cannot read POI file
 
@@ -312,6 +331,7 @@ List all Points of Interest.
 Get total count of POIs.
 
 **Response:**
+
 ```json
 {
   "total": 5
@@ -319,6 +339,7 @@ Get total count of POIs.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Count retrieved
 - `500 Internal Server Error` - Cannot read POI file
 
@@ -331,18 +352,20 @@ Get total count of POIs.
 Calculate real-time ETA to all POIs.
 
 **Query Parameters:**
+
 - `latitude` (float, optional) - Current latitude (default: from telemetry)
 - `longitude` (float, optional) - Current longitude (default: from telemetry)
 - `speed_knots` (float, optional) - Current speed (default: from telemetry)
 
 **Response:**
+
 ```json
 [
   {
     "poi_id": "poi-1",
     "name": "LaGuardia Airport",
     "latitude": 40.7769,
-    "longitude": -73.8740,
+    "longitude": -73.874,
     "distance_meters": 8500,
     "eta_seconds": 2640,
     "bearing_degrees": 45.5,
@@ -358,14 +381,16 @@ Calculate real-time ETA to all POIs.
 ```
 
 **Status Codes:**
+
 - `200 OK` - ETAs calculated
 - `400 Bad Request` - Invalid coordinates/speed
 - `500 Internal Server Error` - Calculation error
 
 **Calculation Method:**
+
 - **Distance:** Haversine formula (great-circle distance)
 - **Bearing:** Inverse bearing calculation
-- **ETA:** distance_meters / (speed_knots * 0.51444) seconds
+- **ETA:** distance_meters / (speed_knots \* 0.51444) seconds
 - **Speed Default:** 67 knots (fallback if not available)
 
 **Use Case:** Grafana ETA tooltips, real-time navigation.
@@ -377,15 +402,17 @@ Calculate real-time ETA to all POIs.
 Get specific POI details.
 
 **Path Parameters:**
+
 - `poi_id` (string) - POI identifier
 
 **Response:**
+
 ```json
 {
   "id": "poi-1",
   "name": "LaGuardia Airport",
   "latitude": 40.7769,
-  "longitude": -73.8740,
+  "longitude": -73.874,
   "description": "LGA - Major NYC airport",
   "created_at": "2025-10-30T10:00:00",
   "updated_at": "2025-10-30T10:00:00"
@@ -393,6 +420,7 @@ Get specific POI details.
 ```
 
 **Status Codes:**
+
 - `200 OK` - POI found
 - `404 Not Found` - POI not found
 
@@ -405,6 +433,7 @@ Get specific POI details.
 Create a new POI.
 
 **Request Body:**
+
 ```json
 {
   "name": "Central Park",
@@ -417,6 +446,7 @@ Create a new POI.
 **Response:** Created POI with ID and timestamps
 
 **Status Codes:**
+
 - `201 Created` - POI created
 - `400 Bad Request` - Invalid data
 - `409 Conflict` - POI name already exists
@@ -430,9 +460,11 @@ Create a new POI.
 Update existing POI.
 
 **Path Parameters:**
+
 - `poi_id` (string) - POI identifier
 
 **Request Body:**
+
 ```json
 {
   "name": "LaGuardia Airport (Updated)",
@@ -443,6 +475,7 @@ Update existing POI.
 **Response:** Updated POI
 
 **Status Codes:**
+
 - `200 OK` - POI updated
 - `404 Not Found` - POI not found
 - `400 Bad Request` - Invalid data
@@ -457,9 +490,11 @@ Update existing POI.
 Delete a POI.
 
 **Path Parameters:**
+
 - `poi_id` (string) - POI identifier
 
 **Response:**
+
 ```json
 {
   "message": "POI deleted successfully",
@@ -469,6 +504,7 @@ Delete a POI.
 ```
 
 **Status Codes:**
+
 - `200 OK` - POI deleted
 - `404 Not Found` - POI not found
 - `500 Internal Server Error` - Deletion error
@@ -483,9 +519,11 @@ Delete a POI.
 
 Get route history as GeoJSON for map display.
 
-**Description:** Returns the position history (route) as a GeoJSON LineString, suitable for rendering on Grafana Geomap panels.
+**Description:** Returns the position history (route) as a GeoJSON LineString,
+suitable for rendering on Grafana Geomap panels.
 
 **Response:**
+
 ```json
 {
   "type": "FeatureCollection",
@@ -495,9 +533,9 @@ Get route history as GeoJSON for map display.
       "geometry": {
         "type": "LineString",
         "coordinates": [
-          [-74.0060, 40.7128],
-          [-74.0050, 40.7138],
-          [-74.0040, 40.7148]
+          [-74.006, 40.7128],
+          [-74.005, 40.7138],
+          [-74.004, 40.7148]
         ]
       },
       "properties": {
@@ -509,6 +547,7 @@ Get route history as GeoJSON for map display.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Route data available
 - `204 No Content` - No route data yet
 
@@ -530,15 +569,18 @@ Alias for `/route.geojson` (for compatibility).
 
 Calculate ETA to a specific waypoint on the active route.
 
-**Description:** Returns estimated time to arrive at a waypoint, considering current position and available timing data.
+**Description:** Returns estimated time to arrive at a waypoint, considering
+current position and available timing data.
 
 **Parameters:**
+
 - `route_id` (path, required): Route identifier
 - `waypoint_index` (path, required): Index of waypoint (0-based)
 - `current_position_lat` (query, optional): Current latitude
 - `current_position_lon` (query, optional): Current longitude
 
 **Response:**
+
 ```json
 {
   "waypoint_index": 5,
@@ -553,11 +595,13 @@ Calculate ETA to a specific waypoint on the active route.
 ```
 
 **Status Codes:**
+
 - `200 OK` - ETA calculated
 - `400 Bad Request` - Invalid parameters
 - `404 Not Found` - Route not found
 
-**Use Case:** Real-time waypoint ETAs, flight plan tracking, progress monitoring.
+**Use Case:** Real-time waypoint ETAs, flight plan tracking, progress
+monitoring.
 
 ---
 
@@ -565,9 +609,11 @@ Calculate ETA to a specific waypoint on the active route.
 
 Calculate ETA to an arbitrary geographic location.
 
-**Description:** Returns estimated time to reach any specified coordinate, supporting routes with or without timing data.
+**Description:** Returns estimated time to reach any specified coordinate,
+supporting routes with or without timing data.
 
 **Parameters:**
+
 - `route_id` (path, required): Route identifier
 - `target_lat` (query, required): Target latitude
 - `target_lon` (query, required): Target longitude
@@ -575,9 +621,10 @@ Calculate ETA to an arbitrary geographic location.
 - `current_position_lon` (query, optional): Current longitude
 
 **Response:**
+
 ```json
 {
-  "target_location": {"latitude": 40.7128, "longitude": -74.0060},
+  "target_location": { "latitude": 40.7128, "longitude": -74.006 },
   "eta_seconds": 1800,
   "eta_minutes": 30.0,
   "distance_meters": 75000,
@@ -588,11 +635,13 @@ Calculate ETA to an arbitrary geographic location.
 ```
 
 **Status Codes:**
+
 - `200 OK` - ETA calculated
 - `400 Bad Request` - Invalid coordinates
 - `404 Not Found` - Route not found
 
-**Use Case:** POI arrival predictions, arbitrary destination ETAs, navigation planning.
+**Use Case:** POI arrival predictions, arbitrary destination ETAs, navigation
+planning.
 
 ---
 
@@ -600,14 +649,17 @@ Calculate ETA to an arbitrary geographic location.
 
 Get overall route progress and timing metrics.
 
-**Description:** Returns current progress along the route, next waypoint information, and timing profile.
+**Description:** Returns current progress along the route, next waypoint
+information, and timing profile.
 
 **Parameters:**
+
 - `route_id` (path, required): Route identifier
 - `current_position_lat` (query, optional): Current latitude
 - `current_position_lon` (query, optional): Current longitude
 
 **Response:**
+
 ```json
 {
   "route_id": "route-001",
@@ -631,6 +683,7 @@ Get overall route progress and timing metrics.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Progress retrieved
 - `404 Not Found` - Route not found
 
@@ -642,9 +695,11 @@ Get overall route progress and timing metrics.
 
 Get timing profile of the currently active route.
 
-**Description:** Returns detailed timing information for the active route, if available.
+**Description:** Returns detailed timing information for the active route, if
+available.
 
 **Response:**
+
 ```json
 {
   "route_id": "route-001",
@@ -667,6 +722,7 @@ Get timing profile of the currently active route.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Timing profile available
 - `404 Not Found` - No active route or no timing data
 
@@ -678,9 +734,11 @@ Get timing profile of the currently active route.
 
 Get ETA caching performance metrics.
 
-**Description:** Returns statistics about the ETA cache system, useful for performance monitoring.
+**Description:** Returns statistics about the ETA cache system, useful for
+performance monitoring.
 
 **Response:**
+
 ```json
 {
   "cache_enabled": true,
@@ -695,6 +753,7 @@ Get ETA caching performance metrics.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Cache metrics retrieved
 
 **Use Case:** Performance monitoring, cache optimization, system diagnostics.
@@ -705,9 +764,11 @@ Get ETA caching performance metrics.
 
 Get historical ETA accuracy statistics.
 
-**Description:** Returns how accurate the ETA predictions have been, comparing predicted vs actual arrivals.
+**Description:** Returns how accurate the ETA predictions have been, comparing
+predicted vs actual arrivals.
 
 **Response:**
+
 ```json
 {
   "total_predictions": 150,
@@ -731,9 +792,11 @@ Get historical ETA accuracy statistics.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Accuracy metrics retrieved
 
-**Use Case:** ETA algorithm validation, accuracy tracking, continuous improvement.
+**Use Case:** ETA algorithm validation, accuracy tracking, continuous
+improvement.
 
 ---
 
@@ -744,6 +807,7 @@ Clean up expired cache entries.
 **Description:** Removes TTL-expired entries from the ETA cache.
 
 **Response:**
+
 ```json
 {
   "cleaned_entries": 12,
@@ -753,6 +817,7 @@ Clean up expired cache entries.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Cache cleaned
 
 **Use Case:** Maintenance, memory management, periodic cleanup.
@@ -766,6 +831,7 @@ Clear all ETA cache entries.
 **Description:** Removes all entries from the ETA cache immediately.
 
 **Response:**
+
 ```json
 {
   "message": "Cache cleared",
@@ -775,6 +841,7 @@ Clear all ETA cache entries.
 ```
 
 **Status Codes:**
+
 - `200 OK` - Cache cleared
 
 **Use Case:** Cache reset, troubleshooting, system maintenance.
@@ -785,22 +852,25 @@ Clear all ETA cache entries.
 
 Get ETA for active route using real-time position (live mode).
 
-**Description:** Calculates ETA for the active route based on a real-time position update, ideal for Starlink terminal position feeds.
+**Description:** Calculates ETA for the active route based on a real-time
+position update, ideal for Starlink terminal position feeds.
 
 **Parameters (JSON Body):**
+
 ```json
 {
   "latitude": 40.7128,
-  "longitude": -74.0060,
+  "longitude": -74.006,
   "altitude": 5000.0,
   "timestamp": "2025-11-04T10:30:00Z"
 }
 ```
 
 **Response:**
+
 ```json
 {
-  "current_position": {"latitude": 40.7128, "longitude": -74.0060},
+  "current_position": { "latitude": 40.7128, "longitude": -74.006 },
   "route_progress": {
     "progress_percent": 45.5,
     "waypoints_remaining": 20,
@@ -820,11 +890,13 @@ Get ETA for active route using real-time position (live mode).
 ```
 
 **Status Codes:**
+
 - `200 OK` - ETA calculated
 - `400 Bad Request` - Invalid position data
 - `404 Not Found` - No active route
 
-**Use Case:** Live aircraft tracking, real-time ETA updates, Starlink integration.
+**Use Case:** Live aircraft tracking, real-time ETA updates, Starlink
+integration.
 
 ---
 
@@ -834,7 +906,9 @@ Get ETA for active route using real-time position (live mode).
 
 POI management web interface.
 
-**Description:** Returns a complete HTML page with interactive POI management UI, including:
+**Description:** Returns a complete HTML page with interactive POI management
+UI, including:
+
 - Interactive map for click-to-place coordinates
 - POI creation/editing/deletion form
 - Real-time POI list with live ETAs
@@ -843,6 +917,7 @@ POI management web interface.
 **Response:** HTML/CSS/JavaScript interface
 
 **Status Codes:**
+
 - `200 OK` - UI page loaded
 
 **Use Case:** Grafana HTML text panel, standalone POI management.
@@ -865,20 +940,21 @@ All endpoints return errors in consistent JSON format:
 
 ### HTTP Status Codes
 
-| Code | Description | Use Case |
-|------|-------------|----------|
-| `200` | OK | Successful GET, POST, PUT |
-| `201` | Created | Successful resource creation |
-| `204` | No Content | Successful DELETE or empty response |
-| `400` | Bad Request | Invalid input data |
-| `404` | Not Found | Resource doesn't exist |
-| `409` | Conflict | Duplicate resource |
-| `422` | Unprocessable Entity | Validation error |
-| `500` | Internal Server Error | Server error |
+| Code  | Description           | Use Case                            |
+| ----- | --------------------- | ----------------------------------- |
+| `200` | OK                    | Successful GET, POST, PUT           |
+| `201` | Created               | Successful resource creation        |
+| `204` | No Content            | Successful DELETE or empty response |
+| `400` | Bad Request           | Invalid input data                  |
+| `404` | Not Found             | Resource doesn't exist              |
+| `409` | Conflict              | Duplicate resource                  |
+| `422` | Unprocessable Entity  | Validation error                    |
+| `500` | Internal Server Error | Server error                        |
 
 ### Common Error Scenarios
 
 **Invalid Coordinates:**
+
 ```json
 {
   "detail": "Invalid latitude: must be between -90 and 90",
@@ -887,6 +963,7 @@ All endpoints return errors in consistent JSON format:
 ```
 
 **POI Not Found:**
+
 ```json
 {
   "detail": "POI 'poi-999' not found",
@@ -895,13 +972,12 @@ All endpoints return errors in consistent JSON format:
 ```
 
 **Configuration Validation:**
+
 ```json
 {
   "detail": "Configuration validation failed",
   "error_code": "VALIDATION_ERROR",
-  "errors": [
-    {"field": "route.radius_km", "message": "must be > 0"}
-  ]
+  "errors": [{ "field": "route.radius_km", "message": "must be > 0" }]
 }
 ```
 
@@ -912,18 +988,21 @@ All endpoints return errors in consistent JSON format:
 ### cURL Examples
 
 **Get Health Status:**
+
 ```bash
-curl http://localhost:8000/health | jq .
+curl <http://localhost:8000/health> | jq .
 ```
 
 **Get Current Status:**
+
 ```bash
-curl http://localhost:8000/api/status | jq .
+curl <http://localhost:8000/api/status> | jq .
 ```
 
 **Create POI:**
+
 ```bash
-curl -X POST http://localhost:8000/api/pois \
+curl -X POST <http://localhost:8000/api/pois> \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Central Park",
@@ -934,13 +1013,15 @@ curl -X POST http://localhost:8000/api/pois \
 ```
 
 **Get ETAs with Custom Location:**
+
 ```bash
-curl "http://localhost:8000/api/pois/etas?latitude=40.7128&longitude=-74.0060&speed_knots=50"
+curl "<http://localhost:8000/api/pois/etas?latitude=40.7128&longitude=-74.0060&speed_knots=50">
 ```
 
 **Update Configuration:**
+
 ```bash
-curl -X POST http://localhost:8000/api/config \
+curl -X POST <http://localhost:8000/api/config> \
   -H "Content-Type: application/json" \
   -d '{
     "route": {"pattern": "straight"}
@@ -950,11 +1031,12 @@ curl -X POST http://localhost:8000/api/config \
 ### Python Examples
 
 **Using requests library:**
+
 ```python
 import requests
 
 # Get current status
-response = requests.get('http://localhost:8000/api/status')
+response = requests.get('<http://localhost:8000/api/status>')
 status = response.json()
 print(f"Position: {status['position']['latitude']}, {status['position']['longitude']}")
 
@@ -964,12 +1046,12 @@ poi_data = {
     "latitude": 40.7829,
     "longitude": -73.9654
 }
-response = requests.post('http://localhost:8000/api/pois', json=poi_data)
+response = requests.post('<http://localhost:8000/api/pois',> json=poi_data)
 poi = response.json()
 print(f"Created POI: {poi['id']}")
 
 # Get ETAs
-response = requests.get('http://localhost:8000/api/pois/etas')
+response = requests.get('<http://localhost:8000/api/pois/etas>')
 etas = response.json()
 for poi in etas:
     print(f"{poi['name']}: {poi['eta_seconds']} seconds")
@@ -980,10 +1062,12 @@ for poi in etas:
 ## Interactive Documentation
 
 For interactive API exploration, visit:
-- **Swagger UI:** `http://localhost:8000/docs`
-- **ReDoc:** `http://localhost:8000/redoc`
+
+- **Swagger UI:** `<http://localhost:8000/docs`>
+- **ReDoc:** `<http://localhost:8000/redoc`>
 
 These provide:
+
 - Live endpoint testing
 - Request/response examples
 - Schema validation

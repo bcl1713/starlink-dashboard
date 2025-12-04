@@ -1,9 +1,7 @@
 # Starlink Dashboard API Reference
 
-**Last Updated:** 2025-11-04
-**Backend Version:** 0.3.0
-**Base URL:** `http://localhost:8000`
-**Status:** Complete with ETA Route Timing endpoints
+**Last Updated:** 2025-11-04 **Backend Version:** 0.3.0 **Base URL:**
+`<http://localhost:8000`> **Status:** Complete with ETA Route Timing endpoints
 
 [Back to main docs](../INDEX.md)
 
@@ -82,15 +80,15 @@ Comprehensive error documentation:
 Verify the backend is running:
 
 ```bash
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 ### Interactive Documentation
 
 For live API exploration:
 
-- **Swagger UI:** `http://localhost:8000/docs`
-- **ReDoc:** `http://localhost:8000/redoc`
+- **Swagger UI:** `<http://localhost:8000/docs`>
+- **ReDoc:** `<http://localhost:8000/redoc`>
 
 These provide:
 
@@ -127,8 +125,8 @@ use on trusted networks.
 
 ## API Versioning
 
-The API currently uses implicit versioning. Breaking changes will be communicated
-via version updates in this documentation.
+The API currently uses implicit versioning. Breaking changes will be
+communicated via version updates in this documentation.
 
 ---
 
@@ -138,7 +136,7 @@ via version updates in this documentation.
 
 All timestamps use ISO-8601 format in UTC:
 
-```
+```text
 2025-10-31T10:30:00.000000
 ```
 

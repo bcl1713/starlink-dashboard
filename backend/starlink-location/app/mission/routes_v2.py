@@ -1,5 +1,10 @@
 """Mission v2 API endpoints for hierarchical mission management."""
 
+# FR-004: File exceeds 300 lines (1150 lines) because mission API combines leg
+# CRUD, timeline management, export dispatch, and validation workflows that must
+# coordinate across storage, KML parsing, and state machines. Separation would
+# create circular imports. Deferred to v0.4.0.
+
 import json
 import logging
 import tempfile

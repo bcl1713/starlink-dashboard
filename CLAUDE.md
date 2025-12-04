@@ -10,11 +10,13 @@ metrics visualization and full simulation mode for offline development.
 
 **Tech Stack:** Python (FastAPI) + Prometheus + Grafana + Docker Compose
 
-**Documentation:** 
+**Documentation:**
+
 - `docs/design-document.md` – architecture overview
 - `docs/phased-development-plan.md` – implementation roadmap
 - `docs/ROUTE-TIMING-GUIDE.md` – route timing feature + ETA modes
-- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phase manager, overrides, dashboards
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phase
+  manager, overrides, dashboards
 
 ## Development Commands
 
@@ -30,9 +32,11 @@ docker compose build           # Build images (use --no-cache to force rebuild)
 
 ### ⚠️ CRITICAL: Backend Python Code Changes Workflow
 
-**YOU MUST FOLLOW THIS EXACT SEQUENCE EVERY TIME YOU MODIFY ANY .py FILE IN backend/**
+**YOU MUST FOLLOW THIS EXACT SEQUENCE EVERY TIME YOU MODIFY ANY .py FILE IN
+backend/**
 
-**FAILURE TO DO THIS WILL RESULT IN RUNNING OLD CODE AND WASTING HOURS DEBUGGING**
+**FAILURE TO DO THIS WILL RESULT IN RUNNING OLD CODE AND WASTING HOURS
+DEBUGGING**
 
 ```bash
 # 1. Make your code changes (edit *.py files)
@@ -44,8 +48,8 @@ docker compose down && docker compose build --no-cache && docker compose up -d
 docker compose ps    # All containers should show "healthy"
 
 # 4. VERIFY your changes took effect:
-curl http://localhost:8000/health
-curl http://localhost:8000/docs
+curl <http://localhost:8000/health>
+curl <http://localhost:8000/docs>
 
 # 5. ONLY AFTER VERIFICATION, commit changes:
 git add .
@@ -55,9 +59,12 @@ git commit -m "Your message"
 **WHY THIS IS NON-NEGOTIABLE:**
 
 - ❌ `docker compose up` alone WILL NOT WORK - it serves cached code
-- ❌ `docker compose restart` WILL NOT WORK - containers are still using old images
-- ❌ `docker compose build` (without `--no-cache`) WILL NOT WORK - layers are cached
-- ✅ ONLY THIS WORKS: `docker compose down && docker compose build --no-cache && docker compose up -d`
+- ❌ `docker compose restart` WILL NOT WORK - containers are still using old
+  images
+- ❌ `docker compose build` (without `--no-cache`) WILL NOT WORK - layers are
+  cached
+- ✅ ONLY THIS WORKS:
+  `docker compose down && docker compose build --no-cache && docker compose up -d`
 
 **WHAT HAPPENS IF YOU SKIP THIS:**
 
@@ -71,10 +78,10 @@ git commit -m "Your message"
 
 ### Access Points
 
-- **Grafana:** <http://localhost:3000> (default: admin/admin)
-- **Prometheus:** <http://localhost:9090>
-- **Backend health:** <http://localhost:8000/health>
-- **Prometheus metrics:** <http://localhost:8000/metrics>
+- **Grafana:** <<http://localhost:3000>> (default: admin/admin)
+- **Prometheus:** <<http://localhost:9090>>
+- **Backend health:** <<http://localhost:8000/health>>
+- **Prometheus metrics:** <<http://localhost:8000/metrics>>
 
 ## Configuration
 
@@ -156,7 +163,7 @@ Check the `/health` endpoint to see current connection status.
 
 ```bash
 # Once running, check health endpoint to see actual mode and connection status
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # Example response (connected):
 # {
@@ -187,21 +194,27 @@ The backend exposes Prometheus metrics including:
   `starlink_network_throughput_down_mbps`, `starlink_network_throughput_up_mbps`
 - Status: `starlink_dish_obstruction_percent`, `starlink_dish_speed_knots`,
   `starlink_dish_heading_degrees`
-- POI/ETA: `starlink_eta_poi_seconds{name="...",eta_type="anticipated|estimated"}`,
-  `starlink_distance_to_poi_meters{...,eta_type="..."}`  
+- POI/ETA:
+  `starlink_eta_poi_seconds{name="...",eta_type="anticipated|estimated"}`,
+  `starlink_distance_to_poi_meters{...,eta_type="..."}`
 
 ### Flight Status & ETA Modes
 
 - Flight phases: `pre_departure`, `in_flight`, `post_arrival`
-- ETA modes auto-switch between `anticipated` (planned timeline pre-departure) and
-  `estimated` (live performance once airborne)
+- ETA modes auto-switch between `anticipated` (planned timeline pre-departure)
+  and `estimated` (live performance once airborne)
 - Relevant APIs:
   - `/api/flight-status` – snapshot with phase, mode, countdown, route context
-  - `/api/pois/etas` – returns `eta_type`, `flight_phase`, `is_pre_departure` per POI
-  - `/api/routes` & `/api/routes/{id}` – include `flight_phase`, `eta_mode`, `has_timing_data`
-- Prometheus: `starlink_flight_phase`, `starlink_eta_mode`, `starlink_time_until_departure_seconds`
-- For manual testing use `/api/flight-status/depart` and `/api/flight-status/arrive`;
-  see `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` for full workflow and troubleshooting.
+  - `/api/pois/etas` – returns `eta_type`, `flight_phase`, `is_pre_departure`
+    per POI
+  - `/api/routes` & `/api/routes/{id}` – include `flight_phase`, `eta_mode`,
+    `has_timing_data`
+- Prometheus: `starlink_flight_phase`, `starlink_eta_mode`,
+  `starlink_time_until_departure_seconds`
+- For manual testing use `/api/flight-status/depart` and
+  `/api/flight-status/arrive`; see
+  `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` for full workflow and
+  troubleshooting.
 
 ## Storage Requirements
 
@@ -218,7 +231,7 @@ With the default 1-year retention period, Prometheus will store approximately
 
 **Formula:**
 
-```
+```text
 Storage_GB = (45 metrics × 31,536,000 seconds × 1.5 bytes × 1.2 overhead) / 1,073,741,824
 Storage_GB ≈ 2.4 GB
 ```
@@ -238,10 +251,10 @@ Storage_GB ≈ 2.4 GB
 
 ```bash
 # Web UI for managing routes
-http://localhost:8000/ui/routes
+<http://localhost:8000/ui/routes>
 
 # API documentation and testing
-http://localhost:8000/docs
+<http://localhost:8000/docs>
 ```
 
 ### Common Operations
@@ -251,43 +264,43 @@ http://localhost:8000/docs
 ```bash
 curl -X POST \
   -F "file=@myroute.kml" \
-  http://localhost:8000/api/routes/upload
+  <http://localhost:8000/api/routes/upload>
 ```
 
 **List all routes:**
 
 ```bash
-curl http://localhost:8000/api/routes
+curl <http://localhost:8000/api/routes>
 ```
 
 **Get route details:**
 
 ```bash
-curl http://localhost:8000/api/routes/{route_id}
+curl <http://localhost:8000/api/routes/{route_id}>
 ```
 
 **Activate a route (simulation will follow it):**
 
 ```bash
-curl -X POST http://localhost:8000/api/routes/{route_id}/activate
+curl -X POST <http://localhost:8000/api/routes/{route_id}/activate>
 ```
 
 **Deactivate all routes:**
 
 ```bash
-curl -X POST http://localhost:8000/api/routes/deactivate
+curl -X POST <http://localhost:8000/api/routes/deactivate>
 ```
 
 **Delete a route:**
 
 ```bash
-curl -X DELETE http://localhost:8000/api/routes/{route_id}
+curl -X DELETE <http://localhost:8000/api/routes/{route_id}>
 ```
 
 **Download original KML file:**
 
 ```bash
-curl -O http://localhost:8000/api/routes/{route_id}/download
+curl -O <http://localhost:8000/api/routes/{route_id}/download>
 ```
 
 ### Route Features
@@ -320,7 +333,7 @@ See `/data/sample_routes/README.md` for detailed descriptions.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
+<kml xmlns="<http://www.opengis.net/kml/2.2">>
   <Document>
     <Placemark>
       <LineString>
@@ -344,7 +357,7 @@ See `/data/sample_routes/README.md` for detailed descriptions.
 
 - Multiple Placemarks (multiple route segments)
 - Point geometry for waypoints (will be imported as POIs)
-- Route names and descriptions in `<name>` and `<description>` tags
+- Route names and descriptions in `name` and `<description>` tags
 
 ### Route Storage
 
@@ -360,7 +373,7 @@ changes:
 
 **In Grafana:**
 
-1. Open <http://localhost:3000/d/starlink/fullscreen-overview>
+1. Open <<http://localhost:3000/d/starlink/fullscreen-overview>>
 2. Activate a route
 3. Route appears as dark orange line on map
 4. With simulation mode active, position follows the route
@@ -369,10 +382,10 @@ changes:
 
 ```bash
 # Check route progress
-curl 'http://localhost:9090/api/v1/query?query=starlink_route_progress_percent'
+curl '<http://localhost:9090/api/v1/query?query=starlink_route_progress_percent'>
 
 # Check waypoint index
-curl 'http://localhost:9090/api/v1/query?query=starlink_current_waypoint_index'
+curl '<http://localhost:9090/api/v1/query?query=starlink_current_waypoint_index'>
 ```
 
 ### Troubleshooting
@@ -473,9 +486,16 @@ once available.
   requirements
 
 ## Active Technologies
-- Python 3.13 (backend), TypeScript/React (frontend), Markdown (docs) + FastAPI (backend), React/Vite (frontend), Black, Prettier, ESLint, markdownlint-cli2 (001-codebase-cleanup)
+
+- Python 3.13 (backend), TypeScript/React (frontend), Markdown (docs) + FastAPI
+  (backend), React/Vite (frontend), Black, Prettier, ESLint, markdownlint-cli2
+  (001-codebase-cleanup)
 - N/A (refactoring existing code, no new data storage) (001-codebase-cleanup)
 
 ## Recent Changes
-- 001-codebase-cleanup: Added Python 3.13 (backend), TypeScript/React (frontend), Markdown (docs) + FastAPI (backend), React/Vite (frontend), Black, Prettier, ESLint, markdownlint-cli2
-- docker builds should always be delegated to a sub agent.  they use a huge amount of context
+
+- 001-codebase-cleanup: Added Python 3.13 (backend), TypeScript/React
+  (frontend), Markdown (docs) + FastAPI (backend), React/Vite (frontend), Black,
+  Prettier, ESLint, markdownlint-cli2
+- docker builds should always be delegated to a sub agent. they use a huge
+  amount of context

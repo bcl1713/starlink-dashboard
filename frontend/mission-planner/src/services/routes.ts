@@ -17,18 +17,24 @@ export interface Waypoint {
 
 export const routesApi = {
   async list(): Promise<Route[]> {
-    const response = await apiClient.get<{ routes: Route[]; total: number }>('/api/routes');
+    const response = await apiClient.get<{ routes: Route[]; total: number }>(
+      '/api/routes'
+    );
     return response.data.routes || [];
   },
 
   async upload(file: File): Promise<Route> {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await apiClient.post<Route>('/api/routes/upload?import_pois=true', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await apiClient.post<Route>(
+      '/api/routes/upload?import_pois=true',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
     return response.data;
   },
 
@@ -37,7 +43,10 @@ export const routesApi = {
     // Extract coordinates from points (cleaned/calculated route)
     // NOT waypoints (those are named placemarks)
     if (response.data.points && Array.isArray(response.data.points)) {
-      return response.data.points.map((point: any) => [point.latitude, point.longitude]);
+      return response.data.points.map((point: any) => [
+        point.latitude,
+        point.longitude,
+      ]);
     }
     return [];
   },
@@ -55,6 +64,6 @@ export const routesApi = {
 
   async getWaypointNames(routeId: string): Promise<string[]> {
     const waypoints = await this.getWaypoints(routeId);
-    return waypoints.map(wp => wp.name || '').filter(name => name !== '');
+    return waypoints.map((wp) => wp.name || '').filter((name) => name !== '');
   },
 };

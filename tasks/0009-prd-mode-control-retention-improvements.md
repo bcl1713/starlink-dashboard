@@ -38,18 +38,18 @@ extended data retention.
    previous voyages without simulation data appearing in my metrics, so that I
    can accurately analyze real-world performance.
 
-2. **As a developer**, I want to clearly see when the system is in live mode but
+1. **As a developer**, I want to clearly see when the system is in live mode but
    disconnected versus running in simulation mode, so that I can diagnose issues
    quickly without confusion.
 
-3. **As a system administrator**, I want to know the storage requirements for
+1. **As a system administrator**, I want to know the storage requirements for
    1-year retention before deploying, so that I can provision appropriate disk
    space.
 
-4. **As a data analyst**, I want access to a full year of metrics at 1-second
+1. **As a data analyst**, I want access to a full year of metrics at 1-second
    resolution, so that I can perform seasonal or long-term trend analysis.
 
-5. **As a user**, I want the system to start successfully in live mode even when
+1. **As a user**, I want the system to start successfully in live mode even when
    the dish is temporarily unavailable, so that I can review historical data in
    Grafana without new simulated data being generated.
 
@@ -60,7 +60,7 @@ extended data retention.
 1. The system MUST support two explicit operating modes set via the
    `STARLINK_MODE` environment variable: `live` and `simulation`.
 
-2. When `STARLINK_MODE=live`:
+1. When `STARLINK_MODE=live`:
    - The backend MUST attempt to connect to the Starlink dish on startup
    - If connection fails, the backend MUST start successfully anyway (no
      fallback to simulation)
@@ -72,124 +72,124 @@ extended data retention.
    - The `/health` endpoint MUST report `mode: "live"` and indicate connection
      status (connected: true/false)
 
-3. When `STARLINK_MODE=simulation`:
+1. When `STARLINK_MODE=simulation`:
    - The backend MUST start the simulation data generator immediately on startup
    - The backend MUST serve simulated metrics continuously
    - The `/health` endpoint MUST report `mode: "simulation"`
    - The existing Grafana simulation mode banner MUST continue to display (no
      changes required)
 
-4. When `STARLINK_MODE` is not set or is invalid:
+1. When `STARLINK_MODE` is not set or is invalid:
    - The system MUST fail to start with a clear error message
    - The error message MUST explain valid options: `live` or `simulation`
 
-5. The `SIMULATION_MODE` environment variable (backward compatibility):
+1. The `SIMULATION_MODE` environment variable (backward compatibility):
    - If `STARLINK_MODE` is set, it MUST take precedence over `SIMULATION_MODE`
    - If only `SIMULATION_MODE` is set: `true` maps to `simulation`, `false` maps
      to `live`
    - A deprecation warning SHOULD be logged when `SIMULATION_MODE` is used
      without `STARLINK_MODE`
 
-6. Mode switching MUST require a service restart (no dynamic switching support).
+1. Mode switching MUST require a service restart (no dynamic switching support).
 
-7. The automatic fallback code in main.py:66-79 MUST be removed entirely.
+1. The automatic fallback code in main.py:66-79 MUST be removed entirely.
 
 ### Live Mode Connection Handling
 
-8. When in live mode with no dish connection at startup:
+1. When in live mode with no dish connection at startup:
    - The system MUST start successfully (do not crash or exit)
    - All metric endpoints MUST return HTTP 200 status codes
-   - All metric values MUST be null, zero, or marked as unavailable in Prometheus
-     format
+   - All metric values MUST be null, zero, or marked as unavailable in
+     Prometheus format
    - Prometheus metrics MUST NOT be populated with simulated or default values
    - The system MUST log the connection failure clearly
 
-9. Live mode connection retry strategy:
+1. Live mode connection retry strategy:
    - The system MUST attempt to connect to the dish once at startup
    - If connection fails, no automatic retry attempts are required
    - The system MAY implement periodic reconnection attempts in a future
      enhancement, but this is NOT required for this PRD
 
-10. When connection is established in live mode (if implementing optional retry):
-    - The system MUST begin populating metrics immediately
-    - A log message MUST indicate successful connection
-    - The `/health` endpoint MUST update to reflect active connection status
+1. When connection is established in live mode (if implementing optional retry):
+   - The system MUST begin populating metrics immediately
+   - A log message MUST indicate successful connection
+   - The `/health` endpoint MUST update to reflect active connection status
 
-11. If connection is lost after being established in live mode (if implementing
-    optional retry):
-    - The system MUST log the disconnection
-    - The system MUST revert to serving empty/null metrics
-    - The system MAY attempt to reconnect automatically
+1. If connection is lost after being established in live mode (if implementing
+   optional retry):
+   - The system MUST log the disconnection
+   - The system MUST revert to serving empty/null metrics
+   - The system MAY attempt to reconnect automatically
 
 ### Prometheus Retention
 
-12. Prometheus data retention MUST be configurable via the
-    `PROMETHEUS_RETENTION` environment variable.
+1. Prometheus data retention MUST be configurable via the `PROMETHEUS_RETENTION`
+   environment variable.
 
-13. The system MUST support a retention period of `1y` (1 year) when configured.
+1. The system MUST support a retention period of `1y` (1 year) when configured.
 
-14. All metrics MUST be stored at full 1-second resolution for the entire
-    retention period (no downsampling).
+1. All metrics MUST be stored at full 1-second resolution for the entire
+   retention period (no downsampling).
 
-15. Changing retention from 15d to 1y MUST preserve all existing data
-    automatically (Prometheus handles this natively).
+1. Changing retention from 15d to 1y MUST preserve all existing data
+   automatically (Prometheus handles this natively).
 
-16. The PRD implementation MUST include a storage estimation calculation based
-    on:
-    - Number of metrics currently exposed by the backend
-    - 1-second scrape interval
-    - 1-year retention period (31,536,000 seconds)
-    - Prometheus storage overhead and compression
+1. The PRD implementation MUST include a storage estimation calculation based
+   on:
+   - Number of metrics currently exposed by the backend
+   - 1-second scrape interval
+   - 1-year retention period (31,536,000 seconds)
+   - Prometheus storage overhead and compression
 
-17. The `.env.example` file MUST be updated to show `PROMETHEUS_RETENTION=1y` as
-    the recommended default, with a comment explaining estimated storage
-    requirements.
+1. The `.env.example` file MUST be updated to show `PROMETHEUS_RETENTION=1y` as
+   the recommended default, with a comment explaining estimated storage
+   requirements.
 
 ### Documentation Updates
 
-18. `CLAUDE.md` MUST be updated to:
-    - Remove all references to automatic failover behavior
-    - Document the new explicit mode control requirement
-    - Explain live mode behavior when dish is unavailable (starts successfully,
-      serves empty metrics)
-    - Update Prometheus retention information to reflect 1-year default
-    - Include storage size estimates for 1-year retention
-    - Update the "Automatic Fallback" section to explain the new behavior
+1. `CLAUDE.md` MUST be updated to:
+   - Remove all references to automatic failover behavior
+   - Document the new explicit mode control requirement
+   - Explain live mode behavior when dish is unavailable (starts successfully,
+     serves empty metrics)
+   - Update Prometheus retention information to reflect 1-year default
+   - Include storage size estimates for 1-year retention
+   - Update the "Automatic Fallback" section to explain the new behavior
 
-19. `.env.example` MUST be updated to:
-    - Show explicit `STARLINK_MODE` configuration as required
-    - Include comments about live mode connection behavior
-    - Show `PROMETHEUS_RETENTION=1y` as the default
-    - Include storage size estimate in comments
-    - Mark `SIMULATION_MODE` as deprecated (but still supported)
+1. `.env.example` MUST be updated to:
+   - Show explicit `STARLINK_MODE` configuration as required
+   - Include comments about live mode connection behavior
+   - Show `PROMETHEUS_RETENTION=1y` as the default
+   - Include storage size estimate in comments
+   - Mark `SIMULATION_MODE` as deprecated (but still supported)
 
-20. Health check endpoint documentation MUST be updated to reflect the new
-    `dish_connected` field in live mode.
+1. Health check endpoint documentation MUST be updated to reflect the new
+   `dish_connected` field in live mode.
 
 ## Non-Goals (Out of Scope)
 
 1. **Dynamic mode switching:** Users will not be able to switch between live and
    simulation modes without restarting the service.
 
-2. **Grafana UI changes:** No changes to the Grafana simulation mode banner or
+1. **Grafana UI changes:** No changes to the Grafana simulation mode banner or
    dashboard indicators are required (existing banner is sufficient).
 
-3. **Data downsampling:** No automatic downsampling or tiered retention is
+1. **Data downsampling:** No automatic downsampling or tiered retention is
    included (all data kept at 1-second resolution).
 
-4. **Sophisticated retry logic:** Complex exponential backoff or configurable
+1. **Sophisticated retry logic:** Complex exponential backoff or configurable
    retry intervals are not required. Connection is attempted once at startup.
 
-5. **Historical data migration:** No special migration process is needed
+1. **Historical data migration:** No special migration process is needed
    (changing retention period automatically preserves existing data).
 
-6. **Multi-dish support:** Live mode will continue to support only a single
+1. **Multi-dish support:** Live mode will continue to support only a single
    Starlink dish connection.
 
-7. **Prometheus alerting:** Alert rules for live mode disconnection scenarios
+1. **Prometheus alerting:** Alert rules for live mode disconnection scenarios
    are deferred to a future enhancement.
 
-8. **Mock gRPC testing:** Connection state testing should align with existing
+1. **Mock gRPC testing:** Connection state testing should align with existing
    test patterns in the project (unit and integration tests already exist).
 
 ## Design Considerations
@@ -270,13 +270,13 @@ This ensures simulation data never pollutes live data collection.
 1. **Startup Logic (main.py):** Remove the try/except fallback block at
    main.py:66-79 that switches to simulation mode on connection failure.
 
-2. **LiveCoordinator:** Modify to handle connection failure gracefully without
+1. **LiveCoordinator:** Modify to handle connection failure gracefully without
    raising exceptions that trigger fallback.
 
-3. **Metric Serving:** Ensure metric endpoints return valid Prometheus format
+1. **Metric Serving:** Ensure metric endpoints return valid Prometheus format
    with null/zero values when in disconnected live mode.
 
-4. **Health Endpoint:** Add `dish_connected` boolean field to `/health` response
+1. **Health Endpoint:** Add `dish_connected` boolean field to `/health` response
    when in live mode.
 
 ### Prometheus Configuration
@@ -284,7 +284,7 @@ This ensures simulation data never pollutes live data collection.
 1. **Retention Settings:** Update Prometheus startup configuration to read from
    `PROMETHEUS_RETENTION` environment variable (default to `1y`).
 
-2. **Storage Volume:** Ensure the Docker volume for Prometheus data is not
+1. **Storage Volume:** Ensure the Docker volume for Prometheus data is not
    constrained by size limits in docker-compose.yml.
 
 ### Storage Estimation
@@ -292,8 +292,8 @@ This ensures simulation data never pollutes live data collection.
 The implementation should calculate and document expected storage requirements:
 
 1. Count current metrics exposed at `/metrics` endpoint
-2. Calculate: `metric_count × 31,536,000 seconds × 1.5 bytes (avg with
-   compression) + 20% overhead`
+2. Calculate:
+   `metric_count × 31,536,000 seconds × 1.5 bytes (avg with compression) + 20% overhead`
 3. Document this calculation in CLAUDE.md and .env.example
 
 **Estimated storage (to be calculated during implementation):**
@@ -307,20 +307,20 @@ The implementation should calculate and document expected storage requirements:
 1. **No Unintended Mode Switches:** Zero instances of the system automatically
    switching from live to simulation mode after this change.
 
-2. **Clear Status Reporting:** Health endpoint accurately reports mode and
+1. **Clear Status Reporting:** Health endpoint accurately reports mode and
    connection status 100% of the time.
 
-3. **Data Integrity:** No simulated data appears in Prometheus when reviewing
+1. **Data Integrity:** No simulated data appears in Prometheus when reviewing
    historical metrics in live mode with no active connection.
 
-4. **Storage Accuracy:** Actual Prometheus storage usage for 1-year retention
+1. **Storage Accuracy:** Actual Prometheus storage usage for 1-year retention
    matches estimates within ±20%.
 
-5. **Documentation Clarity:** Users can configure mode and retention without
+1. **Documentation Clarity:** Users can configure mode and retention without
    referring to external resources (measured by lack of related support
    questions).
 
-6. **Backward Compatibility:** Existing configurations using `SIMULATION_MODE`
+1. **Backward Compatibility:** Existing configurations using `SIMULATION_MODE`
    continue to work correctly with deprecation warnings.
 
 ## Testing Requirements
@@ -334,14 +334,14 @@ files found:
    - Add tests for health endpoint with `dish_connected` field
    - Test configuration validation for `STARLINK_MODE` values
 
-2. **Integration Tests:**
-   - Update `test_health.py` to verify live mode health response with
-     connection status
+1. **Integration Tests:**
+   - Update `test_health.py` to verify live mode health response with connection
+     status
    - Verify metrics endpoint returns valid Prometheus format with null values in
      disconnected live mode
    - Test backward compatibility of `SIMULATION_MODE` environment variable
 
-3. **Manual Testing:**
+1. **Manual Testing:**
    - Verify system starts successfully in live mode without dish connection
    - Verify Grafana can display historical data in disconnected live mode
      without new data appearing
@@ -353,19 +353,18 @@ files found:
 
 1. ~~Retry strategy~~ - Connection attempted once at startup only, no automatic
    retries
-2. ~~Prometheus alerting~~ - Deferred to future enhancement
-3. ~~Data migration~~ - No migration needed, Prometheus preserves data
+1. ~~Prometheus alerting~~ - Deferred to future enhancement
+1. ~~Data migration~~ - No migration needed, Prometheus preserves data
    automatically
-4. ~~Testing approach~~ - Follow existing test patterns (unit + integration)
+1. ~~Testing approach~~ - Follow existing test patterns (unit + integration)
 
 **REMAINING:**
 
-1. **Storage Estimation:** The exact number of metrics needs to be counted from
+2. **Storage Estimation:** The exact number of metrics needs to be counted from
    the `/metrics` endpoint to calculate precise storage requirements. Should
    this be done manually or automated as part of implementation?
 
 ---
 
-**Document Version:** 1.0
-**Created:** 2025-10-28
-**Next Steps:** Approve PRD and proceed with implementation
+**Document Version:** 1.0 **Created:** 2025-10-28 **Next Steps:** Approve PRD
+and proceed with implementation

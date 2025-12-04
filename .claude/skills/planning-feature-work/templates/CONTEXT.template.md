@@ -32,10 +32,10 @@ Replace these with actual paths during planning.
 
 Document services, APIs, secrets, and libraries impacted:
 
-- External API: <name>
+- External API: `name`
 - Environment variables: `VAR_ONE`, `VAR_TWO`
-- Backend service: <name and repo>
-- Feature flags: <flag-name>
+- Backend service: `name and repo`
+- Feature flags: `flag-name`
 
 ---
 
@@ -68,6 +68,6 @@ Define exactly what “done and verified” means:
 
 ## References
 
-- GitHub Issue: <link>
-- PRs related: <link>
-- Design docs: <link>
+- GitHub Issue: `link`
+- PRs related: `link`
+- Design docs: `link`

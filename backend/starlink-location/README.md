@@ -1,15 +1,20 @@
 # Starlink Location Backend
 
-A FastAPI-based Prometheus metrics exporter and telemetry API for simulating Starlink dish positioning, network performance, and environmental conditions. Includes realistic physics-based simulators for position tracking, network metrics, and obstruction detection.
+A FastAPI-based Prometheus metrics exporter and telemetry API for simulating
+Starlink dish positioning, network performance, and environmental conditions.
+Includes realistic physics-based simulators for position tracking, network
+metrics, and obstruction detection.
 
 ## Features
 
 - **Simulation Mode**: Generates realistic Starlink telemetry data
-- **Prometheus Metrics**: Exports metrics in Prometheus format (1-second scrape interval)
+- **Prometheus Metrics**: Exports metrics in Prometheus format (1-second scrape
+  interval)
 - **REST API**: JSON telemetry endpoints and configuration management
 - **Structured Logging**: JSON-formatted logs for monitoring and debugging
 - **Health Checks**: Built-in health monitoring and uptime tracking
-- **Configuration Management**: Runtime configuration updates via API or environment variables
+- **Configuration Management**: Runtime configuration updates via API or
+  environment variables
 - **Graceful Degradation**: Returns last known good values on errors
 - **Background Updates**: Continuous telemetry generation at 10 Hz
 
@@ -25,19 +30,19 @@ docker compose up -d
 docker compose ps
 
 # Check backend health
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 
 # View metrics
-curl http://localhost:8000/metrics | head -20
+curl <http://localhost:8000/metrics> | head -20
 
 # Get status
-curl http://localhost:8000/api/status | jq .
+curl <http://localhost:8000/api/status> | jq .
 
 # Access Prometheus
-open http://localhost:9090
+open <http://localhost:9090>
 
 # Access Grafana
-open http://localhost:3000  # admin/admin
+open <http://localhost:3000>  # admin/admin
 ```
 
 ### Local Development
@@ -138,7 +143,7 @@ position:
 Returns welcome message and API documentation links.
 
 ```bash
-curl http://localhost:8000/
+curl <http://localhost:8000/>
 ```
 
 ### `/health` - Health Check
@@ -146,10 +151,11 @@ curl http://localhost:8000/
 Returns service status, uptime, and mode information.
 
 ```bash
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
@@ -165,13 +171,20 @@ Response:
 Returns metrics in Prometheus format. Compatible with Prometheus scraping.
 
 ```bash
-curl http://localhost:8000/metrics
+curl <http://localhost:8000/metrics>
 ```
 
 Available metrics:
-- Position: `starlink_dish_latitude_degrees`, `starlink_dish_longitude_degrees`, `starlink_dish_altitude_meters`, `starlink_dish_speed_knots`, `starlink_dish_heading_degrees`
-- Network: `starlink_network_latency_ms`, `starlink_network_throughput_down_mbps`, `starlink_network_throughput_up_mbps`, `starlink_network_packet_loss_percent`
-- Status: `starlink_dish_obstruction_percent`, `starlink_signal_quality_percent`, `starlink_uptime_seconds`, `starlink_service_info`
+
+- Position: `starlink_dish_latitude_degrees`, `starlink_dish_longitude_degrees`,
+  `starlink_dish_altitude_meters`, `starlink_dish_speed_knots`,
+  `starlink_dish_heading_degrees`
+- Network: `starlink_network_latency_ms`,
+  `starlink_network_throughput_down_mbps`,
+  `starlink_network_throughput_up_mbps`, `starlink_network_packet_loss_percent`
+- Status: `starlink_dish_obstruction_percent`,
+  `starlink_signal_quality_percent`, `starlink_uptime_seconds`,
+  `starlink_service_info`
 - Counters: `simulation_updates_total`, `simulation_errors_total`
 
 ### `/api/status` - Current Status (JSON)
@@ -179,16 +192,17 @@ Available metrics:
 Returns current telemetry with human-readable fields and ISO 8601 timestamp.
 
 ```bash
-curl http://localhost:8000/api/status
+curl <http://localhost:8000/api/status>
 ```
 
 Response:
+
 ```json
 {
   "timestamp": "2024-10-23T16:30:00.000000",
   "position": {
     "latitude": 40.7128,
-    "longitude": -74.0060,
+    "longitude": -74.006,
     "altitude": 5000.0,
     "speed": 25.5,
     "heading": 45.0
@@ -215,13 +229,13 @@ Response:
 #### GET - Retrieve Configuration
 
 ```bash
-curl http://localhost:8000/api/config
+curl <http://localhost:8000/api/config>
 ```
 
 #### POST/PUT - Update Configuration
 
 ```bash
-curl -X POST http://localhost:8000/api/config \
+curl -X POST <http://localhost:8000/api/config> \
   -H "Content-Type: application/json" \
   -d @config.json
 ```
@@ -229,6 +243,7 @@ curl -X POST http://localhost:8000/api/config \
 ## Metrics
 
 ### Position Metrics
+
 - `starlink_dish_latitude_degrees` - Current dish latitude
 - `starlink_dish_longitude_degrees` - Current dish longitude
 - `starlink_dish_altitude_meters` - Current dish altitude
@@ -236,38 +251,47 @@ curl -X POST http://localhost:8000/api/config \
 - `starlink_dish_heading_degrees` - Current heading (0=North, 90=East)
 
 ### Network Metrics
+
 - `starlink_network_latency_ms` - Round-trip latency with occasional spikes
 - `starlink_network_throughput_down_mbps` - Download throughput (50-200 Mbps)
 - `starlink_network_throughput_up_mbps` - Upload throughput (10-40 Mbps)
 - `starlink_network_packet_loss_percent` - Packet loss percentage (0-5%)
 
 ### Obstruction & Signal Metrics
+
 - `starlink_dish_obstruction_percent` - Obstruction percentage (0-100%)
-- `starlink_signal_quality_percent` - Signal quality (0-100%, inverse of obstruction)
+- `starlink_signal_quality_percent` - Signal quality (0-100%, inverse of
+  obstruction)
 
 ### Status Metrics
-- `starlink_service_info{version="0.2.0", mode="simulation"}` - Service information
+
+- `starlink_service_info{version="0.2.0", mode="simulation"}` - Service
+  information
 - `starlink_uptime_seconds` - Service uptime
 
 ### Counters
+
 - `simulation_updates_total` - Total simulation updates executed
 - `simulation_errors_total` - Total simulation errors encountered
 
 ## Simulation Behavior
 
 ### Position Simulation
+
 - Follows a circular or straight route
 - Speed varies realistically (0-100 knots)
 - Heading changes smoothly
 - Altitude varies between configured min/max
 
 ### Network Simulation
+
 - Latency: 20-80ms typical, occasional spikes to 200ms (5% probability)
 - Download: 50-200 Mbps with random variation
 - Upload: 10-40 Mbps with slower variation
 - Packet loss: 0-5% with smooth changes
 
 ### Obstruction Simulation
+
 - Varies 0-30% by default
 - Correlates with network latency (higher latency → higher obstruction)
 - Smooth time-based variation
@@ -281,6 +305,7 @@ pytest tests/unit/ -v
 ```
 
 Tests included for:
+
 - Configuration loading and validation
 - Route generation (circular and straight)
 - Position simulator
@@ -295,6 +320,7 @@ pytest tests/integration/ -v
 ```
 
 Tests included for:
+
 - Health endpoint
 - Metrics endpoint
 - Status endpoint
@@ -340,6 +366,7 @@ Structured JSON logging with context fields:
 ```
 
 Configure via environment:
+
 - `LOG_LEVEL`: DEBUG, INFO, WARNING, ERROR, CRITICAL
 - `JSON_LOGS`: true/false (default: true)
 - `LOG_FILE`: Optional file path
@@ -354,7 +381,7 @@ Configure via environment:
 
 ## Project Structure
 
-```
+```text
 backend/starlink-location/
 ├── main.py                 # FastAPI application entry point
 ├── config.yaml             # Default configuration
@@ -395,12 +422,14 @@ backend/starlink-location/
 ## Troubleshooting
 
 ### Port Already in Use
+
 ```bash
 lsof -i :8000
 kill -9 <PID>
 ```
 
 ### Configuration Not Loading
+
 ```bash
 # Check config file path
 ls -la config.yaml
@@ -410,17 +439,19 @@ STARLINK_MODE=live uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 ### Metrics Not Updating
+
 ```bash
 # Check logs for background update errors
 docker compose logs starlink-location | grep -i error
 
 # Verify health endpoint
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 ## Contributing
 
 When making changes:
+
 1. Update tests in `tests/`
 2. Ensure all tests pass: `pytest tests/`
 3. Run with coverage: `pytest tests/ --cov=app`

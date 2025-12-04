@@ -23,16 +23,16 @@
 All geographic coordinates use decimal degrees:
 
 ```typescript
-latitude: float   // -90 to 90 (negative = South)
-longitude: float  // -180 to 180 (negative = West)
-altitude: float   // Meters above sea level
+latitude: float; // -90 to 90 (negative = South)
+longitude: float; // -180 to 180 (negative = West)
+altitude: float; // Meters above sea level
 ```
 
 ### Timestamp Format
 
 All timestamps use ISO-8601 format in UTC:
 
-```
+```text
 "2025-10-31T10:30:00.000000"
 ```
 
@@ -52,13 +52,13 @@ Response from `/health` endpoint.
 
 ```json
 {
-  "status": "ok",                                  // "ok" or "error"
-  "uptime_seconds": 3600.5,                        // float
-  "mode": "simulation",                            // "simulation" or "live"
-  "version": "0.2.0",                              // string
-  "timestamp": "2025-10-31T10:30:00.000000",       // ISO-8601
-  "message": "Service is healthy",                 // string
-  "dish_connected": true                           // bool
+  "status": "ok", // "ok" or "error"
+  "uptime_seconds": 3600.5, // float
+  "mode": "simulation", // "simulation" or "live"
+  "version": "0.2.0", // string
+  "timestamp": "2025-10-31T10:30:00.000000", // ISO-8601
+  "message": "Service is healthy", // string
+  "dish_connected": true // bool
 }
 ```
 
@@ -83,7 +83,7 @@ Response from `/api/status` endpoint.
   "timestamp": "2025-10-31T10:30:00.000000",
   "position": {
     "latitude": 40.7128,
-    "longitude": -74.0060,
+    "longitude": -74.006,
     "altitude": 5000.0,
     "speed": 25.5,
     "heading": 45.0
@@ -113,11 +113,11 @@ Response from `/api/status` endpoint.
 
 ```json
 {
-  "latitude": 40.7128,        // float: -90 to 90
-  "longitude": -74.0060,      // float: -180 to 180
-  "altitude": 5000.0,         // float: meters
-  "speed": 25.5,              // float: knots
-  "heading": 45.0             // float: degrees (0=North)
+  "latitude": 40.7128, // float: -90 to 90
+  "longitude": -74.006, // float: -180 to 180
+  "altitude": 5000.0, // float: meters
+  "speed": 25.5, // float: knots
+  "heading": 45.0 // float: degrees (0=North)
 }
 ```
 
@@ -125,10 +125,10 @@ Response from `/api/status` endpoint.
 
 ```json
 {
-  "latency_ms": 45.2,                // float: milliseconds
-  "throughput_down_mbps": 125.3,     // float: megabits/sec
-  "throughput_up_mbps": 25.1,        // float: megabits/sec
-  "packet_loss_percent": 0.5         // float: 0-100
+  "latency_ms": 45.2, // float: milliseconds
+  "throughput_down_mbps": 125.3, // float: megabits/sec
+  "throughput_up_mbps": 25.1, // float: megabits/sec
+  "packet_loss_percent": 0.5 // float: 0-100
 }
 ```
 
@@ -136,7 +136,7 @@ Response from `/api/status` endpoint.
 
 ```json
 {
-  "obstruction_percent": 15.0        // float: 0-100
+  "obstruction_percent": 15.0 // float: 0-100
 }
 ```
 
@@ -144,9 +144,9 @@ Response from `/api/status` endpoint.
 
 ```json
 {
-  "signal_quality_percent": 85.0,    // float: 0-100
-  "uptime_seconds": 3600.5,          // float
-  "temperature_celsius": null        // float or null
+  "signal_quality_percent": 85.0, // float: 0-100
+  "uptime_seconds": 3600.5, // float
+  "temperature_celsius": null // float or null
 }
 ```
 
@@ -158,13 +158,13 @@ Response from `/api/status` endpoint.
 
 ```json
 {
-  "id": "poi-1",                                   // string: unique ID
-  "name": "LaGuardia Airport",                     // string
-  "latitude": 40.7769,                             // float
-  "longitude": -73.8740,                           // float
-  "description": "LGA - Major NYC airport",        // string (optional)
-  "created_at": "2025-10-30T10:00:00",             // ISO-8601
-  "updated_at": "2025-10-30T10:00:00"              // ISO-8601
+  "id": "poi-1", // string: unique ID
+  "name": "LaGuardia Airport", // string
+  "latitude": 40.7769, // float
+  "longitude": -73.874, // float
+  "description": "LGA - Major NYC airport", // string (optional)
+  "created_at": "2025-10-30T10:00:00", // ISO-8601
+  "updated_at": "2025-10-30T10:00:00" // ISO-8601
 }
 ```
 
@@ -187,7 +187,7 @@ Response from `/api/status` endpoint.
   "poi_id": "poi-1",
   "name": "LaGuardia Airport",
   "latitude": 40.7769,
-  "longitude": -73.8740,
+  "longitude": -73.874,
   "distance_meters": 8500,
   "eta_seconds": 2640,
   "bearing_degrees": 45.5,
@@ -322,8 +322,8 @@ Response from `/route.geojson` endpoint.
       "geometry": {
         "type": "LineString",
         "coordinates": [
-          [-74.0060, 40.7128],
-          [-74.0050, 40.7138]
+          [-74.006, 40.7128],
+          [-74.005, 40.7138]
         ]
       },
       "properties": {
@@ -351,7 +351,7 @@ Response from `/api/config` endpoint.
   "route": {
     "pattern": "circular",
     "latitude_start": 40.7128,
-    "longitude_start": -74.0060,
+    "longitude_start": -74.006,
     "radius_km": 100.0,
     "distance_km": 500.0
   },
@@ -439,7 +439,7 @@ Response from `/api/routes/{route_id}/eta/location`.
 {
   "target_location": {
     "latitude": 40.7128,
-    "longitude": -74.0060
+    "longitude": -74.006
   },
   "eta_seconds": 1800,
   "eta_minutes": 30.0,

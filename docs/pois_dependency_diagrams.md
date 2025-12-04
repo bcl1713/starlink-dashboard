@@ -3,7 +3,8 @@
 ## 1. CURRENT FILE STRUCTURE & CALL GRAPH
 
 ### Current Single File
-```
+
+```text
 pois.py (1159 lines)
 ├── Global State
 │   └── _coordinator: Optional[object]
@@ -38,7 +39,8 @@ pois.py (1159 lines)
 ## 2. NEW MODULE STRUCTURE
 
 ### Proposed Organization
-```
+
+```text
 app/api/pois/
 ├── __init__.py (50 lines)
 │   ├── router = APIRouter(prefix="/api/pois", tags=["pois"])
@@ -66,7 +68,8 @@ app/api/pois/
 ## 3. INTERNAL DEPENDENCIES BY MODULE
 
 ### helpers.py (Dependencies) ↓
-```
+
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ helpers.py - FOUNDATION LAYER (150 lines)                   │
 ├─────────────────────────────────────────────────────────────┤
@@ -131,7 +134,8 @@ app/api/pois/
 ```
 
 ### crud.py (Dependencies) ↓
-```
+
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ crud.py - CRUD OPERATIONS (220 lines)                       │
 ├─────────────────────────────────────────────────────────────┤
@@ -203,7 +207,8 @@ app/api/pois/
 ```
 
 ### etas.py (Dependencies) ↓
-```
+
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ etas.py - ETA CALCULATIONS (280 lines) ⚠️ COMPLEX          │
 ├─────────────────────────────────────────────────────────────┤
@@ -287,7 +292,8 @@ app/api/pois/
 ```
 
 ### stats.py (Dependencies) ↓
-```
+
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ stats.py - STATISTICS ENDPOINTS (230 lines)                 │
 ├─────────────────────────────────────────────────────────────┤
@@ -362,8 +368,9 @@ app/api/pois/
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### __init__.py (Dependencies) ↓
-```
+### **init**.py (Dependencies) ↓
+
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │ __init__.py - MODULE COMPOSITION (50 lines)                 │
 ├─────────────────────────────────────────────────────────────┤
@@ -402,7 +409,7 @@ app/api/pois/
 
 ## 4. CROSS-MODULE DEPENDENCY GRAPH
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────────────┐
 │ EXTERNAL SERVICES (not part of pois module)                          │
 ├──────────────────────────────────────────────────────────────────────┤
@@ -497,7 +504,7 @@ app/api/pois/
 
 ## 5. DATA FLOW: GET /api/pois/etas (Complex Example)
 
-```
+```text
 Client Request: GET /api/pois/etas?latitude=41.6&longitude=-74.0&speed_knots=67
     │
     ├─→ FastAPI Router (pois/__init__.py)
@@ -573,14 +580,16 @@ Client Request: GET /api/pois/etas?latitude=41.6&longitude=-74.0&speed_knots=67
 ## 6. IMPORT STRATEGY & CIRCULAR DEPENDENCY PREVENTION
 
 ### Current Issue (Before Refactoring)
-```
+
+```text
 pois.py (monolithic)
   ├─ Single file, no internal circular dependencies
   └─ ✓ No issues
 ```
 
 ### New Structure (After Refactoring)
-```
+
+```text
 pois/__init__.py
   ├─ imports crud_router from .crud
   ├─ imports etas_router from .etas
@@ -604,8 +613,9 @@ pois/stats.py
   └─ NO imports from crud, etas (safe)
 ```
 
-### _coordinator Global State Management
-```
+### \_coordinator Global State Management
+
+```text
 Problem: _coordinator is global state that needs to be shared
 Solution: Define in __init__.py, import in other modules
 
@@ -637,7 +647,7 @@ RECOMMENDED: Keep global in __init__.py, import where needed
 
 ## 7. MODULE SIZE ESTIMATES
 
-```
+```text
 Current Structure:
 ┌───────────────────┬────────┬──────────────┐
 │ File              │ Lines  │ % of Total   │
@@ -674,4 +684,3 @@ Benefits:
  ✓ Clear separation of concerns
  ✓ Each module has single responsibility
 ```
-

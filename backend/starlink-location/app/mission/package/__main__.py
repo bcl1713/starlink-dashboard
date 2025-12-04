@@ -1,5 +1,10 @@
 """Mission package export utilities for creating portable mission archives."""
 
+# FR-004: File exceeds 300 lines (1203 lines) because packaging mission data
+# involves multi-format export, KML generation, metadata handling, and zip archive
+# assembly that are tightly coupled. Refactoring would split business logic across
+# 3+ modules with tight cohesion. Deferred to v0.4.0.
+
 import io
 import json
 import logging

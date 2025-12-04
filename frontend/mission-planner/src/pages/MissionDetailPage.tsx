@@ -8,7 +8,14 @@ import {
   CardContent,
 } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { useMission, useAddLeg, useDeleteLeg, useActivateLeg, useDeactivateAllLegs, useDeleteMission } from '../hooks/api/useMissions';
+import {
+  useMission,
+  useAddLeg,
+  useDeleteLeg,
+  useActivateLeg,
+  useDeactivateAllLegs,
+  useDeleteMission,
+} from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
 import type { MissionLeg } from '../types/mission';
 
@@ -100,11 +107,11 @@ export function MissionDetailPage() {
               const legCount = mission?.legs.length || 0;
               const confirmed = window.confirm(
                 `Are you sure you want to delete this mission?\n\n` +
-                `This will permanently delete:\n` +
-                `- ${legCount} leg(s)\n` +
-                `- All associated routes\n` +
-                `- All associated POIs\n\n` +
-                `This action cannot be undone.`
+                  `This will permanently delete:\n` +
+                  `- ${legCount} leg(s)\n` +
+                  `- All associated routes\n` +
+                  `- All associated POIs\n\n` +
+                  `This action cannot be undone.`
               );
               if (confirmed) {
                 handleDeleteMission(confirmed);
@@ -123,10 +130,14 @@ export function MissionDetailPage() {
           <div className="flex gap-2">
             <Button
               onClick={handleDeactivateAllLegs}
-              disabled={deactivateAllLegs.isPending || mission.legs.length === 0}
+              disabled={
+                deactivateAllLegs.isPending || mission.legs.length === 0
+              }
               variant="outline"
             >
-              {deactivateAllLegs.isPending ? 'Deactivating...' : 'Deactivate All'}
+              {deactivateAllLegs.isPending
+                ? 'Deactivating...'
+                : 'Deactivate All'}
             </Button>
             <Button
               onClick={() => setShowAddLegDialog(true)}
@@ -137,7 +148,9 @@ export function MissionDetailPage() {
           </div>
         </div>
         {mission.legs.length === 0 ? (
-          <p className="text-muted-foreground">No legs configured for this mission</p>
+          <p className="text-muted-foreground">
+            No legs configured for this mission
+          </p>
         ) : (
           <div className="grid gap-4">
             {mission.legs.map((leg) => (
@@ -188,11 +201,11 @@ export function MissionDetailPage() {
                           e.stopPropagation();
                           const confirmed = window.confirm(
                             `Are you sure you want to delete leg "${leg.name}"?\n\n` +
-                            `This will permanently delete:\n` +
-                            `- The leg configuration\n` +
-                            `- Associated route (${leg.route_id || 'none'})\n` +
-                            `- All associated POIs\n\n` +
-                            `This action cannot be undone.`
+                              `This will permanently delete:\n` +
+                              `- The leg configuration\n` +
+                              `- Associated route (${leg.route_id || 'none'})\n` +
+                              `- All associated POIs\n\n` +
+                              `This action cannot be undone.`
                           );
                           if (confirmed) {
                             handleDeleteLeg(leg, confirmed);

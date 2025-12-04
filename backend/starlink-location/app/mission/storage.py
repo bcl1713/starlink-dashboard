@@ -4,6 +4,10 @@ Missions are stored as JSON files under data/missions/ with optional assets.
 This design allows mission plans to be portable across instances and systems.
 """
 
+# FR-004: File exceeds 300 lines (445 lines) because mission storage handles
+# v1/v2 format compatibility, JSON serialization, timeline building, and file I/O
+# operations. Refactoring would fragment format handling logic. Deferred to v0.4.0.
+
 import hashlib
 import json
 import logging

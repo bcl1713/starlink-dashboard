@@ -12,8 +12,8 @@ how timing data works, ETA modes, and flight phases.
 When you upload a KML file, the parser:
 
 1. **Finds timing markers** in coordinate descriptions
-2. **Extracts timestamps** using regex pattern: `Time Over
-   Waypoint:\s*(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})Z`
+2. **Extracts timestamps** using regex pattern:
+   `Time Over Waypoint:\s*(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})Z`
 3. **Maps timestamps to waypoints** using haversine distance (within 1000m
    tolerance)
 4. **Calculates segment speeds** between consecutive timestamped points
@@ -87,11 +87,11 @@ estimated mode reacts to real performance.
 
 ### Automatic Switching Rules
 
-| Trigger | Phase | ETA Mode | Notes |
-| ------- | ----- | -------- | ----- |
-| Speed rises above departure threshold (default 40 kn) | `pre_departure → in_flight` | Estimated | Detected by `FlightStateManager.check_departure`; can be forced via `/api/flight-status/depart` |
-| Arrival threshold met (within 100 m for 60 s) or `/api/flight-status/arrive` called | `in_flight → post_arrival` | Estimated | Keeps last-known ETAs until reset |
-| `/api/flight-status` reset or route deactivated | `post_arrival → pre_departure` | Anticipated | Clears actual departure/arrival timestamps and resumes planned timeline |
+| Trigger                                                                             | Phase                          | ETA Mode    | Notes                                                                                           |
+| ----------------------------------------------------------------------------------- | ------------------------------ | ----------- | ----------------------------------------------------------------------------------------------- |
+| Speed rises above departure threshold (default 40 kn)                               | `pre_departure → in_flight`    | Estimated   | Detected by `FlightStateManager.check_departure`; can be forced via `/api/flight-status/depart` |
+| Arrival threshold met (within 100 m for 60 s) or `/api/flight-status/arrive` called | `in_flight → post_arrival`     | Estimated   | Keeps last-known ETAs until reset                                                               |
+| `/api/flight-status` reset or route deactivated                                     | `post_arrival → pre_departure` | Anticipated | Clears actual departure/arrival timestamps and resumes planned timeline                         |
 
 ### Timed vs. Untimed Routes
 

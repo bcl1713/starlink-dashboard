@@ -113,7 +113,7 @@ Markdown MUST pass Prettier formatting (prose wrap always)
 
 **Required Exclusions**:
 
-```
+```text
 # Dependencies
 node_modules/
 .venv/
@@ -224,7 +224,7 @@ shared)
 
 **Required Exclusions**:
 
-```
+```text
 node_modules/
 dist/
 build/
@@ -288,19 +288,19 @@ eslint "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
       // Line length - allow long lines (Prettier handles prose wrap)
       "line_length": 200,
       "code_blocks": false,
-      "tables": false
+      "tables": false,
     },
     "MD033": false, // Allow inline HTML (needed for technical docs)
-    "MD041": false // First line doesn't need to be H1 (allow front matter)
+    "MD041": false, // First line doesn't need to be H1 (allow front matter)
   },
   "globs": ["docs/**/*.md", "*.md", "specs/**/*.md"],
   "ignores": [
     "node_modules/**",
-    "**/node_modules/**",
+    ### /node_modules/
     ".venv/**",
     "data/**",
-    "dev/archive/**"
-  ]
+    "dev/archive/**",
+  ],
 }
 ```
 
@@ -460,18 +460,19 @@ jobs:
 To ensure consistency across development and CI environments, the following tool
 versions MUST be used:
 
-| Tool               | Version  | Install Command                       |
-| ------------------ | -------- | ------------------------------------- |
-| Black              | 24.4.2   | `pip install black==24.4.2`           |
-| Prettier           | 3.2.5    | `npm install -g prettier@3.2.5`       |
-| ESLint             | 8.57.0   | `npm install eslint@8.57.0`           |
-| markdownlint-cli2  | 0.12.1   | `npm install -g markdownlint-cli2@0.12.1` |
-| Python             | 3.13     | (system Python or via pyenv)          |
-| Node.js            | 20.x LTS | (via nvm or system package manager)   |
+| Tool              | Version  | Install Command                           |
+| ----------------- | -------- | ----------------------------------------- |
+| Black             | 24.4.2   | `pip install black==24.4.2`               |
+| Prettier          | 3.2.5    | `npm install -g prettier@3.2.5`           |
+| ESLint            | 8.57.0   | `npm install eslint@8.57.0`               |
+| markdownlint-cli2 | 0.12.1   | `npm install -g markdownlint-cli2@0.12.1` |
+| Python            | 3.13     | (system Python or via pyenv)              |
+| Node.js           | 20.x LTS | (via nvm or system package manager)       |
 
 **Version Pinning Strategy**:
 
-- Python: Pin in `requirements-dev.txt` or `pyproject.toml` `[tool.poetry.dev-dependencies]`
+- Python: Pin in `requirements-dev.txt` or `pyproject.toml`
+  `[tool.poetry.dev-dependencies]`
 - Node.js: Pin in `frontend/mission-planner/package.json` `devDependencies`
 - CI: Pin explicitly in workflow YAML files
 
@@ -489,22 +490,21 @@ Developers MUST run linters locally before pushing changes:
 
 ```yaml
 repos:
-  - repo: https://github.com/psf/black
+  - repo: <https://github.com/psf/black>
     rev: 24.4.2
     hooks:
       - id: black
         language_version: python3.13
         files: ^backend/starlink-location/app/.*\.py$
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
+  - repo: <https://github.com/pre-commit/mirrors-prettier>
     rev: v3.2.5
     hooks:
       - id: prettier
         types_or: [typescript, tsx, javascript, jsx, markdown]
-        files:
-          ^(frontend/mission-planner/src/.*\.(ts|tsx|js|jsx)|docs/.*\.md|.*\.md)$
+        files: ^(frontend/mission-planner/src/.*\.(ts|tsx|js|jsx)|docs/.*\.md|.*\.md)$
 
-  - repo: https://github.com/pre-commit/mirrors-eslint
+  - repo: <https://github.com/pre-commit/mirrors-eslint>
     rev: v8.57.0
     hooks:
       - id: eslint
@@ -514,7 +514,7 @@ repos:
           - "@typescript-eslint/parser@7.0.0"
           - "@typescript-eslint/eslint-plugin@7.0.0"
 
-  - repo: https://github.com/DavidAnson/markdownlint-cli2
+  - repo: <https://github.com/DavidAnson/markdownlint-cli2>
     rev: v0.12.1
     hooks:
       - id: markdownlint-cli2

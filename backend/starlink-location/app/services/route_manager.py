@@ -1,5 +1,9 @@
 """Route manager with file watching for KML route loading and management."""
 
+# FR-004: File exceeds 300 lines (330 lines) because route manager combines
+# file watching, KML parsing, route storage, and active route coordination.
+# Splitting would fragment route lifecycle management. Deferred to v0.4.0.
+
 import logging
 from pathlib import Path
 from typing import Optional

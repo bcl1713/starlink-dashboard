@@ -20,7 +20,7 @@ how to resolve them.
 
 ```bash
 # Check if timing was detected in route
-curl http://localhost:8000/api/routes/{route_id} | jq '.has_timing_data'
+curl <http://localhost:8000/api/routes/{route_id}> | jq '.has_timing_data'
 ```
 
 ## ETA Calculations Returning Zeros
@@ -47,8 +47,8 @@ curl http://localhost:8000/api/routes/{route_id} | jq '.has_timing_data'
 1. Verify route has timing data: `GET /api/routes/active/timing`
 2. Check that route is activated (not just loaded)
 3. Ensure Docker container rebuilt after code changes
-4. Rebuild Docker: `docker compose down && docker compose build --no-cache &&
-   docker compose up -d`
+4. Rebuild Docker:
+   `docker compose down && docker compose build --no-cache && docker compose up -d`
 
 ## High ETA Calculation Times
 

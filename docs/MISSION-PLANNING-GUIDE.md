@@ -44,9 +44,9 @@ The planner runs in your web browser and outputs three briefing formats: CSV
 ### Access the Planner
 
 1. Open your browser and navigate to:
-   `http://<dashboard-url>/ui/mission-planner`
-2. The interface loads a four-step form
-3. You do **not** need Grafana or Prometheus experience—the planner is
+   `<http://<dashboard-url>/ui/mission-planner`>
+1. The interface loads a four-step form
+1. You do **not** need Grafana or Prometheus experience—the planner is
    self-contained
 
 ### Requirements
@@ -182,11 +182,11 @@ adjustable per mission).
 
 1. **Nominal:** Satellite is in your antenna's azimuth window AND you have
    line-of-sight
-2. **Degraded:** Satellite outside azimuth window (e.g., directly overhead) OR
+1. **Degraded:** Satellite outside azimuth window (e.g., directly overhead) OR
    aircraft performing aerobatic maneuver
-3. **Transition:** Switching from X-1 to X-2 satellite (requires 15 min buffer
+1. **Transition:** Switching from X-1 to X-2 satellite (requires 15 min buffer
    pre/post)
-4. **AAR Window:** X-Band goes dark during air refueling (antenna points at
+1. **AAR Window:** X-Band goes dark during air refueling (antenna points at
    tanker)
 
 **Typical behavior:**
@@ -268,7 +268,7 @@ Ka > Ku). Status reflects how many systems are degraded:
 
 Example timeline output:
 
-```
+```text
 Time              Duration  X-Band          Ka              Ku              Status
 09:00:00 - 09:15 15 min    NOMINAL         NOMINAL         NOMINAL         NOMINAL
 09:15:00 - 09:30 15 min    DEGRADED (Txn)  NOMINAL         NOMINAL         DEGRADED
@@ -289,7 +289,7 @@ Time              Duration  X-Band          Ka              Ku              Stat
 
 ### CSV Export
 
-**File:** `mission-<name>-<timestamp>.csv`
+**File:** `mission-`name`-<timestamp>.csv`
 
 **Format:**
 
@@ -309,25 +309,30 @@ segment_start_utc,segment_end_utc,segment_duration_seconds,status,x_band_state,k
 
 ### Excel Export
 
-**File:** `mission-<name>-<timestamp>.xlsx`
+**File:** `mission-`name`-<timestamp>.xlsx`
 
-**Sheet 1: Summary**
+### Sheet 1: Summary
 
-- Geographic map showing mission route with color-coded segments (green=NOMINAL, yellow=DEGRADED, red=CRITICAL)
+- Geographic map showing mission route with color-coded segments (green=NOMINAL,
+  yellow=DEGRADED, red=CRITICAL)
 - Map resolution: 3840×2880 pixels @ 300 DPI (12.8" × 9.6" for printing)
-- Labeled markers for departure airport (blue), arrival airport (purple), and mission-event POIs (orange)
-- Route centered with 5% smart padding (5% on larger dimension, other dimension auto-adjusted for aspect ratio)
-- Horizontal timeline bar chart showing X-Band, Ka, and Ku transport states over time
-- Simplified summary table with columns: Start (UTC), Duration, Status, Systems Down
+- Labeled markers for departure airport (blue), arrival airport (purple), and
+  mission-event POIs (orange)
+- Route centered with 5% smart padding (5% on larger dimension, other dimension
+  auto-adjusted for aspect ratio)
+- Horizontal timeline bar chart showing X-Band, Ka, and Ku transport states over
+  time
+- Simplified summary table with columns: Start (UTC), Duration, Status, Systems
+  Down
 - Color-coded table rows matching segment status
 
-**Sheet 2: Detailed Breakdown**
+### Sheet 2: Detailed Breakdown
 
 - All three time zones (UTC, Eastern, T+)
 - System-by-system status per segment
 - Notes column for manual annotations
 
-**Sheet 3: Statistics**
+### Sheet 3: Statistics
 
 - Total mission duration
 - Nominal time / Degraded time / Critical time (hours and percentage)
@@ -338,27 +343,27 @@ segment_start_utc,segment_end_utc,segment_duration_seconds,status,x_band_state,k
 
 ### PDF Export
 
-**File:** `mission-<name>-<timestamp>.pdf`
+**File:** `mission-`name`-<timestamp>.pdf`
 
-**Page 1: Executive Summary**
+### Page 1: Executive Summary
 
 - Mission name, date, route overview
 - Key statistics (total time, degradation windows)
 - Risk rating (Green/Yellow/Red)
 
-**Page 2: Route Map**
+### Page 2: Route Map
 
 - Flight path with color-coded segments
 - Satellite coverage overlays
 - AAR window markers
 
-**Page 3: Timeline Chart**
+### Page 3: Timeline Chart
 
 - Horizontal bar chart with three rows (X-Band, Ka, Ku)
 - Color-coded blocks showing each system's status over time
 - Vertical grid lines at 1-hour intervals
 
-**Page 4: System Behavior**
+### Page 4: System Behavior
 
 - Table with row per system (X-Band, Ka, Ku)
 - Columns: System Name, Total Nominal Time, Total Degraded Time, Root Cause,
@@ -381,7 +386,8 @@ segment_start_utc,segment_end_utc,segment_duration_seconds,status,x_band_state,k
 1. Open KML file in text editor
 2. Search for `<LineString>` (must be present)
 3. Check sample route: `simple-circular.kml` works 100% of the time
-4. If repairing manually, validate at <https://validator.kml4earth.appspot.com>
+4. If repairing manually, validate at
+   <<https://validator.kml4earth.appspot.com>>
 
 ---
 

@@ -1,10 +1,11 @@
 # Contributing to Starlink Dashboard
 
-**Last Updated:** 2025-11-04
-**Status:** Foundation + Major Features Complete - Ready for Contributors
-**Current Phase:** ETA Route Timing Complete (all 451 tests passing)
+**Last Updated:** 2025-11-04 **Status:** Foundation + Major Features Complete -
+Ready for Contributors **Current Phase:** ETA Route Timing Complete (all 451
+tests passing)
 
-Thank you for your interest in contributing to the Starlink Dashboard project! This guide provides everything you need to get started.
+Thank you for your interest in contributing to the Starlink Dashboard project!
+This guide provides everything you need to get started.
 
 ## Quick Navigation
 
@@ -21,7 +22,8 @@ Thank you for your interest in contributing to the Starlink Dashboard project! T
 
 ## Code of Conduct
 
-Be respectful, inclusive, and professional. This project welcomes contributions from developers of all skill levels.
+Be respectful, inclusive, and professional. This project welcomes contributions
+from developers of all skill levels.
 
 ---
 
@@ -37,28 +39,32 @@ Be respectful, inclusive, and professional. This project welcomes contributions 
 ### Initial Setup
 
 1. **Clone the repository:**
+
    ```bash
-   git clone https://github.com/your-repo/starlink-dashboard.git
+   git clone <https://github.com/your-repo/starlink-dashboard.git>
    cd starlink-dashboard
    git checkout dev
    ```
 
-2. **Create your feature branch:**
+1. **Create your feature branch:**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
 
-3. **Set up development environment:**
+1. **Set up development environment:**
+
    ```bash
    cp .env.example .env
    docker compose build
    docker compose up -d
    ```
 
-4. **Verify setup:**
+1. **Verify setup:**
+
    ```bash
-   curl http://localhost:8000/health
-   open http://localhost:3000
+   curl <http://localhost:8000/health>
+   open <http://localhost:3000>
    ```
 
 ---
@@ -68,25 +74,30 @@ Be respectful, inclusive, and professional. This project welcomes contributions 
 ### 1. Understand the Project
 
 **Read core documentation:**
+
 - [README.md](./README.md) - Project overview
 - [CLAUDE.md](./CLAUDE.md) - Development configuration
 - [docs/design-document.md](./docs/design-document.md) - Architecture overview
-- [docs/phased-development-plan.md](./docs/phased-development-plan.md) - Implementation phases
+- [docs/phased-development-plan.md](./docs/phased-development-plan.md) -
+  Implementation phases
 
 ### 2. Find Issues to Work On
 
 **Look for:**
+
 - Issues labeled `good first issue`
 - Issues in the current development phase
 - Feature requests in [GitHub Issues](./issues)
 
 **Check development status:**
+
 - [dev/STATUS.md](./dev/STATUS.md) - Current phase and active work
 - [dev/README.md](./dev/README.md) - Task structure and workflow
 
 ### 3. Plan Your Work
 
 **Before coding:**
+
 1. Create a task folder in `/dev/active/[task-name]/`
 2. Run `/dev-docs` slash command to generate planning documents
 3. Document your approach in task files
@@ -95,6 +106,7 @@ Be respectful, inclusive, and professional. This project welcomes contributions 
 ### 4. Implement the Feature
 
 **During development:**
+
 1. Work on your feature branch
 2. Update code according to plan
 3. Write tests for new functionality
@@ -102,6 +114,7 @@ Be respectful, inclusive, and professional. This project welcomes contributions 
 5. Keep task checklist updated
 
 **Best practices:**
+
 - Make atomic commits (one logical change per commit)
 - Write clear commit messages
 - Test frequently with `docker compose up -d && docker compose logs -f`
@@ -110,6 +123,7 @@ Be respectful, inclusive, and professional. This project welcomes contributions 
 ### 5. Test Your Changes
 
 **Local testing:**
+
 ```bash
 # Build and test
 docker compose build
@@ -119,11 +133,12 @@ docker compose up -d
 docker compose exec starlink-location pytest tests/
 
 # Manual testing
-curl http://localhost:8000/api/status
-# Open http://localhost:3000 in browser
+curl <http://localhost:8000/api/status>
+# Open <http://localhost:3000> in browser
 ```
 
 **Validation checklist:**
+
 - All containers start without errors
 - Health endpoints return 200
 - Data flows from backend to Prometheus to Grafana
@@ -133,12 +148,14 @@ curl http://localhost:8000/api/status
 ### 6. Commit and Push
 
 **Commit your work:**
+
 ```bash
 git add .
 git commit -m "type: brief description"
 ```
 
 **Push to your fork:**
+
 ```bash
 git push origin feature/your-feature-name
 ```
@@ -149,7 +166,7 @@ git push origin feature/your-feature-name
 
 ### Format
 
-```
+```text
 type: brief description (50 chars max)
 
 Longer explanation if needed. Explain the "why" not just the "what".
@@ -160,6 +177,7 @@ References: #123 (related issue number)
 ### Types
 
 Use conventional commit types:
+
 - `feat:` - New feature
 - `fix:` - Bug fix
 - `docs:` - Documentation update
@@ -170,7 +188,8 @@ Use conventional commit types:
 ### Examples
 
 **Good commits:**
-```
+
+```text
 feat: add ETA calculations for POIs
 
 Implements Haversine formula to calculate great-circle distance
@@ -180,7 +199,7 @@ updates in real-time based on current position and speed.
 Fixes: #45
 ```
 
-```
+```text
 fix: resolve POI file locking issue
 
 Added filelock library to prevent concurrent access errors when
@@ -190,7 +209,8 @@ Related: #78
 ```
 
 **Bad commits:**
-```
+
+```text
 update code
 Fixed stuff
 WIP
@@ -203,12 +223,14 @@ WIP
 ### Before Creating PR
 
 1. **Update from dev branch:**
+
    ```bash
    git fetch origin
    git rebase origin/dev
    ```
 
-2. **Run final tests:**
+1. **Run final tests:**
+
    ```bash
    docker compose down
    docker compose build --no-cache
@@ -217,7 +239,7 @@ WIP
    docker compose logs -f
    ```
 
-3. **Update documentation:**
+1. **Update documentation:**
    - Update README if needed
    - Update API docs for new endpoints
    - Add troubleshooting if introducing new complexity
@@ -225,12 +247,14 @@ WIP
 ### Creating the PR
 
 **Use GitHub:**
+
 1. Push your branch to GitHub
 2. Click "Create Pull Request"
 3. Fill in PR template (see below)
 
 **PR Title:** Same format as commit messages
-```
+
+```text
 feat: add ETA calculations for POIs
 ```
 
@@ -238,30 +262,36 @@ feat: add ETA calculations for POIs
 
 ```markdown
 ## Description
+
 Brief explanation of what this PR does.
 
 ## Type of Change
+
 - [ ] New feature
 - [ ] Bug fix
 - [ ] Documentation update
 - [ ] Refactoring
 
 ## Changes Made
+
 - What specifically was changed
 - Any new files or directories
 - Any dependencies added
 
 ## Testing
+
 How was this tested? What should reviewers test?
 
 ## Screenshots (if applicable)
+
 Include Grafana screenshots for UI changes.
 
 ## Related Issues
-Fixes #123
-Related to #456
+
+Fixes #123 Related to #456
 
 ## Checklist
+
 - [ ] Code follows project style
 - [ ] Tests pass (if applicable)
 - [ ] Documentation updated
@@ -297,10 +327,12 @@ docker compose exec starlink-location pytest tests/ --cov=app --cov-report=html
 ### Writing Tests
 
 **For new features, add tests to:**
+
 - `backend/starlink-location/tests/unit/` - Unit tests
 - `backend/starlink-location/tests/integration/` - Integration tests
 
 **Test file structure:**
+
 ```python
 import pytest
 from app.your_module import your_function
@@ -330,6 +362,7 @@ async def test_async_function():
 ### When to Update Documentation
 
 Update docs for:
+
 - New features or endpoints
 - Configuration changes
 - Troubleshooting discovered issues
@@ -337,14 +370,14 @@ Update docs for:
 
 ### Files to Update
 
-| Change | Files to Update |
-|--------|-----------------|
-| New API endpoint | `docs/API-REFERENCE.md` |
+| Change            | Files to Update                    |
+| ----------------- | ---------------------------------- |
+| New API endpoint  | `docs/API-REFERENCE.md`            |
 | New configuration | `docs/SETUP-GUIDE.md`, `CLAUDE.md` |
-| Troubleshooting | `docs/TROUBLESHOOTING.md` |
-| New metrics | `docs/METRICS.md` |
-| Architecture | `docs/design-document.md` |
-| Grafana changes | `docs/grafana-setup.md` |
+| Troubleshooting   | `docs/TROUBLESHOOTING.md`          |
+| New metrics       | `docs/METRICS.md`                  |
+| Architecture      | `docs/design-document.md`          |
+| Grafana changes   | `docs/grafana-setup.md`            |
 
 ### Documentation Standards
 
@@ -361,7 +394,7 @@ Update docs for:
 
 ### Directory Layout
 
-```
+```text
 starlink-dashboard/
 ├── backend/                           # Python backend service
 │   └── starlink-location/
@@ -403,12 +436,14 @@ starlink-dashboard/
 ### Key Files for Developers
 
 **Must read:**
+
 - `CLAUDE.md` - Development configuration
 - `docker-compose.yml` - Service setup
 - `backend/starlink-location/main.py` - Backend entry point
 - `docs/design-document.md` - Architecture
 
 **Reference often:**
+
 - `docs/API-REFERENCE.md` - Endpoints
 - `docs/TROUBLESHOOTING.md` - Common issues
 - `backend/starlink-location/requirements.txt` - Dependencies
@@ -484,6 +519,7 @@ docker system prune
 ### Adding a New API Endpoint
 
 1. **Create endpoint in `backend/starlink-location/app/api/`**
+
    ```python
    from fastapi import APIRouter, HTTPException
 
@@ -495,21 +531,23 @@ docker system prune
        return {"status": "ok"}
    ```
 
-2. **Register in `main.py`**
+1. **Register in `main.py`**
+
    ```python
    from app.api import new_feature
    app.include_router(new_feature.router)
    ```
 
-3. **Add tests in `tests/`**
+1. **Add tests in `tests/`**
 
-4. **Update `docs/API-REFERENCE.md`**
+1. **Update `docs/API-REFERENCE.md`**
 
-5. **Commit and create PR**
+1. **Commit and create PR**
 
 ### Adding a New Metric
 
 1. **Define in `app/core/metrics.py`**
+
    ```python
    new_metric = Gauge(
        'starlink_new_metric',
@@ -517,11 +555,11 @@ docker system prune
    )
    ```
 
-2. **Update in simulation/live coordinator**
+1. **Update in simulation/live coordinator**
 
-3. **Add to tests**
+1. **Add to tests**
 
-4. **Update `docs/METRICS.md`**
+1. **Update `docs/METRICS.md`**
 
 ### Creating a New Feature
 
@@ -544,19 +582,21 @@ docker system prune
 When ready for release:
 
 1. **Create release branch:**
+
    ```bash
    git checkout -b release/v0.3.0
    ```
 
-2. **Update version:**
+1. **Update version:**
    - `backend/starlink-location/main.py`
    - Docker image tags
 
-3. **Update CHANGELOG**
+1. **Update CHANGELOG**
 
-4. **Create PR and merge to main**
+1. **Create PR and merge to main**
 
-5. **Tag release:**
+1. **Tag release:**
+
    ```bash
    git tag -a v0.3.0 -m "Release version 0.3.0"
    git push origin v0.3.0
@@ -584,10 +624,11 @@ When ready for release:
 
 ## Current Development Status
 
-**Phase 0:** Foundation ✅ Complete
-**Phase 1+:** Feature development - See [dev/STATUS.md](./dev/STATUS.md)
+**Phase 0:** Foundation ✅ Complete **Phase 1+:** Feature development - See
+[dev/STATUS.md](./dev/STATUS.md)
 
 **Most Needed Contributions:**
+
 - Automated testing framework
 - Additional Grafana dashboard improvements
 - Documentation enhancements

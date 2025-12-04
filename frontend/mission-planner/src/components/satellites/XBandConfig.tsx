@@ -1,6 +1,19 @@
 import { useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import type { XBandTransition } from '../../types/satellite';
@@ -50,7 +63,9 @@ export function XBandConfig({
   onTransitionsChange,
   availableSatellites,
 }: XBandConfigProps) {
-  const [newTransition, setNewTransition] = useState<Partial<XBandTransition>>({});
+  const [newTransition, setNewTransition] = useState<Partial<XBandTransition>>(
+    {}
+  );
   const [satelliteIdError, setSatelliteIdError] = useState<string | null>(null);
   const [latitudeError, setLatitudeError] = useState<string | null>(null);
   const [longitudeError, setLongitudeError] = useState<string | null>(null);
@@ -94,7 +109,10 @@ export function XBandConfig({
     <div className="space-y-4">
       <div>
         <label className="text-sm font-medium">Starting Satellite</label>
-        <Select value={startingSatellite} onValueChange={onStartingSatelliteChange}>
+        <Select
+          value={startingSatellite}
+          onValueChange={onStartingSatelliteChange}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Select starting satellite" />
           </SelectTrigger>
@@ -177,7 +195,9 @@ export function XBandConfig({
                     className={longitudeError ? 'border-red-500' : ''}
                   />
                   {longitudeError && (
-                    <p className="text-sm text-red-500 mt-1">{longitudeError}</p>
+                    <p className="text-sm text-red-500 mt-1">
+                      {longitudeError}
+                    </p>
                   )}
                 </div>
               </TableCell>
@@ -186,11 +206,16 @@ export function XBandConfig({
                   <Select
                     value={newTransition.target_satellite_id || ''}
                     onValueChange={(value) => {
-                      setNewTransition({ ...newTransition, target_satellite_id: value });
+                      setNewTransition({
+                        ...newTransition,
+                        target_satellite_id: value,
+                      });
                       setSatelliteIdError(validateSatelliteId(value));
                     }}
                   >
-                    <SelectTrigger className={satelliteIdError ? 'border-red-500' : ''}>
+                    <SelectTrigger
+                      className={satelliteIdError ? 'border-red-500' : ''}
+                    >
                       <SelectValue placeholder="Target satellite" />
                     </SelectTrigger>
                     <SelectContent>
@@ -202,14 +227,18 @@ export function XBandConfig({
                     </SelectContent>
                   </Select>
                   {satelliteIdError && (
-                    <p className="text-sm text-red-500 mt-1">{satelliteIdError}</p>
+                    <p className="text-sm text-red-500 mt-1">
+                      {satelliteIdError}
+                    </p>
                   )}
                 </div>
               </TableCell>
               <TableCell>
                 <Button
                   onClick={handleAddTransition}
-                  disabled={!!latitudeError || !!longitudeError || !!satelliteIdError}
+                  disabled={
+                    !!latitudeError || !!longitudeError || !!satelliteIdError
+                  }
                 >
                   Add
                 </Button>

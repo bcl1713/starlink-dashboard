@@ -4,6 +4,10 @@ Combines azimuth checks, coverage events, takeoff/landing buffers, and AAR
 windows to produce operator advisories and mission event lists.
 """
 
+# FR-004: File exceeds 300 lines (403 lines) because rule evaluation coordinates
+# multiple constraint types (azimuth, coverage, AAR timing, takeoff/landing) with
+# event generation. Splitting would fragment related rule logic. Deferred to v0.4.0.
+
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta

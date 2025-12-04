@@ -1,6 +1,7 @@
 # Starlink Location Backend - Validation Guide
 
-This document provides instructions for validating the Starlink Location Backend implementation.
+This document provides instructions for validating the Starlink Location Backend
+implementation.
 
 ## Prerequisites
 
@@ -17,6 +18,7 @@ docker compose build --no-cache starlink-location
 ```
 
 Expected output:
+
 - Successfully built Docker image
 - Image tagged and ready to run
 
@@ -27,6 +29,7 @@ docker compose up -d
 ```
 
 Expected output:
+
 - starlink-location service starts (port 8000)
 - prometheus service starts (port 9090)
 - grafana service starts (port 3000)
@@ -38,7 +41,8 @@ docker compose ps
 ```
 
 Expected output:
-```
+
+```text
 NAME                STATUS
 starlink-location   Up (healthy)
 prometheus          Up
@@ -50,10 +54,11 @@ grafana             Up
 ### Root Endpoint
 
 ```bash
-curl http://localhost:8000/
+curl <http://localhost:8000/>
 ```
 
 Expected response:
+
 ```json
 {
   "message": "Starlink Location Backend",
@@ -71,10 +76,11 @@ Expected response:
 ### Health Endpoint
 
 ```bash
-curl http://localhost:8000/health
+curl <http://localhost:8000/health>
 ```
 
 Expected response:
+
 ```json
 {
   "status": "ok",
@@ -88,10 +94,11 @@ Expected response:
 ### Metrics Endpoint
 
 ```bash
-curl http://localhost:8000/metrics | head -50
+curl <http://localhost:8000/metrics> | head -50
 ```
 
 Expected output:
+
 - Prometheus-format metrics
 - Contains `starlink_dish_latitude_degrees`
 - Contains `starlink_network_latency_ms`
@@ -101,16 +108,17 @@ Expected output:
 ### Status Endpoint
 
 ```bash
-curl http://localhost:8000/api/status | jq .
+curl <http://localhost:8000/api/status> | jq .
 ```
 
 Expected response:
+
 ```json
 {
   "timestamp": "2024-10-23T16:30:00.000000",
   "position": {
     "latitude": 40.7128,
-    "longitude": -74.0060,
+    "longitude": -74.006,
     "altitude": 5000.0,
     "speed": 25.5,
     "heading": 45.0
@@ -135,17 +143,18 @@ Expected response:
 ### Configuration Endpoint - GET
 
 ```bash
-curl http://localhost:8000/api/config | jq .
+curl <http://localhost:8000/api/config> | jq .
 ```
 
 Expected output:
+
 - Complete SimulationConfig JSON
 - All sections present (route, network, obstruction, position)
 
 ### Configuration Endpoint - POST
 
 ```bash
-curl -X POST http://localhost:8000/api/config \
+curl -X POST <http://localhost:8000/api/config> \
   -H "Content-Type: application/json" \
   -d '{
     "mode": "simulation",
@@ -161,7 +170,7 @@ Expected response: 200 OK with updated configuration
 
 ## Prometheus Validation
 
-1. Access Prometheus UI: http://localhost:9090
+1. Access Prometheus UI: <http://localhost:9090>
 
 2. Check targets:
    - Navigate to Status > Targets
@@ -179,11 +188,13 @@ Expected response: 200 OK with updated configuration
 ## Monitoring Logs
 
 ### Backend logs
+
 ```bash
 docker compose logs -f starlink-location
 ```
 
 Expected log entries:
+
 - "Initializing Starlink Location Backend..."
 - "Configuration loaded: mode=simulation"
 - "Simulation coordinator initialized"
@@ -191,11 +202,13 @@ Expected log entries:
 - Periodic status updates every 60 seconds
 
 ### Prometheus logs
+
 ```bash
 docker compose logs -f prometheus
 ```
 
 Expected log entries:
+
 - Successful scrapes from starlink-location:8000
 - Metrics ingestion messages
 
@@ -206,12 +219,13 @@ Run the following to verify stability over time:
 ```bash
 for i in {1..600}; do
   echo "=== Request $i ($(date)) ==="
-  curl -s http://localhost:8000/api/status | jq '.position.latitude, .network.latency_ms'
+  curl -s <http://localhost:8000/api/status> | jq '.position.latitude, .network.latency_ms'
   sleep 1
 done
 ```
 
 Expected behavior:
+
 - All requests succeed (HTTP 200)
 - Latitude values change smoothly over time (circular route)
 - Latency values vary within configured range (20-80ms typical, spikes to 200ms)
@@ -237,20 +251,25 @@ Expected behavior:
 ## Troubleshooting
 
 ### Service won't start
+
 1. Check logs: `docker compose logs starlink-location`
 2. Verify port 8000 is available
 3. Rebuild image: `docker compose build --no-cache starlink-location`
 
 ### Metrics endpoint returns empty
+
 1. Wait 5-10 seconds for simulator to initialize
-2. Check background task: `docker compose logs -f starlink-location | grep "Background"`
+2. Check background task:
+   `docker compose logs -f starlink-location | grep "Background"`
 
 ### Prometheus shows "DOWN" status
+
 1. Check if starlink-location is healthy: `docker compose ps`
-2. Verify health endpoint works: `curl http://localhost:8000/health`
+2. Verify health endpoint works: `curl <http://localhost:8000/health`>
 3. Check Prometheus config: `cat monitoring/prometheus/prometheus.yml`
 
 ### Configuration changes not applied
+
 1. POST request must have valid SimulationConfig JSON
 2. Check response for validation errors
 3. GET config to verify update applied
@@ -258,6 +277,7 @@ Expected behavior:
 ## Performance Metrics
 
 Expected baseline performance:
+
 - Health check response: < 10ms
 - Status endpoint response: < 50ms
 - Metrics endpoint response: < 100ms
@@ -269,16 +289,19 @@ Expected baseline performance:
 ## Cleanup
 
 Stop all services:
+
 ```bash
 docker compose down
 ```
 
 Remove volumes (data):
+
 ```bash
 docker compose down -v
 ```
 
 Remove images:
+
 ```bash
 docker compose down -v --rmi all
 ```

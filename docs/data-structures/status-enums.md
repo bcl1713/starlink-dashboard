@@ -78,7 +78,7 @@ STATE_COLUMNS = [
 
 **Location:** `backend/starlink-location/app/mission/exporter.py`
 
-### _format_seconds_hms(value: float | int) -> str
+### \_format_seconds_hms(value: float | int) -> str
 
 Formats seconds as HH:MM:SS (handles negative values)
 
@@ -87,7 +87,7 @@ Formats seconds as HH:MM:SS (handles negative values)
 # Example: -3661 -> "-01:01:01"
 ```
 
-### _serialize_transport_list(transports: Iterable[Transport]) -> str
+### \_serialize_transport_list(transports: Iterable[Transport]) -> str
 
 Converts Transport enums to display names, joined by ", "
 
@@ -95,7 +95,7 @@ Converts Transport enums to display names, joined by ", "
 # Example: [Transport.X, Transport.KA] -> "X-Band, CommKa"
 ```
 
-### _compose_time_block(moment: datetime, mission_start: datetime) -> str
+### \_compose_time_block(moment: datetime, mission_start: datetime) -> str
 
 Returns multiline string: "UTC time\nEastern time\nT+/-HH:MM"
 
@@ -106,15 +106,15 @@ Returns multiline string: "UTC time\nEastern time\nT+/-HH:MM"
 #  T+01:40"
 ```
 
-### _format_utc(dt: datetime) -> str
+### \_format_utc(dt: datetime) -> str
 
 Returns "YYYY-MM-DD HH:MZ" (no seconds, Z suffix indicates UTC)
 
-### _format_eastern(dt: datetime) -> str
+### \_format_eastern(dt: datetime) -> str
 
 Returns "YYYY-MM-DD HH:MMTZE" (with DST-aware timezone abbreviation)
 
-### _format_offset(delta: timedelta) -> str
+### \_format_offset(delta: timedelta) -> str
 
 Formats as "T+/-HH:MM"
 
@@ -123,15 +123,15 @@ Formats as "T+/-HH:MM"
 # Example: timedelta(minutes=-30) -> "T-00:30"
 ```
 
-### _ensure_timezone(value: datetime) -> datetime
+### \_ensure_timezone(value: datetime) -> datetime
 
 Ensures datetime is UTC-aware; converts to UTC if needed
 
-### _mission_start_timestamp(timeline: MissionTimeline) -> datetime
+### \_mission_start_timestamp(timeline: MissionTimeline) -> datetime
 
 Returns mission's zero point (earliest segment start or timeline.created_at)
 
-### _segment_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
+### \_segment_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
 
 #### Lines 271-331 - Converts segments to exportable rows
 
@@ -150,7 +150,7 @@ Special handling for export:
 - Metadata serialized as JSON
 - AAR rows inserted in order
 
-### _segment_at_time
+### \_segment_at_time
 
 ```python
 _segment_at_time(timeline: MissionTimeline, timestamp: datetime)
@@ -159,17 +159,17 @@ _segment_at_time(timeline: MissionTimeline, timestamp: datetime)
 
 Returns segment containing the given timestamp, or last segment if not found
 
-### _advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
+### \_advisory_rows(timeline: MissionTimeline, mission: Mission | None) -> pd.DataFrame
 
 Converts advisories to DataFrame with columns:
 
 - "Mission ID", "Timestamp (UTC)", "Timestamp (Eastern)", "T Offset"
 - "Transport", "Severity", "Event Type", "Message", "Metadata"
 
-### _statistics_rows(timeline: MissionTimeline) -> pd.DataFrame
+### \_statistics_rows(timeline: MissionTimeline) -> pd.DataFrame
 
 Converts timeline.statistics to DataFrame, humanizing metric names. Skips keys
-starting with "_" (internal only)
+starting with "\_" (internal only)
 
 ---
 

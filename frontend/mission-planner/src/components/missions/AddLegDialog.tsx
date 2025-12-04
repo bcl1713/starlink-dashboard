@@ -35,7 +35,9 @@ export function AddLegDialog({
 }: AddLegDialogProps) {
   const [legName, setLegName] = useState('');
   const [description, setDescription] = useState('');
-  const [routeOption, setRouteOption] = useState<'existing' | 'upload'>('existing');
+  const [routeOption, setRouteOption] = useState<'existing' | 'upload'>(
+    'existing'
+  );
   const [selectedRouteId, setSelectedRouteId] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -108,7 +110,8 @@ export function AddLegDialog({
     }
   };
 
-  const isFormValid = legName.trim() &&
+  const isFormValid =
+    legName.trim() &&
     (routeOption === 'existing' ? selectedRouteId : uploadedFile);
 
   return (
@@ -204,7 +207,9 @@ export function AddLegDialog({
                     <Input
                       type="file"
                       accept=".kml"
-                      onChange={(e) => setUploadedFile(e.target.files?.[0] || null)}
+                      onChange={(e) =>
+                        setUploadedFile(e.target.files?.[0] || null)
+                      }
                       disabled={isSubmitting}
                     />
                     {uploadedFile && (
