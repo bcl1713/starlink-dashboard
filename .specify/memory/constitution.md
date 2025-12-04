@@ -1,14 +1,28 @@
 <!--
-  SYNC IMPACT REPORT (v1.0.1)
+  SYNC IMPACT REPORT (v1.1.0)
   ===========================
-  Version Change: 1.0.0 → 1.0.1 (PATCH: Linting discipline clarification)
-  Modified Sections: Code Formatting & Linting (added markdownlint-cli2,
-  disabled comment policy)
-  Templates Updated:
-    - plan-template.md: ✅ Compatible with Constitution Check gate
-    - spec-template.md: ✅ Compatible with user story prioritization
-    - tasks-template.md: ✅ Compatible with task formatting
-  Follow-up TODOs: None
+  Version Change: 1.0.1 → 1.1.0 (MINOR: Runtime guidance minimalism principle added)
+
+  Added Sections:
+    - Governance > Runtime Guidance Minimalism (new principle)
+
+  Modified Sections:
+    - Governance > Use Guidance: Expanded with explicit minimalism requirements
+
+  Templates Validated:
+    - plan-template.md: ✅ Compatible (no changes needed)
+    - spec-template.md: ✅ Compatible (no changes needed)
+    - tasks-template.md: ✅ Compatible (no changes needed)
+    - agent-file-template.md: ✅ Compatible (no changes needed)
+    - checklist-template.md: ✅ Compatible (no changes needed)
+
+  CLAUDE.md Status:
+    - Current: 157 lines (within 300-line constitution limit)
+    - ⚠ AUDIT REQUIRED: Review for context pollution and minimalism compliance
+
+  Follow-up TODOs:
+    - Review CLAUDE.md against new minimalism principle
+    - Remove non-essential content that duplicates constitution or docs
 -->
 
 # Starlink Dashboard Constitution
@@ -192,6 +206,37 @@ Exceptions exist for generated/auto-managed content that developers don't edit.
 - On-demand: Before major releases, audit test coverage and observability
   metrics
 
+**Runtime Guidance Minimalism:**
+
+Runtime guidance files (CLAUDE.md, agent-specific instruction files) MUST be
+kept minimal to reduce context pollution and cognitive overhead.
+
+**Rules:**
+
+- CLAUDE.md MUST contain ONLY absolutely necessary operational information that
+  cannot be derived from:
+  - This constitution (governance and principles)
+  - README.md (project overview and quick start)
+  - Documentation in `docs/` (architecture, APIs, features)
+- CLAUDE.md SHOULD focus on:
+  - Critical workflow sequences (e.g., Docker rebuild requirements)
+  - Tool-specific commands and their constraints
+  - Environment-specific configuration that changes behavior
+  - Non-obvious gotchas that cause failures (e.g., caching issues)
+- CLAUDE.md MUST NOT duplicate:
+  - Architectural explanations (use `docs/design-document.md`)
+  - Feature descriptions (use `docs/FEATURES-OVERVIEW.md`)
+  - Setup instructions (use `docs/QUICK-START.md` or `docs/SETUP-GUIDE.md`)
+  - Code quality standards (defined in this constitution)
+- CLAUDE.md MUST be under 300 lines (subject to Principle IV)
+- When CLAUDE.md grows beyond 200 lines, conduct audit to extract content into
+  proper documentation
+
+**Rationale:** Runtime guidance files are loaded into AI context windows on
+every interaction. Bloated guidance files waste tokens, slow processing, and
+bury critical information in noise. Minimalism ensures agents find essential
+information quickly and rely on proper documentation for depth.
+
 **Use Guidance:**
 
 - Runtime development guidance is documented in `CLAUDE.md` (global) and project
@@ -199,7 +244,9 @@ Exceptions exist for generated/auto-managed content that developers don't edit.
 - CLAUDE.md is the canonical source for tool workflows, CI/CD procedures, and
   environment-specific instructions
 - This constitution defines the "what" and "why"; CLAUDE.md defines the "how"
+- When information could go in either location, prefer documentation in `docs/`
+  and link from CLAUDE.md
 
 ---
 
-**Version**: 1.0.1 | **Ratified**: 2025-12-02 | **Last Amended**: 2025-12-02
+**Version**: 1.1.0 | **Ratified**: 2025-12-02 | **Last Amended**: 2025-12-04

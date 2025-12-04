@@ -1,244 +1,157 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with
-code in this repository.
-
-## Quick Reference
+Guidance for Claude Code when working with this repository.
 
 **Project:** Docker-based Starlink terminal monitoring system with real-time
-metrics visualization and full simulation mode for offline development.
+metrics visualization and simulation mode.
 
-**Tech Stack:** Python (FastAPI) + Prometheus + Grafana + Docker Compose
+**Tech Stack:** Python 3.13 (FastAPI) + Prometheus + Grafana + Docker Compose;
+TypeScript/React frontend; Markdown documentation.
 
-**Documentation:** See `docs/design-document.md` for architecture and
-`docs/phased-development-plan.md` for implementation phases.
+**Key Docs:**
 
-## Development Commands
+- `docs/design-document.md` – architecture
+- `docs/phased-development-plan.md` – development roadmap
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phases & ETA
+  modes
 
-### Docker Compose
+## ⚠️ Backend Python Code Changes (CRITICAL)
 
-```bash
-docker compose up -d           # Start all services
-docker compose down            # Stop all services
-docker compose logs -f         # Stream logs
-docker compose restart         # Restart services
-docker compose build           # Build images (use --no-cache to force rebuild)
-```
-
-### Access Points
-
-- **Grafana:** <http://localhost:3000> (default: admin/admin)
-- **Prometheus:** <http://localhost:9090>
-- **Backend health:** <http://localhost:8000/health>
-- **Prometheus metrics:** <http://localhost:8000/metrics>
-
-## Configuration
-
-Environment variables in `.env`:
+**REQUIRED sequence for ANY .py file changes:**
 
 ```bash
-# Operating mode: Two approaches (STARLINK_MODE is recommended)
-# Approach 1: STARLINK_MODE (explicit, recommended)
-STARLINK_MODE=simulation          # or 'live' for real Starlink terminal
-
-# Approach 2: SIMULATION_MODE (backward compatible)
-# SIMULATION_MODE=true             # Equivalent to STARLINK_MODE=simulation
-# SIMULATION_MODE=false            # Equivalent to STARLINK_MODE=live
-# (If both are set, STARLINK_MODE takes precedence)
-
-# Starlink dish network configuration (for live mode)
-STARLINK_DISH_HOST=192.168.100.1  # IP address of Starlink dish
-STARLINK_DISH_PORT=9200           # gRPC port for Starlink communication
-
-# Other settings
-PROMETHEUS_RETENTION=1y           # Metrics retention period (1 year, ~2.4 GB storage)
-GRAFANA_ADMIN_PASSWORD=admin      # Grafana admin password (change in production!)
+docker compose down && docker compose build --no-cache && \
+  docker compose up -d && docker compose ps
+curl http://localhost:8000/health  # Verify changes took effect
 ```
 
-## Key Implementation Paths
+**Why:** `docker compose up` alone serves cached code. Only the sequence above
+rebuilds images without layer caching.
 
-**Backend service location:** `backend/starlink-location/`
+**Docker commands:** `up -d`, `down`, `logs -f`, `restart`, `ps`
 
-**Required Docker configs:** `monitoring/prometheus/` and `monitoring/grafana/`
+## Access Points & Configuration
 
-**Data volumes:** `/data/routes/` for KML files, `/data/sim_routes/` for
-simulator routes
+**Service URLs:**
+
+- Grafana: `http://localhost:3000` (admin/admin)
+- Prometheus: `http://localhost:9090`
+- Backend: `http://localhost:8000/health` or `/docs`
+
+**Environment variables** (`.env`):
+
+- `STARLINK_MODE=simulation` (or `live`)
+- `STARLINK_DISH_HOST=192.168.100.1`
+- `STARLINK_DISH_PORT=9200`
+- `PROMETHEUS_RETENTION=1y` (~2.4 GB)
+- `GRAFANA_ADMIN_PASSWORD=admin`
+
+**Module Paths (Refactored - Phase 001-codebase-cleanup):**
+
+- Backend: `backend/starlink-location/` (main service)
+- API Layer:
+  - Routes: `app/api/routes/` (management, upload, download, stats, eta, timing,
+    cache)
+  - POIs: `app/api/pois/` (crud, etas, stats, helpers)
+  - UI: `app/api/ui/` (routes, templates)
+- Mission Layer:
+  - Routes: `app/mission/routes/` (missions, legs, waypoints, operations)
+  - Timeline: `app/mission/timeline_builder/` (calculator, state, validators)
+  - Exporter: `app/mission/exporter/` (formatting, excel_utils, transport_utils)
+  - Package: `app/mission/package/` (mission export/import)
+- Services:
+  - KML Parser: `app/services/kml/` (parser, geometry, validators)
+  - ETA: `app/services/eta/` (core calculations, bearing, distance)
+  - Route ETA: `app/services/route_eta/` (route-specific timing)
+  - POI Manager: `app/services/poi_manager.py` (consolidated)
+  - Flight State: `app/services/flight_state_manager.py` (flight tracking)
+- Core: `app/core/metrics/` (Prometheus metrics)
+- Config: `monitoring/prometheus/`, `monitoring/grafana/`
+- Data: `/data/routes/` (KML files), `/data/sim_routes/` (simulator)
 
 ## Operating Modes
 
-### Simulation Mode (Default)
+**Simulation Mode (default):** Set `STARLINK_MODE=simulation`. Generates
+realistic Starlink telemetry (position, speed, latency, throughput,
+obstructions). No hardware required.
 
-Default mode for development. Generates realistic Starlink telemetry (position,
-speed, latency, throughput, obstructions).
+**Live Mode:** Set `STARLINK_MODE=live`. Connects to real terminal at
+`STARLINK_DISH_HOST:STARLINK_DISH_PORT`. If dish unavailable on startup, service
+initializes without metrics and auto-reconnects on each cycle. Check
+`http://localhost:8000/health` for connection status.
 
-- Set `STARLINK_MODE=simulation` in `.env`
-- No hardware required
-- Useful for UI development and testing
-- Refer to `docs/design-document.md` section 3 for detailed behavior
+## Core Metrics & APIs
 
-### Live Mode
+**Prometheus Metrics:** Position (`starlink_dish_latitude_degrees`, longitude,
+altitude), Network (latency_ms, throughput_down/up_mbps), Status
+(obstruction_percent, speed_knots, heading_degrees), POI/ETA (eta_poi_seconds,
+distance_to_poi_meters).
 
-Connect to a real Starlink terminal to get actual telemetry data.
+**Flight Status & ETA:**
 
-**Requirements:**
+- Phases: `pre_departure`, `in_flight`, `post_arrival`
+- ETA modes auto-switch: `anticipated` (pre-flight) → `estimated` (airborne)
+- APIs: `/api/flight-status`, `/api/pois/etas`, `/api/routes/{id}`
+- Testing: `/api/flight-status/depart` and `/arrive` endpoints
+- See `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` for details
 
-- Starlink terminal on local network at `192.168.100.1` (default) or configured
-  IP
-- Network access from Docker container to terminal
-- Set `STARLINK_MODE=live` in `.env`
+## Storage & Route Management
 
-**Configuration:**
+**Prometheus Storage:** Default 1-year retention (~2.4 GB). Adjust
+`PROMETHEUS_RETENTION` in `.env`: `1y` (2.4 GB), `90d` (600 MB), `30d` (200 MB),
+`15d` (100 MB).
 
-```bash
-STARLINK_MODE=live
-STARLINK_DISH_HOST=192.168.100.1  # Your terminal's IP address
-STARLINK_DISH_PORT=9200           # Standard gRPC port
-```
+**Route APIs:**
 
-**Docker Networking:**
+- Upload KML: `POST /api/routes/upload`
+- List: `GET /api/routes`
+- Get details: `GET /api/routes/{route_id}`
+- Activate: `POST /api/routes/{route_id}/activate`
+- Deactivate: `POST /api/routes/deactivate`
+- Delete: `DELETE /api/routes/{route_id}`
+- Download: `GET /api/routes/{route_id}/download`
 
-- **Bridge mode (default, cross-platform):** Uses `extra_hosts` to route
-  dish.starlink hostname
-- **Host mode (Linux only):** Uncomment `network_mode: host` in
-  docker-compose.yml for direct access
+**Route Management UI:** `http://localhost:8000/ui/routes`
 
-**Connection Behavior:** If the system fails to connect to the dish on startup,
-it initializes successfully but begins serving without metrics. The service
-remains in live mode and attempts to reconnect on each update cycle. This allows
-the system to continue running and be ready when the dish becomes available.
-Check the `/health` endpoint to see current connection status.
+**Sample Routes:** See `/data/sample_routes/` (simple-circular.kml,
+cross-country.kml, route-with-pois.kml)
 
-**Testing Connection:**
+## KML Format & Route Features
 
-```bash
-# Once running, check health endpoint to see actual mode and connection status
-curl <http://localhost:8000/health>
+**KML Format:** Coordinate order: `longitude,latitude,altitude`. Longitude: -180
+to 180 (negative = West), Latitude: -90 to 90 (negative = South). Supports
+LineString (routes) and Point (POIs).
 
-# Example response (connected):
-# {
-#   "status": "ok",
-#   "mode": "live",
-#   "message": "Live mode: connected to dish",
-#   "dish_connected": true,
-#   ...
-# }
+**Route Features:** KML import with auto-discovery, Grafana visualization (dark
+orange), simulation following, progress metrics
+(`starlink_route_progress_percent`, `starlink_current_waypoint_index`), POI
+import from Point placemarks.
 
-# Example response (disconnected but waiting):
-# {
-#   "status": "ok",
-#   "mode": "live",
-#   "message": "Live mode: waiting for dish connection",
-#   "dish_connected": false,
-#   ...
-# }
-```
+**Monitoring:** View on Grafana dashboard (`http://localhost:3000/d/starlink`)
+or query Prometheus metrics.
 
-## Core Metrics
+## Code Quality Standards
 
-The backend exposes Prometheus metrics including:
+**Formatting:** Prettier (80 char width, prose wrap always, auto line endings).
+Python: Black + ruff. Markdown: markdownlint-cli2.
 
-- Position: `starlink_dish_latitude_degrees`, `starlink_dish_longitude_degrees`,
-  `starlink_dish_altitude_meters`
-- Network: `starlink_network_latency_ms`,
-  `starlink_network_throughput_down_mbps`, `starlink_network_throughput_up_mbps`
-- Status: `starlink_dish_obstruction_percent`, `starlink_dish_speed_knots`,
-  `starlink_dish_heading_degrees`
-- POI/ETA: `starlink_eta_poi_seconds{name="..."}`,
-  `starlink_distance_to_poi_meters{name="..."}`
+**Naming:** Status/session files → ALL CAPS (SESSION-NOTES.md). Task files →
+kebab-case (poi-management-plan.md). No underscores. See
+`.claude/NAMING-CONVENTIONS.md`.
 
-## Storage Requirements
+**File Size:** Target 300 lines max per file (FR-004 justification required if
+exceeded). Phase 001-codebase-cleanup: 88-92% backend compliance (23-24 of 26),
+100% frontend (3/3), 100% documentation refactored into subdirectories.
 
-With the default 1-year retention period, Prometheus will store approximately
-**2.4 GB** of telemetry data.
+**Type Safety:** Python (mypy strict), TypeScript (strict mode). All refactored
+code fully typed and documented.
 
-**Storage Calculation:**
+## Documentation & Architecture
 
-- **Number of unique metrics:** 45 (collected from live backend)
-- **Scrape interval:** 1 second
-- **Retention period:** 1 year (31,536,000 seconds)
-- **Estimated size per sample:** ~1.5 bytes (with compression)
-- **Compression overhead:** ~1.2x
+Refer to:
 
-**Formula:**
+- `docs/design-document.md` – full architecture (sections 1-7)
+- `docs/phased-development-plan.md` – implementation roadmap
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – testing flight modes
 
-```text
-Storage_GB = (45 metrics × 31,536,000 seconds × 1.5 bytes × 1.2 overhead) / 1,073,741,824
-Storage_GB ≈ 2.4 GB
-```
-
-**To adjust retention**, modify `PROMETHEUS_RETENTION` in `.env`:
-
-- `1y` - 1 year (~2.4 GB) - default for long-term analysis
-- `90d` - 90 days (~600 MB)
-- `30d` - 30 days (~200 MB)
-- `15d` - 15 days (~100 MB)
-
-## Dashboard Features
-
-### Position History Route (Fullscreen Overview)
-
-The Fullscreen Overview dashboard's map panel displays both current position and
-historical route.
-
-**Features:**
-
-- Route shows position history over the selected dashboard time range
-- Uses 1-second sampling intervals matching other overview panels
-- Simple blue route line (future: metric-based coloring)
-- Current position marker (green plane) displays on top of route
-- Data gaps interpolated with straight lines
-
-**Implementation:**
-
-- Configured in
-  `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`
-- Uses Grafana Geomap Route layer
-- Queries Prometheus for historical lat/lon time series (queries E & F)
-
-**Known Limitations:**
-
-- No interactive tooltips in initial version (planned future enhancement)
-- Single solid color (no gradient or metric-based coloring yet)
-- All points connected as continuous route (no segment breaks)
-
-## Code Formatting
-
-Use Prettier with settings in `.prettierrc` (print width: 80, prose wrap:
-always, auto line endings).
-
-## File Naming Conventions
-
-When creating documentation or task management files, follow these naming
-standards:
-
-- **Status/session files:** ALL CAPS with hyphens (SESSION-NOTES.md,
-  CONTEXT-HANDOFF.md)
-- **Task planning files:** kebab-case (poi-management-plan.md,
-  feature-context.md)
-- **Never use underscores** for multi-word filenames (use hyphens instead)
-
-See `.claude/NAMING-CONVENTIONS.md` for complete guidelines.
-
-## Project Status
-
-Currently in **Phase 0** (planning/documentation complete). Follow the phased
-development plan in `docs/phased-development-plan.md` for implementation order.
-
-## Architecture Overview
-
-Refer to section 2 in `docs/design-document.md` for the full system architecture
-diagram and component descriptions.
-
-## Testing
-
-To be implemented during development phases. Use pytest for Python backend tests
-once available.
-
-## Additional Context
-
-- **Live mode:** Requires network access to Starlink dish at
-  `192.168.100.1:9200` (see section 7 of design document)
-- **KML/POI system:** Detailed in section 5 of design document
-- **API endpoints:** Section 4 of design document lists all backend endpoints
-- **Grafana integration:** See Phase 5 of development plan for dashboard
-  requirements
+**Docker Builds:** Delegate to sub-agents (expensive context).
