@@ -43,7 +43,7 @@ crew connectivity through predicted degradation windows.
 
 ### 1. Generate Mission Timeline
 
-**Timeline Creation (T-5 to T-2 days before flight)**
+#### Timeline Creation (T-5 to T-2 days before flight)
 
 1. Open mission planner: `<http://<dashboard>/ui/mission-planner`>
 2. Upload flight route (KML from flight planning)
@@ -60,7 +60,7 @@ crew connectivity through predicted degradation windows.
 
 ### 2. Identify Risk Windows
 
-**Analysis (T-2 to T-1 day)**
+#### Analysis (T-2 to T-1 day)
 
 Review exported timeline and identify:
 
@@ -82,7 +82,7 @@ Notify: CNRC, Flight Lead, Air Boss
 
 ### 3. Prepare Crew Briefing
 
-**Briefing (T-1 day)**
+#### Briefing (T-1 day)
 
 1. Print/display mission timeline PDF
 2. Highlight:
@@ -105,7 +105,7 @@ Notify: CNRC, Flight Lead, Air Boss
 <http://<dashboard>/d/starlink/fullscreen-overview>
 ```
 
-**Login:** admin / <configured-password> (default: admin)
+**Login:** admin / `<configured-password>` (default: admin)
 
 ### 2. Configure Mission Overview Panel
 
@@ -147,7 +147,7 @@ The dashboard auto-updates with mission metrics. Key panels:
 
 Two alert rules fire automatically:
 
-**Alert 1: DegradedWindowApproaching**
+#### Alert 1: DegradedWindowApproaching
 
 ```yaml
 expr: mission_next_conflict_seconds{status="degraded"} < 900
@@ -159,7 +159,7 @@ severity: warning
 - Severity: **WARNING** (yellow in dashboard)
 - Action: Notify crew, confirm Ka/Ku readiness
 
-**Alert 2: CriticalWindowApproaching**
+#### Alert 2: CriticalWindowApproaching
 
 ```yaml
 expr: mission_next_conflict_seconds{status="critical"} < 900
@@ -289,30 +289,30 @@ for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation pl
 
 ### Handling Unexpected Status Changes
 
-**Scenario: Timeline predicts NOMINAL, but dashboard shows DEGRADED**
+#### Scenario: Timeline predicts NOMINAL, but dashboard shows DEGRADED
 
 1. **Do not panic.** Timing discrepancies (±5 min) are normal.
-2. **Check:**
+1. **Check:**
    - Is window within ±5 min of predicted? If yes, normal drift.
    - Is it X-Band transition? Check transition duration (should be ±15 min).
    - Is it Ka gap? Check if route actually in coverage.
-3. **If deviation > 10 min:**
+1. **If deviation > 10 min:**
    - Take screenshot of Grafana
    - Check system logs: `docker compose logs starlink-location | tail -50`
    - Contact mission planner with screenshot + crew observations
    - Continue monitoring (do not abort)
 
-**Scenario: Timeline shows one system down, but crew reports both down**
+#### Scenario: Timeline shows one system down, but crew reports both down
 
-4. **Inform Ops Chief immediately.**
-5. **Get crew details:**
+1. **Inform Ops Chief immediately.**
+1. **Get crew details:**
    - Which systems unavailable? (X? Ka? Both?)
    - Any error messages?
    - Current aircraft position (lat/lon)?
-6. **Verify against timeline:**
+1. **Verify against timeline:**
    - Is this a CRITICAL window? (If yes, explain Ku should be available)
    - Check Prometheus metric: `mission_status{transport="ku"}`
-7. **Action:**
+1. **Action:**
    - If Ku also degraded: Escalate to System Ops (possible infrastructure issue)
    - If Ku working: Advise crew to check antenna selection, restart comms
      equipment
@@ -323,7 +323,7 @@ for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation pl
 
 ### Pre-Flight Export
 
-**Delivery timeline: T-2 to T-1 day before flight**
+#### Delivery timeline: T-2 to T-1 day before flight
 
 1. **Generate final timeline:**
 
@@ -366,20 +366,21 @@ Example: `mission-Leg6Rev6-2025-03-15-final.pdf`
    Save as `mission-`name`-<date>-actual-timeline.json`
 
 1. **Compare predicted vs. actual:**
+
    - How close did predictions match?
    - Were there unexpected degradations?
    - Did crew respond effectively?
 
 1. **Archive folder:**
 
-```text
-/archive/missions/<year>/<month>/<mission-name>/
-  ├── mission-brief.pdf
-  ├── predicted-timeline.json
-  ├── actual-timeline.json
-  ├── grafana-screenshots/
-  └── ops-log.txt
-```
+   ```text
+   /archive/missions/<year>/<month>/<mission-name>/
+     ├── mission-brief.pdf
+     ├── predicted-timeline.json
+     ├── actual-timeline.json
+     ├── grafana-screenshots/
+     └── ops-log.txt
+   ```
 
 1. **Document lessons learned:**
    - Any timeline inaccuracies? Report to mission planner
@@ -404,13 +405,14 @@ predicted.
 **Response (Immediate - 0-5 min):**
 
 1. **Get incident details:**
+
    - What time did loss occur? (UTC)
    - Which system(s) affected? (X/Ka/Ku)
    - How long did it last?
    - Any error messages at aircraft?
    - Aircraft position (lat/lon) if available
 
-2. **Check Grafana & logs:**
+1. **Check Grafana & logs:**
 
    ```bash
    # Check Prometheus for anomalies
@@ -420,24 +422,26 @@ predicted.
    docker logs starlink-location | grep -i error | tail -20
    ```
 
-3. **Consult timeline:**
+1. **Consult timeline:**
    - Is incident within any predicted DEGRADED window?
    - Is it within ±10 min of predicted window?
    - If neither: Escalate (possible infrastructure failure)
 
 **Response (Follow-up - 5-30 min):**
 
-2. **Notify stakeholders:**
+1. **Notify stakeholders:**
+
    - Flight Lead (situation update)
    - Ops Chief (decision on continue vs. contingency)
    - Mission Planner (event for investigation)
 
-3. **Provide crew with:**
+1. **Provide crew with:**
+
    - Next time system should recover (if predictable)
    - Backup system status (Ku should always be available)
    - Instructions if incident affects mission (e.g., delay non-critical work)
 
-4. **Log incident:**
+1. **Log incident:**
 
 ```text
 14:25 UTC - INCIDENT: X-Band and Ka both lost, crew reports no signal
@@ -461,14 +465,14 @@ transmitter hardware failure).
 **Immediate Response (0-5 min):**
 
 1. **Declare emergency:** Contact Ops Chief / Flight Lead
-2. **Get crew status:** Are they safe? Do they need emergency comms?
-3. **Check which system failed:**
+1. **Get crew status:** Are they safe? Do they need emergency comms?
+1. **Check which system failed:**
    - If **X-Band or Ka fails:** Crew routes to Ku (should be available)
    - If **Ku fails:** Emergency (all systems down)
 
 **Analysis & Escalation (5-30 min):**
 
-4. **Check infrastructure logs:**
+1. **Check infrastructure logs:**
 
    ```bash
    docker compose logs > /tmp/incident-$(date +%s).log
@@ -488,7 +492,7 @@ transmitter hardware failure).
 
 **Recovery:**
 
-2. **Restart services if safe:**
+1. **Restart services if safe:**
 
    ```bash
    docker compose down
@@ -497,6 +501,7 @@ transmitter hardware failure).
    ```
 
 1. **Verify crew comms restored:**
+
    - Dashboard shows system NOMINAL
    - Crew confirms signal and data rates normal
 
@@ -518,17 +523,17 @@ transmitter hardware failure).
 
 **During Flight:**
 
-5. Monitor Grafana every 15 min
-6. Match dashboard to timeline predictions
-7. Alert crew 15 min before any degradation
-8. Log status snapshots every 30 min
+1. Monitor Grafana every 15 min
+1. Match dashboard to timeline predictions
+1. Alert crew 15 min before any degradation
+1. Log status snapshots every 30 min
 
 **Post-Flight:**
 
-9. Archive actual timeline
-10. Compare to predictions (notes for planner)
-11. Document lessons learned
-12. Close mission
+1. Archive actual timeline
+1. Compare to predictions (notes for planner)
+1. Document lessons learned
+1. Close mission
 
 ---
 

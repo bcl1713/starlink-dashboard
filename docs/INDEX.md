@@ -23,7 +23,7 @@ Start here if you're new to the project:
 
 ## Documentation by Use Case
 
-### I want to...
+### I want to
 
 #### Set up the project
 
@@ -220,13 +220,14 @@ Read in order:
 
 Read in order:
 
-1. [README.md#mission-communication-planning](../README.md#mission-communication-planning) -
-   Overview (5 min)
+1. [README.md#mission-communication-planning](../README.md#mission-communication-planning)
+   \- Overview (5 min)
 1. [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) - User guide (20
    min)
-1. [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) - Operations procedures (15 min)
-1. [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning) -
-   Dashboard setup (10 min)
+1. [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) - Operations procedures (15
+   min)
+1. [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning)
+   \- Dashboard setup (10 min)
 
 ---
 

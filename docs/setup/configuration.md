@@ -118,7 +118,7 @@ curl <http://localhost:8000/metrics> | rg starlink_dish_latitude
 2. Terminal accessible at `192.168.100.1` (default) or known IP
 3. Port `9200` accessible for gRPC
 
-### Basic Configuration
+### Live Mode Configuration
 
 Edit `.env`:
 

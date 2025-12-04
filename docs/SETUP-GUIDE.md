@@ -245,13 +245,13 @@ curl <http://localhost:8000/metrics> | head -20
 
 **Connect to a real Starlink terminal** for actual telemetry.
 
-### Prerequisites
+### Prerequisites - Live Mode
 
 1. **Starlink Terminal:** On the same network or accessible via IP
 2. **Network Access:** Container must reach terminal at `192.168.100.1:9200`
 3. **Terminal Configuration:** Standard Starlink terminal (firmware may vary)
 
-### Configuration
+### Configuration - Live Mode
 
 #### Step 1: Update `.env`
 
@@ -273,7 +273,7 @@ STARLINK_DISH_PORT=9200
 
 Choose one network mode based on your OS:
 
-**Option A: Bridge Mode (Recommended - Cross-Platform)**
+#### Option A: Bridge Mode (Recommended - Cross-Platform)
 
 Works on Windows, macOS, and Linux. Already configured by default.
 
@@ -283,7 +283,7 @@ extra_hosts:
   - "dish.starlink:${STARLINK_DISH_HOST:-192.168.100.1}"
 ```
 
-**Option B: Host Mode (Linux Only - Best Performance)**
+#### Option B: Host Mode (Linux Only - Best Performance)
 
 Directly access the host network. More efficient but Linux-only.
 
@@ -302,7 +302,7 @@ docker compose down
 docker compose up -d
 ```
 
-### Quick Start
+### Quick Start - Live Mode
 
 ```bash
 # 1. Update .env

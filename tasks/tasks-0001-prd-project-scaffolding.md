@@ -40,8 +40,8 @@ Based on PRD: `0001-prd-project-scaffolding.md`
         data/sim_routes/
   - [x] 1.3 Initialize git repository with `git init`
   - [x] 1.4 Create `.gitignore` file with patterns for Python (**pycache**,
-        _.pyc, _.pyo, _.pyd, .Python, env/, venv/), Docker (data/, volumes/),
-        IDE (.vscode/, .idea/, _.swp), and secrets (.env)
+        `*.pyc`, `*.pyo`, `*.pyd`, .Python, env/, venv/), Docker (data/,
+        volumes/), IDE (.vscode/, .idea/, `*.swp`), and secrets (.env)
   - [x] 1.5 Create `.gitattributes` with `*.sh text eol=lf` to ensure shell
         scripts use LF line endings
   - [x] 1.6 Create `.env.example` with documented environment variables:

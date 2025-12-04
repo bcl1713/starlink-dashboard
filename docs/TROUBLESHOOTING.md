@@ -51,7 +51,7 @@ docker compose logs grafana
 
 **Common Causes & Solutions:**
 
-**1. Configuration Error**
+#### 1. Configuration Error
 
 ```bash
 # Check syntax of .env
@@ -63,7 +63,7 @@ docker compose build --no-cache
 docker compose up -d
 ```
 
-**2. Port Binding Failed**
+#### 2. Port Binding Failed
 
 ```bash
 # Find what's using the port
@@ -75,7 +75,7 @@ lsof -i :3000  # Grafana
 kill -9 <PID>
 ```
 
-**3. Insufficient Disk Space**
+#### 3. Insufficient Disk Space
 
 ```bash
 # Check available space
@@ -86,7 +86,7 @@ docker system prune -a  # Remove unused images
 docker volume prune      # Remove unused volumes
 ```
 
-**4. Memory Issues**
+#### 4. Memory Issues
 
 ```bash
 # Check system memory
@@ -128,7 +128,7 @@ lsof -i :9090
 netstat -ano | findstr :3000
 ```
 
-**Solution 1: Kill process**
+#### Solution 1: Kill process
 
 ```bash
 # Linux/macOS
@@ -138,7 +138,7 @@ kill -9 <PID>
 taskkill /PID <PID> /F
 ```
 
-**Solution 2: Change port in .env**
+#### Solution 2: Change port in .env
 
 ```bash
 # Edit .env
@@ -154,7 +154,7 @@ docker compose down
 docker compose up -d
 ```
 
-**Solution 3: Check if service is running**
+#### Solution 3: Check if service is running
 
 ```bash
 # See what's actually bound to the port
@@ -764,7 +764,7 @@ curl <http://localhost:8000/api/pois/etas> | jq length
 
 ## Debug Logging
 
-### Enable debug mode:
+### Enable debug mode
 
 ```bash
 # Edit .env
@@ -779,7 +779,7 @@ docker compose up -d
 docker compose logs -f starlink-location
 ```
 
-### View all component logs:
+### View all component logs
 
 ```bash
 # All services
@@ -795,7 +795,7 @@ docker compose logs --tail=100 starlink-location
 docker compose logs | grep -i "error"
 ```
 
-### Save logs to file:
+### Save logs to file
 
 ```bash
 # Save all logs
@@ -811,7 +811,7 @@ docker compose logs grafana > grafana.log
 
 ## Getting Help
 
-### Before asking for help, gather:
+### Before asking for help, gather
 
 1. **Log output:**
 
@@ -843,7 +843,7 @@ docker compose logs grafana > grafana.log
    curl <http://localhost:9090/api/v1/targets>
    ```
 
-### Resources:
+### Resources
 
 - [API Reference](./API-REFERENCE.md)
 - [Setup Guide](./SETUP-GUIDE.md)

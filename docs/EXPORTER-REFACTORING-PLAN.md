@@ -187,7 +187,8 @@ def mission_start_timestamp(timeline) -> datetime: ...
 
 **Candidates:**
 
-- `generate_route_map(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
+- `generate_route_map(timeline, mission, parent_mission_id, route_manager,
+  poi_manager) -> bytes`
 
 **Keep As:** Public function (currently `_generate_route_map()`)
 
@@ -247,7 +248,8 @@ def mission_start_timestamp(timeline) -> datetime: ...
 
 **Candidates:**
 
-- `generate_xlsx_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
+- `generate_xlsx_export(timeline, mission, parent_mission_id, route_manager,
+  poi_manager) -> bytes`
 
 **Dependencies:**
 
@@ -261,7 +263,8 @@ def mission_start_timestamp(timeline) -> datetime: ...
 
 **Candidates:**
 
-- `generate_pdf_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
+- `generate_pdf_export(timeline, mission, parent_mission_id, route_manager,
+  poi_manager) -> bytes`
 
 **Dependencies:**
 
@@ -279,7 +282,8 @@ def mission_start_timestamp(timeline) -> datetime: ...
 
 **Candidates:**
 
-- `generate_pptx_export(timeline, mission, parent_mission_id, route_manager, poi_manager) -> bytes`
+- `generate_pptx_export(timeline, mission, parent_mission_id, route_manager,
+  poi_manager) -> bytes`
 
 **Dependencies:**
 
@@ -307,7 +311,8 @@ def mission_start_timestamp(timeline) -> datetime: ...
 - `_add_route_kmls_to_zip(zf, mission, route_manager, manifest_files)`
 - `_add_pois_to_zip(zf, mission, poi_manager, manifest_files)`
 - `_add_per_leg_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)`
-- `_add_combined_mission_exports_to_zip(zf, mission, route_manager, poi_manager, manifest_files)`
+- `_add_combined_mission_exports_to_zip(zf, mission, route_manager,
+  poi_manager, manifest_files)`
 - `_create_export_manifest(mission, manifest_files) -> dict`
 
 **Dependencies:**
@@ -350,9 +355,12 @@ def mission_start_timestamp(timeline) -> datetime: ...
 **Candidates:**
 
 - `generate_mission_combined_csv(mission, output_path) -> bytes | None`
-- `generate_mission_combined_xlsx(mission, route_manager, poi_manager, output_path) -> bytes | None`
-- `generate_mission_combined_pptx(mission, route_manager, poi_manager, output_path) -> bytes | None`
-- `generate_mission_combined_pdf(mission, route_manager, poi_manager, output_path) -> bytes | None`
+- `generate_mission_combined_xlsx(mission, route_manager, poi_manager,
+  output_path) -> bytes | None`
+- `generate_mission_combined_pptx(mission, route_manager, poi_manager,
+  output_path) -> bytes | None`
+- `generate_mission_combined_pdf(mission, route_manager, poi_manager,
+  output_path) -> bytes | None`
 
 **Dependencies:**
 
