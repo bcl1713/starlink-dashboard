@@ -50,16 +50,14 @@ rebuilds images without layer caching.
 
 - Backend: `backend/starlink-location/` (main service)
 - API Layer:
-  - Routes: `app/api/routes/` (management, upload, download, stats, eta,
-    timing, cache)
+  - Routes: `app/api/routes/` (management, upload, download, stats, eta, timing,
+    cache)
   - POIs: `app/api/pois/` (crud, etas, stats, helpers)
   - UI: `app/api/ui/` (routes, templates)
 - Mission Layer:
   - Routes: `app/mission/routes/` (missions, legs, waypoints, operations)
-  - Timeline: `app/mission/timeline_builder/` (calculator, state,
-    validators)
-  - Exporter: `app/mission/exporter/` (formatting, excel_utils,
-    transport_utils)
+  - Timeline: `app/mission/timeline_builder/` (calculator, state, validators)
+  - Exporter: `app/mission/exporter/` (formatting, excel_utils, transport_utils)
   - Package: `app/mission/package/` (mission export/import)
 - Services:
   - KML Parser: `app/services/kml/` (parser, geometry, validators)
