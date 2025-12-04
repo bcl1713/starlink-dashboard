@@ -649,14 +649,43 @@ def _generate_route_map(
             p1 = points[i]
             p2 = points[i + 1]
 
-            # If we lack timing, fall back to simple coloring (whole segment)
+            # If we lack timing, fall back to proportional coloring based on timeline status distribution
             if not p1.expected_arrival_time or not p2.expected_arrival_time:
-                # ... (Existing fallback logic could go here, or just default to unknown)
-                # For now, let's just draw it as unknown if no times
+                # Use the overall timeline status distribution to color the route segments
+                # Distribute timeline status across route proportionally
+                if not timeline or not timeline.segments:
+                    fallback_color = STATUS_COLORS["unknown"]
+                else:
+                    # Calculate proportions of timeline statuses
+                    stats = (
+                        timeline.statistics
+                        if timeline.statistics and isinstance(timeline.statistics, dict)
+                        else {}
+                    )
+                    critical_secs = stats.get("critical_seconds", 0)
+                    degraded_secs = stats.get("degraded_seconds", 0)
+                    nominal_secs = stats.get("nominal_seconds", 0)
+                    total_secs = (
+                        critical_secs + degraded_secs + nominal_secs or 1
+                    )  # Avoid division by zero
+
+                    # Distribute route segments by proportion
+                    # Use cumulative distribution to assign colors proportionally
+                    critical_portion = critical_secs / total_secs
+                    degraded_portion = (critical_secs + degraded_secs) / total_secs
+                    segment_index = i / (len(points) - 1)  # 0-1 normalized position
+
+                    if segment_index < critical_portion:
+                        fallback_color = STATUS_COLORS["critical"]
+                    elif segment_index < degraded_portion:
+                        fallback_color = STATUS_COLORS["degraded"]
+                    else:
+                        fallback_color = STATUS_COLORS["nominal"]
+
                 ax.plot(
                     [p1.longitude, p2.longitude],
                     [p1.latitude, p2.latitude],
-                    color=STATUS_COLORS["unknown"],
+                    color=fallback_color,
                     linewidth=1.5,
                     transform=ccrs.PlateCarree(),
                     zorder=5,
