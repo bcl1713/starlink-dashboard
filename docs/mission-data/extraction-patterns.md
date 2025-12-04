@@ -1,7 +1,7 @@
 # Mission Data Extraction Patterns
 
-Common patterns for extracting and processing mission data for visualization
-and export.
+Common patterns for extracting and processing mission data for visualization and
+export.
 
 ## Quick Extraction Patterns
 

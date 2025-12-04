@@ -1593,7 +1593,7 @@ Compatibility layer (app/api/routes/**init**.py): from app.api.routes.management
 import list_routes, get_route, activate_route from app.api.routes.upload import
 upload_route, delete_route
 
-# External code still works:
+# External code still works
 
 from app.api.routes import list_routes, get_route, activate_route
 

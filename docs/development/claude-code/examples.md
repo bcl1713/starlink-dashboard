@@ -149,8 +149,8 @@ Real-world workflows for common development tasks in this project.
 
 ### Backend & Task Management
 
-**Backend Code:** Use simulation mode for testing, check health endpoint
-with `curl http://localhost:8000/health`, use type hints consistently.
+**Backend Code:** Use simulation mode for testing, check health endpoint with
+`curl http://localhost:8000/health`, use type hints consistently.
 
-**Task Management:** Use `dev/active/` directory - it persists across
-context resets and provides clear handoff documentation.
+**Task Management:** Use `dev/active/` directory - it persists across context
+resets and provides clear handoff documentation.

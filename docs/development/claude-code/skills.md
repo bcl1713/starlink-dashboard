@@ -1,7 +1,7 @@
 # Skills System Reference
 
-Context-aware guidelines that automatically activate based on what
-you're working on.
+Context-aware guidelines that automatically activate based on what you're
+working on.
 
 [Back to main guide →](./README.md)
 
@@ -25,8 +25,8 @@ you're working on.
 
 ### `grafana-dashboard`
 
-**Purpose:** Guidelines for creating and editing Grafana dashboards
-with Prometheus queries.
+**Purpose:** Guidelines for creating and editing Grafana dashboards with
+Prometheus queries.
 
 **Auto-activates when:**
 
@@ -55,9 +55,8 @@ with Prometheus queries.
 
 ### Automatic Activation
 
-The `skill-activation-prompt` hook monitors your prompts and file
-edits. When it detects relevant keywords or file patterns, it suggests
-the appropriate skill.
+The `skill-activation-prompt` hook monitors your prompts and file edits. When it
+detects relevant keywords or file patterns, it suggests the appropriate skill.
 
 ### Manual Activation
 
@@ -69,8 +68,8 @@ You can explicitly request a skill:
 
 ### Skill Suggestion
 
-When a skill is suggested but not automatically loaded, you can accept
-or decline:
+When a skill is suggested but not automatically loaded, you can accept or
+decline:
 
 - Accept: "Yes, use that skill"
 - Decline: Continue without it
@@ -106,8 +105,8 @@ To create a custom skill for your project:
 3. Add `guidance.md` with skill instructions
 4. The `skill-developer` skill can help you build these
 
-**Ask:** "Create a new skill for [task]" and the skill-developer agent
-will guide you through the process.
+**Ask:** "Create a new skill for [task]" and the skill-developer agent will
+guide you through the process.
 
 ---
 
@@ -115,8 +114,8 @@ will guide you through the process.
 
 ### Let Skills Activate Automatically
 
-When editing relevant files, skills often activate automatically. You'll
-see a suggestion popup.
+When editing relevant files, skills often activate automatically. You'll see a
+suggestion popup.
 
 ### Be Specific in Your Requests
 
@@ -142,8 +141,8 @@ Skills provide contextual guidance, while agents do deeper analysis:
 
 ### Disable if Needed
 
-If a skill is interfering with your workflow, you can temporarily
-decline it or disable it in `skill-rules.json`.
+If a skill is interfering with your workflow, you can temporarily decline it or
+disable it in `skill-rules.json`.
 
 ---
 
@@ -191,8 +190,6 @@ Skills use a rules-based system to determine when to activate:
 
 **priority:** How important this skill is (higher = more prominent)
 
-**auto_activate:** Whether to activate automatically or wait for
-confirmation
+**auto_activate:** Whether to activate automatically or wait for confirmation
 
-For more details, see `.claude/skills/skill-rules.json` in your
-project.
+For more details, see `.claude/skills/skill-rules.json` in your project.

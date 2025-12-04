@@ -121,23 +121,23 @@ Start here if you're new to the project:
 
 #### Development (development/)
 
-| File                                                           | Purpose                                   | When to read                |
-| -------------------------------------------------------------- | ----------------------------------------- | --------------------------- |
-| [development/claude-code/README.md](./development/claude-code/) | Claude Code workflows guide (main entry)   | AI-assisted development     |
-| [development/claude-code/agents.md](./development/claude-code/agents.md) | Complete agent reference | Using Claude Code agents    |
-| [development/claude-code/commands.md](./development/claude-code/commands.md) | Slash commands reference | Using development commands  |
-| [development/claude-code/skills.md](./development/claude-code/skills.md) | Skills system reference | Using Claude Code skills    |
-| [development/claude-code/examples.md](./development/claude-code/examples.md) | Practical workflows | Learning by example         |
+| File                                                                         | Purpose                                  | When to read               |
+| ---------------------------------------------------------------------------- | ---------------------------------------- | -------------------------- |
+| [development/claude-code/README.md](./development/claude-code/)              | Claude Code workflows guide (main entry) | AI-assisted development    |
+| [development/claude-code/agents.md](./development/claude-code/agents.md)     | Complete agent reference                 | Using Claude Code agents   |
+| [development/claude-code/commands.md](./development/claude-code/commands.md) | Slash commands reference                 | Using development commands |
+| [development/claude-code/skills.md](./development/claude-code/skills.md)     | Skills system reference                  | Using Claude Code skills   |
+| [development/claude-code/examples.md](./development/claude-code/examples.md) | Practical workflows                      | Learning by example        |
 
 ### Backend (backend/starlink-location/)
 
-| File                                                              | Purpose                          | When to read           |
-| ----------------------------------------------------------------- | -------------------------------- | ---------------------- |
-| [README.md](../backend/starlink-location/README.md)               | Backend service overview and API | Developing backend     |
-| [VALIDATION.md](../backend/starlink-location/VALIDATION.md)       | Testing and validation guide     | Testing                |
-| [VALIDATION-TROUBLESHOOTING.md](../backend/starlink-location/VALIDATION-TROUBLESHOOTING.md) | Validation troubleshooting | Debugging tests |
-| [config.yaml](../backend/starlink-location/config.yaml)           | Default configuration            | Understanding defaults |
-| [requirements.txt](../backend/starlink-location/requirements.txt) | Python dependencies              | Dependency management  |
+| File                                                                                        | Purpose                          | When to read           |
+| ------------------------------------------------------------------------------------------- | -------------------------------- | ---------------------- |
+| [README.md](../backend/starlink-location/README.md)                                         | Backend service overview and API | Developing backend     |
+| [VALIDATION.md](../backend/starlink-location/VALIDATION.md)                                 | Testing and validation guide     | Testing                |
+| [VALIDATION-TROUBLESHOOTING.md](../backend/starlink-location/VALIDATION-TROUBLESHOOTING.md) | Validation troubleshooting       | Debugging tests        |
+| [config.yaml](../backend/starlink-location/config.yaml)                                     | Default configuration            | Understanding defaults |
+| [requirements.txt](../backend/starlink-location/requirements.txt)                           | Python dependencies              | Dependency management  |
 
 ### Development (dev/)
 
@@ -234,8 +234,7 @@ Read in order:
    \- Overview (5 min)
 1. [MISSION-PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md) - User guide (20
    min)
-1. [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) - Operations procedures (15
-   min)
+1. [MISSION-COMM-SOP.md](./MISSION-COMM-SOP.md) - Operations procedures (15 min)
 1. [monitoring/README.md#mission-communication-planning](../monitoring/README.md#mission-communication-planning)
    \- Dashboard setup (10 min)
 

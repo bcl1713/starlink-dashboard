@@ -2,22 +2,21 @@
 
 **Last Updated:** 2025-10-30
 
-This guide explains how to use Claude Code agents, commands, and
-skills installed in this project to enhance your development workflow.
+This guide explains how to use Claude Code agents, commands, and skills
+installed in this project to enhance your development workflow.
 
 ---
 
 ## Quick Start
 
-This project uses Claude Code's advanced infrastructure to provide
-specialized AI assistance for common development tasks. The system
-consists of three main components:
+This project uses Claude Code's advanced infrastructure to provide specialized
+AI assistance for common development tasks. The system consists of three main
+components:
 
 ### **Agents**
 
-Specialized AI assistants that handle complex, multi-step tasks
-autonomously. Think of them as expert teammates you can call on for
-specific jobs.
+Specialized AI assistants that handle complex, multi-step tasks autonomously.
+Think of them as expert teammates you can call on for specific jobs.
 
 **Common use cases:**
 
@@ -31,8 +30,8 @@ specific jobs.
 
 ### **Slash Commands**
 
-Quick commands you type in chat to trigger specific workflows
-(e.g., `/dev-docs`, `/dev-docs-update`).
+Quick commands you type in chat to trigger specific workflows (e.g.,
+`/dev-docs`, `/dev-docs-update`).
 
 **Common use cases:**
 
@@ -44,9 +43,9 @@ Quick commands you type in chat to trigger specific workflows
 
 ### **Skills**
 
-Context-aware guidelines that automatically activate when working
-on specific files or topics (e.g., `grafana-dashboard` skill activates
-when working with Grafana configs).
+Context-aware guidelines that automatically activate when working on specific
+files or topics (e.g., `grafana-dashboard` skill activates when working with
+Grafana configs).
 
 **Currently installed skills:**
 
@@ -89,20 +88,20 @@ when working with Grafana configs).
 
 ### Agent Quick Lookup
 
-| Need...                          | Use...                   |
-|----------------------------------|--------------------------|
-| Code architecture feedback       | `code-architecture-reviewer` |
-| Comprehensive documentation      | `documentation-architect` |
-| Refactoring planning            | `refactor-planner`       |
-| Plan validation                 | `plan-reviewer`          |
-| External research/solutions     | `web-research-specialist` |
+| Need...                     | Use...                       |
+| --------------------------- | ---------------------------- |
+| Code architecture feedback  | `code-architecture-reviewer` |
+| Comprehensive documentation | `documentation-architect`    |
+| Refactoring planning        | `refactor-planner`           |
+| Plan validation             | `plan-reviewer`              |
+| External research/solutions | `web-research-specialist`    |
 
 ### Slash Commands
 
-| Command                  | Purpose                              |
-|------------------------|--------------------------------------|
-| `/dev-docs [desc]`    | Create comprehensive plan with tasks |
-| `/dev-docs-update`    | Update docs before context reset     |
+| Command            | Purpose                              |
+| ------------------ | ------------------------------------ |
+| `/dev-docs [desc]` | Create comprehensive plan with tasks |
+| `/dev-docs-update` | Update docs before context reset     |
 
 ### Key File Locations
 
@@ -176,8 +175,7 @@ dev/active/                      # Active development tasks
 **For Claude Code itself:**
 
 - Documentation: [Claude Code docs](https://docs.claude.com/en/docs/claude-code)
-- Issues:
-  [GitHub issues](https://github.com/anthropics/claude-code/issues)
+- Issues: [GitHub issues](https://github.com/anthropics/claude-code/issues)
 
 **For this project:**
 
@@ -185,5 +183,5 @@ dev/active/                      # Active development tasks
 - Check existing docs in `docs/`
 - Review `.claude/` infrastructure
 
-Remember: These tools are here to help you work more efficiently. Don't
-hesitate to experiment and find workflows that work best for you!
+Remember: These tools are here to help you work more efficiently. Don't hesitate
+to experiment and find workflows that work best for you!

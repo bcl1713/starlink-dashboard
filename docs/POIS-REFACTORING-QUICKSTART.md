@@ -136,7 +136,7 @@ __init__.py (COMPOSITION)
 
 ## Files to Create/Modify
 
-### Create (5 files):
+### Create (5 files)
 
 ```text
 backend/starlink-location/app/api/pois/
@@ -147,7 +147,7 @@ backend/starlink-location/app/api/pois/
 └── stats.py                 ← new
 ```
 
-### Modify (2 files):
+### Modify (2 files)
 
 ```text
 app/main.py
@@ -157,7 +157,7 @@ app/api/__init__.py
   (update imports if needed)
 ```
 
-### Delete (1 file):
+### Delete (1 file)
 
 ```text
 app/api/pois.py (after migration complete)

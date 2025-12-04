@@ -16,7 +16,7 @@ refactoring. These requirements implement **FR-024 through FR-031** from
 **Requirement**: FR-024 - All Python code MUST pass Black formatting (line
 length 88)
 
-### Configuration File
+### Black: Configuration File
 
 **Location**: `pyproject.toml` (project root)
 
@@ -42,19 +42,7 @@ extend-exclude = '''
 '''
 ```
 
-### Execution Contract
-
-**CLI Command**:
-
-```bash
-black --check --diff backend/starlink-location/app/
-```
-
-**Expected Behavior**:
-
-- Exit code 0: All files compliant
-- Exit code 1: Formatting violations detected
-- Output: Diff of required changes (if any)
+### Black: Execution Contract
 
 **CI Integration**:
 
@@ -63,7 +51,7 @@ black --check --diff backend/starlink-location/app/
 - **Runs on**: All `.py` files in `backend/starlink-location/app/` (excluding
   `.venv`, `migrations/`)
 
-### Validation Criteria
+### Black: Validation Criteria
 
 - Line length MUST NOT exceed 88 characters
 - String quotes: Double quotes preferred by Black's defaults
@@ -79,7 +67,7 @@ black --check --diff backend/starlink-location/app/
 formatting (print width 80, prose wrap always) **Requirement**: FR-028 - All
 Markdown MUST pass Prettier formatting (prose wrap always)
 
-### Configuration File
+### Prettier: Configuration File
 
 **Location**: `.prettierrc` (project root)
 
@@ -128,7 +116,7 @@ package-lock.json
 /data/
 ```
 
-### Execution Contract
+### Prettier: Execution Contract
 
 **CLI Commands**:
 
@@ -154,7 +142,7 @@ prettier --check "docs/**/*.md" "*.md"
   - All `.ts`, `.tsx`, `.js`, `.jsx` files in `frontend/mission-planner/src/`
   - All `.md` files in `docs/` and project root
 
-### Validation Criteria
+### Prettier: Validation Criteria
 
 - Print width: 80 characters for code, enforced prose wrap for Markdown
 - Indentation: 2 spaces for TS/JS/JSON/YAML
@@ -171,7 +159,7 @@ prettier --check "docs/**/*.md" "*.md"
 **Requirement**: FR-026 - All TypeScript/JavaScript code MUST pass ESLint
 validation
 
-### Configuration File
+### ESLint: Configuration File
 
 **Location**: `frontend/mission-planner/.eslintrc.json` (or project root if
 shared)
@@ -232,7 +220,7 @@ build/
 *.config.ts
 ```
 
-### Execution Contract
+### ESLint: Execution Contract
 
 **CLI Command**:
 
@@ -253,7 +241,7 @@ eslint "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
 - **Runs on**: All `.ts`, `.tsx`, `.js`, `.jsx` files in
   `frontend/mission-planner/src/`
 
-### Validation Criteria
+### ESLint: Validation Criteria
 
 - **FR-008**: No `any` type usage (enforced by
   `@typescript-eslint/no-explicit-any: error`)
@@ -272,7 +260,7 @@ eslint "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
 
 **Requirement**: FR-027 - All Markdown MUST pass markdownlint-cli2 validation
 
-### Configuration File
+### markdownlint-cli2: Configuration File
 
 **Location**: `.markdownlint-cli2.jsonc` (project root)
 
@@ -304,7 +292,7 @@ eslint "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx}"
 }
 ```
 
-### Execution Contract
+### markdownlint-cli2: Execution Contract
 
 **CLI Command**:
 
@@ -324,7 +312,7 @@ markdownlint-cli2 "docs/**/*.md" "*.md" "specs/**/*.md"
 - **Blocking**: PR merge MUST be blocked if exit code != 0
 - **Runs on**: All `.md` files in `docs/`, `specs/`, and project root
 
-### Validation Criteria
+### markdownlint-cli2: Validation Criteria
 
 - Headings must follow ATX style (`#`, `##`, not underlines)
 - No trailing spaces

@@ -28,8 +28,7 @@ breakdown.
 
 **What it creates:**
 
-Creates a directory structure in `dev/active/[task-name]/` with three
-files:
+Creates a directory structure in `dev/active/[task-name]/` with three files:
 
 ### 1. `[task-name]-plan.md`
 
@@ -72,16 +71,16 @@ forecasting system, and create a complete implementation plan with
 tasks.
 ```
 
-**Best Practice:** Use this AFTER exiting plan mode when you have a
-clear vision. The files persist across context resets, so you can pick
-up where you left off.
+**Best Practice:** Use this AFTER exiting plan mode when you have a clear
+vision. The files persist across context resets, so you can pick up where you
+left off.
 
 ---
 
 ## `/dev-docs-update [optional context]`
 
-**Purpose:** Updates development documentation before context compaction
-or when switching conversations.
+**Purpose:** Updates development documentation before context compaction or when
+switching conversations.
 
 **When to use:**
 
@@ -100,11 +99,9 @@ or when switching conversations.
 
 **What it updates:**
 
-1. **Active task context files** - Current state, decisions made,
-   blockers
+1. **Active task context files** - Current state, decisions made, blockers
 2. **Task checklists** - Mark completed items, add new tasks
-3. **Session context** - Complex problems solved, architectural
-   decisions
+3. **Session context** - Complex problems solved, architectural decisions
 4. **Handoff notes** - Exact state for continuing work later
 
 **Example for this project:**
@@ -118,8 +115,8 @@ or when switching conversations.
 metrics
 ```
 
-**Best Practice:** Run this before ending a session so the next Claude
-instance (or you later) can pick up seamlessly.
+**Best Practice:** Run this before ending a session so the next Claude instance
+(or you later) can pick up seamlessly.
 
 ---
 

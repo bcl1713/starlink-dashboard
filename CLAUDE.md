@@ -12,8 +12,8 @@ TypeScript/React frontend; Markdown documentation.
 
 - `docs/design-document.md` – architecture
 - `docs/phased-development-plan.md` – development roadmap
-- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phases &
-  ETA modes
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phases & ETA
+  modes
 
 ## ⚠️ Backend Python Code Changes (CRITICAL)
 
@@ -61,16 +61,16 @@ realistic Starlink telemetry (position, speed, latency, throughput,
 obstructions). No hardware required.
 
 **Live Mode:** Set `STARLINK_MODE=live`. Connects to real terminal at
-`STARLINK_DISH_HOST:STARLINK_DISH_PORT`. If dish unavailable on startup,
-service initializes without metrics and auto-reconnects on each cycle. Check
+`STARLINK_DISH_HOST:STARLINK_DISH_PORT`. If dish unavailable on startup, service
+initializes without metrics and auto-reconnects on each cycle. Check
 `http://localhost:8000/health` for connection status.
 
 ## Core Metrics & APIs
 
-**Prometheus Metrics:**
-Position (`starlink_dish_latitude_degrees`, longitude, altitude), Network
-(latency_ms, throughput_down/up_mbps), Status (obstruction_percent, speed_knots,
-heading_degrees), POI/ETA (eta_poi_seconds, distance_to_poi_meters).
+**Prometheus Metrics:** Position (`starlink_dish_latitude_degrees`, longitude,
+altitude), Network (latency_ms, throughput_down/up_mbps), Status
+(obstruction_percent, speed_knots, heading_degrees), POI/ETA (eta_poi_seconds,
+distance_to_poi_meters).
 
 **Flight Status & ETA:**
 
@@ -83,8 +83,8 @@ heading_degrees), POI/ETA (eta_poi_seconds, distance_to_poi_meters).
 ## Storage & Route Management
 
 **Prometheus Storage:** Default 1-year retention (~2.4 GB). Adjust
-`PROMETHEUS_RETENTION` in `.env`: `1y` (2.4 GB), `90d` (600 MB), `30d`
-(200 MB), `15d` (100 MB).
+`PROMETHEUS_RETENTION` in `.env`: `1y` (2.4 GB), `90d` (600 MB), `30d` (200 MB),
+`15d` (100 MB).
 
 **Route APIs:**
 
@@ -103,12 +103,12 @@ cross-country.kml, route-with-pois.kml)
 
 ## KML Format & Route Features
 
-**KML Format:** Coordinate order: `longitude,latitude,altitude`. Longitude:
--180 to 180 (negative = West), Latitude: -90 to 90 (negative = South). Supports
+**KML Format:** Coordinate order: `longitude,latitude,altitude`. Longitude: -180
+to 180 (negative = West), Latitude: -90 to 90 (negative = South). Supports
 LineString (routes) and Point (POIs).
 
-**Route Features:** KML import with auto-discovery, Grafana visualization
-(dark orange), simulation following, progress metrics
+**Route Features:** KML import with auto-discovery, Grafana visualization (dark
+orange), simulation following, progress metrics
 (`starlink_route_progress_percent`, `starlink_current_waypoint_index`), POI
 import from Point placemarks.
 
@@ -137,7 +137,6 @@ Refer to:
 
 - `docs/design-document.md` – full architecture (sections 1-7)
 - `docs/phased-development-plan.md` – implementation roadmap
-- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – testing flight
-  modes
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – testing flight modes
 
 **Docker Builds:** Delegate to sub-agents (expensive context).

@@ -10,8 +10,8 @@ Complete reference for all available Claude Code agents in this project.
 
 ### `code-architecture-reviewer`
 
-**Purpose:** Reviews code for architectural consistency, best practices,
-and integration with existing systems.
+**Purpose:** Reviews code for architectural consistency, best practices, and
+integration with existing systems.
 
 **When to use:**
 
@@ -47,8 +47,8 @@ Can you review it?"
 
 ### `refactor-planner`
 
-**Purpose:** Analyzes existing code and creates comprehensive refactoring
-plans with risk assessment.
+**Purpose:** Analyzes existing code and creates comprehensive refactoring plans
+with risk assessment.
 
 **When to use:**
 
@@ -86,8 +86,8 @@ satellite data. Can you create a refactoring plan?"
 
 ### `plan-reviewer`
 
-**Purpose:** Reviews development plans before implementation to catch
-issues early.
+**Purpose:** Reviews development plans before implementation to catch issues
+early.
 
 **When to use:**
 
@@ -124,8 +124,8 @@ threshold. Here's my plan: [details]. Can you review it?"
 
 ### `documentation-architect`
 
-**Purpose:** Creates comprehensive documentation by gathering context
-from code, existing docs, and project knowledge.
+**Purpose:** Creates comprehensive documentation by gathering context from code,
+existing docs, and project knowledge.
 
 **When to use:**
 
@@ -165,8 +165,8 @@ we expose, including what they measure and when to use them"
 
 ### `web-research-specialist`
 
-**Purpose:** Researches technical problems across GitHub issues, Stack
-Overflow, Reddit, forums, and other community resources.
+**Purpose:** Researches technical problems across GitHub issues, Stack Overflow,
+Reddit, forums, and other community resources.
 
 **When to use:**
 
@@ -204,13 +204,13 @@ common causes and solutions."
 
 ## Quick Reference
 
-| Agent | Invoke With |
-|-------|-------------|
-| `code-architecture-reviewer` | "Review [file/feature]" |
-| `documentation-architect` | "Document [system/API/feature]" |
-| `refactor-planner` | "Create refactoring plan for [code]" |
-| `plan-reviewer` | "Review this plan: [plan]" |
-| `web-research-specialist` | "Research [topic/problem]" |
+| Agent                        | Invoke With                          |
+| ---------------------------- | ------------------------------------ |
+| `code-architecture-reviewer` | "Review [file/feature]"              |
+| `documentation-architect`    | "Document [system/API/feature]"      |
+| `refactor-planner`           | "Create refactoring plan for [code]" |
+| `plan-reviewer`              | "Review this plan: [plan]"           |
+| `web-research-specialist`    | "Research [topic/problem]"           |
 
 ---
 
@@ -235,8 +235,8 @@ Ask directly when:
 
 ### Effective Agent Invocation
 
-**Be specific:** "Review the POI calculation logic in the distance
-endpoint" is better than "Review my code"
+**Be specific:** "Review the POI calculation logic in the distance endpoint" is
+better than "Review my code"
 
 **Provide context:** Include what you're trying to achieve and why
 

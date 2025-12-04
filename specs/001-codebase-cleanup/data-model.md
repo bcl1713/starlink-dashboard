@@ -16,12 +16,11 @@ compliance.
 **Description**: A source code or documentation file subject to constitutional
 principles and refactoring requirements.
 
-#### Attributes
+#### Code File: Attributes
 
 | Attribute              | Type          | Required | Description                                                      |
-| ---------------------- | ------------- | -------- | ---------------------------------------------------------------- |
-| `file_id`              | string (UUID) | Yes      | Unique identifier                                                |
-| `path`                 | string        | Yes      | Absolute path from repository root                               |
+| ---------------------- | ------------- | -------- | ---------------------------------------------------------------- | --- | ------ | ------ | --- | ---------------------------------- |
+| `file_id`              | string (UUID) | Yes      | Unique identifier                                                |     | `path` | string | Yes | Absolute path from repository root |
 | `line_count`           | integer       | Yes      | Current number of lines in file                                  |
 | `original_line_count`  | integer       | Yes      | Line count before any refactoring                                |
 | `language`             | enum          | Yes      | `python`, `typescript`, `javascript`, `markdown`                 |
@@ -37,7 +36,7 @@ principles and refactoring requirements.
 | `updated_at`           | timestamp     | Yes      | Last modification time                                           |
 | `metadata`             | JSON          | No       | Additional context (dependencies, cyclomatic complexity, etc.)   |
 
-#### Relationships
+#### Code File: Relationships
 
 - **Has Many** `Refactoring Task` (1:N) - A file may require multiple
   refactoring tasks (size reduction, documentation, SOLID principles)
@@ -46,7 +45,7 @@ principles and refactoring requirements.
 - **Belongs To** `Pull Request` (N:1) - A file is refactored within one or more
   PRs (across iterations)
 
-#### State Machine
+#### Code File: State Machine
 
 ```text
 ┌─────────────┐
@@ -91,7 +90,7 @@ principles and refactoring requirements.
 - `violating → deferred`: Evaluation determines refactoring unsafe; FR-004
   comment added
 
-#### Validation Rules
+#### Code File: Validation Rules
 
 1. **Line Count Constraint**: `line_count` must be ≤ 300 for `validated` state
    (or `has_justification` = true)
@@ -141,12 +140,11 @@ principles and refactoring requirements.
 **Description**: A specific unit of work to bring one or more files into
 constitutional compliance.
 
-#### Attributes
+#### Refactoring Task: Attributes
 
 | Attribute          | Type          | Required | Description                                                         |
-| ------------------ | ------------- | -------- | ------------------------------------------------------------------- |
-| `task_id`          | string (UUID) | Yes      | Unique identifier                                                   |
-| `title`            | string        | Yes      | Human-readable task description                                     |
+| ------------------ | ------------- | -------- | ------------------------------------------------------------------- | --- | ------- | ------ | --- | ------------------------------- |
+| `task_id`          | string (UUID) | Yes      | Unique identifier                                                   |     | `title` | string | Yes | Human-readable task description |
 | `target_files`     | string[]      | Yes      | Array of file paths this task addresses                             |
 | `violation_type`   | enum          | Yes      | `size`, `documentation`, `solid_design`, `linting`, `type_coverage` |
 | `estimated_effort` | enum          | Yes      | `small`, `medium`, `large`, `xlarge` (matches Code File)            |
@@ -164,17 +162,16 @@ constitutional compliance.
 | `updated_at`       | timestamp     | Yes      | Last update time                                                    |
 | `notes`            | string        | No       | Implementation notes, blockers, decisions                           |
 
-#### Relationships
+#### Refactoring Task: Relationships
 
 - **Belongs To Many** `Code File` (N:M) - A task may refactor multiple related
-  files; a file may require multiple tasks
-- **Has Many** `Validation Check` (1:N) - A task triggers validation checks upon
-  completion
+  files; a file may require multiple tasks- **Has Many** `Validation Check`
+  (1:N) - A task triggers validation checks upon completion
 - **Belongs To** `Pull Request` (N:1) - A task is completed within a single PR
 - **Depends On** `Refactoring Task` (N:M) - Tasks may have dependency
   relationships
 
-#### State Machine
+#### Refactoring Task: State Machine
 
 ```text
 ┌─────────────┐
@@ -229,7 +226,7 @@ constitutional compliance.
 - `blocked/in_progress → deferred`: Risk assessment deems task unsafe; follow-up
   issue created
 
-#### Validation Rules
+#### Refactoring Task: Validation Rules
 
 1. **Dependency Acyclic Constraint**: No circular dependencies allowed in
    `dependencies` graph
@@ -274,7 +271,7 @@ constitutional compliance.
 **Description**: An automated or manual verification that a requirement is met
 for a Code File or Refactoring Task.
 
-#### Attributes
+#### Validation Check: Attributes
 
 | Attribute        | Type          | Required | Description                                                 |
 | ---------------- | ------------- | -------- | ----------------------------------------------------------- |
@@ -308,14 +305,13 @@ for a Code File or Refactoring Task.
 | `smoke_test`              | Manual functional verification                    | No        | Assumption  |
 | `solid_compliance`        | Review for SOLID violations (manual or tool)      | Partial   | FR-018-023  |
 
-#### Relationships
+#### Validation Check: Relationships
 
 - **Belongs To** `Code File` OR `Refactoring Task` OR `Pull Request` (N:1) - A
-  check validates one entity
-- **Triggered By** `Refactoring Task` (N:1) - Tasks trigger checks upon
-  completion
+  check validates one entity- **Triggered By** `Refactoring Task` (N:1) - Tasks
+  trigger checks upon completion
 
-#### State Machine
+#### Validation Check: State Machine
 
 ```text
 ┌─────────────┐
@@ -352,7 +348,7 @@ for a Code File or Refactoring Task.
 - `running → failed`: Check criteria not met
 - `pending → skipped`: Check not applicable to target entity
 
-#### Validation Rules
+#### Validation Check: Validation Rules
 
 1. **Target Existence**: `target_id` must reference an existing Code File,
    Refactoring Task, or Pull Request
