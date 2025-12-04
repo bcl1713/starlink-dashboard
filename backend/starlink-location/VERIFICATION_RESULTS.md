@@ -9,26 +9,26 @@ Tests**: 123 **Passed**: 123 ✅ **Failed**: 0 ✅ **Coverage**: 91%
 
 ### Unit Tests: 76 Passed ✅
 
-| Module               | Tests  | Status        |
-| -------------------- | ------ | ------------- |
-| test_config.py       | 18     | ✅ PASSED     |
-| test_metrics.py      | 10     | ✅ PASSED     |
-| test_network.py      | 11     | ✅ PASSED     |
-| test_obstructions.py | 8      | ✅ PASSED     |
-| test_position.py     | 12     | ✅ PASSED     |
-| test_route.py        | 17     | ✅ PASSED     |
-| **TOTAL**            | **76** | **✅ PASSED** |
+| Module               | Tests  | Status    |
+| -------------------- | ------ | --------- |
+| test_config.py       | 18     | ✅ PASSED |
+| test_metrics.py      | 10     | ✅ PASSED |
+| test_network.py      | 11     | ✅ PASSED |
+| test_obstructions.py | 8      | ✅ PASSED |
+| test_position.py     | 12     | ✅ PASSED |
+| test_route.py        | 17     | ✅ PASSED |
+| **TOTAL**            | **76** | ✅ PASSED |
 
 ### Integration Tests: 47 Passed ✅
 
-| Module                   | Tests  | Status        |
-| ------------------------ | ------ | ------------- |
-| test_config_api.py       | 9      | ✅ PASSED     |
-| test_health.py           | 7      | ✅ PASSED     |
-| test_metrics_endpoint.py | 10     | ✅ PASSED     |
-| test_simulation_e2e.py   | 10     | ✅ PASSED     |
-| test_status.py           | 9      | ✅ PASSED     |
-| **TOTAL**                | **47** | **✅ PASSED** |
+| Module                   | Tests  | Status    |
+| ------------------------ | ------ | --------- |
+| test_config_api.py       | 9      | ✅ PASSED |
+| test_health.py           | 7      | ✅ PASSED |
+| test_metrics_endpoint.py | 10     | ✅ PASSED |
+| test_simulation_e2e.py   | 10     | ✅ PASSED |
+| test_status.py           | 9      | ✅ PASSED |
+| **TOTAL**                | **47** | ✅ PASSED |
 
 ## Code Coverage Analysis
 

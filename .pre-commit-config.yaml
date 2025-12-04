@@ -52,7 +52,8 @@ repos:
     hooks:
       - id: markdownlint
         name: Markdownlint - Markdown linter
-        entry: bash -c 'markdownlint-cli2 --ignore ".markdownlintignore" "$@"' --
+        entry:
+          bash -c 'markdownlint-cli2 --ignore ".markdownlintignore" "$@"' --
         language: system
         files: \.md$
         exclude: ^(node_modules|\.venv|__pycache__|specs/)

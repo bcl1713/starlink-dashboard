@@ -2,7 +2,8 @@
   SYNC IMPACT REPORT (v1.0.1)
   ===========================
   Version Change: 1.0.0 → 1.0.1 (PATCH: Linting discipline clarification)
-  Modified Sections: Code Formatting & Linting (added markdownlint-cli2, disabled comment policy)
+  Modified Sections: Code Formatting & Linting (added markdownlint-cli2,
+  disabled comment policy)
   Templates Updated:
     - plan-template.md: ✅ Compatible with Constitution Check gate
     - spec-template.md: ✅ Compatible with user story prioritization
