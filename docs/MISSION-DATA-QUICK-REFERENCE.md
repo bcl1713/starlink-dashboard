@@ -1,5 +1,7 @@
 # Mission Data Structures - Quick Reference Card
 
+Quick reference for core mission data structures and their relationships.
+
 ## Core Classes at a Glance
 
 ### Mission
@@ -97,95 +99,6 @@ route_aware_status: str          # "ahead_on_route" | "already_passed" | "not_on
 | `"pre_departure"` | Before departure |
 | `"in_flight"`     | Currently flying |
 | `"post_arrival"`  | After landing    |
-
----
-
-## Helper Functions Cheat Sheet
-
-### Time Formatting (from exporter.py)
-
-```python
-_ensure_timezone(dt)              # → UTC-aware datetime
-_mission_start_timestamp(timeline) # → datetime (mission T+0)
-_format_utc(dt)                   # → "2025-10-27 18:25Z"
-_format_eastern(dt)               # → "2025-10-27 14:25EDT"
-_format_offset(delta)             # → "T+01:40"
-_compose_time_block(dt, start)    # → "UTC\nEastern\nT+offset"
-```
-
-### Data Processing
-
-```python
-_format_seconds_hms(seconds)      # → "HH:MM:SS"
-_serialize_transport_list(transports)  # → "X-Band, CommKa, StarShield"
-_segment_rows(timeline, mission)  # → DataFrame with all segment data
-_segment_at_time(timeline, ts)    # → TimelineSegment | None
-_segment_is_x_ku_warning(segment) # → bool (special warning case)
-```
-
-### Constants
-
-```python
-TRANSPORT_DISPLAY = {
-    Transport.X: "X-Band",
-    Transport.KA: "CommKa",
-    Transport.KU: "StarShield",
-}
-
-LIGHT_YELLOW = colors.Color(1.0, 1.0, 0.85)    # Degraded
-LIGHT_RED = colors.Color(1.0, 0.85, 0.85)      # Critical
-
-STATE_COLUMNS = ["X-Band", "CommKa", "StarShield"]
-```
-
----
-
-## Data Extraction Quick Patterns
-
-### Extract segment for chart
-
-```python
-mission_start = _mission_start_timestamp(timeline)
-for segment in timeline.segments:
-    start = _ensure_timezone(segment.start_time)
-    end = _ensure_timezone(segment.end_time)
-    duration = _format_seconds_hms((end - start).total_seconds())
-    status = segment.status.value.upper()
-    time_block = _compose_time_block(start, mission_start)
-```
-
-### Extract POI markers
-
-```python
-for poi in pois:
-    marker = {
-        "id": poi.poi_id,
-        "name": poi.name,
-        "lat": poi.latitude,
-        "lon": poi.longitude,
-        "eta": _format_seconds_hms(poi.eta_seconds) if poi.eta_seconds > 0 else "-",
-        "status": poi.route_aware_status,
-    }
-```
-
-### Get route geometry
-
-```python
-route_bounds = route.get_bounds()
-route_distance_m = route.get_total_distance()
-route_line = [(p.latitude, p.longitude) for p in route.points]
-```
-
-### Extract timeline statistics
-
-```python
-stats = {
-    "total": timeline.statistics.get("total_duration_seconds", 0),
-    "nominal": timeline.statistics.get("nominal_seconds", 0),
-    "degraded": timeline.statistics.get("degraded_seconds", 0),
-    "critical": timeline.statistics.get("critical_seconds", 0),
-}
-```
 
 ---
 
@@ -292,20 +205,9 @@ from app.models.poi import POI, POIWithETA
 
 ---
 
-## Next Steps
+## Additional Documentation
 
-For map visualization:
+For detailed helper functions and usage patterns, see:
 
-1. Extract route geometry: `route.points` for line, `route.waypoints` for
-   markers
-1. Add POI markers from `pois_with_eta` list
-1. Project timeline segments onto route using time/distance alignment
-1. Color segments by `segment.status`
-
-For chart visualization:
-
-1. Create timeline axis from `mission_start` to final segment end
-2. For each segment, draw bar: `start_time` to `end_time`, colored by status
-3. Add advisory markers at their timestamps
-4. Stack transport states (X-Band, CommKa, StarShield) for degraded/critical
-5. Display statistics summary above chart
+- [Helper Functions Reference](mission-data/helper-functions.md)
+- [Data Extraction Patterns](mission-data/extraction-patterns.md)

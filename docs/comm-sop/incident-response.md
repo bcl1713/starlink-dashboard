@@ -96,13 +96,13 @@ transmitter hardware failure).
    # Send to system engineer
    ```
 
-1. **Verify metrics:**
+2. **Verify metrics:**
 
    ```bash
    curl <http://localhost:8000/metrics> | rg mission
    ```
 
-1. **Escalate to:**
+3. **Escalate to:**
    - System Operations (infrastructure investigation)
    - Mission Planner (next-flight impact analysis)
    - Flight Safety (incident report)
@@ -117,154 +117,14 @@ transmitter hardware failure).
    # Verify mission re-activates and metrics resume
    ```
 
-1. **Verify crew comms restored:**
+2. **Verify crew comms restored:**
    - Dashboard shows system NOMINAL
    - Crew confirms signal and data rates normal
 
-1. **Post-incident review:**
+3. **Post-incident review:**
    - Root cause analysis (hardware? software? config?)
    - Design improvements (redundancy? failover?)
    - Documentation update (incident log, lessons learned)
-
----
-
-## Post-Incident Review Template
-
-### Incident Summary
-
-- **Date/Time (UTC):** [timestamp]
-- **Duration:** [how long]
-- **Systems Affected:** [X/Ka/Ku]
-- **Crew Impact:** [description]
-- **Mission Phase:** [pre-departure/in-flight/post-arrival]
-
-### Timeline of Events
-
-```text
-HH:MM UTC - Event description
-HH:MM UTC - Action taken
-HH:MM UTC - Result/observation
-```
-
-### Root Cause Analysis
-
-**What happened:**
-
-- Technical description of failure
-- Which component(s) failed
-- Why it failed (if known)
-
-**Why it wasn't predicted:**
-
-- Timeline prediction accuracy
-- Was this within normal operating parameters?
-- New failure mode discovered?
-
-### Impact Assessment
-
-**Operational Impact:**
-
-- Mission delay: [yes/no, how long]
-- Crew safety: [any concerns]
-- Communication degradation: [description]
-
-**System Impact:**
-
-- Which services affected
-- Data loss: [yes/no, how much]
-- Recovery time: [duration]
-
-### Corrective Actions
-
-**Immediate (completed):**
-
-1. [Action taken]
-2. [Action taken]
-
-**Short-term (next 7 days):**
-
-1. [Action to take]
-2. [Action to take]
-
-**Long-term (next 30 days):**
-
-1. [Action to take]
-2. [Action to take]
-
-### Lessons Learned
-
-**What worked well:**
-
-- [positive observation]
-- [positive observation]
-
-**What could be improved:**
-
-- [improvement opportunity]
-- [improvement opportunity]
-
-**Documentation updates needed:**
-
-- [ ] Update SOP section: [which section]
-- [ ] Update training materials
-- [ ] Update timeline prediction model
-- [ ] Update alert thresholds
-
-### Stakeholder Communication
-
-**Notified:**
-
-- [ ] Flight Lead
-- [ ] Ops Chief
-- [ ] Mission Planner
-- [ ] System Engineer
-- [ ] Flight Safety Officer
-
-**Report Distribution:**
-
-- [ ] Operations team
-- [ ] Engineering team
-- [ ] Management
-- [ ] Flight crew
-
----
-
-## Incident Severity Levels
-
-### Level 1: Informational
-
-- No crew impact
-- Predicted degradation occurred as expected
-- All systems recovered on schedule
-- **Action:** Log for trend analysis
-
-### Level 2: Minor
-
-- Brief unexpected degradation (< 5 min)
-- Backup system available
-- Crew unaffected
-- **Action:** Document and investigate root cause
-
-### Level 3: Moderate
-
-- Extended unexpected degradation (5-15 min)
-- Crew experienced service interruption
-- Backup system used successfully
-- **Action:** Full investigation, possible SOP update
-
-### Level 4: Major
-
-- Multiple system failure
-- Extended crew impact (> 15 min)
-- Mission objectives potentially affected
-- **Action:** Immediate escalation, comprehensive review
-
-### Level 5: Critical
-
-- All communication systems down
-- Crew safety potentially affected
-- Mission abort considered
-- **Action:** Emergency response, executive notification
 
 ---
 
@@ -318,3 +178,12 @@ Final Status: [RESOLVED/ONGOING/ESCALATED]
 Follow-up Required: [YES/NO]
 Post-Incident Review Scheduled: [DATE/TIME]
 ```
+
+---
+
+## Additional Documentation
+
+For detailed post-incident review procedures and severity levels, see:
+
+- [Incident Severity Levels](incident-severity-levels.md)
+- [Post-Incident Review](post-incident-review.md)

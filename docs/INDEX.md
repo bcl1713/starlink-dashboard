@@ -118,7 +118,16 @@ Start here if you're new to the project:
 | [design-document.md](./design-document.md)                 | System architecture and design decisions | Understanding architecture  |
 | [phased-development-plan.md](./phased-development-plan.md) | Implementation roadmap and phases        | Understanding plan          |
 | [grafana-setup.md](./grafana-setup.md)                     | Dashboard configuration and usage        | Learning Grafana dashboards |
-| [claude-code-workflows.md](./claude-code-workflows.md)     | Claude-specific development workflows    | AI-assisted development     |
+
+#### Development (development/)
+
+| File                                                           | Purpose                                   | When to read                |
+| -------------------------------------------------------------- | ----------------------------------------- | --------------------------- |
+| [development/claude-code/README.md](./development/claude-code/) | Claude Code workflows guide (main entry)   | AI-assisted development     |
+| [development/claude-code/agents.md](./development/claude-code/agents.md) | Complete agent reference | Using Claude Code agents    |
+| [development/claude-code/commands.md](./development/claude-code/commands.md) | Slash commands reference | Using development commands  |
+| [development/claude-code/skills.md](./development/claude-code/skills.md) | Skills system reference | Using Claude Code skills    |
+| [development/claude-code/examples.md](./development/claude-code/examples.md) | Practical workflows | Learning by example         |
 
 ### Backend (backend/starlink-location/)
 
@@ -126,6 +135,7 @@ Start here if you're new to the project:
 | ----------------------------------------------------------------- | -------------------------------- | ---------------------- |
 | [README.md](../backend/starlink-location/README.md)               | Backend service overview and API | Developing backend     |
 | [VALIDATION.md](../backend/starlink-location/VALIDATION.md)       | Testing and validation guide     | Testing                |
+| [VALIDATION-TROUBLESHOOTING.md](../backend/starlink-location/VALIDATION-TROUBLESHOOTING.md) | Validation troubleshooting | Debugging tests |
 | [config.yaml](../backend/starlink-location/config.yaml)           | Default configuration            | Understanding defaults |
 | [requirements.txt](../backend/starlink-location/requirements.txt) | Python dependencies              | Dependency management  |
 
