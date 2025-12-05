@@ -13,7 +13,7 @@
   details
 - **[Core Components](./core-components.md)** - Backend, Prometheus, Grafana
 - **[Mapping & Routing](./mapping-routing.md)** - KML routes, POIs, and ETAs
-- **[Development Workflow](./development-workflow.md)** - Development practices
+- **[Development Workflow](../development/workflow.md)** - Development practices
 - **[Future Enhancements](./future-enhancements.md)** - Planned features
 
 ---

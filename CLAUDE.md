@@ -34,7 +34,19 @@ rebuilds images without layer caching.
 ## Key References
 
 - Project overview: `README.md`
-- Architecture: `docs/design-document.md`
+- Architecture: `docs/architecture/design-document.md`
 - Features & APIs: `docs/FEATURES-OVERVIEW.md`, `docs/API-REFERENCE-INDEX.md`
 - Code standards: `.specify/memory/constitution.md`
-- Setup: `docs/QUICK-START.md`, `docs/SETUP-GUIDE.md`
+- Setup: `docs/setup/quick-start.md`, `docs/setup/README.md`
+- Development: `docs/development/workflow.md`
+
+## Active Technologies
+
+- Markdown (CommonMark specification) + ripgrep (rg) for search, git mv for
+  preserving history (002-docs-cleanup)
+- Filesystem-based markdown files in docs/ hierarchy (002-docs-cleanup)
+
+## Recent Changes
+
+- 002-docs-cleanup: Added Markdown (CommonMark specification) + ripgrep (rg) for
+  search, git mv for preserving history

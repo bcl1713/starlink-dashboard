@@ -1,0 +1,26 @@
+# File Size Report (>280 lines)
+
+286 ./backend/starlink-location/VALIDATION.md
+395 ./.claude/commands/speckit.checklist.md
+314 ./.claude/commands/speckit.specify.md
+324 ./data/sample_routes/README.md
+292 ./docs/metrics/reference.md
+282 ./docs/metrics/troubleshooting.md
+297 ./docs/README-POIS-REFACTORING.md
+299 ./docs/setup/prerequisites-verification.md
+649 ./specs/001-codebase-cleanup/contracts/linting-config-requirements.md
+837 ./specs/001-codebase-cleanup/contracts/smoke-test-checklist.md
+734 ./specs/001-codebase-cleanup/data-model.md
+284 ./specs/001-codebase-cleanup/plan.md
+2309 ./specs/001-codebase-cleanup/quickstart.md
+1142 ./specs/001-codebase-cleanup/research.md
+326 ./specs/001-codebase-cleanup/RETROSPECTIVE.md
+346 ./specs/001-codebase-cleanup/spec.md
+791 ./specs/001-codebase-cleanup/tasks.md
+396 ./specs/002-docs-cleanup/contracts/category-requirements.md
+419 ./specs/002-docs-cleanup/contracts/link-validation-checklist.md
+498 ./specs/002-docs-cleanup/data-model.md
+368 ./specs/002-docs-cleanup/plan.md
+397 ./specs/002-docs-cleanup/quickstart.md
+351 ./specs/002-docs-cleanup/research.md
+355 ./specs/002-docs-cleanup/tasks.md

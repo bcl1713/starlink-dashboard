@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-[Back to README](../README.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
 
 ---
 
@@ -30,7 +30,7 @@ curl http://localhost:8000/health        # Backend health
 open http://localhost:3000                # Grafana (admin/admin)
 ```
 
-**Detailed setup:** See [Setup Guide](./SETUP-GUIDE.md)
+**Detailed setup:** See [Installation Guide](./installation.md)
 
 ---
 
@@ -67,7 +67,7 @@ PROMETHEUS_RETENTION=1y           # 1 year of data
 - Simulates network metrics with realistic patterns
 - Useful for UI development and testing
 
-**See:** [Setup Guide - Simulation Mode](./SETUP-GUIDE.md#simulation-mode-setup)
+**See:** [Configuration Guide - Simulation Mode](./configuration.md#simulation-mode)
 
 ---
 
@@ -88,7 +88,7 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 - Network access to terminal's gRPC port
 - Proper Docker networking configuration
 
-**See:** [Setup Guide - Live Mode](./SETUP-GUIDE.md#live-mode-setup)
+**See:** [Configuration Guide - Live Mode](./configuration.md#live-mode)
 
 ---
 
@@ -143,4 +143,4 @@ curl http://localhost:8000/metrics | head -20
 
 ---
 
-[Back to README](../README.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)

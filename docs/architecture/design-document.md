@@ -2,18 +2,18 @@
 
 **This document has been reorganized into multiple focused files.**
 
-Please see: **[Architecture Documentation](./architecture/README.md)**
+Please see: **[Architecture Documentation](./README.md)**
 
 ---
 
 ## Quick Links
 
-- **[Overview & Objectives](./architecture/README.md)** - Project goals
-- **[System Architecture](./architecture/README.md#system-stack)** - Component
+- **[Overview & Objectives](./README.md)** - Project goals
+- **[System Architecture](./README.md#system-stack)** - Component
   design
-- **[Core Components](./architecture/README.md)** - Backend, Prometheus, Grafana
-- **[Development Workflow](../CLAUDE.md)** - Docker rebuild process
-- **[Setup Guide](./setup/README.md)** - Installation instructions
+- **[Core Components](./README.md)** - Backend, Prometheus, Grafana
+- **[Development Workflow](../../CLAUDE.md)** - Docker rebuild process
+- **[Setup Guide](../setup/README.md)** - Installation instructions
 
 ---
 
@@ -41,6 +41,6 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
 
 ---
 
-[Go to Full Architecture Documentation →](./architecture/README.md)
+[Go to Full Architecture Documentation →](./README.md)
 
-[Back to main docs](./INDEX.md)
+[Back to main docs](../INDEX.md)

@@ -13,17 +13,17 @@ physical Starlink hardware and simulation mode for offline development.
 
 **For Users:**
 
-- [Quick Start](./docs/QUICK-START.md) - Get up and running in 3 minutes
-- [Setup Guide](./docs/SETUP-GUIDE.md) - Detailed installation instructions
-- [Features Overview](./docs/FEATURES-OVERVIEW.md) - Complete feature list
+- [Quick Start](./docs/setup/quick-start.md) - Get up and running in 3 minutes
+- [Setup Guide](./docs/setup/README.md) - Detailed installation instructions
+- [Features Overview](./docs/features/overview.md) - Complete feature list
 - [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 **For Developers:**
 
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 - [API Reference](./docs/API-REFERENCE-INDEX.md) - Complete API documentation
-- [Development Status](./dev/STATUS.md) - Current development status
-- [Architecture](./docs/design-document.md) - System design and architecture
+- [Development Workflow](./docs/development/workflow.md) - Development practices
+- [Architecture](./docs/architecture/design-document.md) - System design and architecture
 
 ---
 
@@ -82,7 +82,7 @@ Comprehensive documentation is organized by topic:
 
 ### For Using the System
 
-- [Features Overview](./docs/FEATURES-OVERVIEW.md) - Complete feature list
+- [Features Overview](./docs/features/overview.md) - Complete feature list
 - [Grafana Setup](./docs/grafana-setup.md) - Dashboard usage
 - [API Reference](./docs/API-REFERENCE-INDEX.md) - REST API endpoints
 - [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues
