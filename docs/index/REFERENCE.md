@@ -24,13 +24,14 @@
 **Installation & Setup:**
 
 - Quick Start: [README.md#quick-start](../../README.md#quick-start)
-- Detailed Setup: [SETUP-GUIDE.md](../SETUP-GUIDE.md)
+- Detailed Setup: [setup/installation.md](../setup/installation.md)
 - Simulation Mode:
-  [SETUP-GUIDE.md#simulation-mode-setup](../SETUP-GUIDE.md#simulation-mode-setup)
-- Live Mode: [SETUP-GUIDE.md#live-mode-setup](../SETUP-GUIDE.md#live-mode-setup)
-- Verification: [SETUP-GUIDE.md#verification](../SETUP-GUIDE.md#verification)
+  [setup/configuration/simulation-mode.md](../setup/configuration/simulation-mode.md)
+- Live Mode:
+  [setup/configuration/live-mode.md](../setup/configuration/live-mode.md)
+- Verification: [setup/installation.md#verification](../setup/installation.md#verification)
 - Troubleshooting Setup:
-  [TROUBLESHOOTING.md#service-wont-start](../TROUBLESHOOTING.md#service-wont-start)
+  [troubleshooting/quick-diagnostics.md#service-issues](../troubleshooting/quick-diagnostics.md#service-issues)
 
 **Configuration:**
 
@@ -43,18 +44,17 @@
 
 **API & Endpoints:**
 
-- Quick Reference: [API-REFERENCE.md](../API-REFERENCE.md)
+- Quick Reference: [api/README.md](../api/README.md)
 - Backend Service:
   [backend/README.md](../../backend/starlink-location/README.md)
-- Examples:
-  [API-REFERENCE.md#api-usage-examples](../API-REFERENCE.md#api-usage-examples)
+- Examples: [api/examples/README.md](../api/examples/README.md)
 
 **Monitoring & Metrics:**
 
 - Metrics Reference: [METRICS.md](../METRICS.md)
 - Prometheus Config:
   [monitoring/prometheus/prometheus.yml](../../monitoring/prometheus/prometheus.yml)
-- Grafana Setup: [grafana-setup.md](../grafana-setup.md)
+- Grafana Setup: [setup/grafana-setup.md](../setup/grafana-setup.md)
 - Dashboard Features:
   [README.md#grafana-dashboards](../../README.md#grafana-dashboards)
 - Mission Monitoring:
@@ -71,66 +71,69 @@
 **Development & Contributing:**
 
 - How to Contribute: [CONTRIBUTING.md](../../CONTRIBUTING.md)
-- Architecture: [design-document.md](../design-document.md)
+- Architecture:
+  [architecture/design-document.md](../architecture/design-document.md)
 - Development Status: [dev/STATUS.md](../../dev/STATUS.md)
 - Development Plan: [phased-development-plan.md](../phased-development-plan.md)
 - Development Config: [CLAUDE.md](../../CLAUDE.md)
 
 **Troubleshooting:**
 
-- Common Issues: [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+- Common Issues:
+  [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
 - Port Conflicts:
-  [TROUBLESHOOTING.md#port-conflicts](../TROUBLESHOOTING.md#port-conflicts)
+  [troubleshooting/quick-diagnostics.md#port-conflicts](../troubleshooting/quick-diagnostics.md#port-conflicts)
 - Backend Issues:
-  [TROUBLESHOOTING.md#backend-issues](../TROUBLESHOOTING.md#backend-issues)
+  [troubleshooting/data-issues.md](../troubleshooting/data-issues.md)
 - Network Issues:
-  [TROUBLESHOOTING.md#network--connectivity](../TROUBLESHOOTING.md#network--connectivity)
+  [troubleshooting/quick-diagnostics.md#network-connectivity](../troubleshooting/quick-diagnostics.md#network-connectivity)
 - Live Mode Issues:
-  [TROUBLESHOOTING.md#live-mode-issues](../TROUBLESHOOTING.md#live-mode-issues)
+  [troubleshooting/quick-diagnostics.md#live-mode-issues](../troubleshooting/quick-diagnostics.md#live-mode-issues)
 
 ### By Audience
 
 **First-Time Users:**
 
 - Start here: [README.md](../../README.md)
-- Then read: [SETUP-GUIDE.md](../SETUP-GUIDE.md)
+- Then read: [setup/installation.md](../setup/installation.md)
 
 **Operators/DevOps:**
 
-- Setup: [SETUP-GUIDE.md](../SETUP-GUIDE.md)
-- Troubleshooting: [TROUBLESHOOTING.md](../TROUBLESHOOTING.md)
+- Setup: [setup/installation.md](../setup/installation.md)
+- Troubleshooting:
+  [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
 - Configuration: [CLAUDE.md](../../CLAUDE.md)
 
 **Developers:**
 
-- Architecture: [design-document.md](../design-document.md)
+- Architecture:
+  [architecture/design-document.md](../architecture/design-document.md)
 - Contributing: [CONTRIBUTING.md](../../CONTRIBUTING.md)
-- API Reference: [API-REFERENCE.md](../API-REFERENCE.md)
+- API Reference: [api/README.md](../api/README.md)
 
 **API Consumers:**
 
-- Quick Start: [API-REFERENCE.md#quick-start](../API-REFERENCE.md)
-- Examples:
-  [API-REFERENCE.md#api-usage-examples](../API-REFERENCE.md#api-usage-examples)
+- Quick Start: [api/README.md](../api/README.md)
+- Examples: [api/examples/README.md](../api/examples/README.md)
 - Interactive Docs: <http://localhost:8000/docs>
 
 ---
 
 ## File Size Reference
 
-| File                       | Size  | Type      | Purpose                         |
-| -------------------------- | ----- | --------- | ------------------------------- |
-| README.md                  | 14 KB | Overview  | Project entry point             |
-| SETUP-GUIDE.md             | 18 KB | How-to    | Detailed setup instructions     |
-| API-REFERENCE.md           | 22 KB | Reference | Complete API documentation      |
-| TROUBLESHOOTING.md         | 24 KB | Reference | Problem diagnosis and solutions |
-| design-document.md         | 9 KB  | Design    | Architecture and design         |
-| CONTRIBUTING.md            | 18 KB | Process   | Contribution guidelines         |
-| grafana-setup.md           | 12 KB | How-to    | Dashboard configuration         |
-| METRICS.md                 | 8 KB  | Reference | Prometheus metrics              |
-| phased-development-plan.md | 7 KB  | Plan      | Implementation roadmap          |
-| CLAUDE.md                  | 8 KB  | Config    | Development configuration       |
-| Backend README             | 14 KB | Overview  | Service documentation           |
+| File                                     | Size  | Type      | Purpose                         |
+| ---------------------------------------- | ----- | --------- | ------------------------------- |
+| README.md                                | 14 KB | Overview  | Project entry point             |
+| setup/installation.md                    | 18 KB | How-to    | Detailed setup instructions     |
+| api/README.md                            | 22 KB | Reference | Complete API documentation      |
+| troubleshooting/quick-diagnostics.md     | 24 KB | Reference | Problem diagnosis and solutions |
+| architecture/design-document.md          | 9 KB  | Design    | Architecture and design         |
+| CONTRIBUTING.md                          | 18 KB | Process   | Contribution guidelines         |
+| setup/grafana-setup.md                   | 12 KB | How-to    | Dashboard configuration         |
+| METRICS.md                               | 8 KB  | Reference | Prometheus metrics              |
+| phased-development-plan.md               | 7 KB  | Plan      | Implementation roadmap          |
+| CLAUDE.md                                | 8 KB  | Config    | Development configuration       |
+| Backend README                           | 14 KB | Overview  | Service documentation           |
 
 **Total Documentation:** ~154 KB of comprehensive guides
 
@@ -141,9 +144,10 @@
 ### Most Useful Pages
 
 - [README.md](../../README.md) - Start here
-- [SETUP-GUIDE.md](../SETUP-GUIDE.md) - How to set up
-- [API-REFERENCE.md](../API-REFERENCE.md) - API endpoints
-- [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Fix problems
+- [setup/installation.md](../setup/installation.md) - How to set up
+- [api/README.md](../api/README.md) - API endpoints
+- [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
+  \- Fix problems
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to contribute
 
 ### External Resources

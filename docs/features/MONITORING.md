@@ -1,6 +1,7 @@
 # Monitoring & Dashboards
 
-**Related:** [Main README](../../README.md) | [Setup Guide](../SETUP-GUIDE.md)
+**Related:** [Main README](../../README.md) |
+[Setup Guide](../setup/installation.md)
 
 ## Core Monitoring Features
 
@@ -128,4 +129,5 @@ Focused location and movement tracking.
 - Movement analysis
 - Position verification
 
-**Configuration Guide:** See [Grafana Setup Documentation](../grafana-setup.md)
+**Configuration Guide:** See
+[Grafana Setup Documentation](../setup/grafana-setup.md)

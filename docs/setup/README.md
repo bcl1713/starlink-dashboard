@@ -193,7 +193,7 @@ After successful setup:
 
 **Resources:**
 
-- [Design Document](../design-document.md) - Architecture overview
+- [Design Document](../architecture/design-document.md) - Architecture overview
 - [CLAUDE.md](../../CLAUDE.md) - Development guide
 - [Troubleshooting Guide](../troubleshooting/README.md) - Common problems
 

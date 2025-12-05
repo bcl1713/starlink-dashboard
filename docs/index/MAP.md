@@ -16,8 +16,8 @@
 
 | File                                              | Purpose                                   | When to read                |
 | :------------------------------------------------ | :---------------------------------------- | :-------------------------- |
-| [SETUP-GUIDE.md](../SETUP-GUIDE.md)               | Complete setup instructions for all modes | Setting up the project      |
-| [API-REFERENCE.md](../API-REFERENCE.md)           | All REST API endpoints with examples      | Using the API               |
+| [setup/installation.md](../setup/installation.md) | Complete setup instructions for all modes | Setting up the project      |
+| [api/README.md](../api/README.md)                 | All REST API endpoints with examples      | Using the API               |
 | [ROUTE-TIMING-GUIDE.md](../ROUTE-TIMING-GUIDE.md) | Route timing feature complete guide       | Using route timing features |
 
 ### Mission Communication Planning
@@ -30,18 +30,18 @@
 
 ### Reference
 
-| File                                        | Purpose                                   | When to read          |
-| :------------------------------------------ | :---------------------------------------- | :-------------------- |
-| [METRICS.md](../METRICS.md)                 | Complete Prometheus metrics documentation | Understanding metrics |
-| [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) | Problem diagnosis and solutions           | Troubleshooting       |
+| File                                                                                | Purpose                                   | When to read          |
+| :---------------------------------------------------------------------------------- | :---------------------------------------- | :-------------------- |
+| [METRICS.md](../METRICS.md)                                                         | Complete Prometheus metrics documentation | Understanding metrics |
+| [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)     | Problem diagnosis and solutions           | Troubleshooting       |
 
 ### Architecture & Design
 
-| File                                                        | Purpose                                  | When to read                |
-| :---------------------------------------------------------- | :--------------------------------------- | :-------------------------- |
-| [design-document.md](../design-document.md)                 | System architecture and design decisions | Understanding architecture  |
-| [phased-development-plan.md](../phased-development-plan.md) | Implementation roadmap and phases        | Understanding plan          |
-| [grafana-setup.md](../grafana-setup.md)                     | Dashboard configuration and usage        | Learning Grafana dashboards |
+| File                                                                   | Purpose                                  | When to read                |
+| :--------------------------------------------------------------------- | :--------------------------------------- | :-------------------------- |
+| [architecture/design-document.md](../architecture/design-document.md)  | System architecture and design decisions | Understanding architecture  |
+| [phased-development-plan.md](../phased-development-plan.md)            | Implementation roadmap and phases        | Understanding plan          |
+| [setup/grafana-setup.md](../setup/grafana-setup.md)                    | Dashboard configuration and usage        | Learning Grafana dashboards |
 
 ### Development (development/)
 

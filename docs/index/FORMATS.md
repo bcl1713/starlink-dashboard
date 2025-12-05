@@ -5,21 +5,25 @@
 ### Quick Reference (5-10 minutes)
 
 - [README.md Quick Start](../../README.md#quick-start)
-- [SETUP-GUIDE - Quick Start](../SETUP-GUIDE.md#installation)
-- [Troubleshooting - Quick Diagnostics](../TROUBLESHOOTING.md#quick-diagnostics)
-- [API Reference - Examples](../API-REFERENCE.md#api-usage-examples)
+- [Setup Guide - Quick Start](../setup/installation.md#installation)
+- [Troubleshooting - Quick Diagnostics](../troubleshooting/quick-diagnostics.md)
+- [API Reference - Examples](../api/examples/README.md)
 
 ### How-To Guides (10-20 minutes)
 
-- [SETUP-GUIDE.md](../SETUP-GUIDE.md) - Setup in simulation or live mode
+- [setup/installation.md](../setup/installation.md) - Setup in simulation or
+  live mode
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to contribute
-- [grafana-setup.md](../grafana-setup.md) - Using Grafana dashboards
-- [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Debugging common issues
+- [setup/grafana-setup.md](../setup/grafana-setup.md) - Using Grafana
+  dashboards
+- [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
+  \- Debugging common issues
 
 ### Reference Documentation (20+ minutes)
 
-- [design-document.md](../design-document.md) - Full architecture
-- [API-REFERENCE.md](../API-REFERENCE.md) - Complete API specification
+- [architecture/design-document.md](../architecture/design-document.md) - Full
+  architecture
+- [api/README.md](../api/README.md) - Complete API specification
 - [METRICS.md](../METRICS.md) - All metrics reference
 - [phased-development-plan.md](../phased-development-plan.md) - Implementation
   plan
@@ -40,8 +44,9 @@
 Read in order:
 
 1. [README.md](../../README.md) - Overview (5 min)
-2. [SETUP-GUIDE.md](../SETUP-GUIDE.md) - Setup (15 min)
-3. [grafana-setup.md](../grafana-setup.md) - Using dashboards (10 min)
+2. [setup/installation.md](../setup/installation.md) - Setup (15 min)
+3. [setup/grafana-setup.md](../setup/grafana-setup.md) - Using dashboards (10
+   min)
 
 ### For Contributors
 
@@ -49,7 +54,8 @@ Read in order:
 
 1. [README.md](../../README.md) - Overview (5 min)
 2. [CLAUDE.md](../../CLAUDE.md) - Development config (10 min)
-3. [design-document.md](../design-document.md) - Architecture (15 min)
+3. [architecture/design-document.md](../architecture/design-document.md) -
+   Architecture (15 min)
 4. [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to contribute (15 min)
 5. [dev/STATUS.md](../../dev/STATUS.md) - Current work (5 min)
 
@@ -57,25 +63,29 @@ Read in order:
 
 Read in order:
 
-1. [API-REFERENCE.md](../API-REFERENCE.md) - API endpoints (20 min)
+1. [api/README.md](../api/README.md) - API endpoints (20 min)
 2. [Backend README](../../backend/starlink-location/README.md) - Service details
    (10 min)
 3. <http://localhost:8000/docs> - Interactive docs (5 min)
 
 ### For Troubleshooting
 
-1. [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Quick diagnostics (5 min)
-2. [SETUP-GUIDE.md](../SETUP-GUIDE.md) - Verify configuration (10 min)
-3. [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Specific issue (varies)
+1. [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
+   \- Quick diagnostics (5 min)
+2. [setup/installation.md](../setup/installation.md) - Verify configuration (10
+   min)
+3. [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
+   \- Specific issue (varies)
 
 ### For Operations/DevOps
 
 Read in order:
 
-1. [SETUP-GUIDE.md](../SETUP-GUIDE.md) - Installation (10 min)
-2. [SETUP-GUIDE.md - Performance](../SETUP-GUIDE.md#performance-tuning) - Tuning
-   (10 min)
-3. [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) - Monitoring (15 min)
+1. [setup/installation.md](../setup/installation.md) - Installation (10 min)
+2. [setup/installation.md - Performance](../setup/installation.md#performance-tuning)
+   \- Tuning (10 min)
+3. [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
+   \- Monitoring (15 min)
 
 ### For Mission Planners
 

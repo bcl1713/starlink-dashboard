@@ -173,8 +173,8 @@ markdownlint-cli2 "docs/**/*.md"
 ## Related Documentation
 
 - [Development Status](../dev/STATUS.md) - Current development status
-- [Architecture](./design-document.md) - System architecture
-- [Setup Guide](./SETUP-GUIDE.md) - Development environment setup
+- [Architecture](./architecture/design-document.md) - System architecture
+- [Setup Guide](./setup/installation.md) - Development environment setup
 
 ---
 

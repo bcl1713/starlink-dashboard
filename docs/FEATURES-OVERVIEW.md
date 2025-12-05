@@ -85,7 +85,8 @@ future enhancements
 - Prometheus query time: <1s
 - Grafana dashboard load: <2s
 
-**See:** [Setup Guide - Performance Tuning](./SETUP-GUIDE.md#performance-tuning)
+**See:**
+[Setup Guide - Performance Tuning](./setup/installation.md#performance-tuning)
 
 ---
 

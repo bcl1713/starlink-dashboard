@@ -28,9 +28,9 @@ metrics, and obstruction detection.
 - [Architecture](./docs/ARCHITECTURE.md) - Project structure and design
 - [Testing Guide](./docs/TESTING.md) - Running tests
 - [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues
-- [API Reference](./docs/API-REFERENCE.md) - Complete endpoint documentation
-- [Configuration Guide](./docs/CONFIGURATION.md) - Environment variables and
-  config files
+- [API Reference](../../docs/api/README.md) - Complete endpoint documentation
+- [Configuration Guide](../../docs/setup/configuration.md) - Environment
+  variables and config files
 - [Main Project Documentation](../../docs/) - Overall project docs
 
 ---
@@ -78,8 +78,9 @@ curl http://localhost:8000/api/status | jq .
 ### For Development
 
 - [Testing Guide](./docs/TESTING.md) - Running and writing tests
-- [API Reference](./docs/API-REFERENCE.md) - Complete endpoint documentation
-- [Configuration Guide](./docs/CONFIGURATION.md) - All configuration options
+- [API Reference](../../docs/api/README.md) - Complete endpoint documentation
+- [Configuration Guide](../../docs/setup/configuration.md) - All configuration
+  options
 
 ### For Troubleshooting
 
@@ -133,10 +134,10 @@ Part of the Starlink Dashboard project.
 
 ## Related Resources
 
-- [Main Project Documentation](../../docs/design-document.md) - Architecture and
-  design
-- [Grafana Setup](../../docs/grafana-setup.md) - Dashboard configuration
-- [Setup Guide](../../docs/SETUP-GUIDE.md) - Complete system setup
+- [Main Project Documentation](../../docs/architecture/design-document.md) -
+  Architecture and design
+- [Grafana Setup](../../docs/setup/grafana-setup.md) - Dashboard configuration
+- [Setup Guide](../../docs/setup/installation.md) - Complete system setup
 
 ---
 
