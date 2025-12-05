@@ -30,7 +30,7 @@ provides quick navigation to all endpoint categories.
 
 Health, status, and metrics endpoints.
 
-**Document:** [Core Endpoints](./api/core-endpoints.md)
+**Document:** [Core Endpoints](./api/endpoints/core.md)
 
 **Key Endpoints:**
 
@@ -47,7 +47,7 @@ Health, status, and metrics endpoints.
 
 Create, read, update, and delete Points of Interest with ETA calculations.
 
-**Document:** [POI Endpoints](./api/poi-endpoints.md)
+**Document:** [POI Endpoints](./api/endpoints/poi.md)
 
 **Key Endpoints:**
 
@@ -65,7 +65,7 @@ Create, read, update, and delete Points of Interest with ETA calculations.
 
 Route history and GeoJSON export for map visualization.
 
-**Document:** [Route Endpoints](./api/route-endpoints.md)
+**Document:** [Route Endpoints](./api/endpoints/routes.md)
 
 **Key Endpoints:**
 
@@ -78,7 +78,7 @@ Route history and GeoJSON export for map visualization.
 
 Advanced route-based ETA calculations with timing profiles.
 
-**Document:** [ETA Endpoints](./api/eta-endpoints.md)
+**Document:** [ETA Endpoints](./api/endpoints/eta.md)
 
 **Key Endpoints:**
 
@@ -98,7 +98,7 @@ Advanced route-based ETA calculations with timing profiles.
 
 Service configuration management at runtime.
 
-**Document:** [Configuration Endpoints](./api/configuration-endpoints.md)
+**Document:** [Configuration Endpoints](./api/endpoints/configuration.md)
 
 **Key Endpoints:**
 
@@ -112,7 +112,7 @@ Service configuration management at runtime.
 
 Practical examples with cURL, Python, and JavaScript.
 
-**Document:** [API Examples](./api/examples.md)
+**Document:** [API Examples](./api/examples/README.md)
 
 **Covers:**
 
@@ -129,7 +129,7 @@ Practical examples with cURL, Python, and JavaScript.
 
 Standard error response formats and common error scenarios.
 
-**Document:** [Error Handling](./api/errors.md)
+**Document:** [Error Handling](./api/errors-reference.md)
 
 **HTTP Status Codes:**
 
@@ -148,7 +148,7 @@ Standard error response formats and common error scenarios.
 
 Request and response data structures.
 
-**Document:** [Data Models](./api/models.md)
+**Document:** [Data Models](./api/models/README.md)
 
 **Covers:**
 

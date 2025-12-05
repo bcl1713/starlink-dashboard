@@ -91,10 +91,10 @@ const etas = await response.json();
 ## Related Documentation
 
 - [API Reference Index](../README.md) - Complete API overview
-- [Core Endpoints](../core-endpoints.md) - Health and metrics
-- [POI Endpoints](../poi-endpoints.md) - POI management
-- [ETA Endpoints](../eta-endpoints.md) - ETA calculations
-- [Error Handling](../errors.md) - Error response formats
+- [Core Endpoints](../endpoints/core.md) - Health and metrics
+- [POI Endpoints](../endpoints/poi.md) - POI management
+- [ETA Endpoints](../endpoints/eta.md) - ETA calculations
+- [Error Handling](../errors-reference.md) - Error response formats
 
 ---
 

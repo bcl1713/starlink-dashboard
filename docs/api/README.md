@@ -1,7 +1,7 @@
 # Starlink Dashboard API Reference
 
-**Last Updated:** 2025-11-04 **Backend Version:** 0.3.0 **Base URL:**
-`<http://localhost:8000`> **Status:** Complete with ETA Route Timing endpoints
+**Purpose**: Technical reference for REST API endpoints, models, and contracts
+**Audience**: API consumers, integrators, developers
 
 [Back to main docs](../INDEX.md)
 
@@ -24,63 +24,74 @@ returns Prometheus text format).
 
 ---
 
-## Quick Links
+## Quick Navigation
 
-- **[Endpoints](./endpoints.md)** - Complete endpoint reference
-- **[Models](./models.md)** - Request/response data models
-- **[Errors](./errors.md)** - Error codes and handling
+- **[Endpoints](./endpoints/README.md)** - Complete endpoint reference by
+  category
+- **[Models & Schemas](./models/README.md)** - Request/response data structures
+- **[Code Examples](./examples/README.md)** - cURL, Python, JavaScript examples
+- **[Error Reference](./errors-reference.md)** - Error codes and handling
 
 ---
 
 ## Documentation Structure
 
-This API documentation is organized into three main sections:
+This API documentation is organized by functional area:
 
-### 1. Endpoints Reference
+### 1. Endpoints by Category
 
-Complete listing of all available endpoints with:
+**[View All Endpoints →](./endpoints/README.md)**
 
-- Request methods and paths
-- Query parameters
-- Request/response examples
-- Status codes
-- Use cases
+- **[Core Endpoints](./endpoints/core.md)** - Health, status, metrics
+- **[Configuration](./endpoints/configuration.md)** - System configuration
+- **[POI Management](./endpoints/poi.md)** - Points of Interest
+- **[Routes](./endpoints/routes.md)** - Route management
+- **[ETA Calculations](./endpoints/eta.md)** - Estimated time of arrival
 
-**[View Endpoints →](./endpoints.md)**
+### 2. Data Models & Schemas
 
-### 2. Data Models
+**[View All Models →](./models/README.md)**
 
-Detailed documentation of request and response structures:
+- Request/response structures
+- Validation rules
+- Type definitions
+- Example payloads
 
-- POI models
-- Route models
-- ETA calculation models
-- Configuration models
-- Health check models
+### 3. Code Examples
 
-**[View Models →](./models.md)**
+**[View All Examples →](./examples/README.md)**
 
-### 3. Error Handling
+- **[cURL Examples](./examples/curl-examples.md)** - Command-line usage
+- **[Python Examples](./examples/python-examples.md)** - Python integration
+- **[JavaScript Examples](./examples/javascript-examples.md)** - Web/Node.js
+  usage
 
-Comprehensive error documentation:
+### 4. Error Handling
+
+**[View Error Reference →](./errors-reference.md)**
 
 - Error response format
 - HTTP status codes
-- Common error scenarios
-- Troubleshooting guides
-
-**[View Error Handling →](./errors.md)**
+- Common scenarios
+- Troubleshooting
 
 ---
 
 ## Adding New API Documentation
 
-**For Contributors:** When adding or updating API endpoints, follow this
-structure:
+**For Contributors:** When adding or updating API endpoints:
 
 ### 1. Document the Endpoint
 
-Add endpoint details to **[endpoints.md](./endpoints.md)**:
+Add to appropriate file in **[endpoints/](./endpoints/)**:
+
+- **Core/health endpoints** → `endpoints/core.md`
+- **Configuration** → `endpoints/configuration.md`
+- **POI management** → `endpoints/poi.md`
+- **Routes** → `endpoints/routes.md`
+- **ETA calculations** → `endpoints/eta.md`
+
+Include:
 
 - Endpoint path and HTTP method
 - Request parameters (query, path, body)
@@ -90,55 +101,77 @@ Add endpoint details to **[endpoints.md](./endpoints.md)**:
 
 ### 2. Document Data Models
 
-If the endpoint uses new request/response structures, add to
-**[models.md](./models.md)**:
+Add to appropriate file in **[models/](./models/)**:
 
 - Model name and purpose
 - Field definitions with types
 - Validation rules
 - Example JSON
 
-### 3. Document Errors
+### 3. Add Code Examples
 
-If the endpoint returns new error codes, add to
-**[errors-reference.md](./errors-reference.md)**:
+Update **[examples/](./examples/)** with usage examples:
 
-- Error code constant
-- HTTP status code
-- Description
-- Example scenario in [errors-scenarios.md](./errors-scenarios.md)
+- cURL examples for testing
+- Python examples for integration
+- JavaScript examples for web apps
 
-### 4. Update This Index
+### 4. Document Errors
 
-Update the Quick Links section above if creating a new category of endpoints.
+Add new error codes to **[errors-reference.md](./errors-reference.md)**
 
-**See existing documentation for format examples.**
+### 5. Update Indexes
+
+- Update category README in `endpoints/`, `models/`, or `examples/`
+- Update this README if creating new category
 
 ---
 
-## Getting Started
+## Getting Started with the API
 
-### Quick Test
-
-Verify the backend is running:
+### 1. Verify Service is Running
 
 ```bash
-curl <http://localhost:8000/health>
+curl http://localhost:8000/health
 ```
 
-### Interactive Documentation
+Expected response:
 
-For live API exploration:
+```json
+{
+  "status": "healthy",
+  "mode": "simulation",
+  "dish_connected": true
+}
+```
 
-- **Swagger UI:** `<http://localhost:8000/docs`>
-- **ReDoc:** `<http://localhost:8000/redoc`>
+### 2. Explore Interactive Documentation
 
-These provide:
+The API provides auto-generated interactive documentation:
 
-- Live endpoint testing
+- **Swagger UI:** <http://localhost:8000/docs>
+- **ReDoc:** <http://localhost:8000/redoc>
+
+These interfaces provide:
+
+- Live endpoint testing (try requests directly)
 - Request/response examples
 - Schema validation
 - Parameter documentation
+
+### 3. Try a Simple Request
+
+Get current telemetry status:
+
+```bash
+curl http://localhost:8000/api/status | jq .
+```
+
+### 4. Common Workflows
+
+- **POI Management:** See [POI Endpoints](./endpoints/poi.md)
+- **ETA Calculations:** See [ETA Endpoints](./endpoints/eta.md)
+- **Configuration:** See [Configuration Endpoints](./endpoints/configuration.md)
 
 ### Base Configuration
 
@@ -148,7 +181,7 @@ Default service ports:
 - Prometheus: `9090`
 - Grafana: `3000`
 
-These can be changed in `.env` file.
+Change in `.env` file if needed.
 
 ---
 
