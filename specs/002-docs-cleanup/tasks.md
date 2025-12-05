@@ -11,15 +11,15 @@
 
 ## 🎯 Current Status (2025-12-04)
 
-**Progress**: 44 of 83 tasks complete (53%)
+**Progress**: 56 of 83 tasks complete (67%)
 
 **✓ Completed Phases**:
 - Phase 1-2: Setup & Foundational Structure (16 tasks)
 - Phase 3: User Story 1 - New Developer Onboarding (12 tasks) ✓ MVP
 - Phase 4: User Story 2 - Documentation Maintenance (16 tasks) ✓ MVP
+- Phase 5: User Story 3 - User/Operator Reference (12 tasks) ✓
 
 **📋 Next Session**:
-- Phase 5: User Story 3 - User/Operator Reference (T045-T056) - 12 tasks
 - Phase 6: User Story 4 - API Consumer Integration (T057-T066) - 10 tasks
 - Phase 7: Polish & Cross-Cutting Concerns (T067-T083) - 17 tasks
 
@@ -28,6 +28,8 @@
 - Updated all category READMEs with contributor guidance
 - Fixed all links in moved historical reports
 - Moved docs/exporter/ to docs/reports/analysis-reports/
+- Organized troubleshooting into services/ and connectivity/ subdirectories
+- Established symptom-based navigation in troubleshooting README
 - Established clear documentation structure for maintainability
 
 ---
@@ -146,18 +148,18 @@ This feature reorganizes documentation only. Primary paths:
 
 ### Organize User-Facing Documentation
 
-- [ ] T045 [P] [US3] Move docs/setup/configuration.md to docs/setup/ if not already there (verify location)
-- [ ] T046 [P] [US3] Move docs/TROUBLESHOOTING.md to docs/troubleshooting/quick-diagnostics.md using git mv
-- [ ] T047 [P] [US3] Consolidate backend troubleshooting: Review backend/starlink-location/TROUBLESHOOTING.md, move project-wide content to docs/troubleshooting/, keep service-specific
-- [ ] T048 [P] [US3] Organize docs/troubleshooting/services/ subdirectory with per-service troubleshooting (grafana.md, prometheus.md, backend.md, frontend.md)
-- [ ] T049 [P] [US3] Organize docs/troubleshooting/connectivity/ subdirectory for connectivity issues (live-mode.md, performance.md, data-storage.md)
-- [ ] T050 [US3] Update links IN moved troubleshooting files (T046-T049) to use correct relative paths
-- [ ] T051 [US3] Update links TO moved troubleshooting files across all documentation
-- [ ] T052 [US3] Update docs/setup/README.md to list all setup/configuration guides with clear purpose statements
-- [ ] T053 [US3] Update docs/troubleshooting/README.md with symptom-based navigation (by service, by symptom, quick diagnostics)
-- [ ] T054 [US3] Ensure docs/features/ clearly separates user-facing feature descriptions from developer implementation details
-- [ ] T055 [US3] Validate all links for US3 changes using markdown-link-check
-- [ ] T056 [US3] Test operator navigation path: docs/ → setup/ → configuration → troubleshooting/ (each <2 minutes)
+- [X] T045 [P] [US3] Move docs/setup/configuration.md to docs/setup/ if not already there (verify location)
+- [X] T046 [P] [US3] Move docs/TROUBLESHOOTING.md to docs/troubleshooting/quick-diagnostics.md using git mv
+- [X] T047 [P] [US3] Consolidate backend troubleshooting: Review backend/starlink-location/TROUBLESHOOTING.md, move project-wide content to docs/troubleshooting/, keep service-specific
+- [X] T048 [P] [US3] Organize docs/troubleshooting/services/ subdirectory with per-service troubleshooting (grafana.md, prometheus.md, backend.md, frontend.md)
+- [X] T049 [P] [US3] Organize docs/troubleshooting/connectivity/ subdirectory for connectivity issues (live-mode.md, performance.md, data-storage.md)
+- [X] T050 [US3] Update links IN moved troubleshooting files (T046-T049) to use correct relative paths
+- [X] T051 [US3] Update links TO moved troubleshooting files across all documentation
+- [X] T052 [US3] Update docs/setup/README.md to list all setup/configuration guides with clear purpose statements
+- [X] T053 [US3] Update docs/troubleshooting/README.md with symptom-based navigation (by service, by symptom, quick diagnostics)
+- [X] T054 [US3] Ensure docs/features/ clearly separates user-facing feature descriptions from developer implementation details
+- [X] T055 [US3] Validate all links for US3 changes using markdown-link-check
+- [X] T056 [US3] Test operator navigation path: docs/ → setup/ → configuration → troubleshooting/ (each <2 minutes)
 
 **Checkpoint**: Operators can quickly find operational guides without wading through developer docs
 

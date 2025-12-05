@@ -227,8 +227,8 @@ curl http://localhost:8000/api/pois/etas | jq length
 
 ## Related Documentation
 
-- [Quick Diagnostics](./quick-diagnostics.md)
-- [Service Issues](./service-issues.md)
-- [Data Issues](./data-issues.md)
-- [API Reference](../API-REFERENCE.md)
-- [Setup Guide](../SETUP-GUIDE.md)
+- [Quick Diagnostics](../quick-diagnostics.md)
+- [Service Issues](../service-issues.md)
+- [Data Issues](../data-issues.md)
+- [API Reference](../../api/README.md)
+- [Setup Guide](../../setup/README.md)

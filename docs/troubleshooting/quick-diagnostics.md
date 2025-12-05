@@ -228,7 +228,7 @@ docker compose logs grafana > grafana.log
 
 ### Resources
 
-- [Backend Issues](./backend-issues.md)
+- [Backend Issues](./services/backend.md)
 - [Service Issues](./service-issues.md)
 - [Data Issues](./data-issues.md)
 - [API Reference](../API-REFERENCE.md)

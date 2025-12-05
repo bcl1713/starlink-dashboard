@@ -90,8 +90,8 @@ open http://localhost:9090/graph
 
 ## Related Documentation
 
-- [Quick Diagnostics](./quick-diagnostics.md)
-- [Backend Issues](./backend-issues.md)
-- [Data Issues](./data-issues.md)
-- [API Reference](../API-REFERENCE.md)
-- [Setup Guide](../SETUP-GUIDE.md)
+- [Quick Diagnostics](../quick-diagnostics.md)
+- [Backend Issues](backend.md)
+- [Data Issues](../data-issues.md)
+- [API Reference](../../api/README.md)
+- [Setup Guide](../../setup/README.md)

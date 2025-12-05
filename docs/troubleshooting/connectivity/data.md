@@ -73,7 +73,7 @@ docker compose up -d
 
 For more troubleshooting topics, see:
 
-- [Live Mode Issues](connectivity-live-mode.md)
-- [Data Storage Issues](connectivity-data-storage.md)
-- [POI Management Issues](connectivity-poi-management.md)
-- [Performance Issues](connectivity-performance.md)
+- [Live Mode Issues](live-mode.md)
+- [Data Storage Issues](data-storage.md)
+- [POI Management Issues](poi-management.md)
+- [Performance Issues](performance.md)

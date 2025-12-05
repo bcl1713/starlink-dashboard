@@ -273,7 +273,7 @@ docker compose up -d
 ## Related Documentation
 
 - [Quick Diagnostics](./quick-diagnostics.md)
-- [Backend Issues](./backend-issues.md)
+- [Backend Issues](./services/backend.md)
 - [Service Issues](./service-issues.md)
 - [API Reference](../API-REFERENCE.md)
 - [Setup Guide](../SETUP-GUIDE.md)

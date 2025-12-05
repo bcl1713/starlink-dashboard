@@ -7,11 +7,11 @@
 This troubleshooting guide helps you diagnose and resolve common issues with the
 Starlink Dashboard system. The guide is organized into three main areas:
 
-- **[Docker Services](./docker-services.md)** - Container startup, port
+- **[Docker Services](./services/docker.md)** - Container startup, port
   conflicts, and Docker-specific issues
 - **[Metrics & Monitoring](./metrics-monitoring.md)** - Prometheus and Grafana
   configuration and data collection
-- **[Connectivity & Data](./connectivity-data.md)** - Network issues, live mode,
+- **[Connectivity & Data](./connectivity/data.md)** - Network issues, live mode,
   data storage, and POI management
 
 ## Quick Diagnostics
@@ -36,26 +36,26 @@ docker stats --no-stream
 
 ### Service Won't Start
 
-- [Container exits immediately](./docker-services.md#container-exits-immediately)
-- [Failed to connect to Docker daemon](./docker-services.md#failed-to-connect-to-docker-daemon)
-- [Port conflicts](./docker-services.md#port-conflicts)
+- [Container exits immediately](./services/docker.md#container-exits-immediately)
+- [Failed to connect to Docker daemon](./services/docker.md#failed-to-connect-to-docker-daemon)
+- [Port conflicts](./services/docker.md#port-conflicts)
 
 ### Data Issues
 
-- [Metrics not updating](./docker-services.md#metrics-not-updating)
+- [Metrics not updating](./services/docker.md#metrics-not-updating)
 - [Dashboards empty or no data](./metrics-monitoring.md#dashboards-empty)
-- [POI list empty or missing](./connectivity-data.md#poi-list-empty-or-missing)
+- [POI list empty or missing](./connectivity/data.md#poi-list-empty-or-missing)
 
 ### Connectivity Issues
 
-- [Live mode won't connect to dish](./connectivity-data.md#live-mode-wont-connect-to-dish)
-- [Services can't communicate](./connectivity-data.md#services-cant-communicate)
+- [Live mode won't connect to dish](./connectivity/data.md#live-mode-wont-connect-to-dish)
+- [Services can't communicate](./connectivity/data.md#services-cant-communicate)
 
 ### Performance Issues
 
-- [High CPU usage](./connectivity-data.md#high-cpu-usage)
-- [High memory usage](./connectivity-data.md#high-memory-usage)
-- [Slow dashboard loading](./connectivity-data.md#slow-dashboard-loading)
+- [High CPU usage](./connectivity/data.md#high-cpu-usage)
+- [High memory usage](./connectivity/data.md#high-memory-usage)
+- [Slow dashboard loading](./connectivity/data.md#slow-dashboard-loading)
 
 ## Debug Logging
 
