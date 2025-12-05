@@ -95,7 +95,7 @@ Create, update, and manage points of interest along routes.
 - `DELETE /api/pois/{id}` - Delete POI
 - `GET /api/pois/stats` - POI statistics
 
-**See:** [POI API Documentation](../api/poi-endpoints.md)
+**See:** [POI API Documentation](../api/endpoints/poi.md)
 
 ### Real-Time ETA Calculations
 
@@ -126,7 +126,7 @@ Calculate estimated time of arrival to all POIs.
 - `GET /api/pois/etas` - Get all POI ETAs
 - `GET /api/pois/{id}/eta` - Get specific POI ETA
 
-**See:** [ETA Endpoints Documentation](../api/eta-endpoints.md)
+**See:** [ETA Endpoints Documentation](../api/endpoints/eta.md)
 
 ### POI Visualization
 

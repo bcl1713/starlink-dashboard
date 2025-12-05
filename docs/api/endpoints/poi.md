@@ -58,9 +58,9 @@ curl http://localhost:8000/api/pois/etas | jq .
 ## Related Documentation
 
 - [API Reference Index](./README.md) - Complete API overview
-- [Core Endpoints](./core-endpoints.md) - Health and metrics
-- [ETA Endpoints](./eta-endpoints.md) - Route-based ETA calculations
-- [Error Handling](./errors.md) - Error response formats
+- [Core Endpoints](./core.md) - Health and metrics
+- [ETA Endpoints](./eta.md) - Route-based ETA calculations
+- [Error Handling](../errors.md) - Error response formats
 
 ---
 

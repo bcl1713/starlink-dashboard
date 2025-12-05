@@ -40,7 +40,7 @@ Runtime configuration management via REST API.
 - Feature flags
 - Logging levels
 
-**See:** [Configuration Endpoints](../api/configuration-endpoints.md)
+**See:** [Configuration Endpoints](../api/endpoints/configuration.md)
 
 ---
 
@@ -79,7 +79,7 @@ Auto-generated API documentation with testing interface.
 - Flight status
 - Mission planning
 
-**See:** [API Reference Index](../API-REFERENCE-INDEX.md)
+**See:** [API Reference Index](../api/README.md)
 
 ---
 

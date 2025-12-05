@@ -53,10 +53,9 @@ curl -X POST http://localhost:8000/api/routes/cache/clear
 ## Related Documentation
 
 - [API Reference Index](./README.md) - Complete API overview
-- [Core Endpoints](./core-endpoints.md) - Health and metrics
-- [POI Endpoints](./poi-endpoints.md) - POI-based ETAs
-- [Route Timing Guide](../ROUTE-TIMING-GUIDE-OVERVIEW.md) - Route timing
-  features
+- [Core Endpoints](./core.md) - Health and metrics
+- [POI Endpoints](./poi.md) - POI-based ETAs
+- [Route Timing Guide](../../ROUTE-TIMING-GUIDE.md) - Route timing features
 
 ---
 

@@ -8,9 +8,9 @@ Endpoints for route data, GeoJSON export, and geographic visualization.
 
 **Related Documentation:**
 
-- [Core Endpoints](./core-endpoints.md) - Health and metrics
-- [POI Endpoints](./poi-endpoints.md) - POI management
-- [ETA Endpoints](./eta-endpoints.md) - ETA calculations
+- [Core Endpoints](./core.md) - Health and metrics
+- [POI Endpoints](./poi.md) - POI management
+- [ETA Endpoints](./eta.md) - ETA calculations
 
 ---
 
@@ -107,7 +107,7 @@ The GeoJSON endpoints are designed for use with Grafana Geomap panels:
 
 ## Related Documentation
 
-- [API Reference Index](../API-REFERENCE-INDEX.md) - Complete API overview
-- [Core Endpoints](./core-endpoints.md) - Health and metrics
+- [API Reference Index](../README.md) - Complete API overview
+- [Core Endpoints](./core.md) - Health and metrics
 - [ETA Endpoints](./eta-endpoints.md) - ETA calculations
 - [Grafana Setup](../grafana-dashboards.md) - Dashboard configuration

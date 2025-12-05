@@ -8,9 +8,9 @@ Endpoints for retrieving and updating service configuration at runtime.
 
 **Related Documentation:**
 
-- [Core Endpoints](./core-endpoints.md) - Health and metrics
-- [POI Endpoints](./poi-endpoints.md) - POI management
-- [Setup Guide](../SETUP-GUIDE-INSTALLATION.md) - Configuration details
+- [Core Endpoints](./core.md) - Health and metrics
+- [POI Endpoints](./poi.md) - POI management
+- [Setup Guide](../../setup/configuration.md) - Configuration details
 
 ---
 
@@ -232,7 +232,7 @@ The API validates all configuration updates to ensure:
 
 ## Related Documentation
 
-- [API Reference Index](../API-REFERENCE-INDEX.md) - Complete API overview
-- [Core Endpoints](./core-endpoints.md) - Health and metrics
-- [Setup Guide](../SETUP-GUIDE-INSTALLATION.md) - Environment configuration
-- [Error Handling](./errors.md) - Error response formats
+- [API Reference Index](../README.md) - Complete API overview
+- [Core Endpoints](./core.md) - Health and metrics
+- [Setup Guide](../../setup/configuration.md) - Environment configuration
+- [Error Handling](../errors.md) - Error response formats

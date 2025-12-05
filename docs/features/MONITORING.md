@@ -37,7 +37,7 @@ Comprehensive network metrics for latency, throughput, and connectivity.
 
 **Available In:** Simulation and Live modes
 
-**See:** [Metrics Documentation](../METRICS.md)
+**See:** [Metrics Documentation](../metrics/overview.md)
 
 ### Historical Data Retention
 
@@ -130,4 +130,4 @@ Focused location and movement tracking.
 - Position verification
 
 **Configuration Guide:** See
-[Grafana Setup Documentation](../setup/grafana-setup.md)
+[Grafana Setup Documentation](../grafana-configuration.md)

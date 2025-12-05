@@ -35,16 +35,16 @@ Start here if you're new to the project:
 | Goal                            | Document                                                     | Time   |
 | ------------------------------- | ------------------------------------------------------------ | ------ |
 | Understand available dashboards | [README.md - Dashboards](../../README.md#grafana-dashboards) | 5 min  |
-| Learn dashboard features        | [Grafana Setup](../setup/grafana-setup.md)                   | 15 min |
-| Create custom dashboards        | [Grafana Setup](../setup/grafana-setup.md)                   | 20 min |
-| Understand the metrics          | [METRICS.md](../METRICS.md)                                  | 10 min |
+| Learn dashboard features        | [Grafana Setup](../grafana-configuration.md)                 | 15 min |
+| Create custom dashboards        | [Grafana Setup](../grafana-configuration.md)                 | 20 min |
+| Understand the metrics          | [METRICS](../metrics/overview.md)                            | 10 min |
 
 #### Plan missions
 
 | Goal                            | Document                                                  | Time   |
 | ------------------------------- | --------------------------------------------------------- | ------ |
-| Learn mission planning workflow | [MISSION-PLANNING-GUIDE.md](../MISSION-PLANNING-GUIDE.md) | 20 min |
-| Set up for mission operations   | [MISSION-COMM-SOP.md](../MISSION-COMM-SOP.md)             | 15 min |
+| Learn mission planning workflow | [Mission Planning](../missions/MISSION-PLANNING-GUIDE.md) | 20 min |
+| Set up for mission operations   | [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md)    | 15 min |
 | Understand performance targets  | [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.md)           | 10 min |
 
 #### Develop features

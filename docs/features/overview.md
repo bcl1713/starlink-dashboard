@@ -35,5 +35,5 @@ capabilities (realistic telemetry, route following).
 
 - [Main README](../../README.md) - Quick start and overview
 - [Setup Guide](../setup/README.md) - Installation instructions
-- [API Reference](../API-REFERENCE-INDEX.md) - Complete API docs
+- [API Reference](../api/README.md) - Complete API docs
 - [Troubleshooting](../troubleshooting/README.md) - Common issues

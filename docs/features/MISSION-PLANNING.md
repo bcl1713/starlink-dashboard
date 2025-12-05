@@ -22,7 +22,7 @@ Create and manage missions with transport configurations.
 - Ka-Band (high-bandwidth data)
 - Ku-Band/StarShield (Starlink connectivity)
 
-**See:** [Mission Planning Guide](../MISSION-PLANNING-GUIDE.md)
+**See:** [Mission Planning Guide](../missions/MISSION-PLANNING-GUIDE.md)
 
 ### Satellite Geometry Engine
 
@@ -67,7 +67,7 @@ Generate mission briefing documents in multiple formats.
 - `POST /api/missions/{id}/export/csv`
 - `POST /api/missions/{id}/export/xlsx`
 
-**See:** [Mission Communication SOP](../MISSION-COMM-SOP.md)
+**See:** [Mission Communication SOP](../missions/MISSION-COMM-SOP.md)
 
 ### Grafana Mission Visualization
 

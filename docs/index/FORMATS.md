@@ -14,7 +14,7 @@
 - [setup/installation.md](../setup/installation.md) - Setup in simulation or
   live mode
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to contribute
-- [setup/grafana-setup.md](../setup/grafana-setup.md) - Using Grafana
+- [Grafana Configuration](../grafana-configuration.md) - Using Grafana
   dashboards
 - [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
   \- Debugging common issues
@@ -24,7 +24,7 @@
 - [architecture/design-document.md](../architecture/design-document.md) - Full
   architecture
 - [api/README.md](../api/README.md) - Complete API specification
-- [METRICS.md](../METRICS.md) - All metrics reference
+- [METRICS](../metrics/overview.md) - All metrics reference
 - [phased-development-plan.md](../phased-development-plan.md) - Implementation
   plan
 - [Backend README](../../backend/starlink-location/README.md) - Service details
@@ -45,7 +45,7 @@ Read in order:
 
 1. [README.md](../../README.md) - Overview (5 min)
 2. [setup/installation.md](../setup/installation.md) - Setup (15 min)
-3. [setup/grafana-setup.md](../setup/grafana-setup.md) - Using dashboards (10
+3. [Grafana Configuration](../grafana-configuration.md) - Using dashboards (10
    min)
 
 ### For Contributors
@@ -93,9 +93,9 @@ Read in order:
 
 1. [README.md#mission-communication-planning](../../README.md#mission-communication-planning)
    \- Overview (5 min)
-1. [MISSION-PLANNING-GUIDE.md](../MISSION-PLANNING-GUIDE.md) - User guide (20
-   min)
-1. [MISSION-COMM-SOP.md](../MISSION-COMM-SOP.md) - Operations procedures (15
-   min)
+1. [MISSION-PLANNING-GUIDE.md](../missions/MISSION-PLANNING-GUIDE.md) - User
+   guide (20 min)
+1. [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md) - Operations
+   procedures (15 min)
 1. [monitoring/README.md#mission-communication-planning](../../monitoring/README.md#mission-communication-planning)
    \- Dashboard setup (10 min)

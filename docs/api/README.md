@@ -243,7 +243,7 @@ Geographic coordinates use decimal degrees:
 
 - [CLAUDE.md](/CLAUDE.md) - Development configuration
 - [SETUP-GUIDE](../setup/README.md) - Installation and setup
-- [METRICS](../METRICS.md) - Prometheus metrics reference
+- [METRICS](../metrics/overview.md) - Prometheus metrics reference
 - [Backend README](../../backend/starlink-location/README.md) - Service details
 
 ---

@@ -95,7 +95,7 @@ For questions or issues:
 
 - **[MISSION-COMM-SOP.md](../MISSION-COMM-SOP.md)** — Operations playbook for
   monitoring and alert response
-- **[METRICS.md](../../METRICS.md)** — Prometheus metrics reference for
+- **[METRICS](../../metrics/overview.md)** — Prometheus metrics reference for
   dashboard integration
 - **[API Reference](../../api/README.md)** — Mission planning API
   endpoints (for integrations)

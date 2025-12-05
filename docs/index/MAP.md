@@ -22,17 +22,17 @@
 
 ### Mission Communication Planning
 
-| File                                                      | Purpose                                                    | When to read                              |
-| :-------------------------------------------------------- | :--------------------------------------------------------- | :---------------------------------------- |
-| [MISSION-PLANNING-GUIDE.md](../MISSION-PLANNING-GUIDE.MD) | Mission planning interface and workflow guide              | Using mission planner                     |
-| [MISSION-COMM-SOP.md](../MISSION-COMM-SOP.MD)             | Operations playbook for mission planning and monitoring    | Planning and executing missions           |
-| [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.MD)           | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
+| File                                                               | Purpose                                                    | When to read                              |
+| :----------------------------------------------------------------- | :--------------------------------------------------------- | :---------------------------------------- |
+| [MISSION-PLANNING-GUIDE.md](../missions/MISSION-PLANNING-GUIDE.md) | Mission planning interface and workflow guide              | Using mission planner                     |
+| [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md)             | Operations playbook for mission planning and monitoring    | Planning and executing missions           |
+| [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.MD)                    | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
 
 ### Reference
 
 | File                                                                                | Purpose                                   | When to read          |
 | :---------------------------------------------------------------------------------- | :---------------------------------------- | :-------------------- |
-| [METRICS.md](../METRICS.md)                                                         | Complete Prometheus metrics documentation | Understanding metrics |
+| [METRICS](../metrics/overview.md)                                                   | Complete Prometheus metrics documentation | Understanding metrics |
 | [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)     | Problem diagnosis and solutions           | Troubleshooting       |
 
 ### Architecture & Design
@@ -41,7 +41,7 @@
 | :--------------------------------------------------------------------- | :--------------------------------------- | :-------------------------- |
 | [architecture/design-document.md](../architecture/design-document.md)  | System architecture and design decisions | Understanding architecture  |
 | [phased-development-plan.md](../phased-development-plan.md)            | Implementation roadmap and phases        | Understanding plan          |
-| [setup/grafana-setup.md](../setup/grafana-setup.md)                    | Dashboard configuration and usage        | Learning Grafana dashboards |
+| [Grafana Configuration](../grafana-configuration.md)                   | Dashboard configuration and usage        | Learning Grafana dashboards |
 
 ### Development (development/)
 

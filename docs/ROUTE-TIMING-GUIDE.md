@@ -16,7 +16,7 @@ tests passing
   5 minutes
 - **[KML Format Reference](./route-timing/README.md#quick-start)** - Timing data
   format
-- **[API Usage](../api/route-endpoints.md)** - Route timing endpoints
+- **[API Usage](./api/endpoints/routes.md)** - Route timing endpoints
 - **[Troubleshooting](./troubleshooting/README.md)** - Common issues
 
 ---

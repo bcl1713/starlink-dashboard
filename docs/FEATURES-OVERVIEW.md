@@ -33,11 +33,11 @@ starlink-dashboard/
 │   ├── prometheus/
 │   └── grafana/
 ├── docs/                          # Comprehensive documentation
-│   ├── SETUP-GUIDE.md             # Setup instructions
-│   ├── API-REFERENCE-INDEX.md     # API endpoints
-│   ├── TROUBLESHOOTING.md         # Common issues
-│   ├── design-document.md         # Architecture details
-│   └── grafana-setup.md           # Dashboard configuration
+│   ├── setup/                     # Setup instructions
+│   ├── api/                       # API endpoints
+│   ├── troubleshooting/           # Common issues
+│   ├── architecture/              # Architecture details
+│   └── grafana-configuration.md   # Dashboard configuration
 ├── dev/                           # Development management
 │   ├── STATUS.md                  # Current development status
 │   ├── README.md                  # Workflow documentation

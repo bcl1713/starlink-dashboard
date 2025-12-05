@@ -51,10 +51,10 @@
 
 **Monitoring & Metrics:**
 
-- Metrics Reference: [METRICS.md](../METRICS.md)
+- Metrics Reference: [METRICS](../metrics/overview.md)
 - Prometheus Config:
   [monitoring/prometheus/prometheus.yml](../../monitoring/prometheus/prometheus.yml)
-- Grafana Setup: [setup/grafana-setup.md](../setup/grafana-setup.md)
+- Grafana Setup: [Grafana Configuration](../grafana-configuration.md)
 - Dashboard Features:
   [README.md#grafana-dashboards](../../README.md#grafana-dashboards)
 - Mission Monitoring:
@@ -62,8 +62,9 @@
 
 **Mission Communication Planning:**
 
-- User Guide: [MISSION-PLANNING-GUIDE.md](../MISSION-PLANNING-GUIDE.md)
-- Operations Playbook: [MISSION-COMM-SOP.md](../MISSION-COMM-SOP.md)
+- User Guide:
+  [MISSION-PLANNING-GUIDE.md](../missions/MISSION-PLANNING-GUIDE.md)
+- Operations Playbook: [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md)
 - Performance Analysis: [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.md)
 - Monitoring Setup:
   [monitoring/README.md#mission-communication-planning](../../monitoring/README.md#mission-communication-planning)
@@ -129,8 +130,8 @@
 | troubleshooting/quick-diagnostics.md     | 24 KB | Reference | Problem diagnosis and solutions |
 | architecture/design-document.md          | 9 KB  | Design    | Architecture and design         |
 | CONTRIBUTING.md                          | 18 KB | Process   | Contribution guidelines         |
-| setup/grafana-setup.md                   | 12 KB | How-to    | Dashboard configuration         |
-| METRICS.md                               | 8 KB  | Reference | Prometheus metrics              |
+| grafana-configuration.md                 | 12 KB | How-to    | Dashboard configuration         |
+| metrics/overview.md                      | 8 KB  | Reference | Prometheus metrics              |
 | phased-development-plan.md               | 7 KB  | Plan      | Implementation roadmap          |
 | CLAUDE.md                                | 8 KB  | Config    | Development configuration       |
 | Backend README                           | 14 KB | Overview  | Service documentation           |
