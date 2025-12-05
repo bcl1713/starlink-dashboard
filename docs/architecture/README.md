@@ -1,20 +1,19 @@
-# Design Document: Mobile Starlink Terminal Monitoring Webapp
+# Architecture
 
-**This document has been reorganized into multiple focused files.**
+**Purpose**: Explain system design, technical decisions, and internal structure
+**Audience**: Developers, contributors, technical evaluators
+
+[Back to main docs](../INDEX.md)
 
 ---
 
-## Documentation Topics
+## Documentation in This Category
 
-- **[Overview](./overview.md)** - Project objectives and goals
-- **[System Architecture](./system-architecture.md)** - High-level architecture
-  and component design
-- **[Simulation Mode](./simulation-mode.md)** - Simulation implementation
-  details
-- **[Core Components](./core-components.md)** - Backend, Prometheus, Grafana
-- **[Mapping & Routing](./mapping-routing.md)** - KML routes, POIs, and ETAs
-- **[Development Workflow](../development/workflow.md)** - Development practices
-- **[Future Enhancements](./future-enhancements.md)** - Planned features
+### System Design
+
+- **[Design Document](./design-document.md)**: Comprehensive system
+  architecture, technology stack, and component design for the mobile Starlink
+  terminal monitoring webapp
 
 ---
 

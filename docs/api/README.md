@@ -73,6 +73,49 @@ Comprehensive error documentation:
 
 ---
 
+## Adding New API Documentation
+
+**For Contributors:** When adding or updating API endpoints, follow this
+structure:
+
+### 1. Document the Endpoint
+
+Add endpoint details to **[endpoints.md](./endpoints.md)**:
+
+- Endpoint path and HTTP method
+- Request parameters (query, path, body)
+- Request example (cURL, Python)
+- Response example (JSON)
+- Possible error codes
+
+### 2. Document Data Models
+
+If the endpoint uses new request/response structures, add to
+**[models.md](./models.md)**:
+
+- Model name and purpose
+- Field definitions with types
+- Validation rules
+- Example JSON
+
+### 3. Document Errors
+
+If the endpoint returns new error codes, add to
+**[errors-reference.md](./errors-reference.md)**:
+
+- Error code constant
+- HTTP status code
+- Description
+- Example scenario in [errors-scenarios.md](./errors-scenarios.md)
+
+### 4. Update This Index
+
+Update the Quick Links section above if creating a new category of endpoints.
+
+**See existing documentation for format examples.**
+
+---
+
 ## Getting Started
 
 ### Quick Test

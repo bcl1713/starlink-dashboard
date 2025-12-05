@@ -9,32 +9,48 @@
 
 ## Documentation in This Category
 
-### Getting Started
+### Core Development Guides
 
-- **[Workflow](./workflow.md)**: Development workflow and git practices
-- **[Contributing](../../CONTRIBUTING.md)**: Contribution guidelines and standards
-- **[Testing](./testing.md)**: Testing procedures and standards
+- **[Workflow](./workflow.md)**: Development workflow, git practices, and
+  Docker rebuild process for Python backend changes
+- **[Contributing](../../CONTRIBUTING.md)**: Contribution guidelines,
+  standards, and code review process
 
-### Development Tools
+### AI-Assisted Development
 
-- **[Claude Code](./claude-code/)**: AI-assisted development guides
-- **[Code Quality](../../.specify/memory/constitution.md)**: Quality standards
-  and principles
+- **[Claude Code](./claude-code/README.md)**: Comprehensive guide to using
+  Claude Code for AI-assisted development
+  - [Agents](./claude-code/agents.md): Understanding and using Claude Code
+    agents
+  - [Commands](./claude-code/commands.md): Slash commands and custom commands
+  - [Skills](./claude-code/skills.md): Reusable skills and capabilities
+  - [Examples](./claude-code/examples.md): Real-world usage examples
 
-### Common Tasks
+### Code Quality
+
+- **[Constitution](../../.specify/memory/constitution.md)**: Project quality
+  standards, principles, and governance
+
+---
+
+## Overview
 
 This category provides guides for developers contributing to the Starlink
-Dashboard project, covering workflows, testing, code quality, and
-tool-specific development practices.
+Dashboard project, covering workflows, AI-assisted development, code quality,
+and development best practices.
 
 ---
 
 ## Developer Journey
 
-1. **Onboarding**: Review [CONTRIBUTING.md](../../CONTRIBUTING.md) and [workflow.md](./workflow.md)
-2. **Setup**: Follow [setup guide](../setup/README.md) for development environment
-3. **Architecture**: Understand system design via [architecture docs](../architecture/README.md)
-4. **Testing**: Learn testing practices in [testing.md](./testing.md)
+1. **Onboarding**: Review [CONTRIBUTING.md](../../CONTRIBUTING.md) and
+   [workflow.md](./workflow.md)
+2. **Setup**: Follow [setup guide](../setup/README.md) for development
+   environment
+3. **Architecture**: Understand system design via
+   [architecture docs](../architecture/README.md)
+4. **AI Tools**: Learn [Claude Code](./claude-code/README.md) for
+   AI-assisted development
 5. **Contribute**: Submit changes following workflow guidelines
 
 ---

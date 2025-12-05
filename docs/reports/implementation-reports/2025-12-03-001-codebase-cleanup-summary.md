@@ -23,11 +23,11 @@ implementation demonstrates significant code quality improvements through:
 
 ## Quick Links
 
-- [Phase-by-Phase Details](./docs/reports/implementation-phases.md) - Complete
-  phase breakdowns
-- [Metrics and Results](./docs/reports/implementation-results.md) - Key metrics
-  and deliverables
-- [Outstanding Issues](./docs/reports/implementation-results.md#outstanding-issues)
+- [Phase-by-Phase Details](../implementation-phases.md) - Complete phase
+  breakdowns
+- [Metrics and Results](../implementation-results.md) - Key metrics and
+  deliverables
+- [Outstanding Issues](../implementation-results.md#outstanding-issues) -
   Follow-up work
 
 ---
@@ -106,7 +106,7 @@ Final quality checks: all Python files compile, smoke tests pass, file size
 compliance verified.
 
 **Detailed phase information**: See
-[Phase Details](./docs/reports/implementation-phases.md)
+[Phase Details](../implementation-phases.md)
 
 ---
 
@@ -179,7 +179,7 @@ compliance verified.
 3. **Add LOG_LEVEL/JSON_LOGS to .env.example** (30 minutes)
 
 **Complete recommendations**: See
-[Results and Recommendations](./docs/reports/implementation-results.md#outstanding-issues)
+[Results and Recommendations](../implementation-results.md#outstanding-issues)
 
 ---
 

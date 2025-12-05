@@ -29,6 +29,48 @@ limitations.
 
 ---
 
+## Adding New Feature Documentation
+
+**For Contributors:** When documenting a new feature, follow this structure:
+
+### 1. Choose the Right Location
+
+Determine which feature area the new capability belongs to:
+
+- **Monitoring**: Real-time telemetry, dashboards, metrics
+- **Navigation**: Routes, tracking, geographic features
+- **Mission Planning**: Mission management, planning workflows
+- **System**: Configuration, deployment, system-level features
+
+Add to existing file if feature extends an existing area, or create new file
+for entirely new capability domain.
+
+### 2. Feature Documentation Format
+
+Each feature description should include:
+
+- **What it does**: User-facing capability description
+- **Use cases**: When and why users would use this feature
+- **How to use**: Basic usage instructions (link to setup docs for details)
+- **Limitations**: Known constraints or boundaries
+- **Related features**: Links to complementary functionality
+
+### 3. Update This Index
+
+Add the new feature to the appropriate section in this README.
+
+### 4. Cross-Reference
+
+Link from feature docs to:
+
+- **API docs** (if feature exposes API endpoints)
+- **Setup docs** (if feature requires configuration)
+- **Troubleshooting** (if feature has known issues)
+
+**See [overview.md](./overview.md) for format examples.**
+
+---
+
 ## Related Documentation
 
 - [API Reference](../api/README.md) - Technical API specifications

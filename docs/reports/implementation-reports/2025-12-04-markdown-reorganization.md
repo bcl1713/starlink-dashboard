@@ -19,11 +19,9 @@ complex file
 
 ## Quick Links
 
-- [Completed Work Details](./docs/reports/reorganization-completed.md) - API
-  Reference split
-- [Remaining Work Plan](./docs/reports/reorganization-remaining.md) - 18 files
-  to split
-- [Quality Standards](./docs/reports/reorganization-remaining.md#quality-standards-applied)
+- [Completed Work Details](../reorganization-completed.md) - API Reference split
+- [Remaining Work Plan](../reorganization-remaining.md) - 18 files to split
+- [Quality Standards](../reorganization-remaining.md#quality-standards-applied) -
   Methodology and approach
 
 ---
@@ -73,7 +71,7 @@ replaced with structured documentation
 | LOW      | 4     | 2,451 | Reference/archived docs |
 
 **Detailed breakdown:** See
-[Remaining Work Plan](./docs/reports/reorganization-remaining.md)
+[Remaining Work Plan](../reorganization-remaining.md)
 
 ---
 
@@ -98,7 +96,7 @@ replaced with structured documentation
 
 ### Subsequent Phases
 
-See [Remaining Work Plan](./docs/reports/reorganization-remaining.md) for
+See [Remaining Work Plan](../reorganization-remaining.md) for
 complete execution order (Phases 4-6).
 
 ---

@@ -2,7 +2,7 @@
 
 **Feature**: 001-Codebase-Cleanup **Document**: Metrics, deliverables, and
 follow-up work **Related**:
-[Summary](../../IMPLEMENTATION-COMPLETION-SUMMARY.md) |
+[Summary](./implementation-reports/2025-12-03-001-codebase-cleanup-summary.md) |
 [Phases](./implementation-phases.md)
 
 ---
@@ -194,6 +194,6 @@ ongoing code quality improvements.
 
 ## Related Documents
 
-- [Implementation Summary](../../IMPLEMENTATION-COMPLETION-SUMMARY.md) -
+- [Implementation Summary](./implementation-reports/2025-12-03-001-codebase-cleanup-summary.md)
   Executive overview
 - [Phase Details](./implementation-phases.md) - Complete phase breakdowns

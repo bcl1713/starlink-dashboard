@@ -7,44 +7,61 @@
 
 ---
 
-## Documentation in This Category
-
-### Implementation Reports
-
-Historical records of feature implementations and completion summaries:
-
-- Implementation reports are located in [implementation-reports/](./implementation-reports/)
-- Each report includes completion date, feature scope, and outcomes
-- Reports are frozen at completion (not updated)
-
-### Analysis Reports
-
-Feature analysis artifacts and technical investigations:
-
-- Analysis reports are located in [analysis-reports/](./analysis-reports/)
-- Contains code analysis, design explorations, and technical research
-- Historical context for architectural decisions
-
----
-
 ## Report Organization
 
 All files in this category **MUST**:
 
 - Include creation date in filename or frontmatter
 - Be marked as "COMPLETE" or "ARCHIVED"
-- Remain frozen after completion (no updates)
+- Remain frozen after completion (not updated)
 
 **Naming Convention**: `YYYY-MM-DD-descriptive-name.md`
 
----
-
-## Current Reports
-
-Reports are organized in subdirectories:
+Reports are organized in two subdirectories:
 
 - `implementation-reports/` - Feature completion summaries
 - `analysis-reports/` - Technical analysis artifacts
+
+---
+
+## Available Reports
+
+### Feature Implementation Summaries
+
+Completed feature implementation reports:
+
+- **[2025-12-03: 001 Codebase Cleanup](./implementation-reports/2025-12-03-001-codebase-cleanup-summary.md)**
+  - Systematic refactoring of Python backend, TypeScript frontend, and
+    markdown docs
+  - Status: COMPLETE
+- **[2025-12-04: Markdown Reorganization](./implementation-reports/2025-12-04-markdown-reorganization.md)**
+  - API reference documentation split (1083 lines → 7 focused files)
+  - Status: Phase 1 Complete
+- **[2025-12-04: Markdown Split Summary](./implementation-reports/2025-12-04-markdown-split-summary.md)**
+  - Summary of markdown file reorganization effort
+  - Status: COMPLETE
+
+### Technical Analysis Artifacts
+
+Analysis and planning documents:
+
+- **[Exporter Analysis](./analysis-reports/exporter/README.md)**
+  - Mission package exporter module analysis and refactoring plan
+  - Includes architecture analysis, refactoring strategy, and implementation
+    roadmap
+
+### Supporting Documentation
+
+Additional historical documentation:
+
+- [Implementation Phases](./implementation-phases.md) - Detailed phase
+  breakdowns for 001-codebase-cleanup
+- [Implementation Results](./implementation-results.md) - Metrics and outcomes
+  for 001-codebase-cleanup
+- [Reorganization Completed](./reorganization-completed.md) - API reference
+  split details
+- [Reorganization Remaining](./reorganization-remaining.md) - Remaining
+  markdown reorganization work
 
 ---
 
