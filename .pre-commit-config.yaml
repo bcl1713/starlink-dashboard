@@ -58,6 +58,21 @@ repos:
         exclude: ^(node_modules|\.venv|__pycache__|specs/)
         stages: [pre-commit]
 
+
+        name: Lychee - Broken Link Checker
+        args: ["--no-progress", "--exclude-path", "node_modules", "--exclude-path", ".venv", "docs/"]
+
+  # Naming convention check for docs
+  - repo: local
+    hooks:
+      - id: naming-convention
+        name: Naming Convention - Docs Filenames
+        entry: python3 tools/check_filename_convention.py
+        language: system
+        files: ^docs/.*\.md$
+        pass_filenames: false
+
+
 # Global pre-commit settings
 default_language_version:
   python: python3.13

@@ -8,7 +8,7 @@ components.
 
 ### For a Quick Overview (5 minutes)
 
-Start here: **[POIS-REFACTORING-QUICKSTART.md](POIS-REFACTORING-QUICKSTART.md)**
+Start here: **[pois-refactoring-quickstart.md](pois-refactoring-quickstart.md)**
 
 - Problem statement
 - Solution summary
@@ -258,7 +258,7 @@ app/api/pois.py      - After migration
 
 Refer to specific documents:
 
-1. **POIS-REFACTORING-QUICKSTART.md** - Quick overview
+1. **pois-refactoring-quickstart.md** - Quick overview
 2. **pois_refactoring_analysis.md** - Detailed analysis
 3. **pois_dependency_diagrams.md** - Visual diagrams
 4. **POIS-MODULE-STRUCTURE.txt** - Structure overview
@@ -275,5 +275,5 @@ Refer to specific documents:
 ---
 
 **Next Step**: Start with
-[POIS-REFACTORING-QUICKSTART.md](POIS-REFACTORING-QUICKSTART.md) for a 5-minute
+[pois-refactoring-quickstart.md](pois-refactoring-quickstart.md) for a 5-minute
 overview.

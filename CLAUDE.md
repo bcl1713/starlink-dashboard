@@ -35,7 +35,7 @@ rebuilds images without layer caching.
 
 - Project overview: `README.md`
 - Architecture: `docs/architecture/design-document.md`
-- Features & APIs: `docs/FEATURES-OVERVIEW.md`, `docs/API-REFERENCE-INDEX.md`
+- Features & APIs: `docs/features-overview.md`, `docs/api-reference-index.md`
 - Code standards: `.specify/memory/constitution.md`
 - Setup: `docs/setup/quick-start.md`, `docs/setup/README.md`
 - Development: `docs/development/workflow.md`

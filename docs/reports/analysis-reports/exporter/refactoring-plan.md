@@ -23,12 +23,12 @@
 
 ## Plan Sections
 
-### 1. [Refactoring Roadmap](plan/ROADMAP.md)
+### 1. [Refactoring Roadmap](plan/roadmap.md)
 
 Detailed roadmap covering Phases 1 through 6 of the refactoring effort,
 including specific modules to extract and their benefits.
 
-### 2. [Implementation Strategy](plan/IMPLEMENTATION.md)
+### 2. [Implementation Strategy](plan/implementation.md)
 
 Execution details including the refactoring sequence (timeline), testing
 strategy, file size estimates, dependency graph, backward compatibility, and

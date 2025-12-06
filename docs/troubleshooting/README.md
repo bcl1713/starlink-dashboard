@@ -3,7 +3,7 @@
 **Purpose**: Help users diagnose and resolve problems
 **Audience**: Users, operators, support staff
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 
@@ -179,4 +179,4 @@ Check:
 
 ---
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)

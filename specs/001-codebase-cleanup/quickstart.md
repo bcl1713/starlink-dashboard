@@ -1456,7 +1456,7 @@ async def get_route_eta(route_id: str, ...):
 **Strategy**:
 
 ```text
-Original: docs/API-REFERENCE.md (999 lines)
+Original: docs/API-reference.md (999 lines)
 Target:   Focused sub-documents
 
 Split by:

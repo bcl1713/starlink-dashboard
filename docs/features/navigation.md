@@ -67,7 +67,7 @@ Simulator follows uploaded KML routes with realistic movement.
 **Configuration:** Automatically enabled when route is activated in simulation
 mode
 
-**See:** [Route Timing Guide](../ROUTE-TIMING-GUIDE.md)
+**See:** [Route Timing Guide](../route-timing-guide.md)
 
 ---
 
@@ -169,7 +169,7 @@ Track flight phases with automatic transitions.
 - `POST /api/flight-status/depart` - Trigger departure (testing)
 - `POST /api/flight-status/arrive` - Trigger arrival (testing)
 
-**See [Flight Status Guide](../ROUTE-TIMING-GUIDE.md) for details.
+**See [Flight Status Guide](../route-timing-guide.md) for details.
 
 ### Automatic ETA Mode Switching
 
@@ -183,4 +183,4 @@ ETA calculations adapt based on flight phase.
 
 **Configuration:** Automatic based on flight phase (no manual config needed)
 
-**See:** [Route Timing Guide](../ROUTE-TIMING-GUIDE.md)
+**See:** [Route Timing Guide](../route-timing-guide.md)

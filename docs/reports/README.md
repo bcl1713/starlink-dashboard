@@ -3,7 +3,7 @@
 **Purpose**: Archive historical documentation and completed work artifacts
 **Audience**: Project historians, retrospective reviewers
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 
@@ -58,7 +58,7 @@ Additional historical documentation:
   breakdowns for 001-codebase-cleanup
 - [Implementation Results](./implementation-results.md) - Metrics and outcomes
   for 001-codebase-cleanup
-- [Batch 2 Reorganization Summary](../REORGANIZATION-BATCH-2-SUMMARY.md)
+- [Batch 2 Reorganization Summary](../reorganization-batch-2-summary.md)
   - Remaining markdown reorganization work
 
 ---

@@ -3,7 +3,7 @@
 **Purpose**: Guide developers on contributing, testing, and building the system
 **Audience**: Contributors, developers
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 

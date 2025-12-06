@@ -797,7 +797,7 @@ Docusaurus)
 ## Smoke Test Results
 
 **Test Category**: Documentation **Tested By**: [Your Name] **Date**: 2025-12-02
-**Environment**: Local filesystem **Files Modified**: `docs/API-REFERENCE.md`
+**Environment**: Local filesystem **Files Modified**: `docs/API-reference.md`
 (split into 3 files)
 
 ### Link Validation

@@ -5,7 +5,7 @@ understanding and implementing map and chart generation using mission data.
 
 ## Document Overview
 
-### 1. MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md (Start Here!)
+### 1. MISSION-DATA-STRUCTURES-QUICK-reference.md (Start Here!)
 
 **Best for:** Quick lookups, implementation jumpstart
 
@@ -17,7 +17,7 @@ understanding and implementing map and chart generation using mission data.
 
 **Read this first** if you're implementing map/chart functions.
 
-### 2. MISSION-DATA-STRUCTURES.md (Comprehensive Reference)
+### 2. mission-data-structures.md (Comprehensive Reference)
 
 **Best for:** Deep understanding, complete field listings
 
@@ -45,7 +45,7 @@ models.
 
 **Read this** to understand the big picture and data flow.
 
-### 4. MISSION-VISUALIZATION-GUIDE.md (Implementation Patterns)
+### 4. mission-visualization-guide.md (Implementation Patterns)
 
 **Best for:** Writing actual visualization code, seeing examples
 
@@ -68,13 +68,13 @@ models.
 ## Document Dependencies
 
 ```text
-Start: MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md
+Start: MISSION-DATA-STRUCTURES-QUICK-reference.md
    |
    +-> Need deep dive? MISSION-DATA-STRUCTURES-SUMMARY.txt
    |       |
-   |       +-> Need complete spec? MISSION-DATA-STRUCTURES.md
+   |       +-> Need complete spec? mission-data-structures.md
    |
-   +-> Implementing code? MISSION-VISUALIZATION-GUIDE.md
+   +-> Implementing code? mission-visualization-guide.md
 ```
 
 ---
@@ -123,37 +123,37 @@ Start: MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md
 
 ### Case 1: Building a Timeline Bar Chart
 
-1. Read: MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md (sections: Core Classes,
+1. Read: MISSION-DATA-STRUCTURES-QUICK-reference.md (sections: Core Classes,
    Helper Functions)
-1. Read: MISSION-VISUALIZATION-GUIDE.md (section: Data Extraction Pattern)
-1. Reference: MISSION-DATA-STRUCTURES.md (TimelineSegment class)
+1. Read: mission-visualization-guide.md (section: Data Extraction Pattern)
+1. Reference: mission-data-structures.md (TimelineSegment class)
 
 ### Case 2: Building a Route Map with Overlay
 
-1. Read: MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md (all sections)
-2. Read: MISSION-VISUALIZATION-GUIDE.md (sections: Route Geometry Pattern,
+1. Read: MISSION-DATA-STRUCTURES-QUICK-reference.md (all sections)
+2. Read: mission-visualization-guide.md (sections: Route Geometry Pattern,
    Timeline to Route Mapping)
-3. Reference: MISSION-DATA-STRUCTURES.md (ParsedRoute, RoutePoint classes)
+3. Reference: mission-data-structures.md (ParsedRoute, RoutePoint classes)
 
 ### Case 3: Building an Integrated Dashboard
 
 1. Read: MISSION-DATA-STRUCTURES-SUMMARY.txt (entire document)
-2. Read: MISSION-VISUALIZATION-GUIDE.md (section: Complete Data Flow Example)
-3. Reference: MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md (as needed during
+2. Read: mission-visualization-guide.md (section: Complete Data Flow Example)
+3. Reference: MISSION-DATA-STRUCTURES-QUICK-reference.md (as needed during
    implementation)
 
 ### Case 4: Understanding Transport States and Colors
 
-1. Read: MISSION-VISUALIZATION-GUIDE.md (section: Timeline Segment Status
+1. Read: mission-visualization-guide.md (section: Timeline Segment Status
    Visualization)
-1. Reference: MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md (Enum Values table)
+1. Reference: MISSION-DATA-STRUCTURES-QUICK-reference.md (Enum Values table)
 
 ### Case 5: Handling Special Cases and Edge Conditions
 
 1. Read: MISSION-DATA-STRUCTURES-SUMMARY.txt (section 10: Important Caveats)
-2. Read: MISSION-VISUALIZATION-GUIDE.md (section: Special Cases and Edge
+2. Read: mission-visualization-guide.md (section: Special Cases and Edge
    Handling)
-3. Reference: MISSION-DATA-STRUCTURES.md (Special notes within class
+3. Reference: mission-data-structures.md (Special notes within class
    descriptions)
 
 ---
@@ -203,12 +203,12 @@ time, each with status, transport states, and duration.
 
 **Q: How do I position timeline segments on a map?** A: Use
 `segment.metadata["satellites"]` and time-matching to route waypoints via
-`expected_arrival_time`. See MISSION-VISUALIZATION-GUIDE.md section "Timeline to
+`expected_arrival_time`. See mission-visualization-guide.md section "Timeline to
 Route Mapping Pattern".
 
 **Q: What color should each status show?** A: NOMINAL=Green, DEGRADED=Yellow
 (use LIGHT_YELLOW), CRITICAL=Red (use LIGHT_RED). See color mapping table in
-MISSION-VISUALIZATION-GUIDE.md.
+mission-visualization-guide.md.
 
 **Q: How do I handle X-Ku conflict warnings?** A: Call
 `_segment_is_x_ku_warning(segment)`. If True, display as "WARNING" even though
@@ -220,7 +220,7 @@ exporter.
 
 **Q: What are the transport display names?** A: X→"X-Band", Ka→"HCX",
 Ku→"StarShield". See TRANSPORT_DISPLAY constant in
-MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md.
+MISSION-DATA-STRUCTURES-QUICK-reference.md.
 
 **Q: Where do advisory events come from?** A: `MissionTimeline.advisories` -
 it's a list of `TimelineAdvisory` objects with timestamp, event_type, transport,
@@ -243,18 +243,18 @@ All documentation files are in:
 
 **Related Mission Planning Documents:**
 
-- `MISSION-PLANNING-GUIDE.md` - Mission planning workflow and features
-- `MISSION-COMM-SOP.md` - Communication procedures and best practices
+- `mission-planning-guide.md` - Mission planning workflow and features
+- `mission-comm-sop.md` - Communication procedures and best practices
 
 ---
 
 ## Quick Navigation
 
-**Looking for enum values?** → MISSION-DATA-STRUCTURES-QUICK-REFERENCE.md
+**Looking for enum values?** → MISSION-DATA-STRUCTURES-QUICK-reference.md
 
-**Looking for implementation example?** → MISSION-VISUALIZATION-GUIDE.md
+**Looking for implementation example?** → mission-visualization-guide.md
 
-**Looking for complete field list?** → MISSION-DATA-STRUCTURES.md
+**Looking for complete field list?** → mission-data-structures.md
 
 **Looking for summary/architecture?** → MISSION-DATA-STRUCTURES-SUMMARY.txt
 

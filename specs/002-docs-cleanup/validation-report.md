@@ -28,16 +28,16 @@ The documentation cleanup and restructuring effort is **COMPLETE** and has succe
 
 ### SC-001: 10-Minute Onboarding ✓ PASS
 
-**Criteria**: New developers can find setup docs, architecture overview, and contribution guidelines within 10 minutes using only README and docs/INDEX.md
+**Criteria**: New developers can find setup docs, architecture overview, and contribution guidelines within 10 minutes using only README and docs/index.md
 
 **Validation**:
 - README.md links directly to setup documentation
-- docs/INDEX.md provides clear "For Developers & Contributors" section
+- docs/index.md provides clear "For Developers & Contributors" section
 - Navigation path: README → docs/setup/quick-start.md → docs/architecture/design-document.md → CONTRIBUTING.md
 - All target documents exist and are well-organized
 
 **Evidence**:
-- docs/INDEX.md:76-82 (Developer onboarding path)
+- docs/index.md:76-82 (Developer onboarding path)
 - README.md links to essential docs
 - docs/setup/README.md provides complete setup index
 
@@ -65,15 +65,15 @@ The documentation cleanup and restructuring effort is **COMPLETE** and has succe
 
 ### SC-004: 2-Minute Search ✓ PASS
 
-**Criteria**: Common documentation findable within 2 minutes from docs/INDEX.md
+**Criteria**: Common documentation findable within 2 minutes from docs/index.md
 
 **Validation**:
-- docs/INDEX.md provides quick search table (lines 142-150)
+- docs/index.md provides quick search table (lines 142-150)
 - Direct links to all 7 categories with clear purposes
 - Audience-based navigation sections
 - Legacy index structure preserved for reference
 
-**Evidence**: docs/INDEX.md:135-150 (Quick Search table)
+**Evidence**: docs/index.md:135-150 (Quick Search table)
 
 ### SC-005: Zero Duplicates ✓ PASS
 
@@ -88,18 +88,18 @@ The documentation cleanup and restructuring effort is **COMPLETE** and has succe
 - tasks.md:129-132 (duplicate consolidation tasks)
 - All duplicate consolidation tasks marked complete
 
-### SC-006: Clear INDEX.md ✓ PASS
+### SC-006: Clear index.md ✓ PASS
 
 **Criteria**: Complete navigation index with all categories and purposes
 
 **Validation**:
-- docs/INDEX.md updated with all 7 categories
+- docs/index.md updated with all 7 categories
 - Each category includes purpose, audience, and description
 - Audience-based navigation sections added
 - Quick search table provided
 - Legacy index structure preserved
 
-**Evidence**: docs/INDEX.md (completely reorganized in Phase 7)
+**Evidence**: docs/index.md (completely reorganized in Phase 7)
 
 ### SC-007: Category File Limits ✓ PASS
 
@@ -145,8 +145,8 @@ reports: 4 files ✓
 backend/starlink-location/docs/:
 - ARCHITECTURE.md (service-specific)
 - GETTING-STARTED.md (service-specific)
-- TESTING.md (service-specific)
-- TROUBLESHOOTING.md (service-specific)
+- testing.md (service-specific)
+- troubleshooting.md (service-specific)
 ```
 
 All files are service-implementation specific and appropriately located.
@@ -205,7 +205,7 @@ All files include dates in filenames and are located in appropriate historical s
 
 **Requirements**:
 1. ✓ 7 categories with clear purposes - All categories implemented
-2. ✓ Audience separation (user vs developer) - Clear separation in INDEX.md
+2. ✓ Audience separation (user vs developer) - Clear separation in index.md
 3. ✓ File size ≤300 lines - All docs comply
 4. ✓ Lowercase-with-hyphens naming - Minor violations noted below
 
@@ -219,7 +219,7 @@ All files include dates in filenames and are located in appropriate historical s
 
 | Task | Status | Notes |
 |------|--------|-------|
-| T067: Update INDEX.md | ✓ COMPLETE | All 7 categories documented with purposes |
+| T067: Update index.md | ✓ COMPLETE | All 7 categories documented with purposes |
 | T068: Audience navigation | ✓ COMPLETE | Users, developers, API consumers sections added |
 | T069: Root-level compliance | ✓ COMPLETE | Exactly 4 files at root (allowed) |
 | T070: Category README verification | ✓ COMPLETE | All 7 categories have README.md |
@@ -247,16 +247,16 @@ Some files do not follow the lowercase-with-hyphens convention. These are primar
 - CONTRIBUTING.md
 
 **Docs directory (should be lowercase)**:
-- docs/PERFORMANCE-NOTES.md → should be docs/reports/performance-notes.md
-- docs/POIS-REFACTORING-QUICKSTART.md → should be in reports/analysis-reports/
-- docs/README-POIS-REFACTORING.md → should be in reports/analysis-reports/
-- docs/README-EXPORTER-ANALYSIS.md → should be in reports/analysis-reports/
+- docs/performance-notes.md → should be docs/reports/performance-notes.md
+- docs/pois-refactoring-quickstart.md → should be in reports/analysis-reports/
+- docs/readme-pois-refactoring.md → should be in reports/analysis-reports/
+- docs/readme-exporter-analysis.md → should be in reports/analysis-reports/
 
 **Backend docs (allowed - existing convention)**:
 - backend/starlink-location/docs/ARCHITECTURE.md
 - backend/starlink-location/docs/GETTING-STARTED.md
-- backend/starlink-location/docs/TESTING.md
-- backend/starlink-location/docs/TROUBLESHOOTING.md
+- backend/starlink-location/docs/testing.md
+- backend/starlink-location/docs/troubleshooting.md
 
 **Recommendation**: Move the 4 uppercase docs/ files to appropriate reports/ subdirectories with lowercase names in a follow-up cleanup task.
 
@@ -270,7 +270,7 @@ Some files do not follow the lowercase-with-hyphens convention. These are primar
 
 **Path**:
 1. README.md → Quick Links section
-2. docs/INDEX.md → "For Developers & Contributors" section
+2. docs/index.md → "For Developers & Contributors" section
 3. docs/setup/quick-start.md (setup)
 4. docs/architecture/design-document.md (architecture)
 5. CONTRIBUTING.md (contribution guidelines)
@@ -282,7 +282,7 @@ Some files do not follow the lowercase-with-hyphens convention. These are primar
 **Test**: Developer needs to document new API endpoint. Find correct location in <5 minutes without creating duplicates.
 
 **Path**:
-1. docs/INDEX.md → "Documentation by Category" → API Reference
+1. docs/index.md → "Documentation by Category" → API Reference
 2. docs/api/README.md → "Endpoints" section
 3. docs/api/endpoints/ subdirectory (clear structure)
 
@@ -293,7 +293,7 @@ Some files do not follow the lowercase-with-hyphens convention. These are primar
 **Test**: Operator needs installation guide, configuration docs, and troubleshooting for specific error in <2 minutes each
 
 **Path**:
-1. docs/INDEX.md → "For Users & Operators" section
+1. docs/index.md → "For Users & Operators" section
 2. docs/setup/README.md (installation)
 3. docs/setup/configuration.md (configuration)
 4. docs/troubleshooting/README.md → symptom-based navigation
@@ -305,7 +305,7 @@ Some files do not follow the lowercase-with-hyphens convention. These are primar
 **Test**: API consumer needs endpoint spec, model schema, and code example in <5 minutes
 
 **Path**:
-1. docs/INDEX.md → "For API Consumers & Integrators" section
+1. docs/index.md → "For API Consumers & Integrators" section
 2. docs/api/README.md → structured navigation
 3. docs/api/endpoints/ (endpoint specs)
 4. docs/api/models/ (model schemas)

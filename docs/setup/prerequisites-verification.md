@@ -2,7 +2,7 @@
 
 Verification steps and troubleshooting for prerequisites.
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
 
 ---
 
@@ -296,4 +296,4 @@ Once all verification checks pass, proceed to installation:
 
 ---
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)

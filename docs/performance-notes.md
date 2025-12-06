@@ -167,5 +167,5 @@ docker compose exec starlink-location python -m pytest tests/performance/test_be
 - `tools/benchmark_mission_timeline.py` — Standalone benchmark reference tool
 - `backend/starlink-location/app/mission/timeline_service.py` — Core timeline
   computation
-- `MISSION-PLANNING-GUIDE.md` — Mission planning user guide
-- `MISSION-COMM-SOP.md` — Operations standard procedures
+- `mission-planning-guide.md` — Mission planning user guide
+- `mission-comm-sop.md` — Operations standard procedures

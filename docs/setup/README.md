@@ -3,7 +3,7 @@
 **Purpose**: Help users install, configure, and initially deploy the system
 **Audience**: Users, operators, first-time installers
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 

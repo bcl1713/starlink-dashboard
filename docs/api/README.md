@@ -3,7 +3,7 @@
 **Purpose**: Technical reference for REST API endpoints, models, and contracts
 **Audience**: API consumers, integrators, developers
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 

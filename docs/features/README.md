@@ -3,7 +3,7 @@
 **Purpose**: Describe system capabilities and user-facing functionality
 **Audience**: Users, evaluators, product stakeholders
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 
@@ -13,12 +13,12 @@
 
 - **[Overview](./overview.md)**: Complete feature catalog and system
   capabilities
-- **[Monitoring](MONITORING.md)**: Real-time telemetry monitoring and
+- **[Monitoring](monitoring.md)**: Real-time telemetry monitoring and
   visualization
-- **[Navigation](NAVIGATION.md)**: Route-based navigation and tracking
-- **[Mission Planning](MISSION-PLANNING.md)**: Mission management and planning
+- **[Navigation](navigation.md)**: Route-based navigation and tracking
+- **[Mission Planning](mission-planning.md)**: Mission management and planning
   tools
-- **[System Features](SYSTEM.md)**: System-level capabilities and
+- **[System Features](system.md)**: System-level capabilities and
   configuration
 
 ### Feature Areas

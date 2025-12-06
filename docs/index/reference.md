@@ -63,9 +63,9 @@
 **Mission Communication Planning:**
 
 - User Guide:
-  [MISSION-PLANNING-GUIDE.md](../missions/MISSION-PLANNING-GUIDE.md)
-- Operations Playbook: [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md)
-- Performance Analysis: [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.md)
+  [mission-planning-guide.md](../missions/mission-planning-guide.md)
+- Operations Playbook: [mission-comm-sop.md](../missions/mission-comm-sop.md)
+- Performance Analysis: [performance-notes.md](../performance-notes.md)
 - Monitoring Setup:
   [monitoring/README.md#mission-communication-planning](../../monitoring/README.md#mission-communication-planning)
 

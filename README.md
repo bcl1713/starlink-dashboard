@@ -22,7 +22,7 @@ physical Starlink hardware and simulation mode for offline development.
 **For Developers:**
 
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
-- [API Reference](./docs/API-REFERENCE-INDEX.md) - Complete API documentation
+- [API Reference](./docs/api-reference-index.md) - Complete API documentation
 - [Development Workflow](./docs/development/workflow.md) - Development practices
 - [Architecture](./docs/architecture/design-document.md) - System design and architecture
 
@@ -85,7 +85,7 @@ Comprehensive documentation is organized by topic:
 
 - [Features Overview](./docs/features/overview.md) - Complete feature list
 - [Grafana Setup](./docs/setup/grafana-setup.md) - Dashboard usage
-- [API Reference](./docs/API-REFERENCE-INDEX.md) - REST API endpoints
+- [API Reference](./docs/api-reference-index.md) - REST API endpoints
 - [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common issues
 
 ### For Development
@@ -110,7 +110,7 @@ Comprehensive documentation is organized by topic:
 
 **API Questions:**
 
-- See [API Reference](./docs/API-REFERENCE-INDEX.md)
+- See [API Reference](./docs/api-reference-index.md)
 - Visit <http://localhost:8000/docs> (interactive documentation)
 
 **Development Questions:**
@@ -152,4 +152,4 @@ Part of the Starlink Dashboard project.
 
 **Quick Links:** [Quick Start](./docs/setup/quick-start.md) |
 [Features](./docs/features/overview.md) |
-[API Docs](./docs/API-REFERENCE-INDEX.md) | [Contributing](./CONTRIBUTING.md)
+[API Docs](./docs/api-reference-index.md) | [Contributing](./CONTRIBUTING.md)

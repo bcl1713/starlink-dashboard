@@ -1,6 +1,6 @@
 # Installation Troubleshooting
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
 
 ---
 
@@ -170,4 +170,4 @@ If errors persist:
 
 ---
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)

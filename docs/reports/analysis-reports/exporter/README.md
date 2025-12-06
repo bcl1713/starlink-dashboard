@@ -10,11 +10,11 @@ which enables comprehensive export of mission data in multiple formats.
 Due to their size, the original exporter documentation files have been preserved
 and are available in this directory:
 
-- **[ARCHITECTURE-ANALYSIS.md](./ARCHITECTURE-ANALYSIS.md)** (618 lines) -
+- **[architecture-analysis.md](./architecture-analysis.md)** (618 lines) -
   Detailed architecture analysis
-- **[REFACTORING-PLAN.md](./REFACTORING-PLAN.md)** (567 lines) - Refactoring
+- **[refactoring-plan.md](./refactoring-plan.md)** (567 lines) - Refactoring
   strategy and implementation
-- **[SUMMARY.md](./SUMMARY.md)** (455 lines) - Feature summary and overview
+- **[summary.md](./summary.md)** (455 lines) - Feature summary and overview
 
 ---
 
@@ -79,4 +79,4 @@ app/api/missions/export/
 - **Memory usage:** <256 MB per export
 - **Concurrent exports:** Supported via async processing
 
---- [Back to Documentation Internal Index](../../../INDEX.md)
+--- [Back to Documentation Internal Index](../../../index.md)

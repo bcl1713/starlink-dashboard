@@ -7,7 +7,7 @@ Complete markdown file reorganization to 300-line maximum
 
 ## Executive Summary
 
-Successfully completed reorganization of API-REFERENCE.md (1083 lines), the
+Successfully completed reorganization of API-reference.md (1083 lines), the
 largest and most complex documentation file. Split into 7 focused,
 well-structured reference files averaging 242 lines each.
 
@@ -19,27 +19,27 @@ complex file
 
 ## Quick Links
 
-- [Reorganization Summary](../../REORGANIZATION-BATCH-2-SUMMARY.md) - API
+- [Reorganization Summary](../../reorganization-batch-2-summary.md) - API
   Reference split
-- [Reorganization Summary](../../REORGANIZATION-BATCH-2-SUMMARY.md) - 18 files
+- [Reorganization Summary](../../reorganization-batch-2-summary.md) - 18 files
   to split
-- [Quality Standards](../../REORGANIZATION-BATCH-2-SUMMARY.md#quality-standards-applied)
+- [Quality Standards](../../reorganization-batch-2-summary.md#quality-standards-applied)
   - Methodology and approach
 
 ---
 
 ## Completed Work
 
-### API-REFERENCE.md Split (1083 lines)
+### API-reference.md Split (1083 lines)
 
-**Original File:** `/docs/API-REFERENCE.md` (1083 lines) **Status:** Removed and
+**Original File:** `/docs/API-reference.md` (1083 lines) **Status:** Removed and
 replaced with structured documentation
 
 **New Files Created:**
 
 | File                           | Lines | Purpose                       |
 | ------------------------------ | ----- | ----------------------------- |
-| API-REFERENCE-INDEX.md         | 272   | Main index and navigation     |
+| api-reference-index.md         | 272   | Main index and navigation     |
 | api/core-endpoints.md          | 245   | Health, status, metrics       |
 | api/poi-endpoints.md           | 311   | POI management                |
 | api/route-endpoints.md         | 113   | Route and GeoJSON             |
@@ -73,7 +73,7 @@ replaced with structured documentation
 | LOW      | 4     | 2,451 | Reference/archived docs |
 
 **Detailed breakdown:** See
-[Reorganization Summary](../../REORGANIZATION-BATCH-2-SUMMARY.md)
+[Reorganization Summary](../../reorganization-batch-2-summary.md)
 
 ---
 
@@ -81,15 +81,15 @@ replaced with structured documentation
 
 ### Phase 2: Critical Path (Week 1)
 
-1. **TROUBLESHOOTING.md** → 4 files (868 lines)
+1. **troubleshooting.md** → 4 files (868 lines)
 2. **README.md** → 2 files (451 lines)
-3. **SETUP-GUIDE.md** → 3 files (654 lines)
+3. **SETUP-guide.md** → 3 files (654 lines)
 
 **Impact:** Immediate improvement for 80% of users
 
 ### Phase 3: Documentation Core (Week 2)
 
-1. **INDEX.md** → 2 files (456 lines)
+1. **index.md** → 2 files (456 lines)
 2. **design-document.md** → 3 files (611 lines)
 3. **setup/installation.md** → 3 files (529 lines)
 4. **setup/configuration.md** → 3 files (691 lines)
@@ -98,7 +98,7 @@ replaced with structured documentation
 
 ### Subsequent Phases
 
-See [Reorganization Summary](../../REORGANIZATION-BATCH-2-SUMMARY.md) - 18 files
+See [Reorganization Summary](../../reorganization-batch-2-summary.md) - 18 files
 to split execution order (Phases 4-6).
 
 ---
@@ -107,7 +107,7 @@ to split execution order (Phases 4-6).
 
 ### File Naming
 
-- Index files: `-INDEX.md` or `-OVERVIEW.md` suffix
+- Index files: `-index.md` or `-overview.md` suffix
 - Split files: Descriptive names with category prefix
 - No underscores in new files (kebab-case)
 
@@ -190,7 +190,7 @@ to split execution order (Phases 4-6).
 
 ### Immediate (This Week)
 
-1. **Split TROUBLESHOOTING.md** (868 lines → 4 files)
+1. **Split troubleshooting.md** (868 lines → 4 files)
    - Service issues
    - Configuration issues
    - Performance issues
@@ -204,8 +204,8 @@ to split execution order (Phases 4-6).
 
 Continue with core documentation:
 
-1. **Split SETUP-GUIDE.md** (654 lines → 3 files)
-2. **Split INDEX.md** (456 lines → 2 files)
+1. **Split SETUP-guide.md** (654 lines → 3 files)
+2. **Split index.md** (456 lines → 2 files)
 3. **Split design-document.md** (611 lines → 3 files)
 
 ---

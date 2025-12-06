@@ -59,7 +59,7 @@ All files validated with markdownlint (0 errors)
 
 ---
 
-#### 3. docs/INDEX.md (456 lines - preserved)
+#### 3. docs/index.md (456 lines - preserved)
 
 **Decision:** Kept as-is with FR-004 exception justification
 
@@ -173,7 +173,7 @@ docs/api/
 
 2. **Update Documentation Index**
    - Add references to new split files
-   - Update navigation paths in docs/INDEX.md
+   - Update navigation paths in docs/index.md
 
 3. **Validate All Links**
    - Run link checker across documentation

@@ -3,7 +3,7 @@
 **Purpose**: Explain system design, technical decisions, and internal structure
 **Audience**: Developers, contributors, technical evaluators
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 
@@ -68,4 +68,4 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
 
 [Go to Full Architecture Documentation →](./design-document.md)
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)

@@ -76,4 +76,4 @@ curl http://localhost:8000/api/routes/active/timing | jq .
 
 [Go to Full Route Timing Guide →](./route-timing/README.md)
 
-[Back to main docs](./INDEX.md)
+[Back to main docs](./index.md)

@@ -328,7 +328,7 @@ npm install -g markdown-link-check
 
 1. **Feature overview**: `docs/features/[feature-name].md`
 2. **Setup (if needed)**: `docs/setup/[feature-name]-setup.md`
-3. **Update indexes**: `docs/features/README.md`, `docs/INDEX.md`
+3. **Update indexes**: `docs/features/README.md`, `docs/index.md`
 
 ### Add Troubleshooting Guide
 

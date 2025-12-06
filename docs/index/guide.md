@@ -43,9 +43,9 @@ Start here if you're new to the project:
 
 | Goal                            | Document                                                  | Time   |
 | ------------------------------- | --------------------------------------------------------- | ------ |
-| Learn mission planning workflow | [Mission Planning](../missions/MISSION-PLANNING-GUIDE.md) | 20 min |
-| Set up for mission operations   | [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md)    | 15 min |
-| Understand performance targets  | [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.md)           | 10 min |
+| Learn mission planning workflow | [Mission Planning](../missions/mission-planning-guide.md) | 20 min |
+| Set up for mission operations   | [mission-comm-sop.md](../missions/mission-comm-sop.md)    | 15 min |
+| Understand performance targets  | [performance-notes.md](../performance-notes.md)           | 10 min |
 
 #### Develop features
 

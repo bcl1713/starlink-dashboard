@@ -102,10 +102,10 @@ Start here to integrate with the Starlink Dashboard API:
 
 The previous index system is still available for reference:
 
-- [Navigation Guide](index/GUIDE.md) - Use case-based documentation access
-- [Complete Documentation Map](index/MAP.md) - Detailed file listing by location
-- [Documentation by Format](index/FORMATS.md) - Organized by documentation type
-- [Documentation Reference](index/REFERENCE.md) - Searchable topics and quick links
+- [Navigation Guide](index/guide.md) - Use case-based documentation access
+- [Complete Documentation Map](index/map.md) - Detailed file listing by location
+- [Documentation by Format](index/formats.md) - Organized by documentation type
+- [Documentation Reference](index/reference.md) - Searchable topics and quick links
 
 ### Root-Level Documentation
 
@@ -121,8 +121,8 @@ Essential project documentation at the repository root:
 Service implementation details:
 
 - [Backend Architecture](../backend/starlink-location/docs/ARCHITECTURE.md)
-- [Backend Testing](../backend/starlink-location/docs/TESTING.md)
-- [Backend Troubleshooting](../backend/starlink-location/docs/TROUBLESHOOTING.md)
+- [Backend Testing Guide](../backend/starlink-location/docs/TESTING.md)
+- [Troubleshooting](../backend/starlink-location/docs/TROUBLESHOOTING.md)
 
 ### Specification Documents
 

@@ -43,4 +43,4 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
 
 [Go to Full Architecture Documentation →](./README.md)
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)

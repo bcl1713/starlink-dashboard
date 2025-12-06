@@ -9,22 +9,22 @@ Starlink Dashboard system.
 
 ## Feature Categories
 
-### 1. [Monitoring & Dashboards](./MONITORING.md)
+### 1. [Monitoring & Dashboards](./monitoring.md)
 
 Core real-time position tracking, network performance metrics, historical data
 retention, and Grafana dashboard details.
 
-### 2. [Navigation & Timing](./NAVIGATION.md)
+### 2. [Navigation & Timing](./navigation.md)
 
 Route management (KML import, visualization), Point of Interest (POI) tracking
 with real-time ETA, and flight phase detection.
 
-### 3. [Mission Communication Planning](./MISSION-PLANNING.md)
+### 3. [Mission Communication Planning](./mission-planning.md)
 
 Pre-flight predictive planning tools, satellite geometry analysis, multi-format
 briefing exports, and mission timeline visualization.
 
-### 4. [System Configuration & Simulation](./SYSTEM.md)
+### 4. [System Configuration & Simulation](./system.md)
 
 Environment configuration, REST API documentation, and simulation mode
 capabilities (realistic telemetry, route following).

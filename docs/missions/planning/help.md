@@ -92,7 +92,7 @@ For questions or issues:
 
 ## Related Documents
 
-- **[MISSION-COMM-SOP.md](../MISSION-COMM-SOP.md)** — Operations playbook for
+- **[mission-comm-sop.md](../mission-comm-sop.md)** — Operations playbook for
   monitoring and alert response
 - **[METRICS](../../metrics/overview.md)** — Prometheus metrics reference for
   dashboard integration

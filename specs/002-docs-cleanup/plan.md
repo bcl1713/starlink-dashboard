@@ -39,7 +39,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 - Target: Documentation MUST be accurate and up-to-date
 - Current approach: Organization only, not content accuracy audit
 - **Justification**: Content accuracy is a separate effort. This feature focuses on structure to enable future content audits.
-- **Mitigation**: Flag obviously outdated content for follow-up; update INDEX.md with accurate navigation
+- **Mitigation**: Flag obviously outdated content for follow-up; update index.md with accurate navigation
 
 ### Gate 3: Clear Documentation (Principle II)
 
@@ -47,7 +47,7 @@ _GATE: Must pass before Phase 0 research. Re-check after Phase 1 design._
 
 - Target: Documentation MUST address both developer and user needs
 - Approach: Explicit separation of user-facing vs. developer documentation
-- Implementation: Separate top-level categories, updated INDEX.md with audience-based navigation
+- Implementation: Separate top-level categories, updated index.md with audience-based navigation
 
 ### Gate 4: Runtime Guidance Minimalism (Governance)
 
@@ -103,7 +103,7 @@ CONTRIBUTING.md        # Contribution guidelines (RETAINED)
 
 # Main documentation hierarchy
 docs/
-├── INDEX.md           # Master documentation index (UPDATED)
+├── index.md           # Master documentation index (UPDATED)
 │
 ├── setup/             # User-facing setup and configuration
 │   ├── README.md      # Setup category index
@@ -153,8 +153,8 @@ docs/
 # Backend-specific documentation (RETAINED if service-specific)
 backend/starlink-location/docs/
 ├── ARCHITECTURE.md    # Backend service architecture
-├── TESTING.md         # Backend-specific testing
-└── TROUBLESHOOTING.md # Backend-specific troubleshooting
+├── testing.md         # Backend-specific testing
+└── troubleshooting.md # Backend-specific troubleshooting
 
 # Specs documentation (RETAINED - feature planning)
 specs/
@@ -316,7 +316,7 @@ Phase 2 is NOT part of this plan command. After completing Phase 0-1, run `/spec
 2. **Relocation Tasks**: Move root-level docs to appropriate categories
 3. **Consolidation Tasks**: Merge duplicate/fragmented documentation
 4. **Link Update Tasks**: Update all internal links to new locations
-5. **Index Update Tasks**: Update docs/INDEX.md and category README files
+5. **Index Update Tasks**: Update docs/index.md and category README files
 6. **Validation Tasks**: Validate links, test navigation paths, verify structure
 7. **Guidelines Tasks**: Update CONTRIBUTING.md with documentation structure
 

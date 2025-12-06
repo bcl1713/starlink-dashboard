@@ -31,7 +31,7 @@ timeline = load_mission_timeline(leg_id)
 
 ## Recommended Refactoring
 
-See `EXPORTER-REFACTORING-PLAN.md` for detailed plan.
+See `EXPORTER-refactoring-plan.md` for detailed plan.
 
 **Quick Summary:**
 

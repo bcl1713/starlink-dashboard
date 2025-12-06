@@ -169,7 +169,7 @@ Manual review process:
 ### Examples of Violations
 
 **Exact Duplicate**:
-- `docs/FEATURES.md` and `docs/features/FEATURES-OVERVIEW.md` containing identical text
+- `docs/FEATURES.md` and `docs/features/features-overview.md` containing identical text
 
 **Semantic Duplicate**:
 - `docs/api/errors.md`, `docs/api/ERRORS.md`, `docs/api/errors-format.md`, `docs/api/errors-handling.md` all describing API error responses

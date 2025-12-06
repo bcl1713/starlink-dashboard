@@ -193,7 +193,7 @@ Move entire categories at once and update links in batches:
 ```bash
 # Example: Move all setup docs
 git mv QUICK-START.md docs/setup/quick-start.md
-git mv SETUP-GUIDE.md docs/setup/installation.md
+git mv SETUP-guide.md docs/setup/installation.md
 
 # Update all links in one pass
 find docs/ -name "*.md" -exec sed -i 's|QUICK-START\.md|../setup/quick-start.md|g' {} \;
@@ -303,7 +303,7 @@ Use this checklist before merging documentation reorganization:
 ### Spot Check (Manual)
 
 - [ ] Navigate from README.md to 3 random docs (links work)
-- [ ] Navigate from docs/INDEX.md to 5 random category indexes (links work)
+- [ ] Navigate from docs/index.md to 5 random category indexes (links work)
 - [ ] Open 5 random documentation files, click all internal links (work)
 - [ ] Test anchor links to sections within files (3 random examples)
 

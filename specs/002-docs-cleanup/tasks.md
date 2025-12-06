@@ -97,7 +97,7 @@ This feature reorganizes documentation only. Primary paths:
 ### Core Documentation Organization for Onboarding
 
 - [X] T017 [P] [US1] Move docs/QUICK-START.md to docs/setup/quick-start.md using git mv
-- [X] T018 [P] [US1] Remove docs/SETUP-GUIDE.md (redirect file, target already exists)
+- [X] T018 [P] [US1] Remove docs/SETUP-guide.md (redirect file, target already exists)
 - [X] T019 [P] [US1] Move docs/design-document.md to docs/architecture/design-document.md using git mv
 - [X] T020 [P] [US1] Move docs/development-workflow.md to docs/development/workflow.md using git mv
 - [X] T021 [US1] Update links IN moved files (T017-T020) to use correct relative paths from new locations
@@ -125,9 +125,9 @@ This feature reorganizes documentation only. Primary paths:
 - [X] T030 [P] [US2] Delete or move duplicate FEATURES.md after consolidation in T029
 - [X] T031 [P] [US2] Consolidate 7 API error documentation files (docs/api/errors.md, ERRORS.md, errors-*.md) into single docs/api/errors-reference.md
 - [X] T032 [P] [US2] Delete consolidated error doc duplicates after merging to errors-reference.md in T031
-- [X] T033 [US2] Move root-level IMPLEMENTATION-COMPLETION-SUMMARY.md to docs/reports/implementation-reports/2025-12-03-001-codebase-cleanup-summary.md using git mv
+- [X] T033 [US2] Move root-level IMPLEMENTATION-COMPLETION-summary.md to docs/reports/implementation-reports/2025-12-03-001-codebase-cleanup-summary.md using git mv
 - [X] T034 [P] [US2] Move root-level MARKDOWN-REORGANIZATION-REPORT.md to docs/reports/implementation-reports/2025-12-04-markdown-reorganization.md using git mv
-- [X] T035 [P] [US2] Move root-level MARKDOWN-SPLIT-SUMMARY.md to docs/reports/implementation-reports/2025-12-04-markdown-split-summary.md using git mv
+- [X] T035 [P] [US2] Move root-level MARKDOWN-SPLIT-summary.md to docs/reports/implementation-reports/2025-12-04-markdown-split-summary.md using git mv
 - [X] T036 [US2] Update links IN moved historical reports (T033-T035) to use correct relative paths
 - [X] T037 [US2] Update links TO moved reports across all documentation
 - [X] T038 [US2] Move docs/exporter/ analysis documents to docs/reports/analysis-reports/ (feature-specific artifacts)
@@ -151,8 +151,8 @@ This feature reorganizes documentation only. Primary paths:
 ### Organize User-Facing Documentation
 
 - [X] T045 [P] [US3] Move docs/setup/configuration.md to docs/setup/ if not already there (verify location)
-- [X] T046 [P] [US3] Move docs/TROUBLESHOOTING.md to docs/troubleshooting/quick-diagnostics.md using git mv
-- [X] T047 [P] [US3] Consolidate backend troubleshooting: Review backend/starlink-location/TROUBLESHOOTING.md, move project-wide content to docs/troubleshooting/, keep service-specific
+- [X] T046 [P] [US3] Move docs/troubleshooting.md to docs/troubleshooting/quick-diagnostics.md using git mv
+- [X] T047 [P] [US3] Consolidate backend troubleshooting: Review backend/starlink-location/troubleshooting.md, move project-wide content to docs/troubleshooting/, keep service-specific
 - [X] T048 [P] [US3] Organize docs/troubleshooting/services/ subdirectory with per-service troubleshooting (grafana.md, prometheus.md, backend.md, frontend.md)
 - [X] T049 [P] [US3] Organize docs/troubleshooting/connectivity/ subdirectory for connectivity issues (live-mode.md, performance.md, data-storage.md)
 - [X] T050 [US3] Update links IN moved troubleshooting files (T046-T049) to use correct relative paths
@@ -178,7 +178,7 @@ This feature reorganizes documentation only. Primary paths:
 - [X] T057 [P] [US4] Verify docs/api/endpoints/ structure, ensure all endpoint docs are organized by functional area (missions, pois, routes, eta, etc.)
 - [X] T058 [P] [US4] Verify docs/api/models/ structure, ensure all model/schema docs are clearly named and organized
 - [X] T059 [P] [US4] Verify docs/api/examples/ structure (curl-examples.md, python-examples.md, javascript-examples.md)
-- [X] T060 [P] [US4] Review API-REFERENCE-INDEX.md and ensure it links to organized endpoint, model, and example sections
+- [X] T060 [P] [US4] Review api-reference-index.md and ensure it links to organized endpoint, model, and example sections
 - [X] T061 [P] [US4] Check for any remaining duplicate API documentation and consolidate (building on T031-T032 error docs work)
 - [X] T062 [US4] Ensure docs/api/README.md provides clear navigation: endpoints by area → models → examples
 - [X] T063 [US4] Add "Getting Started with API" section to docs/api/README.md with authentication, common patterns, error handling
@@ -194,8 +194,8 @@ This feature reorganizes documentation only. Primary paths:
 
 **Purpose**: Complete documentation index, validate entire structure, ensure compliance
 
-- [X] T067 [P] Update docs/INDEX.md with complete navigation to all 7 categories and their purposes
-- [X] T068 [P] Add audience-based navigation to docs/INDEX.md (users vs developers vs API consumers)
+- [X] T067 [P] Update docs/index.md with complete navigation to all 7 categories and their purposes
+- [X] T068 [P] Add audience-based navigation to docs/index.md (users vs developers vs API consumers)
 - [X] T069 [P] Verify root-level compliance: Only README.md, CLAUDE.md, AGENTS.md, CONTRIBUTING.md exist at root
 - [X] T070 [P] Verify all category README.md files have complete file listings with descriptions
 - [X] T071 [P] Verify all moved files preserve git history using `git log --follow [file]`
@@ -270,7 +270,7 @@ This feature reorganizes documentation only. Primary paths:
 ```bash
 # Launch all file moves for User Story 1 together:
 Task: "Move docs/QUICK-START.md to docs/setup/quick-start.md using git mv"
-Task: "Move docs/SETUP-GUIDE.md to docs/setup/installation.md using git mv"
+Task: "Move docs/SETUP-guide.md to docs/setup/installation.md using git mv"
 Task: "Move docs/design-document.md to docs/architecture/design-document.md using git mv"
 Task: "Move docs/development-workflow.md to docs/development/workflow.md using git mv"
 
@@ -281,7 +281,7 @@ Task: "Move docs/development-workflow.md to docs/development/workflow.md using g
 
 ```bash
 # Launch all validation tasks together:
-Task: "Update docs/INDEX.md with complete navigation"
+Task: "Update docs/index.md with complete navigation"
 Task: "Verify root-level compliance"
 Task: "Run comprehensive link validation"
 Task: "Verify file size compliance"

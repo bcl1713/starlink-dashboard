@@ -92,9 +92,9 @@ Read in order:
 
 1. [README.md#mission-communication-planning](../../README.md#mission-communication-planning)
    \- Overview (5 min)
-1. [MISSION-PLANNING-GUIDE.md](../missions/MISSION-PLANNING-GUIDE.md) - User
+1. [mission-planning-guide.md](../missions/mission-planning-guide.md) - User
    guide (20 min)
-1. [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md) - Operations
+1. [mission-comm-sop.md](../missions/mission-comm-sop.md) - Operations
    procedures (15 min)
 1. [monitoring/README.md#mission-communication-planning](../../monitoring/README.md#mission-communication-planning)
    \- Dashboard setup (10 min)

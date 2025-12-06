@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
 
 ---
 
@@ -143,4 +143,4 @@ curl http://localhost:8000/metrics | head -20
 
 ---
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)

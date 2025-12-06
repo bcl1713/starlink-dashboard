@@ -1,6 +1,6 @@
 # POI Management API Index
 
-[Back to API Reference](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to main docs](../../index.md)
 
 **Last Updated:** 2025-11-04 **Backend Version:** 0.3.0
 
@@ -90,4 +90,4 @@ const etas = await response.json();
 
 ---
 
-[Back to API Reference](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to main docs](../../index.md)

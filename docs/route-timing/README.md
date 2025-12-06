@@ -11,7 +11,7 @@ arrival times.
 
 ## Documentation Topics
 
-See [Route Timing Guide](../ROUTE-TIMING-GUIDE.md) for details.
+See [Route Timing Guide](../route-timing-guide.md) for details.
 
 ---
 
@@ -106,4 +106,4 @@ For routes with 1000+ waypoints:
 
 ---
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)

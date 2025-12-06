@@ -5,7 +5,7 @@ mission export system (exporter.py and package_exporter.py).
 
 ## Documents
 
-### 1. EXPORTER-SUMMARY.md (13 KB, 392 lines)
+### 1. EXPORTER-summary.md (13 KB, 392 lines)
 
 **START HERE** - Executive overview of the export system
 
@@ -25,7 +25,7 @@ communication
 
 ---
 
-### 2. EXPORTER-ARCHITECTURE-ANALYSIS.md (22 KB, 541 lines)
+### 2. EXPORTER-architecture-analysis.md (22 KB, 541 lines)
 
 **DETAILED REFERENCE** - In-depth architectural breakdown
 
@@ -44,7 +44,7 @@ communication
 
 ---
 
-### 3. EXPORTER-REFACTORING-PLAN.md (14 KB, 494 lines)
+### 3. EXPORTER-refactoring-plan.md (14 KB, 494 lines)
 
 **IMPLEMENTATION GUIDE** - Step-by-step refactoring roadmap
 
@@ -103,28 +103,28 @@ Decompose into 16 focused modules:
 
 ### For Code Review
 
-1. Read EXPORTER-SUMMARY.md sections on "Current Architecture Issues" and
+1. Read EXPORTER-summary.md sections on "Current Architecture Issues" and
    "Critical Dependencies"
-1. Reference EXPORTER-ARCHITECTURE-ANALYSIS.md for specific function details
+1. Reference EXPORTER-architecture-analysis.md for specific function details
 1. Use dependency graph to understand impact of changes
 
 ### For Refactoring Planning
 
-1. Start with EXPORTER-REFACTORING-PLAN.md "Quick Reference"
+1. Start with EXPORTER-refactoring-plan.md "Quick Reference"
 2. Review "Refactoring Sequence" for implementation order
 3. Check "Risk Assessment" before starting each phase
 4. Reference phase details for module specifications
 
 ### For New Feature Development
 
-1. Consult EXPORTER-SUMMARY.md "Export Format Details" for format specifics
+1. Consult EXPORTER-summary.md "Export Format Details" for format specifics
 2. Use "Integration Points" section to understand manager interactions
-3. Reference EXPORTER-ARCHITECTURE-ANALYSIS.md "Dependency Graph"
+3. Reference EXPORTER-architecture-analysis.md "Dependency Graph"
 
 ### For Performance Optimization
 
-1. Review "Performance Characteristics" in EXPORTER-SUMMARY.md
-2. Check EXPORTER-ARCHITECTURE-ANALYSIS.md for heavy operations
+1. Review "Performance Characteristics" in EXPORTER-summary.md
+2. Check EXPORTER-architecture-analysis.md for heavy operations
 3. Consider lazy loading/streaming opportunities from refactoring plan
 
 ---
@@ -192,9 +192,9 @@ TOTAL: 3,750 lines (+232 for imports, minimal change)
 
 Refer to the respective document sections:
 
-- Architecture questions → EXPORTER-ARCHITECTURE-ANALYSIS.md
-- Refactoring questions → EXPORTER-REFACTORING-PLAN.md
-- High-level overview → EXPORTER-SUMMARY.md
+- Architecture questions → EXPORTER-architecture-analysis.md
+- Refactoring questions → EXPORTER-refactoring-plan.md
+- High-level overview → EXPORTER-summary.md
 
 All documents include detailed section headers and table of contents for easy
 navigation.

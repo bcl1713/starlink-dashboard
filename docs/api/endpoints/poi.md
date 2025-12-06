@@ -1,6 +1,6 @@
 # POI Management API Endpoints
 
-[Back to API Reference](../README.md) | [Back to Document Index](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to Document Index](../../index.md)
 
 **Last Updated:** 2025-11-04 **Backend Version:** 0.3.0
 
@@ -64,4 +64,4 @@ curl http://localhost:8000/api/pois/etas | jq .
 
 ---
 
-[Back to API Reference](../README.md) | [Back to Document Index](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to Document Index](../../index.md)

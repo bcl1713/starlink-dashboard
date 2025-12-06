@@ -87,7 +87,7 @@ An external developer or system integrator needs to understand and use the REST 
 - **FR-003**: System MUST identify and remove duplicate documentation (same content in multiple files)
 - **FR-004**: System MUST identify and archive or remove outdated documentation artifacts (temporary reports, obsolete guides)
 - **FR-005**: System MUST update all internal documentation links to reflect new file locations
-- **FR-006**: System MUST create or update a main documentation index (docs/INDEX.md) with clear navigation paths
+- **FR-006**: System MUST create or update a main documentation index (docs/index.md) with clear navigation paths
 - **FR-007**: System MUST separate user-facing documentation (setup, operation, troubleshooting) from developer documentation (architecture, contributing, development guides)
 - **FR-008**: System MUST consolidate fragmented documentation (multiple partial guides about the same topic into single authoritative documents)
 - **FR-009**: System MUST preserve backend-specific documentation in backend/ directory if it's service-specific implementation detail
@@ -112,7 +112,7 @@ An external developer or system integrator needs to understand and use the REST 
 - **SC-003**: All internal documentation links remain functional (zero broken links after reorganization)
 - **SC-004**: Documentation search operations (finding specific topics) complete in under 2 minutes for common scenarios (setup, API reference, troubleshooting)
 - **SC-005**: Zero duplicate documentation exists (same content in multiple files)
-- **SC-006**: Documentation index (docs/INDEX.md) provides clear navigation to all major documentation categories
+- **SC-006**: Documentation index (docs/index.md) provides clear navigation to all major documentation categories
 - **SC-007**: Each documentation category (setup, api, features, troubleshooting) contains less than 15 files at top level (subcategories used for larger collections)
 - **SC-008**: 100% of documentation files have clear purpose statements or section headers that immediately communicate content
 - **SC-009**: Backend-specific documentation clearly separated from project-wide documentation (95%+ of docs/ content is project-wide)
@@ -141,7 +141,7 @@ An external developer or system integrator needs to understand and use the REST 
    - Temporary artifacts with no historical value (e.g., "TEMP-NOTES.md")
    - Completely superseded by newer comprehensive documentation
 
-8. **Index Strategy**: docs/INDEX.md will serve as the authoritative documentation map, with category-specific indexes (e.g., docs/api/README.md) providing detailed navigation within categories.
+8. **Index Strategy**: docs/index.md will serve as the authoritative documentation map, with category-specific indexes (e.g., docs/api/README.md) providing detailed navigation within categories.
 
 ## Constraints _(included when relevant)_
 
@@ -167,7 +167,7 @@ An external developer or system integrator needs to understand and use the REST 
 
 4. **Build System**: Documentation links referenced in code comments or build scripts may need updates (verify with search).
 
-5. **docs/INDEX.md**: Current documentation index exists and will be updated rather than recreated from scratch.
+5. **docs/index.md**: Current documentation index exists and will be updated rather than recreated from scratch.
 
 ## Out of Scope _(clarifies boundaries)_
 
@@ -192,24 +192,24 @@ An external developer or system integrator needs to understand and use the REST 
 Based on repository analysis, the following issues exist:
 
 **Root-level Documentation Clutter** (files that should move to docs/):
-- FEATURES.md (duplicates docs/FEATURES-OVERVIEW.md)
-- IMPLEMENTATION-COMPLETION-SUMMARY.md (historical artifact from 001-codebase-cleanup)
+- FEATURES.md (duplicates docs/features-overview.md)
+- IMPLEMENTATION-COMPLETION-summary.md (historical artifact from 001-codebase-cleanup)
 - MARKDOWN-REORGANIZATION-REPORT.md (historical artifact)
-- MARKDOWN-SPLIT-SUMMARY.md (historical artifact)
+- MARKDOWN-SPLIT-summary.md (historical artifact)
 
 **docs/ Folder Issues**:
-- Deeply nested structures (docs/missions/planning/HELP.md could be docs/mission-planning/help.md)
+- Deeply nested structures (docs/missions/planning/help.md could be docs/mission-planning/help.md)
 - Duplicate content areas (docs/api/errors.md, docs/api/ERRORS.md, docs/api/errors-*.md - 7 error-related files)
-- Historical artifacts in main docs (docs/documentation-update-summary.md, docs/REORGANIZATION-BATCH-2-SUMMARY.md)
+- Historical artifacts in main docs (docs/documentation-update-summary.md, docs/reorganization-batch-2-summary.md)
 - Unclear categorization (docs/exporter/ contains analysis and planning from feature work, not user-facing docs)
 
 **Backend Documentation**:
-- backend/starlink-location/docs/ contains service-specific docs (ARCHITECTURE.md, TESTING.md, TROUBLESHOOTING.md)
+- backend/starlink-location/docs/ contains service-specific docs (ARCHITECTURE.md, testing.md, troubleshooting.md)
 - Some duplication with main docs/ (setup, troubleshooting)
 - Decision needed: keep backend-specific vs. consolidate project-wide
 
 **Positive Aspects**:
-- docs/INDEX.md exists with structured navigation
+- docs/index.md exists with structured navigation
 - Recent 001-codebase-cleanup work established quality standards
 - Clear separation of specs/ directory for feature planning
 

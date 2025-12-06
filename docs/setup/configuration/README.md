@@ -1,6 +1,6 @@
 # Configuration Guide
 
-[Back to Setup Guide](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to Setup Guide](../README.md) | [Back to main docs](../../index.md)
 
 ---
 
@@ -177,4 +177,4 @@ Configuration complete! Proceed to:
 
 ---
 
-[Back to Setup Guide](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to Setup Guide](../README.md) | [Back to main docs](../../index.md)

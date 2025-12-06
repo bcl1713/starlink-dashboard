@@ -108,7 +108,7 @@ We'll use a **7-category hybrid system** that maps to project needs:
    ```bash
    # Move all setup docs
    git mv QUICK-START.md docs/setup/quick-start.md
-   git mv SETUP-GUIDE.md docs/setup/installation.md
+   git mv SETUP-guide.md docs/setup/installation.md
    git commit -m "refactor(docs): relocate setup docs to docs/setup/"
    ```
 
@@ -139,7 +139,7 @@ We'll use a **7-category hybrid system** that maps to project needs:
 After moves, verify history preservation:
 ```bash
 git log --follow --oneline docs/setup/installation.md
-# Should show commits from SETUP-GUIDE.md era
+# Should show commits from SETUP-guide.md era
 ```
 
 ---
@@ -187,9 +187,9 @@ find docs/ -name "*error*.md" | xargs -n2 diff -u
 
 ### Known Duplicate Candidates (from spec analysis)
 
-1. **FEATURES.md vs. docs/FEATURES-OVERVIEW.md**: Exact or near-exact
+1. **FEATURES.md vs. docs/features-overview.md**: Exact or near-exact
 2. **docs/api/errors.md, ERRORS.md, errors-*.md (7 files)**: Semantic duplicates
-3. **Root-level summaries** (IMPLEMENTATION-COMPLETION-SUMMARY.md, etc.): Historical artifacts, not duplicates
+3. **Root-level summaries** (IMPLEMENTATION-COMPLETION-summary.md, etc.): Historical artifacts, not duplicates
 
 ### Implementation Approach
 
@@ -305,11 +305,11 @@ For documents with both user and developer content:
 | File                              | Category         | Rationale                           |
 | --------------------------------- | ---------------- | ----------------------------------- |
 | QUICK-START.md                    | setup/           | Getting system running              |
-| API-REFERENCE-INDEX.md            | api/             | API specification                   |
+| api-reference-index.md            | api/             | API specification                   |
 | FEATURES.md                       | features/        | User-facing capabilities            |
 | design-document.md                | architecture/    | System design                       |
 | development-workflow.md           | development/     | Developer process                   |
-| TROUBLESHOOTING.md                | troubleshooting/ | Problem-solving                     |
+| troubleshooting.md                | troubleshooting/ | Problem-solving                     |
 | IMPLEMENTATION-COMPLETION-SUMMARY | reports/         | Historical artifact (dated)         |
 | backend/.../ARCHITECTURE.md       | (keep in place)  | Backend-specific implementation     |
 | docs/exporter/analysis/...        | reports/         | Feature implementation history      |

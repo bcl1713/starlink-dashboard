@@ -11,7 +11,9 @@ with examples and solutions.
 
 ---
 
-## Invalid Coordinates
+## Scenarios
+
+### Invalid Coordinates
 
 **Scenario:** Coordinates outside valid range.
 
@@ -35,9 +37,7 @@ curl -X POST http://localhost:8000/api/pois \
 
 **Fix:** Ensure latitude is -90 to 90, longitude is -180 to 180.
 
----
-
-## POI Not Found
+### POI Not Found
 
 **Scenario:** Attempting to access non-existent POI.
 
@@ -59,9 +59,7 @@ curl http://localhost:8000/api/pois/nonexistent-poi-id
 
 **Fix:** Verify POI ID exists by listing all POIs first.
 
----
-
-## Duplicate POI Name
+### Duplicate POI Name
 
 **Scenario:** Creating POI with name that already exists.
 
@@ -85,9 +83,7 @@ curl -X POST http://localhost:8000/api/pois \
 
 **Fix:** Use a unique name or update the existing POI instead.
 
----
-
-## Configuration Validation Error
+### Configuration Validation Error
 
 **Scenario:** Invalid configuration values.
 
@@ -117,9 +113,7 @@ curl -X POST http://localhost:8000/api/config \
 
 **Fix:** Ensure all configuration values meet validation requirements.
 
----
-
-## Route Not Found
+### Route Not Found
 
 **Scenario:** Attempting to access non-existent route.
 
@@ -141,9 +135,7 @@ curl http://localhost:8000/api/routes/nonexistent-route/progress
 
 **Fix:** Verify route ID exists or use the active route endpoint.
 
----
-
-## No Active Route
+### No Active Route
 
 **Scenario:** Requesting active route information when no route is active.
 
@@ -165,9 +157,7 @@ curl http://localhost:8000/api/routes/active/timing
 
 **Fix:** Activate a route first before accessing active route endpoints.
 
----
-
-## Missing Required Parameter
+### Missing Required Parameter
 
 **Scenario:** Required query parameter not provided.
 
@@ -189,9 +179,7 @@ curl "http://localhost:8000/api/routes/route-001/eta/location"
 
 **Fix:** Include all required parameters in the request.
 
----
-
-## Invalid Speed Value
+### Invalid Speed Value
 
 **Scenario:** Speed parameter out of valid range.
 
@@ -213,9 +201,7 @@ curl "http://localhost:8000/api/pois/etas?speed_knots=-50"
 
 **Fix:** Ensure speed is >= 0.
 
----
-
-## Service Unavailable
+### Service Unavailable
 
 **Scenario:** Backend service experiencing issues.
 

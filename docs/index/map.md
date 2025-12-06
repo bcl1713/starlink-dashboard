@@ -18,15 +18,15 @@
 | :------------------------------------------------ | :---------------------------------------- | :-------------------------- |
 | [setup/installation.md](../setup/installation.md) | Complete setup instructions for all modes | Setting up the project      |
 | [api/README.md](../api/README.md)                 | All REST API endpoints with examples      | Using the API               |
-| [ROUTE-TIMING-GUIDE.md](../ROUTE-TIMING-GUIDE.md) | Route timing feature complete guide       | Using route timing features |
+| [route-timing-guide.md](../route-timing-guide.md) | Route timing feature complete guide       | Using route timing features |
 
 ### Mission Communication Planning
 
 | File                                                               | Purpose                                                    | When to read                              |
 | :----------------------------------------------------------------- | :--------------------------------------------------------- | :---------------------------------------- |
-| [MISSION-PLANNING-GUIDE.md](../missions/MISSION-PLANNING-GUIDE.md) | Mission planning interface and workflow guide              | Using mission planner                     |
-| [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md)             | Operations playbook for mission planning and monitoring    | Planning and executing missions           |
-| [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.md)                    | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
+| [mission-planning-guide.md](../missions/mission-planning-guide.md) | Mission planning interface and workflow guide              | Using mission planner                     |
+| [mission-comm-sop.md](../missions/mission-comm-sop.md)             | Operations playbook for mission planning and monitoring    | Planning and executing missions           |
+| [performance-notes.md](../performance-notes.md)                    | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
 
 ### Reference
 
@@ -59,7 +59,7 @@
 | :--------------------------------------------------------------------------------------------- | :------------------------------- | :--------------------- |
 | [README.md](../../backend/starlink-location/README.md)                                         | Backend service overview and API | Developing backend     |
 | [VALIDATION.md](../../backend/starlink-location/VALIDATION.md)                                 | Testing and validation guide     | Testing                |
-| [VALIDATION-TROUBLESHOOTING.md](../../backend/starlink-location/VALIDATION-TROUBLESHOOTING.md) | Validation troubleshooting       | Debugging tests        |
+| [Validating Maps](../../backend/starlink-location/VALIDATION-TROUBLESHOOTING.md)               | Validation troubleshooting       | Debugging tests        |
 | [config.yaml](../../backend/starlink-location/config.yaml)                                     | Default configuration            | Understanding defaults |
 | [requirements.txt](../../backend/starlink-location/requirements.txt)                           | Python dependencies              | Dependency management  |
 
