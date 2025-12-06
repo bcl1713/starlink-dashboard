@@ -15,8 +15,7 @@
 1. Open KML file in text editor
 2. Search for `<LineString>` (must be present)
 3. Check sample route: `simple-circular.kml` works 100% of the time
-4. If repairing manually, validate at
-   <<https://validator.kml4earth.appspot.com>>
+4. If repairing manually, use an online KML validator.
 
 ---
 

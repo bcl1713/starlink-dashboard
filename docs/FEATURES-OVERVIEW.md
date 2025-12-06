@@ -15,7 +15,7 @@
 - **Docker-based:** Single `docker compose up` for complete stack
 - **REST API:** Full API for programmatic access and integrations
 
-**Complete feature details:** See [Features](../FEATURES.md)
+For a detailed list of completed and planned features, see [Development Plan](development-plan.md).
 
 ---
 
@@ -66,8 +66,7 @@ starlink-dashboard/
 
 **Branch Status:** feature/mission-comm-planning (ready for merge to main)
 
-**Next Steps:** See [Phased Development Plan](./phased-development-plan.md) for
-future enhancements
+**Next Steps:** See the [Development Plan](development-plan.md) for timeline details.
 
 ---
 

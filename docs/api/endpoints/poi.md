@@ -1,6 +1,6 @@
 # POI Management API Endpoints
 
-[Back to API Reference](./README.md) | [Back to main docs](../INDEX.md)
+[Back to API Reference](../README.md) | [Back to Document Index](../../INDEX.md)
 
 **Last Updated:** 2025-11-04 **Backend Version:** 0.3.0
 
@@ -11,18 +11,18 @@
 This document has been reorganized into operation-focused files for better
 navigation and maintainability.
 
-**Please visit the [POI Index](./poi/README.md) to access all POI endpoint
+**Please visit the [POI Index](../poi/README.md) to access all POI endpoint
 documentation.**
 
 ---
 
 ## Quick Links
 
-- **[POI Index](./poi/README.md)** - Complete POI endpoint overview
-- [List & Query Endpoints](./poi/list-query-endpoints.md) - List and retrieve
+- **[POI Overview](../poi/README.md)** - Complete POI endpoint overview
+- [List & Query](../poi/list-query-endpoints.md) - List and retrieve
   POIs
-- [ETA Endpoints](./poi/eta-endpoints.md) - Calculate ETAs to POIs
-- [Management Endpoints](./poi/management-endpoints.md) - Create, update, delete
+- [ETA Calculations](../poi/eta-endpoints.md) - Calculate ETAs to POIs
+- [Management](../poi/management-endpoints.md) - Create, update, delete
 
 ---
 
@@ -64,4 +64,4 @@ curl http://localhost:8000/api/pois/etas | jq .
 
 ---
 
-[Back to API Reference](./README.md) | [Back to main docs](../INDEX.md)
+[Back to API Reference](../README.md) | [Back to Document Index](../../INDEX.md)

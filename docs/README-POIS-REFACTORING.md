@@ -17,16 +17,6 @@ Start here: **[POIS-REFACTORING-QUICKSTART.md](POIS-REFACTORING-QUICKSTART.md)**
 
 ### For Detailed Analysis (20 minutes)
 
-Read: **[pois_refactoring_analysis.md](pois_refactoring_analysis.md)**
-
-- Complete endpoint list (10 endpoints)
-- All helper functions
-- Dependency analysis
-- Code patterns & duplication
-- Logical grouping with rationale
-- Module structure details
-- Benefits analysis
-
 ### For Visual Understanding (10 minutes)
 
 Review: **[POIS-MODULE-STRUCTURE.txt](POIS-MODULE-STRUCTURE.txt)**
@@ -37,14 +27,6 @@ Review: **[POIS-MODULE-STRUCTURE.txt](POIS-MODULE-STRUCTURE.txt)**
 - Dependency flow diagram
 
 ### For Implementation Reference
-
-Use: **[pois_dependency_diagrams.md](pois_dependency_diagrams.md)**
-
-- Detailed dependency graphs
-- Data flow examples
-- Import strategy
-- Circular dependency prevention
-- Size estimates
 
 ### For Executive Reference
 

@@ -31,7 +31,7 @@ crew connectivity through predicted degradation windows.
 
 This SOP is organized into the following sections:
 
-### [Operations Procedures](operations-procedures.md)
+### [Standard Operating Procedures](../missions/MISSION-COMM-SOP.md)
 
 Complete operational procedures for mission communications:
 

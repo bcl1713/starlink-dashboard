@@ -13,12 +13,12 @@
 
 - **[Overview](./overview.md)**: Complete feature catalog and system
   capabilities
-- **[Monitoring](./monitoring.md)**: Real-time telemetry monitoring and
+- **[Monitoring](MONITORING.md)**: Real-time telemetry monitoring and
   visualization
-- **[Navigation](./navigation.md)**: Route-based navigation and tracking
-- **[Mission Planning](./mission-planning.md)**: Mission management and planning
+- **[Navigation](NAVIGATION.md)**: Route-based navigation and tracking
+- **[Mission Planning](MISSION-PLANNING.md)**: Mission management and planning
   tools
-- **[System Features](./system.md)**: System-level capabilities and
+- **[System Features](SYSTEM.md)**: System-level capabilities and
   configuration
 
 ### Feature Areas

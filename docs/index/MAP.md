@@ -26,7 +26,7 @@
 | :----------------------------------------------------------------- | :--------------------------------------------------------- | :---------------------------------------- |
 | [MISSION-PLANNING-GUIDE.md](../missions/MISSION-PLANNING-GUIDE.md) | Mission planning interface and workflow guide              | Using mission planner                     |
 | [MISSION-COMM-SOP.md](../missions/MISSION-COMM-SOP.md)             | Operations playbook for mission planning and monitoring    | Planning and executing missions           |
-| [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.MD)                    | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
+| [PERFORMANCE-NOTES.md](../PERFORMANCE-NOTES.md)                    | Performance benchmarking results and optimization guidance | Understanding performance characteristics |
 
 ### Reference
 
@@ -40,7 +40,7 @@
 | File                                                                   | Purpose                                  | When to read                |
 | :--------------------------------------------------------------------- | :--------------------------------------- | :-------------------------- |
 | [architecture/design-document.md](../architecture/design-document.md)  | System architecture and design decisions | Understanding architecture  |
-| [phased-development-plan.md](../phased-development-plan.md)            | Implementation roadmap and phases        | Understanding plan          |
+| [Development Plan](../development-plan.md)                             | Implementation roadmap and phases        | Understanding plan          |
 | [Grafana Configuration](../grafana-configuration.md)                   | Dashboard configuration and usage        | Learning Grafana dashboards |
 
 ### Development (development/)
@@ -65,8 +65,7 @@
 
 ## Development (dev/)
 
-| File                               | Purpose                                    | When to read                 |
-| :--------------------------------- | :----------------------------------------- | :--------------------------- |
-| [STATUS.md](../../dev/STATUS.md)   | Current development status and progress    | Understanding current work   |
-| [README.md](../../dev/README.md)   | Development workflow and task management   | Starting development         |
-| [completed/](../../dev/completed/) | Archived completed tasks and documentation | Learning from completed work |
+| File                                       | Purpose                                  | When to read               |
+| :----------------------------------------- | :--------------------------------------- | :------------------------- |
+| [Development Plan](../development-plan.md) | Current development status and progress  | Understanding current work |
+| [README.md](../development/README.md)      | Development workflow and task management | Starting development       |

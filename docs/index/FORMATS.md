@@ -25,14 +25,13 @@
   architecture
 - [api/README.md](../api/README.md) - Complete API specification
 - [METRICS](../metrics/overview.md) - All metrics reference
-- [phased-development-plan.md](../phased-development-plan.md) - Implementation
-  plan
+- [Development Plan](../development-plan.md) - Implementation plan
 - [Backend README](../../backend/starlink-location/README.md) - Service details
 
 ### Planning & Status
 
-- [dev/STATUS.md](../../dev/STATUS.md) - Current development status
-- [phased-development-plan.md](../phased-development-plan.md) - What's planned
+- [Development Plan](../development-plan.md) - Current development status
+- [Phased Development Plan](../development-plan.md) - What's planned
 - [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to get involved
 
 ---
@@ -57,7 +56,7 @@ Read in order:
 3. [architecture/design-document.md](../architecture/design-document.md) -
    Architecture (15 min)
 4. [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to contribute (15 min)
-5. [dev/STATUS.md](../../dev/STATUS.md) - Current work (5 min)
+5. [Development Plan](../development-plan.md) - Current work (5 min)
 
 ### For API Users
 

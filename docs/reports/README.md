@@ -58,10 +58,8 @@ Additional historical documentation:
   breakdowns for 001-codebase-cleanup
 - [Implementation Results](./implementation-results.md) - Metrics and outcomes
   for 001-codebase-cleanup
-- [Reorganization Completed](./reorganization-completed.md) - API reference
-  split details
-- [Reorganization Remaining](./reorganization-remaining.md) - Remaining
-  markdown reorganization work
+- [Batch 2 Reorganization Summary](../REORGANIZATION-BATCH-2-SUMMARY.md)
+  - Remaining markdown reorganization work
 
 ---
 

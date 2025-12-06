@@ -74,8 +74,8 @@
 - How to Contribute: [CONTRIBUTING.md](../../CONTRIBUTING.md)
 - Architecture:
   [architecture/design-document.md](../architecture/design-document.md)
-- Development Status: [dev/STATUS.md](../../dev/STATUS.md)
-- Development Plan: [phased-development-plan.md](../phased-development-plan.md)
+- Development Status: [Development Plan](../development-plan.md)
+- Development Plan: [Development Plan](../development-plan.md)
 - Development Config: [CLAUDE.md](../../CLAUDE.md)
 
 **Troubleshooting:**
@@ -211,5 +211,5 @@ All documentation uses:
 Found an issue in the documentation?
 
 - Check [CONTRIBUTING.md](../../CONTRIBUTING.md) for how to contribute
-- See [dev/STATUS.md](../../dev/STATUS.md) for current work
+- See [Development Plan](../development-plan.md) for current work
 - Reference specific file and line number

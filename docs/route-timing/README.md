@@ -11,16 +11,7 @@ arrival times.
 
 ## Documentation Topics
 
-- **[Overview](./overview.md)** - Feature overview and key capabilities
-- **[Quick Start](./quick-start.md)** - Get started in 5 minutes
-- **[How It Works](./how-it-works.md)** - Technical implementation details
-- **[KML Format](./kml-format.md)** - KML file format with timing data
-- **[API Reference](./api-reference.md)** - Using the timing APIs
-- **[ETA Modes](./eta-modes.md)** - Anticipated vs. Estimated ETAs
-- **[Dashboard Visualization](./dashboard-visualization.md)** - Grafana panels
-- **[Simulation Mode](./simulation-mode.md)** - Simulator behavior
-- **[Troubleshooting](./troubleshooting.md)** - Common issues and solutions
-- **[Examples](./examples.md)** - Complete usage examples
+See [Route Timing Guide](../ROUTE-TIMING-GUIDE.md) for details.
 
 ---
 

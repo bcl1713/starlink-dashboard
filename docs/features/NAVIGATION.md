@@ -169,8 +169,7 @@ Track flight phases with automatic transitions.
 - `POST /api/flight-status/depart` - Trigger departure (testing)
 - `POST /api/flight-status/arrive` - Trigger arrival (testing)
 
-**See:**
-[Flight Status Guide](../../dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md)
+**See [Flight Status Guide](../ROUTE-TIMING-GUIDE.md) for details.
 
 ### Automatic ETA Mode Switching
 

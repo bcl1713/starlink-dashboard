@@ -13,7 +13,7 @@
 
 - **[Quick Start](./quick-start.md)**: 3-minute setup for experienced users
   - fastest way to get the system running
-- **[System Requirements](./system-requirements.md)**: Hardware and software
+- **[Prerequisites](prerequisites-verification.md)**: Hardware and software
   prerequisites for running Starlink Dashboard
 - **[Installation](./installation.md)**: Comprehensive step-by-step
   installation guide
@@ -63,7 +63,7 @@ Ensure your system meets the minimum requirements:
 - 5 GB disk space
 - 4 GB RAM
 
-**[View Prerequisites →](./prerequisites.md)**
+**[View Prerequisites →](prerequisites-verification.md)**
 
 ### 2. Install
 
@@ -199,4 +199,4 @@ After successful setup:
 
 ---
 
-**Ready to begin?** Start with [Prerequisites →](./prerequisites.md)
+**Ready to begin?** Start with [Prerequisites →](prerequisites-verification.md)

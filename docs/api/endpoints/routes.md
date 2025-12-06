@@ -109,5 +109,5 @@ The GeoJSON endpoints are designed for use with Grafana Geomap panels:
 
 - [API Reference Index](../README.md) - Complete API overview
 - [Core Endpoints](./core.md) - Health and metrics
-- [ETA Endpoints](./eta-endpoints.md) - ETA calculations
-- [Grafana Setup](../grafana-dashboards.md) - Dashboard configuration
+- See [ETA Endpoints](eta.md) for timing details.
+- See [Grafana Dashboards](../../grafana-dashboards.md) for visualization details.

@@ -52,9 +52,9 @@ Start here if you're new to the project:
 | Goal                       | Document                                                    | Time   |
 | -------------------------- | ----------------------------------------------------------- | ------ |
 | Understand architecture    | [Design Document](../architecture/design-document.md)       | 15 min |
-| See implementation plan    | [phased-development-plan.md](../phased-development-plan.md) | 10 min |
+| See implementation plan    | [Development Plan](../development-plan.md)                  | 10 min |
 | Contribute code            | [CONTRIBUTING.md](../../CONTRIBUTING.md)                    | 15 min |
-| Current development status | [dev/STATUS.md](../../dev/STATUS.md)                        | 5 min  |
+| Current development status | [Development Plan](../development-plan.md)                  | 5 min  |
 | Review API endpoints       | [API Reference](../api/README.md)                           | 15 min |
 
 #### Debug issues

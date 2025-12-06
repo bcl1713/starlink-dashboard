@@ -79,6 +79,4 @@ app/api/missions/export/
 - **Memory usage:** <256 MB per export
 - **Concurrent exports:** Supported via async processing
 
----
-
-[Back to main docs](../INDEX.md)
+--- [Back to Documentation Internal Index](../../../INDEX.md)

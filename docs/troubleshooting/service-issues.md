@@ -4,22 +4,22 @@
 
 ## Troubleshooting Sections
 
-### 1. [Prometheus Troubleshooting](services/PROMETHEUS.md)
+### 1. [Prometheus Troubleshooting](services/prometheus.md)
 
 Metrics collection failures, scrape configuration issues, high disk usage, and
 reload errors.
 
-### 2. [Grafana Troubleshooting](services/GRAFANA.md)
+### 2. [Grafana Troubleshooting](services/grafana.md)
 
 Access problems, data source connection failures, empty dashboards, and password
 resets.
 
-### 3. [Network & Connectivity Troubleshooting](services/NETWORK.md)
+### 3. [Network & Connectivity Troubleshooting](services/network.md)
 
 Inter-service communication failures, live mode connection issues, and network
 mode configuration (Bridge vs. Host).
 
-### 4. [Performance Troubleshooting](services/PERFORMANCE.md)
+### 4. [Performance Troubleshooting](services/performance.md)
 
 Diagnosing high CPU/memory usage, optimizing dashboard load times, and tuning
 update intervals.

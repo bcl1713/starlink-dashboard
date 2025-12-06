@@ -128,9 +128,6 @@ Service implementation details:
 
 Feature planning and design specifications:
 
-- [Specifications Directory](../specs/README.md) - All feature specs and
-  planning docs
-
 ---
 
 ## Finding What You Need

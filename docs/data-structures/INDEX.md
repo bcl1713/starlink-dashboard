@@ -22,7 +22,7 @@ generated and exported.
 
 ## Documentation Contents
 
-### [Mission and Timeline Models](mission-models.md)
+### [Mission Models](mission-timeline-models.md)
 
 Core data structures for mission planning and timeline generation:
 

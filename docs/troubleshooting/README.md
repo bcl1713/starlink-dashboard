@@ -157,7 +157,7 @@ docker compose logs grafana > grafana.log
 
 - [API Reference](../api/README.md)
 - [Setup Guide](../setup/README.md)
-- [Design Document](../design-document.md)
+- [Design Document](../architecture/design-document.md)
 - [Backend README](../../backend/starlink-location/README.md)
 - [Grafana Documentation](https://grafana.com/docs/)
 - [Prometheus Documentation](https://prometheus.io/docs/)

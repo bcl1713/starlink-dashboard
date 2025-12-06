@@ -35,7 +35,7 @@ Grafana configs).
 
 This guide is organized into the following sections:
 
-### [Agents and Skills Reference](agents-and-skills.md)
+### [Agents and Skills Reference](agents-reference.md)
 
 Complete reference for all available agents and skills:
 

@@ -204,10 +204,4 @@ from app.models.poi import POI, POIWithETA
 ```
 
 ---
-
-## Additional Documentation
-
-For detailed helper functions and usage patterns, see:
-
-- [Helper Functions Reference](mission-data/helper-functions.md)
-- [Data Extraction Patterns](mission-data/extraction-patterns.md)
+| `"pre_departure"` | Before departure

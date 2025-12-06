@@ -66,6 +66,6 @@ visualizes real-time metrics from a **mobile Starlink terminal**.
 
 ---
 
-[Go to Full Architecture Documentation →](./system-architecture.md)
+[Go to Full Architecture Documentation →](./design-document.md)
 
 [Back to main docs](../INDEX.md)
