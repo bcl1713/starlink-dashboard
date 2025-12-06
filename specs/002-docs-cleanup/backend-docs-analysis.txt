@@ -1,0 +1,79 @@
+# Backend Documentation Analysis
+
+## Files in backend/starlink-location/docs/
+
+### ARCHITECTURE.md
+# Backend Architecture
+
+[Back to Backend README](../README.md)
+
+---
+
+## Project Structure
+
+```text
+backend/starlink-location/
+├── main.py                 # FastAPI application entry point
+├── config.yaml             # Default configuration
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Docker build configuration
+├── pytest.ini              # Pytest configuration
+
+**Analysis**: 4 references to project-wide concepts
+
+### GETTING-STARTED.md
+# Getting Started with Starlink Location Backend
+
+[Back to Backend README](../README.md)
+
+---
+
+## Quick Start
+
+### Using Docker Compose
+
+```bash
+# Build and start all services
+docker compose up -d
+
+# Verify services are running
+
+**Analysis**: 7 references to project-wide concepts
+
+### TESTING.md
+# Testing Guide
+
+[Back to Backend README](../README.md)
+
+---
+
+## Unit Tests
+
+```bash
+pytest tests/unit/ -v
+```
+
+Tests included for:
+
+- Configuration loading and validation
+
+**Analysis**: 1 references to project-wide concepts
+
+### TROUBLESHOOTING.md
+# Troubleshooting Guide
+
+[Back to Backend README](../README.md)
+
+---
+
+## Port Already in Use
+
+```bash
+lsof -i :8000
+kill -9 <PID>
+```
+
+---
+
+
+**Analysis**: 0 references to project-wide concepts

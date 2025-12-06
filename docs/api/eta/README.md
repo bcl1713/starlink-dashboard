@@ -1,6 +1,6 @@
 # ETA Route Timing API Index
 
-[Back to API Reference](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to main docs](../../index.md)
 
 **Last Updated:** 2025-11-04 **Backend Version:** 0.3.0
 
@@ -93,11 +93,10 @@ console.log(`Cache hit rate: ${metrics.hit_rate_percent}%`);
 ## Related Documentation
 
 - [API Reference Index](../README.md) - Complete API overview
-- [Core Endpoints](../core-endpoints.md) - Health and metrics
-- [POI Endpoints](../poi-endpoints.md) - POI-based ETAs
-- [Route Timing Guide](../../ROUTE-TIMING-GUIDE-OVERVIEW.md) - Route timing
-  features
+- [Core Endpoints](../endpoints/core.md) - Health and metrics
+- [POI Endpoints](../endpoints/poi.md) - POI-based ETAs
+- [Route Timing Guide](../../route-timing-guide.md) - Route timing features
 
 ---
 
-[Back to API Reference](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to main docs](../../index.md)

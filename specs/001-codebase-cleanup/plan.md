@@ -145,7 +145,7 @@ frontend/
 │       ├── components/   # 1 file to refactor (RouteMap.tsx)
 │       └── pages/        # 2 files to refactor (LegDetailPage.tsx, SatelliteManagerPage.tsx)
 
-docs/                     # 9 files to refactor (API-REFERENCE.md, TROUBLESHOOTING.md, ...)
+docs/                     # 9 files to refactor (API-reference.md, troubleshooting.md, ...)
 ```
 
 **Structure Decision**: Existing web application structure is maintained.
@@ -154,7 +154,7 @@ directory hierarchy. For example:
 
 - `backend/starlink-location/app/api/ui.py` (3995 lines) → Split into
   `ui/__init__.py`, `ui/routes.py`, `ui/templates.py`, `ui/helpers.py`
-- `docs/API-REFERENCE.md` (999 lines) → Split into `docs/api/` directory with
+- `docs/API-reference.md` (999 lines) → Split into `docs/api/` directory with
   `endpoints.md`, `models.md`, `errors.md`
 
 ## Complexity Tracking

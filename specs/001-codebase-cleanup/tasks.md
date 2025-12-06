@@ -329,9 +329,9 @@ Markdown files and verify 80% compliance
 
 ### Documentation Files (300-1000 lines) - Group 8: API and Setup Docs
 
-- [x] T060 [P] [US1] Refactor docs/API-REFERENCE.md (999 lines) - split into 4
+- [x] T060 [P] [US1] Refactor docs/API-reference.md (999 lines) - split into 4
       files in docs/api/
-- [x] T061 [P] [US1] Refactor docs/SETUP-GUIDE.md (636 lines) - split into 4
+- [x] T061 [P] [US1] Refactor docs/SETUP-guide.md (636 lines) - split into 4
       files in docs/setup/
 - [x] T062 [US1] Run markdownlint-cli2 on docs/api/ and docs/setup/
       directories - files created, linting pending
@@ -340,11 +340,11 @@ Markdown files and verify 80% compliance
 
 ### Documentation Files (300-1000 lines) - Group 9: Operations Docs
 
-- [x] T064 [P] [US1] Refactor docs/TROUBLESHOOTING.md (816 lines) - split into
+- [x] T064 [P] [US1] Refactor docs/troubleshooting.md (816 lines) - split into
       docs/troubleshooting/ (4 files)
-- [x] T065 [P] [US1] Refactor docs/ROUTE-TIMING-GUIDE.md (619 lines) - split
+- [x] T065 [P] [US1] Refactor docs/route-timing-guide.md (619 lines) - split
       into docs/route-timing/ (4 files)
-- [x] T066 [P] [US1] Refactor docs/MISSION-VISUALIZATION-GUIDE.md (566 lines) -
+- [x] T066 [P] [US1] Refactor docs/mission-visualization-guide.md (566 lines) -
       split into docs/mission-viz/ (3 files)
 - [x] T067 [US1] Run markdownlint-cli2 on docs/troubleshooting/,
       docs/route-timing/, docs/mission-viz/ directories
@@ -355,9 +355,9 @@ Markdown files and verify 80% compliance
 
 - [x] T069 [P] [US1] Refactor docs/claude-code-workflows.md (731 lines) - split
       into docs/workflows/ (3 files)
-- [x] T070 [P] [US1] Refactor docs/MISSION-COMM-SOP.md (513 lines) - split into
+- [x] T070 [P] [US1] Refactor docs/mission-comm-sop.md (513 lines) - split into
       docs/comm-sop/ (3 files)
-- [x] T071 [P] [US1] Refactor docs/MISSION-DATA-STRUCTURES.md (478 lines) -
+- [x] T071 [P] [US1] Refactor docs/mission-data-structures.md (478 lines) -
       split into docs/data-structures/ (3 files)
 - [x] T072 [US1] Run markdownlint-cli2 on docs/workflows/, docs/comm-sop/,
       docs/data-structures/ directories

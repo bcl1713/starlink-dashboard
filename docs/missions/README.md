@@ -9,20 +9,20 @@ feature set.
 
 ### Planning & Operations
 
-- **[PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md)** (470 lines) - Complete
+- **[PLANNING-guide.md](./mission-planning-guide.md)** (470 lines) - Complete
   mission planning guide
-- **[COMM-SOP.md](./MISSION-COMM-SOP.md)** (562 lines) - Communication standard
+- **[COMM-SOP.md](./mission-comm-sop.md)** (562 lines) - Communication standard
   operating procedures
-- **[VISUALIZATION-GUIDE.md](./MISSION-VISUALIZATION-GUIDE.md)** (573 lines) -
+- **[VISUALIZATION-guide.md](./mission-visualization-guide.md)** (573 lines) -
   Dashboard visualization guide
 
 ### Data Reference
 
-- **[DATA-STRUCTURES.md](./MISSION-DATA-STRUCTURES.md)** (526 lines) - Complete
+- **[DATA-STRUCTURES.md](./mission-data-structures.md)** (526 lines) - Complete
   data structure reference
-- **[DATA-STRUCTURES-INDEX.md](./MISSION-DATA-STRUCTURES-INDEX.md)** (275 lines)
+- **[DATA-STRUCTURES-index.md](./mission-data-structures-index.md)** (275 lines)
   - Quick index
-- **[DATA-QUICK-REFERENCE.md](./MISSION-DATA-QUICK-REFERENCE.md)** (213 lines) -
+- **[DATA-QUICK-reference.md](./mission-data-quick-reference.md)** (213 lines) -
   Quick reference guide
 
 ---
@@ -72,24 +72,24 @@ curl -X POST http://localhost:8000/api/missions/{id}/activate
 
 ### For New Users
 
-1. Start with **[PLANNING-GUIDE.md](./MISSION-PLANNING-GUIDE.md)**
-2. Review **[DATA-QUICK-REFERENCE.md](./MISSION-DATA-QUICK-REFERENCE.md)**
+1. Start with **[PLANNING-guide.md](./mission-planning-guide.md)**
+2. Review **[DATA-QUICK-reference.md](./mission-data-quick-reference.md)**
 3. Set up visualization with
-   **[VISUALIZATION-GUIDE.md](./MISSION-VISUALIZATION-GUIDE.md)**
+   **[VISUALIZATION-guide.md](./mission-visualization-guide.md)**
 
 ### For Operators
 
-1. Follow **[COMM-SOP.md](./MISSION-COMM-SOP.md)** for operational procedures
-2. Reference **[DATA-STRUCTURES-INDEX.md](./MISSION-DATA-STRUCTURES-INDEX.md)**
+1. Follow **[COMM-SOP.md](./mission-comm-sop.md)** for operational procedures
+2. Reference **[DATA-STRUCTURES-index.md](./mission-data-structures-index.md)**
    for quick lookups
 
 ### For Developers
 
-1. Study **[DATA-STRUCTURES.md](./MISSION-DATA-STRUCTURES.md)** for complete API
+1. Study **[DATA-STRUCTURES.md](./mission-data-structures.md)** for complete API
    reference
 2. Review architecture in
    **[../architecture/README.md](../architecture/README.md)**
 
 ---
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)

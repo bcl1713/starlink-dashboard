@@ -123,10 +123,10 @@ update session.
 | dev/STATUS.md             | `/home/brian/Projects/starlink-dashboard-dev/dev/`  | Updated | Complete |
 | development-plan.md       | `/home/brian/Projects/starlink-dashboard-dev/docs/` | Updated | Complete |
 | code-quality-standards.md | `/home/brian/Projects/starlink-dashboard-dev/docs/` | Updated | Complete |
-| docs/INDEX.md             | `/home/brian/Projects/starlink-dashboard-dev/docs/` | Updated | Complete |
-| docs/API-REFERENCE.md     | `/home/brian/Projects/starlink-dashboard-dev/docs/` | Updated | Complete |
+| docs/index.md             | `/home/brian/Projects/starlink-dashboard-dev/docs/` | Updated | Complete |
+| docs/API-reference.md     | `/home/brian/Projects/starlink-dashboard-dev/docs/` | Updated | Complete |
 | docs/design-document.md   | `/home/brian/Projects/starlink-dashboard-dev/docs/` | Updated | Complete |
-| ROUTE-TIMING-GUIDE.md     | `/home/brian/Projects/starlink-dashboard-dev/docs/` | New     | Created  |
+| route-timing-guide.md     | `/home/brian/Projects/starlink-dashboard-dev/docs/` | New     | Created  |
 
 ---
 
@@ -135,8 +135,8 @@ update session.
 ### For Users
 
 1. Read updated README.md for project overview
-2. Review docs/ROUTE-TIMING-GUIDE.md for timing feature usage
-3. Check docs/API-REFERENCE.md for new endpoints
+2. Review docs/route-timing-guide.md for timing feature usage
+3. Check docs/API-reference.md for new endpoints
 4. Refer to docs/design-document.md for architecture
 
 ### For Developers

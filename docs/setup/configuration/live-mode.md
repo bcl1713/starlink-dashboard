@@ -6,17 +6,17 @@
 
 ## Configuration Sections
 
-### 1. [Live Mode Setup](live-mode/SETUP.md)
+### 1. [Live Mode Setup](live-mode/setup.md)
 
 Prerequisites, basic configuration via `.env`, and network mode selection
 (Bridge vs. Host).
 
-### 2. [Connection Testing & Verification](live-mode/TESTING.md)
+### 2. [Connection Testing & Verification](live-mode/testing.md)
 
 Understanding connection behavior, health checks, and verifying connectivity to
 the Starlink dish.
 
-### 3. [Troubleshooting & Best Practices](live-mode/TROUBLESHOOTING.md)
+### 3. [Troubleshooting & Best Practices](live-mode/troubleshooting.md)
 
 Solutions for connection issues, stale metrics, network requirements
 (bandwidth/firewall), and best practices for production deployment.

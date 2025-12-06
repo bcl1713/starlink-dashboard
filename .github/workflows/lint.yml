@@ -76,6 +76,20 @@ jobs:
           markdownlint-cli2 "docs/**/*.md"
         continue-on-error: true
 
+      # Link checking
+      - name: Link Checker (Lychee)
+        uses: lycheeverse/lychee-action@v1.9.1
+        with:
+          args: --no-progress docs/
+          fail: true
+        continue-on-error: true
+
+      # Naming convention check
+      - name: Check Naming Conventions
+        run: |
+          python tools/check_filename_convention.py
+        continue-on-error: true
+
       # Summary
       - name: Linting Summary
         if: always()

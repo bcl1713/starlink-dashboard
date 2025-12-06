@@ -1,6 +1,6 @@
 # POI Management API Index
 
-[Back to API Reference](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to main docs](../../index.md)
 
 **Last Updated:** 2025-11-04 **Backend Version:** 0.3.0
 
@@ -84,10 +84,10 @@ const etas = await response.json();
 ## Related Documentation
 
 - [API Reference Index](../README.md) - Complete API overview
-- [Core Endpoints](../core-endpoints.md) - Health and metrics
-- [ETA Endpoints](../eta-endpoints.md) - Route-based ETA calculations
+- [Core Endpoints](../endpoints/core.md) - Health and metrics
+- [ETA Endpoints](../endpoints/eta.md) - Route-based ETA calculations
 - [Error Handling](../errors.md) - Error response formats
 
 ---
 
-[Back to API Reference](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to main docs](../../index.md)

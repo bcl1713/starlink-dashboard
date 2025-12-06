@@ -252,7 +252,7 @@ curl <http://localhost:8000/api/[endpoin>t]  # Main endpoint for module
 mkdir -p backend/starlink-location/app/api/ui
 
 # 2. Extract templates
-# (See REFACTORING-GUIDE.md for step-by-step)
+# (See REFACTORING-guide.md for step-by-step)
 
 # 3. Update imports in __init__.py
 

@@ -12,7 +12,7 @@ TypeScript/React frontend; Markdown documentation.
 
 - `docs/design-document.md` – architecture
 - `docs/phased-development-plan.md` – development roadmap
-- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – flight phases & ETA
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-guide.md` – flight phases & ETA
   modes
 
 ## ⚠️ Backend Python Code Changes (CRITICAL)
@@ -93,7 +93,7 @@ distance_to_poi_meters).
 - ETA modes auto-switch: `anticipated` (pre-flight) → `estimated` (airborne)
 - APIs: `/api/flight-status`, `/api/pois/etas`, `/api/routes/{id}`
 - Testing: `/api/flight-status/depart` and `/arrive` endpoints
-- See `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` for details
+- See `dev/completed/eta-timing-modes/FLIGHT-STATUS-guide.md` for details
 
 ## Storage & Route Management
 
@@ -152,6 +152,6 @@ Refer to:
 
 - `docs/design-document.md` – full architecture (sections 1-7)
 - `docs/phased-development-plan.md` – implementation roadmap
-- `dev/completed/eta-timing-modes/FLIGHT-STATUS-GUIDE.md` – testing flight modes
+- `dev/completed/eta-timing-modes/FLIGHT-STATUS-guide.md` – testing flight modes
 
 **Docker Builds:** Delegate to sub-agents (expensive context).

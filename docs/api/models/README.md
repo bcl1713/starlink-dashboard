@@ -1,6 +1,6 @@
 # API Data Models Index
 
-[Back to API Reference](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to main docs](../../index.md)
 
 ---
 
@@ -85,4 +85,4 @@ ETA calculation models:
 
 ---
 
-[Back to API Reference](../README.md) | [Back to main docs](../../INDEX.md)
+[Back to API Reference](../README.md) | [Back to main docs](../../index.md)

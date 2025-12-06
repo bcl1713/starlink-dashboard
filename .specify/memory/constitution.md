@@ -225,8 +225,8 @@ kept minimal to reduce context pollution and cognitive overhead.
   - Non-obvious gotchas that cause failures (e.g., caching issues)
 - CLAUDE.md MUST NOT duplicate:
   - Architectural explanations (use `docs/design-document.md`)
-  - Feature descriptions (use `docs/FEATURES-OVERVIEW.md`)
-  - Setup instructions (use `docs/QUICK-START.md` or `docs/SETUP-GUIDE.md`)
+  - Feature descriptions (use `docs/features-overview.md`)
+  - Setup instructions (use `docs/QUICK-START.md` or `docs/SETUP-guide.md`)
   - Code quality standards (defined in this constitution)
 - CLAUDE.md MUST be under 300 lines (subject to Principle IV)
 - When CLAUDE.md grows beyond 200 lines, conduct audit to extract content into
