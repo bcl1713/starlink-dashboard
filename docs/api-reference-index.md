@@ -121,7 +121,8 @@ Practical examples with cURL, Python, and JavaScript.
 - ETA calculations
 - Configuration updates
 - Route monitoring
-- Error handling
+- [Error Handling](./api/errors.md) - Standard error responses, formats, and
+  common error scenarios.
 
 ---
 
@@ -129,7 +130,7 @@ Practical examples with cURL, Python, and JavaScript.
 
 Standard error response formats and common error scenarios.
 
-**Document:** [Error Handling](./api/errors-reference.md)
+**Document:** [Error Handling](./api/errors.md)
 
 **HTTP Status Codes:**
 

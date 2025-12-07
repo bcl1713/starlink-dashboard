@@ -94,7 +94,7 @@ const etas = await response.json();
 - [Core Endpoints](../endpoints/core.md) - Health and metrics
 - [POI Endpoints](../endpoints/poi.md) - POI management
 - [ETA Endpoints](../endpoints/eta.md) - ETA calculations
-- [Error Handling](../errors-reference.md) - Error response formats
+-See the [Error Reference](../errors.md) for details on handling errors.mats
 
 ---
 

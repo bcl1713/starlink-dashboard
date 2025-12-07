@@ -39,7 +39,7 @@ All endpoints are documented with:
 
 - [Models & Schemas](../models/README.md) - Data structure definitions
 - [Code Examples](../examples/README.md) - Language-specific usage examples
-- [Error Reference](../errors-reference.md) - Error codes and handling
+-See [Error Reference](../errors.md) for standard error responses. and handling
 
 ---
 

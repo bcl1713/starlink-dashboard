@@ -30,7 +30,7 @@ returns Prometheus text format).
   category
 - **[Models & Schemas](./models/README.md)** - Request/response data structures
 - **[Code Examples](./examples/README.md)** - cURL, Python, JavaScript examples
-- **[Error Reference](./errors-reference.md)** - Error codes and handling
+- **[Error Reference](./errors.md)** - Error codes and handling
 
 ---
 
@@ -68,7 +68,7 @@ This API documentation is organized by functional area:
 
 ### 4. Error Handling
 
-**[View Error Reference →](./errors-reference.md)**
+**[View Error Reference →](./errors.md)**
 
 - Error response format
 - HTTP status codes
@@ -118,7 +118,7 @@ Update **[examples/](./examples/)** with usage examples:
 
 ### 4. Document Errors
 
-Add new error codes to **[errors-reference.md](./errors-reference.md)**
+Add new error codes to **[errors.md](./errors.md)**
 
 ### 5. Update Indexes
 
