@@ -57,7 +57,7 @@ class RouteTemporalProjector:
         for idx in range(1, len(self.route.points)):
             prev = self.route.points[idx - 1]
             curr = self.route.points[idx]
-            segment = self.calculator._haversine_distance(  # type: ignore[attr-defined]
+            segment = self.calculator._haversine_distance(
                 prev.latitude,
                 prev.longitude,
                 curr.latitude,

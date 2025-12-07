@@ -140,7 +140,7 @@ def _close_interval(
 
 
 def _derive_state(
-    condition_state: Dict[str, Dict[str, str]]
+    condition_state: Dict[str, Dict[str, str]],
 ) -> tuple[TransportState, List[str]]:
     """Return (state, reasons) based on active degraded/offline conditions."""
     offline_reasons = [

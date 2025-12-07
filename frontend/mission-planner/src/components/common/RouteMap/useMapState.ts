@@ -1,5 +1,30 @@
 import { useRef } from 'react';
-import type { Map, LatLngExpression, LatLngBoundsExpression } from 'leaflet';
+import type {
+  Map,
+  LatLngExpression,
+  LatLngBoundsExpression,
+  LatLng,
+} from 'leaflet';
+
+/**
+ * Helper function to extract latitude from various coordinate formats
+ */
+function getLatFromCoordinate(coord: LatLngExpression): number {
+  if (Array.isArray(coord)) {
+    return coord[0];
+  }
+  return (coord as LatLng).lat;
+}
+
+/**
+ * Helper function to extract longitude from various coordinate formats
+ */
+function getLngFromCoordinate(coord: LatLngExpression): number {
+  if (Array.isArray(coord)) {
+    return coord[1];
+  }
+  return (coord as LatLng).lng;
+}
 
 interface UseMapStateProps {
   coordinates: LatLngExpression[];
@@ -27,10 +52,8 @@ export function useMapState({
     for (let i = 1; i < coordinates.length; i++) {
       const prev = coordinates[i - 1];
       const curr = coordinates[i];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const prevLng = Array.isArray(prev) ? prev[1] : (prev as any).lng;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const currLng = Array.isArray(curr) ? curr[1] : (curr as any).lng;
+      const prevLng = getLngFromCoordinate(prev);
+      const currLng = getLngFromCoordinate(curr);
       if (Math.abs(currLng - prevLng) > 180) {
         return true;
       }
@@ -44,14 +67,8 @@ export function useMapState({
   const getBounds = (): LatLngBoundsExpression | undefined => {
     if (coordinates.length === 0) return undefined;
 
-    const lats = coordinates.map((coord) => {
-      if (Array.isArray(coord)) return coord[0];
-      return (coord as { lat: number; lng: number }).lat;
-    });
-    const lngs = coordinates.map((coord) => {
-      if (Array.isArray(coord)) return coord[1];
-      return (coord as { lat: number; lng: number }).lng;
-    });
+    const lats = coordinates.map(getLatFromCoordinate);
+    const lngs = coordinates.map(getLngFromCoordinate);
 
     if (isIDLCrossing) {
       // Normalize longitudes to 0-360 range for IDL crossing routes
@@ -79,14 +96,8 @@ export function useMapState({
   const getCenter = (): LatLngExpression => {
     if (coordinates.length === 0) return [0, 0];
 
-    const lats = coordinates.map((coord) => {
-      if (Array.isArray(coord)) return coord[0];
-      return (coord as { lat: number; lng: number }).lat;
-    });
-    const lngs = coordinates.map((coord) => {
-      if (Array.isArray(coord)) return coord[1];
-      return (coord as { lat: number; lng: number }).lng;
-    });
+    const lats = coordinates.map(getLatFromCoordinate);
+    const lngs = coordinates.map(getLngFromCoordinate);
 
     if (isIDLCrossing) {
       // Normalize longitudes for center calculation

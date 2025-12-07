@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useMap } from 'react-leaflet';
 import type { Map, LatLngBoundsExpression } from 'leaflet';
+import { logger } from '../../../utils/logger';
 
 interface MapControlsProps {
   bounds: LatLngBoundsExpression | undefined;
@@ -24,8 +25,7 @@ export function MapControls({
       try {
         map.fitBounds(bounds, { padding: [50, 50] });
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.warn('Could not fit bounds to map:', error);
+        logger.warn('Could not fit bounds to map:', error);
       }
     }
   }, [map, bounds, mapRef, coordinateCount]);

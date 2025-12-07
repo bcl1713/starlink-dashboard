@@ -1,6 +1,16 @@
-import type { LatLngExpression } from 'leaflet';
+import type { LatLngExpression, LatLng } from 'leaflet';
 import type { XBandTransition } from '../../../types/satellite';
 import type { KaTransition } from '../../../types/timeline';
+
+/**
+ * Helper function to extract longitude from various coordinate formats
+ */
+function getLngFromCoordinate(coord: LatLngExpression): number {
+  if (Array.isArray(coord)) {
+    return coord[1];
+  }
+  return (coord as LatLng).lng;
+}
 
 interface UseRouteRendererProps {
   coordinates: LatLngExpression[];
@@ -48,10 +58,8 @@ export function useRouteRenderer({
       const prev = coords[i - 1];
       const curr = coords[i];
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const prevLng = Array.isArray(prev) ? prev[1] : (prev as any).lng;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const currLng = Array.isArray(curr) ? curr[1] : (curr as any).lng;
+      const prevLng = getLngFromCoordinate(prev);
+      const currLng = getLngFromCoordinate(curr);
 
       // Check if this segment crosses the International Date Line (IDL)
       if (Math.abs(currLng - prevLng) > 180) {
