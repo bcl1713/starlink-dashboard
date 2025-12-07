@@ -44,6 +44,13 @@ jobs:
           ruff check backend/starlink-location/app backend/starlink-location/tests
         continue-on-error: true
 
+      # Naming convention check
+      - name: Check Naming Conventions
+        run: |
+          python tools/check_filename_convention.py
+        continue-on-error: true
+
+
       # Node.js: Setup and linting
       - name: Set up Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
@@ -84,11 +91,7 @@ jobs:
           fail: true
         continue-on-error: true
 
-      # Naming convention check
-      - name: Check Naming Conventions
-        run: |
-          python tools/check_filename_convention.py
-        continue-on-error: true
+
 
       # Summary
       - name: Linting Summary
