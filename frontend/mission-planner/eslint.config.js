@@ -45,7 +45,7 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      'no-console': ['warn', { allow: ['error'] }],
+      'no-console': ['warn', { allow: ['error', 'log', 'warn', 'info'] }],
     },
   },
 ]);
