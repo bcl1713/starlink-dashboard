@@ -48,7 +48,10 @@ curl <http://localhost:8000/api/routes/{route_id}> | jq '.has_timing_data'
 2. Check that route is activated (not just loaded)
 3. Ensure Docker container rebuilt after code changes
 4. Rebuild Docker:
-   `docker compose down && docker compose build --no-cache && docker compose up -d`
+
+   ```bash
+   docker compose down && docker compose build --no-cache && docker compose up -d
+   ```
 
 ## High ETA Calculation Times
 
