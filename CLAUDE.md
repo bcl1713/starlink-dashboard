@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+Last Updated: 2025-12-07
+
 Runtime development guidance for Claude Code. See README.md for project overview
 and docs/ for comprehensive documentation.
 

@@ -1,6 +1,6 @@
 # Contributing Troubleshooting
 
-[Back to Contributing](../CONTRIBUTING.md)
+[Back to Contributing](../../CONTRIBUTING.md)
 
 ---
 
@@ -63,4 +63,4 @@ open an issue or discussion on the project repository.
 
 ---
 
-[Back to Contributing](../CONTRIBUTING.md)
+[Back to Contributing](../../CONTRIBUTING.md)

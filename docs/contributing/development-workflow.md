@@ -1,6 +1,6 @@
 # Development Workflow
 
-[Back to Contributing](../CONTRIBUTING.md)
+[Back to Contributing](../../CONTRIBUTING.md)
 
 ---
 
@@ -160,4 +160,4 @@ pre-commit run black --all-files
 
 ---
 
-[Back to Contributing](../CONTRIBUTING.md)
+[Back to Contributing](../../CONTRIBUTING.md)

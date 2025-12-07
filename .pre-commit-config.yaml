@@ -59,14 +59,14 @@ repos:
         stages: [pre-commit]
 
 
+  # Broken Link Checker (using Docker to avoid local install reqs)
   - repo: local
     hooks:
-      - id: lychee
-        name: Lychee - Broken Link Checker
-        entry: lychee
-        language: system
-        args: ["--no-progress", "--exclude-path", "node_modules", "--exclude-path", ".venv", "docs/"]
-        files: \.md$
+      - id: lychee-docker
+        name: Lychee Link Checker (Docker)
+        entry: lycheeverse/lychee:latest
+        language: docker_image
+        args: ["--no-progress", "--exclude-path", "node_modules", "--exclude-path", ".venv", "--exclude", "file://", "docs/"]
         pass_filenames: false
 
   # Naming convention check for docs
