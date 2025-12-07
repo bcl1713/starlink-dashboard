@@ -35,17 +35,20 @@ jobs:
           pip install black ruff
 
       - name: Run Black (Python formatter)
+        id: black
         run: |
           black --check --diff backend/starlink-location/app backend/starlink-location/tests
         continue-on-error: true
 
       - name: Run Ruff (Python linter)
+        id: ruff
         run: |
           ruff check backend/starlink-location/app backend/starlink-location/tests
         continue-on-error: true
 
       # Naming convention check
       - name: Check Naming Conventions
+        id: naming
         run: |
           python tools/check_filename_convention.py
         continue-on-error: true
@@ -65,12 +68,14 @@ jobs:
           npm ci --legacy-peer-deps
 
       - name: Run Prettier (JS/TS/MD formatter)
+        id: prettier
         run: |
           cd frontend/mission-planner
           npx prettier --check "src/**/*.{ts,tsx,js,jsx,json,md}"
         continue-on-error: true
 
       - name: Run ESLint (JS/TS linter)
+        id: eslint
         run: |
           cd frontend/mission-planner
           npx eslint src --ext .ts,.tsx
@@ -78,6 +83,7 @@ jobs:
 
       # Markdown linting
       - name: Run markdownlint-cli2 (Markdown linter)
+        id: markdownlint
         run: |
           npm install -g markdownlint-cli2
           markdownlint-cli2 "docs/**/*.md"
@@ -85,6 +91,7 @@ jobs:
 
       # Link checking
       - name: Link Checker (Lychee)
+        id: lychee
         uses: lycheeverse/lychee-action@v1.9.1
         with:
           args: --no-progress docs/
@@ -98,11 +105,32 @@ jobs:
         if: always()
         run: |
           echo "## Linting Results" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Linting checks completed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tools Run:**" >> $GITHUB_STEP_SUMMARY
-          echo "- Black (Python formatter)" >> $GITHUB_STEP_SUMMARY
-          echo "- Ruff (Python linter)" >> $GITHUB_STEP_SUMMARY
-          echo "- Prettier (JS/TS/MD formatter)" >> $GITHUB_STEP_SUMMARY
-          echo "- ESLint (JS/TS linter)" >> $GITHUB_STEP_SUMMARY
-          echo "- Markdownlint-cli2 (Markdown linter)" >> $GITHUB_STEP_SUMMARY
+          
+          failures=0
+
+          check_status() {
+            if [ "$1" == "failure" ]; then
+              echo "❌ $2 failed" >> $GITHUB_STEP_SUMMARY
+              failures=$((failures+1))
+            else
+              echo "✅ $2 passed" >> $GITHUB_STEP_SUMMARY
+            fi
+          }
+
+          check_status "${{ steps.black.outcome }}" "Black (Python formatter)"
+          check_status "${{ steps.ruff.outcome }}" "Ruff (Python linter)"
+          check_status "${{ steps.naming.outcome }}" "Naming Conventions"
+          check_status "${{ steps.prettier.outcome }}" "Prettier (JS/TS/MD formatter)"
+          check_status "${{ steps.eslint.outcome }}" "ESLint (JS/TS linter)"
+          check_status "${{ steps.markdownlint.outcome }}" "Markdownlint (Markdown linter)"
+          check_status "${{ steps.lychee.outcome }}" "Lychee (Link Checker)"
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ $failures -gt 0 ]; then
+            echo "🔴 $failures checks failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "🟢 All checks passed" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
