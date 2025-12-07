@@ -17,8 +17,8 @@ test.describe('Mission Workflow', () => {
       await route.fulfill({
         json: {
           routes: [{ id: 'route-1', name: 'Test Route' }],
-          total: 1
-        }
+          total: 1,
+        },
       });
     });
   });
@@ -28,17 +28,21 @@ test.describe('Mission Workflow', () => {
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await expect(page.getByRole('heading', { name: 'Missions' })).toBeVisible();
-    await expect(page.getByText('No missions yet. Create your first mission to get started.')).toBeVisible();
+    await expect(
+      page.getByText(
+        'No missions yet. Create your first mission to get started.'
+      )
+    ).toBeVisible();
 
     // 2. Mock Create Mission API
-    let createdMission: any = null;
+    let createdMission: Record<string, unknown> | null = null;
     await page.route('http://localhost:8000/api/v2/missions', async (route) => {
       if (route.request().method() === 'POST') {
         const data = route.request().postDataJSON();
         createdMission = {
           ...data,
           id: 'new-mission',
-          legs: []
+          legs: [],
         };
         await route.fulfill({ json: createdMission });
       } else if (route.request().method() === 'GET') {
@@ -52,7 +56,9 @@ test.describe('Mission Workflow', () => {
     // 3. Open Create Dialog
     await page.getByRole('button', { name: 'Create New Mission' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Create New Mission' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Create New Mission' })
+    ).toBeVisible();
 
     // 4. Fill Form
     await page.getByLabel('Mission Name').fill('New Mission');
@@ -72,7 +78,7 @@ test.describe('Mission Workflow', () => {
       id: 'test-mission',
       name: 'Test Mission',
       description: 'Test Desc',
-      legs: []
+      legs: [],
     };
 
     // Mock initial state with one mission
@@ -85,36 +91,46 @@ test.describe('Mission Workflow', () => {
     });
 
     // Mock mission detail
-    await page.route('http://localhost:8000/api/v2/missions/test-mission', async (route) => {
-      await route.fulfill({ json: mission });
-    });
+    await page.route(
+      'http://localhost:8000/api/v2/missions/test-mission',
+      async (route) => {
+        await route.fulfill({ json: mission });
+      }
+    );
 
     // Mock Add Leg API
-    await page.route('http://localhost:8000/api/v2/missions/test-mission/legs', async (route) => {
+    await page.route(
+      'http://localhost:8000/api/v2/missions/test-mission/legs',
+      async (route) => {
         const data = route.request().postDataJSON();
         // Return success
         await route.fulfill({ json: { ...data, id: 'leg-1' } });
-    });
+      }
+    );
 
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await page.getByText('Test Mission').click();
 
     // Verify Detail Page
-    await expect(page.getByRole('heading', { name: 'Test Mission' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Test Mission' })
+    ).toBeVisible();
     await expect(page.getByText('No legs configured')).toBeVisible();
 
     // Add Leg
     await page.getByRole('button', { name: 'Add Leg' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    
+
     await page.getByLabel('Leg Name').fill('Leg 1');
-    
+
     // Select Route (this might be tricky depending on Radix UI Select)
     // We mock the routes so "Select Existing" should be active.
     // Radix Select Trigger
     await page.getByRole('combobox').click();
-    await expect(page.getByRole('option', { name: 'Test Route' })).toBeVisible();
+    await expect(
+      page.getByRole('option', { name: 'Test Route' })
+    ).toBeVisible();
     await page.getByRole('option', { name: 'Test Route' }).click();
 
     await page.getByRole('button', { name: 'Add Leg' }).click();
@@ -123,15 +139,15 @@ test.describe('Mission Workflow', () => {
   });
 
   test('should handle export/import', async ({ page }) => {
-     const mission = {
+    const mission = {
       id: 'test-mission',
       name: 'Test Mission',
       description: 'Test Desc',
-      legs: []
+      legs: [],
     };
 
     await page.route('http://localhost:8000/api/v2/missions', async (route) => {
-        await route.fulfill({ json: [mission] });
+      await route.fulfill({ json: [mission] });
     });
 
     await page.goto('/');
@@ -141,14 +157,22 @@ test.describe('Mission Workflow', () => {
     await expect(page.getByRole('button', { name: 'Export' })).toBeVisible();
     await page.getByRole('button', { name: 'Export' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Export Mission' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Export Mission' })
+    ).toBeVisible();
     // Close export dialog
     await page.keyboard.press('Escape');
 
     // Check Import
-    await expect(page.getByRole('button', { name: 'Import Mission', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Import Mission', exact: true }).click();
+    await expect(
+      page.getByRole('button', { name: 'Import Mission', exact: true })
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Import Mission', exact: true })
+      .click();
     await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Import Mission' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Import Mission' })
+    ).toBeVisible();
   });
 });

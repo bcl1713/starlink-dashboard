@@ -141,7 +141,7 @@ class TestKMLRouteFollower:
 
     def test_position_looping(self, kml_follower):
         """Test that position loops back to start after route end."""
-        pos_end = kml_follower.get_position(0.99)
+        kml_follower.get_position(0.99)
         pos_start_again = kml_follower.get_position(1.5)  # 0.5 modulo 1.0
 
         # Should loop back
@@ -159,7 +159,7 @@ class TestKMLRouteFollower:
     def test_reset(self, kml_follower):
         """Test resetting follower to start."""
         # Move to middle
-        pos_mid = kml_follower.get_position(0.5)
+        kml_follower.get_position(0.5)
 
         # Reset
         kml_follower.reset()

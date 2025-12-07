@@ -1,12 +1,13 @@
 # Phase 1: Documentation Taxonomy
 
-**Feature**: Documentation Cleanup and Restructuring
-**Date**: 2025-12-04
+**Feature**: Documentation Cleanup and Restructuring **Date**: 2025-12-04
 **Status**: Complete
 
 ## Overview
 
-This document defines the complete taxonomy for organizing Starlink Dashboard documentation. It establishes categories, classification rules, naming conventions, and cross-reference strategies.
+This document defines the complete taxonomy for organizing Starlink Dashboard
+documentation. It establishes categories, classification rules, naming
+conventions, and cross-reference strategies.
 
 ---
 
@@ -15,10 +16,11 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 ### 1. setup/
 
 **Purpose**: Help users install, configure, and initially deploy the system
-**Audience**: Users, operators, first-time installers
-**Divio Type**: Tutorial (learning-oriented)
+**Audience**: Users, operators, first-time installers **Divio Type**: Tutorial
+(learning-oriented)
 
 **Scope**:
+
 - Initial installation procedures
 - Configuration and environment setup
 - Prerequisites and system requirements
@@ -26,21 +28,23 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 - Quick start guides
 
 **Out of Scope**:
+
 - Troubleshooting (→ troubleshooting/)
 - Development setup (→ development/)
 - Architecture explanations (→ architecture/)
 
-**Index**: `docs/setup/README.md` - Lists all setup guides with purpose and prerequisite info
+**Index**: `docs/setup/README.md` - Lists all setup guides with purpose and
+prerequisite info
 
 ---
 
 ### 2. troubleshooting/
 
-**Purpose**: Help users diagnose and resolve problems
-**Audience**: Users, operators, support staff
-**Divio Type**: How-to (task-oriented, problem-solving)
+**Purpose**: Help users diagnose and resolve problems **Audience**: Users,
+operators, support staff **Divio Type**: How-to (task-oriented, problem-solving)
 
 **Scope**:
+
 - Error diagnosis by symptom
 - Service-specific issues
 - Connectivity and performance problems
@@ -48,11 +52,13 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 - Diagnostic procedures
 
 **Organization**:
+
 - Group by service (grafana, prometheus, backend, frontend)
 - Group by symptom (connectivity, data, performance)
 - Include quick diagnostics guide at top level
 
 **Out of Scope**:
+
 - Setup procedures (→ setup/)
 - Development/debugging (→ development/)
 - Known limitations (→ features/ or architecture/)
@@ -64,10 +70,11 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 ### 3. api/
 
 **Purpose**: Technical reference for REST API endpoints, models, and contracts
-**Audience**: API consumers, integrators, developers
-**Divio Type**: Reference (information-oriented)
+**Audience**: API consumers, integrators, developers **Divio Type**: Reference
+(information-oriented)
 
 **Scope**:
+
 - Endpoint specifications (paths, methods, parameters)
 - Request/response models and schemas
 - Authentication and authorization
@@ -75,37 +82,44 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 - API usage examples (code snippets)
 
 **Organization**:
+
 - `endpoints/` - By functional area (missions, pois, routes, etc.)
 - `models/` - Data structures and schemas
 - `examples/` - Language-specific usage examples
 - `README.md` - API overview and quick reference
 
 **Out of Scope**:
+
 - Feature descriptions (→ features/)
 - Implementation details (→ architecture/)
 - Setup/configuration (→ setup/)
 
-**Index**: `docs/api/README.md` - Endpoint categories, model reference, example guides
+**Index**: `docs/api/README.md` - Endpoint categories, model reference, example
+guides
 
 ---
 
 ### 4. features/
 
 **Purpose**: Describe system capabilities and user-facing functionality
-**Audience**: Users, evaluators, product stakeholders
-**Divio Type**: Explanation (understanding-oriented)
+**Audience**: Users, evaluators, product stakeholders **Divio Type**:
+Explanation (understanding-oriented)
 
 **Scope**:
+
 - User-facing capabilities and workflows
 - Feature descriptions and use cases
 - System behavior and limitations
 - Integration scenarios
 
 **Organization**:
+
 - One file per major feature area
-- Organized by capability domain (monitoring, navigation, mission-planning, system)
+- Organized by capability domain (monitoring, navigation, mission-planning,
+  system)
 
 **Out of Scope**:
+
 - API specifications (→ api/)
 - How-to guides (→ setup/ or troubleshooting/)
 - Implementation (→ architecture/)
@@ -117,10 +131,11 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 ### 5. architecture/
 
 **Purpose**: Explain system design, technical decisions, and internal structure
-**Audience**: Developers, contributors, technical evaluators
-**Divio Type**: Explanation (understanding-oriented, technical depth)
+**Audience**: Developers, contributors, technical evaluators **Divio Type**:
+Explanation (understanding-oriented, technical depth)
 
 **Scope**:
+
 - System architecture and component design
 - Design decisions and rationale
 - Data structures and models (internal)
@@ -128,26 +143,30 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 - Module organization and dependencies
 
 **Organization**:
+
 - `design-document.md` - High-level system architecture
 - `data-structures/` - Internal data models and schemas
 - Subsections for major subsystems if needed
 
 **Out of Scope**:
+
 - User-facing feature descriptions (→ features/)
 - API specifications (→ api/)
 - Development procedures (→ development/)
 
-**Index**: `docs/architecture/README.md` - Architecture overview with links to deep dives
+**Index**: `docs/architecture/README.md` - Architecture overview with links to
+deep dives
 
 ---
 
 ### 6. development/
 
 **Purpose**: Guide developers on contributing, testing, and building the system
-**Audience**: Contributors, developers
-**Divio Type**: How-to (task-oriented, development workflows)
+**Audience**: Contributors, developers **Divio Type**: How-to (task-oriented,
+development workflows)
 
 **Scope**:
+
 - Development workflow and git practices
 - Testing procedures and standards
 - Code quality and contribution guidelines
@@ -155,26 +174,30 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 - Development environment setup
 
 **Organization**:
+
 - Top-level: Common workflows (testing, contributing, development-workflow)
 - `claude-code/` - AI-assisted development guides
 - `testing/` - Test writing and execution guides (if many files)
 
 **Out of Scope**:
+
 - User-facing setup (→ setup/)
 - Architecture explanations (→ architecture/)
 - Contribution policy (root-level CONTRIBUTING.md)
 
-**Index**: `docs/development/README.md` - Developer journey from onboarding to contribution
+**Index**: `docs/development/README.md` - Developer journey from onboarding to
+contribution
 
 ---
 
 ### 7. reports/
 
 **Purpose**: Archive historical documentation and completed work artifacts
-**Audience**: Project historians, retrospective reviewers
-**Divio Type**: Archive (historical record)
+**Audience**: Project historians, retrospective reviewers **Divio Type**:
+Archive (historical record)
 
 **Scope**:
+
 - Implementation completion summaries
 - Feature analysis reports
 - Retrospectives and post-mortems
@@ -182,20 +205,24 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 - Phase completion documentation
 
 **Organization**:
+
 - `implementation-reports/` - Feature completion summaries
 - `analysis-reports/` - Code/feature analysis artifacts
 - `temp/` - Temporary work-in-progress (to be cleaned up)
 
 **Requirements**:
+
 - All files MUST include creation date in filename or frontmatter
 - Files are frozen (not updated after completion)
 - Clearly marked as historical context
 
 **Out of Scope**:
+
 - Current documentation (all other categories)
 - Ongoing/active feature specs (→ specs/)
 
-**Index**: `docs/reports/README.md` - Chronological listing of historical artifacts
+**Index**: `docs/reports/README.md` - Chronological listing of historical
+artifacts
 
 ---
 
@@ -204,12 +231,14 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 ### Rule 1: Primary Audience Test
 
 **Question**: Who is the primary reader?
+
 - **User/Operator** → setup/, troubleshooting/, features/
 - **Developer/Contributor** → development/, architecture/
 - **API Consumer** → api/
 - **Historian** → reports/
 
 **Mixed audience** (no clear primary):
+
 - Split into separate files, OR
 - Use clear section headers and categorize by >60% content rule
 
@@ -218,6 +247,7 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 ### Rule 2: Content Type Test
 
 **Question**: What is the documentation's primary purpose?
+
 - **Getting started** → setup/
 - **Problem-solving** → troubleshooting/
 - **Technical reference** → api/ or architecture/
@@ -230,22 +260,26 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 ### Rule 3: Scope Test (Backend-Specific vs. Project-Wide)
 
 **Question**: Is this specific to one service implementation?
+
 - **Service-specific** → Keep in backend/[service]/docs/
 - **Project-wide** → Move to docs/
 
 **Test**: "Would a frontend developer or another service need this?"
+
 - YES → Project-wide (docs/)
-- NO → Backend-specific (backend/*/docs/)
+- NO → Backend-specific (backend/\*/docs/)
 
 ---
 
 ### Rule 4: Currency Test (Current vs. Historical)
 
 **Question**: Is this documentation actively maintained?
+
 - **Current** (updated with code) → Active categories
 - **Historical** (frozen at completion) → reports/
 
 **Indicators of historical**:
+
 - Contains completion dates or "COMPLETE" status
 - Describes past implementation phases
 - Contains "summary" or "retrospective" in title
@@ -259,12 +293,15 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 **Format**: `lowercase-with-hyphens.md`
 
 **Examples**:
+
 - `quick-start.md` (not `QUICK-START.md` or `QuickStart.md`)
 - `installation.md` (not `install.md` or `INSTALLATION.md`)
 - `mission-planning.md` (not `missionPlanning.md`)
 
 **Exceptions**:
-- Root-level: `README.md`, `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md` (uppercase by convention)
+
+- Root-level: `README.md`, `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`
+  (uppercase by convention)
 - Category indexes: `README.md` (always uppercase)
 
 ### Category Indexes
@@ -272,11 +309,12 @@ This document defines the complete taxonomy for organizing Starlink Dashboard do
 **Requirement**: Every category MUST have `README.md`
 
 **Format**:
+
 ```markdown
 # [Category Name]
 
-**Purpose**: [One-sentence category purpose]
-**Audience**: [Primary reader types]
+**Purpose**: [One-sentence category purpose] **Audience**: [Primary reader
+types]
 
 ## Documentation in This Category
 
@@ -323,6 +361,7 @@ Every documentation file MUST have:
 ### Historical Documents
 
 Files in `reports/` MUST include:
+
 - **Date**: In filename (`2025-12-04-implementation-summary.md`) OR frontmatter
 - **Status**: "COMPLETE" or "ARCHIVED" indicator
 - **Context**: Brief description of why document was created
@@ -334,24 +373,28 @@ Files in `reports/` MUST include:
 ### Link Format
 
 **Always use relative paths**:
+
 ```markdown
 <!-- Good -->
-[Setup Guide](../setup/installation.md)
-[API Reference](../../api/README.md)
+
+[Setup Guide](../setup/installation.md) [API Reference](../../api/README.md)
 
 <!-- Bad -->
-[Setup Guide](/docs/setup/installation.md)  # Absolute path
-[Setup Guide](docs/setup/installation.md)   # Root-relative path
+
+[Setup Guide](/docs/setup/installation.md) # Absolute path
+[Setup Guide](docs/setup/installation.md) # Root-relative path
 ```
 
 ### Anchor Links
 
 **Use standard markdown anchors**:
+
 ```markdown
 [Specific Section](../api/endpoints.md#authentication)
 ```
 
 **Anchor format**: Lowercase, hyphens for spaces, special chars removed
+
 - "Authentication Methods" → `#authentication-methods`
 - "API v2.0 Endpoints" → `#api-v20-endpoints`
 
@@ -360,8 +403,11 @@ Files in `reports/` MUST include:
 **Encouraged**: Link freely between categories to show relationships
 
 **Best practices**:
+
 - Link to category README.md for overview, specific docs for details
-- Use descriptive link text: `[Mission Planning Features](../features/mission-planning.md)`, not `[click here](../features/mission-planning.md)`
+- Use descriptive link text:
+  `[Mission Planning Features](../features/mission-planning.md)`, not
+  `[click here](../features/mission-planning.md)`
 - Avoid circular references (Category A index → B doc → A index)
 
 ---
@@ -437,13 +483,18 @@ docs/troubleshooting/
 ### Splitting Strategies
 
 **Option 1: By subtopic**
+
 - `api-reference.md` → `api-endpoints.md`, `api-models.md`, `api-examples.md`
 
 **Option 2: By progression**
-- `setup-guide.md` → `setup-prerequisites.md`, `setup-installation.md`, `setup-configuration.md`
+
+- `setup-guide.md` → `setup-prerequisites.md`, `setup-installation.md`,
+  `setup-configuration.md`
 
 **Option 3: By audience**
-- `mission-planning.md` → `mission-planning-users.md`, `mission-planning-developers.md`
+
+- `mission-planning.md` → `mission-planning-users.md`,
+  `mission-planning-developers.md`
 
 ---
 
@@ -457,7 +508,7 @@ Use this checklist to validate documentation organization:
 - [ ] All files ≤300 lines (justified if exceeds)
 - [ ] All links use relative paths
 - [ ] Historical docs have dates and "ARCHIVED" status
-- [ ] Backend-specific docs remain in backend/*/docs/
+- [ ] Backend-specific docs remain in backend/\*/docs/
 - [ ] Only README.md, CLAUDE.md, AGENTS.md, CONTRIBUTING.md at root
 
 ---
@@ -494,5 +545,5 @@ docs/
 
 ---
 
-**Taxonomy Status**: ✓ Complete
-**Ready for**: Contract definition and quickstart guide
+**Taxonomy Status**: ✓ Complete **Ready for**: Contract definition and
+quickstart guide

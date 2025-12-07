@@ -158,9 +158,7 @@ export function useLegData({
     routesApi
       .getCoordinates(routeId)
       .then((coords) => setRouteCoordinates(coords))
-      .catch((err) =>
-        console.error('Failed to load route coordinates:', err)
-      );
+      .catch((err) => console.error('Failed to load route coordinates:', err));
 
     routesApi
       .getWaypoints(routeId)
@@ -205,9 +203,7 @@ export function useLegData({
 
         setKaTransitions(transitions);
       })
-      .catch((err) =>
-        console.error('Failed to load Ka transition POIs:', err)
-      );
+      .catch((err) => console.error('Failed to load Ka transition POIs:', err));
 
     // Cleanup: clear Ka transitions when effect unmounts or dependencies change
     return () => {

@@ -9,8 +9,7 @@ Please see: **[Architecture Documentation](./README.md)**
 ## Quick Links
 
 - **[Overview & Objectives](./README.md)** - Project goals
-- **[System Architecture](./README.md#system-stack)** - Component
-  design
+- **[System Architecture](./README.md#system-stack)** - Component design
 - **[Core Components](./README.md)** - Backend, Prometheus, Grafana
 - **[Development Workflow](../../CLAUDE.md)** - Docker rebuild process
 - **[Setup Guide](../setup/README.md)** - Installation instructions

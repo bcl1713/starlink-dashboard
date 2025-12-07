@@ -15,6 +15,11 @@ export interface Waypoint {
   description?: string;
 }
 
+interface RouteDetailResponse {
+  points?: Array<{ latitude: number; longitude: number }>;
+  waypoints?: Waypoint[];
+}
+
 export const routesApi = {
   async list(): Promise<Route[]> {
     const response = await apiClient.get<{ routes: Route[]; total: number }>(
@@ -39,11 +44,13 @@ export const routesApi = {
   },
 
   async getCoordinates(routeId: string): Promise<[number, number][]> {
-    const response = await apiClient.get<any>(`/api/routes/${routeId}`);
+    const response = await apiClient.get<RouteDetailResponse>(
+      `/api/routes/${routeId}`
+    );
     // Extract coordinates from points (cleaned/calculated route)
     // NOT waypoints (those are named placemarks)
     if (response.data.points && Array.isArray(response.data.points)) {
-      return response.data.points.map((point: any) => [
+      return response.data.points.map((point) => [
         point.latitude,
         point.longitude,
       ]);
@@ -52,11 +59,13 @@ export const routesApi = {
   },
 
   async getWaypoints(routeId: string): Promise<Waypoint[]> {
-    const response = await apiClient.get<any>(`/api/routes/${routeId}`);
+    const response = await apiClient.get<RouteDetailResponse>(
+      `/api/routes/${routeId}`
+    );
     // Extract full waypoint objects from the route detail response
     if (response.data.waypoints && Array.isArray(response.data.waypoints)) {
       return response.data.waypoints.filter(
-        (waypoint: any) => waypoint.name !== undefined && waypoint.name !== ''
+        (waypoint) => waypoint.name !== undefined && waypoint.name !== ''
       );
     }
     return [];

@@ -19,8 +19,7 @@ documentation.**
 ## Quick Links
 
 - **[POI Overview](../poi/README.md)** - Complete POI endpoint overview
-- [List & Query](../poi/list-query-endpoints.md) - List and retrieve
-  POIs
+- [List & Query](../poi/list-query-endpoints.md) - List and retrieve POIs
 - [ETA Calculations](../poi/eta-endpoints.md) - Calculate ETAs to POIs
 - [Management](../poi/management-endpoints.md) - Create, update, delete
 

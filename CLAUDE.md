@@ -27,9 +27,8 @@ rebuilds images without layer caching.
 - API: `app/api/routes/`, `app/api/pois/`, `app/api/ui/`
 - Mission: `app/mission/routes/`, `app/mission/timeline_builder/`,
   `app/mission/exporter/`, `app/mission/package/`
-- Services: `app/services/kml/`, `app/services/eta/`,
-  `app/services/route_eta/`, `app/services/poi_manager.py`,
-  `app/services/flight_state_manager.py`
+- Services: `app/services/kml/`, `app/services/eta/`, `app/services/route_eta/`,
+  `app/services/poi_manager.py`, `app/services/flight_state_manager.py`
 - Core: `app/core/metrics/`
 - Data: `/data/routes/` (KML), `/data/sim_routes/` (simulator)
 

@@ -20,7 +20,8 @@ docker compose logs
 
 **Common issues:**
 
-- Port conflicts →See [Prerequisites](prerequisites-verification.md) for more info.
+- Port conflicts →See [Prerequisites](prerequisites-verification.md) for more
+  info.
 - Insufficient disk space → `df -h`
 - Docker not running → `sudo systemctl start docker`
 

@@ -16,15 +16,16 @@ physical Starlink hardware and simulation mode for offline development.
 - [Quick Start](./docs/setup/quick-start.md) - Get up and running in 3 minutes
 - [Setup Guide](./docs/setup/README.md) - Detailed installation instructions
 - [Features Overview](./docs/features/overview.md) - Complete feature list
-- [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common
-  issues and solutions
+- [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common issues
+  and solutions
 
 **For Developers:**
 
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 - [API Reference](./docs/api-reference-index.md) - Complete API documentation
 - [Development Workflow](./docs/development/workflow.md) - Development practices
-- [Architecture](./docs/architecture/design-document.md) - System design and architecture
+- [Architecture](./docs/architecture/design-document.md) - System design and
+  architecture
 
 ---
 

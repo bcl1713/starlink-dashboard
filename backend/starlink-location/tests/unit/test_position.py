@@ -36,7 +36,7 @@ class TestPositionSimulator:
         """Test that multiple updates change position state."""
         pos1 = simulator.update()
         pos2 = simulator.update()
-        pos3 = simulator.update()
+        simulator.update()
 
         # At least one value should change over multiple updates
         position_changed = (
@@ -109,8 +109,6 @@ class TestPositionSimulator:
         for _ in range(5):
             simulator.update()
 
-        initial_altitude = simulator.current_altitude
-
         # Reset
         simulator.reset()
 
@@ -129,8 +127,6 @@ class TestPositionSimulator:
         simulator = PositionSimulator(default_config.route, default_config.position)
 
         initial_pos = simulator.update()
-        initial_lat = initial_pos.latitude
-        initial_lon = initial_pos.longitude
 
         # In a test environment with tight loops (microsecond time deltas),
         # we can only expect ~1 second of simulated movement on the first update

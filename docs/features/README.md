@@ -18,8 +18,7 @@
 - **[Navigation](navigation.md)**: Route-based navigation and tracking
 - **[Mission Planning](mission-planning.md)**: Mission management and planning
   tools
-- **[System Features](system.md)**: System-level capabilities and
-  configuration
+- **[System Features](system.md)**: System-level capabilities and configuration
 
 ### Feature Areas
 
@@ -42,8 +41,8 @@ Determine which feature area the new capability belongs to:
 - **Mission Planning**: Mission management, planning workflows
 - **System**: Configuration, deployment, system-level features
 
-Add to existing file if feature extends an existing area, or create new file
-for entirely new capability domain.
+Add to existing file if feature extends an existing area, or create new file for
+entirely new capability domain.
 
 ### 2. Feature Documentation Format
 

@@ -96,5 +96,5 @@ For questions or issues:
   monitoring and alert response
 - **[METRICS](../../metrics/overview.md)** — Prometheus metrics reference for
   dashboard integration
-- **[API Reference](../../api/README.md)** — Mission planning API
-  endpoints (for integrations)
+- **[API Reference](../../api/README.md)** — Mission planning API endpoints (for
+  integrations)

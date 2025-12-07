@@ -16,7 +16,7 @@ TEST_MISSIONS_DIR = Path("/tmp/test_data/missions")
 TEST_MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
 
 # Monkey-patch RouteManager and POIManager before any imports
-import app.services.route_manager as route_manager_module
+import app.services.route_manager as route_manager_module  # noqa: E402
 
 original_route_init = route_manager_module.RouteManager.__init__
 
@@ -32,8 +32,8 @@ def patched_route_init(self, routes_dir="/tmp/test_data/routes"):
 
 route_manager_module.RouteManager.__init__ = patched_route_init
 
-import app.services.poi_manager as poi_manager_module
-import json
+import app.services.poi_manager as poi_manager_module  # noqa: E402
+import json  # noqa: E402
 
 original_poi_init = poi_manager_module.POIManager.__init__
 
@@ -56,26 +56,26 @@ def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
 
 poi_manager_module.POIManager.__init__ = patched_poi_init
 
-import pytest
-from fastapi.testclient import TestClient
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
-from app.core.config import ConfigManager
-from app.models.config import (
+from app.core.config import ConfigManager  # noqa: E402
+from app.models.config import (  # noqa: E402
     NetworkConfig,
     ObstructionConfig,
     PositionConfig,
     RouteConfig,
     SimulationConfig,
 )
-from app.models.telemetry import (
+from app.models.telemetry import (  # noqa: E402
     EnvironmentalData,
     NetworkData,
     ObstructionData,
     PositionData,
     TelemetryData,
 )
-from app.simulation.coordinator import SimulationCoordinator
-from main import app
+from app.simulation.coordinator import SimulationCoordinator  # noqa: E402
+from main import app  # noqa: E402
 
 
 @pytest.fixture

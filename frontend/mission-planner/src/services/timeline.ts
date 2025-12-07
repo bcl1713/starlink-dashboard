@@ -28,7 +28,7 @@ export const timelineService = {
       const response = await apiClient.get(`/api/missions/${legId}/timeline`);
       return response.data;
     } catch (error) {
-      console.warn(`Timeline not available for leg ${legId}:`, error);
+      console.error(`Timeline not available for leg ${legId}:`, error);
       return null;
     }
   },

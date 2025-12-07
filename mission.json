@@ -10,11 +10,7 @@
       "route_id": "Leg 6 Rev 6",
       "transports": {
         "initial_x_satellite_id": "X-1",
-        "initial_ka_satellite_ids": [
-          "AOR",
-          "POR",
-          "IOR"
-        ],
+        "initial_ka_satellite_ids": ["AOR", "POR", "IOR"],
         "x_transitions": [],
         "ka_outages": [],
         "aar_windows": [],

@@ -15,7 +15,7 @@ export function MissionsPage() {
     name: string;
   } | null>(null);
 
-  const handleSelectMission = (_id: string) => {
+  const handleSelectMission = () => {
     // TODO: Navigate to mission detail view
   };
 

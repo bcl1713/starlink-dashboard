@@ -297,7 +297,7 @@ class TestETACalculator:
         assert "poi-1" in passed
 
         # Second update - move away
-        metrics2 = eta_calculator.calculate_poi_metrics(40.7140, -74.0060, sample_pois)
+        eta_calculator.calculate_poi_metrics(40.7140, -74.0060, sample_pois)
 
         # POI 1 should still be in passed set
         assert "poi-1" in eta_calculator.get_passed_pois()

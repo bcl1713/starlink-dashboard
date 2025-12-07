@@ -6,16 +6,9 @@
   "leg_count": 1,
   "exported_at": "2025-11-25T13:12:15.454799+00:00",
   "file_structure": {
-    "mission_data": [
-      "mission.json",
-      "manifest.json"
-    ],
-    "legs": [
-      "legs/leg-6.json"
-    ],
-    "routes": [
-      "routes/Leg 6 Rev 6.kml"
-    ],
+    "mission_data": ["mission.json", "manifest.json"],
+    "legs": ["legs/leg-6.json"],
+    "routes": ["routes/Leg 6 Rev 6.kml"],
     "pois": [],
     "mission_exports": [],
     "per_leg_exports": []

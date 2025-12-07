@@ -33,7 +33,7 @@ class TestMetricsFormatting:
 
         # Should have proper format (lines with metric name and value)
         lines = output.strip().split("\n")
-        metric_lines = [l for l in lines if not l.startswith("#")]
+        metric_lines = [line for line in lines if not line.startswith("#")]
         assert len(metric_lines) > 0
 
     def test_update_metrics_from_telemetry(self, coordinator):
@@ -69,7 +69,7 @@ class TestMetricsFormatting:
         lines = output.strip().split("\n")
 
         # Find metric lines (not comments)
-        metric_lines = [l for l in lines if not l.startswith("#")]
+        metric_lines = [line for line in lines if not line.startswith("#")]
 
         for line in metric_lines:
             if line:
@@ -170,9 +170,11 @@ class TestMetricsFormatting:
         # Check for mode labels in the output
         lines = output.split("\n")
         mode_lines = [
-            l for l in lines if "starlink_mode_info" in l and not l.startswith("#")
+            line
+            for line in lines
+            if "starlink_mode_info" in line and not line.startswith("#")
         ]
 
         # Should have entries for each mode
-        assert any('mode="simulation"' in l for l in mode_lines)
-        assert any('mode="live"' in l for l in mode_lines)
+        assert any('mode="simulation"' in line for line in mode_lines)
+        assert any('mode="live"' in line for line in mode_lines)

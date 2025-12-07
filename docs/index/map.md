@@ -30,18 +30,18 @@
 
 ### Reference
 
-| File                                                                                | Purpose                                   | When to read          |
-| :---------------------------------------------------------------------------------- | :---------------------------------------- | :-------------------- |
-| [METRICS](../metrics/overview.md)                                                   | Complete Prometheus metrics documentation | Understanding metrics |
-| [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)     | Problem diagnosis and solutions           | Troubleshooting       |
+| File                                                                            | Purpose                                   | When to read          |
+| :------------------------------------------------------------------------------ | :---------------------------------------- | :-------------------- |
+| [METRICS](../metrics/overview.md)                                               | Complete Prometheus metrics documentation | Understanding metrics |
+| [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md) | Problem diagnosis and solutions           | Troubleshooting       |
 
 ### Architecture & Design
 
-| File                                                                   | Purpose                                  | When to read                |
-| :--------------------------------------------------------------------- | :--------------------------------------- | :-------------------------- |
-| [architecture/design-document.md](../architecture/design-document.md)  | System architecture and design decisions | Understanding architecture  |
-| [Development Plan](../development-plan.md)                             | Implementation roadmap and phases        | Understanding plan          |
-| [Grafana Configuration](../grafana-configuration.md)                   | Dashboard configuration and usage        | Learning Grafana dashboards |
+| File                                                                  | Purpose                                  | When to read                |
+| :-------------------------------------------------------------------- | :--------------------------------------- | :-------------------------- |
+| [architecture/design-document.md](../architecture/design-document.md) | System architecture and design decisions | Understanding architecture  |
+| [Development Plan](../development-plan.md)                            | Implementation roadmap and phases        | Understanding plan          |
+| [Grafana Configuration](../grafana-configuration.md)                  | Dashboard configuration and usage        | Learning Grafana dashboards |
 
 ### Development (development/)
 
@@ -55,13 +55,13 @@
 
 ## Backend (backend/starlink-location/)
 
-| File                                                                                           | Purpose                          | When to read           |
-| :--------------------------------------------------------------------------------------------- | :------------------------------- | :--------------------- |
-| [README.md](../../backend/starlink-location/README.md)                                         | Backend service overview and API | Developing backend     |
-| [VALIDATION.md](../../backend/starlink-location/VALIDATION.md)                                 | Testing and validation guide     | Testing                |
-| [Validating Maps](../../backend/starlink-location/VALIDATION-TROUBLESHOOTING.md)               | Validation troubleshooting       | Debugging tests        |
-| [config.yaml](../../backend/starlink-location/config.yaml)                                     | Default configuration            | Understanding defaults |
-| [requirements.txt](../../backend/starlink-location/requirements.txt)                           | Python dependencies              | Dependency management  |
+| File                                                                             | Purpose                          | When to read           |
+| :------------------------------------------------------------------------------- | :------------------------------- | :--------------------- |
+| [README.md](../../backend/starlink-location/README.md)                           | Backend service overview and API | Developing backend     |
+| [VALIDATION.md](../../backend/starlink-location/VALIDATION.md)                   | Testing and validation guide     | Testing                |
+| [Validating Maps](../../backend/starlink-location/VALIDATION-TROUBLESHOOTING.md) | Validation troubleshooting       | Debugging tests        |
+| [config.yaml](../../backend/starlink-location/config.yaml)                       | Default configuration            | Understanding defaults |
+| [requirements.txt](../../backend/starlink-location/requirements.txt)             | Python dependencies              | Dependency management  |
 
 ## Development (dev/)
 

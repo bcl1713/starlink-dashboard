@@ -153,7 +153,7 @@ class TestConfigManager:
         manager = ConfigManager()
         manager.load()
 
-        new_config = SimulationConfig(mode="live", route=default_config.route)
+        SimulationConfig(mode="live", route=default_config.route)
         updated = manager.update_config({"mode": "live"})
         assert updated.mode == "live"
 
@@ -161,11 +161,11 @@ class TestConfigManager:
         """Test resetting ConfigManager singleton."""
         ConfigManager.reset()
         manager1 = ConfigManager()
-        config1 = manager1.load()
+        manager1.load()
 
         ConfigManager.reset()
         manager2 = ConfigManager()
-        config2 = manager2.load()
+        manager2.load()
 
         # Different instances
         assert manager1 is not manager2

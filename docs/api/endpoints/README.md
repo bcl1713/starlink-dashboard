@@ -1,7 +1,7 @@
 # API Endpoints
 
-**Purpose**: Technical reference for REST API endpoints
-**Audience**: API consumers, integrators, developers
+**Purpose**: Technical reference for REST API endpoints **Audience**: API
+consumers, integrators, developers
 
 [Back to API documentation](../README.md)
 
@@ -38,8 +38,8 @@ All endpoints are documented with:
 ## Related Documentation
 
 - [Models & Schemas](../models/README.md) - Data structure definitions
-- [Code Examples](../examples/README.md) - Language-specific usage examples
--See [Error Reference](../errors.md) for standard error responses. and handling
+- [Code Examples](../examples/README.md) - Language-specific usage examples -See
+  [Error Reference](../errors.md) for standard error responses. and handling
 
 ---
 

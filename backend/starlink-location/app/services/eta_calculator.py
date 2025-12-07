@@ -14,7 +14,7 @@ from app.models.flight_status import ETAMode, FlightPhase
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.route import ParsedRoute
+    from app.models.route import ParsedRoute, RouteWaypoint
 
 
 class ETACalculator(_ETACalculator):

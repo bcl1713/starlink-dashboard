@@ -58,7 +58,6 @@ repos:
         exclude: ^(node_modules|\.venv|__pycache__|specs/)
         stages: [pre-commit]
 
-
   # Broken Link Checker (using Docker to avoid local install reqs)
   - repo: local
     hooks:
@@ -66,7 +65,17 @@ repos:
         name: Lychee Link Checker (Docker)
         entry: lycheeverse/lychee:latest
         language: docker_image
-        args: ["--no-progress", "--exclude-path", "node_modules", "--exclude-path", ".venv", "--exclude", "file://", "docs/"]
+        args:
+          [
+            "--no-progress",
+            "--exclude-path",
+            "node_modules",
+            "--exclude-path",
+            ".venv",
+            "--exclude",
+            "file://",
+            "docs/",
+          ]
         pass_filenames: false
 
   # Naming convention check for docs
@@ -78,7 +87,6 @@ repos:
         language: system
         files: ^docs/.*\.md$
         pass_filenames: false
-
 
 # Global pre-commit settings
 default_language_version:

@@ -12,8 +12,7 @@ This document covers the core endpoints for service health, status, and metrics.
 - [POI Endpoints](./poi.md) - POI management
 - [Route Endpoints](./routes.md) - Route and geography
 - [ETA Endpoints](./eta.md) - ETA calculations
-- [Configuration Endpoints](./configuration.md) - Service
-  configuration
+- [Configuration Endpoints](./configuration.md) - Service configuration
 
 ---
 
@@ -242,6 +241,5 @@ These provide:
 - [POI Endpoints](./poi.md) - POI management
 - [Route Endpoints](./routes.md) - Route and geography
 - [ETA Endpoints](./eta.md) - ETA calculations
-- [Configuration Endpoints](./configuration.md) - Service
-  configuration
+- [Configuration Endpoints](./configuration.md) - Service configuration
 - [Error Handling](../errors.md) - Error response formats

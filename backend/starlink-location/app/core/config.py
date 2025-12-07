@@ -49,7 +49,7 @@ def _override_from_env(config_dict: dict) -> dict:
 
         # Handle nested keys (e.g., ROUTE_LATITUDE_START -> route.latitude_start)
         if "_" in config_key:
-            parts = config_key.split("_")
+            config_key.split("_")
 
             # Try to find which section this belongs to
             section = None

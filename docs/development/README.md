@@ -11,10 +11,10 @@
 
 ### Core Development Guides
 
-- **[Workflow](./workflow.md)**: Development workflow, git practices, and
-  Docker rebuild process for Python backend changes
-- **[Contributing](../../CONTRIBUTING.md)**: Contribution guidelines,
-  standards, and code review process
+- **[Workflow](./workflow.md)**: Development workflow, git practices, and Docker
+  rebuild process for Python backend changes
+- **[Contributing](../../CONTRIBUTING.md)**: Contribution guidelines, standards,
+  and code review process
 
 ### AI-Assisted Development
 
@@ -49,15 +49,16 @@ and development best practices.
    environment
 3. **Architecture**: Understand system design via
    [architecture docs](../architecture/README.md)
-4. **AI Tools**: Learn [Claude Code](./claude-code/README.md) for
-   AI-assisted development
+4. **AI Tools**: Learn [Claude Code](./claude-code/README.md) for AI-assisted
+   development
 5. **Contribute**: Submit changes following workflow guidelines
 
 ---
 
 ## Related Documentation
 
-- [Architecture](../architecture/README.md) - System design and technical decisions
+- [Architecture](../architecture/README.md) - System design and technical
+  decisions
 - [API Reference](../api/README.md) - API specifications for integration
 - [Setup Guide](../setup/README.md) - Development environment setup
 

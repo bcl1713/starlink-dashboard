@@ -1,7 +1,6 @@
 # Documentation Category Requirements Contract
 
-**Feature**: Documentation Cleanup and Restructuring
-**Date**: 2025-12-04
+**Feature**: Documentation Cleanup and Restructuring **Date**: 2025-12-04
 **Purpose**: Define testable requirements for documentation organization
 
 ---
@@ -29,6 +28,7 @@ done
 ### README.md Content Requirements
 
 Each category README.md MUST include:
+
 1. **Category heading** (H1): Name of the category
 2. **Purpose statement**: One-sentence description of category purpose
 3. **Audience statement**: Primary reader types
@@ -62,7 +62,8 @@ Each category README.md MUST include:
 
 ### Requirement
 
-Top-level categories MUST contain fewer than 15 files. Categories with >15 files MUST use subcategories.
+Top-level categories MUST contain fewer than 15 files. Categories with >15 files
+MUST use subcategories.
 
 ### Verification
 
@@ -94,12 +95,14 @@ done
 ### Requirement
 
 ONLY the following markdown files are allowed at repository root:
+
 - `README.md` - Project overview
 - `CLAUDE.md` - Runtime guidance
 - `AGENTS.md` - Agent configuration
 - `CONTRIBUTING.md` - Contribution guidelines
 
 ALL other markdown documentation MUST be in:
+
 - `docs/` - Project-wide documentation
 - `backend/*/docs/` - Service-specific documentation
 - `specs/` - Feature specifications and planning
@@ -135,7 +138,9 @@ find . -maxdepth 1 -name "*.md" -type f \
 
 ### Requirement
 
-No two documentation files MUST contain identical or substantially similar content. Semantic duplicates (multiple files about the same topic) MUST be consolidated into single authoritative sources.
+No two documentation files MUST contain identical or substantially similar
+content. Semantic duplicates (multiple files about the same topic) MUST be
+consolidated into single authoritative sources.
 
 ### Verification (Exact Duplicates)
 
@@ -152,6 +157,7 @@ find docs/ -name "*.md" -type f -exec md5sum {} \; \
 ### Verification (Semantic Duplicates - Manual)
 
 Manual review process:
+
 1. List all files in each category
 2. Identify files with overlapping topics (same keywords in names)
 3. Review content for substantial overlap (>50% similar coverage)
@@ -169,14 +175,19 @@ Manual review process:
 ### Examples of Violations
 
 **Exact Duplicate**:
-- `docs/FEATURES.md` and `docs/features/features-overview.md` containing identical text
+
+- `docs/FEATURES.md` and `docs/features/features-overview.md` containing
+  identical text
 
 **Semantic Duplicate**:
-- `docs/api/errors.md`, `docs/api/ERRORS.md`, `docs/api/errors-format.md`, `docs/api/errors-handling.md` all describing API error responses
+
+- `docs/api/errors.md`, `docs/api/ERRORS.md`, `docs/api/errors-format.md`,
+  `docs/api/errors-handling.md` all describing API error responses
 
 ### Consolidation Requirements
 
 When consolidating duplicates:
+
 1. **Choose canonical location** using taxonomy rules
 2. **Merge content** if complementary (preserve unique information)
 3. **Update all links** to point to canonical location
@@ -189,7 +200,8 @@ When consolidating duplicates:
 
 ### Requirement
 
-All documentation files MUST follow lowercase-with-hyphens naming convention, except for established uppercase conventions.
+All documentation files MUST follow lowercase-with-hyphens naming convention,
+except for established uppercase conventions.
 
 ### Verification
 
@@ -226,7 +238,8 @@ find docs/ -name "*.md" -type f \
 
 ### Requirement
 
-Documentation files MUST not exceed 300 lines, per Constitution Principle IV. Files exceeding 300 lines MUST be split or include justification comment.
+Documentation files MUST not exceed 300 lines, per Constitution Principle IV.
+Files exceeding 300 lines MUST be split or include justification comment.
 
 ### Verification
 
@@ -249,6 +262,7 @@ find docs/ -name "*.md" -type f \
 ### Justification Format
 
 For files legitimately >300 lines:
+
 ```markdown
 <!--
   File Size Justification:
@@ -260,7 +274,8 @@ For files legitimately >300 lines:
 
 ### Splitting Guidance
 
-Refer to data-model.md "Splitting Strategies" for approaches to reduce file size.
+Refer to data-model.md "Splitting Strategies" for approaches to reduce file
+size.
 
 ---
 
@@ -268,11 +283,13 @@ Refer to data-model.md "Splitting Strategies" for approaches to reduce file size
 
 ### Requirement
 
-All files in `docs/reports/` MUST include creation/completion date and status indicator.
+All files in `docs/reports/` MUST include creation/completion date and status
+indicator.
 
 ### Verification (Manual)
 
 For each file in `docs/reports/`:
+
 1. Check filename includes date: `YYYY-MM-DD-description.md` OR
 2. Check frontmatter includes `date:` field OR
 3. Check document body includes clear completion date
@@ -285,12 +302,14 @@ For each file in `docs/reports/`:
 ### Date Formats
 
 **Filename** (preferred):
+
 ```
 2025-12-04-implementation-summary.md
 2025-11-15-retrospective.md
 ```
 
 **Frontmatter** (alternative):
+
 ```markdown
 ---
 date: 2025-12-04
@@ -299,9 +318,9 @@ status: COMPLETE
 ```
 
 **Body text** (fallback):
+
 ```markdown
-**Completed**: 2025-12-04
-**Status**: ARCHIVED
+**Completed**: 2025-12-04 **Status**: ARCHIVED
 ```
 
 ---
@@ -310,23 +329,27 @@ status: COMPLETE
 
 ### Requirement
 
-Documentation specific to backend service implementation MUST remain in `backend/*/docs/`. Only project-wide documentation MUST be in `docs/`.
+Documentation specific to backend service implementation MUST remain in
+`backend/*/docs/`. Only project-wide documentation MUST be in `docs/`.
 
 ### Test Question
 
 "Would a frontend developer or another service need this documentation?"
+
 - **YES** → Project-wide, belongs in docs/
-- **NO** → Service-specific, remains in backend/*/docs/
+- **NO** → Service-specific, remains in backend/\*/docs/
 
 ### Examples
 
 **Project-wide** (docs/):
+
 - API endpoint specifications
 - User-facing feature descriptions
 - System-wide setup and troubleshooting
 - Architecture overview
 
 **Backend-specific** (backend/starlink-location/docs/):
+
 - Internal service architecture details
 - Backend-specific testing procedures
 - Service-specific troubleshooting (not visible to other services)
@@ -334,7 +357,8 @@ Documentation specific to backend service implementation MUST remain in `backend
 
 ### Verification (Manual)
 
-Review backend/*/docs/ files and confirm:
+Review backend/\*/docs/ files and confirm:
+
 - Each file describes implementation-specific detail
 - No files describe user-facing behavior or APIs consumed by other services
 - If project-wide content found, relocate to docs/
@@ -345,12 +369,14 @@ Review backend/*/docs/ files and confirm:
 
 ### Requirement
 
-No temporary or work-in-progress documentation is allowed in active categories or at repository root.
+No temporary or work-in-progress documentation is allowed in active categories
+or at repository root.
 
 ### Rules
 
 1. **WIP docs** MUST be in personal feature branches, not main
-2. **If WIP must be in main**: Prefix with `TEMP-` and place in `docs/reports/temp/`
+2. **If WIP must be in main**: Prefix with `TEMP-` and place in
+   `docs/reports/temp/`
 3. **TEMP- files** MUST be cleaned up before merge or within 30 days
 4. **No TEMP- files** allowed at repository root
 
@@ -387,10 +413,11 @@ Use this checklist to verify documentation organization compliance:
 - [ ] Backend-specific docs in correct location (Contract 8)
 - [ ] No temporary docs in active categories (Contract 9)
 
-**Enforcement**: These contracts MUST be verified before merging documentation changes.
+**Enforcement**: These contracts MUST be verified before merging documentation
+changes.
 
 ---
 
-**Contract Status**: ✓ Defined
-**Automation**: Contracts 1-6, 9 have automated verification scripts
-**Manual Review**: Contracts 4 (semantic), 7, 8 require manual verification
+**Contract Status**: ✓ Defined **Automation**: Contracts 1-6, 9 have automated
+verification scripts **Manual Review**: Contracts 4 (semantic), 7, 8 require
+manual verification

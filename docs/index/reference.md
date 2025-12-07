@@ -29,7 +29,8 @@
   [setup/configuration/simulation-mode.md](../setup/configuration/simulation-mode.md)
 - Live Mode:
   [setup/configuration/live-mode.md](../setup/configuration/live-mode.md)
-- Verification: [setup/installation.md#verification](../setup/installation.md#verification)
+- Verification:
+  [setup/installation.md#verification](../setup/installation.md#verification)
 - Troubleshooting Setup:
   [troubleshooting/quick-diagnostics.md#service-issues](../troubleshooting/quick-diagnostics.md#service-issues)
 
@@ -62,8 +63,7 @@
 
 **Mission Communication Planning:**
 
-- User Guide:
-  [mission-planning-guide.md](../missions/mission-planning-guide.md)
+- User Guide: [mission-planning-guide.md](../missions/mission-planning-guide.md)
 - Operations Playbook: [mission-comm-sop.md](../missions/mission-comm-sop.md)
 - Performance Analysis: [performance-notes.md](../performance-notes.md)
 - Monitoring Setup:
@@ -122,19 +122,19 @@
 
 ## File Size Reference
 
-| File                                     | Size  | Type      | Purpose                         |
-| ---------------------------------------- | ----- | --------- | ------------------------------- |
-| README.md                                | 14 KB | Overview  | Project entry point             |
-| setup/installation.md                    | 18 KB | How-to    | Detailed setup instructions     |
-| api/README.md                            | 22 KB | Reference | Complete API documentation      |
-| troubleshooting/quick-diagnostics.md     | 24 KB | Reference | Problem diagnosis and solutions |
-| architecture/design-document.md          | 9 KB  | Design    | Architecture and design         |
-| CONTRIBUTING.md                          | 18 KB | Process   | Contribution guidelines         |
-| grafana-configuration.md                 | 12 KB | How-to    | Dashboard configuration         |
-| metrics/overview.md                      | 8 KB  | Reference | Prometheus metrics              |
-| phased-development-plan.md               | 7 KB  | Plan      | Implementation roadmap          |
-| CLAUDE.md                                | 8 KB  | Config    | Development configuration       |
-| Backend README                           | 14 KB | Overview  | Service documentation           |
+| File                                 | Size  | Type      | Purpose                         |
+| ------------------------------------ | ----- | --------- | ------------------------------- |
+| README.md                            | 14 KB | Overview  | Project entry point             |
+| setup/installation.md                | 18 KB | How-to    | Detailed setup instructions     |
+| api/README.md                        | 22 KB | Reference | Complete API documentation      |
+| troubleshooting/quick-diagnostics.md | 24 KB | Reference | Problem diagnosis and solutions |
+| architecture/design-document.md      | 9 KB  | Design    | Architecture and design         |
+| CONTRIBUTING.md                      | 18 KB | Process   | Contribution guidelines         |
+| grafana-configuration.md             | 12 KB | How-to    | Dashboard configuration         |
+| metrics/overview.md                  | 8 KB  | Reference | Prometheus metrics              |
+| phased-development-plan.md           | 7 KB  | Plan      | Implementation roadmap          |
+| CLAUDE.md                            | 8 KB  | Config    | Development configuration       |
+| Backend README                       | 14 KB | Overview  | Service documentation           |
 
 **Total Documentation:** ~154 KB of comprehensive guides
 

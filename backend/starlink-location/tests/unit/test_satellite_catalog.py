@@ -196,7 +196,7 @@ class TestLoadSatelliteCatalog:
             assert not data_dir.exists()
             assert not sat_coverage_dir.exists()
 
-            catalog = load_satellite_catalog(
+            load_satellite_catalog(
                 data_dir=data_dir,
                 sat_coverage_dir=sat_coverage_dir,
             )

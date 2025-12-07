@@ -1,7 +1,7 @@
 # Starlink Dashboard Troubleshooting Guide
 
-**Purpose**: Help users diagnose and resolve problems
-**Audience**: Users, operators, support staff
+**Purpose**: Help users diagnose and resolve problems **Audience**: Users,
+operators, support staff
 
 [Back to main docs](../index.md)
 
@@ -33,33 +33,30 @@ docker stats --no-stream
 
 ### Services Won't Start
 
-- **[Service Issues](./service-issues.md)** - Container startup, port
-  conflicts, Docker problems
-- **[Docker Services](./services/docker.md)** - Docker-specific
-  configuration and issues
+- **[Service Issues](./service-issues.md)** - Container startup, port conflicts,
+  Docker problems
+- **[Docker Services](./services/docker.md)** - Docker-specific configuration
+  and issues
 - **[Backend Service](./services/backend.md)** - Backend health, metrics,
   configuration
 - **[Grafana Service](./services/grafana.md)** - Grafana configuration and
   connectivity
-- **[Prometheus Service](./services/prometheus.md)** - Prometheus targets
-  and scraping
+- **[Prometheus Service](./services/prometheus.md)** - Prometheus targets and
+  scraping
 
 ### Connectivity Problems
 
-- **[Live Mode](./connectivity/live-mode.md)** - Connection to Starlink
-  dish
+- **[Live Mode](./connectivity/live-mode.md)** - Connection to Starlink dish
 - **[Data Issues](./connectivity/data.md)** - Network issues and data flow
-- **[Data Storage](./connectivity/data-storage.md)** - Persistence and
-  storage problems
-- **[POI Management](./connectivity/poi-management.md)** - Points of
-  interest issues
-- **[Performance](./connectivity/performance.md)** - Speed and resource
+- **[Data Storage](./connectivity/data-storage.md)** - Persistence and storage
+  problems
+- **[POI Management](./connectivity/poi-management.md)** - Points of interest
   issues
+- **[Performance](./connectivity/performance.md)** - Speed and resource issues
 
 ### Data & Metrics
 
-- **[Data Issues](./data-issues.md)** - POI management, storage,
-  persistence
+- **[Data Issues](./data-issues.md)** - POI management, storage, persistence
 - **[Metrics & Monitoring](./metrics-monitoring.md)** - Prometheus and Grafana
   data collection
 

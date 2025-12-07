@@ -31,8 +31,8 @@ Reports are organized in two subdirectories:
 Completed feature implementation reports:
 
 - **[2025-12-03: 001 Codebase Cleanup](./implementation-reports/2025-12-03-001-codebase-cleanup-summary.md)**
-  - Systematic refactoring of Python backend, TypeScript frontend, and
-    markdown docs
+  - Systematic refactoring of Python backend, TypeScript frontend, and markdown
+    docs
   - Status: COMPLETE
 - **[2025-12-04: Markdown Reorganization](./implementation-reports/2025-12-04-markdown-reorganization.md)**
   - API reference documentation split (1083 lines → 7 focused files)

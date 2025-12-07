@@ -123,8 +123,8 @@ Example format:
 ```markdown
 # Document Title
 
-**Purpose**: Brief description of what this document covers
-**Audience**: Who should read this
+**Purpose**: Brief description of what this document covers **Audience**: Who
+should read this
 
 ## Section 1
 
@@ -137,8 +137,8 @@ Content...
 
 #### 3. Update Category Indexes
 
-When adding new documentation, update the appropriate category's `README.md`
-to include your new file in the listing.
+When adding new documentation, update the appropriate category's `README.md` to
+include your new file in the listing.
 
 #### 4. Validate Links
 

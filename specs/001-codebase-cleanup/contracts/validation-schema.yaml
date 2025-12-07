@@ -81,7 +81,8 @@ components:
             - refactored
             - validated
             - deferred
-          description: Current refactoring state (see data-model.md state machine)
+          description:
+            Current refactoring state (see data-model.md state machine)
         refactoring_priority:
           type: string
           enum:
@@ -123,7 +124,8 @@ components:
           type: string
           nullable: true
           maxLength: 500
-          description: Explanation for deferral (e.g., "Generated code", "Migration file")
+          description:
+            Explanation for deferral (e.g., "Generated code", "Migration file")
         assigned_to:
           type: string
           nullable: true
@@ -139,7 +141,8 @@ components:
         metadata:
           type: object
           nullable: true
-          description: Additional context (dependencies, complexity metrics, etc.)
+          description:
+            Additional context (dependencies, complexity metrics, etc.)
           additionalProperties: true
 
     # =========================================================================
@@ -176,7 +179,8 @@ components:
             pattern: "^[a-zA-Z0-9_/-]+\\.(py|ts|tsx|js|jsx|md)$"
           minItems: 1
           maxItems: 3
-          description: Array of file paths this task addresses (1-3 files per spec)
+          description:
+            Array of file paths this task addresses (1-3 files per spec)
         violation_type:
           type: string
           enum:
@@ -217,7 +221,8 @@ components:
             - P1_high
             - P2_medium
             - P3_low
-          description: Task priority (typically matches highest priority target file)
+          description:
+            Task priority (typically matches highest priority target file)
         assigned_to:
           type: string
           nullable: true
@@ -296,7 +301,8 @@ components:
         requirement_id:
           type: string
           pattern: "^(FR|SC)-\\d{3}$"
-          description: Reference to spec.md requirement (e.g., "FR-001", "SC-004")
+          description:
+            Reference to spec.md requirement (e.g., "FR-001", "SC-004")
           example: "FR-001"
         check_type:
           type: string
@@ -322,7 +328,8 @@ components:
           description: Entity type being validated
         target_id:
           type: string
-          description: ID of the entity being validated (file_id, task_id, or pr_id)
+          description:
+            ID of the entity being validated (file_id, task_id, or pr_id)
         status:
           type: string
           enum:
@@ -334,7 +341,8 @@ components:
           description: Current check state
         automated:
           type: boolean
-          description: True if automated (linter/CI), false if manual (smoke test)
+          description:
+            True if automated (linter/CI), false if manual (smoke test)
         evidence:
           type: object
           nullable: true
@@ -516,7 +524,8 @@ components:
           description: Maximum allowed lines (FR-001, FR-002, FR-003)
         passes:
           type: boolean
-          description: True if line_count <= threshold OR has_justification = true
+          description:
+            True if line_count <= threshold OR has_justification = true
         violation_severity:
           type: string
           enum:
@@ -718,7 +727,8 @@ components:
           description: Category of smoke test performed
         test_name:
           type: string
-          description: Specific test performed (e.g., "Health endpoint responds")
+          description:
+            Specific test performed (e.g., "Health endpoint responds")
         passes:
           type: boolean
           description: True if test passed
@@ -758,13 +768,17 @@ components:
           description: True if file_count <= 3 (per spec)
         all_files_under_300_lines:
           type: boolean
-          description: True if all modified files meet FR-001/002/003 or have FR-004 justification
+          description:
+            True if all modified files meet FR-001/002/003 or have FR-004
+            justification
         all_linters_pass:
           type: boolean
-          description: True if Black, Prettier, ESLint, markdownlint all pass (FR-024-031)
+          description:
+            True if Black, Prettier, ESLint, markdownlint all pass (FR-024-031)
         all_types_complete:
           type: boolean
-          description: True if 100% type coverage in refactored code (FR-005, FR-008)
+          description:
+            True if 100% type coverage in refactored code (FR-005, FR-008)
         all_docs_complete:
           type: boolean
           description: True if 100% docstring/JSDoc coverage (FR-006, FR-007)
@@ -790,7 +804,9 @@ components:
 x-validation-rules:
   code_file:
     - rule: "line_count_threshold"
-      description: "Files in validated state must have line_count <= 300 OR has_justification = true"
+      description:
+        "Files in validated state must have line_count <= 300 OR
+        has_justification = true"
       applies_to: ["FR-001", "FR-002", "FR-003", "FR-004"]
     - rule: "path_uniqueness"
       description: "No two CodeFile entities can have the same path"
@@ -806,24 +822,33 @@ x-validation-rules:
 
   refactoring_task:
     - rule: "acyclic_dependencies"
-      description: "dependencies[] must form a Directed Acyclic Graph (no circular dependencies)"
+      description:
+        "dependencies[] must form a Directed Acyclic Graph (no circular
+        dependencies)"
       applies_to: ["data-model.md"]
     - rule: "blocking_transition"
-      description: "Task with status = blocked cannot transition to in_progress if any task in dependencies[] has status NOT IN (completed, deferred)"
+      description:
+        "Task with status = blocked cannot transition to in_progress if any task
+        in dependencies[] has status NOT IN (completed, deferred)"
       applies_to: ["data-model.md"]
     - rule: "pr_association"
-      description: "Task with status IN (in_review, completed) must have non-null pr_number"
+      description:
+        "Task with status IN (in_review, completed) must have non-null pr_number"
       applies_to: ["data-model.md"]
     - rule: "file_ownership"
       description: "All target_files[] must exist as CodeFile entities"
       applies_to: ["data-model.md"]
     - rule: "completion_evidence"
-      description: "Task with status = completed must have associated ValidationCheck entities with status = passed"
+      description:
+        "Task with status = completed must have associated ValidationCheck
+        entities with status = passed"
       applies_to: ["data-model.md"]
 
   validation_check:
     - rule: "target_existence"
-      description: "target_id must reference an existing CodeFile, RefactoringTask, or PullRequest"
+      description:
+        "target_id must reference an existing CodeFile, RefactoringTask, or
+        PullRequest"
       applies_to: ["data-model.md"]
     - rule: "type_applicability"
       description: |
@@ -837,7 +862,8 @@ x-validation-rules:
         - jsdoc_coverage: for language IN (typescript, javascript)
       applies_to: ["FR-024", "FR-025", "FR-026", "FR-027"]
     - rule: "evidence_requirement"
-      description: "status = passed or status = failed must have non-null evidence"
+      description:
+        "status = passed or status = failed must have non-null evidence"
       applies_to: ["data-model.md"]
     - rule: "automated_consistency"
       description: "automated = true checks must have executed_by = ci_system"
@@ -857,7 +883,9 @@ x-validation-rules:
       description: "smoke_test_results must be non-null for status = approved"
       applies_to: ["spec.md assumptions"]
     - rule: "task_completion_blocker"
-      description: "All RefactoringTask entities linked to PR must have status = completed before PR merge"
+      description:
+        "All RefactoringTask entities linked to PR must have status = completed
+        before PR merge"
       applies_to: ["data-model.md"]
 
 # =============================================================================
@@ -867,22 +895,39 @@ x-validation-rules:
 x-success-criteria:
   SC-001:
     description: "At least 80% of Python files under 300 lines"
-    validation_query: "(COUNT(CodeFile WHERE language=python AND line_count<=300) / COUNT(CodeFile WHERE language=python)) >= 0.80"
+    validation_query:
+      "(COUNT(CodeFile WHERE language=python AND line_count<=300) /
+      COUNT(CodeFile WHERE language=python)) >= 0.80"
   SC-002:
     description: "At least 80% of TypeScript/JavaScript files under 300 lines"
-    validation_query: "(COUNT(CodeFile WHERE language IN (typescript,javascript) AND line_count<=300) / COUNT(CodeFile WHERE language IN (typescript,javascript))) >= 0.80"
+    validation_query:
+      "(COUNT(CodeFile WHERE language IN (typescript,javascript) AND
+      line_count<=300) / COUNT(CodeFile WHERE language IN
+      (typescript,javascript))) >= 0.80"
   SC-003:
     description: "At least 80% of Markdown files under 300 lines"
-    validation_query: "(COUNT(CodeFile WHERE language=markdown AND line_count<=300) / COUNT(CodeFile WHERE language=markdown)) >= 0.80"
+    validation_query:
+      "(COUNT(CodeFile WHERE language=markdown AND line_count<=300) /
+      COUNT(CodeFile WHERE language=markdown)) >= 0.80"
   SC-004:
-    description: "100% of Python functions in refactored files have type hints and docstrings"
-    validation_query: "ALL(ValidationCheck WHERE requirement_id=SC-004 AND target_entity=refactoring_task AND status=passed)"
+    description:
+      "100% of Python functions in refactored files have type hints and
+      docstrings"
+    validation_query:
+      "ALL(ValidationCheck WHERE requirement_id=SC-004 AND
+      target_entity=refactoring_task AND status=passed)"
   SC-005:
     description: "100% of exported TS/JS functions have JSDoc"
-    validation_query: "ALL(ValidationCheck WHERE requirement_id=SC-005 AND target_entity=refactoring_task AND status=passed)"
+    validation_query:
+      "ALL(ValidationCheck WHERE requirement_id=SC-005 AND
+      target_entity=refactoring_task AND status=passed)"
   SC-006:
     description: "0 files contain inline lint-disable comments"
-    validation_query: "COUNT(ValidationCheck WHERE check_type=eslint_validation AND evidence.disable_comments_found > 0) = 0"
+    validation_query:
+      "COUNT(ValidationCheck WHERE check_type=eslint_validation AND
+      evidence.disable_comments_found > 0) = 0"
   SC-011:
     description: "Remaining non-compliant files have FR-004 justifications"
-    validation_query: "ALL(CodeFile WHERE violation_status=deferred MUST have has_justification=true)"
+    validation_query:
+      "ALL(CodeFile WHERE violation_status=deferred MUST have
+      has_justification=true)"

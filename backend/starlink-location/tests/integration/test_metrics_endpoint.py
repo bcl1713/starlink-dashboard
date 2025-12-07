@@ -102,7 +102,7 @@ async def test_metrics_format_is_valid(test_client):
 
     # Prometheus format has # for comments and name{labels} value for metrics
     lines = text.strip().split("\n")
-    metric_lines = [l for l in lines if not l.startswith("#")]
+    metric_lines = [line for line in lines if not line.startswith("#")]
 
     # Should have some metric lines
     assert len(metric_lines) > 0
@@ -123,7 +123,7 @@ async def test_metrics_values_are_numeric(test_client):
     text = response.text
 
     lines = text.strip().split("\n")
-    metric_lines = [l for l in lines if not l.startswith("#")]
+    metric_lines = [line for line in lines if not line.startswith("#")]
 
     for line in metric_lines:
         if line and not any(x in line for x in ["TYPE", "HELP"]):

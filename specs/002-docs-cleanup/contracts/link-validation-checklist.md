@@ -1,8 +1,8 @@
 # Link Validation Contract
 
-**Feature**: Documentation Cleanup and Restructuring
-**Date**: 2025-12-04
-**Purpose**: Define requirements and procedures for validating documentation links
+**Feature**: Documentation Cleanup and Restructuring **Date**: 2025-12-04
+**Purpose**: Define requirements and procedures for validating documentation
+links
 
 ---
 
@@ -13,20 +13,22 @@
 **Requirement**: All internal markdown links MUST use relative paths.
 
 **Allowed**:
+
 ```markdown
-[Setup Guide](../setup/installation.md)
-[API Reference](../../api/README.md)
+[Setup Guide](../setup/installation.md) [API Reference](../../api/README.md)
 [Section](#authentication)
 ```
 
 **Prohibited**:
+
 ```markdown
-[Setup Guide](/docs/setup/installation.md)        # Absolute path
-[Setup Guide](docs/setup/installation.md)         # Root-relative path
-[API Docs](http://localhost/docs/api/README.md)   # URL
+[Setup Guide](/docs/setup/installation.md) # Absolute path
+[Setup Guide](docs/setup/installation.md) # Root-relative path
+[API Docs](http://localhost/docs/api/README.md) # URL
 ```
 
 **Rationale**:
+
 - Relative paths work regardless of repository location
 - Portable across forks and local clones
 - Compatible with markdown renderers
@@ -34,12 +36,13 @@
 ### R2: Link Format
 
 **Standard markdown links**:
+
 ```markdown
-[Link Text](path/to/file.md)
-[Link with Anchor](path/to/file.md#section-heading)
+[Link Text](path/to/file.md) [Link with Anchor](path/to/file.md#section-heading)
 ```
 
 **Anchor format rules**:
+
 - Lowercase only
 - Spaces replaced with hyphens
 - Special characters removed
@@ -50,11 +53,13 @@
 **Requirement**: All link targets MUST be valid files or anchors.
 
 **Valid**:
+
 - Link points to existing .md file
 - Anchor points to existing heading in target file
 - External links (http/https) respond with 200 OK (optional check)
 
 **Invalid**:
+
 - Link points to non-existent file
 - Anchor points to non-existent heading
 - Broken external links (optional check)
@@ -70,11 +75,13 @@
 **Steps**:
 
 1. **Find all markdown links**:
+
    ```bash
    rg '\[.*\]\((.*\.md[^)]*)\)' --only-matching --no-filename docs/ > links-inventory.txt
    ```
 
 2. **Extract link components**:
+
    ```bash
    # Parse links into: source_file | link_text | target_path | anchor
    rg '\[([^\]]+)\]\(([^)]+)\)' --replace '$1 | $2' docs/ > links-parsed.txt
@@ -97,6 +104,7 @@
 **Workflow**:
 
 1. **Move file with git mv**:
+
    ```bash
    git mv old/location/file.md new/location/file.md
    ```
@@ -107,6 +115,7 @@
    - Test: Open file in markdown preview, click links
 
 3. **Update links TO moved file**:
+
    ```bash
    # Find all files linking to moved file
    rg 'old/location/file\.md' docs/
@@ -114,6 +123,7 @@
    ```
 
 4. **Commit file move + link updates together**:
+
    ```bash
    git commit -m "refactor(docs): relocate file.md to new location
 
@@ -123,7 +133,8 @@
    "
    ```
 
-**Critical**: File move and link updates MUST be in same commit to avoid broken link states.
+**Critical**: File move and link updates MUST be in same commit to avoid broken
+link states.
 
 ---
 
@@ -145,6 +156,7 @@ done
 ```
 
 **Pass criteria**:
+
 - All files pass markdown-link-check
 - No 404 errors for relative links
 - Anchors resolve correctly
@@ -179,6 +191,7 @@ done
 ```
 
 **Pass criteria**:
+
 - Script exits with 0 (no broken links found)
 - All relative links resolve to existing files
 
@@ -202,8 +215,8 @@ find docs/ -name "*.md" -exec sed -i 's|SETUP-GUIDE\.md|../setup/installation.md
 git commit -m "refactor(docs): relocate setup documentation"
 ```
 
-**Pros**: Fewer commits, easier to track related moves
-**Cons**: Larger commits, harder to review
+**Pros**: Fewer commits, easier to track related moves **Cons**: Larger commits,
+harder to review
 
 ---
 
@@ -223,10 +236,11 @@ git commit -m "refactor(docs): relocate QUICK-START.md to docs/setup/"
 # Repeat for next file...
 ```
 
-**Pros**: Easier to review, atomic changes, safer rollback
-**Cons**: More commits, slower process
+**Pros**: Easier to review, atomic changes, safer rollback **Cons**: More
+commits, slower process
 
-**Recommendation**: Use Strategy 2 for critical files, Strategy 1 for bulk category moves.
+**Recommendation**: Use Strategy 2 for critical files, Strategy 1 for bulk
+category moves.
 
 ---
 
@@ -235,6 +249,7 @@ git commit -m "refactor(docs): relocate QUICK-START.md to docs/setup/"
 ### Case 1: Links in Code Comments
 
 **Detection**:
+
 ```bash
 rg '\[.*\]\(.*\.md.*\)' --type py --type js --type ts
 ```
@@ -243,9 +258,11 @@ rg '\[.*\]\(.*\.md.*\)' --type py --type js --type ts
 
 ### Case 2: Anchor Links to Moved Files
 
-**Challenge**: Anchors may be to old headers that no longer exist after consolidation.
+**Challenge**: Anchors may be to old headers that no longer exist after
+consolidation.
 
 **Verification**:
+
 ```bash
 # Check anchor links
 rg '\]\([^)]*\.md#([^)]+)\)' docs/ | \
@@ -258,6 +275,7 @@ rg '\]\([^)]*\.md#([^)]+)\)' docs/ | \
 ### Case 3: External Links
 
 **Handling**: No updates needed, but optional validation:
+
 ```bash
 # Find external links
 rg '\]\(https?://[^)]+\)' docs/
@@ -266,7 +284,8 @@ rg '\]\(https?://[^)]+\)' docs/
 curl -I [url] | grep "200 OK"
 ```
 
-**Recommendation**: External link validation is optional and out of primary scope.
+**Recommendation**: External link validation is optional and out of primary
+scope.
 
 ### Case 4: README Links from Root
 
@@ -275,11 +294,14 @@ Special case: README.md at root links to docs/
 **Requirement**: Update README.md links when docs/ structure changes.
 
 **Example**:
+
 ```markdown
 <!-- Before -->
+
 [Quick Start](./docs/QUICK-START.md)
 
 <!-- After -->
+
 [Quick Start](./docs/setup/quick-start.md)
 ```
 
@@ -309,7 +331,8 @@ Use this checklist before merging documentation reorganization:
 
 ### Git History Verification
 
-- [ ] Moved files preserve history (`git log --follow [file]` shows pre-move commits)
+- [ ] Moved files preserve history (`git log --follow [file]` shows pre-move
+      commits)
 - [ ] File move commits include link updates (atomic changes)
 - [ ] No "fix broken links" commits after moves (should be atomic)
 
@@ -346,7 +369,8 @@ Use this checklist before merging documentation reorganization:
    - Fast alternative to markdown-link-check
    - Fewer features, simpler use case
 
-**Recommendation**: Start with markdown-link-check, fall back to manual script if issues arise.
+**Recommendation**: Start with markdown-link-check, fall back to manual script
+if issues arise.
 
 ---
 
@@ -414,6 +438,5 @@ fi
 
 ---
 
-**Link Validation Contract Status**: ✓ Defined
-**Automation**: Validation script provided
-**Enforcement**: MUST pass before merge
+**Link Validation Contract Status**: ✓ Defined **Automation**: Validation script
+provided **Enforcement**: MUST pass before merge

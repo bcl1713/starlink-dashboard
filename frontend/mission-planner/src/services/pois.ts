@@ -39,7 +39,7 @@ export const poisService = {
       });
       return response.data.pois;
     } catch (error) {
-      console.warn(`Failed to load POIs for mission ${missionId}:`, error);
+      console.error(`Failed to load POIs for mission ${missionId}:`, error);
       return [];
     }
   },
@@ -60,7 +60,7 @@ export const poisService = {
       });
       return response.data.pois;
     } catch (error) {
-      console.warn(`Failed to load POIs for route ${routeId}:`, error);
+      console.error(`Failed to load POIs for route ${routeId}:`, error);
       return [];
     }
   },
@@ -77,7 +77,7 @@ export const poisService = {
       });
       return response.data.pois;
     } catch (error) {
-      console.warn('Failed to load POIs:', error);
+      console.error('Failed to load POIs:', error);
       return [];
     }
   },

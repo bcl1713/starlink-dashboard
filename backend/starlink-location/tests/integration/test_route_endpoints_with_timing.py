@@ -196,21 +196,6 @@ async def test_backward_compatibility_routes_without_timing(test_client):
     await asyncio.sleep(0.1)
 
     # Create a route without timing data
-    kml_content = """<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-  <Document>
-    <name>No Timing Route</name>
-    <Placemark>
-      <LineString>
-        <coordinates>
-          0,0,0
-          1,1,0
-          2,2,0
-        </coordinates>
-      </LineString>
-    </Placemark>
-  </Document>
-</kml>"""
 
     # This test would require tmp_path fixture in integration tests
     # Skip if not available - the unit tests cover this

@@ -93,8 +93,8 @@ const etas = await response.json();
 - [API Reference Index](../README.md) - Complete API overview
 - [Core Endpoints](../endpoints/core.md) - Health and metrics
 - [POI Endpoints](../endpoints/poi.md) - POI management
-- [ETA Endpoints](../endpoints/eta.md) - ETA calculations
--See the [Error Reference](../errors.md) for details on handling errors.mats
+- [ETA Endpoints](../endpoints/eta.md) - ETA calculations -See the
+  [Error Reference](../errors.md) for details on handling errors.mats
 
 ---
 

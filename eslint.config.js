@@ -1,0 +1,27 @@
+export default [
+  {
+    ignores: [
+      "node_modules/",
+      ".venv/",
+      "venv/",
+      "backend/",
+      "data/",
+      "monitoring/",
+      "specs/",
+      "tools/",
+      "docs/",
+      ".git/",
+      ".github/",
+      "dist/",
+      "build/",
+      "coverage/",
+      ".nyc_output/",
+      ".vscode/",
+      ".idea/",
+      ".pytest_cache/",
+      "test-results/",
+      "playwright-report/",
+      "*.log",
+    ],
+  },
+];

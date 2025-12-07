@@ -533,7 +533,7 @@ class TestMissionScenarioNormalOps:
         # Verify X and Ku remain unaffected
         for segment in segments:
             # Ka can be degraded, but X and Ku should not be in impacted_transports
-            impacted = segment.get("impacted_transports", [])
+            segment.get("impacted_transports", [])
             if "ka" in segment.get("status", "").lower():
                 # Ka is degraded, verify message mentions Ka
                 reasons = segment.get("reasons", [])

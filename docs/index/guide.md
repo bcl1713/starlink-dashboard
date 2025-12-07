@@ -22,13 +22,13 @@ Start here if you're new to the project:
 
 #### Set up the project
 
-| Goal                         | Document                                                                                 | Time   |
-| ---------------------------- | ---------------------------------------------------------------------------------------- | ------ |
-| Get it running in 3 minutes  | [Quick Start (README)](../../README.md#quick-start)                                      | 3 min  |
-| Understand all setup options | [Setup Guide](../setup/installation.md)                                                  | 10 min |
-| Configure simulation mode    | [Simulation Mode](../setup/configuration/simulation-mode.md)                             | 5 min  |
-| Connect to real hardware     | [Live Mode](../setup/configuration/live-mode.md)                                         | 10 min |
-| Fix setup problems           | [Quick Diagnostics](../troubleshooting/quick-diagnostics.md)                             | varies |
+| Goal                         | Document                                                     | Time   |
+| ---------------------------- | ------------------------------------------------------------ | ------ |
+| Get it running in 3 minutes  | [Quick Start (README)](../../README.md#quick-start)          | 3 min  |
+| Understand all setup options | [Setup Guide](../setup/installation.md)                      | 10 min |
+| Configure simulation mode    | [Simulation Mode](../setup/configuration/simulation-mode.md) | 5 min  |
+| Connect to real hardware     | [Live Mode](../setup/configuration/live-mode.md)             | 10 min |
+| Fix setup problems           | [Quick Diagnostics](../troubleshooting/quick-diagnostics.md) | varies |
 
 #### Use the dashboards
 
@@ -49,20 +49,20 @@ Start here if you're new to the project:
 
 #### Develop features
 
-| Goal                       | Document                                                    | Time   |
-| -------------------------- | ----------------------------------------------------------- | ------ |
-| Understand architecture    | [Design Document](../architecture/design-document.md)       | 15 min |
-| See implementation plan    | [Development Plan](../development-plan.md)                  | 10 min |
-| Contribute code            | [CONTRIBUTING.md](../../CONTRIBUTING.md)                    | 15 min |
-| Current development status | [Development Plan](../development-plan.md)                  | 5 min  |
-| Review API endpoints       | [API Reference](../api/README.md)                           | 15 min |
+| Goal                       | Document                                              | Time   |
+| -------------------------- | ----------------------------------------------------- | ------ |
+| Understand architecture    | [Design Document](../architecture/design-document.md) | 15 min |
+| See implementation plan    | [Development Plan](../development-plan.md)            | 10 min |
+| Contribute code            | [CONTRIBUTING.md](../../CONTRIBUTING.md)              | 15 min |
+| Current development status | [Development Plan](../development-plan.md)            | 5 min  |
+| Review API endpoints       | [API Reference](../api/README.md)                     | 15 min |
 
 #### Debug issues
 
-| Goal                    | Document                                                                                                         | Time   |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ |
-| Service won't start     | [Quick Diagnostics - Service Won't Start](../troubleshooting/quick-diagnostics.md#service-issues)                | 10 min |
-| Can't access Grafana    | [Quick Diagnostics - Service Issues](../troubleshooting/quick-diagnostics.md#service-issues)                     | 5 min  |
-| No data appearing       | [Data Issues](../troubleshooting/data-issues.md)                                                                 | 15 min |
-| Live mode won't connect | [Quick Diagnostics - Live Mode](../troubleshooting/quick-diagnostics.md#live-mode-issues)                        | 10 min |
-| Port conflicts          | [Quick Diagnostics - Port Conflicts](../troubleshooting/quick-diagnostics.md#port-conflicts)                     | 5 min  |
+| Goal                    | Document                                                                                          | Time   |
+| ----------------------- | ------------------------------------------------------------------------------------------------- | ------ |
+| Service won't start     | [Quick Diagnostics - Service Won't Start](../troubleshooting/quick-diagnostics.md#service-issues) | 10 min |
+| Can't access Grafana    | [Quick Diagnostics - Service Issues](../troubleshooting/quick-diagnostics.md#service-issues)      | 5 min  |
+| No data appearing       | [Data Issues](../troubleshooting/data-issues.md)                                                  | 15 min |
+| Live mode won't connect | [Quick Diagnostics - Live Mode](../troubleshooting/quick-diagnostics.md#live-mode-issues)         | 10 min |
+| Port conflicts          | [Quick Diagnostics - Port Conflicts](../troubleshooting/quick-diagnostics.md#port-conflicts)      | 5 min  |

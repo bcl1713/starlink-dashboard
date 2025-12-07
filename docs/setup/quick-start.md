@@ -67,7 +67,8 @@ PROMETHEUS_RETENTION=1y           # 1 year of data
 - Simulates network metrics with realistic patterns
 - Useful for UI development and testing
 
-**See:** [Configuration Guide - Simulation Mode](./configuration.md#simulation-mode)
+**See:**
+[Configuration Guide - Simulation Mode](./configuration.md#simulation-mode)
 
 ---
 

@@ -105,9 +105,7 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "text": {},
         "textMode": "auto"
@@ -528,12 +526,7 @@
       "id": 6,
       "options": {
         "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "min",
-            "mean"
-          ],
+          "calcs": ["last", "max", "min", "mean"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -621,12 +614,7 @@
       "id": 7,
       "options": {
         "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "min",
-            "mean"
-          ],
+          "calcs": ["last", "max", "min", "mean"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -653,11 +641,7 @@
   "refresh": "1s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": [
-    "starlink",
-    "monitoring",
-    "position"
-  ],
+  "tags": ["starlink", "monitoring", "position"],
   "templating": {
     "list": [
       {

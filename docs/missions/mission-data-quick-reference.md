@@ -204,4 +204,5 @@ from app.models.poi import POI, POIWithETA
 ```
 
 ---
+
 | `"pre_departure"` | Before departure
