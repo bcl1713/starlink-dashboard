@@ -50,12 +50,13 @@ def _override_from_env(config_dict: dict) -> dict:
         # Handle nested keys (e.g., ROUTE_LATITUDE_START -> route.latitude_start)
         if "_" in config_key:
             # Try to find which section this belongs to
-            # Try to find which section this belongs to
             parts = config_key.split("_", 1)
             section = parts[0]
             key = None
 
-            # Check for multi-word sections (e.g. heading_tracker)
+            # Check for multi-word sections (e.g. heading_tracker) using longest prefix matching
+            # This ensures that STARLINK_HEADING_TRACKER_ENABLED maps to heading_tracker.enabled
+            # rather than heading.tracker_enabled (if "heading" happened to be a section).
             # Sort by length descending to match longest prefix first
             candidate_sections = [
                 k for k, v in config_dict.items() if isinstance(v, dict)

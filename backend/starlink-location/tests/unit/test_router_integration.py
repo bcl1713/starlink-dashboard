@@ -1,3 +1,12 @@
+"""
+Integration tests for FastAPI router configuration.
+
+These tests verify:
+1. Router precedence (v1 vs v2 routers)
+2. No route shadowing/overlap issues
+3. Critical endpoints are accessible
+"""
+
 from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 from main import app

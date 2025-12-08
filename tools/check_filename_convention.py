@@ -48,6 +48,7 @@ def main():
             if not file.endswith(".md"):
                 continue
                 
+            # README.md is a standard exception to the lowercase-with-hyphens rule
             if file == "README.md":
                 continue
 
