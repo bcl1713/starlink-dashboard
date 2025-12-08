@@ -11,7 +11,7 @@ from app.mission.models import (
 )
 from app.mission.state import TransportInterval
 from app.mission.timeline import build_timeline_segments
-from app.mission.timeline_service import _annotate_aar_markers
+from app.mission.timeline_builder.stats import annotate_aar_markers
 from app.satellites.rules import EventType, MissionEvent
 
 
@@ -186,7 +186,7 @@ def test_annotate_aar_markers_appends_reasons():
         ),
     ]
 
-    _annotate_aar_markers(timeline, events)
+    annotate_aar_markers(timeline, events)
 
     blocks = timeline.statistics.get("_aar_blocks")
     assert blocks is not None

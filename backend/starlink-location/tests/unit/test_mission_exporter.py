@@ -12,10 +12,7 @@ import app.mission.exporter as mission_exporter
 from app.mission.exporter import (
     ExportGenerationError,
     TimelineExportFormat,
-    generate_csv_export,
-    generate_pdf_export,
     generate_timeline_export,
-    generate_xlsx_export,
 )
 from app.mission.models import (
     MissionLeg,
@@ -117,7 +114,9 @@ class TestMissionTimelineExporters:
         return _build_test_timeline(mission.id)
 
     def test_generate_csv_contains_expected_headers(self, mission, timeline):
-        output = generate_csv_export(timeline, mission).decode("utf-8")
+        output = generate_timeline_export(
+            TimelineExportFormat.CSV, mission, timeline
+        ).content.decode("utf-8")
         assert "Segment #" in output
         assert "Mission ID" in output
         assert timeline.mission_leg_id in output
@@ -126,7 +125,9 @@ class TestMissionTimelineExporters:
         assert "StarShield" in output
 
     def test_generate_xlsx_creates_multiple_sheets(self, mission, timeline):
-        output = generate_xlsx_export(timeline, mission)
+        output = generate_timeline_export(
+            TimelineExportFormat.XLSX, mission, timeline
+        ).content
         workbook = openpyxl.load_workbook(filename=BytesIO(output))
         assert "Timeline" in workbook.sheetnames
         assert workbook["Timeline"]["A2"].value == 1  # First segment number
@@ -135,7 +136,9 @@ class TestMissionTimelineExporters:
         assert "Advisories" in workbook.sheetnames
 
     def test_generate_pdf_starts_with_pdf_header(self, mission, timeline):
-        output = generate_pdf_export(timeline, mission)
+        output = generate_timeline_export(
+            TimelineExportFormat.PDF, mission, timeline
+        ).content
         assert output.startswith(b"%PDF")
 
     def test_generate_timeline_export_router(self, mission, timeline):

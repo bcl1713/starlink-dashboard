@@ -331,7 +331,9 @@ class TestKMLPOIIntegration:
 
         route_id = payload["id"]
 
-        poi_response = test_client.get(f"/api/pois?route_id={route_id}")
+        poi_response = test_client.get(
+            f"/api/pois?route_id={route_id}&active_only=false"
+        )
         assert poi_response.status_code == 200
 
         poi_payload = poi_response.json()

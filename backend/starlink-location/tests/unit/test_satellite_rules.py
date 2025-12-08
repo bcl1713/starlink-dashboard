@@ -305,7 +305,7 @@ class TestRuleEngine:
         events = engine.get_sorted_events()
 
         landing_events = [e for e in events if e.event_type == EventType.LANDING_BUFFER]
-        assert any(e.severity == "warning" for e in landing_events)
+        assert any(e.severity == "safety" for e in landing_events)
         assert any(e.severity == "info" for e in landing_events)
 
     def test_buffer_configuration_affects_timing(self):
