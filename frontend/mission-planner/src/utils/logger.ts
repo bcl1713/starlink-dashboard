@@ -3,7 +3,7 @@
  * Provides structured logging without eslint-disable-next-line comments
  */
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = import.meta.env.MODE === 'development';
 
 export const logger = {
   log: (...args: unknown[]) => {

@@ -6,7 +6,7 @@ import {
   CardContent,
 } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { SatelliteResponse } from '../../services/satellites';
+import type { SatelliteResponse } from '../../services/satellites';
 
 interface SatelliteListProps {
   satellites: SatelliteResponse[] | undefined;
