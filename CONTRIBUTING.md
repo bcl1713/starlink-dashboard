@@ -70,11 +70,6 @@ issue discussion.
 
 This project uses `pre-commit` to ensure code quality.
 
-> [!IMPORTANT]
-> The Lychee link checker hook requires **Docker** to be running, as it runs the
-> checker within a container. Ensure you have Docker installed and the daemon
-> running before committing changes.
-
 ### Backend Changes (Python)
 
 **CRITICAL**: Backend Python changes require full Docker rebuild:
