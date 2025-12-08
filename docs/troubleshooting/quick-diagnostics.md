@@ -228,12 +228,12 @@ docker compose logs grafana > grafana.log
 
 ### Resources
 
-- [Backend Issues](./backend-issues.md)
+- [Backend Issues](./services/backend.md)
 - [Service Issues](./service-issues.md)
 - [Data Issues](./data-issues.md)
-- [API Reference](../API-REFERENCE.md)
-- [Setup Guide](../SETUP-GUIDE.md)
-- [Design Document](../design-document.md)
+- [API Reference](../api/README.md)
+- [Setup Guide](../setup/installation.md)
+- [Design Document](../architecture/design-document.md)
 - [Backend README](../../backend/starlink-location/README.md)
 - [Grafana Documentation](https://grafana.com/docs/)
 - [Prometheus Documentation](https://prometheus.io/docs/)

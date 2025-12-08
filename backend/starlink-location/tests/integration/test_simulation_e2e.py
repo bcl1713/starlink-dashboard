@@ -85,7 +85,7 @@ async def test_configuration_affects_simulation(test_client, default_config):
 
     # Get current config
     current_response = test_client.get("/api/config")
-    current_config = current_response.json()
+    current_response.json()
 
     # Update with modified config
     modified = default_config.model_copy()

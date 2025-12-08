@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+Last Updated: 2025-12-07
+
 Runtime development guidance for Claude Code. See README.md for project overview
 and docs/ for comprehensive documentation.
 
@@ -25,16 +27,27 @@ rebuilds images without layer caching.
 - API: `app/api/routes/`, `app/api/pois/`, `app/api/ui/`
 - Mission: `app/mission/routes/`, `app/mission/timeline_builder/`,
   `app/mission/exporter/`, `app/mission/package/`
-- Services: `app/services/kml/`, `app/services/eta/`,
-  `app/services/route_eta/`, `app/services/poi_manager.py`,
-  `app/services/flight_state_manager.py`
+- Services: `app/services/kml/`, `app/services/eta/`, `app/services/route_eta/`,
+  `app/services/poi_manager.py`, `app/services/flight_state_manager.py`
 - Core: `app/core/metrics/`
 - Data: `/data/routes/` (KML), `/data/sim_routes/` (simulator)
 
 ## Key References
 
 - Project overview: `README.md`
-- Architecture: `docs/design-document.md`
-- Features & APIs: `docs/FEATURES-OVERVIEW.md`, `docs/API-REFERENCE-INDEX.md`
+- Architecture: `docs/architecture/design-document.md`
+- Features & APIs: `docs/features-overview.md`, `docs/api-reference-index.md`
 - Code standards: `.specify/memory/constitution.md`
-- Setup: `docs/QUICK-START.md`, `docs/SETUP-GUIDE.md`
+- Setup: `docs/setup/quick-start.md`, `docs/setup/README.md`
+- Development: `docs/development/workflow.md`
+
+## Active Technologies
+
+- Markdown (CommonMark specification) + ripgrep (rg) for search, git mv for
+  preserving history (002-docs-cleanup)
+- Filesystem-based markdown files in docs/ hierarchy (002-docs-cleanup)
+
+## Recent Changes
+
+- 002-docs-cleanup: Added Markdown (CommonMark specification) + ripgrep (rg) for
+  search, git mv for preserving history

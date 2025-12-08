@@ -153,7 +153,6 @@ def get_nearest_poi_metrics() -> Optional[dict]:
         Dictionary with nearest POI metrics or None if no POIs available
     """
     try:
-        eta_calculator = get_eta_calculator()
 
         # Get nearest POI from calculator
         # Note: This requires tracking in the ETACalculator

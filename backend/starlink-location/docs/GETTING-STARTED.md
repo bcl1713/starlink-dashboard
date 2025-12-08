@@ -87,7 +87,7 @@ Available metrics categories:
 - **Status**: obstruction, signal quality, uptime
 - **Counters**: simulation updates, errors
 
-**See:** [API Reference](./API-REFERENCE.md) for complete list
+**See:** [API Reference](./API-reference.md) for complete list
 
 ---
 
@@ -99,7 +99,7 @@ Returns current telemetry with human-readable fields.
 curl http://localhost:8000/api/status
 ```
 
-**See:** [API Reference](./API-REFERENCE.md#apistatus) for response schema
+**See:** [API Reference](./API-reference.md#apistatus) for response schema
 
 ---
 

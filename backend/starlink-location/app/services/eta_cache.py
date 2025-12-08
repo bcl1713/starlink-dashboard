@@ -220,7 +220,7 @@ class ETAHistoryTracker:
                 record["actual_arrival_time"] = actual_arrival_time
                 # Calculate error
                 predicted_time = record["prediction_time"]
-                time_delta = (actual_arrival_time - predicted_time).total_seconds()
+                (actual_arrival_time - predicted_time).total_seconds()
                 expected_arrival = (
                     predicted_time.timestamp() + record["predicted_eta_seconds"]
                 )

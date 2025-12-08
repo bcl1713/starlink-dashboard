@@ -12,11 +12,11 @@ from app.models.flight_status import ETAMode
 @pytest.fixture(autouse=True)
 def reset_eta_service_globals():
     """Ensure eta_service globals are reset between tests."""
-    eta_service._eta_calculator = None  # type: ignore[attr-defined]
-    eta_service._poi_manager = None  # type: ignore[attr-defined]
+    eta_service._eta_calculator = None
+    eta_service._poi_manager = None
     yield
-    eta_service._eta_calculator = None  # type: ignore[attr-defined]
-    eta_service._poi_manager = None  # type: ignore[attr-defined]
+    eta_service._eta_calculator = None
+    eta_service._poi_manager = None
 
 
 class DummyPOIManager:
@@ -94,8 +94,8 @@ def test_initialize_eta_service_logs_and_raises_on_failure(
 def test_update_eta_metrics_uses_defaults_and_returns_calculator_output():
     dummy_calc = DummyETACalculator()
     dummy_manager = DummyPOIManager(pois=["poi-a"])
-    eta_service._eta_calculator = dummy_calc  # type: ignore[attr-defined]
-    eta_service._poi_manager = dummy_manager  # type: ignore[attr-defined]
+    eta_service._eta_calculator = dummy_calc
+    eta_service._poi_manager = dummy_manager
 
     result = eta_service.update_eta_metrics(
         latitude=40.0,
@@ -126,8 +126,8 @@ def test_update_eta_metrics_handles_exceptions(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_shutdown_eta_service_clears_singletons():
-    eta_service._eta_calculator = DummyETACalculator()  # type: ignore[attr-defined]
-    eta_service._poi_manager = DummyPOIManager()  # type: ignore[attr-defined]
+    eta_service._eta_calculator = DummyETACalculator()
+    eta_service._poi_manager = DummyPOIManager()
 
     eta_service.shutdown_eta_service()
 
@@ -138,7 +138,7 @@ def test_shutdown_eta_service_clears_singletons():
 
 
 def test_get_nearest_poi_metrics_returns_none_when_initialized():
-    eta_service._eta_calculator = DummyETACalculator()  # type: ignore[attr-defined]
+    eta_service._eta_calculator = DummyETACalculator()
     assert eta_service.get_nearest_poi_metrics() is None
 
 

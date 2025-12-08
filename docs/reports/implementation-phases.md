@@ -1,7 +1,10 @@
 # Implementation Phases - Detailed Breakdown
 
 **Feature**: 001-Codebase-Cleanup **Document**: Phase-by-phase implementation
-details **Related**: [Summary](../../IMPLEMENTATION-COMPLETION-SUMMARY.md) |
+details
+
+**Related**:
+[Summary](./implementation-reports/2025-12-03-001-codebase-cleanup-summary.md) |
 [Results](./implementation-results.md)
 
 ---
@@ -214,7 +217,7 @@ post-MVP work.
 
 ## Related Documents
 
-- [Implementation Summary](../../IMPLEMENTATION-COMPLETION-SUMMARY.md) -
+- [Implementation Summary](./implementation-reports/2025-12-03-001-codebase-cleanup-summary.md):
   Executive overview
 - [Results and Metrics](./implementation-results.md) - Detailed outcomes and
   recommendations

@@ -283,11 +283,11 @@ relative paths for internal linking.
 
 ```text
 docs/
-├── INDEX.md                               # 20 files, ~10K lines total
+├── index.md                               # 20 files, ~10K lines total
 ├── design-document.md                     # Large, general architecture
 ├── phased-development-plan.md
-├── ROUTE-TIMING-GUIDE.md
-├── API-REFERENCE.md
+├── route-timing-guide.md
+├── API-reference.md
 └── ... (17 more files)
 ```
 
@@ -296,7 +296,7 @@ docs/
 ```text
 docs/
 ├── README.md                              # Project overview + quick start
-├── INDEX.md                               # Master index with all docs
+├── index.md                               # Master index with all docs
 ├── getting-started/
 │   ├── setup.md                          # Setup guide
 │   ├── quick-start.md                    # 5-minute tutorial
@@ -413,7 +413,7 @@ Review the
 
 1. **Create new directory structure** (getting-started/, architecture/, etc.)
 2. **Copy sections** from large files to new focused documents
-3. **Update INDEX.md** with new structure and links
+3. **Update index.md** with new structure and links
 4. **Add "See also" sections** for related documents
 5. **Update all cross-references** to use new paths
 6. **Archive old files** (move to `docs/archive/`) rather than deleting
@@ -995,7 +995,7 @@ git commit --no-verify -m "emergency fix"
 
 - [ ] Create new documentation directory structure
 - [ ] Split large markdown files (design-document.md, etc.)
-- [ ] Update INDEX.md with new navigation
+- [ ] Update index.md with new navigation
 - [ ] Fix all cross-references
 - [ ] Run markdownlint on all docs
 

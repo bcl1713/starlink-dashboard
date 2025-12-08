@@ -1,6 +1,6 @@
 # Installation
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
 
 ---
 
@@ -121,8 +121,8 @@ curl http://localhost:8000/health
 - [Back to Setup Guide](./README.md)
 - [System Requirements](./system-requirements.md)
 - [Configuration](./configuration.md)
-- [Back to main docs](../INDEX.md)
+- [Back to main docs](../index.md)
 
 ---
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)

@@ -209,5 +209,5 @@ issues to address remaining polish tasks.
 
 - [Phase 7 Compliance Details](./phase7-compliance-details.md) - File size
   compliance and FR-004 analysis
-- [Phase 7 Recommendations](./phase7-recommendations.md) - Detailed merge
+- [Phase 7 Details](./phase7-compliance-details.md) - Detailed merge
   recommendations

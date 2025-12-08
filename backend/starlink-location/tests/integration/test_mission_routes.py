@@ -123,7 +123,7 @@ def stub_timeline_builder(monkeypatch):
         )
         return timeline, summary
 
-    monkeypatch.setattr("app.mission.routes.build_mission_timeline", _builder)
+    monkeypatch.setattr("app.mission.routes.utils.build_mission_timeline", _builder)
 
 
 @pytest.fixture(autouse=True)

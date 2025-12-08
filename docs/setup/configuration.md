@@ -28,4 +28,4 @@ Please see: **[Configuration Guide](./configuration/README.md)**
 
 [Go to Full Configuration Guide →](./configuration/README.md)
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)

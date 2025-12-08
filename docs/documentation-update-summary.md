@@ -82,14 +82,14 @@ record
 
 **Impact:** Medium - Helps contributors understand current project state
 
-#### 5. docs/INDEX.md
+#### 5. docs/index.md
 
 **Changes:**
 
 - Updated "Last Updated" date: 2025-10-31 → 2025-11-04
 - Added status line: "Comprehensive coverage including ETA Route Timing feature
   (451 tests passing)"
-- Added new documentation file to table: ROUTE-TIMING-GUIDE.md
+- Added new documentation file to table: route-timing-guide.md
 - Updated documentation statistics:
   - Total files: 16 → 18
   - Total pages: ~210 → ~270
@@ -101,7 +101,7 @@ record
 
 ### Important Updates (MEDIUM IMPACT)
 
-#### 6. docs/API-REFERENCE.md
+#### 6. docs/API-reference.md
 
 **Changes:**
 
@@ -153,7 +153,7 @@ capabilities
 
 ### New Documentation Created (HIGH IMPACT)
 
-#### 8. docs/ROUTE-TIMING-GUIDE.md (NEW)
+#### 8. docs/route-timing-guide.md (NEW)
 
 **Content:** Comprehensive 300+ line feature guide covering:
 
@@ -199,10 +199,10 @@ capabilities
 | Project Status    | 2 (README, STATUS.md)         | Critical  |
 | Development Plans | 1 (development-plan.md)       | Critical  |
 | Contributor Info  | 1 (code-quality-standards.md) | Important |
-| API Documentation | 1 (API-REFERENCE.md)          | Critical  |
+| API Documentation | 1 (API-reference.md)          | Critical  |
 | Architecture      | 1 (design-document.md)        | Important |
-| Navigation/Index  | 1 (INDEX.md)                  | Critical  |
-| Feature Guides    | 1 (ROUTE-TIMING-GUIDE.md NEW) | Critical  |
+| Navigation/Index  | 1 (index.md)                  | Critical  |
+| Feature Guides    | 1 (route-timing-guide.md NEW) | Critical  |
 
 ### Documentation Quality Metrics
 

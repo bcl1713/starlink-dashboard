@@ -21,8 +21,10 @@ from .operations import router as operations_router
 router = APIRouter()
 
 # Include all sub-routers
-router.include_router(missions_router)
+# Note: activation_router must be included before missions_router so that
+# /api/missions/active (specific) takes precedence over /api/missions/{id} (generic)
 router.include_router(activation_router)
+router.include_router(missions_router)
 router.include_router(operations_router)
 
 # Export public API

@@ -359,7 +359,7 @@ class TestRouteDetailResponseWithTiming:
 
     def test_route_detail_response_without_timing(self):
         """Test RouteDetailResponse backward compatibility."""
-        metadata = RouteMetadata(
+        RouteMetadata(
             name="Test Route",
             file_path="/data/test.kml",
             point_count=5,
@@ -381,7 +381,7 @@ class TestRouteDetailResponseWithTiming:
 
     def test_route_detail_response_with_timing_profile(self):
         """Test RouteDetailResponse with timing profile."""
-        metadata = RouteMetadata(
+        RouteMetadata(
             name="Test Route",
             file_path="/data/test.kml",
             point_count=5,

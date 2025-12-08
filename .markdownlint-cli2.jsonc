@@ -1,6 +1,5 @@
 {
   "gitignore": ".gitignore",
-
   "ignores": [
     "specs/**",
     ".claude/**",
@@ -11,6 +10,8 @@
     ".git/**",
     ".venv/**",
     "__pycache__/**",
+    "docs/REFACTORING_SUMMARY.txt",
+    "**/*.txt"
   ],
   "customRules": [".markdownlint.custom/max-lines.js"],
   "config": {
@@ -19,11 +20,11 @@
       "tables": false,
       "code_blocks": false,
       "links": false,
-      "headings": false,
+      "headings": false
     },
     "MD060": {
-      "style": "aligned",
+      "style": "aligned"
     },
-    "default": true,
-  },
+    "default": true
+  }
 }

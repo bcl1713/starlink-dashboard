@@ -1,9 +1,9 @@
 # Starlink Dashboard API Reference
 
-**Last Updated:** 2025-11-04 **Backend Version:** 0.3.0 **Base URL:**
-`<http://localhost:8000`> **Status:** Complete with ETA Route Timing endpoints
+**Purpose**: Technical reference for REST API endpoints, models, and contracts
+**Audience**: API consumers, integrators, developers
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 
@@ -24,78 +24,154 @@ returns Prometheus text format).
 
 ---
 
-## Quick Links
+## Quick Navigation
 
-- **[Endpoints](./endpoints.md)** - Complete endpoint reference
-- **[Models](./models.md)** - Request/response data models
-- **[Errors](./errors.md)** - Error codes and handling
+- **[Endpoints](./endpoints/README.md)** - Complete endpoint reference by
+  category
+- **[Models & Schemas](./models/README.md)** - Request/response data structures
+- **[Code Examples](./examples/README.md)** - cURL, Python, JavaScript examples
+- **[Error Reference](./errors.md)** - Error codes and handling
 
 ---
 
 ## Documentation Structure
 
-This API documentation is organized into three main sections:
+This API documentation is organized by functional area:
 
-### 1. Endpoints Reference
+### 1. Endpoints by Category
 
-Complete listing of all available endpoints with:
+**[View All Endpoints →](./endpoints/README.md)**
 
-- Request methods and paths
-- Query parameters
-- Request/response examples
-- Status codes
-- Use cases
+- **[Core Endpoints](./endpoints/core.md)** - Health, status, metrics
+- **[Configuration](./endpoints/configuration.md)** - System configuration
+- **[POI Management](./endpoints/poi.md)** - Points of Interest
+- **[Routes](./endpoints/routes.md)** - Route management
+- **[ETA Calculations](./endpoints/eta.md)** - Estimated time of arrival
 
-**[View Endpoints →](./endpoints.md)**
+### 2. Data Models & Schemas
 
-### 2. Data Models
+**[View All Models →](./models/README.md)**
 
-Detailed documentation of request and response structures:
+- Request/response structures
+- Validation rules
+- Type definitions
+- Example payloads
 
-- POI models
-- Route models
-- ETA calculation models
-- Configuration models
-- Health check models
+### 3. Code Examples
 
-**[View Models →](./models.md)**
+**[View All Examples →](./examples/README.md)**
 
-### 3. Error Handling
+- **[cURL Examples](./examples/curl-examples.md)** - Command-line usage
+- **[Python Examples](./examples/python-examples.md)** - Python integration
+- **[JavaScript Examples](./examples/javascript-examples.md)** - Web/Node.js
+  usage
 
-Comprehensive error documentation:
+### 4. Error Handling
+
+**[View Error Reference →](./errors.md)**
 
 - Error response format
 - HTTP status codes
-- Common error scenarios
-- Troubleshooting guides
-
-**[View Error Handling →](./errors.md)**
+- Common scenarios
+- Troubleshooting
 
 ---
 
-## Getting Started
+## Adding New API Documentation
 
-### Quick Test
+**For Contributors:** When adding or updating API endpoints:
 
-Verify the backend is running:
+### 1. Document the Endpoint
+
+Add to appropriate file in **[endpoints/](./endpoints/)**:
+
+- **Core/health endpoints** → `endpoints/core.md`
+- **Configuration** → `endpoints/configuration.md`
+- **POI management** → `endpoints/poi.md`
+- **Routes** → `endpoints/routes.md`
+- **ETA calculations** → `endpoints/eta.md`
+
+Include:
+
+- Endpoint path and HTTP method
+- Request parameters (query, path, body)
+- Request example (cURL, Python)
+- Response example (JSON)
+- Possible error codes
+
+### 2. Document Data Models
+
+Add to appropriate file in **[models/](./models/)**:
+
+- Model name and purpose
+- Field definitions with types
+- Validation rules
+- Example JSON
+
+### 3. Add Code Examples
+
+Update **[examples/](./examples/)** with usage examples:
+
+- cURL examples for testing
+- Python examples for integration
+- JavaScript examples for web apps
+
+### 4. Document Errors
+
+Add new error codes to **[errors.md](./errors.md)**
+
+### 5. Update Indexes
+
+- Update category README in `endpoints/`, `models/`, or `examples/`
+- Update this README if creating new category
+
+---
+
+## Getting Started with the API
+
+### 1. Verify Service is Running
 
 ```bash
-curl <http://localhost:8000/health>
+curl http://localhost:8000/health
 ```
 
-### Interactive Documentation
+Expected response:
 
-For live API exploration:
+```json
+{
+  "status": "healthy",
+  "mode": "simulation",
+  "dish_connected": true
+}
+```
 
-- **Swagger UI:** `<http://localhost:8000/docs`>
-- **ReDoc:** `<http://localhost:8000/redoc`>
+### 2. Explore Interactive Documentation
 
-These provide:
+The API provides auto-generated interactive documentation:
 
-- Live endpoint testing
+- **Swagger UI:** <http://localhost:8000/docs>
+- **ReDoc:** <http://localhost:8000/redoc>
+
+These interfaces provide:
+
+- Live endpoint testing (try requests directly)
 - Request/response examples
 - Schema validation
 - Parameter documentation
+
+### 3. Try a Simple Request
+
+Get current telemetry status:
+
+```bash
+curl http://localhost:8000/api/status | jq .
+```
+
+### 4. Common Workflows
+
+- **POI Management:** See [POI Endpoints](./endpoints/poi.md)
+- **ETA Calculations:** See [ETA Endpoints](./endpoints/eta.md)
+- **Configuration:** See [Configuration Endpoints](./endpoints/configuration.md)
 
 ### Base Configuration
 
@@ -105,7 +181,7 @@ Default service ports:
 - Prometheus: `9090`
 - Grafana: `3000`
 
-These can be changed in `.env` file.
+Change in `.env` file if needed.
 
 ---
 
@@ -165,9 +241,9 @@ Geographic coordinates use decimal degrees:
 
 ## Related Documentation
 
-- [CLAUDE.md](/CLAUDE.md) - Development configuration
+- [Development Guidelines](../../CLAUDE.md) - Coding standards
 - [SETUP-GUIDE](../setup/README.md) - Installation and setup
-- [METRICS](../METRICS.md) - Prometheus metrics reference
+- [METRICS](../metrics/overview.md) - Prometheus metrics reference
 - [Backend README](../../backend/starlink-location/README.md) - Service details
 
 ---

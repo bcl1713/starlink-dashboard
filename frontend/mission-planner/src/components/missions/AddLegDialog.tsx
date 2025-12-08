@@ -102,9 +102,11 @@ export function AddLegDialog({
       setUploadedFile(null);
       setRouteOption('existing');
       onOpenChange(false);
-    } catch (error: any) {
+    } catch (error) {
       console.error('Failed to add leg:', error);
-      setUploadError(error.message || 'Failed to add leg');
+      const message =
+        error instanceof Error ? error.message : 'Failed to add leg';
+      setUploadError(message);
     } finally {
       setIsSubmitting(false);
     }

@@ -58,10 +58,21 @@ repos:
         exclude: ^(node_modules|\.venv|__pycache__|specs/)
         stages: [pre-commit]
 
+
+  # Naming convention check for docs
+  - repo: local
+    hooks:
+      - id: naming-convention
+        name: Naming Convention - Docs Filenames
+        entry: python3 tools/check_filename_convention.py
+        language: system
+        files: ^docs/.*\.md$
+        pass_filenames: false
+
 # Global pre-commit settings
 default_language_version:
   python: python3.13
-  node: 18.17.1
+  node: 22.12.0
 
 # Fail fast if any hook fails
 fail_fast: false

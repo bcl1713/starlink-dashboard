@@ -10,12 +10,15 @@ import math
 import random
 import time
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from app.models.config import PositionConfig, RouteConfig
 from app.models.telemetry import PositionData
 from app.services.heading_tracker import HeadingTracker
 from app.simulation.route import create_route
+
+if TYPE_CHECKING:
+    from app.simulation.kml_follower import KMLRouteFollower
 
 logger = logging.getLogger(__name__)
 

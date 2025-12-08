@@ -85,7 +85,6 @@ class TestObstructionSimulator:
         """Test relationship between obstruction and signal quality."""
         # High obstruction should correlate with low signal quality
         # This is tested in the coordinator, but we verify obstruction ranges here
-        config = simulator.obstruction_config
 
         for _ in range(20):
             data = simulator.update(network_latency_ms=50.0)

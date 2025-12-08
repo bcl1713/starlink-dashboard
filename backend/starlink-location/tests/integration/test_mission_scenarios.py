@@ -17,6 +17,27 @@ from app.mission.models import (
 )
 from app.mission.storage import delete_mission, mission_exists, list_missions
 from app.mission.timeline_service import TimelineSummary
+from main import app
+from app.models.route import ParsedRoute, RouteMetadata
+
+
+@pytest.fixture(autouse=True)
+def setup_routes(client):
+    """Inject test route into RouteManager."""
+    if hasattr(app.state, "route_manager"):
+        rm = app.state.route_manager
+        # Create a dummy route for scenarios
+        route = ParsedRoute(
+            metadata=RouteMetadata(
+                name="Test Route Cross Country",
+                file_path="/tmp/test_data/routes/test-route-cross-country.kml",
+                last_modified=datetime.now(timezone.utc),
+                point_count=0,
+            ),
+            points=[],
+            segments=[],
+        )
+        rm._routes["test-route-cross-country"] = route
 
 
 @pytest.fixture
@@ -165,6 +186,7 @@ def stub_timeline_builder(monkeypatch):
 
     def _builder(mission, route_manager, poi_manager=None):
         now = datetime.now(timezone.utc)
+        critical_seconds = 0.0
 
         # Check if this is a multi-transport critical scenario
         if "multi-crit" in mission.id:
@@ -347,7 +369,7 @@ def stub_timeline_builder(monkeypatch):
         )
         return timeline, summary
 
-    monkeypatch.setattr("app.mission.routes.build_mission_timeline", _builder)
+    monkeypatch.setattr("app.mission.routes.utils.build_mission_timeline", _builder)
 
 
 class TestMissionScenarioNormalOps:
@@ -425,8 +447,8 @@ class TestMissionScenarioNormalOps:
         ), "Expected X transition reasons in degraded segments"
 
         # Verify timeline has valid metadata
-        assert "mission_id" in timeline_data
-        assert timeline_data["mission_id"] == mission.id
+        assert "mission_leg_id" in timeline_data
+        assert timeline_data["mission_leg_id"] == mission.id
 
         # Verify first and last segments have valid times
         assert len(segments) > 0
@@ -533,7 +555,7 @@ class TestMissionScenarioNormalOps:
         # Verify X and Ku remain unaffected
         for segment in segments:
             # Ka can be degraded, but X and Ku should not be in impacted_transports
-            impacted = segment.get("impacted_transports", [])
+            segment.get("impacted_transports", [])
             if "ka" in segment.get("status", "").lower():
                 # Ka is degraded, verify message mentions Ka
                 reasons = segment.get("reasons", [])
@@ -542,8 +564,8 @@ class TestMissionScenarioNormalOps:
                 ), f"Expected Ka-related reason in degraded segment, got {reasons}"
 
         # Verify timeline has valid metadata
-        assert "mission_id" in timeline_data
-        assert timeline_data["mission_id"] == mission.id
+        assert "mission_leg_id" in timeline_data
+        assert timeline_data["mission_leg_id"] == mission.id
 
         # Verify first and last segments have valid times
         assert len(segments) > 0
@@ -665,8 +687,8 @@ class TestMissionScenarioNormalOps:
         ), f"Expected Ka and Ku to remain unaffected during AAR, but found: {ka_ku_reasons}"
 
         # Verify timeline has valid metadata
-        assert "mission_id" in timeline_data
-        assert timeline_data["mission_id"] == mission.id
+        assert "mission_leg_id" in timeline_data
+        assert timeline_data["mission_leg_id"] == mission.id
 
         # Verify first and last segments have valid times
         assert len(segments) > 0
@@ -799,8 +821,8 @@ class TestMissionScenarioNormalOps:
             ), f"Expected Ku to remain unaffected, but found: {ku_reasons}"
 
         # Verify timeline has valid metadata
-        assert "mission_id" in timeline_data
-        assert timeline_data["mission_id"] == mission.id
+        assert "mission_leg_id" in timeline_data
+        assert timeline_data["mission_leg_id"] == mission.id
 
         # Verify first and last segments have valid times
         assert len(segments) > 0

@@ -1,16 +1,42 @@
-# Starlink Dashboard Setup Guide
+# Setup
 
-**Last Updated:** 2025-10-31 **Project Version:** 0.2.0
+**Purpose**: Help users install, configure, and initially deploy the system
+**Audience**: Users, operators, first-time installers
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)
 
 ---
 
-## Quick Navigation
+## Documentation in This Category
 
-- **[Prerequisites](./prerequisites.md)** - System requirements and dependencies
-- **[Installation](./installation.md)** - Step-by-step installation instructions
-- **[Configuration](./configuration.md)** - Environment setup and configuration
+### Getting Started
+
+- **[Quick Start](./quick-start.md)**: 3-minute setup for experienced users
+  - fastest way to get the system running
+- **[Prerequisites](prerequisites-verification.md)**: Hardware and software
+  prerequisites for running Starlink Dashboard
+- **[Installation](./installation.md)**: Comprehensive step-by-step installation
+  guide
+- **[Configuration](./configuration.md)**: Environment variables, operating
+  modes, and system configuration
+
+### Installation Guides (Detailed)
+
+- **[Installation Steps](./installation-steps.md)**: Detailed installation
+  walkthrough with explanations
+- **[Installation - First Time](./installation-first-time.md)**: First-time user
+  installation guide with extra detail
+- **[Installation - Quick Start](./installation-quick-start.md)**: Fast-track
+  installation for experienced users
+- **[Installation Verification](./installation-verification.md)**: Verify
+  successful installation and service health
+- **[Installation Troubleshooting](./installation-troubleshooting.md)**: Common
+  installation issues and solutions
+
+### Prerequisites Verification
+
+- **[Prerequisites Verification](./prerequisites-verification.md)**: Verify
+  system meets all requirements before installation
 
 ---
 
@@ -37,7 +63,7 @@ Ensure your system meets the minimum requirements:
 - 5 GB disk space
 - 4 GB RAM
 
-**[View Prerequisites →](./prerequisites.md)**
+**[View Prerequisites →](prerequisites-verification.md)**
 
 ### 2. Install
 
@@ -167,10 +193,10 @@ After successful setup:
 
 **Resources:**
 
-- [Design Document](../design-document.md) - Architecture overview
+- [Design Document](../architecture/design-document.md) - Architecture overview
 - [CLAUDE.md](../../CLAUDE.md) - Development guide
 - [Troubleshooting Guide](../troubleshooting/README.md) - Common problems
 
 ---
 
-**Ready to begin?** Start with [Prerequisites →](./prerequisites.md)
+**Ready to begin?** Start with [Prerequisites →](prerequisites-verification.md)

@@ -121,10 +121,10 @@ class TestKMLPOIIntegration:
     def test_poi_creation_and_geojson_export(self, poi_manager_instance):
         """Test POI creation and GeoJSON export."""
         # Create POIs
-        poi1 = poi_manager_instance.create_poi(
+        poi_manager_instance.create_poi(
             POICreate(name="POI 1", latitude=40.7128, longitude=-74.0060)
         )
-        poi2 = poi_manager_instance.create_poi(
+        poi_manager_instance.create_poi(
             POICreate(name="POI 2", latitude=40.7138, longitude=-74.0070)
         )
 
@@ -174,7 +174,7 @@ class TestKMLPOIIntegration:
 
         # Create first manager and add POI
         manager1 = POIManager(pois_file=pois_file)
-        poi1 = manager1.create_poi(
+        manager1.create_poi(
             POICreate(name="Persistent POI", latitude=1.0, longitude=1.0)
         )
 
@@ -188,11 +188,11 @@ class TestKMLPOIIntegration:
     def test_route_and_poi_integration(self, sample_kml_file, poi_manager_instance):
         """Test route-specific POI association."""
         # Parse route
-        route = parse_kml_file(sample_kml_file)
+        parse_kml_file(sample_kml_file)
         route_id = "test_route"
 
         # Create route-specific POI
-        route_poi = poi_manager_instance.create_poi(
+        poi_manager_instance.create_poi(
             POICreate(
                 name="Route POI",
                 latitude=40.7138,
@@ -202,7 +202,7 @@ class TestKMLPOIIntegration:
         )
 
         # Create global POI
-        global_poi = poi_manager_instance.create_poi(
+        poi_manager_instance.create_poi(
             POICreate(name="Global POI", latitude=0.0, longitude=0.0)
         )
 
@@ -331,7 +331,9 @@ class TestKMLPOIIntegration:
 
         route_id = payload["id"]
 
-        poi_response = test_client.get(f"/api/pois?route_id={route_id}")
+        poi_response = test_client.get(
+            f"/api/pois?route_id={route_id}&active_only=false"
+        )
         assert poi_response.status_code == 200
 
         poi_payload = poi_response.json()
@@ -363,7 +365,7 @@ class TestKMLPOIIntegration:
         follower = KMLRouteFollower(active_route)
 
         # Create POIs at start and end of route
-        start_poi = poi_manager_instance.create_poi(
+        poi_manager_instance.create_poi(
             POICreate(
                 name="Start",
                 latitude=40.7128,
@@ -371,7 +373,7 @@ class TestKMLPOIIntegration:
                 route_id=route_id,
             )
         )
-        end_poi = poi_manager_instance.create_poi(
+        poi_manager_instance.create_poi(
             POICreate(
                 name="End",
                 latitude=40.7148,

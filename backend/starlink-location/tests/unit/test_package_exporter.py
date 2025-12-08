@@ -1,10 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from app.mission.models import Mission, MissionLeg
-from app.mission.package_exporter import (
-    generate_mission_combined_xlsx,
-    export_mission_package,
-)
+from app.mission.package.__main__ import generate_mission_combined_xlsx
+from app.mission.package import export_mission_package
 from app.mission.exporter import ExportGenerationError
 
 
@@ -23,8 +21,8 @@ def mock_mission():
     return Mission(id="mission1", name="Test Mission", legs=[leg1, leg2])
 
 
-@patch("app.mission.package_exporter.load_mission_timeline")
-@patch("app.mission.package_exporter.generate_timeline_export")
+@patch("app.mission.package.__main__.load_mission_timeline")
+@patch("app.mission.package.__main__.generate_timeline_export")
 @patch("openpyxl.load_workbook")
 def test_generate_mission_combined_xlsx_export_error(
     mock_load_workbook, mock_generate_export, mock_load_timeline, mock_mission
@@ -56,7 +54,7 @@ def test_generate_mission_combined_xlsx_export_error(
     assert mock_generate_export.call_count == 2
 
 
-@patch("app.mission.package_exporter.load_mission_v2")
+@patch("app.mission.package.__main__.load_mission_v2")
 def test_export_mission_package_returns_file_object(mock_load_mission, mock_mission):
     # Setup
     mock_load_mission.return_value = mock_mission
@@ -90,8 +88,8 @@ def test_export_mission_package_returns_file_object(mock_load_mission, mock_miss
         zip_file.close()
 
 
-@patch("app.mission.package_exporter.load_mission_v2")
-@patch("app.mission.package_exporter.generate_mission_combined_xlsx")
+@patch("app.mission.package.__main__.load_mission_v2")
+@patch("app.mission.package.__main__.generate_mission_combined_xlsx")
 def test_export_mission_package_uses_temp_files_for_large_exports(
     mock_gen_xlsx, mock_load_mission, mock_mission
 ):

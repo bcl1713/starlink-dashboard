@@ -4,6 +4,7 @@ import type { LatLngExpression } from 'leaflet';
 import type { XBandTransition } from '../../../types/satellite';
 import type { AARSegment } from '../../../types/aar';
 import type { KaTransition } from '../../../types/timeline';
+import { logger } from '../../../utils/logger';
 
 interface RouteLayerProps {
   routeSegments: LatLngExpression[][];
@@ -96,8 +97,7 @@ export function RouteLayer({
 
         // Skip if waypoints not found
         if (startIdx === -1 || endIdx === -1) {
-          // eslint-disable-next-line no-console
-          console.warn(
+          logger.warn(
             `AAR segment ${idx}: Could not find waypoints "${segment.start_waypoint_name}" or "${segment.end_waypoint_name}"`
           );
           return null;
@@ -105,8 +105,7 @@ export function RouteLayer({
 
         // Ensure valid order
         if (startIdx > endIdx) {
-          // eslint-disable-next-line no-console
-          console.warn(
+          logger.warn(
             `AAR segment ${idx}: Start waypoint at index ${startIdx} is after end waypoint at index ${endIdx}`
           );
           return null;
@@ -120,8 +119,7 @@ export function RouteLayer({
 
         // Skip if no coordinates found
         if (segmentCoordinates.length === 0) {
-          // eslint-disable-next-line no-console
-          console.warn(
+          logger.warn(
             `AAR segment ${idx}: No coordinates found for slice [${startIdx}:${endIdx + 1}]`
           );
           return null;

@@ -29,11 +29,11 @@ docker compose down
 docker compose up -d
 ```
 
-**Access new ports:**
+### Access
 
-- Backend: <http://localhost:8001>
-- Prometheus: <http://localhost:9091>
-- Grafana: <http://localhost:3001>
+- **Frontend**: `http://localhost:3001`
+- **Backend API**: `http://localhost:8001`
+- **Prometheus**: `http://localhost:9091`
 
 ---
 

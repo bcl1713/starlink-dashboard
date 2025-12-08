@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useSatellites } from '../../hooks/api/useSatellites';
-import { satelliteService } from '../../services/satellites';
+import {
+  satelliteService,
+  type SatelliteResponse,
+} from '../../services/satellites';
 
 interface SatelliteFormData {
   satellite_id: string;
@@ -8,8 +11,7 @@ interface SatelliteFormData {
 }
 
 interface UseSatelliteDataReturn {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  satellites: any[] | undefined;
+  satellites: SatelliteResponse[] | undefined;
   isLoading: boolean;
   refetch: () => void;
   formData: SatelliteFormData;
@@ -24,8 +26,7 @@ interface UseSatelliteDataReturn {
   handleCreate: () => Promise<void>;
   handleUpdate: () => Promise<void>;
   handleDelete: (satelliteId: string) => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handleEdit: (satellite: any) => void;
+  handleEdit: (satellite: SatelliteResponse) => void;
 }
 
 /**
@@ -83,8 +84,7 @@ export function useSatelliteData(): UseSatelliteDataReturn {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleEdit = (satellite: any) => {
+  const handleEdit = (satellite: SatelliteResponse) => {
     setEditingSatelliteId(satellite.satellite_id);
     setFormData({
       satellite_id: satellite.satellite_id,

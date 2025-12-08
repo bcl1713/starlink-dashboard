@@ -1,10 +1,17 @@
 # Starlink Dashboard Troubleshooting Guide
 
-**Last Updated:** 2025-10-31 **Version:** 0.2.0
+**Purpose**: Help users diagnose and resolve problems **Audience**: Users,
+operators, support staff
+
+[Back to main docs](../index.md)
+
+---
 
 ## Quick Diagnostics
 
-Before diving into specific issues, run these checks:
+**Start here first** - Run these checks before diving into specific issues:
+
+**[Quick Diagnostics Guide →](./quick-diagnostics.md)**
 
 ```bash
 # 1. Check all services running
@@ -22,15 +29,43 @@ docker stats --no-stream
 
 ---
 
-## Troubleshooting Categories
+## Troubleshooting by Symptom
+
+### Services Won't Start
 
 - **[Service Issues](./service-issues.md)** - Container startup, port conflicts,
   Docker problems
-- **[Backend Issues](./backend-issues.md)** - Backend health, metrics,
+- **[Docker Services](./services/docker.md)** - Docker-specific configuration
+  and issues
+- **[Backend Service](./services/backend.md)** - Backend health, metrics,
   configuration
+- **[Grafana Service](./services/grafana.md)** - Grafana configuration and
+  connectivity
+- **[Prometheus Service](./services/prometheus.md)** - Prometheus targets and
+  scraping
+
+### Connectivity Problems
+
+- **[Live Mode](./connectivity/live-mode.md)** - Connection to Starlink dish
+- **[Data Issues](./connectivity/data.md)** - Network issues and data flow
+- **[Data Storage](./connectivity/data-storage.md)** - Persistence and storage
+  problems
+- **[POI Management](./connectivity/poi-management.md)** - Points of interest
+  issues
+- **[Performance](./connectivity/performance.md)** - Speed and resource issues
+
+### Data & Metrics
+
 - **[Data Issues](./data-issues.md)** - POI management, storage, persistence
-- **[Quick Diagnostics](./quick-diagnostics.md)** - Fast diagnostic commands and
-  verification steps
+- **[Metrics & Monitoring](./metrics-monitoring.md)** - Prometheus and Grafana
+  data collection
+
+### Network & Performance
+
+- **[Network Configuration](./services/network.md)** - Network connectivity
+  between services
+- **[Performance Tuning](./services/performance.md)** - Resource usage and
+  optimization
 
 ---
 
@@ -119,7 +154,7 @@ docker compose logs grafana > grafana.log
 
 - [API Reference](../api/README.md)
 - [Setup Guide](../setup/README.md)
-- [Design Document](../design-document.md)
+- [Design Document](../architecture/design-document.md)
 - [Backend README](../../backend/starlink-location/README.md)
 - [Grafana Documentation](https://grafana.com/docs/)
 - [Prometheus Documentation](https://prometheus.io/docs/)
@@ -141,4 +176,4 @@ Check:
 
 ---
 
-[Back to main docs](../INDEX.md)
+[Back to main docs](../index.md)

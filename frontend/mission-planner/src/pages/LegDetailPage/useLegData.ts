@@ -3,6 +3,7 @@ import type { SatelliteConfig } from '../../types/satellite';
 import type { AARConfig } from '../../types/aar';
 import type { KaTransition } from '../../types/timeline';
 import type { Waypoint } from '../../services/routes';
+import type { TransportConfig } from '../../types/mission';
 import { routesApi } from '../../services/routes';
 import {
   satelliteService,
@@ -13,8 +14,7 @@ import { poisService, type POI } from '../../services/pois';
 interface UseLegDataProps {
   routeId?: string;
   missionId?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  legTransports?: any;
+  legTransports?: TransportConfig;
 }
 
 interface UseLegDataReturn {
@@ -34,8 +34,9 @@ interface UseLegDataReturn {
 /**
  * Initialize satellite config from leg transports data
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function initializeSatelliteConfig(legTransports?: any): SatelliteConfig {
+function initializeSatelliteConfig(
+  legTransports?: TransportConfig
+): SatelliteConfig {
   if (!legTransports) {
     return {
       xband_starting_satellite: undefined,
@@ -46,26 +47,21 @@ function initializeSatelliteConfig(legTransports?: any): SatelliteConfig {
   }
   return {
     xband_starting_satellite: legTransports.initial_x_satellite_id,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    xband_transitions: (legTransports.x_transitions as any[]) || [],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ka_outages: (legTransports.ka_outages as any[]) || [],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ku_outages: (legTransports.ku_overrides as any[]) || [],
+    xband_transitions: legTransports.x_transitions || [],
+    ka_outages: legTransports.ka_outages || [],
+    ku_outages: legTransports.ku_overrides || [],
   };
 }
 
 /**
  * Initialize AAR config from leg transports data
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function initializeAARConfig(legTransports?: any): AARConfig {
+function initializeAARConfig(legTransports?: TransportConfig): AARConfig {
   if (!legTransports) {
     return { segments: [] };
   }
   return {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    segments: (legTransports.aar_windows as any[]) || [],
+    segments: legTransports.aar_windows || [],
   };
 }
 
@@ -158,9 +154,7 @@ export function useLegData({
     routesApi
       .getCoordinates(routeId)
       .then((coords) => setRouteCoordinates(coords))
-      .catch((err) =>
-        console.error('Failed to load route coordinates:', err)
-      );
+      .catch((err) => console.error('Failed to load route coordinates:', err));
 
     routesApi
       .getWaypoints(routeId)
@@ -205,9 +199,7 @@ export function useLegData({
 
         setKaTransitions(transitions);
       })
-      .catch((err) =>
-        console.error('Failed to load Ka transition POIs:', err)
-      );
+      .catch((err) => console.error('Failed to load Ka transition POIs:', err));
 
     // Cleanup: clear Ka transitions when effect unmounts or dependencies change
     return () => {

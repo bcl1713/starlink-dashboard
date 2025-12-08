@@ -283,4 +283,4 @@ docker compose down -v --rmi all
 ---
 
 For troubleshooting common issues, see
-[VALIDATION-TROUBLESHOOTING.md](VALIDATION-TROUBLESHOOTING.md).
+[VALIDATION-troubleshooting.md](VALIDATION-troubleshooting.md).

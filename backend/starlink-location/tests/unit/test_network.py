@@ -75,7 +75,7 @@ class TestNetworkSimulator:
             latencies.append(data.latency_ms)
 
         # Should have variation
-        unique_latencies = len(set([round(l, 1) for l in latencies]))
+        unique_latencies = len(set([round(lat, 1) for lat in latencies]))
         assert unique_latencies > 1
 
     def test_latency_spikes(self, simulator):
@@ -83,12 +83,10 @@ class TestNetworkSimulator:
         # Run many updates to catch a spike
         config = simulator.config
         max_latency = config.latency_max_ms
-        spike_detected = False
 
         for _ in range(100):
             data = simulator.update()
             if data.latency_ms > max_latency:
-                spike_detected = True
                 # Spike should be within spike max
                 assert data.latency_ms <= config.latency_spike_max_ms
 

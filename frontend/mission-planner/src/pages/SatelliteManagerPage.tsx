@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSatelliteData } from './SatelliteManagerPage/useSatelliteData';
 import { SatelliteList } from './SatelliteManagerPage/SatelliteList';
 import { SatelliteDialogs } from './SatelliteManagerPage/SatelliteDialogs';
+import type { SatelliteResponse } from '../services/satellites';
 
 export default function SatelliteManagerPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -24,8 +25,7 @@ export default function SatelliteManagerPage() {
     handleEdit,
   } = useSatelliteData();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const onEdit = (satellite: any) => {
+  const onEdit = (satellite: SatelliteResponse) => {
     handleEdit(satellite);
     setIsEditDialogOpen(true);
   };

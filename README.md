@@ -13,17 +13,19 @@ physical Starlink hardware and simulation mode for offline development.
 
 **For Users:**
 
-- [Quick Start](./docs/QUICK-START.md) - Get up and running in 3 minutes
-- [Setup Guide](./docs/SETUP-GUIDE.md) - Detailed installation instructions
-- [Features Overview](./docs/FEATURES-OVERVIEW.md) - Complete feature list
-- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
+- [Quick Start](./docs/setup/quick-start.md) - Get up and running in 3 minutes
+- [Setup Guide](./docs/setup/README.md) - Detailed installation instructions
+- [Features Overview](./docs/features/overview.md) - Complete feature list
+- [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common issues
+  and solutions
 
 **For Developers:**
 
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
-- [API Reference](./docs/API-REFERENCE-INDEX.md) - Complete API documentation
-- [Development Status](./dev/STATUS.md) - Current development status
-- [Architecture](./docs/design-document.md) - System design and architecture
+- [API Reference](./docs/api-reference-index.md) - Complete API documentation
+- [Development Workflow](./docs/development/workflow.md) - Development practices
+- [Architecture](./docs/architecture/design-document.md) - System design and
+  architecture
 
 ---
 
@@ -53,7 +55,7 @@ curl http://localhost:8000/health        # Backend health
 open http://localhost:3000                # Grafana (admin/admin)
 ```
 
-**Detailed setup:** See [Quick Start Guide](./docs/QUICK-START.md)
+**Detailed setup:** See [Quick Start Guide](./docs/setup/quick-start.md)
 
 ---
 
@@ -77,21 +79,21 @@ Comprehensive documentation is organized by topic:
 
 ### For Getting Started
 
-- [Quick Start](./docs/QUICK-START.md) - 3-minute setup
-- [Setup Guide](./docs/SETUP-GUIDE.md) - Installation and configuration
+- [Quick Start](./docs/setup/quick-start.md) - 3-minute setup
+- [Setup Guide](./docs/setup/installation.md) - Installation and configuration
 
 ### For Using the System
 
-- [Features Overview](./docs/FEATURES-OVERVIEW.md) - Complete feature list
-- [Grafana Setup](./docs/grafana-setup.md) - Dashboard usage
-- [API Reference](./docs/API-REFERENCE-INDEX.md) - REST API endpoints
-- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues
+- [Features Overview](./docs/features/overview.md) - Complete feature list
+- [Grafana Setup](./docs/setup/grafana-setup.md) - Dashboard usage
+- [API Reference](./docs/api-reference-index.md) - REST API endpoints
+- [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common issues
 
 ### For Development
 
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
 - [CLAUDE.md](./CLAUDE.md) - Development configuration
-- [Design Document](./docs/design-document.md) - Architecture
+- [Design Document](./docs/architecture/design-document.md) - Architecture
 - [Development Status](./dev/STATUS.md) - Current progress
 
 ### For Reference
@@ -104,12 +106,12 @@ Comprehensive documentation is organized by topic:
 
 **Setup Issues:**
 
-- See [Quick Start](./docs/QUICK-START.md)
-- Check [Troubleshooting Guide](./docs/TROUBLESHOOTING.md)
+- See [Quick Start](./docs/setup/quick-start.md)
+- Check [Troubleshooting Guide](./docs/troubleshooting/quick-diagnostics.md)
 
 **API Questions:**
 
-- See [API Reference](./docs/API-REFERENCE-INDEX.md)
+- See [API Reference](./docs/api-reference-index.md)
 - Visit <http://localhost:8000/docs> (interactive documentation)
 
 **Development Questions:**
@@ -119,8 +121,8 @@ Comprehensive documentation is organized by topic:
 
 **Specific Issues:**
 
-- See [Troubleshooting Guide](./docs/TROUBLESHOOTING.md)
-- Run diagnostic commands in [Quick Start](./docs/QUICK-START.md)
+- See [Troubleshooting Guide](./docs/troubleshooting/quick-diagnostics.md)
+- Run diagnostic commands in [Quick Start](./docs/setup/quick-start.md)
 
 ---
 
@@ -130,7 +132,7 @@ Want to help improve Starlink Dashboard?
 
 - Read [Contributing Guide](./CONTRIBUTING.md)
 - Check [Development Status](./dev/STATUS.md) for current tasks
-- Review [Architecture](./docs/design-document.md) before starting
+- Review [Architecture](./docs/architecture/design-document.md) before starting
 
 ---
 
@@ -149,6 +151,6 @@ Part of the Starlink Dashboard project.
 
 ---
 
-**Quick Links:** [Quick Start](./docs/QUICK-START.md) |
-[Features](./docs/FEATURES-OVERVIEW.md) |
-[API Docs](./docs/API-REFERENCE-INDEX.md) | [Contributing](./CONTRIBUTING.md)
+**Quick Links:** [Quick Start](./docs/setup/quick-start.md) |
+[Features](./docs/features/overview.md) |
+[API Docs](./docs/api-reference-index.md) | [Contributing](./CONTRIBUTING.md)

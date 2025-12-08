@@ -42,7 +42,7 @@ Real-world workflows for common development tasks in this project.
 2. Plan: `/dev-docs Debug and fix [issue]`
 3. Fix: Implement and test the solution
 4. Review: `"Review my fix for [issue]"`
-5. Document: Add to `docs/TROUBLESHOOTING.md`
+5. Document: Add to `docs/troubleshooting.md`
 6. Track: `/dev-docs-update Fixed [issue]`
 
 ---

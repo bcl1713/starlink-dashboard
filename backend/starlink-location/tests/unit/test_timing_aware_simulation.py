@@ -1,5 +1,6 @@
 """Unit tests for Phase 5 timing-aware simulation features."""
 
+import random
 import pytest
 from datetime import datetime, timedelta
 
@@ -423,9 +424,6 @@ class TestPositionSimulatorTimingAware:
         for _ in range(5):
             simulator.update()
 
-        forward_progress = simulator.progress
-        forward_speed = simulator.current_speed
-
         # Continue updating until we reverse
         for _ in range(100):
             simulator.update()
@@ -518,7 +516,3 @@ class TestTimingAwarenessIntegration:
 
         # Verify progress increases
         assert simulator.progress >= 0.0
-
-
-# Additional import for random in test
-import random

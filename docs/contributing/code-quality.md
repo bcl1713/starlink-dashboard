@@ -1,6 +1,6 @@
 # Code Quality Standards
 
-[Back to Contributing](../CONTRIBUTING.md)
+[Back to Contributing](../../CONTRIBUTING.md)
 
 ---
 
@@ -123,4 +123,4 @@ markdownlint-cli2 "docs/**/*.md"
 
 ---
 
-[Back to Contributing](../CONTRIBUTING.md)
+[Back to Contributing](../../CONTRIBUTING.md)

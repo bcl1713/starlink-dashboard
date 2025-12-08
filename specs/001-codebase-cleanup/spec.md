@@ -329,15 +329,15 @@ Based on initial codebase scan:
 ### Documentation Files
 
 - **Moderate Size Violations (300-1000 lines)**:
-  - `docs/API-REFERENCE.md` - 999 lines
+  - `docs/API-reference.md` - 999 lines
   - `docs/DOCUMENTATION-AUDIT-REPORT.md` - 917 lines
-  - `docs/TROUBLESHOOTING.md` - 816 lines
+  - `docs/troubleshooting.md` - 816 lines
   - `docs/claude-code-workflows.md` - 731 lines
-  - `docs/SETUP-GUIDE.md` - 636 lines
-  - `docs/ROUTE-TIMING-GUIDE.md` - 619 lines
-  - `docs/MISSION-VISUALIZATION-GUIDE.md` - 566 lines
-  - `docs/MISSION-COMM-SOP.md` - 513 lines
-  - `docs/MISSION-DATA-STRUCTURES.md` - 478 lines
+  - `docs/SETUP-guide.md` - 636 lines
+  - `docs/route-timing-guide.md` - 619 lines
+  - `docs/mission-visualization-guide.md` - 566 lines
+  - `docs/mission-comm-sop.md` - 513 lines
+  - `docs/mission-data-structures.md` - 478 lines
 
 **Estimated Violation Count**: 26 files requiring refactoring
 

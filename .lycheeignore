@@ -1,0 +1,24 @@
+# Lychee ignore file
+# Exclude localhost/private IP links as they are not reachable from CI
+http://localhost
+https://localhost
+http://127.0.0.1
+https://127.0.0.1
+
+# Example domains
+http://example.com
+https://example.com
+http://example.org
+https://example.org
+
+# Private networks
+http://192.168.*
+https://192.168.*
+http://10.*
+https://10.*
+http://172.16.*
+https://172.16.*
+
+# File links
+# Excluding file:// links as they are local paths
+file://*

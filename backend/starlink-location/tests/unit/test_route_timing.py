@@ -2,11 +2,11 @@
 
 from datetime import datetime, timedelta
 from app.models.route import RoutePoint, RouteWaypoint
-from app.services.kml_parser import (
+from app.services.kml import (
     extract_timestamp_from_description,
-    _haversine_distance,
-    _calculate_segment_speeds,
-    _assign_waypoint_timestamps_to_points,
+    haversine_distance,
+    calculate_segment_speeds,
+    assign_waypoint_timestamps_to_points,
 )
 
 
@@ -15,26 +15,26 @@ class TestHaversineDistance:
 
     def test_same_point(self):
         """Distance between same point should be zero."""
-        distance = _haversine_distance(40.7128, -74.0060, 40.7128, -74.0060)
+        distance = haversine_distance(40.7128, -74.0060, 40.7128, -74.0060)
         assert distance < 1  # Near zero (floating point)
 
     def test_new_york_to_los_angeles(self):
         """Test known distance between NYC and LA."""
         # NYC: 40.7128°N, 74.0060°W
         # LA: 34.0522°N, 118.2437°W
-        distance = _haversine_distance(40.7128, -74.0060, 34.0522, -118.2437)
+        distance = haversine_distance(40.7128, -74.0060, 34.0522, -118.2437)
         # Approximate distance is 3944 km = 3,944,000 meters
         assert 3900000 < distance < 4000000, f"Got {distance} meters"
 
     def test_zero_distance_same_location(self):
         """Zero distance for identical locations."""
-        distance = _haversine_distance(0, 0, 0, 0)
+        distance = haversine_distance(0, 0, 0, 0)
         assert distance < 1
 
     def test_antipodal_points(self):
         """Distance across Earth should be approximately π * Earth radius."""
         # From north pole to south pole
-        distance = _haversine_distance(90, 0, -90, 0)
+        distance = haversine_distance(90, 0, -90, 0)
         # Should be approximately 20,036 km (Earth circumference / 2)
         assert 19000000 < distance < 21000000
 
@@ -65,7 +65,7 @@ class TestSegmentSpeedCalculation:
         )
 
         points = [point1, point2]
-        _calculate_segment_speeds(points)
+        calculate_segment_speeds(points)
 
         # Point 2 should have a calculated speed
         assert point2.expected_segment_speed_knots is not None
@@ -89,7 +89,7 @@ class TestSegmentSpeedCalculation:
         )
 
         points = [point1, point2]
-        _calculate_segment_speeds(points)
+        calculate_segment_speeds(points)
 
         # Point 2 should not have a speed
         assert point2.expected_segment_speed_knots is None
@@ -114,7 +114,7 @@ class TestSegmentSpeedCalculation:
         )
 
         points = [point1, point2]
-        _calculate_segment_speeds(points)
+        calculate_segment_speeds(points)
 
         # Point 2 should not have a speed (time delta is zero)
         assert point2.expected_segment_speed_knots is None
@@ -145,7 +145,7 @@ class TestSegmentSpeedCalculation:
         )
 
         points = [point1, point2]
-        _calculate_segment_speeds(points)
+        calculate_segment_speeds(points)
 
         # Check speed is reasonable for flight
         assert point2.expected_segment_speed_knots is not None
@@ -193,7 +193,7 @@ class TestWaypointTimestampAssignment:
         ]
 
         waypoints = [waypoint]
-        _assign_waypoint_timestamps_to_points(points, waypoints)
+        assign_waypoint_timestamps_to_points(points, waypoints)
 
         # Nearest point (index 1) should get the timestamp
         assert points[1].expected_arrival_time is not None
@@ -227,7 +227,7 @@ class TestWaypointTimestampAssignment:
         ]
 
         waypoints = [waypoint]
-        _assign_waypoint_timestamps_to_points(points, waypoints)
+        assign_waypoint_timestamps_to_points(points, waypoints)
 
         # Point should not get assigned timestamp (too far)
         assert points[0].expected_arrival_time is None
@@ -257,7 +257,7 @@ class TestWaypointTimestampAssignment:
 
         waypoints = [waypoint]
         # Should not crash
-        _assign_waypoint_timestamps_to_points(points, waypoints)
+        assign_waypoint_timestamps_to_points(points, waypoints)
 
         assert points[0].expected_arrival_time is None
 
@@ -328,8 +328,8 @@ class TestCompleteTimingPipeline:
         ]
 
         # Run pipeline - should not crash with partial data
-        _assign_waypoint_timestamps_to_points(points, waypoints)
-        _calculate_segment_speeds(points)
+        assign_waypoint_timestamps_to_points(points, waypoints)
+        calculate_segment_speeds(points)
 
         # First point should have timestamp
         assert points[0].expected_arrival_time is not None

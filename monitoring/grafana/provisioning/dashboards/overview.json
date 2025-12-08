@@ -172,9 +172,7 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "text": {},
         "textMode": "auto"
@@ -577,62 +575,62 @@
               }
             ]
           },
-  {
-    "matcher": {
-      "id": "byName",
-      "options": "Distance (km)"
-    },
-    "properties": [
-      {
-        "id": "unit",
-        "value": "km"
-      },
-      {
-        "id": "custom.width",
-        "value": 150
-      }
-    ]
-  },
-  {
-    "matcher": {
-      "id": "byName",
-      "options": "ETA Mode"
-    },
-    "properties": [
-      {
-        "id": "custom.cellOptions",
-        "value": {
-          "type": "badge"
-        }
-      },
-      {
-        "id": "mappings",
-        "value": [
           {
-            "type": 1,
-            "value": "anticipated",
-            "result": {
-              "text": "PLANNED",
-              "color": "#1f78c1"
-            }
+            "matcher": {
+              "id": "byName",
+              "options": "Distance (km)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "km"
+              },
+              {
+                "id": "custom.width",
+                "value": 150
+              }
+            ]
           },
           {
-            "type": 1,
-            "value": "estimated",
-            "result": {
-              "text": "LIVE",
-              "color": "#2eb85c"
-            }
+            "matcher": {
+              "id": "byName",
+              "options": "ETA Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "badge"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": 1,
+                    "value": "anticipated",
+                    "result": {
+                      "text": "PLANNED",
+                      "color": "#1f78c1"
+                    }
+                  },
+                  {
+                    "type": 1,
+                    "value": "estimated",
+                    "result": {
+                      "text": "LIVE",
+                      "color": "#2eb85c"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 120
+              }
+            ]
           }
         ]
-      },
-      {
-        "id": "custom.width",
-        "value": 120
-      }
-    ]
-  }
-]
       },
       "gridPos": {
         "h": 8,
@@ -645,9 +643,7 @@
         "footer": {
           "countRows": "all",
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -675,13 +671,13 @@
               "job": true,
               "instance": true
             },
-      "indexByName": {},
-      "renameByName": {
-        "eta_type": "ETA Mode",
-        "id": "POI ID",
-        "name": "POI Name",
-        "Value": "ETA (seconds)"
-      }
+            "indexByName": {},
+            "renameByName": {
+              "eta_type": "ETA Mode",
+              "id": "POI ID",
+              "name": "POI Name",
+              "Value": "ETA (seconds)"
+            }
           }
         }
       ],
@@ -733,9 +729,7 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true
@@ -799,9 +793,7 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true
@@ -913,11 +905,7 @@
       "id": 5,
       "options": {
         "legend": {
-          "calcs": [
-            "last",
-            "max",
-            "min"
-          ],
+          "calcs": ["last", "max", "min"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -992,9 +980,7 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "text": {},
         "textMode": "auto"
@@ -1058,9 +1044,7 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "text": {},
         "textMode": "auto"
@@ -1124,9 +1108,7 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "text": {},
         "textMode": "auto"
@@ -1205,9 +1187,7 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": [
-            "lastNotNull"
-          ]
+          "calcs": ["lastNotNull"]
         },
         "text": {},
         "textMode": "auto"
@@ -1398,11 +1378,7 @@
   "refresh": "1s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": [
-    "starlink",
-    "monitoring",
-    "overview"
-  ],
+  "tags": ["starlink", "monitoring", "overview"],
   "templating": {
     "list": []
   },

@@ -45,8 +45,8 @@ async def test_update_mission_invalid_route():
     mock_poi_manager = MagicMock()
 
     # We need to mock mission_exists and load_mission since update_mission calls them
-    with patch("app.mission.routes.mission_exists", return_value=True), patch(
-        "app.mission.routes.load_mission"
+    with patch("app.mission.routes.missions.mission_exists", return_value=True), patch(
+        "app.mission.routes.missions.load_mission"
     ) as mock_load:
 
         # Setup existing mission return

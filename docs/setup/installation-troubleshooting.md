@@ -1,6 +1,6 @@
 # Installation Troubleshooting
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)
 
 ---
 
@@ -20,7 +20,8 @@ docker compose logs
 
 **Common issues:**
 
-- Port conflicts → [Prerequisites](./prerequisites.md#port-availability-check)
+- Port conflicts →See [Prerequisites](prerequisites-verification.md) for more
+  info.
 - Insufficient disk space → `df -h`
 - Docker not running → `sudo systemctl start docker`
 
@@ -160,7 +161,7 @@ If errors persist:
 2. **Check documentation:**
    - [Setup Guide](./README.md)
    - [Troubleshooting Guide](../troubleshooting/README.md)
-   - [Prerequisites](./prerequisites.md)
+   - [Prerequisites](prerequisites-verification.md)
 
 3. **Common issues:**
    - Docker container not running
@@ -170,4 +171,4 @@ If errors persist:
 
 ---
 
-[Back to Setup Guide](./README.md) | [Back to main docs](../INDEX.md)
+[Back to Setup Guide](./README.md) | [Back to main docs](../index.md)

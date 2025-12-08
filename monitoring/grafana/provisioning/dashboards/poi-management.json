@@ -585,9 +585,7 @@
         "footer": {
           "countRows": false,
           "fields": "",
-          "reducer": [
-            "sum"
-          ],
+          "reducer": ["sum"],
           "show": false
         },
         "showHeader": true,
@@ -716,10 +714,7 @@
       },
       "options": {
         "legend": {
-          "calcs": [
-            "last",
-            "mean"
-          ],
+          "calcs": ["last", "mean"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -732,11 +727,7 @@
   ],
   "refresh": "1s",
   "schemaVersion": 39,
-  "tags": [
-    "starlink",
-    "poi",
-    "points-of-interest"
-  ],
+  "tags": ["starlink", "poi", "points-of-interest"],
   "templating": {
     "list": []
   },

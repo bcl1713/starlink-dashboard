@@ -6,14 +6,13 @@ import {
   CardContent,
 } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import type { SatelliteResponse } from '../../services/satellites';
 
 interface SatelliteListProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  satellites: any[] | undefined;
+  satellites: SatelliteResponse[] | undefined;
   isLoading: boolean;
   isDeleting: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onEdit: (satellite: any) => void;
+  onEdit: (satellite: SatelliteResponse) => void;
   onDelete: (satelliteId: string) => void;
 }
 
