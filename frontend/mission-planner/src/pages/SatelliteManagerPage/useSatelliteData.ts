@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useSatellites } from '../../hooks/api/useSatellites';
-import { satelliteService, type SatelliteResponse } from '../../services/satellites';
+import {
+  satelliteService,
+  type SatelliteResponse,
+} from '../../services/satellites';
 
 interface SatelliteFormData {
   satellite_id: string;
