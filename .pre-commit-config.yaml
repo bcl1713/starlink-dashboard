@@ -72,7 +72,7 @@ repos:
 # Global pre-commit settings
 default_language_version:
   python: python3.13
-  node: 25.2.1
+  node: 22.12.0
 
 # Fail fast if any hook fails
 fail_fast: false
