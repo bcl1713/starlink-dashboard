@@ -48,6 +48,9 @@ def main():
             if not file.endswith(".md"):
                 continue
                 
+            if file == "README.md":
+                continue
+
             if file in EXCLUDED_FILES:
                 continue
             

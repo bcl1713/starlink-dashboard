@@ -49,10 +49,11 @@ def _override_from_env(config_dict: dict) -> dict:
 
         # Handle nested keys (e.g., ROUTE_LATITUDE_START -> route.latitude_start)
         if "_" in config_key:
-
+            # Try to find which section this belongs to
             # Try to find which section this belongs to
             parts = config_key.split("_", 1)
             section = parts[0]
+            key = None
 
             # Check for multi-word sections (e.g. heading_tracker)
             # Sort by length descending to match longest prefix first
@@ -71,7 +72,7 @@ def _override_from_env(config_dict: dict) -> dict:
                 if len(parts) > 1:
                     key = parts[1]
 
-            if section and section in config_dict:
+            if section and key is not None and section in config_dict:
                 # Convert value to appropriate type
                 value = _convert_env_value(env_value)
                 config_dict[section][key] = value
