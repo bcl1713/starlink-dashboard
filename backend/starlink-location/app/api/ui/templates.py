@@ -508,7 +508,7 @@ def get_poi_management_template() -> str:
             // Map initialization
             function initMap() {
                 map = L.map('map').setView([40.7128, -74.0060], 4);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors',
                     maxZoom: 19
                 }).addTo(map);
