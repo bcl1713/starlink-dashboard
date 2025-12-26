@@ -77,6 +77,14 @@ from app.mission.exporter.transport_utils import (
     segment_is_x_ku_warning,
     serialize_transport_list,
 )
+from app.mission.exporter.pptx_styling import (
+    add_header_bar,
+    add_footer_bar,
+    add_slide_title,
+    add_footer_text,
+    add_logo,
+    TEXT_WHITE,
+)
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
@@ -1820,11 +1828,85 @@ def generate_pptx_export(
 ) -> bytes:
     """Generate a PowerPoint presentation with map and timeline table."""
     prs = Presentation()
+    prs.slide_width = Inches(10)
+    prs.slide_height = Inches(5.62)
 
-    # Slide 1: Route Map
     # Use a blank layout (usually index 6 in default template)
     blank_slide_layout = prs.slide_layouts[6]
-    slide1 = prs.slides.add_slide(blank_slide_layout)
+
+    # Logo path
+    logo_path = Path(__file__).parent.with_name("assets").joinpath("logo.png")
+
+    # Mission metadata
+    mission_id = mission.id if mission else timeline.leg_id
+    mission_name = mission.name if mission else "Mission"
+    organization = (
+        mission.description if (mission and mission.description) else "Organization"
+    )
+    leg_count = len(mission.legs) if mission else 1
+
+    # Slide 1: Title Slide
+    title_slide = prs.slides.add_slide(blank_slide_layout)
+
+    # Add header and footer bars first
+    add_header_bar(title_slide, 0, 0, 10, 0.15)
+    add_footer_bar(title_slide, 0, 5.47, 10, 0.15)
+
+    # Add logo on top of header (added after so it appears on top)
+    add_logo(title_slide, logo_path, 0.2, 0.02, 0.6, 0.6)
+
+    # Add mission title
+    title_box = title_slide.shapes.add_textbox(
+        Inches(1.5), Inches(2.0), Inches(7.0), Inches(1.0)
+    )
+    text_frame = title_box.text_frame
+    text_frame.text = mission_name
+
+    paragraph = text_frame.paragraphs[0]
+    paragraph.alignment = PP_ALIGN.CENTER
+    paragraph.font.size = Pt(28)
+    paragraph.font.bold = True
+    from app.mission.exporter.pptx_styling import TEXT_BLACK
+
+    paragraph.font.color.rgb = TEXT_BLACK
+
+    # Add mission ID
+    id_box = title_slide.shapes.add_textbox(
+        Inches(1.5), Inches(3.0), Inches(7.0), Inches(0.5)
+    )
+    id_frame = id_box.text_frame
+    id_frame.text = f"Mission ID: {mission_id}"
+
+    id_paragraph = id_frame.paragraphs[0]
+    id_paragraph.alignment = PP_ALIGN.CENTER
+    id_paragraph.font.size = Pt(14)
+    id_paragraph.font.color.rgb = TEXT_BLACK
+
+    # Add leg count and organization
+    info_box = title_slide.shapes.add_textbox(
+        Inches(1.5), Inches(3.5), Inches(7.0), Inches(0.5)
+    )
+    info_frame = info_box.text_frame
+    info_frame.text = f"{leg_count} Leg{'s' if leg_count != 1 else ''} | {organization}"
+
+    info_paragraph = info_frame.paragraphs[0]
+    info_paragraph.alignment = PP_ALIGN.CENTER
+    info_paragraph.font.size = Pt(14)
+    info_paragraph.font.color.rgb = TEXT_BLACK
+
+    # Slide 2: Route Map
+    slide_map = prs.slides.add_slide(blank_slide_layout)
+
+    # Add header and footer bars
+    add_header_bar(slide_map, 0, 0, 10, 0.15)
+    add_footer_bar(slide_map, 0, 5.47, 10, 0.15)
+
+    # Add logo
+    add_logo(slide_map, logo_path, 0.2, 0.02, 0.5, 0.5)
+
+    # Add slide title
+    leg_name = timeline.leg_id if timeline else "Route"
+    add_slide_title(slide_map, f"{leg_name} - Route Map", top=0.2)
 
     # Generate map image
     try:
@@ -1837,36 +1919,37 @@ def generate_pptx_export(
         )
         map_image_stream = io.BytesIO(map_image_bytes)
 
-        # Add image to slide, scaled to fit
-        # Default slide size is 10x7.5 inches
-        # We want to maximize the map visibility
-        left = Inches(0.5)
-        top = Inches(0.5)
-        width = Inches(9)
-        height = Inches(6.5)
+        # Add image to slide, centered
+        # Slide size is 10x5.62 inches
+        # Available space: 10.0 wide x ~4.5 tall (below title, above footer)
+        # Constrain height to 4.0 inches and center horizontally
+        height = Inches(4.0)
 
-        slide1.shapes.add_picture(
-            map_image_stream, left, top, width=width, height=height
+        # Add picture first to get its dimensions after aspect ratio is applied
+        pic = slide_map.shapes.add_picture(
+            map_image_stream, Inches(0), Inches(0.9), height=height
         )
 
-        # Add title
-        title_box = slide1.shapes.add_textbox(
-            Inches(0.5), Inches(0.1), Inches(9), Inches(0.5)
-        )
-        tf = title_box.text_frame
-        p = tf.paragraphs[0]
-        p.text = "Mission Route Map"
-        p.font.bold = True
-        p.font.size = Pt(24)
-        p.alignment = PP_ALIGN.CENTER
+        # Center the picture horizontally
+        pic.left = int((Inches(10) - pic.width) / 2)
 
     except Exception as e:
         logger.error("Failed to add map to PPTX: %s", e, exc_info=True)
-        textbox = slide1.shapes.add_textbox(Inches(1), Inches(1), Inches(8), Inches(1))
+        textbox = slide_map.shapes.add_textbox(
+            Inches(1), Inches(1), Inches(8), Inches(1)
+        )
         textbox.text = f"Map generation failed: {str(e)}"
 
-    # Slide 2: Timeline Table
-    # Slide 2+: Timeline Table (Paginated)
+    # Add footer text (centered within gold bar with white text)
+    add_footer_text(
+        slide_map,
+        f"{mission_id} | {organization}",
+        bottom=5.45,
+        font_size=7,
+        color=TEXT_WHITE,
+    )
+
+    # Slide 3+: Timeline Table (Paginated)
     timeline_df = _segment_rows(timeline, mission)
 
     if not timeline_df.empty:
@@ -1883,8 +1966,8 @@ def generate_pptx_export(
             "Reasons",
         ]
 
-        # Pagination settings
-        ROWS_PER_SLIDE = 10
+        # Pagination settings (reduced to 7 for new header/footer styling)
+        ROWS_PER_SLIDE = 7
         MIN_ROWS_LAST_SLIDE = 3
 
         # Convert to list of dicts for easier manipulation if needed, or just slice dataframe
@@ -1950,29 +2033,41 @@ def generate_pptx_export(
 
                     chunks = base_chunks + [chunk_second_last, chunk_last]
 
+        # Get mission start date for footer (from earliest timeline segment)
+        mission_start = mission_start_timestamp(timeline)
+        mission_date = mission_start.strftime("%Y-%m-%d")
+
         for chunk_idx, chunk in enumerate(chunks):
             # Add new slide for each chunk
             slide = prs.slides.add_slide(blank_slide_layout)
 
-            # Add title
-            title_box = slide.shapes.add_textbox(
-                Inches(0.5), Inches(0.1), Inches(9), Inches(0.5)
+            # Add header and footer bars
+            add_header_bar(slide, 0, 0, 10, 0.15)
+            add_footer_bar(slide, 0, 5.47, 10, 0.15)
+
+            # Add logo
+            add_logo(slide, logo_path, 0.2, 0.02, 0.5, 0.5)
+
+            # Add slide title
+            title_text = (
+                f"{leg_name} - Timeline"
+                if chunk_idx == 0
+                else f"{leg_name} - Timeline (cont.)"
             )
-            tf = title_box.text_frame
-            p = tf.paragraphs[0]
-            p.text = (
-                "Mission Timeline" if chunk_idx == 0 else "Mission Timeline (cont.)"
+            add_slide_title(slide, title_text, top=0.2)
+
+            # Add footer text (centered within gold bar with white text)
+            footer_text = f"Date: {mission_date} | {mission_id} | {organization}"
+            add_footer_text(
+                slide, footer_text, bottom=5.45, font_size=7, color=TEXT_WHITE
             )
-            p.font.bold = True
-            p.font.size = Pt(24)
-            p.alignment = PP_ALIGN.CENTER
 
             rows = len(chunk) + 1  # +1 for header
             cols = len(columns_to_show)
 
             # Create table
             left = Inches(0.5)
-            top = Inches(1.0)
+            top = Inches(0.9)
             width = Inches(9.0)
             # Use a minimal height so rows don't stretch to fill a large area
             # The table will expand as needed
@@ -2036,40 +2131,66 @@ def generate_pptx_export(
                     else:
                         cell.fill.fore_color.rgb = RGBColor(255, 255, 255)  # White
 
-                    # Status coloring for transport columns and Status column
-                    # Status coloring for transport columns and Status column
-                    if col_name in STATE_COLUMNS or col_name == "Status":
+                    # Status coloring for Status column with new color palette
+                    if col_name == "Status":
                         val_lower = val.lower()
 
-                        # Check for Safety-of-Flight in reasons if available/nominal/warning
+                        # Check for Safety-of-Flight in reasons
                         is_sof = False
-                        # We check reasons regardless of status, but only apply SOF override if appropriate
                         reasons = str(row_data.get("Reasons", "")).lower()
                         if "safety-of-flight" in reasons or "aar" in reasons:
                             is_sof = True
 
                         # Override Status text to "SOF" if it's a safety window
-                        # User request: "baseline for both should just be SOF"
-                        # If status is WARNING (e.g. due to AAR) or NOMINAL/AVAILABLE, show SOF.
-                        # If DEGRADED or OFFLINE, show that.
-                        if (
-                            col_name == "Status"
-                            and is_sof
-                            and val_lower in ("available", "nominal", "warning")
-                        ):
+                        if is_sof and val_lower in ("available", "nominal", "warning"):
                             cell.text = "SOF"
                             # Re-apply font size since setting text resets it
                             for paragraph in cell.text_frame.paragraphs:
                                 paragraph.font.size = Pt(9)
                                 paragraph.alignment = PP_ALIGN.LEFT
 
-                        if val_lower in ("degraded", "warning", "offline") or is_sof:
+                        # Apply status badge colors
+                        from app.mission.exporter.pptx_styling import (
+                            STATUS_NOMINAL,
+                            STATUS_SOF,
+                            STATUS_DEGRADED,
+                            STATUS_CRITICAL,
+                        )
+
+                        if is_critical_row and not is_sof:
+                            # Critical status
                             cell.fill.solid()
-                            if is_critical_row and not is_sof:
-                                cell.fill.fore_color.rgb = RGBColor(
-                                    255, 204, 204
-                                )  # Light Red
-                            elif val_lower in ("degraded", "warning") or is_sof:
+                            cell.fill.fore_color.rgb = STATUS_CRITICAL
+                            for paragraph in cell.text_frame.paragraphs:
+                                paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                                paragraph.font.bold = True
+                        elif is_sof:
+                            # Safety of Flight
+                            cell.fill.solid()
+                            cell.fill.fore_color.rgb = STATUS_SOF
+                            for paragraph in cell.text_frame.paragraphs:
+                                paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                                paragraph.font.bold = True
+                        elif val_lower in ("degraded", "warning"):
+                            # Degraded status
+                            cell.fill.solid()
+                            cell.fill.fore_color.rgb = STATUS_DEGRADED
+                            for paragraph in cell.text_frame.paragraphs:
+                                paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                                paragraph.font.bold = True
+                        elif val_lower in ("nominal", "available"):
+                            # Nominal status
+                            cell.fill.solid()
+                            cell.fill.fore_color.rgb = STATUS_NOMINAL
+                            for paragraph in cell.text_frame.paragraphs:
+                                paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                                paragraph.font.bold = True
+                    # Keep existing coloring for transport state columns
+                    elif col_name in STATE_COLUMNS:
+                        val_lower = val.lower()
+                        if val_lower in ("degraded", "warning", "offline"):
+                            cell.fill.solid()
+                            if val_lower in ("degraded", "warning"):
                                 cell.fill.fore_color.rgb = RGBColor(
                                     255, 255, 204
                                 )  # Light Yellow

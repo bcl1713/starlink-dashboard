@@ -55,9 +55,8 @@ repos:
         entry: bash -c 'markdownlint-cli2 "$@"' --
         language: system
         files: \.md$
-        exclude: ^(node_modules|\.venv|__pycache__|specs/)
+        exclude: ^(node_modules|\.venv|__pycache__|specs/|openspec/|\.agent/|\.gemini/)
         stages: [pre-commit]
-
 
   # Naming convention check for docs
   - repo: local
