@@ -9,6 +9,7 @@ This module is organized into:
 - transport_utils: Transport state and display utilities
 - excel_utils: Excel workbook manipulation utilities
 - pptx_styling: PowerPoint styling and branding utilities
+- pptx_builder: Reusable PPTX presentation generation functions
 - __main__: Core export generation logic and format handlers
 """
 
@@ -45,6 +46,11 @@ from app.mission.exporter.pptx_styling import (
     TEXT_BLACK,
     TEXT_WHITE,
 )
+from app.mission.exporter.pptx_builder import (
+    create_pptx_presentation,
+    add_route_map_slide,
+    add_timeline_table_slides,
+)
 from app.mission.models import Transport  # Re-exported for package module
 
 __all__ = [
@@ -75,4 +81,8 @@ __all__ = [
     "STATUS_CRITICAL",
     "TEXT_BLACK",
     "TEXT_WHITE",
+    # PPTX builder functions
+    "create_pptx_presentation",
+    "add_route_map_slide",
+    "add_timeline_table_slides",
 ]

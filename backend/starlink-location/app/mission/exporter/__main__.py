@@ -49,7 +49,6 @@ from reportlab.platypus import (
 )
 from pptx import Presentation
 from pptx.util import Inches, Pt
-from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 
 from app.mission.models import (
@@ -80,10 +79,7 @@ from app.mission.exporter.transport_utils import (
 from app.mission.exporter.pptx_styling import (
     add_header_bar,
     add_footer_bar,
-    add_slide_title,
-    add_footer_text,
     add_logo,
-    TEXT_WHITE,
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
@@ -1446,8 +1442,14 @@ def generate_xlsx_export(
     parent_mission_id: str | None = None,
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
+    map_cache: dict[str, bytes] | None = None,
 ) -> bytes:
-    """Return XLSX bytes containing Summary sheet (with map, chart, table) plus Timeline, Advisory, and Statistics sheets."""
+    """Return XLSX bytes containing Summary sheet (with map, chart, table) plus Timeline, Advisory, and Statistics sheets.
+
+    Args:
+        map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
+            will check cache before generating maps and store newly generated maps.
+    """
     workbook_bytes = io.BytesIO()
 
     # Generate all data
@@ -1556,8 +1558,14 @@ def generate_pdf_export(
     parent_mission_id: str | None = None,
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
+    map_cache: dict[str, bytes] | None = None,
 ) -> bytes:
-    """Render a PDF brief summarizing the mission timeline."""
+    """Render a PDF brief summarizing the mission timeline.
+
+    Args:
+        map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
+            will check cache before generating maps and store newly generated maps.
+    """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer,
@@ -1825,14 +1833,19 @@ def generate_pptx_export(
     parent_mission_id: str | None = None,
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
+    map_cache: dict[str, bytes] | None = None,
 ) -> bytes:
-    """Generate a PowerPoint presentation with map and timeline table."""
-    prs = Presentation()
-    prs.slide_width = Inches(10)
-    prs.slide_height = Inches(5.62)
+    """Generate a PowerPoint presentation with map and timeline table.
 
-    # Use a blank layout (usually index 6 in default template)
-    blank_slide_layout = prs.slide_layouts[6]
+    This function has been refactored to use the shared pptx_builder module,
+    eliminating code duplication with package/__main__.py::generate_mission_combined_pptx().
+
+    Args:
+        map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
+            will check cache before generating maps and store newly generated maps.
+    """
+    from app.mission.exporter.pptx_builder import create_pptx_presentation
+    from app.mission.exporter.pptx_styling import TEXT_BLACK
 
     # Logo path
     logo_path = Path(__file__).parent.with_name("assets").joinpath("logo.png")
@@ -1844,6 +1857,14 @@ def generate_pptx_export(
         mission.description if (mission and mission.description) else "Organization"
     )
     leg_count = len(mission.legs) if mission else 1
+
+    # Create presentation with standard dimensions
+    prs = Presentation()
+    prs.slide_width = Inches(10)
+    prs.slide_height = Inches(5.62)
+
+    # Use a blank layout (usually index 6 in default template)
+    blank_slide_layout = prs.slide_layouts[6]
 
     # Slide 1: Title Slide
     title_slide = prs.slides.add_slide(blank_slide_layout)
@@ -1866,8 +1887,6 @@ def generate_pptx_export(
     paragraph.alignment = PP_ALIGN.CENTER
     paragraph.font.size = Pt(28)
     paragraph.font.bold = True
-    from app.mission.exporter.pptx_styling import TEXT_BLACK
-
     paragraph.font.color.rgb = TEXT_BLACK
 
     # Add mission ID
@@ -1894,310 +1913,27 @@ def generate_pptx_export(
     info_paragraph.font.size = Pt(14)
     info_paragraph.font.color.rgb = TEXT_BLACK
 
-    # Slide 2: Route Map
-    slide_map = prs.slides.add_slide(blank_slide_layout)
-
-    # Add header and footer bars
-    add_header_bar(slide_map, 0, 0, 10, 0.15)
-    add_footer_bar(slide_map, 0, 5.47, 10, 0.15)
-
-    # Add logo
-    add_logo(slide_map, logo_path, 0.2, 0.02, 0.5, 0.5)
-
-    # Add slide title
-    leg_name = timeline.leg_id if timeline else "Route"
-    add_slide_title(slide_map, f"{leg_name} - Route Map", top=0.2)
-
-    # Generate map image
-    try:
-        map_image_bytes = _generate_route_map(
-            timeline,
-            mission,
-            parent_mission_id=parent_mission_id,
-            route_manager=route_manager,
-            poi_manager=poi_manager,
-        )
-        map_image_stream = io.BytesIO(map_image_bytes)
-
-        # Add image to slide, centered
-        # Slide size is 10x5.62 inches
-        # Available space: 10.0 wide x ~4.5 tall (below title, above footer)
-        # Constrain height to 4.0 inches and center horizontally
-        height = Inches(4.0)
-
-        # Add picture first to get its dimensions after aspect ratio is applied
-        pic = slide_map.shapes.add_picture(
-            map_image_stream, Inches(0), Inches(0.9), height=height
-        )
-
-        # Center the picture horizontally
-        pic.left = int((Inches(10) - pic.width) / 2)
-
-    except Exception as e:
-        logger.error("Failed to add map to PPTX: %s", e, exc_info=True)
-        textbox = slide_map.shapes.add_textbox(
-            Inches(1), Inches(1), Inches(8), Inches(1)
-        )
-        textbox.text = f"Map generation failed: {str(e)}"
-
-    # Add footer text (centered within gold bar with white text)
-    add_footer_text(
-        slide_map,
-        f"{mission_id} | {organization}",
-        bottom=5.45,
-        font_size=7,
-        color=TEXT_WHITE,
+    # Generate remaining slides using shared builder
+    leg_prs = create_pptx_presentation(
+        mission=mission,
+        timeline=timeline,
+        parent_mission_id=parent_mission_id,
+        route_manager=route_manager,
+        poi_manager=poi_manager,
+        logo_path=logo_path,
+        map_cache=map_cache,
     )
 
-    # Slide 3+: Timeline Table (Paginated)
-    timeline_df = _segment_rows(timeline, mission)
+    # Append slides from builder to main presentation
+    for slide in leg_prs.slides:
+        # Copy slide to main presentation
+        slide_layout = prs.slide_layouts[6]
+        new_slide = prs.slides.add_slide(slide_layout)
 
-    if not timeline_df.empty:
-        # Define columns to show
-        columns_to_show = [
-            "Segment #",
-            "Status",
-            "Start Time",
-            "End Time",
-            "Duration",
-            TRANSPORT_DISPLAY[Transport.X],
-            TRANSPORT_DISPLAY[Transport.KA],
-            TRANSPORT_DISPLAY[Transport.KU],
-            "Reasons",
-        ]
-
-        # Pagination settings (reduced to 7 for new header/footer styling)
-        ROWS_PER_SLIDE = 7
-        MIN_ROWS_LAST_SLIDE = 3
-
-        # Convert to list of dicts for easier manipulation if needed, or just slice dataframe
-        # Slicing dataframe is easier but we need to handle the orphan logic
-        records = timeline_df.to_dict("records")
-        total_rows = len(records)
-
-        chunks = []
-        if total_rows <= ROWS_PER_SLIDE:
-            chunks.append(timeline_df)
-        else:
-            # Naive split first
-            current_idx = 0
-            while current_idx < total_rows:
-                end_idx = min(current_idx + ROWS_PER_SLIDE, total_rows)
-                chunks.append(timeline_df.iloc[current_idx:end_idx])
-                current_idx = end_idx
-
-            # Check last chunk
-            if len(chunks) > 1:
-                last_chunk = chunks[-1]
-                if len(last_chunk) < MIN_ROWS_LAST_SLIDE:
-                    # Need to move items from second to last chunk
-                    # Re-slice the last two chunks
-                    # We need to go back to the source dataframe indices
-                    # Let's recalculate the split point for the last page
-
-                    # Total items excluding the last "naive" chunk's items
-                    # Actually, let's just do it numerically
-                    # If we have 11 items. 10, 1.
-                    # We want 8, 3.
-                    # Split point should be total - 3.
-
-                    # If we have 21 items. 10, 10, 1.
-                    # We want 10, 8, 3.
-
-                    # So we only adjust the boundary between the last two chunks.
-                    # The start of the last chunk is currently `total_rows - len(last_chunk)`
-                    # We want the start to be `total_rows - 3` (or whatever min is)
-                    # But we must ensure the second to last chunk doesn't exceed max? No, it will shrink.
-                    # We must ensure the second to last chunk doesn't fall below min?
-                    # If max=10, min=3.
-                    # Worst case for prev chunk: It had 10. We take 2. It has 8. Safe.
-
-                    # Re-build chunks
-                    # Everything up to the second to last chunk stays same
-                    base_chunks = chunks[:-2]
-
-                    # Combine last two
-                    remainder_count = len(chunks[-2]) + len(chunks[-1])
-                    # We want last chunk to have MIN_ROWS_LAST_SLIDE
-                    # So second to last has remainder_count - MIN_ROWS_LAST_SLIDE
-
-                    split_idx = (
-                        total_rows - remainder_count
-                    )  # Start of the second-to-last chunk
-                    second_last_len = remainder_count - MIN_ROWS_LAST_SLIDE
-
-                    chunk_second_last = timeline_df.iloc[
-                        split_idx : split_idx + second_last_len
-                    ]
-                    chunk_last = timeline_df.iloc[split_idx + second_last_len :]
-
-                    chunks = base_chunks + [chunk_second_last, chunk_last]
-
-        # Get mission start date for footer (from earliest timeline segment)
-        mission_start = mission_start_timestamp(timeline)
-        mission_date = mission_start.strftime("%Y-%m-%d")
-
-        for chunk_idx, chunk in enumerate(chunks):
-            # Add new slide for each chunk
-            slide = prs.slides.add_slide(blank_slide_layout)
-
-            # Add header and footer bars
-            add_header_bar(slide, 0, 0, 10, 0.15)
-            add_footer_bar(slide, 0, 5.47, 10, 0.15)
-
-            # Add logo
-            add_logo(slide, logo_path, 0.2, 0.02, 0.5, 0.5)
-
-            # Add slide title
-            title_text = (
-                f"{leg_name} - Timeline"
-                if chunk_idx == 0
-                else f"{leg_name} - Timeline (cont.)"
-            )
-            add_slide_title(slide, title_text, top=0.2)
-
-            # Add footer text (centered within gold bar with white text)
-            footer_text = f"Date: {mission_date} | {mission_id} | {organization}"
-            add_footer_text(
-                slide, footer_text, bottom=5.45, font_size=7, color=TEXT_WHITE
-            )
-
-            rows = len(chunk) + 1  # +1 for header
-            cols = len(columns_to_show)
-
-            # Create table
-            left = Inches(0.5)
-            top = Inches(0.9)
-            width = Inches(9.0)
-            # Use a minimal height so rows don't stretch to fill a large area
-            # The table will expand as needed
-            height = Inches(1.0)
-
-            shape = slide.shapes.add_table(rows, cols, left, top, width, height)
-            table = shape.table
-
-            # Set column widths (adjusted for wider times)
-            # Total width 9 inches
-            # Old weights: [0.6, 1.0, 1.5, 1.5, 1.0, 1.0, 1.0, 1.0, 2.0]
-            # New weights: [0.6, 1.0, 1.75, 1.75, 1.0, 1.0, 1.0, 1.0, 1.5]
-            col_weights = [0.6, 1.0, 1.75, 1.75, 1.0, 1.0, 1.0, 1.0, 1.5]
-            total_weight = sum(col_weights)
-            for i, weight in enumerate(col_weights):
-                table.columns[i].width = int(width * (weight / total_weight))
-
-            # Header row style
-            for i, col_name in enumerate(columns_to_show):
-                cell = table.cell(0, i)
-                cell.text = col_name
-                cell.fill.solid()
-                cell.fill.fore_color.rgb = RGBColor(51, 102, 178)  # Dark Blue
-                paragraph = cell.text_frame.paragraphs[0]
-                paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White
-                paragraph.font.bold = True
-                paragraph.font.size = Pt(10)
-                paragraph.alignment = PP_ALIGN.CENTER
-
-            # Data rows
-            for row_idx, (_, row_data) in enumerate(chunk.iterrows(), start=1):
-                # Pre-calculate bad transports for this row
-                bad_transports = []
-                for col_name in STATE_COLUMNS:
-                    val = str(row_data[col_name] if row_data[col_name] else "").lower()
-                    if val in ("degraded", "warning", "offline"):
-                        bad_transports.append(col_name)
-
-                is_critical_row = len(bad_transports) >= 2
-
-                for col_idx, col_name in enumerate(columns_to_show):
-                    cell = table.cell(row_idx, col_idx)
-                    val = str(
-                        row_data[col_name] if row_data[col_name] is not None else ""
-                    )
-
-                    # Override Status text if critical
-                    if col_name == "Status" and is_critical_row:
-                        val = "CRITICAL"
-
-                    cell.text = val
-
-                    for paragraph in cell.text_frame.paragraphs:
-                        paragraph.font.size = Pt(9)
-                        paragraph.alignment = PP_ALIGN.LEFT
-
-                    # Alternating row colors
-                    cell.fill.solid()
-                    if row_idx % 2 == 0:
-                        cell.fill.fore_color.rgb = RGBColor(240, 240, 240)  # Light Gray
-                    else:
-                        cell.fill.fore_color.rgb = RGBColor(255, 255, 255)  # White
-
-                    # Status coloring for Status column with new color palette
-                    if col_name == "Status":
-                        val_lower = val.lower()
-
-                        # Check for Safety-of-Flight in reasons
-                        is_sof = False
-                        reasons = str(row_data.get("Reasons", "")).lower()
-                        if "safety-of-flight" in reasons or "aar" in reasons:
-                            is_sof = True
-
-                        # Override Status text to "SOF" if it's a safety window
-                        if is_sof and val_lower in ("available", "nominal", "warning"):
-                            cell.text = "SOF"
-                            # Re-apply font size since setting text resets it
-                            for paragraph in cell.text_frame.paragraphs:
-                                paragraph.font.size = Pt(9)
-                                paragraph.alignment = PP_ALIGN.LEFT
-
-                        # Apply status badge colors
-                        from app.mission.exporter.pptx_styling import (
-                            STATUS_NOMINAL,
-                            STATUS_SOF,
-                            STATUS_DEGRADED,
-                            STATUS_CRITICAL,
-                        )
-
-                        if is_critical_row and not is_sof:
-                            # Critical status
-                            cell.fill.solid()
-                            cell.fill.fore_color.rgb = STATUS_CRITICAL
-                            for paragraph in cell.text_frame.paragraphs:
-                                paragraph.font.color.rgb = RGBColor(255, 255, 255)
-                                paragraph.font.bold = True
-                        elif is_sof:
-                            # Safety of Flight
-                            cell.fill.solid()
-                            cell.fill.fore_color.rgb = STATUS_SOF
-                            for paragraph in cell.text_frame.paragraphs:
-                                paragraph.font.color.rgb = RGBColor(255, 255, 255)
-                                paragraph.font.bold = True
-                        elif val_lower in ("degraded", "warning"):
-                            # Degraded status
-                            cell.fill.solid()
-                            cell.fill.fore_color.rgb = STATUS_DEGRADED
-                            for paragraph in cell.text_frame.paragraphs:
-                                paragraph.font.color.rgb = RGBColor(255, 255, 255)
-                                paragraph.font.bold = True
-                        elif val_lower in ("nominal", "available"):
-                            # Nominal status
-                            cell.fill.solid()
-                            cell.fill.fore_color.rgb = STATUS_NOMINAL
-                            for paragraph in cell.text_frame.paragraphs:
-                                paragraph.font.color.rgb = RGBColor(255, 255, 255)
-                                paragraph.font.bold = True
-                    # Keep existing coloring for transport state columns
-                    elif col_name in STATE_COLUMNS:
-                        val_lower = val.lower()
-                        if val_lower in ("degraded", "warning", "offline"):
-                            cell.fill.solid()
-                            if val_lower in ("degraded", "warning"):
-                                cell.fill.fore_color.rgb = RGBColor(
-                                    255, 255, 204
-                                )  # Light Yellow
-                            else:
-                                cell.fill.fore_color.rgb = RGBColor(
-                                    255, 204, 204
-                                )  # Light Red
+        # Copy all shapes from source slide to new slide
+        for shape in slide.shapes:
+            el = shape.element
+            new_slide.shapes._spTree.append(el)
 
     buffer = io.BytesIO()
     prs.save(buffer)
@@ -2239,8 +1975,14 @@ def generate_timeline_export(
     parent_mission_id: str | None = None,
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
+    map_cache: dict[str, bytes] | None = None,
 ) -> ExportArtifact:
-    """Generate the requested export artifact."""
+    """Generate the requested export artifact.
+
+    Args:
+        map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
+            will check cache before generating maps and store newly generated maps.
+    """
     if export_format is TimelineExportFormat.CSV:
         content = generate_csv_export(timeline, mission)
         return ExportArtifact(content=content, media_type="text/csv", extension="csv")
@@ -2251,6 +1993,7 @@ def generate_timeline_export(
             parent_mission_id=parent_mission_id,
             route_manager=route_manager,
             poi_manager=poi_manager,
+            map_cache=map_cache,
         )
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         return ExportArtifact(content=content, media_type=media_type, extension="xlsx")
@@ -2261,6 +2004,7 @@ def generate_timeline_export(
             parent_mission_id=parent_mission_id,
             route_manager=route_manager,
             poi_manager=poi_manager,
+            map_cache=map_cache,
         )
         return ExportArtifact(
             content=content, media_type="application/pdf", extension="pdf"
@@ -2272,6 +2016,7 @@ def generate_timeline_export(
             parent_mission_id=parent_mission_id,
             route_manager=route_manager,
             poi_manager=poi_manager,
+            map_cache=map_cache,
         )
         return ExportArtifact(
             content=content,
