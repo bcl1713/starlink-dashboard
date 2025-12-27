@@ -19,13 +19,6 @@ from app.mission.storage import load_mission_v2, load_mission_timeline
 from app.mission.exporter import (
     generate_timeline_export,
     TimelineExportFormat,
-    ExportGenerationError,
-)
-from app.mission.exporter.excel_utils import (
-    EXCEL_SHEET_NAME_MAX_LENGTH,
-    create_mission_summary_sheet,
-    copy_worksheet_content,
-    add_error_sheet,
 )
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
@@ -35,95 +28,6 @@ logger = logging.getLogger(__name__)
 
 class ExportPackageError(RuntimeError):
     """Raised when mission package export fails."""
-
-
-def _process_leg_xlsx_export(
-    wb,
-    leg,
-    leg_idx: int,
-    mission_id: str,
-    route_manager: RouteManager | None,
-    poi_manager: POIManager | None,
-):
-    """Process a single leg's XLSX export and add sheets to workbook.
-
-    Args:
-        wb: Workbook to add sheets to
-        leg: Leg object to process
-        leg_idx: Leg index (0-based)
-        mission_id: Parent mission ID
-        route_manager: RouteManager instance
-        poi_manager: POIManager instance
-    """
-    from openpyxl import load_workbook
-
-    # Load timeline for this leg
-    leg_timeline = load_mission_timeline(leg.id)
-    if not leg_timeline:
-        logger.warning(f"No timeline found for leg {leg.id}, adding summary sheet only")
-        # Add a simple sheet for this leg
-        ws_leg = wb.create_sheet(title=f"Leg {leg_idx + 1} - {leg.name[:20]}")
-        ws_leg.append(["Leg Name", leg.name])
-        ws_leg.append(["Leg ID", leg.id])
-        ws_leg.append(["Description", leg.description or "N/A"])
-        ws_leg.append([])
-        ws_leg.append(["Status", "No timeline data available"])
-        return
-
-    try:
-        # Generate full XLSX export for this leg
-        leg_xlsx_bytes = generate_timeline_export(
-            export_format=TimelineExportFormat.XLSX,
-            mission=leg,
-            timeline=leg_timeline,
-            parent_mission_id=mission_id,
-            route_manager=route_manager,
-            poi_manager=poi_manager,
-        )
-
-        # Load the leg workbook
-        leg_wb = load_workbook(io.BytesIO(leg_xlsx_bytes.content))
-
-        # Copy each sheet from leg workbook to main workbook with leg prefix
-        for sheet_name in leg_wb.sheetnames:
-            leg_sheet = leg_wb[sheet_name]
-
-            # Create new sheet name with leg prefix
-            # Truncate leg name to fit Excel's sheet name limit
-            leg_prefix = f"L{leg_idx + 1}"
-            if sheet_name == "Summary":
-                new_sheet_name = f"{leg_prefix} {leg.name[:20]}"
-            else:
-                new_sheet_name = f"{leg_prefix} {sheet_name[:25]}"
-
-            # Ensure sheet name is unique and under limit
-            new_sheet_name = new_sheet_name[:EXCEL_SHEET_NAME_MAX_LENGTH]
-
-            # Create new sheet
-            new_sheet = wb.create_sheet(title=new_sheet_name)
-
-            # Copy all content from leg sheet to new sheet
-            copy_worksheet_content(leg_sheet, new_sheet)
-
-    except ExportGenerationError as e:
-        logger.error(f"Failed to generate XLSX export for leg {leg.id}: {e}")
-        add_error_sheet(wb, leg_idx, leg, str(e))
-
-    except (ValueError, KeyError) as e:
-        logger.error(f"Sheet manipulation error for leg {leg.id}: {e}", exc_info=True)
-        add_error_sheet(wb, leg_idx, leg, f"Processing Error: {str(e)}")
-
-    except zipfile.BadZipFile as e:
-        logger.error(
-            f"Invalid XLSX data generated for leg {leg.id}: {e}", exc_info=True
-        )
-        add_error_sheet(wb, leg_idx, leg, "Generated Excel file was invalid")
-
-    except Exception as e:
-        logger.error(
-            f"Unexpected error combining XLSX for leg {leg.id}: {e}", exc_info=True
-        )
-        add_error_sheet(wb, leg_idx, leg, f"Unexpected Error: {str(e)}")
 
 
 def generate_mission_combined_csv(
@@ -226,66 +130,6 @@ def generate_mission_combined_csv(
     return None
 
 
-def generate_mission_combined_xlsx(
-    mission: Mission,
-    route_manager: RouteManager | None = None,
-    poi_manager: POIManager | None = None,
-    output_path: str | None = None,
-) -> bytes | None:
-    """Generate combined XLSX timeline with one sheet per leg plus summary.
-
-    Creates workbook with:
-    - Mission Summary sheet (overview + leg index)
-    - Full sheets from each leg (Summary, Timeline, Advisories, Statistics)
-    """
-    try:
-        from openpyxl import Workbook
-    except ImportError:
-        logger.error("openpyxl not installed")
-        return b""
-
-    try:
-        # Create main workbook
-        wb = Workbook()
-
-        # Create mission summary sheet
-        create_mission_summary_sheet(wb, mission)
-
-        # Process each leg and import its sheets
-        for leg_idx, leg in enumerate(mission.legs):
-            _process_leg_xlsx_export(
-                wb, leg, leg_idx, mission.id, route_manager, poi_manager
-            )
-
-        # Save to bytes or file
-        if output_path:
-            wb.save(output_path)
-            return None
-
-        output = io.BytesIO()
-        wb.save(output)
-        output.seek(0)
-        return output.read()
-
-    except Exception as e:
-        logger.error(f"Failed to generate combined XLSX: {e}", exc_info=True)
-        # Return a basic error workbook
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Error"
-        ws.append(["Error generating combined Excel file"])
-        ws.append([str(e)])
-
-        if output_path:
-            wb.save(output_path)
-            return None
-
-        output = io.BytesIO()
-        wb.save(output)
-        output.seek(0)
-        return output.read()
-
-
 def generate_mission_combined_pptx(
     mission: Mission,
     route_manager: RouteManager | None = None,
@@ -318,7 +162,7 @@ def generate_mission_combined_pptx(
     # Import shared functions
     from pathlib import Path
 
-    from app.mission.exporter.pptx_builder import create_pptx_presentation
+    from app.mission.exporter.pptx_builder import add_mission_slides_to_presentation
     from app.mission.exporter.pptx_styling import (
         TEXT_BLACK,
         add_footer_bar,
@@ -404,8 +248,9 @@ def generate_mission_combined_pptx(
             continue
 
         try:
-            # Generate slides for this leg using shared builder
-            leg_prs = create_pptx_presentation(
+            # Add slides for this leg directly to main presentation
+            add_mission_slides_to_presentation(
+                prs=prs,
                 mission=leg,
                 timeline=leg_timeline,
                 parent_mission_id=mission.id,
@@ -414,17 +259,6 @@ def generate_mission_combined_pptx(
                 logo_path=logo_path,
                 map_cache=map_cache,
             )
-
-            # Append slides from leg presentation to main presentation
-            for slide in leg_prs.slides:
-                # Copy slide to main presentation
-                slide_layout = prs.slide_layouts[6]
-                new_slide = prs.slides.add_slide(slide_layout)
-
-                # Copy all shapes from source slide to new slide
-                for shape in slide.shapes:
-                    el = shape.element
-                    new_slide.shapes._spTree.append(el)
 
         except Exception as e:
             logger.error(f"Failed to generate PPTX slides for leg {leg.id}: {e}")
@@ -444,187 +278,6 @@ def generate_mission_combined_pptx(
     prs.save(output)
     output.seek(0)
     return output.read()
-
-
-def generate_mission_combined_pdf(
-    mission: Mission,
-    route_manager: RouteManager | None = None,
-    poi_manager: POIManager | None = None,
-    output_path: str | None = None,
-) -> bytes | None:
-    """Generate combined PDF report for entire mission.
-
-    Creates PDF with:
-    - Cover page (mission overview)
-    - Full PDF report for each leg (with maps and timelines)
-    - Summary page
-    """
-    import io
-
-    try:
-        from PyPDF2 import PdfMerger
-        from reportlab.lib.pagesizes import letter
-        from reportlab.pdfgen import canvas
-    except ImportError:
-        logger.error("PyPDF2 or reportlab not installed")
-        return b""
-
-    merger = PdfMerger()
-
-    try:
-        # Create cover page
-        cover_buffer = io.BytesIO()
-        c = canvas.Canvas(cover_buffer, pagesize=letter)
-        width, height = letter
-
-        c.setFont("Helvetica-Bold", 24)
-        c.drawString(100, height - 100, mission.name)
-        c.setFont("Helvetica", 12)
-        c.drawString(100, height - 140, f"Mission ID: {mission.id}")
-        c.drawString(100, height - 160, f"Total Legs: {len(mission.legs)}")
-        c.drawString(
-            100,
-            height - 200,
-            f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}",
-        )
-
-        # Add table of contents
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(100, height - 250, "Table of Contents")
-        c.setFont("Helvetica", 10)
-        y_position = height - 280
-        for idx, leg in enumerate(mission.legs, 1):
-            c.drawString(120, y_position, f"{idx}. {leg.name}")
-            y_position -= 20
-
-        c.showPage()
-        c.save()
-        cover_buffer.seek(0)
-
-        # Add cover page to merger
-        merger.append(cover_buffer)
-
-        # Generate and add each leg's full PDF
-        for leg_idx, leg in enumerate(mission.legs):
-            # Load timeline for this leg
-            leg_timeline = load_mission_timeline(leg.id)
-            if not leg_timeline:
-                logger.warning(
-                    f"No timeline found for leg {leg.id}, adding summary page only"
-                )
-                # Create a simple page for this leg
-                leg_buffer = io.BytesIO()
-                c = canvas.Canvas(leg_buffer, pagesize=letter)
-                c.setFont("Helvetica-Bold", 18)
-                c.drawString(100, height - 100, f"Leg: {leg.name}")
-                c.setFont("Helvetica", 12)
-                c.drawString(100, height - 140, f"Leg ID: {leg.id}")
-                c.drawString(
-                    100, height - 160, f"Description: {leg.description or 'N/A'}"
-                )
-                c.drawString(100, height - 200, "No timeline data available.")
-                c.showPage()
-                c.save()
-                leg_buffer.seek(0)
-                merger.append(leg_buffer)
-                continue
-
-            try:
-                # Generate full PDF export for this leg
-                leg_pdf_bytes = generate_timeline_export(
-                    export_format=TimelineExportFormat.PDF,
-                    mission=leg,
-                    timeline=leg_timeline,
-                    parent_mission_id=mission.id,
-                    route_manager=route_manager,
-                    poi_manager=poi_manager,
-                )
-
-                # Add section divider page before leg PDF (except for first leg)
-                if leg_idx > 0:
-                    divider_buffer = io.BytesIO()
-                    c = canvas.Canvas(divider_buffer, pagesize=letter)
-                    c.setFont("Helvetica-Bold", 20)
-                    c.drawString(100, height - 100, f"Leg {leg_idx + 1}")
-                    c.setFont("Helvetica-Bold", 16)
-                    c.drawString(100, height - 140, leg.name)
-                    c.showPage()
-                    c.save()
-                    divider_buffer.seek(0)
-                    merger.append(divider_buffer)
-
-                # Append the leg PDF
-                leg_pdf_buffer = io.BytesIO(leg_pdf_bytes.content)
-                merger.append(leg_pdf_buffer)
-
-            except Exception as e:
-                logger.error(f"Failed to combine PDF for leg {leg.id}: {e}")
-                # Add error page
-                error_buffer = io.BytesIO()
-                c = canvas.Canvas(error_buffer, pagesize=letter)
-                c.setFont("Helvetica-Bold", 18)
-                c.drawString(100, height - 100, f"Leg: {leg.name} - Export Error")
-                c.setFont("Helvetica", 12)
-                c.drawString(100, height - 140, f"Leg ID: {leg.id}")
-                c.drawString(100, height - 180, f"Error: {str(e)}")
-                c.showPage()
-                c.save()
-                error_buffer.seek(0)
-                merger.append(error_buffer)
-
-        # Create summary page
-        summary_buffer = io.BytesIO()
-        c = canvas.Canvas(summary_buffer, pagesize=letter)
-
-        c.setFont("Helvetica-Bold", 20)
-        c.drawString(100, height - 100, "Mission Summary")
-        c.setFont("Helvetica", 12)
-        c.drawString(100, height - 140, f"Total Legs: {len(mission.legs)}")
-
-        y_position = height - 180
-        for idx, leg in enumerate(mission.legs, 1):
-            c.drawString(100, y_position, f"{idx}. {leg.name} ({leg.id})")
-            y_position -= 20
-
-        c.showPage()
-        c.save()
-        summary_buffer.seek(0)
-
-        # Add summary page
-        merger.append(summary_buffer)
-
-        # Write final combined PDF
-        if output_path:
-            merger.write(output_path)
-            merger.close()
-            return None
-
-        output = io.BytesIO()
-        merger.write(output)
-        merger.close()
-        output.seek(0)
-        return output.read()
-
-    except Exception as e:
-        logger.error(f"Failed to generate combined PDF: {e}")
-        # Return a basic error PDF
-        output_stream = io.BytesIO()
-        c = canvas.Canvas(output_stream, pagesize=letter)
-        width, height = letter
-        c.setFont("Helvetica-Bold", 18)
-        c.drawString(100, height - 100, "PDF Generation Error")
-        c.setFont("Helvetica", 12)
-        c.drawString(100, height - 140, str(e))
-        c.showPage()
-        c.save()
-        output_stream.seek(0)
-
-        if output_path:
-            with open(output_path, "wb") as f:
-                f.write(output_stream.read())
-            return None
-
-        return output_stream.read()
 
 
 def _add_mission_metadata_to_zip(
@@ -776,7 +429,7 @@ def _add_per_leg_exports_to_zip(
     manifest_files: dict,
     map_cache: dict[str, bytes] | None = None,
 ):
-    """Generate and add per-leg exports (CSV, XLSX, PPTX, PDF) to zip archive.
+    """Generate and add per-leg exports (CSV, PPTX) to zip archive.
 
     Args:
         zf: ZipFile to add files to
@@ -810,24 +463,6 @@ def _add_per_leg_exports_to_zip(
             logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
 
         try:
-            # XLSX export
-            xlsx_export = generate_timeline_export(
-                export_format=TimelineExportFormat.XLSX,
-                mission=leg,
-                timeline=leg_timeline,
-                parent_mission_id=mission.id,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                map_cache=map_cache,
-            )
-            xlsx_path = f"exports/legs/{leg.id}/timeline.xlsx"
-            zf.writestr(xlsx_path, xlsx_export.content)
-            manifest_files["per_leg_exports"].append(xlsx_path)
-            logger.info(f"Generated XLSX for leg {leg.id}")
-        except Exception as e:
-            logger.error(f"Failed to generate XLSX for leg {leg.id}: {e}")
-
-        try:
             # PPTX export
             pptx_export = generate_timeline_export(
                 export_format=TimelineExportFormat.PPTX,
@@ -845,24 +480,6 @@ def _add_per_leg_exports_to_zip(
         except Exception as e:
             logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
 
-        try:
-            # PDF export
-            pdf_export = generate_timeline_export(
-                export_format=TimelineExportFormat.PDF,
-                mission=leg,
-                timeline=leg_timeline,
-                parent_mission_id=mission.id,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                map_cache=map_cache,
-            )
-            pdf_path = f"exports/legs/{leg.id}/report.pdf"
-            zf.writestr(pdf_path, pdf_export.content)
-            manifest_files["per_leg_exports"].append(pdf_path)
-            logger.info(f"Generated PDF for leg {leg.id}")
-        except Exception as e:
-            logger.error(f"Failed to generate PDF for leg {leg.id}: {e}")
-
 
 def _add_combined_mission_exports_to_zip(
     zf: zipfile.ZipFile,
@@ -872,7 +489,7 @@ def _add_combined_mission_exports_to_zip(
     manifest_files: dict,
     map_cache: dict[str, bytes] | None = None,
 ):
-    """Generate and add combined mission-level exports to zip archive.
+    """Generate and add combined mission-level exports (CSV, PPTX) to zip archive.
 
     Args:
         zf: ZipFile to add files to
@@ -893,19 +510,7 @@ def _add_combined_mission_exports_to_zip(
                 "exports/mission/mission-timeline.csv"
             )
 
-        # Combined XLSX - stream to temp file
-        with tempfile.NamedTemporaryFile(delete=True, suffix=".xlsx") as tmp_xlsx:
-            generate_mission_combined_xlsx(
-                mission,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                output_path=tmp_xlsx.name,
-            )
-            zf.write(tmp_xlsx.name, "exports/mission/mission-timeline.xlsx")
-            manifest_files["mission_exports"].append(
-                "exports/mission/mission-timeline.xlsx"
-            )
-
+        # Combined PPTX - stream to temp file
         with tempfile.NamedTemporaryFile(delete=True, suffix=".pptx") as tmp_pptx:
             generate_mission_combined_pptx(
                 mission,
@@ -917,18 +522,6 @@ def _add_combined_mission_exports_to_zip(
             zf.write(tmp_pptx.name, "exports/mission/mission-slides.pptx")
             manifest_files["mission_exports"].append(
                 "exports/mission/mission-slides.pptx"
-            )
-
-        with tempfile.NamedTemporaryFile(delete=True, suffix=".pdf") as tmp_pdf:
-            generate_mission_combined_pdf(
-                mission,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                output_path=tmp_pdf.name,
-            )
-            zf.write(tmp_pdf.name, "exports/mission/mission-report.pdf")
-            manifest_files["mission_exports"].append(
-                "exports/mission/mission-report.pdf"
             )
 
         logger.info("Combined mission-level exports complete")

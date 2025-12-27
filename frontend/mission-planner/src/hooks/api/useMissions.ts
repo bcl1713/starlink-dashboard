@@ -1,6 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { missionsApi } from '../../services/missions';
-import type { CreateMissionRequest, MissionLeg } from '../../types/mission';
+import type {
+  CreateMissionRequest,
+  UpdateMissionRequest,
+  MissionLeg,
+} from '../../types/mission';
 
 export function useMissions() {
   return useQuery({
@@ -24,6 +28,24 @@ export function useCreateMission() {
     mutationFn: (mission: CreateMissionRequest) => missionsApi.create(mission),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions'] });
+    },
+  });
+}
+
+export function useUpdateMission() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      updates,
+    }: {
+      id: string;
+      updates: UpdateMissionRequest;
+    }) => missionsApi.update(id, updates),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+      queryClient.invalidateQueries({ queryKey: ['missions', variables.id] });
     },
   });
 }

@@ -47,7 +47,7 @@ from app.mission.exporter.pptx_styling import (
     TEXT_WHITE,
 )
 from app.mission.exporter.pptx_builder import (
-    create_pptx_presentation,
+    add_mission_slides_to_presentation,
     add_route_map_slide,
     add_timeline_table_slides,
 )
@@ -82,7 +82,7 @@ __all__ = [
     "TEXT_BLACK",
     "TEXT_WHITE",
     # PPTX builder functions
-    "create_pptx_presentation",
+    "add_mission_slides_to_presentation",
     "add_route_map_slide",
     "add_timeline_table_slides",
 ]

@@ -1,15 +1,14 @@
 """Mission timeline export utilities.
 
-Transforms `MissionLegTimeline` data into CSV, XLSX, and PDF deliverables with
+Transforms `MissionLegTimeline` data into CSV and PPTX deliverables with
 parallel timestamp formats (UTC, Eastern, and T+ offsets) suitable for
 customer-facing mission briefs.
 """
 
-# FR-004: File exceeds 300 lines (2126 lines) because mission export generation
-# requires complex multi-format handling (PDF graphics with matplotlib, XLSX with
-# formulas, CSV with computed fields) that cannot be cleanly separated. Refactoring
-# would require extraction into 4+ service modules with circular dependencies on
-# timeline builders. Deferred to v0.4.0 pending SOLID improvements.
+# FR-004: File exceeds 300 lines because mission export generation
+# requires complex multi-format handling (PPTX with graphics, CSV with computed fields)
+# that cannot be cleanly separated. Refactoring would require extraction into multiple
+# service modules with circular dependencies. Deferred to v0.4.0 pending SOLID improvements.
 
 from __future__ import annotations
 
@@ -30,29 +29,13 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pandas as pd
-import openpyxl
-from openpyxl.drawing.image import Image as OpenpyxlImage
-from openpyxl.styles import PatternFill
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_RIGHT
-from reportlab.lib.pagesizes import LETTER, landscape
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.platypus import (
-    Image,
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-    Table,
-    TableStyle,
-    PageBreak,
-)
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 
 from app.mission.models import (
     Mission,
+    MissionLeg,
     MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
@@ -70,7 +53,6 @@ from app.mission.exporter.formatting import (
 )
 from app.mission.exporter.transport_utils import (
     TRANSPORT_DISPLAY,
-    STATE_COLUMNS,
     STATUS_COLORS,
     display_transport_state,
     segment_is_x_ku_warning,
@@ -87,24 +69,7 @@ from app.services.route_manager import RouteManager
 logger = logging.getLogger(__name__)
 
 EASTERN_TZ = ZoneInfo("America/New_York")
-LIGHT_YELLOW = colors.Color(1.0, 1.0, 0.85)
-LIGHT_RED = colors.Color(1.0, 0.85, 0.85)
 LOGO_PATH = Path(__file__).parent.with_name("assets").joinpath("logo.png")
-
-
-def _load_logo_flowable() -> Image | None:
-    """Return a scaled logo image if available."""
-    if not LOGO_PATH.exists():
-        return None
-    try:
-        logo = Image(str(LOGO_PATH))
-    except OSError:
-        return None
-    max_width = 1.6 * inch
-    max_height = 0.9 * inch
-    logo._restrictSize(max_width, max_height)
-    logo.hAlign = "RIGHT"
-    return logo
 
 
 class ExportGenerationError(RuntimeError):
@@ -112,11 +77,9 @@ class ExportGenerationError(RuntimeError):
 
 
 class TimelineExportFormat(str, Enum):
-    """Supported export formats."""
+    """Supported export formats: CSV for data analysis, PPTX for presentations."""
 
     CSV = "csv"
-    XLSX = "xlsx"
-    PDF = "pdf"
     PPTX = "pptx"
 
     @classmethod
@@ -1398,438 +1361,9 @@ def generate_csv_export(
     return csv_buffer.getvalue().encode("utf-8")
 
 
-def _summary_table_rows(
-    timeline: MissionLegTimeline, mission: Mission | None = None
-) -> pd.DataFrame:
-    """Generate simplified summary table DataFrame with key columns for Sheet 1.
-
-    Returns a DataFrame with columns: Start (UTC), Duration, Status, Systems Down
-    """
-    records: list[dict] = []
-
-    for segment in timeline.segments:
-        start_utc = ensure_timezone(segment.start_time)
-        end_value = segment.end_time if segment.end_time else segment.start_time
-        end_utc = ensure_timezone(end_value)
-        duration_seconds = max((end_utc - start_utc).total_seconds(), 0)
-
-        # Get segment status
-        status_value = (
-            segment.status.value
-            if isinstance(segment.status, TimelineStatus)
-            else str(segment.status)
-        )
-        status_value = status_value.upper()
-
-        # Get systems down (impacted transports)
-        systems_down = serialize_transport_list(segment.impacted_transports)
-
-        record = {
-            "Start (UTC)": format_utc(start_utc),
-            "Duration": format_seconds_hms(duration_seconds),
-            "Status": status_value,
-            "Systems Down": systems_down,
-        }
-        records.append(record)
-
-    columns = ["Start (UTC)", "Duration", "Status", "Systems Down"]
-    return pd.DataFrame.from_records(records, columns=columns)
-
-
-def generate_xlsx_export(
-    timeline: MissionLegTimeline,
-    mission: Mission | None = None,
-    parent_mission_id: str | None = None,
-    route_manager: RouteManager | None = None,
-    poi_manager: POIManager | None = None,
-    map_cache: dict[str, bytes] | None = None,
-) -> bytes:
-    """Return XLSX bytes containing Summary sheet (with map, chart, table) plus Timeline, Advisory, and Statistics sheets.
-
-    Args:
-        map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
-            will check cache before generating maps and store newly generated maps.
-    """
-    workbook_bytes = io.BytesIO()
-
-    # Generate all data
-    summary_df = _summary_table_rows(timeline, mission)
-    timeline_df = _segment_rows(timeline, mission)
-    advisories_df = _advisory_rows(timeline, mission)
-    stats_df = _statistics_rows(timeline)
-    map_image_bytes = _generate_route_map(
-        timeline,
-        mission,
-        parent_mission_id=parent_mission_id,
-        route_manager=route_manager,
-        poi_manager=poi_manager,
-    )
-    chart_image_bytes = _generate_timeline_chart(timeline)
-
-    # Write DataFrames to Excel sheets
-    with pd.ExcelWriter(workbook_bytes, engine="openpyxl") as writer:
-        # Write Summary sheet first (will reorder later)
-        summary_df.to_excel(writer, sheet_name="Summary", index=False, startrow=0)
-        timeline_df.to_excel(writer, sheet_name="Timeline", index=False)
-        if not advisories_df.empty:
-            advisories_df.to_excel(writer, sheet_name="Advisories", index=False)
-        if not stats_df.empty:
-            stats_df.to_excel(writer, sheet_name="Statistics", index=False)
-
-        # Access openpyxl workbook for image embedding and formatting
-        ws_summary = writer.sheets["Summary"]
-
-        # Set column widths for summary sheet
-        ws_summary.column_dimensions["A"].width = 25
-        ws_summary.column_dimensions["B"].width = 15
-        ws_summary.column_dimensions["C"].width = 12
-        ws_summary.column_dimensions["D"].width = 30
-
-        # Insert rows at top to accommodate map and chart images
-        # Map will be at A1 (approximately 30 rows tall)
-        # Chart will be at A32 (approximately 15 rows tall)
-        # Table will be at A49
-        ws_summary.insert_rows(1, 48)
-
-        # Embed map image at A1
-        try:
-            map_image_stream = io.BytesIO(map_image_bytes)
-            map_image = OpenpyxlImage(map_image_stream)
-            map_image.width = 750  # pixels
-            map_image.height = 500  # pixels
-            ws_summary.add_image(map_image, "A1")
-        except Exception as e:
-            logger.error("Failed to embed map image in Excel: %s", e, exc_info=True)
-
-        # Embed timeline chart at A32
-        try:
-            chart_image_stream = io.BytesIO(chart_image_bytes)
-            chart_image = OpenpyxlImage(chart_image_stream)
-            chart_image.width = 850  # pixels
-            chart_image.height = 300  # pixels
-            ws_summary.add_image(chart_image, "A32")
-        except Exception as e:
-            logger.error(
-                "Failed to embed timeline chart in Excel: %s", e, exc_info=True
-            )
-
-        # Apply color formatting to summary table rows (starting at row 49)
-        # Header is at row 49, data starts at row 50
-        color_map = {
-            "NOMINAL": PatternFill(
-                start_color="00FF00", end_color="00FF00", fill_type="solid"
-            ),
-            "DEGRADED": PatternFill(
-                start_color="FFFF00", end_color="FFFF00", fill_type="solid"
-            ),
-            "CRITICAL": PatternFill(
-                start_color="FF0000", end_color="FF0000", fill_type="solid"
-            ),
-        }
-
-        # Apply color to data rows (skip header row)
-        for row_idx, (_, row) in enumerate(summary_df.iterrows(), start=50):
-            status = row["Status"]
-            fill = color_map.get(status)
-            if fill:
-                # Apply fill to columns A-D for this row
-                for col_idx in range(1, 5):  # Columns A-D (1-4)
-                    ws_summary.cell(row=row_idx, column=col_idx).fill = fill
-
-    workbook_bytes.seek(0)
-    wb_final = openpyxl.load_workbook(workbook_bytes)
-
-    # Reorder sheets: move Summary to position 0 (first)
-    if "Summary" in wb_final.sheetnames:
-        summary_sheet = wb_final["Summary"]
-        wb_final._sheets.remove(summary_sheet)
-        wb_final._sheets.insert(0, summary_sheet)
-
-    # Write final workbook to bytes
-    final_bytes = io.BytesIO()
-    wb_final.save(final_bytes)
-    final_bytes.seek(0)
-    return final_bytes.read()
-
-
-def generate_pdf_export(
-    timeline: MissionLegTimeline,
-    mission: Mission | None = None,
-    parent_mission_id: str | None = None,
-    route_manager: RouteManager | None = None,
-    poi_manager: POIManager | None = None,
-    map_cache: dict[str, bytes] | None = None,
-) -> bytes:
-    """Render a PDF brief summarizing the mission timeline.
-
-    Args:
-        map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
-            will check cache before generating maps and store newly generated maps.
-    """
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=landscape(LETTER),
-        leftMargin=0.75 * inch,
-        rightMargin=0.75 * inch,
-        topMargin=0.75 * inch,
-        bottomMargin=0.75 * inch,
-    )
-    styles = getSampleStyleSheet()
-    story: list = []
-
-    mission_name = mission.name if mission and mission.name else timeline.mission_id
-    logo_flow = _load_logo_flowable()
-    if logo_flow:
-        logo_width = logo_flow.drawWidth
-        header_table = Table(
-            [
-                [
-                    Paragraph("Mission Communication Timeline", styles["Title"]),
-                    logo_flow,
-                ],
-                [
-                    Paragraph(f"Mission: {mission_name}", styles["Heading2"]),
-                    Spacer(1, 0),
-                ],
-            ],
-            colWidths=[doc.width - logo_width, logo_width],
-        )
-        header_table.setStyle(
-            TableStyle(
-                [
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    ("ALIGN", (1, 0), (1, 0), "RIGHT"),
-                    ("SPAN", (1, 1), (1, 1)),
-                ]
-            )
-        )
-        story.append(header_table)
-    else:
-        story.append(Paragraph("Mission Communication Timeline", styles["Title"]))
-        story.append(Spacer(1, 0.05 * inch))
-        story.append(Paragraph(f"Mission: {mission_name}", styles["Heading2"]))
-    story.append(Spacer(1, 0.2 * inch))
-
-    stats_df = _statistics_rows(timeline)
-    if not stats_df.empty:
-        stats_table = Table(
-            [["Metric", "Value"], *stats_df.values.tolist()],
-            hAlign="LEFT",
-        )
-        stats_table.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 6),
-                ]
-            )
-        )
-        story.append(stats_table)
-        story.append(Spacer(1, 0.2 * inch))
-
-    story.append(Spacer(1, 0.3 * inch))
-
-    # Add route map
-    story.append(Paragraph("Route Map", styles["Heading2"]))
-    try:
-        route_map_bytes = _generate_route_map(
-            timeline,
-            mission,
-            parent_mission_id=parent_mission_id,
-            route_manager=route_manager,
-            poi_manager=poi_manager,
-        )
-        route_map_stream = io.BytesIO(route_map_bytes)
-        route_map_image = Image(route_map_stream, width=6.5 * inch, height=4.3 * inch)
-        story.append(route_map_image)
-    except Exception as e:
-        logger.error("Failed to generate route map for PDF: %s", e, exc_info=True)
-        story.append(Paragraph(f"[Route map unavailable: {str(e)}]", styles["Normal"]))
-
-    # Page break before timeline
-    story.append(PageBreak())
-
-    # Add timeline chart
-    story.append(Paragraph("Transport Timeline", styles["Heading2"]))
-    try:
-        chart_image_bytes = _generate_timeline_chart(timeline)
-        chart_image_stream = io.BytesIO(chart_image_bytes)
-        chart_image = Image(chart_image_stream, width=7 * inch, height=2.3 * inch)
-        story.append(chart_image)
-    except Exception as e:
-        logger.error("Failed to generate timeline chart for PDF: %s", e, exc_info=True)
-        story.append(
-            Paragraph(f"[Timeline chart unavailable: {str(e)}]", styles["Normal"])
-        )
-
-    story.append(Spacer(1, 0.2 * inch))
-
-    timeline_df = _segment_rows(timeline, mission)
-    if timeline_df.empty:
-        story.append(
-            Paragraph("No timeline segments were generated.", styles["Normal"])
-        )
-    else:
-        story.append(Paragraph("Timeline Segments", styles["Heading2"]))
-        table_columns = [
-            ("", "Segment #"),
-            ("Status", "Status"),
-            ("Start Time", "Start Time"),
-            ("End Time", "End Time"),
-            ("Duration", "Duration"),
-            (TRANSPORT_DISPLAY[Transport.X], TRANSPORT_DISPLAY[Transport.X]),
-            (TRANSPORT_DISPLAY[Transport.KA], TRANSPORT_DISPLAY[Transport.KA]),
-            (TRANSPORT_DISPLAY[Transport.KU], TRANSPORT_DISPLAY[Transport.KU]),
-            ("Reasons", "Reasons"),
-        ]
-        body_style = styles["BodyText"]
-        body_style.fontSize = 8
-        body_style.leading = 9.5
-        # Pre-calculate status overrides and identify critical rows
-        # We need to modify the data *before* creating the Table if we want to change text
-
-        # Create a map of row_idx -> is_critical for styling later
-        critical_rows = {}
-
-        # Rebuild data with overrides
-        data = [[header for header, _ in table_columns]]
-        for row_idx, row in timeline_df.iterrows():
-            # Determine if row is critical (2+ bad systems, excluding SoF)
-            bad_cols_count = 0
-            for name in STATE_COLUMNS:
-                val = str(row[name]).strip().lower()
-                if val in ("degraded", "warning", "offline"):
-                    bad_cols_count += 1
-
-            is_critical = bad_cols_count >= 2
-            critical_rows[row_idx] = is_critical
-
-            # Check for SoF/AAR reasons
-            reasons = str(row.get("Reasons", "")).lower()
-            is_sof_row = "safety-of-flight" in reasons or "aar" in reasons
-
-            row_values = []
-            for header, key in table_columns:
-                value = row[key]
-
-                # Override Status text
-                if key == "Status":
-                    if is_critical:
-                        value = "CRITICAL"
-                    elif is_sof_row and str(value).lower() in (
-                        "nominal",
-                        "available",
-                        "warning",
-                    ):
-                        value = "SOF"
-
-                if key in {"Start Time", "End Time"}:
-                    display = (value or "-").replace("\n", "<br/>")
-                    row_values.append(Paragraph(display, body_style))
-                elif key == "Reasons":
-                    display = value or "-"
-                    row_values.append(Paragraph(str(display), body_style))
-                else:
-                    row_values.append(value)
-            data.append(row_values)
-
-        column_weights = [0.5, 1.1, 1.5, 1.5, 0.8, 1.2, 1.2, 1.2, 3.0]
-        width_unit = doc.width / sum(column_weights)
-        col_widths = [weight * width_unit for weight in column_weights]
-        table = Table(data, repeatRows=1, colWidths=col_widths)
-        style_commands = [
-            ("BACKGROUND", (0, 0), (-1, 0), colors.Color(0.2, 0.4, 0.7)),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 9),
-            ("FONTSIZE", (0, 1), (-1, -1), 8),
-            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-            ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.whitesmoke, colors.lightgrey]),
-        ]
-        column_index = {key: idx for idx, (_, key) in enumerate(table_columns)}
-        state_column_indices = {name: column_index[name] for name in STATE_COLUMNS}
-        status_col_idx = column_index.get("Status")
-
-        for row_idx in range(len(timeline_df)):
-            is_critical = critical_rows.get(row_idx, False)
-
-            # Check for SoF/AAR reasons
-            reasons = str(timeline_df.iloc[row_idx]["Reasons"]).lower()
-            is_sof_row = "safety-of-flight" in reasons or "aar" in reasons
-
-            # Color Status column
-            if status_col_idx is not None:
-                status_val = str(timeline_df.iloc[row_idx]["Status"]).upper()
-                if is_critical:
-                    style_commands.append(
-                        (
-                            "BACKGROUND",
-                            (status_col_idx, row_idx + 1),
-                            (status_col_idx, row_idx + 1),
-                            LIGHT_RED,
-                        )
-                    )
-                elif status_val in ("DEGRADED", "WARNING") or is_sof_row:
-                    style_commands.append(
-                        (
-                            "BACKGROUND",
-                            (status_col_idx, row_idx + 1),
-                            (status_col_idx, row_idx + 1),
-                            LIGHT_YELLOW,
-                        )
-                    )
-
-            # Color Transport columns
-            for name in STATE_COLUMNS:
-                val = str(timeline_df.iloc[row_idx][name]).strip().lower()
-                col_idx = state_column_indices[name]
-
-                # Check if this specific cell is SoF (AVAILABLE but needs yellow)
-                # SoF applies if the row is SoF and this cell is AVAILABLE/NOMINAL
-                cell_is_sof = is_sof_row and val in ("available", "nominal")
-
-                if val in ("degraded", "warning", "offline") or cell_is_sof:
-                    if is_critical and not cell_is_sof:
-                        color = LIGHT_RED
-                    elif val in ("degraded", "warning") or cell_is_sof:
-                        color = LIGHT_YELLOW
-                    else:
-                        color = LIGHT_RED  # Offline
-
-                    style_commands.append(
-                        (
-                            "BACKGROUND",
-                            (col_idx, row_idx + 1),
-                            (col_idx, row_idx + 1),
-                            color,
-                        )
-                    )
-
-        table.setStyle(TableStyle(style_commands))
-        story.append(table)
-
-    footer_style = styles["Normal"].clone("Footer")
-    footer_style.alignment = TA_RIGHT
-    story.append(Spacer(1, 0.2 * inch))
-    story.append(
-        Paragraph(
-            f"Timeline generated: {format_utc(timeline.created_at)}", footer_style
-        )
-    )
-
-    doc.build(story)
-    buffer.seek(0)
-    return buffer.read()
-
-
 def generate_pptx_export(
     timeline: MissionLegTimeline,
-    mission: Mission | None = None,
+    mission: Mission | MissionLeg | None = None,
     parent_mission_id: str | None = None,
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
@@ -1844,19 +1378,19 @@ def generate_pptx_export(
         map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
             will check cache before generating maps and store newly generated maps.
     """
-    from app.mission.exporter.pptx_builder import create_pptx_presentation
     from app.mission.exporter.pptx_styling import TEXT_BLACK
 
     # Logo path
     logo_path = Path(__file__).parent.with_name("assets").joinpath("logo.png")
 
     # Mission metadata
-    mission_id = mission.id if mission else timeline.leg_id
+    mission_id = mission.id if mission else timeline.mission_leg_id
     mission_name = mission.name if mission else "Mission"
     organization = (
         mission.description if (mission and mission.description) else "Organization"
     )
-    leg_count = len(mission.legs) if mission else 1
+    # Check if mission is a Mission (has .legs) or MissionLeg (no .legs)
+    leg_count = len(mission.legs) if (mission and hasattr(mission, "legs")) else 1
 
     # Create presentation with standard dimensions
     prs = Presentation()
@@ -1913,8 +1447,11 @@ def generate_pptx_export(
     info_paragraph.font.size = Pt(14)
     info_paragraph.font.color.rgb = TEXT_BLACK
 
-    # Generate remaining slides using shared builder
-    leg_prs = create_pptx_presentation(
+    # Add remaining slides using shared builder (adds directly to prs)
+    from app.mission.exporter.pptx_builder import add_mission_slides_to_presentation
+
+    add_mission_slides_to_presentation(
+        prs=prs,
         mission=mission,
         timeline=timeline,
         parent_mission_id=parent_mission_id,
@@ -1923,17 +1460,6 @@ def generate_pptx_export(
         logo_path=logo_path,
         map_cache=map_cache,
     )
-
-    # Append slides from builder to main presentation
-    for slide in leg_prs.slides:
-        # Copy slide to main presentation
-        slide_layout = prs.slide_layouts[6]
-        new_slide = prs.slides.add_slide(slide_layout)
-
-        # Copy all shapes from source slide to new slide
-        for shape in slide.shapes:
-            el = shape.element
-            new_slide.shapes._spTree.append(el)
 
     buffer = io.BytesIO()
     prs.save(buffer)
@@ -1977,7 +1503,7 @@ def generate_timeline_export(
     poi_manager: POIManager | None = None,
     map_cache: dict[str, bytes] | None = None,
 ) -> ExportArtifact:
-    """Generate the requested export artifact.
+    """Generate the requested export artifact (CSV or PPTX only).
 
     Args:
         map_cache: Optional cache for generated maps (route_id -> bytes). If provided,
@@ -1986,29 +1512,6 @@ def generate_timeline_export(
     if export_format is TimelineExportFormat.CSV:
         content = generate_csv_export(timeline, mission)
         return ExportArtifact(content=content, media_type="text/csv", extension="csv")
-    if export_format is TimelineExportFormat.XLSX:
-        content = generate_xlsx_export(
-            timeline,
-            mission,
-            parent_mission_id=parent_mission_id,
-            route_manager=route_manager,
-            poi_manager=poi_manager,
-            map_cache=map_cache,
-        )
-        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        return ExportArtifact(content=content, media_type=media_type, extension="xlsx")
-    if export_format is TimelineExportFormat.PDF:
-        content = generate_pdf_export(
-            timeline,
-            mission,
-            parent_mission_id=parent_mission_id,
-            route_manager=route_manager,
-            poi_manager=poi_manager,
-            map_cache=map_cache,
-        )
-        return ExportArtifact(
-            content=content, media_type="application/pdf", extension="pdf"
-        )
     if export_format is TimelineExportFormat.PPTX:
         content = generate_pptx_export(
             timeline,

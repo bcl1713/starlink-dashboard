@@ -24,7 +24,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from app.core.limiter import limiter
 
-from app.mission.models import Mission, MissionLeg
+from app.mission.models import Mission, MissionLeg, MissionUpdate
 from app.mission.storage import (
     save_mission_v2,
     load_mission_v2,
@@ -163,6 +163,61 @@ async def get_mission(mission_id: str) -> Mission:
         )
 
     return mission
+
+
+@router.patch("/{mission_id}", response_model=Mission)
+async def update_mission(mission_id: str, updates: MissionUpdate) -> Mission:
+    """Update mission name and/or description.
+
+    Args:
+        mission_id: Mission ID to update
+        updates: MissionUpdate with optional name and description fields
+
+    Returns:
+        Updated mission object
+
+    Raises:
+        HTTPException: 404 if mission not found, 422 for validation errors
+    """
+    try:
+        from datetime import datetime, timezone
+
+        logger.info(f"Updating mission {mission_id}")
+
+        with get_mission_lock(mission_id):
+            # Load existing mission
+            mission = load_mission_v2(mission_id)
+            if not mission:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Mission {mission_id} not found",
+                )
+
+            # Apply updates
+            if updates.name is not None:
+                mission.name = updates.name
+                logger.info(f"Updated mission {mission_id} name to: {updates.name}")
+
+            if updates.description is not None:
+                mission.description = updates.description
+                logger.info(f"Updated mission {mission_id} description")
+
+            # Update timestamp
+            mission.updated_at = datetime.now(timezone.utc)
+
+            # Save updated mission
+            save_mission_v2(mission)
+            logger.info(f"Mission {mission_id} updated successfully")
+
+            return mission
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update mission {mission_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update mission: {type(e).__name__}: {str(e)}",
+        )
 
 
 @router.delete("/{mission_id}", status_code=status.HTTP_204_NO_CONTENT)

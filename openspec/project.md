@@ -12,7 +12,7 @@ system for mobile Starlink terminals. It provides:
 - **Dual-mode operation**: Live mode (physical Starlink hardware) and
   Simulation mode (offline development)
 - **Historical metrics** storage and visualization via Prometheus and Grafana
-- **Mission export** capabilities (KML, GeoJSON, PowerPoint, PDF, Excel)
+- **Mission export** capabilities (KML, GeoJSON, PowerPoint, CSV)
 
 **Primary Use Case:** Maritime, aviation, or mobile vehicle operations
 requiring Starlink connectivity monitoring and route planning with satellite
@@ -273,8 +273,8 @@ coverage awareness.
 
 - **Mission:** Collection of route legs with metadata (name, description, timeline)
 - **Leg:** Individual route segment with start/end points and POIs
-- **Export Formats:** KML, GeoJSON, PowerPoint (briefing slides), PDF
-  (reports), Excel (waypoint tables)
+- **Export Formats:** KML, GeoJSON, PowerPoint (presentations), CSV
+  (timeline data)
 - **Import:** KML/KMZ file upload with automatic route and POI extraction
 
 ### Metrics & Monitoring

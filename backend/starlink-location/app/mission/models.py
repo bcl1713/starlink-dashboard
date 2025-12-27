@@ -426,6 +426,24 @@ class Mission(BaseModel):
     }
 
 
+class MissionUpdate(BaseModel):
+    """Partial update model for mission metadata (name and description only)."""
+
+    name: Optional[str] = Field(
+        default=None, description="Updated mission name", min_length=1
+    )
+    description: Optional[str] = Field(
+        default=None, description="Updated mission description"
+    )
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v):
+        if v is not None and len(v.strip()) == 0:
+            raise ValueError("Name cannot be empty or whitespace")
+        return v
+
+
 class TimelineSegment(BaseModel):
     """A contiguous time segment in the mission with uniform communication state."""
 

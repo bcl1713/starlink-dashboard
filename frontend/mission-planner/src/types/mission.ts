@@ -38,3 +38,8 @@ export interface CreateMissionRequest {
   description?: string;
   legs?: MissionLeg[];
 }
+
+export interface UpdateMissionRequest {
+  name?: string;
+  description?: string;
+}

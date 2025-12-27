@@ -2,6 +2,7 @@ import { apiClient } from './api-client';
 import type {
   Mission,
   CreateMissionRequest,
+  UpdateMissionRequest,
   MissionLeg,
 } from '../types/mission';
 
@@ -18,6 +19,14 @@ export const missionsApi = {
 
   create: async (mission: CreateMissionRequest) => {
     const response = await apiClient.post<Mission>('/api/v2/missions', mission);
+    return response.data;
+  },
+
+  update: async (id: string, updates: UpdateMissionRequest) => {
+    const response = await apiClient.patch<Mission>(
+      `/api/v2/missions/${id}`,
+      updates
+    );
     return response.data;
   },
 

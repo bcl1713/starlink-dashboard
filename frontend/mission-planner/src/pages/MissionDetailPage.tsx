@@ -15,8 +15,10 @@ import {
   useActivateLeg,
   useDeactivateAllLegs,
   useDeleteMission,
+  useUpdateMission,
 } from '../hooks/api/useMissions';
 import { AddLegDialog } from '../components/missions/AddLegDialog';
+import { EditableField } from '../components/missions/EditableField';
 import type { MissionLeg } from '../types/mission';
 
 export function MissionDetailPage() {
@@ -27,6 +29,7 @@ export function MissionDetailPage() {
   const addLegMutation = useAddLeg(missionId || '');
   const deleteLegMutation = useDeleteLeg(missionId || '');
   const deleteMissionMutation = useDeleteMission();
+  const updateMissionMutation = useUpdateMission();
   const activateLeg = useActivateLeg();
   const deactivateAllLegs = useDeactivateAllLegs(missionId || '');
 
@@ -89,12 +92,39 @@ export function MissionDetailPage() {
     }
   };
 
+  const handleUpdateName = async (newName: string) => {
+    await updateMissionMutation.mutateAsync({
+      id: mission!.id,
+      updates: { name: newName },
+    });
+  };
+
+  const handleUpdateDescription = async (newDescription: string) => {
+    await updateMissionMutation.mutateAsync({
+      id: mission!.id,
+      updates: { description: newDescription },
+    });
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">{mission.name}</h1>
-          <p className="text-muted-foreground mt-2">{mission.description}</p>
+        <div className="flex-1 mr-4">
+          <EditableField
+            value={mission.name}
+            onSave={handleUpdateName}
+            isLoading={updateMissionMutation.isPending}
+            placeholder="Mission name"
+            className="text-3xl font-bold"
+          />
+          <EditableField
+            value={mission.description || 'No description'}
+            onSave={handleUpdateDescription}
+            isLoading={updateMissionMutation.isPending}
+            placeholder="Mission description"
+            multiline
+            className="text-muted-foreground mt-2"
+          />
           <p className="text-sm text-gray-500 mt-2">ID: {mission.id}</p>
         </div>
         <div className="flex gap-2">

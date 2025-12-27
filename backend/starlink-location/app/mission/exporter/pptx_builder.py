@@ -42,44 +42,39 @@ from app.mission.models import Transport
 if TYPE_CHECKING:
     from pptx.slide import Slide
 
-    from app.mission.models import Mission
+    from app.mission.models import Mission, MissionLeg
     from app.mission.exporter import MissionLegTimeline
     from app.routing import POIManager, RouteManager
 
 logger = logging.getLogger(__name__)
 
 
-def create_pptx_presentation(
-    mission: Mission | None,
+def add_mission_slides_to_presentation(
+    prs: Presentation,
+    mission: Mission | MissionLeg | None,
     timeline: MissionLegTimeline,
     parent_mission_id: str | None = None,
     route_manager: RouteManager | None = None,
     poi_manager: POIManager | None = None,
     logo_path: Path | None = None,
     map_cache: dict[str, bytes] | None = None,
-) -> Presentation:
-    """Generate PowerPoint presentation with map and timeline slides.
+) -> None:
+    """Add mission slides (route map and timeline tables) to an existing presentation.
 
-    This function creates a complete presentation for a mission or leg, including:
+    This function adds slides directly to the provided presentation object:
     - Route map slide with optional caching
     - Paginated timeline table slides with status coloring
 
     Args:
-        mission: Mission or leg object (None for standalone timeline)
+        prs: Presentation object to add slides to
+        mission: Mission or MissionLeg object (None for standalone timeline)
         timeline: Timeline data for this mission/leg
         parent_mission_id: Parent mission ID (for multi-leg exports)
         route_manager: Route manager for map generation
         poi_manager: POI manager for map markers
         logo_path: Path to logo image file
         map_cache: Optional cache for generated maps (route_id -> bytes)
-
-    Returns:
-        Presentation object with all slides added
     """
-    prs = Presentation()
-    prs.slide_width = Inches(10)
-    prs.slide_height = Inches(5.62)
-
     # Import _generate_route_map here to avoid circular imports
     from app.mission.exporter import _generate_route_map
 
@@ -104,13 +99,11 @@ def create_pptx_presentation(
         logo_path=logo_path,
     )
 
-    return prs
-
 
 def add_route_map_slide(
     prs: Presentation,
     timeline: MissionLegTimeline,
-    mission: Mission | None,
+    mission: Mission | MissionLeg | None,
     parent_mission_id: str | None,
     route_manager: RouteManager | None,
     poi_manager: POIManager | None,
@@ -123,7 +116,7 @@ def add_route_map_slide(
     Args:
         prs: Presentation object to add slide to
         timeline: Timeline data for the route
-        mission: Mission or leg object
+        mission: Mission or MissionLeg object
         parent_mission_id: Parent mission ID (for multi-leg exports)
         route_manager: Route manager for map generation
         poi_manager: POI manager for map markers
@@ -143,11 +136,11 @@ def add_route_map_slide(
         add_logo(slide_map, logo_path, 0.2, 0.02, 0.5, 0.5)
 
     # Add slide title
-    leg_name = timeline.leg_id if timeline else "Route"
+    leg_name = timeline.mission_leg_id if timeline else "Route"
     add_slide_title(slide_map, f"{leg_name} - Route Map", top=0.2)
 
     # Get mission metadata for footer
-    mission_id = mission.id if mission else timeline.leg_id
+    mission_id = mission.id if mission else timeline.mission_leg_id
     organization = (
         mission.description if (mission and mission.description) else "Organization"
     )
@@ -217,7 +210,7 @@ def add_route_map_slide(
 def add_timeline_table_slides(
     prs: Presentation,
     timeline: MissionLegTimeline,
-    mission: Mission | None,
+    mission: Mission | MissionLeg | None,
     logo_path: Path | None,
 ) -> None:
     """Add paginated timeline table slides to presentation.
@@ -228,7 +221,7 @@ def add_timeline_table_slides(
     Args:
         prs: Presentation object to add slides to
         timeline: Timeline data to display
-        mission: Mission or leg object
+        mission: Mission or MissionLeg object
         logo_path: Path to logo image
     """
     # Import here to avoid circular dependency
@@ -258,8 +251,8 @@ def add_timeline_table_slides(
     )
 
     # Get mission metadata
-    leg_name = timeline.leg_id if timeline else "Mission"
-    mission_id = mission.id if mission else timeline.leg_id
+    leg_name = timeline.mission_leg_id if timeline else "Mission"
+    mission_id = mission.id if mission else timeline.mission_leg_id
     organization = (
         mission.description if (mission and mission.description) else "Organization"
     )
