@@ -43,3 +43,8 @@ export interface UpdateMissionRequest {
   name?: string;
   description?: string;
 }
+
+export interface UpdateLegRouteResponse {
+  leg: MissionLeg;
+  warnings?: string[] | null;
+}

@@ -118,6 +118,7 @@ export function LegDetailPage() {
       <LegHeader
         missionId={missionId || ''}
         legId={legId || ''}
+        routeId={leg?.route_id}
         onBackClick={handleBackClick}
       />
 

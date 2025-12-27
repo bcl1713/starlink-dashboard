@@ -123,3 +123,16 @@ export function useDeactivateAllLegs(missionId: string) {
     },
   });
 }
+
+export function useUpdateLegRoute(missionId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ legId, file }: { legId: string; file: File }) =>
+      missionsApi.updateLegRoute(missionId, legId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+    },
+  });
+}

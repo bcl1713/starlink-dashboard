@@ -49,6 +49,56 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _get_footer_metadata(
+    mission: Mission | MissionLeg | None,
+    parent_mission_id: str | None,
+) -> str:
+    """Resolve footer metadata from parent mission or leg.
+
+    This function determines what text to show in the slide footer based on
+    the mission hierarchy:
+    - If parent_mission_id is provided: Load parent mission and use its name/description
+    - Otherwise: Use the provided mission object's name/description
+    - If mission is None: Return empty string (caller should handle fallback)
+
+    Args:
+        mission: Mission or MissionLeg object (may be None)
+        parent_mission_id: Parent mission ID (for multi-leg exports)
+
+    Returns:
+        Formatted footer string: "{name} | {description}" or just "{name}"
+        Returns empty string if mission is None
+    """
+    if mission is None:
+        return ""
+
+    # Try to load parent mission first
+    if parent_mission_id:
+        from app.mission.storage import load_mission_v2
+
+        parent_mission = load_mission_v2(parent_mission_id)
+        if parent_mission:
+            # Use parent mission metadata
+            name = parent_mission.name or parent_mission.id
+            description = parent_mission.description
+
+            if description:
+                return f"{name} | {description}"
+            return name
+
+    # Fall back to provided mission object
+    name = mission.name if hasattr(mission, "name") and mission.name else mission.id
+    description = (
+        mission.description
+        if hasattr(mission, "description") and mission.description
+        else None
+    )
+
+    if description:
+        return f"{name} | {description}"
+    return name
+
+
 def add_mission_slides_to_presentation(
     prs: Presentation,
     mission: Mission | MissionLeg | None,
@@ -96,6 +146,7 @@ def add_mission_slides_to_presentation(
         prs=prs,
         timeline=timeline,
         mission=mission,
+        parent_mission_id=parent_mission_id,
         logo_path=logo_path,
     )
 
@@ -135,15 +186,18 @@ def add_route_map_slide(
     if logo_path:
         add_logo(slide_map, logo_path, 0.2, 0.02, 0.5, 0.5)
 
-    # Add slide title
-    leg_name = timeline.mission_leg_id if timeline else "Route"
+    # Add slide title - use mission name if available, otherwise fall back to leg ID
+    if mission and hasattr(mission, "name") and mission.name:
+        leg_name = mission.name
+    else:
+        leg_name = timeline.mission_leg_id if timeline else "Route"
     add_slide_title(slide_map, f"{leg_name} - Route Map", top=0.2)
 
-    # Get mission metadata for footer
-    mission_id = mission.id if mission else timeline.mission_leg_id
-    organization = (
-        mission.description if (mission and mission.description) else "Organization"
-    )
+    # Get footer metadata using helper
+    footer_metadata = _get_footer_metadata(mission, parent_mission_id)
+    if not footer_metadata:
+        # Fallback if mission is None
+        footer_metadata = timeline.mission_leg_id if timeline else "Organization"
 
     # Generate map image (with caching support)
     route_id = mission.route_id if mission else None
@@ -200,7 +254,7 @@ def add_route_map_slide(
     # Add footer text (centered within gold bar with white text)
     add_footer_text(
         slide_map,
-        f"{mission_id} | {organization}",
+        footer_metadata,
         bottom=5.45,
         font_size=7,
         color=TEXT_WHITE,
@@ -211,6 +265,7 @@ def add_timeline_table_slides(
     prs: Presentation,
     timeline: MissionLegTimeline,
     mission: Mission | MissionLeg | None,
+    parent_mission_id: str | None,
     logo_path: Path | None,
 ) -> None:
     """Add paginated timeline table slides to presentation.
@@ -222,6 +277,7 @@ def add_timeline_table_slides(
         prs: Presentation object to add slides to
         timeline: Timeline data to display
         mission: Mission or MissionLeg object
+        parent_mission_id: Parent mission ID (for multi-leg exports)
         logo_path: Path to logo image
     """
     # Import here to avoid circular dependency
@@ -250,12 +306,17 @@ def add_timeline_table_slides(
         timeline_df, rows_per_slide=7, min_rows_last_slide=3
     )
 
-    # Get mission metadata
-    leg_name = timeline.mission_leg_id if timeline else "Mission"
-    mission_id = mission.id if mission else timeline.mission_leg_id
-    organization = (
-        mission.description if (mission and mission.description) else "Organization"
-    )
+    # Get leg name for title - use mission name if available, otherwise fall back to leg ID
+    if mission and hasattr(mission, "name") and mission.name:
+        leg_name = mission.name
+    else:
+        leg_name = timeline.mission_leg_id if timeline else "Mission"
+
+    # Get footer metadata using helper
+    footer_metadata = _get_footer_metadata(mission, parent_mission_id)
+    if not footer_metadata:
+        # Fallback if mission is None
+        footer_metadata = timeline.mission_leg_id if timeline else "Organization"
 
     # Get mission start date for footer
     mission_start = mission_start_timestamp(timeline)
@@ -284,7 +345,7 @@ def add_timeline_table_slides(
         add_slide_title(slide, title_text, top=0.2)
 
         # Add footer text
-        footer_text = f"Date: {mission_date} | {mission_id} | {organization}"
+        footer_text = f"Date: {mission_date} | {footer_metadata}"
         add_footer_text(slide, footer_text, bottom=5.45, font_size=7, color=TEXT_WHITE)
 
         # Add timeline table for this chunk

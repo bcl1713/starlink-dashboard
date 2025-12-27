@@ -4,6 +4,7 @@ import type {
   CreateMissionRequest,
   UpdateMissionRequest,
   MissionLeg,
+  UpdateLegRouteResponse,
 } from '../types/mission';
 
 export const missionsApi = {
@@ -66,5 +67,25 @@ export const missionsApi = {
 
   deactivateAllLegs: async (missionId: string): Promise<void> => {
     await apiClient.post(`/api/v2/missions/${missionId}/legs/deactivate`);
+  },
+
+  updateLegRoute: async (
+    missionId: string,
+    legId: string,
+    kmlFile: File
+  ): Promise<UpdateLegRouteResponse> => {
+    const formData = new FormData();
+    formData.append('file', kmlFile);
+
+    const response = await apiClient.put<UpdateLegRouteResponse>(
+      `/api/v2/missions/${missionId}/legs/${legId}/route`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data;
   },
 };

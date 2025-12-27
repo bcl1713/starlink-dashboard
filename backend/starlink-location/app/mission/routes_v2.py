@@ -1161,6 +1161,300 @@ async def deactivate_all_legs(
         )
 
 
+def _validate_aar_windows_against_route(
+    aar_windows: list,
+    parsed_route,
+) -> tuple[list, list[str]]:
+    """Validate AAR windows against route waypoint names.
+
+    Args:
+        aar_windows: List of AARWindow objects to validate
+        parsed_route: ParsedRoute instance with waypoint data
+
+    Returns:
+        Tuple of (valid_aar_windows, removed_waypoint_names)
+    """
+    if not aar_windows:
+        return [], []
+
+    # Extract waypoint names from parsed route
+    waypoint_names = {wp.name for wp in parsed_route.waypoints if wp.name}
+
+    valid_windows = []
+    removed_waypoints = []
+
+    for window in aar_windows:
+        start_exists = window.start_waypoint_name in waypoint_names
+        end_exists = window.end_waypoint_name in waypoint_names
+
+        if start_exists and end_exists:
+            valid_windows.append(window)
+        else:
+            # Track which waypoints are missing
+            if not start_exists:
+                removed_waypoints.append(window.start_waypoint_name)
+            if not end_exists:
+                removed_waypoints.append(window.end_waypoint_name)
+
+            logger.warning(
+                f"Removing AAR window {window.id}: waypoints "
+                f"'{window.start_waypoint_name}' -> '{window.end_waypoint_name}' "
+                f"not found in new route"
+            )
+
+    return valid_windows, removed_waypoints
+
+
+def _import_waypoints_as_pois(
+    route_id: str,
+    parsed_route,
+    poi_manager: POIManager,
+) -> tuple[int, int]:
+    """Import waypoints from route as POIs.
+
+    Args:
+        route_id: Route identifier
+        parsed_route: ParsedRoute instance
+        poi_manager: POIManager instance
+
+    Returns:
+        Tuple of (created_count, skipped_count)
+    """
+    from app.api.routes.upload import _import_waypoints_as_pois as upload_import_pois
+
+    return upload_import_pois(route_id, parsed_route, poi_manager)
+
+
+@router.put("/{mission_id}/legs/{leg_id}/route")
+@limiter.limit("10/minute")
+async def update_leg_route(
+    request: Request,
+    mission_id: str,
+    leg_id: str,
+    file: UploadFile = File(...),
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> dict:
+    """Update a leg's route via KML file upload.
+
+    Preserves satellite transitions, outages, and transport configurations.
+    Validates AAR windows against new route waypoints and removes invalid ones.
+    Regenerates timeline with new route while maintaining satellite planning.
+
+    Args:
+        request: FastAPI request (for rate limiting)
+        mission_id: Mission ID
+        leg_id: Leg ID to update route for
+        file: Uploaded KML file
+        route_manager: RouteManager instance
+        poi_manager: POIManager instance
+
+    Returns:
+        Updated leg with warnings array if AAR windows were removed
+
+    Raises:
+        HTTPException: 400 for invalid file, 404 for mission/leg not found
+    """
+    try:
+        from app.services.kml_parser import KMLParseError
+
+        # Validate file extension
+        if not file.filename or not file.filename.endswith(".kml"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="File must have .kml extension",
+            )
+
+        with get_mission_lock(mission_id):
+            # Load mission and leg
+            mission = load_mission_v2(mission_id)
+            if not mission:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Mission {mission_id} not found",
+                )
+
+            # Find leg
+            leg_index = None
+            leg = None
+            for i, current_leg in enumerate(mission.legs):
+                if current_leg.id == leg_id:
+                    leg_index = i
+                    leg = current_leg
+                    break
+
+            if leg is None or leg_index is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Leg {leg_id} not found in mission {mission_id}",
+                )
+
+            old_route_id = leg.route_id
+
+            # Generate unique filename for new route
+            routes_dir = Path(route_manager.routes_dir)
+            base_name = Path(file.filename).stem
+            new_route_path = routes_dir / f"{base_name}.kml"
+
+            # Handle filename conflicts
+            counter = 1
+            while new_route_path.exists():
+                new_route_path = routes_dir / f"{base_name}_{counter}.kml"
+                counter += 1
+
+            new_route_id = new_route_path.stem
+
+            # Save new KML file to disk
+            try:
+                contents = await file.read()
+                with open(new_route_path, "wb") as f:
+                    f.write(contents)
+                logger.info(f"Saved new route file: {new_route_path}")
+            except Exception as e:
+                logger.error(f"Failed to save route file: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to save route file",
+                )
+
+            # Parse uploaded KML file using route manager
+            try:
+                route_manager._load_route_file(new_route_path)
+                parsed_route = route_manager.get_route(new_route_id)
+
+                if not parsed_route:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Failed to parse uploaded KML file",
+                    )
+            except KMLParseError as e:
+                # Clean up file on parse failure
+                if new_route_path.exists():
+                    new_route_path.unlink()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid KML file: {str(e)}",
+                )
+            except Exception as e:
+                # Clean up file on parse failure
+                if new_route_path.exists():
+                    new_route_path.unlink()
+                logger.error(f"Failed to parse KML file: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Failed to parse KML file",
+                )
+
+            # Delete old route file if it exists
+            if old_route_id:
+                try:
+                    old_parsed_route = route_manager.get_route(old_route_id)
+                    if old_parsed_route:
+                        old_file_path = Path(old_parsed_route.metadata.file_path)
+                        if old_file_path.exists():
+                            old_file_path.unlink()
+                            logger.info(f"Deleted old route file: {old_file_path}")
+
+                        # Remove from route manager cache
+                        route_manager._routes.pop(old_route_id, None)
+                except Exception as e:
+                    logger.warning(f"Failed to delete old route file: {e}")
+                    # Don't fail the update if old file deletion fails
+
+            # Update leg's route_id
+            leg.route_id = new_route_id
+
+            # Validate AAR windows against new route
+            warnings = []
+            if leg.transports.aar_windows:
+                valid_windows, removed_waypoints = _validate_aar_windows_against_route(
+                    leg.transports.aar_windows, parsed_route
+                )
+
+                if removed_waypoints:
+                    unique_removed = list(set(removed_waypoints))
+                    warnings.append(
+                        f"Removed AAR windows due to missing waypoints: {', '.join(unique_removed)}"
+                    )
+                    leg.transports.aar_windows = valid_windows
+                    logger.info(
+                        f"Removed {len(leg.transports.aar_windows) - len(valid_windows)} "
+                        f"AAR windows for leg {leg_id}"
+                    )
+
+            # Delete old POIs
+            if poi_manager and old_route_id:
+                try:
+                    deleted_pois = poi_manager.delete_route_pois(old_route_id)
+                    logger.info(
+                        f"Deleted {deleted_pois} POIs for old route {old_route_id}"
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to delete old POIs: {e}")
+
+            # Import new POIs from KML waypoints
+            if poi_manager:
+                try:
+                    created, skipped = _import_waypoints_as_pois(
+                        new_route_id, parsed_route, poi_manager
+                    )
+                    logger.info(
+                        f"Imported {created} POIs from new route (skipped {skipped})"
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to import POIs from new route: {e}")
+
+            # Update leg in mission
+            mission.legs[leg_index] = leg
+
+            # Save updated mission
+            try:
+                save_mission_v2(mission)
+                logger.info(f"Saved updated mission {mission_id}")
+            except Exception as e:
+                logger.error(f"Failed to save mission: {e}")
+                # Clean up new route file on failure
+                if new_route_path.exists():
+                    new_route_path.unlink()
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to save mission",
+                )
+
+            # Regenerate timeline
+            if route_manager:
+                try:
+                    logger.info(f"Regenerating timeline for leg {leg_id}")
+                    timeline, summary = build_mission_timeline(
+                        mission=leg,
+                        route_manager=route_manager,
+                        poi_manager=poi_manager,
+                        coverage_sampler=_coverage_sampler,
+                        parent_mission_id=mission_id,
+                    )
+                    save_mission_timeline(leg_id, timeline)
+                    logger.info(
+                        f"Timeline regenerated and saved for leg {leg_id} with new route"
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to regenerate timeline for leg {leg_id}: {e}")
+                    warnings.append(f"Timeline regeneration failed: {str(e)}")
+
+            return {
+                "leg": leg.model_dump(),
+                "warnings": warnings if warnings else None,
+            }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update route for leg {leg_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update route: {type(e).__name__}: {str(e)}",
+        )
+
+
 @router.get("/{mission_id}/legs/{leg_id}/timeline")
 async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
     """Get the computed timeline for a mission leg.
