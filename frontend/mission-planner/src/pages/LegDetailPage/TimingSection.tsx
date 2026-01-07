@@ -3,6 +3,9 @@ import { Button } from '../../components/ui/button';
 import type { MissionLeg } from '../../types/mission';
 import type { Timeline } from '../../services/timeline';
 
+/**
+ * Props for TimingSection component
+ */
 interface TimingSectionProps {
   leg: MissionLeg;
   timeline: Timeline | null;
@@ -13,6 +16,30 @@ interface TimingSectionProps {
   isUpdating: boolean;
 }
 
+/**
+ * Timing Section Component
+ *
+ * Displays and allows editing of mission leg departure times. Users can adjust the
+ * departure time without regenerating the route, providing operational flexibility
+ * for schedule changes.
+ *
+ * All times are displayed and entered in 24-hour format (UTC timezone) for consistency
+ * with professional aviation/maritime standards.
+ *
+ * Features:
+ * - Display original departure time from route timeline (read-only)
+ * - Edit current/adjusted departure time using datetime-local input (24-hour format)
+ * - Calculate and display arrival time based on route duration
+ * - Show offset indicator when departure time is adjusted
+ * - Warning for large time shifts (>8 hours)
+ * - Reset to original time functionality
+ * - Helper text indicating 24-hour format and UTC timezone
+ *
+ * @param leg - Mission leg data including adjusted departure time
+ * @param timeline - Route timeline data with segment times
+ * @param onTimingUpdate - Callback to update departure time adjustment
+ * @param isUpdating - Flag indicating if update is in progress
+ */
 export function TimingSection({
   leg,
   timeline,
@@ -22,6 +49,7 @@ export function TimingSection({
   const [editedDepartureTime, setEditedDepartureTime] = useState<string>('');
   const [hasLocalChanges, setHasLocalChanges] = useState(false);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [timeFormatError, setTimeFormatError] = useState<string | null>(null);
 
   // Extract original departure time from timeline (first segment start_time)
   const originalDepartureTime = timeline?.segments?.[0]?.start_time || null;
@@ -107,8 +135,18 @@ export function TimingSection({
     setEditedDepartureTime(value);
     setHasLocalChanges(true);
 
+    // Validate time format (HH:mm in 24-hour format)
+    const timePart = value.slice(11, 16);
+    const timePattern = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
+
+    if (timePart && !timePattern.test(timePart)) {
+      setTimeFormatError('Time must be in 24-hour format (HH:mm, e.g., 14:30)');
+    } else {
+      setTimeFormatError(null);
+    }
+
     // Calculate offset and show warning if > 8 hours
-    if (originalDepartureTime && value) {
+    if (originalDepartureTime && value && timePattern.test(timePart)) {
       const adjustedUTC = convertLocalToUTC(value);
       const adjustedDate = new Date(adjustedUTC);
       const originalUTC =
@@ -132,7 +170,7 @@ export function TimingSection({
   };
 
   const handleApply = () => {
-    if (!editedDepartureTime) return;
+    if (!editedDepartureTime || timeFormatError) return;
 
     // Convert local datetime to UTC ISO string
     const adjustedUTC = convertLocalToUTC(editedDepartureTime);
@@ -152,6 +190,7 @@ export function TimingSection({
     onTimingUpdate(null);
     setHasLocalChanges(false);
     setWarnings([]);
+    setTimeFormatError(null);
   };
 
   const handleCancel = () => {
@@ -162,6 +201,7 @@ export function TimingSection({
     }
     setHasLocalChanges(false);
     setWarnings([]);
+    setTimeFormatError(null);
   };
 
   // Format ISO datetime for display
@@ -215,22 +255,49 @@ export function TimingSection({
 
         {/* Current/Adjusted Departure Time (Editable) */}
         <div>
-          <label
-            htmlFor="departure-time"
-            className="text-sm font-medium block mb-1"
-          >
+          <label className="text-sm font-medium block mb-1">
             Current Departure (UTC)
           </label>
-          <input
-            id="departure-time"
-            type="datetime-local"
-            value={editedDepartureTime}
-            onChange={(e) => handleDepartureTimeChange(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md font-mono text-sm"
-            disabled={isUpdating}
-          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <input
+                id="departure-date"
+                type="date"
+                value={editedDepartureTime.slice(0, 10)}
+                onChange={(e) =>
+                  handleDepartureTimeChange(
+                    e.target.value + editedDepartureTime.slice(10)
+                  )
+                }
+                className="w-full px-3 py-2 border rounded-md font-mono text-sm"
+                disabled={isUpdating}
+              />
+            </div>
+            <div className="flex-1">
+              {/* Text input with pattern ensures 24-hour format (HH:mm) across all browsers */}
+              <input
+                id="departure-time"
+                type="text"
+                pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
+                placeholder="HH:mm (e.g., 14:30)"
+                value={editedDepartureTime.slice(11, 16)}
+                onChange={(e) =>
+                  handleDepartureTimeChange(
+                    editedDepartureTime.slice(0, 11) + e.target.value
+                  )
+                }
+                className={`w-full px-3 py-2 border rounded-md font-mono text-sm ${
+                  timeFormatError ? 'border-red-500' : ''
+                }`}
+                disabled={isUpdating}
+              />
+            </div>
+          </div>
+          {timeFormatError && (
+            <p className="text-sm text-red-500 mt-1">{timeFormatError}</p>
+          )}
           <p className="text-xs text-muted-foreground mt-1">
-            Enter time in UTC timezone
+            Enter time in UTC timezone (24-hour format: HH:mm)
           </p>
         </div>
 
@@ -265,7 +332,9 @@ export function TimingSection({
             <>
               <Button
                 onClick={handleApply}
-                disabled={isUpdating || !editedDepartureTime}
+                disabled={
+                  isUpdating || !editedDepartureTime || !!timeFormatError
+                }
                 size="sm"
               >
                 {isUpdating ? 'Applying...' : 'Apply'}

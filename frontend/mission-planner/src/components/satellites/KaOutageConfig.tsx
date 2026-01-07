@@ -9,15 +9,20 @@ import {
 } from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { toISO8601 } from '@/lib/utils';
+import { toISO8601, formatTime24Hour } from '@/lib/utils';
 import type { KaOutage } from '../../types/satellite';
 
+/**
+ * Props for KaOutageConfig component
+ */
 interface KaOutageConfigProps {
   outages: KaOutage[];
   onOutagesChange: (outages: KaOutage[]) => void;
 }
 
-// Helper to calculate duration from times
+/**
+ * Helper to calculate duration from times
+ */
 const calculateDuration = (startTime: string, endTime: string): number => {
   const start = new Date(startTime).getTime();
   const end = new Date(endTime).getTime();
@@ -55,6 +60,23 @@ interface NewOutageInput {
   end_time: string;
 }
 
+/**
+ * Ka-Band Outage Configuration Component
+ *
+ * Allows users to configure Ka-band communication outage windows for a mission leg.
+ * All times are displayed and entered in 24-hour format for consistency with
+ * professional aviation/maritime standards.
+ *
+ * Features:
+ * - Display existing outage windows with start time, duration, and end time
+ * - Add new outage windows using datetime-local inputs (24-hour format)
+ * - Automatic duration calculation
+ * - Validation for required fields and duration limits (0-24 hours)
+ * - Helper text indicating 24-hour format requirement
+ *
+ * @param outages - Array of existing Ka outage configurations
+ * @param onOutagesChange - Callback to update outages when user adds/removes entries
+ */
 export function KaOutageConfig({
   outages,
   onOutagesChange,
@@ -116,17 +138,17 @@ export function KaOutageConfig({
           <TableBody>
             {outages.map((outage, index) => (
               <TableRow key={outage.id}>
-                <TableCell>
-                  {new Date(outage.start_time).toLocaleString()}
-                </TableCell>
+                <TableCell>{formatTime24Hour(outage.start_time)}</TableCell>
                 <TableCell>
                   {(outage.duration_seconds / 3600).toFixed(2)}
                 </TableCell>
                 <TableCell>
-                  {new Date(
-                    new Date(outage.start_time).getTime() +
-                      outage.duration_seconds * 1000
-                  ).toLocaleString()}
+                  {formatTime24Hour(
+                    new Date(
+                      new Date(outage.start_time).getTime() +
+                        outage.duration_seconds * 1000
+                    ).toISOString()
+                  )}
                 </TableCell>
                 <TableCell>
                   <Button
@@ -142,8 +164,10 @@ export function KaOutageConfig({
             <TableRow>
               <TableCell>
                 <div>
+                  {/* datetime-local input with step="60" for 1-minute precision (no seconds) */}
                   <Input
                     type="datetime-local"
+                    step="60"
                     value={newOutage.start_time ?? ''}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -163,6 +187,10 @@ export function KaOutageConfig({
                     }}
                     className={startTimeError ? 'border-red-500' : ''}
                   />
+                  {/* Helper text guides users to enter time in 24-hour format */}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    24-hour format (HH:mm)
+                  </p>
                   {startTimeError && (
                     <p className="text-sm text-red-500 mt-1">
                       {startTimeError}
@@ -193,6 +221,7 @@ export function KaOutageConfig({
                 <div>
                   <Input
                     type="datetime-local"
+                    step="60"
                     value={newOutage.end_time ?? ''}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -212,6 +241,9 @@ export function KaOutageConfig({
                     }}
                     className={endTimeError ? 'border-red-500' : ''}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    24-hour format (HH:mm)
+                  </p>
                   {endTimeError && (
                     <p className="text-sm text-red-500 mt-1">{endTimeError}</p>
                   )}

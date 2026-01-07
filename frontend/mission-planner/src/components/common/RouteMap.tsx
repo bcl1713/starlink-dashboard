@@ -13,6 +13,7 @@ import { useMapState } from './RouteMap/useMapState';
 import { useRouteRenderer } from './RouteMap/useRouteRenderer';
 import { MapControls } from './RouteMap/MapControls';
 import { RouteLayer } from './RouteMap/RouteLayer';
+import { formatTime24Hour } from '@/lib/utils';
 
 interface RouteMapProps {
   coordinates: LatLngExpression[];
@@ -118,7 +119,7 @@ export function RouteMap({
               <h4 className="font-medium text-sm mb-1">Ka-Band Outages</h4>
               {kaOutages.map((outage, idx) => (
                 <div key={`ka-${idx}`} className="text-sm text-gray-700 ml-2">
-                  • {new Date(outage.start_time).toLocaleString()} (
+                  • {formatTime24Hour(outage.start_time)} (
                   {outage.duration_seconds}s)
                 </div>
               ))}
@@ -130,7 +131,7 @@ export function RouteMap({
               <h4 className="font-medium text-sm mb-1">Ku-Band Outages</h4>
               {kuOutages.map((outage, idx) => (
                 <div key={`ku-${idx}`} className="text-sm text-gray-700 ml-2">
-                  • {new Date(outage.start_time).toLocaleString()} (
+                  • {formatTime24Hour(outage.start_time)} (
                   {outage.duration_seconds}s)
                   {outage.reason && ` - ${outage.reason}`}
                 </div>

@@ -5,6 +5,7 @@ import type { XBandTransition } from '../../../types/satellite';
 import type { AARSegment } from '../../../types/aar';
 import type { KaTransition } from '../../../types/timeline';
 import { logger } from '../../../utils/logger';
+import { formatTime24Hour } from '@/lib/utils';
 
 interface RouteLayerProps {
   routeSegments: LatLngExpression[][];
@@ -81,7 +82,7 @@ export function RouteLayer({
               <br />
               To: {transition.toSatellite}
               <br />
-              Time: {new Date(transition.timestamp).toLocaleString()}
+              Time: {formatTime24Hour(transition.timestamp)}
             </div>
           </Popup>
         </Marker>
