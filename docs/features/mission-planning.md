@@ -13,7 +13,7 @@ Create and manage missions with transport configurations.
 - Define mission routes with waypoints
 - Configure satellite transports (X-Band, Ka, Ku/StarShield)
 - Set timing windows and operational constraints
-  - All times use 24-hour format (HH:mm) for consistency with aviation/maritime standards
+  - All times use 24-hour format (HH:mm) for aviation/maritime consistency
   - Times are entered and displayed in UTC timezone
 - Specify azimuth angle thresholds for degradation
 - Mission timeline visualization
