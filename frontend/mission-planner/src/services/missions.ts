@@ -5,6 +5,7 @@ import type {
   UpdateMissionRequest,
   MissionLeg,
   UpdateLegRouteResponse,
+  UpdateLegResponse,
 } from '../types/mission';
 
 export const missionsApi = {
@@ -44,8 +45,12 @@ export const missionsApi = {
     return response.data;
   },
 
-  updateLeg: async (missionId: string, legId: string, leg: MissionLeg) => {
-    const response = await apiClient.put<MissionLeg>(
+  updateLeg: async (
+    missionId: string,
+    legId: string,
+    leg: MissionLeg
+  ): Promise<UpdateLegResponse> => {
+    const response = await apiClient.put<UpdateLegResponse>(
       `/api/v2/missions/${missionId}/legs/${legId}`,
       leg
     );

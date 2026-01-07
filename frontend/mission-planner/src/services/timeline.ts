@@ -23,9 +23,14 @@ export interface Timeline {
 }
 
 export const timelineService = {
-  async getTimeline(legId: string): Promise<Timeline | null> {
+  async getTimeline(
+    missionId: string,
+    legId: string
+  ): Promise<Timeline | null> {
     try {
-      const response = await apiClient.get(`/api/missions/${legId}/timeline`);
+      const response = await apiClient.get(
+        `/api/v2/missions/${missionId}/legs/${legId}/timeline`
+      );
       return response.data;
     } catch (error) {
       console.error(`Timeline not available for leg ${legId}:`, error);

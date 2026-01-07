@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Sequence
 
 if TYPE_CHECKING:
@@ -19,6 +19,21 @@ from app.mission.timeline_builder.utils import (
     interpolate_altitude,
     interpolate_longitude,
 )
+
+
+def ensure_timezone(value: datetime) -> datetime:
+    """Return a timezone-aware UTC datetime.
+
+    Args:
+        value: A datetime object (with or without timezone info)
+
+    Returns:
+        A timezone-aware UTC datetime
+    """
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
 
 logger = logging.getLogger(__name__)
 
@@ -145,9 +160,23 @@ class RouteTemporalProjector:
         return self.sample_at_distance(self.total_distance)
 
 
-def derive_mission_window(route: ParsedRoute) -> tuple[datetime, datetime]:
-    """Infer mission start/end timestamps from the parsed route."""
+def derive_mission_window(
+    route: ParsedRoute, adjusted_departure_time: datetime | None = None
+) -> tuple[datetime, datetime]:
+    """Infer mission start/end timestamps from the parsed route.
 
+    Args:
+        route: Parsed route with timing information
+        adjusted_departure_time: Optional override for departure time. If provided,
+            the function calculates the offset from the original departure time and
+            applies it uniformly to both departure and arrival times.
+
+    Returns:
+        Tuple of (adjusted_start_time, adjusted_end_time)
+
+    Raises:
+        TimelineComputationError: If route timing data is missing or invalid
+    """
     start_candidates: list[datetime] = []
     end_candidates: list[datetime] = []
 
@@ -167,11 +196,37 @@ def derive_mission_window(route: ParsedRoute) -> tuple[datetime, datetime]:
             "Route timing data missing departure/arrival timestamps"
         )
 
-    mission_start = min(start_candidates)
-    mission_end = max(end_candidates)
+    original_start = min(start_candidates)
+    original_end = max(end_candidates)
 
-    if mission_end <= mission_start:
+    if original_end <= original_start:
         raise TimelineComputationError("Mission end must be after mission start")
+
+    # Ensure datetimes are timezone-aware for proper arithmetic
+    original_start = ensure_timezone(original_start)
+    original_end = ensure_timezone(original_end)
+
+    # Apply time adjustment if provided
+    if adjusted_departure_time is not None:
+        # Ensure adjusted time is also timezone-aware
+        adjusted_departure_time = ensure_timezone(adjusted_departure_time)
+        offset_seconds = (adjusted_departure_time - original_start).total_seconds()
+        offset = timedelta(seconds=offset_seconds)
+        mission_start = original_start + offset
+        mission_end = original_end + offset
+        logger.info(
+            f"derive_mission_window: adjusted time provided. "
+            f"original_start={original_start}, "
+            f"adjusted_departure_time={adjusted_departure_time}, "
+            f"offset={offset_seconds}s, "
+            f"mission_start={mission_start}"
+        )
+    else:
+        mission_start = original_start
+        mission_end = original_end
+        logger.debug(
+            f"derive_mission_window: no adjustment. " f"mission_start={mission_start}"
+        )
 
     return mission_start, mission_end
 

@@ -1,9 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
+import { useTimeline } from '../hooks/api/useTimeline';
 import { useLegData } from './LegDetailPage/useLegData';
 import { LegHeader } from './LegDetailPage/LegHeader';
 import { LegConfigTabs } from './LegDetailPage/LegConfigTabs';
 import { LegMapVisualization } from './LegDetailPage/LegMapVisualization';
+import { TimingSection } from './LegDetailPage/TimingSection';
 import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
 
@@ -16,6 +18,7 @@ export function LegDetailPage() {
   const { data: mission, isLoading: isMissionLoading } = useMission(
     missionId || ''
   );
+  const { data: timeline } = useTimeline(missionId || '', legId || '');
   const updateLegMutation = useUpdateLeg(missionId || '', legId || '');
 
   // Find the current leg
@@ -69,7 +72,7 @@ export function LegDetailPage() {
     if (!leg) return;
 
     try {
-      await updateLegMutation.mutateAsync({
+      const result = await updateLegMutation.mutateAsync({
         ...leg,
         transports: {
           initial_x_satellite_id:
@@ -81,11 +84,50 @@ export function LegDetailPage() {
           ku_overrides: satelliteConfig.ku_outages,
         },
       });
-      alert('Changes saved successfully!');
+
+      if (result.warnings && result.warnings.length > 0) {
+        alert(
+          `Changes saved successfully!\n\nWarnings:\n${result.warnings.join('\n')}`
+        );
+      } else {
+        alert('Changes saved successfully!');
+      }
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Failed to save:', error);
       alert('Failed to save changes');
+    }
+  };
+
+  const handleTimingUpdate = async (
+    adjustedDepartureTime: string | null,
+    warnings?: string[]
+  ) => {
+    if (!leg) return;
+
+    try {
+      const result = await updateLegMutation.mutateAsync({
+        ...leg,
+        adjusted_departure_time: adjustedDepartureTime,
+      });
+
+      if (warnings && warnings.length > 0) {
+        alert(
+          `Timing updated successfully!\n\nWarnings:\n${warnings.join('\n')}`
+        );
+      } else if (adjustedDepartureTime === null) {
+        alert('Timing reset to original departure time.');
+      } else {
+        alert('Timing updated successfully!');
+      }
+
+      if (result.warnings && result.warnings.length > 0) {
+        const warningMessage = result.warnings.join('\n\n');
+        alert(`⚠️  Server warnings:\n\n${warningMessage}`);
+      }
+    } catch (error) {
+      console.error('Failed to update timing:', error);
+      alert('Failed to update timing. Please try again.');
     }
   };
 
@@ -124,7 +166,14 @@ export function LegDetailPage() {
 
       <div className="grid grid-cols-2 gap-6">
         {/* Left Column: Configuration Tabs */}
-        <div>
+        <div className="space-y-6">
+          <TimingSection
+            leg={leg}
+            timeline={timeline || null}
+            onTimingUpdate={handleTimingUpdate}
+            isUpdating={updateLegMutation.isPending}
+          />
+
           <LegConfigTabs
             satelliteConfig={satelliteConfig}
             aarConfig={aarConfig}
@@ -134,7 +183,7 @@ export function LegDetailPage() {
             onAARConfigChange={handleAARConfigChange}
           />
 
-          <div className="flex justify-end space-x-4 mt-6">
+          <div className="flex justify-end space-x-4">
             <button
               className="px-4 py-2 border rounded-md hover:bg-gray-100"
               onClick={() => navigate(`/missions/${missionId}`)}

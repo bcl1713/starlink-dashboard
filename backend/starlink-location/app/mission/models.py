@@ -327,6 +327,12 @@ class MissionLeg(BaseModel):
         ...,
         description="Transport and satellite configuration",
     )
+    adjusted_departure_time: Optional[datetime] = Field(
+        default=None,
+        description="Optional override for departure time (UTC, ISO-8601). When set, "
+        "all waypoint times and timeline segments are adjusted by the calculated offset "
+        "from the original KML departure time.",
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="When mission was created (UTC, ISO-8601)",
@@ -355,6 +361,21 @@ class MissionLeg(BaseModel):
             )
         return v
 
+    def get_time_offset_seconds(
+        self, original_departure_time: datetime
+    ) -> Optional[float]:
+        """Calculate time offset in seconds from original departure time.
+
+        Args:
+            original_departure_time: The original departure time from the KML route
+
+        Returns:
+            Time offset in seconds if adjusted_departure_time is set, None otherwise
+        """
+        if self.adjusted_departure_time is None:
+            return None
+        return (self.adjusted_departure_time - original_departure_time).total_seconds()
+
     model_config = {
         "json_schema_extra": {
             "example": {
@@ -370,6 +391,7 @@ class MissionLeg(BaseModel):
                     "aar_windows": [],
                     "ku_overrides": [],
                 },
+                "adjusted_departure_time": None,
                 "created_at": "2025-10-20T10:30:00Z",
                 "updated_at": "2025-10-20T10:30:00Z",
                 "is_active": False,

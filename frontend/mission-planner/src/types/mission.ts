@@ -26,6 +26,7 @@ export interface MissionLeg {
   route_id: string;
   description?: string;
   transports: TransportConfig;
+  adjusted_departure_time?: string | null;
   created_at?: string;
   updated_at?: string;
   is_active?: boolean;
@@ -45,6 +46,11 @@ export interface UpdateMissionRequest {
 }
 
 export interface UpdateLegRouteResponse {
+  leg: MissionLeg;
+  warnings?: string[] | null;
+}
+
+export interface UpdateLegResponse {
   leg: MissionLeg;
   warnings?: string[] | null;
 }

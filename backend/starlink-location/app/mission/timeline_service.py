@@ -68,7 +68,10 @@ def build_mission_timeline(
     if not route:
         raise TimelineComputationError(f"Route {mission.route_id} not loaded")
 
-    mission_start, mission_end = derive_mission_window(route)
+    # Pass adjusted_departure_time to derive_mission_window if set
+    mission_start, mission_end = derive_mission_window(
+        route, adjusted_departure_time=mission.adjusted_departure_time
+    )
     projector = RouteTemporalProjector(route, mission_start, mission_end)
 
     resolved_sampler = coverage_sampler or _get_default_coverage_sampler()

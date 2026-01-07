@@ -34,10 +34,12 @@ from app.mission.storage import (
 )
 from app.mission.package import export_mission_package
 from app.mission.timeline_service import build_mission_timeline
+from app.mission.validation import validate_adjusted_departure_time
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
 from app.mission.dependencies import get_route_manager, get_poi_manager
 from app.satellites.coverage import CoverageSampler
+from app.mission.timeline_builder.calculator import derive_mission_window
 
 logger = logging.getLogger(__name__)
 
@@ -812,14 +814,14 @@ async def add_leg_to_mission(
         )
 
 
-@router.put("/{mission_id}/legs/{leg_id}", response_model=MissionLeg)
+@router.put("/{mission_id}/legs/{leg_id}")
 async def update_leg(
     mission_id: str,
     leg_id: str,
     updated_leg: MissionLeg,
     route_manager: RouteManager = Depends(get_route_manager),
     poi_manager: POIManager = Depends(get_poi_manager),
-) -> MissionLeg:
+) -> dict:
     """Update an existing leg in a mission.
 
     Args:
@@ -828,9 +830,11 @@ async def update_leg(
         updated_leg: Updated MissionLeg object
 
     Returns:
-        Updated leg
+        Dict with updated leg and optional warnings array
     """
     try:
+        warnings = []
+
         with get_mission_lock(mission_id):
             # Load mission
             mission = load_mission_v2(mission_id)
@@ -860,6 +864,28 @@ async def update_leg(
                     detail="Leg ID in path must match leg ID in body",
                 )
 
+            # Validate adjusted departure time if set
+            if updated_leg.adjusted_departure_time is not None and updated_leg.route_id:
+                route = route_manager.get_route(updated_leg.route_id)
+                if route:
+                    try:
+                        original_start, _ = derive_mission_window(route)
+                        validation_warnings = validate_adjusted_departure_time(
+                            updated_leg.adjusted_departure_time, original_start
+                        )
+                        warnings.extend(validation_warnings)
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to validate adjusted departure time: {e}"
+                        )
+
+            # Warn if adjusted_departure_time is set but no route exists
+            if updated_leg.adjusted_departure_time and not updated_leg.route_id:
+                warnings.append(
+                    "Adjusted departure time set, but leg has no route. "
+                    "Timeline cannot be regenerated. Please upload a route KML first."
+                )
+
             # Update leg
             mission.legs[leg_index] = updated_leg
 
@@ -867,9 +893,12 @@ async def update_leg(
             save_mission_v2(mission)
 
             # Generate timeline for the updated leg
-            if route_manager:
+            if route_manager and updated_leg.route_id:
                 try:
-                    logger.info(f"Generating timeline for leg {leg_id}")
+                    logger.info(
+                        f"Generating timeline for leg {leg_id} with "
+                        f"adjusted_departure_time={updated_leg.adjusted_departure_time}"
+                    )
                     timeline, summary = build_mission_timeline(
                         mission=updated_leg,
                         route_manager=route_manager,
@@ -877,14 +906,33 @@ async def update_leg(
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
                     )
+                    # Log the timeline start time to verify it was adjusted
+                    if timeline.segments:
+                        first_start = timeline.segments[0].start_time
+                        last_end = timeline.segments[-1].end_time
+                        logger.info(
+                            f"Timeline generated: starts at {first_start}, "
+                            f"ends at {last_end}, "
+                            f"{len(timeline.segments)} segments"
+                        )
                     save_mission_timeline(leg_id, timeline)
-                    logger.info(f"Timeline generated and saved for leg {leg_id}")
+                    logger.info(f"Timeline saved to disk for leg {leg_id}")
                 except Exception as e:
-                    logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
-                    # Don't fail the save if timeline generation fails
+                    logger.error(
+                        f"Failed to generate timeline for leg {leg_id}: {e}",
+                        exc_info=True,
+                    )
+                    warnings.append(
+                        f"Timeline regeneration failed: {str(e)}. "
+                        "Exported documents may show stale timing. "
+                        "Please check that the route KML is properly uploaded."
+                    )
 
             logger.info(f"Updated leg {leg_id} in mission {mission_id}")
-            return updated_leg
+            return {
+                "leg": updated_leg.model_dump(),
+                "warnings": warnings if warnings else None,
+            }
     except HTTPException:
         raise
     except Exception as e:
@@ -1364,6 +1412,13 @@ async def update_leg_route(
             # Update leg's route_id
             leg.route_id = new_route_id
 
+            # Clear adjusted departure time when route is updated
+            if leg.adjusted_departure_time is not None:
+                leg.adjusted_departure_time = None
+                logger.info(
+                    f"Cleared adjusted_departure_time for leg {leg_id} after route update"
+                )
+
             # Validate AAR windows against new route
             warnings = []
             if leg.transports.aar_windows:
@@ -1493,7 +1548,7 @@ async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
                 detail=f"Timeline not found for leg {leg_id}",
             )
 
-        return timeline.model_dump()
+        return timeline.model_dump(mode="json")
     except HTTPException:
         raise
     except Exception as e:

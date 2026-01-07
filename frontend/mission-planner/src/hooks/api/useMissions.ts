@@ -4,6 +4,7 @@ import type {
   CreateMissionRequest,
   UpdateMissionRequest,
   MissionLeg,
+  UpdateLegResponse,
 } from '../../types/mission';
 
 export function useMissions() {
@@ -89,12 +90,13 @@ export function useDeleteLeg(missionId: string) {
 export function useUpdateLeg(missionId: string, legId: string) {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<UpdateLegResponse, Error, MissionLeg>({
     mutationFn: (leg: MissionLeg) =>
       missionsApi.updateLeg(missionId, legId, leg),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline', legId] });
     },
   });
 }
@@ -130,9 +132,12 @@ export function useUpdateLegRoute(missionId: string) {
   return useMutation({
     mutationFn: ({ legId, file }: { legId: string; file: File }) =>
       missionsApi.updateLegRoute(missionId, legId, file),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
       queryClient.invalidateQueries({ queryKey: ['missions'] });
+      queryClient.invalidateQueries({
+        queryKey: ['timeline', variables.legId],
+      });
     },
   });
 }

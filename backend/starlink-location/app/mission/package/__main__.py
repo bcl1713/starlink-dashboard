@@ -239,6 +239,17 @@ def generate_mission_combined_pptx(
             logger.warning(
                 f"No timeline found for leg {leg.id}, adding summary slide only"
             )
+        else:
+            # Log timeline start time for debugging
+            if leg_timeline.segments:
+                first_segment_start = leg_timeline.segments[0].start_time
+                logger.info(
+                    f"Loaded timeline for leg {leg.id}: "
+                    f"first segment starts at {first_segment_start}, "
+                    f"leg.adjusted_departure_time={leg.adjusted_departure_time}"
+                )
+
+        if not leg_timeline:
             # Add a summary slide for this leg
             slide = prs.slides.add_slide(prs.slide_layouts[1])
             title_shape = slide.shapes.title
@@ -447,6 +458,15 @@ def _add_per_leg_exports_to_zip(
                 f"No timeline found for leg {leg.id}, skipping exports for this leg"
             )
             continue
+
+        # Log timeline start time for debugging adjusted departure times
+        if leg_timeline.segments:
+            first_segment_start = leg_timeline.segments[0].start_time
+            logger.info(
+                f"Exporting leg {leg.id}: "
+                f"timeline starts at {first_segment_start}, "
+                f"leg.adjusted_departure_time={leg.adjusted_departure_time}"
+            )
 
         try:
             # CSV export
