@@ -68,7 +68,22 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
     if (!timeline) {
       return [];
     }
-    return mapSegmentsToCoordinates(timeline);
+    const polylines = mapSegmentsToCoordinates(timeline);
+    if (polylines.length > 0) {
+      console.log('Timeline segments:', {
+        totalSegments: timeline.segments?.length || 0,
+        samplesCount: timeline.samples?.length || 0,
+        uniqueStatuses: [
+          ...new Set(timeline.segments?.map((s) => s.status) || []),
+        ],
+        polylines: polylines.map((p) => ({
+          status: p.segment.status,
+          coordinates: p.coordinates.length,
+          color: p.color,
+        })),
+      });
+    }
+    return polylines;
   }, [timeline]);
 
   if (segmentPolylines.length === 0) {
