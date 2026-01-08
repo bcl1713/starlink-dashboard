@@ -100,7 +100,6 @@ export function RouteMap({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <ColorCodedRoute timeline={timelinePreview} />
           <RouteLayer
             routeSegments={routeSegments}
             xbandTransitions={normalizedXBandTransitions}
@@ -111,6 +110,7 @@ export function RouteMap({
             normalizedCoordinates={normalizedCoordinates}
             isIDLCrossing={isIDLCrossing}
           />
+          <ColorCodedRoute timeline={timelinePreview} />
         </MapContainer>
       </div>
 
