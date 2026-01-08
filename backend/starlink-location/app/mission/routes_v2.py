@@ -9,6 +9,7 @@ import json
 import logging
 import tempfile
 import zipfile
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from fastapi import (
@@ -1617,9 +1618,15 @@ async def preview_leg_timeline(
 
         # Update adjusted departure time if provided
         if "adjusted_departure_time" in preview_request:
-            preview_leg.adjusted_departure_time = preview_request.get(
-                "adjusted_departure_time"
-            )
+            adj_time = preview_request.get("adjusted_departure_time")
+            if adj_time:
+                # Parse ISO string if necessary, ensuring timezone awareness
+                if isinstance(adj_time, str):
+                    try:
+                        adj_time = datetime.fromisoformat(adj_time)
+                    except (ValueError, TypeError):
+                        pass  # Keep as-is if parsing fails
+                preview_leg.adjusted_departure_time = adj_time
 
         # Build timeline with samples included (without persisting)
         if not route_manager:

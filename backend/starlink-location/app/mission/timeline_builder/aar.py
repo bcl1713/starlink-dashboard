@@ -9,7 +9,10 @@ from datetime import datetime
 from app.mission.models import MissionLeg
 from app.models.route import ParsedRoute
 from app.satellites.rules import RuleEngine
-from app.mission.timeline_builder.calculator import RouteTemporalProjector
+from app.mission.timeline_builder.calculator import (
+    RouteTemporalProjector,
+    ensure_timezone,
+)
 from app.mission.timeline_builder.utils import timestamp_for_waypoint
 
 logger = logging.getLogger(__name__)
@@ -43,6 +46,9 @@ def resolve_aar_windows(
         end_time = timestamp_for_waypoint(end_wp, projector)
         if not start_time or not end_time or end_time <= start_time:
             continue
+        # Ensure times are timezone-aware for consistent comparison
+        start_time = ensure_timezone(start_time)
+        end_time = ensure_timezone(end_time)
         windows.append(
             ResolvedAARWindow(
                 name=window.id or f"AAR-{idx + 1}",
