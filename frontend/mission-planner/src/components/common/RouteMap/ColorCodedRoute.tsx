@@ -48,7 +48,14 @@ function mapSegmentsToCoordinates(timeline: Timeline): SegmentPolyline[] {
         sample.longitude,
       ]);
 
-      const color = STATUS_COLORS[segment.status.toLowerCase()] || '#95a5a6';
+      const statusKey = segment.status.toLowerCase();
+      const color = STATUS_COLORS[statusKey] || '#95a5a6';
+
+      if (!STATUS_COLORS[statusKey]) {
+        console.warn(
+          `Unknown status value: "${segment.status}" (lowercase: "${statusKey}"). Available: ${Object.keys(STATUS_COLORS).join(', ')}`
+        );
+      }
 
       result.push({
         coordinates,
@@ -68,7 +75,20 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
     if (!timeline) {
       return [];
     }
-    return mapSegmentsToCoordinates(timeline);
+    const polylines = mapSegmentsToCoordinates(timeline);
+    if (polylines.length > 0) {
+      console.log('Raw segments from backend:', timeline.segments?.slice(0, 5));
+      console.log(
+        'Final polylines to render:',
+        polylines.map((p) => ({
+          status: p.segment.status,
+          statusType: typeof p.segment.status,
+          color: p.color,
+          coordinates: p.coordinates.length,
+        }))
+      );
+    }
+    return polylines;
   }, [timeline]);
 
   if (segmentPolylines.length === 0) {
@@ -81,11 +101,13 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
         <Polyline
           key={`segment-${index}`}
           positions={polyline.coordinates}
-          color={polyline.color}
-          weight={5}
-          opacity={0.85}
-          lineCap="round"
-          lineJoin="round"
+          pathOptions={{
+            color: polyline.color,
+            weight: 5,
+            opacity: 0.85,
+            lineCap: 'round',
+            lineJoin: 'round',
+          }}
           interactive={true}
         >
           <Popup>
