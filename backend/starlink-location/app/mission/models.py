@@ -525,6 +525,31 @@ class TimelineSegment(BaseModel):
     }
 
 
+class RouteSampleData(BaseModel):
+    """Route sample with position, timing, and coverage metadata for preview rendering."""
+
+    timestamp: datetime = Field(
+        ...,
+        description="Sample timestamp (UTC, ISO-8601)",
+    )
+    latitude: float = Field(
+        ...,
+        description="Sample latitude coordinate",
+    )
+    longitude: float = Field(
+        ...,
+        description="Sample longitude coordinate",
+    )
+    altitude: Optional[float] = Field(
+        default=None,
+        description="Sample altitude in meters (optional)",
+    )
+    coverage: list[str] = Field(
+        default_factory=list,
+        description="Ka coverage set at this sample (list of satellite IDs)",
+    )
+
+
 class MissionLegTimeline(BaseModel):
     """Complete timeline for a mission leg showing communication state evolution."""
 
@@ -545,6 +570,10 @@ class MissionLegTimeline(BaseModel):
         default_factory=dict,
         description="Summary statistics (e.g., degraded_seconds, critical_seconds)",
     )
+    samples: Optional[list[RouteSampleData]] = Field(
+        default=None,
+        description="Route samples (lat/lon/timestamp) for map rendering in preview mode (optional)",
+    )
 
     model_config = {
         "json_schema_extra": {
@@ -559,6 +588,7 @@ class MissionLegTimeline(BaseModel):
                     "degraded_seconds": 1200,
                     "critical_seconds": 600,
                 },
+                "samples": None,
             }
         }
     }

@@ -1,13 +1,16 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { useTimeline } from '../hooks/api/useTimeline';
+import { useTimelinePreview } from '../hooks/api/useTimelinePreview';
 import { useLegData } from './LegDetailPage/useLegData';
 import { LegHeader } from './LegDetailPage/LegHeader';
 import { LegConfigTabs } from './LegDetailPage/LegConfigTabs';
 import { LegMapVisualization } from './LegDetailPage/LegMapVisualization';
 import { TimingSection } from './LegDetailPage/TimingSection';
+import { TimelinePreviewSection } from '../components/timeline/TimelinePreviewSection';
 import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
+import type { TimelinePreviewRequest } from '../services/timeline';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{
@@ -42,6 +45,33 @@ export function LegDetailPage() {
     missionId: missionId,
     legTransports: leg?.transports,
   });
+
+  // Build preview request from current config
+  const previewRequest: TimelinePreviewRequest | null = leg
+    ? {
+        transports: {
+          initial_x_satellite_id:
+            satelliteConfig.xband_starting_satellite || 'X-1',
+          initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
+          x_transitions: satelliteConfig.xband_transitions,
+          ka_outages: satelliteConfig.ka_outages,
+          aar_windows: aarConfig.segments,
+          ku_overrides: satelliteConfig.ku_outages,
+        },
+        adjusted_departure_time: leg.adjusted_departure_time,
+      }
+    : null;
+
+  // Get timeline preview (debounced)
+  const { preview, isCalculating, error } = useTimelinePreview(
+    missionId || '',
+    legId || '',
+    previewRequest,
+    {
+      debounceMs: 500,
+      enabled: !!leg?.route_id,
+    }
+  );
 
   const handleSatelliteConfigChange = (updates: Partial<SatelliteConfig>) => {
     const updatedConfig = { ...satelliteConfig, ...updates };
@@ -183,6 +213,13 @@ export function LegDetailPage() {
             onAARConfigChange={handleAARConfigChange}
           />
 
+          <TimelinePreviewSection
+            timeline={preview}
+            isCalculating={isCalculating}
+            isUnsaved={hasUnsavedChanges}
+            error={error}
+          />
+
           <div className="flex justify-end space-x-4">
             <button
               className="px-4 py-2 border rounded-md hover:bg-gray-100"
@@ -208,6 +245,7 @@ export function LegDetailPage() {
           kaTransitions={kaTransitions}
           waypointNames={waypointNames}
           availableWaypoints={availableWaypoints}
+          timelinePreview={preview}
         />
       </div>
     </div>
