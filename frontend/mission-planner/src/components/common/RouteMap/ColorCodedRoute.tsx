@@ -68,22 +68,7 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
     if (!timeline) {
       return [];
     }
-    const polylines = mapSegmentsToCoordinates(timeline);
-    if (polylines.length > 0) {
-      console.log('Timeline segments:', {
-        totalSegments: timeline.segments?.length || 0,
-        samplesCount: timeline.samples?.length || 0,
-        uniqueStatuses: [
-          ...new Set(timeline.segments?.map((s) => s.status) || []),
-        ],
-        polylines: polylines.map((p) => ({
-          status: p.segment.status,
-          coordinates: p.coordinates.length,
-          color: p.color,
-        })),
-      });
-    }
-    return polylines;
+    return mapSegmentsToCoordinates(timeline);
   }, [timeline]);
 
   if (segmentPolylines.length === 0) {
@@ -97,8 +82,10 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
           key={`segment-${index}`}
           positions={polyline.coordinates}
           color={polyline.color}
-          weight={4}
-          opacity={0.7}
+          weight={5}
+          opacity={0.85}
+          lineCap="round"
+          lineJoin="round"
           interactive={true}
         >
           <Popup>
