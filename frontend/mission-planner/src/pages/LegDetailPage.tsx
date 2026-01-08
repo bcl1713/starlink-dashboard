@@ -84,15 +84,21 @@ export function LegDetailPage() {
     aarConfig.segments,
   ]);
 
+  // Memoize preview options to prevent unnecessary hook re-runs
+  const previewOptions = useMemo(
+    () => ({
+      debounceMs: 500,
+      enabled: !!leg?.route_id,
+    }),
+    [leg?.route_id]
+  );
+
   // Get timeline preview (debounced)
   const { preview, isCalculating, error } = useTimelinePreview(
     missionId || '',
     legId || '',
     previewRequest,
-    {
-      debounceMs: 500,
-      enabled: !!leg?.route_id,
-    }
+    previewOptions
   );
 
   const handleSatelliteConfigChange = (updates: Partial<SatelliteConfig>) => {
