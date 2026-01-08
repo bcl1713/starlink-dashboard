@@ -63,8 +63,9 @@ export function LegDetailPage() {
         })),
         ka_outages: satelliteConfig.ka_outages,
         aar_windows: aarConfig.segments.map((s) => ({
-          start_waypoint: s.start_waypoint_name,
-          end_waypoint: s.end_waypoint_name,
+          id: s.id,
+          start_waypoint_name: s.start_waypoint_name,
+          end_waypoint_name: s.end_waypoint_name,
         })),
         ku_overrides: satelliteConfig.ku_outages.map((k) => ({
           id: k.id,

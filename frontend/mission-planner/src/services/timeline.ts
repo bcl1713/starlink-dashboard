@@ -45,8 +45,9 @@ export interface TimelinePreviewRequest {
       duration_seconds: number;
     }>;
     aar_windows: Array<{
-      start_waypoint: string;
-      end_waypoint: string;
+      id: string;
+      start_waypoint_name: string;
+      end_waypoint_name: string;
     }>;
     ku_overrides: Array<Record<string, unknown>>;
   };
