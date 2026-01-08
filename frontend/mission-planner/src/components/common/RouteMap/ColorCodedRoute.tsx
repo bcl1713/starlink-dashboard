@@ -51,12 +51,6 @@ function mapSegmentsToCoordinates(timeline: Timeline): SegmentPolyline[] {
       const statusKey = segment.status.toLowerCase();
       const color = STATUS_COLORS[statusKey] || '#95a5a6';
 
-      if (!STATUS_COLORS[statusKey]) {
-        console.warn(
-          `Unknown status value: "${segment.status}" (lowercase: "${statusKey}"). Available: ${Object.keys(STATUS_COLORS).join(', ')}`
-        );
-      }
-
       result.push({
         coordinates,
         segment,
@@ -75,20 +69,7 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
     if (!timeline) {
       return [];
     }
-    const polylines = mapSegmentsToCoordinates(timeline);
-    if (polylines.length > 0) {
-      console.log('Raw segments from backend:', timeline.segments?.slice(0, 5));
-      console.log(
-        'Final polylines to render:',
-        polylines.map((p) => ({
-          status: p.segment.status,
-          statusType: typeof p.segment.status,
-          color: p.color,
-          coordinates: p.coordinates.length,
-        }))
-      );
-    }
-    return polylines;
+    return mapSegmentsToCoordinates(timeline);
   }, [timeline]);
 
   if (segmentPolylines.length === 0) {
