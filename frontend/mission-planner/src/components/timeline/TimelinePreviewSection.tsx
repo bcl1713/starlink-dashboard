@@ -101,7 +101,8 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
                   Total Duration
                 </div>
                 <div className="text-lg font-semibold text-gray-900">
-                  {timeline.statistics.total_duration_seconds
+                  {typeof timeline.statistics.total_duration_seconds ===
+                  'number'
                     ? `${Math.round(timeline.statistics.total_duration_seconds / 60)}m`
                     : 'N/A'}
                 </div>
@@ -111,7 +112,8 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
                   Degraded Time
                 </div>
                 <div className="text-lg font-semibold text-yellow-700">
-                  {timeline.statistics.degraded_duration_seconds
+                  {typeof timeline.statistics.degraded_duration_seconds ===
+                  'number'
                     ? `${Math.round(timeline.statistics.degraded_duration_seconds / 60)}m`
                     : '0m'}
                 </div>
@@ -121,7 +123,8 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
                   Critical Time
                 </div>
                 <div className="text-lg font-semibold text-red-700">
-                  {timeline.statistics.critical_duration_seconds
+                  {typeof timeline.statistics.critical_duration_seconds ===
+                  'number'
                     ? `${Math.round(timeline.statistics.critical_duration_seconds / 60)}m`
                     : '0m'}
                 </div>
@@ -131,7 +134,8 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
                   Nominal Time
                 </div>
                 <div className="text-lg font-semibold text-green-700">
-                  {timeline.statistics.nominal_duration_seconds
+                  {typeof timeline.statistics.nominal_duration_seconds ===
+                  'number'
                     ? `${Math.round(timeline.statistics.nominal_duration_seconds / 60)}m`
                     : '0m'}
                 </div>

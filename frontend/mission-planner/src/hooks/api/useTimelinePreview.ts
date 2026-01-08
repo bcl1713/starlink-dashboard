@@ -22,7 +22,7 @@ export function useTimelinePreview(
   const [isCalculating, setIsCalculating] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const calculatePreview = useCallback(

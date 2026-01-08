@@ -53,12 +53,24 @@ export function LegDetailPage() {
           initial_x_satellite_id:
             satelliteConfig.xband_starting_satellite || 'X-1',
           initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
-          x_transitions: satelliteConfig.xband_transitions,
+          x_transitions: satelliteConfig.xband_transitions.map((t) => ({
+            latitude: t.latitude,
+            longitude: t.longitude,
+            to_satellite: t.target_satellite_id,
+          })),
           ka_outages: satelliteConfig.ka_outages,
-          aar_windows: aarConfig.segments,
-          ku_overrides: satelliteConfig.ku_outages,
+          aar_windows: aarConfig.segments.map((s) => ({
+            start_waypoint: s.start_waypoint_name,
+            end_waypoint: s.end_waypoint_name,
+          })),
+          ku_overrides: satelliteConfig.ku_outages.map((k) => ({
+            id: k.id,
+            start_time: k.start_time,
+            duration_seconds: k.duration_seconds,
+            reason: k.reason,
+          })),
         },
-        adjusted_departure_time: leg.adjusted_departure_time,
+        adjusted_departure_time: leg.adjusted_departure_time || undefined,
       }
     : null;
 
