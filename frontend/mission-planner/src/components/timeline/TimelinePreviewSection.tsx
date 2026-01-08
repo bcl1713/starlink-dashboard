@@ -112,9 +112,8 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
                   Degraded Time
                 </div>
                 <div className="text-lg font-semibold text-yellow-700">
-                  {typeof timeline.statistics.degraded_duration_seconds ===
-                  'number'
-                    ? `${Math.round(timeline.statistics.degraded_duration_seconds / 60)}m`
+                  {typeof timeline.statistics.degraded_seconds === 'number'
+                    ? `${Math.round(timeline.statistics.degraded_seconds / 60)}m`
                     : '0m'}
                 </div>
               </div>
@@ -123,9 +122,8 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
                   Critical Time
                 </div>
                 <div className="text-lg font-semibold text-red-700">
-                  {typeof timeline.statistics.critical_duration_seconds ===
-                  'number'
-                    ? `${Math.round(timeline.statistics.critical_duration_seconds / 60)}m`
+                  {typeof timeline.statistics.critical_seconds === 'number'
+                    ? `${Math.round(timeline.statistics.critical_seconds / 60)}m`
                     : '0m'}
                 </div>
               </div>
@@ -134,9 +132,8 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
                   Nominal Time
                 </div>
                 <div className="text-lg font-semibold text-green-700">
-                  {typeof timeline.statistics.nominal_duration_seconds ===
-                  'number'
-                    ? `${Math.round(timeline.statistics.nominal_duration_seconds / 60)}m`
+                  {typeof timeline.statistics.nominal_seconds === 'number'
+                    ? `${Math.round(timeline.statistics.nominal_seconds / 60)}m`
                     : '0m'}
                 </div>
               </div>
