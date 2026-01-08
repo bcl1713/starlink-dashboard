@@ -338,6 +338,14 @@ metrics.
 
 **No migration required** - this is a new feature with no breaking changes.
 
+**Development Branch Strategy:**
+
+- **Branch:** `feature/add-realtime-timeline-preview`
+- **Commit Strategy:** Small, atomic commits after each logical milestone (see
+  tasks.md)
+- **Expected commits:** ~10-12 commits total across 8 implementation phases
+- **PR Target:** Merge into `main` after code review and testing
+
 **Rollout:**
 
 1. Deploy backend preview endpoint (backward compatible, not used yet)
