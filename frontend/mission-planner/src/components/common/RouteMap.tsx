@@ -9,10 +9,12 @@ import type {
 import type { AARSegment } from '../../types/aar';
 import type { Waypoint } from '../../services/routes';
 import type { KaTransition } from '../../types/timeline';
+import type { Timeline } from '../../services/timeline';
 import { useMapState } from './RouteMap/useMapState';
 import { useRouteRenderer } from './RouteMap/useRouteRenderer';
 import { MapControls } from './RouteMap/MapControls';
 import { RouteLayer } from './RouteMap/RouteLayer';
+import { ColorCodedRoute } from './RouteMap/ColorCodedRoute';
 import { formatTime24Hour } from '@/lib/utils';
 
 interface RouteMapProps {
@@ -25,6 +27,7 @@ interface RouteMapProps {
   kuOutages?: KuOutageOverride[];
   waypoints?: string[];
   waypointObjects?: Waypoint[];
+  timelinePreview?: Timeline | null;
 }
 
 export function RouteMap({
@@ -35,6 +38,7 @@ export function RouteMap({
   aarSegments = [],
   kaOutages = [],
   kuOutages = [],
+  timelinePreview = null,
 }: RouteMapProps) {
   // Use custom hooks for state and rendering logic (must be called before early returns)
   const { mapRef, bounds, center, isIDLCrossing, normalizedCoordinates } =
@@ -106,6 +110,7 @@ export function RouteMap({
             normalizedCoordinates={normalizedCoordinates}
             isIDLCrossing={isIDLCrossing}
           />
+          <ColorCodedRoute timeline={timelinePreview} />
         </MapContainer>
       </div>
 

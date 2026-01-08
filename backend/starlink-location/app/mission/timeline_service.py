@@ -58,8 +58,21 @@ def build_mission_timeline(
     poi_manager: POIManager | None = None,
     coverage_sampler: CoverageSampler | None = None,
     parent_mission_id: str | None = None,
+    include_samples: bool = False,
 ) -> tuple[MissionLegTimeline, TimelineSummary]:
-    """Compute the mission communication timeline and derived summary."""
+    """Compute the mission communication timeline and derived summary.
+
+    Args:
+        mission: Mission leg configuration
+        route_manager: Route manager for loading route data
+        poi_manager: Optional POI manager for satellite POI sync
+        coverage_sampler: Optional coverage sampler for Ka coverage analysis
+        parent_mission_id: Optional parent mission ID for POI scoping
+        include_samples: If True, include route samples in timeline for preview rendering
+
+    Returns:
+        Tuple of (MissionLegTimeline, TimelineSummary)
+    """
 
     if not mission.route_id:
         raise TimelineComputationError("Mission is missing route_id")
@@ -162,6 +175,22 @@ def build_mission_timeline(
     )
     annotate_aar_markers(timeline, events)
     attach_statistics(timeline, mission_start, mission_end)
+
+    # Attach route samples if requested (for preview rendering)
+    if include_samples:
+        from app.mission.models import RouteSampleData
+
+        timeline.samples = [
+            RouteSampleData(
+                timestamp=sample.timestamp,
+                latitude=sample.latitude,
+                longitude=sample.longitude,
+                altitude=sample.altitude,
+                coverage=list(sample.coverage),
+            )
+            for sample in samples
+        ]
+
     total_runtime_ms = (time.perf_counter() - build_start) * 1000.0
     if total_runtime_ms > 1000:
         logger.warning(

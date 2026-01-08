@@ -9,6 +9,7 @@ import json
 import logging
 import tempfile
 import zipfile
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 from fastapi import (
@@ -24,7 +25,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from app.core.limiter import limiter
 
-from app.mission.models import Mission, MissionLeg, MissionUpdate
+from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
 from app.mission.storage import (
     save_mission_v2,
     load_mission_v2,
@@ -1556,4 +1557,106 @@ async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve timeline: {type(e).__name__}: {str(e)}",
+        )
+
+
+@router.post("/{mission_id}/legs/{leg_id}/timeline/preview")
+async def preview_leg_timeline(
+    mission_id: str,
+    leg_id: str,
+    preview_request: dict,
+    route_manager: RouteManager = Depends(get_route_manager),
+    poi_manager: POIManager = Depends(get_poi_manager),
+) -> dict:
+    """Generate a real-time timeline preview for a mission leg.
+
+    This endpoint calculates the timeline without persisting to disk,
+    allowing users to see preview results as they modify configurations.
+    Includes route samples for accurate map rendering.
+
+    Args:
+        mission_id: Mission ID
+        leg_id: Leg ID
+        preview_request: Dictionary containing transports config and adjusted_departure_time
+        route_manager: Route manager dependency
+        poi_manager: POI manager dependency
+
+    Returns:
+        Timeline preview with segments and route samples
+    """
+    try:
+        # Load mission to verify it exists
+        mission = load_mission_v2(mission_id)
+        if not mission:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Mission {mission_id} not found",
+            )
+
+        # Find leg
+        leg = next((m for m in mission.legs if m.id == leg_id), None)
+        if not leg:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Leg {leg_id} not found in mission {mission_id}",
+            )
+
+        # Verify route exists
+        if not leg.route_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Leg {leg_id} has no route. Upload a route KML first.",
+            )
+
+        # Create temporary leg with preview config
+        preview_leg = leg.model_copy()
+
+        # Update transports from request if provided
+        if "transports" in preview_request:
+            transports_data = preview_request["transports"]
+            preview_leg.transports = TransportConfig(**transports_data)
+
+        # Update adjusted departure time if provided
+        if "adjusted_departure_time" in preview_request:
+            adj_time = preview_request.get("adjusted_departure_time")
+            if adj_time:
+                # Parse ISO string if necessary, ensuring timezone awareness
+                if isinstance(adj_time, str):
+                    try:
+                        adj_time = datetime.fromisoformat(adj_time)
+                    except (ValueError, TypeError):
+                        pass  # Keep as-is if parsing fails
+                preview_leg.adjusted_departure_time = adj_time
+
+        # Build timeline with samples included (without persisting)
+        if not route_manager:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Route manager not available",
+            )
+
+        logger.info(
+            f"Generating timeline preview for leg {leg_id} in mission {mission_id}"
+        )
+        timeline, summary = build_mission_timeline(
+            mission=preview_leg,
+            route_manager=route_manager,
+            poi_manager=poi_manager,
+            coverage_sampler=_coverage_sampler,
+            parent_mission_id=mission_id,
+            include_samples=True,
+        )
+
+        return timeline.model_dump(mode="json")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            f"Failed to generate timeline preview for leg {leg_id}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate preview: {type(e).__name__}: {str(e)}",
         )

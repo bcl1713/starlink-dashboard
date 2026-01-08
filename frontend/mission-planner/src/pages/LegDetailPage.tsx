@@ -1,13 +1,17 @@
+import { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { useTimeline } from '../hooks/api/useTimeline';
+import { useTimelinePreview } from '../hooks/api/useTimelinePreview';
 import { useLegData } from './LegDetailPage/useLegData';
 import { LegHeader } from './LegDetailPage/LegHeader';
 import { LegConfigTabs } from './LegDetailPage/LegConfigTabs';
 import { LegMapVisualization } from './LegDetailPage/LegMapVisualization';
 import { TimingSection } from './LegDetailPage/TimingSection';
+import { TimelinePreviewSection } from '../components/timeline/TimelinePreviewSection';
 import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig } from '../types/aar';
+import type { TimelinePreviewRequest } from '../services/timeline';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{
@@ -42,6 +46,61 @@ export function LegDetailPage() {
     missionId: missionId,
     legTransports: leg?.transports,
   });
+
+  // Build preview request from current config (memoized to prevent constant re-triggering)
+  const previewRequest: TimelinePreviewRequest | null = useMemo(() => {
+    if (!leg) return null;
+
+    return {
+      transports: {
+        initial_x_satellite_id:
+          satelliteConfig.xband_starting_satellite || 'X-1',
+        initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
+        x_transitions: satelliteConfig.xband_transitions.map((t) => ({
+          latitude: t.latitude,
+          longitude: t.longitude,
+          to_satellite: t.target_satellite_id,
+        })),
+        ka_outages: satelliteConfig.ka_outages,
+        aar_windows: aarConfig.segments.map((s) => ({
+          id: s.id,
+          start_waypoint_name: s.start_waypoint_name,
+          end_waypoint_name: s.end_waypoint_name,
+        })),
+        ku_overrides: satelliteConfig.ku_outages.map((k) => ({
+          id: k.id,
+          start_time: k.start_time,
+          duration_seconds: k.duration_seconds,
+          reason: k.reason,
+        })),
+      },
+      adjusted_departure_time: leg.adjusted_departure_time || undefined,
+    };
+  }, [
+    leg,
+    satelliteConfig.xband_starting_satellite,
+    satelliteConfig.xband_transitions,
+    satelliteConfig.ka_outages,
+    satelliteConfig.ku_outages,
+    aarConfig.segments,
+  ]);
+
+  // Memoize preview options to prevent unnecessary hook re-runs
+  const previewOptions = useMemo(
+    () => ({
+      debounceMs: 500,
+      enabled: !!leg?.route_id,
+    }),
+    [leg?.route_id]
+  );
+
+  // Get timeline preview (debounced)
+  const { preview, isCalculating, error } = useTimelinePreview(
+    missionId || '',
+    legId || '',
+    previewRequest,
+    previewOptions
+  );
 
   const handleSatelliteConfigChange = (updates: Partial<SatelliteConfig>) => {
     const updatedConfig = { ...satelliteConfig, ...updates };
@@ -183,6 +242,13 @@ export function LegDetailPage() {
             onAARConfigChange={handleAARConfigChange}
           />
 
+          <TimelinePreviewSection
+            timeline={preview}
+            isCalculating={isCalculating}
+            isUnsaved={hasUnsavedChanges}
+            error={error}
+          />
+
           <div className="flex justify-end space-x-4">
             <button
               className="px-4 py-2 border rounded-md hover:bg-gray-100"
@@ -208,6 +274,7 @@ export function LegDetailPage() {
           kaTransitions={kaTransitions}
           waypointNames={waypointNames}
           availableWaypoints={availableWaypoints}
+          timelinePreview={preview}
         />
       </div>
     </div>
