@@ -14,8 +14,23 @@ export const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
+    const errorMessage =
+      error.response?.data?.detail ||
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'An unknown error occurred';
+
+    console.error('API Error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: errorMessage,
+    });
+
+    // Create a new error with a clear message
+    const apiError = new Error(errorMessage);
+    apiError.cause = error;
+    return Promise.reject(apiError);
   }
 );
 

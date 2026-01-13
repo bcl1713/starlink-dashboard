@@ -145,19 +145,14 @@ export const poisService = {
    * Get POIs with real-time ETA data
    */
   async getPOIsWithETA(activeOnly: boolean = true): Promise<POIWithETA[]> {
-    try {
-      const response = await apiClient.get<{
-        pois: POIWithETA[];
-        total: number;
-      }>('/api/pois/telemetry/with_eta', {
-        params: {
-          active_only: activeOnly,
-        },
-      });
-      return response.data.pois;
-    } catch (error) {
-      console.error('Failed to load POIs with ETA:', error);
-      return [];
-    }
+    const response = await apiClient.get<{
+      pois: POIWithETA[];
+      total: number;
+    }>('/api/pois/telemetry/with_eta', {
+      params: {
+        active_only: activeOnly,
+      },
+    });
+    return response.data.pois;
   },
 };

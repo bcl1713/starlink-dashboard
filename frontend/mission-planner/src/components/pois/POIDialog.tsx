@@ -28,6 +28,17 @@ export function POIDialog({
 
   const isLoading = isLoadingPOI || createPOI.isPending || updatePOI.isPending;
 
+  // Determine error message from mutation states
+  const error = createPOI.isError
+    ? createPOI.error instanceof Error
+      ? createPOI.error.message
+      : 'Failed to create POI. Please check your input and try again.'
+    : updatePOI.isError
+      ? updatePOI.error instanceof Error
+        ? updatePOI.error.message
+        : 'Failed to update POI. Please check your input and try again.'
+      : undefined;
+
   const handleSubmit = (data: POICreate | POIUpdate) => {
     if (isNew) {
       createPOI.mutate(data as POICreate, {
@@ -49,8 +60,17 @@ export function POIDialog({
     }
   };
 
+  // Reset error states when dialog closes or opens
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      createPOI.reset();
+      updatePOI.reset();
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{isNew ? 'Create POI' : 'Edit POI'}</DialogTitle>
@@ -61,6 +81,7 @@ export function POIDialog({
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}
           isLoading={isLoading}
+          error={error}
           selectedCoords={selectedCoords}
         />
       </DialogContent>

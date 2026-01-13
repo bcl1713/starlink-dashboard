@@ -5,11 +5,24 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { IconPicker } from '../ui/IconPicker';
 
+const CATEGORY_OPTIONS = [
+  { value: 'airport', label: 'Airport' },
+  { value: 'city', label: 'City' },
+  { value: 'landmark', label: 'Landmark' },
+  { value: 'waypoint', label: 'Waypoint' },
+  { value: 'departure', label: 'Departure' },
+  { value: 'arrival', label: 'Arrival' },
+  { value: 'alternate', label: 'Alternate' },
+  { value: 'satellite', label: 'Satellite' },
+  { value: 'other', label: 'Other' },
+];
+
 interface POIFormProps {
   poi?: POI;
   onSubmit: (data: POICreate | POIUpdate) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  error?: string;
   selectedCoords?: { lat: number; lng: number };
 }
 
@@ -18,13 +31,14 @@ export function POIForm({
   onSubmit,
   onCancel,
   isLoading,
+  error,
   selectedCoords,
 }: POIFormProps) {
   const [formData, setFormData] = useState({
     name: poi?.name || '',
     latitude: selectedCoords?.lat || poi?.latitude || 0,
     longitude: selectedCoords?.lng || poi?.longitude || 0,
-    icon: poi?.icon || '📍',
+    icon: poi?.icon || '',
     category: poi?.category || '',
     description: poi?.description || '',
     route_id: poi?.route_id || '',
@@ -45,6 +59,9 @@ export function POIForm({
     if (typeof formData.longitude !== 'number' || isNaN(formData.longitude)) {
       newErrors.longitude = 'Valid longitude is required';
     }
+    if (!formData.category) {
+      newErrors.category = 'Category is required';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -57,11 +74,18 @@ export function POIForm({
     onSubmit({
       ...formData,
       category: formData.category || null,
+      icon: formData.icon || '📍',
     });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
       <div>
         <Label htmlFor="name">Name *</Label>
         <Input
@@ -77,7 +101,30 @@ export function POIForm({
       </div>
 
       <div>
-        <Label htmlFor="icon">Icon</Label>
+        <Label htmlFor="category">Category *</Label>
+        <select
+          id="category"
+          value={formData.category}
+          onChange={(e) =>
+            setFormData({ ...formData, category: e.target.value })
+          }
+          disabled={isLoading}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Select a category</option>
+          {CATEGORY_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        {errors.category && (
+          <p className="text-red-500 text-sm mt-1">{errors.category}</p>
+        )}
+      </div>
+
+      <div>
+        <Label htmlFor="icon">Icon (Optional)</Label>
         <IconPicker
           value={formData.icon}
           onChange={(icon) => setFormData({ ...formData, icon })}
@@ -127,19 +174,6 @@ export function POIForm({
             <p className="text-red-500 text-sm mt-1">{errors.longitude}</p>
           )}
         </div>
-      </div>
-
-      <div>
-        <Label htmlFor="category">Category</Label>
-        <Input
-          id="category"
-          value={formData.category}
-          onChange={(e) =>
-            setFormData({ ...formData, category: e.target.value })
-          }
-          placeholder="e.g., Landing, Checkpoint"
-          disabled={isLoading}
-        />
       </div>
 
       <div>
