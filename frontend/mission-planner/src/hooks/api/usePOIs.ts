@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { poisService } from '../../services/pois';
 import type { POICreate, POIUpdate } from '../../services/pois';
 
-export function usePOIs() {
+export function usePOIs(activeOnly: boolean = false) {
   return useQuery({
-    queryKey: ['pois'],
-    queryFn: () => poisService.getAllPOIs(),
+    queryKey: ['pois', { activeOnly }],
+    queryFn: () => poisService.getAllPOIs(activeOnly),
   });
 }
 

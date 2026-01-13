@@ -14,7 +14,8 @@ export function POIManagerPage() {
     lat: number;
     lng: number;
   } | null>(null);
-  const { data: pois, refetch } = usePOIs();
+  const [activeOnly, setActiveOnly] = useState(false);
+  const { data: pois, refetch } = usePOIs(activeOnly);
 
   const handleMapClick = (lat: number, lng: number) => {
     setSelectedCoords({ lat, lng });
@@ -38,6 +39,7 @@ export function POIManagerPage() {
               // TODO: Implement filtering logic
               console.log('Filters:', filters);
             }}
+            onActiveOnlyChange={setActiveOnly}
           />
 
           <POIList

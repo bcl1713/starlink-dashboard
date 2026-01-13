@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 
 interface POIFilterBarProps {
   onFilterChange: (filters: FilterOptions) => void;
+  onActiveOnlyChange?: (activeOnly: boolean) => void;
 }
 
 export interface FilterOptions {
@@ -14,13 +15,17 @@ export interface FilterOptions {
   approaching?: boolean;
 }
 
-export function POIFilterBar({ onFilterChange }: POIFilterBarProps) {
+export function POIFilterBar({
+  onFilterChange,
+  onActiveOnlyChange,
+}: POIFilterBarProps) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [courseStatus, setCourseStatus] = useState<
     'ahead_on_route' | 'already_passed' | 'not_on_route' | null
   >(null);
   const [approaching, setApproaching] = useState(false);
+  const [activeOnly, setActiveOnly] = useState(false);
 
   const handleFilterChange = () => {
     onFilterChange({
@@ -31,12 +36,19 @@ export function POIFilterBar({ onFilterChange }: POIFilterBarProps) {
     });
   };
 
+  const handleActiveOnlyChange = (value: boolean) => {
+    setActiveOnly(value);
+    onActiveOnlyChange?.(value);
+  };
+
   const handleReset = () => {
     setSearch('');
     setCategory(null);
     setCourseStatus(null);
     setApproaching(false);
+    setActiveOnly(false);
     onFilterChange({});
+    onActiveOnlyChange?.(false);
   };
 
   return (
@@ -54,6 +66,14 @@ export function POIFilterBar({ onFilterChange }: POIFilterBarProps) {
       </div>
 
       <div className="flex gap-2 flex-wrap">
+        <Button
+          variant={activeOnly ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleActiveOnlyChange(!activeOnly)}
+        >
+          {activeOnly ? 'Showing Active Only' : 'Show All POIs'}
+        </Button>
+
         <Button
           variant={approaching ? 'default' : 'outline'}
           size="sm"
@@ -79,7 +99,7 @@ export function POIFilterBar({ onFilterChange }: POIFilterBarProps) {
           </Button>
         )}
 
-        {search || category || courseStatus || approaching ? (
+        {search || category || courseStatus || approaching || activeOnly ? (
           <Button variant="ghost" size="sm" onClick={handleReset}>
             Clear all
           </Button>
