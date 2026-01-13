@@ -4,6 +4,8 @@ import { MissionsPage } from './pages/MissionsPage';
 import { MissionDetailPage } from './pages/MissionDetailPage';
 import { LegDetailPage } from './pages/LegDetailPage';
 import SatelliteManagerPage from './pages/SatelliteManagerPage';
+import { RouteManagerPage } from './pages/RouteManagerPage';
+import { POIManagerPage } from './pages/POIManagerPage';
 
 const queryClient = new QueryClient();
 
@@ -19,6 +21,12 @@ function App() {
             <Link to="/satellites" className="hover:underline">
               Satellites
             </Link>
+            <Link to="/pois" className="hover:underline">
+              POIs
+            </Link>
+            <Link to="/routes" className="hover:underline">
+              Routes
+            </Link>
           </div>
         </nav>
         <Routes>
@@ -29,6 +37,8 @@ function App() {
             element={<LegDetailPage />}
           />
           <Route path="/satellites" element={<SatelliteManagerPage />} />
+          <Route path="/pois" element={<POIManagerPage />} />
+          <Route path="/routes" element={<RouteManagerPage />} />
           <Route path="/" element={<Navigate to="/missions" replace />} />
         </Routes>
       </BrowserRouter>

@@ -1,0 +1,201 @@
+import { useState } from 'react';
+import type { POI, POICreate, POIUpdate } from '../../services/pois';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { IconPicker } from '../ui/IconPicker';
+
+interface POIFormProps {
+  poi?: POI;
+  onSubmit: (data: POICreate | POIUpdate) => void;
+  onCancel: () => void;
+  isLoading?: boolean;
+  selectedCoords?: { lat: number; lng: number };
+}
+
+export function POIForm({
+  poi,
+  onSubmit,
+  onCancel,
+  isLoading,
+  selectedCoords,
+}: POIFormProps) {
+  const [formData, setFormData] = useState({
+    name: poi?.name || '',
+    latitude: selectedCoords?.lat || poi?.latitude || 0,
+    longitude: selectedCoords?.lng || poi?.longitude || 0,
+    icon: poi?.icon || '📍',
+    category: poi?.category || '',
+    description: poi?.description || '',
+    route_id: poi?.route_id || '',
+    mission_id: poi?.mission_id || '',
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    if (typeof formData.latitude !== 'number' || isNaN(formData.latitude)) {
+      newErrors.latitude = 'Valid latitude is required';
+    }
+    if (typeof formData.longitude !== 'number' || isNaN(formData.longitude)) {
+      newErrors.longitude = 'Valid longitude is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    onSubmit({
+      ...formData,
+      category: formData.category || null,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="name">Name *</Label>
+        <Input
+          id="name"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          placeholder="POI name"
+          disabled={isLoading}
+        />
+        {errors.name && (
+          <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+        )}
+      </div>
+
+      <div>
+        <Label htmlFor="icon">Icon</Label>
+        <IconPicker
+          value={formData.icon}
+          onChange={(icon) => setFormData({ ...formData, icon })}
+          disabled={isLoading}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="latitude">Latitude *</Label>
+          <Input
+            id="latitude"
+            type="number"
+            step="0.0001"
+            value={formData.latitude}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                latitude: parseFloat(e.target.value) || 0,
+              })
+            }
+            placeholder="-90 to 90"
+            disabled={isLoading}
+          />
+          {errors.latitude && (
+            <p className="text-red-500 text-sm mt-1">{errors.latitude}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="longitude">Longitude *</Label>
+          <Input
+            id="longitude"
+            type="number"
+            step="0.0001"
+            value={formData.longitude}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                longitude: parseFloat(e.target.value) || 0,
+              })
+            }
+            placeholder="-180 to 180"
+            disabled={isLoading}
+          />
+          {errors.longitude && (
+            <p className="text-red-500 text-sm mt-1">{errors.longitude}</p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <Label htmlFor="category">Category</Label>
+        <Input
+          id="category"
+          value={formData.category}
+          onChange={(e) =>
+            setFormData({ ...formData, category: e.target.value })
+          }
+          placeholder="e.g., Landing, Checkpoint"
+          disabled={isLoading}
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="description">Description</Label>
+        <Input
+          id="description"
+          value={formData.description}
+          onChange={(e) =>
+            setFormData({ ...formData, description: e.target.value })
+          }
+          placeholder="Optional description"
+          disabled={isLoading}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="route_id">Route ID</Label>
+          <Input
+            id="route_id"
+            value={formData.route_id}
+            onChange={(e) =>
+              setFormData({ ...formData, route_id: e.target.value })
+            }
+            placeholder="Optional"
+            disabled={isLoading}
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="mission_id">Mission ID</Label>
+          <Input
+            id="mission_id"
+            value={formData.mission_id}
+            onChange={(e) =>
+              setFormData({ ...formData, mission_id: e.target.value })
+            }
+            placeholder="Optional"
+            disabled={isLoading}
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 justify-end pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isLoading}
+        >
+          Cancel
+        </Button>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Saving...' : 'Save POI'}
+        </Button>
+      </div>
+    </form>
+  );
+}

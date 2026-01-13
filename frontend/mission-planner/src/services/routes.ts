@@ -5,6 +5,16 @@ export interface Route {
   name: string;
   description?: string;
   waypoint_count?: number;
+  active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RouteDetail extends Route {
+  points?: Array<{ latitude: number; longitude: number }>;
+  waypoints?: Waypoint[];
+  timing_profile?: TimingProfile;
+  flight_phase?: string;
 }
 
 export interface Waypoint {
@@ -15,17 +25,33 @@ export interface Waypoint {
   description?: string;
 }
 
+export interface TimingProfile {
+  [key: string]: string | number;
+}
+
 interface RouteDetailResponse {
   points?: Array<{ latitude: number; longitude: number }>;
   waypoints?: Waypoint[];
+  timing_profile?: TimingProfile;
+  flight_phase?: string;
+}
+
+interface RouteListResponse {
+  routes: Route[];
+  total: number;
 }
 
 export const routesApi = {
   async list(): Promise<Route[]> {
-    const response = await apiClient.get<{ routes: Route[]; total: number }>(
-      '/api/routes'
-    );
+    const response = await apiClient.get<RouteListResponse>('/api/routes');
     return response.data.routes || [];
+  },
+
+  async get(routeId: string): Promise<RouteDetail> {
+    const response = await apiClient.get<RouteDetailResponse>(
+      `/api/routes/${routeId}`
+    );
+    return response.data as RouteDetail;
   },
 
   async upload(file: File): Promise<Route> {
@@ -38,6 +64,34 @@ export const routesApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+      }
+    );
+    return response.data;
+  },
+
+  async delete(routeId: string): Promise<void> {
+    await apiClient.delete(`/api/routes/${routeId}`);
+  },
+
+  async activate(routeId: string): Promise<Route> {
+    const response = await apiClient.post<Route>(
+      `/api/routes/${routeId}/activate`
+    );
+    return response.data;
+  },
+
+  async deactivate(routeId: string): Promise<Route> {
+    const response = await apiClient.post<Route>(
+      `/api/routes/${routeId}/deactivate`
+    );
+    return response.data;
+  },
+
+  async download(routeId: string): Promise<Blob> {
+    const response = await apiClient.get<Blob>(
+      `/api/routes/${routeId}/download`,
+      {
+        responseType: 'blob',
       }
     );
     return response.data;

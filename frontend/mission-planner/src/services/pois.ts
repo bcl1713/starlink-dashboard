@@ -15,6 +15,34 @@ export interface POI {
   updated_at: string;
 }
 
+export interface POICreate {
+  name: string;
+  latitude: number;
+  longitude: number;
+  icon: string;
+  category?: string | null;
+  description?: string;
+  route_id?: string | null;
+  mission_id?: string | null;
+}
+
+export interface POIUpdate {
+  name?: string;
+  latitude?: number;
+  longitude?: number;
+  icon?: string;
+  category?: string | null;
+  description?: string;
+  route_id?: string | null;
+  mission_id?: string | null;
+}
+
+export interface POIWithETA extends POI {
+  eta?: string;
+  bearing?: number;
+  course_status?: 'ahead_on_route' | 'already_passed' | 'not_on_route';
+}
+
 export interface POIListResponse {
   pois: POI[];
   total: number;
@@ -23,6 +51,23 @@ export interface POIListResponse {
 }
 
 export const poisService = {
+  /**
+   * Get all POIs
+   */
+  async getAllPOIs(activeOnly: boolean = true): Promise<POI[]> {
+    try {
+      const response = await apiClient.get<POIListResponse>('/api/pois', {
+        params: {
+          active_only: activeOnly,
+        },
+      });
+      return response.data.pois;
+    } catch (error) {
+      console.error('Failed to load POIs:', error);
+      return [];
+    }
+  },
+
   /**
    * Get POIs for a specific mission
    */
@@ -66,18 +111,52 @@ export const poisService = {
   },
 
   /**
-   * Get all POIs
+   * Get a single POI by ID
    */
-  async getAllPOIs(activeOnly: boolean = true): Promise<POI[]> {
+  async getPOI(poiId: string): Promise<POI> {
+    const response = await apiClient.get<POI>(`/api/pois/${poiId}`);
+    return response.data;
+  },
+
+  /**
+   * Create a new POI
+   */
+  async createPOI(poi: POICreate): Promise<POI> {
+    const response = await apiClient.post<POI>('/api/pois', poi);
+    return response.data;
+  },
+
+  /**
+   * Update an existing POI
+   */
+  async updatePOI(poiId: string, updates: POIUpdate): Promise<POI> {
+    const response = await apiClient.put<POI>(`/api/pois/${poiId}`, updates);
+    return response.data;
+  },
+
+  /**
+   * Delete a POI
+   */
+  async deletePOI(poiId: string): Promise<void> {
+    await apiClient.delete(`/api/pois/${poiId}`);
+  },
+
+  /**
+   * Get POIs with real-time ETA data
+   */
+  async getPOIsWithETA(activeOnly: boolean = true): Promise<POIWithETA[]> {
     try {
-      const response = await apiClient.get<POIListResponse>('/api/pois', {
+      const response = await apiClient.get<{
+        pois: POIWithETA[];
+        total: number;
+      }>('/api/pois/telemetry/with_eta', {
         params: {
           active_only: activeOnly,
         },
       });
       return response.data.pois;
     } catch (error) {
-      console.error('Failed to load POIs:', error);
+      console.error('Failed to load POIs with ETA:', error);
       return [];
     }
   },
