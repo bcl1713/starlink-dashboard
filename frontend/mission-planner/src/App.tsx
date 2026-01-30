@@ -6,6 +6,7 @@ import { LegDetailPage } from './pages/LegDetailPage';
 import SatelliteManagerPage from './pages/SatelliteManagerPage';
 import { RouteManagerPage } from './pages/RouteManagerPage';
 import { POIManagerPage } from './pages/POIManagerPage';
+import { DataExportPage } from './pages/DataExportPage';
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,9 @@ function App() {
             <Link to="/routes" className="hover:underline">
               Routes
             </Link>
+            <Link to="/export" className="hover:underline">
+              Data Export
+            </Link>
           </div>
         </nav>
         <Routes>
@@ -39,6 +43,7 @@ function App() {
           <Route path="/satellites" element={<SatelliteManagerPage />} />
           <Route path="/pois" element={<POIManagerPage />} />
           <Route path="/routes" element={<RouteManagerPage />} />
+          <Route path="/export" element={<DataExportPage />} />
           <Route path="/" element={<Navigate to="/missions" replace />} />
         </Routes>
       </BrowserRouter>

@@ -13,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api import (
     config,
+    export,
     flight_status,
     geojson,
     health,
@@ -485,6 +486,7 @@ app.include_router(routes.router, tags=["Routes"])
 app.include_router(mission_routes.router, tags=["Missions"])
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
+app.include_router(export.router, tags=["Export"])
 app.include_router(ui.router, tags=["UI"])
 
 
