@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { usePOIs } from '../hooks/api/usePOIs';
 import { POIList } from '../components/pois/POIList';
 import { POIFilterBar } from '../components/pois/POIFilterBar';
+import type { FilterOptions } from '../components/pois/POIFilterBar';
 import { POIMap } from '../components/pois/POIMap';
 import { POIDialog } from '../components/pois/POIDialog';
 import { Button } from '../components/ui/button';
@@ -14,15 +15,66 @@ export function POIManagerPage() {
     lat: number;
     lng: number;
   } | null>(null);
-  const [activeOnly, setActiveOnly] = useState(false);
-  const { data: pois, refetch } = usePOIs(activeOnly);
+  const [showRoutePOIs, setShowRoutePOIs] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({});
+
+  // Fetch all POIs (no server-side filtering for active_only)
+  const { data: allPOIs, isLoading, error, refetch } = usePOIs(false);
+
+  // Filter POIs client-side
+  const filteredPOIs = useMemo(() => {
+    if (!allPOIs) return [];
+
+    return allPOIs.filter((poi) => {
+      // Filter out route POIs unless showRoutePOIs is true
+      if (!showRoutePOIs && poi.route_id) {
+        return false;
+      }
+
+      // Apply search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesSearch =
+          poi.name.toLowerCase().includes(searchLower) ||
+          (poi.category && poi.category.toLowerCase().includes(searchLower)) ||
+          (poi.description &&
+            poi.description.toLowerCase().includes(searchLower));
+        if (!matchesSearch) return false;
+      }
+
+      // Apply category filter
+      if (filters.category && poi.category !== filters.category) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [allPOIs, showRoutePOIs, filters]);
 
   const handleMapClick = (lat: number, lng: number) => {
     setSelectedCoords({ lat, lng });
     setEditingPOIId('new');
   };
 
-  const selectedPOI = pois?.find((p) => p.id === selectedPOIId);
+  const handleSelectPOI = (id: string) => {
+    setSelectedPOIId(id);
+    // Clear editing state when viewing a different POI
+    if (editingPOIId && editingPOIId !== id) {
+      setEditingPOIId(null);
+    }
+  };
+
+  const handleEditPOI = (id: string) => {
+    setEditingPOIId(id);
+    setSelectedPOIId(id);
+  };
+
+  const handleFilterChange = useCallback((newFilters: FilterOptions) => {
+    setFilters(newFilters);
+  }, []);
+
+  const selectedPOI = allPOIs?.find((p) => p.id === selectedPOIId);
+  const focusPOI = selectedPOI || null;
 
   return (
     <div className="p-6">
@@ -35,16 +87,17 @@ export function POIManagerPage() {
         {/* Left panel - List and filters */}
         <div className="lg:col-span-2 space-y-4">
           <POIFilterBar
-            onFilterChange={(filters) => {
-              // TODO: Implement filtering logic
-              console.log('Filters:', filters);
-            }}
-            onActiveOnlyChange={setActiveOnly}
+            onFilterChange={handleFilterChange}
+            showRoutePOIs={showRoutePOIs}
+            onShowRoutePOIsChange={setShowRoutePOIs}
           />
 
           <POIList
-            onSelectPOI={setSelectedPOIId}
-            onEditPOI={setEditingPOIId}
+            pois={filteredPOIs}
+            isLoading={isLoading}
+            error={error as Error | null}
+            onSelectPOI={handleSelectPOI}
+            onEditPOI={handleEditPOI}
             onDeletePOI={() => setSelectedPOIId(null)}
           />
         </div>
@@ -54,9 +107,10 @@ export function POIManagerPage() {
           {/* Map */}
           <Card className="h-96">
             <POIMap
-              pois={pois || []}
+              pois={filteredPOIs}
               onMapClick={handleMapClick}
-              onPOIClick={(poi) => setSelectedPOIId(poi.id)}
+              onPOIClick={(poi) => handleSelectPOI(poi.id)}
+              focusPOI={focusPOI}
             />
           </Card>
 

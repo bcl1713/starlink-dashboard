@@ -4,17 +4,29 @@ export interface Route {
   id: string;
   name: string;
   description?: string;
-  waypoint_count?: number;
-  active?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  point_count?: number;
+  is_active?: boolean;
+  imported_at?: string;
+  has_timing_data?: boolean;
+  flight_phase?: string;
+  eta_mode?: string;
 }
 
 export interface RouteDetail extends Route {
   points?: Array<{ latitude: number; longitude: number }>;
   waypoints?: Waypoint[];
   timing_profile?: TimingProfile;
-  flight_phase?: string;
+  statistics?: {
+    distance_meters: number;
+    distance_km: number;
+    bounds: {
+      min_lat: number;
+      max_lat: number;
+      min_lon: number;
+      max_lon: number;
+    };
+  };
+  poi_count?: number;
 }
 
 export interface Waypoint {

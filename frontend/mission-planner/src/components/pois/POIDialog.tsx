@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { usePOI, useCreatePOI, useUpdatePOI } from '../../hooks/api/usePOIs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { POIForm } from './POIForm';
-import type { POICreate, POIUpdate } from '../../services/pois';
+import { POIMap } from './POIMap';
+import type { POICreate, POIUpdate, POI } from '../../services/pois';
 
 interface POIDialogProps {
   open: boolean;
@@ -15,13 +17,45 @@ export function POIDialog({
   open,
   onOpenChange,
   poiId,
-  selectedCoords,
+  selectedCoords: initialCoords,
   onSuccess,
 }: POIDialogProps) {
   const isNew = poiId === 'new';
   const { data: poi, isLoading: isLoadingPOI } = usePOI(
     !isNew && poiId ? poiId : ''
   );
+
+  // Track coordinates for the map marker
+  const [currentCoords, setCurrentCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(initialCoords || null);
+
+  const [prevPoiId, setPrevPoiId] = useState<string | undefined>(undefined);
+  const [prevInitialCoords, setPrevInitialCoords] = useState(initialCoords);
+
+  // Adjust state while rendering if props/data change
+  if (poi && poi.id !== prevPoiId) {
+    setPrevPoiId(poi.id);
+    setCurrentCoords({ lat: poi.latitude, lng: poi.longitude });
+  }
+
+  if (
+    initialCoords &&
+    (initialCoords !== prevInitialCoords ||
+      (prevInitialCoords &&
+        (initialCoords.lat !== prevInitialCoords.lat ||
+          initialCoords.lng !== prevInitialCoords.lng)))
+  ) {
+    setPrevInitialCoords(initialCoords);
+    setCurrentCoords(initialCoords);
+  }
+
+  // Reset when dialog closes (during render)
+  if (!open && (currentCoords !== null || prevPoiId !== undefined)) {
+    setCurrentCoords(null);
+    setPrevPoiId(undefined);
+  }
 
   const createPOI = useCreatePOI();
   const updatePOI = useUpdatePOI();
@@ -69,21 +103,68 @@ export function POIDialog({
     onOpenChange(newOpen);
   };
 
+  const handleMapClick = (lat: number, lng: number) => {
+    setCurrentCoords({ lat, lng });
+  };
+
+  // Create a temporary POI for the map marker
+  const mapPOIs: POI[] = currentCoords
+    ? [
+        {
+          id: 'temp-marker',
+          name: 'New Position',
+          latitude: currentCoords.lat,
+          longitude: currentCoords.lng,
+          icon: '📍',
+          category: null,
+          active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ]
+    : [];
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isNew ? 'Create POI' : 'Edit POI'}</DialogTitle>
         </DialogHeader>
 
-        <POIForm
-          poi={poi}
-          onSubmit={handleSubmit}
-          onCancel={() => onOpenChange(false)}
-          isLoading={isLoading}
-          error={error}
-          selectedCoords={selectedCoords}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Form */}
+          <div>
+            <POIForm
+              poi={poi}
+              onSubmit={handleSubmit}
+              onCancel={() => onOpenChange(false)}
+              isLoading={isLoading}
+              error={error}
+              selectedCoords={currentCoords || undefined}
+            />
+          </div>
+
+          {/* Map for positioning */}
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">
+              Click on the map to set the POI position
+            </p>
+            <div className="h-80 border rounded-lg overflow-hidden">
+              <POIMap
+                pois={mapPOIs}
+                onMapClick={handleMapClick}
+                center={
+                  currentCoords
+                    ? [currentCoords.lat, currentCoords.lng]
+                    : poi
+                      ? [poi.latitude, poi.longitude]
+                      : [0, 0]
+                }
+                zoom={currentCoords || poi ? 10 : 3}
+              />
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -50,8 +50,27 @@
 - [ ] 5.4 Implement route projection visualization on map
 - [ ] 5.5 Add route-aware status badges (ahead_on_route, already_passed, not_on_route)
 - [ ] 5.6 Add POI filtering by category and course status
-- [ ] 5.7 Implement "approaching" filter (within 30 min ETA)
+- [x] 5.7 ~~Implement "approaching" filter (within 30 min ETA)~~ REMOVED - unnecessary feature
 - [ ] 5.8 Test real-time features with telemetry data
+
+## 5b. POI UX Improvements (User Feedback)
+
+- [x] 5b.1 Fix "Show All POIs/Showing Active Only" button - removed confusing button, now showing all POIs by default
+- [x] 5b.2 Add sortable columns to POI table - all columns now sortable with visual indicators
+- [x] 5b.3 Add Route POIs toggle - hidden by default, visible with toggle button
+- [x] 5b.4 Remove Approaching (30 mins) button - removed from filter bar
+- [x] 5b.5 Make View/Edit buttons show POI on map - map now focuses on selected POI
+- [x] 5b.6 Add click-to-position on map in edit view - POIDialog now includes a map for positioning
+- [x] 5b.7 Fix dialog z-index issue on smaller screens - dialog was appearing behind map, increased z-index to 1000+
+- [x] 5b.8 Fix CSP errors for Leaflet marker icons - switched from CDN to local bundled icons
+
+## 5c. Route UX Improvements (User Feedback)
+
+- [x] 5c.1 Add sortable columns to Route table - all columns now sortable with visual indicators
+- [x] 5c.2 Create RouteDetailDialog - shows route details with map preview when clicking View
+- [x] 5c.3 Wire up View button - clicking View now opens dialog with route map
+- [x] 5c.4 Fix Route interface to match backend API - changed from active/created_at to is_active/imported_at
+- [x] 5c.5 Fix waypoints display - now uses waypoints array length from detail endpoint (column renamed to "Points" for list, "Waypoints" shown in detail)
 
 ## 6. Navigation Integration & UI Polish
 

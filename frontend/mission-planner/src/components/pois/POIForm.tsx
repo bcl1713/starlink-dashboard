@@ -45,6 +45,24 @@ export function POIForm({
     mission_id: poi?.mission_id || '',
   });
 
+  const [prevSelectedCoords, setPrevSelectedCoords] = useState(selectedCoords);
+
+  // Adjust state while rendering if selectedCoords changes
+  if (
+    selectedCoords &&
+    (selectedCoords !== prevSelectedCoords ||
+      (prevSelectedCoords &&
+        (selectedCoords.lat !== prevSelectedCoords.lat ||
+          selectedCoords.lng !== prevSelectedCoords.lng)))
+  ) {
+    setPrevSelectedCoords(selectedCoords);
+    setFormData((prev) => ({
+      ...prev,
+      latitude: selectedCoords.lat,
+      longitude: selectedCoords.lng,
+    }));
+  }
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = () => {

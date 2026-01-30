@@ -1,14 +1,20 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
   useMapEvent,
+  useMap,
 } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { POI } from '../../services/pois';
+
+// Import marker icons directly so Vite bundles them (avoids CSP issues with CDN)
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 interface POIMapProps {
   pois?: POI[];
@@ -16,18 +22,16 @@ interface POIMapProps {
   onPOIClick?: (poi: POI) => void;
   center?: [number, number];
   zoom?: number;
+  focusPOI?: POI | null;
 }
 
-// Fix for Leaflet default icon issue
+// Fix for Leaflet default icon issue - use locally bundled icons
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
 });
 
 function MapClickHandler({
@@ -41,12 +45,27 @@ function MapClickHandler({
   return null;
 }
 
+function MapFocusHandler({ focusPOI }: { focusPOI?: POI | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (focusPOI) {
+      map.flyTo([focusPOI.latitude, focusPOI.longitude], 12, {
+        duration: 0.5,
+      });
+    }
+  }, [focusPOI, map]);
+
+  return null;
+}
+
 export function POIMap({
   pois = [],
   onMapClick,
   onPOIClick,
   center = [0, 0],
   zoom = 3,
+  focusPOI,
 }: POIMapProps) {
   const mapRef = useRef(null);
 
@@ -63,6 +82,7 @@ export function POIMap({
       />
 
       {onMapClick && <MapClickHandler onMapClick={onMapClick} />}
+      <MapFocusHandler focusPOI={focusPOI} />
 
       {pois?.map((poi) => (
         <Marker

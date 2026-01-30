@@ -40,7 +40,7 @@ export function RouteActionsMenu({
 
   return (
     <div className="flex gap-2">
-      {route.active ? (
+      {route.is_active ? (
         <Button
           variant="outline"
           size="sm"

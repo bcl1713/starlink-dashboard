@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { useUploadRoute, useDownloadRoute } from '../hooks/api/useRoutes';
 import { RouteList } from '../components/routes/RouteList';
 import { RouteUploadDialog } from '../components/routes/RouteUploadDialog';
+import { RouteDetailDialog } from '../components/routes/RouteDetailDialog';
 import { Button } from '../components/ui/button';
 import type { Route } from '../services/routes';
 
 export function RouteManagerPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const uploadRoute = useUploadRoute();
   const downloadRoute = useDownloadRoute();
 
@@ -29,6 +32,11 @@ export function RouteManagerPage() {
     });
   };
 
+  const handleSelectRoute = (id: string) => {
+    setSelectedRouteId(id);
+    setDetailOpen(true);
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -37,7 +45,7 @@ export function RouteManagerPage() {
       </div>
 
       <RouteList
-        onSelectRoute={() => {}}
+        onSelectRoute={handleSelectRoute}
         onDelete={() => {}}
         onDownload={handleDownload}
       />
@@ -47,6 +55,12 @@ export function RouteManagerPage() {
         onOpenChange={setUploadOpen}
         onUpload={handleUpload}
         isLoading={uploadRoute.isPending}
+      />
+
+      <RouteDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        routeId={selectedRouteId}
       />
     </div>
   );

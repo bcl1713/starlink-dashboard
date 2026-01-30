@@ -1,55 +1,47 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
-import { X } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 
 interface POIFilterBarProps {
   onFilterChange: (filters: FilterOptions) => void;
-  onActiveOnlyChange?: (activeOnly: boolean) => void;
+  showRoutePOIs: boolean;
+  onShowRoutePOIsChange: (show: boolean) => void;
 }
 
 export interface FilterOptions {
   search?: string;
   category?: string | null;
   courseStatus?: 'ahead_on_route' | 'already_passed' | 'not_on_route' | null;
-  approaching?: boolean;
 }
 
 export function POIFilterBar({
   onFilterChange,
-  onActiveOnlyChange,
+  showRoutePOIs,
+  onShowRoutePOIsChange,
 }: POIFilterBarProps) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [courseStatus, setCourseStatus] = useState<
     'ahead_on_route' | 'already_passed' | 'not_on_route' | null
   >(null);
-  const [approaching, setApproaching] = useState(false);
-  const [activeOnly, setActiveOnly] = useState(false);
 
-  const handleFilterChange = () => {
+  useEffect(() => {
     onFilterChange({
       search: search || undefined,
       category,
       courseStatus,
-      approaching,
     });
-  };
-
-  const handleActiveOnlyChange = (value: boolean) => {
-    setActiveOnly(value);
-    onActiveOnlyChange?.(value);
-  };
+  }, [search, category, courseStatus, onFilterChange]);
 
   const handleReset = () => {
     setSearch('');
     setCategory(null);
     setCourseStatus(null);
-    setApproaching(false);
-    setActiveOnly(false);
     onFilterChange({});
-    onActiveOnlyChange?.(false);
   };
+
+  const hasFilters = search || category || courseStatus;
 
   return (
     <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
@@ -59,7 +51,6 @@ export function POIFilterBar({
             placeholder="Search POIs..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyUp={handleFilterChange}
             className="flex-1"
           />
         </div>
@@ -67,43 +58,39 @@ export function POIFilterBar({
 
       <div className="flex gap-2 flex-wrap">
         <Button
-          variant={activeOnly ? 'default' : 'outline'}
+          variant={showRoutePOIs ? 'default' : 'outline'}
           size="sm"
-          onClick={() => handleActiveOnlyChange(!activeOnly)}
+          onClick={() => onShowRoutePOIsChange(!showRoutePOIs)}
         >
-          {activeOnly ? 'Showing Active Only' : 'Show All POIs'}
-        </Button>
-
-        <Button
-          variant={approaching ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => {
-            setApproaching(!approaching);
-            handleFilterChange();
-          }}
-        >
-          Approaching (30 min)
+          {showRoutePOIs ? (
+            <>
+              <Eye className="w-4 h-4 mr-1" />
+              Route POIs Visible
+            </>
+          ) : (
+            <>
+              <EyeOff className="w-4 h-4 mr-1" />
+              Route POIs Hidden
+            </>
+          )}
         </Button>
 
         {courseStatus && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              setCourseStatus(null);
-              handleFilterChange();
-            }}
+            onClick={() => setCourseStatus(null)}
           >
             {courseStatus}
             <X className="w-3 h-3 ml-1" />
           </Button>
         )}
 
-        {search || category || courseStatus || approaching || activeOnly ? (
+        {hasFilters && (
           <Button variant="ghost" size="sm" onClick={handleReset}>
             Clear all
           </Button>
-        ) : null}
+        )}
       </div>
     </div>
   );

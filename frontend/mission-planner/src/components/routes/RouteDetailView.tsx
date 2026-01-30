@@ -25,12 +25,12 @@ export function RouteDetailView({ routeId }: RouteDetailViewProps) {
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <span className="text-gray-600">Waypoints</span>
-              <p className="font-semibold">{route.waypoint_count || 0}</p>
+              <p className="font-semibold">{route.waypoints?.length || 0}</p>
             </div>
             <div>
               <span className="text-gray-600">Status</span>
               <p className="font-semibold">
-                {route.active ? 'Active' : 'Inactive'}
+                {route.is_active ? 'Active' : 'Inactive'}
               </p>
             </div>
             {route.flight_phase && (
