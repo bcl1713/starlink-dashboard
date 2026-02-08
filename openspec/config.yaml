@@ -1,16 +1,55 @@
 schema: spec-driven
 context:
+  Purpose: |
+    The Starlink Dashboard is a Docker-based monitoring and mission planning
+    system for mobile Starlink terminals. It provides real-time monitoring of
+    metrics, mission planning with interactive route visualization, ETA
+    calculation with POI tracking, dual-mode operation (Live/Simulation),
+    historical metrics via Prometheus/Grafana, and mission export capabilities.
   Tech Stack:
     Frontend:
-      React, TypeScript, Vite, TailwindCSS, Radix, Zustand, React Hook Form,
-      TanStack React Query, Leaflet, Axios, Playwright, Lucide React, Node
+      Framework: React 19.2.0, TypeScript 5.9.3 (strict mode)
+      Build: Vite 7.2.4, TailwindCSS 4.1.17, Radix UI
+      State/Forms: Zustand 5.0.8, React Hook Form 7.66.1, Zod 4.1.12
+      Data/Maps: TanStack React Query 5.90.10, Leaflet 1.9.4, Axios 1.13.2
+      Testing: Playwright 1.56.1, Vitest 4.0.13, Lucide React
     Backend:
-      FastAPI, Python, Uvicorn, Pydantic, FastKML, NumPy, Python-PPTX,
-      starlink-grpc-core, Prometheus, SlowAPI, Pytest
+      Framework: FastAPI 0.104.0+, Python 3.11, Uvicorn 0.24.0+
+      Validation: Pydantic 2.0+
+      Geospatial: FastKML 1.3+, GeoJSON 2.5+, Cartopy 0.22+, NumPy, Pandas
+      Exports: Python-PPTX 0.6.21, ReportLab 4.0+, OpenPyXL 3.1+
+      Starlink: starlink-grpc-core 1.2+, gRPCio 1.50+
+      Metrics: Prometheus-client 0.19+, SlowAPI 0.1.9+, Pytest 7.4+
     Infrastructure:
-      Docker, Docker Compose, Prometheus, Grafana, Nginx, File-based
-    Code Quality:
-      Black, Ruff, MyPy, ESLINT, Prettier, Markdownlint-cli2, Git, Hooks
+      Deployment: Docker, Docker Compose, Nginx
+      Monitoring: Prometheus 2.x, Grafana 10.x
+      Storage: File-based (KML, GeoJSON, YAML, JSON)
+  Conventions:
+    Python:
+      Style: Black (88 char), Ruff, MyPy (required types), PEP 257 docstrings
+      Structure: Files < 300 lines, snake_case (vars/funcs), PascalCase (classes)
+      Async: Use async/await for I/O operations in FastAPI routes
+    TypeScript:
+      Style: Prettier (80 char), ESLint, Strict mode, functional components
+      Structure: Files < 300 lines, camelCase (vars), PascalCase (components/types)
+      State: Zustand for global, React Query for server state
+    Documentation:
+      Style: Prettier (80 char), Markdownlint-cli2, lowercase-with-hyphens.md
+  Architecture:
+    Backend: Layered (api, services, core, models), FastAPI DI, /api/v2/ prefix
+    Frontend: Component-based (pages, components, services, types, utils)
+  Git Workflow:
+    Strategy: Main branch workflow with feature/* and specs/* branches
+    Commits: "type: description" (feat, fix, docs, refactor, test, chore)
+    Hooks: Pre-commit (Black, Ruff, Prettier, ESLint, Markdownlint)
+  Domain Context:
+    Integration: gRPC to Starlink dish at 192.168.100.1:9200
+    Geospatial: KML/GeoJSON routes, POIs, ETA based on GPS/speed
+    Metrics: Prometheus gauges/counters for network and terminal state
+  Constraints:
+    Technical: Python 3.11+, Node 22+, Docker required, files < 300 lines
+    Operations: Docker rebuild required for Python changes, .env for config
+    Security: Non-root containers, No secrets in repo, SlowAPI rate limiting
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
