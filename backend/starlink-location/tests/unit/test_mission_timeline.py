@@ -14,7 +14,6 @@ from app.mission.timeline import build_timeline_segments
 from app.mission.timeline_builder.stats import annotate_aar_markers
 from app.satellites.rules import EventType, MissionEvent
 
-
 BASE = datetime(2025, 10, 27, 12, 0, tzinfo=timezone.utc)
 
 

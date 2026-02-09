@@ -4,7 +4,7 @@
 repos:
   # Python code formatting with Black
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 26.1.0
     hooks:
       - id: black
         name: Black - Python code formatter

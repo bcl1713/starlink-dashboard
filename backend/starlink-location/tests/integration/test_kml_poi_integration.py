@@ -273,8 +273,7 @@ class TestKMLPOIIntegration:
         pois_file = Path("/tmp/test_data/pois.json")
         pois_file.write_text(json.dumps({"pois": {}, "routes": {}}, indent=2))
 
-        kml_content = textwrap.dedent(
-            """
+        kml_content = textwrap.dedent("""
             <?xml version="1.0" encoding="UTF-8"?>
             <kml xmlns="http://www.opengis.net/kml/2.2">
               <Document>
@@ -311,8 +310,7 @@ class TestKMLPOIIntegration:
                 </Placemark>
               </Document>
             </kml>
-            """
-        ).strip()
+            """).strip()
 
         files = {
             "file": (

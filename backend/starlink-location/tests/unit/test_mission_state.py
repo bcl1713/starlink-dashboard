@@ -2,11 +2,9 @@
 
 from datetime import datetime, timedelta, timezone
 
-
 from app.mission.models import Transport, TransportState
 from app.mission.state import generate_transport_intervals
 from app.satellites.rules import EventType, MissionEvent
-
 
 BASE_TIME = datetime(2025, 10, 27, 12, 0, tzinfo=timezone.utc)
 

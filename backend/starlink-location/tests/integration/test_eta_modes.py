@@ -8,8 +8,7 @@ def _upload_stub_route(test_client, prefix: str) -> dict:
     """Upload a minimal KML route without timing metadata and return response JSON."""
     route_name = f"{prefix}-{uuid4().hex[:6]}"
     filename = f"{route_name}.kml"
-    kml_content = textwrap.dedent(
-        f"""\
+    kml_content = textwrap.dedent(f"""\
         <?xml version="1.0" encoding="UTF-8"?>
         <kml xmlns="http://www.opengis.net/kml/2.2">
           <Document>
@@ -25,8 +24,7 @@ def _upload_stub_route(test_client, prefix: str) -> dict:
             </Placemark>
           </Document>
         </kml>
-        """
-    ).encode("utf-8")
+        """).encode("utf-8")
 
     files = {
         "file": (
