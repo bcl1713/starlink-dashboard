@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { POI, POICreate, POIUpdate } from '../../services/pois';
+import { useRoutes } from '../../hooks/api/useRoutes';
+import { useMissions } from '../../hooks/api/useMissions';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
@@ -34,6 +36,9 @@ export function POIForm({
   error,
   selectedCoords,
 }: POIFormProps) {
+  const { data: routes } = useRoutes();
+  const { data: missions } = useMissions();
+
   const [formData, setFormData] = useState({
     name: poi?.name || '',
     latitude: selectedCoords?.lat || poi?.latitude || 0,
@@ -209,29 +214,44 @@ export function POIForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="route_id">Route ID</Label>
-          <Input
+          <Label htmlFor="route_id">Route</Label>
+          <select
             id="route_id"
             value={formData.route_id}
             onChange={(e) =>
               setFormData({ ...formData, route_id: e.target.value })
             }
-            placeholder="Optional"
             disabled={isLoading}
-          />
+            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">(None)</option>
+            {routes?.map((route) => (
+              <option key={route.id} value={route.id}>
+                {route.name}
+                {route.is_active ? ' (Active)' : ''}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
-          <Label htmlFor="mission_id">Mission ID</Label>
-          <Input
+          <Label htmlFor="mission_id">Mission</Label>
+          <select
             id="mission_id"
             value={formData.mission_id}
             onChange={(e) =>
               setFormData({ ...formData, mission_id: e.target.value })
             }
-            placeholder="Optional"
             disabled={isLoading}
-          />
+            className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">(None)</option>
+            {missions?.map((mission) => (
+              <option key={mission.id} value={mission.id}>
+                {mission.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

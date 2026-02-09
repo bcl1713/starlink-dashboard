@@ -35,6 +35,8 @@ export function useActivateRoute() {
     onSuccess: (_, routeId) => {
       queryClient.invalidateQueries({ queryKey: ['routes'] });
       queryClient.invalidateQueries({ queryKey: ['routes', routeId] });
+      // Cross-cache invalidation: route activation changes POI projections
+      queryClient.invalidateQueries({ queryKey: ['pois'] });
     },
   });
 }
@@ -47,6 +49,8 @@ export function useDeactivateRoute() {
     onSuccess: (_, routeId) => {
       queryClient.invalidateQueries({ queryKey: ['routes'] });
       queryClient.invalidateQueries({ queryKey: ['routes', routeId] });
+      // Cross-cache invalidation: route deactivation clears POI projections
+      queryClient.invalidateQueries({ queryKey: ['pois'] });
     },
   });
 }

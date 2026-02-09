@@ -38,9 +38,26 @@ export interface POIUpdate {
 }
 
 export interface POIWithETA extends POI {
+  poi_id?: string;
   eta?: string;
+  eta_seconds?: number;
+  eta_type?: 'anticipated' | 'estimated';
   bearing?: number;
-  course_status?: 'ahead_on_route' | 'already_passed' | 'not_on_route';
+  bearing_degrees?: number;
+  course_status?: 'on_course' | 'slightly_off' | 'off_track' | 'behind' | null;
+  distance_meters?: number;
+  is_on_active_route?: boolean;
+  projected_latitude?: number | null;
+  projected_longitude?: number | null;
+  projected_waypoint_index?: number | null;
+  projected_route_progress?: number | null;
+  route_aware_status?:
+    | 'ahead_on_route'
+    | 'already_passed'
+    | 'not_on_route'
+    | 'pre_departure'
+    | null;
+  flight_phase?: string | null;
 }
 
 export interface POIListResponse {

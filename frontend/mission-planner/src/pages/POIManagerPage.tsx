@@ -1,5 +1,9 @@
 import { useState, useMemo, useCallback } from 'react';
-import { usePOIs } from '../hooks/api/usePOIs';
+import { useQuery } from '@tanstack/react-query';
+import { usePOIs, usePOIsWithETA } from '../hooks/api/usePOIs';
+import { useRoutes } from '../hooks/api/useRoutes';
+import { routesApi } from '../services/routes';
+import type { POIWithETA } from '../services/pois';
 import { POIList } from '../components/pois/POIList';
 import { POIFilterBar } from '../components/pois/POIFilterBar';
 import type { FilterOptions } from '../components/pois/POIFilterBar';
@@ -20,6 +24,24 @@ export function POIManagerPage() {
 
   // Fetch all POIs (no server-side filtering for active_only)
   const { data: allPOIs, isLoading, error, refetch } = usePOIs(false);
+
+  // Fetch real-time ETA data (polls every 5 seconds)
+  const { data: etaData } = usePOIsWithETA();
+
+  // Find active route and fetch its coordinates for map display
+  const { data: routes } = useRoutes();
+  const activeRoute = useMemo(() => routes?.find((r) => r.is_active), [routes]);
+  const { data: activeRouteCoords } = useQuery({
+    queryKey: ['routes', activeRoute?.id, 'coordinates'],
+    queryFn: () => routesApi.getCoordinates(activeRoute!.id),
+    enabled: !!activeRoute?.id,
+  });
+
+  // Build ETA lookup for course status filtering
+  const etaMap = useMemo(() => {
+    if (!etaData) return new Map<string, POIWithETA>();
+    return new Map(etaData.map((p) => [p.poi_id || p.id, p]));
+  }, [etaData]);
 
   // Filter POIs client-side
   const filteredPOIs = useMemo(() => {
@@ -47,9 +69,20 @@ export function POIManagerPage() {
         return false;
       }
 
+      // Apply course status filter
+      if (filters.courseStatus) {
+        const eta = etaMap.get(poi.id);
+        if (
+          !eta?.route_aware_status ||
+          eta.route_aware_status !== filters.courseStatus
+        ) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [allPOIs, showRoutePOIs, filters]);
+  }, [allPOIs, showRoutePOIs, filters, etaMap]);
 
   const handleMapClick = (lat: number, lng: number) => {
     setSelectedCoords({ lat, lng });
@@ -94,6 +127,7 @@ export function POIManagerPage() {
 
           <POIList
             pois={filteredPOIs}
+            etaData={etaData}
             isLoading={isLoading}
             error={error as Error | null}
             onSelectPOI={handleSelectPOI}
@@ -108,6 +142,8 @@ export function POIManagerPage() {
           <Card className="h-96">
             <POIMap
               pois={filteredPOIs}
+              etaData={etaData}
+              routeCoordinates={activeRouteCoords}
               onMapClick={handleMapClick}
               onPOIClick={(poi) => handleSelectPOI(poi.id)}
               focusPOI={focusPOI}

@@ -388,6 +388,10 @@ def get_poi_management_template() -> str:
     </head>
     <body>
         <div class="container">
+            <div style="background: #fff3cd; color: #856404; border: 1px solid #ffc107; padding: 16px 24px; text-align: center; font-size: 1em;">
+                <strong>⚠️ Deprecated:</strong> This UI is being replaced by the new React frontend.
+                Please use <a href="/pois" style="color: #533f03; font-weight: bold;">the new POI Manager</a> instead.
+            </div>
             <div class="header">
                 <h1>🗺️ POI Management</h1>
                 <p>Create, edit, and delete Points of Interest for tracking</p>
@@ -892,7 +896,13 @@ def get_poi_management_template() -> str:
 
 def get_route_management_template() -> str:
     """Return the Route Management web interface HTML (stub)."""
-    return "<p>Route Management UI - Coming Soon</p>"
+    return """
+    <div style="background: #fff3cd; color: #856404; border: 1px solid #ffc107; padding: 16px 24px; text-align: center; font-size: 1em; margin: 20px;">
+        <strong>⚠️ Deprecated:</strong> This UI is being replaced by the new React frontend.
+        Please use <a href="/routes" style="color: #533f03; font-weight: bold;">the new Route Manager</a> instead.
+    </div>
+    <p>Route Management UI - Coming Soon</p>
+    """
 
 
 def get_mission_planner_template() -> str:

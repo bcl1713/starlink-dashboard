@@ -43,6 +43,15 @@ export function POIFilterBar({
 
   const hasFilters = search || category || courseStatus;
 
+  const courseStatusOptions: {
+    value: 'ahead_on_route' | 'already_passed' | 'not_on_route';
+    label: string;
+  }[] = [
+    { value: 'ahead_on_route', label: 'Ahead' },
+    { value: 'already_passed', label: 'Passed' },
+    { value: 'not_on_route', label: 'Off Route' },
+  ];
+
   return (
     <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
       <div className="flex gap-2">
@@ -54,6 +63,22 @@ export function POIFilterBar({
             className="flex-1"
           />
         </div>
+        <select
+          value={category || ''}
+          onChange={(e) => setCategory(e.target.value || null)}
+          className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Categories</option>
+          <option value="airport">Airport</option>
+          <option value="city">City</option>
+          <option value="landmark">Landmark</option>
+          <option value="waypoint">Waypoint</option>
+          <option value="departure">Departure</option>
+          <option value="arrival">Arrival</option>
+          <option value="alternate">Alternate</option>
+          <option value="satellite">Satellite</option>
+          <option value="other">Other</option>
+        </select>
       </div>
 
       <div className="flex gap-2 flex-wrap">
@@ -75,16 +100,19 @@ export function POIFilterBar({
           )}
         </Button>
 
-        {courseStatus && (
+        {courseStatusOptions.map((opt) => (
           <Button
-            variant="outline"
+            key={opt.value}
+            variant={courseStatus === opt.value ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setCourseStatus(null)}
+            onClick={() =>
+              setCourseStatus(courseStatus === opt.value ? null : opt.value)
+            }
           >
-            {courseStatus}
-            <X className="w-3 h-3 ml-1" />
+            {opt.label}
+            {courseStatus === opt.value && <X className="w-3 h-3 ml-1" />}
           </Button>
-        )}
+        ))}
 
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={handleReset}>
