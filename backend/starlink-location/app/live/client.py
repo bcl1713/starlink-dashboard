@@ -197,6 +197,63 @@ class StarlinkClient:
             self.logger.error(f"Failed to get location data: {e}")
             raise
 
+    def get_gps_config(self) -> Dict:
+        """Get GPS configuration and status from Starlink dish.
+
+        Returns:
+            Dictionary with enabled, ready, and satellites keys
+
+        Raises:
+            starlink_grpc.GrpcError: If gRPC error occurs
+            RpcError: If low-level gRPC error occurs
+        """
+        if not self.context:
+            self.connect()
+
+        try:
+            status, _, _ = starlink_grpc.status_data(context=self.context)
+            return {
+                "enabled": status.get("gps_enabled", False),
+                "ready": status.get("gps_ready", False),
+                "satellites": status.get("gps_sats", 0),
+            }
+        except (starlink_grpc.GrpcError, RpcError) as e:
+            self.logger.error(f"Failed to get GPS config: {e}")
+            raise
+
+    def set_gps_config(self, enable: bool) -> Dict:
+        """Set GPS configuration on Starlink dish.
+
+        Args:
+            enable: Whether to enable GPS for position data
+
+        Returns:
+            Dictionary with updated enabled, ready, and satellites keys
+
+        Raises:
+            starlink_grpc.GrpcError: If gRPC error occurs
+            RpcError: If low-level gRPC error occurs
+            PermissionError: If the dish denies GPS configuration changes
+        """
+        if not self.context:
+            self.connect()
+
+        try:
+            new_state = starlink_grpc.set_gps_config(
+                enable=enable, context=self.context
+            )
+            self.logger.info(f"GPS {'enabled' if new_state else 'disabled'}")
+            return self.get_gps_config()
+        except starlink_grpc.GrpcError as e:
+            if "PERMISSION_DENIED" in str(e):
+                self.logger.error("Permission denied to change GPS config")
+                raise PermissionError("GPS configuration change not permitted") from e
+            self.logger.error(f"Failed to set GPS config: {e}")
+            raise
+        except RpcError as e:
+            self.logger.error(f"Failed to set GPS config: {e}")
+            raise
+
     def get_history_stats(
         self, parse_samples: int = -1
     ) -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict, Dict]:

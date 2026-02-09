@@ -27,11 +27,13 @@ context:
   Conventions:
     Python:
       Style: Black (88 char), Ruff, MyPy (required types), PEP 257 docstrings
-      Structure: Files < 300 lines, snake_case (vars/funcs), PascalCase (classes)
+      Structure:
+        Files < 300 lines, snake_case (vars/funcs), PascalCase (classes)
       Async: Use async/await for I/O operations in FastAPI routes
     TypeScript:
       Style: Prettier (80 char), ESLint, Strict mode, functional components
-      Structure: Files < 300 lines, camelCase (vars), PascalCase (components/types)
+      Structure:
+        Files < 300 lines, camelCase (vars), PascalCase (components/types)
       State: Zustand for global, React Query for server state
     Documentation:
       Style: Prettier (80 char), Markdownlint-cli2, lowercase-with-hyphens.md
@@ -40,7 +42,7 @@ context:
     Frontend: Component-based (pages, components, services, types, utils)
   Git Workflow:
     Strategy: Main branch workflow with feature/* and specs/* branches
-    Commits: "type: description" (feat, fix, docs, refactor, test, chore)
+    Commits: type-description format (feat, fix, docs, refactor, test, chore)
     Hooks: Pre-commit (Black, Ruff, Prettier, ESLint, Markdownlint)
   Domain Context:
     Integration: gRPC to Starlink dish at 192.168.100.1:9200

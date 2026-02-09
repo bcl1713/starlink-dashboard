@@ -7,6 +7,7 @@ import SatelliteManagerPage from './pages/SatelliteManagerPage';
 import { RouteManagerPage } from './pages/RouteManagerPage';
 import { POIManagerPage } from './pages/POIManagerPage';
 import { DataExportPage } from './pages/DataExportPage';
+import { ConfigurationPage } from './pages/ConfigurationPage';
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,9 @@ function App() {
             <Link to="/export" className="hover:underline">
               Data Export
             </Link>
+            <Link to="/configuration" className="hover:underline">
+              Configuration
+            </Link>
           </div>
         </nav>
         <Routes>
@@ -44,6 +48,7 @@ function App() {
           <Route path="/pois" element={<POIManagerPage />} />
           <Route path="/routes" element={<RouteManagerPage />} />
           <Route path="/export" element={<DataExportPage />} />
+          <Route path="/configuration" element={<ConfigurationPage />} />
           <Route path="/" element={<Navigate to="/missions" replace />} />
         </Routes>
       </BrowserRouter>

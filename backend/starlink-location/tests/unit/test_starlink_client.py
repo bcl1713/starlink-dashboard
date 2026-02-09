@@ -480,6 +480,124 @@ class TestStarlinkClientTelemetry:
         assert telemetry.network.throughput_down_mbps == pytest.approx(0.0)
 
 
+class TestStarlinkClientGPSConfig:
+    """Test GPS configuration methods."""
+
+    @patch("app.live.client.starlink_grpc.status_data")
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_get_gps_config_success(self, mock_context_class, mock_status):
+        """Test successful GPS config retrieval."""
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+
+        status_dict = {
+            "gps_enabled": True,
+            "gps_ready": True,
+            "gps_sats": 12,
+        }
+        mock_status.return_value = (status_dict, {}, {})
+
+        client = StarlinkClient()
+        config = client.get_gps_config()
+
+        assert config["enabled"] is True
+        assert config["ready"] is True
+        assert config["satellites"] == 12
+
+    @patch("app.live.client.starlink_grpc.status_data")
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_get_gps_config_defaults(self, mock_context_class, mock_status):
+        """Test GPS config retrieval with missing fields uses defaults."""
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+
+        status_dict = {}  # Empty status
+        mock_status.return_value = (status_dict, {}, {})
+
+        client = StarlinkClient()
+        config = client.get_gps_config()
+
+        assert config["enabled"] is False
+        assert config["ready"] is False
+        assert config["satellites"] == 0
+
+    @patch("app.live.client.starlink_grpc.status_data")
+    @patch("app.live.client.starlink_grpc.set_gps_config")
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_set_gps_config_enable(self, mock_context_class, mock_set_gps, mock_status):
+        """Test enabling GPS config."""
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+        mock_set_gps.return_value = True
+
+        status_dict = {
+            "gps_enabled": True,
+            "gps_ready": True,
+            "gps_sats": 10,
+        }
+        mock_status.return_value = (status_dict, {}, {})
+
+        client = StarlinkClient()
+        config = client.set_gps_config(enable=True)
+
+        mock_set_gps.assert_called_once_with(enable=True, context=mock_context)
+        assert config["enabled"] is True
+
+    @patch("app.live.client.starlink_grpc.status_data")
+    @patch("app.live.client.starlink_grpc.set_gps_config")
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_set_gps_config_disable(
+        self, mock_context_class, mock_set_gps, mock_status
+    ):
+        """Test disabling GPS config."""
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+        mock_set_gps.return_value = False
+
+        status_dict = {
+            "gps_enabled": False,
+            "gps_ready": False,
+            "gps_sats": 0,
+        }
+        mock_status.return_value = (status_dict, {}, {})
+
+        client = StarlinkClient()
+        config = client.set_gps_config(enable=False)
+
+        mock_set_gps.assert_called_once_with(enable=False, context=mock_context)
+        assert config["enabled"] is False
+
+    @patch("app.live.client.starlink_grpc.set_gps_config")
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_set_gps_config_permission_denied(self, mock_context_class, mock_set_gps):
+        """Test GPS config change denied raises PermissionError."""
+        import starlink_grpc
+
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+        mock_set_gps.side_effect = starlink_grpc.GrpcError("PERMISSION_DENIED")
+
+        client = StarlinkClient()
+        with pytest.raises(
+            PermissionError, match="GPS configuration change not permitted"
+        ):
+            client.set_gps_config(enable=True)
+
+    @patch("app.live.client.starlink_grpc.set_gps_config")
+    @patch("app.live.client.starlink_grpc.ChannelContext")
+    def test_set_gps_config_grpc_error(self, mock_context_class, mock_set_gps):
+        """Test GPS config change fails with other gRPC error."""
+        import starlink_grpc
+
+        mock_context = MagicMock()
+        mock_context_class.return_value = mock_context
+        mock_set_gps.side_effect = starlink_grpc.GrpcError("Connection failed")
+
+        client = StarlinkClient()
+        with pytest.raises(starlink_grpc.GrpcError):
+            client.set_gps_config(enable=True)
+
+
 class TestStarlinkClientContextManager:
     """Test context manager functionality."""
 

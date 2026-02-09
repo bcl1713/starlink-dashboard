@@ -16,6 +16,7 @@ from app.api import (
     export,
     flight_status,
     geojson,
+    gps,
     health,
     metrics,
     pois,
@@ -90,6 +91,8 @@ async def startup_event():
             logger.info_json("LiveCoordinator initialized successfully")
             # Set service info with live mode
             set_service_info(version="0.2.0", mode="live")
+            # Register Starlink client with GPS module for GPS config API
+            gps.set_starlink_client(_coordinator.client)
         else:
             # Initialize SimulationCoordinator for simulation mode
             logger.info_json("Initializing SimulationCoordinator for simulation mode")
@@ -487,6 +490,7 @@ app.include_router(mission_routes.router, tags=["Missions"])
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])
+app.include_router(gps.router, tags=["GPS"])
 app.include_router(ui.router, tags=["UI"])
 
 
