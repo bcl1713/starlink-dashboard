@@ -104,6 +104,9 @@ start date instead of export generation time. Slide titles now use human-readabl
 leg names instead of technical IDs, and footers display parent mission metadata
 for multi-leg exports to improve readability and professionalism.
 
+**CHANGE:** Route map generation MUST handle IDL crossings in all rendering
+paths, including the fallback path used when route points lack timing data.
+
 #### Scenario: Export leg with styled route map slide
 
 **Given** a mission leg with a route and map
@@ -211,6 +214,25 @@ UTC
 **When** user exports the mission as PowerPoint
 **Then** the slide title falls back to the leg ID (e.g., "leg-1 - Route Map")
 **And** the export succeeds without error
+
+#### Scenario: IDL-crossing route renders without wrapping in PPTX map
+
+**Given** a mission leg with a route that crosses the International Date Line
+**And** the route points may or may not have `expected_arrival_time` populated
+**When** user exports the mission as PowerPoint
+**Then** the route map SHALL render all route segments taking the short path across the IDL
+**And** no route segment SHALL wrap around the globe through 0° longitude
+**And** this SHALL apply regardless of whether route points have timing data
+**And** the map projection SHALL center on the route's midpoint in Pacific view
+
+#### Scenario: IDL-crossing route with mixed timing data
+
+**Given** a mission leg with a route that crosses the IDL
+**And** some route points have `expected_arrival_time` and some do not
+**When** the PPTX route map is generated
+**Then** timed segments SHALL render with color-coded status and correct IDL handling
+**And** untimed segments SHALL render with fallback coloring and correct IDL handling
+**And** there SHALL be no visual discontinuity at the boundary between timed and untimed segments
 
 ### Requirement: Backward Compatibility
 

@@ -107,6 +107,15 @@ status during the planning phase.
 - **AND** filter samples by segment timestamp range
 - **AND** render polylines connecting sample coordinates with segment color
 
+#### Scenario: IDL-crossing route renders without wrapping
+
+- **WHEN** route crosses the International Date Line (longitude ±180°)
+- **AND** preview timeline is rendered as color-coded segments
+- **THEN** the system SHALL normalize sample coordinates to the same coordinate space used by the base route layer
+- **AND** color-coded polylines SHALL take the short path across the IDL
+- **AND** color-coded polylines SHALL NOT wrap around the globe through 0° longitude
+- **AND** color-coded segments SHALL align visually with the base blue route line
+
 ### Requirement: Timeline Table Preview
 
 The system SHALL display a detailed timeline table showing segment information
