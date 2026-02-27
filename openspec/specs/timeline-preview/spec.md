@@ -42,6 +42,8 @@ previews without persisting results to disk.
   `/api/v2/missions/{mission_id}/legs/{leg_id}/timeline/preview`
 - **THEN** the system SHALL accept a request body containing transport
   configuration and optional adjusted departure time
+- **AND** the `x_transitions` array items SHALL each include `id` (string) and
+  `target_satellite_id` (string) fields matching the backend `XTransition` model
 - **AND** validate the configuration structure
 - **AND** return HTTP 400 if configuration is invalid
 
@@ -68,6 +70,13 @@ previews without persisting results to disk.
 - **THEN** the system SHALL return HTTP 500 with error details
 - **AND** log the error for debugging
 - **AND** NOT corrupt any existing saved timeline data
+
+#### Scenario: Frontend preview request matches backend contract
+
+- **WHEN** the frontend constructs a timeline preview request with X-Band transitions
+- **THEN** each x_transition item SHALL include the `id` field from the `XBandTransition` state
+- **AND** each x_transition item SHALL include the `target_satellite_id` field (not `to_satellite`)
+- **AND** the `TimelinePreviewRequest` TypeScript type SHALL define x_transition items with `id: string` and `target_satellite_id: string` fields
 
 ### Requirement: Color-Coded Route Visualization
 
