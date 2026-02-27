@@ -57,9 +57,10 @@ export function LegDetailPage() {
           satelliteConfig.xband_starting_satellite || 'X-1',
         initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
         x_transitions: satelliteConfig.xband_transitions.map((t) => ({
+          id: t.id,
           latitude: t.latitude,
           longitude: t.longitude,
-          to_satellite: t.target_satellite_id,
+          target_satellite_id: t.target_satellite_id,
         })),
         ka_outages: satelliteConfig.ka_outages,
         aar_windows: aarConfig.segments.map((s) => ({

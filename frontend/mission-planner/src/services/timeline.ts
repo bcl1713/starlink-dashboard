@@ -36,9 +36,10 @@ export interface TimelinePreviewRequest {
     initial_x_satellite_id: string;
     initial_ka_satellite_ids: string[];
     x_transitions: Array<{
+      id: string;
       latitude: number;
       longitude: number;
-      to_satellite: string;
+      target_satellite_id: string;
     }>;
     ka_outages: Array<{
       start_time: string;
