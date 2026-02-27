@@ -329,6 +329,49 @@ def _interpolate_position_at_time(target_time, p1, p2):
     return type("Point", (), {"latitude": lat, "longitude": lon})
 
 
+def _plot_segment_with_idl_handling(ax, lon1, lat1, lon2, lat2, color):
+    """Plot a route segment, splitting at ±180° if it crosses the IDL."""
+    if abs(lon2 - lon1) > 180:
+        d_lon_short_path = 360 - abs(lon1 - lon2)
+
+        if d_lon_short_path == 0:
+            return
+
+        fraction = (180 - abs(lon1)) / d_lon_short_path
+        lat_at_180 = lat1 + (lat2 - lat1) * fraction
+
+        # Segment 1: P1 to Meridian
+        target_lon1 = 180 if lon1 > 0 else -180
+        ax.plot(
+            [lon1, target_lon1],
+            [lat1, lat_at_180],
+            color=color,
+            linewidth=1.5,
+            transform=ccrs.PlateCarree(),
+            zorder=5,
+        )
+
+        # Segment 2: Meridian to P2
+        target_lon2 = 180 if lon2 > 0 else -180
+        ax.plot(
+            [target_lon2, lon2],
+            [lat_at_180, lat2],
+            color=color,
+            linewidth=1.5,
+            transform=ccrs.PlateCarree(),
+            zorder=5,
+        )
+    else:
+        ax.plot(
+            [lon1, lon2],
+            [lat1, lat2],
+            color=color,
+            linewidth=1.5,
+            transform=ccrs.PlateCarree(),
+            zorder=5,
+        )
+
+
 def _generate_route_map(
     timeline: MissionLegTimeline,
     mission: Mission | None = None,
@@ -649,13 +692,13 @@ def _generate_route_map(
                     else:
                         fallback_color = STATUS_COLORS["nominal"]
 
-                ax.plot(
-                    [p1.longitude, p2.longitude],
-                    [p1.latitude, p2.latitude],
-                    color=fallback_color,
-                    linewidth=1.5,
-                    transform=ccrs.PlateCarree(),
-                    zorder=5,
+                _plot_segment_with_idl_handling(
+                    ax,
+                    p1.longitude,
+                    p1.latitude,
+                    p2.longitude,
+                    p2.latitude,
+                    fallback_color,
                 )
                 continue
 
@@ -672,49 +715,10 @@ def _generate_route_map(
 
                 color = STATUS_COLORS.get(status, default_color)
 
-                # Draw this sub-segment
-                # Check for IDL crossing within this sub-segment
-                if abs(sp2.longitude - sp1.longitude) > 180:
-                    # Handle International Date Line crossings: split route into segments at ±180° boundaries
-                    d_lon_short_path = 360 - abs(sp1.longitude - sp2.longitude)
-
-                    if d_lon_short_path == 0:
-                        continue
-
-                    fraction = (180 - abs(sp1.longitude)) / d_lon_short_path
-                    lat_at_180 = sp1.latitude + (sp2.latitude - sp1.latitude) * fraction
-
-                    # Segment 1: P1 to Meridian
-                    target_lon1 = 180 if sp1.longitude > 0 else -180
-                    ax.plot(
-                        [sp1.longitude, target_lon1],
-                        [sp1.latitude, lat_at_180],
-                        color=color,
-                        linewidth=1.5,
-                        transform=ccrs.PlateCarree(),
-                        zorder=5,
-                    )
-
-                    # Segment 2: Meridian to P2
-                    target_lon2 = 180 if sp2.longitude > 0 else -180
-                    ax.plot(
-                        [target_lon2, sp2.longitude],
-                        [lat_at_180, sp2.latitude],
-                        color=color,
-                        linewidth=1.5,
-                        transform=ccrs.PlateCarree(),
-                        zorder=5,
-                    )
-                else:
-                    # Normal segment
-                    ax.plot(
-                        [sp1.longitude, sp2.longitude],
-                        [sp1.latitude, sp2.latitude],
-                        color=color,
-                        linewidth=1.5,
-                        transform=ccrs.PlateCarree(),
-                        zorder=5,
-                    )
+                # Draw this sub-segment (with IDL handling)
+                _plot_segment_with_idl_handling(
+                    ax, sp1.longitude, sp1.latitude, sp2.longitude, sp2.latitude, color
+                )
 
             # Add rounded caps for smooth joins (optional, but matplotlib lines usually join well)
             # For individual segments, we might see gaps if linewidth is large.

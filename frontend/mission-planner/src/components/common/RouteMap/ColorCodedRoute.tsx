@@ -5,6 +5,7 @@ import type { Timeline, TimelineSegment } from '../../../services/timeline';
 
 interface ColorCodedRouteProps {
   timeline: Timeline | null;
+  isIDLCrossing: boolean;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -22,7 +23,10 @@ interface SegmentPolyline {
 /**
  * Maps segment timestamps to route coordinates using samples
  */
-function mapSegmentsToCoordinates(timeline: Timeline): SegmentPolyline[] {
+function mapSegmentsToCoordinates(
+  timeline: Timeline,
+  isIDLCrossing: boolean
+): SegmentPolyline[] {
   if (!timeline.samples || timeline.samples.length === 0) {
     return [];
   }
@@ -45,7 +49,9 @@ function mapSegmentsToCoordinates(timeline: Timeline): SegmentPolyline[] {
     if (segmentSamples.length > 0) {
       const coordinates: LatLngExpression[] = segmentSamples.map((sample) => [
         sample.latitude,
-        sample.longitude,
+        isIDLCrossing && sample.longitude < 0
+          ? sample.longitude + 360
+          : sample.longitude,
       ]);
 
       const statusKey = segment.status.toLowerCase();
@@ -64,13 +70,14 @@ function mapSegmentsToCoordinates(timeline: Timeline): SegmentPolyline[] {
 
 export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
   timeline,
+  isIDLCrossing,
 }) => {
   const segmentPolylines = useMemo(() => {
     if (!timeline) {
       return [];
     }
-    return mapSegmentsToCoordinates(timeline);
-  }, [timeline]);
+    return mapSegmentsToCoordinates(timeline, isIDLCrossing);
+  }, [timeline, isIDLCrossing]);
 
   if (segmentPolylines.length === 0) {
     return null;

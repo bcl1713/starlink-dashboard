@@ -110,7 +110,10 @@ export function RouteMap({
             normalizedCoordinates={normalizedCoordinates}
             isIDLCrossing={isIDLCrossing}
           />
-          <ColorCodedRoute timeline={timelinePreview} />
+          <ColorCodedRoute
+            timeline={timelinePreview}
+            isIDLCrossing={isIDLCrossing}
+          />
         </MapContainer>
       </div>
 
