@@ -129,8 +129,7 @@ async def recompute_mission_timeline_endpoint(
         200: {
             "content": {
                 "text/csv": {},
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {},
-                "application/pdf": {},
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation": {},
             },
             "description": "Mission timeline export",
         },
@@ -148,7 +147,7 @@ async def recompute_mission_timeline_endpoint(
 async def export_mission_timeline_endpoint(
     request: Request,
     mission_id: str,
-    format: str = Query("csv", description="Export format: csv, xlsx, or pdf"),
+    format: str = Query("csv", description="Export format: csv or pptx"),
     route_manager: RouteManager = Depends(get_route_manager),
     poi_manager: POIManager = Depends(get_poi_manager),
 ) -> StreamingResponse:
@@ -157,7 +156,7 @@ async def export_mission_timeline_endpoint(
     Args:
         request: FastAPI request object
         mission_id: Mission ID to export
-        format: Export format (csv, xlsx, or pdf)
+        format: Export format (csv or pptx)
         route_manager: Route manager dependency
         poi_manager: POI manager dependency
 

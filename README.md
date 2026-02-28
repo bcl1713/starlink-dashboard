@@ -5,7 +5,7 @@ visualization through Prometheus and Grafana. Supports both live monitoring of
 physical Starlink hardware and simulation mode for offline development.
 
 **Status:** Phase 0 Complete (Foundation) + ETA Route Timing Feature Complete
-**Version:** 0.3.0 **Last Updated:** 2025-11-04
+**Version:** 0.2.0 **Last Updated:** 2026-02-28
 
 ---
 
@@ -85,16 +85,13 @@ Comprehensive documentation is organized by topic:
 ### For Using the System
 
 - [Features Overview](./docs/features/overview.md) - Complete feature list
-- [Grafana Setup](./docs/setup/grafana-setup.md) - Dashboard usage
 - [API Reference](./docs/api-reference-index.md) - REST API endpoints
 - [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common issues
 
 ### For Development
 
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute
-- [CLAUDE.md](./CLAUDE.md) - Development configuration
 - [Design Document](./docs/architecture/design-document.md) - Architecture
-- [Development Status](./dev/STATUS.md) - Current progress
 
 ### For Reference
 
@@ -117,8 +114,6 @@ Comprehensive documentation is organized by topic:
 **Development Questions:**
 
 - See [Contributing Guide](./CONTRIBUTING.md)
-- Check [Development Status](./dev/STATUS.md)
-
 **Specific Issues:**
 
 - See [Troubleshooting Guide](./docs/troubleshooting/quick-diagnostics.md)
@@ -131,7 +126,6 @@ Comprehensive documentation is organized by topic:
 Want to help improve Starlink Dashboard?
 
 - Read [Contributing Guide](./CONTRIBUTING.md)
-- Check [Development Status](./dev/STATUS.md) for current tasks
 - Review [Architecture](./docs/architecture/design-document.md) before starting
 
 ---

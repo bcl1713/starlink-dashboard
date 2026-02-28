@@ -10,7 +10,7 @@ This document tracks all major features completed beyond the Phase 0 foundation.
 ## Current Achievement
 
 **Foundation:** Phase 0 complete with three major features fully implemented,
-tested (451 tests), and integrated. System ready for production deployment or
+tested (850+ tests), and integrated. System ready for production deployment or
 continuation with additional enhancements.
 
 ---
@@ -119,7 +119,7 @@ arrival times and calculating realistic ETAs.
 
 ### ETA Route Timing Tests
 
-451 tests passing (100%)
+850+ tests passing (100%)
 
 ### Key Metrics Added
 
@@ -145,7 +145,7 @@ arrival times and calculating realistic ETAs.
 
 | ETA Route Timing | 24 | 5 | 451 | [x] Complete |
 
-| Total | 50 | 7 | 451+ | Production |
+| Total | 50 | 7 | 850+ | Production |
 
 ---
 
@@ -188,7 +188,7 @@ arrival times and calculating realistic ETAs.
 ### Technical Debt
 
 - None identified; all features fully refactored and tested
-- Code quality: High (451/451 tests passing)
+- Code quality: High (850+ tests passing)
 - Documentation: Complete and current
 
 ---
@@ -205,7 +205,22 @@ arrival times and calculating realistic ETAs.
 
 | 0.3.0 | 2025-11-04 | ETA Route Timing (5 phases) | 451 |
 
+### Post-0.3.0 Features (Nov 2025 - Feb 2026)
+
+- Mission leg planning UI with full export/import
+- Real-time timeline preview system
+- PPTX export with map caching and styled slides
+- GPS location control with toggle UI and API
+- Starlink telemetry CSV export with Zulu time
+- POI and Route management UI in React frontend
+- Real-time ETA display and route visualization
+- IDL (International Date Line) line wrapping fixes
+- PPTX label collision avoidance with adjustText
+- 24-hour time input standardization
+- Leg departure time adjustment
+- Mission metadata editing
+
 ---
 
-**End Status:** Production-ready system with foundation and three major features
-complete.
+**End Status:** Production-ready system with mission
+planning, real-time monitoring, and export capabilities.

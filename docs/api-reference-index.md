@@ -1,6 +1,6 @@
 # API Reference Index
 
-**Last Updated:** 2025-11-04 **Backend Version:** 0.3.0 **Base URL:**
+**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0 **Base URL:**
 `http://localhost:8000`
 
 ## Overview
@@ -214,7 +214,7 @@ Request and response data structures.
 
 ## Authentication & Security
 
-**Current Version:** No authentication required (v0.3.0)
+**Current Version:** No authentication required (v0.2.0)
 
 The API is designed for internal network use. For production deployments:
 
@@ -227,7 +227,7 @@ The API is designed for internal network use. For production deployments:
 
 ## Rate Limiting
 
-**Current Version:** No rate limiting (v0.3.0)
+**Current Version:** No rate limiting (v0.2.0)
 
 For production deployments, consider implementing rate limiting at:
 
@@ -239,7 +239,7 @@ For production deployments, consider implementing rate limiting at:
 
 ## API Versioning
 
-**Current Version:** 0.3.0
+**Current Version:** 0.2.0
 
 API versioning strategy:
 
@@ -269,5 +269,5 @@ API versioning strategy:
 
 ---
 
-**Last Updated:** 2025-11-04 **Status:** Complete with ETA Route Timing
+**Last Updated:** 2026-02-28 **Status:** Complete with ETA Route Timing
 endpoints

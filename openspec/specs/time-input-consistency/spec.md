@@ -1,7 +1,7 @@
 # time-input-consistency Specification
 
 ## Purpose
-TBD - created by archiving change standardize-24hr-time-inputs. Update Purpose after archive.
+Ensure all time inputs and displays use consistent 24-hour format (HH:mm) with UTC timezone clarity.
 ## Requirements
 ### Requirement: Time inputs use 24-hour format
 

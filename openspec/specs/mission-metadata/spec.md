@@ -1,7 +1,7 @@
 # mission-metadata Specification
 
 ## Purpose
-TBD - created by archiving change edit-mission-metadata. Update Purpose after archive.
+Provide API and UI for editing mission name and description after creation with validation and persistence.
 ## Requirements
 ### Requirement: PATCH mission metadata endpoint
 

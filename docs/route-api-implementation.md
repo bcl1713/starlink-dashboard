@@ -43,6 +43,29 @@ Detailed implementation information for the Route Management system.
 
 ---
 
+## File Structure
+
+The route API is split across 8 modules in
+`app/api/routes/`:
+
+```text
+app/api/routes/
+├── __init__.py     # Main router, includes all sub-routers
+├── management.py   # List, get, activate/deactivate routes
+├── upload.py       # POST /upload endpoint
+├── download.py     # GET /download/{route_id} endpoint
+├── delete.py       # DELETE /{route_id} endpoint
+├── stats.py        # Route statistics endpoints
+├── eta.py          # Route ETA calculation endpoints
+├── timing.py       # Route timing profile endpoints
+└── cache.py        # Route cache management endpoints
+```
+
+All sub-routers are mounted under the `/api/routes` prefix
+via `__init__.py`.
+
+---
+
 ## Key Features
 
 ### Timing Data Extraction

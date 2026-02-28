@@ -162,7 +162,7 @@ curl -X POST <http://localhost:8000/api/config> \
     "route": {"pattern": "circular", "latitude_start": 40.7128, "longitude_start": -74.0060, "radius_km": 100.0, "distance_km": 500.0},
     "network": {"latency_min_ms": 20.0, "latency_typical_ms": 50.0, "latency_max_ms": 80.0, "latency_spike_max_ms": 200.0, "spike_probability": 0.05, "throughput_down_min_mbps": 50.0, "throughput_down_max_mbps": 200.0, "throughput_up_min_mbps": 10.0, "throughput_up_max_mbps": 40.0, "packet_loss_min_percent": 0.0, "packet_loss_max_percent": 5.0},
     "obstruction": {"min_percent": 0.0, "max_percent": 30.0, "variation_rate": 0.5},
-    "position": {"speed_min_knots": 0.0, "speed_max_knots": 100.0, "altitude_min_meters": 100.0, "altitude_max_meters": 10000.0, "heading_variation_rate": 5.0}
+    "position": {"speed_min_knots": 0.0, "speed_max_knots": 100.0, "altitude_min_feet": 100.0, "altitude_max_feet": 10000.0, "heading_variation_rate": 5.0}
   }'
 ```
 

@@ -1,7 +1,7 @@
 # mission-export Specification
 
 ## Purpose
-TBD - created by archiving change enhance-pptx-styling. Update Purpose after archive.
+Define export formats (CSV and PPTX), apply professional PPTX styling, and support in-place route updates preserving satellite configurations.
 ## Requirements
 ### Requirement: Supported Export Formats
 
@@ -178,15 +178,16 @@ DEGRADED, and CRITICAL statuses
 
 ### Requirement: Backward Compatibility
 
-PPTX styling enhancements MUST NOT affect other export formats (CSV, XLSX, PDF)
-or change the PowerPoint file structure.
+PPTX styling enhancements MUST NOT affect the CSV export format
+or change the PowerPoint file structure. References to PDF and XLSX formats
+are removed since those formats are no longer supported.
 
-#### Scenario: Other export formats unchanged
+#### Scenario: CSV export format unchanged
 
 **Given** a mission with timeline data
-**When** user exports as CSV, XLSX, or PDF
+**When** user exports as CSV
 **Then** the output format and content remain identical to pre-enhancement behavior
-**And** no visual styling changes are applied to these formats
+**And** no visual styling changes are applied to the CSV output
 
 #### Scenario: PowerPoint file structure preserved
 

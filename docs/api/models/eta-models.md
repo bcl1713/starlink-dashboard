@@ -78,7 +78,7 @@ Response from `/api/routes/metrics/eta-cache`.
   "hit_rate_percent": 78.5,
   "cached_entries": 23,
   "average_calculation_time_ms": 12.5,
-  "last_cleanup": "2025-11-04T10:30:00Z"
+  "last_cleanup": "2026-02-28T10:30:00Z"
 }
 ```
 
@@ -112,8 +112,8 @@ Response from `/api/routes/metrics/eta-accuracy`.
   },
   "recent_predictions": [
     {
-      "predicted_time": "2025-11-04T10:30:00Z",
-      "actual_arrival_time": "2025-11-04T10:31:30Z",
+      "predicted_time": "2026-02-28T10:30:00Z",
+      "actual_arrival_time": "2026-02-28T10:31:30Z",
       "error_seconds": 90,
       "destination": "waypoint_5"
     }

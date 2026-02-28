@@ -123,7 +123,7 @@ JSON_LOGS=true                    # Use JSON format for logs
 ```
 
 **Complete configuration guide:** See
-[Configuration Documentation](./CONFIGURATION.md)
+[Configuration Documentation](../../../docs/setup/configuration.md)
 
 ---
 

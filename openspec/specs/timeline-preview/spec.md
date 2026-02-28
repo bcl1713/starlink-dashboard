@@ -1,7 +1,7 @@
 # timeline-preview Specification
 
 ## Purpose
-TBD - created by archiving change add-realtime-timeline-preview. Update Purpose after archive.
+Calculate mission leg timelines in real-time as users modify configuration, display color-coded route segments, and distinguish between saved and preview state.
 ## Requirements
 ### Requirement: Real-Time Timeline Calculation
 

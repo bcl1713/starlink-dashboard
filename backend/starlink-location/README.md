@@ -26,8 +26,8 @@ metrics, and obstruction detection.
 
 - [Getting Started](./docs/GETTING-STARTED.md) - Installation and setup
 - [Architecture](./docs/ARCHITECTURE.md) - Project structure and design
-- [Testing Guide](./docs/testing.md) - Running tests
-- [Troubleshooting](./docs/troubleshooting.md) - Common issues
+- [Testing Guide](./docs/TESTING.md) - Running tests
+- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues
 - [API Reference](../../docs/api/README.md) - Complete endpoint documentation
 - [Configuration Guide](../../docs/setup/configuration.md) - Environment
   variables and config files
@@ -77,14 +77,14 @@ curl http://localhost:8000/api/status | jq .
 
 ### For Development
 
-- [Testing Guide](./docs/testing.md) - Running and writing tests
+- [Testing Guide](./docs/TESTING.md) - Running and writing tests
 - [API Reference](../../docs/api/README.md) - Complete endpoint documentation
 - [Configuration Guide](../../docs/setup/configuration.md) - All configuration
   options
 
 ### For Troubleshooting
 
-- [Troubleshooting](./docs/troubleshooting.md) - Common issues and solutions
+- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ---
 
@@ -122,7 +122,7 @@ When making changes:
 3. Run with coverage: `pytest tests/ --cov=app`
 4. Update documentation if adding features
 
-See [Testing Guide](./docs/testing.md) for more details.
+See [Testing Guide](./docs/TESTING.md) for more details.
 
 ---
 
@@ -136,7 +136,6 @@ Part of the Starlink Dashboard project.
 
 - [Main Project Documentation](../../docs/architecture/design-document.md) -
   Architecture and design
-- [Grafana Setup](../../docs/setup/grafana-setup.md) - Dashboard configuration
 - [Setup Guide](../../docs/setup/installation.md) - Complete system setup
 
 ---

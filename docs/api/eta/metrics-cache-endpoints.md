@@ -2,7 +2,7 @@
 
 [Back to API Reference](../README.md) | [ETA Index](./README.md)
 
-**Last Updated:** 2025-11-04 **Backend Version:** 0.3.0
+**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
 
 ---
 
@@ -24,7 +24,7 @@ performance monitoring.
   "hit_rate_percent": 78.5,
   "cached_entries": 23,
   "average_calculation_time_ms": 12.5,
-  "last_cleanup": "2025-11-04T10:30:00Z"
+  "last_cleanup": "2026-02-28T10:30:00Z"
 }
 ```
 
@@ -58,8 +58,8 @@ predicted vs actual arrivals.
   },
   "recent_predictions": [
     {
-      "predicted_time": "2025-11-04T10:30:00Z",
-      "actual_arrival_time": "2025-11-04T10:31:30Z",
+      "predicted_time": "2026-02-28T10:30:00Z",
+      "actual_arrival_time": "2026-02-28T10:31:30Z",
       "error_seconds": 90,
       "destination": "waypoint_5"
     }
@@ -88,7 +88,7 @@ Clean up expired cache entries.
 {
   "cleaned_entries": 12,
   "remaining_entries": 23,
-  "timestamp": "2025-11-04T10:30:00Z"
+  "timestamp": "2026-02-28T10:30:00Z"
 }
 ```
 
@@ -112,7 +112,7 @@ Clear all ETA cache entries.
 {
   "message": "Cache cleared",
   "cleared_entries": 35,
-  "timestamp": "2025-11-04T10:30:00Z"
+  "timestamp": "2026-02-28T10:30:00Z"
 }
 ```
 

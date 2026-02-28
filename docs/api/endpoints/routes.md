@@ -1,6 +1,6 @@
 # Route & Geographic API Endpoints
 
-**Last Updated:** 2025-11-04 **Backend Version:** 0.3.0
+**Last Updated:** 2026-02-28 **Backend Version:** 0.2.0
 
 ## Overview
 

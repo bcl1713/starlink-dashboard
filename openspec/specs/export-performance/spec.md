@@ -1,7 +1,7 @@
 # export-performance Specification
 
 ## Purpose
-TBD - created by archiving change refactor-export-logic. Update Purpose after archive.
+Consolidate export logic into reusable functions and cache route maps within export operations to improve performance.
 ## Requirements
 ### Requirement: PPTX Generation Code Consolidation
 
@@ -44,7 +44,7 @@ artifacts.
 #### Scenario: Map cached across export artifacts for same leg
 
 **Given** a mission leg with route "Leg 1 Rev 1"
-**When** the system generates exports (XLSX, PPTX, PDF) for the leg
+**When** the system generates exports (CSV, PPTX) for the leg
 **Then** `_generate_route_map()` is called exactly once for this route
 **And** subsequent export artifacts reuse the cached map bytes
 **And** logs show "Map generation - Route has 42 valid points" once per unique

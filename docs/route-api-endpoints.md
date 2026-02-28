@@ -9,7 +9,7 @@ with support for route timing profiles, waypoint extraction, and POI
 integration. The system uses FastAPI endpoints to expose route functionality and
 integrates with the Prometheus metrics system.
 
-## Current Route API Endpoints (8 Total)
+## Current Route API Endpoints (17 Total)
 
 ### 1. List Routes
 
@@ -75,6 +75,61 @@ Returns the original KML file with media type
 
 Deletes route and cascades deletion of associated POIs.
 
+### 9. Get Route ETA
+
+**Endpoint:** `GET /api/routes/{route_id}/eta`
+**Response Model:** `dict`
+
+Returns ETA calculations for a specific route.
+
+### 10. Get Route ETA to Location
+
+**Endpoint:** `GET /api/routes/{route_id}/eta/location`
+
+Calculate ETA to an arbitrary location on a route.
+
+### 11. Get Route Progress
+
+**Endpoint:** `GET /api/routes/{route_id}/progress`
+
+Returns route progress metrics.
+
+### 12. Get Active Route ETA (Live Mode)
+
+**Endpoint:** `GET /api/routes/live-mode/active-route-eta`
+
+Get active route ETA for live mode.
+
+### 13. Get Active Route Timing
+
+**Endpoint:** `GET /api/routes/active/timing`
+
+Returns timing profile for the currently active route.
+
+### 14. Get ETA Cache Statistics
+
+**Endpoint:** `GET /api/routes/metrics/eta-cache`
+
+Returns ETA cache statistics.
+
+### 15. Get ETA Accuracy Statistics
+
+**Endpoint:** `GET /api/routes/metrics/eta-accuracy`
+
+Returns ETA accuracy statistics.
+
+### 16. Clean Up Expired Cache
+
+**Endpoint:** `POST /api/routes/cache/cleanup`
+
+Cleans up expired cache entries.
+
+### 17. Clear All ETA Cache
+
+**Endpoint:** `POST /api/routes/cache/clear`
+
+Clears all ETA cache entries.
+
 ---
 
 ## Response Models
@@ -95,11 +150,13 @@ Deletes route and cascades deletion of associated POIs.
 
 ### API Endpoints
 
-- **File:**
-  `/home/brian/Projects/starlink-dashboard-dev/backend/starlink-location/app/api/routes.py`
-- Contains all 8 route endpoints
-- Functions for validation, error handling, POI import coordination
-- Uses global route_manager and poi_manager instances
+- **Directory:** `app/api/routes/`
+- Split across 8 modules: management, upload, download,
+  delete, stats, eta, timing, cache
+- See [route-api-implementation.md](./route-api-implementation.md)
+  for file structure details
+- Uses dependency injection for route_manager and
+  poi_manager instances
 
 ### Response Model Definitions
 

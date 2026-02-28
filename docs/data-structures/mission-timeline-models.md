@@ -31,19 +31,21 @@ class Mission(BaseModel):
 
 ---
 
-## MissionTimeline Model
+## MissionLegTimeline Model
 
 **Location:** `backend/starlink-location/app/mission/models.py`
 
-### MissionTimeline Fields
+### MissionLegTimeline Fields
 
 ```python
-class MissionTimeline(BaseModel):
-    mission_id: str                      # Associated mission ID
+class MissionLegTimeline(BaseModel):
+    mission_leg_id: str                  # Associated mission leg ID
     created_at: datetime                 # When timeline was computed (UTC)
     segments: list[TimelineSegment]      # Ordered timeline segments
     advisories: list[TimelineAdvisory]   # Operator advisories
     statistics: dict                     # Summary statistics
+    samples: Optional[list[RouteSampleData]]
+    # Route samples for map rendering in preview mode (optional)
 ```
 
 ### Statistics Dict Keys

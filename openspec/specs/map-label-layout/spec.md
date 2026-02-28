@@ -1,7 +1,7 @@
 # map-label-layout Specification
 
 ## Purpose
-TBD - created by syncing change fix-pptx-label-overlap. Update Purpose after archive.
+Automatically reposition POI labels to avoid overlapping on route maps while maintaining readability and using leader lines for displaced labels.
 
 ## Requirements
 

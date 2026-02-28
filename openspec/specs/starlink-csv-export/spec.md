@@ -1,7 +1,7 @@
 # starlink-csv-export Specification
 
 ## Purpose
-TBD - created by archiving change starlink-data-csv-export. Update Purpose after archive.
+Enable users to export Starlink telemetry data as CSV for any date range within the retention period.
 ## Requirements
 ### Requirement: Date Range Selection
 

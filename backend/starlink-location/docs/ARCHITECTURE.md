@@ -46,7 +46,7 @@ backend/starlink-location/
 
 - `starlink_dish_latitude_degrees` - Current dish latitude
 - `starlink_dish_longitude_degrees` - Current dish longitude
-- `starlink_dish_altitude_meters` - Current dish altitude
+- `starlink_dish_altitude_feet` - Current dish altitude
 - `starlink_dish_speed_knots` - Current movement speed
 - `starlink_dish_heading_degrees` - Current heading (0=North, 90=East)
 

@@ -160,7 +160,7 @@ curl -X POST \
     "latitude": 40.7128,
     "longitude": -74.0060,
     "altitude": 5000.0,
-    "timestamp": "2025-11-04T10:30:00Z"
+    "timestamp": "2026-02-28T10:30:00Z"
   }' \
   "<http://localhost:8000/api/routes/live-mode/active-route-eta">
 ```
@@ -256,7 +256,7 @@ curl -X POST \
     "latitude": 40.7128,
     "longitude": -74.0060,
     "altitude": 5000.0,
-    "timestamp": "2025-11-04T10:30:00Z"
+    "timestamp": "2026-02-28T10:30:00Z"
   }' \
   "<http://localhost:8000/api/routes/live-mode/active-route-eta">
 

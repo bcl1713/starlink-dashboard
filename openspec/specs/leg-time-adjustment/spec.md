@@ -1,7 +1,7 @@
 # leg-time-adjustment Specification
 
 ## Purpose
-TBD - created by archiving change adjust-leg-takeoff-time. Update Purpose after archive.
+Allow users to override mission leg departure times to shift timeline schedules while preserving satellite configurations.
 ## Requirements
 ### Requirement: Adjusted Departure Time Field
 
