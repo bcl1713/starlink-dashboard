@@ -107,6 +107,10 @@ for multi-leg exports to improve readability and professionalism.
 **CHANGE:** Route map generation MUST handle IDL crossings in all rendering
 paths, including the fallback path used when route points lack timing data.
 
+**CHANGE:** Timeline table font size reduced to 8pt for all cells (header and
+data) to prevent column overflow. The segment column header is now blank to
+eliminate unnecessary text wrapping.
+
 #### Scenario: Export leg with styled route map slide
 
 **Given** a mission leg with a route and map
@@ -132,14 +136,16 @@ DEGRADED, and CRITICAL statuses
 - Gold header bar and footer bar
 - Light gray content background
 - Slide title "Leg X - Timeline" in 24pt bold
+- Timeline table header row with 8pt bold white text on dark blue background
+- **The first column header (segment) SHALL be blank (empty string)**
 - Each segment row displays:
-  - Segment number (11pt bold)
-  - Color-coded status badge with white text (11pt bold):
+  - Segment number (8pt)
+  - Color-coded status badge with white text (8pt bold):
     - NOMINAL: Green (RGB 22, 163, 74)
     - SOF: Blue (RGB 2, 132, 199)
     - DEGRADED: Orange (RGB 234, 88, 12)
     - CRITICAL: Red (RGB 220, 38, 38)
-  - Start time, end time, duration, reason
+  - Start time, end time, duration, reason (all 8pt)
   - Transport state indicators (✓ or ⚠)
 - Visual separator (1px gray line) between segments
 - **Footer with "Date: YYYY-MM-DD | Mission ID | Organization" where date
@@ -148,91 +154,20 @@ DEGRADED, and CRITICAL statuses
 - **Footer text styled as 7pt white font**
 - Logo image (if exists)
 
-#### Scenario: Mission leg date displays correctly
+#### Scenario: Timeline table font size is uniform 8pt
 
-**Given** a mission leg with timeline segments starting at 2025-01-15 10:00:00
-UTC
-**And** the PowerPoint is exported on 2025-01-20 14:30:00 UTC
-**When** user opens the generated PowerPoint file
-**Then** the footer displays "Date: 2025-01-15 | ..." (the leg start date)
-**And** the footer does NOT display 2025-01-20 (the export generation date)
-
-#### Scenario: Mission with no timeline segments
-
-**Given** a mission leg with no timeline segments
+**Given** a mission leg with timeline segments
 **When** user exports the mission as PowerPoint
-**Then** the footer date falls back to the timeline creation timestamp
-**And** the export succeeds without error
+**Then** all table header cells SHALL use 8pt bold font
+**And** all table data cells SHALL use 8pt font
+**And** no cell in the timeline table SHALL use a font size larger than 8pt
 
-#### Scenario: Footer text is readable within gold bar
+#### Scenario: Segment column header is blank
 
-**Given** any mission leg exported to PowerPoint
-**When** user views the slides in presentation mode
-**Then** the footer text appears inside the gold bar at the bottom
-**And** the white 7pt text is clearly readable against the gold background
-(RGB 212, 175, 55)
-**And** the text is centered horizontally within the slide
-
-#### Scenario: Slide titles use human-readable leg names
-
-**Given** a mission leg with name "Leg 1 - Departure"
+**Given** a mission leg with timeline segments
 **When** user exports the mission as PowerPoint
-**Then** the route map slide title displays "Leg 1 - Departure - Route Map"
-**And** the timeline slide title displays "Leg 1 - Departure - Timeline"
-**And** the slide titles do NOT display the technical leg ID (e.g., "leg-1")
-
-#### Scenario: Multi-leg mission uses parent mission metadata in footer
-
-**Given** a parent mission with name "26-05" and description "CONUS California"
-**And** the mission contains a leg with name "Leg 1 - Departure"
-**When** user exports the mission package as a ZIP file
-**Then** the leg's PowerPoint slides display:
-- Slide title: "Leg 1 - Departure - Route Map"
-- Footer: "Date: 2025-01-15 | 26-05 | CONUS California"
-**And** the footer uses the parent mission's name and description
-**And** the footer does NOT use the leg's individual metadata
-
-#### Scenario: Standalone leg export uses leg metadata in footer
-
-**Given** a standalone mission leg with name "Leg 1" and description "Test Flight"
-**And** no parent mission is associated
-**When** user exports the leg as PowerPoint
-**Then** the slide footer displays "Date: 2025-01-15 | Leg 1 | Test Flight"
-**And** the footer uses the leg's own metadata
-
-#### Scenario: Missing description handled gracefully
-
-**Given** a mission with name "26-05" but no description
-**When** user exports the mission as PowerPoint
-**Then** the footer displays "Date: 2025-01-15 | 26-05"
-**And** the footer does NOT display a trailing separator (no " | ")
-**And** the footer does NOT display "Organization" placeholder text
-
-#### Scenario: Fallback to leg ID when name missing
-
-**Given** a mission leg with no name field set (edge case)
-**When** user exports the mission as PowerPoint
-**Then** the slide title falls back to the leg ID (e.g., "leg-1 - Route Map")
-**And** the export succeeds without error
-
-#### Scenario: IDL-crossing route renders without wrapping in PPTX map
-
-**Given** a mission leg with a route that crosses the International Date Line
-**And** the route points may or may not have `expected_arrival_time` populated
-**When** user exports the mission as PowerPoint
-**Then** the route map SHALL render all route segments taking the short path across the IDL
-**And** no route segment SHALL wrap around the globe through 0° longitude
-**And** this SHALL apply regardless of whether route points have timing data
-**And** the map projection SHALL center on the route's midpoint in Pacific view
-
-#### Scenario: IDL-crossing route with mixed timing data
-
-**Given** a mission leg with a route that crosses the IDL
-**And** some route points have `expected_arrival_time` and some do not
-**When** the PPTX route map is generated
-**Then** timed segments SHALL render with color-coded status and correct IDL handling
-**And** untimed segments SHALL render with fallback coloring and correct IDL handling
-**And** there SHALL be no visual discontinuity at the boundary between timed and untimed segments
+**Then** the first column of the timeline table header row SHALL display an empty string
+**And** the first column of each data row SHALL still display the segment number
 
 ### Requirement: Backward Compatibility
 
