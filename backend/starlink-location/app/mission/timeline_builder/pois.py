@@ -13,11 +13,6 @@ from app.mission.timeline_builder.utils import find_waypoint_coordinates
 logger = logging.getLogger(__name__)
 
 MISSION_EVENT_CATEGORY = "mission-event"
-KA_POI_CATEGORIES = {
-    "mission-ka-transition",
-    "mission-ka-gap-exit",
-    "mission-ka-gap-entry",
-}
 KA_POI_NAME_PREFIXES = (
     "Ka Coverage Exit",
     "Ka Coverage Entry",
@@ -47,7 +42,7 @@ def sync_ka_pois(
         deleted = poi_manager.delete_leg_pois(
             route_id=mission.route_id,
             mission_id=effective_mission_id,
-            categories=KA_POI_CATEGORIES,
+            categories=None,
             prefixes=KA_POI_NAME_PREFIXES,
         )
 
