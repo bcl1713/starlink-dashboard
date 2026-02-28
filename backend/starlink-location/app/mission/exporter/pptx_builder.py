@@ -453,13 +453,13 @@ def _add_timeline_table(
     # Header row style
     for i, col_name in enumerate(columns_to_show):
         cell = table.cell(0, i)
-        cell.text = col_name
+        cell.text = "" if col_name == "Segment #" else col_name
         cell.fill.solid()
         cell.fill.fore_color.rgb = RGBColor(51, 102, 178)  # Dark Blue
         paragraph = cell.text_frame.paragraphs[0]
         paragraph.font.color.rgb = RGBColor(255, 255, 255)  # White
         paragraph.font.bold = True
-        paragraph.font.size = Pt(10)
+        paragraph.font.size = Pt(8)
         paragraph.alignment = PP_ALIGN.CENTER
 
     # Data rows
@@ -484,7 +484,7 @@ def _add_timeline_table(
             cell.text = val
 
             for paragraph in cell.text_frame.paragraphs:
-                paragraph.font.size = Pt(9)
+                paragraph.font.size = Pt(8)
                 paragraph.alignment = PP_ALIGN.LEFT
 
             # Alternating row colors
@@ -509,7 +509,7 @@ def _add_timeline_table(
                     cell.text = "SOF"
                     # Re-apply font size since setting text resets it
                     for paragraph in cell.text_frame.paragraphs:
-                        paragraph.font.size = Pt(9)
+                        paragraph.font.size = Pt(8)
                         paragraph.alignment = PP_ALIGN.LEFT
 
                 # Apply status badge colors
