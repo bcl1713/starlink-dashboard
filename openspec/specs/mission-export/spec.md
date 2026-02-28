@@ -111,6 +111,11 @@ paths, including the fallback path used when route points lack timing data.
 data) to prevent column overflow. The segment column header is now blank to
 eliminate unnecessary text wrapping.
 
+**CHANGE:** Route map POI labels MUST use automatic collision avoidance to
+prevent overlapping labels when markers are close together. Labels SHALL be
+dynamically repositioned with leader lines connecting displaced labels to
+their markers.
+
 #### Scenario: Export leg with styled route map slide
 
 **Given** a mission leg with a route and map
@@ -121,6 +126,8 @@ eliminate unnecessary text wrapping.
 - Light gray content background (RGB 248, 249, 250)
 - Slide title "Leg X - Route Map" in 24pt bold
 - Route map image centered within content area
+- **POI labels automatically positioned to avoid overlap**
+- **Leader lines connecting displaced labels to their markers**
 - **Footer text with mission leg start date, mission ID, and organization**
 - **Footer text positioned within the gold bar (y=5.47 inches)**
 - **Footer text styled as 7pt white font for readability on gold background**

@@ -21,6 +21,7 @@ matplotlib.use("Agg")  # Headless mode for Docker
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from adjustText import adjust_text
 from matplotlib.lines import Line2D
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -801,7 +802,18 @@ def _generate_route_map(
             logger.info(
                 f"Map generation: Found {len(pois)} POIs for route={mission.route_id}, mission={effective_mission_id} (parent={parent_mission_id})"
             )
+            # Deduplicate POIs by (name, lat, lon) to avoid stacking
+            # identical labels at the same coordinates
+            seen_pois = set()
             for poi in pois:
+                # Only label mission events (AAR, swaps, transitions),
+                # not KML waypoints or satellites
+                if poi.category != "mission-event":
+                    continue
+                key = (poi.name, round(poi.latitude, 4), round(poi.longitude, 4))
+                if key in seen_pois:
+                    continue
+                seen_pois.add(key)
                 mission_event_pois.append(
                     {
                         "lat": poi.latitude,
@@ -921,18 +933,29 @@ def _generate_route_map(
             zorder=10,
         )
 
+        # Collect all labels and marker positions for collision avoidance.
+        # Use geographic coordinates with transform=PlateCarree so adjustText
+        # can properly measure bounding boxes via Cartopy's transform pipeline.
+        label_texts = []
+        marker_x = []
+        marker_y = []
+
         # Label for Departure
-        ax.text(
-            start_point.longitude + 0.5,
-            start_point.latitude + 0.5,
-            start_label,
-            transform=ccrs.PlateCarree(),
-            fontsize=10,
-            fontweight="bold",
-            color="#2c3e50",
-            zorder=11,
-            bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", pad=1),
+        label_texts.append(
+            ax.text(
+                start_point.longitude,
+                start_point.latitude,
+                start_label,
+                transform=ccrs.PlateCarree(),
+                fontsize=10,
+                fontweight="bold",
+                color="#2c3e50",
+                zorder=11,
+                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", pad=1),
+            )
         )
+        marker_x.append(start_point.longitude)
+        marker_y.append(start_point.latitude)
 
         # 4. Plot Arrival Point (End)
         end_point = points[-1]
@@ -949,23 +972,24 @@ def _generate_route_map(
         )
 
         # Label for Arrival
-        ax.text(
-            end_point.longitude + 0.5,
-            end_point.latitude + 0.5,
-            end_label,
-            transform=ccrs.PlateCarree(),
-            fontsize=10,
-            fontweight="bold",
-            color="#2c3e50",
-            zorder=11,
-            bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", pad=1),
+        label_texts.append(
+            ax.text(
+                end_point.longitude,
+                end_point.latitude,
+                end_label,
+                transform=ccrs.PlateCarree(),
+                fontsize=10,
+                fontweight="bold",
+                color="#2c3e50",
+                zorder=11,
+                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", pad=1),
+            )
         )
+        marker_x.append(end_point.longitude)
+        marker_y.append(end_point.latitude)
 
         # 5. Plot Mission Event POIs
         for poi in mission_event_pois:
-            # No proximity filtering for mission events - they are critical to show
-            # even if they overlap (though rare).
-
             # Plot waypoint marker (Blue Diamond)
             ax.plot(
                 poi["lon"],
@@ -981,17 +1005,38 @@ def _generate_route_map(
 
             # Label with waypoint name
             if poi["label"]:
-                ax.text(
-                    poi["lon"] + 0.5,
-                    poi["lat"] + 0.5,
-                    poi["label"],
-                    transform=ccrs.PlateCarree(),
-                    fontsize=8,
-                    fontweight="bold",
-                    color="#2c3e50",
-                    zorder=11,
-                    bbox=dict(facecolor="white", alpha=0.6, edgecolor="none", pad=0.5),
+                label_texts.append(
+                    ax.text(
+                        poi["lon"],
+                        poi["lat"],
+                        poi["label"],
+                        transform=ccrs.PlateCarree(),
+                        fontsize=8,
+                        fontweight="bold",
+                        color="#2c3e50",
+                        zorder=11,
+                        bbox=dict(
+                            facecolor="white", alpha=0.6, edgecolor="none", pad=0.5
+                        ),
+                    )
                 )
+                marker_x.append(poi["lon"])
+                marker_y.append(poi["lat"])
+
+        # Resolve label overlaps using force-directed repulsion
+        if label_texts:
+            adjust_text(
+                label_texts,
+                x=marker_x,
+                y=marker_y,
+                ax=ax,
+                force_text=(1.0, 1.0),
+                force_points=(1.0, 1.0),
+                expand=(1.3, 1.5),
+                force_explode=(0.3, 1.0),
+                lim=1000,
+                arrowprops=dict(arrowstyle="->", color="gray", lw=0.5),
+            )
 
     # Phase 12: Add legend inset to map
     legend_elements = [
