@@ -799,3 +799,31 @@ class TestTimelineStorage:
         delete_mission_timeline("leg-1", parent_mission_id="mission-a")
 
         assert not flat_path.exists()
+
+    def test_save_and_load_without_mission_id_uses_flat_path(
+        self, sample_timeline, temp_missions_dir
+    ):
+        """save/load without parent_mission_id round-trips through the legacy flat path."""
+        save_mission_timeline("leg-1", sample_timeline)
+
+        flat = temp_missions_dir / "leg-1.timeline.json"
+        assert flat.exists()
+
+        loaded = load_mission_timeline("leg-1")
+        assert loaded is not None
+        assert loaded.mission_leg_id == "leg-1"
+
+    def test_legacy_fallback_auto_migrates_to_scoped_path(
+        self, sample_timeline, temp_missions_dir
+    ):
+        """Loading a legacy flat file with parent_mission_id migrates it to the scoped path."""
+        import json as _json
+
+        flat_path = temp_missions_dir / "leg-1.timeline.json"
+        flat_path.write_text(_json.dumps(sample_timeline.model_dump(), default=str))
+
+        load_mission_timeline("leg-1", parent_mission_id="mission-a")
+
+        scoped = temp_missions_dir / "mission-a" / "legs" / "leg-1.timeline.json"
+        assert scoped.exists()
+        assert not flat_path.exists()

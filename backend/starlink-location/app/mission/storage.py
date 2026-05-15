@@ -54,9 +54,7 @@ def get_mission_checksum_path(mission_id: str) -> Path:
     return MISSIONS_DIR / f"{mission_id}.sha256"
 
 
-def get_mission_timeline_path(
-    leg_id: str, parent_mission_id: str | None = None
-) -> Path:
+def get_leg_timeline_path(leg_id: str, parent_mission_id: str | None = None) -> Path:
     """Get the file path for a leg's cached timeline.
 
     When parent_mission_id is provided the timeline is stored inside the
@@ -381,7 +379,7 @@ def delete_mission(mission_id: str) -> bool:
     """
     mission_path = get_mission_path(mission_id)
     checksum_path = get_mission_checksum_path(mission_id)
-    timeline_path = get_mission_timeline_path(mission_id)
+    timeline_path = get_leg_timeline_path(mission_id)
 
     deleted = False
 
@@ -423,7 +421,7 @@ def save_mission_timeline(
 ) -> Path:
     """Persist a leg timeline to disk."""
     ensure_missions_directory()
-    timeline_path = get_mission_timeline_path(leg_id, parent_mission_id)
+    timeline_path = get_leg_timeline_path(leg_id, parent_mission_id)
     timeline_path.parent.mkdir(parents=True, exist_ok=True)
     with open(timeline_path, "w") as handle:
         json.dump(timeline.model_dump(), handle, indent=2, default=str)
@@ -441,23 +439,35 @@ def load_mission_timeline(
     legacy flat-file path so existing data continues to work after upgrades.
     """
     if parent_mission_id:
-        scoped_path = get_mission_timeline_path(leg_id, parent_mission_id)
+        scoped_path = get_leg_timeline_path(leg_id, parent_mission_id)
         if scoped_path.exists():
             with open(scoped_path, "r") as handle:
                 return MissionLegTimeline(**json.load(handle))
     # Legacy fallback: flat file written before the scoped-path fix.
     # Two missions whose legs share a slug will still collide here until each
-    # leg is re-saved (which writes the scoped file). Log so operators know.
-    legacy_path = get_mission_timeline_path(leg_id)
+    # leg is loaded at least once after the upgrade (auto-migration below).
+    legacy_path = get_leg_timeline_path(leg_id)
     if not legacy_path.exists():
         return None
     logger.warning(
-        "Loading timeline for leg %s from legacy flat-file path; "
-        "re-save the leg to migrate to the mission-scoped path.",
+        "Loading timeline for leg %s from legacy flat-file path; migrating now.",
         leg_id,
     )
     with open(legacy_path, "r") as handle:
-        return MissionLegTimeline(**json.load(handle))
+        timeline = MissionLegTimeline(**json.load(handle))
+    # Auto-migrate: write the scoped file and remove the flat one so future
+    # loads go through the per-mission path and the warning disappears.
+    if parent_mission_id:
+        try:
+            scoped_path = get_leg_timeline_path(leg_id, parent_mission_id)
+            scoped_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(scoped_path, "w") as handle:
+                json.dump(timeline.model_dump(), handle, indent=2, default=str)
+            legacy_path.unlink(missing_ok=True)
+            logger.info("Migrated timeline for leg %s to scoped path", leg_id)
+        except OSError as exc:
+            logger.warning("Failed to migrate timeline for leg %s: %s", leg_id, exc)
+    return timeline
 
 
 def delete_mission_timeline(
@@ -471,15 +481,17 @@ def delete_mission_timeline(
     that happen to share the same slug.
     """
     if parent_mission_id:
-        scoped_path = get_mission_timeline_path(leg_id, parent_mission_id)
+        scoped_path = get_leg_timeline_path(leg_id, parent_mission_id)
         if scoped_path.exists():
             try:
                 scoped_path.unlink()
             except OSError as exc:
-                logger.warning("Failed to delete scoped timeline %s: %s", leg_id, exc)
+                logger.warning(
+                    "Failed to delete scoped timeline %s: %s", scoped_path, exc
+                )
 
     # Always attempt to remove the legacy flat file to prevent future pollution.
-    legacy_path = get_mission_timeline_path(leg_id)
+    legacy_path = get_leg_timeline_path(leg_id)
     if legacy_path.exists():
         try:
             legacy_path.unlink()
