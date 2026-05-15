@@ -18,7 +18,6 @@ from app.mission.storage import (
     get_mission_leg_file_path,
     get_mission_legs_dir,
     get_mission_path,
-    get_mission_timeline_path,
     list_missions,
     load_mission,
     load_mission_timeline,
@@ -745,17 +744,13 @@ class TestTimelineStorage:
         assert scoped.exists()
         assert not flat.exists()
 
-    def test_legacy_fallback_reads_flat_file(
-        self, sample_timeline, temp_missions_dir
-    ):
+    def test_legacy_fallback_reads_flat_file(self, sample_timeline, temp_missions_dir):
         """load_mission_timeline falls back to the flat file for pre-fix data."""
         # Write directly to the legacy flat path (simulating pre-fix data)
         import json
 
         flat_path = temp_missions_dir / "leg-1.timeline.json"
-        flat_path.write_text(
-            json.dumps(sample_timeline.model_dump(), default=str)
-        )
+        flat_path.write_text(json.dumps(sample_timeline.model_dump(), default=str))
 
         # Load with a mission ID whose scoped path doesn't exist
         loaded = load_mission_timeline("leg-1", parent_mission_id="mission-a")
@@ -799,9 +794,7 @@ class TestTimelineStorage:
 
         # Simulate a legacy flat file left over from before the fix
         flat_path = temp_missions_dir / "leg-1.timeline.json"
-        flat_path.write_text(
-            json.dumps(sample_timeline.model_dump(), default=str)
-        )
+        flat_path.write_text(json.dumps(sample_timeline.model_dump(), default=str))
 
         delete_mission_timeline("leg-1", parent_mission_id="mission-a")
 

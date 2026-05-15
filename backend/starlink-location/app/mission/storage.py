@@ -54,7 +54,9 @@ def get_mission_checksum_path(mission_id: str) -> Path:
     return MISSIONS_DIR / f"{mission_id}.sha256"
 
 
-def get_mission_timeline_path(leg_id: str, parent_mission_id: str | None = None) -> Path:
+def get_mission_timeline_path(
+    leg_id: str, parent_mission_id: str | None = None
+) -> Path:
     """Get the file path for a leg's cached timeline.
 
     When parent_mission_id is provided the timeline is stored inside the
@@ -474,9 +476,7 @@ def delete_mission_timeline(
             try:
                 scoped_path.unlink()
             except OSError as exc:
-                logger.warning(
-                    "Failed to delete scoped timeline %s: %s", leg_id, exc
-                )
+                logger.warning("Failed to delete scoped timeline %s: %s", leg_id, exc)
 
     # Always attempt to remove the legacy flat file to prevent future pollution.
     legacy_path = get_mission_timeline_path(leg_id)
@@ -484,9 +484,7 @@ def delete_mission_timeline(
         try:
             legacy_path.unlink()
         except OSError as exc:
-            logger.warning(
-                "Failed to delete legacy timeline %s: %s", leg_id, exc
-            )
+            logger.warning("Failed to delete legacy timeline %s: %s", leg_id, exc)
 
 
 def mission_exists(mission_id: str) -> bool:
