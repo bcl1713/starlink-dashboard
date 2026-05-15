@@ -730,6 +730,9 @@ class TestTimelineStorage:
     def sample_timeline_b(self):
         from app.mission.models import MissionLegTimeline
 
+        # Distinct mission_leg_id so test_cross_mission_collision_is_fixed can
+        # assert the two timelines didn't bleed into each other — both are stored
+        # under leg_id="leg-1" but in different mission directories.
         return MissionLegTimeline(mission_leg_id="leg-1-mission-b")
 
     def test_scoped_path_used_when_mission_id_provided(

@@ -425,7 +425,7 @@ def save_mission_timeline(
     timeline_path.parent.mkdir(parents=True, exist_ok=True)
     with open(timeline_path, "w") as handle:
         json.dump(timeline.model_dump(), handle, indent=2, default=str)
-    logger.info("Saved mission timeline for %s", leg_id)
+    logger.info("Saved leg timeline for %s", leg_id)
     return timeline_path
 
 

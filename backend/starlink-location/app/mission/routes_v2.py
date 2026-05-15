@@ -94,7 +94,9 @@ async def create_mission(
                             coverage_sampler=_coverage_sampler,
                             parent_mission_id=mission.id,
                         )
-                        save_mission_timeline(leg.id, timeline, parent_mission_id=mission.id)
+                        save_mission_timeline(
+                            leg.id, timeline, parent_mission_id=mission.id
+                        )
                         logger.info(f"Timeline generated and saved for leg {leg.id}")
                     except Exception as e:
                         logger.error(
@@ -797,7 +799,9 @@ async def add_leg_to_mission(
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
                     )
-                    save_mission_timeline(leg.id, timeline, parent_mission_id=mission_id)
+                    save_mission_timeline(
+                        leg.id, timeline, parent_mission_id=mission_id
+                    )
                     logger.info(f"Timeline generated and saved for new leg {leg.id}")
                 except Exception as e:
                     logger.error(
@@ -918,7 +922,9 @@ async def update_leg(
                             f"ends at {last_end}, "
                             f"{len(timeline.segments)} segments"
                         )
-                    save_mission_timeline(leg_id, timeline, parent_mission_id=mission_id)
+                    save_mission_timeline(
+                        leg_id, timeline, parent_mission_id=mission_id
+                    )
                     logger.info(f"Timeline saved to disk for leg {leg_id}")
                 except Exception as e:
                     logger.error(
@@ -1138,7 +1144,9 @@ async def activate_leg(
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
                     )
-                    save_mission_timeline(leg_id, timeline, parent_mission_id=mission_id)
+                    save_mission_timeline(
+                        leg_id, timeline, parent_mission_id=mission_id
+                    )
                     logger.info(f"Timeline generated and saved for leg {leg_id}")
                 except Exception as e:
                     logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
@@ -1494,7 +1502,9 @@ async def update_leg_route(
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
                     )
-                    save_mission_timeline(leg_id, timeline, parent_mission_id=mission_id)
+                    save_mission_timeline(
+                        leg_id, timeline, parent_mission_id=mission_id
+                    )
                     logger.info(
                         f"Timeline regenerated and saved for leg {leg_id} with new route"
                     )
