@@ -379,7 +379,6 @@ def delete_mission(mission_id: str) -> bool:
     """
     mission_path = get_mission_path(mission_id)
     checksum_path = get_mission_checksum_path(mission_id)
-    timeline_path = get_leg_timeline_path(mission_id)
 
     deleted = False
 
@@ -400,13 +399,10 @@ def delete_mission(mission_id: str) -> bool:
             logger.error(f"Failed to delete checksum file {checksum_path}: {e}")
             raise
 
-    if timeline_path.exists():
-        try:
-            timeline_path.unlink()
-            logger.info(f"Deleted timeline file {timeline_path}")
-        except OSError as e:
-            logger.error(f"Failed to delete timeline file {timeline_path}: {e}")
-            raise
+    # Scoped leg timelines live inside the mission directory and are removed
+    # automatically when the v2 delete endpoint calls shutil.rmtree(mission_dir).
+    # The old flat-file timeline ({mission_id}.timeline.json) never existed in
+    # practice because timelines were always keyed by leg_id, not mission_id.
 
     if not deleted:
         logger.warning(f"Mission {mission_id} not found for deletion")
@@ -437,6 +433,11 @@ def load_mission_timeline(
 
     Checks the mission-scoped path first (new layout), then falls back to the
     legacy flat-file path so existing data continues to work after upgrades.
+
+    Note: callers that omit parent_mission_id will never find a scoped file and
+    will only hit the legacy flat-file path.  After migration is complete (all
+    flat files removed) those call sites will always return None.  Pass
+    parent_mission_id whenever the mission context is available.
     """
     if parent_mission_id:
         scoped_path = get_leg_timeline_path(leg_id, parent_mission_id)
@@ -457,6 +458,8 @@ def load_mission_timeline(
         timeline = MissionLegTimeline(**json.load(handle))
     # Auto-migrate: write the scoped file and remove the flat one so future
     # loads go through the per-mission path and the warning disappears.
+    # Not atomic — a crash between the write and the unlink leaves both files,
+    # which is safe: the scoped path wins on the next load.
     if parent_mission_id:
         try:
             scoped_path = get_leg_timeline_path(leg_id, parent_mission_id)
@@ -491,6 +494,7 @@ def delete_mission_timeline(
                 )
 
     # Always attempt to remove the legacy flat file to prevent future pollution.
+    # TODO: remove this probe once all deployments have migrated to scoped paths.
     legacy_path = get_leg_timeline_path(leg_id)
     if legacy_path.exists():
         try:
