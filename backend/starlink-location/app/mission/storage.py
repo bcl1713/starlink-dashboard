@@ -54,9 +54,16 @@ def get_mission_checksum_path(mission_id: str) -> Path:
     return MISSIONS_DIR / f"{mission_id}.sha256"
 
 
-def get_mission_timeline_path(mission_id: str) -> Path:
-    """Get the file path for a mission's cached timeline."""
-    return MISSIONS_DIR / f"{mission_id}{TIMELINE_SUFFIX}"
+def get_mission_timeline_path(leg_id: str, parent_mission_id: str | None = None) -> Path:
+    """Get the file path for a leg's cached timeline.
+
+    When parent_mission_id is provided the timeline is stored inside the
+    mission directory alongside its leg file, preventing name collisions
+    between legs with the same name in different missions.
+    """
+    if parent_mission_id:
+        return get_mission_legs_dir(parent_mission_id) / f"{leg_id}{TIMELINE_SUFFIX}"
+    return MISSIONS_DIR / f"{leg_id}{TIMELINE_SUFFIX}"
 
 
 def get_mission_directory(mission_id: str) -> Path:
@@ -407,34 +414,54 @@ def delete_mission(mission_id: str) -> bool:
     return deleted
 
 
-def save_mission_timeline(mission_id: str, timeline: MissionLegTimeline) -> Path:
-    """Persist a mission timeline to disk."""
+def save_mission_timeline(
+    leg_id: str,
+    timeline: MissionLegTimeline,
+    parent_mission_id: str | None = None,
+) -> Path:
+    """Persist a leg timeline to disk."""
     ensure_missions_directory()
-    timeline_path = get_mission_timeline_path(mission_id)
+    timeline_path = get_mission_timeline_path(leg_id, parent_mission_id)
+    timeline_path.parent.mkdir(parents=True, exist_ok=True)
     with open(timeline_path, "w") as handle:
         json.dump(timeline.model_dump(), handle, indent=2, default=str)
-    logger.info("Saved mission timeline for %s", mission_id)
+    logger.info("Saved mission timeline for %s", leg_id)
     return timeline_path
 
 
-def load_mission_timeline(mission_id: str) -> MissionLegTimeline | None:
-    """Load a previously computed mission timeline."""
-    timeline_path = get_mission_timeline_path(mission_id)
-    if not timeline_path.exists():
+def load_mission_timeline(
+    leg_id: str,
+    parent_mission_id: str | None = None,
+) -> MissionLegTimeline | None:
+    """Load a previously computed leg timeline.
+
+    Checks the mission-scoped path first (new layout), then falls back to the
+    legacy flat-file path so existing data continues to work.
+    """
+    if parent_mission_id:
+        scoped_path = get_mission_timeline_path(leg_id, parent_mission_id)
+        if scoped_path.exists():
+            with open(scoped_path, "r") as handle:
+                return MissionLegTimeline(**json.load(handle))
+    # Legacy fallback: flat file written before this fix
+    legacy_path = get_mission_timeline_path(leg_id)
+    if not legacy_path.exists():
         return None
-    with open(timeline_path, "r") as handle:
-        data = json.load(handle)
-    return MissionLegTimeline(**data)
+    with open(legacy_path, "r") as handle:
+        return MissionLegTimeline(**json.load(handle))
 
 
-def delete_mission_timeline(mission_id: str) -> None:
-    """Remove cached mission timeline without touching mission data."""
-    timeline_path = get_mission_timeline_path(mission_id)
+def delete_mission_timeline(
+    leg_id: str,
+    parent_mission_id: str | None = None,
+) -> None:
+    """Remove a cached leg timeline without touching mission data."""
+    timeline_path = get_mission_timeline_path(leg_id, parent_mission_id)
     if timeline_path.exists():
         try:
             timeline_path.unlink()
         except OSError as exc:
-            logger.warning("Failed to delete mission timeline %s: %s", mission_id, exc)
+            logger.warning("Failed to delete mission timeline %s: %s", leg_id, exc)
 
 
 def mission_exists(mission_id: str) -> bool:

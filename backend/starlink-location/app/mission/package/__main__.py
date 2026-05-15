@@ -66,7 +66,7 @@ def generate_mission_combined_csv(
         for leg in mission.legs:
             try:
                 # Load timeline for this leg
-                timeline = load_mission_timeline(leg.id)
+                timeline = load_mission_timeline(leg.id, parent_mission_id=mission.id)
                 if not timeline:
                     continue
 
@@ -234,7 +234,7 @@ def generate_mission_combined_pptx(
     # For each leg, generate slides using shared builder
     for leg_idx, leg in enumerate(mission.legs):
         # Load timeline for this leg
-        leg_timeline = load_mission_timeline(leg.id)
+        leg_timeline = load_mission_timeline(leg.id, parent_mission_id=mission.id)
         if not leg_timeline:
             logger.warning(
                 f"No timeline found for leg {leg.id}, adding summary slide only"
@@ -452,7 +452,7 @@ def _add_per_leg_exports_to_zip(
     """
     for leg in mission.legs:
         # Load timeline for this specific leg
-        leg_timeline = load_mission_timeline(leg.id)
+        leg_timeline = load_mission_timeline(leg.id, parent_mission_id=mission.id)
         if not leg_timeline:
             logger.warning(
                 f"No timeline found for leg {leg.id}, skipping exports for this leg"
