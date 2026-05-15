@@ -11,18 +11,22 @@ from app.mission.storage import (
     compute_file_checksum,
     compute_mission_checksum,
     delete_mission,
+    delete_mission_timeline,
     get_mission_checksum_path,
     get_mission_directory,
     get_mission_file_path,
     get_mission_leg_file_path,
     get_mission_legs_dir,
     get_mission_path,
+    get_mission_timeline_path,
     list_missions,
     load_mission,
+    load_mission_timeline,
     load_mission_v2,
     load_mission_metadata_v2,
     mission_exists,
     save_mission,
+    save_mission_timeline,
     save_mission_v2,
 )
 
@@ -708,3 +712,97 @@ class TestHierarchicalMissionStorageV2:
         assert loaded.id == "empty-mission"
         assert loaded.name == "Empty Mission"
         assert loaded.legs == []
+
+
+class TestTimelineStorage:
+    """Tests for mission-scoped leg timeline storage.
+
+    These tests encode the bug fixed in PR #34: slugified leg IDs colliding
+    across missions caused stale timeline data to bleed into unrelated exports.
+    """
+
+    @pytest.fixture
+    def sample_timeline(self):
+        from app.mission.models import MissionLegTimeline
+
+        return MissionLegTimeline(mission_leg_id="leg-1")
+
+    @pytest.fixture
+    def sample_timeline_b(self):
+        from app.mission.models import MissionLegTimeline
+
+        return MissionLegTimeline(mission_leg_id="leg-1-mission-b")
+
+    def test_scoped_path_used_when_mission_id_provided(
+        self, sample_timeline, temp_missions_dir
+    ):
+        """Timeline is stored inside {mission_id}/legs/ when parent_mission_id is given."""
+        save_mission_timeline("leg-1", sample_timeline, parent_mission_id="mission-a")
+
+        scoped = temp_missions_dir / "mission-a" / "legs" / "leg-1.timeline.json"
+        flat = temp_missions_dir / "leg-1.timeline.json"
+
+        assert scoped.exists()
+        assert not flat.exists()
+
+    def test_legacy_fallback_reads_flat_file(
+        self, sample_timeline, temp_missions_dir
+    ):
+        """load_mission_timeline falls back to the flat file for pre-fix data."""
+        # Write directly to the legacy flat path (simulating pre-fix data)
+        import json
+
+        flat_path = temp_missions_dir / "leg-1.timeline.json"
+        flat_path.write_text(
+            json.dumps(sample_timeline.model_dump(), default=str)
+        )
+
+        # Load with a mission ID whose scoped path doesn't exist
+        loaded = load_mission_timeline("leg-1", parent_mission_id="mission-a")
+
+        assert loaded is not None
+        assert loaded.mission_leg_id == "leg-1"
+
+    def test_cross_mission_collision_is_fixed(
+        self, sample_timeline, sample_timeline_b, temp_missions_dir
+    ):
+        """Two missions with the same leg slug use independent timeline files."""
+        save_mission_timeline("leg-1", sample_timeline, parent_mission_id="mission-a")
+        save_mission_timeline("leg-1", sample_timeline_b, parent_mission_id="mission-b")
+
+        loaded_a = load_mission_timeline("leg-1", parent_mission_id="mission-a")
+        loaded_b = load_mission_timeline("leg-1", parent_mission_id="mission-b")
+
+        assert loaded_a is not None
+        assert loaded_b is not None
+        assert loaded_a.mission_leg_id == "leg-1"
+        assert loaded_b.mission_leg_id == "leg-1-mission-b"
+
+    def test_delete_leg_removes_scoped_timeline(
+        self, sample_timeline, temp_missions_dir
+    ):
+        """delete_mission_timeline removes the scoped timeline file."""
+        save_mission_timeline("leg-1", sample_timeline, parent_mission_id="mission-a")
+
+        scoped = temp_missions_dir / "mission-a" / "legs" / "leg-1.timeline.json"
+        assert scoped.exists()
+
+        delete_mission_timeline("leg-1", parent_mission_id="mission-a")
+
+        assert not scoped.exists()
+
+    def test_delete_also_removes_legacy_flat_file(
+        self, sample_timeline, temp_missions_dir
+    ):
+        """delete_mission_timeline cleans up legacy flat files to prevent future pollution."""
+        import json
+
+        # Simulate a legacy flat file left over from before the fix
+        flat_path = temp_missions_dir / "leg-1.timeline.json"
+        flat_path.write_text(
+            json.dumps(sample_timeline.model_dump(), default=str)
+        )
+
+        delete_mission_timeline("leg-1", parent_mission_id="mission-a")
+
+        assert not flat_path.exists()

@@ -436,17 +436,24 @@ def load_mission_timeline(
     """Load a previously computed leg timeline.
 
     Checks the mission-scoped path first (new layout), then falls back to the
-    legacy flat-file path so existing data continues to work.
+    legacy flat-file path so existing data continues to work after upgrades.
     """
     if parent_mission_id:
         scoped_path = get_mission_timeline_path(leg_id, parent_mission_id)
         if scoped_path.exists():
             with open(scoped_path, "r") as handle:
                 return MissionLegTimeline(**json.load(handle))
-    # Legacy fallback: flat file written before this fix
+    # Legacy fallback: flat file written before the scoped-path fix.
+    # Two missions whose legs share a slug will still collide here until each
+    # leg is re-saved (which writes the scoped file). Log so operators know.
     legacy_path = get_mission_timeline_path(leg_id)
     if not legacy_path.exists():
         return None
+    logger.warning(
+        "Loading timeline for leg %s from legacy flat-file path; "
+        "re-save the leg to migrate to the mission-scoped path.",
+        leg_id,
+    )
     with open(legacy_path, "r") as handle:
         return MissionLegTimeline(**json.load(handle))
 
@@ -455,13 +462,31 @@ def delete_mission_timeline(
     leg_id: str,
     parent_mission_id: str | None = None,
 ) -> None:
-    """Remove a cached leg timeline without touching mission data."""
-    timeline_path = get_mission_timeline_path(leg_id, parent_mission_id)
-    if timeline_path.exists():
+    """Remove a cached leg timeline without touching mission data.
+
+    Deletes both the mission-scoped path (when parent_mission_id is given) and
+    the legacy flat-file path, so stale flat files can't bleed into future legs
+    that happen to share the same slug.
+    """
+    if parent_mission_id:
+        scoped_path = get_mission_timeline_path(leg_id, parent_mission_id)
+        if scoped_path.exists():
+            try:
+                scoped_path.unlink()
+            except OSError as exc:
+                logger.warning(
+                    "Failed to delete scoped timeline %s: %s", leg_id, exc
+                )
+
+    # Always attempt to remove the legacy flat file to prevent future pollution.
+    legacy_path = get_mission_timeline_path(leg_id)
+    if legacy_path.exists():
         try:
-            timeline_path.unlink()
+            legacy_path.unlink()
         except OSError as exc:
-            logger.warning("Failed to delete mission timeline %s: %s", leg_id, exc)
+            logger.warning(
+                "Failed to delete legacy timeline %s: %s", leg_id, exc
+            )
 
 
 def mission_exists(mission_id: str) -> bool:
