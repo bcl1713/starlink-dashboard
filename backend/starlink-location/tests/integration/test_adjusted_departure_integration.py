@@ -403,6 +403,99 @@ class TestUpdateLegWithAdjustedDepartureTime:
         client.delete(f"/api/v2/missions/{mission_id}")
 
 
+class TestPreviewLegTimelineAdjustedDepartureTime:
+    """Tests for POST /api/v2/missions/{mission_id}/legs/{leg_id}/timeline/preview."""
+
+    def test_preview_rejects_invalid_adjusted_departure_time(
+        self,
+        client: TestClient,
+        mock_timeline_generation,
+    ):
+        """Preview should return 400 instead of swallowing malformed datetime strings."""
+        mission_id = f"test-mission-{uuid4().hex[:8]}"
+        leg_id = f"test-leg-{uuid4().hex[:8]}"
+
+        leg = MissionLeg(
+            id=leg_id,
+            name="Test Leg",
+            route_id="test-route-001",
+            transports=TransportConfig(initial_x_satellite_id="X-1"),
+            adjusted_departure_time=None,
+        )
+        mission = Mission(id=mission_id, name="Test Mission", legs=[leg])
+
+        with patch("app.mission.routes_v2.build_mission_timeline") as mock_build, patch(
+            "app.mission.routes_v2.save_mission_timeline"
+        ) as _mock_save:
+            mock_build.return_value = mock_timeline_generation
+
+            create_response = client.post(
+                "/api/v2/missions",
+                json=mission.model_dump(mode="json"),
+            )
+            assert create_response.status_code == 201
+
+            response = client.post(
+                f"/api/v2/missions/{mission_id}/legs/{leg_id}/timeline/preview",
+                json={"adjusted_departure_time": "not-a-datetime"},
+            )
+
+        assert response.status_code == 400
+        assert "Invalid adjusted_departure_time format" in response.json()["detail"]
+
+        client.delete(f"/api/v2/missions/{mission_id}")
+
+    def test_preview_accepts_valid_adjusted_departure_time(
+        self,
+        client: TestClient,
+        test_route_with_timing,
+        mock_timeline_generation,
+    ):
+        """Preview should pass through a valid datetime string and build the timeline."""
+        mission_id = f"test-mission-{uuid4().hex[:8]}"
+        leg_id = f"test-leg-{uuid4().hex[:8]}"
+
+        leg = MissionLeg(
+            id=leg_id,
+            name="Test Leg",
+            route_id="test-route-001",
+            transports=TransportConfig(initial_x_satellite_id="X-1"),
+            adjusted_departure_time=None,
+        )
+        mission = Mission(id=mission_id, name="Test Mission", legs=[leg])
+
+        with patch("app.mission.routes_v2.build_mission_timeline") as mock_build, patch(
+            "app.mission.routes_v2.save_mission_timeline"
+        ) as _mock_save:
+            mock_build.return_value = mock_timeline_generation
+
+            create_response = client.post(
+                "/api/v2/missions",
+                json=mission.model_dump(mode="json"),
+            )
+            assert create_response.status_code == 201
+
+            original_route_manager = client.app.state.route_manager
+            mock_route_manager = MagicMock()
+            mock_route_manager.get_route.return_value = test_route_with_timing
+            client.app.state.route_manager = mock_route_manager
+
+            try:
+                response = client.post(
+                    f"/api/v2/missions/{mission_id}/legs/{leg_id}/timeline/preview",
+                    json={"adjusted_departure_time": "2025-10-27T17:25:00Z"},
+                )
+            finally:
+                client.app.state.route_manager = original_route_manager
+
+        assert response.status_code == 200
+        assert mock_build.called
+        mission_arg = mock_build.call_args.kwargs["mission"]
+        assert mission_arg.adjusted_departure_time.isoformat() == "2025-10-27T17:25:00+00:00"
+
+        client.delete(f"/api/v2/missions/{mission_id}")
+
+
 class TestRouteUpdateClearsAdjustedDepartureTime:
     """Tests for PUT /api/v2/missions/{mission_id}/legs/{leg_id}/route clearing adjusted_departure_time."""
 

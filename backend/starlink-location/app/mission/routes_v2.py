@@ -1619,13 +1619,23 @@ async def preview_leg_timeline(
         # Update adjusted departure time if provided
         if "adjusted_departure_time" in preview_request:
             adj_time = preview_request.get("adjusted_departure_time")
-            if adj_time:
-                # Parse ISO string if necessary, ensuring timezone awareness
+            if adj_time is not None:
                 if isinstance(adj_time, str):
                     try:
                         adj_time = datetime.fromisoformat(adj_time)
-                    except (ValueError, TypeError):
-                        pass  # Keep as-is if parsing fails
+                    except (ValueError, TypeError) as exc:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Invalid adjusted_departure_time format: {adj_time}",
+                        ) from exc
+                elif not isinstance(adj_time, datetime):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=(
+                            "Invalid adjusted_departure_time format: expected "
+                            "an ISO-8601 string"
+                        ),
+                    )
                 preview_leg.adjusted_departure_time = adj_time
 
         # Build timeline with samples included (without persisting)
