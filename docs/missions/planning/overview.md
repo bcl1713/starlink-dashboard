@@ -117,6 +117,60 @@ entire route:
 - **Red (Critical):** 2+ systems down simultaneously (rare, but alerts you to
   risk)
 
+#### Real-Time Timeline Preview
+
+The preview refreshes automatically after you change satellite transitions,
+outages, or AAR windows. There is no save-first detour; the planner waits for a
+short pause in typing, recalculates, and updates both the route overlay and the
+timeline table. The Unsaved badge appears whenever the preview is ahead of the
+saved leg.
+
+The preview shows three things at once:
+
+- The segment table, with status, timing, transport state, and reason codes
+- The color-coded route overlay, where green means nominal, yellow means
+  degraded, and red means critical
+- A clear saved-versus-preview distinction so you can experiment without
+  accidentally overwriting the official leg
+
+Use the preview to answer three questions before you save:
+
+1. Did the change shift any segments from green to yellow or red?
+2. Do the reasons column and transport states explain the impact clearly?
+3. Is the route still acceptable enough to persist, or should you keep
+   experimenting?
+
+For very long routes, the table renders only what is visible so the UI remains
+responsive.
+
+#### Example iterative workflow
+
+- Start with an initial X-Band transition and one AAR window.
+- Move the transition a little farther from the current waypoint.
+- Check whether the yellow segment shrinks or whether the change simply moves
+  the risk elsewhere.
+- Adjust the AAR window only if the preview shows an avoidable overlap.
+- Save once the preview matches the operational intent.
+
+#### Best practices
+
+- Treat the preview as the working draft and the saved leg as the official
+  record.
+- Make one change at a time if you need to understand why a segment changed
+  color.
+- Keep the Unsaved badge visible in your head, if not on the screen; it is the
+  system trying to prevent future embarrassment.
+- Review the route overlay and the table together, because the map shows where a
+  problem lives and the table explains why it lives there.
+- If the preview looks wrong, change the configuration again rather than saving
+  and hoping the universe will improve on its own. It rarely does.
+
+#### Preview screenshots
+
+![Timeline preview table showing Unsaved state and segment breakdown](../../assets/timeline-preview-table.png)
+
+![Color-coded route preview with green, yellow, and red segments](../../assets/timeline-preview-map.png)
+
 #### Export Options
 
 **CSV Format** (Data Integration)

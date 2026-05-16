@@ -20,6 +20,7 @@ consumers, integrators, developers
 - **[ETA Endpoints](./eta.md)** - Estimated time of arrival calculations
 - **[POI Endpoints](./poi.md)** - Point of interest management
 - **[Route Endpoints](./routes.md)** - Route management and tracking
+- **[Timeline Preview](./timeline-preview.md)** - Real-time mission leg preview
 - **[Additional Endpoints](./additional.md)** - Flight status, GPS, CSV export,
   POI stats, GeoJSON variants, position table
 

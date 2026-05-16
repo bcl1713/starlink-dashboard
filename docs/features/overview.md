@@ -21,8 +21,8 @@ with real-time ETA, and flight phase detection.
 
 ### 3. [Mission Communication Planning](./mission-planning.md)
 
-Pre-flight predictive planning tools, satellite geometry analysis, multi-format
-briefing exports, and mission timeline visualization.
+Pre-flight predictive planning tools, real-time timeline preview, satellite geometry analysis,
+multi-format briefing exports, and mission timeline visualization.
 
 ### 4. [System Configuration & Simulation](./system.md)
 

@@ -18,6 +18,7 @@ The Starlink Dashboard backend provides a comprehensive REST API for:
 - Route and geographic data
 - ETA calculations and route timing
 - Mission planning and visualization
+- Real-time mission leg timeline preview
 
 All endpoints return JSON unless otherwise specified (except `/metrics` which
 returns Prometheus text format).

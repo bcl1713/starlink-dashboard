@@ -17,6 +17,9 @@ Create and manage missions with transport configurations.
   - Times are entered and displayed in UTC timezone
 - Specify azimuth angle thresholds for degradation
 - Mission timeline visualization
+- Real-time timeline preview with automatic updates when configuration changes
+- Unsaved-state indicator so you know when the preview is ahead of the saved leg
+- Color-coded route overlay for nominal, degraded, and critical segments
 
 **Transports Supported:**
 
@@ -25,6 +28,40 @@ Create and manage missions with transport configurations.
 - Ku-Band/StarShield (Starlink connectivity)
 
 **See:** [Mission Planning Guide](../missions/mission-planning-guide.md)
+
+### Real-Time Timeline Preview
+
+The preview recalculates automatically after a short debounce whenever you edit
+satellite transitions, outages, or AAR windows. You can make a change, watch
+the route and status colors update, and only save once the result looks sane.
+The preview panel shows an Unsaved badge whenever the current configuration
+differs from the persisted leg.
+
+What the preview tells you:
+
+- Green segments mean nominal communication coverage
+- Yellow segments mean degraded communication
+- Red segments mean critical communication gaps
+- The timeline table lists segment status, UTC timing, duration, transport
+  state, and reason codes
+- Route map overlays update immediately so transition impacts are easy to spot
+- The preview uses the same calculation engine as the saved leg, so what you see
+  is the same model the API stores
+
+How to use it well:
+
+1. Make one configuration change at a time when you are trying to understand a
+   color change.
+2. Use the table to read the reason codes, then cross-check the map to see where
+   the risk sits on the route.
+3. Keep experimenting while the Unsaved badge is present; save only when the
+   preview matches the mission intent.
+4. For long routes, expect the table to stay usable by rendering only the visible
+   rows.
+
+![Timeline preview table](../assets/timeline-preview-table.png)
+
+![Color-coded route preview](../assets/timeline-preview-map.png)
 
 ### Satellite Geometry Engine
 

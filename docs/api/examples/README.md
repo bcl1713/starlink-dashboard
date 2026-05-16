@@ -39,6 +39,7 @@ Python requests library examples:
 - Route progress monitoring
 - Configuration updates
 - Error handling patterns
+- Timeline preview requests and responses
 
 **Best for:** Backend integrations, data analysis, automation scripts
 

@@ -16,8 +16,8 @@
 - **[Monitoring](monitoring.md)**: Real-time telemetry monitoring and
   visualization
 - **[Navigation](navigation.md)**: Route-based navigation and tracking
-- **[Mission Planning](mission-planning.md)**: Mission management and planning
-  tools
+- **[Mission Planning](./mission-planning.md)**: Mission management, planning tools,
+  and real-time timeline preview
 - **[System Features](system.md)**: System-level capabilities and configuration
 
 ### Feature Areas
