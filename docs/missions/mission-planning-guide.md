@@ -12,7 +12,8 @@
 ### 1. [Mission Planning Overview & Workflow](planning/overview.md)
 
 Introduction to the mission communication planner, system requirements, and
-step-by-step workflow (upload route, configure systems, define AAR windows).
+step-by-step workflow (upload route, configure systems, define AAR windows,
+review the real-time timeline preview).
 
 ### 2. [Communication Systems & Timeline Logic](planning/systems.md)
 

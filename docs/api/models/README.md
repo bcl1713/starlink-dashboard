@@ -76,6 +76,7 @@ ETA calculation models:
 - POI with ETA: [POIWithETA](./poi-models.md#poiwitheta-extended-model)
 - Route progress: [RouteProgress](./route-models.md#routeprogress)
 - Service health: [HealthResponse](./health-status-models.md#healthresponse)
+- Timeline preview: [TimelinePreview](./timeline-preview.md)
 
 **Validation:**
 
