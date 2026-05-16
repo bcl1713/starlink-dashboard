@@ -491,7 +491,10 @@ class TestPreviewLegTimelineAdjustedDepartureTime:
         assert response.status_code == 200
         assert mock_build.called
         mission_arg = mock_build.call_args.kwargs["mission"]
-        assert mission_arg.adjusted_departure_time.isoformat() == "2025-10-27T17:25:00+00:00"
+        assert (
+            mission_arg.adjusted_departure_time.isoformat()
+            == "2025-10-27T17:25:00+00:00"
+        )
 
         client.delete(f"/api/v2/missions/{mission_id}")
 
