@@ -193,11 +193,6 @@ deployments, implement authentication at the reverse proxy level.
 
 ---
 
-## Rate Limiting
-
-No rate limiting is currently implemented. The service is designed for internal
-use on trusted networks.
-
 ---
 
 ## API Versioning

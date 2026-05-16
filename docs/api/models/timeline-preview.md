@@ -44,18 +44,22 @@
 ### Request Fields
 
 - `transports.initial_x_satellite_id` — active X-Band satellite ID
-- `transports.initial_ka_satellite_ids` — Ka coverage regions or satellite IDs to seed the preview
+- `transports.initial_ka_satellite_ids` — Ka coverage regions or satellite IDs
+  to seed the preview
 - `transports.x_transitions[]` — X-Band handoff points and target satellite IDs
-- `transports.ka_outages[]` — manual Ka outage windows used to simulate degraded service
+- `transports.ka_outages[]` — manual Ka outage windows used to simulate
+  degraded service
 - `transports.aar_windows[]` — AAR windows that can suppress X-Band coverage
 - `transports.ku_overrides[]` — optional override objects for Ku behavior
-- `adjusted_departure_time` — optional ISO-8601 timestamp used to shift the timeline calculation
+- `adjusted_departure_time` — optional ISO-8601 timestamp used to shift the
+  timeline calculation
 
 ---
 
 ## Response Schema: `MissionLegTimeline`
 
-The preview endpoint returns the standard mission-leg timeline structure, with route samples included for preview rendering.
+The preview endpoint returns the standard mission-leg timeline structure, with
+route samples included for preview rendering.
 
 ### Top-Level Fields
 

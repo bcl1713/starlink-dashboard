@@ -147,11 +147,12 @@ console.log(preview.statistics);
 
 - Preview requests are ephemeral; they do not persist the timeline.
 - Use the same payload shape the frontend sends when you want parity with the UI.
-- If the request returns `400`, check the adjusted departure time and transport configuration first.
-- The returned `samples[]` array is what powers the preview map overlay, while
-  `segments[]` drives the table and status badges.
-- If you are testing a long route, expect the response to stay the same shape
-  even though the UI renders the table lazily.
+- If the request returns `400`, check the adjusted departure time and
+  transport configuration first.
+- The returned `samples[]` array is what powers the preview map overlay,
+  while `segments[]` drives the table and status badges.
+- If you are testing a long route, expect the response to stay the same
+  shape even though the UI renders the table lazily.
 
 ---
 
