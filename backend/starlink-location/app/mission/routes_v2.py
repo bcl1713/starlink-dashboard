@@ -30,6 +30,8 @@ from app.mission.storage import (
     save_mission_v2,
     load_mission_v2,
     save_mission_timeline,
+    load_mission_timeline,
+    delete_mission_timeline,
     get_mission_lock,
     load_mission_metadata_v2,
 )
@@ -92,7 +94,9 @@ async def create_mission(
                             coverage_sampler=_coverage_sampler,
                             parent_mission_id=mission.id,
                         )
-                        save_mission_timeline(leg.id, timeline)
+                        save_mission_timeline(
+                            leg.id, timeline, parent_mission_id=mission.id
+                        )
                         logger.info(f"Timeline generated and saved for leg {leg.id}")
                     except Exception as e:
                         logger.error(
@@ -602,7 +606,7 @@ def _generate_timelines_for_imported_legs(
                     coverage_sampler=coverage_sampler,
                     parent_mission_id=mission.id,
                 )
-                save_mission_timeline(leg.id, timeline)
+                save_mission_timeline(leg.id, timeline, parent_mission_id=mission.id)
                 logger.info(f"Timeline generated and saved for imported leg {leg.id}")
             except Exception as e:
                 logger.error(
@@ -795,7 +799,9 @@ async def add_leg_to_mission(
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
                     )
-                    save_mission_timeline(leg.id, timeline)
+                    save_mission_timeline(
+                        leg.id, timeline, parent_mission_id=mission_id
+                    )
                     logger.info(f"Timeline generated and saved for new leg {leg.id}")
                 except Exception as e:
                     logger.error(
@@ -916,7 +922,9 @@ async def update_leg(
                             f"ends at {last_end}, "
                             f"{len(timeline.segments)} segments"
                         )
-                    save_mission_timeline(leg_id, timeline)
+                    save_mission_timeline(
+                        leg_id, timeline, parent_mission_id=mission_id
+                    )
                     logger.info(f"Timeline saved to disk for leg {leg_id}")
                 except Exception as e:
                     logger.error(
@@ -1048,6 +1056,10 @@ async def delete_leg(
                     logger.error(f"Failed to delete leg file {leg_file}: {e}")
                     raise
 
+            # 5. Delete leg timeline file
+            delete_mission_timeline(leg_id, parent_mission_id=mission_id)
+            logger.info(f"Deleted timeline for leg {leg_id}")
+
             logger.info(
                 f"Deleted leg {leg_id} from mission {mission_id} with route {route_id}"
             )
@@ -1132,7 +1144,9 @@ async def activate_leg(
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
                     )
-                    save_mission_timeline(leg_id, timeline)
+                    save_mission_timeline(
+                        leg_id, timeline, parent_mission_id=mission_id
+                    )
                     logger.info(f"Timeline generated and saved for leg {leg_id}")
                 except Exception as e:
                     logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
@@ -1488,7 +1502,9 @@ async def update_leg_route(
                         coverage_sampler=_coverage_sampler,
                         parent_mission_id=mission_id,
                     )
-                    save_mission_timeline(leg_id, timeline)
+                    save_mission_timeline(
+                        leg_id, timeline, parent_mission_id=mission_id
+                    )
                     logger.info(
                         f"Timeline regenerated and saved for leg {leg_id} with new route"
                     )
@@ -1523,8 +1539,6 @@ async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
         Timeline object with segments and metadata
     """
     try:
-        from app.mission.storage import load_mission_timeline
-
         # Load mission to verify it exists
         mission = load_mission_v2(mission_id)
         if not mission:
@@ -1542,7 +1556,7 @@ async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
             )
 
         # Load timeline for the leg
-        timeline = load_mission_timeline(leg_id)
+        timeline = load_mission_timeline(leg_id, parent_mission_id=mission_id)
         if not timeline:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

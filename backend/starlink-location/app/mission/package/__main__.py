@@ -72,7 +72,6 @@ def generate_mission_combined_csv(
 
         for leg in mission.legs:
             try:
-                # Load timeline for this leg
                 timeline = _load_export_timeline(
                     mission, leg, route_manager, poi_manager
                 )
@@ -473,7 +472,7 @@ def _load_export_timeline(
                 exc_info=True,
             )
 
-    return load_mission_timeline(leg.id)
+    return load_mission_timeline(leg.id, parent_mission_id=mission.id)
 
 
 def _add_per_leg_exports_to_zip(
