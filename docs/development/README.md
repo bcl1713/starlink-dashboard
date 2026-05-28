@@ -13,6 +13,8 @@
 
 - **[Workflow](./workflow.md)**: Development workflow, git practices, and Docker
   rebuild process for Python backend changes
+- **[Release Policy](./release-policy.md)**: `dev` integration branch policy,
+  semantic versioning, and release flow
 - **[Contributing](../../CONTRIBUTING.md)**: Contribution guidelines, standards,
   and code review process
 
