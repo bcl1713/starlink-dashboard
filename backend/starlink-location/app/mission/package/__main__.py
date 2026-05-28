@@ -36,7 +36,10 @@ class ExportPackageError(RuntimeError):
 
 
 def generate_mission_combined_csv(
-    mission: Mission, output_path: str | None = None
+    mission: Mission,
+    output_path: str | None = None,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
 ) -> bytes | None:
     """Generate combined CSV timeline for all legs in mission.
 
@@ -71,7 +74,9 @@ def generate_mission_combined_csv(
         for leg in mission.legs:
             try:
                 # Load timeline for this leg
-                timeline = load_mission_timeline(leg.id)
+                timeline = _load_export_timeline(
+                    mission, leg, route_manager, poi_manager
+                )
                 if not timeline:
                     continue
 
@@ -133,6 +138,40 @@ def generate_mission_combined_csv(
     if not output_path:
         return f.getvalue().encode("utf-8")
     return None
+
+
+def _load_timeline_for_export(
+    leg: MissionLeg,
+    route_manager: RouteManager | None = None,
+    poi_manager: POIManager | None = None,
+    parent_mission_id: str | None = None,
+) -> MissionLegTimeline | None:
+    """Return the timeline that should be used for export generation.
+
+    Cached timelines can be stale when planners adjust a leg's departure time
+    but export immediately from the mission package endpoint. For adjusted
+    legs, rebuild from the route at export time so relative events such as AAR
+    windows shift with the adjusted takeoff.
+    """
+    if leg.adjusted_departure_time is not None and route_manager and leg.route_id:
+        try:
+            timeline, _summary = build_mission_timeline(
+                mission=leg,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+                parent_mission_id=parent_mission_id,
+            )
+            return timeline
+        except Exception as e:
+            logger.warning(
+                "Failed to rebuild adjusted timeline for leg %s during export; "
+                "falling back to cached timeline: %s",
+                leg.id,
+                e,
+                exc_info=True,
+            )
+
+    return load_mission_timeline(leg.id)
 
 
 def generate_mission_combined_pptx(

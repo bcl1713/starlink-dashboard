@@ -47,7 +47,9 @@ def test_per_leg_exports_rebuild_timeline_before_using_cached_aar_blocks():
             ]
         },
     )
-    artifact = ExportArtifact(content=b"export", media_type="text/plain", extension="txt")
+    artifact = ExportArtifact(
+        content=b"export", media_type="text/plain", extension="txt"
+    )
 
     with (
         patch(
