@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
-from io import BytesIO
 
-import openpyxl
 import pytest
 
 import app.mission.exporter as mission_exporter
@@ -97,7 +95,7 @@ def _build_test_timeline(mission_id: str) -> MissionLegTimeline:
 class TestTimelineExportFormat:
     def test_from_string_accepts_mixed_casing(self):
         assert TimelineExportFormat.from_string("CSV") is TimelineExportFormat.CSV
-        assert TimelineExportFormat.from_string("Pdf") is TimelineExportFormat.PDF
+        assert TimelineExportFormat.from_string("Pptx") is TimelineExportFormat.PPTX
 
     def test_from_string_invalid_raises(self):
         with pytest.raises(ExportGenerationError):
@@ -124,22 +122,11 @@ class TestMissionTimelineExporters:
         assert "CommKa" in output
         assert "StarShield" in output
 
-    def test_generate_xlsx_creates_multiple_sheets(self, mission, timeline):
+    def test_generate_pptx_starts_with_zip_header(self, mission, timeline):
         output = generate_timeline_export(
-            TimelineExportFormat.XLSX, mission, timeline
+            TimelineExportFormat.PPTX, mission, timeline
         ).content
-        workbook = openpyxl.load_workbook(filename=BytesIO(output))
-        assert "Timeline" in workbook.sheetnames
-        assert workbook["Timeline"]["A2"].value == 1  # First segment number
-
-        # Advisories sheet should exist because we provided one
-        assert "Advisories" in workbook.sheetnames
-
-    def test_generate_pdf_starts_with_pdf_header(self, mission, timeline):
-        output = generate_timeline_export(
-            TimelineExportFormat.PDF, mission, timeline
-        ).content
-        assert output.startswith(b"%PDF")
+        assert output.startswith(b"PK")
 
     def test_generate_timeline_export_router(self, mission, timeline):
         artifact = generate_timeline_export(TimelineExportFormat.CSV, mission, timeline)
@@ -169,11 +156,13 @@ class TestMissionTimelineExporters:
 
         df = mission_exporter._segment_rows(timeline, mission)
         row = df.iloc[0]
-        assert row["Status"] == "NOMINAL"
-        assert row["X-Band"] == "WARNING"
-        assert row["Impacted Transports"] == ""
+        assert row["Status"] == "DEGRADED"
+        assert row["Call Posture"] == "Degraded"
+        assert row["Primary Reason"] == "Ku/X conflict"
+        assert row["X-Band"] == "DEGRADED"
+        assert row["Systems Affected"] == "X"
 
-    def test_aar_block_rows_inserted(self, mission):
+    def test_aar_block_rows_normalize_primary_table_without_overlap(self, mission):
         start = datetime(2025, 11, 5, 0, 0, tzinfo=timezone.utc)
         segments = [
             TimelineSegment(
@@ -204,11 +193,8 @@ class TestMissionTimelineExporters:
         )
 
         df = mission_exporter._segment_rows(timeline, mission)
-        assert "WARNING" in df["Status"].values
-        aar_rows = df[df["Segment #"] == "AAR"]
-        assert len(aar_rows) == 1
-        aar_row = aar_rows.iloc[0]
-        assert aar_row["Reasons"] == "AAR"
-        assert aar_row["X-Band"] == "AVAILABLE"
-        assert aar_row["CommKa"] == "AVAILABLE"
-        assert aar_row["StarShield"] == "AVAILABLE"
+        assert "AAR" not in df["Segment #"].values
+        assert list(df["Call Posture"]) == ["Avoid calls", "Nominal calls"]
+        assert list(df["Primary Reason"]) == ["SOF AAR", "nominal window"]
+        assert list(df["Reasons"]) == ["Avoid calls — SOF AAR", "Nominal calls"]
+        assert df.iloc[0]["Systems Affected"] == ""

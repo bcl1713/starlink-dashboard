@@ -9,6 +9,7 @@ from app.mission.models import (
     Transport,
     TransportState,
 )
+from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.state import TransportInterval
 from app.mission.timeline import build_timeline_segments
 from app.mission.timeline_builder.stats import annotate_aar_markers
@@ -195,3 +196,185 @@ def test_annotate_aar_markers_appends_reasons():
     expected_end = (BASE + timedelta(minutes=45)).isoformat()
     assert block["start"] == expected_start
     assert block["end"] == expected_end
+
+
+def _timeline_from_segments(segments, statistics=None):
+    return MissionLegTimeline(
+        mission_leg_id="mission-1",
+        segments=segments,
+        advisories=[],
+        statistics=statistics or {},
+    )
+
+
+def _segment(seg_id, start_offset, end_offset, status, reasons=None, metadata=None):
+    return TimelineSegment(
+        id=seg_id,
+        start_time=BASE + timedelta(minutes=start_offset),
+        end_time=BASE + timedelta(minutes=end_offset),
+        status=status,
+        x_state=TransportState.AVAILABLE,
+        ka_state=TransportState.AVAILABLE,
+        ku_state=TransportState.AVAILABLE,
+        reasons=reasons or [],
+        impacted_transports=[],
+        metadata=metadata or {},
+    )
+
+
+def test_call_availability_sof_carves_hole_out_of_nominal_window():
+    timeline = _timeline_from_segments(
+        [_segment("seg-1", 0, 60, TimelineStatus.NOMINAL)],
+        statistics={
+            "_aar_blocks": [
+                {
+                    "start": (BASE + timedelta(minutes=20)).isoformat(),
+                    "end": (BASE + timedelta(minutes=40)).isoformat(),
+                }
+            ]
+        },
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    assert [(s.start_time, s.end_time) for s in timeline.segments] == [
+        (BASE, BASE + timedelta(minutes=20)),
+        (BASE + timedelta(minutes=20), BASE + timedelta(minutes=40)),
+        (BASE + timedelta(minutes=40), BASE + timedelta(minutes=60)),
+    ]
+    assert [s.metadata["call_posture"] for s in timeline.segments] == [
+        "Nominal calls",
+        "Avoid calls",
+        "Nominal calls",
+    ]
+    assert timeline.segments[1].metadata["primary_reason"] == "SOF AAR"
+    assert timeline.segments[1].reasons == ["Avoid calls — SOF AAR"]
+
+
+def test_call_availability_priority_sof_wins_over_nominal_but_not_outage():
+    outage = _segment(
+        "seg-outage",
+        10,
+        20,
+        TimelineStatus.DEGRADED,
+        reasons=["Ka outage"],
+    )
+    outage.ka_state = TransportState.OFFLINE
+    outage.impacted_transports = [Transport.KA]
+    timeline = _timeline_from_segments(
+        [
+            _segment("seg-nominal-a", 0, 10, TimelineStatus.NOMINAL),
+            outage,
+            _segment("seg-nominal-b", 20, 30, TimelineStatus.NOMINAL),
+        ],
+        statistics={
+            "_aar_blocks": [
+                {
+                    "start": (BASE + timedelta(minutes=5)).isoformat(),
+                    "end": (BASE + timedelta(minutes=25)).isoformat(),
+                }
+            ]
+        },
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    labels = [s.metadata["availability_label"] for s in timeline.segments]
+    assert labels == [
+        "Nominal calls",
+        "Avoid calls — SOF AAR",
+        "Unavailable — system outage",
+        "Avoid calls — SOF AAR",
+        "Nominal calls",
+    ]
+
+
+def test_call_availability_ku_x_conflict_is_degraded_block():
+    conflict = _segment(
+        "seg-conflict",
+        15,
+        25,
+        TimelineStatus.DEGRADED,
+        reasons=["X-Ku Conflict az=180° el=20°"],
+    )
+    conflict.x_state = TransportState.DEGRADED
+    conflict.impacted_transports = [Transport.X]
+    timeline = _timeline_from_segments(
+        [
+            _segment("seg-a", 0, 15, TimelineStatus.NOMINAL),
+            conflict,
+            _segment("seg-b", 25, 40, TimelineStatus.NOMINAL),
+        ]
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    assert timeline.segments[1].metadata["call_posture"] == "Degraded"
+    assert timeline.segments[1].metadata["primary_reason"] == "Ku/X conflict"
+    assert (
+        timeline.segments[1].metadata["availability_label"]
+        == "Degraded — Ku/X conflict"
+    )
+    assert timeline.segments[1].impacted_transports == [Transport.X]
+
+
+def test_call_availability_merges_adjacent_only_when_labels_match():
+    timeline = _timeline_from_segments(
+        [
+            _segment("seg-a", 0, 10, TimelineStatus.NOMINAL),
+            _segment("seg-b", 10, 20, TimelineStatus.NOMINAL),
+            _segment(
+                "seg-c", 20, 30, TimelineStatus.NOMINAL, metadata={"note": "handoff"}
+            ),
+        ]
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    assert [(s.start_time, s.end_time) for s in timeline.segments] == [
+        (BASE, BASE + timedelta(minutes=20)),
+        (BASE + timedelta(minutes=20), BASE + timedelta(minutes=30)),
+    ]
+    assert timeline.segments[0].metadata["source_segment_ids"] == ["seg-a", "seg-b"]
+    assert timeline.segments[1].metadata["notes"] == ["handoff"]
+
+
+def test_call_availability_rows_are_sorted_and_non_overlapping():
+    conflict = _segment(
+        "seg-conflict",
+        5,
+        20,
+        TimelineStatus.DEGRADED,
+        reasons=["Other activity conflict"],
+    )
+    conflict.x_state = TransportState.DEGRADED
+    conflict.impacted_transports = [Transport.X]
+    timeline = _timeline_from_segments(
+        [
+            conflict,
+            _segment("seg-nominal", 0, 5, TimelineStatus.NOMINAL),
+            _segment("seg-tail", 20, 30, TimelineStatus.NOMINAL),
+        ],
+        statistics={
+            "_aar_blocks": [
+                {
+                    "start": (BASE + timedelta(minutes=10)).isoformat(),
+                    "end": (BASE + timedelta(minutes=15)).isoformat(),
+                }
+            ]
+        },
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    starts = [s.start_time for s in timeline.segments]
+    assert starts == sorted(starts)
+    for prev, nxt in zip(timeline.segments, timeline.segments[1:]):
+        assert prev.end_time <= nxt.start_time
+    assert [s.metadata["availability_label"] for s in timeline.segments] == [
+        "Nominal calls",
+        "Activity conflict",
+        "Avoid calls — SOF AAR",
+        "Activity conflict",
+        "Nominal calls",
+    ]

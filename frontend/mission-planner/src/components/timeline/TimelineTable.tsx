@@ -50,6 +50,51 @@ function calculateDuration(start: string, end: string): string {
   }
 }
 
+function metadataString(segment: TimelineSegment, key: string): string | null {
+  const value = segment.metadata?.[key];
+  return typeof value === 'string' && value.trim() ? value : null;
+}
+
+function metadataStringList(segment: TimelineSegment, key: string): string[] {
+  const value = segment.metadata?.[key];
+  if (Array.isArray(value)) {
+    return value.filter(
+      (item): item is string =>
+        typeof item === 'string' && item.trim().length > 0
+    );
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return [value];
+  }
+  return [];
+}
+
+function availabilityLabel(segment: TimelineSegment): string {
+  return metadataString(segment, 'availability_label') || segment.status;
+}
+
+function callPosture(segment: TimelineSegment): string {
+  return metadataString(segment, 'call_posture') || segment.status;
+}
+
+function primaryReason(segment: TimelineSegment): string {
+  return (
+    metadataString(segment, 'primary_reason') || segment.reasons?.[0] || '—'
+  );
+}
+
+function systemsAffected(segment: TimelineSegment): string {
+  const systems = metadataStringList(segment, 'systems_affected');
+  return systems.length > 0 ? systems.join(', ') : '—';
+}
+
+function notesAndSources(segment: TimelineSegment): string[] {
+  const notes = metadataStringList(segment, 'notes');
+  const sources = metadataStringList(segment, 'source_reasons');
+  const values = [...notes, ...sources];
+  return values.filter((item, index) => values.indexOf(item) === index);
+}
+
 export const TimelineTable: React.FC<TimelineTableProps> = ({
   timeline,
   isLoading = false,
@@ -88,88 +133,94 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
               Segment
             </th>
             <th className="px-4 py-2 text-left font-semibold text-gray-700">
-              Status
+              Call Posture
+            </th>
+            <th className="px-4 py-2 text-left font-semibold text-gray-700">
+              Primary Reason
             </th>
             <th className="px-4 py-2 text-left font-semibold text-gray-700">
               Start Time (UTC)
             </th>
             <th className="px-4 py-2 text-left font-semibold text-gray-700">
+              End Time (UTC)
+            </th>
+            <th className="px-4 py-2 text-left font-semibold text-gray-700">
               Duration
             </th>
             <th className="px-4 py-2 text-left font-semibold text-gray-700">
-              X State
+              Systems Affected
             </th>
             <th className="px-4 py-2 text-left font-semibold text-gray-700">
-              Ka State
-            </th>
-            <th className="px-4 py-2 text-left font-semibold text-gray-700">
-              Ku State
-            </th>
-            <th className="px-4 py-2 text-left font-semibold text-gray-700">
-              Reasons
+              Notes / Source Events
             </th>
           </tr>
         </thead>
         <tbody className="divide-y">
-          {displaySegments.map((segment: TimelineSegment, index: number) => (
-            <tr
-              key={segment.id || index}
-              className={`hover:bg-gray-50 ${
-                STATUS_COLORS[segment.status.toLowerCase()] || ''
-              }`}
-            >
-              <td className="px-4 py-2 text-gray-700">{index + 1}</td>
-              <td className="px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      STATUS_BADGE_COLORS[segment.status.toLowerCase()] ||
-                      'bg-gray-400'
-                    }`}
-                  ></div>
-                  <span className="font-medium capitalize">
-                    {segment.status}
-                  </span>
-                </div>
-              </td>
-              <td className="px-4 py-2 font-mono text-xs">
-                {formatTime(segment.start_time)}
-              </td>
-              <td className="px-4 py-2">
-                {calculateDuration(segment.start_time, segment.end_time)}
-              </td>
-              <td className="px-4 py-2 capitalize text-xs">
-                {segment.x_state || 'unknown'}
-              </td>
-              <td className="px-4 py-2 capitalize text-xs">
-                {segment.ka_state || 'unknown'}
-              </td>
-              <td className="px-4 py-2 capitalize text-xs">
-                {segment.ku_state || 'unknown'}
-              </td>
-              <td className="px-4 py-2 text-xs">
-                {segment.reasons && segment.reasons.length > 0 ? (
-                  <div className="space-y-1">
-                    {segment.reasons.slice(0, 2).map((reason, i) => (
-                      <div
-                        key={i}
-                        className="bg-gray-200 px-2 py-1 rounded text-gray-700"
-                      >
-                        {reason}
-                      </div>
-                    ))}
-                    {segment.reasons.length > 2 && (
-                      <div className="text-gray-500">
-                        +{segment.reasons.length - 2} more
-                      </div>
-                    )}
+          {displaySegments.map((segment: TimelineSegment, index: number) => {
+            const sourceNotes = notesAndSources(segment);
+            return (
+              <tr
+                key={segment.id || index}
+                className={`hover:bg-gray-50 ${
+                  STATUS_COLORS[segment.status.toLowerCase()] || ''
+                }`}
+              >
+                <td className="px-4 py-2 text-gray-700">{index + 1}</td>
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        STATUS_BADGE_COLORS[segment.status.toLowerCase()] ||
+                        'bg-gray-400'
+                      }`}
+                    ></div>
+                    <span className="font-medium">
+                      {availabilityLabel(segment)}
+                    </span>
                   </div>
-                ) : (
-                  '-'
-                )}
-              </td>
-            </tr>
-          ))}
+                  <div className="text-xs text-gray-600">
+                    {callPosture(segment)}
+                  </div>
+                </td>
+                <td className="px-4 py-2 text-xs text-gray-700">
+                  {primaryReason(segment)}
+                </td>
+                <td className="px-4 py-2 font-mono text-xs">
+                  {formatTime(segment.start_time)}
+                </td>
+                <td className="px-4 py-2 font-mono text-xs">
+                  {formatTime(segment.end_time)}
+                </td>
+                <td className="px-4 py-2">
+                  {calculateDuration(segment.start_time, segment.end_time)}
+                </td>
+                <td className="px-4 py-2 text-xs">
+                  {systemsAffected(segment)}
+                </td>
+                <td className="px-4 py-2 text-xs">
+                  {sourceNotes.length > 0 ? (
+                    <div className="space-y-1">
+                      {sourceNotes.slice(0, 2).map((note, i) => (
+                        <div
+                          key={i}
+                          className="bg-gray-200 px-2 py-1 rounded text-gray-700"
+                        >
+                          {note}
+                        </div>
+                      ))}
+                      {sourceNotes.length > 2 && (
+                        <div className="text-gray-500">
+                          +{sourceNotes.length - 2} more
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

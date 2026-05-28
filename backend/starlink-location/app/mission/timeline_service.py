@@ -6,6 +6,7 @@ import logging
 import time
 from pathlib import Path
 
+from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.models import MissionLeg, MissionLegTimeline, Transport
 from app.mission.state import generate_transport_intervals
 from app.mission.timeline import assemble_mission_timeline
@@ -174,6 +175,7 @@ def build_mission_timeline(
         intervals=intervals,
     )
     annotate_aar_markers(timeline, events)
+    normalize_call_availability_timeline(timeline)
     attach_statistics(timeline, mission_start, mission_end)
 
     # Attach route samples if requested (for preview rendering)

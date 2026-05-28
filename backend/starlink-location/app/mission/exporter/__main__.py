@@ -34,6 +34,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 
+from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.models import (
     Mission,
     MissionLeg,
@@ -1276,10 +1277,12 @@ def _segment_rows(
     mission: Mission | None,
 ) -> pd.DataFrame:
     """Convert timeline segments into a pandas DataFrame."""
-    mission_start = mission_start_timestamp(timeline)
+    export_timeline = timeline.model_copy(deep=True)
+    normalize_call_availability_timeline(export_timeline)
+    mission_start = mission_start_timestamp(export_timeline)
     rows: list[tuple[datetime, int, dict]] = []
 
-    for idx, segment in enumerate(timeline.segments, start=1):
+    for idx, segment in enumerate(export_timeline.segments, start=1):
         start_utc = ensure_timezone(segment.start_time)
         end_value = segment.end_time if segment.end_time else segment.start_time
         end_utc = ensure_timezone(end_value)
@@ -1291,10 +1294,22 @@ def _segment_rows(
             else str(segment.status)
         )
         status_value = status_value.upper()
+        metadata = segment.metadata or {}
+        call_posture = metadata.get("call_posture") or status_value
+        primary_reason = metadata.get("primary_reason") or (
+            segment.reasons[0] if segment.reasons else ""
+        )
+        systems_affected = metadata.get("systems_affected") or [
+            transport.value for transport in segment.impacted_transports
+        ]
+        notes = metadata.get("notes") or []
+        source_reasons = metadata.get("source_reasons") or segment.reasons
+        notes_and_sources = _format_notes_and_sources(notes, source_reasons)
         impacted_display = serialize_transport_list(segment.impacted_transports)
         if warning_only:
             status_value = TimelineStatus.NOMINAL.value.upper()
             impacted_display = ""
+            systems_affected = []
         record = {
             "Segment #": idx,
             "Mission ID": mission.id if mission else timeline.mission_id,
@@ -1302,6 +1317,8 @@ def _segment_rows(
                 mission.name if mission and mission.name else timeline.mission_id
             ),
             "Status": status_value,
+            "Call Posture": call_posture,
+            "Primary Reason": primary_reason,
             "Start Time": compose_time_block(start_utc, mission_start),
             "End Time": compose_time_block(end_utc, mission_start),
             "Duration": format_seconds_hms(duration_seconds),
@@ -1311,20 +1328,25 @@ def _segment_rows(
             TRANSPORT_DISPLAY[Transport.KA]: segment.ka_state.value.upper(),
             TRANSPORT_DISPLAY[Transport.KU]: segment.ku_state.value.upper(),
             "Impacted Transports": impacted_display,
+            "Systems Affected": ", ".join(systems_affected),
             "Reasons": ", ".join(segment.reasons),
+            "Notes / Source Events": notes_and_sources,
             "Metadata": (
                 json.dumps(segment.metadata, sort_keys=True) if segment.metadata else ""
             ),
         }
         rows.append((start_utc, 1, record))
 
-    rows.extend(_aar_block_rows(timeline, mission, mission_start))
+    # AAR/SOF blocks are incorporated by normalize_call_availability_timeline()
+    # above so the primary table stays chronological and non-overlapping.
 
     columns = [
         "Segment #",
         "Mission ID",
         "Mission Name",
         "Status",
+        "Call Posture",
+        "Primary Reason",
         "Start Time",
         "End Time",
         "Duration",
@@ -1332,7 +1354,9 @@ def _segment_rows(
         TRANSPORT_DISPLAY[Transport.KA],
         TRANSPORT_DISPLAY[Transport.KU],
         "Impacted Transports",
+        "Systems Affected",
         "Reasons",
+        "Notes / Source Events",
         "Metadata",
     ]
 
@@ -1399,6 +1423,28 @@ def _statistics_rows(timeline: MissionLegTimeline) -> pd.DataFrame:
             display_value = format_seconds_hms(value)
         rows.append({"Metric": display_name, "Value": display_value})
     return pd.DataFrame(rows, columns=["Metric", "Value"])
+
+
+def _format_notes_and_sources(notes: object, source_reasons: object) -> str:
+    """Format concise notes/source context for the availability table."""
+    values: list[str] = []
+    if isinstance(notes, list):
+        values.extend(str(note) for note in notes if str(note).strip())
+    elif isinstance(notes, str) and notes.strip():
+        values.append(notes)
+    if isinstance(source_reasons, list):
+        values.extend(str(reason) for reason in source_reasons if str(reason).strip())
+    elif isinstance(source_reasons, str) and source_reasons.strip():
+        values.append(source_reasons)
+
+    seen: set[str] = set()
+    unique_values: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        unique_values.append(value)
+    return "; ".join(unique_values)
 
 
 # Note: format_seconds_hms, humanize_metric_name, and compose_time_block are now
