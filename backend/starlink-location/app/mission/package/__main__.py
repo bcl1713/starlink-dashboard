@@ -140,40 +140,6 @@ def generate_mission_combined_csv(
     return None
 
 
-def _load_timeline_for_export(
-    leg: MissionLeg,
-    route_manager: RouteManager | None = None,
-    poi_manager: POIManager | None = None,
-    parent_mission_id: str | None = None,
-) -> MissionLegTimeline | None:
-    """Return the timeline that should be used for export generation.
-
-    Cached timelines can be stale when planners adjust a leg's departure time
-    but export immediately from the mission package endpoint. For adjusted
-    legs, rebuild from the route at export time so relative events such as AAR
-    windows shift with the adjusted takeoff.
-    """
-    if leg.adjusted_departure_time is not None and route_manager and leg.route_id:
-        try:
-            timeline, _summary = build_mission_timeline(
-                mission=leg,
-                route_manager=route_manager,
-                poi_manager=poi_manager,
-                parent_mission_id=parent_mission_id,
-            )
-            return timeline
-        except Exception as e:
-            logger.warning(
-                "Failed to rebuild adjusted timeline for leg %s during export; "
-                "falling back to cached timeline: %s",
-                leg.id,
-                e,
-                exc_info=True,
-            )
-
-    return load_mission_timeline(leg.id)
-
-
 def generate_mission_combined_pptx(
     mission: Mission,
     route_manager: RouteManager | None = None,
@@ -277,8 +243,9 @@ def generate_mission_combined_pptx(
 
     # For each leg, generate slides using shared builder
     for leg_idx, leg in enumerate(mission.legs):
-        # Load timeline for this leg
-        leg_timeline = load_mission_timeline(leg.id)
+        # Rebuild from the latest leg settings so adjusted departure times and
+        # derived AAR/event windows cannot be served from a stale timeline cache.
+        leg_timeline = _load_export_timeline(mission, leg, route_manager, poi_manager)
         if not leg_timeline:
             logger.warning(
                 f"No timeline found for leg {leg.id}, adding summary slide only"
@@ -603,7 +570,12 @@ def _add_combined_mission_exports_to_zip(
 
         # Combined CSV - stream to temp file
         with tempfile.NamedTemporaryFile(delete=True) as tmp_csv:
-            generate_mission_combined_csv(mission, output_path=tmp_csv.name)
+            generate_mission_combined_csv(
+                mission,
+                output_path=tmp_csv.name,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+            )
             zf.write(tmp_csv.name, "exports/mission/mission-timeline.csv")
             manifest_files["mission_exports"].append(
                 "exports/mission/mission-timeline.csv"
