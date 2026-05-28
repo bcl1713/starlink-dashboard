@@ -128,6 +128,6 @@ def timestamp_for_waypoint(
     if not waypoint:
         return None
     if waypoint.expected_arrival_time:
-        return waypoint.expected_arrival_time
+        return projector.shift_route_timestamp(waypoint.expected_arrival_time)
     projection = projector.project(waypoint.latitude, waypoint.longitude)
     return projection.timestamp

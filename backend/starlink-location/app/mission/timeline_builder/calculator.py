@@ -121,10 +121,27 @@ class RouteTemporalProjector:
         self.route = route
         self.start_time = start_time
         self.end_time = end_time
+        self.original_start_time = self._derive_original_start_time()
         self.duration_seconds = max((end_time - start_time).total_seconds(), 1.0)
         self.calculator = RouteETACalculator(route)
         self.cumulative_distances = self._build_cumulative_distances()
         self.total_distance = max(self.cumulative_distances[-1], 1.0)
+
+    def _derive_original_start_time(self) -> datetime:
+        """Return the unadjusted route start used to calculate time shifts."""
+        candidates: list[datetime] = []
+        if self.route.timing_profile and self.route.timing_profile.departure_time:
+            candidates.append(self.route.timing_profile.departure_time)
+        for point in self.route.points:
+            if point.expected_arrival_time:
+                candidates.append(point.expected_arrival_time)
+        if not candidates:
+            return self.start_time
+        return min(ensure_timezone(candidate) for candidate in candidates)
+
+    def shift_route_timestamp(self, timestamp: datetime) -> datetime:
+        """Shift a route-native timestamp by the projector's departure offset."""
+        return ensure_timezone(timestamp) + (self.start_time - self.original_start_time)
 
     def _build_cumulative_distances(self) -> list[float]:
         distances = [0.0]
