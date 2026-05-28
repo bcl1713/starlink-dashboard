@@ -18,7 +18,6 @@ from app.mission.models import Mission, MissionLeg, MissionLegTimeline
 from app.mission.storage import (
     load_mission_v2,
     load_mission_timeline,
-    save_mission_timeline,
 )
 from app.mission.timeline_service import build_mission_timeline
 from app.mission.exporter import (
@@ -451,9 +450,10 @@ def _load_export_timeline(
 ) -> MissionLegTimeline | None:
     """Return a timeline for export, rebuilding from current leg settings first.
 
-    Persisted timelines are a cache. Rebuilding here ensures package/document
-    exports reflect planner edits such as adjusted departure times even if an
-    older cached timeline still exists on disk.
+    Persisted timelines are a cache, not an export target. Rebuilding here keeps
+    package/document exports aligned with planner edits such as adjusted
+    departure times without turning a read-only package export into another
+    timeline write path. If rebuild fails, fall back to the existing cache.
     """
     if route_manager and leg.route_id:
         try:
@@ -463,7 +463,6 @@ def _load_export_timeline(
                 poi_manager=poi_manager,
                 parent_mission_id=mission.id,
             )
-            save_mission_timeline(leg.id, timeline)
             return timeline
         except Exception as exc:
             logger.warning(

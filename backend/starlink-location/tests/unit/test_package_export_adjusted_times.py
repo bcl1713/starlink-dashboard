@@ -56,7 +56,7 @@ def test_per_leg_exports_rebuild_timeline_before_using_cached_aar_blocks():
             "app.mission.package.__main__.build_mission_timeline",
             return_value=(rebuilt_timeline, MagicMock()),
         ) as mock_build,
-        patch("app.mission.package.__main__.save_mission_timeline") as mock_save,
+        patch("app.mission.storage.save_mission_timeline") as mock_save,
         patch(
             "app.mission.package.__main__.load_mission_timeline",
             return_value=stale_timeline,
@@ -76,7 +76,7 @@ def test_per_leg_exports_rebuild_timeline_before_using_cached_aar_blocks():
         )
 
     mock_build.assert_called_once()
-    mock_save.assert_called_once_with("leg-1", rebuilt_timeline)
+    mock_save.assert_not_called()
     mock_load.assert_not_called()
     assert mock_generate.call_count == 2
     assert all(

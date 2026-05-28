@@ -150,7 +150,9 @@ def test_combined_csv_rebuilds_adjusted_leg_timeline_instead_of_cached_stale_tim
             "app.mission.package.__main__.build_mission_timeline",
             return_value=(adjusted_timeline, MagicMock()),
         ) as mock_build,
-        patch("app.mission.package.__main__.save_mission_timeline"),
+        patch(
+            "app.mission.package.__main__.save_mission_timeline", create=True
+        ) as mock_save,
     ):
         csv_bytes = generate_mission_combined_csv(
             mission,
@@ -161,6 +163,7 @@ def test_combined_csv_rebuilds_adjusted_leg_timeline_instead_of_cached_stale_tim
     assert csv_bytes is not None
     output = csv_bytes.decode("utf-8")
     mock_build.assert_called_once()
+    mock_save.assert_not_called()
     assert "2025-11-05T00:40:00+00:00" in output
     assert "2025-11-05T00:50:00+00:00" in output
     assert "2025-11-05T00:00:00+00:00" not in output
