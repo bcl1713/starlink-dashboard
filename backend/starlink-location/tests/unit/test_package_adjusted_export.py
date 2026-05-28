@@ -248,7 +248,7 @@ def test_adjusted_takeoff_delta_shifts_transition_aar_and_landing_times():
     transition_segments = [
         segment
         for segment in timeline.segments
-        if "X Transition to X-2" in segment.reasons
+        if "X Transition to X-2" in segment.metadata.get("source_reasons", [])
     ]
     assert transition_segments
     assert min(segment.start_time for segment in transition_segments) == (
