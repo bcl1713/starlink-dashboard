@@ -14,8 +14,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import IO
 
-from app.mission.models import Mission
-from app.mission.storage import load_mission_v2, load_mission_timeline
+from app.mission.models import Mission, MissionLeg, MissionLegTimeline
+from app.mission.storage import (
+    load_mission_v2,
+    load_mission_timeline,
+    save_mission_timeline,
+)
+from app.mission.timeline_service import build_mission_timeline
 from app.mission.exporter import (
     generate_timeline_export,
     TimelineExportFormat,
@@ -432,6 +437,40 @@ def _add_pois_to_zip(
         logger.error(f"Failed to add satellite POI data: {e}")
 
 
+def _load_export_timeline(
+    mission: Mission,
+    leg: MissionLeg,
+    route_manager: RouteManager | None,
+    poi_manager: POIManager | None,
+) -> MissionLegTimeline | None:
+    """Return a timeline for export, rebuilding from current leg settings first.
+
+    Persisted timelines are a cache. Rebuilding here ensures package/document
+    exports reflect planner edits such as adjusted departure times even if an
+    older cached timeline still exists on disk.
+    """
+    if route_manager and leg.route_id:
+        try:
+            timeline, _summary = build_mission_timeline(
+                mission=leg,
+                route_manager=route_manager,
+                poi_manager=poi_manager,
+                parent_mission_id=mission.id,
+            )
+            save_mission_timeline(leg.id, timeline)
+            return timeline
+        except Exception as exc:
+            logger.warning(
+                "Failed to rebuild timeline for leg %s during export; "
+                "falling back to cached timeline: %s",
+                leg.id,
+                exc,
+                exc_info=True,
+            )
+
+    return load_mission_timeline(leg.id)
+
+
 def _add_per_leg_exports_to_zip(
     zf: zipfile.ZipFile,
     mission: Mission,
@@ -451,8 +490,9 @@ def _add_per_leg_exports_to_zip(
         map_cache: Optional cache for generated maps (route_id -> bytes)
     """
     for leg in mission.legs:
-        # Load timeline for this specific leg
-        leg_timeline = load_mission_timeline(leg.id)
+        # Rebuild from the latest leg settings so adjusted departure times and
+        # derived AAR/event windows cannot be served from a stale timeline cache.
+        leg_timeline = _load_export_timeline(mission, leg, route_manager, poi_manager)
         if not leg_timeline:
             logger.warning(
                 f"No timeline found for leg {leg.id}, skipping exports for this leg"
