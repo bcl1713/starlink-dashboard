@@ -427,6 +427,42 @@ class TestHierarchicalMissionStorageV2:
         assert loaded.legs[1].name == "Leg 2"
         assert loaded.legs[1].route_id == "route-2"
 
+    def test_load_mission_v2_ignores_scoped_timeline_files(
+        self, sample_mission_with_legs, temp_missions_dir
+    ):
+        """Timeline cache files in legs/ must not be parsed as MissionLegs."""
+        from app.mission.models import MissionLegTimeline
+
+        save_mission_v2(sample_mission_with_legs)
+        save_mission_timeline(
+            "leg-1",
+            MissionLegTimeline(mission_leg_id="leg-1", segments=[]),
+            parent_mission_id="operation-falcon",
+        )
+
+        loaded = load_mission_v2("operation-falcon")
+
+        assert loaded is not None
+        assert [leg.id for leg in loaded.legs] == ["leg-1", "leg-2"]
+
+    def test_load_mission_metadata_v2_ignores_scoped_timeline_files(
+        self, sample_mission_with_legs, temp_missions_dir
+    ):
+        """Metadata loads should count only actual leg JSON files."""
+        from app.mission.models import MissionLegTimeline
+
+        save_mission_v2(sample_mission_with_legs)
+        save_mission_timeline(
+            "leg-1",
+            MissionLegTimeline(mission_leg_id="leg-1", segments=[]),
+            parent_mission_id="operation-falcon",
+        )
+
+        loaded = load_mission_metadata_v2("operation-falcon")
+
+        assert loaded is not None
+        assert [leg.id for leg in loaded.legs] == ["leg-1", "leg-2"]
+
     def test_load_mission_v2_preserves_leg_order(
         self, sample_mission_with_legs, temp_missions_dir
     ):

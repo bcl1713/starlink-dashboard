@@ -86,6 +86,14 @@ def get_mission_leg_file_path(mission_id: str, leg_id: str) -> Path:
     return get_mission_legs_dir(mission_id) / f"{leg_id}.json"
 
 
+def _iter_mission_leg_files(legs_dir: Path):
+    """Yield persisted mission leg JSON files, excluding cached timelines."""
+    for leg_file in sorted(legs_dir.glob("*.json")):
+        if leg_file.name.endswith(TIMELINE_SUFFIX):
+            continue
+        yield leg_file
+
+
 def compute_file_checksum(file_path: Path) -> str:
     """Compute SHA256 checksum of a file."""
     sha256 = hashlib.sha256()
@@ -209,7 +217,7 @@ def load_mission_v2(mission_id: str) -> Optional[Mission]:
     legs = []
 
     if legs_dir.exists():
-        for leg_file in sorted(legs_dir.glob("*.json")):
+        for leg_file in _iter_mission_leg_files(legs_dir):
             with open(leg_file, "r") as f:
                 leg_data = json.load(f)
                 legs.append(MissionLeg(**leg_data))
@@ -250,7 +258,7 @@ def load_mission_metadata_v2(mission_id: str) -> Optional[Mission]:
         leg_stubs = []
 
         if legs_dir.exists():
-            for leg_file in sorted(legs_dir.glob("*.json")):
+            for leg_file in _iter_mission_leg_files(legs_dir):
                 # Extract leg ID from filename (e.g., "leg-1.json" -> "leg-1")
                 leg_id = leg_file.stem
                 # Create minimal leg stub with only required fields
