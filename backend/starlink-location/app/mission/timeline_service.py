@@ -21,6 +21,8 @@ from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,
     derive_mission_window,
     generate_timeline_samples,
+    route_takeoff_delta,
+    route_with_adjusted_departure,
     TIMELINE_SAMPLE_INTERVAL_SECONDS,
 )
 from app.mission.timeline_builder.coverage import analyze_ka_coverage
@@ -81,10 +83,8 @@ def build_mission_timeline(
     if not route:
         raise TimelineComputationError(f"Route {mission.route_id} not loaded")
 
-    # Pass adjusted_departure_time to derive_mission_window if set
-    mission_start, mission_end = derive_mission_window(
-        route, adjusted_departure_time=mission.adjusted_departure_time
-    )
+    route = route_with_adjusted_departure(route, mission.adjusted_departure_time)
+    mission_start, mission_end = derive_mission_window(route)
     projector = RouteTemporalProjector(route, mission_start, mission_end)
 
     resolved_sampler = coverage_sampler or _get_default_coverage_sampler()
@@ -248,4 +248,6 @@ __all__ = [
     "TimelineComputationError",
     "TimelineSummary",
     "RouteTemporalProjector",
+    "route_takeoff_delta",
+    "route_with_adjusted_departure",
 ]

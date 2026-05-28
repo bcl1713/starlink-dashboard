@@ -201,12 +201,18 @@ def add_route_map_slide(
 
     # Generate map image (with caching support)
     route_id = mission.route_id if mission else None
+    adjusted_departure = getattr(mission, "adjusted_departure_time", None)
+    map_cache_key = (
+        f"{route_id}|adjusted={adjusted_departure.isoformat()}"
+        if route_id and adjusted_departure
+        else route_id
+    )
     map_image_bytes = None
 
     # Check cache first
-    if route_id and map_cache is not None and route_id in map_cache:
-        map_image_bytes = map_cache[route_id]
-        logger.info(f"Cache hit for route {route_id}")
+    if map_cache_key and map_cache is not None and map_cache_key in map_cache:
+        map_image_bytes = map_cache[map_cache_key]
+        logger.info(f"Cache hit for route map {map_cache_key}")
     else:
         # Generate map
         try:
@@ -220,8 +226,8 @@ def add_route_map_slide(
             logger.info(f"Cache miss for route {route_id}, generated map")
 
             # Store in cache if available
-            if route_id and map_cache is not None:
-                map_cache[route_id] = map_image_bytes
+            if map_cache_key and map_cache is not None:
+                map_cache[map_cache_key] = map_image_bytes
         except Exception as e:
             logger.error("Failed to generate map: %s", e, exc_info=True)
 

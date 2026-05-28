@@ -44,6 +44,65 @@ class TimelineComputationError(RuntimeError):
     """Raised when mission timeline generation fails."""
 
 
+def route_takeoff_delta(
+    route: ParsedRoute, adjusted_departure_time: datetime | None = None
+) -> timedelta | None:
+    """Return the uniform route-time delta for an adjusted takeoff.
+
+    The route KML/timing profile is the source timeline. When planners adjust
+    takeoff, every derived event must move by the same delta: route points,
+    AAR waypoint windows, satellite transition projections, and landing.
+    """
+    if adjusted_departure_time is None or not route.timing_profile:
+        return None
+    if not route.timing_profile.departure_time:
+        return None
+
+    original_start = ensure_timezone(route.timing_profile.departure_time)
+    adjusted_start = ensure_timezone(adjusted_departure_time)
+    return adjusted_start - original_start
+
+
+def route_with_adjusted_departure(
+    route: ParsedRoute, adjusted_departure_time: datetime | None = None
+) -> ParsedRoute:
+    """Return a route copy with all embedded timeline timestamps shifted.
+
+    The input route is often cached by RouteManager, so this function never
+    mutates it in place. Only route-timeline fields are shifted; observed actual
+    departure/arrival timestamps remain untouched.
+    """
+    delta = route_takeoff_delta(route, adjusted_departure_time)
+    if delta is None or delta.total_seconds() == 0:
+        return route
+
+    shifted = route.model_copy(deep=True)
+
+    if shifted.timing_profile:
+        if shifted.timing_profile.departure_time:
+            shifted.timing_profile.departure_time = (
+                ensure_timezone(shifted.timing_profile.departure_time) + delta
+            )
+        if shifted.timing_profile.arrival_time:
+            shifted.timing_profile.arrival_time = (
+                ensure_timezone(shifted.timing_profile.arrival_time) + delta
+            )
+
+    for point in shifted.points:
+        if point.expected_arrival_time:
+            point.expected_arrival_time = (
+                ensure_timezone(point.expected_arrival_time) + delta
+            )
+
+    for waypoint in shifted.waypoints:
+        if waypoint.expected_arrival_time:
+            waypoint.expected_arrival_time = (
+                ensure_timezone(waypoint.expected_arrival_time) + delta
+            )
+
+    return shifted
+
+
 @dataclass
 class RouteProjection:
     """Projection of an arbitrary coordinate onto the route timeline."""
@@ -62,10 +121,27 @@ class RouteTemporalProjector:
         self.route = route
         self.start_time = start_time
         self.end_time = end_time
+        self.original_start_time = self._derive_original_start_time()
         self.duration_seconds = max((end_time - start_time).total_seconds(), 1.0)
         self.calculator = RouteETACalculator(route)
         self.cumulative_distances = self._build_cumulative_distances()
         self.total_distance = max(self.cumulative_distances[-1], 1.0)
+
+    def _derive_original_start_time(self) -> datetime:
+        """Return the unadjusted route start used to calculate time shifts."""
+        candidates: list[datetime] = []
+        if self.route.timing_profile and self.route.timing_profile.departure_time:
+            candidates.append(self.route.timing_profile.departure_time)
+        for point in self.route.points:
+            if point.expected_arrival_time:
+                candidates.append(point.expected_arrival_time)
+        if not candidates:
+            return self.start_time
+        return min(ensure_timezone(candidate) for candidate in candidates)
+
+    def shift_route_timestamp(self, timestamp: datetime) -> datetime:
+        """Shift a route-native timestamp by the projector's departure offset."""
+        return ensure_timezone(timestamp) + (self.start_time - self.original_start_time)
 
     def _build_cumulative_distances(self) -> list[float]:
         distances = [0.0]
@@ -177,6 +253,8 @@ def derive_mission_window(
     Raises:
         TimelineComputationError: If route timing data is missing or invalid
     """
+    route = route_with_adjusted_departure(route, adjusted_departure_time)
+
     start_candidates: list[datetime] = []
     end_candidates: list[datetime] = []
 
@@ -206,27 +284,9 @@ def derive_mission_window(
     original_start = ensure_timezone(original_start)
     original_end = ensure_timezone(original_end)
 
-    # Apply time adjustment if provided
-    if adjusted_departure_time is not None:
-        # Ensure adjusted time is also timezone-aware
-        adjusted_departure_time = ensure_timezone(adjusted_departure_time)
-        offset_seconds = (adjusted_departure_time - original_start).total_seconds()
-        offset = timedelta(seconds=offset_seconds)
-        mission_start = original_start + offset
-        mission_end = original_end + offset
-        logger.info(
-            f"derive_mission_window: adjusted time provided. "
-            f"original_start={original_start}, "
-            f"adjusted_departure_time={adjusted_departure_time}, "
-            f"offset={offset_seconds}s, "
-            f"mission_start={mission_start}"
-        )
-    else:
-        mission_start = original_start
-        mission_end = original_end
-        logger.debug(
-            f"derive_mission_window: no adjustment. " f"mission_start={mission_start}"
-        )
+    mission_start = original_start
+    mission_end = original_end
+    logger.debug(f"derive_mission_window: mission_start={mission_start}")
 
     return mission_start, mission_end
 

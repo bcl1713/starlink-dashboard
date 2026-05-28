@@ -15,6 +15,8 @@ from app.mission.timeline_builder.calculator import (
     RouteProjection,
     derive_mission_window,
     generate_timeline_samples,
+    route_takeoff_delta,
+    route_with_adjusted_departure,
     TIMELINE_SAMPLE_INTERVAL_SECONDS,
 )
 from app.mission.timeline_builder.coverage import (
@@ -63,6 +65,8 @@ __all__ = [
     "RouteProjection",
     "derive_mission_window",
     "generate_timeline_samples",
+    "route_takeoff_delta",
+    "route_with_adjusted_departure",
     "TIMELINE_SAMPLE_INTERVAL_SECONDS",
     # Coverage
     "RouteSample",

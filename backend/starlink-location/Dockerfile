@@ -17,22 +17,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python dependencies from builder
-COPY --from=builder /root/.local /home/appuser/.local
+# Create non-root user for security before copying dependencies into its home.
+# COPY --chown avoids a slow recursive chown over the installed Python package tree.
+RUN useradd -m -u 1000 appuser
 
-# Copy application code and configuration
-COPY main.py .
-COPY config.yaml .
-COPY app/ ./app/
-COPY tests/ ./tests/
+# Copy Python dependencies from builder with final ownership already set
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 
-# Create non-root user for security
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+# Copy application code and configuration with final ownership already set
+COPY --chown=appuser:appuser main.py .
+COPY --chown=appuser:appuser config.yaml .
+COPY --chown=appuser:appuser app/ ./app/
+COPY --chown=appuser:appuser tests/ ./tests/
 
-# Create data directories with proper permissions
+# Create data/cache directories with proper permissions without walking the dependency tree
 RUN mkdir -p /data/routes /data/sim_routes /home/appuser/.local/share/cartopy /home/appuser/.config/matplotlib /home/appuser/.cache/matplotlib && \
-    chown -R appuser:appuser /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache && \
-    chmod -R 755 /data /home/appuser/.local /home/appuser/.config /home/appuser/.cache
+    chown appuser:appuser /data /data/routes /data/sim_routes /home/appuser/.local/share/cartopy /home/appuser/.config /home/appuser/.config/matplotlib /home/appuser/.cache /home/appuser/.cache/matplotlib && \
+    chmod 755 /data /data/routes /data/sim_routes /home/appuser/.local /home/appuser/.local/share /home/appuser/.local/share/cartopy /home/appuser/.config /home/appuser/.config/matplotlib /home/appuser/.cache /home/appuser/.cache/matplotlib
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["entrypoint.sh"]

@@ -66,6 +66,7 @@ from app.mission.exporter.pptx_styling import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.mission.timeline_builder.calculator import route_with_adjusted_departure
 
 logger = logging.getLogger(__name__)
 
@@ -436,6 +437,10 @@ def _generate_route_map(
         logger.error(f"Available routes: {list(available_routes.keys())}")
         logger.error(f"Mission: {mission.id}, Leg: {mission.name}")
         return _base_map_canvas()
+
+    route = route_with_adjusted_departure(
+        route, getattr(mission, "adjusted_departure_time", None)
+    )
 
     if not route.points:
         logger.warning(
