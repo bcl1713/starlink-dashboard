@@ -512,7 +512,7 @@ def _add_timeline_table(
                     is_sof = True
 
                 # Override Status text to "SOF" if it's a safety window
-                if is_sof and val_lower in ("available", "nominal", "warning"):
+                if is_sof and val_lower in ("available", "nominal", "sof"):
                     cell.text = "SOF"
                     # Re-apply font size since setting text resets it
                     for paragraph in cell.text_frame.paragraphs:
@@ -520,12 +520,19 @@ def _add_timeline_table(
                         paragraph.alignment = PP_ALIGN.LEFT
 
                 # Apply status badge colors
-                if is_critical_row and not is_sof:
+                if is_critical_row or val_lower == "critical":
                     # Critical status
                     cell.fill.solid()
                     cell.fill.fore_color.rgb = STATUS_CRITICAL
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                        paragraph.font.bold = True
+                elif val_lower in ("degraded", "warning"):
+                    # Degraded status takes priority over SOF coloring
+                    cell.fill.solid()
+                    cell.fill.fore_color.rgb = STATUS_DEGRADED
+                    for paragraph in cell.text_frame.paragraphs:
+                        paragraph.font.color.rgb = TEXT_BLACK
                         paragraph.font.bold = True
                 elif is_sof:
                     # Safety of Flight
@@ -533,13 +540,6 @@ def _add_timeline_table(
                     cell.fill.fore_color.rgb = STATUS_SOF
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.color.rgb = RGBColor(255, 255, 255)
-                        paragraph.font.bold = True
-                elif val_lower in ("degraded", "warning"):
-                    # Degraded status
-                    cell.fill.solid()
-                    cell.fill.fore_color.rgb = STATUS_DEGRADED
-                    for paragraph in cell.text_frame.paragraphs:
-                        paragraph.font.color.rgb = TEXT_BLACK
                         paragraph.font.bold = True
                 elif val_lower in ("nominal", "available"):
                     # Nominal status

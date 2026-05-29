@@ -8,12 +8,14 @@ interface TimelineTableProps {
 
 const STATUS_COLORS: Record<string, string> = {
   nominal: 'bg-green-100 text-green-800',
+  sof: 'bg-blue-100 text-blue-800',
   degraded: 'bg-yellow-200 text-black',
   critical: 'bg-red-100 text-red-800',
 };
 
 const STATUS_BADGE_COLORS: Record<string, string> = {
   nominal: 'bg-green-500',
+  sof: 'bg-blue-500',
   degraded: 'bg-yellow-500',
   critical: 'bg-red-500',
 };

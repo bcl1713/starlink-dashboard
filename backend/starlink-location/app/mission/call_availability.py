@@ -52,6 +52,13 @@ _STATE_PRIORITY = {
     TransportState.OFFLINE: 2,
 }
 
+_STATUS_PRIORITY = {
+    TimelineStatus.NOMINAL: 0,
+    TimelineStatus.SOF: 1,
+    TimelineStatus.DEGRADED: 2,
+    TimelineStatus.CRITICAL: 3,
+}
+
 _REASON_LABELS = {
     "outage": "system outage",
     "aar": "AAR window",
@@ -160,6 +167,10 @@ def _decide_availability(
     notes = tuple(
         _unique(note for segment in segments for note in _segment_notes(segment))
     )
+    source_status = max(
+        (segment.status for segment in segments),
+        key=lambda status: _STATUS_PRIORITY.get(status, 0),
+    )
 
     impacted = tuple(
         transport
@@ -185,20 +196,18 @@ def _decide_availability(
         status = TimelineStatus.DEGRADED
         posture = "Degraded"
         primary = _REASON_LABELS["x_aar"]
-    elif impacted or any(
-        segment.status != TimelineStatus.NOMINAL for segment in segments
-    ):
-        status = (
-            TimelineStatus.DEGRADED if len(impacted) <= 1 else TimelineStatus.CRITICAL
-        )
+    elif impacted or source_status in (TimelineStatus.DEGRADED, TimelineStatus.CRITICAL):
+        status = TimelineStatus.CRITICAL if (
+            len(impacted) > 1 or source_status == TimelineStatus.CRITICAL
+        ) else TimelineStatus.DEGRADED
         posture = "Degraded" if status == TimelineStatus.DEGRADED else "Critical"
         primary = _primary_activity_reason(source_reasons)
     elif sof_reason := _primary_sof_reason(source_reasons):
-        status = TimelineStatus.DEGRADED
+        status = TimelineStatus.SOF
         posture = "Avoid calls"
         primary = sof_reason
     elif in_sof:
-        status = TimelineStatus.NOMINAL
+        status = TimelineStatus.SOF
         posture = "Safety-of-flight advised"
         primary = _REASON_LABELS["aar"]
     else:

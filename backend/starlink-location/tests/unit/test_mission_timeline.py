@@ -247,7 +247,7 @@ def test_call_availability_aar_advisory_carves_hole_without_degrading():
         "Safety-of-flight advised",
         "Nominal calls",
     ]
-    assert timeline.segments[1].status == TimelineStatus.NOMINAL
+    assert timeline.segments[1].status == TimelineStatus.SOF
     assert timeline.segments[1].metadata["primary_reason"] == "AAR window"
     assert timeline.segments[1].reasons == ["Safety-of-flight advised — AAR window"]
 
@@ -405,14 +405,14 @@ def test_call_availability_takeoff_landing_sof_periods_are_distinct():
             _segment(
                 "seg-takeoff",
                 0,
-                10,
+                15,
                 TimelineStatus.NOMINAL,
                 reasons=["Safety-of-Flight (takeoff)"],
             ),
-            _segment("seg-cruise", 10, 50, TimelineStatus.NOMINAL),
+            _segment("seg-cruise", 15, 45, TimelineStatus.NOMINAL),
             _segment(
                 "seg-landing",
-                50,
+                45,
                 60,
                 TimelineStatus.NOMINAL,
                 reasons=["Safety-of-Flight (landing)"],
@@ -428,10 +428,77 @@ def test_call_availability_takeoff_landing_sof_periods_are_distinct():
         "Avoid calls — Safety-of-Flight (landing)",
     ]
     assert [s.status for s in timeline.segments] == [
-        TimelineStatus.DEGRADED,
+        TimelineStatus.SOF,
         TimelineStatus.NOMINAL,
-        TimelineStatus.DEGRADED,
+        TimelineStatus.SOF,
     ]
+
+
+def test_call_availability_priority_degraded_over_sof():
+    degraded_sof = _segment(
+        "seg-degraded-sof",
+        0,
+        15,
+        TimelineStatus.NOMINAL,
+        reasons=["Safety-of-Flight (takeoff)", "X transition to X-2"],
+    )
+    degraded_sof.x_state = TransportState.DEGRADED
+    degraded_sof.impacted_transports = [Transport.X]
+    timeline = _timeline_from_segments([degraded_sof])
+
+    normalize_call_availability_timeline(timeline)
+
+    assert timeline.segments[0].status == TimelineStatus.DEGRADED
+    assert timeline.segments[0].metadata["call_posture"] == "Degraded"
+    assert timeline.segments[0].metadata["primary_reason"] == (
+        "Satellite swap: X transition to X-2"
+    )
+
+
+def test_call_availability_priority_critical_over_sof():
+    critical_sof = _segment(
+        "seg-critical-sof",
+        45,
+        60,
+        TimelineStatus.NOMINAL,
+        reasons=["Safety-of-Flight (landing)", "Ka outage", "Ku outage"],
+    )
+    critical_sof.ka_state = TransportState.OFFLINE
+    critical_sof.ku_state = TransportState.OFFLINE
+    critical_sof.impacted_transports = [Transport.KA, Transport.KU]
+    timeline = _timeline_from_segments([critical_sof])
+
+    normalize_call_availability_timeline(timeline)
+
+    assert timeline.segments[0].status == TimelineStatus.CRITICAL
+    assert timeline.segments[0].metadata["call_posture"] == "Unavailable"
+    assert timeline.segments[0].metadata["primary_reason"] == "system outage"
+
+
+def test_call_availability_source_status_priority_order_is_explicit():
+    timeline = _timeline_from_segments(
+        [
+            _segment("seg-sof", 0, 10, TimelineStatus.SOF),
+            _segment("seg-degraded", 0, 10, TimelineStatus.DEGRADED),
+        ]
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    assert timeline.segments[0].status == TimelineStatus.DEGRADED
+
+    timeline = _timeline_from_segments(
+        [
+            _segment("seg-nominal", 0, 10, TimelineStatus.NOMINAL),
+            _segment("seg-sof", 0, 10, TimelineStatus.SOF),
+            _segment("seg-degraded", 0, 10, TimelineStatus.DEGRADED),
+            _segment("seg-critical", 0, 10, TimelineStatus.CRITICAL),
+        ]
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    assert timeline.segments[0].status == TimelineStatus.CRITICAL
 
 
 def test_call_availability_merges_adjacent_only_when_labels_match():

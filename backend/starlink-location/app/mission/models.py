@@ -45,6 +45,7 @@ class TimelineStatus(str, Enum):
     """Overall communication status during a timeline segment."""
 
     NOMINAL = "nominal"  # All transports available
+    SOF = "sof"  # Safety-of-flight advisory, no transport degrade
     DEGRADED = "degraded"  # One transport unavailable
     CRITICAL = "critical"  # Two or more transports unavailable
 

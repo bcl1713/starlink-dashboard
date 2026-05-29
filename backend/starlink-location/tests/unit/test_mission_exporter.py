@@ -194,6 +194,7 @@ class TestMissionTimelineExporters:
 
         df = mission_exporter._segment_rows(timeline, mission)
         assert "AAR" not in df["Segment #"].values
+        assert list(df["Status"]) == ["SOF", "NOMINAL"]
         assert list(df["Call Posture"]) == [
             "Safety-of-flight advised",
             "Nominal calls",

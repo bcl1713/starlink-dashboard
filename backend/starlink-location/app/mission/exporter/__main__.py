@@ -271,10 +271,10 @@ def _get_detailed_segment_statuses(
 
             if raw_status == "critical":
                 status = "critical"
-            elif raw_status == "degraded" or is_sof:
+            elif raw_status in ("degraded", "warning"):
                 status = "degraded"
-            elif raw_status == "warning":
-                status = "degraded"
+            elif raw_status == "sof" or is_sof:
+                status = "sof"
             else:
                 status = "nominal"
         else:
