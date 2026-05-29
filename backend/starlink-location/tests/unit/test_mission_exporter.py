@@ -133,7 +133,9 @@ class TestMissionTimelineExporters:
         assert artifact.extension == "csv"
         assert artifact.media_type == "text/csv"
 
-    def test_x_ku_conflict_segments_render_as_warning(self, mission):
+    def test_x_ku_conflict_segments_render_as_transport_concurrency_advisory(
+        self, mission
+    ):
         start = datetime(2025, 11, 5, 2, 0, tzinfo=timezone.utc)
         warning_segment = TimelineSegment(
             id="seg-warning",
@@ -156,11 +158,16 @@ class TestMissionTimelineExporters:
 
         df = mission_exporter._segment_rows(timeline, mission)
         row = df.iloc[0]
-        assert row["Status"] == "DEGRADED"
-        assert row["Call Posture"] == "Degraded"
+        assert row["Status"] == "SOF"
+        assert row["Call Posture"] == "Transport concurrency advisory"
         assert row["Primary Reason"] == "X Band / Ku conflict"
-        assert row["X-Band"] == "DEGRADED"
-        assert row["Systems Affected"] == "X"
+        assert row["X-Band"] == "AVAILABLE"
+        assert row["StarShield"] == "AVAILABLE"
+        assert row["Systems Affected"] == ""
+        assert row["Reasons"] == (
+            "Transport concurrency advisory: X Band / Ku conflict — choose one "
+            "transport; PACE preference Starlink > Comm Ka > X-Band"
+        )
 
     def test_aar_block_rows_normalize_primary_table_without_overlap(self, mission):
         start = datetime(2025, 11, 5, 0, 0, tzinfo=timezone.utc)

@@ -290,7 +290,7 @@ def test_call_availability_priority_aar_advisory_not_outage():
     ]
 
 
-def test_call_availability_ku_x_conflict_is_degraded_block():
+def test_call_availability_ku_x_conflict_is_advisory_not_degraded():
     conflict = _segment(
         "seg-conflict",
         15,
@@ -310,13 +310,40 @@ def test_call_availability_ku_x_conflict_is_degraded_block():
 
     normalize_call_availability_timeline(timeline)
 
-    assert timeline.segments[1].metadata["call_posture"] == "Degraded"
-    assert timeline.segments[1].metadata["primary_reason"] == "X Band / Ku conflict"
-    assert (
-        timeline.segments[1].metadata["availability_label"]
-        == "Degraded — X Band / Ku conflict"
+    advisory = timeline.segments[1]
+    assert advisory.status == TimelineStatus.SOF
+    assert advisory.x_state == TransportState.AVAILABLE
+    assert advisory.ku_state == TransportState.AVAILABLE
+    assert advisory.impacted_transports == []
+    assert advisory.metadata["call_posture"] == "Transport concurrency advisory"
+    assert advisory.metadata["primary_reason"] == "X Band / Ku conflict"
+    assert advisory.metadata["availability_label"] == (
+        "Transport concurrency advisory: X Band / Ku conflict — choose one "
+        "transport; PACE preference Starlink > Comm Ka > X-Band"
     )
-    assert timeline.segments[1].impacted_transports == [Transport.X]
+
+
+def test_call_availability_ku_x_conflict_preserves_separate_degradation():
+    conflict_with_outage = _segment(
+        "seg-conflict-outage",
+        15,
+        25,
+        TimelineStatus.DEGRADED,
+        reasons=["X-Ku Conflict az=180° el=20°", "Ka coverage gap"],
+    )
+    conflict_with_outage.x_state = TransportState.DEGRADED
+    conflict_with_outage.ka_state = TransportState.DEGRADED
+    conflict_with_outage.impacted_transports = [Transport.X, Transport.KA]
+    timeline = _timeline_from_segments([conflict_with_outage])
+
+    normalize_call_availability_timeline(timeline)
+
+    assert timeline.segments[0].status == TimelineStatus.DEGRADED
+    assert timeline.segments[0].metadata["call_posture"] == "Degraded"
+    assert timeline.segments[0].metadata["primary_reason"] == "Ka coverage gap"
+    assert timeline.segments[0].impacted_transports == [Transport.KA]
+    assert timeline.segments[0].x_state == TransportState.AVAILABLE
+    assert timeline.segments[0].ka_state == TransportState.DEGRADED
 
 
 def test_call_availability_satellite_swap_reason_is_specific():

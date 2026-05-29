@@ -68,6 +68,11 @@ _REASON_LABELS = {
     "nominal": "nominal window",
 }
 
+_KU_X_ADVISORY_LABEL = (
+    "Transport concurrency advisory: X Band / Ku conflict — choose one "
+    "transport; PACE preference Starlink > Comm Ka > X-Band"
+)
+
 
 def normalize_call_availability_timeline(timeline: MissionLegTimeline) -> None:
     """Replace timeline segments with merged, non-overlapping availability rows.
@@ -172,6 +177,23 @@ def _decide_availability(
         key=lambda status: _STATUS_PRIORITY.get(status, 0),
     )
 
+    has_ku_x_conflict = _has_ku_x_conflict(source_reasons)
+    if (
+        has_ku_x_conflict
+        and x_state == TransportState.DEGRADED
+        and not _has_actual_x_degradation(source_reasons, in_sof)
+    ):
+        x_state = TransportState.AVAILABLE
+
+    if (
+        has_ku_x_conflict
+        and source_status == TimelineStatus.DEGRADED
+        and all(
+            state == TransportState.AVAILABLE for state in (x_state, ka_state, ku_state)
+        )
+    ):
+        source_status = TimelineStatus.NOMINAL
+
     impacted = tuple(
         transport
         for transport, state in (
@@ -188,9 +210,9 @@ def _decide_availability(
         )
         posture = "Unavailable"
         primary = _primary_outage_reason(source_reasons)
-    elif _has_ku_x_conflict(source_reasons):
-        status = TimelineStatus.DEGRADED
-        posture = "Degraded"
+    elif has_ku_x_conflict and not impacted:
+        status = TimelineStatus.SOF
+        posture = "Transport concurrency advisory"
         primary = _REASON_LABELS["ku_x"]
     elif _has_x_aar_conflict(source_reasons, in_sof, impacted, x_state):
         status = TimelineStatus.DEGRADED
@@ -201,7 +223,7 @@ def _decide_availability(
             len(impacted) > 1 or source_status == TimelineStatus.CRITICAL
         ) else TimelineStatus.DEGRADED
         posture = "Degraded" if status == TimelineStatus.DEGRADED else "Critical"
-        primary = _primary_activity_reason(source_reasons)
+        primary = _primary_activity_reason(source_reasons, skip_ku_x=has_ku_x_conflict)
     elif sof_reason := _primary_sof_reason(source_reasons):
         status = TimelineStatus.SOF
         posture = "Avoid calls"
@@ -215,7 +237,9 @@ def _decide_availability(
         posture = "Nominal calls"
         primary = _REASON_LABELS["nominal"]
 
-    if posture == "Nominal calls":
+    if posture == "Transport concurrency advisory":
+        label = _KU_X_ADVISORY_LABEL
+    elif posture == "Nominal calls":
         label = posture
     elif posture == "Degraded" and primary.lower().endswith("activity conflict"):
         label = primary
@@ -340,11 +364,16 @@ def _primary_sof_reason(reasons: tuple[str, ...]) -> str | None:
     return None
 
 
-def _primary_activity_reason(reasons: tuple[str, ...]) -> str:
-    for reason in reasons:
+def _primary_activity_reason(
+    reasons: tuple[str, ...], *, skip_ku_x: bool = False
+) -> str:
+    filtered_reasons = tuple(
+        reason for reason in reasons if not (skip_ku_x and _has_ku_x_conflict((reason,)))
+    )
+    for reason in filtered_reasons:
         if _is_satellite_swap_reason(reason):
             return f"Satellite swap: {reason}"
-    for reason in reasons:
+    for reason in filtered_reasons:
         if reason and reason.strip():
             return reason
     return _REASON_LABELS["activity"]
@@ -374,6 +403,23 @@ def _has_ku_x_conflict(reasons: tuple[str, ...]) -> bool:
         if "ku/x" in normalized or (
             "ku" in normalized and "x" in normalized and "conflict" in normalized
         ):
+            return True
+    return False
+
+
+def _has_actual_x_degradation(reasons: tuple[str, ...], in_aar: bool) -> bool:
+    for reason in reasons:
+        if _has_ku_x_conflict((reason,)):
+            continue
+        if _is_satellite_swap_reason(reason):
+            return True
+        normalized = reason.lower().replace("-", " ").replace("/", " ")
+        if any(
+            marker in normalized
+            for marker in ("x band", "xband", "x transition", "x azimuth")
+        ):
+            return True
+        if in_aar and "x" in normalized and "aar" in normalized:
             return True
     return False
 
