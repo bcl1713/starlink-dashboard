@@ -222,7 +222,7 @@ def _segment(seg_id, start_offset, end_offset, status, reasons=None, metadata=No
     )
 
 
-def test_call_availability_sof_carves_hole_out_of_nominal_window():
+def test_call_availability_aar_advisory_carves_hole_without_degrading():
     timeline = _timeline_from_segments(
         [_segment("seg-1", 0, 60, TimelineStatus.NOMINAL)],
         statistics={
@@ -244,14 +244,15 @@ def test_call_availability_sof_carves_hole_out_of_nominal_window():
     ]
     assert [s.metadata["call_posture"] for s in timeline.segments] == [
         "Nominal calls",
-        "Avoid calls",
+        "Safety-of-flight advised",
         "Nominal calls",
     ]
-    assert timeline.segments[1].metadata["primary_reason"] == "SOF AAR"
-    assert timeline.segments[1].reasons == ["Avoid calls — SOF AAR"]
+    assert timeline.segments[1].status == TimelineStatus.NOMINAL
+    assert timeline.segments[1].metadata["primary_reason"] == "AAR window"
+    assert timeline.segments[1].reasons == ["Safety-of-flight advised — AAR window"]
 
 
-def test_call_availability_priority_sof_wins_over_nominal_but_not_outage():
+def test_call_availability_priority_aar_advisory_not_outage():
     outage = _segment(
         "seg-outage",
         10,
@@ -282,9 +283,9 @@ def test_call_availability_priority_sof_wins_over_nominal_but_not_outage():
     labels = [s.metadata["availability_label"] for s in timeline.segments]
     assert labels == [
         "Nominal calls",
-        "Avoid calls — SOF AAR",
+        "Safety-of-flight advised — AAR window",
         "Unavailable — system outage",
-        "Avoid calls — SOF AAR",
+        "Safety-of-flight advised — AAR window",
         "Nominal calls",
     ]
 
@@ -310,12 +311,127 @@ def test_call_availability_ku_x_conflict_is_degraded_block():
     normalize_call_availability_timeline(timeline)
 
     assert timeline.segments[1].metadata["call_posture"] == "Degraded"
-    assert timeline.segments[1].metadata["primary_reason"] == "Ku/X conflict"
+    assert timeline.segments[1].metadata["primary_reason"] == "X Band / Ku conflict"
     assert (
         timeline.segments[1].metadata["availability_label"]
-        == "Degraded — Ku/X conflict"
+        == "Degraded — X Band / Ku conflict"
     )
     assert timeline.segments[1].impacted_transports == [Transport.X]
+
+
+def test_call_availability_satellite_swap_reason_is_specific():
+    swap = _segment(
+        "seg-swap",
+        10,
+        20,
+        TimelineStatus.DEGRADED,
+        reasons=["X Transition to X-2"],
+    )
+    swap.x_state = TransportState.DEGRADED
+    swap.impacted_transports = [Transport.X]
+    timeline = _timeline_from_segments(
+        [
+            _segment("seg-a", 0, 10, TimelineStatus.NOMINAL),
+            swap,
+            _segment("seg-b", 20, 30, TimelineStatus.NOMINAL),
+        ]
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    assert timeline.segments[1].metadata["call_posture"] == "Degraded"
+    assert timeline.segments[1].metadata["primary_reason"] == (
+        "Satellite swap: X Transition to X-2"
+    )
+
+
+def test_call_availability_x_aar_conflict_is_specific_degrade():
+    conflict = _segment(
+        "seg-conflict",
+        10,
+        20,
+        TimelineStatus.DEGRADED,
+        reasons=["X-Band azimuth conflict during AAR window"],
+    )
+    conflict.x_state = TransportState.DEGRADED
+    conflict.impacted_transports = [Transport.X]
+    timeline = _timeline_from_segments(
+        [
+            _segment("seg-a", 0, 10, TimelineStatus.NOMINAL),
+            conflict,
+            _segment("seg-b", 20, 30, TimelineStatus.NOMINAL),
+        ],
+        statistics={
+            "_aar_blocks": [
+                {
+                    "start": (BASE + timedelta(minutes=5)).isoformat(),
+                    "end": (BASE + timedelta(minutes=25)).isoformat(),
+                }
+            ]
+        },
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    degraded = [
+        segment
+        for segment in timeline.segments
+        if segment.metadata["primary_reason"] == "X Band / AAR conflict"
+    ]
+    assert degraded
+    assert degraded[0].metadata["call_posture"] == "Degraded"
+
+
+
+def test_call_availability_aar_reason_with_unrelated_x_is_not_x_aar_conflict():
+    aar_exercise = _segment(
+        "seg-aar-exercise",
+        10,
+        20,
+        TimelineStatus.NOMINAL,
+        reasons=["AAR exercise window"],
+    )
+    timeline = _timeline_from_segments([aar_exercise])
+
+    normalize_call_availability_timeline(timeline)
+
+    assert timeline.segments[0].metadata["call_posture"] == "Nominal calls"
+    assert timeline.segments[0].metadata["primary_reason"] == "nominal window"
+
+
+def test_call_availability_takeoff_landing_sof_periods_are_distinct():
+    timeline = _timeline_from_segments(
+        [
+            _segment(
+                "seg-takeoff",
+                0,
+                10,
+                TimelineStatus.NOMINAL,
+                reasons=["Safety-of-Flight (takeoff)"],
+            ),
+            _segment("seg-cruise", 10, 50, TimelineStatus.NOMINAL),
+            _segment(
+                "seg-landing",
+                50,
+                60,
+                TimelineStatus.NOMINAL,
+                reasons=["Safety-of-Flight (landing)"],
+            ),
+        ]
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    assert [s.metadata["availability_label"] for s in timeline.segments] == [
+        "Avoid calls — Safety-of-Flight (takeoff)",
+        "Nominal calls",
+        "Avoid calls — Safety-of-Flight (landing)",
+    ]
+    assert [s.status for s in timeline.segments] == [
+        TimelineStatus.DEGRADED,
+        TimelineStatus.NOMINAL,
+        TimelineStatus.DEGRADED,
+    ]
 
 
 def test_call_availability_merges_adjacent_only_when_labels_match():
@@ -373,8 +489,8 @@ def test_call_availability_rows_are_sorted_and_non_overlapping():
         assert prev.end_time <= nxt.start_time
     assert [s.metadata["availability_label"] for s in timeline.segments] == [
         "Nominal calls",
-        "Activity conflict",
-        "Avoid calls — SOF AAR",
-        "Activity conflict",
+        "Other activity conflict",
+        "Degraded — X Band / AAR conflict",
+        "Other activity conflict",
         "Nominal calls",
     ]

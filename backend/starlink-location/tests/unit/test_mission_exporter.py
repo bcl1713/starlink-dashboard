@@ -158,7 +158,7 @@ class TestMissionTimelineExporters:
         row = df.iloc[0]
         assert row["Status"] == "DEGRADED"
         assert row["Call Posture"] == "Degraded"
-        assert row["Primary Reason"] == "Ku/X conflict"
+        assert row["Primary Reason"] == "X Band / Ku conflict"
         assert row["X-Band"] == "DEGRADED"
         assert row["Systems Affected"] == "X"
 
@@ -194,7 +194,13 @@ class TestMissionTimelineExporters:
 
         df = mission_exporter._segment_rows(timeline, mission)
         assert "AAR" not in df["Segment #"].values
-        assert list(df["Call Posture"]) == ["Avoid calls", "Nominal calls"]
-        assert list(df["Primary Reason"]) == ["SOF AAR", "nominal window"]
-        assert list(df["Reasons"]) == ["Avoid calls — SOF AAR", "Nominal calls"]
+        assert list(df["Call Posture"]) == [
+            "Safety-of-flight advised",
+            "Nominal calls",
+        ]
+        assert list(df["Primary Reason"]) == ["AAR window", "nominal window"]
+        assert list(df["Reasons"]) == [
+            "Safety-of-flight advised — AAR window",
+            "Nominal calls",
+        ]
         assert df.iloc[0]["Systems Affected"] == ""

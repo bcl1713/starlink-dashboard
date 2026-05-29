@@ -10,7 +10,7 @@ interface ColorCodedRouteProps {
 
 const STATUS_COLORS: Record<string, string> = {
   nominal: '#2ecc71', // Green
-  degraded: '#f1c40f', // Yellow
+  degraded: '#ffff00', // Yellow
   critical: '#e74c3c', // Red
 };
 

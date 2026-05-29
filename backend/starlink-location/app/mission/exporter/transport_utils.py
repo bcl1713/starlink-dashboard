@@ -32,7 +32,7 @@ STATE_COLUMNS = [
 # Using standard traffic light colors for clear status indication
 STATUS_COLORS = {
     "nominal": "#2ecc71",  # Green
-    "degraded": "#f1c40f",  # Yellow/Orange
+    "degraded": "#ffff00",  # Yellow
     "critical": "#e74c3c",  # Red
     "unknown": "#95a5a6",  # Gray (fallback)
 }

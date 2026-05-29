@@ -54,8 +54,9 @@ _STATE_PRIORITY = {
 
 _REASON_LABELS = {
     "outage": "system outage",
-    "sof": "SOF AAR",
-    "ku_x": "Ku/X conflict",
+    "aar": "AAR window",
+    "ku_x": "X Band / Ku conflict",
+    "x_aar": "X Band / AAR conflict",
     "activity": "operational activity conflict",
     "nominal": "nominal window",
 }
@@ -176,29 +177,39 @@ def _decide_availability(
         )
         posture = "Unavailable"
         primary = _primary_outage_reason(source_reasons)
-    elif in_sof:
-        status = TimelineStatus.DEGRADED
-        posture = "Avoid calls"
-        primary = _REASON_LABELS["sof"]
     elif _has_ku_x_conflict(source_reasons):
         status = TimelineStatus.DEGRADED
         posture = "Degraded"
         primary = _REASON_LABELS["ku_x"]
+    elif _has_x_aar_conflict(source_reasons, in_sof, impacted, x_state):
+        status = TimelineStatus.DEGRADED
+        posture = "Degraded"
+        primary = _REASON_LABELS["x_aar"]
     elif impacted or any(
         segment.status != TimelineStatus.NOMINAL for segment in segments
     ):
         status = (
             TimelineStatus.DEGRADED if len(impacted) <= 1 else TimelineStatus.CRITICAL
         )
-        posture = "Activity conflict"
-        primary = _REASON_LABELS["activity"]
+        posture = "Degraded" if status == TimelineStatus.DEGRADED else "Critical"
+        primary = _primary_activity_reason(source_reasons)
+    elif sof_reason := _primary_sof_reason(source_reasons):
+        status = TimelineStatus.DEGRADED
+        posture = "Avoid calls"
+        primary = sof_reason
+    elif in_sof:
+        status = TimelineStatus.NOMINAL
+        posture = "Safety-of-flight advised"
+        primary = _REASON_LABELS["aar"]
     else:
         status = TimelineStatus.NOMINAL
         posture = "Nominal calls"
         primary = _REASON_LABELS["nominal"]
 
-    if posture in ("Nominal calls", "Activity conflict"):
+    if posture == "Nominal calls":
         label = posture
+    elif posture == "Degraded" and primary.lower().endswith("activity conflict"):
+        label = primary
     else:
         label = f"{posture} — {primary}"
     return AvailabilityDecision(
@@ -313,6 +324,39 @@ def _primary_outage_reason(reasons: tuple[str, ...]) -> str:
     return "system outage"
 
 
+def _primary_sof_reason(reasons: tuple[str, ...]) -> str | None:
+    for reason in reasons:
+        if "safety-of-flight" in reason.lower():
+            return reason
+    return None
+
+
+def _primary_activity_reason(reasons: tuple[str, ...]) -> str:
+    for reason in reasons:
+        if _is_satellite_swap_reason(reason):
+            return f"Satellite swap: {reason}"
+    for reason in reasons:
+        if reason and reason.strip():
+            return reason
+    return _REASON_LABELS["activity"]
+
+
+def _is_satellite_swap_reason(reason: str | None) -> bool:
+    if not reason:
+        return False
+    normalized = reason.lower()
+    return any(
+        token in normalized
+        for token in (
+            "satellite swap",
+            "transition",
+            "coverage swap",
+            "coverage lost",
+            "coverage exit",
+        )
+    )
+
+
 def _has_ku_x_conflict(reasons: tuple[str, ...]) -> bool:
     for reason in reasons:
         normalized = reason.lower().replace(" ", "")
@@ -323,6 +367,23 @@ def _has_ku_x_conflict(reasons: tuple[str, ...]) -> bool:
         ):
             return True
     return False
+
+
+def _has_x_aar_conflict(
+    reasons: tuple[str, ...],
+    in_aar: bool,
+    impacted: tuple[Transport, ...],
+    x_state: TransportState,
+) -> bool:
+    for reason in reasons:
+        normalized = reason.lower().replace("-", " ").replace("/", " ")
+        has_x_band_marker = any(
+            marker in normalized
+            for marker in ("x band", "xband", "x aar", "x azimuth", "x conflict")
+        )
+        if "aar" in normalized and (has_x_band_marker or "azimuth" in normalized):
+            return True
+    return in_aar and Transport.X in impacted and x_state != TransportState.AVAILABLE
 
 
 def _parse_timestamp(raw: str) -> datetime:

@@ -29,6 +29,7 @@ from app.mission.exporter.pptx_styling import (
     STATUS_DEGRADED,
     STATUS_NOMINAL,
     STATUS_SOF,
+    TEXT_BLACK,
     TEXT_WHITE,
     add_footer_bar,
     add_footer_text,
@@ -538,7 +539,7 @@ def _add_timeline_table(
                     cell.fill.solid()
                     cell.fill.fore_color.rgb = STATUS_DEGRADED
                     for paragraph in cell.text_frame.paragraphs:
-                        paragraph.font.color.rgb = RGBColor(255, 255, 255)
+                        paragraph.font.color.rgb = TEXT_BLACK
                         paragraph.font.bold = True
                 elif val_lower in ("nominal", "available"):
                     # Nominal status

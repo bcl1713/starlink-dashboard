@@ -8,7 +8,7 @@ interface TimelineTableProps {
 
 const STATUS_COLORS: Record<string, string> = {
   nominal: 'bg-green-100 text-green-800',
-  degraded: 'bg-yellow-100 text-yellow-800',
+  degraded: 'bg-yellow-200 text-black',
   critical: 'bg-red-100 text-red-800',
 };
 
@@ -158,20 +158,20 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
         <tbody className="divide-y">
           {displaySegments.map((segment: TimelineSegment, index: number) => {
             const sourceNotes = notesAndSources(segment);
+            const statusKey = segment.status.toLowerCase();
+            const bodyTextClass =
+              statusKey === 'degraded' ? 'text-black' : 'text-gray-700';
             return (
               <tr
                 key={segment.id || index}
-                className={`hover:bg-gray-50 ${
-                  STATUS_COLORS[segment.status.toLowerCase()] || ''
-                }`}
+                className={`hover:bg-gray-50 ${STATUS_COLORS[statusKey] || ''}`}
               >
-                <td className="px-4 py-2 text-gray-700">{index + 1}</td>
+                <td className={`px-4 py-2 ${bodyTextClass}`}>{index + 1}</td>
                 <td className="px-4 py-2">
                   <div className="flex items-center gap-2">
                     <div
                       className={`w-3 h-3 rounded-full ${
-                        STATUS_BADGE_COLORS[segment.status.toLowerCase()] ||
-                        'bg-gray-400'
+                        STATUS_BADGE_COLORS[statusKey] || 'bg-gray-400'
                       }`}
                     ></div>
                     <span className="font-medium">
@@ -182,7 +182,7 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
                     {callPosture(segment)}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-xs text-gray-700">
+                <td className={`px-4 py-2 text-xs ${bodyTextClass}`}>
                   {primaryReason(segment)}
                 </td>
                 <td className="px-4 py-2 font-mono text-xs">

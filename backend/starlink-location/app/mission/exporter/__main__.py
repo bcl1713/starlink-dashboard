@@ -251,11 +251,10 @@ def _get_detailed_segment_statuses(
                 next_change = min(end_time, s_start)
                 break
 
-        # Check if current_time falls within an AAR block
-        in_aar_block = False
+        # Check if current_time falls within an AAR block so map intervals split at
+        # AAR boundaries without treating AAR as degraded by default.
         for aar_start, aar_end in aar_blocks:
             if aar_start <= current_time < aar_end:
-                in_aar_block = True
                 # AAR block might end before the segment ends
                 next_change = min(next_change, aar_end)
                 break
@@ -268,11 +267,11 @@ def _get_detailed_segment_statuses(
         if active_seg:
             raw_status = active_seg.status.value
             reasons = str(active_seg.reasons).lower()
-            is_sof = "safety-of-flight" in reasons or "aar" in reasons
+            is_sof = "safety-of-flight" in reasons
 
             if raw_status == "critical":
                 status = "critical"
-            elif raw_status == "degraded" or is_sof or in_aar_block:
+            elif raw_status == "degraded" or is_sof:
                 status = "degraded"
             elif raw_status == "warning":
                 status = "degraded"
@@ -280,10 +279,6 @@ def _get_detailed_segment_statuses(
                 status = "nominal"
         else:
             status = "unknown"  # Gap in timeline
-
-        # Override to degraded if in AAR block (even if segment is nominal)
-        if in_aar_block and status == "nominal":
-            status = "degraded"
 
         intervals.append((current_time, next_change, status))
         current_time = next_change

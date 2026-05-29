@@ -4,7 +4,18 @@ from unittest.mock import Mock, patch
 
 
 from app.mission.exporter.pptx_builder import _get_footer_metadata
+from app.mission.exporter.pptx_styling import STATUS_DEGRADED, TEXT_BLACK
 from app.mission.models import Mission, MissionLeg, TransportConfig
+
+
+def test_degraded_status_uses_yellow_with_black_text_palette():
+    """Degraded PPT styling should be yellow, not orange, with black text."""
+    assert (STATUS_DEGRADED[0], STATUS_DEGRADED[1], STATUS_DEGRADED[2]) == (
+        255,
+        255,
+        0,
+    )
+    assert (TEXT_BLACK[0], TEXT_BLACK[1], TEXT_BLACK[2]) == (0, 0, 0)
 
 
 class TestGetFooterMetadata:
