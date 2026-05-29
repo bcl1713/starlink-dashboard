@@ -550,6 +550,42 @@ def test_call_availability_merges_adjacent_only_when_labels_match():
     assert timeline.segments[1].metadata["notes"] == ["handoff"]
 
 
+def test_call_availability_normalization_is_idempotent_for_labels():
+    swap = _segment(
+        "seg-swap",
+        0,
+        10,
+        TimelineStatus.DEGRADED,
+        reasons=["Ka transition IOR → POR"],
+    )
+    swap.ka_state = TransportState.DEGRADED
+    swap.impacted_transports = [Transport.KA]
+    timeline = _timeline_from_segments(
+        [
+            _segment(
+                "seg-sof",
+                10,
+                20,
+                TimelineStatus.SOF,
+                reasons=["Safety-of-Flight (landing)"],
+            ),
+            swap,
+        ]
+    )
+
+    normalize_call_availability_timeline(timeline)
+    normalize_call_availability_timeline(timeline)
+
+    assert [s.metadata["availability_label"] for s in timeline.segments] == [
+        "Degraded — Satellite swap: Ka transition IOR → POR",
+        "Avoid calls — Safety-of-Flight (landing)",
+    ]
+    assert [s.reasons for s in timeline.segments] == [
+        ["Degraded — Satellite swap: Ka transition IOR → POR"],
+        ["Avoid calls — Safety-of-Flight (landing)"],
+    ]
+
+
 def test_call_availability_rows_are_sorted_and_non_overlapping():
     conflict = _segment(
         "seg-conflict",

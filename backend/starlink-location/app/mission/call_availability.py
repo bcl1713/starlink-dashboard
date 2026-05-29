@@ -161,7 +161,7 @@ def _decide_availability(
     ka_state = _highest_state(segment.ka_state for segment in segments)
     ku_state = _highest_state(segment.ku_state for segment in segments)
     source_reasons = tuple(
-        _unique(reason for segment in segments for reason in segment.reasons)
+        _unique(reason for segment in segments for reason in _segment_source_reasons(segment))
     )
     source_segment_ids = tuple(
         _unique(segment.id for segment in segments if segment.id)
@@ -331,6 +331,18 @@ def _highest_state(states: Iterable[TransportState]) -> TransportState:
     if not ordered:
         return TransportState.AVAILABLE
     return max(ordered, key=lambda state: _STATE_PRIORITY[state])
+
+
+def _segment_source_reasons(segment: TimelineSegment) -> list[str]:
+    metadata = segment.metadata or {}
+    raw_source_reasons = metadata.get("source_reasons")
+    if isinstance(raw_source_reasons, list):
+        values = [str(reason) for reason in raw_source_reasons if str(reason).strip()]
+        if values:
+            return values
+    elif isinstance(raw_source_reasons, str) and raw_source_reasons.strip():
+        return [raw_source_reasons]
+    return [str(reason) for reason in segment.reasons if str(reason).strip()]
 
 
 def _segment_notes(segment: TimelineSegment) -> list[str]:
