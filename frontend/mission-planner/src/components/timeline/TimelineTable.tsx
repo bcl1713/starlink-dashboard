@@ -9,6 +9,7 @@ interface TimelineTableProps {
 const STATUS_COLORS: Record<string, string> = {
   nominal: 'bg-green-100 text-green-800',
   sof: 'bg-blue-100 text-blue-800',
+  advisory: 'bg-blue-100 text-blue-800',
   degraded: 'bg-yellow-200 text-black',
   critical: 'bg-red-100 text-red-800',
 };
@@ -16,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_BADGE_COLORS: Record<string, string> = {
   nominal: 'bg-green-500',
   sof: 'bg-blue-500',
+  advisory: 'bg-blue-500',
   degraded: 'bg-yellow-500',
   critical: 'bg-red-500',
 };
@@ -71,8 +73,8 @@ function metadataStringList(segment: TimelineSegment, key: string): string[] {
   return [];
 }
 
-function availabilityLabel(segment: TimelineSegment): string {
-  return metadataString(segment, 'availability_label') || segment.status;
+function displayStatus(status: string): string {
+  return status.toLowerCase() === 'sof' ? 'ADVISORY' : status.toUpperCase();
 }
 
 function callPosture(segment: TimelineSegment): string {
@@ -177,7 +179,7 @@ export const TimelineTable: React.FC<TimelineTableProps> = ({
                       }`}
                     ></div>
                     <span className="font-medium">
-                      {availabilityLabel(segment)}
+                      {displayStatus(segment.status)}
                     </span>
                   </div>
                   <div className="text-xs text-gray-600">

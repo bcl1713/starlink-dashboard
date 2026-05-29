@@ -68,10 +68,7 @@ _REASON_LABELS = {
     "nominal": "nominal window",
 }
 
-_KU_X_ADVISORY_LABEL = (
-    "Transport concurrency advisory: X Band / Ku conflict — choose one "
-    "transport; PACE preference Starlink > Comm Ka > X-Band"
-)
+_KU_X_ADVISORY_LABEL = "X Band / Ku conflict — choose one transport"
 
 
 def normalize_call_availability_timeline(timeline: MissionLegTimeline) -> None:

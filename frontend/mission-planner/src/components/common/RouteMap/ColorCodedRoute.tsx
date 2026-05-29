@@ -11,9 +11,14 @@ interface ColorCodedRouteProps {
 const STATUS_COLORS: Record<string, string> = {
   nominal: '#2ecc71', // Green
   sof: '#0284c7', // Blue
+  advisory: '#0284c7', // Blue
   degraded: '#ffff00', // Yellow
   critical: '#e74c3c', // Red
 };
+
+function displayStatus(status: string): string {
+  return status.toLowerCase() === 'sof' ? 'ADVISORY' : status.toUpperCase();
+}
 
 interface SegmentPolyline {
   coordinates: LatLngExpression[];
@@ -102,7 +107,7 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
           <Popup>
             <div className="text-sm">
               <div className="font-semibold capitalize">
-                Status: {polyline.segment.status}
+                Status: {displayStatus(polyline.segment.status)}
               </div>
               <div className="text-xs text-gray-600">
                 {new Date(polyline.segment.start_time).toLocaleTimeString(

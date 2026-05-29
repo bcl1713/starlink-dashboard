@@ -511,9 +511,9 @@ def _add_timeline_table(
                 if "safety-of-flight" in reasons or "aar" in reasons:
                     is_sof = True
 
-                # Override Status text to "SOF" if it's a safety window
+                # Override advisory window status text for user-facing output.
                 if is_sof and val_lower in ("available", "nominal", "sof"):
-                    cell.text = "SOF"
+                    cell.text = "ADVISORY"
                     # Re-apply font size since setting text resets it
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.size = Pt(8)
@@ -534,8 +534,8 @@ def _add_timeline_table(
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.color.rgb = TEXT_BLACK
                         paragraph.font.bold = True
-                elif is_sof:
-                    # Safety of Flight
+                elif is_sof or val_lower == "advisory":
+                    # Advisory / Safety of Flight
                     cell.fill.solid()
                     cell.fill.fore_color.rgb = STATUS_SOF
                     for paragraph in cell.text_frame.paragraphs:

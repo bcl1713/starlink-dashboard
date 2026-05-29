@@ -1044,6 +1044,9 @@ def _generate_route_map(
         # Route status colors
         Line2D([0], [0], color=STATUS_COLORS["nominal"], linewidth=3, label="Nominal"),
         Line2D(
+            [0], [0], color=STATUS_COLORS["sof"], linewidth=3, label="Advisory"
+        ),
+        Line2D(
             [0], [0], color=STATUS_COLORS["degraded"], linewidth=3, label="Degraded"
         ),
         Line2D(
@@ -1288,7 +1291,7 @@ def _segment_rows(
             if isinstance(segment.status, TimelineStatus)
             else str(segment.status)
         )
-        status_value = status_value.upper()
+        status_value = _display_status(status_value)
         metadata = segment.metadata or {}
         call_posture = metadata.get("call_posture") or status_value
         primary_reason = metadata.get("primary_reason") or (
@@ -1418,6 +1421,14 @@ def _statistics_rows(timeline: MissionLegTimeline) -> pd.DataFrame:
             display_value = format_seconds_hms(value)
         rows.append({"Metric": display_name, "Value": display_value})
     return pd.DataFrame(rows, columns=["Metric", "Value"])
+
+
+def _display_status(status_value: str) -> str:
+    """Return user-facing timeline status text."""
+    normalized = status_value.strip().lower()
+    if normalized == TimelineStatus.SOF.value:
+        return "ADVISORY"
+    return normalized.upper()
 
 
 def _format_notes_and_sources(notes: object, source_reasons: object) -> str:

@@ -317,10 +317,11 @@ def test_call_availability_ku_x_conflict_is_advisory_not_degraded():
     assert advisory.impacted_transports == []
     assert advisory.metadata["call_posture"] == "Transport concurrency advisory"
     assert advisory.metadata["primary_reason"] == "X Band / Ku conflict"
-    assert advisory.metadata["availability_label"] == (
-        "Transport concurrency advisory: X Band / Ku conflict — choose one "
-        "transport; PACE preference Starlink > Comm Ka > X-Band"
+    assert (
+        advisory.metadata["availability_label"]
+        == "X Band / Ku conflict — choose one transport"
     )
+    assert "PACE" not in advisory.metadata["availability_label"]
 
 
 def test_call_availability_ku_x_conflict_preserves_separate_degradation():

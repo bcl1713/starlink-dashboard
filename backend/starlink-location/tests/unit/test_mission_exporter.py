@@ -158,16 +158,14 @@ class TestMissionTimelineExporters:
 
         df = mission_exporter._segment_rows(timeline, mission)
         row = df.iloc[0]
-        assert row["Status"] == "SOF"
+        assert row["Status"] == "ADVISORY"
         assert row["Call Posture"] == "Transport concurrency advisory"
         assert row["Primary Reason"] == "X Band / Ku conflict"
         assert row["X-Band"] == "AVAILABLE"
         assert row["StarShield"] == "AVAILABLE"
         assert row["Systems Affected"] == ""
-        assert row["Reasons"] == (
-            "Transport concurrency advisory: X Band / Ku conflict — choose one "
-            "transport; PACE preference Starlink > Comm Ka > X-Band"
-        )
+        assert row["Reasons"] == "X Band / Ku conflict — choose one transport"
+        assert "PACE" not in row["Reasons"]
 
     def test_aar_block_rows_normalize_primary_table_without_overlap(self, mission):
         start = datetime(2025, 11, 5, 0, 0, tzinfo=timezone.utc)
@@ -201,7 +199,7 @@ class TestMissionTimelineExporters:
 
         df = mission_exporter._segment_rows(timeline, mission)
         assert "AAR" not in df["Segment #"].values
-        assert list(df["Status"]) == ["SOF", "NOMINAL"]
+        assert list(df["Status"]) == ["ADVISORY", "NOMINAL"]
         assert list(df["Call Posture"]) == [
             "Safety-of-flight advised",
             "Nominal calls",

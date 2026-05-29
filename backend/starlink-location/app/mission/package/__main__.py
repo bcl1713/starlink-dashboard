@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import IO
 
-from app.mission.models import Mission, MissionLeg, MissionLegTimeline
+from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TimelineStatus
 from app.mission.storage import (
     load_mission_v2,
     load_mission_timeline,
@@ -28,6 +28,14 @@ from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
 
 logger = logging.getLogger(__name__)
+
+
+def _display_status(status_value: str) -> str:
+    """Return user-facing timeline status text."""
+    normalized = status_value.strip().lower()
+    if normalized == TimelineStatus.SOF.value:
+        return "ADVISORY"
+    return normalized.upper()
 
 
 class ExportPackageError(RuntimeError):
@@ -101,7 +109,7 @@ def generate_mission_combined_csv(
                             leg.id,
                             leg.name,
                             start_time,
-                            segment.status.value,
+                            _display_status(segment.status.value),
                             f"States: X={segment.x_state.value}, Ka={segment.ka_state.value}, Ku={segment.ku_state.value} | Duration: {duration}s | Reasons: {reasons}",
                         ]
                     )
