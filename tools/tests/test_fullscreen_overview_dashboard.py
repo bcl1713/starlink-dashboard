@@ -18,7 +18,8 @@ CORE_MAP_LAYERS = {
     "MissionEvents",
     "Satellites",
 }
-HCX_COMM_LAYERS = {"CommKaOverlay"}
+HCX_COMM_LAYER_TOKENS = {"CommKaOverlay", "HCX"}
+HCX_COMM_LAYER_SOURCES = {"commka.geojson"}
 
 
 def _fullscreen_overview_dashboard() -> dict:
@@ -75,15 +76,16 @@ def test_fullscreen_overview_keeps_core_map_layers_visible_by_default() -> None:
         assert layers[layer_name].get("opacity", 1) > 0
 
 
-def test_fullscreen_overview_hcx_comm_overlay_is_disabled_but_preserved() -> None:
-    layers = _layers_by_name()
+def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
+    layers = _current_position_layers()
 
-    assert HCX_COMM_LAYERS <= layers.keys()
-    for layer_name in HCX_COMM_LAYERS:
-        layer = layers[layer_name]
-        assert layer["type"] == "geojson"
-        assert layer["opacity"] == 0
-        assert layer["config"]["src"].endswith(
-            "/data/sat_coverage/commka.geojson"
-        )
-        assert layer["config"]["style"].get("opacity", 0) > 0
+    layer_names = {layer["name"] for layer in layers}
+    for token in HCX_COMM_LAYER_TOKENS:
+        assert all(token not in name for name in layer_names)
+
+    layer_sources = {
+        Path(layer.get("config", {}).get("src", "")).name
+        for layer in layers
+        if layer.get("type") == "geojson"
+    }
+    assert HCX_COMM_LAYER_SOURCES.isdisjoint(layer_sources)
