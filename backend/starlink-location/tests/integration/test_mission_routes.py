@@ -739,10 +739,9 @@ class TestMissionExportEndpoint:
         for fmt, media in [
             ("csv", "text/csv"),
             (
-                "xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "pptx",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             ),
-            ("pdf", "application/pdf"),
         ]:
             response = client.post(
                 f"/api/missions/{test_mission.id}/export",

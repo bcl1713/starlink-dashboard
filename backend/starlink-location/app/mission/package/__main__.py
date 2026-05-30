@@ -673,20 +673,14 @@ def export_mission_package(
         ├── exports/
         │   ├── mission/
         │   │   ├── mission-timeline.csv
-        │   │   ├── mission-timeline.xlsx
-        │   │   ├── mission-slides.pptx
-        │   │   └── mission-report.pdf
+        │   │   └── mission-slides.pptx
         │   └── legs/
         │       ├── {leg-id-1}/
         │       │   ├── timeline.csv
-        │       │   ├── timeline.xlsx
-        │       │   ├── slides.pptx
-        │       │   └── report.pdf
+        │       │   └── slides.pptx
         │       └── {leg-id-2}/
         │           ├── timeline.csv
-        │           ├── timeline.xlsx
-        │           ├── slides.pptx
-        │           └── report.pdf
+        │           └── slides.pptx
 
     Args:
         mission_id: Mission to export

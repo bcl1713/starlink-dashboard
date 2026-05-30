@@ -1,9 +1,18 @@
-import pytest
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
-from app.mission.models import Mission, MissionLeg
-from app.mission.package.__main__ import generate_mission_combined_xlsx
+
+import pytest
+
+from app.mission.models import (
+    Mission,
+    MissionLeg,
+    MissionLegTimeline,
+    TimelineSegment,
+    TimelineStatus,
+    TransportState,
+)
+from app.mission.package.__main__ import generate_mission_combined_csv
 from app.mission.package import export_mission_package
-from app.mission.exporter import ExportGenerationError
 
 
 @pytest.fixture
@@ -21,37 +30,43 @@ def mock_mission():
     return Mission(id="mission1", name="Test Mission", legs=[leg1, leg2])
 
 
-@patch("app.mission.package.__main__.load_mission_timeline")
-@patch("app.mission.package.__main__.generate_timeline_export")
-@patch("openpyxl.load_workbook")
-def test_generate_mission_combined_xlsx_export_error(
-    mock_load_workbook, mock_generate_export, mock_load_timeline, mock_mission
-):
-    # Setup
-    mock_load_timeline.return_value = MagicMock()  # Return a dummy timeline
+def _sample_timeline(leg_id: str, status: TimelineStatus) -> MissionLegTimeline:
+    start = datetime(2026, 5, 30, 12, 0, tzinfo=timezone.utc)
+    end = datetime(2026, 5, 30, 12, 5, tzinfo=timezone.utc)
+    return MissionLegTimeline(
+        mission_leg_id=leg_id,
+        segments=[
+            TimelineSegment(
+                id=f"{leg_id}-segment-1",
+                start_time=start,
+                end_time=end,
+                status=status,
+                x_state=TransportState.AVAILABLE,
+                ka_state=TransportState.AVAILABLE,
+                ku_state=TransportState.AVAILABLE,
+                reasons=["sof_demo"] if status == TimelineStatus.SOF else [],
+            )
+        ],
+    )
 
-    # Simulate ExportGenerationError for the first leg
-    mock_generate_export.side_effect = [
-        ExportGenerationError("Simulated export failure"),
-        MagicMock(content=b"fake_xlsx_content"),  # Second leg succeeds
+
+@patch("app.mission.package.__main__.load_mission_timeline")
+def test_generate_mission_combined_csv_continues_after_leg_error(
+    mock_load_timeline, mock_mission
+):
+    mock_load_timeline.side_effect = [
+        RuntimeError("Simulated timeline load failure"),
+        _sample_timeline("leg2", TimelineStatus.SOF),
     ]
 
-    # Mock load_workbook for the second leg
-    mock_wb = MagicMock()
-    mock_wb.sheetnames = ["Summary", "Timeline"]
-    mock_sheet = MagicMock()
-    mock_wb.__getitem__.return_value = mock_sheet
-    mock_load_workbook.return_value = mock_wb
+    csv_bytes = generate_mission_combined_csv(mock_mission)
 
-    # Execute
-    xlsx_bytes = generate_mission_combined_xlsx(mock_mission)
-
-    # Verify
-    assert xlsx_bytes is not None
-    assert len(xlsx_bytes) > 0
-
-    # Verify that generate_timeline_export was called for both legs
-    assert mock_generate_export.call_count == 2
+    assert csv_bytes is not None
+    csv_text = csv_bytes.decode("utf-8")
+    assert "Leg 2" in csv_text
+    assert "ADVISORY" in csv_text
+    assert "sof_demo" in csv_text
+    assert mock_load_timeline.call_count == 2
 
 
 @patch("app.mission.package.__main__.load_mission_v2")
@@ -89,40 +104,48 @@ def test_export_mission_package_returns_file_object(mock_load_mission, mock_miss
 
 
 @patch("app.mission.package.__main__.load_mission_v2")
-@patch("app.mission.package.__main__.generate_mission_combined_xlsx")
-def test_export_mission_package_uses_temp_files_for_large_exports(
-    mock_gen_xlsx, mock_load_mission, mock_mission
+@patch("app.mission.package.__main__.generate_mission_combined_pptx")
+@patch("app.mission.package.__main__.generate_mission_combined_csv")
+def test_export_mission_package_uses_temp_files_for_mission_exports(
+    mock_gen_csv, mock_gen_pptx, mock_load_mission, mock_mission
 ):
-    # Setup
     mock_load_mission.return_value = mock_mission
     mock_route_manager = MagicMock()
     mock_poi_manager = MagicMock()
 
-    # Mock generate_mission_combined_xlsx to write to the path it's given
-    def side_effect(mission, output_path=None, **kwargs):
+    def csv_side_effect(mission, output_path=None, **kwargs):
         if output_path:
-            with open(output_path, "w") as f:
-                f.write("dummy xlsx content")
+            with open(output_path, "w", encoding="utf-8") as f:
+                f.write("dummy csv content")
         return None
 
-    mock_gen_xlsx.side_effect = side_effect
+    def pptx_side_effect(mission, output_path=None, **kwargs):
+        if output_path:
+            with open(output_path, "wb") as f:
+                f.write(b"dummy pptx content")
+        return None
 
-    # Execute
+    mock_gen_csv.side_effect = csv_side_effect
+    mock_gen_pptx.side_effect = pptx_side_effect
+
     zip_file = export_mission_package("mission1", mock_route_manager, mock_poi_manager)
 
     try:
-        # Verify
         import zipfile
 
         with zipfile.ZipFile(zip_file, "r") as zf:
-            assert "exports/mission/mission-timeline.xlsx" in zf.namelist()
-            content = zf.read("exports/mission/mission-timeline.xlsx")
-            assert content == b"dummy xlsx content"
+            assert "exports/mission/mission-timeline.csv" in zf.namelist()
+            assert "exports/mission/mission-slides.pptx" in zf.namelist()
+            assert "exports/mission/mission-timeline.xlsx" not in zf.namelist()
+            assert zf.read("exports/mission/mission-timeline.csv") == b"dummy csv content"
+            assert zf.read("exports/mission/mission-slides.pptx") == b"dummy pptx content"
 
-        # Verify generate_mission_combined_xlsx was called with an output_path
-        assert mock_gen_xlsx.called
-        call_args = mock_gen_xlsx.call_args
-        assert "output_path" in call_args.kwargs or len(call_args.args) > 1
+        assert mock_gen_csv.called
+        assert mock_gen_pptx.called
+        csv_call_args = mock_gen_csv.call_args
+        pptx_call_args = mock_gen_pptx.call_args
+        assert "output_path" in csv_call_args.kwargs or len(csv_call_args.args) > 1
+        assert "output_path" in pptx_call_args.kwargs or len(pptx_call_args.args) > 1
 
     finally:
         zip_file.close()

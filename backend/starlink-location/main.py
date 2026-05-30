@@ -55,10 +55,10 @@ setup_logging(level=log_level, json_format=json_logs, log_file=log_file)
 logger = get_logger(__name__)
 
 # Global simulator instance
-_coordinator: SimulationCoordinator = None
+_coordinator: SimulationCoordinator | LiveCoordinator | None = None
 _background_task = None
 _simulation_config = None
-_route_manager: RouteManager = None
+_route_manager: RouteManager | None = None
 
 
 async def startup_event():
@@ -268,7 +268,7 @@ async def startup_event():
 
 async def shutdown_event():
     """Cleanup on shutdown."""
-    global _background_task
+    global _background_task, _route_manager
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
@@ -280,6 +280,12 @@ async def shutdown_event():
                 await _background_task
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
+            _background_task = None
+
+        if _route_manager:
+            logger.info_json("Stopping Route Manager watcher")
+            _route_manager.stop_watching()
+            _route_manager = None
 
         # Shutdown ETA service
         logger.info_json("Shutting down ETA service")
@@ -323,10 +329,9 @@ async def _background_update_loop(poi_manager=None):
                         try:
                             # Extract active route for route-aware ETA calculations
                             active_route = None
-                            if hasattr(_coordinator, "route_manager"):
-                                active_route = (
-                                    _coordinator.route_manager.get_active_route()
-                                )
+                            route_manager = getattr(_coordinator, "route_manager", None)
+                            if route_manager is not None:
+                                active_route = route_manager.get_active_route()
 
                             update_metrics_from_telemetry(
                                 telemetry, _simulation_config, active_route, poi_manager
