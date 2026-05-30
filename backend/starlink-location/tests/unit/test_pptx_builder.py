@@ -3,6 +3,7 @@
 from unittest.mock import Mock, patch
 
 
+from app.mission.exporter.__main__ import _cover_metadata_line
 from app.mission.exporter.pptx_builder import _get_footer_metadata
 from app.mission.exporter.pptx_styling import STATUS_DEGRADED, TEXT_BLACK
 from app.mission.models import Mission, MissionLeg, TransportConfig
@@ -16,6 +17,19 @@ def test_degraded_status_uses_yellow_with_black_text_palette():
         0,
     )
     assert (TEXT_BLACK[0], TEXT_BLACK[1], TEXT_BLACK[2]) == (0, 0, 0)
+
+
+def test_title_slide_cover_metadata_prefers_mission_revision_fields():
+    """Cover metadata should not reuse stale Rev text from descriptions."""
+    mission = Mission(
+        id="mission-26-07",
+        name="Mission 26-07",
+        description="1 Leg | Rev 2",
+        legs=[],
+        metadata={"mission_number": "26-07", "revision": "5"},
+    )
+
+    assert _cover_metadata_line(mission, leg_count=1) == "1 Leg | Mission 26-07 | Rev 5"
 
 
 class TestGetFooterMetadata:

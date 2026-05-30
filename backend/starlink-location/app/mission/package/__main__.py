@@ -178,6 +178,7 @@ def generate_mission_combined_pptx(
     # Import shared functions
     from pathlib import Path
 
+    from app.mission.exporter.__main__ import _cover_metadata_line
     from app.mission.exporter.pptx_builder import add_mission_slides_to_presentation
     from app.mission.exporter.pptx_styling import (
         TEXT_BLACK,
@@ -196,7 +197,6 @@ def generate_mission_combined_pptx(
     # Mission metadata
     mission_id = mission.id
     mission_name = mission.name
-    organization = mission.description if mission.description else "Organization"
     leg_count = len(mission.legs)
 
     # Title slide with styling
@@ -235,12 +235,12 @@ def generate_mission_combined_pptx(
     id_paragraph.font.size = Pt(14)
     id_paragraph.font.color.rgb = TEXT_BLACK
 
-    # Add leg count and organization
+    # Add leg count and mission metadata
     info_box = title_slide.shapes.add_textbox(
         Inches(1.5), Inches(3.5), Inches(7.0), Inches(0.5)
     )
     info_frame = info_box.text_frame
-    info_frame.text = f"{leg_count} Leg{'s' if leg_count != 1 else ''} | {organization}"
+    info_frame.text = _cover_metadata_line(mission, leg_count)
 
     info_paragraph = info_frame.paragraphs[0]
     info_paragraph.alignment = PP_ALIGN.CENTER

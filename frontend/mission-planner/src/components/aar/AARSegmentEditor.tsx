@@ -8,6 +8,7 @@ import {
   TableRow,
 } from '../ui/table';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import {
   Select,
   SelectContent,
@@ -29,6 +30,49 @@ export function AARSegmentEditor({
   availableWaypoints,
 }: AARSegmentEditorProps) {
   const [newSegment, setNewSegment] = useState<Partial<AARSegment>>({});
+
+  const formatOverrideForInput = (value?: string | null) => {
+    if (!value) {
+      return '';
+    }
+    const normalized = value.endsWith('Z') ? value : `${value}Z`;
+    return normalized.slice(0, 16);
+  };
+
+  const toUtcOverride = (value: string) => {
+    if (!value) {
+      return null;
+    }
+    return `${value}:00Z`;
+  };
+
+  const updateSegmentOverride = (
+    index: number,
+    field: 'override_start_time' | 'override_end_time',
+    value: string
+  ) => {
+    onSegmentsChange(
+      segments.map((segment, segmentIndex) =>
+        segmentIndex === index
+          ? { ...segment, [field]: toUtcOverride(value) }
+          : segment
+      )
+    );
+  };
+
+  const clearSegmentOverrides = (index: number) => {
+    onSegmentsChange(
+      segments.map((segment, segmentIndex) =>
+        segmentIndex === index
+          ? {
+              ...segment,
+              override_start_time: null,
+              override_end_time: null,
+            }
+          : segment
+      )
+    );
+  };
 
   // Calculate available end waypoints (only those after the start waypoint)
   const getAvailableEndWaypoints = () => {
@@ -69,11 +113,18 @@ export function AARSegmentEditor({
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-medium mb-2">AAR Segments</h3>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Optional UTC overrides let operators enter wind-adjusted,
+          pilot-projected AR start/end times. Saving the leg persists these
+          times and regenerates the preview/export from the adjusted boundaries.
+        </p>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Start Waypoint</TableHead>
               <TableHead>End Waypoint</TableHead>
+              <TableHead>Override Start (UTC)</TableHead>
+              <TableHead>Override End (UTC)</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -83,13 +134,50 @@ export function AARSegmentEditor({
                 <TableCell>{segment.start_waypoint_name}</TableCell>
                 <TableCell>{segment.end_waypoint_name}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleRemoveSegment(index)}
-                  >
-                    Remove
-                  </Button>
+                  <Input
+                    type="datetime-local"
+                    value={formatOverrideForInput(segment.override_start_time)}
+                    onChange={(event) =>
+                      updateSegmentOverride(
+                        index,
+                        'override_start_time',
+                        event.target.value
+                      )
+                    }
+                    aria-label={`Override start time for ${segment.start_waypoint_name}`}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input
+                    type="datetime-local"
+                    value={formatOverrideForInput(segment.override_end_time)}
+                    onChange={(event) =>
+                      updateSegmentOverride(
+                        index,
+                        'override_end_time',
+                        event.target.value
+                      )
+                    }
+                    aria-label={`Override end time for ${segment.end_waypoint_name}`}
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => clearSegmentOverrides(index)}
+                    >
+                      Clear Times
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleRemoveSegment(index)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -136,6 +224,16 @@ export function AARSegmentEditor({
                     ))}
                   </SelectContent>
                 </Select>
+              </TableCell>
+              <TableCell>
+                <span className="text-xs text-muted-foreground">
+                  Uses waypoint time unless set after adding.
+                </span>
+              </TableCell>
+              <TableCell>
+                <span className="text-xs text-muted-foreground">
+                  Uses waypoint time unless set after adding.
+                </span>
               </TableCell>
               <TableCell>
                 <Button onClick={handleAddSegment}>Add</Button>

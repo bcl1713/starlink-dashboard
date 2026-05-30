@@ -1303,6 +1303,7 @@ def _segment_rows(
         notes = metadata.get("notes") or []
         source_reasons = metadata.get("source_reasons") or segment.reasons
         notes_and_sources = _format_notes_and_sources(notes, source_reasons)
+        operational_markers = _format_marker_list(metadata.get("operational_markers"))
         impacted_display = serialize_transport_list(segment.impacted_transports)
         if warning_only:
             status_value = TimelineStatus.NOMINAL.value.upper()
@@ -1317,6 +1318,7 @@ def _segment_rows(
             "Status": status_value,
             "Call Posture": call_posture,
             "Primary Reason": primary_reason,
+            "Operational Markers": operational_markers,
             "Start Time": compose_time_block(start_utc, mission_start),
             "End Time": compose_time_block(end_utc, mission_start),
             "Duration": format_seconds_hms(duration_seconds),
@@ -1345,6 +1347,7 @@ def _segment_rows(
         "Status",
         "Call Posture",
         "Primary Reason",
+        "Operational Markers",
         "Start Time",
         "End Time",
         "Duration",
@@ -1453,6 +1456,55 @@ def _format_notes_and_sources(notes: object, source_reasons: object) -> str:
     return "; ".join(unique_values)
 
 
+def _format_marker_list(markers: object) -> str:
+    """Format operator-facing boundary/safety markers for table exports."""
+
+    if isinstance(markers, list):
+        values = [str(marker) for marker in markers if str(marker).strip()]
+    elif isinstance(markers, str) and markers.strip():
+        values = [markers]
+    else:
+        values = []
+    return "; ".join(dict.fromkeys(values))
+
+
+def _cover_metadata_line(
+    mission: Mission | MissionLeg | None,
+    leg_count: int,
+    parent_mission_id: str | None = None,
+) -> str:
+    """Build title-slide metadata without stale description/revision mismatches."""
+
+    leg_label = f"{leg_count} Leg{'s' if leg_count != 1 else ''}"
+    if mission is None:
+        return leg_label
+
+    metadata_source: Mission | MissionLeg | None = mission
+    if parent_mission_id and not hasattr(mission, "legs"):
+        try:
+            from app.mission.storage import load_mission_v2
+
+            metadata_source = load_mission_v2(parent_mission_id) or mission
+        except Exception:
+            metadata_source = mission
+
+    metadata = getattr(metadata_source, "metadata", None) or {}
+    mission_number = metadata.get("mission_number") if isinstance(metadata, dict) else None
+    revision = metadata.get("revision") if isinstance(metadata, dict) else None
+    parts = [leg_label]
+    if mission_number:
+        parts.append(f"Mission {mission_number}")
+    if revision:
+        parts.append(f"Rev {revision}")
+    if len(parts) > 1:
+        return " | ".join(parts)
+
+    description = getattr(mission, "description", None)
+    if description:
+        parts.append(str(description))
+    return " | ".join(parts)
+
+
 # Note: format_seconds_hms, humanize_metric_name, and compose_time_block are now
 # imported from exporter.formatting module above
 
@@ -1492,11 +1544,9 @@ def generate_pptx_export(
     # Mission metadata
     mission_id = mission.id if mission else timeline.mission_leg_id
     mission_name = mission.name if mission else "Mission"
-    organization = (
-        mission.description if (mission and mission.description) else "Organization"
-    )
     # Check if mission is a Mission (has .legs) or MissionLeg (no .legs)
-    leg_count = len(mission.legs) if (mission and hasattr(mission, "legs")) else 1
+    legs = getattr(mission, "legs", None) if mission is not None else None
+    leg_count = len(legs) if legs is not None else 1
 
     # Create presentation with standard dimensions
     prs = Presentation()
@@ -1541,12 +1591,12 @@ def generate_pptx_export(
     id_paragraph.font.size = Pt(14)
     id_paragraph.font.color.rgb = TEXT_BLACK
 
-    # Add leg count and organization
+    # Add leg count and mission metadata
     info_box = title_slide.shapes.add_textbox(
         Inches(1.5), Inches(3.5), Inches(7.0), Inches(0.5)
     )
     info_frame = info_box.text_frame
-    info_frame.text = f"{leg_count} Leg{'s' if leg_count != 1 else ''} | {organization}"
+    info_frame.text = _cover_metadata_line(mission, leg_count, parent_mission_id)
 
     info_paragraph = info_frame.paragraphs[0]
     info_paragraph.alignment = PP_ALIGN.CENTER

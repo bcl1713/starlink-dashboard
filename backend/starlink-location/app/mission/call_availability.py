@@ -45,6 +45,7 @@ class AvailabilityDecision:
     source_reasons: tuple[str, ...]
     source_segment_ids: tuple[str, ...]
     boundary_markers: tuple[str, ...]
+    operational_markers: tuple[str, ...]
 
 
 _STATE_PRIORITY = {
@@ -166,6 +167,29 @@ def _boundary_markers(start: datetime, aar_blocks: list[AARBlock]) -> tuple[str,
     return tuple(markers)
 
 
+def _operational_markers(
+    source_reasons: tuple[str, ...],
+    in_sof: bool,
+    boundary_markers: tuple[str, ...],
+) -> tuple[str, ...]:
+    """Return operator-legible timeline markers separate from status reasons."""
+
+    markers: list[str] = list(boundary_markers)
+    if in_sof:
+        markers.append("AAR window")
+    for reason in source_reasons:
+        normalized = reason.lower()
+        if "safety-of-flight" not in normalized:
+            continue
+        if "landing" in normalized:
+            markers.append("Landing safety window")
+        elif "takeoff" in normalized:
+            markers.append("Takeoff safety window")
+        else:
+            markers.append("Safety-of-flight window")
+    return tuple(_unique(markers))
+
+
 def _decide_availability(
     segments: list[TimelineSegment],
     in_sof: bool,
@@ -256,8 +280,9 @@ def _decide_availability(
         label = primary
     else:
         label = f"{posture} — {primary}"
-    if boundary_markers and status in (TimelineStatus.DEGRADED, TimelineStatus.CRITICAL):
-        label = f"{label}; {', '.join(boundary_markers)}"
+    operational_markers = _operational_markers(
+        source_reasons, in_sof, boundary_markers
+    )
     return AvailabilityDecision(
         status=status,
         call_posture=posture,
@@ -271,6 +296,7 @@ def _decide_availability(
         source_reasons=source_reasons,
         source_segment_ids=source_segment_ids,
         boundary_markers=boundary_markers,
+        operational_markers=operational_markers,
     )
 
 
@@ -291,6 +317,7 @@ def _build_segment(
         "source_reasons": list(decision.source_reasons),
         "source_segment_ids": list(decision.source_segment_ids),
         "boundary_markers": list(decision.boundary_markers),
+        "operational_markers": list(decision.operational_markers),
     }
     return TimelineSegment(
         id=f"{mission_id}-availability-{index:03d}",
@@ -321,8 +348,9 @@ def _can_merge(left: TimelineSegment, right: TimelineSegment) -> bool:
         and left_meta.get("availability_label") == right_meta.get("availability_label")
         and left_meta.get("systems_affected") == right_meta.get("systems_affected")
         and left_meta.get("notes") == right_meta.get("notes")
-        and left_meta.get("source_reasons") == right_meta.get("source_reasons")
         and left_meta.get("boundary_markers") == right_meta.get("boundary_markers")
+        and left_meta.get("operational_markers")
+        == right_meta.get("operational_markers")
     )
 
 

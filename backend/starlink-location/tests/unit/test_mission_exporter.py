@@ -167,6 +167,44 @@ class TestMissionTimelineExporters:
         assert row["Reasons"] == "X Band / Ku conflict — choose one transport"
         assert "PACE" not in row["Reasons"]
 
+    def test_aar_boundary_and_landing_markers_export_in_dedicated_column(self, mission):
+        start = datetime(2025, 11, 5, 18, 34, tzinfo=timezone.utc)
+        segment = TimelineSegment(
+            id="seg-x-ku-aar",
+            start_time=start,
+            end_time=start + timedelta(minutes=104),
+            status=TimelineStatus.DEGRADED,
+            x_state=TransportState.DEGRADED,
+            ka_state=TransportState.AVAILABLE,
+            ku_state=TransportState.AVAILABLE,
+            reasons=["X Band / Ku conflict", "Safety-of-Flight (landing)"],
+            impacted_transports=[Transport.X],
+            metadata={},
+        )
+        timeline = MissionLegTimeline(
+            mission_leg_id=mission.id,
+            segments=[segment],
+            advisories=[],
+            statistics={
+                "_aar_blocks": [
+                    {
+                        "start": (start + timedelta(minutes=8)).isoformat(),
+                        "end": (start + timedelta(minutes=104)).isoformat(),
+                    }
+                ]
+            },
+        )
+
+        df = mission_exporter._segment_rows(timeline, mission)
+
+        assert "Operational Markers" in df.columns
+        aar_start = df[df["Start Time"].str.contains("18:42Z")].iloc[0]
+        assert aar_start["Status"] == "ADVISORY"
+        assert aar_start["Reasons"] == "X Band / Ku conflict — choose one transport"
+        assert aar_start["Operational Markers"] == (
+            "AAR Start; AAR window; Landing safety window"
+        )
+
     def test_aar_block_rows_normalize_primary_table_without_overlap(self, mission):
         start = datetime(2025, 11, 5, 0, 0, tzinfo=timezone.utc)
         segments = [

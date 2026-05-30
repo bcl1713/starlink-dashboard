@@ -625,9 +625,16 @@ def test_call_availability_rows_are_sorted_and_non_overlapping():
     assert [s.metadata["availability_label"] for s in timeline.segments] == [
         "Nominal calls",
         "Other activity conflict",
-        "Degraded — X Band / AAR conflict; AAR Start",
-        "Other activity conflict; AAR End",
+        "Degraded — X Band / AAR conflict",
+        "Other activity conflict",
         "Nominal calls",
+    ]
+    assert [s.metadata.get("operational_markers") for s in timeline.segments] == [
+        [],
+        [],
+        ["AAR Start", "AAR window"],
+        ["AAR End"],
+        [],
     ]
 
 
@@ -662,7 +669,47 @@ def test_call_availability_keeps_aar_start_boundary_during_existing_degrade():
     ]
     assert timeline.segments[1].status == TimelineStatus.DEGRADED
     assert timeline.segments[1].metadata["boundary_markers"] == ["AAR Start"]
-    assert "AAR Start" in timeline.segments[1].metadata["availability_label"]
+    assert timeline.segments[1].metadata["operational_markers"] == [
+        "AAR Start",
+        "AAR window",
+    ]
+    assert "AAR Start" not in timeline.segments[1].metadata["availability_label"]
+
+
+def test_call_availability_exposes_aar_start_as_operational_marker_not_reason_suffix():
+    conflict = _segment(
+        "seg-x-ku",
+        0,
+        20,
+        TimelineStatus.DEGRADED,
+        reasons=["X Band / Ku conflict"],
+    )
+    conflict.x_state = TransportState.DEGRADED
+    conflict.impacted_transports = [Transport.X]
+    timeline = _timeline_from_segments(
+        [conflict],
+        statistics={
+            "_aar_blocks": [
+                {
+                    "start": (BASE + timedelta(minutes=10)).isoformat(),
+                    "end": (BASE + timedelta(minutes=20)).isoformat(),
+                }
+            ]
+        },
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    aar_start_segment = timeline.segments[1]
+    assert aar_start_segment.status == TimelineStatus.SOF
+    assert aar_start_segment.metadata["availability_label"] == (
+        "X Band / Ku conflict — choose one transport"
+    )
+    assert aar_start_segment.metadata["operational_markers"] == [
+        "AAR Start",
+        "AAR window",
+    ]
+    assert "AAR Start" not in aar_start_segment.reasons[0]
 
 
 def test_call_availability_lists_multiple_critical_degrade_causes():
@@ -710,6 +757,30 @@ def test_call_availability_coalesces_adjacent_same_reason_degraded_blocks():
         "seg-swap-1",
         "seg-swap-2",
         "seg-swap-3",
+    ]
+
+
+def test_call_availability_landing_marker_survives_x_ku_advisory_overlap():
+    x_ku = _segment(
+        "seg-x-ku-landing",
+        0,
+        15,
+        TimelineStatus.DEGRADED,
+        reasons=["X Band / Ku conflict", "Safety-of-Flight (landing)"],
+    )
+    x_ku.x_state = TransportState.DEGRADED
+    x_ku.impacted_transports = [Transport.X]
+    timeline = _timeline_from_segments([x_ku])
+
+    normalize_call_availability_timeline(timeline)
+
+    assert len(timeline.segments) == 1
+    assert timeline.segments[0].status == TimelineStatus.SOF
+    assert timeline.segments[0].metadata["availability_label"] == (
+        "X Band / Ku conflict — choose one transport"
+    )
+    assert timeline.segments[0].metadata["operational_markers"] == [
+        "Landing safety window"
     ]
 
 
