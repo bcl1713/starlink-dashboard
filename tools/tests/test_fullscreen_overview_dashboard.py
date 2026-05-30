@@ -20,6 +20,12 @@ CORE_MAP_LAYERS = {
 }
 HCX_COMM_LAYER_TOKENS = {"CommKaOverlay", "HCX"}
 HCX_COMM_LAYER_SOURCES = {"commka.geojson"}
+EXPECTED_CLOCK_DEFAULTS = {
+    "UTC (Zulu)": "UTC",
+    "Omaha": "America/Chicago",
+    "Washington DC": "America/New_York",
+    "Tokyo": "Asia/Tokyo",
+}
 
 
 def _fullscreen_overview_dashboard() -> dict:
@@ -40,6 +46,15 @@ def _current_position_layers() -> list[dict]:
 
 def _layers_by_name() -> dict[str, dict]:
     return {layer["name"]: layer for layer in _current_position_layers()}
+
+
+def _clock_panels_by_title() -> dict[str, dict]:
+    dashboard = _fullscreen_overview_dashboard()
+    return {
+        panel["title"]: panel
+        for panel in dashboard["panels"]
+        if panel.get("type") == "grafana-clock-panel"
+    }
 
 
 def test_fullscreen_overview_dashboard_json_is_valid() -> None:
@@ -66,6 +81,16 @@ def test_fullscreen_overview_has_only_mission_planner_link() -> None:
             "url": "http://localhost:5173/missions",
         }
     ]
+
+
+def test_fullscreen_overview_clock_defaults_use_large_font_and_required_zones() -> None:
+    clock_panels = _clock_panels_by_title()
+
+    assert set(clock_panels) == set(EXPECTED_CLOCK_DEFAULTS)
+    for title, timezone in EXPECTED_CLOCK_DEFAULTS.items():
+        options = clock_panels[title]["options"]
+        assert options["timezone"] == timezone
+        assert options["timeSettings"]["fontSize"] == "36px"
 
 
 def test_fullscreen_overview_keeps_core_map_layers_visible_by_default() -> None:
