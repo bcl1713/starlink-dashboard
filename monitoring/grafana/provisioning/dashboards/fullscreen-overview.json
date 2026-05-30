@@ -87,7 +87,7 @@
         "showDate": false,
         "showSeconds": true,
         "timeSettings": {
-          "fontSize": "24px",
+          "fontSize": "36px",
           "fontWeight": "bold"
         },
         "timezone": "UTC",
@@ -159,7 +159,7 @@
         "showDate": false,
         "showSeconds": true,
         "timeSettings": {
-          "fontSize": "24px",
+          "fontSize": "36px",
           "fontWeight": "bold"
         },
         "timezone": "America/New_York",
@@ -231,7 +231,7 @@
         "showDate": false,
         "showSeconds": true,
         "timeSettings": {
-          "fontSize": "24px",
+          "fontSize": "36px",
           "fontWeight": "bold"
         },
         "timezone": "Asia/Tokyo",
@@ -303,10 +303,10 @@
         "showDate": false,
         "showSeconds": true,
         "timeSettings": {
-          "fontSize": "24px",
+          "fontSize": "36px",
           "fontWeight": "bold"
         },
-        "timezone": "Asia/Kuala_Lumpur",
+        "timezone": "America/Chicago",
         "timezoneSettings": {
           "fontSize": "12px",
           "fontWeight": "normal",
@@ -320,7 +320,7 @@
           "refId": "A"
         }
       ],
-      "title": "Kuala Lumpur",
+      "title": "Omaha",
       "type": "grafana-clock-panel"
     },
     {
