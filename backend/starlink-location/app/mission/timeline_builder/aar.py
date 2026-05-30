@@ -40,10 +40,13 @@ def resolve_aar_windows(
     waypoint_lookup = {wp.name: wp for wp in route.waypoints if wp.name}
 
     for idx, window in enumerate(mission.transports.aar_windows or []):
-        start_wp = waypoint_lookup.get(window.start_waypoint_name)
-        end_wp = waypoint_lookup.get(window.end_waypoint_name)
-        start_time = timestamp_for_waypoint(start_wp, projector)
-        end_time = timestamp_for_waypoint(end_wp, projector)
+        start_time = window.override_start_time
+        end_time = window.override_end_time
+        if start_time is None or end_time is None:
+            start_wp = waypoint_lookup.get(window.start_waypoint_name)
+            end_wp = waypoint_lookup.get(window.end_waypoint_name)
+            start_time = timestamp_for_waypoint(start_wp, projector)
+            end_time = timestamp_for_waypoint(end_wp, projector)
         if not start_time or not end_time or end_time <= start_time:
             continue
         # Ensure times are timezone-aware for consistent comparison

@@ -3,15 +3,19 @@
 from datetime import datetime, timedelta, timezone
 
 from app.mission.models import (
+    AARWindow,
+    MissionLeg,
     MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
     Transport,
+    TransportConfig,
     TransportState,
 )
 from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.state import TransportInterval
 from app.mission.timeline import build_timeline_segments
+from app.mission.timeline_builder.aar import resolve_aar_windows
 from app.mission.timeline_builder.stats import annotate_aar_markers
 from app.satellites.rules import EventType, MissionEvent
 
@@ -284,7 +288,7 @@ def test_call_availability_priority_aar_advisory_not_outage():
     assert labels == [
         "Nominal calls",
         "Safety-of-flight advised — AAR window",
-        "Unavailable — system outage",
+        "Unavailable — Ka outage",
         "Safety-of-flight advised — AAR window",
         "Nominal calls",
     ]
@@ -500,7 +504,7 @@ def test_call_availability_priority_critical_over_sof():
 
     assert timeline.segments[0].status == TimelineStatus.CRITICAL
     assert timeline.segments[0].metadata["call_posture"] == "Unavailable"
-    assert timeline.segments[0].metadata["primary_reason"] == "system outage"
+    assert timeline.segments[0].metadata["primary_reason"] == "Ka outage; Ku outage"
 
 
 def test_call_availability_source_status_priority_order_is_explicit():
@@ -621,7 +625,121 @@ def test_call_availability_rows_are_sorted_and_non_overlapping():
     assert [s.metadata["availability_label"] for s in timeline.segments] == [
         "Nominal calls",
         "Other activity conflict",
-        "Degraded — X Band / AAR conflict",
-        "Other activity conflict",
+        "Degraded — X Band / AAR conflict; AAR Start",
+        "Other activity conflict; AAR End",
         "Nominal calls",
     ]
+
+
+def test_call_availability_keeps_aar_start_boundary_during_existing_degrade():
+    degraded = _segment(
+        "seg-ka-gap",
+        0,
+        30,
+        TimelineStatus.DEGRADED,
+        reasons=["Ka coverage gap"],
+    )
+    degraded.ka_state = TransportState.DEGRADED
+    degraded.impacted_transports = [Transport.KA]
+    timeline = _timeline_from_segments(
+        [degraded],
+        statistics={
+            "_aar_blocks": [
+                {
+                    "start": (BASE + timedelta(minutes=10)).isoformat(),
+                    "end": (BASE + timedelta(minutes=20)).isoformat(),
+                }
+            ]
+        },
+    )
+
+    normalize_call_availability_timeline(timeline)
+
+    assert [(s.start_time, s.end_time) for s in timeline.segments] == [
+        (BASE, BASE + timedelta(minutes=10)),
+        (BASE + timedelta(minutes=10), BASE + timedelta(minutes=20)),
+        (BASE + timedelta(minutes=20), BASE + timedelta(minutes=30)),
+    ]
+    assert timeline.segments[1].status == TimelineStatus.DEGRADED
+    assert timeline.segments[1].metadata["boundary_markers"] == ["AAR Start"]
+    assert "AAR Start" in timeline.segments[1].metadata["availability_label"]
+
+
+def test_call_availability_lists_multiple_critical_degrade_causes():
+    critical = _segment(
+        "seg-critical",
+        0,
+        10,
+        TimelineStatus.CRITICAL,
+        reasons=["Ka transition AOR → POR", "Ku outage"],
+    )
+    critical.ka_state = TransportState.OFFLINE
+    critical.ku_state = TransportState.OFFLINE
+    critical.impacted_transports = [Transport.KA, Transport.KU]
+    timeline = _timeline_from_segments([critical])
+
+    normalize_call_availability_timeline(timeline)
+
+    label = timeline.segments[0].metadata["availability_label"]
+    assert timeline.segments[0].status == TimelineStatus.CRITICAL
+    assert "Ka transition AOR → POR" in label
+    assert "Ku outage" in label
+
+
+def test_call_availability_coalesces_adjacent_same_reason_degraded_blocks():
+    segments = []
+    for idx, (start, end) in enumerate(((0, 10), (10, 20), (20, 30)), start=1):
+        segment = _segment(
+            f"seg-swap-{idx}",
+            start,
+            end,
+            TimelineStatus.DEGRADED,
+            reasons=["X Transition to X-6"],
+        )
+        segment.x_state = TransportState.DEGRADED
+        segment.impacted_transports = [Transport.X]
+        segments.append(segment)
+    timeline = _timeline_from_segments(segments)
+
+    normalize_call_availability_timeline(timeline)
+
+    assert len(timeline.segments) == 1
+    assert timeline.segments[0].start_time == BASE
+    assert timeline.segments[0].end_time == BASE + timedelta(minutes=30)
+    assert timeline.segments[0].metadata["source_segment_ids"] == [
+        "seg-swap-1",
+        "seg-swap-2",
+        "seg-swap-3",
+    ]
+
+
+def test_resolve_aar_windows_uses_manual_time_overrides_without_route_waypoints():
+    override_start = BASE + timedelta(minutes=12)
+    override_end = BASE + timedelta(minutes=42)
+    mission = MissionLeg(
+        id="mission-override",
+        name="Mission override",
+        route_id="route-1",
+        transports=TransportConfig(
+            initial_x_satellite_id="X-1",
+            aar_windows=[
+                AARWindow(
+                    id="aar-1",
+                    start_waypoint_name="ARIP",
+                    end_waypoint_name="AREX",
+                    override_start_time=override_start,
+                    override_end_time=override_end,
+                )
+            ],
+        ),
+    )
+
+    windows = resolve_aar_windows(
+        mission,
+        route=type("Route", (), {"waypoints": []})(),
+        projector=object(),
+    )
+
+    assert len(windows) == 1
+    assert windows[0].start_time == override_start
+    assert windows[0].end_time == override_end

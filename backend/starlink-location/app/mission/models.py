@@ -161,6 +161,14 @@ class AARWindow(BaseModel):
         ...,
         description="Name of the ending waypoint (from KML) for AAR segment",
     )
+    override_start_time: Optional[datetime] = Field(
+        default=None,
+        description="Optional pilot-projected AAR start override (UTC, ISO-8601)",
+    )
+    override_end_time: Optional[datetime] = Field(
+        default=None,
+        description="Optional pilot-projected AAR end override (UTC, ISO-8601)",
+    )
 
     model_config = {
         "json_schema_extra": {

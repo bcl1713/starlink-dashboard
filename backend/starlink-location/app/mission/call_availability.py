@@ -44,6 +44,7 @@ class AvailabilityDecision:
     notes: tuple[str, ...]
     source_reasons: tuple[str, ...]
     source_segment_ids: tuple[str, ...]
+    boundary_markers: tuple[str, ...]
 
 
 _STATE_PRIORITY = {
@@ -116,7 +117,8 @@ def normalize_call_availability_timeline(timeline: MissionLegTimeline) -> None:
             continue
 
         in_sof = any(block.start <= start < block.end for block in aar_blocks)
-        decision = _decide_availability(active_segments, in_sof)
+        boundary_markers = _boundary_markers(start, aar_blocks)
+        decision = _decide_availability(active_segments, in_sof, boundary_markers)
         segment = _build_segment(
             timeline.mission_leg_id,
             len(normalized) + 1,
@@ -154,8 +156,20 @@ def _extract_aar_blocks(
     return blocks
 
 
+def _boundary_markers(start: datetime, aar_blocks: list[AARBlock]) -> tuple[str, ...]:
+    markers: list[str] = []
+    for block in aar_blocks:
+        if start == block.start:
+            markers.append("AAR Start")
+        if start == block.end:
+            markers.append("AAR End")
+    return tuple(markers)
+
+
 def _decide_availability(
-    segments: list[TimelineSegment], in_sof: bool
+    segments: list[TimelineSegment],
+    in_sof: bool,
+    boundary_markers: tuple[str, ...] = (),
 ) -> AvailabilityDecision:
     x_state = _highest_state(segment.x_state for segment in segments)
     ka_state = _highest_state(segment.ka_state for segment in segments)
@@ -206,7 +220,7 @@ def _decide_availability(
             TimelineStatus.CRITICAL if len(impacted) > 1 else TimelineStatus.DEGRADED
         )
         posture = "Unavailable"
-        primary = _primary_outage_reason(source_reasons)
+        primary = _combined_degrade_reason(source_reasons, skip_ku_x=has_ku_x_conflict)
     elif has_ku_x_conflict and not impacted:
         status = TimelineStatus.SOF
         posture = "Transport concurrency advisory"
@@ -220,7 +234,7 @@ def _decide_availability(
             len(impacted) > 1 or source_status == TimelineStatus.CRITICAL
         ) else TimelineStatus.DEGRADED
         posture = "Degraded" if status == TimelineStatus.DEGRADED else "Critical"
-        primary = _primary_activity_reason(source_reasons, skip_ku_x=has_ku_x_conflict)
+        primary = _combined_degrade_reason(source_reasons, skip_ku_x=has_ku_x_conflict)
     elif sof_reason := _primary_sof_reason(source_reasons):
         status = TimelineStatus.SOF
         posture = "Avoid calls"
@@ -242,6 +256,8 @@ def _decide_availability(
         label = primary
     else:
         label = f"{posture} — {primary}"
+    if boundary_markers and status in (TimelineStatus.DEGRADED, TimelineStatus.CRITICAL):
+        label = f"{label}; {', '.join(boundary_markers)}"
     return AvailabilityDecision(
         status=status,
         call_posture=posture,
@@ -254,6 +270,7 @@ def _decide_availability(
         notes=notes,
         source_reasons=source_reasons,
         source_segment_ids=source_segment_ids,
+        boundary_markers=boundary_markers,
     )
 
 
@@ -273,6 +290,7 @@ def _build_segment(
         "notes": list(decision.notes),
         "source_reasons": list(decision.source_reasons),
         "source_segment_ids": list(decision.source_segment_ids),
+        "boundary_markers": list(decision.boundary_markers),
     }
     return TimelineSegment(
         id=f"{mission_id}-availability-{index:03d}",
@@ -304,6 +322,7 @@ def _can_merge(left: TimelineSegment, right: TimelineSegment) -> bool:
         and left_meta.get("systems_affected") == right_meta.get("systems_affected")
         and left_meta.get("notes") == right_meta.get("notes")
         and left_meta.get("source_reasons") == right_meta.get("source_reasons")
+        and left_meta.get("boundary_markers") == right_meta.get("boundary_markers")
     )
 
 
@@ -360,10 +379,30 @@ def _segment_notes(segment: TimelineSegment) -> list[str]:
 
 
 def _primary_outage_reason(reasons: tuple[str, ...]) -> str:
+    return _combined_degrade_reason(reasons)
+
+
+def _combined_degrade_reason(
+    reasons: tuple[str, ...], *, skip_ku_x: bool = False
+) -> str:
+    labels: list[str] = []
     for reason in reasons:
-        if "outage" in reason.lower():
-            return "system outage"
-    return "system outage"
+        if not reason or not reason.strip():
+            continue
+        if skip_ku_x and _has_ku_x_conflict((reason,)):
+            continue
+        normalized = reason.lower()
+        if "safety-of-flight" in normalized or normalized == _REASON_LABELS["aar"].lower():
+            continue
+        if _is_satellite_swap_reason(reason):
+            label = f"Satellite swap: {reason}"
+        elif "outage" in normalized or "coverage gap" in normalized or "transition" in normalized:
+            label = reason
+        else:
+            label = reason
+        if label not in labels:
+            labels.append(label)
+    return "; ".join(labels) if labels else "system outage"
 
 
 def _primary_sof_reason(reasons: tuple[str, ...]) -> str | None:
