@@ -115,7 +115,7 @@ def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_lay
         "minZoom": 0,
         "url": RAINVIEWER_RADAR_TILE_URL,
     }
-    assert radar_layer["opacity"] == 0.35
+    assert radar_layer["opacity"] == 0.7
     assert layers.index(radar_layer) < min(
         layers.index(layers_by_name[layer_name]) for layer_name in CORE_MAP_LAYERS
     )

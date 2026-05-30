@@ -386,7 +386,7 @@
             },
             "name": "Weather Radar (RainViewer)",
             "noRepeat": false,
-            "opacity": 0.35,
+            "opacity": 0.7,
             "tooltip": false,
             "type": "xyz"
           },
