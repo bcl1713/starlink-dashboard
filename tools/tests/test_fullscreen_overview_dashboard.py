@@ -95,7 +95,7 @@ def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
     assert HCX_COMM_LAYER_SOURCES.isdisjoint(layer_sources)
 
 
-def test_fullscreen_overview_refits_view_to_current_position_on_data_refresh() -> None:
+def test_fullscreen_overview_refits_view_without_forcing_zoom() -> None:
     panel = _current_position_panel()
     view = panel["options"]["view"]
 
@@ -103,8 +103,9 @@ def test_fullscreen_overview_refits_view_to_current_position_on_data_refresh() -
     assert view["allLayers"] is False
     assert view["layer"] == "Current Position"
     assert view["lastOnly"] is True
-    assert view["zoom"] == 6
     assert view["padding"] == 25
+    assert "zoom" not in view
+    assert "initialZoom" not in view
 
 
 def test_fullscreen_overview_documents_grafana_follow_limitation() -> None:
@@ -114,5 +115,8 @@ def test_fullscreen_overview_documents_grafana_follow_limitation() -> None:
 
     assert "Grafana Geomap does not support true continuous auto-follow" in description
     assert "refits to the latest Current Position" in description
+    assert "without setting a fixed zoom" in description
+    assert "pause dashboard refresh" in dashboard_docs
+    assert "resume refresh" in dashboard_docs
     assert "true continuous auto-follow" in dashboard_docs
     assert "Fit to data" in dashboard_docs

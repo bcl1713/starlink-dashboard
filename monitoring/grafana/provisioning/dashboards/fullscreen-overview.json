@@ -328,7 +328,7 @@
         "type": "datasource",
         "uid": "-- Mixed --"
       },
-      "description": "Grafana Geomap does not support true continuous auto-follow for a moving marker in this provisioned dashboard. The map uses Fit to data on the Current Position layer, last value only, so each data refresh refits to the latest Current Position while preserving route, history, POI, satellite, and mission-event layers for operator context.",
+      "description": "Grafana Geomap does not support true continuous auto-follow for a moving marker in this provisioned dashboard. The map uses Fit to data on the Current Position layer, last value only, so each data refresh refits to the latest Current Position without setting a fixed zoom. Operators can pause dashboard refresh for free-pan/zoom inspection and resume refresh to recenter on the aircraft.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -709,8 +709,7 @@
           "layer": "Current Position",
           "noRepeat": false,
           "padding": 25,
-          "shared": false,
-          "zoom": 6
+          "shared": false
         }
       },
       "pluginVersion": "12.2.1",

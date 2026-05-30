@@ -77,12 +77,13 @@ mission-event awareness.
   in this provisioned dashboard; there is no native follow/track-camera option.
 - The dashboard uses Geomap **Fit to data** scoped to the `Current Position`
   layer, with `lastOnly` enabled. When panel data refreshes, Grafana refits the
-  view to the latest aircraft position.
-- A capped zoom and padding keep nearby route/history context visible in common
-  mission-monitoring cases, while the planned route, position history, POI,
-  satellite, and mission-event layers remain enabled and usable.
-- Operators can still manually pan/zoom for full-route inspection; the view will
-  refit back to the aircraft on the next data refresh.
+  view to the latest aircraft position without setting a fixed zoom level.
+- Grafana's native follow/refit behavior still recenters on refresh, so manual
+  pan/zoom is best treated as a free-pan mode: pause dashboard refresh while
+  inspecting the wider route or nearby context, then resume refresh to recenter
+  on the aircraft.
+- Planned route, position history, POI, satellite, and mission-event layers
+  remain enabled and usable.
 
 ---
 
