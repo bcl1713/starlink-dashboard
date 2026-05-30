@@ -48,6 +48,25 @@ def test_fullscreen_overview_dashboard_json_is_valid() -> None:
     assert dashboard["title"] == "Fullscreen Overview"
 
 
+def test_fullscreen_overview_has_only_mission_planner_link() -> None:
+    dashboard = _fullscreen_overview_dashboard()
+
+    assert dashboard["links"] == [
+        {
+            "asDropdown": False,
+            "icon": "external link",
+            "includeVars": False,
+            "keepTime": False,
+            "tags": [],
+            "targetBlank": True,
+            "title": "Mission Planner",
+            "tooltip": "Open Mission Planner",
+            "type": "link",
+            "url": "http://localhost:5173/missions",
+        }
+    ]
+
+
 def test_fullscreen_overview_keeps_core_map_layers_visible_by_default() -> None:
     layers = _layers_by_name()
 
