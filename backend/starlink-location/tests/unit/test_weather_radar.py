@@ -7,7 +7,6 @@ import pytest
 
 from app.services.weather_radar import RainViewerRadarService
 
-
 RAINVIEWER_METADATA = {
     "host": "https://tilecache.rainviewer.com",
     "radar": {
@@ -48,7 +47,9 @@ def test_rainviewer_service_prefers_nowcast_frame_when_available() -> None:
 
 def test_rainviewer_service_caches_metadata_between_tile_requests() -> None:
     metadata_fetcher = Mock(return_value=RAINVIEWER_METADATA)
-    service = RainViewerRadarService(metadata_fetcher=metadata_fetcher, cache_ttl_seconds=600)
+    service = RainViewerRadarService(
+        metadata_fetcher=metadata_fetcher, cache_ttl_seconds=600
+    )
 
     service.tile_url(z=1, x=2, y=3)
     service.tile_url(z=1, x=2, y=4)
@@ -64,7 +65,9 @@ def test_rainviewer_service_rejects_zoom_levels_rainviewer_does_not_serve() -> N
 
 
 def test_rainviewer_service_reports_unavailable_metadata() -> None:
-    service = RainViewerRadarService(metadata_fetcher=lambda: (_ for _ in ()).throw(URLError("nope")))
+    service = RainViewerRadarService(
+        metadata_fetcher=lambda: (_ for _ in ()).throw(URLError("nope"))
+    )
 
     with pytest.raises(RuntimeError, match="RainViewer metadata unavailable"):
         service.tile_url(z=0, x=0, y=0)

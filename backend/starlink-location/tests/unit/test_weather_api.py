@@ -3,17 +3,24 @@
 from app.api import weather
 
 
-def test_rainviewer_radar_tile_endpoint_redirects_to_latest_tile(client, monkeypatch) -> None:
+def test_rainviewer_radar_tile_endpoint_redirects_to_latest_tile(
+    client, monkeypatch
+) -> None:
     monkeypatch.setattr(
         weather.rainviewer_radar_service,
         "tile_url",
         lambda z, x, y: f"https://tilecache.rainviewer.com/radar/{z}/{x}/{y}.png",
     )
 
-    response = client.get("/api/weather/radar/rainviewer/3/4/5.png", follow_redirects=False)
+    response = client.get(
+        "/api/weather/radar/rainviewer/3/4/5.png", follow_redirects=False
+    )
 
     assert response.status_code == 307
-    assert response.headers["location"] == "https://tilecache.rainviewer.com/radar/3/4/5.png"
+    assert (
+        response.headers["location"]
+        == "https://tilecache.rainviewer.com/radar/3/4/5.png"
+    )
     assert response.headers["cache-control"] == "public, max-age=300"
 
 
@@ -23,7 +30,9 @@ def test_rainviewer_radar_tile_endpoint_returns_503_when_source_unavailable(
     def unavailable_tile_url(z: int, x: int, y: int) -> str:
         raise RuntimeError("RainViewer metadata unavailable")
 
-    monkeypatch.setattr(weather.rainviewer_radar_service, "tile_url", unavailable_tile_url)
+    monkeypatch.setattr(
+        weather.rainviewer_radar_service, "tile_url", unavailable_tile_url
+    )
 
     response = client.get("/api/weather/radar/rainviewer/3/4/5.png")
 
