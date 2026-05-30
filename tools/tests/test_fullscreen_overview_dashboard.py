@@ -59,6 +59,25 @@ def _clock_panels_by_title() -> dict[str, dict]:
     }
 
 
+def _panel_by_title(title: str) -> dict:
+    dashboard = _fullscreen_overview_dashboard()
+    panels = [
+        panel for panel in dashboard["panels"] if panel.get("title") == title
+    ]
+    assert len(panels) == 1
+    return panels[0]
+
+
+def _field_override_by_name(panel: dict, field_name: str) -> dict:
+    matches = [
+        override
+        for override in panel["fieldConfig"]["overrides"]
+        if override["matcher"] == {"id": "byName", "options": field_name}
+    ]
+    assert len(matches) == 1
+    return matches[0]
+
+
 def test_fullscreen_overview_dashboard_json_is_valid() -> None:
     dashboard = _fullscreen_overview_dashboard()
 
@@ -134,3 +153,29 @@ def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
         if layer.get("type") == "geojson"
     }
     assert HCX_COMM_LAYER_SOURCES.isdisjoint(layer_sources)
+
+
+def test_fullscreen_overview_poi_table_hides_active_route_fields() -> None:
+    poi_panel = _panel_by_title("POI Quick Reference (Top 5)")
+    organize_options = poi_panel["transformations"][0]["options"]
+
+    assert organize_options["excludeByName"]["active"] is True
+    assert organize_options["excludeByName"]["is_on_active_route"] is True
+
+
+def test_fullscreen_overview_poi_table_sets_readable_column_widths() -> None:
+    poi_panel = _panel_by_title("POI Quick Reference (Top 5)")
+
+    poi_override = _field_override_by_name(poi_panel, "POI")
+    eta_override = _field_override_by_name(poi_panel, "ETA")
+
+    assert {"id": "custom.width", "value": 220} in poi_override["properties"]
+    assert {"id": "custom.width", "value": 120} in eta_override["properties"]
+
+
+def test_fullscreen_overview_gives_map_more_vertical_space() -> None:
+    map_panel = _panel_by_title("Current Position")
+    packet_loss_panel = _panel_by_title("Packet Loss")
+
+    assert map_panel["gridPos"] == {"h": 23, "w": 18, "x": 0, "y": 3}
+    assert packet_loss_panel["gridPos"] == {"h": 4, "w": 18, "x": 0, "y": 26}
