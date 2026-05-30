@@ -199,7 +199,11 @@ def _decide_availability(
     ka_state = _highest_state(segment.ka_state for segment in segments)
     ku_state = _highest_state(segment.ku_state for segment in segments)
     source_reasons = tuple(
-        _unique(reason for segment in segments for reason in _segment_source_reasons(segment))
+        _unique(
+            reason
+            for segment in segments
+            for reason in _segment_source_reasons(segment)
+        )
     )
     source_segment_ids = tuple(
         _unique(segment.id for segment in segments if segment.id)
@@ -253,10 +257,15 @@ def _decide_availability(
         status = TimelineStatus.DEGRADED
         posture = "Degraded"
         primary = _REASON_LABELS["x_aar"]
-    elif impacted or source_status in (TimelineStatus.DEGRADED, TimelineStatus.CRITICAL):
-        status = TimelineStatus.CRITICAL if (
-            len(impacted) > 1 or source_status == TimelineStatus.CRITICAL
-        ) else TimelineStatus.DEGRADED
+    elif impacted or source_status in (
+        TimelineStatus.DEGRADED,
+        TimelineStatus.CRITICAL,
+    ):
+        status = (
+            TimelineStatus.CRITICAL
+            if (len(impacted) > 1 or source_status == TimelineStatus.CRITICAL)
+            else TimelineStatus.DEGRADED
+        )
         posture = "Degraded" if status == TimelineStatus.DEGRADED else "Critical"
         primary = _combined_degrade_reason(source_reasons, skip_ku_x=has_ku_x_conflict)
     elif sof_reason := _primary_sof_reason(source_reasons):
@@ -280,9 +289,7 @@ def _decide_availability(
         label = primary
     else:
         label = f"{posture} — {primary}"
-    operational_markers = _operational_markers(
-        source_reasons, in_sof, boundary_markers
-    )
+    operational_markers = _operational_markers(source_reasons, in_sof, boundary_markers)
     label = _label_with_markers(label, operational_markers)
     return AvailabilityDecision(
         status=status,
@@ -431,11 +438,18 @@ def _combined_degrade_reason(
         if skip_ku_x and _has_ku_x_conflict((reason,)):
             continue
         normalized = reason.lower()
-        if "safety-of-flight" in normalized or normalized == _REASON_LABELS["aar"].lower():
+        if (
+            "safety-of-flight" in normalized
+            or normalized == _REASON_LABELS["aar"].lower()
+        ):
             continue
         if _is_satellite_swap_reason(reason):
             label = f"Satellite swap: {reason}"
-        elif "outage" in normalized or "coverage gap" in normalized or "transition" in normalized:
+        elif (
+            "outage" in normalized
+            or "coverage gap" in normalized
+            or "transition" in normalized
+        ):
             label = reason
         else:
             label = reason
@@ -455,7 +469,9 @@ def _primary_activity_reason(
     reasons: tuple[str, ...], *, skip_ku_x: bool = False
 ) -> str:
     filtered_reasons = tuple(
-        reason for reason in reasons if not (skip_ku_x and _has_ku_x_conflict((reason,)))
+        reason
+        for reason in reasons
+        if not (skip_ku_x and _has_ku_x_conflict((reason,)))
     )
     for reason in filtered_reasons:
         if _is_satellite_swap_reason(reason):

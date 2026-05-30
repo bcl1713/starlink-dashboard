@@ -51,7 +51,9 @@ def resolve_aar_windows(
                     window.id or idx + 1,
                 )
                 continue
-            duration = ensure_timezone(route_end_time) - ensure_timezone(route_start_time)
+            duration = ensure_timezone(route_end_time) - ensure_timezone(
+                route_start_time
+            )
             try:
                 elapsed_offset = parse_elapsed_offset(window.override_start_elapsed)
             except ValueError as exc:

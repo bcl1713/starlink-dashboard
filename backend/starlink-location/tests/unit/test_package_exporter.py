@@ -137,8 +137,12 @@ def test_export_mission_package_uses_temp_files_for_mission_exports(
             assert "exports/mission/mission-timeline.csv" in zf.namelist()
             assert "exports/mission/mission-slides.pptx" in zf.namelist()
             assert "exports/mission/mission-timeline.xlsx" not in zf.namelist()
-            assert zf.read("exports/mission/mission-timeline.csv") == b"dummy csv content"
-            assert zf.read("exports/mission/mission-slides.pptx") == b"dummy pptx content"
+            assert (
+                zf.read("exports/mission/mission-timeline.csv") == b"dummy csv content"
+            )
+            assert (
+                zf.read("exports/mission/mission-slides.pptx") == b"dummy pptx content"
+            )
 
         assert mock_gen_csv.called
         assert mock_gen_pptx.called

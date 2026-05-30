@@ -1044,9 +1044,7 @@ def _generate_route_map(
     legend_elements = [
         # Route status colors
         Line2D([0], [0], color=STATUS_COLORS["nominal"], linewidth=3, label="Nominal"),
-        Line2D(
-            [0], [0], color=STATUS_COLORS["sof"], linewidth=3, label="Advisory"
-        ),
+        Line2D([0], [0], color=STATUS_COLORS["sof"], linewidth=3, label="Advisory"),
         Line2D(
             [0], [0], color=STATUS_COLORS["degraded"], linewidth=3, label="Degraded"
         ),
@@ -1550,7 +1548,9 @@ def _cover_metadata_line(
             metadata_source = mission
 
     metadata = getattr(metadata_source, "metadata", None) or {}
-    mission_number = metadata.get("mission_number") if isinstance(metadata, dict) else None
+    mission_number = (
+        metadata.get("mission_number") if isinstance(metadata, dict) else None
+    )
     revision = metadata.get("revision") if isinstance(metadata, dict) else None
     parts = [leg_label]
     if mission_number:

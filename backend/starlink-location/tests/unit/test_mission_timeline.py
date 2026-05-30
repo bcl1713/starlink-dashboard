@@ -253,7 +253,9 @@ def test_call_availability_aar_advisory_carves_hole_without_degrading():
     ]
     assert timeline.segments[1].status == TimelineStatus.SOF
     assert timeline.segments[1].metadata["primary_reason"] == "AAR window"
-    assert timeline.segments[1].reasons == ["Safety-of-flight advised — AAR window; AAR Start"]
+    assert timeline.segments[1].reasons == [
+        "Safety-of-flight advised — AAR window; AAR Start"
+    ]
 
 
 def test_call_availability_priority_aar_advisory_not_outage():
@@ -412,7 +414,6 @@ def test_call_availability_x_aar_conflict_is_specific_degrade():
     ]
     assert degraded
     assert degraded[0].metadata["call_posture"] == "Degraded"
-
 
 
 def test_call_availability_aar_reason_with_unrelated_x_is_not_x_aar_conflict():
