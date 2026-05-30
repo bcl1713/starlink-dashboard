@@ -15,6 +15,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+import re
 import matplotlib
 
 matplotlib.use("Agg")  # Headless mode for Docker
@@ -1270,6 +1271,69 @@ def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
     return buffer.read()
 
 
+def _compact_reason_label(segment: TimelineSegment) -> str:
+    """Return concise operator-facing reason labels for tabular exports."""
+    metadata = segment.metadata or {}
+    raw_markers = metadata.get("operational_markers") or []
+    markers = [str(marker) for marker in raw_markers if str(marker).strip()]
+    compact_parts: list[str] = []
+
+    has_aar_boundary = any(
+        marker.lower() in {"aar start", "aar end"} for marker in markers
+    )
+    for marker in markers:
+        marker_lower = marker.lower()
+        if marker_lower == "aar window":
+            if has_aar_boundary:
+                continue
+            compact = "AAR Window"
+        elif marker_lower in {"aar start", "aar end"}:
+            compact = marker.title().replace("Aar", "AAR")
+        elif "safety-of-flight" in marker_lower or "safety window" in marker_lower:
+            if any(part.startswith("AAR") for part in compact_parts):
+                continue
+            if "takeoff" in marker_lower:
+                compact = "Takeoff"
+            elif "landing" in marker_lower:
+                compact = "Landing"
+            else:
+                compact = "SOF"
+        else:
+            compact = marker
+        if compact not in compact_parts:
+            compact_parts.append(compact)
+
+    if any(part in {"AAR Start", "AAR End"} for part in compact_parts):
+        return "; ".join(compact_parts)
+
+    source_reasons = metadata.get("source_reasons") or segment.reasons
+    for reason_value in source_reasons:
+        reason = str(reason_value)
+        reason_lower = reason.lower()
+        compact = ""
+        if "x" in reason_lower and "ku" in reason_lower and "conflict" in reason_lower:
+            compact = "X/Ku Conflict"
+        elif match := re.search(
+            r"ka\s+transition\s+([A-Za-z0-9-]+)\s*(?:→|->|=>|to)\s*([A-Za-z0-9-]+)",
+            reason,
+            flags=re.IGNORECASE,
+        ):
+            compact = f"Ka {match.group(1).upper()} => {match.group(2).upper()}"
+        elif match := re.search(
+            r"x\s+transition\s+(?:to\s+)?([A-Za-z0-9-]+)",
+            reason,
+            flags=re.IGNORECASE,
+        ):
+            compact = f"X => {match.group(1).upper()}"
+
+        if compact and compact not in compact_parts:
+            compact_parts.append(compact)
+
+    if compact_parts:
+        return "; ".join(compact_parts)
+    return ", ".join(segment.reasons)
+
+
 def _segment_rows(
     timeline: MissionLegTimeline,
     mission: Mission | None,
@@ -1327,7 +1391,7 @@ def _segment_rows(
             TRANSPORT_DISPLAY[Transport.KU]: segment.ku_state.value.upper(),
             "Impacted Transports": impacted_display,
             "Systems Affected": ", ".join(systems_affected),
-            "Reasons": ", ".join(segment.reasons),
+            "Reasons": _compact_reason_label(segment),
             "Notes / Source Events": notes_and_sources,
             "Metadata": (
                 json.dumps(segment.metadata, sort_keys=True) if segment.metadata else ""

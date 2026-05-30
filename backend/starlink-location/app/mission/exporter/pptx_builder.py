@@ -505,15 +505,15 @@ def _add_timeline_table(
             if col_name == "Status":
                 val_lower = val.lower()
 
-                # Check for Safety-of-Flight in reasons
-                is_sof = False
-                reasons = str(row_data.get("Reasons", "")).lower()
-                if "safety-of-flight" in reasons or "aar" in reasons:
-                    is_sof = True
+                # Treat exported status as the source of truth. Compact operator
+                # markers such as "AAR End" may appear on nominal rows and must
+                # not recolor/relabel them as advisory.
+                is_sof = val_lower in ("sof", "advisory")
 
                 # Override advisory window status text for user-facing output.
-                if is_sof and val_lower in ("available", "nominal", "sof"):
+                if is_sof and val_lower in ("sof", "advisory"):
                     cell.text = "ADVISORY"
+                    val_lower = "advisory"
                     # Re-apply font size since setting text resets it
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.size = Pt(8)
