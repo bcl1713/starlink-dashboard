@@ -328,6 +328,7 @@
         "type": "datasource",
         "uid": "-- Mixed --"
       },
+      "description": "Grafana Geomap does not support true continuous auto-follow for a moving marker in this provisioned dashboard. The map uses Fit to data on the Current Position layer, last value only, so each data refresh refits to the latest Current Position while preserving route, history, POI, satellite, and mission-event layers for operator context.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -703,14 +704,13 @@
         },
         "view": {
           "allLayers": false,
-          "fit": true,
-          "id": "zero",
-          "initialZoom": 4,
-          "lat": 0,
-          "lon": 0,
+          "id": "fit",
+          "lastOnly": true,
+          "layer": "Current Position",
           "noRepeat": false,
+          "padding": 25,
           "shared": false,
-          "zoom": 1
+          "zoom": 6
         }
       },
       "pluginVersion": "12.2.1",

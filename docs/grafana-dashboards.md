@@ -63,7 +63,30 @@ The main dashboard providing a high-level view of terminal operations:
 
 ---
 
-### 2. Network Metrics (Detailed Network Performance)
+### 2. Fullscreen Overview (Operator Display)
+
+**UID:** `starlink-fullscreen`
+
+The fullscreen overview is intended for mission-monitoring displays where the map
+should keep the aircraft visible while preserving enough context for route and
+mission-event awareness.
+
+#### Aircraft Follow Behavior
+
+- Grafana Geomap does not provide true continuous auto-follow for a moving marker
+  in this provisioned dashboard; there is no native follow/track-camera option.
+- The dashboard uses Geomap **Fit to data** scoped to the `Current Position`
+  layer, with `lastOnly` enabled. When panel data refreshes, Grafana refits the
+  view to the latest aircraft position.
+- A capped zoom and padding keep nearby route/history context visible in common
+  mission-monitoring cases, while the planned route, position history, POI,
+  satellite, and mission-event layers remain enabled and usable.
+- Operators can still manually pan/zoom for full-route inspection; the view will
+  refit back to the aircraft on the next data refresh.
+
+---
+
+### 3. Network Metrics (Detailed Network Performance)
 
 **UID:** `starlink-network`
 
@@ -95,7 +118,7 @@ All panels include min/max/mean statistics in legends for quick reference.
 
 ---
 
-### 3. Position & Movement (Detailed Positioning)
+### 4. Position & Movement (Detailed Positioning)
 
 **UID:** `starlink-position`
 

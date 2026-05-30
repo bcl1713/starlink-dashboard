@@ -26,7 +26,7 @@ def _fullscreen_overview_dashboard() -> dict:
     return json.loads(DASHBOARD_PATH.read_text())
 
 
-def _current_position_layers() -> list[dict]:
+def _current_position_panel() -> dict:
     dashboard = _fullscreen_overview_dashboard()
     geomap_panels = [
         panel
@@ -35,7 +35,11 @@ def _current_position_layers() -> list[dict]:
         and panel.get("title") == "Current Position"
     ]
     assert len(geomap_panels) == 1
-    return geomap_panels[0]["options"]["layers"]
+    return geomap_panels[0]
+
+
+def _current_position_layers() -> list[dict]:
+    return _current_position_panel()["options"]["layers"]
 
 
 def _layers_by_name() -> dict[str, dict]:
@@ -89,3 +93,26 @@ def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
         if layer.get("type") == "geojson"
     }
     assert HCX_COMM_LAYER_SOURCES.isdisjoint(layer_sources)
+
+
+def test_fullscreen_overview_refits_view_to_current_position_on_data_refresh() -> None:
+    panel = _current_position_panel()
+    view = panel["options"]["view"]
+
+    assert view["id"] == "fit"
+    assert view["allLayers"] is False
+    assert view["layer"] == "Current Position"
+    assert view["lastOnly"] is True
+    assert view["zoom"] == 6
+    assert view["padding"] == 25
+
+
+def test_fullscreen_overview_documents_grafana_follow_limitation() -> None:
+    panel = _current_position_panel()
+    description = panel["description"]
+    dashboard_docs = (REPO_ROOT / "docs" / "grafana-dashboards.md").read_text()
+
+    assert "Grafana Geomap does not support true continuous auto-follow" in description
+    assert "refits to the latest Current Position" in description
+    assert "true continuous auto-follow" in dashboard_docs
+    assert "Fit to data" in dashboard_docs
