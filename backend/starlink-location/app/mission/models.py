@@ -169,6 +169,13 @@ class AARWindow(BaseModel):
         default=None,
         description="Optional pilot-projected AAR end override (UTC, ISO-8601)",
     )
+    override_start_elapsed: Optional[str] = Field(
+        default=None,
+        description=(
+            "Optional flight-deck mission elapsed AAR start override "
+            "using T+HH:MM or T+HH:MM:SS. The original AR duration is preserved."
+        ),
+    )
 
     model_config = {
         "json_schema_extra": {

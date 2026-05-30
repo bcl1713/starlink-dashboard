@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.mission.models import MissionLeg
 from app.models.route import ParsedRoute
@@ -40,13 +40,36 @@ def resolve_aar_windows(
     waypoint_lookup = {wp.name: wp for wp in route.waypoints if wp.name}
 
     for idx, window in enumerate(mission.transports.aar_windows or []):
-        start_time = window.override_start_time
-        end_time = window.override_end_time
-        if start_time is None or end_time is None:
-            start_wp = waypoint_lookup.get(window.start_waypoint_name)
-            end_wp = waypoint_lookup.get(window.end_waypoint_name)
-            start_time = timestamp_for_waypoint(start_wp, projector)
-            end_time = timestamp_for_waypoint(end_wp, projector)
+        start_wp = waypoint_lookup.get(window.start_waypoint_name)
+        end_wp = waypoint_lookup.get(window.end_waypoint_name)
+        route_start_time = timestamp_for_waypoint(start_wp, projector)
+        route_end_time = timestamp_for_waypoint(end_wp, projector)
+        if window.override_start_elapsed:
+            if route_start_time is None or route_end_time is None:
+                logger.warning(
+                    "Skipping AAR window %s: T+ override requires route waypoint times",
+                    window.id or idx + 1,
+                )
+                continue
+            duration = ensure_timezone(route_end_time) - ensure_timezone(route_start_time)
+            try:
+                elapsed_offset = parse_elapsed_offset(window.override_start_elapsed)
+            except ValueError as exc:
+                logger.warning(
+                    "Skipping AAR window %s: invalid T+ override %r (%s)",
+                    window.id or idx + 1,
+                    window.override_start_elapsed,
+                    exc,
+                )
+                continue
+            start_time = ensure_timezone(projector.start_time) + elapsed_offset
+            end_time = start_time + duration
+        else:
+            start_time = window.override_start_time
+            end_time = window.override_end_time
+            if start_time is None or end_time is None:
+                start_time = route_start_time
+                end_time = route_end_time
         if not start_time or not end_time or end_time <= start_time:
             continue
         # Ensure times are timezone-aware for consistent comparison
@@ -61,6 +84,22 @@ def resolve_aar_windows(
         )
 
     return windows
+
+
+def parse_elapsed_offset(value: str) -> timedelta:
+    """Parse flight-deck mission elapsed values such as T+02:15."""
+
+    raw = value.strip().upper()
+    if raw.startswith("T+"):
+        raw = raw[2:]
+    parts = raw.split(":")
+    if len(parts) not in (2, 3):
+        raise ValueError("Elapsed AAR override must use T+HH:MM or T+HH:MM:SS")
+    hours, minutes = int(parts[0]), int(parts[1])
+    seconds = int(parts[2]) if len(parts) == 3 else 0
+    if hours < 0 or minutes < 0 or seconds < 0 or minutes >= 60 or seconds >= 60:
+        raise ValueError("Elapsed AAR override contains invalid time fields")
+    return timedelta(hours=hours, minutes=minutes, seconds=seconds)
 
 
 def apply_x_transitions(

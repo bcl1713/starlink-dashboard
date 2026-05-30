@@ -299,7 +299,6 @@ def add_timeline_table_slides(
     columns_to_show = [
         "Segment #",
         "Status",
-        "Operational Markers",
         "Start Time",
         "End Time",
         "Duration",
@@ -453,7 +452,7 @@ def _add_timeline_table(
 
     # Set column widths (adjusted for wider times)
     # Total width 9 inches
-    col_weights = [0.5, 0.85, 1.1, 1.55, 1.55, 0.85, 0.85, 0.85, 0.85, 1.4]
+    col_weights = [0.5, 0.85, 1.55, 1.55, 0.85, 0.85, 0.85, 0.85, 1.4]
     total_weight = sum(col_weights)
     for i, weight in enumerate(col_weights):
         table.columns[i].width = int(width * (weight / total_weight))

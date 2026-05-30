@@ -24,6 +24,17 @@ interface AARSegmentEditorProps {
   availableWaypoints: string[];
 }
 
+const ELAPSED_PATTERN = /^T\+\d{1,3}:\d{2}(?::\d{2})?$/i;
+
+function normalizeElapsedInput(value: string) {
+  const trimmed = value.trim().toUpperCase();
+  if (!trimmed) {
+    return null;
+  }
+  const withPrefix = trimmed.startsWith('T+') ? trimmed : `T+${trimmed}`;
+  return ELAPSED_PATTERN.test(withPrefix) ? withPrefix : trimmed;
+}
+
 export function AARSegmentEditor({
   segments,
   onSegmentsChange,
@@ -31,30 +42,17 @@ export function AARSegmentEditor({
 }: AARSegmentEditorProps) {
   const [newSegment, setNewSegment] = useState<Partial<AARSegment>>({});
 
-  const formatOverrideForInput = (value?: string | null) => {
-    if (!value) {
-      return '';
-    }
-    const normalized = value.endsWith('Z') ? value : `${value}Z`;
-    return normalized.slice(0, 16);
-  };
-
-  const toUtcOverride = (value: string) => {
-    if (!value) {
-      return null;
-    }
-    return `${value}:00Z`;
-  };
-
-  const updateSegmentOverride = (
-    index: number,
-    field: 'override_start_time' | 'override_end_time',
-    value: string
-  ) => {
+  const updateSegmentElapsedOverride = (index: number, value: string) => {
+    const normalized = normalizeElapsedInput(value);
     onSegmentsChange(
       segments.map((segment, segmentIndex) =>
         segmentIndex === index
-          ? { ...segment, [field]: toUtcOverride(value) }
+          ? {
+              ...segment,
+              override_start_elapsed: normalized,
+              override_start_time: null,
+              override_end_time: null,
+            }
           : segment
       )
     );
@@ -66,6 +64,7 @@ export function AARSegmentEditor({
         segmentIndex === index
           ? {
               ...segment,
+              override_start_elapsed: null,
               override_start_time: null,
               override_end_time: null,
             }
@@ -114,73 +113,72 @@ export function AARSegmentEditor({
       <div>
         <h3 className="text-sm font-medium mb-2">AAR Segments</h3>
         <p className="mb-3 text-xs text-muted-foreground">
-          Optional UTC overrides let operators enter wind-adjusted,
-          pilot-projected AR start/end times. Saving the leg persists these
-          times and regenerates the preview/export from the adjusted boundaries.
+          Enter flight-deck AR timing as a mission-elapsed start value such as
+          T+07:12. The original AR duration is preserved automatically, so AREX
+          shifts by the same delta when the ARIP override changes.
         </p>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Start Waypoint</TableHead>
               <TableHead>End Waypoint</TableHead>
-              <TableHead>Override Start (UTC)</TableHead>
-              <TableHead>Override End (UTC)</TableHead>
+              <TableHead>Override AR Start (T+HH:MM)</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {segments.map((segment, index) => (
-              <TableRow key={segment.id}>
-                <TableCell>{segment.start_waypoint_name}</TableCell>
-                <TableCell>{segment.end_waypoint_name}</TableCell>
-                <TableCell>
-                  <Input
-                    type="datetime-local"
-                    value={formatOverrideForInput(segment.override_start_time)}
-                    onChange={(event) =>
-                      updateSegmentOverride(
-                        index,
-                        'override_start_time',
-                        event.target.value
-                      )
-                    }
-                    aria-label={`Override start time for ${segment.start_waypoint_name}`}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="datetime-local"
-                    value={formatOverrideForInput(segment.override_end_time)}
-                    onChange={(event) =>
-                      updateSegmentOverride(
-                        index,
-                        'override_end_time',
-                        event.target.value
-                      )
-                    }
-                    aria-label={`Override end time for ${segment.end_waypoint_name}`}
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => clearSegmentOverrides(index)}
-                    >
-                      Clear Times
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleRemoveSegment(index)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
+            {segments.map((segment, index) => {
+              const elapsedValue = segment.override_start_elapsed ?? '';
+              const elapsedIsValid =
+                !elapsedValue || ELAPSED_PATTERN.test(elapsedValue);
+              return (
+                <TableRow key={segment.id}>
+                  <TableCell>{segment.start_waypoint_name}</TableCell>
+                  <TableCell>{segment.end_waypoint_name}</TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <Input
+                        placeholder="T+00:00"
+                        value={elapsedValue}
+                        onChange={(event) =>
+                          updateSegmentElapsedOverride(
+                            index,
+                            event.target.value
+                          )
+                        }
+                        aria-label={`Mission elapsed AR start for ${segment.start_waypoint_name}`}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Preserves AR duration and shifts AREX automatically.
+                      </p>
+                      {!elapsedIsValid && (
+                        <p className="text-xs text-destructive">
+                          Use T+HH:MM or T+HH:MM:SS.
+                        </p>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => clearSegmentOverrides(index)}
+                      >
+                        Clear T+
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveSegment(index)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             <TableRow>
               <TableCell>
                 <Select
@@ -227,12 +225,7 @@ export function AARSegmentEditor({
               </TableCell>
               <TableCell>
                 <span className="text-xs text-muted-foreground">
-                  Uses waypoint time unless set after adding.
-                </span>
-              </TableCell>
-              <TableCell>
-                <span className="text-xs text-muted-foreground">
-                  Uses waypoint time unless set after adding.
+                  Optional after adding; defaults to waypoint timing.
                 </span>
               </TableCell>
               <TableCell>

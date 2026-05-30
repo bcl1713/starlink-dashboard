@@ -1303,7 +1303,6 @@ def _segment_rows(
         notes = metadata.get("notes") or []
         source_reasons = metadata.get("source_reasons") or segment.reasons
         notes_and_sources = _format_notes_and_sources(notes, source_reasons)
-        operational_markers = _format_marker_list(metadata.get("operational_markers"))
         impacted_display = serialize_transport_list(segment.impacted_transports)
         if warning_only:
             status_value = TimelineStatus.NOMINAL.value.upper()
@@ -1318,7 +1317,6 @@ def _segment_rows(
             "Status": status_value,
             "Call Posture": call_posture,
             "Primary Reason": primary_reason,
-            "Operational Markers": operational_markers,
             "Start Time": compose_time_block(start_utc, mission_start),
             "End Time": compose_time_block(end_utc, mission_start),
             "Duration": format_seconds_hms(duration_seconds),
@@ -1347,7 +1345,6 @@ def _segment_rows(
         "Status",
         "Call Posture",
         "Primary Reason",
-        "Operational Markers",
         "Start Time",
         "End Time",
         "Duration",

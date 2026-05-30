@@ -15,7 +15,7 @@ from app.mission.models import (
 from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.state import TransportInterval
 from app.mission.timeline import build_timeline_segments
-from app.mission.timeline_builder.aar import resolve_aar_windows
+from app.mission.timeline_builder.aar import parse_elapsed_offset, resolve_aar_windows
 from app.mission.timeline_builder.stats import annotate_aar_markers
 from app.satellites.rules import EventType, MissionEvent
 
@@ -253,7 +253,7 @@ def test_call_availability_aar_advisory_carves_hole_without_degrading():
     ]
     assert timeline.segments[1].status == TimelineStatus.SOF
     assert timeline.segments[1].metadata["primary_reason"] == "AAR window"
-    assert timeline.segments[1].reasons == ["Safety-of-flight advised — AAR window"]
+    assert timeline.segments[1].reasons == ["Safety-of-flight advised — AAR window; AAR Start"]
 
 
 def test_call_availability_priority_aar_advisory_not_outage():
@@ -287,10 +287,10 @@ def test_call_availability_priority_aar_advisory_not_outage():
     labels = [s.metadata["availability_label"] for s in timeline.segments]
     assert labels == [
         "Nominal calls",
+        "Safety-of-flight advised — AAR window; AAR Start",
+        "Unavailable — Ka outage; AAR window",
         "Safety-of-flight advised — AAR window",
-        "Unavailable — Ka outage",
-        "Safety-of-flight advised — AAR window",
-        "Nominal calls",
+        "Nominal calls; AAR End",
     ]
 
 
@@ -455,9 +455,9 @@ def test_call_availability_takeoff_landing_sof_periods_are_distinct():
     normalize_call_availability_timeline(timeline)
 
     assert [s.metadata["availability_label"] for s in timeline.segments] == [
-        "Avoid calls — Safety-of-Flight (takeoff)",
+        "Avoid calls — Safety-of-Flight (takeoff); Takeoff safety window",
         "Nominal calls",
-        "Avoid calls — Safety-of-Flight (landing)",
+        "Avoid calls — Safety-of-Flight (landing); Landing safety window",
     ]
     assert [s.status for s in timeline.segments] == [
         TimelineStatus.SOF,
@@ -582,11 +582,11 @@ def test_call_availability_normalization_is_idempotent_for_labels():
 
     assert [s.metadata["availability_label"] for s in timeline.segments] == [
         "Degraded — Satellite swap: Ka transition IOR → POR",
-        "Avoid calls — Safety-of-Flight (landing)",
+        "Avoid calls — Safety-of-Flight (landing); Landing safety window",
     ]
     assert [s.reasons for s in timeline.segments] == [
         ["Degraded — Satellite swap: Ka transition IOR → POR"],
-        ["Avoid calls — Safety-of-Flight (landing)"],
+        ["Avoid calls — Safety-of-Flight (landing); Landing safety window"],
     ]
 
 
@@ -625,8 +625,8 @@ def test_call_availability_rows_are_sorted_and_non_overlapping():
     assert [s.metadata["availability_label"] for s in timeline.segments] == [
         "Nominal calls",
         "Other activity conflict",
-        "Degraded — X Band / AAR conflict",
-        "Other activity conflict",
+        "Degraded — X Band / AAR conflict; AAR Start; AAR window",
+        "Other activity conflict; AAR End",
         "Nominal calls",
     ]
     assert [s.metadata.get("operational_markers") for s in timeline.segments] == [
@@ -673,10 +673,11 @@ def test_call_availability_keeps_aar_start_boundary_during_existing_degrade():
         "AAR Start",
         "AAR window",
     ]
-    assert "AAR Start" not in timeline.segments[1].metadata["availability_label"]
+    assert "AAR Start" in timeline.segments[1].metadata["availability_label"]
+    assert "AAR Start" in timeline.segments[1].reasons[0]
 
 
-def test_call_availability_exposes_aar_start_as_operational_marker_not_reason_suffix():
+def test_call_availability_exposes_aar_start_inline_in_reason_text():
     conflict = _segment(
         "seg-x-ku",
         0,
@@ -703,13 +704,15 @@ def test_call_availability_exposes_aar_start_as_operational_marker_not_reason_su
     aar_start_segment = timeline.segments[1]
     assert aar_start_segment.status == TimelineStatus.SOF
     assert aar_start_segment.metadata["availability_label"] == (
-        "X Band / Ku conflict — choose one transport"
+        "X Band / Ku conflict — choose one transport; AAR Start; AAR window"
     )
     assert aar_start_segment.metadata["operational_markers"] == [
         "AAR Start",
         "AAR window",
     ]
-    assert "AAR Start" not in aar_start_segment.reasons[0]
+    assert aar_start_segment.reasons[0] == (
+        "X Band / Ku conflict — choose one transport; AAR Start; AAR window"
+    )
 
 
 def test_call_availability_lists_multiple_critical_degrade_causes():
@@ -777,7 +780,7 @@ def test_call_availability_landing_marker_survives_x_ku_advisory_overlap():
     assert len(timeline.segments) == 1
     assert timeline.segments[0].status == TimelineStatus.SOF
     assert timeline.segments[0].metadata["availability_label"] == (
-        "X Band / Ku conflict — choose one transport"
+        "X Band / Ku conflict — choose one transport; Landing safety window"
     )
     assert timeline.segments[0].metadata["operational_markers"] == [
         "Landing safety window"
@@ -814,3 +817,54 @@ def test_resolve_aar_windows_uses_manual_time_overrides_without_route_waypoints(
     assert len(windows) == 1
     assert windows[0].start_time == override_start
     assert windows[0].end_time == override_end
+
+
+def test_elapsed_aar_override_preserves_route_duration_and_shifts_end_time():
+    original_start = BASE + timedelta(minutes=15)
+    original_end = BASE + timedelta(minutes=75)
+    mission = MissionLeg(
+        id="mission-elapsed-override",
+        name="Mission elapsed override",
+        route_id="route-1",
+        transports=TransportConfig(
+            initial_x_satellite_id="X-1",
+            aar_windows=[
+                AARWindow(
+                    id="aar-1",
+                    start_waypoint_name="ARIP",
+                    end_waypoint_name="AREX",
+                    override_start_elapsed="T+00:30",
+                )
+            ],
+        ),
+    )
+    waypoint_type = type("Waypoint", (), {})
+    arip = waypoint_type()
+    arip.name = "ARIP"
+    arip.expected_arrival_time = original_start
+    arip.latitude = 0.0
+    arip.longitude = 0.0
+    arex = waypoint_type()
+    arex.name = "AREX"
+    arex.expected_arrival_time = original_end
+    arex.latitude = 0.0
+    arex.longitude = 0.0
+    projector = type(
+        "Projector",
+        (),
+        {
+            "start_time": BASE,
+            "shift_route_timestamp": lambda self, timestamp: timestamp,
+        },
+    )()
+
+    windows = resolve_aar_windows(
+        mission,
+        route=type("Route", (), {"waypoints": [arip, arex]})(),
+        projector=projector,
+    )
+
+    assert parse_elapsed_offset("T+00:30") == timedelta(minutes=30)
+    assert len(windows) == 1
+    assert windows[0].start_time == BASE + timedelta(minutes=30)
+    assert windows[0].end_time == BASE + timedelta(minutes=90)

@@ -283,6 +283,7 @@ def _decide_availability(
     operational_markers = _operational_markers(
         source_reasons, in_sof, boundary_markers
     )
+    label = _label_with_markers(label, operational_markers)
     return AvailabilityDecision(
         status=status,
         call_posture=posture,
@@ -298,6 +299,16 @@ def _decide_availability(
         boundary_markers=boundary_markers,
         operational_markers=operational_markers,
     )
+
+
+def _label_with_markers(label: str, markers: tuple[str, ...]) -> str:
+    visible_markers = tuple(
+        marker for marker in markers if marker.lower() not in label.lower()
+    )
+    if not visible_markers:
+        return label
+    marker_text = "; ".join(visible_markers)
+    return f"{label}; {marker_text}"
 
 
 def _build_segment(

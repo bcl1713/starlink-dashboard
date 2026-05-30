@@ -69,6 +69,7 @@ export function LegDetailPage() {
           end_waypoint_name: s.end_waypoint_name,
           override_start_time: s.override_start_time,
           override_end_time: s.override_end_time,
+          override_start_elapsed: s.override_start_elapsed,
         })),
         ku_overrides: satelliteConfig.ku_outages.map((k) => ({
           id: k.id,

@@ -167,7 +167,7 @@ class TestMissionTimelineExporters:
         assert row["Reasons"] == "X Band / Ku conflict — choose one transport"
         assert "PACE" not in row["Reasons"]
 
-    def test_aar_boundary_and_landing_markers_export_in_dedicated_column(self, mission):
+    def test_aar_boundary_and_landing_markers_export_inline_in_reasons(self, mission):
         start = datetime(2025, 11, 5, 18, 34, tzinfo=timezone.utc)
         segment = TimelineSegment(
             id="seg-x-ku-aar",
@@ -197,11 +197,11 @@ class TestMissionTimelineExporters:
 
         df = mission_exporter._segment_rows(timeline, mission)
 
-        assert "Operational Markers" in df.columns
+        assert "Operational Markers" not in df.columns
         aar_start = df[df["Start Time"].str.contains("18:42Z")].iloc[0]
         assert aar_start["Status"] == "ADVISORY"
-        assert aar_start["Reasons"] == "X Band / Ku conflict — choose one transport"
-        assert aar_start["Operational Markers"] == (
+        assert aar_start["Reasons"] == (
+            "X Band / Ku conflict — choose one transport; "
             "AAR Start; AAR window; Landing safety window"
         )
 
@@ -244,7 +244,7 @@ class TestMissionTimelineExporters:
         ]
         assert list(df["Primary Reason"]) == ["AAR window", "nominal window"]
         assert list(df["Reasons"]) == [
-            "Safety-of-flight advised — AAR window",
-            "Nominal calls",
+            "Safety-of-flight advised — AAR window; AAR Start",
+            "Nominal calls; AAR End",
         ]
         assert df.iloc[0]["Systems Affected"] == ""
