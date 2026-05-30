@@ -223,7 +223,8 @@ def add_status_badge(
     paragraph.alignment = PP_ALIGN.CENTER
     paragraph.font.size = Pt(11)
     paragraph.font.bold = True
-    paragraph.font.color.rgb = TEXT_WHITE
+    text_color = TEXT_BLACK if status == TimelineStatus.DEGRADED else TEXT_WHITE
+    paragraph.font.color.rgb = text_color
 
     return shape
 
