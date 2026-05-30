@@ -379,6 +379,19 @@
         "layers": [
           {
             "config": {
+              "attribution": "Weather radar \u00a9 Rain Viewer / MeteoLab Inc.",
+              "maxZoom": 7,
+              "minZoom": 0,
+              "url": "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+            },
+            "name": "Weather Radar (RainViewer)",
+            "noRepeat": false,
+            "opacity": 0.35,
+            "tooltip": false,
+            "type": "xyz"
+          },
+          {
+            "config": {
               "showLegend": true,
               "style": {
                 "color": {

@@ -18,6 +18,8 @@ CORE_MAP_LAYERS = {
     "MissionEvents",
     "Satellites",
 }
+RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
+RAINVIEWER_RADAR_TILE_URL = "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
 HCX_COMM_LAYER_TOKENS = {"CommKaOverlay", "HCX"}
 HCX_COMM_LAYER_SOURCES = {"commka.geojson"}
 EXPECTED_CLOCK_DEFAULTS = {
@@ -99,6 +101,24 @@ def test_fullscreen_overview_keeps_core_map_layers_visible_by_default() -> None:
     assert CORE_MAP_LAYERS <= layers.keys()
     for layer_name in CORE_MAP_LAYERS:
         assert layers[layer_name].get("opacity", 1) > 0
+
+
+def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_layers() -> None:
+    layers = _current_position_layers()
+    layers_by_name = {layer["name"]: layer for layer in layers}
+    radar_layer = layers_by_name[RADAR_LAYER_NAME]
+
+    assert radar_layer["type"] == "xyz"
+    assert radar_layer["config"] == {
+        "attribution": "Weather radar © Rain Viewer / MeteoLab Inc.",
+        "maxZoom": 7,
+        "minZoom": 0,
+        "url": RAINVIEWER_RADAR_TILE_URL,
+    }
+    assert radar_layer["opacity"] == 0.35
+    assert layers.index(radar_layer) < min(
+        layers.index(layers_by_name[layer_name]) for layer_name in CORE_MAP_LAYERS
+    )
 
 
 def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
