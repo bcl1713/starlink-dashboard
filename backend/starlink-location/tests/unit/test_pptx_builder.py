@@ -2,9 +2,51 @@
 
 from unittest.mock import Mock, patch
 
+from pptx import Presentation
 
+from app.mission.exporter.__main__ import _cover_metadata_line
 from app.mission.exporter.pptx_builder import _get_footer_metadata
-from app.mission.models import Mission, MissionLeg, TransportConfig
+from app.mission.exporter.pptx_styling import (
+    STATUS_DEGRADED,
+    TEXT_BLACK,
+    add_status_badge,
+)
+from app.mission.models import Mission, MissionLeg, TimelineStatus, TransportConfig
+
+
+def test_degraded_status_uses_yellow_with_black_text_palette():
+    """Degraded PPT styling should be yellow, not orange, with black text."""
+    assert (STATUS_DEGRADED[0], STATUS_DEGRADED[1], STATUS_DEGRADED[2]) == (
+        255,
+        255,
+        0,
+    )
+    assert (TEXT_BLACK[0], TEXT_BLACK[1], TEXT_BLACK[2]) == (0, 0, 0)
+
+
+def test_degraded_status_badge_uses_black_text_on_yellow_background():
+    """Actual degraded status badges should render readable black text."""
+    prs = Presentation()
+    slide = prs.slides.add_slide(prs.slide_layouts[6])
+
+    badge = add_status_badge(slide, TimelineStatus.DEGRADED, 0, 0, 1, 0.3)
+    paragraph = badge.text_frame.paragraphs[0]
+
+    assert badge.fill.fore_color.rgb == STATUS_DEGRADED
+    assert paragraph.font.color.rgb == TEXT_BLACK
+
+
+def test_title_slide_cover_metadata_prefers_mission_revision_fields():
+    """Cover metadata should not reuse stale Rev text from descriptions."""
+    mission = Mission(
+        id="mission-26-07",
+        name="Mission 26-07",
+        description="1 Leg | Rev 2",
+        legs=[],
+        metadata={"mission_number": "26-07", "revision": "5"},
+    )
+
+    assert _cover_metadata_line(mission, leg_count=1) == "1 Leg | Mission 26-07 | Rev 5"
 
 
 class TestGetFooterMetadata:

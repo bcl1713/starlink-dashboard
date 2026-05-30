@@ -213,6 +213,13 @@ class TestRuleEngine:
         assert any("Safety-of-Flight" in e.reason for e in takeoff_events)
         assert any("Safety-of-Flight" in e.reason for e in landing_events)
 
+        takeoff_start = min(e.timestamp for e in takeoff_events)
+        takeoff_end = max(e.timestamp for e in takeoff_events)
+        landing_start = min(e.timestamp for e in landing_events)
+        landing_end = max(e.timestamp for e in landing_events)
+        assert takeoff_end - takeoff_start == timedelta(minutes=15)
+        assert landing_end - landing_start == timedelta(minutes=15)
+
     def test_add_aar_window_events(self):
         """Test adding AAR window events."""
         engine = RuleEngine()

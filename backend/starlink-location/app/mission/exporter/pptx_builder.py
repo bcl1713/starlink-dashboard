@@ -29,6 +29,7 @@ from app.mission.exporter.pptx_styling import (
     STATUS_DEGRADED,
     STATUS_NOMINAL,
     STATUS_SOF,
+    TEXT_BLACK,
     TEXT_WHITE,
     add_footer_bar,
     add_footer_text,
@@ -201,12 +202,18 @@ def add_route_map_slide(
 
     # Generate map image (with caching support)
     route_id = mission.route_id if mission else None
+    adjusted_departure = getattr(mission, "adjusted_departure_time", None)
+    map_cache_key = (
+        f"{route_id}|adjusted={adjusted_departure.isoformat()}"
+        if route_id and adjusted_departure
+        else route_id
+    )
     map_image_bytes = None
 
     # Check cache first
-    if route_id and map_cache is not None and route_id in map_cache:
-        map_image_bytes = map_cache[route_id]
-        logger.info(f"Cache hit for route {route_id}")
+    if map_cache_key and map_cache is not None and map_cache_key in map_cache:
+        map_image_bytes = map_cache[map_cache_key]
+        logger.info(f"Cache hit for route map {map_cache_key}")
     else:
         # Generate map
         try:
@@ -220,8 +227,8 @@ def add_route_map_slide(
             logger.info(f"Cache miss for route {route_id}, generated map")
 
             # Store in cache if available
-            if route_id and map_cache is not None:
-                map_cache[route_id] = map_image_bytes
+            if map_cache_key and map_cache is not None:
+                map_cache[map_cache_key] = map_image_bytes
         except Exception as e:
             logger.error("Failed to generate map: %s", e, exc_info=True)
 
@@ -445,7 +452,7 @@ def _add_timeline_table(
 
     # Set column widths (adjusted for wider times)
     # Total width 9 inches
-    col_weights = [0.6, 1.0, 1.75, 1.75, 1.0, 1.0, 1.0, 1.0, 1.5]
+    col_weights = [0.5, 0.85, 1.55, 1.55, 0.85, 0.85, 0.85, 0.85, 1.4]
     total_weight = sum(col_weights)
     for i, weight in enumerate(col_weights):
         table.columns[i].width = int(width * (weight / total_weight))
@@ -498,39 +505,39 @@ def _add_timeline_table(
             if col_name == "Status":
                 val_lower = val.lower()
 
-                # Check for Safety-of-Flight in reasons
-                is_sof = False
-                reasons = str(row_data.get("Reasons", "")).lower()
-                if "safety-of-flight" in reasons or "aar" in reasons:
-                    is_sof = True
+                # Treat exported status as the source of truth. Compact operator
+                # markers such as "AAR End" may appear on nominal rows and must
+                # not recolor/relabel them as advisory.
+                is_sof = val_lower in ("sof", "advisory")
 
-                # Override Status text to "SOF" if it's a safety window
-                if is_sof and val_lower in ("available", "nominal", "warning"):
-                    cell.text = "SOF"
+                # Override advisory window status text for user-facing output.
+                if is_sof and val_lower in ("sof", "advisory"):
+                    cell.text = "ADVISORY"
+                    val_lower = "advisory"
                     # Re-apply font size since setting text resets it
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.size = Pt(8)
                         paragraph.alignment = PP_ALIGN.LEFT
 
                 # Apply status badge colors
-                if is_critical_row and not is_sof:
+                if is_critical_row or val_lower == "critical":
                     # Critical status
                     cell.fill.solid()
                     cell.fill.fore_color.rgb = STATUS_CRITICAL
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.color.rgb = RGBColor(255, 255, 255)
                         paragraph.font.bold = True
-                elif is_sof:
-                    # Safety of Flight
-                    cell.fill.solid()
-                    cell.fill.fore_color.rgb = STATUS_SOF
-                    for paragraph in cell.text_frame.paragraphs:
-                        paragraph.font.color.rgb = RGBColor(255, 255, 255)
-                        paragraph.font.bold = True
                 elif val_lower in ("degraded", "warning"):
-                    # Degraded status
+                    # Degraded status takes priority over SOF coloring
                     cell.fill.solid()
                     cell.fill.fore_color.rgb = STATUS_DEGRADED
+                    for paragraph in cell.text_frame.paragraphs:
+                        paragraph.font.color.rgb = TEXT_BLACK
+                        paragraph.font.bold = True
+                elif is_sof or val_lower == "advisory":
+                    # Advisory / Safety of Flight
+                    cell.fill.solid()
+                    cell.fill.fore_color.rgb = STATUS_SOF
                     for paragraph in cell.text_frame.paragraphs:
                         paragraph.font.color.rgb = RGBColor(255, 255, 255)
                         paragraph.font.bold = True

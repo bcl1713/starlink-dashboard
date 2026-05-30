@@ -5,13 +5,21 @@ from datetime import datetime, timezone, timedelta
 
 from app.mission.models import MissionLeg, TransportConfig
 from app.mission.timeline_builder.calculator import (
+    RouteTemporalProjector,
     derive_mission_window,
     TimelineComputationError,
 )
+from app.mission.timeline_builder.utils import timestamp_for_waypoint
 from app.mission.validation import (
     validate_adjusted_departure_time,
 )
-from app.models.route import ParsedRoute, RoutePoint, RouteTimingProfile, RouteMetadata
+from app.models.route import (
+    ParsedRoute,
+    RoutePoint,
+    RouteTimingProfile,
+    RouteMetadata,
+    RouteWaypoint,
+)
 
 
 class TestMissionLegTimeOffset:
@@ -201,6 +209,32 @@ class TestDeriveMissionWindow:
 
         adjusted_duration = (end - start).total_seconds()
         assert adjusted_duration == original_duration
+
+    def test_waypoint_timestamps_shift_with_adjusted_departure(self):
+        """Timed route waypoints should shift by the same departure delta."""
+        original_departure = datetime(2025, 10, 27, 16, 45, 0, tzinfo=timezone.utc)
+        original_arrival = datetime(2025, 10, 27, 22, 15, 0, tzinfo=timezone.utc)
+        waypoint_time = datetime(2025, 10, 27, 18, 0, 0, tzinfo=timezone.utc)
+        adjusted_departure = original_departure + timedelta(minutes=75)
+
+        route = self._create_test_route(original_departure, original_arrival)
+        route.waypoints = [
+            RouteWaypoint(
+                name="AAR-START",
+                latitude=35.25,
+                longitude=-120.25,
+                order=1,
+                expected_arrival_time=waypoint_time,
+            )
+        ]
+        start, end = derive_mission_window(
+            route, adjusted_departure_time=adjusted_departure
+        )
+        projector = RouteTemporalProjector(route, start, end)
+
+        assert timestamp_for_waypoint(route.waypoints[0], projector) == (
+            waypoint_time + timedelta(minutes=75)
+        )
 
     def test_large_offset(self):
         """Large offset (10 hours) is allowed and applied correctly."""

@@ -15,6 +15,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+import re
 import matplotlib
 
 matplotlib.use("Agg")  # Headless mode for Docker
@@ -34,6 +35,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
 
+from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.models import (
     Mission,
     MissionLeg,
@@ -66,6 +68,7 @@ from app.mission.exporter.pptx_styling import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.mission.timeline_builder.calculator import route_with_adjusted_departure
 
 logger = logging.getLogger(__name__)
 
@@ -249,11 +252,10 @@ def _get_detailed_segment_statuses(
                 next_change = min(end_time, s_start)
                 break
 
-        # Check if current_time falls within an AAR block
-        in_aar_block = False
+        # Check if current_time falls within an AAR block so map intervals split at
+        # AAR boundaries without treating AAR as degraded by default.
         for aar_start, aar_end in aar_blocks:
             if aar_start <= current_time < aar_end:
-                in_aar_block = True
                 # AAR block might end before the segment ends
                 next_change = min(next_change, aar_end)
                 break
@@ -266,22 +268,18 @@ def _get_detailed_segment_statuses(
         if active_seg:
             raw_status = active_seg.status.value
             reasons = str(active_seg.reasons).lower()
-            is_sof = "safety-of-flight" in reasons or "aar" in reasons
+            is_sof = "safety-of-flight" in reasons
 
             if raw_status == "critical":
                 status = "critical"
-            elif raw_status == "degraded" or is_sof or in_aar_block:
+            elif raw_status in ("degraded", "warning"):
                 status = "degraded"
-            elif raw_status == "warning":
-                status = "degraded"
+            elif raw_status == "sof" or is_sof:
+                status = "sof"
             else:
                 status = "nominal"
         else:
             status = "unknown"  # Gap in timeline
-
-        # Override to degraded if in AAR block (even if segment is nominal)
-        if in_aar_block and status == "nominal":
-            status = "degraded"
 
         intervals.append((current_time, next_change, status))
         current_time = next_change
@@ -436,6 +434,10 @@ def _generate_route_map(
         logger.error(f"Available routes: {list(available_routes.keys())}")
         logger.error(f"Mission: {mission.id}, Leg: {mission.name}")
         return _base_map_canvas()
+
+    route = route_with_adjusted_departure(
+        route, getattr(mission, "adjusted_departure_time", None)
+    )
 
     if not route.points:
         logger.warning(
@@ -1042,6 +1044,7 @@ def _generate_route_map(
     legend_elements = [
         # Route status colors
         Line2D([0], [0], color=STATUS_COLORS["nominal"], linewidth=3, label="Nominal"),
+        Line2D([0], [0], color=STATUS_COLORS["sof"], linewidth=3, label="Advisory"),
         Line2D(
             [0], [0], color=STATUS_COLORS["degraded"], linewidth=3, label="Degraded"
         ),
@@ -1266,15 +1269,80 @@ def _generate_timeline_chart(timeline: MissionLegTimeline) -> bytes:
     return buffer.read()
 
 
+def _compact_reason_label(segment: TimelineSegment) -> str:
+    """Return concise operator-facing reason labels for tabular exports."""
+    metadata = segment.metadata or {}
+    raw_markers = metadata.get("operational_markers") or []
+    markers = [str(marker) for marker in raw_markers if str(marker).strip()]
+    compact_parts: list[str] = []
+
+    has_aar_boundary = any(
+        marker.lower() in {"aar start", "aar end"} for marker in markers
+    )
+    for marker in markers:
+        marker_lower = marker.lower()
+        if marker_lower == "aar window":
+            if has_aar_boundary:
+                continue
+            compact = "AAR Window"
+        elif marker_lower in {"aar start", "aar end"}:
+            compact = marker.title().replace("Aar", "AAR")
+        elif "safety-of-flight" in marker_lower or "safety window" in marker_lower:
+            if any(part.startswith("AAR") for part in compact_parts):
+                continue
+            if "takeoff" in marker_lower:
+                compact = "Takeoff"
+            elif "landing" in marker_lower:
+                compact = "Landing"
+            else:
+                compact = "SOF"
+        else:
+            compact = marker
+        if compact not in compact_parts:
+            compact_parts.append(compact)
+
+    if any(part in {"AAR Start", "AAR End"} for part in compact_parts):
+        return "; ".join(compact_parts)
+
+    source_reasons = metadata.get("source_reasons") or segment.reasons
+    for reason_value in source_reasons:
+        reason = str(reason_value)
+        reason_lower = reason.lower()
+        compact = ""
+        if "x" in reason_lower and "ku" in reason_lower and "conflict" in reason_lower:
+            compact = "X/Ku Conflict"
+        elif match := re.search(
+            r"ka\s+transition\s+([A-Za-z0-9-]+)\s*(?:→|->|=>|to)\s*([A-Za-z0-9-]+)",
+            reason,
+            flags=re.IGNORECASE,
+        ):
+            compact = f"Ka {match.group(1).upper()} => {match.group(2).upper()}"
+        elif match := re.search(
+            r"x\s+transition\s+(?:to\s+)?([A-Za-z0-9-]+)",
+            reason,
+            flags=re.IGNORECASE,
+        ):
+            compact = f"X => {match.group(1).upper()}"
+
+        if compact and compact not in compact_parts:
+            compact_parts.append(compact)
+
+    if compact_parts:
+        return "; ".join(compact_parts)
+    return ", ".join(segment.reasons)
+
+
 def _segment_rows(
     timeline: MissionLegTimeline,
     mission: Mission | None,
 ) -> pd.DataFrame:
     """Convert timeline segments into a pandas DataFrame."""
-    mission_start = mission_start_timestamp(timeline)
+    export_timeline = timeline.model_copy(deep=True)
+    normalize_call_availability_timeline(export_timeline)
+    mission_start = mission_start_timestamp(export_timeline)
     rows: list[tuple[datetime, int, dict]] = []
 
-    for idx, segment in enumerate(timeline.segments, start=1):
+    for idx, segment in enumerate(export_timeline.segments, start=1):
         start_utc = ensure_timezone(segment.start_time)
         end_value = segment.end_time if segment.end_time else segment.start_time
         end_utc = ensure_timezone(end_value)
@@ -1285,11 +1353,23 @@ def _segment_rows(
             if isinstance(segment.status, TimelineStatus)
             else str(segment.status)
         )
-        status_value = status_value.upper()
+        status_value = _display_status(status_value)
+        metadata = segment.metadata or {}
+        call_posture = metadata.get("call_posture") or status_value
+        primary_reason = metadata.get("primary_reason") or (
+            segment.reasons[0] if segment.reasons else ""
+        )
+        systems_affected = metadata.get("systems_affected") or [
+            transport.value for transport in segment.impacted_transports
+        ]
+        notes = metadata.get("notes") or []
+        source_reasons = metadata.get("source_reasons") or segment.reasons
+        notes_and_sources = _format_notes_and_sources(notes, source_reasons)
         impacted_display = serialize_transport_list(segment.impacted_transports)
         if warning_only:
             status_value = TimelineStatus.NOMINAL.value.upper()
             impacted_display = ""
+            systems_affected = []
         record = {
             "Segment #": idx,
             "Mission ID": mission.id if mission else timeline.mission_id,
@@ -1297,6 +1377,8 @@ def _segment_rows(
                 mission.name if mission and mission.name else timeline.mission_id
             ),
             "Status": status_value,
+            "Call Posture": call_posture,
+            "Primary Reason": primary_reason,
             "Start Time": compose_time_block(start_utc, mission_start),
             "End Time": compose_time_block(end_utc, mission_start),
             "Duration": format_seconds_hms(duration_seconds),
@@ -1306,20 +1388,25 @@ def _segment_rows(
             TRANSPORT_DISPLAY[Transport.KA]: segment.ka_state.value.upper(),
             TRANSPORT_DISPLAY[Transport.KU]: segment.ku_state.value.upper(),
             "Impacted Transports": impacted_display,
-            "Reasons": ", ".join(segment.reasons),
+            "Systems Affected": ", ".join(systems_affected),
+            "Reasons": _compact_reason_label(segment),
+            "Notes / Source Events": notes_and_sources,
             "Metadata": (
                 json.dumps(segment.metadata, sort_keys=True) if segment.metadata else ""
             ),
         }
         rows.append((start_utc, 1, record))
 
-    rows.extend(_aar_block_rows(timeline, mission, mission_start))
+    # AAR/SOF blocks are incorporated by normalize_call_availability_timeline()
+    # above so the primary table stays chronological and non-overlapping.
 
     columns = [
         "Segment #",
         "Mission ID",
         "Mission Name",
         "Status",
+        "Call Posture",
+        "Primary Reason",
         "Start Time",
         "End Time",
         "Duration",
@@ -1327,7 +1414,9 @@ def _segment_rows(
         TRANSPORT_DISPLAY[Transport.KA],
         TRANSPORT_DISPLAY[Transport.KU],
         "Impacted Transports",
+        "Systems Affected",
         "Reasons",
+        "Notes / Source Events",
         "Metadata",
     ]
 
@@ -1396,6 +1485,87 @@ def _statistics_rows(timeline: MissionLegTimeline) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["Metric", "Value"])
 
 
+def _display_status(status_value: str) -> str:
+    """Return user-facing timeline status text."""
+    normalized = status_value.strip().lower()
+    if normalized == TimelineStatus.SOF.value:
+        return "ADVISORY"
+    return normalized.upper()
+
+
+def _format_notes_and_sources(notes: object, source_reasons: object) -> str:
+    """Format concise notes/source context for the availability table."""
+    values: list[str] = []
+    if isinstance(notes, list):
+        values.extend(str(note) for note in notes if str(note).strip())
+    elif isinstance(notes, str) and notes.strip():
+        values.append(notes)
+    if isinstance(source_reasons, list):
+        values.extend(str(reason) for reason in source_reasons if str(reason).strip())
+    elif isinstance(source_reasons, str) and source_reasons.strip():
+        values.append(source_reasons)
+
+    seen: set[str] = set()
+    unique_values: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        unique_values.append(value)
+    return "; ".join(unique_values)
+
+
+def _format_marker_list(markers: object) -> str:
+    """Format operator-facing boundary/safety markers for table exports."""
+
+    if isinstance(markers, list):
+        values = [str(marker) for marker in markers if str(marker).strip()]
+    elif isinstance(markers, str) and markers.strip():
+        values = [markers]
+    else:
+        values = []
+    return "; ".join(dict.fromkeys(values))
+
+
+def _cover_metadata_line(
+    mission: Mission | MissionLeg | None,
+    leg_count: int,
+    parent_mission_id: str | None = None,
+) -> str:
+    """Build title-slide metadata without stale description/revision mismatches."""
+
+    leg_label = f"{leg_count} Leg{'s' if leg_count != 1 else ''}"
+    if mission is None:
+        return leg_label
+
+    metadata_source: Mission | MissionLeg | None = mission
+    if parent_mission_id and not hasattr(mission, "legs"):
+        try:
+            from app.mission.storage import load_mission_v2
+
+            metadata_source = load_mission_v2(parent_mission_id) or mission
+        except Exception:
+            metadata_source = mission
+
+    metadata = getattr(metadata_source, "metadata", None) or {}
+    mission_number = (
+        metadata.get("mission_number") if isinstance(metadata, dict) else None
+    )
+    revision = metadata.get("revision") if isinstance(metadata, dict) else None
+    parts = [leg_label]
+    if mission_number:
+        parts.append(f"Mission {mission_number}")
+    if revision:
+        parts.append(f"Rev {revision}")
+    if len(parts) > 1:
+        return " | ".join(parts)
+
+    description = getattr(mission, "description", None)
+    if description:
+        parts.append(str(description))
+    return " | ".join(parts)
+
+
 # Note: format_seconds_hms, humanize_metric_name, and compose_time_block are now
 # imported from exporter.formatting module above
 
@@ -1435,11 +1605,9 @@ def generate_pptx_export(
     # Mission metadata
     mission_id = mission.id if mission else timeline.mission_leg_id
     mission_name = mission.name if mission else "Mission"
-    organization = (
-        mission.description if (mission and mission.description) else "Organization"
-    )
     # Check if mission is a Mission (has .legs) or MissionLeg (no .legs)
-    leg_count = len(mission.legs) if (mission and hasattr(mission, "legs")) else 1
+    legs = getattr(mission, "legs", None) if mission is not None else None
+    leg_count = len(legs) if legs is not None else 1
 
     # Create presentation with standard dimensions
     prs = Presentation()
@@ -1484,12 +1652,12 @@ def generate_pptx_export(
     id_paragraph.font.size = Pt(14)
     id_paragraph.font.color.rgb = TEXT_BLACK
 
-    # Add leg count and organization
+    # Add leg count and mission metadata
     info_box = title_slide.shapes.add_textbox(
         Inches(1.5), Inches(3.5), Inches(7.0), Inches(0.5)
     )
     info_frame = info_box.text_frame
-    info_frame.text = f"{leg_count} Leg{'s' if leg_count != 1 else ''} | {organization}"
+    info_frame.text = _cover_metadata_line(mission, leg_count, parent_mission_id)
 
     info_paragraph = info_frame.paragraphs[0]
     info_paragraph.alignment = PP_ALIGN.CENTER

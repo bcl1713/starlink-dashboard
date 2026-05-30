@@ -6,7 +6,7 @@ PowerPoint presentations with consistent colors, layouts, and visual hierarchy.
 Color palette based on organizational branding standards:
 - Gold (RGB 212, 175, 55): Primary accent for headers and branding
 - Light gray (RGB 248, 249, 250): Content backgrounds
-- Status colors: Green (NOMINAL), Blue (SOF), Orange (DEGRADED), Red (CRITICAL)
+- Status colors: Green (NOMINAL), Blue (SOF), Yellow (DEGRADED), Red (CRITICAL)
 
 All functions accept `slide` objects from python-pptx and return created shapes
 or boolean success indicators.
@@ -35,7 +35,7 @@ CONTENT_GRAY = RGBColor(248, 249, 250)  # Light backgrounds
 # Status Colors
 STATUS_NOMINAL = RGBColor(22, 163, 74)  # Green
 STATUS_SOF = RGBColor(2, 132, 199)  # Blue
-STATUS_DEGRADED = RGBColor(234, 88, 12)  # Orange
+STATUS_DEGRADED = RGBColor(255, 255, 0)  # Yellow
 STATUS_CRITICAL = RGBColor(220, 38, 38)  # Red
 
 # Text Colors
@@ -223,7 +223,8 @@ def add_status_badge(
     paragraph.alignment = PP_ALIGN.CENTER
     paragraph.font.size = Pt(11)
     paragraph.font.bold = True
-    paragraph.font.color.rgb = TEXT_WHITE
+    text_color = TEXT_BLACK if status == TimelineStatus.DEGRADED else TEXT_WHITE
+    paragraph.font.color.rgb = text_color
 
     return shape
 

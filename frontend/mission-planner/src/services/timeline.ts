@@ -49,6 +49,9 @@ export interface TimelinePreviewRequest {
       id: string;
       start_waypoint_name: string;
       end_waypoint_name: string;
+      override_start_time?: string | null;
+      override_end_time?: string | null;
+      override_start_elapsed?: string | null;
     }>;
     ku_overrides: Array<Record<string, unknown>>;
   };

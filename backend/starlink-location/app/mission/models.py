@@ -45,6 +45,7 @@ class TimelineStatus(str, Enum):
     """Overall communication status during a timeline segment."""
 
     NOMINAL = "nominal"  # All transports available
+    SOF = "sof"  # Safety-of-flight advisory, no transport degrade
     DEGRADED = "degraded"  # One transport unavailable
     CRITICAL = "critical"  # Two or more transports unavailable
 
@@ -159,6 +160,21 @@ class AARWindow(BaseModel):
     end_waypoint_name: str = Field(
         ...,
         description="Name of the ending waypoint (from KML) for AAR segment",
+    )
+    override_start_time: Optional[datetime] = Field(
+        default=None,
+        description="Optional pilot-projected AAR start override (UTC, ISO-8601)",
+    )
+    override_end_time: Optional[datetime] = Field(
+        default=None,
+        description="Optional pilot-projected AAR end override (UTC, ISO-8601)",
+    )
+    override_start_elapsed: Optional[str] = Field(
+        default=None,
+        description=(
+            "Optional flight-deck mission elapsed AAR start override "
+            "using T+HH:MM or T+HH:MM:SS. The original AR duration is preserved."
+        ),
     )
 
     model_config = {

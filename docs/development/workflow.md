@@ -5,9 +5,16 @@ request guidelines for the Starlink Dashboard project.
 
 ## Git Workflow
 
-### 1. Create a Feature Branch
+### 1. Choose the Base Branch
+
+Use `dev` as the default base for enhancements and non-urgent fixes. Keep `main`
+reserved for stable mission use and release tags. Branch from `main` only for
+urgent hotfixes that must reach active mission users before the next `dev`
+validation cycle.
 
 ```bash
+git checkout dev
+git pull origin dev
 git checkout -b feat/your-feature-name
 ```
 
