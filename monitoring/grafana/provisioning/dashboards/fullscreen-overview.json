@@ -23,30 +23,6 @@
     {
       "asDropdown": false,
       "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [],
-      "targetBlank": false,
-      "title": "Toggle Kiosk Mode",
-      "tooltip": "Click to toggle fullscreen kiosk mode",
-      "type": "link",
-      "url": "/d/starlink-fullscreen/fullscreen-overview?kiosk"
-    },
-    {
-      "asDropdown": false,
-      "icon": "home",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": false,
-      "title": "All Dashboards",
-      "tooltip": "",
-      "type": "dashboards",
-      "url": ""
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
       "includeVars": false,
       "keepTime": false,
       "tags": [],
@@ -54,7 +30,7 @@
       "title": "Mission Planner",
       "tooltip": "Open Mission Planner",
       "type": "link",
-      "url": "http://localhost:8000/ui/mission-planner"
+      "url": "http://localhost:5173/missions"
     }
   ],
   "liveNow": true,
