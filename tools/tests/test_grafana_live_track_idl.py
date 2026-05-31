@@ -14,6 +14,12 @@ HEMISPHERE_HISTORY_TARGETS = {
     "F_EAST": "starlink_dish_longitude_degrees >= 0",
 }
 
+NAN_FALLBACK = "or on() vector(0/0)"
+HEMISPHERE_HISTORY_TARGETS_WITH_FALLBACK = {
+    ref_id: f"({expr}) {NAN_FALLBACK}"
+    for ref_id, expr in HEMISPHERE_HISTORY_TARGETS.items()
+}
+
 DASHBOARD_LIVE_MAPS = [
     (
         "fullscreen-overview.json",
@@ -80,7 +86,23 @@ def test_live_history_track_queries_are_split_by_hemisphere_for_idl() -> None:
     for filename, panel_title, *_ in DASHBOARD_LIVE_MAPS:
         panel = _panel_by_title(_dashboard(filename), panel_title)
 
-        assert _target_exprs(panel) == HEMISPHERE_HISTORY_TARGETS
+        target_exprs = _target_exprs(panel)
+        assert target_exprs == HEMISPHERE_HISTORY_TARGETS_WITH_FALLBACK
+        for ref_id, base_expr in HEMISPHERE_HISTORY_TARGETS.items():
+            assert base_expr in target_exprs[ref_id]
+
+
+def test_no_idl_selected_timeframe_keeps_optional_split_frames_defined() -> None:
+    for filename, panel_title, *_ in DASHBOARD_LIVE_MAPS:
+        panel = _panel_by_title(_dashboard(filename), panel_title)
+
+        for ref_id, expr in _target_exprs(panel).items():
+            assert ref_id in HEMISPHERE_HISTORY_TARGETS
+            assert expr.endswith(NAN_FALLBACK), (
+                f"{filename} {panel_title} target {ref_id} can be absent when "
+                "the selected time frame stays entirely in the other hemisphere; "
+                "Grafana route layers then dereference an undefined split frame."
+            )
 
 
 def test_live_history_track_layers_are_split_by_hemisphere_for_idl() -> None:

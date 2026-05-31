@@ -781,7 +781,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "starlink_dish_latitude_degrees and starlink_dish_longitude_degrees < 0",
+          "expr": "(starlink_dish_latitude_degrees and starlink_dish_longitude_degrees < 0) or on() vector(0/0)",
           "instant": false,
           "interval": "1s",
           "intervalFactor": 1,
@@ -794,7 +794,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "starlink_dish_longitude_degrees < 0",
+          "expr": "(starlink_dish_longitude_degrees < 0) or on() vector(0/0)",
           "instant": false,
           "interval": "1s",
           "intervalFactor": 1,
@@ -872,7 +872,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "starlink_dish_latitude_degrees and starlink_dish_longitude_degrees >= 0",
+          "expr": "(starlink_dish_latitude_degrees and starlink_dish_longitude_degrees >= 0) or on() vector(0/0)",
           "instant": false,
           "interval": "1s",
           "intervalFactor": 1,
@@ -885,7 +885,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "starlink_dish_longitude_degrees >= 0",
+          "expr": "(starlink_dish_longitude_degrees >= 0) or on() vector(0/0)",
           "instant": false,
           "interval": "1s",
           "intervalFactor": 1,

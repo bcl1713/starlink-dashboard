@@ -190,18 +190,18 @@ def test_fullscreen_overview_live_history_is_split_by_hemisphere_for_idl() -> No
     assert east_history["location"] == west_history["location"]
 
     assert _target_by_ref_id(map_panel, "E")["expr"] == (
-        "starlink_dish_latitude_degrees and "
-        "starlink_dish_longitude_degrees < 0"
+        "(starlink_dish_latitude_degrees and "
+        "starlink_dish_longitude_degrees < 0) or on() vector(0/0)"
     )
     assert _target_by_ref_id(map_panel, "F")["expr"] == (
-        "starlink_dish_longitude_degrees < 0"
+        "(starlink_dish_longitude_degrees < 0) or on() vector(0/0)"
     )
     assert _target_by_ref_id(map_panel, "E_EAST")["expr"] == (
-        "starlink_dish_latitude_degrees and "
-        "starlink_dish_longitude_degrees >= 0"
+        "(starlink_dish_latitude_degrees and "
+        "starlink_dish_longitude_degrees >= 0) or on() vector(0/0)"
     )
     assert _target_by_ref_id(map_panel, "F_EAST")["expr"] == (
-        "starlink_dish_longitude_degrees >= 0"
+        "(starlink_dish_longitude_degrees >= 0) or on() vector(0/0)"
     )
 
 
