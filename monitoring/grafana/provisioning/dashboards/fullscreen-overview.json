@@ -23,30 +23,6 @@
     {
       "asDropdown": false,
       "icon": "external link",
-      "includeVars": true,
-      "keepTime": true,
-      "tags": [],
-      "targetBlank": false,
-      "title": "Toggle Kiosk Mode",
-      "tooltip": "Click to toggle fullscreen kiosk mode",
-      "type": "link",
-      "url": "/d/starlink-fullscreen/fullscreen-overview?kiosk"
-    },
-    {
-      "asDropdown": false,
-      "icon": "home",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": false,
-      "title": "All Dashboards",
-      "tooltip": "",
-      "type": "dashboards",
-      "url": ""
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
       "includeVars": false,
       "keepTime": false,
       "tags": [],
@@ -54,7 +30,7 @@
       "title": "Mission Planner",
       "tooltip": "Open Mission Planner",
       "type": "link",
-      "url": "http://localhost:8000/ui/mission-planner"
+      "url": "http://localhost:5173/missions"
     }
   ],
   "liveNow": true,
@@ -111,7 +87,7 @@
         "showDate": false,
         "showSeconds": true,
         "timeSettings": {
-          "fontSize": "24px",
+          "fontSize": "36px",
           "fontWeight": "bold"
         },
         "timezone": "UTC",
@@ -183,7 +159,7 @@
         "showDate": false,
         "showSeconds": true,
         "timeSettings": {
-          "fontSize": "24px",
+          "fontSize": "36px",
           "fontWeight": "bold"
         },
         "timezone": "America/New_York",
@@ -255,7 +231,7 @@
         "showDate": false,
         "showSeconds": true,
         "timeSettings": {
-          "fontSize": "24px",
+          "fontSize": "36px",
           "fontWeight": "bold"
         },
         "timezone": "Asia/Tokyo",
@@ -327,10 +303,10 @@
         "showDate": false,
         "showSeconds": true,
         "timeSettings": {
-          "fontSize": "24px",
+          "fontSize": "36px",
           "fontWeight": "bold"
         },
-        "timezone": "Asia/Kuala_Lumpur",
+        "timezone": "America/Chicago",
         "timezoneSettings": {
           "fontSize": "12px",
           "fontWeight": "normal",
@@ -344,7 +320,7 @@
           "refId": "A"
         }
       ],
-      "title": "Kuala Lumpur",
+      "title": "Omaha",
       "type": "grafana-clock-panel"
     },
     {
@@ -379,7 +355,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 22,
+        "h": 23,
         "w": 18,
         "x": 0,
         "y": 3
@@ -401,6 +377,19 @@
           "showZoom": true
         },
         "layers": [
+          {
+            "config": {
+              "attribution": "Weather radar \u00a9 Rain Viewer / MeteoLab Inc.",
+              "maxZoom": 7,
+              "minZoom": 0,
+              "url": "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+            },
+            "name": "Weather Radar (RainViewer)",
+            "noRepeat": false,
+            "opacity": 0.7,
+            "tooltip": false,
+            "type": "xyz"
+          },
           {
             "config": {
               "showLegend": true,
@@ -720,48 +709,6 @@
             "name": "Current Position",
             "tooltip": true,
             "type": "markers"
-          },
-          {
-            "config": {
-              "rules": [],
-              "src": "http://localhost:8000/data/sat_coverage/commka.geojson",
-              "style": {
-                "color": {
-                  "fixed": "#8AB8FF"
-                },
-                "opacity": 0.1,
-                "rotation": {
-                  "fixed": 0,
-                  "max": 360,
-                  "min": -360,
-                  "mode": "mod"
-                },
-                "size": {
-                  "fixed": 5,
-                  "max": 15,
-                  "min": 2
-                },
-                "symbol": {
-                  "fixed": "build/img/icons/marker/circle.svg",
-                  "mode": "fixed"
-                },
-                "symbolAlign": {
-                  "horizontal": "center",
-                  "vertical": "center"
-                },
-                "textConfig": {
-                  "fontSize": 12,
-                  "offsetX": 0,
-                  "offsetY": 0,
-                  "textAlign": "center",
-                  "textBaseline": "middle"
-                }
-              }
-            },
-            "name": "CommKaOverlay",
-            "opacity": 1,
-            "tooltip": true,
-            "type": "geojson"
           }
         ],
         "tooltip": {
@@ -1130,6 +1077,10 @@
                   "mode": "gradient",
                   "type": "color-background"
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 120
               }
             ]
           },
@@ -1144,13 +1095,6 @@
                 "value": true
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "POI"
-            },
-            "properties": []
           },
           {
             "matcher": {
@@ -1246,6 +1190,7 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "active": true,
               "bearing_degrees": true,
               "course_status": false,
               "distance_meters": true,
@@ -1265,9 +1210,9 @@
             },
             "includeByName": {},
             "indexByName": {
-              "category": 1,
-              "eta_seconds": 2,
-              "name": 0
+              "category": 2,
+              "eta_seconds": 0,
+              "name": 1
             },
             "renameByName": {
               "category": "Type",
@@ -1684,10 +1629,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 18,
         "x": 0,
-        "y": 25
+        "y": 26
       },
       "id": 4,
       "options": {

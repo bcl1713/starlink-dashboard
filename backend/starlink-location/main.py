@@ -23,6 +23,7 @@ from app.api import (
     routes,
     status,
     ui,
+    weather,
 )
 from app.mission import (
     routes as mission_routes,
@@ -496,6 +497,7 @@ app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])
 app.include_router(gps.router, tags=["GPS"])
+app.include_router(weather.router, tags=["Weather"])
 app.include_router(ui.router, tags=["UI"])
 
 
