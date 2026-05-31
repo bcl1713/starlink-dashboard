@@ -68,6 +68,14 @@ def _panel_by_title(title: str) -> dict:
     return panels[0]
 
 
+def _target_by_ref_id(panel: dict, ref_id: str) -> dict:
+    targets = [
+        target for target in panel["targets"] if target.get("refId") == ref_id
+    ]
+    assert len(targets) == 1
+    return targets[0]
+
+
 def _field_override_by_name(panel: dict, field_name: str) -> dict:
     matches = [
         override
@@ -161,6 +169,40 @@ def test_fullscreen_overview_poi_table_hides_active_route_fields() -> None:
 
     assert organize_options["excludeByName"]["active"] is True
     assert organize_options["excludeByName"]["is_on_active_route"] is True
+
+
+def test_fullscreen_overview_live_history_is_split_by_hemisphere_for_idl() -> None:
+    map_panel = _panel_by_title("Current Position")
+    layers = _layers_by_name()
+
+    west_history = layers["Position History - Western Hemisphere"]
+    east_history = layers["Position History - Eastern Hemisphere"]
+
+    assert west_history["type"] == "route"
+    assert west_history["filterData"]["options"] == "joinByField-E-F"
+    assert west_history["location"] == {
+        "latitude": "latitude_history",
+        "longitude": "longitude_history",
+        "mode": "coords",
+    }
+    assert east_history["type"] == "route"
+    assert east_history["filterData"]["options"] == "joinByField-E_EAST-F_EAST"
+    assert east_history["location"] == west_history["location"]
+
+    assert _target_by_ref_id(map_panel, "E")["expr"] == (
+        "starlink_dish_latitude_degrees and "
+        "starlink_dish_longitude_degrees < 0"
+    )
+    assert _target_by_ref_id(map_panel, "F")["expr"] == (
+        "starlink_dish_longitude_degrees < 0"
+    )
+    assert _target_by_ref_id(map_panel, "E_EAST")["expr"] == (
+        "starlink_dish_latitude_degrees and "
+        "starlink_dish_longitude_degrees >= 0"
+    )
+    assert _target_by_ref_id(map_panel, "F_EAST")["expr"] == (
+        "starlink_dish_longitude_degrees >= 0"
+    )
 
 
 def test_fullscreen_overview_poi_table_anchors_eta_left_and_flexes_poi_name() -> None:
