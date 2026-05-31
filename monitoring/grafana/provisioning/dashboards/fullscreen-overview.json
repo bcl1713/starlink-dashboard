@@ -355,7 +355,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 22,
+        "h": 23,
         "w": 18,
         "x": 0,
         "y": 3
@@ -1077,6 +1077,10 @@
                   "mode": "gradient",
                   "type": "color-background"
                 }
+              },
+              {
+                "id": "custom.width",
+                "value": 120
               }
             ]
           },
@@ -1091,13 +1095,6 @@
                 "value": true
               }
             ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "POI"
-            },
-            "properties": []
           },
           {
             "matcher": {
@@ -1193,6 +1190,7 @@
           "id": "organize",
           "options": {
             "excludeByName": {
+              "active": true,
               "bearing_degrees": true,
               "course_status": false,
               "distance_meters": true,
@@ -1212,9 +1210,9 @@
             },
             "includeByName": {},
             "indexByName": {
-              "category": 1,
-              "eta_seconds": 2,
-              "name": 0
+              "category": 2,
+              "eta_seconds": 0,
+              "name": 1
             },
             "renameByName": {
               "category": "Type",
@@ -1631,10 +1629,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 18,
         "x": 0,
-        "y": 25
+        "y": 26
       },
       "id": 4,
       "options": {
