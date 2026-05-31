@@ -16,11 +16,24 @@ HEMISPHERE_HISTORY_TARGETS = {
     "F_EAST": f"{NORMALIZED_LONGITUDE_EXPR} >= 0",
 }
 
+DASHBOARD_RANGE_END = "${__to:date:seconds}"
 FALLBACK_GUARDS = {
-    "E": f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} < 0)[$__range:]) > 0",
-    "F": f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} < 0)[$__range:]) > 0",
-    "E_EAST": f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} >= 0)[$__range:]) > 0",
-    "F_EAST": f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} >= 0)[$__range:]) > 0",
+    "E": (
+        f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} < 0)"
+        f"[$__range:] @ {DASHBOARD_RANGE_END}) > 0"
+    ),
+    "F": (
+        f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} < 0)"
+        f"[$__range:] @ {DASHBOARD_RANGE_END}) > 0"
+    ),
+    "E_EAST": (
+        f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} >= 0)"
+        f"[$__range:] @ {DASHBOARD_RANGE_END}) > 0"
+    ),
+    "F_EAST": (
+        f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} >= 0)"
+        f"[$__range:] @ {DASHBOARD_RANGE_END}) > 0"
+    ),
 }
 UNSPLIT_HISTORY_FALLBACKS = {
     "E": "starlink_dish_latitude_degrees",

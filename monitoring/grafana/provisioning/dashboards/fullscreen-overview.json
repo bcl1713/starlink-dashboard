@@ -781,7 +781,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "(starlink_dish_latitude_degrees and (((starlink_dish_longitude_degrees + 180) % 360) - 180) < 0) or (starlink_dish_latitude_degrees unless count_over_time(((((starlink_dish_longitude_degrees + 180) % 360) - 180) < 0)[$__range:]) > 0)",
+          "expr": "(starlink_dish_latitude_degrees and (((starlink_dish_longitude_degrees + 180) % 360) - 180) < 0) or (starlink_dish_latitude_degrees unless count_over_time(((((starlink_dish_longitude_degrees + 180) % 360) - 180) < 0)[$__range:] @ ${__to:date:seconds}) > 0)",
           "instant": false,
           "interval": "1s",
           "intervalFactor": 1,
@@ -794,7 +794,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "((((starlink_dish_longitude_degrees + 180) % 360) - 180) < 0) or ((((starlink_dish_longitude_degrees + 180) % 360) - 180) unless count_over_time(((((starlink_dish_longitude_degrees + 180) % 360) - 180) < 0)[$__range:]) > 0)",
+          "expr": "((((starlink_dish_longitude_degrees + 180) % 360) - 180) < 0) or ((((starlink_dish_longitude_degrees + 180) % 360) - 180) unless count_over_time(((((starlink_dish_longitude_degrees + 180) % 360) - 180) < 0)[$__range:] @ ${__to:date:seconds}) > 0)",
           "instant": false,
           "interval": "1s",
           "intervalFactor": 1,
@@ -872,7 +872,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "(starlink_dish_latitude_degrees and (((starlink_dish_longitude_degrees + 180) % 360) - 180) >= 0) or (starlink_dish_latitude_degrees unless count_over_time(((((starlink_dish_longitude_degrees + 180) % 360) - 180) >= 0)[$__range:]) > 0)",
+          "expr": "(starlink_dish_latitude_degrees and (((starlink_dish_longitude_degrees + 180) % 360) - 180) >= 0) or (starlink_dish_latitude_degrees unless count_over_time(((((starlink_dish_longitude_degrees + 180) % 360) - 180) >= 0)[$__range:] @ ${__to:date:seconds}) > 0)",
           "instant": false,
           "interval": "1s",
           "intervalFactor": 1,
@@ -885,7 +885,7 @@
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
-          "expr": "((((starlink_dish_longitude_degrees + 180) % 360) - 180) >= 0) or ((((starlink_dish_longitude_degrees + 180) % 360) - 180) unless count_over_time(((((starlink_dish_longitude_degrees + 180) % 360) - 180) >= 0)[$__range:]) > 0)",
+          "expr": "((((starlink_dish_longitude_degrees + 180) % 360) - 180) >= 0) or ((((starlink_dish_longitude_degrees + 180) % 360) - 180) unless count_over_time(((((starlink_dish_longitude_degrees + 180) % 360) - 180) >= 0)[$__range:] @ ${__to:date:seconds}) > 0)",
           "instant": false,
           "interval": "1s",
           "intervalFactor": 1,
