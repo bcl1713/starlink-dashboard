@@ -1099,18 +1099,6 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "POI"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 220
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Course Status"
             },
             "properties": [
@@ -1222,9 +1210,9 @@
             },
             "includeByName": {},
             "indexByName": {
-              "category": 1,
-              "eta_seconds": 2,
-              "name": 0
+              "category": 2,
+              "eta_seconds": 0,
+              "name": 1
             },
             "renameByName": {
               "category": "Type",

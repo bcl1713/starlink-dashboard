@@ -163,14 +163,26 @@ def test_fullscreen_overview_poi_table_hides_active_route_fields() -> None:
     assert organize_options["excludeByName"]["is_on_active_route"] is True
 
 
-def test_fullscreen_overview_poi_table_sets_readable_column_widths() -> None:
+def test_fullscreen_overview_poi_table_anchors_eta_left_and_flexes_poi_name() -> None:
     poi_panel = _panel_by_title("POI Quick Reference (Top 5)")
+    organize_options = poi_panel["transformations"][0]["options"]
 
-    poi_override = _field_override_by_name(poi_panel, "POI")
+    assert organize_options["indexByName"]["eta_seconds"] == 0
+    assert organize_options["indexByName"]["name"] == 1
+
+    poi_overrides = [
+        override
+        for override in poi_panel["fieldConfig"]["overrides"]
+        if override["matcher"] == {"id": "byName", "options": "POI"}
+    ]
     eta_override = _field_override_by_name(poi_panel, "ETA")
 
-    assert {"id": "custom.width", "value": 220} in poi_override["properties"]
     assert {"id": "custom.width", "value": 120} in eta_override["properties"]
+    assert all(
+        property_config["id"] != "custom.width"
+        for override in poi_overrides
+        for property_config in override["properties"]
+    )
 
 
 def test_fullscreen_overview_gives_map_more_vertical_space() -> None:
