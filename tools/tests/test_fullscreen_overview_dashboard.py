@@ -18,6 +18,8 @@ CORE_MAP_LAYERS = {
     "MissionEvents",
     "Satellites",
 }
+NORMALIZED_LONGITUDE_EXPR = "(((starlink_dish_longitude_degrees + 180) % 360) - 180)"
+DASHBOARD_RANGE_END = "${__to:date:seconds}"
 RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
 RAINVIEWER_RADAR_TILE_URL = "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
 HCX_COMM_LAYER_TOKENS = {"CommKaOverlay", "HCX"}
@@ -190,18 +192,28 @@ def test_fullscreen_overview_live_history_is_split_by_hemisphere_for_idl() -> No
     assert east_history["location"] == west_history["location"]
 
     assert _target_by_ref_id(map_panel, "E")["expr"] == (
-        "starlink_dish_latitude_degrees and "
-        "starlink_dish_longitude_degrees < 0"
+        f"(starlink_dish_latitude_degrees and {NORMALIZED_LONGITUDE_EXPR} < 0) "
+        "or (starlink_dish_latitude_degrees unless "
+        f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} < 0)"
+        f"[$__range:] @ {DASHBOARD_RANGE_END}) > 0)"
     )
     assert _target_by_ref_id(map_panel, "F")["expr"] == (
-        "starlink_dish_longitude_degrees < 0"
+        f"({NORMALIZED_LONGITUDE_EXPR} < 0) or "
+        f"({NORMALIZED_LONGITUDE_EXPR} unless "
+        f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} < 0)"
+        f"[$__range:] @ {DASHBOARD_RANGE_END}) > 0)"
     )
     assert _target_by_ref_id(map_panel, "E_EAST")["expr"] == (
-        "starlink_dish_latitude_degrees and "
-        "starlink_dish_longitude_degrees >= 0"
+        f"(starlink_dish_latitude_degrees and {NORMALIZED_LONGITUDE_EXPR} >= 0) "
+        "or (starlink_dish_latitude_degrees unless "
+        f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} >= 0)"
+        f"[$__range:] @ {DASHBOARD_RANGE_END}) > 0)"
     )
     assert _target_by_ref_id(map_panel, "F_EAST")["expr"] == (
-        "starlink_dish_longitude_degrees >= 0"
+        f"({NORMALIZED_LONGITUDE_EXPR} >= 0) or "
+        f"({NORMALIZED_LONGITUDE_EXPR} unless "
+        f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} >= 0)"
+        f"[$__range:] @ {DASHBOARD_RANGE_END}) > 0)"
     )
 
 
