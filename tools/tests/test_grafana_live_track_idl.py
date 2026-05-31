@@ -1,0 +1,127 @@
+import json
+from pathlib import Path
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DASHBOARD_DIR = (
+    REPO_ROOT / "monitoring" / "grafana" / "provisioning" / "dashboards"
+)
+
+HEMISPHERE_HISTORY_TARGETS = {
+    "E": "starlink_dish_latitude_degrees and starlink_dish_longitude_degrees < 0",
+    "F": "starlink_dish_longitude_degrees < 0",
+    "E_EAST": "starlink_dish_latitude_degrees and starlink_dish_longitude_degrees >= 0",
+    "F_EAST": "starlink_dish_longitude_degrees >= 0",
+}
+
+DASHBOARD_LIVE_MAPS = [
+    (
+        "fullscreen-overview.json",
+        "Current Position",
+        "Position History - Western Hemisphere",
+        "Position History - Eastern Hemisphere",
+        "latitude_history",
+        "longitude_history",
+    ),
+    (
+        "overview.json",
+        "Live Position Map",
+        "Historical Route - Western Hemisphere",
+        "Historical Route - Eastern Hemisphere",
+        "lat_history",
+        "lon_history",
+    ),
+    (
+        "position-movement.json",
+        "Live Position Map (Large)",
+        "Historical Route - Western Hemisphere",
+        "Historical Route - Eastern Hemisphere",
+        "lat_history",
+        "lon_history",
+    ),
+]
+
+
+def _dashboard(filename: str) -> dict:
+    return json.loads((DASHBOARD_DIR / filename).read_text())
+
+
+def _panel_by_title(dashboard: dict, title: str) -> dict:
+    panels = [panel for panel in dashboard["panels"] if panel.get("title") == title]
+    assert len(panels) == 1
+    return panels[0]
+
+
+def _target_exprs(panel: dict) -> dict[str, str]:
+    return {
+        target["refId"]: target["expr"]
+        for target in panel["targets"]
+        if target.get("refId") in HEMISPHERE_HISTORY_TARGETS
+    }
+
+
+def _route_layers_by_name(panel: dict) -> dict[str, dict]:
+    return {
+        layer["name"]: layer
+        for layer in panel["options"]["layers"]
+        if layer.get("type") == "route"
+    }
+
+
+def _join_filters(panel: dict) -> set[str]:
+    return {
+        transformation.get("filter", {}).get("options")
+        for transformation in panel.get("transformations", [])
+        if transformation.get("id") == "joinByField"
+    }
+
+
+def test_live_history_track_queries_are_split_by_hemisphere_for_idl() -> None:
+    for filename, panel_title, *_ in DASHBOARD_LIVE_MAPS:
+        panel = _panel_by_title(_dashboard(filename), panel_title)
+
+        assert _target_exprs(panel) == HEMISPHERE_HISTORY_TARGETS
+
+
+def test_live_history_track_layers_are_split_by_hemisphere_for_idl() -> None:
+    for (
+        filename,
+        panel_title,
+        west_layer_name,
+        east_layer_name,
+        latitude_field,
+        longitude_field,
+    ) in DASHBOARD_LIVE_MAPS:
+        panel = _panel_by_title(_dashboard(filename), panel_title)
+        route_layers = _route_layers_by_name(panel)
+
+        west_history = route_layers[west_layer_name]
+        east_history = route_layers[east_layer_name]
+
+        assert west_history["filterByRefId"] == "E"
+        assert west_history["filterData"] == {
+            "id": "byRefId",
+            "options": "joinByField-E-F",
+        }
+        assert west_history["location"] == {
+            "mode": "coords",
+            "latitude": latitude_field,
+            "longitude": longitude_field,
+        }
+
+        assert east_history["filterByRefId"] == "E_EAST"
+        assert east_history["filterData"] == {
+            "id": "byRefId",
+            "options": "joinByField-E_EAST-F_EAST",
+        }
+        assert east_history["location"] == west_history["location"]
+
+
+def test_live_history_transformations_join_each_hemisphere_independently() -> None:
+    for filename, panel_title, *_ in DASHBOARD_LIVE_MAPS:
+        panel = _panel_by_title(_dashboard(filename), panel_title)
+
+        assert {
+            "/^(?:E|F)$/",
+            "/^(?:E_EAST|F_EAST)$/",
+        } <= _join_filters(panel)

@@ -172,7 +172,9 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": ["lastNotNull"]
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "text": {},
         "textMode": "auto"
@@ -358,7 +360,7 @@
         "layers": [
           {
             "type": "route",
-            "name": "Historical Route",
+            "name": "Historical Route - Western Hemisphere",
             "config": {
               "style": {
                 "color": {
@@ -374,7 +376,37 @@
               "latitude": "lat_history",
               "longitude": "lon_history"
             },
-            "tooltip": false
+            "tooltip": false,
+            "filterByRefId": "E",
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-E-F"
+            }
+          },
+          {
+            "type": "route",
+            "name": "Historical Route - Eastern Hemisphere",
+            "config": {
+              "style": {
+                "color": {
+                  "fixed": "green"
+                },
+                "opacity": 0.6,
+                "lineWidth": 3
+              },
+              "showLegend": true
+            },
+            "location": {
+              "mode": "coords",
+              "latitude": "lat_history",
+              "longitude": "lon_history"
+            },
+            "tooltip": false,
+            "filterByRefId": "E_EAST",
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-E_EAST-F_EAST"
+            }
           },
           {
             "type": "markers",
@@ -422,7 +454,12 @@
               "latitude": "latitude",
               "longitude": "longitude"
             },
-            "tooltip": true
+            "tooltip": true,
+            "filterByRefId": "A",
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-A-B-C-D"
+            }
           }
         ],
         "view": {
@@ -486,7 +523,7 @@
           "interval": "1s"
         },
         {
-          "expr": "starlink_dish_latitude_degrees",
+          "expr": "starlink_dish_latitude_degrees and starlink_dish_longitude_degrees < 0",
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "lat_history",
@@ -494,7 +531,7 @@
           "interval": "1s"
         },
         {
-          "expr": "starlink_dish_longitude_degrees",
+          "expr": "starlink_dish_longitude_degrees < 0",
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "lon_history",
@@ -516,15 +553,57 @@
           "legendFormat": "heading_history",
           "refId": "H",
           "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_latitude_degrees and starlink_dish_longitude_degrees >= 0",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "lat_history",
+          "refId": "E_EAST",
+          "interval": "1s"
+        },
+        {
+          "expr": "starlink_dish_longitude_degrees >= 0",
+          "instant": false,
+          "intervalFactor": 1,
+          "legendFormat": "lon_history",
+          "refId": "F_EAST",
+          "interval": "1s"
         }
       ],
       "title": "Live Position Map",
       "transformations": [
         {
+          "filter": {
+            "id": "byRefId",
+            "options": "/^(?:A|B|C|D)$/"
+          },
           "id": "joinByField",
           "options": {
             "byField": "Time",
-            "mode": "outer"
+            "mode": "inner"
+          }
+        },
+        {
+          "filter": {
+            "id": "byRefId",
+            "options": "/^(?:E|F)$/"
+          },
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "inner"
+          }
+        },
+        {
+          "filter": {
+            "id": "byRefId",
+            "options": "/^(?:E_EAST|F_EAST)$/"
+          },
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "inner"
           }
         }
       ],
@@ -643,7 +722,9 @@
         "footer": {
           "countRows": "all",
           "fields": "",
-          "reducer": ["sum"],
+          "reducer": [
+            "sum"
+          ],
           "show": false
         },
         "showHeader": true,
@@ -729,7 +810,9 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": ["lastNotNull"]
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true
@@ -793,7 +876,9 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": ["lastNotNull"]
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "showThresholdLabels": false,
         "showThresholdMarkers": true
@@ -905,7 +990,11 @@
       "id": 5,
       "options": {
         "legend": {
-          "calcs": ["last", "max", "min"],
+          "calcs": [
+            "last",
+            "max",
+            "min"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -980,7 +1069,9 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": ["lastNotNull"]
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "text": {},
         "textMode": "auto"
@@ -1044,7 +1135,9 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": ["lastNotNull"]
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "text": {},
         "textMode": "auto"
@@ -1108,7 +1201,9 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": ["lastNotNull"]
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "text": {},
         "textMode": "auto"
@@ -1187,7 +1282,9 @@
         "reduceOptions": {
           "values": false,
           "fields": "",
-          "calcs": ["lastNotNull"]
+          "calcs": [
+            "lastNotNull"
+          ]
         },
         "text": {},
         "textMode": "auto"
@@ -1378,7 +1475,11 @@
   "refresh": "1s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": ["starlink", "monitoring", "overview"],
+  "tags": [
+    "starlink",
+    "monitoring",
+    "overview"
+  ],
   "templating": {
     "list": []
   },
