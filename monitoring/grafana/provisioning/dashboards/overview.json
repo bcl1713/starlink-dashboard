@@ -523,7 +523,7 @@
           "interval": "1s"
         },
         {
-          "expr": "(starlink_dish_latitude_degrees and starlink_dish_longitude_degrees < 0) or on() vector(0/0)",
+          "expr": "(starlink_dish_latitude_degrees and starlink_dish_longitude_degrees < 0) or (starlink_dish_latitude_degrees unless count_over_time((starlink_dish_longitude_degrees < 0)[$__range:]) > 0)",
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "lat_history",
@@ -531,7 +531,7 @@
           "interval": "1s"
         },
         {
-          "expr": "(starlink_dish_longitude_degrees < 0) or on() vector(0/0)",
+          "expr": "(starlink_dish_longitude_degrees < 0) or (starlink_dish_longitude_degrees unless count_over_time((starlink_dish_longitude_degrees < 0)[$__range:]) > 0)",
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "lon_history",
@@ -555,7 +555,7 @@
           "interval": "1s"
         },
         {
-          "expr": "(starlink_dish_latitude_degrees and starlink_dish_longitude_degrees >= 0) or on() vector(0/0)",
+          "expr": "(starlink_dish_latitude_degrees and starlink_dish_longitude_degrees >= 0) or (starlink_dish_latitude_degrees unless count_over_time((starlink_dish_longitude_degrees >= 0)[$__range:]) > 0)",
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "lat_history",
@@ -563,7 +563,7 @@
           "interval": "1s"
         },
         {
-          "expr": "(starlink_dish_longitude_degrees >= 0) or on() vector(0/0)",
+          "expr": "(starlink_dish_longitude_degrees >= 0) or (starlink_dish_longitude_degrees unless count_over_time((starlink_dish_longitude_degrees >= 0)[$__range:]) > 0)",
           "instant": false,
           "intervalFactor": 1,
           "legendFormat": "lon_history",

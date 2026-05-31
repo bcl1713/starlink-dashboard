@@ -14,9 +14,23 @@ HEMISPHERE_HISTORY_TARGETS = {
     "F_EAST": "starlink_dish_longitude_degrees >= 0",
 }
 
-NAN_FALLBACK = "or on() vector(0/0)"
+FALLBACK_GUARDS = {
+    "E": "count_over_time((starlink_dish_longitude_degrees < 0)[$__range:]) > 0",
+    "F": "count_over_time((starlink_dish_longitude_degrees < 0)[$__range:]) > 0",
+    "E_EAST": "count_over_time((starlink_dish_longitude_degrees >= 0)[$__range:]) > 0",
+    "F_EAST": "count_over_time((starlink_dish_longitude_degrees >= 0)[$__range:]) > 0",
+}
+UNSPLIT_HISTORY_FALLBACKS = {
+    "E": "starlink_dish_latitude_degrees",
+    "F": "starlink_dish_longitude_degrees",
+    "E_EAST": "starlink_dish_latitude_degrees",
+    "F_EAST": "starlink_dish_longitude_degrees",
+}
 HEMISPHERE_HISTORY_TARGETS_WITH_FALLBACK = {
-    ref_id: f"({expr}) {NAN_FALLBACK}"
+    ref_id: (
+        f"({expr}) or ({UNSPLIT_HISTORY_FALLBACKS[ref_id]} "
+        f"unless {FALLBACK_GUARDS[ref_id]})"
+    )
     for ref_id, expr in HEMISPHERE_HISTORY_TARGETS.items()
 }
 
@@ -92,17 +106,19 @@ def test_live_history_track_queries_are_split_by_hemisphere_for_idl() -> None:
             assert base_expr in target_exprs[ref_id]
 
 
-def test_no_idl_selected_timeframe_keeps_optional_split_frames_defined() -> None:
+def test_no_idl_selected_timeframe_keeps_a_drawable_history_track() -> None:
     for filename, panel_title, *_ in DASHBOARD_LIVE_MAPS:
         panel = _panel_by_title(_dashboard(filename), panel_title)
 
         for ref_id, expr in _target_exprs(panel).items():
             assert ref_id in HEMISPHERE_HISTORY_TARGETS
-            assert expr.endswith(NAN_FALLBACK), (
-                f"{filename} {panel_title} target {ref_id} can be absent when "
-                "the selected time frame stays entirely in the other hemisphere; "
-                "Grafana route layers then dereference an undefined split frame."
+            assert "vector(0/0)" not in expr, (
+                f"{filename} {panel_title} target {ref_id} must not use a "
+                "NaN-only fallback; Grafana can receive a defined frame but "
+                "still render no visible live track."
             )
+            assert UNSPLIT_HISTORY_FALLBACKS[ref_id] in expr
+            assert f"unless {FALLBACK_GUARDS[ref_id]}" in expr
 
 
 def test_live_history_track_layers_are_split_by_hemisphere_for_idl() -> None:
