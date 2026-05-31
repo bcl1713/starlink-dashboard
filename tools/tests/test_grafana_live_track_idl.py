@@ -7,24 +7,26 @@ DASHBOARD_DIR = (
     REPO_ROOT / "monitoring" / "grafana" / "provisioning" / "dashboards"
 )
 
+NORMALIZED_LONGITUDE_EXPR = "(((starlink_dish_longitude_degrees + 180) % 360) - 180)"
+
 HEMISPHERE_HISTORY_TARGETS = {
-    "E": "starlink_dish_latitude_degrees and starlink_dish_longitude_degrees < 0",
-    "F": "starlink_dish_longitude_degrees < 0",
-    "E_EAST": "starlink_dish_latitude_degrees and starlink_dish_longitude_degrees >= 0",
-    "F_EAST": "starlink_dish_longitude_degrees >= 0",
+    "E": f"starlink_dish_latitude_degrees and {NORMALIZED_LONGITUDE_EXPR} < 0",
+    "F": f"{NORMALIZED_LONGITUDE_EXPR} < 0",
+    "E_EAST": f"starlink_dish_latitude_degrees and {NORMALIZED_LONGITUDE_EXPR} >= 0",
+    "F_EAST": f"{NORMALIZED_LONGITUDE_EXPR} >= 0",
 }
 
 FALLBACK_GUARDS = {
-    "E": "count_over_time((starlink_dish_longitude_degrees < 0)[$__range:]) > 0",
-    "F": "count_over_time((starlink_dish_longitude_degrees < 0)[$__range:]) > 0",
-    "E_EAST": "count_over_time((starlink_dish_longitude_degrees >= 0)[$__range:]) > 0",
-    "F_EAST": "count_over_time((starlink_dish_longitude_degrees >= 0)[$__range:]) > 0",
+    "E": f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} < 0)[$__range:]) > 0",
+    "F": f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} < 0)[$__range:]) > 0",
+    "E_EAST": f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} >= 0)[$__range:]) > 0",
+    "F_EAST": f"count_over_time(({NORMALIZED_LONGITUDE_EXPR} >= 0)[$__range:]) > 0",
 }
 UNSPLIT_HISTORY_FALLBACKS = {
     "E": "starlink_dish_latitude_degrees",
-    "F": "starlink_dish_longitude_degrees",
+    "F": NORMALIZED_LONGITUDE_EXPR,
     "E_EAST": "starlink_dish_latitude_degrees",
-    "F_EAST": "starlink_dish_longitude_degrees",
+    "F_EAST": NORMALIZED_LONGITUDE_EXPR,
 }
 HEMISPHERE_HISTORY_TARGETS_WITH_FALLBACK = {
     ref_id: (
@@ -119,6 +121,21 @@ def test_no_idl_selected_timeframe_keeps_a_drawable_history_track() -> None:
             )
             assert UNSPLIT_HISTORY_FALLBACKS[ref_id] in expr
             assert f"unless {FALLBACK_GUARDS[ref_id]}" in expr
+
+
+def test_live_history_longitudes_are_normalized_to_grafana_drawable_range() -> None:
+    for filename, panel_title, *_ in DASHBOARD_LIVE_MAPS:
+        panel = _panel_by_title(_dashboard(filename), panel_title)
+
+        for ref_id, expr in _target_exprs(panel).items():
+            if ref_id in {"F", "F_EAST"}:
+                assert "starlink_dish_longitude_degrees unless" not in expr, (
+                    f"{filename} {panel_title} target {ref_id} must not fall "
+                    "back to raw Starlink 0..360 longitudes; Grafana can keep "
+                    "markers visible while route lines with >180 longitude fail "
+                    "to draw in the expected viewport."
+                )
+            assert NORMALIZED_LONGITUDE_EXPR in expr
 
 
 def test_live_history_track_layers_are_split_by_hemisphere_for_idl() -> None:
