@@ -348,10 +348,17 @@ class StarlinkClient:
                 packet_loss_percent=float(packet_loss),
             )
 
-            # Extract obstruction data
-            obstruction_fraction = obstruction.get("fraction_obstructed", 0.0)
+            # Extract obstruction data.
+            # starlink_grpc.status_data() returns fraction_obstructed on the
+            # general status dict, while the separate obstruction dict contains
+            # only wedge detail/validity metadata. Fall back to the obstruction
+            # dict for compatibility with older mocks.
+            obstruction_fraction = status.get(
+                "fraction_obstructed",
+                obstruction.get("fraction_obstructed", 0.0),
+            )
             obstruction_pct = ObstructionData(
-                obstruction_percent=float(obstruction_fraction * 100)
+                obstruction_percent=float((obstruction_fraction or 0.0) * 100)
             )
 
             # Extract environmental data
