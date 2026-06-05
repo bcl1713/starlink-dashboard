@@ -1686,7 +1686,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 9,
+        "w": 7,
         "x": 0,
         "y": 26
       },
@@ -1722,6 +1722,72 @@
       ],
       "title": "Ground Entry Point",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 20,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 7,
+        "y": 26
+      },
+      "id": 206,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "fields": "",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "expr": "starlink_dish_obstruction_percent",
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "Obstruction",
+          "refId": "A"
+        }
+      ],
+      "title": "Obstruction %",
+      "type": "gauge"
     },
     {
       "datasource": {
@@ -1793,8 +1859,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 9,
-        "x": 9,
+        "w": 7,
+        "x": 11,
         "y": 26
       },
       "id": 4,
