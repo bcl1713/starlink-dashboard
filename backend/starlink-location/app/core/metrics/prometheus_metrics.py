@@ -131,6 +131,32 @@ starlink_network_packet_loss_percent = Gauge(
     registry=REGISTRY,
 )
 
+starlink_ground_entry_point_latitude_degrees = Gauge(
+    "starlink_ground_entry_point_latitude_degrees",
+    "Ground entry point latitude in decimal degrees",
+    registry=REGISTRY,
+)
+
+starlink_ground_entry_point_longitude_degrees = Gauge(
+    "starlink_ground_entry_point_longitude_degrees",
+    "Ground entry point longitude in decimal degrees",
+    registry=REGISTRY,
+)
+
+starlink_ground_entry_point_location = Gauge(
+    "starlink_ground_entry_point_location",
+    "Ground entry point location with labels for Grafana geomap display",
+    labelnames=["lat", "lon", "city", "country", "ip"],
+    registry=REGISTRY,
+)
+
+starlink_ground_entry_point_info = Gauge(
+    "starlink_ground_entry_point_info",
+    "Ground entry point identity information",
+    labelnames=["city", "country", "ip"],
+    registry=REGISTRY,
+)
+
 # ============================================================================
 # Network metrics - Histograms for percentile analysis
 # ============================================================================

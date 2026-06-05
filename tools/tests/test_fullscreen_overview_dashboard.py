@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DASHBOARD_PATH = (
     REPO_ROOT
@@ -19,7 +18,9 @@ CORE_MAP_LAYERS = {
     "Satellites",
 }
 RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
-RAINVIEWER_RADAR_TILE_URL = "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+RAINVIEWER_RADAR_TILE_URL = (
+    "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+)
 HCX_COMM_LAYER_TOKENS = {"CommKaOverlay", "HCX"}
 HCX_COMM_LAYER_SOURCES = {"commka.geojson"}
 EXPECTED_CLOCK_DEFAULTS = {
@@ -39,8 +40,7 @@ def _current_position_layers() -> list[dict]:
     geomap_panels = [
         panel
         for panel in dashboard["panels"]
-        if panel.get("type") == "geomap"
-        and panel.get("title") == "Current Position"
+        if panel.get("type") == "geomap" and panel.get("title") == "Current Position"
     ]
     assert len(geomap_panels) == 1
     return geomap_panels[0]["options"]["layers"]
@@ -61,9 +61,7 @@ def _clock_panels_by_title() -> dict[str, dict]:
 
 def _panel_by_title(title: str) -> dict:
     dashboard = _fullscreen_overview_dashboard()
-    panels = [
-        panel for panel in dashboard["panels"] if panel.get("title") == title
-    ]
+    panels = [panel for panel in dashboard["panels"] if panel.get("title") == title]
     assert len(panels) == 1
     return panels[0]
 
@@ -122,7 +120,9 @@ def test_fullscreen_overview_keeps_core_map_layers_visible_by_default() -> None:
         assert layers[layer_name].get("opacity", 1) > 0
 
 
-def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_layers() -> None:
+def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_layers() -> (
+    None
+):
     layers = _current_position_layers()
     layers_by_name = {layer["name"]: layer for layer in layers}
     radar_layer = layers_by_name[RADAR_LAYER_NAME]
@@ -190,4 +190,22 @@ def test_fullscreen_overview_gives_map_more_vertical_space() -> None:
     packet_loss_panel = _panel_by_title("Packet Loss")
 
     assert map_panel["gridPos"] == {"h": 23, "w": 18, "x": 0, "y": 3}
-    assert packet_loss_panel["gridPos"] == {"h": 4, "w": 18, "x": 0, "y": 26}
+    assert packet_loss_panel["gridPos"] == {"h": 4, "w": 9, "x": 9, "y": 26}
+
+
+def test_fullscreen_overview_splits_ground_entry_point_and_packet_loss_row() -> None:
+    ground_entry_panel = _panel_by_title("Ground Entry Point")
+    packet_loss_panel = _panel_by_title("Packet Loss")
+    layers_by_name = _layers_by_name()
+
+    assert ground_entry_panel["gridPos"] == {"h": 4, "w": 9, "x": 0, "y": 26}
+    assert packet_loss_panel["gridPos"] == {"h": 4, "w": 9, "x": 9, "y": 26}
+    assert "Ground Entry Point" in layers_by_name
+    assert (
+        layers_by_name["Ground Entry Point"]["config"]["coords"]["lat"]
+        == "starlink_ground_entry_point_latitude_degrees"
+    )
+    assert (
+        layers_by_name["Ground Entry Point"]["config"]["coords"]["lon"]
+        == "starlink_ground_entry_point_longitude_degrees"
+    )

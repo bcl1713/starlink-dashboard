@@ -23,6 +23,8 @@ from app.mission.exporter.__main__ import (
     generate_timeline_export,
     _generate_route_map,
     _segment_rows,
+    GroundEntryPoint,
+    get_cached_ground_entry_point,
 )
 from app.mission.exporter.transport_utils import (
     TRANSPORT_DISPLAY,
@@ -60,6 +62,8 @@ __all__ = [
     "generate_timeline_export",
     "_generate_route_map",
     "_segment_rows",
+    "GroundEntryPoint",
+    "get_cached_ground_entry_point",
     "TRANSPORT_DISPLAY",
     "STATE_COLUMNS",
     "Transport",
