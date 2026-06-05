@@ -356,8 +356,13 @@ class TestStarlinkClientTelemetry:
             "uplink_throughput_bps": 20e6,  # 20 Mbps
             "pop_ping_drop_rate": 0.01,  # 1%
             "temperature_c": 35.0,
+            "fraction_obstructed": 0.15,
         }
-        obstruction_dict = {"fraction_obstructed": 0.15}
+        obstruction_dict = {
+            "wedges_fraction_obstructed[]": [None] * 12,
+            "raw_wedges_fraction_obstructed[]": [None] * 12,
+            "valid_s": None,
+        }
         alert_dict = {}
         mock_status.return_value = (status_dict, obstruction_dict, alert_dict)
 
