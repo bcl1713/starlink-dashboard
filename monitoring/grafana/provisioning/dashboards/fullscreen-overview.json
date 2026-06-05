@@ -658,6 +658,61 @@
           },
           {
             "config": {
+              "coords": {
+                "lat": "starlink_ground_entry_point_latitude_degrees",
+                "lon": "starlink_ground_entry_point_longitude_degrees"
+              },
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "blue"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 12,
+                  "max": 20,
+                  "min": 5,
+                  "mode": "fixed"
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "fixed": "GEP",
+                  "mode": "fixed"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 18,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-GP_LAT-GP_LON"
+            },
+            "layer-tooltip": true,
+            "location": {
+              "latitude": "ground_entry_latitude",
+              "longitude": "ground_entry_longitude",
+              "mode": "coords"
+            },
+            "name": "Ground Entry Point",
+            "tooltip": true,
+            "type": "markers"
+          },
+          {
+            "config": {
               "showLegend": false,
               "style": {
                 "color": {
@@ -956,6 +1011,30 @@
             "method": "GET",
             "params": []
           }
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_ground_entry_point_latitude_degrees",
+          "instant": true,
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "ground_entry_latitude",
+          "refId": "GP_LAT"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_ground_entry_point_longitude_degrees",
+          "instant": true,
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "ground_entry_longitude",
+          "refId": "GP_LON"
         }
       ],
       "title": "Current Position",
@@ -986,6 +1065,17 @@
           "filter": {
             "id": "byRefId",
             "options": "/^(?:E_EAST|F_EAST)$/"
+          },
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "inner"
+          }
+        },
+        {
+          "filter": {
+            "id": "byRefId",
+            "options": "/^(?:GP_LAT|GP_LON)$/"
           },
           "id": "joinByField",
           "options": {
@@ -1386,7 +1476,12 @@
       "id": 2,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "min", "max", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1529,7 +1624,12 @@
       "id": 3,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "max", "min", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "min",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1559,6 +1659,69 @@
       ],
       "title": "Download/Upload Throughput",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 9,
+        "x": 0,
+        "y": 26
+      },
+      "id": 205,
+      "options": {
+        "colorMode": "value",
+        "graphOrientation": "auto",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_ground_entry_point_info",
+          "instant": true,
+          "legendFormat": "{{city}}, {{country}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Ground Entry Point",
+      "type": "stat"
     },
     {
       "datasource": {
@@ -1630,14 +1793,18 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 18,
-        "x": 0,
+        "w": 9,
+        "x": 9,
         "y": 26
       },
       "id": 4,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "max", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1665,7 +1832,11 @@
   "preload": false,
   "refresh": "1s",
   "schemaVersion": 42,
-  "tags": ["starlink", "fullscreen", "overview"],
+  "tags": [
+    "starlink",
+    "fullscreen",
+    "overview"
+  ],
   "templating": {
     "list": [
       {
@@ -1719,7 +1890,14 @@
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["1s", "5s", "10s", "30s", "1m", "5m"]
+    "refresh_intervals": [
+      "1s",
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ]
   },
   "timezone": "utc",
   "title": "Fullscreen Overview",

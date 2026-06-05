@@ -68,6 +68,10 @@ from app.mission.exporter.pptx_styling import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.services.ground_entry_point import (
+    GroundEntryPoint,
+    get_cached_ground_entry_point,
+)
 from app.mission.timeline_builder.calculator import route_with_adjusted_departure
 
 logger = logging.getLogger(__name__)
@@ -1340,6 +1344,8 @@ def _segment_rows(
     export_timeline = timeline.model_copy(deep=True)
     normalize_call_availability_timeline(export_timeline)
     mission_start = mission_start_timestamp(export_timeline)
+    ground_entry_point = get_cached_ground_entry_point()
+    ground_entry_values = _ground_entry_export_values(ground_entry_point)
     rows: list[tuple[datetime, int, dict]] = []
 
     for idx, segment in enumerate(export_timeline.segments, start=1):
@@ -1391,6 +1397,7 @@ def _segment_rows(
             "Systems Affected": ", ".join(systems_affected),
             "Reasons": _compact_reason_label(segment),
             "Notes / Source Events": notes_and_sources,
+            **ground_entry_values,
             "Metadata": (
                 json.dumps(segment.metadata, sort_keys=True) if segment.metadata else ""
             ),
@@ -1417,6 +1424,11 @@ def _segment_rows(
         "Systems Affected",
         "Reasons",
         "Notes / Source Events",
+        "Ground Entry City",
+        "Ground Entry Country",
+        "Ground Entry IP",
+        "Ground Entry Latitude",
+        "Ground Entry Longitude",
         "Metadata",
     ]
 
@@ -1424,6 +1436,27 @@ def _segment_rows(
         row for _, _, row in sorted(rows, key=lambda item: (item[0], item[1]))
     ]
     return pd.DataFrame.from_records(ordered_records, columns=columns)
+
+
+def _ground_entry_export_values(
+    entry_point: GroundEntryPoint | None,
+) -> dict[str, str | float]:
+    """Return CSV column values for the current ground entry point."""
+    if entry_point is None:
+        return {
+            "Ground Entry City": "",
+            "Ground Entry Country": "",
+            "Ground Entry IP": "",
+            "Ground Entry Latitude": "",
+            "Ground Entry Longitude": "",
+        }
+    return {
+        "Ground Entry City": entry_point.city,
+        "Ground Entry Country": entry_point.country,
+        "Ground Entry IP": entry_point.ip,
+        "Ground Entry Latitude": entry_point.latitude,
+        "Ground Entry Longitude": entry_point.longitude,
+    }
 
 
 def _advisory_rows(

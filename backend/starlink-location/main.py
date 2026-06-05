@@ -38,6 +38,7 @@ from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.services.ground_entry_point import refresh_ground_entry_point_metrics
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from app.core.limiter import limiter
@@ -84,6 +85,23 @@ async def startup_event():
 
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
+
+        try:
+            entry_point = refresh_ground_entry_point_metrics()
+            if entry_point is not None:
+                logger.info_json(
+                    "Ground entry point discovered",
+                    extra_fields={
+                        "city": entry_point.city,
+                        "country": entry_point.country,
+                    },
+                )
+        except Exception as e:  # pragma: no cover - defensive startup guard
+            logger.warning_json(
+                "Failed to publish ground entry point metrics",
+                extra_fields={"error": str(e)},
+                exc_info=True,
+            )
 
         if _simulation_config.mode == "live":
             # Initialize LiveCoordinator for real terminal data

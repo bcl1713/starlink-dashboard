@@ -17,6 +17,10 @@ from app.core.metrics.prometheus_metrics import (
     starlink_network_throughput_down_mbps_current,
     starlink_network_throughput_up_mbps_current,
     starlink_network_packet_loss_percent,
+    starlink_ground_entry_point_latitude_degrees,
+    starlink_ground_entry_point_longitude_degrees,
+    starlink_ground_entry_point_location,
+    starlink_ground_entry_point_info,
     # Network metrics - Histograms
     starlink_network_latency_ms,
     starlink_network_throughput_down_mbps,
@@ -103,6 +107,10 @@ __all__ = [
     "starlink_network_throughput_down_mbps_current",
     "starlink_network_throughput_up_mbps_current",
     "starlink_network_packet_loss_percent",
+    "starlink_ground_entry_point_latitude_degrees",
+    "starlink_ground_entry_point_longitude_degrees",
+    "starlink_ground_entry_point_location",
+    "starlink_ground_entry_point_info",
     # Network metrics - Histograms
     "starlink_network_latency_ms",
     "starlink_network_throughput_down_mbps",
