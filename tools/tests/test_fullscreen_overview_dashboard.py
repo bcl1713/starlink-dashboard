@@ -190,16 +190,18 @@ def test_fullscreen_overview_gives_map_more_vertical_space() -> None:
     packet_loss_panel = _panel_by_title("Packet Loss")
 
     assert map_panel["gridPos"] == {"h": 23, "w": 18, "x": 0, "y": 3}
-    assert packet_loss_panel["gridPos"] == {"h": 4, "w": 9, "x": 9, "y": 26}
+    assert packet_loss_panel["gridPos"] == {"h": 4, "w": 7, "x": 11, "y": 26}
 
 
-def test_fullscreen_overview_splits_ground_entry_point_and_packet_loss_row() -> None:
+def test_fullscreen_overview_places_obstruction_gauge_between_ground_entry_point_and_packet_loss() -> None:
     ground_entry_panel = _panel_by_title("Ground Entry Point")
+    obstruction_panel = _panel_by_title("Obstruction %")
     packet_loss_panel = _panel_by_title("Packet Loss")
     layers_by_name = _layers_by_name()
 
-    assert ground_entry_panel["gridPos"] == {"h": 4, "w": 9, "x": 0, "y": 26}
-    assert packet_loss_panel["gridPos"] == {"h": 4, "w": 9, "x": 9, "y": 26}
+    assert ground_entry_panel["gridPos"] == {"h": 4, "w": 7, "x": 0, "y": 26}
+    assert obstruction_panel["gridPos"] == {"h": 4, "w": 4, "x": 7, "y": 26}
+    assert packet_loss_panel["gridPos"] == {"h": 4, "w": 7, "x": 11, "y": 26}
     assert "Ground Entry Point" in layers_by_name
     assert (
         layers_by_name["Ground Entry Point"]["config"]["coords"]["lat"]
@@ -209,3 +211,30 @@ def test_fullscreen_overview_splits_ground_entry_point_and_packet_loss_row() -> 
         layers_by_name["Ground Entry Point"]["config"]["coords"]["lon"]
         == "starlink_ground_entry_point_longitude_degrees"
     )
+
+
+def test_fullscreen_overview_obstruction_gauge_uses_absolute_thresholds() -> None:
+    obstruction_panel = _panel_by_title("Obstruction %")
+    defaults = obstruction_panel["fieldConfig"]["defaults"]
+
+    assert obstruction_panel["type"] == "gauge"
+    assert defaults["min"] == 0
+    assert defaults["max"] == 20
+    assert defaults["unit"] == "percent"
+    assert defaults["thresholds"] == {
+        "mode": "absolute",
+        "steps": [
+            {"color": "green", "value": 0},
+            {"color": "yellow", "value": 5},
+            {"color": "red", "value": 10},
+        ],
+    }
+    assert obstruction_panel["targets"] == [
+        {
+            "expr": "starlink_dish_obstruction_percent",
+            "interval": "1s",
+            "intervalFactor": 1,
+            "legendFormat": "Obstruction",
+            "refId": "A",
+        }
+    ]
