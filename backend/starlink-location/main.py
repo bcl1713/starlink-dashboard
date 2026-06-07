@@ -38,7 +38,10 @@ from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.services.ground_entry_point import refresh_ground_entry_point_metrics
+from app.services.ground_entry_point import (
+    maybe_refresh_ground_entry_point_metrics,
+    refresh_ground_entry_point_metrics,
+)
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from app.core.limiter import limiter
@@ -323,12 +326,27 @@ async def _background_update_loop(poi_manager=None):
 
     update_count = 0
     error_count = 0
+    try:
+        ground_entry_refresh_interval_seconds = float(
+            os.getenv("STARLINK_GROUND_ENTRY_REFRESH_SECONDS", "300")
+        )
+    except ValueError:
+        ground_entry_refresh_interval_seconds = 300.0
+        logger.warning_json(
+            "Invalid STARLINK_GROUND_ENTRY_REFRESH_SECONDS; using default",
+            extra_fields={"value": os.getenv("STARLINK_GROUND_ENTRY_REFRESH_SECONDS")},
+        )
+
 
     try:
         logger.info_json("Background update loop started")
 
         while True:
             try:
+                maybe_refresh_ground_entry_point_metrics(
+                    refresh_interval_seconds=ground_entry_refresh_interval_seconds
+                )
+
                 if _coordinator:
                     telemetry = _coordinator.update()
                     update_count += 1
