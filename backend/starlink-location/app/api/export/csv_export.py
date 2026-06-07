@@ -13,6 +13,7 @@ from app.core.logging import get_logger
 from .prometheus import (
     EXPORT_METRICS,
     calculate_step,
+    export_columns,
     query_all_metrics,
 )
 
@@ -21,10 +22,10 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 # CSV column headers
-CSV_COLUMNS = ["timestamp"] + [col for _, col in EXPORT_METRICS]
+CSV_COLUMNS = ["timestamp", *export_columns()]
 
 
-def generate_csv(data_by_timestamp: dict[float, dict[str, float]]) -> str:
+def generate_csv(data_by_timestamp: dict[float, dict[str, float | str]]) -> str:
     """Generate CSV content from metric data.
 
     Args:
@@ -42,9 +43,13 @@ def generate_csv(data_by_timestamp: dict[float, dict[str, float]]) -> str:
     # Write data rows sorted by timestamp
     for ts in sorted(data_by_timestamp.keys()):
         row_data = data_by_timestamp[ts]
-        row = [datetime.utcfromtimestamp(ts).isoformat() + "Z"]
-        for _, col in EXPORT_METRICS:
-            row.append(row_data.get(col, ""))
+        row: list[object] = [datetime.utcfromtimestamp(ts).isoformat() + "Z"]
+        for metric in EXPORT_METRICS:
+            if metric.column:
+                row.append(row_data.get(metric.column, ""))
+            if metric.label_columns:
+                for column_name in metric.label_columns.values():
+                    row.append(row_data.get(column_name, ""))
         writer.writerow(row)
 
     return output.getvalue()
