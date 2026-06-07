@@ -124,7 +124,8 @@ export function DataExportPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Data Export</h1>
         <p className="text-gray-600 mt-2">
-          Export historical Starlink telemetry data to CSV
+          Export historical Starlink telemetry and Ground Entry Point data to
+          CSV
         </p>
       </div>
 
@@ -216,6 +217,9 @@ export function DataExportPage() {
             <li>Position: latitude, longitude, altitude, speed, heading</li>
             <li>Network: latency, throughput (up/down), packet loss</li>
             <li>Signal: obstruction percent, signal quality</li>
+            <li>
+              Ground Entry Point: latitude, longitude, city, country, and IP
+            </li>
           </ul>
         </CardContent>
       </Card>
