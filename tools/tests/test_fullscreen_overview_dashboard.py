@@ -18,9 +18,10 @@ CORE_MAP_LAYERS = {
     "Satellites",
 }
 RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
+RAINVIEWER_RADAR_REFRESH_VARIABLE = "radar_refresh"
 RAINVIEWER_RADAR_TILE_URL = (
     "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
-    "?refresh=${__to:date:YYYYMMDDHHmm}"
+    f"?refresh=${{{RAINVIEWER_RADAR_REFRESH_VARIABLE}}}"
 )
 HCX_COMM_LAYER_TOKENS = {"CommKaOverlay", "HCX"}
 HCX_COMM_LAYER_SOURCES = {"commka.geojson"}
@@ -141,10 +142,27 @@ def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_lay
     )
 
 
-def test_fullscreen_overview_rainviewer_cache_buster_is_bounded_to_minute() -> None:
+def test_fullscreen_overview_rainviewer_cache_buster_uses_refresh_variable() -> None:
+    dashboard = _fullscreen_overview_dashboard()
     radar_layer = _layers_by_name()[RADAR_LAYER_NAME]
+    variables_by_name = {
+        variable["name"]: variable for variable in dashboard["templating"]["list"]
+    }
+    refresh_variable = variables_by_name[RAINVIEWER_RADAR_REFRESH_VARIABLE]
 
-    assert radar_layer["config"]["url"].endswith("?refresh=${__to:date:YYYYMMDDHHmm}")
+    assert radar_layer["config"]["url"].endswith(
+        f"?refresh=${{{RAINVIEWER_RADAR_REFRESH_VARIABLE}}}"
+    )
+    assert refresh_variable["hide"] == 2
+    assert refresh_variable["refresh"] == 2
+    assert refresh_variable["type"] == "query"
+    assert refresh_variable["datasource"] == {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093",
+    }
+    assert refresh_variable["skipUrlSync"] is True
+    assert refresh_variable["regex"] == "/.* ([0-9]+) .*/"
+    assert "floor(vector(time() / 300))" in refresh_variable["definition"]
 
 
 def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:

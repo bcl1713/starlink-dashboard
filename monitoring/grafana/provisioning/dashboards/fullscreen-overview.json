@@ -382,7 +382,7 @@
               "attribution": "Weather radar \u00a9 Rain Viewer / MeteoLab Inc.",
               "maxZoom": 7,
               "minZoom": 0,
-              "url": "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png?refresh=${__to:date:YYYYMMDDHHmm}"
+              "url": "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png?refresh=${radar_refresh}"
             },
             "name": "Weather Radar (RainViewer)",
             "noRepeat": false,
@@ -1948,6 +1948,34 @@
         ],
         "query": "Departure & Arrival : departure\\,arrival, All POIs :  , Departure Only : departure, Arrival Only : arrival, Waypoints Only : waypoint, Alternates Only : alternate",
         "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "0",
+          "value": "0"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "definition": "query_result(floor(vector(time() / 300)))",
+        "description": "Hidden five-minute token that forces Grafana Geomap XYZ layer reinitialization so weather radar tiles can advance without a manual page reload.",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Radar refresh token",
+        "multi": false,
+        "name": "radar_refresh",
+        "options": [],
+        "query": {
+          "query": "query_result(floor(vector(time() / 300)))",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 2,
+        "regex": "/.* ([0-9]+) .*/",
+        "skipUrlSync": true,
+        "sort": 0,
+        "type": "query"
       }
     ]
   },
