@@ -382,7 +382,7 @@
               "attribution": "Weather radar \u00a9 Rain Viewer / MeteoLab Inc.",
               "maxZoom": 7,
               "minZoom": 0,
-              "url": "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+              "url": "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png?refresh=${__to:date:YYYYMMDDHHmm}"
             },
             "name": "Weather Radar (RainViewer)",
             "noRepeat": false,
