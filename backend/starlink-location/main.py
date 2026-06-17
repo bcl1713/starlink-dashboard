@@ -328,10 +328,10 @@ async def _background_update_loop(poi_manager=None):
     error_count = 0
     try:
         ground_entry_refresh_interval_seconds = float(
-            os.getenv("STARLINK_GROUND_ENTRY_REFRESH_SECONDS", "300")
+            os.getenv("STARLINK_GROUND_ENTRY_REFRESH_SECONDS", "1")
         )
     except ValueError:
-        ground_entry_refresh_interval_seconds = 300.0
+        ground_entry_refresh_interval_seconds = 1.0
         logger.warning_json(
             "Invalid STARLINK_GROUND_ENTRY_REFRESH_SECONDS; using default",
             extra_fields={"value": os.getenv("STARLINK_GROUND_ENTRY_REFRESH_SECONDS")},

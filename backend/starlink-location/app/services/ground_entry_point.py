@@ -7,8 +7,9 @@ import math
 import os
 import time
 from dataclasses import dataclass
-from functools import lru_cache
+from typing import Callable
 
+import dns.resolver
 import httpx
 
 from app.core.metrics.prometheus_metrics import (
@@ -20,7 +21,8 @@ from app.core.metrics.prometheus_metrics import (
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_REFRESH_INTERVAL_SECONDS = 300.0
+_DEFAULT_REFRESH_INTERVAL_SECONDS = 1.0
+_OPENDNS_RESOLVERS = ["208.67.222.222", "208.67.220.220"]
 _last_ground_entry_point_location_labels: tuple[str, str, str, str, str] | None = None
 _last_ground_entry_point_info_labels: tuple[str, str, str] | None = None
 _last_ground_entry_point_refresh_monotonic: float | None = None
@@ -43,42 +45,114 @@ class GroundEntryPoint:
         return ", ".join(parts) if parts else "Unknown"
 
 
-@lru_cache(maxsize=1)
-def get_cached_ground_entry_point() -> GroundEntryPoint | None:
-    """Resolve and cache the current public egress location.
+class GroundEntryPointResolver:
+    """Resolve public IP frequently, geolocating only when the IP changes."""
 
-    The lookup intentionally fails closed: if public-IP or geolocation services
-    are unavailable, metrics and exports continue with empty ground-entry values
-    rather than delaying telemetry collection. Apparently even satellites must
-    occasionally wait for a website to answer.
-    """
-    return discover_ground_entry_point()
+    def __init__(
+        self,
+        ip_resolver: Callable[[], str | None] | None = None,
+        geolocator: Callable[[str], GroundEntryPoint | None] | None = None,
+        poll_interval_seconds: float = _DEFAULT_REFRESH_INTERVAL_SECONDS,
+        time_source: Callable[[], float] | None = None,
+    ) -> None:
+        self._ip_resolver = ip_resolver or resolve_public_ip_via_dns
+        self._geolocator = geolocator or geolocate_public_ip
+        self._poll_interval_seconds = poll_interval_seconds
+        self._time_source = time_source or time.monotonic
+        self._last_lookup_at: float | None = None
+        self._current_ip: str | None = None
+        self._current_entry: GroundEntryPoint | None = None
+        self._entry_cache: dict[str, GroundEntryPoint] = {}
+
+    def current(self) -> GroundEntryPoint | None:
+        """Return the most recently resolved ground entry point."""
+        configured = _entry_point_from_environment()
+        if configured is not None:
+            self._current_ip = configured.ip or self._current_ip
+            self._current_entry = configured
+            return configured
+        return self._current_entry
+
+    def invalidate(self, clear_geolocation_cache: bool = False) -> None:
+        """Clear current resolver state, optionally dropping per-IP geolocation cache."""
+        self._last_lookup_at = None
+        self._current_ip = None
+        self._current_entry = None
+        if clear_geolocation_cache:
+            self._entry_cache.clear()
+
+    def refresh(self, force: bool = False) -> GroundEntryPoint | None:
+        """Refresh public IP state and geolocate only when the IP changes."""
+        configured = _entry_point_from_environment()
+        if configured is not None:
+            self._current_ip = configured.ip or self._current_ip
+            self._current_entry = configured
+            return configured
+
+        now = self._time_source()
+        if (
+            not force
+            and self._last_lookup_at is not None
+            and now - self._last_lookup_at < self._poll_interval_seconds
+        ):
+            return self._current_entry
+
+        self._last_lookup_at = now
+
+        try:
+            ip = self._ip_resolver()
+        except Exception as exc:  # pragma: no cover - defensive network guard
+            logger.warning("Failed to resolve public IP: %s", exc)
+            return self._current_entry
+
+        if not ip:
+            return self._current_entry
+
+        if ip == self._current_ip and self._current_entry is not None:
+            return self._current_entry
+
+        cached_entry = self._entry_cache.get(ip)
+        if cached_entry is not None:
+            self._current_ip = ip
+            self._current_entry = cached_entry
+            return cached_entry
+
+        try:
+            entry = self._geolocator(ip)
+        except Exception as exc:  # pragma: no cover - defensive network guard
+            logger.warning("Failed to geolocate public IP %s: %s", ip, exc)
+            return self._current_entry
+
+        if entry is None:
+            return self._current_entry
+
+        self._entry_cache[ip] = entry
+        self._current_ip = ip
+        self._current_entry = entry
+        return entry
 
 
-def invalidate_cached_ground_entry_point() -> None:
-    """Invalidate the cached ground entry point so the next lookup re-discovers it."""
-    get_cached_ground_entry_point.cache_clear()
+def resolve_public_ip_via_dns(timeout_seconds: float = 2.0) -> str | None:
+    """Resolve the current public IP using OpenDNS rather than HTTP."""
+    resolver = dns.resolver.Resolver(configure=False)
+    resolver.nameservers = _OPENDNS_RESOLVERS
+    resolver.timeout = timeout_seconds
+    resolver.lifetime = timeout_seconds
+    answers = list(resolver.resolve("myip.opendns.com", "A", search=False))
+    if not answers:
+        return None
+    return str(answers[0]).strip()
 
 
-def discover_ground_entry_point(
+def geolocate_public_ip(
+    ip: str,
     timeout_seconds: float = 5.0,
 ) -> GroundEntryPoint | None:
-    """Discover the public egress IP and geolocate it with ipinfo.io."""
-    configured = _entry_point_from_environment()
-    if configured is not None:
-        return configured
-
-    try:
-        with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
-            ip = client.get("https://ifconfig.me/ip").text.strip()
-            if not ip:
-                return None
-            response = client.get(f"https://ipinfo.io/{ip}/json")
-            response.raise_for_status()
-            payload = response.json()
-    except Exception as exc:  # pragma: no cover - defensive network guard
-        logger.warning("Failed to discover ground entry point: %s", exc)
-        return None
+    """Geolocate a public IP using ipinfo.io."""
+    with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+        response = client.get(f"https://ipinfo.io/{ip}/json")
+        response.raise_for_status()
+        payload = response.json()
 
     loc = str(payload.get("loc") or "")
     try:
@@ -96,6 +170,34 @@ def discover_ground_entry_point(
         latitude=latitude,
         longitude=longitude,
     )
+
+
+_resolver = GroundEntryPointResolver()
+
+
+def invalidate_cached_ground_entry_point() -> None:
+    """Invalidate current ground-entry state so the next lookup re-discovers it."""
+    _resolver.invalidate(clear_geolocation_cache=True)
+
+
+def discover_ground_entry_point(
+    timeout_seconds: float = 5.0,
+) -> GroundEntryPoint | None:
+    """Discover the public egress IP and geolocate it with DNS-based IP lookup."""
+    configured = _entry_point_from_environment()
+    if configured is not None:
+        return configured
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: resolve_public_ip_via_dns(timeout_seconds=min(timeout_seconds, 2.0)),
+        geolocator=lambda ip: geolocate_public_ip(ip, timeout_seconds=timeout_seconds),
+    )
+    return resolver.refresh(force=True)
+
+
+def get_cached_ground_entry_point() -> GroundEntryPoint | None:
+    """Return the last-known ground entry point without forcing a network lookup."""
+    return _resolver.current()
 
 
 def clear_ground_entry_point_metrics() -> None:
@@ -162,12 +264,12 @@ def publish_ground_entry_point_metrics(entry_point: GroundEntryPoint | None) -> 
 
 def refresh_ground_entry_point_metrics(
     now_monotonic: float | None = None,
+    force: bool = False,
 ) -> GroundEntryPoint | None:
-    """Invalidate cached discovery, re-resolve the entry point, and publish metrics."""
+    """Refresh DNS-watched ground-entry state and publish current metrics."""
     global _last_ground_entry_point_refresh_monotonic
 
-    invalidate_cached_ground_entry_point()
-    entry_point = get_cached_ground_entry_point()
+    entry_point = _resolver.refresh(force=force)
     publish_ground_entry_point_metrics(entry_point)
     _last_ground_entry_point_refresh_monotonic = (
         time.monotonic() if now_monotonic is None else now_monotonic
@@ -179,7 +281,7 @@ def maybe_refresh_ground_entry_point_metrics(
     refresh_interval_seconds: float | None = None,
     now_monotonic: float | None = None,
 ) -> GroundEntryPoint | None:
-    """Refresh entry-point metrics only when the periodic refresh interval has elapsed."""
+    """Refresh entry-point metrics only when the DNS watcher interval has elapsed."""
     interval_seconds = (
         _DEFAULT_REFRESH_INTERVAL_SECONDS
         if refresh_interval_seconds is None
