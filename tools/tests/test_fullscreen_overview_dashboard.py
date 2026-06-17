@@ -20,6 +20,7 @@ CORE_MAP_LAYERS = {
 RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
 RAINVIEWER_RADAR_TILE_URL = (
     "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+    "?refresh=${__to:date:YYYYMMDDHHmm}"
 )
 HCX_COMM_LAYER_TOKENS = {"CommKaOverlay", "HCX"}
 HCX_COMM_LAYER_SOURCES = {"commka.geojson"}
@@ -140,6 +141,12 @@ def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_lay
     )
 
 
+def test_fullscreen_overview_rainviewer_cache_buster_is_bounded_to_minute() -> None:
+    radar_layer = _layers_by_name()[RADAR_LAYER_NAME]
+
+    assert radar_layer["config"]["url"].endswith("?refresh=${__to:date:YYYYMMDDHHmm}")
+
+
 def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
     layers = _current_position_layers()
 
@@ -193,7 +200,9 @@ def test_fullscreen_overview_gives_map_more_vertical_space() -> None:
     assert packet_loss_panel["gridPos"] == {"h": 4, "w": 7, "x": 11, "y": 26}
 
 
-def test_fullscreen_overview_places_obstruction_gauge_between_ground_entry_point_and_packet_loss() -> None:
+def test_fullscreen_overview_places_obstruction_gauge_between_ground_entry_point_and_packet_loss() -> (
+    None
+):
     ground_entry_panel = _panel_by_title("Ground Entry Point")
     obstruction_panel = _panel_by_title("Obstruction %")
     packet_loss_panel = _panel_by_title("Packet Loss")

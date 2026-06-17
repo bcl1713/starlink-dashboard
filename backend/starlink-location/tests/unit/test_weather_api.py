@@ -21,7 +21,29 @@ def test_rainviewer_radar_tile_endpoint_redirects_to_latest_tile(
         response.headers["location"]
         == "https://tilecache.rainviewer.com/radar/3/4/5.png"
     )
-    assert response.headers["cache-control"] == "public, max-age=300"
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_rainviewer_radar_tile_endpoint_allows_dashboard_refresh_token(
+    client, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        weather.rainviewer_radar_service,
+        "tile_url",
+        lambda z, x, y: f"https://tilecache.rainviewer.com/radar/{z}/{x}/{y}.png",
+    )
+
+    response = client.get(
+        "/api/weather/radar/rainviewer/3/4/5.png?refresh=202606171200",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 307
+    assert (
+        response.headers["location"]
+        == "https://tilecache.rainviewer.com/radar/3/4/5.png"
+    )
+    assert response.headers["cache-control"] == "no-store"
 
 
 def test_rainviewer_radar_tile_endpoint_returns_503_when_source_unavailable(
