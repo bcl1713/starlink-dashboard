@@ -21,6 +21,72 @@ def setup_function() -> None:
     gep._last_ground_entry_point_refresh_monotonic = None
 
 
+def test_extract_cloudflare_trace_ipv4_reads_valid_ip_line() -> None:
+    trace_body = """fl=123f45
+h=1.1.1.1
+ip=203.0.113.10
+ts=1781950000.123
+"""
+
+    assert gep._extract_cloudflare_trace_ipv4(trace_body) == "203.0.113.10"
+
+
+def test_extract_cloudflare_trace_ipv4_rejects_missing_or_non_ipv4_values() -> None:
+    assert gep._extract_cloudflare_trace_ipv4("h=1.1.1.1\nloc=US\n") is None
+    assert gep._extract_cloudflare_trace_ipv4("ip=2001:db8::1\n") is None
+    assert gep._extract_cloudflare_trace_ipv4("ip=999.0.0.1\n") is None
+
+
+def test_resolve_public_ip_prefers_cloudflare_trace(monkeypatch) -> None:
+    lookup_timeouts: list[float] = []
+
+    def trace_lookup(timeout_seconds: float) -> str:
+        lookup_timeouts.append(timeout_seconds)
+        return "203.0.113.10"
+
+    def dns_lookup(timeout_seconds: float) -> str:  # pragma: no cover - must not run
+        raise AssertionError("OpenDNS fallback should not run after trace succeeds")
+
+    monkeypatch.setattr(gep, "resolve_public_ip_via_cloudflare_trace", trace_lookup)
+    monkeypatch.setattr(gep, "resolve_public_ip_via_dns", dns_lookup)
+
+    assert gep.resolve_public_ip(timeout_seconds=1.5) == "203.0.113.10"
+    assert lookup_timeouts == [1.5]
+
+
+def test_resolve_public_ip_falls_back_to_dns_when_trace_has_no_ipv4(
+    monkeypatch,
+) -> None:
+    lookup_order: list[str] = []
+
+    def trace_lookup(timeout_seconds: float) -> None:
+        lookup_order.append(f"trace:{timeout_seconds}")
+        return None
+
+    def dns_lookup(timeout_seconds: float) -> str:
+        lookup_order.append(f"dns:{timeout_seconds}")
+        return "198.51.100.24"
+
+    monkeypatch.setattr(gep, "resolve_public_ip_via_cloudflare_trace", trace_lookup)
+    monkeypatch.setattr(gep, "resolve_public_ip_via_dns", dns_lookup)
+
+    assert gep.resolve_public_ip(timeout_seconds=1.25) == "198.51.100.24"
+    assert lookup_order == ["trace:1.25", "dns:1.25"]
+
+
+def test_resolve_public_ip_returns_none_when_all_sources_fail(monkeypatch) -> None:
+    def trace_lookup(timeout_seconds: float) -> None:
+        raise RuntimeError("trace unavailable")
+
+    def dns_lookup(timeout_seconds: float) -> None:
+        raise RuntimeError("dns unavailable")
+
+    monkeypatch.setattr(gep, "resolve_public_ip_via_cloudflare_trace", trace_lookup)
+    monkeypatch.setattr(gep, "resolve_public_ip_via_dns", dns_lookup)
+
+    assert gep.resolve_public_ip() is None
+
+
 def test_publish_ground_entry_point_metrics_exposes_location_and_info_labels() -> None:
     entry_point = GroundEntryPoint(
         ip="203.0.113.10",

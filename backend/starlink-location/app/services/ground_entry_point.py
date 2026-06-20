@@ -7,6 +7,7 @@ import math
 import os
 import time
 from dataclasses import dataclass
+from ipaddress import AddressValueError, IPv4Address
 from typing import Callable
 
 import dns.resolver
@@ -22,6 +23,7 @@ from app.core.metrics.prometheus_metrics import (
 logger = logging.getLogger(__name__)
 
 _DEFAULT_REFRESH_INTERVAL_SECONDS = 1.0
+_CLOUDFLARE_TRACE_URL = "https://1.1.1.1/cdn-cgi/trace"
 _OPENDNS_RESOLVERS = ["208.67.222.222", "208.67.220.220"]
 _last_ground_entry_point_location_labels: tuple[str, str, str, str, str] | None = None
 _last_ground_entry_point_info_labels: tuple[str, str, str] | None = None
@@ -55,7 +57,7 @@ class GroundEntryPointResolver:
         poll_interval_seconds: float = _DEFAULT_REFRESH_INTERVAL_SECONDS,
         time_source: Callable[[], float] | None = None,
     ) -> None:
-        self._ip_resolver = ip_resolver or resolve_public_ip_via_dns
+        self._ip_resolver = ip_resolver or resolve_public_ip
         self._geolocator = geolocator or geolocate_public_ip
         self._poll_interval_seconds = poll_interval_seconds
         self._time_source = time_source or time.monotonic
@@ -132,8 +134,35 @@ class GroundEntryPointResolver:
         return entry
 
 
+def resolve_public_ip(timeout_seconds: float = 2.0) -> str | None:
+    """Resolve the current public IPv4, preferring Cloudflare trace."""
+    try:
+        ip = resolve_public_ip_via_cloudflare_trace(timeout_seconds=timeout_seconds)
+    except Exception as exc:  # pragma: no cover - defensive network guard
+        logger.warning("Cloudflare trace public-IP lookup failed: %s", exc)
+        ip = None
+    if ip:
+        return ip
+
+    try:
+        return resolve_public_ip_via_dns(timeout_seconds=timeout_seconds)
+    except Exception as exc:  # pragma: no cover - defensive network guard
+        logger.warning("OpenDNS public-IP lookup failed: %s", exc)
+        return None
+
+
+def resolve_public_ip_via_cloudflare_trace(
+    timeout_seconds: float = 2.0,
+) -> str | None:
+    """Resolve the current public IPv4 using Cloudflare's trace endpoint."""
+    with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+        response = client.get(_CLOUDFLARE_TRACE_URL)
+        response.raise_for_status()
+        return _extract_cloudflare_trace_ipv4(response.text)
+
+
 def resolve_public_ip_via_dns(timeout_seconds: float = 2.0) -> str | None:
-    """Resolve the current public IP using OpenDNS rather than HTTP."""
+    """Resolve the current public IPv4 using OpenDNS as a fallback."""
     resolver = dns.resolver.Resolver(configure=False)
     resolver.nameservers = _OPENDNS_RESOLVERS
     resolver.timeout = timeout_seconds
@@ -141,7 +170,24 @@ def resolve_public_ip_via_dns(timeout_seconds: float = 2.0) -> str | None:
     answers = list(resolver.resolve("myip.opendns.com", "A", search=False))
     if not answers:
         return None
-    return str(answers[0]).strip()
+    return _normalize_ipv4_address(str(answers[0]).strip())
+
+
+def _extract_cloudflare_trace_ipv4(trace_body: str) -> str | None:
+    """Extract and validate the ``ip=`` IPv4 value from Cloudflare trace text."""
+    for line in trace_body.splitlines():
+        key, separator, value = line.partition("=")
+        if separator and key == "ip":
+            return _normalize_ipv4_address(value.strip())
+    return None
+
+
+def _normalize_ipv4_address(value: str) -> str | None:
+    """Return a canonical IPv4 string, or None when the value is not IPv4."""
+    try:
+        return str(IPv4Address(value))
+    except AddressValueError:
+        return None
 
 
 def geolocate_public_ip(
@@ -183,13 +229,13 @@ def invalidate_cached_ground_entry_point() -> None:
 def discover_ground_entry_point(
     timeout_seconds: float = 5.0,
 ) -> GroundEntryPoint | None:
-    """Discover the public egress IP and geolocate it with DNS-based IP lookup."""
+    """Discover the public egress IP and geolocate it."""
     configured = _entry_point_from_environment()
     if configured is not None:
         return configured
 
     resolver = GroundEntryPointResolver(
-        ip_resolver=lambda: resolve_public_ip_via_dns(timeout_seconds=min(timeout_seconds, 2.0)),
+        ip_resolver=lambda: resolve_public_ip(timeout_seconds=min(timeout_seconds, 2.0)),
         geolocator=lambda ip: geolocate_public_ip(ip, timeout_seconds=timeout_seconds),
     )
     return resolver.refresh(force=True)
