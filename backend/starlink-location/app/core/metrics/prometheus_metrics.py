@@ -146,14 +146,14 @@ starlink_ground_entry_point_longitude_degrees = Gauge(
 starlink_ground_entry_point_location = Gauge(
     "starlink_ground_entry_point_location",
     "Ground entry point location with labels for Grafana geomap display",
-    labelnames=["lat", "lon", "city", "country", "ip"],
+    labelnames=["lat", "lon", "city", "region", "country", "ip", "display"],
     registry=REGISTRY,
 )
 
 starlink_ground_entry_point_info = Gauge(
     "starlink_ground_entry_point_info",
     "Ground entry point identity information",
-    labelnames=["city", "country", "ip"],
+    labelnames=["city", "region", "country", "ip", "display"],
     registry=REGISTRY,
 )
 

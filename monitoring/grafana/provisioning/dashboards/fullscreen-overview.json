@@ -1716,7 +1716,7 @@
           },
           "expr": "starlink_ground_entry_point_info",
           "instant": true,
-          "legendFormat": "{{city}}, {{country}}",
+          "legendFormat": "{{display}}",
           "refId": "A"
         }
       ],

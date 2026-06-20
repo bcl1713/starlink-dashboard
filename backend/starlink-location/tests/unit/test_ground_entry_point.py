@@ -91,6 +91,7 @@ def test_publish_ground_entry_point_metrics_exposes_location_and_info_labels() -
     entry_point = GroundEntryPoint(
         ip="203.0.113.10",
         city="Omaha",
+        region="Nebraska",
         country="US",
         latitude=41.2565,
         longitude=-95.9345,
@@ -101,12 +102,113 @@ def test_publish_ground_entry_point_metrics_exposes_location_and_info_labels() -
     output = generate_latest(REGISTRY).decode("utf-8")
     assert "starlink_ground_entry_point_location" in output
     assert 'city="Omaha"' in output
+    assert 'region="Nebraska"' in output
     assert 'country="US"' in output
+    assert 'display="Omaha, Nebraska"' in output
     assert 'ip="203.0.113.10"' in output
     assert 'lat="41.2565"' in output
     assert 'lon="-95.9345"' in output
     assert "starlink_ground_entry_point_latitude_degrees 41.2565" in output
     assert "starlink_ground_entry_point_longitude_degrees -95.9345" in output
+
+
+def test_ground_entry_point_label_formats_us_with_region() -> None:
+    entry_point = GroundEntryPoint(
+        ip="203.0.113.10",
+        city="Omaha",
+        region="Nebraska",
+        country="US",
+        latitude=41.2565,
+        longitude=-95.9345,
+    )
+
+    assert entry_point.label == "Omaha, Nebraska"
+
+
+def test_ground_entry_point_label_formats_non_us_with_country() -> None:
+    entry_point = GroundEntryPoint(
+        ip="198.51.100.24",
+        city="Tokyo",
+        region="Tokyo",
+        country="JP",
+        latitude=35.6764,
+        longitude=139.65,
+    )
+
+    assert entry_point.label == "Tokyo, JP"
+
+
+def test_ground_entry_point_label_omits_empty_and_placeholder_parts() -> None:
+    assert (
+        GroundEntryPoint(
+            ip="203.0.113.10",
+            city=" unknown ",
+            region="Nebraska",
+            country="US",
+            latitude=41.2565,
+            longitude=-95.9345,
+        ).label
+        == "Nebraska"
+    )
+    assert (
+        GroundEntryPoint(
+            ip="198.51.100.24",
+            city="",
+            region="None",
+            country="JP",
+            latitude=35.6764,
+            longitude=139.65,
+        ).label
+        == "JP"
+    )
+    assert (
+        GroundEntryPoint(
+            ip="198.51.100.25",
+            city="null",
+            region="unknown",
+            country="n/a",
+            latitude=0.0,
+            longitude=0.0,
+        ).label
+        == "Ground Entry Point"
+    )
+
+
+def test_geolocate_public_ip_parses_ipinfo_region(monkeypatch) -> None:
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {
+                "ip": "203.0.113.10",
+                "city": "Omaha",
+                "region": "Nebraska",
+                "country": "US",
+                "loc": "41.2565,-95.9345",
+            }
+
+    class FakeClient:
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+
+        def __enter__(self) -> "FakeClient":
+            return self
+
+        def __exit__(self, *args) -> None:
+            return None
+
+        def get(self, url: str) -> FakeResponse:
+            assert url == "https://ipinfo.io/203.0.113.10/json"
+            return FakeResponse()
+
+    monkeypatch.setattr(gep.httpx, "Client", FakeClient)
+
+    entry_point = gep.geolocate_public_ip("203.0.113.10")
+
+    assert entry_point is not None
+    assert entry_point.region == "Nebraska"
+    assert entry_point.label == "Omaha, Nebraska"
 
 
 def test_refresh_ground_entry_point_metrics_replaces_labels(monkeypatch) -> None:
