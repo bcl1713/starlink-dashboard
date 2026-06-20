@@ -25,8 +25,10 @@ logger = logging.getLogger(__name__)
 _DEFAULT_REFRESH_INTERVAL_SECONDS = 1.0
 _CLOUDFLARE_TRACE_URL = "https://1.1.1.1/cdn-cgi/trace"
 _OPENDNS_RESOLVERS = ["208.67.222.222", "208.67.220.220"]
-_last_ground_entry_point_location_labels: tuple[str, str, str, str, str] | None = None
-_last_ground_entry_point_info_labels: tuple[str, str, str] | None = None
+_last_ground_entry_point_location_labels: (
+    tuple[str, str, str, str, str, str, str] | None
+) = None
+_last_ground_entry_point_info_labels: tuple[str, str, str, str, str] | None = None
 _last_ground_entry_point_refresh_monotonic: float | None = None
 
 
@@ -39,11 +41,16 @@ class GroundEntryPoint:
     country: str
     latitude: float
     longitude: float
+    region: str = ""
 
     @property
     def label(self) -> str:
-        """Return compact city/country display text for dashboards."""
-        parts = [part for part in (self.city, self.country) if part]
+        """Return compact, punctuation-safe display text for dashboards."""
+        parts = _display_location_parts(
+            city=self.city,
+            region=self.region,
+            country=self.country,
+        )
         return ", ".join(parts) if parts else "Unknown"
 
 
@@ -211,8 +218,9 @@ def geolocate_public_ip(
 
     return GroundEntryPoint(
         ip=str(payload.get("ip") or ip),
-        city=str(payload.get("city") or ""),
-        country=str(payload.get("country") or ""),
+        city=_clean_location_part(payload.get("city")),
+        region=_clean_location_part(payload.get("region")),
+        country=_clean_location_part(payload.get("country")),
         latitude=latitude,
         longitude=longitude,
     )
@@ -235,7 +243,9 @@ def discover_ground_entry_point(
         return configured
 
     resolver = GroundEntryPointResolver(
-        ip_resolver=lambda: resolve_public_ip(timeout_seconds=min(timeout_seconds, 2.0)),
+        ip_resolver=lambda: resolve_public_ip(
+            timeout_seconds=min(timeout_seconds, 2.0)
+        ),
         geolocator=lambda ip: geolocate_public_ip(ip, timeout_seconds=timeout_seconds),
     )
     return resolver.refresh(force=True)
@@ -264,7 +274,9 @@ def clear_ground_entry_point_metrics() -> None:
 
     if _last_ground_entry_point_info_labels is not None:
         try:
-            starlink_ground_entry_point_info.remove(*_last_ground_entry_point_info_labels)
+            starlink_ground_entry_point_info.remove(
+                *_last_ground_entry_point_info_labels
+            )
         except KeyError:
             pass
         _last_ground_entry_point_info_labels = None
@@ -284,10 +296,18 @@ def publish_ground_entry_point_metrics(entry_point: GroundEntryPoint | None) -> 
         lat_label,
         lon_label,
         entry_point.city,
+        entry_point.region,
         entry_point.country,
         entry_point.ip,
+        entry_point.label,
     )
-    info_labels = (entry_point.city, entry_point.country, entry_point.ip)
+    info_labels = (
+        entry_point.city,
+        entry_point.region,
+        entry_point.country,
+        entry_point.ip,
+        entry_point.label,
+    )
 
     starlink_ground_entry_point_latitude_degrees.set(entry_point.latitude)
     starlink_ground_entry_point_longitude_degrees.set(entry_point.longitude)
@@ -295,13 +315,17 @@ def publish_ground_entry_point_metrics(entry_point: GroundEntryPoint | None) -> 
         lat=location_labels[0],
         lon=location_labels[1],
         city=location_labels[2],
-        country=location_labels[3],
-        ip=location_labels[4],
+        region=location_labels[3],
+        country=location_labels[4],
+        ip=location_labels[5],
+        display=location_labels[6],
     ).set(1)
     starlink_ground_entry_point_info.labels(
         city=info_labels[0],
-        country=info_labels[1],
-        ip=info_labels[2],
+        region=info_labels[1],
+        country=info_labels[2],
+        ip=info_labels[3],
+        display=info_labels[4],
     ).set(1)
 
     _last_ground_entry_point_location_labels = location_labels
@@ -343,9 +367,11 @@ def maybe_refresh_ground_entry_point_metrics(
 
     current_monotonic = time.monotonic() if now_monotonic is None else now_monotonic
 
-    if _last_ground_entry_point_refresh_monotonic is None or (
-        current_monotonic - _last_ground_entry_point_refresh_monotonic
-    ) >= interval_seconds:
+    if (
+        _last_ground_entry_point_refresh_monotonic is None
+        or (current_monotonic - _last_ground_entry_point_refresh_monotonic)
+        >= interval_seconds
+    ):
         return refresh_ground_entry_point_metrics(now_monotonic=current_monotonic)
 
     return get_cached_ground_entry_point()
@@ -365,8 +391,33 @@ def _entry_point_from_environment() -> GroundEntryPoint | None:
         return None
     return GroundEntryPoint(
         ip=os.getenv("STARLINK_GROUND_ENTRY_IP", ""),
-        city=os.getenv("STARLINK_GROUND_ENTRY_CITY", ""),
-        country=os.getenv("STARLINK_GROUND_ENTRY_COUNTRY", ""),
+        city=_clean_location_part(os.getenv("STARLINK_GROUND_ENTRY_CITY")),
+        region=_clean_location_part(
+            os.getenv("STARLINK_GROUND_ENTRY_REGION")
+            or os.getenv("STARLINK_GROUND_ENTRY_STATE")
+        ),
+        country=_clean_location_part(os.getenv("STARLINK_GROUND_ENTRY_COUNTRY")),
         latitude=latitude,
         longitude=longitude,
     )
+
+
+def _display_location_parts(city: str, region: str, country: str) -> list[str]:
+    """Choose dashboard location parts without placeholder junk or punctuation gaps."""
+    clean_city = _clean_location_part(city)
+    clean_region = _clean_location_part(region)
+    clean_country = _clean_location_part(country)
+
+    if clean_country.upper() == "US" and clean_region:
+        return [part for part in (clean_city, clean_region) if part]
+    return [part for part in (clean_city, clean_country) if part]
+
+
+def _clean_location_part(value: object) -> str:
+    """Normalize empty/placeholder location fields to an empty string."""
+    if value is None:
+        return ""
+    text = str(value).strip().strip(",")
+    if text.lower() in {"", "none", "null", "unknown", "n/a", "na"}:
+        return ""
+    return text

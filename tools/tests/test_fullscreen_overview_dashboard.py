@@ -141,7 +141,9 @@ def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_lay
     )
 
 
-def test_fullscreen_overview_rainviewer_cache_buster_does_not_use_refresh_variable() -> None:
+def test_fullscreen_overview_rainviewer_cache_buster_does_not_use_refresh_variable() -> (
+    None
+):
     dashboard = _fullscreen_overview_dashboard()
     radar_layer = _layers_by_name()[RADAR_LAYER_NAME]
     variable_names = {variable["name"] for variable in dashboard["templating"]["list"]}
@@ -223,6 +225,23 @@ def test_fullscreen_overview_places_obstruction_gauge_between_ground_entry_point
         layers_by_name["Ground Entry Point"]["config"]["coords"]["lon"]
         == "starlink_ground_entry_point_longitude_degrees"
     )
+
+
+def test_fullscreen_overview_ground_entry_point_uses_safe_display_label() -> None:
+    ground_entry_panel = _panel_by_title("Ground Entry Point")
+
+    assert ground_entry_panel["targets"] == [
+        {
+            "datasource": {
+                "type": "prometheus",
+                "uid": "PBFA97CFB590B2093",
+            },
+            "expr": "starlink_ground_entry_point_info",
+            "instant": True,
+            "legendFormat": "{{display}}",
+            "refId": "A",
+        }
+    ]
 
 
 def test_fullscreen_overview_obstruction_gauge_uses_absolute_thresholds() -> None:
