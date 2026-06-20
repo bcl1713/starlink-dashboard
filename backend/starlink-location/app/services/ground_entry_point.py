@@ -51,7 +51,7 @@ class GroundEntryPoint:
             region=self.region,
             country=self.country,
         )
-        return ", ".join(parts) if parts else "Unknown"
+        return ", ".join(parts) if parts else "Ground Entry Point"
 
 
 class GroundEntryPointResolver:

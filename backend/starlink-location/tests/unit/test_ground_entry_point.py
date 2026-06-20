@@ -161,6 +161,17 @@ def test_ground_entry_point_label_omits_empty_and_placeholder_parts() -> None:
         ).label
         == "JP"
     )
+    assert (
+        GroundEntryPoint(
+            ip="198.51.100.25",
+            city="null",
+            region="unknown",
+            country="n/a",
+            latitude=0.0,
+            longitude=0.0,
+        ).label
+        == "Ground Entry Point"
+    )
 
 
 def test_geolocate_public_ip_parses_ipinfo_region(monkeypatch) -> None:
