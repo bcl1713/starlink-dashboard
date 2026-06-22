@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any, Literal
 
 from app.mission import storage
@@ -56,7 +57,7 @@ def build_active_x_link(
         return empty_active_x_link(state_filter)
 
     route = route_manager.get_active_route() if route_manager else None
-    active_leg = _find_active_mission_leg()
+    active_leg = _find_active_mission_leg(route)
     if active_leg is None:
         return empty_active_x_link(state_filter)
 
@@ -108,11 +109,13 @@ def build_active_x_link(
     return {**common, "coordinates": coordinates, "total": len(coordinates)}
 
 
-def _find_active_mission_leg() -> MissionLeg | None:
+def _find_active_mission_leg(route: ParsedRoute | None = None) -> MissionLeg | None:
     missions_dir = storage.MISSIONS_DIR
     if not missions_dir.exists():
         return None
 
+    active_route_id = _route_id(route) if route is not None else None
+    first_active_leg: MissionLeg | None = None
     for mission_dir in sorted(missions_dir.iterdir()):
         if not mission_dir.is_dir():
             continue
@@ -120,9 +123,20 @@ def _find_active_mission_leg() -> MissionLeg | None:
         if mission is None:
             continue
         for leg in mission.legs:
-            if leg.is_active:
+            if not leg.is_active:
+                continue
+            if first_active_leg is None:
+                first_active_leg = leg
+            if active_route_id is not None and leg.route_id == active_route_id:
                 return leg
-    return None
+    return first_active_leg
+
+
+def _route_id(route: ParsedRoute) -> str | None:
+    file_path = route.metadata.file_path
+    if not file_path:
+        return None
+    return Path(file_path).stem
 
 
 def _resolve_active_satellite_id(

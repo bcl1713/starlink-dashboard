@@ -120,6 +120,52 @@ def _save_active_mission(tmp_path: Path) -> None:
     save_mission_v2(mission)
 
 
+def test_active_x_link_prefers_active_leg_matching_active_route(tmp_path, monkeypatch):
+    from app.mission import storage
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    save_mission_v2(
+        Mission(
+            id="a-other-mission",
+            name="Other Mission",
+            legs=[
+                MissionLeg(
+                    id="other-leg",
+                    name="Other Leg",
+                    route_id="other-route",
+                    is_active=True,
+                    transports=TransportConfig(initial_x_satellite_id="X-1"),
+                )
+            ],
+        )
+    )
+    save_mission_v2(
+        Mission(
+            id="z-current-mission",
+            name="Current Mission",
+            legs=[
+                MissionLeg(
+                    id="current-leg",
+                    name="Current Leg",
+                    route_id="test-route",
+                    is_active=True,
+                    transports=TransportConfig(initial_x_satellite_id="X-2"),
+                )
+            ],
+        )
+    )
+
+    result = build_active_x_link(
+        coordinator=StaticCoordinator(
+            _telemetry(latitude=0.0, longitude=0.0, heading=90.0)
+        ),
+        route_manager=StaticRouteManager(_route()),
+        poi_manager=StaticPOIManager([_satellite("X-1", 0.0), _satellite("X-2", 30.0)]),
+    )
+
+    assert result["satellite_id"] == "X-2"
+
+
 def test_active_x_link_uses_transitioned_satellite_after_projected_transition(
     tmp_path, monkeypatch
 ):
