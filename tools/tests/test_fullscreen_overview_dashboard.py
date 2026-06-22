@@ -16,6 +16,8 @@ CORE_MAP_LAYERS = {
     "Planned Route (KML) - Eastern Hemisphere",
     "MissionEvents",
     "Satellites",
+    "Active X-band Link - Normal",
+    "Active X-band Link - Warning",
 }
 RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
 RAINVIEWER_RADAR_TILE_URL = (
@@ -165,6 +167,43 @@ def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
         if layer.get("type") == "geojson"
     }
     assert HCX_COMM_LAYER_SOURCES.isdisjoint(layer_sources)
+
+
+def test_fullscreen_overview_active_x_band_link_uses_split_state_layers() -> None:
+    map_panel = _panel_by_title("Current Position")
+    layers = _layers_by_name()
+    normal_layer = layers["Active X-band Link - Normal"]
+    warning_layer = layers["Active X-band Link - Warning"]
+    targets_by_ref = {target["refId"]: target for target in map_panel["targets"]}
+
+    assert (
+        targets_by_ref["ActiveXLinkNormal"]["url"] == "/api/active-x-link?state=normal"
+    )
+    assert (
+        targets_by_ref["ActiveXLinkWarning"]["url"]
+        == "/api/active-x-link?state=warning"
+    )
+    assert targets_by_ref["ActiveXLinkNormal"]["root_selector"] == "coordinates"
+    assert targets_by_ref["ActiveXLinkWarning"]["root_selector"] == "coordinates"
+
+    assert normal_layer["type"] == "route"
+    assert warning_layer["type"] == "route"
+    assert normal_layer["filterData"] == {
+        "id": "byRefId",
+        "options": "ActiveXLinkNormal",
+    }
+    assert warning_layer["filterData"] == {
+        "id": "byRefId",
+        "options": "ActiveXLinkWarning",
+    }
+    assert normal_layer["config"]["style"]["color"] == {"fixed": "green"}
+    assert warning_layer["config"]["style"]["color"] == {"fixed": "yellow"}
+    assert normal_layer["location"] == {
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "mode": "coords",
+    }
+    assert warning_layer["location"] == normal_layer["location"]
 
 
 def test_fullscreen_overview_poi_table_hides_active_route_fields() -> None:

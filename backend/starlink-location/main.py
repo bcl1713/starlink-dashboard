@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import (
+    active_x_link,
     config,
     export,
     flight_status,
@@ -133,6 +134,7 @@ async def startup_event():
         )
 
         # Register coordinator with API modules
+        app.state.coordinator = _coordinator
         health.set_coordinator(_coordinator)
         status.set_coordinator(_coordinator)
         config.set_coordinator(_coordinator)
@@ -337,7 +339,6 @@ async def _background_update_loop(poi_manager=None):
             extra_fields={"value": os.getenv("STARLINK_GROUND_ENTRY_REFRESH_SECONDS")},
         )
 
-
     try:
         logger.info_json("Background update loop started")
 
@@ -522,6 +523,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # Register API routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
+app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(flight_status.router, tags=["Flight Status"])
