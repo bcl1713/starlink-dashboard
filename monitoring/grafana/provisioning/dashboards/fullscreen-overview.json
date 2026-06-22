@@ -445,6 +445,56 @@
               "showLegend": false,
               "style": {
                 "color": {
+                  "fixed": "green"
+                },
+                "lineWidth": 4,
+                "opacity": 0.9
+              }
+            },
+            "filterByRefId": "ActiveXLinkNormal",
+            "filterData": {
+              "id": "byRefId",
+              "options": "ActiveXLinkNormal"
+            },
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Active X-band Link - Normal",
+            "tooltip": true,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "yellow"
+                },
+                "lineWidth": 4,
+                "opacity": 0.9
+              }
+            },
+            "filterByRefId": "ActiveXLinkWarning",
+            "filterData": {
+              "id": "byRefId",
+              "options": "ActiveXLinkWarning"
+            },
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Active X-band Link - Warning",
+            "tooltip": true,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
                   "fixed": "blue"
                 },
                 "lineWidth": 3,
@@ -1005,6 +1055,60 @@
                 "value": "${poi_category}"
               }
             ]
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
+            "params": []
+          }
+        },
+        {
+          "cacheDurationSeconds": 1,
+          "columns": [],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "hide": false,
+          "parser": "backend",
+          "refId": "ActiveXLinkNormal",
+          "root_selector": "coordinates",
+          "source": "url",
+          "type": "json",
+          "url": "/api/active-x-link?state=normal",
+          "urlOptions": {
+            "params": []
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
+            "params": []
+          }
+        },
+        {
+          "cacheDurationSeconds": 1,
+          "columns": [],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "hide": false,
+          "parser": "backend",
+          "refId": "ActiveXLinkWarning",
+          "root_selector": "coordinates",
+          "source": "url",
+          "type": "json",
+          "url": "/api/active-x-link?state=warning",
+          "urlOptions": {
+            "params": []
           },
           "url_options": {
             "data": "",
