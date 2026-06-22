@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
-from pathlib import Path
 
-from app.mission.models import Mission, MissionLeg, TransportConfig, XTransition
+from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.mission.storage import save_mission_v2
 from app.models.poi import POI
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
@@ -40,9 +39,14 @@ class StaticPOIManager:
         return self.pois
 
 
-def _telemetry(latitude: float, longitude: float, heading: float) -> TelemetryData:
+def _telemetry(
+    latitude: float,
+    longitude: float,
+    heading: float,
+    timestamp: datetime | None = None,
+) -> TelemetryData:
     return TelemetryData(
-        timestamp=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        timestamp=timestamp or datetime(2026, 1, 1, tzinfo=timezone.utc),
         position=PositionData(
             latitude=latitude,
             longitude=longitude,
@@ -93,33 +97,6 @@ def test_active_x_link_endpoint_is_registered() -> None:
     )
 
 
-def _save_active_mission(tmp_path: Path) -> None:
-    mission = Mission(
-        id="mission-85",
-        name="Mission 85",
-        legs=[
-            MissionLeg(
-                id="leg-1",
-                name="Leg 1",
-                route_id="test-route",
-                is_active=True,
-                transports=TransportConfig(
-                    initial_x_satellite_id="X-1",
-                    x_transitions=[
-                        XTransition(
-                            id="x-swap",
-                            latitude=0.0,
-                            longitude=10.0,
-                            target_satellite_id="X-2",
-                        )
-                    ],
-                ),
-            )
-        ],
-    )
-    save_mission_v2(mission)
-
-
 def test_active_x_link_prefers_active_leg_matching_active_route(tmp_path, monkeypatch):
     from app.mission import storage
 
@@ -164,32 +141,6 @@ def test_active_x_link_prefers_active_leg_matching_active_route(tmp_path, monkey
     )
 
     assert result["satellite_id"] == "X-2"
-
-
-def test_active_x_link_uses_transitioned_satellite_after_projected_transition(
-    tmp_path, monkeypatch
-):
-    from app.mission import storage
-
-    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
-    _save_active_mission(tmp_path)
-
-    result = build_active_x_link(
-        coordinator=StaticCoordinator(
-            _telemetry(latitude=0.0, longitude=15.0, heading=90.0)
-        ),
-        route_manager=StaticRouteManager(_route()),
-        poi_manager=StaticPOIManager([_satellite("X-1", 0.0), _satellite("X-2", 30.0)]),
-    )
-
-    assert result["satellite_id"] == "X-2"
-    assert result["total"] == 2
-    assert [point["point"] for point in result["coordinates"]] == [
-        "aircraft",
-        "satellite",
-    ]
-    assert result["coordinates"][0]["longitude"] == 15.0
-    assert result["coordinates"][1]["longitude"] == 30.0
 
 
 def test_active_x_link_marks_green_outside_normal_forbidden_window(

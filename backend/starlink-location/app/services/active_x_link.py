@@ -7,13 +7,16 @@ from pathlib import Path
 from typing import Any, Literal
 
 from app.mission import storage
-from app.mission.models import MissionLeg, XTransition
+from app.mission.models import MissionLeg
 from app.models.poi import POI
 from app.models.route import ParsedRoute
 from app.models.telemetry import TelemetryData
 from app.satellites.geometry import is_in_azimuth_range
 from app.satellites.rules import RuleEngine
-from app.services.route_eta_calculator import RouteETACalculator
+from app.services.active_x_handoff import (
+    empty_handoff_context,
+    resolve_active_x_context,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +27,11 @@ def empty_active_x_link(state: str | None = None) -> dict[str, Any]:
     """Return an empty, Grafana-friendly active-X link response."""
     return {
         "coordinates": [],
+        "links": [],
         "total": 0,
         "satellite_id": None,
+        "pending_satellite_id": None,
+        "handoff": empty_handoff_context(),
         "state": state,
         "color": None,
         "relative_azimuth_degrees": None,
@@ -61,52 +67,51 @@ def build_active_x_link(
     if active_leg is None:
         return empty_active_x_link(state_filter)
 
-    satellite_id = _resolve_active_satellite_id(active_leg, route, telemetry)
+    active_context = resolve_active_x_context(active_leg, route, telemetry)
+    satellite_id = active_context.current_satellite_id
     if not satellite_id:
         return empty_active_x_link(state_filter)
 
-    satellite = _find_satellite_poi(poi_manager, satellite_id)
-    if satellite is None:
+    satellite_ids = [satellite_id]
+    if active_context.pending_satellite_id:
+        satellite_ids.append(active_context.pending_satellite_id)
+
+    links = _build_satellite_links(telemetry, poi_manager, satellite_ids)
+    if not links:
         return empty_active_x_link(state_filter)
 
-    link_state, color, relative_azimuth, in_forbidden = _evaluate_link_state(
-        telemetry, satellite
-    )
-    if state_filter is not None and link_state != state_filter:
+    current_link = links[0]
+    matching_links = [
+        link for link in links if state_filter is None or link["state"] == state_filter
+    ]
+    if state_filter is not None and not matching_links:
         return {
             **empty_active_x_link(state_filter),
             "satellite_id": satellite_id,
-            "state": link_state,
-            "color": color,
-            "relative_azimuth_degrees": relative_azimuth,
-            "in_forbidden_window": in_forbidden,
+            "pending_satellite_id": active_context.pending_satellite_id,
+            "handoff": active_context.handoff,
+            "state": current_link["state"],
+            "color": current_link["color"],
+            "relative_azimuth_degrees": current_link["relative_azimuth_degrees"],
+            "in_forbidden_window": current_link["in_forbidden_window"],
         }
 
-    aircraft = telemetry.position
+    coordinates = [point for link in matching_links for point in link["coordinates"]]
     common = {
         "satellite_id": satellite_id,
-        "state": link_state,
-        "color": color,
-        "relative_azimuth_degrees": relative_azimuth,
-        "in_forbidden_window": in_forbidden,
+        "pending_satellite_id": active_context.pending_satellite_id,
+        "handoff": active_context.handoff,
+        "state": current_link["state"],
+        "color": current_link["color"],
+        "relative_azimuth_degrees": current_link["relative_azimuth_degrees"],
+        "in_forbidden_window": current_link["in_forbidden_window"],
     }
-    coordinates = [
-        {
-            **common,
-            "point": "aircraft",
-            "sequence": 0,
-            "latitude": aircraft.latitude,
-            "longitude": aircraft.longitude,
-        },
-        {
-            **common,
-            "point": "satellite",
-            "sequence": 1,
-            "latitude": satellite.latitude,
-            "longitude": satellite.longitude,
-        },
-    ]
-    return {**common, "coordinates": coordinates, "total": len(coordinates)}
+    return {
+        **common,
+        "links": matching_links,
+        "coordinates": coordinates,
+        "total": len(coordinates),
+    }
 
 
 def _find_active_mission_leg(route: ParsedRoute | None = None) -> MissionLeg | None:
@@ -139,49 +144,45 @@ def _route_id(route: ParsedRoute) -> str | None:
     return Path(file_path).stem
 
 
-def _resolve_active_satellite_id(
-    leg: MissionLeg,
-    route: ParsedRoute | None,
+def _build_satellite_links(
     telemetry: TelemetryData,
-) -> str | None:
-    current_satellite = leg.transports.initial_x_satellite_id
-    if not current_satellite:
-        return None
-    if route is None or not leg.transports.x_transitions:
-        return current_satellite
-
-    current_progress = _project_progress(
-        route,
-        telemetry.position.latitude,
-        telemetry.position.longitude,
-    )
-    if current_progress is None:
-        return current_satellite
-
-    transitions: list[tuple[float, XTransition]] = []
-    for transition in leg.transports.x_transitions:
-        progress = _project_progress(route, transition.latitude, transition.longitude)
-        if progress is not None:
-            transitions.append((progress, transition))
-
-    for progress, transition in sorted(transitions, key=lambda item: item[0]):
-        if current_progress >= progress and transition.target_satellite_id:
-            current_satellite = transition.target_satellite_id
-    return current_satellite
-
-
-def _project_progress(
-    route: ParsedRoute,
-    latitude: float,
-    longitude: float,
-) -> float | None:
-    try:
-        projection = RouteETACalculator(route).project_poi_to_route(latitude, longitude)
-    except Exception as exc:  # pragma: no cover - defensive geometry guard
-        logger.debug("Failed to project active X link point onto route: %s", exc)
-        return None
-    progress = projection.get("projected_route_progress")
-    return float(progress) if progress is not None else None
+    poi_manager: Any,
+    satellite_ids: list[str],
+) -> list[dict[str, Any]]:
+    aircraft = telemetry.position
+    links: list[dict[str, Any]] = []
+    for satellite_id in satellite_ids:
+        satellite = _find_satellite_poi(poi_manager, satellite_id)
+        if satellite is None:
+            continue
+        link_state, color, relative_azimuth, in_forbidden = _evaluate_link_state(
+            telemetry, satellite
+        )
+        common = {
+            "satellite_id": satellite_id,
+            "state": link_state,
+            "color": color,
+            "relative_azimuth_degrees": relative_azimuth,
+            "in_forbidden_window": in_forbidden,
+        }
+        coordinates = [
+            {
+                **common,
+                "point": "aircraft",
+                "sequence": len(links) * 2,
+                "latitude": aircraft.latitude,
+                "longitude": aircraft.longitude,
+            },
+            {
+                **common,
+                "point": "satellite",
+                "sequence": len(links) * 2 + 1,
+                "latitude": satellite.latitude,
+                "longitude": satellite.longitude,
+            },
+        ]
+        links.append({**common, "coordinates": coordinates})
+    return links
 
 
 def _find_satellite_poi(poi_manager: Any, satellite_id: str) -> POI | None:
