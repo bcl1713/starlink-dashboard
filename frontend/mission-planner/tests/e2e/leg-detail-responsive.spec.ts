@@ -68,11 +68,36 @@ async function mockLegDetailApis(page: Page) {
   await page.route(
     'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview',
     async (route) => {
+      const request = route.request();
+      const hasManualTrack =
+        request.method() === 'POST' &&
+        request.postDataJSON().transports.manual_aar_tracks.length > 0;
       await route.fulfill({
         json: {
           mission_leg_id: 'responsive-leg',
           created_at: '2026-08-13T00:00:00Z',
-          segments: [],
+          segments: hasManualTrack
+            ? [
+                {
+                  id: 'manual-ar-segment',
+                  start_time: '2026-08-13T00:30:00Z',
+                  end_time: '2026-08-13T01:30:00Z',
+                  status: 'degraded',
+                  x_state: 'degraded',
+                  ka_state: 'available',
+                  ku_state: 'available',
+                  reasons: ['Manual AR Track: Manual AR Track'],
+                },
+              ]
+            : [],
+          statistics: hasManualTrack
+            ? {
+                total_duration_seconds: 7200,
+                degraded_seconds: 3600,
+                critical_seconds: 0,
+                nominal_seconds: 3600,
+              }
+            : undefined,
         },
       });
     }
@@ -131,6 +156,10 @@ test.describe('Leg detail responsive layout', () => {
 
     await expect(page.getByRole('status')).toHaveText('Manual AR track saved.');
     await expect(page.getByText('2 operator-entered points')).toBeVisible();
+    await expect(page.locator('path[stroke="#F97316"]')).toBeVisible();
+    await expect(page.getByText('1 segments')).toBeVisible();
+    await expect(page.getByText('Degraded Time')).toBeVisible();
+    await expect(page.getByText('60m')).toBeVisible();
 
     await page.reload();
     await page.getByRole('tab', { name: 'Manual AR Tracks' }).click();

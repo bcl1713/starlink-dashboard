@@ -53,6 +53,14 @@ export interface TimelinePreviewRequest {
       override_end_time?: string | null;
       override_start_elapsed?: string | null;
     }>;
+    manual_aar_tracks: Array<{
+      id: string;
+      name: string;
+      points: Array<{
+        latitude: number;
+        longitude: number;
+      }>;
+    }>;
     ku_overrides: Array<Record<string, unknown>>;
   };
   adjusted_departure_time?: string;

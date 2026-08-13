@@ -32,7 +32,11 @@ from app.mission.timeline_builder.events import (
     apply_x_azimuth_events,
     apply_manual_outages,
 )
-from app.mission.timeline_builder.aar import resolve_aar_windows, apply_x_transitions
+from app.mission.timeline_builder.aar import (
+    apply_manual_aar_tracks,
+    apply_x_transitions,
+    resolve_aar_windows,
+)
 from app.mission.timeline_builder.pois import sync_ka_pois, sync_x_aar_pois
 from app.mission.timeline_builder.stats import (
     TimelineSummary,
@@ -129,6 +133,9 @@ def build_mission_timeline(
         rule_engine.add_aar_window_events(
             window.start_time, window.end_time, window.name
         )
+    apply_manual_aar_tracks(
+        rule_engine, mission.transports.manual_aar_tracks, projector
+    )
 
     transition_schedule = apply_x_transitions(
         rule_engine, mission, projector, aar_windows

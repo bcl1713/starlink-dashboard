@@ -1,10 +1,56 @@
 """Regression tests for operator-created manual AAR tracks."""
 
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock
+
 import pytest
 from pydantic import ValidationError
 
-from app.mission.models import ManualAARTrack, ManualAARTrackPoint, Mission, MissionLeg, TransportConfig
+from app.mission.models import (
+    ManualAARTrack,
+    ManualAARTrackPoint,
+    Mission,
+    MissionLeg,
+    TimelineStatus,
+    TransportConfig,
+)
 from app.mission.storage import load_mission_v2, save_mission_v2
+from app.mission.timeline_service import build_mission_timeline
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
+
+
+def _timed_manual_track_route(start: datetime) -> ParsedRoute:
+    return ParsedRoute(
+        metadata=RouteMetadata(
+            name="Manual track route", file_path="manual-track.kml", point_count=3
+        ),
+        points=[
+            RoutePoint(
+                latitude=60.0,
+                longitude=-50.0,
+                sequence=0,
+                expected_arrival_time=start,
+            ),
+            RoutePoint(
+                latitude=40.0,
+                longitude=-50.0,
+                sequence=1,
+                expected_arrival_time=start + timedelta(hours=1),
+            ),
+            RoutePoint(
+                latitude=20.0,
+                longitude=-50.0,
+                sequence=2,
+                expected_arrival_time=start + timedelta(hours=2),
+            ),
+        ],
+        timing_profile=RouteTimingProfile(
+            departure_time=start,
+            arrival_time=start + timedelta(hours=2),
+            has_timing_data=True,
+            segment_count_with_timing=3,
+        ),
+    )
 
 
 def test_manual_aar_track_persists_ordered_deviation_points(isolate_mission_storage):
@@ -91,3 +137,50 @@ def test_manual_aar_track_rejects_out_of_range_coordinates(point, message):
     """Manual position entry accepts only decimal-degree geographic coordinates."""
     with pytest.raises(ValidationError, match=message):
         ManualAARTrackPoint(**point)
+
+
+def test_manual_aar_track_degrades_x_between_projected_endpoints():
+    """A track creates an X degradation over its route-projected time span."""
+    start = datetime(2026, 8, 13, 12, 0, tzinfo=timezone.utc)
+    route_manager = MagicMock()
+    route_manager.get_route.return_value = _timed_manual_track_route(start)
+    base_leg = MissionLeg(
+        id="manual-track-leg",
+        name="Manual track leg",
+        route_id="manual-track-route",
+        transports=TransportConfig(initial_x_satellite_id="X-1"),
+    )
+    manual_track = ManualAARTrack(
+        id="manual-track",
+        name="AR deviation",
+        points=[
+            ManualAARTrackPoint(latitude=50.0, longitude=-50.0),
+            ManualAARTrackPoint(latitude=30.0, longitude=-50.0),
+        ],
+    )
+    tracked_leg = base_leg.model_copy(
+        update={
+            "transports": base_leg.transports.model_copy(
+                update={"manual_aar_tracks": [manual_track]}
+            )
+        }
+    )
+
+    baseline, _ = build_mission_timeline(
+        base_leg, route_manager=route_manager, coverage_sampler=None
+    )
+    tracked, _ = build_mission_timeline(
+        tracked_leg, route_manager=route_manager, coverage_sampler=None
+    )
+
+    assert baseline.statistics["degraded_seconds"] == 0
+    assert tracked.statistics["degraded_seconds"] == 3600
+    degraded = [
+        segment
+        for segment in tracked.segments
+        if segment.status == TimelineStatus.DEGRADED
+    ]
+    assert [(segment.start_time, segment.end_time) for segment in degraded] == [
+        (start + timedelta(minutes=30), start + timedelta(minutes=90))
+    ]
+    assert "Manual AR Track: AR deviation" in degraded[0].reasons[0]
