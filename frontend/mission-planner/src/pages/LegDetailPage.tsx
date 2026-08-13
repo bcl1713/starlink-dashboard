@@ -222,7 +222,7 @@ export function LegDetailPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto min-w-0 space-y-6 p-4 sm:p-6">
       <LegHeader
         missionId={missionId || ''}
         legId={legId || ''}
@@ -230,9 +230,9 @@ export function LegDetailPage() {
         onBackClick={handleBackClick}
       />
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)]">
         {/* Left Column: Configuration Tabs */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <TimingSection
             leg={leg}
             timeline={timeline || null}
@@ -256,7 +256,7 @@ export function LegDetailPage() {
             error={error}
           />
 
-          <div className="flex justify-end space-x-4">
+          <div className="flex flex-wrap justify-end gap-4">
             <button
               className="px-4 py-2 border rounded-md hover:bg-gray-100"
               onClick={() => navigate(`/missions/${missionId}`)}

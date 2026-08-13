@@ -35,17 +35,19 @@ export function LegConfigTabs({
 }: LegConfigTabsProps) {
   return (
     <Tabs defaultValue="xband" className="w-full">
-      <TabsList>
-        <TabsTrigger value="xband">X-Band</TabsTrigger>
-        <TabsTrigger value="ka">Ka Outages</TabsTrigger>
-        <TabsTrigger value="ku">Ku/Starlink Outages</TabsTrigger>
-        <TabsTrigger value="aar">AAR Segments</TabsTrigger>
-        <TabsTrigger value="manual-ar">Manual AR Tracks</TabsTrigger>
-      </TabsList>
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
+        <TabsList className="min-w-max justify-start">
+          <TabsTrigger value="xband">X-Band</TabsTrigger>
+          <TabsTrigger value="ka">Ka Outages</TabsTrigger>
+          <TabsTrigger value="ku">Ku/Starlink Outages</TabsTrigger>
+          <TabsTrigger value="aar">AAR Segments</TabsTrigger>
+          <TabsTrigger value="manual-ar">Manual AR Tracks</TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="xband" className="space-y-4">
-        <div className="rounded-lg border p-6">
-          <div className="flex justify-between items-center mb-4">
+        <div className="rounded-lg border p-4 sm:p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xl font-semibold">X-Band Configuration</h2>
             <Link
               to="/satellites"
@@ -73,7 +75,7 @@ export function LegConfigTabs({
       </TabsContent>
 
       <TabsContent value="ka" className="space-y-4">
-        <div className="rounded-lg border p-6">
+        <div className="rounded-lg border p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4">
             Ka Outage Configuration
           </h2>
@@ -87,7 +89,7 @@ export function LegConfigTabs({
       </TabsContent>
 
       <TabsContent value="ku" className="space-y-4">
-        <div className="rounded-lg border p-6">
+        <div className="rounded-lg border p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4">
             Ku/Starlink Outage Configuration
           </h2>
@@ -101,7 +103,7 @@ export function LegConfigTabs({
       </TabsContent>
 
       <TabsContent value="aar" className="space-y-4">
-        <div className="rounded-lg border p-6">
+        <div className="rounded-lg border p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4">
             AAR Segment Configuration
           </h2>
@@ -116,7 +118,7 @@ export function LegConfigTabs({
       </TabsContent>
 
       <TabsContent value="manual-ar" className="space-y-4">
-        <div className="rounded-lg border p-6">
+        <div className="rounded-lg border p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-4">Manual AR Track</h2>
           <ManualAARTrackEditor
             tracks={aarConfig.manualTracks}

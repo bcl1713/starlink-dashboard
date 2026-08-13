@@ -28,7 +28,7 @@ export function LegMapVisualization({
   timelinePreview,
 }: LegMapVisualizationProps) {
   return (
-    <div className="sticky top-6 h-fit">
+    <div className="min-w-0 lg:sticky lg:top-6 lg:h-fit">
       <h2 className="text-xl font-semibold mb-4">Route Visualization</h2>
       <RouteMap
         coordinates={routeCoordinates}
@@ -41,7 +41,7 @@ export function LegMapVisualization({
         waypoints={waypointNames}
         waypointObjects={availableWaypoints}
         timelinePreview={timelinePreview}
-        height="600px"
+        height="clamp(20rem, 50vw, 37.5rem)"
       />
       <div className="mt-4 text-sm text-gray-600 space-y-1">
         <p>• Blue line: Flight route</p>
