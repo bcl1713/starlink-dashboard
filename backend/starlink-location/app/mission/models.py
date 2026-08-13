@@ -188,6 +188,79 @@ class AARWindow(BaseModel):
     }
 
 
+class ManualAARTrackPoint(BaseModel):
+    """An operator-entered geographic point on a manual AAR track."""
+
+    latitude: float = Field(
+        ..., description="Point latitude in decimal degrees (-90 to 90)"
+    )
+    longitude: float = Field(
+        ..., description="Point longitude in decimal degrees (-180 to 180)"
+    )
+
+    @field_validator("latitude")
+    @classmethod
+    def validate_latitude(cls, value: float) -> float:
+        """Reject coordinates outside the valid latitude range."""
+        if not -90 <= value <= 90:
+            raise ValueError("Latitude must be between -90 and 90 degrees")
+        return value
+
+    @field_validator("longitude")
+    @classmethod
+    def validate_longitude(cls, value: float) -> float:
+        """Reject coordinates outside the valid longitude range."""
+        if not -180 <= value <= 180:
+            raise ValueError("Longitude must be between -180 and 180 degrees")
+        return value
+
+
+class ManualAARTrack(BaseModel):
+    """An operator-created AAR track independent of the planned route KML."""
+
+    id: str = Field(..., description="Unique manual AAR track identifier")
+    name: str = Field(..., description="Operator-facing manual track name", min_length=1)
+    points: list[ManualAARTrackPoint] = Field(
+        ..., description="Ordered manual AAR track points"
+    )
+
+    @field_validator("points", mode="before")
+    @classmethod
+    def validate_points(
+        cls, points: list[ManualAARTrackPoint] | list[dict]
+    ) -> list[ManualAARTrackPoint] | list[dict]:
+        """Require a line with no duplicate consecutive points."""
+        if len(points) < 2:
+            raise ValueError("Manual AAR track must contain at least two points")
+        for previous, current in zip(points, points[1:]):
+            previous_latitude = (
+                previous.latitude
+                if isinstance(previous, ManualAARTrackPoint)
+                else previous.get("latitude")
+            )
+            previous_longitude = (
+                previous.longitude
+                if isinstance(previous, ManualAARTrackPoint)
+                else previous.get("longitude")
+            )
+            current_latitude = (
+                current.latitude
+                if isinstance(current, ManualAARTrackPoint)
+                else current.get("latitude")
+            )
+            current_longitude = (
+                current.longitude
+                if isinstance(current, ManualAARTrackPoint)
+                else current.get("longitude")
+            )
+            if (
+                previous_latitude == current_latitude
+                and previous_longitude == current_longitude
+            ):
+                raise ValueError("Manual AAR track contains a duplicate consecutive point")
+        return points
+
+
 class KuOutageOverride(BaseModel):
     """Manual override for Ku transport outage (LEO link failure).
 
@@ -242,6 +315,10 @@ class TransportConfig(BaseModel):
         default_factory=list,
         description="Air-refueling segments",
     )
+    manual_aar_tracks: list[ManualAARTrack] = Field(
+        default_factory=list,
+        description="Operator-created AAR tracks independent of the planned route",
+    )
     ku_overrides: list[KuOutageOverride] = Field(
         default_factory=list,
         description="Manual Ku outage overrides",
@@ -255,6 +332,7 @@ class TransportConfig(BaseModel):
                 "x_transitions": [],
                 "ka_outages": [],
                 "aar_windows": [],
+                "manual_aar_tracks": [],
                 "ku_overrides": [],
             }
         }

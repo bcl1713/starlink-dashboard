@@ -7,6 +7,18 @@ export interface AARSegment {
   override_start_elapsed?: string | null;
 }
 
+export interface ManualAARTrackPoint {
+  latitude: number;
+  longitude: number;
+}
+
+export interface ManualAARTrack {
+  id: string;
+  name: string;
+  points: ManualAARTrackPoint[];
+}
+
 export interface AARConfig {
   segments: AARSegment[];
+  manualTracks: ManualAARTrack[];
 }
