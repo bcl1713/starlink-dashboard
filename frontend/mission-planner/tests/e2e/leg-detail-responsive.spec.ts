@@ -88,6 +88,80 @@ async function mockLegDetailApis(page: Page) {
 }
 
 test.describe('Leg detail responsive layout', () => {
+  test('persists a manual AR track, confirms it, and retains it after reload', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const persistedMission = structuredClone(mission);
+
+    await mockLegDetailApis(page);
+    await page.route(
+      'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg',
+      async (route) => {
+        if (route.request().method() !== 'PUT') {
+          await route.continue();
+          return;
+        }
+
+        const updatedLeg = route.request().postDataJSON();
+        persistedMission.legs[0] = updatedLeg;
+        await route.fulfill({ json: { leg: updatedLeg, warnings: [] } });
+      }
+    );
+    await page.route(
+      'http://localhost:8000/api/v2/missions/responsive-mission',
+      async (route) => {
+        await route.fulfill({ json: persistedMission });
+      }
+    );
+
+    await page.goto('/missions/responsive-mission/legs/responsive-leg');
+    await page.getByRole('tab', { name: 'Manual AR Tracks' }).click();
+    await page.getByLabel('Manual AR point 1 latitude').fill('50');
+    await page.getByLabel('Manual AR point 1 longitude').fill('-50');
+    await page.getByLabel('Manual AR point 2 latitude').fill('30');
+    await page.getByLabel('Manual AR point 2 longitude').fill('-50');
+
+    const saveTrack = page.getByRole('button', {
+      name: 'Save and Persist Manual AR Track',
+    });
+    await saveTrack.scrollIntoViewIfNeeded();
+    await expect(saveTrack).toBeInViewport();
+    await saveTrack.click();
+
+    await expect(page.getByRole('status')).toHaveText('Manual AR track saved.');
+    await expect(page.getByText('2 operator-entered points')).toBeVisible();
+
+    await page.reload();
+    await page.getByRole('tab', { name: 'Manual AR Tracks' }).click();
+    await expect(page.getByText('2 operator-entered points')).toBeVisible();
+  });
+
+  test('keeps invalid manual AR track input and shows an inline error', async ({
+    page,
+  }) => {
+    await mockLegDetailApis(page);
+    await page.goto('/missions/responsive-mission/legs/responsive-leg');
+    await page.getByRole('tab', { name: 'Manual AR Tracks' }).click();
+    await page.getByLabel('Manual AR point 1 latitude').fill('50');
+    await page.getByLabel('Manual AR point 1 longitude').fill('-50');
+    await page.getByLabel('Manual AR point 2 latitude').fill('30');
+
+    await page
+      .getByRole('button', { name: 'Save and Persist Manual AR Track' })
+      .click();
+
+    await expect(page.getByRole('alert')).toHaveText(
+      'Enter both latitude and longitude for every manual AR track point.'
+    );
+    await expect(page.getByLabel('Manual AR point 1 latitude')).toHaveValue(
+      '50'
+    );
+    await expect(page.getByLabel('Manual AR point 2 latitude')).toHaveValue(
+      '30'
+    );
+  });
+
   test('stacks the map and keeps Manual AR Tracks reachable on mobile', async ({
     page,
   }) => {

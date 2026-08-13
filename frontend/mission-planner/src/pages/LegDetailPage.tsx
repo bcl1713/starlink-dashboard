@@ -10,7 +10,7 @@ import { LegMapVisualization } from './LegDetailPage/LegMapVisualization';
 import { TimingSection } from './LegDetailPage/TimingSection';
 import { TimelinePreviewSection } from '../components/timeline/TimelinePreviewSection';
 import type { SatelliteConfig } from '../types/satellite';
-import type { AARConfig } from '../types/aar';
+import type { AARConfig, ManualAARTrack } from '../types/aar';
 import type { TimelinePreviewRequest } from '../services/timeline';
 
 export function LegDetailPage() {
@@ -117,6 +117,32 @@ export function LegDetailPage() {
   const handleAARConfigChange = (config: AARConfig) => {
     setAARConfig(config);
     setHasUnsavedChanges(true);
+  };
+
+  const handleManualTrackSave = async (track: ManualAARTrack) => {
+    if (!leg) {
+      throw new Error('The leg is no longer available. Reload and try again.');
+    }
+
+    const updatedAARConfig = {
+      ...aarConfig,
+      manualTracks: [...aarConfig.manualTracks, track],
+    };
+    await updateLegMutation.mutateAsync({
+      ...leg,
+      transports: {
+        initial_x_satellite_id:
+          satelliteConfig.xband_starting_satellite || 'X-1',
+        initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
+        x_transitions: satelliteConfig.xband_transitions,
+        ka_outages: satelliteConfig.ka_outages,
+        aar_windows: updatedAARConfig.segments,
+        manual_aar_tracks: updatedAARConfig.manualTracks,
+        ku_overrides: satelliteConfig.ku_outages,
+      },
+    });
+    setAARConfig(updatedAARConfig);
+    setHasUnsavedChanges(false);
   };
 
   const handleBackClick = () => {
@@ -247,6 +273,7 @@ export function LegDetailPage() {
             waypointNames={waypointNames}
             onSatelliteConfigChange={handleSatelliteConfigChange}
             onAARConfigChange={handleAARConfigChange}
+            onManualTrackSave={handleManualTrackSave}
           />
 
           <TimelinePreviewSection
