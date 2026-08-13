@@ -64,6 +64,23 @@ def test_manual_aar_track_rejects_insufficient_or_duplicate_points(points, messa
 
 
 @pytest.mark.parametrize(
+    "points",
+    [
+        None,
+        "not a point list",
+        [
+            {"latitude": 35.0, "longitude": -120.0},
+            "not a coordinate mapping",
+        ],
+    ],
+)
+def test_manual_aar_track_rejects_malformed_point_collections(points):
+    """Malformed request data produces Pydantic validation errors rather than crashes."""
+    with pytest.raises(ValidationError):
+        ManualAARTrack(id="manual-track", name="Deviation", points=points)
+
+
+@pytest.mark.parametrize(
     "point, message",
     [
         ({"latitude": 90.1, "longitude": 0}, "Latitude must be between -90 and 90"),

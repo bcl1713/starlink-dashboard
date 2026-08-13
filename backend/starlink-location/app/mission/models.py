@@ -224,38 +224,18 @@ class ManualAARTrack(BaseModel):
         ..., description="Ordered manual AAR track points"
     )
 
-    @field_validator("points", mode="before")
+    @field_validator("points")
     @classmethod
     def validate_points(
-        cls, points: list[ManualAARTrackPoint] | list[dict]
-    ) -> list[ManualAARTrackPoint] | list[dict]:
+        cls, points: list[ManualAARTrackPoint]
+    ) -> list[ManualAARTrackPoint]:
         """Require a line with no duplicate consecutive points."""
         if len(points) < 2:
             raise ValueError("Manual AAR track must contain at least two points")
         for previous, current in zip(points, points[1:]):
-            previous_latitude = (
-                previous.latitude
-                if isinstance(previous, ManualAARTrackPoint)
-                else previous.get("latitude")
-            )
-            previous_longitude = (
-                previous.longitude
-                if isinstance(previous, ManualAARTrackPoint)
-                else previous.get("longitude")
-            )
-            current_latitude = (
-                current.latitude
-                if isinstance(current, ManualAARTrackPoint)
-                else current.get("latitude")
-            )
-            current_longitude = (
-                current.longitude
-                if isinstance(current, ManualAARTrackPoint)
-                else current.get("longitude")
-            )
             if (
-                previous_latitude == current_latitude
-                and previous_longitude == current_longitude
+                previous.latitude == current.latitude
+                and previous.longitude == current.longitude
             ):
                 raise ValueError("Manual AAR track contains a duplicate consecutive point")
         return points
