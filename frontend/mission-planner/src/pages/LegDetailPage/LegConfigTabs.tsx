@@ -11,7 +11,7 @@ import { KuOutageConfig } from '../../components/satellites/KuOutageConfig';
 import { AARSegmentEditor } from '../../components/aar/AARSegmentEditor';
 import { ManualAARTrackEditor } from '../../components/aar/ManualAARTrackEditor';
 import type { SatelliteConfig } from '../../types/satellite';
-import type { AARConfig } from '../../types/aar';
+import type { AARConfig, ManualAARTrack } from '../../types/aar';
 
 interface LegConfigTabsProps {
   satelliteConfig: SatelliteConfig;
@@ -20,6 +20,7 @@ interface LegConfigTabsProps {
   waypointNames: string[];
   onSatelliteConfigChange: (updates: Partial<SatelliteConfig>) => void;
   onAARConfigChange: (config: AARConfig) => void;
+  onManualTrackSave: (track: ManualAARTrack) => Promise<void>;
 }
 
 /**
@@ -32,6 +33,7 @@ export function LegConfigTabs({
   waypointNames,
   onSatelliteConfigChange,
   onAARConfigChange,
+  onManualTrackSave,
 }: LegConfigTabsProps) {
   return (
     <Tabs defaultValue="xband" className="w-full">
@@ -122,8 +124,14 @@ export function LegConfigTabs({
           <h2 className="text-xl font-semibold mb-4">Manual AR Track</h2>
           <ManualAARTrackEditor
             tracks={aarConfig.manualTracks}
-            onTracksChange={(manualTracks) =>
-              onAARConfigChange({ ...aarConfig, manualTracks })
+            onSaveTrack={onManualTrackSave}
+            onRemoveTrack={(trackId) =>
+              onAARConfigChange({
+                ...aarConfig,
+                manualTracks: aarConfig.manualTracks.filter(
+                  (track) => track.id !== trackId
+                ),
+              })
             }
           />
         </div>
