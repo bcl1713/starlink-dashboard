@@ -58,10 +58,11 @@ function initializeSatelliteConfig(
  */
 function initializeAARConfig(legTransports?: TransportConfig): AARConfig {
   if (!legTransports) {
-    return { segments: [] };
+    return { segments: [], manualTracks: [] };
   }
   return {
     segments: legTransports.aar_windows || [],
+    manualTracks: legTransports.manual_aar_tracks || [],
   };
 }
 

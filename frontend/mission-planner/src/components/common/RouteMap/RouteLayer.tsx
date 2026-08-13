@@ -2,7 +2,7 @@ import { Polyline, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { XBandTransition } from '../../../types/satellite';
-import type { AARSegment } from '../../../types/aar';
+import type { AARSegment, ManualAARTrack } from '../../../types/aar';
 import type { KaTransition } from '../../../types/timeline';
 import { logger } from '../../../utils/logger';
 import { formatTime24Hour } from '@/lib/utils';
@@ -12,6 +12,7 @@ interface RouteLayerProps {
   xbandTransitions: XBandTransition[];
   kaTransitions: KaTransition[];
   aarSegments: AARSegment[];
+  manualAARTracks: ManualAARTrack[];
   getWaypointCoordinateIndex: (waypointName: string) => number;
   coordinates: LatLngExpression[];
   normalizedCoordinates: LatLngExpression[];
@@ -26,9 +27,27 @@ export function RouteLayer({
   xbandTransitions,
   kaTransitions,
   aarSegments,
+  manualAARTracks,
   getWaypointCoordinateIndex,
   normalizedCoordinates,
+  isIDLCrossing,
 }: RouteLayerProps) {
+  const getManualTrackPoints = (track: ManualAARTrack): [number, number][] => {
+    const crossesAntimeridian = track.points.some(
+      (point, index) =>
+        index > 0 &&
+        Math.abs(point.longitude - track.points[index - 1].longitude) > 180
+    );
+    const normalizeLongitude = isIDLCrossing || crossesAntimeridian;
+
+    return track.points.map((point) => [
+      point.latitude,
+      normalizeLongitude && point.longitude < 0
+        ? point.longitude + 360
+        : point.longitude,
+    ]);
+  };
+
   // Create X-Band transition icon
   const createXBandIcon = () => {
     return L.divIcon({
@@ -142,6 +161,19 @@ export function RouteLayer({
           </Polyline>
         );
       })}
+
+      {manualAARTracks.map((track) => (
+        <Polyline
+          key={`manual-aar-${track.id}`}
+          positions={getManualTrackPoints(track)}
+          color="#F97316"
+          weight={5}
+          opacity={0.9}
+          dashArray="8, 6"
+        >
+          <Popup>Manual AR Track: {track.name}</Popup>
+        </Polyline>
+      ))}
     </>
   );
 }

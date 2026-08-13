@@ -9,6 +9,7 @@ import { XBandConfig } from '../../components/satellites/XBandConfig';
 import { KaOutageConfig } from '../../components/satellites/KaOutageConfig';
 import { KuOutageConfig } from '../../components/satellites/KuOutageConfig';
 import { AARSegmentEditor } from '../../components/aar/AARSegmentEditor';
+import { ManualAARTrackEditor } from '../../components/aar/ManualAARTrackEditor';
 import type { SatelliteConfig } from '../../types/satellite';
 import type { AARConfig } from '../../types/aar';
 
@@ -39,6 +40,7 @@ export function LegConfigTabs({
         <TabsTrigger value="ka">Ka Outages</TabsTrigger>
         <TabsTrigger value="ku">Ku/Starlink Outages</TabsTrigger>
         <TabsTrigger value="aar">AAR Segments</TabsTrigger>
+        <TabsTrigger value="manual-ar">Manual AR Tracks</TabsTrigger>
       </TabsList>
 
       <TabsContent value="xband" className="space-y-4">
@@ -109,6 +111,18 @@ export function LegConfigTabs({
               onAARConfigChange({ ...aarConfig, segments })
             }
             availableWaypoints={waypointNames}
+          />
+        </div>
+      </TabsContent>
+
+      <TabsContent value="manual-ar" className="space-y-4">
+        <div className="rounded-lg border p-6">
+          <h2 className="text-xl font-semibold mb-4">Manual AR Track</h2>
+          <ManualAARTrackEditor
+            tracks={aarConfig.manualTracks}
+            onTracksChange={(manualTracks) =>
+              onAARConfigChange({ ...aarConfig, manualTracks })
+            }
           />
         </div>
       </TabsContent>

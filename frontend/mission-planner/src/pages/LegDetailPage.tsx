@@ -71,6 +71,7 @@ export function LegDetailPage() {
           override_end_time: s.override_end_time,
           override_start_elapsed: s.override_start_elapsed,
         })),
+        manual_aar_tracks: aarConfig.manualTracks,
         ku_overrides: satelliteConfig.ku_outages.map((k) => ({
           id: k.id,
           start_time: k.start_time,
@@ -87,6 +88,7 @@ export function LegDetailPage() {
     satelliteConfig.ka_outages,
     satelliteConfig.ku_outages,
     aarConfig.segments,
+    aarConfig.manualTracks,
   ]);
 
   // Memoize preview options to prevent unnecessary hook re-runs
@@ -144,6 +146,7 @@ export function LegDetailPage() {
           x_transitions: satelliteConfig.xband_transitions,
           ka_outages: satelliteConfig.ka_outages,
           aar_windows: aarConfig.segments,
+          manual_aar_tracks: aarConfig.manualTracks,
           ku_overrides: satelliteConfig.ku_outages,
         },
       });

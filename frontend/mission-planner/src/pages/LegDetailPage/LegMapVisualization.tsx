@@ -35,6 +35,7 @@ export function LegMapVisualization({
         xbandTransitions={satelliteConfig.xband_transitions}
         kaTransitions={kaTransitions}
         aarSegments={aarConfig.segments}
+        manualAARTracks={aarConfig.manualTracks}
         kaOutages={satelliteConfig.ka_outages || []}
         kuOutages={satelliteConfig.ku_outages || []}
         waypoints={waypointNames}
@@ -47,6 +48,7 @@ export function LegMapVisualization({
         <p>• Blue circles: X-Band transition points</p>
         <p>• Green circles: Ka satellite transitions</p>
         <p>• Yellow dashed line: AAR segments</p>
+        <p>• Orange dashed line: Manual AR deviation tracks</p>
         {timelinePreview && (
           <>
             <p>• Green segments: Nominal communication status</p>

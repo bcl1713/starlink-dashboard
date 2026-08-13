@@ -6,7 +6,7 @@ import type {
   KaOutage,
   KuOutageOverride,
 } from '../../types/satellite';
-import type { AARSegment } from '../../types/aar';
+import type { AARSegment, ManualAARTrack } from '../../types/aar';
 import type { Waypoint } from '../../services/routes';
 import type { KaTransition } from '../../types/timeline';
 import type { Timeline } from '../../services/timeline';
@@ -23,6 +23,7 @@ interface RouteMapProps {
   xbandTransitions?: XBandTransition[];
   kaTransitions?: KaTransition[];
   aarSegments?: AARSegment[];
+  manualAARTracks?: ManualAARTrack[];
   kaOutages?: KaOutage[];
   kuOutages?: KuOutageOverride[];
   waypoints?: string[];
@@ -36,6 +37,7 @@ export function RouteMap({
   xbandTransitions = [],
   kaTransitions = [],
   aarSegments = [],
+  manualAARTracks = [],
   kaOutages = [],
   kuOutages = [],
   timelinePreview = null,
@@ -105,6 +107,7 @@ export function RouteMap({
             xbandTransitions={normalizedXBandTransitions}
             kaTransitions={normalizedKaTransitions}
             aarSegments={aarSegments}
+            manualAARTracks={manualAARTracks}
             getWaypointCoordinateIndex={getWaypointCoordinateIndex}
             coordinates={coordinates}
             normalizedCoordinates={normalizedCoordinates}
