@@ -9,6 +9,7 @@ import {
 } from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { createClientId } from '@/lib/clientId';
 import { toISO8601, formatTime24Hour } from '@/lib/utils';
 import type { KuOutageOverride } from '../../types/satellite';
 
@@ -107,7 +108,7 @@ export function KuOutageConfig({
       onOutagesChange([
         ...outages,
         {
-          id: crypto.randomUUID(),
+          id: createClientId(),
           start_time: toISO8601(newOutage.start_time!),
           duration_seconds: durationSeconds,
           reason: newOutage.reason || undefined,

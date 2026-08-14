@@ -16,6 +16,7 @@ import {
 } from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { createClientId } from '@/lib/clientId';
 import type { XBandTransition } from '../../types/satellite';
 
 interface XBandConfigProps {
@@ -87,7 +88,7 @@ export function XBandConfig({
       onTransitionsChange([
         ...transitions,
         {
-          id: crypto.randomUUID(),
+          id: createClientId(),
           latitude: newTransition.latitude!,
           longitude: newTransition.longitude!,
           target_satellite_id: newTransition.target_satellite_id!,

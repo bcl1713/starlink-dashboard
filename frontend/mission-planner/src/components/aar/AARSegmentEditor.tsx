@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+import { createClientId } from '@/lib/clientId';
 import type { AARSegment } from '../../types/aar';
 
 interface AARSegmentEditorProps {
@@ -95,7 +96,7 @@ export function AARSegmentEditor({
       onSegmentsChange([
         ...segments,
         {
-          id: crypto.randomUUID(),
+          id: createClientId(),
           start_waypoint_name: newSegment.start_waypoint_name,
           end_waypoint_name: newSegment.end_waypoint_name,
         },
