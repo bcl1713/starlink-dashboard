@@ -32,7 +32,9 @@ const toDatetimeLocalValue = (date: Date): string => {
   )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
-const durationHoursPattern = /^(?:\d+\.?\d*|\.\d+)$/;
+// Signed decimal input reaches range validation so negative values receive
+// the actionable minimum-duration feedback instead of a generic format error.
+const durationHoursPattern = /^[+-]?(?:\d+\.?\d*|\.\d+)$/;
 
 const validateDurationHours = (durationHours: string): string | null => {
   if (!durationHours.trim()) {
@@ -225,7 +227,7 @@ export function KaOutageConfig({
                   id="ka-outage-duration-hours"
                   type="text"
                   inputMode="decimal"
-                  pattern="[0-9]*\.?[0-9]*"
+                  pattern="[+-]?[0-9]*\.?[0-9]*"
                   min="0.01"
                   max="24"
                   step="0.01"

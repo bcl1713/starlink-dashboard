@@ -340,7 +340,7 @@ test.describe('Leg detail responsive layout', () => {
 
     await expect(duration).toHaveAttribute('type', 'text');
     await expect(duration).toHaveAttribute('inputmode', 'decimal');
-    await expect(duration).toHaveAttribute('pattern', '[0-9]*\\.?[0-9]*');
+    await expect(duration).toHaveAttribute('pattern', '[+-]?[0-9]*\\.?[0-9]*');
     await expect(duration).toHaveAttribute('min', '0.01');
     await expect(duration).toHaveAttribute('max', '24');
     await startTime.fill('2026-08-13T00:30');
