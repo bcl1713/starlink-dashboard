@@ -32,9 +32,14 @@ const toDatetimeLocalValue = (date: Date): string => {
   )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
+const durationHoursPattern = /^(?:\d+\.?\d*|\.\d+)$/;
+
 const validateDurationHours = (durationHours: string): string | null => {
   if (!durationHours.trim()) {
     return 'Duration is required.';
+  }
+  if (!durationHoursPattern.test(durationHours)) {
+    return 'Enter a valid number of hours.';
   }
   const duration = Number(durationHours);
   if (!Number.isFinite(duration)) {
@@ -99,6 +104,7 @@ export function KaOutageConfig({
   const duration = Number(durationHours);
   const calculatedEndTime =
     !Number.isNaN(startDate.getTime()) &&
+    durationHoursPattern.test(durationHours) &&
     Number.isFinite(duration) &&
     duration > 0
       ? toDatetimeLocalValue(new Date(startDate.getTime() + duration * 3600000))
@@ -217,7 +223,9 @@ export function KaOutageConfig({
                 </Label>
                 <Input
                   id="ka-outage-duration-hours"
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[0-9]*\.?[0-9]*"
                   min="0.01"
                   max="24"
                   step="0.01"
