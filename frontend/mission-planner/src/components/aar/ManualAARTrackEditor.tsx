@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { createClientId } from '@/lib/clientId';
@@ -35,6 +35,30 @@ export function ManualAARTrackEditor({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [editingTrackId, setEditingTrackId] = useState<string | null>(null);
+  const hasHydratedPersistedTrack = useRef(false);
+
+  const loadTrack = (track: ManualAARTrack) => {
+    setEditingTrackId(track.id);
+    setName(track.name);
+    setPoints(
+      track.points.map((point) => ({
+        latitude: String(point.latitude),
+        longitude: String(point.longitude),
+      }))
+    );
+    setError(null);
+    setSuccess(null);
+  };
+
+  useEffect(() => {
+    if (hasHydratedPersistedTrack.current || tracks.length === 0) {
+      return;
+    }
+
+    hasHydratedPersistedTrack.current = true;
+    loadTrack(tracks[0]);
+  }, [tracks]);
 
   const updatePoint = (
     pointIndex: number,
@@ -93,13 +117,12 @@ export function ManualAARTrackEditor({
     try {
       setIsSaving(true);
       await onSaveTrack({
-        id: createClientId(),
+        id: editingTrackId ?? createClientId(),
         name: name.trim(),
         points: parsedPoints,
       });
       setError(null);
       setSuccess('Manual AR track saved.');
-      setPoints([emptyPoint(), emptyPoint()]);
     } catch (saveError) {
       setError(
         saveError instanceof Error
@@ -131,6 +154,13 @@ export function ManualAARTrackEditor({
                 {track.points.length} operator-entered points
               </p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => loadTrack(track)}
+            >
+              Edit
+            </Button>
             <Button
               variant="destructive"
               size="sm"
@@ -197,6 +227,20 @@ export function ManualAARTrackEditor({
           </p>
         )}
         <div className="flex gap-2">
+          {tracks.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setEditingTrackId(null);
+                setName('Manual AR Track');
+                setPoints([emptyPoint(), emptyPoint()]);
+                setError(null);
+                setSuccess(null);
+              }}
+            >
+              New Track
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => setPoints([...points, emptyPoint()])}

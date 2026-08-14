@@ -126,7 +126,13 @@ export function LegDetailPage() {
 
     const updatedAARConfig = {
       ...aarConfig,
-      manualTracks: [...aarConfig.manualTracks, track],
+      manualTracks: aarConfig.manualTracks.some(
+        (existingTrack) => existingTrack.id === track.id
+      )
+        ? aarConfig.manualTracks.map((existingTrack) =>
+            existingTrack.id === track.id ? track : existingTrack
+          )
+        : [...aarConfig.manualTracks, track],
     };
     await updateLegMutation.mutateAsync({
       ...leg,
