@@ -15,8 +15,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <nav className="bg-gray-800 text-white p-4 mb-6">
-          <div className="container mx-auto flex gap-6">
+        <nav className="mb-6 bg-gray-800 p-4 text-white">
+          <div className="container mx-auto flex flex-wrap gap-x-6 gap-y-3">
             <Link to="/missions" className="hover:underline">
               Missions
             </Link>

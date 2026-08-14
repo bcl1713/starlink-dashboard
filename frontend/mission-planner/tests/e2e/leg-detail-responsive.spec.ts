@@ -202,7 +202,7 @@ test.describe('Leg detail responsive layout', () => {
     );
   });
 
-  test('stacks the map and keeps Manual AR Tracks reachable on mobile', async ({
+  test('keeps navigation and every tab reachable without mobile page overflow', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -210,15 +210,39 @@ test.describe('Leg detail responsive layout', () => {
 
     await page.goto('/missions/responsive-mission/legs/responsive-leg');
 
+    const navigationLinks = [
+      'Missions',
+      'Satellites',
+      'POIs',
+      'Routes',
+      'Data Export',
+      'Configuration',
+    ];
+    const tabNames = [
+      'X-Band',
+      'Ka Outages',
+      'Ku/Starlink Outages',
+      'AAR Segments',
+      'Manual AR Tracks',
+    ];
     const manualArTab = page.getByRole('tab', { name: 'Manual AR Tracks' });
     const mapHeading = page.getByRole('heading', {
       name: 'Route Visualization',
     });
 
-    await expect(manualArTab).toBeVisible();
+    const hasPageOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth
+    );
+    expect(hasPageOverflow).toBe(false);
+    for (const linkName of navigationLinks) {
+      await expect(
+        page.getByRole('link', { name: linkName, exact: true })
+      ).toBeInViewport();
+    }
+    for (const tabName of tabNames) {
+      await expect(page.getByRole('tab', { name: tabName })).toBeInViewport();
+    }
     await expect(mapHeading).toBeVisible();
-    await manualArTab.scrollIntoViewIfNeeded();
-    await expect(manualArTab).toBeInViewport();
 
     const [tabBox, mapBox] = await Promise.all([
       manualArTab.boundingBox(),
@@ -228,7 +252,9 @@ test.describe('Leg detail responsive layout', () => {
     expect(mapBox).not.toBeNull();
     expect(mapBox!.y).toBeGreaterThan(tabBox!.y);
 
-    await manualArTab.click();
+    await manualArTab.focus();
+    await expect(manualArTab).toBeFocused();
+    await page.keyboard.press('Enter');
     await expect(
       page.getByRole('heading', { name: 'Manual AR Track', exact: true })
     ).toBeVisible();
