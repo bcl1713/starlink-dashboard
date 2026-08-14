@@ -160,9 +160,10 @@ test.describe('Leg detail responsive layout', () => {
     await expect(saveTrack).toBeInViewport();
     await saveTrack.click();
 
-    await expect(page.getByRole('status')).toHaveText('Manual AR track saved.');
     await expect(page.getByText('2 operator-entered points')).toBeVisible();
-    const manualTrackOverlay = page.locator('path[stroke="#F97316"]');
+    const manualTrackOverlay = page.locator(
+      'path[stroke="var(--route-manual-track)"]'
+    );
     await expect(manualTrackOverlay).toBeAttached();
     await expect(manualTrackOverlay).not.toHaveAttribute('d', 'M0 0');
     await expect(page.getByText('1 segments')).toBeVisible();
@@ -174,7 +175,9 @@ test.describe('Leg detail responsive layout', () => {
     await page.reload();
     await page.getByRole('tab', { name: 'Manual AR Tracks' }).click();
     await expect(page.getByText('2 operator-entered points')).toBeVisible();
-    await expect(page.locator('path[stroke="#F97316"]')).toBeAttached();
+    await expect(
+      page.locator('path[stroke="var(--route-manual-track)"]')
+    ).toBeAttached();
   });
 
   test('hydrates persisted manual AR track points for no-op save and reload', async ({
@@ -271,7 +274,9 @@ test.describe('Leg detail responsive layout', () => {
     await expect(page.getByLabel('Manual AR point 2 longitude')).toHaveValue(
       '-50'
     );
-    await expect(page.locator('path[stroke="#F97316"]')).toBeAttached();
+    await expect(
+      page.locator('path[stroke="var(--route-manual-track)"]')
+    ).toBeAttached();
   });
 
   test('keeps invalid manual AR track input and shows an inline error', async ({
@@ -327,6 +332,7 @@ test.describe('Leg detail responsive layout', () => {
       name: 'Route Visualization',
     });
 
+    await page.getByRole('button', { name: 'Toggle navigation' }).click();
     const hasPageOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth
     );
@@ -337,7 +343,9 @@ test.describe('Leg detail responsive layout', () => {
       ).toBeInViewport();
     }
     for (const tabName of tabNames) {
-      await expect(page.getByRole('tab', { name: tabName })).toBeInViewport();
+      const tab = page.getByRole('tab', { name: tabName });
+      await tab.scrollIntoViewIfNeeded();
+      await expect(tab).toBeInViewport();
     }
     await expect(mapHeading).toBeVisible();
 

@@ -30,16 +30,16 @@ export function MissionCard({
   };
 
   return (
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow">
-      <CardHeader onClick={handleClick}>
+    <Card className="cursor-pointer transition-colors hover:border-primary/40 hover:bg-accent/30">
+      <CardHeader onClick={handleClick} className="pb-4">
         <CardTitle>{mission.name}</CardTitle>
         <CardDescription>
           {mission.description || 'No description'}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-between items-center">
-          <span className="text-sm text-gray-600">
+        <div className="flex flex-wrap justify-between gap-3">
+          <span className="text-sm text-muted-foreground">
             {mission.legs.length} leg{mission.legs.length !== 1 ? 's' : ''}
           </span>
           <div className="flex gap-2">

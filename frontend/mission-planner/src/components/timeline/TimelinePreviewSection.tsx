@@ -18,129 +18,113 @@ export const TimelinePreviewSection: React.FC<TimelinePreviewSectionProps> = ({
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
-      <div
-        className="flex items-center justify-between p-4 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center gap-3">
+    <section
+      className="overflow-hidden rounded-xl border border-border bg-card"
+      aria-labelledby="timeline-preview-heading"
+    >
+      <div className="flex items-center justify-between gap-4 bg-muted/70 p-4">
+        <div className="flex min-w-0 items-center gap-3">
           <button
             type="button"
-            className="text-gray-600 hover:text-gray-800"
+            className="rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-expanded={isExpanded}
+            aria-controls="timeline-preview-content"
+            aria-label={
+              isExpanded
+                ? 'Collapse timeline preview'
+                : 'Expand timeline preview'
+            }
+            onClick={() => setIsExpanded(!isExpanded)}
           >
-            {isExpanded ? (
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            ) : (
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            )}
+            {isExpanded ? '⌄' : '›'}
           </button>
-
-          <h3 className="text-lg font-semibold text-gray-800">
-            Timeline Preview
-          </h3>
-
+          <div>
+            <p className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+              Operational timeline
+            </p>
+            <h3
+              id="timeline-preview-heading"
+              className="text-lg font-semibold text-foreground"
+            >
+              Timeline Preview
+            </h3>
+          </div>
           {isUnsaved && (
-            <span className="inline-block px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded">
+            <span className="status-critical rounded px-2 py-1 text-xs font-semibold">
               Unsaved
             </span>
           )}
-
           {isCalculating && (
-            <span className="inline-block text-xs text-gray-600">
-              (calculating...)
-            </span>
+            <span className="text-xs text-muted-foreground">Calculating…</span>
           )}
         </div>
-
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          {timeline && timeline.segments && (
-            <span>{timeline.segments.length} segments</span>
-          )}
-        </div>
+        {timeline?.segments && (
+          <span className="shrink-0 text-sm text-muted-foreground">
+            {timeline.segments.length} segments
+          </span>
+        )}
       </div>
 
       {isExpanded && (
-        <div className="p-4 bg-white">
+        <div id="timeline-preview-content" className="p-4">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-800 text-sm">
+            <div
+              className="status-critical mb-4 rounded border border-destructive/30 p-3 text-sm"
+              role="alert"
+            >
               {error.message}
             </div>
           )}
 
           <TimelineTable timeline={timeline} isLoading={isCalculating} />
 
-          {timeline && timeline.statistics && (
-            <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm font-medium text-gray-600">
-                  Total Duration
-                </div>
-                <div className="text-lg font-semibold text-gray-900">
-                  {typeof timeline.statistics.total_duration_seconds ===
-                  'number'
-                    ? `${Math.round(timeline.statistics.total_duration_seconds / 60)}m`
-                    : 'N/A'}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-600">
-                  Degraded Time
-                </div>
-                <div className="text-lg font-semibold text-yellow-700">
-                  {typeof timeline.statistics.degraded_seconds === 'number'
-                    ? `${Math.round(timeline.statistics.degraded_seconds / 60)}m`
-                    : '0m'}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-600">
-                  Critical Time
-                </div>
-                <div className="text-lg font-semibold text-red-700">
-                  {typeof timeline.statistics.critical_seconds === 'number'
-                    ? `${Math.round(timeline.statistics.critical_seconds / 60)}m`
-                    : '0m'}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-medium text-gray-600">
-                  Nominal Time
-                </div>
-                <div className="text-lg font-semibold text-green-700">
-                  {typeof timeline.statistics.nominal_seconds === 'number'
-                    ? `${Math.round(timeline.statistics.nominal_seconds / 60)}m`
-                    : '0m'}
-                </div>
-              </div>
+          {timeline?.statistics && (
+            <div className="mt-4 grid grid-cols-2 gap-4 border-t border-border pt-4 sm:grid-cols-4">
+              <TimelineMetric
+                label="Total duration"
+                value={timeline.statistics.total_duration_seconds}
+              />
+              <TimelineMetric
+                label="Degraded time"
+                value={timeline.statistics.degraded_seconds}
+                tone="degraded"
+              />
+              <TimelineMetric
+                label="Critical time"
+                value={timeline.statistics.critical_seconds}
+                tone="critical"
+              />
+              <TimelineMetric
+                label="Nominal time"
+                value={timeline.statistics.nominal_seconds}
+                tone="nominal"
+              />
             </div>
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 };
+
+function TimelineMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: unknown;
+  tone?: 'nominal' | 'degraded' | 'critical';
+}) {
+  return (
+    <div>
+      <div className="text-sm font-medium text-muted-foreground">{label}</div>
+      <div
+        className="text-lg font-semibold text-foreground"
+        style={tone ? { color: `var(--status-${tone})` } : undefined}
+      >
+        {typeof value === 'number' ? `${Math.round(value / 60)}m` : '0m'}
+      </div>
+    </div>
+  );
+}

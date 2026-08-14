@@ -9,11 +9,11 @@ interface ColorCodedRouteProps {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  nominal: '#2ecc71', // Green
-  sof: '#0284c7', // Blue
-  advisory: '#0284c7', // Blue
-  degraded: '#ffff00', // Yellow
-  critical: '#e74c3c', // Red
+  nominal: 'var(--status-nominal)',
+  sof: 'var(--status-advisory)',
+  advisory: 'var(--status-advisory)',
+  degraded: 'var(--status-degraded)',
+  critical: 'var(--status-critical)',
 };
 
 function displayStatus(status: string): string {
@@ -61,7 +61,7 @@ function mapSegmentsToCoordinates(
       ]);
 
       const statusKey = segment.status.toLowerCase();
-      const color = STATUS_COLORS[statusKey] || '#95a5a6';
+      const color = STATUS_COLORS[statusKey] || 'var(--muted-foreground)';
 
       result.push({
         coordinates,
@@ -109,7 +109,7 @@ export const ColorCodedRoute: React.FC<ColorCodedRouteProps> = ({
               <div className="font-semibold capitalize">
                 Status: {displayStatus(polyline.segment.status)}
               </div>
-              <div className="text-xs text-gray-600">
+              <div className="text-xs text-muted-foreground">
                 {new Date(polyline.segment.start_time).toLocaleTimeString(
                   'en-US',
                   {

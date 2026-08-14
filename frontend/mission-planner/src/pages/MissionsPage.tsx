@@ -34,7 +34,7 @@ export function MissionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <MissionList
         onSelectMission={handleSelectMission}
         onCreateNew={() => setCreateDialogOpen(true)}

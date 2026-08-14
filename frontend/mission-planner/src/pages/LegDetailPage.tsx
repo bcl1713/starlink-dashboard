@@ -9,6 +9,7 @@ import { LegConfigTabs } from './LegDetailPage/LegConfigTabs';
 import { LegMapVisualization } from './LegDetailPage/LegMapVisualization';
 import { TimingSection } from './LegDetailPage/TimingSection';
 import { TimelinePreviewSection } from '../components/timeline/TimelinePreviewSection';
+import { Button } from '../components/ui/button';
 import type { SatelliteConfig } from '../types/satellite';
 import type { AARConfig, ManualAARTrack } from '../types/aar';
 import type { TimelinePreviewRequest } from '../services/timeline';
@@ -232,8 +233,10 @@ export function LegDetailPage() {
   // Loading state
   if (isMissionLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <p className="text-muted-foreground">Loading leg configuration...</p>
+      <div className="app-page">
+        <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">
+          Loading leg configuration...
+        </div>
       </div>
     );
   }
@@ -241,20 +244,23 @@ export function LegDetailPage() {
   // Leg not found state
   if (!leg) {
     return (
-      <div className="container mx-auto p-6">
-        <p className="text-red-600">Leg not found</p>
-        <button
-          className="mt-4 px-4 py-2 border rounded-md hover:bg-gray-100"
+      <div className="app-page">
+        <div className="status-critical rounded-xl border p-4" role="alert">
+          Leg not found
+        </div>
+        <Button
+          className="mt-4"
+          variant="outline"
           onClick={() => navigate(`/missions/${missionId}`)}
         >
           Back to Mission
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto min-w-0 space-y-6 p-4 sm:p-6">
+    <div className="app-page min-w-0 space-y-6">
       <LegHeader
         missionId={missionId || ''}
         legId={legId || ''}
@@ -289,20 +295,16 @@ export function LegDetailPage() {
             error={error}
           />
 
-          <div className="flex flex-wrap justify-end gap-4">
-            <button
-              className="px-4 py-2 border rounded-md hover:bg-gray-100"
+          <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
+            <Button
+              variant="outline"
               onClick={() => navigate(`/missions/${missionId}`)}
             >
               Cancel
-            </button>
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              onClick={handleSave}
-              disabled={updateLegMutation.isPending}
-            >
+            </Button>
+            <Button onClick={handleSave} disabled={updateLegMutation.isPending}>
               {updateLegMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+            </Button>
           </div>
         </div>
 
