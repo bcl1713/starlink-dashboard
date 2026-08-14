@@ -43,8 +43,8 @@ async function mockLegDetailApis(page: Page) {
       await route.fulfill({
         json: {
           points: [
-            { latitude: 34, longitude: -118 },
-            { latitude: 35, longitude: -117 },
+            { latitude: 50, longitude: -50 },
+            { latitude: 30, longitude: -50 },
           ],
           waypoints: [],
         },
@@ -156,14 +156,19 @@ test.describe('Leg detail responsive layout', () => {
 
     await expect(page.getByRole('status')).toHaveText('Manual AR track saved.');
     await expect(page.getByText('2 operator-entered points')).toBeVisible();
-    await expect(page.locator('path[stroke="#F97316"]')).toBeVisible();
+    const manualTrackOverlay = page.locator('path[stroke="#F97316"]');
+    await expect(manualTrackOverlay).toBeAttached();
+    await expect(manualTrackOverlay).not.toHaveAttribute('d', 'M0 0');
     await expect(page.getByText('1 segments')).toBeVisible();
     await expect(page.getByText('Degraded Time')).toBeVisible();
-    await expect(page.getByText('60m')).toBeVisible();
+    await expect(
+      page.getByText('Degraded Time').locator('..').getByText('60m')
+    ).toBeVisible();
 
     await page.reload();
     await page.getByRole('tab', { name: 'Manual AR Tracks' }).click();
     await expect(page.getByText('2 operator-entered points')).toBeVisible();
+    await expect(page.locator('path[stroke="#F97316"]')).toBeAttached();
   });
 
   test('keeps invalid manual AR track input and shows an inline error', async ({
@@ -219,7 +224,7 @@ test.describe('Leg detail responsive layout', () => {
 
     await manualArTab.click();
     await expect(
-      page.getByRole('heading', { name: 'Manual AR Track' })
+      page.getByRole('heading', { name: 'Manual AR Track', exact: true })
     ).toBeVisible();
   });
 
