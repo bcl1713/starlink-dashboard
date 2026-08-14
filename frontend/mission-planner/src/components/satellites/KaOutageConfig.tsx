@@ -9,6 +9,7 @@ import {
 } from '../ui/table';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { createClientId } from '@/lib/clientId';
 import { toISO8601, formatTime24Hour } from '@/lib/utils';
 import type { KaOutage } from '../../types/satellite';
@@ -22,23 +23,37 @@ interface KaOutageConfigProps {
 }
 
 /**
- * Helper to calculate duration from times
+ * Formats a local Date for the datetime-local input used by this form.
  */
-const calculateDuration = (startTime: string, endTime: string): number => {
-  const start = new Date(startTime).getTime();
-  const end = new Date(endTime).getTime();
-  return Math.max(0, (end - start) / 1000); // seconds
+const toDatetimeLocalValue = (date: Date): string => {
+  const pad = (value: number) => value.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
-const validateDuration = (duration: number): string | null => {
+// Signed decimal input reaches range validation so negative values receive
+// the actionable minimum-duration feedback instead of a generic format error.
+const durationHoursPattern = /^[+-]?(?:\d+\.?\d*|\.\d+)$/;
+
+const validateDurationHours = (durationHours: string): string | null => {
+  if (!durationHours.trim()) {
+    return 'Duration is required.';
+  }
+  if (!durationHoursPattern.test(durationHours)) {
+    return 'Enter a valid number of hours.';
+  }
+  const duration = Number(durationHours);
+  if (!Number.isFinite(duration)) {
+    return 'Enter a valid number of hours.';
+  }
   if (duration <= 0) {
-    return 'Duration must be greater than 0 seconds';
+    return 'Duration must be greater than 0 hours.';
   }
-  if (duration > 86400) {
-    // 24 hours
-    return 'Duration cannot exceed 24 hours (86400 seconds)';
+  if (duration > 24) {
+    return 'Duration cannot exceed 24 hours.';
   }
-  return null; // Valid
+  return null;
 };
 
 const validateDatetime = (datetime: string): string | null => {
@@ -58,7 +73,7 @@ const validateDatetime = (datetime: string): string | null => {
 
 interface NewOutageInput {
   start_time: string;
-  end_time: string;
+  duration_hours: string;
 }
 
 /**
@@ -70,8 +85,8 @@ interface NewOutageInput {
  *
  * Features:
  * - Display existing outage windows with start time, duration, and end time
- * - Add new outage windows using datetime-local inputs (24-hour format)
- * - Automatic duration calculation
+ * - Add new outage windows using a start time and duration in hours
+ * - Automatic calculated end time using the local datetime input semantics
  * - Validation for required fields and duration limits (0-24 hours)
  * - Helper text indicating 24-hour format requirement
  *
@@ -84,37 +99,37 @@ export function KaOutageConfig({
 }: KaOutageConfigProps) {
   const [newOutage, setNewOutage] = useState<Partial<NewOutageInput>>({});
   const [startTimeError, setStartTimeError] = useState<string | null>(null);
-  const [endTimeError, setEndTimeError] = useState<string | null>(null);
   const [durationError, setDurationError] = useState<string | null>(null);
 
+  const durationHours = newOutage.duration_hours ?? '';
+  const startDate = new Date(newOutage.start_time ?? '');
+  const duration = Number(durationHours);
+  const calculatedEndTime =
+    !Number.isNaN(startDate.getTime()) &&
+    durationHoursPattern.test(durationHours) &&
+    Number.isFinite(duration) &&
+    duration > 0
+      ? toDatetimeLocalValue(new Date(startDate.getTime() + duration * 3600000))
+      : '';
+
   const handleAddOutage = () => {
-    // Validate inputs
     const startError = validateDatetime(newOutage.start_time || '');
-    const endError = validateDatetime(newOutage.end_time || '');
-    const durationSeconds = calculateDuration(
-      newOutage.start_time || '',
-      newOutage.end_time || ''
-    );
-    const durError = validateDuration(durationSeconds);
+    const durError = validateDurationHours(durationHours);
 
     setStartTimeError(startError);
-    setEndTimeError(endError);
     setDurationError(durError);
 
-    // Only proceed if all validations pass
-    if (!startError && !endError && !durError) {
+    if (!startError && !durError) {
       onOutagesChange([
         ...outages,
         {
           id: createClientId(),
           start_time: toISO8601(newOutage.start_time!),
-          duration_seconds: durationSeconds,
+          duration_seconds: duration * 3600,
         },
       ]);
       setNewOutage({});
-      // Clear errors after successful submission
       setStartTimeError(null);
-      setEndTimeError(null);
       setDurationError(null);
     }
   };
@@ -127,7 +142,10 @@ export function KaOutageConfig({
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-medium mb-2">Ka Outage Windows</h3>
-        <Table>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Scroll horizontally to access all outage columns on narrow screens.
+        </p>
+        <Table className="min-w-[42rem]">
           <TableHeader>
             <TableRow>
               <TableHead>Start Time</TableHead>
@@ -165,8 +183,11 @@ export function KaOutageConfig({
             <TableRow>
               <TableCell>
                 <div>
-                  {/* datetime-local input with step="60" for 1-minute precision (no seconds) */}
+                  <Label htmlFor="ka-outage-start-time" className="sr-only">
+                    Ka outage start time
+                  </Label>
                   <Input
+                    id="ka-outage-start-time"
                     type="datetime-local"
                     step="60"
                     value={newOutage.start_time ?? ''}
@@ -177,88 +198,82 @@ export function KaOutageConfig({
                         start_time: value,
                       });
                       setStartTimeError(validateDatetime(value));
-                      // Re-validate duration if end time exists
-                      if (newOutage.end_time) {
-                        const dur = calculateDuration(
-                          value,
-                          newOutage.end_time
-                        );
-                        setDurationError(validateDuration(dur));
-                      }
                     }}
+                    aria-describedby={
+                      startTimeError ? 'ka-outage-start-time-error' : undefined
+                    }
+                    aria-invalid={Boolean(startTimeError)}
                     className={startTimeError ? 'border-red-500' : ''}
                   />
-                  {/* Helper text guides users to enter time in 24-hour format */}
                   <p className="text-xs text-muted-foreground mt-1">
                     24-hour format (HH:mm)
                   </p>
                   {startTimeError && (
-                    <p className="text-sm text-red-500 mt-1">
+                    <p
+                      id="ka-outage-start-time-error"
+                      className="text-sm text-red-500 mt-1"
+                      role="alert"
+                    >
                       {startTimeError}
                     </p>
                   )}
                 </div>
               </TableCell>
               <TableCell>
-                {newOutage.start_time && newOutage.end_time && (
-                  <div>
-                    <span>
-                      {(
-                        calculateDuration(
-                          newOutage.start_time,
-                          newOutage.end_time
-                        ) / 3600
-                      ).toFixed(2)}
-                    </span>
-                    {durationError && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {durationError}
-                      </p>
-                    )}
-                  </div>
+                <Label htmlFor="ka-outage-duration-hours" className="sr-only">
+                  Duration (hours)
+                </Label>
+                <Input
+                  id="ka-outage-duration-hours"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="[+-]?[0-9]*\.?[0-9]*"
+                  min="0.01"
+                  max="24"
+                  step="0.01"
+                  required
+                  value={durationHours}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setNewOutage({ ...newOutage, duration_hours: value });
+                    setDurationError(validateDurationHours(value));
+                  }}
+                  aria-describedby={
+                    durationError ? 'ka-outage-duration-error' : undefined
+                  }
+                  aria-invalid={Boolean(durationError)}
+                  className={durationError ? 'border-red-500' : ''}
+                />
+                {durationError && (
+                  <p
+                    id="ka-outage-duration-error"
+                    className="text-sm text-red-500 mt-1"
+                    role="alert"
+                  >
+                    {durationError}
+                  </p>
                 )}
               </TableCell>
               <TableCell>
                 <div>
+                  <Label htmlFor="ka-outage-end-time" className="sr-only">
+                    Calculated Ka outage end time
+                  </Label>
                   <Input
+                    id="ka-outage-end-time"
                     type="datetime-local"
                     step="60"
-                    value={newOutage.end_time ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setNewOutage({
-                        ...newOutage,
-                        end_time: value,
-                      });
-                      setEndTimeError(validateDatetime(value));
-                      // Re-validate duration if start time exists
-                      if (newOutage.start_time) {
-                        const dur = calculateDuration(
-                          newOutage.start_time,
-                          value
-                        );
-                        setDurationError(validateDuration(dur));
-                      }
-                    }}
-                    className={endTimeError ? 'border-red-500' : ''}
+                    value={calculatedEndTime}
+                    readOnly
+                    aria-live="polite"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    24-hour format (HH:mm)
+                    Calculated from the local start time and duration.
                   </p>
-                  {endTimeError && (
-                    <p className="text-sm text-red-500 mt-1">{endTimeError}</p>
-                  )}
                 </div>
               </TableCell>
               <TableCell>
-                <Button
-                  onClick={handleAddOutage}
-                  disabled={
-                    !!startTimeError || !!endTimeError || !!durationError
-                  }
-                >
-                  Add
-                </Button>
+                <Button onClick={handleAddOutage}>Add</Button>
               </TableCell>
             </TableRow>
           </TableBody>

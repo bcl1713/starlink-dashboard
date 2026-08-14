@@ -283,4 +283,140 @@ test.describe('Leg detail responsive layout', () => {
     );
     expect(overflow).toBe(false);
   });
+
+  test('adds, saves, reloads, and previews a Ka outage from duration hours on mobile', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const persistedMission = structuredClone(mission);
+    let savedKaOutages: Array<{ duration_seconds: number }> = [];
+    let previewKaOutages: Array<{ duration_seconds: number }> = [];
+
+    await mockLegDetailApis(page);
+    await page.route(
+      'http://localhost:8000/api/v2/missions/responsive-mission',
+      async (route) => {
+        await route.fulfill({ json: persistedMission });
+      }
+    );
+    await page.route(
+      'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg',
+      async (route) => {
+        if (route.request().method() !== 'PUT') {
+          await route.continue();
+          return;
+        }
+
+        const updatedLeg = route.request().postDataJSON();
+        savedKaOutages = updatedLeg.transports.ka_outages;
+        persistedMission.legs[0] = updatedLeg;
+        await route.fulfill({ json: { leg: updatedLeg, warnings: [] } });
+      }
+    );
+    await page.route(
+      'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview',
+      async (route) => {
+        if (route.request().method() === 'POST') {
+          previewKaOutages = route.request().postDataJSON()
+            .transports.ka_outages;
+        }
+        await route.fulfill({
+          json: {
+            mission_leg_id: 'responsive-leg',
+            created_at: '2026-08-13T00:00:00Z',
+            segments: [],
+          },
+        });
+      }
+    );
+
+    await page.goto('/missions/responsive-mission/legs/responsive-leg');
+    await page.getByRole('tab', { name: 'Ka Outages' }).click();
+
+    const startTime = page.getByLabel('Ka outage start time');
+    const duration = page.getByLabel('Duration (hours)');
+    const endTime = page.getByLabel('Calculated Ka outage end time');
+    const addOutage = page.getByRole('button', { name: 'Add', exact: true });
+
+    await expect(duration).toHaveAttribute('type', 'text');
+    await expect(duration).toHaveAttribute('inputmode', 'decimal');
+    await expect(duration).toHaveAttribute('pattern', '[+-]?[0-9]*\\.?[0-9]*');
+    await expect(duration).toHaveAttribute('min', '0.01');
+    await expect(duration).toHaveAttribute('max', '24');
+    await startTime.fill('2026-08-13T00:30');
+    await duration.fill('1.5');
+    await expect(endTime).toHaveValue('2026-08-13T02:00');
+
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth
+      )
+    ).toBe(false);
+    await addOutage.scrollIntoViewIfNeeded();
+    await expect(addOutage).toBeInViewport();
+    await addOutage.click();
+
+    await expect.poll(() => previewKaOutages[0]?.duration_seconds).toBe(5400);
+    await expect(page.getByText('1.50', { exact: true })).toBeVisible();
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Save Changes' }).click();
+    await expect.poll(() => savedKaOutages[0]?.duration_seconds).toBe(5400);
+
+    await page.reload();
+    await page.getByRole('tab', { name: 'Ka Outages' }).click();
+    await expect(page.getByText('1.50', { exact: true })).toBeVisible();
+  });
+
+  test('keeps invalid Ka outage values and explains how to correct them', async ({
+    page,
+  }) => {
+    await mockLegDetailApis(page);
+    await page.goto('/missions/responsive-mission/legs/responsive-leg');
+    await page.getByRole('tab', { name: 'Ka Outages' }).click();
+
+    const startTime = page.getByLabel('Ka outage start time');
+    const duration = page.getByLabel('Duration (hours)');
+    const addOutage = page.getByRole('button', { name: 'Add', exact: true });
+
+    await addOutage.click();
+    await expect(page.getByText('Datetime is required')).toBeVisible();
+    await expect(page.getByText('Duration is required.')).toBeVisible();
+
+    await startTime.fill('2026-08-13T00:30');
+    await duration.fill('0');
+    await addOutage.click();
+    await expect(
+      page.getByText('Duration must be greater than 0 hours.')
+    ).toBeVisible();
+    await expect(duration).toHaveValue('0');
+
+    await duration.fill('-1');
+    await addOutage.click();
+    await expect(
+      page.getByText('Duration must be greater than 0 hours.')
+    ).toBeVisible();
+    await expect(duration).toHaveValue('-1');
+
+    await duration.fill('25');
+    await addOutage.click();
+    await expect(
+      page.getByText('Duration cannot exceed 24 hours.')
+    ).toBeVisible();
+    await expect(duration).toHaveValue('25');
+
+    await duration.fill('abc');
+    await addOutage.click();
+    await expect(
+      page.getByText('Enter a valid number of hours.')
+    ).toBeVisible();
+    await expect(duration).toHaveValue('abc');
+
+    await duration.fill('1e-1');
+    await addOutage.click();
+    await expect(
+      page.getByText('Enter a valid number of hours.')
+    ).toBeVisible();
+    await expect(duration).toHaveValue('1e-1');
+  });
 });
