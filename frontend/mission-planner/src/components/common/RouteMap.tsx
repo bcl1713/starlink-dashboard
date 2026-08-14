@@ -13,6 +13,7 @@ import type { Timeline } from '../../services/timeline';
 import { useMapState } from './RouteMap/useMapState';
 import { useRouteRenderer } from './RouteMap/useRouteRenderer';
 import { MapControls } from './RouteMap/MapControls';
+import { MapLegend } from './RouteMap/MapLegend';
 import { RouteLayer } from './RouteMap/RouteLayer';
 import { ColorCodedRoute } from './RouteMap/ColorCodedRoute';
 import { formatTime24Hour } from '@/lib/utils';
@@ -42,12 +43,8 @@ export function RouteMap({
   kuOutages = [],
   timelinePreview = null,
 }: RouteMapProps) {
-  // Use custom hooks for state and rendering logic (must be called before early returns)
   const { mapRef, bounds, center, isIDLCrossing, normalizedCoordinates } =
-    useMapState({
-      coordinates: coordinates || [],
-    });
-
+    useMapState({ coordinates: coordinates || [] });
   const {
     routeSegments,
     normalizedXBandTransitions,
@@ -61,23 +58,21 @@ export function RouteMap({
     kaTransitions,
   });
 
-  // Defensive check: ensure we have valid coordinate data
   if (!coordinates || coordinates.length === 0) {
     return (
       <div style={{ height, width: '100%' }}>
-        <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-          <p className="text-gray-500">No route data available</p>
+        <div className="flex h-full items-center justify-center rounded-lg border border-border bg-muted">
+          <p className="text-muted-foreground">No route data available</p>
         </div>
       </div>
     );
   }
 
-  // Defensive check: ensure bounds and center are valid
   if (!bounds || !center || routeSegments.length === 0) {
     return (
       <div style={{ height, width: '100%' }}>
-        <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-          <p className="text-gray-500">Error loading route map</p>
+        <div className="flex h-full items-center justify-center rounded-lg border border-border bg-muted">
+          <p className="text-muted-foreground">Error loading route map</p>
         </div>
       </div>
     );
@@ -85,7 +80,10 @@ export function RouteMap({
 
   return (
     <div>
-      <div style={{ height, width: '100%' }}>
+      <div
+        className="relative overflow-hidden rounded-xl border border-border bg-muted shadow-sm"
+        style={{ height, width: '100%' }}
+      >
         <MapContainer
           bounds={bounds}
           center={center}
@@ -118,30 +116,43 @@ export function RouteMap({
             isIDLCrossing={isIDLCrossing}
           />
         </MapContainer>
+        <MapLegend hasTimeline={Boolean(timelinePreview?.segments?.length)} />
       </div>
 
-      {/* Outage Information Panel */}
-      {kaOutages.length > 0 || kuOutages.length > 0 ? (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h3 className="text-lg font-semibold mb-2">Communication Outages</h3>
-
+      {(kaOutages.length > 0 || kuOutages.length > 0) && (
+        <section
+          className="mt-4 rounded-lg border border-border bg-muted/60 p-4"
+          aria-label="Communication outages"
+        >
+          <h3 className="text-base font-semibold text-foreground">
+            Communication Outages
+          </h3>
           {kaOutages.length > 0 && (
-            <div className="mb-3">
-              <h4 className="font-medium text-sm mb-1">Ka-Band Outages</h4>
+            <div className="mt-3">
+              <h4 className="text-sm font-medium text-foreground">
+                Ka-Band Outages
+              </h4>
               {kaOutages.map((outage, idx) => (
-                <div key={`ka-${idx}`} className="text-sm text-gray-700 ml-2">
+                <div
+                  key={`ka-${idx}`}
+                  className="ml-2 text-sm text-muted-foreground"
+                >
                   • {formatTime24Hour(outage.start_time)} (
                   {outage.duration_seconds}s)
                 </div>
               ))}
             </div>
           )}
-
           {kuOutages.length > 0 && (
-            <div>
-              <h4 className="font-medium text-sm mb-1">Ku-Band Outages</h4>
+            <div className="mt-3">
+              <h4 className="text-sm font-medium text-foreground">
+                Ku-Band Outages
+              </h4>
               {kuOutages.map((outage, idx) => (
-                <div key={`ku-${idx}`} className="text-sm text-gray-700 ml-2">
+                <div
+                  key={`ku-${idx}`}
+                  className="ml-2 text-sm text-muted-foreground"
+                >
                   • {formatTime24Hour(outage.start_time)} (
                   {outage.duration_seconds}s)
                   {outage.reason && ` - ${outage.reason}`}
@@ -149,8 +160,8 @@ export function RouteMap({
               ))}
             </div>
           )}
-        </div>
-      ) : null}
+        </section>
+      )}
     </div>
   );
 }

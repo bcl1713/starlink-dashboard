@@ -52,16 +52,16 @@ export function RouteLayer({
   const createXBandIcon = () => {
     return L.divIcon({
       className: 'xband-marker',
-      html: '<div style="width: 16px; height: 16px; background: #3B82F6; border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
+      html: '<div style="width: 16px; height: 16px; background: var(--route-handoff); border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
       iconSize: [16, 16],
     });
   };
 
-  // Create Ka transition icon (green)
+  // Create Ka transition icon
   const createKaIcon = () => {
     return L.divIcon({
       className: 'ka-marker',
-      html: '<div style="width: 16px; height: 16px; background: #10B981; border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
+      html: '<div style="width: 16px; height: 16px; background: var(--route-transition); border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
       iconSize: [16, 16],
     });
   };
@@ -70,7 +70,13 @@ export function RouteLayer({
     <>
       {/* Render route segments */}
       {routeSegments.map((segment, idx) => (
-        <Polyline key={idx} positions={segment} color="blue" weight={3} />
+        <Polyline
+          key={idx}
+          positions={segment}
+          color="var(--route-reference)"
+          weight={4}
+          opacity={0.9}
+        />
       ))}
 
       {/* Render X-Band transition markers */}
@@ -149,7 +155,7 @@ export function RouteLayer({
           <Polyline
             key={`aar-${idx}`}
             positions={segmentCoordinates}
-            color="#FFC107"
+            color="var(--route-air-refuel)"
             weight={6}
             opacity={0.7}
             dashArray="5, 5"
@@ -166,7 +172,7 @@ export function RouteLayer({
         <Polyline
           key={`manual-aar-${track.id}`}
           positions={getManualTrackPoints(track)}
-          color="#F97316"
+          color="var(--route-manual-track)"
           weight={5}
           opacity={0.9}
           dashArray="8, 6"

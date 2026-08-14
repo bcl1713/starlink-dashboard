@@ -78,11 +78,17 @@
   --sidebar-ring: oklch(0.708 0 0);
   --status-nominal: #177a55;
   --status-nominal-subtle: #e8f5ef;
+  --status-advisory: #1769aa;
+  --status-advisory-subtle: #e5f1fa;
   --status-degraded: #a96900;
   --status-degraded-subtle: #fff5df;
   --status-critical: #b42318;
   --status-critical-subtle: #fcebea;
-  --route-context: #007c83;
+  --route-reference: #1769aa;
+  --route-handoff: #007c83;
+  --route-transition: #177a55;
+  --route-air-refuel: #a96900;
+  --route-manual-track: #aa5a16;
 }
 
 .dark {
@@ -149,6 +155,11 @@
   .status-nominal {
     background: var(--status-nominal-subtle);
     color: var(--status-nominal);
+  }
+
+  .status-advisory {
+    background: var(--status-advisory-subtle);
+    color: var(--status-advisory);
   }
 
   .status-degraded {
