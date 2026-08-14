@@ -327,6 +327,7 @@ test.describe('Leg detail responsive layout', () => {
       name: 'Route Visualization',
     });
 
+    await page.getByRole('button', { name: 'Toggle navigation' }).click();
     const hasPageOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth
     );

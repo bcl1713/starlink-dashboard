@@ -110,9 +110,14 @@ export function POIManagerPage() {
   const focusPOI = selectedPOI || null;
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">POI Manager</h1>
+    <div className="app-page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Points of Interest</h1>
+          <p className="page-description">
+            Manage route-aware operational reference points and their details.
+          </p>
+        </div>
         <Button onClick={() => setEditingPOIId('new')}>Create POI</Button>
       </div>
 
@@ -157,24 +162,26 @@ export function POIManagerPage() {
                 <h2 className="text-lg font-semibold mb-4">POI Details</h2>
                 <div className="space-y-2 text-sm">
                   <p>
-                    <span className="text-gray-600">Name:</span>{' '}
+                    <span className="text-muted-foreground">Name:</span>{' '}
                     {selectedPOI.name}
                   </p>
                   <p>
-                    <span className="text-gray-600">Category:</span>{' '}
+                    <span className="text-muted-foreground">Category:</span>{' '}
                     {selectedPOI.category || '—'}
                   </p>
                   <p>
-                    <span className="text-gray-600">Icon:</span>{' '}
+                    <span className="text-muted-foreground">Icon:</span>{' '}
                     {selectedPOI.icon}
                   </p>
                   {selectedPOI.description && (
                     <p>
-                      <span className="text-gray-600">Description:</span>{' '}
+                      <span className="text-muted-foreground">
+                        Description:
+                      </span>{' '}
                       {selectedPOI.description}
                     </p>
                   )}
-                  <p className="text-xs text-gray-500 pt-2">
+                  <p className="pt-2 text-xs text-muted-foreground">
                     {selectedPOI.latitude.toFixed(4)},{' '}
                     {selectedPOI.longitude.toFixed(4)}
                   </p>

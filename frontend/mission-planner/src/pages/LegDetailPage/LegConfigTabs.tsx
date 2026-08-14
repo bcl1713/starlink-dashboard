@@ -37,13 +37,15 @@ export function LegConfigTabs({
 }: LegConfigTabsProps) {
   return (
     <Tabs defaultValue="xband" className="w-full">
-      <TabsList className="h-auto w-full flex-wrap justify-start gap-1">
-        <TabsTrigger value="xband">X-Band</TabsTrigger>
-        <TabsTrigger value="ka">Ka Outages</TabsTrigger>
-        <TabsTrigger value="ku">Ku/Starlink Outages</TabsTrigger>
-        <TabsTrigger value="aar">AAR Segments</TabsTrigger>
-        <TabsTrigger value="manual-ar">Manual AR Tracks</TabsTrigger>
-      </TabsList>
+      <div className="relative after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-8 after:bg-gradient-to-l after:from-muted after:to-transparent">
+        <TabsList className="h-auto w-full max-w-full justify-start gap-1 overflow-x-auto [scrollbar-width:thin]">
+          <TabsTrigger value="xband">X-Band</TabsTrigger>
+          <TabsTrigger value="ka">Ka Outages</TabsTrigger>
+          <TabsTrigger value="ku">Ku/Starlink Outages</TabsTrigger>
+          <TabsTrigger value="aar">AAR Segments</TabsTrigger>
+          <TabsTrigger value="manual-ar">Manual AR Tracks</TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="xband" className="space-y-4">
         <div className="rounded-lg border p-4 sm:p-6">

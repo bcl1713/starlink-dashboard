@@ -43,26 +43,26 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+  --background: #f6f8fb;
+  --foreground: #132238;
+  --card: #ffffff;
+  --card-foreground: #132238;
+  --popover: #ffffff;
+  --popover-foreground: #132238;
+  --primary: #1769aa;
+  --primary-foreground: #ffffff;
+  --secondary: #eef3f8;
+  --secondary-foreground: #132238;
+  --muted: #eef3f8;
+  --muted-foreground: #53657a;
+  --accent: #e5f1fa;
+  --accent-foreground: #0a4477;
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+  --border: #d6e0ea;
+  --input: #d6e0ea;
+  --ring: #69b7f4;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -76,6 +76,13 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --status-nominal: #177a55;
+  --status-nominal-subtle: #e8f5ef;
+  --status-degraded: #a96900;
+  --status-degraded-subtle: #fff5df;
+  --status-critical: #b42318;
+  --status-critical-subtle: #fcebea;
+  --route-context: #007c83;
 }
 
 .dark {
@@ -119,5 +126,38 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .app-page {
+    @apply mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8;
+  }
+
+  .page-header {
+    @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between;
+  }
+
+  .page-title {
+    @apply text-[1.75rem] font-bold leading-tight tracking-tight text-foreground;
+  }
+
+  .page-description {
+    @apply mt-2 max-w-3xl text-sm leading-5 text-muted-foreground;
+  }
+
+  .status-nominal {
+    background: var(--status-nominal-subtle);
+    color: var(--status-nominal);
+  }
+
+  .status-degraded {
+    background: var(--status-degraded-subtle);
+    color: var(--status-degraded);
+  }
+
+  .status-critical {
+    background: var(--status-critical-subtle);
+    color: var(--status-critical);
   }
 }
