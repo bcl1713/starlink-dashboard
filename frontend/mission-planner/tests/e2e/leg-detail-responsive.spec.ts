@@ -177,6 +177,103 @@ test.describe('Leg detail responsive layout', () => {
     await expect(page.locator('path[stroke="#F97316"]')).toBeAttached();
   });
 
+  test('hydrates persisted manual AR track points for no-op save and reload', async ({
+    page,
+  }) => {
+    const persistedMission = {
+      ...mission,
+      legs: mission.legs.map((leg) => ({
+        ...leg,
+        transports: {
+          ...leg.transports,
+          manual_aar_tracks: [
+            {
+              id: 'persisted-manual-ar-track',
+              name: 'Persisted Manual AR Track',
+              points: [
+                { latitude: 50, longitude: -50 },
+                { latitude: 30, longitude: -50 },
+              ],
+            },
+          ],
+        },
+      })),
+    };
+    let savedManualTracks: Array<{
+      id: string;
+      name: string;
+      points: Array<{ latitude: number; longitude: number }>;
+    }> = [];
+
+    await mockLegDetailApis(page);
+    await page.route(
+      'http://localhost:8000/api/v2/missions/responsive-mission',
+      async (route) => {
+        await route.fulfill({ json: persistedMission });
+      }
+    );
+    await page.route(
+      'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg',
+      async (route) => {
+        if (route.request().method() !== 'PUT') {
+          await route.continue();
+          return;
+        }
+
+        const updatedLeg = route.request().postDataJSON();
+        savedManualTracks = updatedLeg.transports.manual_aar_tracks;
+        persistedMission.legs[0] = updatedLeg;
+        await route.fulfill({ json: { leg: updatedLeg, warnings: [] } });
+      }
+    );
+
+    await page.goto('/missions/responsive-mission/legs/responsive-leg');
+    await page.getByRole('tab', { name: 'Manual AR Tracks' }).click();
+
+    await expect(page.getByLabel('Manual AR track name')).toHaveValue(
+      'Persisted Manual AR Track'
+    );
+    await expect(page.getByLabel('Manual AR point 1 latitude')).toHaveValue(
+      '50'
+    );
+    await expect(page.getByLabel('Manual AR point 1 longitude')).toHaveValue(
+      '-50'
+    );
+    await expect(page.getByLabel('Manual AR point 2 latitude')).toHaveValue(
+      '30'
+    );
+    await expect(page.getByLabel('Manual AR point 2 longitude')).toHaveValue(
+      '-50'
+    );
+
+    await page
+      .getByRole('button', { name: 'Save and Persist Manual AR Track' })
+      .click();
+    await expect(page.getByRole('status')).toHaveText('Manual AR track saved.');
+    await expect
+      .poll(() => savedManualTracks)
+      .toEqual([
+        {
+          id: 'persisted-manual-ar-track',
+          name: 'Persisted Manual AR Track',
+          points: [
+            { latitude: 50, longitude: -50 },
+            { latitude: 30, longitude: -50 },
+          ],
+        },
+      ]);
+
+    await page.reload();
+    await page.getByRole('tab', { name: 'Manual AR Tracks' }).click();
+    await expect(page.getByLabel('Manual AR point 1 latitude')).toHaveValue(
+      '50'
+    );
+    await expect(page.getByLabel('Manual AR point 2 longitude')).toHaveValue(
+      '-50'
+    );
+    await expect(page.locator('path[stroke="#F97316"]')).toBeAttached();
+  });
+
   test('keeps invalid manual AR track input and shows an inline error', async ({
     page,
   }) => {
