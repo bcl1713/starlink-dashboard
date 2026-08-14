@@ -224,6 +224,16 @@ def _apply_event(
     if event.event_type == EventType.AAR_WINDOW:
         return False
 
+    if event.event_type in (
+        EventType.MANUAL_AAR_TRACK_START,
+        EventType.MANUAL_AAR_TRACK_END,
+    ):
+        track_id = event.metadata.get("track_id", "unknown") if event.metadata else "unknown"
+        key = f"manual_aar_track:{track_id}"
+        if event.event_type == EventType.MANUAL_AAR_TRACK_START:
+            return activate("degraded", key, reason or "Manual AR Track")
+        return deactivate("degraded", key)
+
     if event.event_type == EventType.X_AZIMUTH_VIOLATION:
         key = "x_azimuth"
         if event.severity in ("warning", "critical"):

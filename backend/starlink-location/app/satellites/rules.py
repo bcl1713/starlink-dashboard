@@ -36,6 +36,8 @@ class EventType(str, Enum):
     TAKEOFF_BUFFER = "takeoff_buffer"
     LANDING_BUFFER = "landing_buffer"
     AAR_WINDOW = "aar_window"
+    MANUAL_AAR_TRACK_START = "manual_aar_track_start"
+    MANUAL_AAR_TRACK_END = "manual_aar_track_end"
 
 
 @dataclass
@@ -324,6 +326,44 @@ class RuleEngine:
                 severity="info",
                 reason=end_label,
             )
+        )
+
+    def add_manual_aar_track_events(
+        self,
+        start_time: datetime,
+        end_time: datetime,
+        track_id: str,
+        track_name: str,
+    ) -> None:
+        """Degrade X while the planned route overlaps a manual AR track.
+
+        A manual track is a geographic deviation, not a route replacement. Its
+        points are projected onto the planned route and the earliest/latest
+        projections bound the interval in which the X-band link is degraded.
+        """
+        reason = f"Manual AR Track: {track_name}"
+        metadata = {"track_id": track_id, "track_name": track_name}
+        self.events.extend(
+            [
+                MissionEvent(
+                    timestamp=start_time,
+                    event_type=EventType.MANUAL_AAR_TRACK_START,
+                    transport=Transport.X,
+                    affected_transport=Transport.X,
+                    severity="warning",
+                    reason=reason,
+                    metadata=metadata,
+                ),
+                MissionEvent(
+                    timestamp=end_time,
+                    event_type=EventType.MANUAL_AAR_TRACK_END,
+                    transport=Transport.X,
+                    affected_transport=Transport.X,
+                    severity="info",
+                    reason=f"{reason} complete",
+                    metadata=metadata,
+                ),
+            ]
         )
 
     def get_sorted_events(self) -> List[MissionEvent]:
