@@ -113,10 +113,16 @@ async function mockLegDetailApis(page: Page) {
 }
 
 test.describe('Leg detail responsive layout', () => {
-  test('persists a manual AR track, confirms it, and retains it after reload', async ({
+  test('persists a manual AR track without crypto.randomUUID on mobile', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => {
+      Object.defineProperty(globalThis.crypto, 'randomUUID', {
+        configurable: true,
+        value: undefined,
+      });
+    });
     const persistedMission = structuredClone(mission);
 
     await mockLegDetailApis(page);

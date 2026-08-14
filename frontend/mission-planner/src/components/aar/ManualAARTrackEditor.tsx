@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { createClientId } from '@/lib/clientId';
 import type { ManualAARTrack, ManualAARTrackPoint } from '../../types/aar';
 
 interface ManualAARTrackEditorProps {
@@ -92,7 +93,7 @@ export function ManualAARTrackEditor({
     try {
       setIsSaving(true);
       await onSaveTrack({
-        id: crypto.randomUUID(),
+        id: createClientId(),
         name: name.trim(),
         points: parsedPoints,
       });
