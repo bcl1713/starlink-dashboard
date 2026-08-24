@@ -1,5 +1,6 @@
 """Integration tests for mission v2 API endpoints."""
 
+import asyncio
 import pytest
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
@@ -112,6 +113,41 @@ class TestMissionV2CreateEndpoint:
             call_args = mock_save.call_args
             assert call_args[0][0] == test_mission_v2.legs[0].id
             assert call_args[0][1] == timeline
+
+
+class TestMissionV2ListEndpoint:
+    """Tests for the paginated v2 mission listing contract."""
+
+    def test_cors_exposes_total_header_to_the_mission_planner(self, client):
+        """Browser clients can read the pagination total from a CORS response."""
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://localhost:5173"},
+        )
+
+        assert response.status_code == 200
+        assert response.headers["access-control-expose-headers"] == "X-Total-Count"
+
+    def test_list_missions_returns_total_header_and_requested_page(self, monkeypatch):
+        """The additive total header lets clients paginate without breaking arrays."""
+        from fastapi import Response
+
+        from app.mission.routes_v2 import list_missions
+
+        missions = [
+            Mission(id=f"mission-{index}", name=f"Mission {index}")
+            for index in range(26)
+        ]
+        monkeypatch.setattr(
+            "app.mission.routes_v2.list_mission_metadata_v2",
+            lambda: missions,
+        )
+        response = Response()
+
+        page = asyncio.run(list_missions(response, limit=25, offset=25))
+
+        assert response.headers["X-Total-Count"] == "26"
+        assert [mission.id for mission in page] == ["mission-25"]
 
 
 class TestMissionV2UpdateEndpoint:

@@ -8,10 +8,34 @@ import type {
   UpdateLegResponse,
 } from '../types/mission';
 
+export const MISSIONS_PAGE_SIZE = 25;
+
+export interface MissionPage {
+  missions: Mission[];
+  total: number;
+}
+
 export const missionsApi = {
   list: async () => {
-    const response = await apiClient.get<Mission[]>('/api/v2/missions');
-    return response.data;
+    const page = await missionsApi.listPage();
+    return page.missions;
+  },
+
+  listPage: async (
+    limit = MISSIONS_PAGE_SIZE,
+    offset = 0
+  ): Promise<MissionPage> => {
+    const response = await apiClient.get<Mission[]>('/api/v2/missions', {
+      params: { limit, offset },
+    });
+    const reportedTotal = Number(response.headers['x-total-count']);
+
+    return {
+      missions: response.data,
+      total: Number.isInteger(reportedTotal)
+        ? reportedTotal
+        : response.data.length,
+    };
   },
 
   get: async (id: string) => {

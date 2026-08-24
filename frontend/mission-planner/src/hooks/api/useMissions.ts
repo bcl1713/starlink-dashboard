@@ -14,6 +14,13 @@ export function useMissions() {
   });
 }
 
+export function useMissionsPage(limit: number, offset: number) {
+  return useQuery({
+    queryKey: ['missions', { limit, offset }],
+    queryFn: () => missionsApi.listPage(limit, offset),
+  });
+}
+
 export function useMission(id: string) {
   return useQuery({
     queryKey: ['missions', id],

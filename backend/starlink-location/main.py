@@ -476,6 +476,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Total-Count"],
 )
 
 # Mount data/sat_coverage directory for satellite coverage overlays (Ka/CommKa GeoJSON)

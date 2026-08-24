@@ -175,4 +175,48 @@ test.describe('Mission Workflow', () => {
       page.getByRole('heading', { name: 'Import Mission' })
     ).toBeVisible();
   });
+
+  test('paginates a newest-first mission list with boundary controls', async ({
+    page,
+  }) => {
+    const missions = Array.from({ length: 26 }, (_, index) => ({
+      id: `mission-${26 - index}`,
+      name: `Mission ${26 - index}`,
+      legs: [],
+      created_at: '2026-01-01T00:00:00Z',
+      updated_at: `2026-01-${String(26 - index).padStart(2, '0')}T00:00:00Z`,
+      metadata: {},
+    }));
+
+    await page.route('**/api/v2/missions*', async (route) => {
+      const offset = Number(
+        route
+          .request()
+          .url()
+          .match(/offset=(\d+)/)?.[1] ?? 0
+      );
+      await route.fulfill({
+        headers: { 'X-Total-Count': String(missions.length) },
+        json: missions.slice(offset, offset + 25),
+      });
+    });
+
+    await page.goto('/missions');
+    await expect(page.getByText('Mission 26', { exact: true })).toBeVisible();
+    await expect(page.getByText('Mission 2', { exact: true })).toBeVisible();
+    await expect(page.getByText('Page 1 of 2')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Previous page' })
+    ).toBeDisabled();
+
+    await page.getByRole('button', { name: 'Next page' }).click();
+    await expect(page.getByText('Mission 1', { exact: true })).toBeVisible();
+    await expect(page.getByText('Page 2 of 2')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Next page' })
+    ).toBeDisabled();
+
+    await page.getByRole('button', { name: 'Previous page' }).click();
+    await expect(page.getByText('Page 1 of 2')).toBeVisible();
+  });
 });
