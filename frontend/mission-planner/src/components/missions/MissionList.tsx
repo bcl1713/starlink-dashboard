@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { useMissionsPage, useDeleteMission } from '../../hooks/api/useMissions';
 import { MissionCard } from './MissionCard';
 import { Button } from '../ui/button';
@@ -27,6 +27,13 @@ export function MissionList({
   const missions = missionPage?.missions;
   const total = missionPage?.total ?? 0;
   const totalPages = Math.ceil(total / MISSIONS_PAGE_SIZE);
+  const lastValidPage = Math.max(totalPages, 1);
+
+  useLayoutEffect(() => {
+    // Query results can shrink after a delete; correct before the empty page paints.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage((currentPage) => Math.min(currentPage, lastValidPage));
+  }, [lastValidPage]);
 
   if (isLoading)
     return (
@@ -90,7 +97,9 @@ export function MissionList({
         >
           <Button
             variant="outline"
-            onClick={() => setPage((currentPage) => currentPage - 1)}
+            onClick={() =>
+              setPage((currentPage) => Math.max(currentPage - 1, 1))
+            }
             disabled={page === 1}
             aria-label="Previous page"
           >
@@ -121,7 +130,9 @@ export function MissionList({
           </div>
           <Button
             variant="outline"
-            onClick={() => setPage((currentPage) => currentPage + 1)}
+            onClick={() =>
+              setPage((currentPage) => Math.min(currentPage + 1, lastValidPage))
+            }
             disabled={page === totalPages}
             aria-label="Next page"
           >
