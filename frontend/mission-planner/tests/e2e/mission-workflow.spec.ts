@@ -3,17 +3,20 @@ import { test, expect } from '@playwright/test';
 test.describe('Mission Workflow', () => {
   test.beforeEach(async ({ page }) => {
     // Mock initial empty mission list
-    await page.route('http://localhost:8000/api/v2/missions', async (route) => {
-      const method = route.request().method();
-      if (method === 'GET') {
-        await route.fulfill({ json: [] });
-      } else {
-        await route.continue();
+    await page.route(
+      'http://localhost:5173/api/v2/missions**',
+      async (route) => {
+        const method = route.request().method();
+        if (method === 'GET') {
+          await route.fulfill({ json: [] });
+        } else {
+          await route.continue();
+        }
       }
-    });
+    );
 
     // Mock route list (for adding legs later)
-    await page.route('http://localhost:8000/api/routes', async (route) => {
+    await page.route('http://localhost:5173/api/routes', async (route) => {
       await route.fulfill({
         json: {
           routes: [{ id: 'route-1', name: 'Test Route' }],
@@ -30,28 +33,31 @@ test.describe('Mission Workflow', () => {
     await expect(page.getByRole('heading', { name: 'Missions' })).toBeVisible();
     await expect(
       page.getByText(
-        'No missions yet. Create your first mission to get started.'
+        'Create your first mission to begin planning its route and legs.'
       )
     ).toBeVisible();
 
     // 2. Mock Create Mission API
     let createdMission: Record<string, unknown> | null = null;
-    await page.route('http://localhost:8000/api/v2/missions', async (route) => {
-      if (route.request().method() === 'POST') {
-        const data = route.request().postDataJSON();
-        createdMission = {
-          ...data,
-          id: 'new-mission',
-          legs: [],
-        };
-        await route.fulfill({ json: createdMission });
-      } else if (route.request().method() === 'GET') {
-        // Return the created mission if it exists, otherwise empty
-        await route.fulfill({ json: createdMission ? [createdMission] : [] });
-      } else {
-        await route.continue();
+    await page.route(
+      'http://localhost:5173/api/v2/missions**',
+      async (route) => {
+        if (route.request().method() === 'POST') {
+          const data = route.request().postDataJSON();
+          createdMission = {
+            ...data,
+            id: 'new-mission',
+            legs: [],
+          };
+          await route.fulfill({ json: createdMission });
+        } else if (route.request().method() === 'GET') {
+          // Return the created mission if it exists, otherwise empty
+          await route.fulfill({ json: createdMission ? [createdMission] : [] });
+        } else {
+          await route.continue();
+        }
       }
-    });
+    );
 
     // 3. Open Create Dialog
     await page.getByRole('button', { name: 'Create New Mission' }).click();
@@ -82,17 +88,20 @@ test.describe('Mission Workflow', () => {
     };
 
     // Mock initial state with one mission
-    await page.route('http://localhost:8000/api/v2/missions', async (route) => {
-      if (route.request().method() === 'GET') {
-        await route.fulfill({ json: [mission] });
-      } else {
-        await route.continue();
+    await page.route(
+      'http://localhost:5173/api/v2/missions**',
+      async (route) => {
+        if (route.request().method() === 'GET') {
+          await route.fulfill({ json: [mission] });
+        } else {
+          await route.continue();
+        }
       }
-    });
+    );
 
     // Mock mission detail
     await page.route(
-      'http://localhost:8000/api/v2/missions/test-mission',
+      'http://localhost:5173/api/v2/missions/test-mission',
       async (route) => {
         await route.fulfill({ json: mission });
       }
@@ -100,7 +109,7 @@ test.describe('Mission Workflow', () => {
 
     // Mock Add Leg API
     await page.route(
-      'http://localhost:8000/api/v2/missions/test-mission/legs',
+      'http://localhost:5173/api/v2/missions/test-mission/legs',
       async (route) => {
         const data = route.request().postDataJSON();
         // Return success
@@ -113,9 +122,7 @@ test.describe('Mission Workflow', () => {
     await page.getByText('Test Mission').click();
 
     // Verify Detail Page
-    await expect(
-      page.getByRole('heading', { name: 'Test Mission' })
-    ).toBeVisible();
+    await expect(page.getByText('Test Mission', { exact: true })).toBeVisible();
     await expect(page.getByText('No legs configured')).toBeVisible();
 
     // Add Leg
@@ -131,7 +138,8 @@ test.describe('Mission Workflow', () => {
     await expect(
       page.getByRole('option', { name: 'Test Route' })
     ).toBeVisible();
-    await page.getByRole('option', { name: 'Test Route' }).click();
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
 
     await page.getByRole('button', { name: 'Add Leg' }).click();
 
@@ -146,9 +154,12 @@ test.describe('Mission Workflow', () => {
       legs: [],
     };
 
-    await page.route('http://localhost:8000/api/v2/missions', async (route) => {
-      await route.fulfill({ json: [mission] });
-    });
+    await page.route(
+      'http://localhost:5173/api/v2/missions**',
+      async (route) => {
+        await route.fulfill({ json: [mission] });
+      }
+    );
 
     await page.goto('/');
     await page.waitForLoadState('networkidle');

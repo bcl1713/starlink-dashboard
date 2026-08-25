@@ -27,7 +27,7 @@ const mission = {
 
 async function mockLegDetailApis(page: Page) {
   await page.route(
-    'http://localhost:8000/api/v2/missions/responsive-mission',
+    'http://localhost:5173/api/v2/missions/responsive-mission',
     async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({ json: mission });
@@ -38,7 +38,7 @@ async function mockLegDetailApis(page: Page) {
   );
 
   await page.route(
-    'http://localhost:8000/api/routes/responsive-route',
+    'http://localhost:5173/api/routes/responsive-route',
     async (route) => {
       await route.fulfill({
         json: {
@@ -53,7 +53,7 @@ async function mockLegDetailApis(page: Page) {
   );
 
   await page.route(
-    'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg/timeline',
+    'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg/timeline',
     async (route) => {
       await route.fulfill({
         json: {
@@ -66,7 +66,7 @@ async function mockLegDetailApis(page: Page) {
   );
 
   await page.route(
-    'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview',
+    'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview',
     async (route) => {
       const request = route.request();
       const hasManualTrack =
@@ -103,11 +103,11 @@ async function mockLegDetailApis(page: Page) {
     }
   );
 
-  await page.route('http://localhost:8000/api/satellites', async (route) => {
+  await page.route('http://localhost:5173/api/satellites', async (route) => {
     await route.fulfill({ json: [] });
   });
 
-  await page.route('http://localhost:8000/api/pois**', async (route) => {
+  await page.route('http://localhost:5173/api/pois**', async (route) => {
     await route.fulfill({ json: { pois: [], total: 0 } });
   });
 }
@@ -127,7 +127,7 @@ test.describe('Leg detail responsive layout', () => {
 
     await mockLegDetailApis(page);
     await page.route(
-      'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg',
+      'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg',
       async (route) => {
         if (route.request().method() !== 'PUT') {
           await route.continue();
@@ -140,7 +140,7 @@ test.describe('Leg detail responsive layout', () => {
       }
     );
     await page.route(
-      'http://localhost:8000/api/v2/missions/responsive-mission',
+      'http://localhost:5173/api/v2/missions/responsive-mission',
       async (route) => {
         await route.fulfill({ json: persistedMission });
       }
@@ -210,13 +210,13 @@ test.describe('Leg detail responsive layout', () => {
 
     await mockLegDetailApis(page);
     await page.route(
-      'http://localhost:8000/api/v2/missions/responsive-mission',
+      'http://localhost:5173/api/v2/missions/responsive-mission',
       async (route) => {
         await route.fulfill({ json: persistedMission });
       }
     );
     await page.route(
-      'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg',
+      'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg',
       async (route) => {
         if (route.request().method() !== 'PUT') {
           await route.continue();
@@ -399,13 +399,13 @@ test.describe('Leg detail responsive layout', () => {
 
     await mockLegDetailApis(page);
     await page.route(
-      'http://localhost:8000/api/v2/missions/responsive-mission',
+      'http://localhost:5173/api/v2/missions/responsive-mission',
       async (route) => {
         await route.fulfill({ json: persistedMission });
       }
     );
     await page.route(
-      'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg',
+      'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg',
       async (route) => {
         if (route.request().method() !== 'PUT') {
           await route.continue();
@@ -419,7 +419,7 @@ test.describe('Leg detail responsive layout', () => {
       }
     );
     await page.route(
-      'http://localhost:8000/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview',
+      'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview',
       async (route) => {
         if (route.request().method() === 'POST') {
           previewKaOutages = route.request().postDataJSON()
