@@ -2,9 +2,18 @@ services:
   starlink-location:
     build: ./backend/starlink-location/
     container_name: starlink-location
-    env_file: .env
-    ports:
-      - "${STARLINK_LOCATION_PORT}:8000"
+    environment:
+      STARLINK_MODE: simulation
+      SIMULATION_MODE: "true"
+      STARLINK_DISH_HOST: 192.168.100.1
+      STARLINK_DISH_PORT: "9200"
+      PROMETHEUS_RETENTION: 1y
+      GRAFANA_ADMIN_PASSWORD: simulation-only-local
+      STARLINK_LOCATION_PORT: "8000"
+      PROMETHEUS_PORT: "9090"
+      GRAFANA_PORT: "3000"
+      TIMEZONE_TAKEOFF: America/Los_Angeles
+      TIMEZONE_LANDING: Europe/London
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -12,19 +21,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    # Network configuration for Starlink dish access
-    # For live mode, the container needs to reach the Starlink dish at 192.168.100.1:9200
-    #
-    # Option 1: host network mode (Linux only, best performance)
-    # Uncomment 'network_mode: host' and comment out 'networks' section below
-    # This allows container to access the host network directly
-    # network_mode: host
-    #
-    # Option 2: Bridge network with extra_hosts (cross-platform, Docker Desktop compatible)
-    # Uses extra_hosts to add the dish IP, allowing container to reach 192.168.100.1
-    # This is the default and works on Windows, Mac, and Linux
     extra_hosts:
-      - "dish.starlink:${STARLINK_DISH_HOST:-192.168.100.1}"
+      - "dish.starlink:192.168.100.1"
     volumes:
       - ./data/missions:/app/data/missions
       - ./data/satellites:/app/data/satellites
@@ -34,69 +32,65 @@ services:
       - poi_data:/data
     networks:
       - starlink-net
+      - proxy
 
   prometheus:
-    image: prom/prometheus:latest
+    build: ./monitoring/prometheus
     container_name: prometheus
-    env_file: .env
-    ports:
-      - "${PROMETHEUS_PORT}:9090"
-    restart: unless-stopped
-    volumes:
-      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./monitoring/prometheus/rules:/etc/prometheus/rules
-      - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.retention.time=${PROMETHEUS_RETENTION}"
+      - "--storage.tsdb.retention.time=1y"
     depends_on:
       starlink-location:
         condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - prometheus_data:/prometheus
     networks:
       - starlink-net
+      - proxy
 
   grafana:
-    image: grafana/grafana:latest
+    build: ./monitoring/grafana
     container_name: grafana
-    env_file: .env
-    ports:
-      - "${GRAFANA_PORT}:3000"
-    restart: unless-stopped
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_PLUGINS_PREINSTALL=grafana-clock-panel,yesoreyeram-infinity-datasource@3.11.1
-      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=1s
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-      - ./monitoring/grafana/custom-icons/chevron-up.svg:/usr/share/grafana/public/img/icons/marker/chevron-up.svg:ro
+      GF_SECURITY_ADMIN_PASSWORD: simulation-only-local
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_PLUGINS_PREINSTALL: grafana-clock-panel,yesoreyeram-infinity-datasource@3.11.1
+      GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 1s
     depends_on:
       - prometheus
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
     networks:
       - starlink-net
+      - proxy
 
   mission-planner:
     build:
       context: ./frontend/mission-planner
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
     container_name: mission-planner
-    ports:
-      - "5173:80"
     depends_on:
-      - starlink-location
-    environment:
-      - VITE_API_URL=http://starlink-location:8000
+      starlink-location:
+        condition: service_healthy
+    restart: unless-stopped
     networks:
       - starlink-net
+      - proxy
 
 networks:
   starlink-net:
     driver: bridge
+  proxy:
+    external: true
 
 volumes:
-  prometheus_data:
-  grafana_data:
   route_data:
   sim_route_data:
   poi_data:
+  prometheus_data:
+  grafana_data:

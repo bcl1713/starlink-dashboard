@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 // Step options
 const STEP_OPTIONS = [
