@@ -118,3 +118,92 @@ def test_feasible_estimate_builds_piecewise_route_with_one_downstream_shift():
         route.points[-1].expected_arrival_time
         + timedelta(seconds=estimate.delta_seconds)
     )
+
+
+def test_uses_local_speed_before_global_speed_for_diversion():
+    route = _route([(0, 0), (0, 1), (0, 2), (0, 3), (0, 4)])
+    route.points[1].expected_segment_speed_knots = 400.0
+    route.points[2].expected_segment_speed_knots = 400.0
+    route.points[3].expected_segment_speed_knots = 700.0
+    route.points[4].expected_segment_speed_knots = 700.0
+
+    estimate = build_derived_route_estimate(route, _track([(0.2, 1.2), (0.2, 1.8)]))
+
+    assert estimate.available is True
+    assert estimate.speed_knots == 400.0
+    assert estimate.speed_source == "local_weighted_median"
+
+
+def test_invalid_anchor_override_returns_explicit_unavailable_result():
+    route = _route([(0, 0), (0, 2), (0, 4)])
+    override = ManualRouteSplice(
+        enabled_track_id="ar-1",
+        leave_segment_index=1,
+        leave_fraction=0.8,
+        rejoin_segment_index=0,
+        rejoin_fraction=0.2,
+    )
+
+    estimate = build_derived_route_estimate(
+        route, _track([(0.2, 1), (0.2, 3)]), override
+    )
+
+    assert estimate.available is False
+    assert estimate.unavailable_reason == "invalid_splice_override"
+
+
+def test_out_of_order_anchor_times_use_calculated_replaced_duration():
+    route = _route([(0, 0), (0, 2), (0, 4)])
+    route.points[2].expected_arrival_time = route.points[1].expected_arrival_time
+
+    estimate = build_derived_route_estimate(route, _track([(0.2, 1), (0.2, 3)]))
+
+    assert estimate.available is True
+    assert "distance/speed" in " ".join(estimate.warnings)
+    assert estimate.planned_duration_seconds > 0
+
+
+def test_zero_length_source_segments_are_ignored_without_mutating_route():
+    route = _route([(0, 0), (0, 0), (0, 2), (0, 4)])
+    original = route.model_dump(mode="json")
+
+    estimate = build_derived_route_estimate(route, _track([(0.2, 1), (0.2, 3)]))
+
+    assert estimate.available is True
+    assert estimate.leave_anchor is not None
+    assert estimate.leave_anchor.segment_index != 0
+    assert route.model_dump(mode="json") == original
+
+
+def test_uses_labelled_500_knot_fallback_without_speed_or_profile():
+    route = _route([(0, 0), (0, 2), (0, 4)])
+    route.timing_profile = None
+    for point in route.points:
+        point.expected_segment_speed_knots = None
+
+    estimate = build_derived_route_estimate(route, _track([(0.2, 1), (0.2, 3)]))
+
+    assert estimate.available is True
+    assert estimate.speed_knots == 500.0
+    assert estimate.speed_source == "fallback_500kt"
+
+
+def test_feasible_override_uses_explicit_speed_and_remains_deterministic():
+    route = _route([(0, 0), (0, 2), (0, 4)])
+    override = ManualRouteSplice(
+        enabled_track_id="ar-1",
+        leave_segment_index=0,
+        leave_fraction=0.5,
+        rejoin_segment_index=1,
+        rejoin_fraction=0.5,
+        speed_knots=450.0,
+    )
+    track = _track([(0.2, 1), (0.2, 3)])
+
+    first = build_derived_route_estimate(route, track, override)
+    second = build_derived_route_estimate(route, track, override)
+
+    assert first.available is True
+    assert first.speed_knots == 450.0
+    assert first.speed_source == "operator_override"
+    assert first.as_dict() == second.as_dict()
