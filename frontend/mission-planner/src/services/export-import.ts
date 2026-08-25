@@ -1,5 +1,29 @@
 import { apiClient } from './api-client';
+import axios from 'axios';
 import type { ImportResult } from '../types/export';
+
+interface MissionPackageTooLargeDetail {
+  code: 'mission_package_too_large';
+  layer: string;
+  max_bytes: number;
+}
+
+export function formatMissionImportError(error: unknown): string {
+  if (axios.isAxiosError(error)) {
+    const detail = error.response?.data?.detail as
+      | MissionPackageTooLargeDetail
+      | undefined;
+
+    if (detail?.code === 'mission_package_too_large') {
+      const maxMiB = detail.max_bytes / (1024 * 1024);
+      return `Mission package exceeds the ${maxMiB} MiB limit (rejected by ${detail.layer}).`;
+    }
+
+    return error.message;
+  }
+
+  return error instanceof Error ? error.message : 'Unknown error';
+}
 
 export const exportImportApi = {
   exportMission: async (missionId: string): Promise<Blob> => {

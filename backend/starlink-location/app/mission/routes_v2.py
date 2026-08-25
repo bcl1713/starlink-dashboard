@@ -50,6 +50,7 @@ logger = logging.getLogger(__name__)
 # Constants
 DEFAULT_PAGINATION_LIMIT = 10  # Default number of missions to return
 MAX_PAGINATION_LIMIT = 100  # Maximum number of missions to return
+MISSION_PACKAGE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
 
@@ -639,11 +640,15 @@ async def import_mission(
             # Save uploaded file
             contents = await file.read()
 
-            MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
-            if len(contents) > MAX_UPLOAD_SIZE:
+            if len(contents) > MISSION_PACKAGE_MAX_UPLOAD_BYTES:
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail="File too large",
+                    detail={
+                        "code": "mission_package_too_large",
+                        "layer": "application",
+                        "max_bytes": MISSION_PACKAGE_MAX_UPLOAD_BYTES,
+                        "received_bytes": len(contents),
+                    },
                 )
 
             with open(zip_path, "wb") as f:
@@ -728,6 +733,8 @@ async def import_mission(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid zip file"
         )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Import failed: {e}")
         raise HTTPException(

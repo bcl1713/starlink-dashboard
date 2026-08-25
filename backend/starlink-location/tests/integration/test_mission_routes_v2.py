@@ -293,3 +293,24 @@ class TestMissionV2UpdateEndpoint:
         assert updated_data["updated_at"] > created_data["updated_at"]
         # Verify created_at stayed the same
         assert updated_data["created_at"] == created_data["created_at"]
+
+
+class TestMissionPackageImportLimits:
+    """Regression coverage for the mission-package upload contract."""
+
+    def test_import_rejects_an_oversize_package_with_attributable_413(self, client):
+        """The application layer preserves its documented package-size rejection."""
+        package = b"x" * (100 * 1024 * 1024 + 1)
+
+        response = client.post(
+            "/api/v2/missions/import",
+            files={"file": ("oversize.zip", package, "application/zip")},
+        )
+
+        assert response.status_code == 413
+        assert response.json()["detail"] == {
+            "code": "mission_package_too_large",
+            "layer": "application",
+            "max_bytes": 100 * 1024 * 1024,
+            "received_bytes": len(package),
+        }
