@@ -175,7 +175,7 @@ def test_zero_length_source_segments_are_ignored_without_mutating_route():
     assert route.model_dump(mode="json") == original
 
 
-def test_uses_labelled_500_knot_fallback_without_speed_or_profile():
+def test_uses_labelled_400_ktas_assumption_without_speed_or_profile():
     route = _route([(0, 0), (0, 2), (0, 4)])
     route.timing_profile = None
     for point in route.points:
@@ -184,8 +184,8 @@ def test_uses_labelled_500_knot_fallback_without_speed_or_profile():
     estimate = build_derived_route_estimate(route, _track([(0.2, 1), (0.2, 3)]))
 
     assert estimate.available is True
-    assert estimate.speed_knots == 500.0
-    assert estimate.speed_source == "fallback_500kt"
+    assert estimate.speed_knots == 400.0
+    assert estimate.speed_source == "assumed_400_ktas"
 
 
 def test_feasible_override_uses_explicit_speed_and_remains_deterministic():

@@ -26,6 +26,17 @@ function formatDuration(seconds?: number): string {
   return `${sign}${Math.round(Math.abs(seconds) / 60)} min`;
 }
 
+function formatSpeedSource(source?: string | null): string {
+  if (source === 'assumed_400_ktas') return 'assumed 400 KTAS';
+  if (source === 'operator_override') return 'operator override';
+  if (source === 'local_weighted_median') return 'local planned-route timing';
+  if (source === 'global_weighted_median') return 'planned-route timing';
+  if (source === 'planned_total_distance_duration') {
+    return 'planned route total duration';
+  }
+  return source || 'unknown source';
+}
+
 /** Controls only persist selection/overrides; preview geometry and ETA stay ephemeral. */
 export function ManualRouteEstimateControls({
   tracks,
@@ -93,7 +104,7 @@ export function ManualRouteEstimateControls({
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-muted-foreground sm:grid-cols-3">
               <div><dt>Distance delta</dt><dd>{typeof estimate.derived_distance_nm === 'number' && typeof estimate.planned_distance_nm === 'number' ? `${(estimate.derived_distance_nm - estimate.planned_distance_nm).toFixed(1)} NM` : 'Unavailable'}</dd></div>
               <div><dt>Timeline delta</dt><dd>{formatDuration(estimate.delta_seconds)}</dd></div>
-              <div><dt>Speed</dt><dd>{estimate.speed_knots ? `${estimate.speed_knots.toFixed(0)} kt (${estimate.speed_source})` : 'Unavailable'}</dd></div>
+              <div><dt>Speed</dt><dd>{estimate.speed_knots ? `${estimate.speed_knots.toFixed(0)} KTAS (${formatSpeedSource(estimate.speed_source)})` : 'Unavailable'}</dd></div>
               <div><dt>Leave progress</dt><dd>{estimate.leave_anchor ? `${estimate.leave_anchor.progress_nm.toFixed(1)} NM` : 'Unavailable'}</dd></div>
               <div><dt>Rejoin progress</dt><dd>{estimate.rejoin_anchor ? `${estimate.rejoin_anchor.progress_nm.toFixed(1)} NM` : 'Unavailable'}</dd></div>
             </dl>

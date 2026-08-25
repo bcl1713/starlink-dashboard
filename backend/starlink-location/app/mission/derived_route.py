@@ -21,6 +21,7 @@ EARTH_RADIUS_NM = 3440.065
 MAX_ANCHOR_CONNECTOR_NM = 100.0
 MIN_PROGRESS_SEPARATION_NM = 0.01
 MAX_CANDIDATES = 8
+AR_DIVERSION_ASSUMED_SPEED_KTAS = 400.0
 
 
 @dataclass(frozen=True)
@@ -199,7 +200,7 @@ def _speed(route: ParsedRoute, leave_progress: float, rejoin_progress: float) ->
         total = sum(distance_nm((left.latitude, left.longitude), (right.latitude, right.longitude)) for left, right in zip(route.points, route.points[1:]))
         if total > 0:
             return total / (duration / 3600.0), "planned_total_distance_duration"
-    return 500.0, "fallback_500kt"
+    return AR_DIVERSION_ASSUMED_SPEED_KTAS, "assumed_400_ktas"
 
 
 def _local_speed(route: ParsedRoute, progress: float) -> float | None:
