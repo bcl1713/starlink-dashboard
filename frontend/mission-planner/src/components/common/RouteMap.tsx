@@ -10,6 +10,7 @@ import type { AARSegment, ManualAARTrack } from '../../types/aar';
 import type { Waypoint } from '../../services/routes';
 import type { KaTransition } from '../../types/timeline';
 import type { Timeline } from '../../services/timeline';
+import type { DerivedRouteEstimate } from '../../services/timeline';
 import { useMapState } from './RouteMap/useMapState';
 import { useRouteRenderer } from './RouteMap/useRouteRenderer';
 import { MapControls } from './RouteMap/MapControls';
@@ -30,6 +31,7 @@ interface RouteMapProps {
   waypoints?: string[];
   waypointObjects?: Waypoint[];
   timelinePreview?: Timeline | null;
+  derivedRouteEstimate?: DerivedRouteEstimate | null;
 }
 
 export function RouteMap({
@@ -42,6 +44,7 @@ export function RouteMap({
   kaOutages = [],
   kuOutages = [],
   timelinePreview = null,
+  derivedRouteEstimate = null,
 }: RouteMapProps) {
   const { mapRef, bounds, center, isIDLCrossing, normalizedCoordinates } =
     useMapState({ coordinates: coordinates || [] });
@@ -110,6 +113,7 @@ export function RouteMap({
             coordinates={coordinates}
             normalizedCoordinates={normalizedCoordinates}
             isIDLCrossing={isIDLCrossing}
+            derivedRouteEstimate={derivedRouteEstimate}
           />
           <ColorCodedRoute
             timeline={timelinePreview}

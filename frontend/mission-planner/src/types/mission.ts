@@ -1,5 +1,9 @@
 import type { XBandTransition, KaOutage, KuOutageOverride } from './satellite';
-import type { AARSegment, ManualAARTrack } from './aar';
+import type {
+  AARSegment,
+  ManualAARTrack,
+  ManualRouteSplice,
+} from './aar';
 
 export interface Mission {
   id: string;
@@ -18,6 +22,7 @@ export interface TransportConfig {
   ka_outages?: KaOutage[];
   aar_windows?: AARSegment[];
   manual_aar_tracks?: ManualAARTrack[];
+  manual_route_splice?: ManualRouteSplice | null;
   ku_overrides?: KuOutageOverride[];
 }
 

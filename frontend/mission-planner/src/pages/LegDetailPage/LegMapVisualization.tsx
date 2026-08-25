@@ -57,6 +57,7 @@ export function LegMapVisualization({
         waypoints={waypointNames}
         waypointObjects={availableWaypoints}
         timelinePreview={timelinePreview}
+        derivedRouteEstimate={timelinePreview?.derived_route_estimate}
         height="clamp(20rem, 50vw, 37.5rem)"
       />
     </section>
