@@ -26,6 +26,8 @@ covers all configuration options for the Starlink Dashboard.
   volumes
 - **[Logging Configuration](./logging-configuration.md)** - Log levels and
   formats
+- **[Mission Package Upload Limit](./mission-package-upload-limits.md)** - 100
+  MiB import contract, proxy alignment, and verification
 
 ---
 
