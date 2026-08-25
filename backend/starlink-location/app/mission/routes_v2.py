@@ -21,6 +21,7 @@ from fastapi import (
     File,
     Depends,
     Request,
+    Response,
 )
 from fastapi.responses import StreamingResponse
 from app.core.limiter import limiter
@@ -33,7 +34,7 @@ from app.mission.storage import (
     load_mission_timeline,
     delete_mission_timeline,
     get_mission_lock,
-    load_mission_metadata_v2,
+    list_mission_metadata_v2,
 )
 from app.mission.package import export_mission_package
 from app.mission.timeline_service import build_mission_timeline
@@ -114,6 +115,7 @@ async def create_mission(
 
 @router.get("", response_model=list[Mission])
 async def list_missions(
+    response: Response,
     limit: int = Query(DEFAULT_PAGINATION_LIMIT, ge=1, le=MAX_PAGINATION_LIMIT),
     offset: int = Query(0, ge=0),
 ) -> list[Mission]:
@@ -127,21 +129,8 @@ async def list_missions(
         List of missions with metadata only (empty legs arrays)
     """
     try:
-        from pathlib import Path
-
-        missions_dir = Path("data/missions")
-
-        if not missions_dir.exists():
-            return []
-
-        missions = []
-        for mission_dir in sorted(missions_dir.iterdir()):
-            if mission_dir.is_dir():
-                # Use metadata-only loading for efficiency
-                mission = load_mission_metadata_v2(mission_dir.name)
-                if mission:
-                    missions.append(mission)
-
+        missions = list_mission_metadata_v2()
+        response.headers["X-Total-Count"] = str(len(missions))
         return missions[offset : offset + limit]
     except Exception as e:
         logger.error(f"Failed to list missions: {e}", exc_info=True)

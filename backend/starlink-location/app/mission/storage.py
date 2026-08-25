@@ -253,6 +253,16 @@ def load_mission_metadata_v2(mission_id: str) -> Optional[Mission]:
         with open(mission_file, "r") as f:
             mission_data = json.load(f)
 
+        # Legacy mission files can predate timestamp persistence or contain an
+        # invalid timestamp. Drop those values so Pydantic can safely apply its
+        # defaults; list ordering uses the original persisted values separately.
+        for timestamp_field in ("created_at", "updated_at"):
+            if (
+                timestamp_field in mission_data
+                and _parse_persisted_timestamp(mission_data[timestamp_field]) is None
+            ):
+                mission_data.pop(timestamp_field)
+
         # Count leg files and create stub leg objects with only IDs
         legs_dir = get_mission_legs_dir(mission_id)
         leg_stubs = []
@@ -287,6 +297,58 @@ def load_mission_metadata_v2(mission_id: str) -> Optional[Mission]:
     except Exception as e:
         logger.error(f"Failed to load mission metadata {mission_id}: {e}")
         return None
+
+
+def _parse_persisted_timestamp(value: object) -> Optional[datetime]:
+    """Return a timezone-aware persisted timestamp, or None for legacy values."""
+    if not isinstance(value, str):
+        return None
+
+    try:
+        timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+    if timestamp.tzinfo is None:
+        return None
+    return timestamp.astimezone(timezone.utc)
+
+
+def list_mission_metadata_v2() -> list[Mission]:
+    """List hierarchical mission metadata newest-first with stable legacy fallback."""
+    ensure_missions_directory()
+    missions: list[tuple[Optional[datetime], str, Mission]] = []
+
+    for mission_dir in sorted(MISSIONS_DIR.iterdir(), key=lambda path: path.name):
+        if not mission_dir.is_dir():
+            continue
+
+        try:
+            with open(mission_dir / "mission.json", "r") as f:
+                raw_metadata = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        mission = load_mission_metadata_v2(mission_dir.name)
+        if not mission:
+            continue
+
+        timestamp = _parse_persisted_timestamp(raw_metadata.get("updated_at"))
+        if timestamp is None:
+            timestamp = _parse_persisted_timestamp(raw_metadata.get("created_at"))
+        missions.append((timestamp, mission.id, mission))
+
+    return [
+        mission
+        for _, _, mission in sorted(
+            missions,
+            key=lambda item: (
+                item[0] is None,
+                -item[0].timestamp() if item[0] else 0,
+                item[1],
+            ),
+        )
+    ]
 
 
 def load_mission(mission_id: str) -> Optional[MissionLeg]:

@@ -1,6 +1,8 @@
-import { useMissions, useDeleteMission } from '../../hooks/api/useMissions';
+import { useLayoutEffect, useState } from 'react';
+import { useMissionsPage, useDeleteMission } from '../../hooks/api/useMissions';
 import { MissionCard } from './MissionCard';
 import { Button } from '../ui/button';
+import { MISSIONS_PAGE_SIZE } from '../../services/missions';
 
 interface MissionListProps {
   onSelectMission: (id: string) => void;
@@ -15,8 +17,25 @@ export function MissionList({
   onImport,
   onExport,
 }: MissionListProps) {
-  const { data: missions, isLoading, error } = useMissions();
+  const [page, setPage] = useState(1);
+  const {
+    data: missionPage,
+    isLoading,
+    error,
+  } = useMissionsPage(MISSIONS_PAGE_SIZE, (page - 1) * MISSIONS_PAGE_SIZE);
   const deleteMission = useDeleteMission();
+  const missions = missionPage?.missions;
+  const total = missionPage?.total ?? 0;
+  const totalPages = Math.ceil(total / MISSIONS_PAGE_SIZE);
+  const lastValidPage = Math.max(totalPages, 1);
+
+  useLayoutEffect(() => {
+    // Query results can shrink after a delete; correct before the empty page paints.
+    if (!missionPage || page <= lastValidPage) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(lastValidPage);
+  }, [lastValidPage, missionPage, page]);
 
   if (isLoading)
     return (
@@ -71,6 +90,57 @@ export function MissionList({
             />
           ))}
         </div>
+      )}
+
+      {total > MISSIONS_PAGE_SIZE && (
+        <nav
+          aria-label="Mission list pagination"
+          className="mt-6 flex flex-wrap items-center justify-between gap-3"
+        >
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPage((currentPage) => Math.max(currentPage - 1, 1))
+            }
+            disabled={page === 1}
+            aria-label="Previous page"
+          >
+            Previous
+          </Button>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span aria-live="polite">
+              Page {page} of {totalPages}
+            </span>
+            <label className="flex items-center gap-2">
+              <span className="sr-only">Page</span>
+              <select
+                aria-label="Page"
+                className="rounded-md border border-input bg-background px-2 py-1 text-foreground"
+                value={page}
+                onChange={(event) => setPage(Number(event.target.value))}
+              >
+                {Array.from(
+                  { length: totalPages },
+                  (_, index) => index + 1
+                ).map((pageNumber) => (
+                  <option key={pageNumber} value={pageNumber}>
+                    Page {pageNumber}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() =>
+              setPage((currentPage) => Math.min(currentPage + 1, lastValidPage))
+            }
+            disabled={page === totalPages}
+            aria-label="Next page"
+          >
+            Next
+          </Button>
+        </nav>
       )}
     </div>
   );
