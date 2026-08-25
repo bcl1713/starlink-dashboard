@@ -81,36 +81,49 @@ performance.
 
 ## Timeline, Preview, and Export Effects
 
-For a feasible selected track, the timeline builder uses an ephemeral derived
-route. It preserves source timing before the leave anchor, times the diversion
-at the selected effective speed, and applies `delta_seconds` once to downstream
-source-route timing and the final route arrival time. Timeline samples and their
-coverage/transport calculations therefore use the selected route basis.
+For a feasible selected track, the timeline builder attempts to use an ephemeral
+derived route. That route preserves source timing before the leave anchor, times
+the diversion at the selected effective speed, and applies `delta_seconds` once
+to downstream source-route timing and the final route arrival time.
+
+The builder can fall back to the planned source route even when the estimate is
+available. This occurs when it cannot reconstruct a leave-anchor timestamp from
+the adjacent source-route timestamps, including when either timestamp is absent
+or they are not strictly increasing. In that case, planning timing, timeline
+samples, and coverage/transport calculations remain planned-basis; they must not
+be labelled derived.
 
 The timeline preview exposes `route_basis` and `derived_route_estimate` next to
-its normal timeline data and samples. With no selection, or with an unavailable
-estimate, its basis is `planned` and `derived_route_estimate` is respectively
-`null` or an unavailable estimate.
+its normal timeline data and samples. `route_basis: "derived_estimate"` reports
+that a feasible estimate is available; it does not guarantee that the displayed
+timeline samples use derived timing. Under the leave-anchor timestamp fallback,
+the preview can report an available estimate and
+`route_basis: "derived_estimate"` while its timing remains planned-basis. With
+no selection, or with an unavailable estimate, its basis is `planned` and
+`derived_route_estimate` is respectively `null` or an unavailable estimate.
 
 Mission package export rebuilds each leg timeline from current leg settings
-before generating its per-leg CSV and PowerPoint artifacts. Consequently, a
-feasible selected derived route supplies the same recalculated timeline times
-used for those artifacts; export does not independently recompute a separate
-planned-only timeline. If rebuilding fails, package export can fall back to a
-cached timeline, so an export should be checked against the current preview when
-the route basis matters operationally.
+before generating its per-leg CSV and PowerPoint artifacts. When the derived
+route is built, export uses the same recalculated timeline times; it does not
+independently recompute a separate planned-only timeline. Under the leave-anchor
+timestamp fallback, however, those export times remain planned-basis. If
+rebuilding fails, package export can fall back to a cached timeline, so an
+export should be checked against the current preview when the route basis
+matters operationally.
 
 Current export artifacts consume the rebuilt timeline but do not add a dedicated
 `route_basis`, estimate-confidence, speed-source, or warning field. Treat an
-export's timing as derived only when its corresponding current timeline was
-built from a feasible selected estimate; otherwise it remains planned-basis.
+export's timing as derived only when its corresponding current timeline actually
+used a derived route. An available feasible estimate alone is insufficient: the
+leave-anchor timestamp fallback leaves the export planned-basis.
 
 ## API Fields
 
 When a Manual AR replacement is selected, preview responses include:
 
 - `route_basis` — `derived_estimate` for a feasible estimate, otherwise
-  `planned`
+  `planned`; a feasible estimate can still leave timeline and export timing
+  planned-basis when the leave-anchor timestamp cannot be reconstructed
 - `derived_route_estimate.available` — whether a derived estimate was built
 - `derived_route_estimate.estimated` — always true for this feature
 - `derived_route_estimate.unavailable_reason` — populated when unavailable
