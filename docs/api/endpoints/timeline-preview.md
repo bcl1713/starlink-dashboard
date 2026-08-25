@@ -1,8 +1,8 @@
 # Timeline Preview API Endpoint
 
-**Purpose**: Recalculate a mission leg timeline in real time without
-persisting the result to disk.
-**Audience**: API consumers, integrators, frontend developers
+**Purpose**: Recalculate a mission leg timeline in real time without persisting
+the result to disk. **Audience**: API consumers, integrators, frontend
+developers
 
 [Back to API endpoints](./README.md)
 
@@ -14,9 +14,9 @@ Generate a preview timeline for a mission leg using the current transport
 configuration and optional adjusted departure time.
 
 The endpoint returns the same timeline structure used by saved legs, plus route
-samples for preview rendering on the map.
-The frontend uses this endpoint whenever the user pauses editing long enough
-for the preview debounce to settle, so the UI and API stay in lockstep.
+samples for preview rendering on the map. The frontend uses this endpoint
+whenever the user pauses editing long enough for the preview debounce to settle,
+so the UI and API stay in lockstep.
 
 ### Request Body
 
@@ -30,9 +30,12 @@ The `transports` object matches the frontend `TimelinePreviewRequest` contract:
 
 - `initial_x_satellite_id` — string
 - `initial_ka_satellite_ids` — string array
-- `x_transitions[]` — objects with `id`, `latitude`, `longitude`, and `target_satellite_id`
+- `x_transitions[]` — objects with `id`, `latitude`, `longitude`, and
+  `target_satellite_id`
 - `ka_outages[]` — objects with `start_time` and `duration_seconds`
-- `aar_windows[]` — objects with `id`, `start_waypoint_name`, and `end_waypoint_name`
+- `aar_windows[]` — objects with `id`, `start_waypoint_name`, and
+  `end_waypoint_name`
+- `manual_route_splice` — optional selected Manual AR track and estimate input
 - `ku_overrides[]` — free-form override objects for Ku behavior
 
 ### Response Body
@@ -43,9 +46,23 @@ Returns a `MissionLegTimeline` object:
 - `created_at` — when the preview was generated
 - `segments[]` — ordered timeline segments
 - `advisories[]` — operator advisories, if any
-- `statistics` — summary metrics such as total, nominal, degraded, and
-  critical time
+- `statistics` — summary metrics such as total, nominal, degraded, and critical
+  time
 - `samples[]` — route samples used to render the preview map
+- `route_basis` — `planned` or `derived_estimate`
+- `derived_route_estimate` — selected Manual AR estimate metadata, or `null`
+  when no replacement is selected
+
+When `manual_route_splice` selects a feasible Manual AR track, the response
+reports an available derived-route estimate. The timeline builder uses derived
+timing and samples only when it can reconstruct the leave-anchor timestamp from
+adjacent source-route timestamps. If that reconstruction fails, the preview
+retains planned-basis timing and samples even though `route_basis` remains
+`derived_estimate` to denote estimate availability. The source KML remains
+unchanged. If no feasible splice is available, the response uses the planned
+route basis and supplies the structured unavailable estimate. See
+[Manual AR Derived-Route Estimates](../../missions/planning/manual-ar-derived-route-estimates.md)
+for connector limits, timing sources, confidence, and export implications.
 
 ### Status Codes
 
