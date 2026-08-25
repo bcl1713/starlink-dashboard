@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Service methods own their complete `/api/...` paths. Keep requests
+// same-origin so the Mission Planner reverse proxy forwards them to the API.
+// Do not configure a VITE API base: `/api` here would duplicate every path.
+const API_BASE_URL = '';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
