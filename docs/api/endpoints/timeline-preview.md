@@ -53,11 +53,14 @@ Returns a `MissionLegTimeline` object:
 - `derived_route_estimate` — selected Manual AR estimate metadata, or `null`
   when no replacement is selected
 
-When `manual_route_splice` selects a feasible Manual AR track, the route samples
-and timeline are calculated from an explicitly estimated derived route. The
-source KML remains unchanged. If no feasible splice is available, the response
-uses the planned route basis and supplies the structured unavailable estimate.
-See
+When `manual_route_splice` selects a feasible Manual AR track, the response
+reports an available derived-route estimate. The timeline builder uses derived
+timing and samples only when it can reconstruct the leave-anchor timestamp from
+adjacent source-route timestamps. If that reconstruction fails, the preview
+retains planned-basis timing and samples even though `route_basis` remains
+`derived_estimate` to denote estimate availability. The source KML remains
+unchanged. If no feasible splice is available, the response uses the planned
+route basis and supplies the structured unavailable estimate. See
 [Manual AR Derived-Route Estimates](../../missions/planning/manual-ar-derived-route-estimates.md)
 for connector limits, timing sources, confidence, and export implications.
 
