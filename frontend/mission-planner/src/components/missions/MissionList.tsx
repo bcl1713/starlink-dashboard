@@ -31,9 +31,11 @@ export function MissionList({
 
   useLayoutEffect(() => {
     // Query results can shrink after a delete; correct before the empty page paints.
+    if (!missionPage || page <= lastValidPage) return;
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPage((currentPage) => Math.min(currentPage, lastValidPage));
-  }, [lastValidPage]);
+    setPage(lastValidPage);
+  }, [lastValidPage, missionPage, page]);
 
   if (isLoading)
     return (

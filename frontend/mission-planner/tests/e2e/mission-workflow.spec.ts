@@ -196,7 +196,10 @@ test.describe('Mission Workflow', () => {
           .match(/offset=(\d+)/)?.[1] ?? 0
       );
       await route.fulfill({
-        headers: { 'X-Total-Count': String(missions.length) },
+        headers: {
+          'Access-Control-Expose-Headers': 'X-Total-Count',
+          'X-Total-Count': String(missions.length),
+        },
         json: missions.slice(offset, offset + 25),
       });
     });
@@ -232,7 +235,7 @@ test.describe('Mission Workflow', () => {
       metadata: {},
     }));
 
-    await page.route('**/api/v2/missions*', async (route) => {
+    await page.route('**/api/v2/missions**', async (route) => {
       if (route.request().method() === 'DELETE') {
         missions = missions.filter((mission) => mission.id !== 'mission-1');
         await route.fulfill({ status: 204 });
@@ -246,7 +249,10 @@ test.describe('Mission Workflow', () => {
           .match(/offset=(\d+)/)?.[1] ?? 0
       );
       await route.fulfill({
-        headers: { 'X-Total-Count': String(missions.length) },
+        headers: {
+          'Access-Control-Expose-Headers': 'X-Total-Count',
+          'X-Total-Count': String(missions.length),
+        },
         json: missions.slice(offset, offset + 25),
       });
     });
