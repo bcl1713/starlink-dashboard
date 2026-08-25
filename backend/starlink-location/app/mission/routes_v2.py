@@ -1688,7 +1688,12 @@ async def preview_leg_timeline(
                     "unavailable_reason": "selected_track_not_found",
                 }
             else:
-                estimate = build_derived_route_estimate(source_route, selected_track)
+                preview_route = route_with_adjusted_departure(
+                    source_route, preview_leg.adjusted_departure_time
+                )
+                estimate = build_derived_route_estimate(
+                    preview_route, selected_track, splice
+                )
                 response["route_basis"] = (
                     "derived_estimate" if estimate.available else "planned"
                 )

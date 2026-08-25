@@ -6,9 +6,11 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import ValidationError
 
+from app.mission.derived_route import build_derived_route_estimate
 from app.mission.models import (
     ManualAARTrack,
     ManualAARTrackPoint,
+    ManualRouteSplice,
     Mission,
     MissionLeg,
     TimelineStatus,
@@ -184,3 +186,100 @@ def test_manual_aar_track_degrades_x_between_projected_endpoints():
         (start + timedelta(minutes=30), start + timedelta(minutes=90))
     ]
     assert "Manual AR Track: AR deviation" in degraded[0].reasons[0]
+
+
+def test_selected_feasible_splice_drives_samples_eta_and_selected_x_interval():
+    """One selected feasible track uses a single derived geometry/timing basis."""
+    start = datetime(2026, 8, 13, 12, 0, tzinfo=timezone.utc)
+    source_route = _timed_manual_track_route(start)
+    source_before = source_route.model_dump(mode="json")
+    route_manager = MagicMock()
+    route_manager.get_route.return_value = source_route
+    manual_track = ManualAARTrack(
+        id="selected-track",
+        name="Estimated AR deviation",
+        points=[
+            ManualAARTrackPoint(latitude=50.0, longitude=-49.0),
+            ManualAARTrackPoint(latitude=30.0, longitude=-49.0),
+        ],
+    )
+    baseline_leg = MissionLeg(
+        id="derived-route-leg",
+        name="Derived route leg",
+        route_id="manual-track-route",
+        transports=TransportConfig(initial_x_satellite_id="X-1"),
+    )
+    estimated_leg = baseline_leg.model_copy(
+        update={
+            "transports": TransportConfig(
+                initial_x_satellite_id="X-1",
+                manual_aar_tracks=[manual_track],
+                manual_route_splice=ManualRouteSplice(
+                    enabled_track_id=manual_track.id,
+                    speed_knots=500.0,
+                ),
+            )
+        }
+    )
+
+    baseline, _ = build_mission_timeline(
+        baseline_leg, route_manager=route_manager, coverage_sampler=None, include_samples=True
+    )
+    estimated, _ = build_mission_timeline(
+        estimated_leg, route_manager=route_manager, coverage_sampler=None, include_samples=True
+    )
+
+    assert source_route.model_dump(mode="json") == source_before
+    assert estimated.samples != baseline.samples
+    estimate = build_derived_route_estimate(
+        source_route, manual_track, estimated_leg.transports.manual_route_splice
+    )
+    assert estimate.available is True
+    assert (estimated.segments[-1].end_time - baseline.segments[-1].end_time).total_seconds() == pytest.approx(
+        estimate.delta_seconds
+    )
+    degraded = [
+        segment for segment in estimated.segments if segment.status == TimelineStatus.DEGRADED
+    ]
+    assert any("Estimated AR deviation" in reason for segment in degraded for reason in segment.reasons)
+
+
+def test_unavailable_selected_splice_leaves_planned_timeline_unchanged():
+    """A remote selected track returns the same planned samples, ETA, and outages."""
+    start = datetime(2026, 8, 13, 12, 0, tzinfo=timezone.utc)
+    route_manager = MagicMock()
+    route_manager.get_route.return_value = _timed_manual_track_route(start)
+    remote_track = ManualAARTrack(
+        id="remote-track",
+        name="Remote AR",
+        points=[
+            ManualAARTrackPoint(latitude=80.0, longitude=0.0),
+            ManualAARTrackPoint(latitude=70.0, longitude=0.0),
+        ],
+    )
+    baseline_leg = MissionLeg(
+        id="unavailable-leg",
+        name="Unavailable splice leg",
+        route_id="manual-track-route",
+        transports=TransportConfig(initial_x_satellite_id="X-1"),
+    )
+    unavailable_leg = baseline_leg.model_copy(
+        update={
+            "transports": TransportConfig(
+                initial_x_satellite_id="X-1",
+                manual_aar_tracks=[remote_track],
+                manual_route_splice=ManualRouteSplice(enabled_track_id=remote_track.id),
+            )
+        }
+    )
+
+    baseline, _ = build_mission_timeline(
+        baseline_leg, route_manager=route_manager, coverage_sampler=None, include_samples=True
+    )
+    unavailable, _ = build_mission_timeline(
+        unavailable_leg, route_manager=route_manager, coverage_sampler=None, include_samples=True
+    )
+
+    assert unavailable.model_dump(mode="json", exclude={"created_at"}) == baseline.model_dump(
+        mode="json", exclude={"created_at"}
+    )
