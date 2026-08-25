@@ -44,6 +44,10 @@ from app.mission.timeline_builder.stats import (
     attach_statistics,
     summarize_timeline,
 )
+from app.mission.derived_route import (
+    build_derived_route_estimate,
+    derived_route_for_estimate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +93,19 @@ def build_mission_timeline(
         raise TimelineComputationError(f"Route {mission.route_id} not loaded")
 
     route = route_with_adjusted_departure(route, mission.adjusted_departure_time)
+    splice = mission.transports.manual_route_splice
+    if splice:
+        selected_track = next(
+            (
+                track
+                for track in mission.transports.manual_aar_tracks
+                if track.id == splice.enabled_track_id
+            ),
+            None,
+        )
+        if selected_track:
+            estimate = build_derived_route_estimate(route, selected_track)
+            route = derived_route_for_estimate(route, estimate)
     mission_start, mission_end = derive_mission_window(route)
     projector = RouteTemporalProjector(route, mission_start, mission_end)
 

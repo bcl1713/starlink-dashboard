@@ -37,6 +37,7 @@ from app.mission.storage import (
     list_mission_metadata_v2,
 )
 from app.mission.package import export_mission_package
+from app.mission.derived_route import build_derived_route_estimate
 from app.mission.timeline_service import build_mission_timeline
 from app.mission.validation import validate_adjusted_departure_time
 from app.services.route_manager import RouteManager
@@ -1667,7 +1668,35 @@ async def preview_leg_timeline(
             include_samples=True,
         )
 
-        return timeline.model_dump(mode="json")
+        response = timeline.model_dump(mode="json")
+        splice = preview_leg.transports.manual_route_splice
+        if splice:
+            source_route = route_manager.get_route(preview_leg.route_id)
+            selected_track = next(
+                (
+                    track
+                    for track in preview_leg.transports.manual_aar_tracks
+                    if track.id == splice.enabled_track_id
+                ),
+                None,
+            )
+            if source_route is None or selected_track is None:
+                response["route_basis"] = "planned"
+                response["derived_route_estimate"] = {
+                    "available": False,
+                    "estimated": True,
+                    "unavailable_reason": "selected_track_not_found",
+                }
+            else:
+                estimate = build_derived_route_estimate(source_route, selected_track)
+                response["route_basis"] = (
+                    "derived_estimate" if estimate.available else "planned"
+                )
+                response["derived_route_estimate"] = estimate.as_dict()
+        else:
+            response["route_basis"] = "planned"
+            response["derived_route_estimate"] = None
+        return response
 
     except HTTPException:
         raise
