@@ -44,6 +44,10 @@ from app.mission.timeline_builder.stats import (
     attach_statistics,
     summarize_timeline,
 )
+from app.mission.derived_route import (
+    build_derived_route_estimate,
+    derived_route_for_estimate,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +93,22 @@ def build_mission_timeline(
         raise TimelineComputationError(f"Route {mission.route_id} not loaded")
 
     route = route_with_adjusted_departure(route, mission.adjusted_departure_time)
+    splice = mission.transports.manual_route_splice
+    selected_track = None
+    splice_available = False
+    if splice:
+        selected_track = next(
+            (
+                track
+                for track in mission.transports.manual_aar_tracks
+                if track.id == splice.enabled_track_id
+            ),
+            None,
+        )
+        if selected_track:
+            estimate = build_derived_route_estimate(route, selected_track, splice)
+            splice_available = estimate.available
+            route = derived_route_for_estimate(route, estimate)
     mission_start, mission_end = derive_mission_window(route)
     projector = RouteTemporalProjector(route, mission_start, mission_end)
 
@@ -133,9 +153,17 @@ def build_mission_timeline(
         rule_engine.add_aar_window_events(
             window.start_time, window.end_time, window.name
         )
-    apply_manual_aar_tracks(
-        rule_engine, mission.transports.manual_aar_tracks, projector
-    )
+    # The selected replacement track is an estimated route basis only when its
+    # splice is feasible.  Other saved Manual AR tracks remain independent X
+    # overlays; an unavailable selected splice leaves planned output unchanged.
+    manual_tracks = [
+        track
+        for track in mission.transports.manual_aar_tracks
+        if not splice or track.id != splice.enabled_track_id
+    ]
+    if selected_track and splice_available:
+        manual_tracks.append(selected_track)
+    apply_manual_aar_tracks(rule_engine, manual_tracks, projector)
 
     transition_schedule = apply_x_transitions(
         rule_engine, mission, projector, aar_windows

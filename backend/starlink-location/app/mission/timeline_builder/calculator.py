@@ -175,8 +175,56 @@ class RouteTemporalProjector:
     def timestamp_for_distance(self, distance: float) -> datetime:
         if self.total_distance <= 0:
             return self.start_time
+        distance = max(0.0, min(distance, self.total_distance))
+        for index in range(1, len(self.cumulative_distances)):
+            previous = self.route.points[index - 1]
+            current = self.route.points[index]
+            if (
+                previous.expected_arrival_time is None
+                or current.expected_arrival_time is None
+                or current.expected_arrival_time <= previous.expected_arrival_time
+                or distance > self.cumulative_distances[index]
+            ):
+                continue
+            span = max(
+                self.cumulative_distances[index] - self.cumulative_distances[index - 1],
+                1e-6,
+            )
+            fraction = (distance - self.cumulative_distances[index - 1]) / span
+            return ensure_timezone(previous.expected_arrival_time) + (
+                ensure_timezone(current.expected_arrival_time)
+                - ensure_timezone(previous.expected_arrival_time)
+            ) * fraction
         ratio = max(0.0, min(1.0, distance / self.total_distance))
         return self.start_time + timedelta(seconds=ratio * self.duration_seconds)
+
+    def distance_for_timestamp(self, timestamp: datetime) -> float:
+        """Map a timestamp onto explicit monotonic route timings when available."""
+        timestamp = ensure_timezone(timestamp)
+        for index in range(1, len(self.cumulative_distances)):
+            previous = self.route.points[index - 1]
+            current = self.route.points[index]
+            if (
+                previous.expected_arrival_time is None
+                or current.expected_arrival_time is None
+                or current.expected_arrival_time <= previous.expected_arrival_time
+            ):
+                continue
+            start = ensure_timezone(previous.expected_arrival_time)
+            end = ensure_timezone(current.expected_arrival_time)
+            if start <= timestamp <= end:
+                fraction = (timestamp - start).total_seconds() / max(
+                    (end - start).total_seconds(), 1e-6
+                )
+                return self.cumulative_distances[index - 1] + fraction * (
+                    self.cumulative_distances[index]
+                    - self.cumulative_distances[index - 1]
+                )
+        ratio = max(
+            0.0,
+            min(1.0, (timestamp - self.start_time).total_seconds() / self.duration_seconds),
+        )
+        return self.total_distance * ratio
 
     def sample_at_distance(self, distance: float) -> RouteSample:
         distance = max(0.0, min(distance, self.total_distance))
@@ -309,8 +357,7 @@ def generate_timeline_samples(
     while True:
         elapsed = min(step * interval_seconds, total_duration)
         timestamp = projector.start_time + timedelta(seconds=elapsed)
-        ratio = (elapsed / total_duration) if total_duration > 0 else 0.0
-        distance = total_distance * ratio
+        distance = projector.distance_for_timestamp(timestamp)
 
         sample = projector.sample_at_distance(distance)
         # Ensure timestamp aligns with the simulation clock

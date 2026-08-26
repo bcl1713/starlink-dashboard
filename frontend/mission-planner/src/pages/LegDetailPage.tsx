@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { useTimeline } from '../hooks/api/useTimeline';
@@ -11,8 +11,13 @@ import { TimingSection } from './LegDetailPage/TimingSection';
 import { TimelinePreviewSection } from '../components/timeline/TimelinePreviewSection';
 import { Button } from '../components/ui/button';
 import type { SatelliteConfig } from '../types/satellite';
-import type { AARConfig, ManualAARTrack } from '../types/aar';
+import type {
+  AARConfig,
+  ManualAARTrack,
+  ManualRouteSplice,
+} from '../types/aar';
 import type { TimelinePreviewRequest } from '../services/timeline';
+import { ManualRouteEstimateControls } from '../components/aar/ManualRouteEstimateControls';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{
@@ -28,6 +33,13 @@ export function LegDetailPage() {
 
   // Find the current leg
   const leg = mission?.legs.find((l) => l.id === legId);
+  const [manualRouteSpliceOverride, setManualRouteSplice] = useState<
+    ManualRouteSplice | null | undefined
+  >();
+  const manualRouteSplice =
+    manualRouteSpliceOverride === undefined
+      ? (leg?.transports.manual_route_splice ?? undefined)
+      : (manualRouteSpliceOverride ?? undefined);
 
   // Use custom hook for data management
   const {
@@ -73,6 +85,7 @@ export function LegDetailPage() {
           override_start_elapsed: s.override_start_elapsed,
         })),
         manual_aar_tracks: aarConfig.manualTracks,
+        manual_route_splice: manualRouteSplice,
         ku_overrides: satelliteConfig.ku_outages.map((k) => ({
           id: k.id,
           start_time: k.start_time,
@@ -90,6 +103,7 @@ export function LegDetailPage() {
     satelliteConfig.ku_outages,
     aarConfig.segments,
     aarConfig.manualTracks,
+    manualRouteSplice,
   ]);
 
   // Memoize preview options to prevent unnecessary hook re-runs
@@ -145,6 +159,7 @@ export function LegDetailPage() {
         ka_outages: satelliteConfig.ka_outages,
         aar_windows: updatedAARConfig.segments,
         manual_aar_tracks: updatedAARConfig.manualTracks,
+        manual_route_splice: manualRouteSplice,
         ku_overrides: satelliteConfig.ku_outages,
       },
     });
@@ -180,6 +195,7 @@ export function LegDetailPage() {
           ka_outages: satelliteConfig.ka_outages,
           aar_windows: aarConfig.segments,
           manual_aar_tracks: aarConfig.manualTracks,
+          manual_route_splice: manualRouteSplice,
           ku_overrides: satelliteConfig.ku_outages,
         },
       });
@@ -286,6 +302,16 @@ export function LegDetailPage() {
             onSatelliteConfigChange={handleSatelliteConfigChange}
             onAARConfigChange={handleAARConfigChange}
             onManualTrackSave={handleManualTrackSave}
+          />
+
+          <ManualRouteEstimateControls
+            tracks={aarConfig.manualTracks}
+            splice={manualRouteSplice}
+            estimate={preview?.derived_route_estimate}
+            onChange={(splice) => {
+              setManualRouteSplice(splice ?? null);
+              setHasUnsavedChanges(true);
+            }}
           />
 
           <TimelinePreviewSection

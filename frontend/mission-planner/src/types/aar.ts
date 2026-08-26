@@ -18,6 +18,16 @@ export interface ManualAARTrack {
   points: ManualAARTrackPoint[];
 }
 
+/** Persisted operator input only; derived preview geometry is never saved. */
+export interface ManualRouteSplice {
+  enabled_track_id: string;
+  leave_segment_index?: number;
+  leave_fraction?: number;
+  rejoin_segment_index?: number;
+  rejoin_fraction?: number;
+  speed_knots?: number;
+}
+
 export interface AARConfig {
   segments: AARSegment[];
   manualTracks: ManualAARTrack[];

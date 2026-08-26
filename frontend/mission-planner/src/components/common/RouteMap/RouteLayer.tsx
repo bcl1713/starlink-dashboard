@@ -4,6 +4,7 @@ import type { LatLngExpression } from 'leaflet';
 import type { XBandTransition } from '../../../types/satellite';
 import type { AARSegment, ManualAARTrack } from '../../../types/aar';
 import type { KaTransition } from '../../../types/timeline';
+import type { DerivedRouteEstimate } from '../../../services/timeline';
 import { logger } from '../../../utils/logger';
 import { formatTime24Hour } from '@/lib/utils';
 
@@ -17,6 +18,24 @@ interface RouteLayerProps {
   coordinates: LatLngExpression[];
   normalizedCoordinates: LatLngExpression[];
   isIDLCrossing: boolean;
+  derivedRouteEstimate?: DerivedRouteEstimate | null;
+}
+
+function splitAtAntimeridian(
+  points: Array<{ latitude: number; longitude: number }>
+): [number, number][][] {
+  return points
+    .reduce<[number, number][][]>((segments, point, index) => {
+      if (
+        index > 0 &&
+        Math.abs(point.longitude - points[index - 1].longitude) > 180
+      ) {
+        segments.push([]);
+      }
+      segments[segments.length - 1].push([point.latitude, point.longitude]);
+      return segments;
+    }, [[]])
+    .filter((segment) => segment.length > 1);
 }
 
 /**
@@ -31,6 +50,7 @@ export function RouteLayer({
   getWaypointCoordinateIndex,
   normalizedCoordinates,
   isIDLCrossing,
+  derivedRouteEstimate,
 }: RouteLayerProps) {
   const getManualTrackPoints = (track: ManualAARTrack): [number, number][] => {
     const crossesAntimeridian = track.points.some(
@@ -78,6 +98,21 @@ export function RouteLayer({
           opacity={0.9}
         />
       ))}
+
+      {derivedRouteEstimate?.available &&
+        splitAtAntimeridian(derivedRouteEstimate.points || []).map(
+          (segment, index) => (
+            <Polyline
+              key={`derived-estimate-${index}`}
+              positions={segment}
+              color="var(--route-manual-track)"
+              weight={5}
+              opacity={0.95}
+            >
+              <Popup>Estimated route (derived, not telemetry)</Popup>
+            </Polyline>
+          )
+        )}
 
       {/* Render X-Band transition markers */}
       {xbandTransitions.map((transition) => {

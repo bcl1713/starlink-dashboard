@@ -241,6 +241,21 @@ class ManualAARTrack(BaseModel):
         return points
 
 
+class ManualRouteSplice(BaseModel):
+    """Saved operator selection/override for one estimated Manual AR splice.
+
+    Derived geometry and timings intentionally do not belong in persisted
+    mission data; callers rebuild them from the source route and raw track.
+    """
+
+    enabled_track_id: str = Field(..., min_length=1)
+    leave_segment_index: Optional[int] = Field(default=None, ge=0)
+    leave_fraction: Optional[float] = Field(default=None, ge=0, le=1)
+    rejoin_segment_index: Optional[int] = Field(default=None, ge=0)
+    rejoin_fraction: Optional[float] = Field(default=None, ge=0, le=1)
+    speed_knots: Optional[float] = Field(default=None, gt=0, le=1000)
+
+
 class KuOutageOverride(BaseModel):
     """Manual override for Ku transport outage (LEO link failure).
 
@@ -298,6 +313,10 @@ class TransportConfig(BaseModel):
     manual_aar_tracks: list[ManualAARTrack] = Field(
         default_factory=list,
         description="Operator-created AAR tracks independent of the planned route",
+    )
+    manual_route_splice: Optional[ManualRouteSplice] = Field(
+        default=None,
+        description="Optional selected Manual AR replacement estimate input only",
     )
     ku_overrides: list[KuOutageOverride] = Field(
         default_factory=list,
