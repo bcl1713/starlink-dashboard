@@ -117,7 +117,11 @@ function derivedEstimate(
   };
 }
 
-async function mockManualRouteApis(page: Page, persistedMission: typeof mission) {
+async function mockManualRouteApis(
+  page: Page,
+  persistedMission: typeof mission,
+  onPreviewRouteBasis?: (routeBasis: string) => void
+) {
   await page.route('**/api/v2/missions/manual-route-mission', async (route) => {
     await route.fulfill({ json: persistedMission });
   });
@@ -149,15 +153,18 @@ async function mockManualRouteApis(page: Page, persistedMission: typeof mission)
     async (route) => {
       const request = route.request().postDataJSON();
       const splice = request.transports.manual_route_splice as Splice | null;
+      const estimate = splice
+        ? derivedEstimate(splice.enabled_track_id, splice)
+        : null;
+      const routeBasis = estimate?.available ? 'derived_estimate' : 'planned';
+      onPreviewRouteBasis?.(routeBasis);
       await route.fulfill({
         json: {
           mission_leg_id: 'manual-route-leg',
           created_at: '2026-08-26T00:00:00Z',
           segments: [],
-          route_basis: splice ? 'derived_estimate' : 'planned',
-          derived_route_estimate: splice
-            ? derivedEstimate(splice.enabled_track_id, splice)
-            : null,
+          route_basis: routeBasis,
+          derived_route_estimate: estimate,
         },
       });
     }
@@ -256,7 +263,10 @@ test.describe('Manual AR derived route estimates', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const persistedMission = structuredClone(mission);
-    await mockManualRouteApis(page, persistedMission);
+    let unavailableRouteBasis: string | undefined;
+    await mockManualRouteApis(page, persistedMission, (routeBasis) => {
+      unavailableRouteBasis = routeBasis;
+    });
 
     await page.goto('/missions/manual-route-mission/legs/manual-route-leg');
     await page
@@ -285,5 +295,10 @@ test.describe('Manual AR derived route estimates', () => {
     await expect(page.getByRole('alert')).toContainText(
       'No feasible estimate (no_feasible_splice). The planned route and timeline remain in use.'
     );
+    await expect.poll(() => unavailableRouteBasis).toBe('planned');
+    await expect(
+      page.getByText('Estimated map layer: derived estimate, not telemetry.')
+    ).not.toBeVisible();
+    await expect(visibleMapPaths).toHaveCount(0);
   });
 });
