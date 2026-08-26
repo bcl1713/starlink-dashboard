@@ -42,6 +42,7 @@ from app.mission.timeline_service import build_mission_timeline
 from app.mission.validation import validate_adjusted_departure_time
 from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
+from app.models.poi import POICreate
 from app.mission.dependencies import get_route_manager, get_poi_manager
 from app.satellites.coverage import CoverageSampler
 from app.mission.timeline_builder.calculator import (
@@ -55,6 +56,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_PAGINATION_LIMIT = 10  # Default number of missions to return
 MAX_PAGINATION_LIMIT = 100  # Maximum number of missions to return
 MISSION_PACKAGE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+MISSION_PACKAGE_ENDPOINT_MARKER = "Imported by mission-package endpoint sync"
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
 
@@ -438,9 +440,17 @@ def _import_routes_from_zip(
 
             # Save route KML to routes directory
             routes_dir = Path(route_manager.routes_dir)
+            routes_dir.mkdir(parents=True, exist_ok=True)
             kml_path = routes_dir / f"{route_id}.kml"
             with open(kml_path, "wb") as f:
                 f.write(kml_content)
+
+            # Package import must make routes immediately available to the
+            # endpoint and timeline restoration that follows; do not rely on
+            # the filesystem watcher noticing the copied file in time.
+            route_manager._load_route_file(str(kml_path))
+            if route_manager.get_route(route_id) is None:
+                raise ValueError("route could not be parsed after import")
 
             routes_imported += 1
             logger.info(f"Imported route: {route_id}")
@@ -570,6 +580,67 @@ def _import_leg_pois(
     return pois_imported, warnings
 
 
+def _endpoint_marker(leg_id: str, role: str) -> str:
+    """Return the durable ownership marker for one imported leg endpoint."""
+    return f"{MISSION_PACKAGE_ENDPOINT_MARKER}; leg={leg_id}; role={role}"
+
+
+def _synchronize_imported_endpoint_pois(
+    mission: Mission,
+    route_manager: RouteManager,
+    poi_manager: POIManager,
+) -> tuple[int, list[str]]:
+    """Restore exactly one owned departure and arrival POI for each imported leg.
+
+    Endpoint POIs are owned by the mission/route association plus a durable
+    marker in their description. Re-imports only replace those owned markers,
+    leaving explicit user POIs and other mission or satellite events untouched.
+    """
+    created = 0
+    warnings = []
+
+    for leg in mission.legs:
+        route = route_manager.get_route(leg.route_id)
+        if route is None:
+            warnings.append(
+                f"Endpoint POIs not restored for leg {leg.id}: route unavailable"
+            )
+            continue
+        if not route.points:
+            warnings.append(
+                f"Endpoint POIs not restored for leg {leg.id}: route has no endpoints"
+            )
+            continue
+
+        endpoints = (
+            ("departure", "airport", route.points[0]),
+            ("arrival", "flag", route.points[-1]),
+        )
+        owned_markers = {_endpoint_marker(leg.id, role) for role, _, _ in endpoints}
+        for poi in poi_manager.list_pois(
+            route_id=leg.route_id, mission_id=mission.id
+        ):
+            if poi.description in owned_markers:
+                poi_manager.delete_poi(poi.id)
+
+        for role, icon, point in endpoints:
+            poi_manager.create_poi(
+                POICreate(
+                    name=f"{leg.name} {role.title()}",
+                    latitude=point.latitude,
+                    longitude=point.longitude,
+                    icon=icon,
+                    category=role,
+                    description=_endpoint_marker(leg.id, role),
+                    route_id=leg.route_id,
+                    mission_id=mission.id,
+                )
+            )
+            created += 1
+
+    return created, warnings
+
+
 def _generate_timelines_for_imported_legs(
     mission: Mission,
     route_manager: RouteManager,
@@ -633,6 +704,7 @@ async def import_mission(
         warnings = []
         routes_imported = 0
         pois_imported = 0
+        endpoint_pois_restored = 0
         satellites_imported = 0
         satellites_updated = 0
 
@@ -706,6 +778,18 @@ async def import_mission(
                         zf, poi_manager, poi_files, satellite_file, tmppath
                     )
                     warnings.extend(poi_warnings)
+
+                    if route_manager:
+                        endpoint_pois_restored, endpoint_warnings = (
+                            _synchronize_imported_endpoint_pois(
+                                mission, route_manager, poi_manager
+                            )
+                        )
+                        warnings.extend(endpoint_warnings)
+                    else:
+                        warnings.append(
+                            "Endpoint POIs not restored: route manager unavailable"
+                        )
                 else:
                     warnings.append("POI manager not available, POIs not imported")
 
@@ -716,6 +800,7 @@ async def import_mission(
                     "leg_count": len(mission.legs),
                     "routes_imported": routes_imported,
                     "pois_imported": pois_imported,
+                    "endpoint_pois_restored": endpoint_pois_restored,
                     "satellites_imported": satellites_imported,
                     "satellites_updated": satellites_updated,
                     "warnings": warnings,
