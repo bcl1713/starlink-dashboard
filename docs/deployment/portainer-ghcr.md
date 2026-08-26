@@ -104,7 +104,9 @@ For an authorized non-live stack, use Portainer's Git-based stack update flow:
    needed for rollback.
 5. Review the rendered Compose configuration before submitting the update. It
    must use GHCR images, include the external `proxy` network, and have no local
-   `build:` entries or repository `.env` dependency.
+   `build:` entries or repository `.env` dependency. Mission Planner traffic
+   must continue through the proxy's same-origin route; do not replace it with
+   direct container or host-port routing.
 6. Perform only the authorized non-live validation. Stop rather than attempting
    a live deployment or changing external routing.
 
@@ -140,6 +142,23 @@ A production rollout occurs only after all of the following are true:
 Workers must stop at this gate. They must not deploy or redeploy Portainer stack
 `180`, touch endpoint `3`, alter external DNS/proxy routing, or recreate live
 volumes.
+
+## Authorized Live Verification
+
+Only the Brian-approved operator performs this verification after the live gate
+has been approved. Use the approved environment's values in Portainer; the
+placeholder URLs below must not be replaced with live values in this repository:
+
+```bash
+curl --fail <DASHBOARD_PUBLIC_URL>/health
+curl --fail <PROMETHEUS_INTERNAL_URL>/-/ready
+curl --fail <MISSION_PLANNER_PUBLIC_URL>/api/v2/missions
+```
+
+The approved operator also checks the public hostnames `starlink.hblucas.org`
+and `mission-planner.hblucas.org` through their approved routes. Mission Planner
+must remain reachable through the same-origin proxy route; do not expose a
+direct backend route as a replacement.
 
 ## Operator Completion Record
 
