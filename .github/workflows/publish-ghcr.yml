@@ -20,6 +20,12 @@ jobs:
             context: ./backend/starlink-location
           - image: ghcr.io/${{ github.repository }}/mission-planner
             context: ./frontend/mission-planner
+          - image: ghcr.io/${{ github.repository }}/prometheus
+            context: .
+            file: ./deployment/prometheus/Dockerfile
+          - image: ghcr.io/${{ github.repository }}/grafana
+            context: .
+            file: ./deployment/grafana/Dockerfile
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -47,6 +53,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.file || 'Dockerfile' }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: |
