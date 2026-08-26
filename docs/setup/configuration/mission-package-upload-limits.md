@@ -1,6 +1,8 @@
 # Mission Package Upload Limit
 
-[Back to Configuration](README.md) | [Mission package import behavior](../../missions/mission-package-import.md) | [Back to Setup](../README.md)
+[Back to Configuration](README.md) |
+[Mission package import behavior](../../missions/mission-package-import.md) |
+[Back to Setup](../README.md)
 
 ---
 
@@ -131,4 +133,6 @@ limit and error handling before retrying.
 
 ---
 
-[Back to Configuration](README.md) | [Mission package import behavior](../../missions/mission-package-import.md) | [Back to Setup](../README.md)
+[Back to Configuration](README.md) |
+[Mission package import behavior](../../missions/mission-package-import.md) |
+[Back to Setup](../README.md)

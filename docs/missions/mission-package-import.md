@@ -22,10 +22,10 @@ application-limit details.
 For every imported leg whose referenced route is available and has endpoints,
 the importer restores exactly two endpoint POIs:
 
-| Role | Source | POI category | Icon |
-| --- | --- | --- | --- |
-| Departure | First point in the leg route | `departure` | `airport` |
-| Arrival | Last point in the leg route | `arrival` | `flag` |
+| Role      | Source                       | POI category | Icon      |
+| --------- | ---------------------------- | ------------ | --------- |
+| Departure | First point in the leg route | `departure`  | `airport` |
+| Arrival   | Last point in the leg route  | `arrival`    | `flag`    |
 
 Each restored endpoint POI is associated with both the imported parent mission
 and its route. This makes the endpoints available to mission- and route-scoped
@@ -65,11 +65,11 @@ route points.
 An import can succeed while returning warnings. Always inspect the `warnings`
 array before treating the restored mission as ready for use.
 
-| Warning condition | Example warning | Operator action |
-| --- | --- | --- |
-| Referenced route is unavailable | `Endpoint POIs not restored for leg <leg-id>: route unavailable` | Confirm that the package contains the leg's expected `routes/<route-id>.kml` file and that it parses successfully, then re-import. |
-| Route has no usable endpoints | `Endpoint POIs not restored for leg <leg-id>: route has no endpoints` | Correct the route KML so it has route points, then re-import. |
-| Route manager is unavailable | `Endpoint POIs not restored: route manager unavailable` | Restore backend route-management availability and retry the import. |
+| Warning condition               | Example warning                                                       | Operator action                                                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Referenced route is unavailable | `Endpoint POIs not restored for leg <leg-id>: route unavailable`      | Confirm that the package contains the leg's expected `routes/<route-id>.kml` file and that it parses successfully, then re-import. |
+| Route has no usable endpoints   | `Endpoint POIs not restored for leg <leg-id>: route has no endpoints` | Correct the route KML so it has route points, then re-import.                                                                      |
+| Route manager is unavailable    | `Endpoint POIs not restored: route manager unavailable`               | Restore backend route-management availability and retry the import.                                                                |
 
 Route-import and packaged-POI warnings can also appear in the same array. A
 nonzero `routes_imported` count alone is not sufficient evidence that endpoint
