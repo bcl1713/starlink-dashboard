@@ -44,7 +44,10 @@ from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
 from app.mission.dependencies import get_route_manager, get_poi_manager
 from app.satellites.coverage import CoverageSampler
-from app.mission.timeline_builder.calculator import derive_mission_window
+from app.mission.timeline_builder.calculator import (
+    derive_mission_window,
+    route_with_adjusted_departure,
+)
 
 logger = logging.getLogger(__name__)
 
