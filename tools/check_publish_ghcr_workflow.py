@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 
@@ -57,15 +58,34 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
     """Validate each expected GHCR image has an explicit, usable build contract."""
     errors: list[str] = []
     entries = workflow_entries(workflow_path)
-    found_images: set[str] = set()
+    image_names = [entry["image"].rsplit("/", maxsplit=1)[-1] for entry in entries]
+    image_counts = Counter(image_names)
+    found_images = set(image_names)
     workflow_text = workflow_path.read_text(encoding="utf-8")
 
     if "matrix.file || 'Dockerfile'" in workflow_text:
         errors.append("build action must not fall back to an ambiguous Dockerfile")
 
+    expected_entry_count = len(EXPECTED_IMAGES)
+    if len(entries) != expected_entry_count:
+        errors.append(
+            "publish matrix must contain exactly "
+            f"{expected_entry_count} entries, got {len(entries)}"
+        )
+
+    duplicate_images = sorted(
+        image_name
+        for image_name, count in image_counts.items()
+        if image_name in EXPECTED_IMAGES and count > 1
+    )
+    if duplicate_images:
+        errors.append(
+            "duplicate publish matrix images: "
+            f"{', '.join(duplicate_images)}"
+        )
+
     for entry in entries:
         image_name = entry["image"].rsplit("/", maxsplit=1)[-1]
-        found_images.add(image_name)
         expected = EXPECTED_IMAGES.get(image_name)
         if expected is None:
             errors.append(f"unexpected publish matrix image: {image_name}")
