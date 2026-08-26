@@ -1,0 +1,108 @@
+# Portainer Git-stack profile. Supply the required image and volume values in
+# Portainer; this profile intentionally does not load a repository .env file.
+services:
+  starlink-location:
+    image: ghcr.io/bcl1713/starlink-dashboard/starlink-location:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
+    restart: unless-stopped
+    environment:
+      STARLINK_MODE: ${STARLINK_MODE:-simulation}
+      SIMULATION_MODE: ${SIMULATION_MODE:-true}
+      STARLINK_DISH_HOST: ${STARLINK_DISH_HOST:-192.168.100.1}
+      STARLINK_DISH_PORT: ${STARLINK_DISH_PORT:-9200}
+      TIMEZONE_TAKEOFF: ${TIMEZONE_TAKEOFF:-America/Los_Angeles}
+      TIMEZONE_LANDING: ${TIMEZONE_LANDING:-Europe/London}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - missions_data:/app/data/missions
+      - satellites_data:/app/data/satellites
+      - sat_coverage_data:/app/data/sat_coverage
+      - route_data:/data/routes
+      - sim_route_data:/data/sim_routes
+      - poi_data:/data
+    networks:
+      - starlink-net
+      - proxy
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-1y}
+    volumes:
+      - ../monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../monitoring/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+    networks:
+      - starlink-net
+      - proxy
+
+  grafana:
+    image: grafana/grafana:12.0.2
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set in Portainer}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_PLUGINS_PREINSTALL: grafana-clock-panel,yesoreyeram-infinity-datasource@3.11.1
+      GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 1s
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ../monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../monitoring/grafana/custom-icons/chevron-up.svg:/usr/share/grafana/public/img/icons/marker/chevron-up.svg:ro
+    depends_on:
+      prometheus:
+        condition: service_started
+    networks:
+      - starlink-net
+      - proxy
+
+  mission-planner:
+    image: ghcr.io/bcl1713/starlink-dashboard/mission-planner:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
+    restart: unless-stopped
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+    networks:
+      - starlink-net
+      - proxy
+
+networks:
+  starlink-net:
+    driver: bridge
+  proxy:
+    external: true
+    name: ${STARLINK_PROXY_NETWORK:-proxy}
+
+volumes:
+  missions_data:
+    external: true
+    name: ${STARLINK_MISSIONS_VOLUME:?Set the existing missions volume name}
+  satellites_data:
+    external: true
+    name: ${STARLINK_SATELLITES_VOLUME:?Set the existing satellites volume name}
+  sat_coverage_data:
+    external: true
+    name: ${STARLINK_SAT_COVERAGE_VOLUME:?Set the existing sat coverage volume name}
+  route_data:
+    external: true
+    name: ${STARLINK_ROUTE_VOLUME:?Set the existing route volume name}
+  sim_route_data:
+    external: true
+    name: ${STARLINK_SIM_ROUTE_VOLUME:?Set the existing simulation route volume name}
+  poi_data:
+    external: true
+    name: ${STARLINK_POI_VOLUME:?Set the existing POI volume name}
+  prometheus_data:
+    external: true
+    name: ${STARLINK_PROMETHEUS_VOLUME:?Set the existing Prometheus volume name}
+  grafana_data:
+    external: true
+    name: ${STARLINK_GRAFANA_VOLUME:?Set the existing Grafana volume name}
