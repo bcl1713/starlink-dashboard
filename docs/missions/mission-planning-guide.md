@@ -26,7 +26,12 @@ calculated.
 Breakdown of available export formats (CSV, Excel, PDF) and their intended
 audience (data integration, team briefing, stakeholder brief).
 
-### 4. [Troubleshooting & Support](planning/help.md)
+### 4. [Mission Package Import](mission-package-import.md)
+
+Operator and API guidance for importing a mission-package ZIP, endpoint-POI
+restoration, warning handling, and safe re-imports.
+
+### 5. [Troubleshooting & Support](planning/help.md)
 
 Common issues (invalid route files, coordinate errors), FAQ, support contact
 information, and links to related documentation.
