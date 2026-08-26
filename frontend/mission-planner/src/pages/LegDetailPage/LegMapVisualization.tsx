@@ -46,6 +46,11 @@ export function LegMapVisualization({
           Open the map legend for layer keys
         </span>
       </div>
+      {timelinePreview?.derived_route_estimate?.available && (
+        <p className="mb-2 text-xs text-muted-foreground">
+          Estimated map layer: derived estimate, not telemetry.
+        </p>
+      )}
       <RouteMap
         coordinates={routeCoordinates}
         xbandTransitions={satelliteConfig.xband_transitions}
