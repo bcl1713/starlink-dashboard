@@ -24,6 +24,11 @@ RAINVIEWER_RADAR_TILE_URL = (
     "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
     "?refresh=${__to:date:YYYYMMDDHHmm}"
 )
+ARCGIS_WORLD_IMAGERY_TILE_URL = (
+    "https://server.arcgisonline.com/ArcGIS/rest/services/"
+    "World_Imagery/MapServer/tile/{z}/{y}/{x}"
+)
+ARCGIS_WORLD_IMAGERY_ATTRIBUTION = "Tiles © Esri"
 HCX_COMM_LAYER_TOKENS = {"CommKaOverlay", "HCX"}
 HCX_COMM_LAYER_SOURCES = {"commka.geojson"}
 EXPECTED_CLOCK_DEFAULTS = {
@@ -121,6 +126,46 @@ def test_fullscreen_overview_keeps_core_map_layers_visible_by_default() -> None:
     assert CORE_MAP_LAYERS <= layers.keys()
     for layer_name in CORE_MAP_LAYERS:
         assert layers[layer_name].get("opacity", 1) > 0
+
+
+def test_fullscreen_overview_uses_keyless_arcgis_world_imagery_basemap() -> None:
+    map_panel = _panel_by_title("Current Position")
+
+    assert map_panel["options"]["basemap"] == {
+        "config": {
+            "attribution": ARCGIS_WORLD_IMAGERY_ATTRIBUTION,
+            "url": ARCGIS_WORLD_IMAGERY_TILE_URL,
+        },
+        "name": "ArcGIS World Imagery",
+        "type": "xyz",
+    }
+
+
+def test_fullscreen_overview_current_position_uses_joined_marker_frame() -> None:
+    current_position_layers = [
+        layer for layer in _current_position_layers() if layer["name"] == "Current Position"
+    ]
+
+    assert len(current_position_layers) == 1
+    current_position = current_position_layers[0]
+
+    assert current_position["filterData"] == {
+        "id": "byRefId",
+        "options": "joinByField-A-B-C-D",
+    }
+    assert "filterByRefId" not in current_position
+    assert current_position["location"] == {
+        "latitude": "latitude",
+        "longitude": "longitude",
+        "mode": "coords",
+    }
+    assert current_position["config"]["style"]["rotation"] == {
+        "field": "heading",
+        "fixed": 0,
+        "max": 360,
+        "min": 0,
+        "mode": "field",
+    }
 
 
 def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_layers() -> (
