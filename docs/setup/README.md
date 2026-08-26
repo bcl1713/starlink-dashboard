@@ -38,6 +38,12 @@
 - **[Prerequisites Verification](./prerequisites-verification.md)**: Verify
   system meets all requirements before installation
 
+### Deployment Runbooks
+
+- **[Portainer GHCR Deployment](../deployment/portainer-ghcr.md)**: Git-based
+  Portainer deployment, immutable GHCR image selection, rollback, and live
+  release-gate requirements
+
 ---
 
 ## Overview
