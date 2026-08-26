@@ -55,11 +55,24 @@ shape, not a file to copy into the repository:
 # Values supplied by Portainer, not a repository .env file.
 STARLINK_MODE: simulation
 GRAFANA_ADMIN_PASSWORD: <PORTAINER_MANAGED_SECRET>
-IMAGE_TAG: <IMMUTABLE_GIT_SHA_OR_RELEASE_TAG>
+STARLINK_IMAGE_TAG: <IMMUTABLE_GIT_SHA_OR_RELEASE_TAG>
+STARLINK_MISSIONS_VOLUME: <EXISTING_MISSIONS_VOLUME_NAME>
+STARLINK_SATELLITES_VOLUME: <EXISTING_SATELLITES_VOLUME_NAME>
+STARLINK_SAT_COVERAGE_VOLUME: <EXISTING_SAT_COVERAGE_VOLUME_NAME>
+STARLINK_ROUTE_VOLUME: <EXISTING_ROUTE_VOLUME_NAME>
+STARLINK_SIM_ROUTE_VOLUME: <EXISTING_SIM_ROUTE_VOLUME_NAME>
+STARLINK_POI_VOLUME: <EXISTING_POI_VOLUME_NAME>
+STARLINK_PROMETHEUS_VOLUME: <EXISTING_PROMETHEUS_VOLUME_NAME>
+STARLINK_GRAFANA_VOLUME: <EXISTING_GRAFANA_VOLUME_NAME>
 ```
 
-The committed profile resolves GHCR images using the selected immutable version.
-For example, image references use placeholders of this form:
+`STARLINK_IMAGE_TAG` is the exact variable used by the committed profile to
+resolve both GHCR images. Each `STARLINK_*_VOLUME` value names the corresponding
+pre-existing external Docker volume. Portainer must provide all eight volume
+values; the profile does not create, replace, or delete any volume.
+
+For example, image references and the external proxy network use placeholders of
+this form:
 
 ```yaml
 services:
@@ -96,8 +109,9 @@ For an authorized non-live stack, use Portainer's Git-based stack update flow:
 
 1. Select the reviewed Git repository, deployment-profile path, and approved Git
    reference.
-2. Set the stack's Portainer-managed configuration values, including the chosen
-   immutable image tag.
+2. Set the stack's Portainer-managed configuration values, including
+   `STARLINK_IMAGE_TAG` with the chosen immutable image tag and all eight
+   `STARLINK_*_VOLUME` values for the existing external volumes.
 3. Enable image pulling during the stack update so Portainer fetches the chosen
    GHCR images.
 4. Leave image pruning disabled. Pruning can remove the prior immutable image
@@ -167,7 +181,8 @@ Record the following in the approved change record without including secrets:
 - Git reference and immutable image SHA or release tag selected
 - previous immutable tag retained for rollback
 - confirmation that image pulling was enabled and pruning was disabled
-- confirmation that Portainer supplied runtime configuration
+- confirmation that Portainer supplied `STARLINK_IMAGE_TAG` and all required
+  external-volume configuration values
 - confirmation that the external `proxy` network and live volumes were left
   unchanged
 - Brian's live-deployment and public-hostname approval, when applicable
