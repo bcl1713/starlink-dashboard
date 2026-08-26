@@ -18,8 +18,10 @@ jobs:
         include:
           - image: ghcr.io/${{ github.repository }}/starlink-location
             context: ./backend/starlink-location
+            file: ./backend/starlink-location/Dockerfile
           - image: ghcr.io/${{ github.repository }}/mission-planner
             context: ./frontend/mission-planner
+            file: ./frontend/mission-planner/Dockerfile
           - image: ghcr.io/${{ github.repository }}/prometheus
             context: .
             file: ./deployment/prometheus/Dockerfile
@@ -29,6 +31,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Validate GHCR build contract
+        run: python tools/check_publish_ghcr_workflow.py
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -53,7 +58,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          file: ${{ matrix.file || 'Dockerfile' }}
+          file: ${{ matrix.file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: |
