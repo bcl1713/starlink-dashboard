@@ -21,7 +21,7 @@ CORE_MAP_LAYERS = {
 }
 RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
 RAINVIEWER_RADAR_TILE_URL = (
-    "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+    "/api/datasources/proxy/uid/infinity/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
     "?refresh=${__to:date:YYYYMMDDHHmm}"
 )
 ARCGIS_WORLD_IMAGERY_TILE_URL = (
@@ -264,10 +264,12 @@ def test_fullscreen_overview_active_x_band_link_uses_split_state_layers() -> Non
         "id": "byRefId",
         "options": "ActiveXLinkNormal",
     }
+    assert "filterByRefId" not in normal_layer
     assert warning_layer["filterData"] == {
         "id": "byRefId",
         "options": "ActiveXLinkWarning",
     }
+    assert "filterByRefId" not in warning_layer
     assert normal_layer["config"]["style"]["color"] == {"fixed": "green"}
     assert warning_layer["config"]["style"]["color"] == {"fixed": "yellow"}
     assert normal_layer["location"] == {
