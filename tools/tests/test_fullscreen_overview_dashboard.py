@@ -214,6 +214,43 @@ def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
     assert HCX_COMM_LAYER_SOURCES.isdisjoint(layer_sources)
 
 
+def test_current_position_url_queries_use_canonical_infinity_get_options() -> None:
+    map_panel = _panel_by_title("Current Position")
+    infinity_url_targets = {
+        target["refId"]: target
+        for target in map_panel["targets"]
+        if target.get("datasource", {}).get("type")
+        == "yesoreyeram-infinity-datasource"
+        and target.get("source") == "url"
+    }
+
+    critical_route_refs = {
+        "H",
+        "H_EAST",
+        "ActiveXLinkNormal",
+        "ActiveXLinkWarning",
+    }
+    assert critical_route_refs <= infinity_url_targets.keys()
+    for target in infinity_url_targets.values():
+        assert target["url_options"] == {
+            "data": "",
+            "method": "GET",
+            "params": [],
+        }
+
+    layers = _layers_by_name()
+    for layer_name, ref_id in (
+        ("Planned Route (KML) - Western Hemisphere", "H"),
+        ("Planned Route (KML) - Eastern Hemisphere", "H_EAST"),
+        ("Active X-band Link - Normal", "ActiveXLinkNormal"),
+        ("Active X-band Link - Warning", "ActiveXLinkWarning"),
+    ):
+        assert layers[layer_name]["filterData"] == {
+            "id": "byRefId",
+            "options": ref_id,
+        }
+
+
 def test_fullscreen_overview_planned_route_layers_use_grafana_v12_ref_filters() -> None:
     layers = _layers_by_name()
 

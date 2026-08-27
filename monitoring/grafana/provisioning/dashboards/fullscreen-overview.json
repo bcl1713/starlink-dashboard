@@ -954,6 +954,11 @@
           "url": "/api/route/coordinates/west",
           "urlOptions": {
             "params": []
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
+            "params": []
           }
         },
         {
@@ -974,6 +979,11 @@
           "type": "json",
           "url": "/api/route/coordinates/east",
           "urlOptions": {
+            "params": []
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
             "params": []
           }
         },
