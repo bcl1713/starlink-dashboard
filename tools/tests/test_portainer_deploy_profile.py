@@ -47,14 +47,19 @@ def test_portainer_profile_uses_required_host_paths_and_packaged_monitoring_imag
     assert "grafana/grafana:12.0.2" in local_compose
     assert "prom/prometheus:latest" not in local_compose
     assert "grafana/grafana:latest" not in local_compose
-    assert "yesoreyeram-infinity-datasource@3.11.1" in compose
+    assert (
+        "GF_INSTALL_PLUGINS: "
+        "grafana-clock-panel,yesoreyeram-infinity-datasource 3.11.1" in compose
+    )
+    assert "GF_PLUGINS_PREINSTALL" not in compose
+    assert "yesoreyeram-infinity-datasource 3.11.1" in compose
     assert "branches: [dev]" in workflow
     assert "type=sha,format=long,prefix=sha-" in workflow
     assert "org.opencontainers.image.source" in workflow
     assert "org.opencontainers.image.revision" in workflow
     assert "docker compose" in smoke_script
     assert "docker build" in smoke_script
-    assert "GF_PLUGINS_PREINSTALL=grafana-clock-panel,yesoreyeram-infinity-datasource@3.11.1" in smoke_script
+    assert "GF_INSTALL_PLUGINS=grafana-clock-panel,yesoreyeram-infinity-datasource 3.11.1" in smoke_script
     assert "/health" in smoke_script
     assert "/-/ready" in smoke_script
     assert "/api/v2/missions" in smoke_script

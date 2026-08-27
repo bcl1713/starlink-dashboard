@@ -55,7 +55,7 @@ export STARLINK_GRAFANA_DATA_PATH="$data_dir/grafana"
 docker compose --project-name "$project" --file "$compose_file" config --quiet
 docker compose --project-name "$project" --file "$compose_file" up --detach
 docker compose --project-name "$project" --file "$compose_file" exec -T grafana env \
-  | grep -Fx 'GF_PLUGINS_PREINSTALL=grafana-clock-panel,yesoreyeram-infinity-datasource@3.11.1'
+  | grep -Fx 'GF_INSTALL_PLUGINS=grafana-clock-panel,yesoreyeram-infinity-datasource 3.11.1'
 
 probe() {
   local url=$1
