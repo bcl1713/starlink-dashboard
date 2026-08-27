@@ -403,7 +403,6 @@
                 "opacity": 0.9
               }
             },
-            "filterByRefId": "H",
             "filterData": {
               "id": "byRefId",
               "options": "H"
@@ -428,7 +427,6 @@
                 "opacity": 1
               }
             },
-            "filterByRefId": "H_EAST",
             "filterData": {
               "id": "byRefId",
               "options": "H_EAST"
@@ -941,16 +939,20 @@
         },
         {
           "cacheDurationSeconds": 5,
+          "columns": [],
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
             "uid": "infinity"
           },
           "filterExpression": "",
+          "filters": [],
           "format": "table",
-          "parser": "json",
+          "global_query_id": "",
+          "parser": "backend",
           "refId": "H",
           "root_selector": "coordinates",
           "source": "url",
+          "type": "json",
           "url": "/api/route/coordinates/west",
           "urlOptions": {
             "params": []
@@ -958,16 +960,20 @@
         },
         {
           "cacheDurationSeconds": 5,
+          "columns": [],
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
             "uid": "infinity"
           },
           "filterExpression": "",
+          "filters": [],
           "format": "table",
-          "parser": "json",
+          "global_query_id": "",
+          "parser": "backend",
           "refId": "H_EAST",
           "root_selector": "coordinates",
           "source": "url",
+          "type": "json",
           "url": "/api/route/coordinates/east",
           "urlOptions": {
             "params": []

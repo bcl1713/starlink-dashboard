@@ -214,6 +214,33 @@ def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
     assert HCX_COMM_LAYER_SOURCES.isdisjoint(layer_sources)
 
 
+def test_fullscreen_overview_planned_route_layers_use_grafana_v12_ref_filters() -> None:
+    layers = _layers_by_name()
+
+    for layer_name, ref_id in (
+        ("Planned Route (KML) - Western Hemisphere", "H"),
+        ("Planned Route (KML) - Eastern Hemisphere", "H_EAST"),
+    ):
+        layer = layers[layer_name]
+        assert layer["filterData"] == {"id": "byRefId", "options": ref_id}
+        assert "filterByRefId" not in layer
+        assert layer["location"] == {
+            "latitude": "latitude",
+            "longitude": "longitude",
+            "mode": "coords",
+        }
+        assert layer["type"] == "route"
+        assert layer["config"]["style"]["color"] == {"fixed": "dark-orange"}
+
+    map_panel = _panel_by_title("Current Position")
+    targets_by_ref = {target["refId"]: target for target in map_panel["targets"]}
+    for ref_id in ("H", "H_EAST"):
+        target = targets_by_ref[ref_id]
+        assert target["parser"] == "backend"
+        assert target["type"] == "json"
+        assert target["root_selector"] == "coordinates"
+
+
 def test_fullscreen_overview_active_x_band_link_uses_split_state_layers() -> None:
     map_panel = _panel_by_title("Current Position")
     layers = _layers_by_name()
