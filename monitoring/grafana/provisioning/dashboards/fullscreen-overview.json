@@ -384,7 +384,7 @@
               "attribution": "Weather radar \u00a9 Rain Viewer / MeteoLab Inc.",
               "maxZoom": 7,
               "minZoom": 0,
-              "url": "/api/weather/radar/rainviewer/{z}/{x}/{y}.png?refresh=${__to:date:YYYYMMDDHHmm}"
+              "url": "/api/datasources/proxy/uid/infinity/api/weather/radar/rainviewer/{z}/{x}/{y}.png?refresh=${__to:date:YYYYMMDDHHmm}"
             },
             "name": "Weather Radar (RainViewer)",
             "noRepeat": false,

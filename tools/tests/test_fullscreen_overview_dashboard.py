@@ -21,7 +21,7 @@ CORE_MAP_LAYERS = {
 }
 RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
 RAINVIEWER_RADAR_TILE_URL = (
-    "/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+    "/api/datasources/proxy/uid/infinity/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
     "?refresh=${__to:date:YYYYMMDDHHmm}"
 )
 ARCGIS_WORLD_IMAGERY_TILE_URL = (
