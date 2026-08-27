@@ -58,7 +58,7 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set in Portainer}
       GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_PLUGINS_PREINSTALL: grafana-clock-panel,yesoreyeram-infinity-datasource@3.11.1
+      GF_INSTALL_PLUGINS: grafana-clock-panel,yesoreyeram-infinity-datasource 3.11.1
       GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 1s
     volumes:
       - type: bind
