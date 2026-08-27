@@ -802,7 +802,6 @@
                 }
               }
             },
-            "filterByRefId": "A",
             "filterData": {
               "id": "byRefId",
               "options": "joinByField-A-B-C-D"
