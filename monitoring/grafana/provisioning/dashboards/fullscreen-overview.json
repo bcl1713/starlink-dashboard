@@ -363,10 +363,12 @@
       "id": 1,
       "options": {
         "basemap": {
-          "config": {},
-          "name": "Layer 0",
-          "noRepeat": false,
-          "type": "default"
+          "config": {
+            "attribution": "Tiles © Esri",
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          },
+          "name": "ArcGIS World Imagery",
+          "type": "xyz"
         },
         "controls": {
           "mouseWheelZoom": true,

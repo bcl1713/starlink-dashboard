@@ -123,6 +123,22 @@ def test_fullscreen_overview_keeps_core_map_layers_visible_by_default() -> None:
         assert layers[layer_name].get("opacity", 1) > 0
 
 
+def test_fullscreen_overview_uses_keyless_arcgis_world_imagery_basemap() -> None:
+    map_panel = _panel_by_title("Current Position")
+
+    assert map_panel["options"]["basemap"] == {
+        "config": {
+            "attribution": "Tiles © Esri",
+            "url": (
+                "https://server.arcgisonline.com/ArcGIS/rest/services/"
+                "World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            ),
+        },
+        "name": "ArcGIS World Imagery",
+        "type": "xyz",
+    }
+
+
 def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_layers() -> (
     None
 ):
