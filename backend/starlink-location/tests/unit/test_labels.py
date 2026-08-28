@@ -1,6 +1,6 @@
 """Unit tests for label helper functions."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from app.core.labels import (
@@ -105,7 +105,7 @@ class TestApplyCommonLabels:
     def mock_telemetry(self):
         """Create a mock telemetry object."""
         return TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=40.7128,
                 longitude=-74.0060,

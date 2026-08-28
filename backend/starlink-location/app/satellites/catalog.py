@@ -281,5 +281,17 @@ def _load_yaml_catalog(
             catalog.add_satellite(satellite)
             logger.info(f"Loaded custom satellite {sat_id} from YAML")
 
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         logger.error(f"Error loading YAML catalog from {yaml_path}: {e}")

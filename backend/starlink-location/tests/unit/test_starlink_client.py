@@ -148,7 +148,7 @@ class TestStarlinkClientConnection:
     def test_disconnect_close_error(self, mock_context_class):
         """Test disconnect handles close errors gracefully."""
         mock_context = MagicMock()
-        mock_context.close.side_effect = Exception("Close failed")
+        mock_context.close.side_effect = RuntimeError("Close failed")
         mock_context_class.return_value = mock_context
 
         client = StarlinkClient()

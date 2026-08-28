@@ -296,6 +296,18 @@ def add_logo(
         )
         logger.info(f"Logo successfully added from {logo_path}")
         return True
-    except Exception as e:
-        logger.error(f"Failed to add logo: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
+        logger.exception("Failed to add logo")
         return False

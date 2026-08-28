@@ -242,20 +242,20 @@ class ETAProjection:
             # First, try to find matching waypoint on route by name
             # This handles explicitly named waypoints in the KML
             for waypoint in active_route.waypoints:
-                if waypoint.name and waypoint.name.upper() == poi.name.upper():
+                if (
+                    waypoint.name
+                    and waypoint.name.upper() == poi.name.upper()
+                    and waypoint.expected_arrival_time
+                ):
                     # Found matching waypoint with expected arrival time
-                    if waypoint.expected_arrival_time:
-                        # Calculate time until expected arrival
-                        time_until_arrival = (
-                            waypoint.expected_arrival_time - current_time
-                        )
-                        eta_seconds = time_until_arrival.total_seconds()
+                    time_until_arrival = waypoint.expected_arrival_time - current_time
+                    eta_seconds = time_until_arrival.total_seconds()
 
-                        # Return positive ETA or -1 if time has passed
-                        if eta_seconds > 0:
-                            return eta_seconds
-                        else:
-                            return -1.0
+                    # Return positive ETA or -1 if time has passed
+                    if eta_seconds > 0:
+                        return eta_seconds
+                    else:
+                        return -1.0
 
             # Second, try to use POI's projected waypoint index
             # This is set by route-aware projection for off-route POIs
@@ -279,7 +279,19 @@ class ETAProjection:
             # If no waypoint found, return None to fall back to distance/speed
             return None
 
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.debug(f"Anticipated ETA calculation failed for {poi.name}: {e}")
             return None
 
@@ -375,7 +387,19 @@ class ETAProjection:
 
             return None
 
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.debug(f"On-route estimated ETA calculation failed: {e}")
             return None
 
@@ -498,7 +522,19 @@ class ETAProjection:
 
             return None
 
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.debug(
                 f"Off-route estimated ETA calculation with projection failed for {poi.name}: {e}"
             )

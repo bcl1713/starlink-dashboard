@@ -109,7 +109,19 @@ class GroundEntryPointResolver:
 
         try:
             ip = self._ip_resolver()
-        except Exception as exc:  # pragma: no cover - defensive network guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:  # pragma: no cover - defensive network guard
             logger.warning("Failed to resolve public IP: %s", exc)
             return self._current_entry
 
@@ -127,7 +139,19 @@ class GroundEntryPointResolver:
 
         try:
             entry = self._geolocator(ip)
-        except Exception as exc:  # pragma: no cover - defensive network guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:  # pragma: no cover - defensive network guard
             logger.warning("Failed to geolocate public IP %s: %s", ip, exc)
             return self._current_entry
 
@@ -144,7 +168,19 @@ def resolve_public_ip(timeout_seconds: float = 2.0) -> str | None:
     """Resolve the current public IPv4, preferring Cloudflare trace."""
     try:
         ip = resolve_public_ip_via_cloudflare_trace(timeout_seconds=timeout_seconds)
-    except Exception as exc:  # pragma: no cover - defensive network guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:  # pragma: no cover - defensive network guard
         logger.warning("Cloudflare trace public-IP lookup failed: %s", exc)
         ip = None
     if ip:
@@ -152,7 +188,19 @@ def resolve_public_ip(timeout_seconds: float = 2.0) -> str | None:
 
     try:
         return resolve_public_ip_via_dns(timeout_seconds=timeout_seconds)
-    except Exception as exc:  # pragma: no cover - defensive network guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:  # pragma: no cover - defensive network guard
         logger.warning("OpenDNS public-IP lookup failed: %s", exc)
         return None
 

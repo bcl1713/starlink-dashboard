@@ -77,7 +77,18 @@ class POIManager:
             logger.error(f"Failed to load POI file: {e}")
             self._pois = {}
             return
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to acquire lock for reading POI file: {e}")
             self._pois = {}
             return
@@ -102,7 +113,19 @@ class POIManager:
 
                 poi = POI(**poi_data)
                 self._pois[poi_id] = poi
-            except Exception as e:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 logger.warning(f"Failed to load POI {poi_id}: {e}")
 
         logger.info(f"Loaded {len(self._pois)} POIs from {self.pois_file}")
@@ -149,9 +172,32 @@ class POIManager:
                     # Clean up temp file if it exists
                     try:
                         temp_file.unlink()
-                    except Exception:
+                    except (
+                        RuntimeError,
+                        ValueError,
+                        OSError,
+                        KeyError,
+                        TypeError,
+                        AttributeError,
+                        LookupError,
+                        ConnectionError,
+                        TimeoutError,
+                        ImportError,
+                        EOFError,
+                    ):
                         pass
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to acquire lock for writing POI file: {e}")
 
     def list_pois(
@@ -311,7 +357,19 @@ class POIManager:
                 poi.projected_route_progress = projection["projected_route_progress"]
 
                 logger.info(f"Projected new POI {poi_id} onto active route")
-            except Exception as e:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 logger.warning(
                     f"Failed to project new POI {poi_id} onto active route: {e}"
                 )
@@ -620,7 +678,18 @@ class POIManager:
 
         try:
             calculator = RouteETACalculator(route)
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to create route ETA calculator: {e}")
             return 0
 
@@ -642,7 +711,19 @@ class POIManager:
                 self._pois[poi_id] = poi
 
                 projected_count += 1
-            except Exception as e:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 logger.warning(f"Failed to project POI {poi_id} onto route: {e}")
                 continue
 

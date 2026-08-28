@@ -4,9 +4,9 @@
 # storage operations, timeline building, export handling, and state validation.
 # Separation would create circular dependencies with exporter and storage modules.
 # Deferred to v0.4.0.
-
 import logging
 from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -48,8 +48,8 @@ router = APIRouter(prefix="/api/missions", tags=["missions"])
 )
 async def create_mission(
     mission: MissionLeg,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> MissionLeg:
     """Create a new mission.
 
@@ -101,11 +101,20 @@ async def create_mission(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
-    except Exception as e:
-        logger.error(
+    except (
+        RuntimeError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
             "Mission creation failed: %s",
-            str(e),
-            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -118,9 +127,9 @@ async def create_mission(
     response_model=MissionListResponse,
 )
 async def list_missions_endpoint(
-    limit: int = Query(10, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    route_id: str | None = Query(None, description="Filter by route ID"),
+    limit: Annotated[int, Query(ge=1, le=100)] = 10,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    route_id: Annotated[str | None, Query(description="Filter by route ID")] = None,
 ) -> MissionListResponse:
     """List all missions with optional filtering.
 
@@ -156,10 +165,20 @@ async def list_missions_endpoint(
             offset=offset,
             missions=paginated,
         )
-    except Exception as e:
-        logger.error(
+    except (
+        RuntimeError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
             "Failed to list missions",
-            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -205,10 +224,20 @@ async def get_mission(mission_id: str) -> MissionLeg:
         return mission
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(
+    except (
+        RuntimeError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
             "Failed to get mission",
-            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -233,8 +262,8 @@ async def get_mission(mission_id: str) -> MissionLeg:
 async def update_mission(
     mission_id: str,
     mission_update: MissionLeg,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> MissionLeg:
     """Update an existing mission (merge logic).
 
@@ -305,10 +334,20 @@ async def update_mission(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(e),
         )
-    except Exception as e:
-        logger.error(
+    except (
+        RuntimeError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
             "Failed to update mission",
-            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -328,8 +367,8 @@ async def update_mission(
 )
 async def delete_mission_endpoint(
     mission_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> None:
     """Delete a mission by ID.
 
@@ -369,7 +408,19 @@ async def delete_mission_endpoint(
                         mission.route_id,
                         mission_id,
                     )
-            except Exception as exc:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as exc:
                 logger.warning(
                     "Failed to deactivate route %s for mission %s: %s",
                     mission.route_id,
@@ -386,7 +437,19 @@ async def delete_mission_endpoint(
                     logger.info(
                         "Deleted %d mission-scoped POIs for %s", removed, mission_id
                     )
-            except Exception as exc:  # pragma: no cover - defensive
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as exc:  # pragma: no cover - defensive
                 logger.warning(
                     "Failed to delete mission POIs for %s: %s", mission_id, exc
                 )
@@ -402,10 +465,20 @@ async def delete_mission_endpoint(
         )
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(
+    except (
+        RuntimeError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
             "Failed to delete mission",
-            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

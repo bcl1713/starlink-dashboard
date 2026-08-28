@@ -6,7 +6,7 @@
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import starlink_grpc
 from grpc import RpcError
@@ -120,7 +120,21 @@ class StarlinkClient:
             try:
                 self.context.close()
                 self.logger.info("Disconnected from Starlink dish")
-            except Exception as e:
+            except (
+                starlink_grpc.GrpcError,
+                RpcError,
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 self.logger.warning(f"Error closing connection: {e}")
             finally:
                 self.context = None
@@ -148,7 +162,19 @@ class StarlinkClient:
             self.logger.warning(f"Connection test failed: {type(e).__name__}: {e}")
             self._connected = False
             return False
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             self.logger.error(
                 f"Unexpected error during connection test: {type(e).__name__}: {e}"
             )
@@ -371,7 +397,7 @@ class StarlinkClient:
             )
 
             return TelemetryData(
-                timestamp=datetime.now(),
+                timestamp=datetime.now(timezone.utc),
                 position=position,
                 network=network,
                 obstruction=obstruction_pct,
@@ -399,5 +425,17 @@ class StarlinkClient:
         """Ensure connection is closed on garbage collection."""
         try:
             self.disconnect()
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
             pass

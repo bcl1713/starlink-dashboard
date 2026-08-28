@@ -32,7 +32,19 @@ def get_last_scrape_time():
         from app.api.metrics import get_last_scrape_time as get_scrape_time
 
         return get_scrape_time()
-    except Exception:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
         return None
 
 
@@ -42,7 +54,19 @@ def _get_metrics_count():
         from app.core.metrics import REGISTRY
 
         return len(list(REGISTRY.collect()))
-    except Exception:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
         return 0
 
 
@@ -55,7 +79,19 @@ def _get_active_route():
     if route_manager:
         try:
             return route_manager.get_active_route()
-        except Exception as exc:  # pragma: no cover - defensive guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:  # pragma: no cover - defensive guard
             logger.debug("Unable to fetch active route from coordinator: %s", exc)
 
     return None
@@ -173,7 +209,19 @@ async def health():
 
             flight_state_manager = get_flight_state_manager()
             status_snapshot = flight_state_manager.get_status()
-        except Exception as exc:  # pragma: no cover - defensive guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:  # pragma: no cover - defensive guard
             logger.debug("Flight state unavailable for health response: %s", exc)
 
         now = datetime.now(tz=timezone.utc)
@@ -239,7 +287,19 @@ async def health():
         if active_route:
             try:
                 active_route_id = Path(active_route.metadata.file_path).stem
-            except Exception:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
                 active_route_id = active_route.metadata.file_path
             response.setdefault("active_route_id", active_route_id)
             response.setdefault("active_route_name", active_route.metadata.name)
@@ -264,5 +324,17 @@ async def health():
 
     except HTTPException:
         raise
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(status_code=500, detail=f"Health check failed: {e!s}")

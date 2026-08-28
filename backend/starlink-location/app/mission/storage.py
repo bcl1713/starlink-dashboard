@@ -294,7 +294,19 @@ def load_mission_metadata_v2(mission_id: str) -> Mission | None:
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse mission {mission_id}: {e}")
         return None
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         logger.error(f"Failed to load mission metadata {mission_id}: {e}")
         return None
 
@@ -397,7 +409,19 @@ def load_mission(mission_id: str) -> MissionLeg | None:
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse mission {mission_id}: {e}")
         raise ValueError(f"Invalid JSON in mission file: {e}")
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         logger.error(f"Failed to load mission {mission_id}: {e}")
         raise
 

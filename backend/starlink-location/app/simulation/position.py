@@ -9,7 +9,7 @@ import logging
 import math
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional
 
 from app.models.config import PositionConfig, RouteConfig
@@ -179,7 +179,7 @@ class PositionSimulator:
         # Calculate heading from movement using HeadingTracker
         # This simulates how heading will be calculated in live mode!
         calculated_heading = self.heading_tracker.update(
-            latitude=lat, longitude=lon, timestamp=datetime.now()
+            latitude=lat, longitude=lon, timestamp=datetime.now(timezone.utc)
         )
 
         return PositionData(

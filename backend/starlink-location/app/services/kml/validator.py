@@ -25,5 +25,17 @@ def validate_kml_file(file_path: str | Path) -> tuple[bool, str | None]:
         return True, None
     except KMLParseError as e:
         return False, str(e)
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         return False, f"Unexpected error: {e}"

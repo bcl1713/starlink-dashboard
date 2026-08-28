@@ -1,5 +1,7 @@
 """Route timing profile endpoints."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.logging import get_logger
@@ -33,7 +35,7 @@ def _format_duration(seconds: float) -> str:
 
 @router.get("/active/timing")
 async def get_active_route_timing(
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict:
     """Get timing profile data for the currently active route.
 

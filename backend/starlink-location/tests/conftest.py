@@ -2,7 +2,7 @@
 
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -206,7 +206,19 @@ def ensure_eta_service_initialized():
             # Re-initialize the ETA service
             poi_manager = POIManager()
             eta_service.initialize_eta_service(poi_manager)
-    except Exception:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
         # Silently handle initialization errors - they may be expected in some tests
         pass
 
@@ -247,20 +259,68 @@ def reset_prometheus_registry():
                     if not hasattr(collector, "_metrics") or not collector._metrics:
                         try:
                             collector.set(0)
-                        except Exception:
+                        except (
+                            RuntimeError,
+                            ValueError,
+                            OSError,
+                            KeyError,
+                            TypeError,
+                            AttributeError,
+                            LookupError,
+                            ConnectionError,
+                            TimeoutError,
+                            ImportError,
+                            EOFError,
+                        ):
                             pass
                     # Gauges with labels: need to reset each child metric
                     else:
                         for child in collector._metrics.values():
                             try:
                                 child.set(0)
-                            except Exception:
+                            except (
+                                RuntimeError,
+                                ValueError,
+                                OSError,
+                                KeyError,
+                                TypeError,
+                                AttributeError,
+                                LookupError,
+                                ConnectionError,
+                                TimeoutError,
+                                ImportError,
+                                EOFError,
+                            ):
                                 pass
-                except Exception:
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ):
                     # Silently skip any gauges we can't reset
                     pass
 
-    except Exception:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
         # If we can't reset the registry, continue anyway - tests will still run
         pass
 
@@ -301,7 +361,7 @@ def isolate_mission_storage():
 def default_mock_telemetry():
     """Create default mock telemetry for tests."""
     return TelemetryData(
-        timestamp=datetime.now(),
+        timestamp=datetime.now(timezone.utc),
         position=PositionData(
             latitude=40.7128,
             longitude=-74.0060,

@@ -1,6 +1,6 @@
 """Unit tests for route timing functionality."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.models.route import RoutePoint, RouteWaypoint
 from app.services.kml import (
@@ -46,8 +46,10 @@ class TestSegmentSpeedCalculation:
     def test_simple_two_point_route(self):
         """Calculate speed for simple two-point route."""
         # Create two points with timestamps
-        start_time = datetime(2025, 10, 27, 16, 51, 13)
-        end_time = datetime(2025, 10, 27, 17, 2, 13)  # 11 minutes = 660 seconds
+        start_time = datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
+        end_time = datetime(
+            2025, 10, 27, 17, 2, 13, tzinfo=timezone.utc
+        )  # 11 minutes = 660 seconds
 
         # Points are approximately 20 nm apart (37 km)
         point1 = RoutePoint(
@@ -79,7 +81,9 @@ class TestSegmentSpeedCalculation:
             longitude=-122.0,
             altitude=10000,
             sequence=0,
-            expected_arrival_time=datetime(2025, 10, 27, 16, 51, 13),
+            expected_arrival_time=datetime(
+                2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc
+            ),
         )
         point2 = RoutePoint(
             latitude=37.01,
@@ -97,7 +101,7 @@ class TestSegmentSpeedCalculation:
 
     def test_no_calculation_with_zero_time_delta(self):
         """No speed calculated if time delta is zero."""
-        same_time = datetime(2025, 10, 27, 16, 51, 13)
+        same_time = datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
 
         point1 = RoutePoint(
             latitude=37.0,
@@ -125,7 +129,7 @@ class TestSegmentSpeedCalculation:
         # Simulate two points 100 km apart, 12 minutes apart
         # Expected speed: 100 km / 12 min = 500 km/h ≈ 270 knots
 
-        start_time = datetime(2025, 10, 27, 16, 51, 13)
+        start_time = datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
         end_time = start_time + timedelta(minutes=12)
 
         # Approximate points 100 km apart
@@ -168,7 +172,9 @@ class TestWaypointTimestampAssignment:
             altitude=None,
             order=0,
             role="waypoint",
-            expected_arrival_time=datetime(2025, 10, 27, 16, 51, 13),
+            expected_arrival_time=datetime(
+                2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc
+            ),
         )
 
         # Create points, one very close to waypoint
@@ -214,7 +220,9 @@ class TestWaypointTimestampAssignment:
             altitude=None,
             order=0,
             role="waypoint",
-            expected_arrival_time=datetime(2025, 10, 27, 16, 51, 13),
+            expected_arrival_time=datetime(
+                2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc
+            ),
         )
 
         # Create point far from waypoint (> 1000m)
@@ -274,7 +282,7 @@ class TestTimestampExtraction:
         timestamp = extract_timestamp_from_description(description)
 
         assert timestamp is not None
-        assert timestamp == datetime(2025, 10, 27, 16, 51, 13)
+        assert timestamp == datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
 
     def test_extract_with_minimal_description(self):
         """Extract from minimal description with just timestamp."""
@@ -282,7 +290,7 @@ class TestTimestampExtraction:
         timestamp = extract_timestamp_from_description(description)
 
         assert timestamp is not None
-        assert timestamp == datetime(2025, 10, 27, 17, 10, 26)
+        assert timestamp == datetime(2025, 10, 27, 17, 10, 26, tzinfo=timezone.utc)
 
     def test_none_for_missing_timestamp(self):
         """Return None when timestamp not found."""
@@ -308,7 +316,9 @@ class TestCompleteTimingPipeline:
                 altitude=None,
                 order=0,
                 role="departure",
-                expected_arrival_time=datetime(2025, 10, 27, 16, 51, 13),
+                expected_arrival_time=datetime(
+                    2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc
+                ),
             ),
             RouteWaypoint(
                 name="B",

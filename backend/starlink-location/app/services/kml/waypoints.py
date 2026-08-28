@@ -114,9 +114,12 @@ def match_waypoint_by_code(
     iterator = reversed(waypoints) if prefer_last else iter(waypoints)
 
     for waypoint in iterator:
-        if waypoint.name and waypoint.coordinate:
-            if waypoint.name.upper() == code_upper:
-                return waypoint
+        if (
+            waypoint.name
+            and waypoint.coordinate
+            and waypoint.name.upper() == code_upper
+        ):
+            return waypoint
 
     return None
 

@@ -14,6 +14,7 @@ status calculation or response builders.
 """
 
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
@@ -55,14 +56,16 @@ router = APIRouter(tags=["pois"])
 
 @router.get("/", response_model=POIListResponse, summary="List all POIs")
 async def list_pois(
-    route_id: str | None = Query(None, description="Filter by route ID"),
-    mission_id: str | None = Query(None, description="Filter by mission ID"),
-    active_only: bool = Query(
-        True,
-        description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_id: Annotated[str | None, Query(description="Filter by route ID")] = None,
+    mission_id: Annotated[str | None, Query(description="Filter by mission ID")] = None,
+    active_only: Annotated[
+        bool,
+        Query(
+            description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
+        ),
+    ] = True,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> POIListResponse:
     """Get list of all POIs, optionally filtered by route.
 
@@ -153,8 +156,8 @@ async def list_pois(
 @router.get("/{poi_id}", response_model=POIResponse, summary="Get a specific POI")
 async def get_poi(
     poi_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> POIResponse:
     """Get a specific POI by ID.
 
@@ -214,8 +217,8 @@ async def get_poi(
 )
 async def create_poi(
     poi_create: POICreate,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> POIResponse:
     """Create a new POI.
 
@@ -241,7 +244,19 @@ async def create_poi(
         if _coordinator and hasattr(_coordinator, "route_manager"):
             try:
                 active_route = _coordinator.route_manager.get_active_route()
-            except Exception:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
                 pass
 
         if not poi_manager:
@@ -276,7 +291,19 @@ async def create_poi(
             projected_waypoint_index=poi.projected_waypoint_index,
             projected_route_progress=poi.projected_route_progress,
         )
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to create POI: {e!s}",
@@ -287,8 +314,8 @@ async def create_poi(
 async def update_poi(
     poi_id: str,
     poi_update: POIUpdate,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> POIResponse:
     """Update an existing POI.
 
@@ -350,7 +377,19 @@ async def update_poi(
         )
     except HTTPException:
         raise
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to update POI: {e!s}",
@@ -362,7 +401,7 @@ async def update_poi(
 )
 async def delete_poi(
     poi_id: str,
-    poi_manager: POIManager = Depends(get_poi_manager),
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> None:
     """Delete a POI.
 

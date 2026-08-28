@@ -1,6 +1,6 @@
 """Unit tests for timestamp extraction utility."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.services.kml_parser import extract_timestamp_from_description
 
@@ -28,7 +28,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 57, 55)
+        assert result == datetime(2025, 10, 27, 16, 57, 55, tzinfo=timezone.utc)
 
     def test_timestamp_with_extra_whitespace(self):
         """Extract timestamp with extra whitespace variations."""
@@ -36,7 +36,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 17, 2, 32)
+        assert result == datetime(2025, 10, 27, 17, 2, 32, tzinfo=timezone.utc)
 
     def test_timestamp_in_multiline_description(self):
         """Extract timestamp from multiline description."""
@@ -46,7 +46,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 51, 13)
+        assert result == datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
 
     def test_none_description(self):
         """Handle None description gracefully."""
@@ -88,7 +88,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 51, 13)
+        assert result == datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
 
     def test_timestamp_with_surrounding_text(self):
         """Extract timestamp when surrounded by other text."""
@@ -96,7 +96,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 17, 2, 32)
+        assert result == datetime(2025, 10, 27, 17, 2, 32, tzinfo=timezone.utc)
 
     def test_timestamp_edge_case_midnight(self):
         """Extract timestamp at midnight."""
@@ -104,7 +104,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 0, 0, 0)
+        assert result == datetime(2025, 10, 27, 0, 0, 0, tzinfo=timezone.utc)
 
     def test_timestamp_edge_case_end_of_day(self):
         """Extract timestamp at end of day."""
@@ -112,7 +112,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 23, 59, 59)
+        assert result == datetime(2025, 10, 27, 23, 59, 59, tzinfo=timezone.utc)
 
     def test_timestamp_leap_year_date(self):
         """Extract timestamp on leap year date."""
@@ -120,7 +120,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2024, 2, 29, 12, 30, 45)
+        assert result == datetime(2024, 2, 29, 12, 30, 45, tzinfo=timezone.utc)
 
     def test_timestamp_single_digit_month_day(self):
         """Extract timestamp with single digit month/day (padded with zero)."""
@@ -128,22 +128,22 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 1, 5, 9, 8, 7)
+        assert result == datetime(2025, 1, 5, 9, 8, 7, tzinfo=timezone.utc)
 
     def test_timestamp_different_years(self):
         """Extract timestamps from different years."""
         test_cases = [
             (
                 "Time Over Waypoint: 2024-06-15 12:00:00Z",
-                datetime(2024, 6, 15, 12, 0, 0),
+                datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
             ),
             (
                 "Time Over Waypoint: 2025-06-15 12:00:00Z",
-                datetime(2025, 6, 15, 12, 0, 0),
+                datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
             ),
             (
                 "Time Over Waypoint: 2026-06-15 12:00:00Z",
-                datetime(2026, 6, 15, 12, 0, 0),
+                datetime(2026, 6, 15, 12, 0, 0, tzinfo=timezone.utc),
             ),
         ]
 
@@ -164,7 +164,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 58, 51)
+        assert result == datetime(2025, 10, 27, 16, 58, 51, tzinfo=timezone.utc)
 
     def test_long_description_with_timestamp(self):
         """Extract timestamp from long description text."""
@@ -177,7 +177,7 @@ class TestTimestampExtraction:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 51, 13)
+        assert result == datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
 
 
 class TestTimestampExtractionEdgeCases:
@@ -189,7 +189,7 @@ class TestTimestampExtractionEdgeCases:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 51, 13)
+        assert result == datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
 
     def test_timestamp_almost_correct_format_missing_z(self):
         """Malformed timestamp missing 'Z' suffix."""
@@ -227,7 +227,7 @@ class TestTimestampExtractionRealWorldExamples:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 51, 13)
+        assert result == datetime(2025, 10, 27, 16, 51, 13, tzinfo=timezone.utc)
 
     def test_appch_waypoint_timestamp(self):
         """Extract from real APPCH approach waypoint."""
@@ -235,7 +235,7 @@ class TestTimestampExtractionRealWorldExamples:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 57, 55)
+        assert result == datetime(2025, 10, 27, 16, 57, 55, tzinfo=timezone.utc)
 
     def test_toc_waypoint_timestamp(self):
         """Extract from real -TOC- (Top of Climb) waypoint."""
@@ -243,7 +243,7 @@ class TestTimestampExtractionRealWorldExamples:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 16, 58, 51)
+        assert result == datetime(2025, 10, 27, 16, 58, 51, tzinfo=timezone.utc)
 
     def test_tod_waypoint_timestamp(self):
         """Extract from real -TOD- (Top of Descent) waypoint."""
@@ -251,7 +251,7 @@ class TestTimestampExtractionRealWorldExamples:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 17, 10, 26)
+        assert result == datetime(2025, 10, 27, 17, 10, 26, tzinfo=timezone.utc)
 
     def test_kadw_departure_timestamp(self):
         """Extract from real KADW (departure) waypoint."""
@@ -261,4 +261,4 @@ class TestTimestampExtractionRealWorldExamples:
         result = extract_timestamp_from_description(description)
 
         assert result is not None
-        assert result == datetime(2025, 10, 27, 15, 45, 0)
+        assert result == datetime(2025, 10, 27, 15, 45, 0, tzinfo=timezone.utc)

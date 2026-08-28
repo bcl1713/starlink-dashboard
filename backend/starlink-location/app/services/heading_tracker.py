@@ -1,6 +1,6 @@
 """Heading tracker for calculating heading from GPS position updates."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.simulation.route import calculate_bearing
 
@@ -46,7 +46,7 @@ class HeadingTracker:
             If stationary or insufficient data, returns last known heading.
         """
         if timestamp is None:
-            timestamp = datetime.now()
+            timestamp = datetime.now(timezone.utc)
 
         # First position - no heading yet
         if self._previous_position is None:

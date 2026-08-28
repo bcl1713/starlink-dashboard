@@ -137,12 +137,11 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
 
     # Convert coordinates to RoutePoint list
     points: list[RoutePoint] = []
-    point_sequence = 0
 
     if not primary_coords:
         raise KMLParseError("No coordinate data found in KML file")
 
-    for coord in primary_coords:
+    for point_sequence, coord in enumerate(primary_coords):
         points.append(
             RoutePoint(
                 latitude=coord.latitude,
@@ -151,7 +150,6 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
                 sequence=point_sequence,
             )
         )
-        point_sequence += 1
 
     route_waypoints = build_route_waypoints(
         waypoints=waypoints,

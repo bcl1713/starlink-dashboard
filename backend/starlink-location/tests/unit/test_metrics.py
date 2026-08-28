@@ -1,5 +1,7 @@
 """Tests for Prometheus metrics."""
 
+import math
+
 from app.core.metrics import (
     REGISTRY,
     set_service_info,
@@ -77,7 +79,7 @@ class TestMetricsFormatting:
                 if len(parts) >= 2:
                     try:
                         value = float(parts[-1])
-                        assert value == value  # Check not NaN
+                        assert not math.isnan(value)
                     except (ValueError, IndexError):
                         # Some lines may have different format
                         pass

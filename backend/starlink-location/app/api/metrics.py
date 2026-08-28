@@ -1,6 +1,7 @@
 """Prometheus metrics endpoint handler."""
 
 import time
+from typing import Annotated
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse, Response
@@ -31,8 +32,8 @@ def set_last_scrape_time(timestamp):
 
 @router.get("/metrics")
 async def metrics(
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ):
     """
     Prometheus metrics endpoint.
@@ -61,7 +62,19 @@ async def metrics(
     try:
         # Delegate to metrics_export for on-demand POI updates (handles pre-flight cases)
         metrics_output = await metrics_export.get_metrics(route_manager, poi_manager)
-    except Exception:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
         # Fall back to direct registry scrape if export helper fails
         raw_output = generate_latest(REGISTRY)
         if not raw_output.endswith(b"# EOF\n"):

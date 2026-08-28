@@ -133,13 +133,37 @@ class RouteManager:
                     get_flight_state_manager().update_route_context(
                         parsed_route, auto_reset=False, reason="route_reloaded"
                     )
-                except Exception as exc:  # pragma: no cover - defensive guard
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as exc:  # pragma: no cover - defensive guard
                     logger.debug("Failed to sync flight state on route reload: %s", exc)
         except KMLParseError as e:
             error_msg = str(e)
             self._errors[route_id] = error_msg
             logger.warning(f"Failed to parse KML file {file_path}: {error_msg}")
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             error_msg = f"Unexpected error parsing {file_path}: {e}"
             self._errors[route_id] = error_msg
             logger.error(error_msg)
@@ -180,7 +204,19 @@ class RouteManager:
                 from app.services.flight_state import get_flight_state_manager
 
                 get_flight_state_manager().clear_route_context(reason="route_removed")
-            except Exception as exc:  # pragma: no cover - defensive guard
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as exc:  # pragma: no cover - defensive guard
                 logger.debug(
                     "Failed to clear flight state after route removal: %s", exc
                 )
@@ -257,7 +293,19 @@ class RouteManager:
                 get_flight_state_manager().update_route_context(
                     parsed_route, auto_reset=True, reason="route_activated"
                 )
-        except Exception as exc:  # pragma: no cover - defensive guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:  # pragma: no cover - defensive guard
             logger.debug("Failed to sync flight state on route activation: %s", exc)
         return True
 
@@ -280,7 +328,19 @@ class RouteManager:
                     get_flight_state_manager().clear_route_context(
                         reason="route_deactivated"
                     )
-                except Exception as exc:  # pragma: no cover - defensive guard
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as exc:  # pragma: no cover - defensive guard
                     logger.debug(
                         "Failed to clear flight state on route deactivation: %s", exc
                     )
@@ -298,7 +358,19 @@ class RouteManager:
                     get_flight_state_manager().clear_route_context(
                         reason="route_deactivated"
                     )
-                except Exception as exc:  # pragma: no cover - defensive guard
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as exc:  # pragma: no cover - defensive guard
                     logger.debug(
                         "Failed to clear flight state on route deactivation: %s", exc
                     )
@@ -328,5 +400,17 @@ class RouteManager:
             from app.services.flight_state import get_flight_state_manager
 
             get_flight_state_manager().clear_route_context(reason="routes_reloaded")
-        except Exception as exc:  # pragma: no cover - defensive guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:  # pragma: no cover - defensive guard
             logger.debug("Failed to clear flight state after route reload: %s", exc)

@@ -5,7 +5,7 @@
 # formatting for map visualization. Splitting would obscure the rendering pipeline.
 # Deferred to v0.4.0.
 
-from typing import Any
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 
@@ -24,13 +24,16 @@ router = APIRouter(prefix="/api", tags=["geojson"])
 
 @router.get("/route.geojson", response_model=dict, summary="Get route as GeoJSON")
 async def get_route_geojson(
-    include_pois: bool = Query(True, description="Include POIs in response"),
-    include_position: bool = Query(False, description="Include current position"),
-    route_id: str | None = Query(
-        None, description="Specific route ID (uses active if not provided)"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    include_pois: Annotated[bool, Query(description="Include POIs in response")] = True,
+    include_position: Annotated[
+        bool, Query(description="Include current position")
+    ] = False,
+    route_id: Annotated[
+        str | None,
+        Query(description="Specific route ID (uses active if not provided)"),
+    ] = None,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict[str, Any]:
     """
     Get active route and optionally POIs as GeoJSON FeatureCollection.
@@ -84,7 +87,19 @@ async def get_route_geojson(
             coordinator = SimulationCoordinator(config=config_manager.get_config())
             telemetry = coordinator.get_current_telemetry()
             position = telemetry.position if telemetry else None
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
             # If coordinator not available, skip position
             position = None
 
@@ -234,10 +249,11 @@ def _get_route_coordinates_filtered(
     summary="Get route coordinates as tabular data",
 )
 async def get_route_coordinates(
-    route_id: str | None = Query(
-        None, description="Specific route ID (uses active if not provided)"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_id: Annotated[
+        str | None,
+        Query(description="Specific route ID (uses active if not provided)"),
+    ] = None,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict[str, Any]:
     """
     Get active route coordinates in tabular format for Grafana geomap route layer.
@@ -266,10 +282,11 @@ async def get_route_coordinates(
     summary="Get route coordinates in western hemisphere (IDL-safe)",
 )
 async def get_route_coordinates_west(
-    route_id: str | None = Query(
-        None, description="Specific route ID (uses active if not provided)"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_id: Annotated[
+        str | None,
+        Query(description="Specific route ID (uses active if not provided)"),
+    ] = None,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict[str, Any]:
     """
     Get active route coordinates in western hemisphere (longitude < 0) for Grafana geomap.
@@ -293,10 +310,11 @@ async def get_route_coordinates_west(
     summary="Get route coordinates in eastern hemisphere (IDL-safe)",
 )
 async def get_route_coordinates_east(
-    route_id: str | None = Query(
-        None, description="Specific route ID (uses active if not provided)"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_id: Annotated[
+        str | None,
+        Query(description="Specific route ID (uses active if not provided)"),
+    ] = None,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict[str, Any]:
     """
     Get active route coordinates in eastern hemisphere (longitude >= 0) for Grafana geomap.
@@ -316,10 +334,11 @@ async def get_route_coordinates_east(
 
 @router.get("/route.json", response_model=dict, summary="Get route as JSON")
 async def get_route_json(
-    route_id: str | None = Query(
-        None, description="Specific route ID (uses active if not provided)"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_id: Annotated[
+        str | None,
+        Query(description="Specific route ID (uses active if not provided)"),
+    ] = None,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict[str, Any]:
     """
     Get active route metadata as JSON.
@@ -373,8 +392,10 @@ async def get_route_json(
 
 @router.get("/pois.geojson", response_model=dict, summary="Get POIs as GeoJSON")
 async def get_pois_geojson(
-    route_id: str | None = Query(None, description="Filter POIs by route ID"),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_id: Annotated[
+        str | None, Query(description="Filter POIs by route ID")
+    ] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict[str, Any]:
     """
     Get all POIs as GeoJSON FeatureCollection.
@@ -417,7 +438,19 @@ async def get_position_geojson() -> dict[str, Any]:
         coordinator = SimulationCoordinator(config=config_manager.get_config())
         telemetry = coordinator.get_current_telemetry()
         position = telemetry.position if telemetry else None
-    except Exception:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
         # If coordinator not available, return empty collection
         pass
 

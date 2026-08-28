@@ -69,7 +69,19 @@ async def get_config():
     try:
         config = _coordinator.get_config()
         return config.model_dump()
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get configuration: {e!s}"
         )
@@ -94,7 +106,19 @@ async def update_config(new_config: SimulationConfig):
         # Validate the new config (Pydantic will do this automatically)
         _coordinator.update_config(new_config)
         return new_config.model_dump()
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=400, detail=f"Failed to update configuration: {e!s}"
         )
@@ -117,7 +141,19 @@ async def replace_config(new_config: SimulationConfig):
         # Validate the new config (Pydantic will do this automatically)
         _coordinator.update_config(new_config)
         return new_config.model_dump()
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=400, detail=f"Failed to update configuration: {e!s}"
         )

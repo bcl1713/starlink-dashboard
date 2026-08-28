@@ -150,7 +150,19 @@ class TestRouteTimingIntegration:
                 assert parsed_route is not None, f"Failed to parse {kml_file.name}"
                 assert len(parsed_route.points) > 0, f"No points in {kml_file.name}"
                 parsed_routes.append((kml_file.name, parsed_route))
-            except Exception as e:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 pytest.fail(f"Failed to parse {kml_file.name}: {e}")
 
         assert (

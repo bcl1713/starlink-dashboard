@@ -6,7 +6,7 @@
 
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.metrics import (
     starlink_current_waypoint_index,
@@ -74,12 +74,24 @@ class SimulationCoordinator:
             telemetry = self._generate_telemetry()
             self._last_valid_telemetry = telemetry
             return telemetry
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
             # Graceful degradation: return last known good state
             if self._last_valid_telemetry:
                 # Update timestamp but return old data
                 return TelemetryData(
-                    timestamp=datetime.now(),
+                    timestamp=datetime.now(timezone.utc),
                     position=self._last_valid_telemetry.position,
                     network=self._last_valid_telemetry.network,
                     obstruction=self._last_valid_telemetry.obstruction,
@@ -213,7 +225,7 @@ class SimulationCoordinator:
         self._update_route_metrics()
 
         return TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=position_data,
             network=network_data,
             obstruction=obstruction_data,

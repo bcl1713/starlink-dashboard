@@ -1,6 +1,8 @@
 """Flight status API endpoints for monitoring flight phase and ETA mode."""
 
-from fastapi import APIRouter, HTTPException
+from typing import Annotated
+
+from fastapi import APIRouter, Body, HTTPException
 
 from app.models.flight_status import (
     ArrivalUpdateRequest,
@@ -49,7 +51,19 @@ async def get_flight_status() -> FlightStatusResponse:
     """
     try:
         return _build_response()
-    except Exception as exc:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
 
@@ -80,7 +94,19 @@ async def transition_flight_phase(
         return _build_response()
     except HTTPException:
         raise
-    except Exception as exc:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
 
@@ -90,7 +116,9 @@ async def transition_flight_phase(
     summary="Manually trigger departure",
 )
 async def manual_departure(
-    update: DepartureUpdateRequest = DepartureUpdateRequest(),
+    update: Annotated[
+        DepartureUpdateRequest, Body(default_factory=DepartureUpdateRequest)
+    ],
 ) -> FlightStatusResponse:
     """Force the flight into IN_FLIGHT phase with an optional departure timestamp."""
     try:
@@ -103,7 +131,19 @@ async def manual_departure(
         return _build_response()
     except HTTPException:
         raise
-    except Exception as exc:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
 
@@ -113,7 +153,7 @@ async def manual_departure(
     summary="Manually trigger arrival",
 )
 async def manual_arrival(
-    update: ArrivalUpdateRequest = ArrivalUpdateRequest(),
+    update: Annotated[ArrivalUpdateRequest, Body(default_factory=ArrivalUpdateRequest)],
 ) -> FlightStatusResponse:
     """Force the flight into POST_ARRIVAL phase with an optional arrival timestamp."""
     try:
@@ -124,7 +164,19 @@ async def manual_arrival(
         return _build_response()
     except HTTPException:
         raise
-    except Exception as exc:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 
 
@@ -137,5 +189,17 @@ async def reset_flight_status() -> FlightStatusResponse:
         manager = get_flight_state_manager()
         manager.reset()
         return _build_response()
-    except Exception as exc:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:
         raise HTTPException(status_code=500, detail=str(exc))

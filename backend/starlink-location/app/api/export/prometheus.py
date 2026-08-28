@@ -188,7 +188,19 @@ async def query_all_metrics(
                             data_by_timestamp[timestamp][column_name] = labels.get(
                                 label_name, ""
                             )
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.warning(
                 "Failed to query metric %s: %s", export_metric.metric, str(e)
             )

@@ -1,5 +1,7 @@
 """Route statistics endpoint."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.logging import get_logger
@@ -19,7 +21,7 @@ router = APIRouter()
 )
 async def get_route_stats(
     route_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> RouteStatsResponse:
     """Get statistics for a specific route.
 

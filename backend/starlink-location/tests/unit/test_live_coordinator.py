@@ -4,7 +4,7 @@ Tests cover telemetry collection, heading calculation, error handling,
 and graceful degradation using mocked StarlinkClient.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -67,7 +67,7 @@ class TestLiveCoordinatorInitialization:
 
     def test_init_invalid_config(self):
         """Test initialization fails with invalid config type."""
-        with pytest.raises(ValueError, match="must be a SimulationConfig"):
+        with pytest.raises(TypeError, match="must be a SimulationConfig"):
             LiveCoordinator({"invalid": "config"})
 
     @patch("app.live.coordinator.StarlinkClient")
@@ -141,7 +141,7 @@ class TestLiveCoordinatorUpdate:
         # Create mock telemetry with movement
         initial_telemetry = default_mock_telemetry()
         second_telemetry = TelemetryData(
-            timestamp=datetime.now() + timedelta(seconds=5),
+            timestamp=datetime.now(timezone.utc) + timedelta(seconds=5),
             position=PositionData(
                 latitude=40.7200,  # Moved north
                 longitude=-74.0060,

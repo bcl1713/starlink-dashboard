@@ -2,6 +2,7 @@
 
 import io
 import logging
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
@@ -84,8 +85,8 @@ async def get_mission_timeline_endpoint(mission_id: str) -> MissionLegTimeline:
 )
 async def recompute_mission_timeline_endpoint(
     mission_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> MissionLegTimeline:
     """Force a fresh mission timeline computation without altering activation.
 
@@ -115,7 +116,7 @@ async def recompute_mission_timeline_endpoint(
             poi_manager=poi_manager,
         )
     except TimelineComputationError as exc:
-        logger.error("Failed to recompute timeline for %s", mission_id, exc_info=True)
+        logger.exception("Failed to recompute timeline for %s", mission_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to compute mission timeline: {type(exc).__name__}: {exc!s}",
@@ -148,9 +149,9 @@ async def recompute_mission_timeline_endpoint(
 async def export_mission_timeline_endpoint(
     request: Request,
     mission_id: str,
-    format: str = Query("csv", description="Export format: csv or pptx"),
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    format: Annotated[str, Query(description="Export format: csv or pptx")] = "csv",
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> StreamingResponse:
     """Generate a downloadable mission timeline export.
 

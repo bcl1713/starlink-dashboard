@@ -1,6 +1,6 @@
 """Unit tests for metric value validation and ranges."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.metrics import update_metrics_from_telemetry
 from app.models.telemetry import (
@@ -18,7 +18,7 @@ class TestPositionMetricRanges:
     def test_latitude_valid_range(self):
         """Test that latitude values are within valid range (-90 to 90)."""
         telemetry = TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=45.0,  # Valid
                 longitude=0.0,
@@ -46,7 +46,7 @@ class TestPositionMetricRanges:
         """Test latitude at poles."""
         for lat in [-90.0, 90.0]:
             telemetry = TelemetryData(
-                timestamp=datetime.now(),
+                timestamp=datetime.now(timezone.utc),
                 position=PositionData(
                     latitude=lat,
                     longitude=0.0,
@@ -72,7 +72,7 @@ class TestPositionMetricRanges:
     def test_longitude_valid_range(self):
         """Test that longitude values are within valid range (-180 to 180)."""
         telemetry = TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=0.0,
                 longitude=120.0,  # Valid
@@ -99,7 +99,7 @@ class TestPositionMetricRanges:
         """Test longitude at date line."""
         for lon in [-180.0, 180.0]:
             telemetry = TelemetryData(
-                timestamp=datetime.now(),
+                timestamp=datetime.now(timezone.utc),
                 position=PositionData(
                     latitude=0.0,
                     longitude=lon,
@@ -129,7 +129,7 @@ class TestNetworkMetricRanges:
     def test_latency_positive(self):
         """Test that latency is always positive."""
         telemetry = TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=0.0, longitude=0.0, altitude=100.0, speed=10.0, heading=90.0
             ),
@@ -151,7 +151,7 @@ class TestNetworkMetricRanges:
     def test_throughput_non_negative(self):
         """Test that throughput values are non-negative."""
         telemetry = TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=0.0, longitude=0.0, altitude=100.0, speed=10.0, heading=90.0
             ),
@@ -174,7 +174,7 @@ class TestNetworkMetricRanges:
         """Test that packet loss is within 0-100%."""
         for loss in [0.0, 5.0, 50.0, 100.0]:
             telemetry = TelemetryData(
-                timestamp=datetime.now(),
+                timestamp=datetime.now(timezone.utc),
                 position=PositionData(
                     latitude=0.0,
                     longitude=0.0,
@@ -205,7 +205,7 @@ class TestPositionHeadingRange:
         """Test that heading is between 0 and 360 degrees."""
         for heading in [0.0, 90.0, 180.0, 270.0, 359.9]:
             telemetry = TelemetryData(
-                timestamp=datetime.now(),
+                timestamp=datetime.now(timezone.utc),
                 position=PositionData(
                     latitude=0.0,
                     longitude=0.0,
@@ -236,7 +236,7 @@ class TestObstructionMetrics:
         """Test that obstruction percentage is 0-100%."""
         for obstruction in [0.0, 25.0, 50.0, 100.0]:
             telemetry = TelemetryData(
-                timestamp=datetime.now(),
+                timestamp=datetime.now(timezone.utc),
                 position=PositionData(
                     latitude=0.0,
                     longitude=0.0,
@@ -263,7 +263,7 @@ class TestObstructionMetrics:
         """Test that signal quality is 0-100%."""
         for quality in [0.0, 50.0, 100.0]:
             telemetry = TelemetryData(
-                timestamp=datetime.now(),
+                timestamp=datetime.now(timezone.utc),
                 position=PositionData(
                     latitude=0.0,
                     longitude=0.0,
@@ -293,7 +293,7 @@ class TestExtremeTelemetryValues:
     def test_very_high_altitude(self):
         """Test telemetry with very high altitude (aircraft level)."""
         telemetry = TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=0.0,
                 longitude=0.0,
@@ -319,7 +319,7 @@ class TestExtremeTelemetryValues:
     def test_very_low_altitude(self):
         """Test telemetry with sea level or below altitude."""
         telemetry = TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=0.0,
                 longitude=0.0,

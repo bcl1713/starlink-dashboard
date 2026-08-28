@@ -53,7 +53,7 @@ class RainViewerRadarService:
         frame = self._latest_frame(metadata)
         path = frame.get("path")
         if not isinstance(host, str) or not isinstance(path, str):
-            raise RuntimeError("RainViewer metadata unavailable")
+            raise TypeError("RainViewer metadata unavailable")
 
         return (
             f"{host}{path}/{RAINVIEWER_TILE_SIZE}/{z}/{x}/{y}/"
@@ -81,15 +81,15 @@ class RainViewerRadarService:
     def _latest_frame(metadata: dict[str, Any]) -> dict[str, Any]:
         radar = metadata.get("radar")
         if not isinstance(radar, dict):
-            raise RuntimeError("RainViewer metadata unavailable")
+            raise TypeError("RainViewer metadata unavailable")
 
         nowcast = radar.get("nowcast") or []
         past = radar.get("past") or []
         frames = nowcast if nowcast else past
         if not frames:
-            raise RuntimeError("RainViewer metadata unavailable")
+            raise TypeError("RainViewer metadata unavailable")
 
         latest = max(frames, key=lambda frame: frame.get("time", 0))
         if not isinstance(latest, dict):
-            raise RuntimeError("RainViewer metadata unavailable")
+            raise TypeError("RainViewer metadata unavailable")
         return latest

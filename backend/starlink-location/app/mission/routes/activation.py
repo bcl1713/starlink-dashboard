@@ -4,9 +4,9 @@
 # state transitions, timeline building, metric coordination, and flight status
 # updates. Splitting would create coupling across state-dependent operations.
 # Deferred to v0.4.0.
-
 import logging
 from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -71,8 +71,8 @@ def get_active_mission_id() -> str | None:
 )
 async def activate_mission(
     mission_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> MissionActivationResponse:
     """Activate a mission (set as active and trigger timeline recomputation).
 
@@ -139,7 +139,19 @@ async def activate_mission(
                         logger.debug(
                             "Deactivated mission",
                         )
-                except Exception:  # pragma: no cover
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ):  # pragma: no cover
                     logger.warning(
                         "Failed to deactivate mission",
                     )
@@ -154,16 +166,27 @@ async def activate_mission(
         if mission.route_id and route_manager:
             try:
                 route_manager.activate_route(mission.route_id)
-            except Exception:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
                 mission.is_active = False
                 mission.updated_at = datetime.now(timezone.utc)
                 save_mission(mission)
                 _active_mission_id = None
-                logger.error(
+                logger.exception(
                     "Failed to activate route %s for mission %s",
                     mission.route_id,
                     mission_id,
-                    exc_info=True,
                 )
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -188,9 +211,7 @@ async def activate_mission(
             mission.updated_at = datetime.now(timezone.utc)
             save_mission(mission)
             _active_mission_id = None
-            logger.error(
-                "Failed to compute mission timeline for %s", mission_id, exc_info=True
-            )
+            logger.exception("Failed to compute mission timeline for %s", mission_id)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to compute mission timeline: {type(exc).__name__}: {exc!s}",
@@ -209,7 +230,19 @@ async def activate_mission(
             logger.info(
                 "Reset flight state to pre_departure",
             )
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
             logger.warning(
                 "Failed to reset flight state",
             )
@@ -227,10 +260,21 @@ async def activate_mission(
         )
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
             "Failed to activate mission",
-            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -249,7 +293,7 @@ async def activate_mission(
     },
 )
 async def deactivate_mission(
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> MissionDeactivationResponse:
     """Deactivate the currently active mission.
 
@@ -289,7 +333,19 @@ async def deactivate_mission(
                         mission.route_id,
                         mission.id,
                     )
-            except Exception as exc:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as exc:
                 logger.warning(
                     "Failed to deactivate route %s for mission %s: %s",
                     mission.route_id,
@@ -318,8 +374,20 @@ async def deactivate_mission(
         )
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error("Failed to deactivate mission", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to deactivate mission")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to deactivate mission: {type(e).__name__}: {e!s}",
@@ -368,10 +436,21 @@ async def get_active_mission() -> MissionLeg:
         )
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
             "Failed to get active mission",
-            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -468,10 +547,21 @@ async def get_active_mission_satellites_endpoint() -> dict:
         return geojson
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
             "Failed to get active mission satellites",
-            exc_info=True,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

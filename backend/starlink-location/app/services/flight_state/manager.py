@@ -406,7 +406,19 @@ class FlightStateManager:
                 new_route_id = (
                     Path(file_path).stem if file_path else route.metadata.name
                 )
-            except Exception:  # pragma: no cover - defensive guard
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):  # pragma: no cover - defensive guard
                 new_route_id = route.metadata.name
             new_route_name = route.metadata.name
             if route.timing_profile:
@@ -569,14 +581,38 @@ class FlightStateManager:
             for callback in self._phase_change_callbacks:
                 try:
                     callback(old_phase, new_phase)
-                except Exception as e:
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as e:
                     logger.error(f"Error in phase change callback: {e}")
 
         if old_mode != self._status.eta_mode:
             for callback in self._mode_change_callbacks:
                 try:
                     callback(old_mode, self._status.eta_mode)
-                except Exception as e:
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as e:
                     logger.error(f"Error in mode change callback: {e}")
 
 

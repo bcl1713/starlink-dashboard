@@ -8,7 +8,7 @@ and exports.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.mission.models import (
     MissionLegTimeline,
@@ -148,7 +148,7 @@ def _interval_at(
     for interval in transport_intervals:
         interval_end = interval.end
         if interval_end is None:
-            interval_end = datetime.max
+            interval_end = datetime.max.replace(tzinfo=timezone.utc)
 
         if interval.start <= timestamp < interval_end:
             return interval

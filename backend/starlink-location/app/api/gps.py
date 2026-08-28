@@ -35,7 +35,19 @@ async def get_gps_config():
     try:
         config = _starlink_client.get_gps_config()
         return GPSConfigResponse(**config)
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=503,
             detail=f"Failed to connect to Starlink dish: {e!s}",
@@ -70,7 +82,19 @@ async def set_gps_config(request: GPSConfigRequest):
             status_code=403,
             detail=str(e),
         )
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=503,
             detail=f"Failed to connect to Starlink dish: {e!s}",

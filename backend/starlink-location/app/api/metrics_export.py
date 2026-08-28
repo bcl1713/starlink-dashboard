@@ -1,5 +1,7 @@
 """Metrics export endpoint for integration with Prometheus and monitoring."""
 
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, status
 
 from app.core.config import ConfigManager
@@ -27,8 +29,8 @@ router = APIRouter(tags=["metrics"])
 
 @router.get("/metrics", status_code=status.HTTP_200_OK)
 async def get_metrics(
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> str:
     """
     Get Prometheus metrics in OpenMetrics text format.
@@ -109,7 +111,19 @@ async def get_metrics(
                 from app.services.flight_state import get_flight_state_manager
 
                 status_snapshot = get_flight_state_manager().get_status()
-            except Exception:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
                 status_snapshot = None
 
             eta_mode = (
@@ -155,7 +169,19 @@ async def get_metrics(
                         if eta_seconds >= 0:
                             eta_gauge.labels(**label_kwargs).set(eta_seconds)
 
-    except Exception:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
         # Gracefully handle errors in POI metric calculation
         pass
 

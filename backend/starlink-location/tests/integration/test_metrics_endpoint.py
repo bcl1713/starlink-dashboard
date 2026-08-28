@@ -1,6 +1,7 @@
 """Integration tests for Prometheus metrics endpoint."""
 
 import asyncio
+import math
 
 import pytest
 
@@ -133,7 +134,7 @@ async def test_metrics_values_are_numeric(test_client):
                 try:
                     value = float(parts[-1])
                     # Should not be NaN or Inf (though some Prometheus formats allow these)
-                    assert value == value  # NaN check
+                    assert not math.isnan(value)
                 except (ValueError, IndexError):
                     pass
 

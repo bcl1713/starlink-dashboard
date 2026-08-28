@@ -2,7 +2,7 @@
 
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.route import RoutePoint, RouteTimingProfile, RouteWaypoint
 from app.services.kml.geometry import haversine_distance
@@ -33,7 +33,7 @@ def extract_timestamp_from_description(
         >>> desc = "Airport\\n Time Over Waypoint: 2025-10-27 16:51:13Z"
         >>> ts = extract_timestamp_from_description(desc)
         >>> ts.isoformat()
-        '2025-10-27T16:51:13'
+        '2025-10-27T16:51:13+00:00'
     """
     if not description:
         return None
@@ -45,7 +45,9 @@ def extract_timestamp_from_description(
     try:
         timestamp_str = match.group(1)
         # Parse format: "2025-10-27 16:51:13"
-        return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+        return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=timezone.utc
+        )
     except (ValueError, IndexError) as e:
         logger.debug(f"Failed to parse timestamp from description: {e}")
         return None

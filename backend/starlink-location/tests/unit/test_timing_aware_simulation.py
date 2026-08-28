@@ -1,7 +1,7 @@
 """Unit tests for Phase 5 timing-aware simulation features."""
 
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from app.models.config import PositionConfig, RouteConfig
@@ -37,7 +37,9 @@ class TestKMLRouteFollowerTimingMethods:
                 longitude=-74.0,
                 altitude=10000,
                 sequence=0,
-                expected_arrival_time=datetime(2025, 11, 3, 12, 0, 0),
+                expected_arrival_time=datetime(
+                    2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc
+                ),
                 expected_segment_speed_knots=None,  # Start point
             ),
             RoutePoint(
@@ -45,7 +47,9 @@ class TestKMLRouteFollowerTimingMethods:
                 longitude=-74.0,
                 altitude=10000,
                 sequence=1,
-                expected_arrival_time=datetime(2025, 11, 3, 12, 10, 0),
+                expected_arrival_time=datetime(
+                    2025, 11, 3, 12, 10, 0, tzinfo=timezone.utc
+                ),
                 expected_segment_speed_knots=500.0,  # 500 knots to this point
             ),
             RoutePoint(
@@ -53,14 +57,16 @@ class TestKMLRouteFollowerTimingMethods:
                 longitude=-74.0,
                 altitude=10000,
                 sequence=2,
-                expected_arrival_time=datetime(2025, 11, 3, 12, 20, 0),
+                expected_arrival_time=datetime(
+                    2025, 11, 3, 12, 20, 0, tzinfo=timezone.utc
+                ),
                 expected_segment_speed_knots=550.0,  # 550 knots to this point
             ),
         ]
 
         timing_profile = RouteTimingProfile(
-            departure_time=datetime(2025, 11, 3, 12, 0, 0),
-            arrival_time=datetime(2025, 11, 3, 12, 20, 0),
+            departure_time=datetime(2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc),
+            arrival_time=datetime(2025, 11, 3, 12, 20, 0, tzinfo=timezone.utc),
             total_expected_duration_seconds=1200.0,
             has_timing_data=True,
             segment_count_with_timing=2,
@@ -149,8 +155,12 @@ class TestKMLRouteFollowerTimingMethods:
         profile = follower.get_route_timing_profile()
         assert profile is not None
         assert profile.has_timing_data is True
-        assert profile.departure_time == datetime(2025, 11, 3, 12, 0, 0)
-        assert profile.arrival_time == datetime(2025, 11, 3, 12, 20, 0)
+        assert profile.departure_time == datetime(
+            2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc
+        )
+        assert profile.arrival_time == datetime(
+            2025, 11, 3, 12, 20, 0, tzinfo=timezone.utc
+        )
         assert profile.total_expected_duration_seconds == 1200.0
 
     def test_get_route_timing_profile_without_timing(self, untimed_route):
@@ -448,7 +458,7 @@ class TestTimingAwarenessIntegration:
         # Simulate 100-point route with timing
         points = []
         base_lat, base_lon = 38.8, -77.0  # Near DC
-        base_time = datetime(2025, 11, 3, 12, 0, 0)
+        base_time = datetime(2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc)
 
         for i in range(100):
             # Simulate progress across ~2000 km

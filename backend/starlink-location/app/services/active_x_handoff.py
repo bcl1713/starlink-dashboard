@@ -181,7 +181,19 @@ def _project_progress(
 ) -> float | None:
     try:
         projection = RouteETACalculator(route).project_poi_to_route(latitude, longitude)
-    except Exception as exc:  # pragma: no cover - defensive geometry guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:  # pragma: no cover - defensive geometry guard
         logger.debug("Failed to project active X link point onto route: %s", exc)
         return None
     progress = projection.get("projected_route_progress")

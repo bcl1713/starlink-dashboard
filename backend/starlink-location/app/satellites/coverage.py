@@ -49,15 +49,18 @@ def point_in_polygon(
     for i in range(1, n + 1):
         p2_lon, p2_lat = polygon[i % n]
 
-        if lat > min(p1_lat, p2_lat) and lat <= max(p1_lat, p2_lat):
-            if lon <= max(p1_lon, p2_lon):
-                if p1_lat != p2_lat:
-                    x_intersect = (lat - p1_lat) * (p2_lon - p1_lon) / (
-                        p2_lat - p1_lat
-                    ) + p1_lon
+        if (
+            lat > min(p1_lat, p2_lat)
+            and lat <= max(p1_lat, p2_lat)
+            and lon <= max(p1_lon, p2_lon)
+        ):
+            if p1_lat != p2_lat:
+                x_intersect = (lat - p1_lat) * (p2_lon - p1_lon) / (
+                    p2_lat - p1_lat
+                ) + p1_lon
 
-                if p1_lon == p2_lon or lon <= x_intersect:
-                    inside = not inside
+            if p1_lon == p2_lon or lon <= x_intersect:
+                inside = not inside
 
         p1_lon, p1_lat = p2_lon, p2_lat
 

@@ -1591,7 +1591,19 @@ def _cover_metadata_line(
             from app.mission.storage import load_mission_v2
 
             metadata_source = load_mission_v2(parent_mission_id) or mission
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
             metadata_source = mission
 
     metadata = getattr(metadata_source, "metadata", None) or {}

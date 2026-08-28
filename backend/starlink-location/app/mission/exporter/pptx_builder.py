@@ -229,8 +229,20 @@ def add_route_map_slide(
             # Store in cache if available
             if map_cache_key and map_cache is not None:
                 map_cache[map_cache_key] = map_image_bytes
-        except Exception as e:
-            logger.error("Failed to generate map: %s", e, exc_info=True)
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
+            logger.exception("Failed to generate map: %s")
 
     # Add map to slide
     if map_image_bytes:
@@ -251,8 +263,20 @@ def add_route_map_slide(
             # Center the picture horizontally
             pic.left = int((Inches(10) - pic.width) / 2)
 
-        except Exception as e:
-            logger.error("Failed to add map to PPTX: %s", e, exc_info=True)
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
+            logger.exception("Failed to add map to PPTX: %s")
             textbox = slide_map.shapes.add_textbox(
                 Inches(1), Inches(1), Inches(8), Inches(1)
             )

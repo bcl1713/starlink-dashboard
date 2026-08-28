@@ -52,98 +52,112 @@ def generate_mission_combined_csv(
 
     Combines all leg timelines into a single CSV with leg boundaries marked.
     """
+    f = io.StringIO()
+    if output_path:
+        with open(output_path, "w", newline="", encoding="utf-8") as output_file:
+            _write_mission_combined_csv(
+                output_file, mission, route_manager, poi_manager
+            )
+        return None
+
+    _write_mission_combined_csv(f, mission, route_manager, poi_manager)
+    return f.getvalue().encode("utf-8")
+
+
+def _write_mission_combined_csv(
+    f: IO[str],
+    mission: Mission,
+    route_manager: RouteManager | None,
+    poi_manager: POIManager | None,
+) -> None:
     import csv
 
-    if output_path:
-        f = open(output_path, "w", newline="", encoding="utf-8")
-    else:
-        f = io.StringIO()
+    writer = csv.writer(f)
 
-    try:
-        writer = csv.writer(f)
+    # Write header
+    writer.writerow(
+        [
+            "Mission",
+            mission.name,
+            "Total Legs",
+            len(mission.legs),
+            "Generated",
+            datetime.now(timezone.utc).isoformat(),
+        ]
+    )
+    writer.writerow([])  # Blank line
 
-        # Write header
-        writer.writerow(
-            [
-                "Mission",
-                mission.name,
-                "Total Legs",
-                len(mission.legs),
-                "Generated",
-                datetime.now(timezone.utc).isoformat(),
-            ]
-        )
-        writer.writerow([])  # Blank line
+    # Write combined timeline
+    writer.writerow(["Leg ID", "Leg Name", "Event Time", "Event Type", "Details"])
 
-        # Write combined timeline
-        writer.writerow(["Leg ID", "Leg Name", "Event Time", "Event Type", "Details"])
+    for leg in mission.legs:
+        try:
+            timeline = _load_export_timeline(mission, leg, route_manager, poi_manager)
+            if not timeline:
+                continue
 
-        for leg in mission.legs:
-            try:
-                timeline = _load_export_timeline(
-                    mission, leg, route_manager, poi_manager
+            # Add leg boundary marker
+            writer.writerow([leg.id, leg.name, "LEG START", "---", "---"])
+
+            # Add timeline segments
+            for segment in timeline.segments:
+                start_time = (
+                    segment.start_time.isoformat()
+                    if isinstance(segment.start_time, datetime)
+                    else segment.start_time
                 )
-                if not timeline:
-                    continue
+                duration = (
+                    (segment.end_time - segment.start_time).total_seconds()
+                    if isinstance(segment.end_time, datetime)
+                    else 0
+                )
 
-                # Add leg boundary marker
-                writer.writerow([leg.id, leg.name, "LEG START", "---", "---"])
+                reasons = ", ".join(segment.reasons) if segment.reasons else "---"
 
-                # Add timeline segments
-                for segment in timeline.segments:
-                    start_time = (
-                        segment.start_time.isoformat()
-                        if isinstance(segment.start_time, datetime)
-                        else segment.start_time
-                    )
-                    duration = (
-                        (segment.end_time - segment.start_time).total_seconds()
-                        if isinstance(segment.end_time, datetime)
-                        else 0
-                    )
+                writer.writerow(
+                    [
+                        leg.id,
+                        leg.name,
+                        start_time,
+                        _display_status(segment.status.value),
+                        f"States: X={segment.x_state.value}, Ka={segment.ka_state.value}, Ku={segment.ku_state.value} | Duration: {duration}s | Reasons: {reasons}",
+                    ]
+                )
 
-                    reasons = ", ".join(segment.reasons) if segment.reasons else "---"
+            # Add timeline advisories
+            for advisory in timeline.advisories:
+                timestamp = (
+                    advisory.timestamp.isoformat()
+                    if isinstance(advisory.timestamp, datetime)
+                    else advisory.timestamp
+                )
+                writer.writerow(
+                    [
+                        leg.id,
+                        leg.name,
+                        timestamp,
+                        f"ADVISORY ({advisory.event_type})",
+                        f"[{advisory.severity.upper()}] {advisory.message}",
+                    ]
+                )
 
-                    writer.writerow(
-                        [
-                            leg.id,
-                            leg.name,
-                            start_time,
-                            _display_status(segment.status.value),
-                            f"States: X={segment.x_state.value}, Ka={segment.ka_state.value}, Ku={segment.ku_state.value} | Duration: {duration}s | Reasons: {reasons}",
-                        ]
-                    )
+            writer.writerow([leg.id, leg.name, "LEG END", "---", "---"])
+            writer.writerow([])  # Blank line between legs
 
-                # Add timeline advisories
-                for advisory in timeline.advisories:
-                    timestamp = (
-                        advisory.timestamp.isoformat()
-                        if isinstance(advisory.timestamp, datetime)
-                        else advisory.timestamp
-                    )
-                    writer.writerow(
-                        [
-                            leg.id,
-                            leg.name,
-                            timestamp,
-                            f"ADVISORY ({advisory.event_type})",
-                            f"[{advisory.severity.upper()}] {advisory.message}",
-                        ]
-                    )
-
-                writer.writerow([leg.id, leg.name, "LEG END", "---", "---"])
-                writer.writerow([])  # Blank line between legs
-
-            except Exception as e:
-                logger.error(f"Failed to include leg {leg.id} in combined CSV: {e}")
-
-    finally:
-        if output_path:
-            f.close()
-
-    if not output_path:
-        return f.getvalue().encode("utf-8")
-    return None
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
+            logger.error(f"Failed to include leg {leg.id} in combined CSV: {e}")
 
 
 def generate_mission_combined_pptx(
@@ -288,7 +302,19 @@ def generate_mission_combined_pptx(
                 map_cache=map_cache,
             )
 
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to generate PPTX slides for leg {leg.id}: {e}")
             # Add error slide
             slide = prs.slides.add_slide(prs.slide_layouts[1])
@@ -369,7 +395,19 @@ def _add_route_kmls_to_zip(
                         )
                 else:
                     logger.warning(f"Route {leg.route_id} not found for leg {leg.id}")
-            except Exception as e:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 logger.error(f"Failed to add route KML for leg {leg.id}: {e}")
 
 
@@ -422,7 +460,19 @@ def _add_pois_to_zip(
                 zf.writestr(poi_path, json.dumps(pois_data, indent=2, default=str))
                 manifest_files["pois"].append(poi_path)
                 logger.info(f"Added POI data: {poi_path} with {len(leg_pois)} POIs")
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to add POI data for leg {leg.id}: {e}")
 
     # Export satellite POIs (category="satellite") separately
@@ -445,7 +495,19 @@ def _add_pois_to_zip(
             logger.info(
                 f"Added satellite POI data: {satellite_path} with {len(satellite_pois)} satellites"
             )
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         logger.error(f"Failed to add satellite POI data: {e}")
 
 
@@ -471,7 +533,19 @@ def _load_export_timeline(
                 parent_mission_id=mission.id,
             )
             return timeline
-        except Exception as exc:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:
             logger.warning(
                 "Failed to rebuild timeline for leg %s during export; "
                 "falling back to cached timeline: %s",
@@ -531,7 +605,19 @@ def _add_per_leg_exports_to_zip(
             zf.writestr(csv_path, csv_export.content)
             manifest_files["per_leg_exports"].append(csv_path)
             logger.info(f"Generated CSV for leg {leg.id}")
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to generate CSV for leg {leg.id}: {e}")
 
         try:
@@ -549,7 +635,19 @@ def _add_per_leg_exports_to_zip(
             zf.writestr(pptx_path, pptx_export.content)
             manifest_files["per_leg_exports"].append(pptx_path)
             logger.info(f"Generated PPTX for leg {leg.id}")
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to generate PPTX for leg {leg.id}: {e}")
 
 
@@ -603,7 +701,19 @@ def _add_combined_mission_exports_to_zip(
 
         logger.info("Combined mission-level exports complete")
 
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         logger.error(f"Failed to generate combined mission exports: {e}")
 
 
@@ -695,9 +805,8 @@ def export_mission_package(
     if not mission:
         raise ExportPackageError(f"Mission {mission_id} not found")
 
-    # Create a temporary file for the zip archive
-    # delete=True ensures it's deleted when closed by the caller (StreamingResponse)
-    zip_temp = tempfile.NamedTemporaryFile(delete=True)
+    # Create a temporary file for the zip archive. The caller owns closing it.
+    zip_temp = io.BytesIO()
 
     manifest_files = {
         "mission_data": ["mission.json", "manifest.json"],
@@ -740,7 +849,19 @@ def export_mission_package(
                 f"Created manifest.json with {manifest['statistics']['total_files']} files"
             )
 
-    except Exception:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
         # If anything fails, close and delete the temp file
         zip_temp.close()
         raise

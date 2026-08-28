@@ -2,7 +2,8 @@
 
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
@@ -43,7 +44,10 @@ def generate_csv(data_by_timestamp: dict[float, dict[str, float | str]]) -> str:
     # Write data rows sorted by timestamp
     for ts in sorted(data_by_timestamp.keys()):
         row_data = data_by_timestamp[ts]
-        row: list[object] = [datetime.utcfromtimestamp(ts).isoformat() + "Z"]
+        row: list[object] = [
+            datetime.fromtimestamp(ts, tz=timezone.utc).replace(tzinfo=None).isoformat()
+            + "Z"
+        ]
         for metric in EXPORT_METRICS:
             if metric.column:
                 row.append(row_data.get(metric.column, ""))
@@ -59,13 +63,15 @@ def generate_csv(data_by_timestamp: dict[float, dict[str, float | str]]) -> str:
 @limiter.limit("10/minute")
 async def export_starlink_csv(
     request: Request,
-    start: datetime = Query(..., description="Start datetime (ISO 8601)"),
-    end: datetime = Query(..., description="End datetime (ISO 8601)"),
-    step: int | None = Query(
-        None,
-        description="Step interval in seconds (auto-calculated if not provided)",
-        ge=1,
-    ),
+    start: Annotated[datetime, Query(description="Start datetime (ISO 8601)")] = ...,
+    end: Annotated[datetime, Query(description="End datetime (ISO 8601)")] = ...,
+    step: Annotated[
+        int | None,
+        Query(
+            description="Step interval in seconds (auto-calculated if not provided)",
+            ge=1,
+        ),
+    ] = None,
 ) -> StreamingResponse:
     """Export Starlink telemetry data to CSV.
 
@@ -135,8 +141,20 @@ async def export_starlink_csv(
 
     except HTTPException:
         raise
-    except Exception as e:
-        logger.exception("Failed to export Starlink CSV: %s", str(e))
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to export Starlink CSV")
         raise HTTPException(
             status_code=500,
             detail=f"Failed to query Prometheus: {e!s}",
