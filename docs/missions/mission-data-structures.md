@@ -8,24 +8,22 @@
 
 ## Reference Sections
 
-### 1. [Core Mission Models & Enums](data/models.md)
+### 1. [Core Mission and Timeline Models](../data-structures/mission-timeline-models.md)
 
-Defines Mission, MissionTimeline, TimelineSegment, TimelineAdvisory, and related
-Pydantic models and Enums used throughout the system.
+Defines Mission, MissionLegTimeline, TimelineSegment, TimelineAdvisory, and
+transport configuration models used throughout the system.
 
-### 2. [Route & POI Data Structures](data/routes-pois.md)
+### 2. [Route & POI Data Structures](../data-structures/route-poi-models.md)
 
 Details the ParsedRoute (metadata, points, waypoints) and POI (Points of
 Interest, including real-time ETA) structures essential for map visualization.
 
-### 3. [Exporter Helper Functions](data/exporter-helpers.md)
+### 3. [Exporter Helper Functions](../mission-data/helper-functions.md)
 
-Documentation for the helper functions in exporter.py, including color
-constants, timestamp formatting, transport display mapping, and DataFrame
-generation helpers.
+Documents exporter color constants, timestamp formatting, transport display
+mappings, and DataFrame generation helpers.
 
-### 4. [Data Flow & Implementation Notes](data/implementation-notes.md)
+### 4. [Data Flow & Implementation Notes](viz/implementation.md)
 
-Step-by-step data flows for generating maps and charts, plus critical
-implementation notes regarding timezone handling, duration formatting, and route
-integration.
+Covers map and chart generation data flow, timezone handling, missing route
+timing, and visualization edge cases.

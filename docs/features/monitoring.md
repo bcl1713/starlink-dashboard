@@ -60,7 +60,8 @@ Store and query up to 1 year of metrics data (configurable).
 - 30 days: ~200 MB
 - 15 days: ~100 MB
 
-**See:** [CLAUDE.md - Storage](../../CLAUDE.md#storage--route-management)
+**See:**
+[Storage Configuration](../setup/configuration/storage-configuration.md)
 
 ---
 

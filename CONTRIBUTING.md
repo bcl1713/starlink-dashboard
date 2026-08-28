@@ -9,8 +9,8 @@ help you get started.
 
 - [Development Workflow](./docs/development/workflow.md) - Git practices and
   development process
-- [Code Quality Standards](/.specify/memory/constitution.md) - Quality
-  principles and guidelines
+- [Code Quality Standards](./docs/code-quality-standards.md) - Formatting,
+  linting, testing, and review requirements
 - [Architecture Documentation](./docs/architecture/README.md) - System design
   and structure
 
@@ -171,8 +171,8 @@ For detailed documentation structure and guidelines, see:
 
 ### General Principles
 
-- Follow the [Constitution](/.specify/memory/constitution.md) for quality
-  principles
+- Follow the [Code Quality Standards](./docs/code-quality-standards.md),
+  including formatting, testing, and review requirements
 - Maintain file size limits (≤300 lines for most files)
 - Write clear, self-documenting code
 - Include docstrings for all public functions/classes

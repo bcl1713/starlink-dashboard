@@ -46,7 +46,7 @@ starlink-dashboard/
 │   └── completed/                 # Completed tasks
 ├── docker-compose.yml             # Service composition
 ├── .env.example                   # Configuration template
-├── CLAUDE.md                      # AI development guide
+├── AGENTS.md                      # AI development guide
 ├── CONTRIBUTING.md                # Contribution guidelines
 └── README.md                      # This file
 ```
