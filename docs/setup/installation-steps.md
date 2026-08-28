@@ -37,7 +37,7 @@ backend/
 monitoring/
 docker-compose.yml
 .env.example
-CLAUDE.md
+AGENTS.md
 README.md
 ```
 

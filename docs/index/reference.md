@@ -134,7 +134,7 @@
 | grafana-configuration.md             | 12 KB | How-to    | Dashboard configuration         |
 | metrics/overview.md                  | 8 KB  | Reference | Prometheus metrics              |
 | phased-development-plan.md           | 7 KB  | Plan      | Implementation roadmap          |
-| AGENTS.md                            | 8 KB  | Config    | Development configuration       |
+| AGENTS.md                            | —     | Config    | Development configuration       |
 | Backend README                       | 14 KB | Overview  | Service documentation           |
 
 **Total Documentation:** ~154 KB of comprehensive guides
