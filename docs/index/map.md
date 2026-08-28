@@ -5,7 +5,7 @@
 | File                                           | Purpose                                       | Audience     |
 | :--------------------------------------------- | :-------------------------------------------- | :----------- |
 | [README.md](../../README.md)                   | Project overview, quick start, navigation     | Everyone     |
-| [CLAUDE.md](../../CLAUDE.md)                   | AI development guide, configuration reference | Developers   |
+| [AGENTS.md](../../AGENTS.md)                   | AI development guide, configuration reference | Developers   |
 | [CONTRIBUTING.md](../../CONTRIBUTING.md)       | How to contribute, development workflow       | Contributors |
 | [.env.example](../../.env.example)             | Configuration template with defaults          | Everyone     |
 | [docker-compose.yml](../../docker-compose.yml) | Service definition and composition            | DevOps       |

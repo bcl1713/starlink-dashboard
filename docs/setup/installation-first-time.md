@@ -68,8 +68,7 @@ Open Grafana and explore:
 
 1. **[Configuration](./configuration.md)** - Customize for your use case
 2. **[API Reference](../api/README.md)** - Explore available endpoints
-3. **[Route Management](../../CLAUDE.md#route-management)** - Upload flight
-   routes
+3. **[Route Management](../route-api-endpoints.md)** - Upload flight routes
 
 ---
 

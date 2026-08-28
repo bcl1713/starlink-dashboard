@@ -38,7 +38,7 @@
 
 - Environment Variables:
   [README.md#configuration](../../README.md#configuration)
-- .env Reference: [CLAUDE.md#configuration](../../CLAUDE.md#configuration)
+- .env Reference: [.env.example](../../.env.example)
 - Backend Config:
   [backend/README.md#environment-variables](../../backend/starlink-location/README.md#environment-variables)
 - Docker Compose: [docker-compose.yml](../../docker-compose.yml)
@@ -76,7 +76,7 @@
   [architecture/design-document.md](../architecture/design-document.md)
 - Development Status: [Development Plan](../development-plan.md)
 - Development Plan: [Development Plan](../development-plan.md)
-- Development Config: [CLAUDE.md](../../CLAUDE.md)
+- Development Config: [AGENTS.md](../../AGENTS.md)
 
 **Troubleshooting:**
 
@@ -103,7 +103,8 @@
 - Setup: [setup/installation.md](../setup/installation.md)
 - Troubleshooting:
   [troubleshooting/quick-diagnostics.md](../troubleshooting/quick-diagnostics.md)
-- Configuration: [CLAUDE.md](../../CLAUDE.md)
+- Configuration:
+  [Environment Variables](../setup/configuration/environment-variables.md)
 
 **Developers:**
 
@@ -133,7 +134,7 @@
 | grafana-configuration.md             | 12 KB | How-to    | Dashboard configuration         |
 | metrics/overview.md                  | 8 KB  | Reference | Prometheus metrics              |
 | phased-development-plan.md           | 7 KB  | Plan      | Implementation roadmap          |
-| CLAUDE.md                            | 8 KB  | Config    | Development configuration       |
+| AGENTS.md                            | 8 KB  | Config    | Development configuration       |
 | Backend README                       | 14 KB | Overview  | Service documentation           |
 
 **Total Documentation:** ~154 KB of comprehensive guides

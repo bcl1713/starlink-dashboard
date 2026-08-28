@@ -30,8 +30,8 @@
 
 ### Code Quality
 
-- **[Constitution](../../.specify/memory/constitution.md)**: Project quality
-  standards, principles, and governance
+- **[Code Quality Standards](../code-quality-standards.md)**: Project
+  formatting, linting, and code style requirements
 
 ---
 

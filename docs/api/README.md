@@ -237,7 +237,7 @@ Geographic coordinates use decimal degrees:
 
 ## Related Documentation
 
-- [Development Guidelines](../../CLAUDE.md) - Coding standards
+- [Development Guidelines](../code-quality-standards.md) - Coding standards
 - [SETUP-GUIDE](../setup/README.md) - Installation and setup
 - [METRICS](../metrics/overview.md) - Prometheus metrics reference
 - [Backend README](../../backend/starlink-location/README.md) - Service details

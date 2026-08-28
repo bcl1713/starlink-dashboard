@@ -119,8 +119,7 @@ Essential project documentation at the repository root:
 
 - [README.md](../README.md) - Project overview and quick links
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution guidelines and standards
-- [CLAUDE.md](../CLAUDE.md) - Runtime guidance for AI-assisted development
-- [AGENTS.md](../AGENTS.md) - Agent configuration
+- [AGENTS.md](../AGENTS.md) - Runtime guidance for AI-assisted development
 
 ### Backend-Specific Documentation
 

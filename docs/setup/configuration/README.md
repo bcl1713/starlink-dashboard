@@ -174,7 +174,7 @@ docker compose logs | rg -i error
 Configuration complete! Proceed to:
 
 - **[API Reference](../../api/README.md)** - Explore endpoints
-- **[Route Management](../../../CLAUDE.md#route-management)** - Upload routes
+- **[Route Management](../../route-api-endpoints.md)** - Upload routes
 - **[Troubleshooting](../../troubleshooting/README.md)** - Common issues
 
 ---
