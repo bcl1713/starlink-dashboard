@@ -1,15 +1,15 @@
 """Tests for synthetic route generator."""
 
-import pytest
 import math
 
+import pytest
 from app.simulation.route import (
     CircularRoute,
     StraightRoute,
     calculate_destination,
+    create_route,
     degrees_to_radians,
     radians_to_degrees,
-    create_route,
 )
 
 
@@ -77,7 +77,7 @@ class TestCircularRoute:
         route = CircularRoute(40.0, -74.0, 100.0)
 
         # Progress 0 should give first point
-        lat1, lon1, head1 = route.get_point(0.0)
+        lat1, lon1, _head1 = route.get_point(0.0)
         assert lat1 == pytest.approx(route.points[0][0])
         assert lon1 == pytest.approx(route.points[0][1])
 
@@ -91,8 +91,8 @@ class TestCircularRoute:
         route = CircularRoute(40.0, -74.0, 100.0)
 
         # Progress 1.0 and 0.0 should give same point
-        lat_0, lon_0, head_0 = route.get_point(0.0)
-        lat_1, lon_1, head_1 = route.get_point(1.0)
+        lat_0, lon_0, _head_0 = route.get_point(0.0)
+        lat_1, lon_1, _head_1 = route.get_point(1.0)
 
         assert lat_0 == pytest.approx(lat_1)
         assert lon_0 == pytest.approx(lon_1)
@@ -145,7 +145,7 @@ class TestStraightRoute:
     def test_straight_route_get_segment_middle(self):
         """Test getting midpoint of straight route."""
         route = StraightRoute(40.0, -74.0, 42.0, -72.0)
-        lat_mid, lon_mid, bearing = route.get_segment(0.5)
+        lat_mid, lon_mid, _bearing = route.get_segment(0.5)
 
         # Should be roughly between start and end
         assert 40.0 < lat_mid < 42.0

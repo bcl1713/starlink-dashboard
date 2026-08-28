@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Sequence
 
 from app.mission.models import (
     MissionLegTimeline,
@@ -13,8 +13,8 @@ from app.mission.models import (
     Transport,
     TransportState,
 )
-from app.satellites.rules import EventType, MissionEvent
 from app.mission.timeline_builder.utils import ensure_datetime
+from app.satellites.rules import EventType, MissionEvent
 
 logger = logging.getLogger(__name__)
 

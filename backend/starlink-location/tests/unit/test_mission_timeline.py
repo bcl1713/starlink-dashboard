@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
+from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.models import (
     AARWindow,
     MissionLeg,
@@ -12,7 +13,6 @@ from app.mission.models import (
     TransportConfig,
     TransportState,
 )
-from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.state import TransportInterval
 from app.mission.timeline import build_timeline_segments
 from app.mission.timeline_builder.aar import parse_elapsed_offset, resolve_aar_windows

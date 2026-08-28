@@ -7,22 +7,21 @@
 import logging
 import time
 from datetime import datetime
-from typing import Optional
 
+from app.core.metrics import (
+    starlink_current_waypoint_index,
+    starlink_route_progress_percent,
+)
 from app.models.config import SimulationConfig
 from app.models.telemetry import (
     EnvironmentalData,
     TelemetryData,
 )
 from app.services.speed_tracker import SpeedTracker
+from app.simulation.kml_follower import KMLRouteFollower
 from app.simulation.network import NetworkSimulator
 from app.simulation.obstructions import ObstructionSimulator
 from app.simulation.position import PositionSimulator
-from app.simulation.kml_follower import KMLRouteFollower
-from app.core.metrics import (
-    starlink_route_progress_percent,
-    starlink_current_waypoint_index,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +49,7 @@ class SimulationCoordinator:
         self.speed_tracker = SpeedTracker(smoothing_duration_seconds=120.0)
 
         # Last known good state for graceful degradation
-        self._last_valid_telemetry: Optional[TelemetryData] = None
+        self._last_valid_telemetry: TelemetryData | None = None
 
         # Route Manager for KML route integration (Phase 5 feature)
         self.route_manager = None

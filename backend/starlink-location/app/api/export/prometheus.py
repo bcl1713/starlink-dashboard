@@ -3,7 +3,7 @@
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -35,9 +35,7 @@ EXPORT_METRICS = [
     ExportMetric(
         "starlink_network_throughput_down_mbps_current", "throughput_down_mbps"
     ),
-    ExportMetric(
-        "starlink_network_throughput_up_mbps_current", "throughput_up_mbps"
-    ),
+    ExportMetric("starlink_network_throughput_up_mbps_current", "throughput_up_mbps"),
     ExportMetric("starlink_network_packet_loss_percent", "packet_loss_percent"),
     ExportMetric("starlink_dish_obstruction_percent", "obstruction_percent"),
     ExportMetric("starlink_signal_quality_percent", "signal_quality_percent"),
@@ -71,7 +69,7 @@ def export_columns() -> list[str]:
     return columns
 
 
-def calculate_step(start: datetime, end: datetime, step: Optional[int] = None) -> int:
+def calculate_step(start: datetime, end: datetime, step: int | None = None) -> int:
     """Calculate appropriate step interval based on time range.
 
     Args:
@@ -183,7 +181,10 @@ async def query_all_metrics(
                     if export_metric.column:
                         data_by_timestamp[timestamp][export_metric.column] = float(val)
                     if export_metric.label_columns:
-                        for label_name, column_name in export_metric.label_columns.items():
+                        for (
+                            label_name,
+                            column_name,
+                        ) in export_metric.label_columns.items():
                             data_by_timestamp[timestamp][column_name] = labels.get(
                                 label_name, ""
                             )

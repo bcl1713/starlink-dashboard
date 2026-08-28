@@ -1,13 +1,13 @@
 """Unit tests for adjusted departure time functionality."""
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
+import pytest
 from app.mission.models import MissionLeg, TransportConfig
 from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,
-    derive_mission_window,
     TimelineComputationError,
+    derive_mission_window,
 )
 from app.mission.timeline_builder.utils import timestamp_for_waypoint
 from app.mission.validation import (
@@ -15,9 +15,9 @@ from app.mission.validation import (
 )
 from app.models.route import (
     ParsedRoute,
+    RouteMetadata,
     RoutePoint,
     RouteTimingProfile,
-    RouteMetadata,
     RouteWaypoint,
 )
 

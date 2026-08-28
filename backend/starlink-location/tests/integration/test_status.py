@@ -1,7 +1,8 @@
 """Integration tests for JSON status endpoint."""
 
-import pytest
 import asyncio
+
+import pytest
 
 
 @pytest.mark.asyncio

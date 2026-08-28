@@ -5,7 +5,6 @@
 # properties. Splitting would fragment the route domain. Deferred to v0.4.0.
 
 from datetime import datetime, timezone
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -17,15 +16,15 @@ class RoutePoint(BaseModel):
     longitude: float = Field(
         ..., description="Longitude in decimal degrees (-180 to 180)"
     )
-    altitude: Optional[float] = Field(
+    altitude: float | None = Field(
         default=None, description="Altitude in meters above sea level"
     )
     sequence: int = Field(default=0, description="Order of point in route (0-indexed)")
-    expected_arrival_time: Optional[datetime] = Field(
+    expected_arrival_time: datetime | None = Field(
         default=None,
         description="Expected arrival time at this waypoint (UTC, ISO-8601)",
     )
-    expected_segment_speed_knots: Optional[float] = Field(
+    expected_segment_speed_knots: float | None = Field(
         default=None,
         description="Expected speed for segment ending at this point (in knots)",
     )
@@ -47,26 +46,26 @@ class RoutePoint(BaseModel):
 class RouteWaypoint(BaseModel):
     """Represents a waypoint parsed from a KML Placemark."""
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None, description="Waypoint name as defined in KML"
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, description="Waypoint description text"
     )
-    style_url: Optional[str] = Field(
+    style_url: str | None = Field(
         default=None, description="Referenced style URL for icon/styling"
     )
     latitude: float = Field(..., description="Waypoint latitude in decimal degrees")
     longitude: float = Field(..., description="Waypoint longitude in decimal degrees")
-    altitude: Optional[float] = Field(
+    altitude: float | None = Field(
         default=None, description="Waypoint altitude if provided"
     )
     order: int = Field(..., description="Document order index of this waypoint")
-    role: Optional[str] = Field(
+    role: str | None = Field(
         default=None,
         description="Semantic role (e.g., 'departure', 'arrival', 'waypoint', 'alternate')",
     )
-    expected_arrival_time: Optional[datetime] = Field(
+    expected_arrival_time: datetime | None = Field(
         default=None,
         description="Expected arrival time at this waypoint (UTC, ISO-8601), parsed from description",
     )
@@ -92,7 +91,7 @@ class RouteMetadata(BaseModel):
     """Metadata about a parsed KML route."""
 
     name: str = Field(..., description="Name of the route from KML")
-    description: Optional[str] = Field(default=None, description="Description from KML")
+    description: str | None = Field(default=None, description="Description from KML")
     file_path: str = Field(..., description="Path to the source KML file")
     imported_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
@@ -104,20 +103,20 @@ class RouteMetadata(BaseModel):
 class RouteTimingProfile(BaseModel):
     """Timing profile for a route with expected speeds and arrival times."""
 
-    departure_time: Optional[datetime] = Field(
+    departure_time: datetime | None = Field(
         default=None, description="Expected departure time (UTC, ISO-8601)"
     )
-    arrival_time: Optional[datetime] = Field(
+    arrival_time: datetime | None = Field(
         default=None, description="Expected arrival time at route end (UTC, ISO-8601)"
     )
-    total_expected_duration_seconds: Optional[float] = Field(
+    total_expected_duration_seconds: float | None = Field(
         default=None, description="Total expected flight duration in seconds"
     )
-    actual_departure_time: Optional[datetime] = Field(
+    actual_departure_time: datetime | None = Field(
         default=None,
         description="Observed departure time when flight state transitioned from PRE_DEPARTURE",
     )
-    actual_arrival_time: Optional[datetime] = Field(
+    actual_arrival_time: datetime | None = Field(
         default=None,
         description="Observed arrival time when flight state transitioned to POST_ARRIVAL",
     )
@@ -132,7 +131,7 @@ class RouteTimingProfile(BaseModel):
         default=0, description="Number of segments with calculated expected speeds"
     )
 
-    def get_total_duration(self) -> Optional[float]:
+    def get_total_duration(self) -> float | None:
         """Get total expected duration in seconds."""
         if self.departure_time and self.arrival_time:
             delta = self.arrival_time - self.departure_time
@@ -176,7 +175,7 @@ class ParsedRoute(BaseModel):
         default_factory=list,
         description="Optional waypoint placemarks associated with the route",
     )
-    timing_profile: Optional[RouteTimingProfile] = Field(
+    timing_profile: RouteTimingProfile | None = Field(
         default=None, description="Timing profile if route has embedded timing data"
     )
 
@@ -252,32 +251,32 @@ class RouteResponse(BaseModel):
         ..., description="Unique route identifier (filename without extension)"
     )
     name: str = Field(..., description="Route name from KML")
-    description: Optional[str] = Field(default=None, description="Route description")
+    description: str | None = Field(default=None, description="Route description")
     point_count: int = Field(..., description="Number of points in route")
     is_active: bool = Field(
         default=False, description="Whether this is the active route"
     )
     imported_at: datetime = Field(..., description="When route was imported")
-    imported_poi_count: Optional[int] = Field(
+    imported_poi_count: int | None = Field(
         default=None,
         description="Number of POIs imported from the KML upload (only set on upload response)",
     )
-    skipped_poi_count: Optional[int] = Field(
+    skipped_poi_count: int | None = Field(
         default=None,
         description="Number of waypoint placemarks skipped during POI import",
     )
     has_timing_data: bool = Field(
         default=False, description="Whether route has embedded timing metadata"
     )
-    timing_profile: Optional[RouteTimingProfile] = Field(
+    timing_profile: RouteTimingProfile | None = Field(
         default=None,
         description="Timing profile with departure/arrival/duration info (if has_timing_data is True)",
     )
-    flight_phase: Optional[str] = Field(
+    flight_phase: str | None = Field(
         default=None,
         description="Current flight phase (pre_departure, in_flight, post_arrival) when route is active",
     )
-    eta_mode: Optional[str] = Field(
+    eta_mode: str | None = Field(
         default=None,
         description="Current ETA mode (anticipated or estimated) when route is active",
     )
@@ -295,7 +294,7 @@ class RouteDetailResponse(BaseModel):
 
     id: str = Field(..., description="Unique route identifier")
     name: str = Field(..., description="Route name from KML")
-    description: Optional[str] = Field(default=None, description="Route description")
+    description: str | None = Field(default=None, description="Route description")
     point_count: int = Field(..., description="Number of points in route")
     is_active: bool = Field(
         default=False, description="Whether this is the active route"
@@ -311,18 +310,18 @@ class RouteDetailResponse(BaseModel):
         default_factory=list,
         description="Waypoint placemarks extracted from the KML (for POI import/reference)",
     )
-    timing_profile: Optional[RouteTimingProfile] = Field(
+    timing_profile: RouteTimingProfile | None = Field(
         default=None, description="Timing profile if route has embedded timing data"
     )
     has_timing_data: bool = Field(
         default=False,
         description="Whether the timing profile contains schedule metadata",
     )
-    flight_phase: Optional[str] = Field(
+    flight_phase: str | None = Field(
         default=None,
         description="Current flight phase (pre_departure, in_flight, post_arrival) when route is active",
     )
-    eta_mode: Optional[str] = Field(
+    eta_mode: str | None = Field(
         default=None,
         description="Current ETA mode (anticipated or estimated) when route is active",
     )

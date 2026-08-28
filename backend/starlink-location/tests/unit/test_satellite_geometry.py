@@ -6,7 +6,6 @@ against known reference values.
 
 import math
 
-
 from app.satellites.geometry import (
     GEOSTATIONARY_ALTITUDE,
     WGS84_SEMI_MAJOR_AXIS,
@@ -133,14 +132,14 @@ class TestLookAngles:
         alt_high = 50000.0  # 50 km
 
         # Aircraft far from satellite
-        az1, el1 = look_angles(
+        _az1, el1 = look_angles(
             aircraft_lat_deg=60.0,
             aircraft_lon_deg=0.0,
             aircraft_alt_m=alt_low,
             satellite_lon_deg=0.0,
         )
 
-        az2, el2 = look_angles(
+        _az2, el2 = look_angles(
             aircraft_lat_deg=60.0,
             aircraft_lon_deg=0.0,
             aircraft_alt_m=alt_high,
@@ -154,7 +153,7 @@ class TestLookAngles:
     def test_look_angles_horizon_check(self):
         """Test that satellite below horizon has negative elevation."""
         # Aircraft far from satellite (should be below horizon)
-        azimuth, elevation = look_angles(
+        _azimuth, elevation = look_angles(
             aircraft_lat_deg=85.0,  # Very far from geostationary
             aircraft_lon_deg=0.0,
             aircraft_alt_m=0.0,
@@ -189,7 +188,7 @@ class TestAzimuthElevationFromEcef:
         # Target to the north
         target_ecef = (WGS84_SEMI_MAJOR_AXIS, 0.0, 1000000.0)
 
-        azimuth, elevation = azimuth_elevation_from_ecef(
+        azimuth, _elevation = azimuth_elevation_from_ecef(
             observer_ecef, target_ecef, 0.0, 0.0
         )
 
@@ -249,7 +248,7 @@ class TestGeometryEdgeCases:
     def test_aircraft_at_antipode(self):
         """Test azimuth calculation with aircraft at antipodal point."""
         # Aircraft at South Pole, satellite at equator
-        azimuth, elevation = look_angles(
+        _azimuth, elevation = look_angles(
             aircraft_lat_deg=-90.0,
             aircraft_lon_deg=0.0,
             aircraft_alt_m=0.0,

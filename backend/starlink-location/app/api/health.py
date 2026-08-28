@@ -4,7 +4,6 @@ import logging
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
@@ -12,7 +11,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 # Global health state
-_coordinator: Optional[object] = None
+_coordinator: object | None = None
 _last_metrics_scrape_time = None
 
 # Health check thresholds
@@ -62,7 +61,7 @@ def _get_active_route():
     return None
 
 
-def _ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
+def _ensure_utc(dt: datetime | None) -> datetime | None:
     """Return datetime with UTC tzinfo; assumes naive timestamps are UTC."""
     if dt is None:
         return None
@@ -73,7 +72,7 @@ def _ensure_utc(dt: Optional[datetime]) -> Optional[datetime]:
 
 def _compute_time_until_departure(
     now: datetime, status_snapshot, timing_profile
-) -> Optional[float]:
+) -> float | None:
     """Compute seconds until departure using flight status and timing profile."""
     departure_time = None
     if status_snapshot:
@@ -92,7 +91,7 @@ def _compute_time_until_departure(
     return None
 
 
-def _safe_isoformat(dt: Optional[datetime]) -> Optional[str]:
+def _safe_isoformat(dt: datetime | None) -> str | None:
     """Return ISO-8601 string for datetime, normalizing to UTC."""
     dt = _ensure_utc(dt)
     if dt is None:
@@ -266,4 +265,4 @@ async def health():
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Health check failed: {e!s}")

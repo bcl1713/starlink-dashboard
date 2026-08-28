@@ -4,9 +4,9 @@ import logging
 import math
 from pathlib import Path
 
+from app.mission.storage import load_mission
 from app.models.poi import POI
 from app.services.route_manager import RouteManager
-from app.mission.storage import load_mission
 
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,13 @@
 """Unit tests for route timing functionality."""
 
 from datetime import datetime, timedelta
+
 from app.models.route import RoutePoint, RouteWaypoint
 from app.services.kml import (
+    assign_waypoint_timestamps_to_points,
+    calculate_segment_speeds,
     extract_timestamp_from_description,
     haversine_distance,
-    calculate_segment_speeds,
-    assign_waypoint_timestamps_to_points,
 )
 
 

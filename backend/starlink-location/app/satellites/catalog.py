@@ -8,7 +8,6 @@ import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +18,14 @@ class Satellite:
 
     satellite_id: str  # e.g., 'X-1', 'AOR', 'Ku-Leo-1'
     transport: str  # 'X', 'Ka', or 'Ku'
-    longitude: Optional[float] = None  # For geostationary satellites
-    slot: Optional[str] = None  # Orbital slot name
-    coverage_geojson_path: Optional[Path] = None  # Path to coverage polygon GeoJSON
-    coverage_polygon: Optional[dict] = None  # Loaded GeoJSON feature (lazy loaded)
+    longitude: float | None = None  # For geostationary satellites
+    slot: str | None = None  # Orbital slot name
+    coverage_geojson_path: Path | None = None  # Path to coverage polygon GeoJSON
+    coverage_polygon: dict | None = None  # Loaded GeoJSON feature (lazy loaded)
     color: str = "#FFFFFF"  # Display color for Grafana overlays
-    metadata: Optional[dict] = None  # Additional metadata
+    metadata: dict | None = None  # Additional metadata
 
-    def load_coverage(self) -> Optional[dict]:
+    def load_coverage(self) -> dict | None:
         """Load and cache coverage polygon from GeoJSON file."""
         if self.coverage_polygon is not None:
             return self.coverage_polygon
@@ -52,11 +51,11 @@ class Satellite:
                     )
                     return None
                 return self.coverage_polygon
-        except (IOError, json.JSONDecodeError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load coverage for {self.satellite_id}: {e}")
             return None
 
-    def get_coverage_polygon(self) -> Optional[dict]:
+    def get_coverage_polygon(self) -> dict | None:
         """Get coverage polygon (lazy loading from GeoJSON)."""
         if self.coverage_polygon is not None:
             return self.coverage_polygon
@@ -74,8 +73,8 @@ class SatelliteCatalog:
 
     def __init__(self):
         """Initialize empty satellite catalog."""
-        self.satellites: Dict[str, Satellite] = {}
-        self._transport_index: Dict[str, List[str]] = {}  # transport -> [sat_id, ...]
+        self.satellites: dict[str, Satellite] = {}
+        self._transport_index: dict[str, list[str]] = {}  # transport -> [sat_id, ...]
 
     def add_satellite(self, satellite: Satellite) -> None:
         """Add satellite to catalog.
@@ -94,16 +93,16 @@ class SatelliteCatalog:
             f"Added satellite {satellite.satellite_id} ({satellite.transport})"
         )
 
-    def get_satellite(self, satellite_id: str) -> Optional[Satellite]:
+    def get_satellite(self, satellite_id: str) -> Satellite | None:
         """Retrieve satellite metadata by ID."""
         return self.satellites.get(satellite_id)
 
-    def get_by_transport(self, transport: str) -> List[Satellite]:
+    def get_by_transport(self, transport: str) -> list[Satellite]:
         """Get all satellites for a transport (X, Ka, or Ku)."""
         sat_ids = self._transport_index.get(transport, [])
         return [self.satellites[sat_id] for sat_id in sat_ids]
 
-    def list_all(self) -> List[Satellite]:
+    def list_all(self) -> list[Satellite]:
         """List all satellites in catalog."""
         return list(self.satellites.values())
 
@@ -113,7 +112,7 @@ class SatelliteCatalog:
 
 
 # Global catalog instance (initialized on startup)
-_catalog: Optional[SatelliteCatalog] = None
+_catalog: SatelliteCatalog | None = None
 
 
 def load_satellite_catalog(

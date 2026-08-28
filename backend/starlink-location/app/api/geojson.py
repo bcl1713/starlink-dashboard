@@ -5,15 +5,15 @@
 # formatting for map visualization. Splitting would obscure the rendering pipeline.
 # Deferred to v0.4.0.
 
-from typing import Any, Optional
+from typing import Any
 
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Depends, Query
 
 from app.core.config import ConfigManager
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.services.geojson import GeoJSONBuilder
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
 
 # Initialize services
 config_manager = ConfigManager()
@@ -26,7 +26,7 @@ router = APIRouter(prefix="/api", tags=["geojson"])
 async def get_route_geojson(
     include_pois: bool = Query(True, description="Include POIs in response"),
     include_position: bool = Query(False, description="Include current position"),
-    route_id: Optional[str] = Query(
+    route_id: str | None = Query(
         None, description="Specific route ID (uses active if not provided)"
     ),
     route_manager: RouteManager = Depends(get_route_manager),
@@ -97,9 +97,9 @@ async def get_route_geojson(
 
 
 def _get_route_coordinates_filtered(
-    route_id: Optional[str],
+    route_id: str | None,
     route_manager: RouteManager,
-    hemisphere: Optional[str] = None,
+    hemisphere: str | None = None,
 ) -> dict[str, Any]:
     """
     Helper function to get route coordinates, optionally filtered by hemisphere.
@@ -234,7 +234,7 @@ def _get_route_coordinates_filtered(
     summary="Get route coordinates as tabular data",
 )
 async def get_route_coordinates(
-    route_id: Optional[str] = Query(
+    route_id: str | None = Query(
         None, description="Specific route ID (uses active if not provided)"
     ),
     route_manager: RouteManager = Depends(get_route_manager),
@@ -266,7 +266,7 @@ async def get_route_coordinates(
     summary="Get route coordinates in western hemisphere (IDL-safe)",
 )
 async def get_route_coordinates_west(
-    route_id: Optional[str] = Query(
+    route_id: str | None = Query(
         None, description="Specific route ID (uses active if not provided)"
     ),
     route_manager: RouteManager = Depends(get_route_manager),
@@ -293,7 +293,7 @@ async def get_route_coordinates_west(
     summary="Get route coordinates in eastern hemisphere (IDL-safe)",
 )
 async def get_route_coordinates_east(
-    route_id: Optional[str] = Query(
+    route_id: str | None = Query(
         None, description="Specific route ID (uses active if not provided)"
     ),
     route_manager: RouteManager = Depends(get_route_manager),
@@ -316,7 +316,7 @@ async def get_route_coordinates_east(
 
 @router.get("/route.json", response_model=dict, summary="Get route as JSON")
 async def get_route_json(
-    route_id: Optional[str] = Query(
+    route_id: str | None = Query(
         None, description="Specific route ID (uses active if not provided)"
     ),
     route_manager: RouteManager = Depends(get_route_manager),
@@ -373,7 +373,7 @@ async def get_route_json(
 
 @router.get("/pois.geojson", response_model=dict, summary="Get POIs as GeoJSON")
 async def get_pois_geojson(
-    route_id: Optional[str] = Query(None, description="Filter POIs by route ID"),
+    route_id: str | None = Query(None, description="Filter POIs by route ID"),
     poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict[str, Any]:
     """

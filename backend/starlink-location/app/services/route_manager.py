@@ -6,13 +6,11 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
-
-from watchdog.events import FileSystemEventHandler
-from watchdog.observers import Observer
 
 from app.models.route import ParsedRoute
 from app.services.kml_parser import KMLParseError, parse_kml_file
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +63,8 @@ class RouteManager:
         self.routes_dir.mkdir(parents=True, exist_ok=True)
 
         self._routes: dict[str, ParsedRoute] = {}
-        self._active_route_id: Optional[str] = None
-        self._observer: Optional[Observer] = None
+        self._active_route_id: str | None = None
+        self._observer: Observer | None = None
         self._errors: dict[str, str] = {}  # Tracks errors by route_id
 
         logger.info(f"RouteManager initialized with directory: {self.routes_dir}")
@@ -207,7 +205,7 @@ class RouteManager:
 
         return result
 
-    def get_route(self, route_id: str) -> Optional[ParsedRoute]:
+    def get_route(self, route_id: str) -> ParsedRoute | None:
         """
         Get a specific route by ID.
 
@@ -219,7 +217,7 @@ class RouteManager:
         """
         return self._routes.get(route_id)
 
-    def get_active_route(self) -> Optional[ParsedRoute]:
+    def get_active_route(self) -> ParsedRoute | None:
         """
         Get the currently active route.
 
@@ -263,7 +261,7 @@ class RouteManager:
             logger.debug("Failed to sync flight state on route activation: %s", exc)
         return True
 
-    def deactivate_route(self, route_id: Optional[str] = None) -> None:
+    def deactivate_route(self, route_id: str | None = None) -> None:
         """Deactivate a specific route or the current active route.
 
         Args:

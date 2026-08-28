@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta
 
 import pytest
-
 from app.mission.models import Transport
 from app.satellites.rules import ConstraintConfig, EventType, MissionEvent, RuleEngine
 

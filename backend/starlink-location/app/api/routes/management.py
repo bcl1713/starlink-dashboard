@@ -1,15 +1,14 @@
 """Route management endpoints (list, get, activate, deactivate)."""
 
 from datetime import datetime
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.logging import get_logger
-from app.models.route import RouteListResponse, RouteDetailResponse, RouteResponse
-from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.models.route import RouteDetailResponse, RouteListResponse, RouteResponse
 from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
+from app.services.route_manager import RouteManager
 
 logger = get_logger(__name__)
 
@@ -19,7 +18,7 @@ router = APIRouter()
 
 @router.get("/", response_model=RouteListResponse, summary="List all routes")
 async def list_routes(
-    active: Optional[bool] = Query(None, description="Filter by active status"),
+    active: bool | None = Query(None, description="Filter by active status"),
     route_manager: RouteManager = Depends(get_route_manager),
 ) -> RouteListResponse:
     """
@@ -224,8 +223,8 @@ async def activate_route(
         flight_phase = parsed_route.timing_profile.flight_status
 
     try:
-        from app.services.flight_state import get_flight_state_manager
         from app.models.route import RouteTimingProfile
+        from app.services.flight_state import get_flight_state_manager
 
         status_snapshot = get_flight_state_manager().get_status()
         flight_phase = status_snapshot.phase.value

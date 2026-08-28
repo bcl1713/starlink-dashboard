@@ -19,17 +19,16 @@ Deferred for future refactoring with potential:
 """
 
 import logging
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.services.poi_manager import POIManager
 from app.mission.dependencies import get_poi_manager
+from app.services.poi_manager import POIManager
 
 logger = logging.getLogger(__name__)
 
 # Global coordinator reference for accessing telemetry
-_coordinator: Optional[object] = None
+_coordinator: object | None = None
 
 
 def set_coordinator(coordinator: object) -> None:
@@ -52,7 +51,7 @@ router = APIRouter(tags=["pois"])
 
 @router.get("/count/total", response_model=dict, summary="Get POI count")
 async def count_pois(
-    route_id: Optional[str] = Query(None, description="Filter by route ID"),
+    route_id: str | None = Query(None, description="Filter by route ID"),
     poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict:
     """Get count of POIs, optionally filtered by route.
@@ -79,9 +78,9 @@ async def count_pois(
     summary="Get next destination (closest POI name)",
 )
 async def get_next_destination(
-    latitude: Optional[str] = Query(None),
-    longitude: Optional[str] = Query(None),
-    speed_knots: Optional[str] = Query(None),
+    latitude: str | None = Query(None),
+    longitude: str | None = Query(None),
+    speed_knots: str | None = Query(None),
     poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict:
     """Get the name of the closest POI (next destination).
@@ -182,9 +181,9 @@ async def get_next_destination(
     summary="Get time to next arrival (closest POI ETA)",
 )
 async def get_next_eta(
-    latitude: Optional[str] = Query(None),
-    longitude: Optional[str] = Query(None),
-    speed_knots: Optional[str] = Query(None),
+    latitude: str | None = Query(None),
+    longitude: str | None = Query(None),
+    speed_knots: str | None = Query(None),
     poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict:
     """Get the ETA in seconds to the closest POI.
@@ -257,8 +256,7 @@ async def get_next_eta(
     for poi in pois:
         distance = eta_calc.calculate_distance(lat, lon, poi.latitude, poi.longitude)
         eta_seconds = eta_calc.calculate_eta(distance, speed)
-        if eta_seconds < closest_eta:
-            closest_eta = eta_seconds
+        closest_eta = min(closest_eta, eta_seconds)
 
     status_eta_mode = "estimated"
     status_phase = None
@@ -284,9 +282,9 @@ async def get_next_eta(
     summary="Get count of approaching POIs (< 30 min)",
 )
 async def get_approaching_pois(
-    latitude: Optional[str] = Query(None),
-    longitude: Optional[str] = Query(None),
-    speed_knots: Optional[str] = Query(None),
+    latitude: str | None = Query(None),
+    longitude: str | None = Query(None),
+    speed_knots: str | None = Query(None),
     poi_manager: POIManager = Depends(get_poi_manager),
 ) -> dict:
     """Get count of POIs that will be reached within 30 minutes.

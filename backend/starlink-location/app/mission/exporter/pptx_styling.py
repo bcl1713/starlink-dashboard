@@ -18,12 +18,13 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from pptx.util import Inches, Pt
-from pptx.enum.text import PP_ALIGN
 from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN
+from pptx.util import Inches, Pt
 
 if TYPE_CHECKING:
     from pptx.slide import Slide
+
     from app.mission.models import TimelineStatus
 
 logger = logging.getLogger(__name__)

@@ -7,9 +7,9 @@ intervals feed the timeline engine to build customer-facing segments.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Sequence
 
 from app.mission.models import Transport, TransportState
 from app.satellites.rules import EventType, MissionEvent
@@ -22,16 +22,16 @@ class TransportInterval:
     transport: Transport
     state: TransportState
     start: datetime
-    end: Optional[datetime] = None
-    reasons: List[str] = field(default_factory=list)
+    end: datetime | None = None
+    reasons: list[str] = field(default_factory=list)
 
 
 def generate_transport_intervals(
     events: Sequence[MissionEvent],
     mission_start: datetime,
     mission_end: datetime,
-    transports: Optional[Sequence[Transport]] = None,
-) -> Dict[Transport, List[TransportInterval]]:
+    transports: Sequence[Transport] | None = None,
+) -> dict[Transport, list[TransportInterval]]:
     """Generate contiguous availability intervals for each transport.
 
     Args:
@@ -53,14 +53,14 @@ def generate_transport_intervals(
 
     transports = list(transports or [Transport.X, Transport.KA, Transport.KU])
 
-    active_conditions: Dict[Transport, Dict[str, Dict[str, str]]] = {
+    active_conditions: dict[Transport, dict[str, dict[str, str]]] = {
         transport: {"degraded": {}, "offline": {}, "safety": {}}
         for transport in transports
     }
 
-    intervals: Dict[Transport, List[TransportInterval]] = {}
-    current_state: Dict[Transport, TransportState] = {}
-    current_reasons: Dict[Transport, List[str]] = {}
+    intervals: dict[Transport, list[TransportInterval]] = {}
+    current_state: dict[Transport, TransportState] = {}
+    current_reasons: dict[Transport, list[str]] = {}
 
     for transport in transports:
         intervals[transport] = [
@@ -126,7 +126,7 @@ def _clamp_timestamp(ts: datetime, start: datetime, end: datetime) -> datetime:
 
 
 def _close_interval(
-    intervals: List[TransportInterval], transition_time: datetime
+    intervals: list[TransportInterval], transition_time: datetime
 ) -> None:
     """Close the current interval at the provided timestamp."""
     if not intervals:
@@ -140,8 +140,8 @@ def _close_interval(
 
 
 def _derive_state(
-    condition_state: Dict[str, Dict[str, str]],
-) -> tuple[TransportState, List[str]]:
+    condition_state: dict[str, dict[str, str]],
+) -> tuple[TransportState, list[str]]:
     """Return (state, reasons) based on active degraded/offline conditions."""
     offline_reasons = [
         condition_state["offline"][key]
@@ -167,7 +167,7 @@ def _derive_state(
 
 
 def _apply_event(
-    active_conditions: Dict[Transport, Dict[str, Dict[str, str]]],
+    active_conditions: dict[Transport, dict[str, dict[str, str]]],
     event: MissionEvent,
 ) -> bool:
     """Apply a MissionEvent to the active condition set."""
@@ -228,7 +228,9 @@ def _apply_event(
         EventType.MANUAL_AAR_TRACK_START,
         EventType.MANUAL_AAR_TRACK_END,
     ):
-        track_id = event.metadata.get("track_id", "unknown") if event.metadata else "unknown"
+        track_id = (
+            event.metadata.get("track_id", "unknown") if event.metadata else "unknown"
+        )
         key = f"manual_aar_track:{track_id}"
         if event.event_type == EventType.MANUAL_AAR_TRACK_START:
             return activate("degraded", key, reason or "Manual AR Track")

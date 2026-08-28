@@ -1,16 +1,14 @@
 """KML file validation."""
 
 from pathlib import Path
-from typing import Optional
 
 
 class KMLParseError(Exception):
     """Raised when KML parsing fails."""
 
-    pass
 
 
-def validate_kml_file(file_path: str | Path) -> tuple[bool, Optional[str]]:
+def validate_kml_file(file_path: str | Path) -> tuple[bool, str | None]:
     """
     Validate a KML file without fully parsing it.
 

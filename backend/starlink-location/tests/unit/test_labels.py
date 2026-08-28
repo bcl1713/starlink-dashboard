@@ -1,19 +1,20 @@
 """Unit tests for label helper functions."""
 
-import pytest
 from datetime import datetime
+
+import pytest
 from app.core.labels import (
+    apply_common_labels,
+    get_geographic_labels,
     get_mode_label,
     get_status_label,
-    get_geographic_labels,
-    apply_common_labels,
 )
 from app.models.telemetry import (
-    TelemetryData,
-    PositionData,
+    EnvironmentalData,
     NetworkData,
     ObstructionData,
-    EnvironmentalData,
+    PositionData,
+    TelemetryData,
 )
 
 

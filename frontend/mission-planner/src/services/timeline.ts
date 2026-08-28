@@ -47,7 +47,12 @@ export interface DerivedRouteEstimate {
   available: boolean;
   estimated: boolean;
   unavailable_reason?: string | null;
-  points?: Array<{ latitude: number; longitude: number; altitude?: number | null; provenance: string }>;
+  points?: Array<{
+    latitude: number;
+    longitude: number;
+    altitude?: number | null;
+    provenance: string;
+  }>;
   planned_distance_nm?: number;
   derived_distance_nm?: number;
   planned_duration_seconds?: number;

@@ -2,12 +2,12 @@
 
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.logging import get_logger
-from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
+from app.services.route_manager import RouteManager
 
 logger = get_logger(__name__)
 
@@ -65,8 +65,8 @@ async def delete_route(
         route_manager._routes.pop(route_id, None)
 
     except Exception as e:
-        logger.error(f"Error deleting route {route_id}: {str(e)}")
+        logger.error(f"Error deleting route {route_id}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error deleting route: {str(e)}",
+            detail=f"Error deleting route: {e!s}",
         )

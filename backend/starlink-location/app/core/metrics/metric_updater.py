@@ -8,51 +8,51 @@
 import logging
 import math
 from datetime import datetime, timezone
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from app.models.telemetry import TelemetryData
-    from app.models.route import ParsedRoute
-    from app.services.poi_manager import POIManager
     from app.core.config import ConfigManager
+    from app.models.route import ParsedRoute
+    from app.models.telemetry import TelemetryData
+    from app.services.poi_manager import POIManager
 
 from app.core.metrics.prometheus_metrics import (
     _current_position,
+    mission_active_info,
+    mission_comm_state,
+    mission_critical_seconds,
+    mission_degraded_seconds,
+    mission_next_conflict_seconds,
+    mission_phase_state,
+    mission_timeline_generated_timestamp,
+    simulation_updates_total,
+    starlink_dish_altitude_feet,
+    starlink_dish_heading_degrees,
     starlink_dish_latitude_degrees,
     starlink_dish_longitude_degrees,
-    starlink_dish_altitude_feet,
-    starlink_dish_speed_knots,
-    starlink_dish_heading_degrees,
-    starlink_network_latency_ms_current,
-    starlink_network_throughput_down_mbps_current,
-    starlink_network_throughput_up_mbps_current,
-    starlink_network_packet_loss_percent,
-    starlink_network_latency_ms,
-    starlink_network_throughput_down_mbps,
-    starlink_network_throughput_up_mbps,
     starlink_dish_obstruction_percent,
-    starlink_signal_quality_percent,
-    starlink_uptime_seconds,
-    starlink_flight_phase,
-    starlink_eta_mode,
-    starlink_flight_departure_time_unix,
-    starlink_flight_arrival_time_unix,
-    starlink_time_until_departure_seconds,
-    starlink_eta_poi_seconds,
-    starlink_distance_to_poi_meters,
-    simulation_updates_total,
-    starlink_dish_uptime_seconds,
-    starlink_dish_thermal_throttle,
     starlink_dish_outage_active,
-    starlink_service_info,
+    starlink_dish_speed_knots,
+    starlink_dish_thermal_throttle,
+    starlink_dish_uptime_seconds,
+    starlink_distance_to_poi_meters,
+    starlink_eta_mode,
+    starlink_eta_poi_seconds,
+    starlink_flight_arrival_time_unix,
+    starlink_flight_departure_time_unix,
+    starlink_flight_phase,
     starlink_mode_info,
-    mission_active_info,
-    mission_phase_state,
-    mission_next_conflict_seconds,
-    mission_timeline_generated_timestamp,
-    mission_comm_state,
-    mission_degraded_seconds,
-    mission_critical_seconds,
+    starlink_network_latency_ms,
+    starlink_network_latency_ms_current,
+    starlink_network_packet_loss_percent,
+    starlink_network_throughput_down_mbps,
+    starlink_network_throughput_down_mbps_current,
+    starlink_network_throughput_up_mbps,
+    starlink_network_throughput_up_mbps_current,
+    starlink_service_info,
+    starlink_signal_quality_percent,
+    starlink_time_until_departure_seconds,
+    starlink_uptime_seconds,
 )
 
 logger = logging.getLogger(__name__)
@@ -299,7 +299,7 @@ def update_metrics_from_telemetry(
         )
 
         # Update Prometheus gauges with ETA data
-        for poi_id, metrics_data in eta_metrics.items():
+        for metrics_data in eta_metrics.values():
             poi_name = metrics_data.get("poi_name", "unknown")
             poi_category = metrics_data.get("poi_category", "")
             eta_seconds = metrics_data.get("eta_seconds", -1)

@@ -4,7 +4,6 @@ from unittest.mock import Mock
 from urllib.error import URLError
 
 import pytest
-
 from app.services.weather_radar import RainViewerRadarService
 
 RAINVIEWER_METADATA = {

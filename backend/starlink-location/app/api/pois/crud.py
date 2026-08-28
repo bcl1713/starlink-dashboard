@@ -14,10 +14,10 @@ status calculation or response builders.
 """
 
 import logging
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.models.poi import (
     POICreate,
     POIListResponse,
@@ -26,14 +26,13 @@ from app.models.poi import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
 
 from .helpers import calculate_poi_active_status
 
 logger = logging.getLogger(__name__)
 
 # Global coordinator reference for accessing telemetry
-_coordinator: Optional[object] = None
+_coordinator: object | None = None
 
 
 def set_coordinator(coordinator: object) -> None:
@@ -56,8 +55,8 @@ router = APIRouter(tags=["pois"])
 
 @router.get("/", response_model=POIListResponse, summary="List all POIs")
 async def list_pois(
-    route_id: Optional[str] = Query(None, description="Filter by route ID"),
-    mission_id: Optional[str] = Query(None, description="Filter by mission ID"),
+    route_id: str | None = Query(None, description="Filter by route ID"),
+    mission_id: str | None = Query(None, description="Filter by mission ID"),
     active_only: bool = Query(
         True,
         description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
@@ -280,7 +279,7 @@ async def create_poi(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to create POI: {str(e)}",
+            detail=f"Failed to create POI: {e!s}",
         )
 
 
@@ -354,7 +353,7 @@ async def update_poi(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to update POI: {str(e)}",
+            detail=f"Failed to update POI: {e!s}",
         )
 
 

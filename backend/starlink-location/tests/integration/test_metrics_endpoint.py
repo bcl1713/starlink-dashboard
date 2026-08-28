@@ -1,7 +1,8 @@
 """Integration tests for Prometheus metrics endpoint."""
 
-import pytest
 import asyncio
+
+import pytest
 
 
 @pytest.mark.asyncio

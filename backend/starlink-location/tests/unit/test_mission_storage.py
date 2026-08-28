@@ -5,8 +5,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
-import app.mission.storage as storage
+from app.mission import storage
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.mission.storage import (
     compute_file_checksum,
@@ -21,9 +20,9 @@ from app.mission.storage import (
     get_mission_path,
     list_missions,
     load_mission,
+    load_mission_metadata_v2,
     load_mission_timeline,
     load_mission_v2,
-    load_mission_metadata_v2,
     mission_exists,
     save_mission,
     save_mission_timeline,
@@ -223,7 +222,7 @@ class TestMissionStorage:
         """Test saving/loading mission with complex transport configuration."""
         from datetime import datetime, timezone
 
-        from app.mission.models import XTransition, AARWindow, KaOutage
+        from app.mission.models import AARWindow, KaOutage, XTransition
 
         mission = MissionLeg(
             id="complex-mission",

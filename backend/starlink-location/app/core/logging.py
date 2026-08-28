@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Log levels
 LOG_LEVEL_DEBUG = "DEBUG"
@@ -27,7 +27,7 @@ class JSONFormatter(logging.Formatter):
         Returns:
             JSON formatted log line
         """
-        log_data: Dict[str, Any] = {
+        log_data: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
@@ -53,8 +53,8 @@ class StructuredLogger(logging.Logger):
         level: int,
         msg: str,
         args: tuple,
-        exc_info: Optional[Any] = None,
-        extra_fields: Optional[Dict[str, Any]] = None,
+        exc_info: Any | None = None,
+        extra_fields: dict[str, Any] | None = None,
         **kwargs
     ) -> None:
         """
@@ -84,13 +84,13 @@ class StructuredLogger(logging.Logger):
             self.handle(record)
 
     def debug_json(
-        self, message: str, extra_fields: Optional[Dict[str, Any]] = None
+        self, message: str, extra_fields: dict[str, Any] | None = None
     ) -> None:
         """Log debug message with optional extra fields."""
         self._log_with_extras(logging.DEBUG, message, (), extra_fields=extra_fields)
 
     def info_json(
-        self, message: str, extra_fields: Optional[Dict[str, Any]] = None
+        self, message: str, extra_fields: dict[str, Any] | None = None
     ) -> None:
         """Log info message with optional extra fields."""
         self._log_with_extras(logging.INFO, message, (), extra_fields=extra_fields)
@@ -98,7 +98,7 @@ class StructuredLogger(logging.Logger):
     def warning_json(
         self,
         message: str,
-        extra_fields: Optional[Dict[str, Any]] = None,
+        extra_fields: dict[str, Any] | None = None,
         exc_info: bool = False,
     ) -> None:
         """Log warning message with optional extra fields."""
@@ -109,7 +109,7 @@ class StructuredLogger(logging.Logger):
     def error_json(
         self,
         message: str,
-        extra_fields: Optional[Dict[str, Any]] = None,
+        extra_fields: dict[str, Any] | None = None,
         exc_info: bool = False,
     ) -> None:
         """Log error message with optional extra fields."""
@@ -120,7 +120,7 @@ class StructuredLogger(logging.Logger):
     def critical_json(
         self,
         message: str,
-        extra_fields: Optional[Dict[str, Any]] = None,
+        extra_fields: dict[str, Any] | None = None,
         exc_info: bool = False,
     ) -> None:
         """Log critical message with optional extra fields."""
@@ -132,7 +132,7 @@ class StructuredLogger(logging.Logger):
 def setup_logging(
     level: str = LOG_LEVEL_INFO,
     json_format: bool = True,
-    log_file: Optional[str] = None,
+    log_file: str | None = None,
 ) -> None:
     """
     Configure structured logging.

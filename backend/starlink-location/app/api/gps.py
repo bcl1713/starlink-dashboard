@@ -1,6 +1,5 @@
 """GPS configuration endpoint handler."""
 
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
@@ -9,7 +8,7 @@ from app.models.gps import GPSConfigRequest, GPSConfigResponse
 router = APIRouter()
 
 # Global client reference (set during startup for live mode)
-_starlink_client: Optional[object] = None
+_starlink_client: object | None = None
 
 
 def set_starlink_client(client):
@@ -40,7 +39,7 @@ async def get_gps_config():
     except Exception as e:
         raise HTTPException(
             status_code=503,
-            detail=f"Failed to connect to Starlink dish: {str(e)}",
+            detail=f"Failed to connect to Starlink dish: {e!s}",
         )
 
 
@@ -75,5 +74,5 @@ async def set_gps_config(request: GPSConfigRequest):
     except Exception as e:
         raise HTTPException(
             status_code=503,
-            detail=f"Failed to connect to Starlink dish: {str(e)}",
+            detail=f"Failed to connect to Starlink dish: {e!s}",
         )

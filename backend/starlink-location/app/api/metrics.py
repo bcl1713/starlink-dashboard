@@ -1,15 +1,16 @@
 """Prometheus metrics endpoint handler."""
 
 import time
+
 from fastapi import APIRouter, Depends
-from fastapi.responses import Response, JSONResponse
+from fastapi.responses import JSONResponse, Response
 from prometheus_client import generate_latest
 
 from app.api import metrics_export
 from app.core.metrics import REGISTRY, _current_position
-from app.mission.dependencies import get_route_manager, get_poi_manager
-from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 router = APIRouter()
 

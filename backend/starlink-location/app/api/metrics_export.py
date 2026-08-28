@@ -1,22 +1,22 @@
 """Metrics export endpoint for integration with Prometheus and monitoring."""
 
-from fastapi import APIRouter, status, Depends
+from fastapi import APIRouter, Depends, status
 
 from app.core.config import ConfigManager
 from app.core.metrics import (
     REGISTRY,
-    starlink_route_has_timing_data,
-    starlink_route_total_duration_seconds,
-    starlink_route_departure_time_unix,
     starlink_route_arrival_time_unix,
+    starlink_route_departure_time_unix,
+    starlink_route_has_timing_data,
     starlink_route_segment_count_with_timing,
+    starlink_route_total_duration_seconds,
 )
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.models.flight_status import ETAMode
 from app.services.eta_calculator import ETACalculator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
-from app.mission.dependencies import get_route_manager, get_poi_manager
 
 # Initialize services
 config_manager = ConfigManager()

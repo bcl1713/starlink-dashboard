@@ -4,12 +4,12 @@
 # multiple ETA calculation modes, status filtering, and distance metrics.
 # Splitting would fragment related ETA calculation endpoints. Deferred to v0.4.0.
 
-from fastapi import APIRouter, HTTPException, Query, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.logging import get_logger
-from app.services.route_manager import RouteManager
-from app.services.route_eta_calculator import RouteETACalculator
 from app.mission.dependencies import get_route_manager
+from app.services.route_eta_calculator import RouteETACalculator
+from app.services.route_manager import RouteManager
 
 logger = get_logger(__name__)
 
@@ -82,10 +82,10 @@ async def calculate_eta_to_waypoint(
         )
         return eta_data
     except Exception as e:
-        logger.error(f"Error calculating ETA for route {route_id}: {str(e)}")
+        logger.error(f"Error calculating ETA for route {route_id}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calculating ETA: {str(e)}",
+            detail=f"Error calculating ETA: {e!s}",
         )
 
 
@@ -145,10 +145,10 @@ async def calculate_eta_to_location(
         )
         return eta_data
     except Exception as e:
-        logger.error(f"Error calculating ETA for route {route_id}: {str(e)}")
+        logger.error(f"Error calculating ETA for route {route_id}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calculating ETA: {str(e)}",
+            detail=f"Error calculating ETA: {e!s}",
         )
 
 
@@ -203,10 +203,10 @@ async def get_route_progress(
         )
         return progress_data
     except Exception as e:
-        logger.error(f"Error calculating route progress for {route_id}: {str(e)}")
+        logger.error(f"Error calculating route progress for {route_id}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calculating progress: {str(e)}",
+            detail=f"Error calculating progress: {e!s}",
         )
 
 
@@ -308,8 +308,8 @@ async def get_live_mode_active_route_eta(
             "next_waypoint_eta": next_eta,
         }
     except Exception as e:
-        logger.error(f"Error calculating live mode ETA: {str(e)}")
+        logger.error(f"Error calculating live mode ETA: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calculating ETA: {str(e)}",
+            detail=f"Error calculating ETA: {e!s}",
         )

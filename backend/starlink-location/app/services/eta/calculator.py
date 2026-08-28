@@ -5,7 +5,6 @@ import math
 import time
 from collections import deque
 from datetime import datetime, timezone
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,7 @@ class ETACalculator:
             deque()
         )  # (speed_knots, timestamp)
         self._smoothed_speed: float = default_speed_knots
-        self._last_update_time: Optional[datetime] = None
+        self._last_update_time: datetime | None = None
 
         # POI tracking
         self._passed_pois: set[str] = set()  # Track POI IDs that have been passed
@@ -122,7 +121,7 @@ class ETACalculator:
         return self.earth_radius_m * c
 
     def calculate_eta(
-        self, distance_meters: float, speed_knots: Optional[float] = None
+        self, distance_meters: float, speed_knots: float | None = None
     ) -> float:
         """
         Calculate estimated time to arrival (ETA) for a given distance and speed.

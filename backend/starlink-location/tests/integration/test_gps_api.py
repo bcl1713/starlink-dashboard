@@ -1,7 +1,8 @@
 """Integration tests for GPS configuration API endpoint."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestGPSConfigAPI:

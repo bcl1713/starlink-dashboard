@@ -1,18 +1,18 @@
 """Unit tests for Phase 5 timing-aware simulation features."""
 
 import random
-import pytest
 from datetime import datetime, timedelta
 
+import pytest
+from app.models.config import PositionConfig, RouteConfig
 from app.models.route import (
-    RoutePoint,
-    RouteMetadata,
     ParsedRoute,
+    RouteMetadata,
+    RoutePoint,
     RouteTimingProfile,
 )
-from app.simulation.position import PositionSimulator
 from app.simulation.kml_follower import KMLRouteFollower
-from app.models.config import PositionConfig, RouteConfig
+from app.simulation.position import PositionSimulator
 
 
 class TestKMLRouteFollowerTimingMethods:

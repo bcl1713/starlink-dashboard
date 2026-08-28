@@ -2,21 +2,26 @@
 
 from datetime import datetime, timedelta, timezone
 
-from app.mission.derived_route import build_derived_route_estimate, derived_route_for_estimate
-from app.mission.timeline_builder.calculator import RouteTemporalProjector
+from app.mission.derived_route import (
+    build_derived_route_estimate,
+    derived_route_for_estimate,
+)
 from app.mission.models import (
     ManualAARTrack,
     ManualAARTrackPoint,
     ManualRouteSplice,
     TransportConfig,
 )
+from app.mission.timeline_builder.calculator import RouteTemporalProjector
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
 
 
 def _route(points: list[tuple[float, float]]) -> ParsedRoute:
     start = datetime(2026, 8, 25, 12, 0, tzinfo=timezone.utc)
     return ParsedRoute(
-        metadata=RouteMetadata(name="planned", file_path="planned.kml", point_count=len(points)),
+        metadata=RouteMetadata(
+            name="planned", file_path="planned.kml", point_count=len(points)
+        ),
         points=[
             RoutePoint(
                 latitude=latitude,
@@ -39,7 +44,9 @@ def _track(points: list[tuple[float, float]]) -> ManualAARTrack:
     return ManualAARTrack(
         id="ar-1",
         name="Manual AR",
-        points=[ManualAARTrackPoint(latitude=lat, longitude=lon) for lat, lon in points],
+        points=[
+            ManualAARTrackPoint(latitude=lat, longitude=lon) for lat, lon in points
+        ],
     )
 
 
@@ -104,7 +111,9 @@ def test_feasible_estimate_builds_piecewise_route_with_one_downstream_shift():
     derived = derived_route_for_estimate(route, estimate)
 
     assert derived is not route
-    assert derived.points[0].expected_arrival_time == route.points[0].expected_arrival_time
+    assert (
+        derived.points[0].expected_arrival_time == route.points[0].expected_arrival_time
+    )
     assert derived.points[-1].expected_arrival_time == (
         route.points[-1].expected_arrival_time
         + timedelta(seconds=estimate.delta_seconds)

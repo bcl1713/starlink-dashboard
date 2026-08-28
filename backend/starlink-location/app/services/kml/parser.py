@@ -4,19 +4,14 @@ import logging
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any
 
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.kml.geometry import (
+    KML_NS,
     get_element_text,
     parse_geometry,
     parse_line_style,
-    KML_NS,
-)
-from app.services.kml.waypoints import (
-    WaypointData,
-    identify_primary_waypoints,
-    build_route_waypoints,
 )
 from app.services.kml.route_builder import (
     RouteSegmentData,
@@ -25,10 +20,15 @@ from app.services.kml.route_builder import (
 )
 from app.services.kml.timing import (
     assign_waypoint_timestamps_to_points,
-    calculate_segment_speeds,
     build_route_timing_profile,
+    calculate_segment_speeds,
 )
 from app.services.kml.validator import KMLParseError
+from app.services.kml.waypoints import (
+    WaypointData,
+    build_route_waypoints,
+    identify_primary_waypoints,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,15 +37,15 @@ logger = logging.getLogger(__name__)
 class PlacemarkData:
     """Lightweight representation of a Placemark for downstream processing."""
 
-    name: Optional[str]
-    description: Optional[str]
-    style_url: Optional[str]
-    geometry: Optional[Any]  # PlacemarkGeometry
-    line_style: Optional[Any]  # LineStyleInfo
+    name: str | None
+    description: str | None
+    style_url: str | None
+    geometry: Any | None  # PlacemarkGeometry
+    line_style: Any | None  # LineStyleInfo
     order: int
 
 
-def parse_kml_file(file_path: str | Path) -> Optional[ParsedRoute]:
+def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
     """
     Parse a KML file and convert to ParsedRoute object.
 
@@ -69,7 +69,7 @@ def parse_kml_file(file_path: str | Path) -> Optional[ParsedRoute]:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
-    except IOError as e:
+    except OSError as e:
         raise KMLParseError(f"Failed to read KML file: {e}")
 
     try:

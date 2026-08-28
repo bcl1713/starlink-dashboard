@@ -7,11 +7,13 @@
 
 import logging
 import threading
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from app.models.flight_status import FlightPhase, ETAMode, FlightStatus
+from app.models.flight_status import ETAMode, FlightPhase, FlightStatus
+from typing_extensions import Self
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from app.models.route import ParsedRoute
@@ -19,7 +21,7 @@ if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
 logger = logging.getLogger(__name__)
 
 
-def _normalize_to_utc(dt: Optional[datetime]) -> Optional[datetime]:
+def _normalize_to_utc(dt: datetime | None) -> datetime | None:
     """Return datetime normalized to UTC (assumes naive timestamps are already UTC)."""
     if dt is None:
         return None
@@ -55,7 +57,7 @@ class FlightStateManager:
     _instance: Optional["FlightStateManager"] = None
     _lock = threading.Lock()
 
-    def __new__(cls) -> "FlightStateManager":
+    def __new__(cls) -> Self:
         """Implement singleton pattern with thread safety."""
         if cls._instance is None:
             with cls._lock:
@@ -87,12 +89,12 @@ class FlightStateManager:
 
         # Speed persistence tracking
         self._speed_persistence_seconds = 0.0
-        self._last_speed_sample_time: Optional[datetime] = None
-        self._above_threshold_start_time: Optional[datetime] = None
+        self._last_speed_sample_time: datetime | None = None
+        self._above_threshold_start_time: datetime | None = None
 
         # Arrival tracking
-        self._arrival_start_time: Optional[datetime] = None
-        self._arrival_distance_at_start: Optional[float] = None
+        self._arrival_start_time: datetime | None = None
+        self._arrival_distance_at_start: float | None = None
 
         # Callbacks for state changes
         self._phase_change_callbacks: list[
@@ -289,7 +291,7 @@ class FlightStateManager:
             return False
 
     def transition_phase(
-        self, new_phase: FlightPhase, reason: Optional[str] = None
+        self, new_phase: FlightPhase, reason: str | None = None
     ) -> bool:
         """
         Manually transition to a new flight phase.
@@ -382,7 +384,7 @@ class FlightStateManager:
         route: Optional["ParsedRoute"],
         *,
         auto_reset: bool = True,
-        reason: Optional[str] = None,
+        reason: str | None = None,
     ) -> None:
         """
         Synchronize the active route context with the flight state manager.
@@ -392,8 +394,8 @@ class FlightStateManager:
             auto_reset: Whether to reset flight state when route changes
             reason: Optional log annotation for why the context changed
         """
-        new_route_id: Optional[str] = None
-        new_route_name: Optional[str] = None
+        new_route_id: str | None = None
+        new_route_name: str | None = None
         scheduled_departure = None
         scheduled_arrival = None
         has_timing_data = False
@@ -413,7 +415,7 @@ class FlightStateManager:
                 scheduled_arrival = route.timing_profile.arrival_time
 
         reset_needed = False
-        previous_route_id: Optional[str]
+        previous_route_id: str | None
 
         with self._lock:
             previous_route_id = self._status.active_route_id
@@ -453,7 +455,7 @@ class FlightStateManager:
             )
             self.transition_phase(FlightPhase.PRE_DEPARTURE, reason=reset_reason)
 
-    def clear_route_context(self, reason: Optional[str] = None) -> None:
+    def clear_route_context(self, reason: str | None = None) -> None:
         """Convenience wrapper for clearing the active route context.
 
         Args:
@@ -468,7 +470,7 @@ class FlightStateManager:
     # ------------------------------------------------------------------ #
 
     def trigger_departure(
-        self, timestamp: Optional[datetime] = None, reason: Optional[str] = None
+        self, timestamp: datetime | None = None, reason: str | None = None
     ) -> bool:
         """
         Manually trigger departure and transition to IN_FLIGHT phase.
@@ -503,7 +505,7 @@ class FlightStateManager:
         return True
 
     def trigger_arrival(
-        self, timestamp: Optional[datetime] = None, reason: Optional[str] = None
+        self, timestamp: datetime | None = None, reason: str | None = None
     ) -> bool:
         """
         Manually trigger arrival and transition to POST_ARRIVAL phase.

@@ -13,10 +13,10 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+
+from filelock import FileLock
 
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline
-from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 
@@ -150,7 +150,7 @@ def save_mission(mission: MissionLeg) -> dict:
             "saved_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    except IOError as e:
+    except OSError as e:
         logger.error(f"Failed to save mission {mission.id}: {e}")
         raise
 
@@ -193,7 +193,7 @@ def save_mission_v2(mission: Mission) -> dict:
     }
 
 
-def load_mission_v2(mission_id: str) -> Optional[Mission]:
+def load_mission_v2(mission_id: str) -> Mission | None:
     """Load a hierarchical mission with all legs.
 
     Args:
@@ -229,7 +229,7 @@ def load_mission_v2(mission_id: str) -> Optional[Mission]:
     return mission
 
 
-def load_mission_metadata_v2(mission_id: str) -> Optional[Mission]:
+def load_mission_metadata_v2(mission_id: str) -> Mission | None:
     """Load mission metadata with leg count but without full leg data.
 
     This is optimized for listing operations where full leg data is not needed.
@@ -299,7 +299,7 @@ def load_mission_metadata_v2(mission_id: str) -> Optional[Mission]:
         return None
 
 
-def _parse_persisted_timestamp(value: object) -> Optional[datetime]:
+def _parse_persisted_timestamp(value: object) -> datetime | None:
     """Return a timezone-aware persisted timestamp, or None for legacy values."""
     if not isinstance(value, str):
         return None
@@ -317,7 +317,7 @@ def _parse_persisted_timestamp(value: object) -> Optional[datetime]:
 def list_mission_metadata_v2() -> list[Mission]:
     """List hierarchical mission metadata newest-first with stable legacy fallback."""
     ensure_missions_directory()
-    missions: list[tuple[Optional[datetime], str, Mission]] = []
+    missions: list[tuple[datetime | None, str, Mission]] = []
 
     for mission_dir in sorted(MISSIONS_DIR.iterdir(), key=lambda path: path.name):
         if not mission_dir.is_dir():
@@ -351,7 +351,7 @@ def list_mission_metadata_v2() -> list[Mission]:
     ]
 
 
-def load_mission(mission_id: str) -> Optional[MissionLeg]:
+def load_mission(mission_id: str) -> MissionLeg | None:
     """Load a mission leg from persistent storage.
 
     Args:

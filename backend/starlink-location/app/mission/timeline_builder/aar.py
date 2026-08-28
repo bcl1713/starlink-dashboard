@@ -7,13 +7,13 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from app.mission.models import ManualAARTrack, MissionLeg
-from app.models.route import ParsedRoute
-from app.satellites.rules import RuleEngine
 from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,
     ensure_timezone,
 )
 from app.mission.timeline_builder.utils import timestamp_for_waypoint
+from app.models.route import ParsedRoute
+from app.satellites.rules import RuleEngine
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +122,7 @@ def parse_elapsed_offset(value: str) -> timedelta:
     """Parse flight-deck mission elapsed values such as T+02:15."""
 
     raw = value.strip().upper()
-    if raw.startswith("T+"):
-        raw = raw[2:]
+    raw = raw.removeprefix("T+")
     parts = raw.split(":")
     if len(parts) not in (2, 3):
         raise ValueError("Elapsed AAR override must use T+HH:MM or T+HH:MM:SS")

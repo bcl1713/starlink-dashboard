@@ -1,9 +1,9 @@
 """Integration tests for ETA route timing extraction from real KML files."""
 
-import pytest
 from datetime import datetime
 from pathlib import Path
 
+import pytest
 from app.services.kml_parser import parse_kml_file
 
 
@@ -138,7 +138,7 @@ class TestRouteTimingIntegration:
 
     def test_parse_all_legs_without_crash(self, kml_routes_dir):
         """Parse all available leg KML files to verify robustness."""
-        kml_files = sorted(list(kml_routes_dir.glob("Leg *.kml")))
+        kml_files = sorted(kml_routes_dir.glob("Leg *.kml"))
 
         if not kml_files:
             pytest.skip("No Leg KML files found")

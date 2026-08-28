@@ -10,14 +10,13 @@ category="satellite" in the POI system.
 # Splitting would fragment satellite domain logic. Deferred to v0.4.0.
 
 import logging
-from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.mission.dependencies import get_poi_manager
 from app.models.poi import POICreate, POIUpdate
 from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_poi_manager
 
 logger = logging.getLogger(__name__)
 
@@ -50,20 +49,20 @@ class SatelliteCreate(BaseModel):
     longitude: float = Field(
         ..., description="Longitude in decimal degrees (-180 to 180)"
     )
-    slot: Optional[str] = Field(default=None, description="Orbital slot name")
+    slot: str | None = Field(default=None, description="Orbital slot name")
     color: str = Field(default="#FFFFFF", description="Display color in hex format")
 
 
 class SatelliteUpdate(BaseModel):
     """Request model for updating a satellite."""
 
-    satellite_id: Optional[str] = Field(default=None, description="Satellite ID")
-    transport: Optional[str] = Field(default=None, description="Transport type")
-    longitude: Optional[float] = Field(
+    satellite_id: str | None = Field(default=None, description="Satellite ID")
+    transport: str | None = Field(default=None, description="Transport type")
+    longitude: float | None = Field(
         default=None, description="Longitude (-180 to 180)"
     )
-    slot: Optional[str] = Field(default=None, description="Orbital slot name")
-    color: Optional[str] = Field(
+    slot: str | None = Field(default=None, description="Orbital slot name")
+    color: str | None = Field(
         default=None, description="Display color in hex format"
     )
 
@@ -72,10 +71,10 @@ class SatelliteUpdate(BaseModel):
 router = APIRouter(prefix="/api/satellites", tags=["satellites"])
 
 
-@router.get("", response_model=List[SatelliteResponse])
+@router.get("", response_model=list[SatelliteResponse])
 async def list_satellites(
     poi_manager: POIManager = Depends(get_poi_manager),
-) -> List[SatelliteResponse]:
+) -> list[SatelliteResponse]:
     """List all available satellites in the catalog.
 
     Returns all satellites from the POI system where category="satellite".
@@ -205,7 +204,7 @@ async def create_satellite(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to create satellite: {str(e)}",
+            detail=f"Failed to create satellite: {e!s}",
         )
 
 
@@ -301,7 +300,7 @@ async def update_satellite(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to update satellite: {str(e)}",
+            detail=f"Failed to update satellite: {e!s}",
         )
 
 

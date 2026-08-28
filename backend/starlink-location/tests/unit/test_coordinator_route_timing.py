@@ -1,15 +1,15 @@
 """Tests for coordinator speed handling with route timing data."""
 
-import pytest
 from datetime import datetime
 
+import pytest
+from app.models.config import PositionConfig, RouteConfig, SimulationConfig
 from app.models.route import (
-    RoutePoint,
-    RouteMetadata,
     ParsedRoute,
+    RouteMetadata,
+    RoutePoint,
     RouteTimingProfile,
 )
-from app.models.config import SimulationConfig, PositionConfig, RouteConfig
 from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.kml_follower import KMLRouteFollower
 

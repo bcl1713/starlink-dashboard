@@ -174,7 +174,7 @@ class PositionSimulator:
         self._update_altitude()
 
         # Get position from route
-        lat, lon, route_heading = self.route.get_segment(self.progress)
+        lat, lon, _route_heading = self.route.get_segment(self.progress)
 
         # Calculate heading from movement using HeadingTracker
         # This simulates how heading will be calculated in live mode!

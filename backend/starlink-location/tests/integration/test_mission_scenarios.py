@@ -1,24 +1,24 @@
 """Integration tests for mission communication planning scenarios."""
 
-import pytest
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
-from fastapi.testclient import TestClient
 
+import pytest
 from app.mission.models import (
     MissionLeg,
-    Transport,
-    TransportConfig,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
+    Transport,
+    TransportConfig,
     TransportState,
-    MissionLegTimeline,
     XTransition,
 )
-from app.mission.storage import delete_mission, mission_exists, list_missions
+from app.mission.storage import delete_mission, list_missions, mission_exists
 from app.mission.timeline_service import TimelineSummary
-from main import app
 from app.models.route import ParsedRoute, RouteMetadata
+from fastapi.testclient import TestClient
+from main import app
 
 
 @pytest.fixture(autouse=True)
@@ -175,9 +175,8 @@ def cleanup_scenario_missions():
     missions = list_missions()
     for mission_dict in missions:
         mission_id = mission_dict.get("id", "")
-        if mission_id.startswith("scenario-"):
-            if mission_exists(mission_id):
-                delete_mission(mission_id)
+        if mission_id.startswith("scenario-") and mission_exists(mission_id):
+            delete_mission(mission_id)
 
 
 @pytest.fixture(autouse=True)
@@ -438,7 +437,7 @@ class TestMissionScenarioNormalOps:
         # Verify reasons mention X transitions
         all_reasons = []
         for segment in segments:
-            if "reasons" in segment and segment["reasons"]:
+            if segment.get("reasons"):
                 all_reasons.extend(segment["reasons"])
 
         x_related_reasons = [r for r in all_reasons if "X" in r or "transition" in r]
@@ -544,7 +543,7 @@ class TestMissionScenarioNormalOps:
         # Verify reasons mention Ka transition
         all_reasons = []
         for segment in segments:
-            if "reasons" in segment and segment["reasons"]:
+            if segment.get("reasons"):
                 all_reasons.extend(segment["reasons"])
 
         ka_related_reasons = [r for r in all_reasons if "Ka" in r or "transition" in r]
@@ -668,7 +667,7 @@ class TestMissionScenarioNormalOps:
         # Verify reasons mention X azimuth conflict during AAR
         all_reasons = []
         for segment in segments:
-            if "reasons" in segment and segment["reasons"]:
+            if segment.get("reasons"):
                 all_reasons.extend(segment["reasons"])
 
         aar_related_reasons = [
@@ -790,7 +789,7 @@ class TestMissionScenarioNormalOps:
         # Verify critical segment has both X and Ka reasons
         critical_reasons = []
         for segment in critical_segments:
-            if "reasons" in segment and segment["reasons"]:
+            if segment.get("reasons"):
                 critical_reasons.extend(segment["reasons"])
 
         has_x_reason = any("X" in r or "transition" in r for r in critical_reasons)

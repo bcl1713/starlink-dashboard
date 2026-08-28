@@ -4,10 +4,10 @@ from fastapi import APIRouter
 
 from app.core.logging import get_logger
 from app.services.route_eta_calculator import (
-    get_eta_cache_stats,
-    get_eta_accuracy_stats,
-    clear_eta_cache,
     cleanup_eta_cache,
+    clear_eta_cache,
+    get_eta_accuracy_stats,
+    get_eta_cache_stats,
 )
 
 logger = get_logger(__name__)

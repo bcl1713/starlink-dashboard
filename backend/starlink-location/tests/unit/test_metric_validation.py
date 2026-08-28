@@ -1,13 +1,14 @@
 """Unit tests for metric value validation and ranges."""
 
 from datetime import datetime
+
 from app.core.metrics import update_metrics_from_telemetry
 from app.models.telemetry import (
-    TelemetryData,
-    PositionData,
+    EnvironmentalData,
     NetworkData,
     ObstructionData,
-    EnvironmentalData,
+    PositionData,
+    TelemetryData,
 )
 
 

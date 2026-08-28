@@ -2,7 +2,6 @@
 
 import logging
 import time
-from typing import Optional
 
 import starlink_grpc
 from grpc import RpcError
@@ -54,7 +53,7 @@ class LiveCoordinator:
         self.speed_tracker = SpeedTracker(smoothing_duration_seconds=120.0)
 
         # Last known good state for graceful degradation
-        self._last_valid_telemetry: Optional[TelemetryData] = None
+        self._last_valid_telemetry: TelemetryData | None = None
         self._connection_status: bool = False
 
         logger.info(
@@ -83,7 +82,7 @@ class LiveCoordinator:
             )
             self._connection_status = False
 
-    def update(self) -> Optional[TelemetryData]:
+    def update(self) -> TelemetryData | None:
         """
         Update telemetry from Starlink dish.
 

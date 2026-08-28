@@ -8,24 +8,24 @@
 import io
 import json
 import logging
-import zipfile
 import tempfile
+import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import IO
 
+from app.mission.exporter import (
+    TimelineExportFormat,
+    generate_timeline_export,
+)
 from app.mission.models import Mission, MissionLeg, MissionLegTimeline, TimelineStatus
 from app.mission.storage import (
-    load_mission_v2,
     load_mission_timeline,
+    load_mission_v2,
 )
 from app.mission.timeline_service import build_mission_timeline
-from app.mission.exporter import (
-    generate_timeline_export,
-    TimelineExportFormat,
-)
-from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
 
@@ -169,8 +169,8 @@ def generate_mission_combined_pptx(
 
     try:
         from pptx import Presentation
-        from pptx.util import Inches, Pt
         from pptx.enum.text import PP_ALIGN
+        from pptx.util import Inches, Pt
     except ImportError:
         logger.error("python-pptx not installed")
         return b""
@@ -295,7 +295,7 @@ def generate_mission_combined_pptx(
             title_shape = slide.shapes.title
             content = slide.placeholders[1]
             title_shape.text = f"{leg.name} - Export Error"
-            content.text = f"Leg ID: {leg.id}\n\nFailed to generate timeline: {str(e)}"
+            content.text = f"Leg ID: {leg.id}\n\nFailed to generate timeline: {e!s}"
 
     # Save to bytes or file
     if output_path:

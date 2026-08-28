@@ -43,8 +43,8 @@ from app.mission.models import Transport
 if TYPE_CHECKING:
     from pptx.slide import Slide
 
-    from app.mission.models import Mission, MissionLeg
     from app.mission.exporter import MissionLegTimeline
+    from app.mission.models import Mission, MissionLeg
     from app.routing import POIManager, RouteManager
 
 logger = logging.getLogger(__name__)
@@ -256,7 +256,7 @@ def add_route_map_slide(
             textbox = slide_map.shapes.add_textbox(
                 Inches(1), Inches(1), Inches(8), Inches(1)
             )
-            textbox.text = f"Map generation failed: {str(e)}"
+            textbox.text = f"Map generation failed: {e!s}"
 
     # Add footer text (centered within gold bar with white text)
     add_footer_text(

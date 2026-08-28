@@ -8,22 +8,21 @@ Run with:
     pytest tests/performance/test_benchmark.py -v -s
 """
 
-import time
-import psutil
 import os
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from uuid import uuid4
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
+import psutil
 from app.mission.models import (
     MissionLeg,
     TransportConfig,
     XTransition,
 )
 from app.mission.timeline_service import build_mission_timeline
-from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 
 def create_test_mission(mission_number: int) -> MissionLeg:
@@ -102,8 +101,8 @@ def benchmark_timeline_recompute(mission_count: int = 10, max_workers: int = 4) 
         # Create a test route if it doesn't exist
         from app.models.route import (
             ParsedRoute,
-            RoutePoint,
             RouteMetadata,
+            RoutePoint,
             RouteTimingProfile,
         )
 

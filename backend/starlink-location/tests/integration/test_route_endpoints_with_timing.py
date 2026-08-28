@@ -1,8 +1,9 @@
 """Integration tests for route API endpoints with timing data."""
 
-import pytest
 import asyncio
 from datetime import datetime
+
+import pytest
 
 
 @pytest.mark.asyncio

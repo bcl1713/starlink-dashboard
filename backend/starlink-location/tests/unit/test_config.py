@@ -1,13 +1,13 @@
 """Tests for configuration loading and validation."""
 
 import os
-import pytest
 import tempfile
-import yaml
 from pathlib import Path
 
+import pytest
+import yaml
 from app.core.config import ConfigManager, _convert_env_value
-from app.models.config import SimulationConfig, HeadingTrackerConfig
+from app.models.config import HeadingTrackerConfig, SimulationConfig
 
 
 class TestEnvValueConversion:

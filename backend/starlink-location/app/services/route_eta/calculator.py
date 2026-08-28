@@ -5,9 +5,8 @@
 # state transitions. Refactoring into separate modules would obscure the unified
 # calculation pipeline. Deferred to v0.4.0.
 
-import math
 import logging
-from typing import Optional
+import math
 
 from app.models.route import ParsedRoute
 
@@ -345,7 +344,7 @@ class RouteETACalculator:
     def _calculate_remaining_duration_from_segments(
         self,
         start_index: int,
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         Calculate expected duration for remaining route using segment-specific data.
 

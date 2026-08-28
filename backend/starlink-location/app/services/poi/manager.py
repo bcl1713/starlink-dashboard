@@ -9,13 +9,12 @@ import json
 import logging
 import re
 import uuid
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional, Sequence
-
-from filelock import FileLock
 
 from app.models.poi import POI, POICreate, POIUpdate
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +58,7 @@ class POIManager:
                 with open(self.pois_file, "w") as f:
                     json.dump(initial_data, f, indent=2)
                 logger.info(f"Created initial POI file: {self.pois_file}")
-            except IOError as e:
+            except OSError as e:
                 logger.error(f"Failed to create POI file: {e}")
 
     def _load_pois(self) -> None:
@@ -72,10 +71,9 @@ class POIManager:
 
         lock = FileLock(self.lock_file, timeout=5)
         try:
-            with lock.acquire(timeout=5):
-                with open(self.pois_file, "r") as f:
-                    data = json.load(f)
-        except (IOError, json.JSONDecodeError) as e:
+            with lock.acquire(timeout=5), open(self.pois_file, "r") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load POI file: {e}")
             self._pois = {}
             return
@@ -122,7 +120,7 @@ class POIManager:
                     # Load existing file to preserve route data
                     with open(self.pois_file, "r") as f:
                         data = json.load(f)
-                except (IOError, json.JSONDecodeError):
+                except (OSError, json.JSONDecodeError):
                     data = {"pois": {}, "routes": {}}
 
                 # Update pois section
@@ -146,7 +144,7 @@ class POIManager:
                     # Atomic rename (platform-specific but reliable on both Unix and Windows)
                     temp_file.replace(self.pois_file)
                     logger.debug(f"Saved {len(self._pois)} POIs to {self.pois_file}")
-                except IOError as e:
+                except OSError as e:
                     logger.error(f"Failed to save POI file: {e}")
                     # Clean up temp file if it exists
                     try:
@@ -157,7 +155,7 @@ class POIManager:
             logger.error(f"Failed to acquire lock for writing POI file: {e}")
 
     def list_pois(
-        self, route_id: Optional[str] = None, mission_id: Optional[str] = None
+        self, route_id: str | None = None, mission_id: str | None = None
     ) -> list[POI]:
         """
         Get list of POIs, optionally filtered by route or mission.
@@ -176,7 +174,7 @@ class POIManager:
             pois = [poi for poi in pois if poi.mission_id == mission_id]
         return pois
 
-    def get_poi(self, poi_id: str) -> Optional[POI]:
+    def get_poi(self, poi_id: str) -> POI | None:
         """
         Get a specific POI by ID.
 
@@ -188,7 +186,7 @@ class POIManager:
         """
         return self._pois.get(poi_id)
 
-    def find_poi_by_name(self, name: str) -> Optional[POI]:
+    def find_poi_by_name(self, name: str) -> POI | None:
         """
         Find the first POI matching the provided name (case-insensitive).
 
@@ -204,7 +202,7 @@ class POIManager:
                 return poi
         return None
 
-    def find_global_poi_by_name(self, name: str) -> Optional[POI]:
+    def find_global_poi_by_name(self, name: str) -> POI | None:
         """
         Find a global (non-scoped) POI by name.
 
@@ -324,7 +322,7 @@ class POIManager:
         logger.info(f"Created POI: {poi_id}")
         return poi
 
-    def update_poi(self, poi_id: str, poi_update: POIUpdate) -> Optional[POI]:
+    def update_poi(self, poi_id: str, poi_update: POIUpdate) -> POI | None:
         """
         Update an existing POI.
 
@@ -379,7 +377,7 @@ class POIManager:
         logger.info(f"Deleted POI: {poi_id}")
         return True
 
-    def count_pois(self, route_id: Optional[str] = None) -> int:
+    def count_pois(self, route_id: str | None = None) -> int:
         """
         Count POIs, optionally by route.
 
@@ -664,7 +662,7 @@ class POIManager:
         """
         cleared_count = 0
 
-        for poi_id, poi in self._pois.items():
+        for poi in self._pois.values():
             if (
                 poi.projected_latitude is not None
                 or poi.projected_longitude is not None

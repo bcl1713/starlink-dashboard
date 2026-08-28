@@ -1,6 +1,5 @@
 """Heading tracker for calculating heading from GPS position updates."""
 
-from typing import Optional, Tuple
 from datetime import datetime
 
 from app.simulation.route import calculate_bearing
@@ -28,11 +27,11 @@ class HeadingTracker:
         self.min_distance_meters = min_distance_meters
         self.max_age_seconds = max_age_seconds
 
-        self._previous_position: Optional[Tuple[float, float, datetime]] = None
+        self._previous_position: tuple[float, float, datetime] | None = None
         self._last_heading: float = 0.0
 
     def update(
-        self, latitude: float, longitude: float, timestamp: Optional[datetime] = None
+        self, latitude: float, longitude: float, timestamp: datetime | None = None
     ) -> float:
         """
         Update with new position and calculate heading.

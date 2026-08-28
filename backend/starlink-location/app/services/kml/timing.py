@@ -3,9 +3,8 @@
 import logging
 import re
 from datetime import datetime
-from typing import Optional
 
-from app.models.route import RoutePoint, RouteWaypoint, RouteTimingProfile
+from app.models.route import RoutePoint, RouteTimingProfile, RouteWaypoint
 from app.services.kml.geometry import haversine_distance
 
 logger = logging.getLogger(__name__)
@@ -17,8 +16,8 @@ TIMESTAMP_PATTERN = re.compile(
 
 
 def extract_timestamp_from_description(
-    description: Optional[str],
-) -> Optional[datetime]:
+    description: str | None,
+) -> datetime | None:
     """
     Extract timestamp from waypoint description.
 
@@ -176,7 +175,7 @@ def build_route_timing_profile(
     route_name: str,
     points: list[RoutePoint],
     waypoints: list[RouteWaypoint],
-) -> Optional[RouteTimingProfile]:
+) -> RouteTimingProfile | None:
     """
     Build RouteTimingProfile with departure/arrival times and total duration.
 

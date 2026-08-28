@@ -22,14 +22,13 @@ Deferred for future refactoring with potential separation of:
 
 import logging
 from pathlib import Path
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.models.poi import POIETAListResponse, POIWithETA
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
 
 from .helpers import (
     calculate_bearing,
@@ -40,7 +39,7 @@ from .helpers import (
 logger = logging.getLogger(__name__)
 
 # Global coordinator reference for accessing telemetry
-_coordinator: Optional[object] = None
+_coordinator: object | None = None
 
 
 def set_coordinator(coordinator: object) -> None:
@@ -67,19 +66,19 @@ router = APIRouter(tags=["pois"])
     summary="Get all POIs with real-time ETA data",
 )
 async def get_pois_with_etas(
-    route_id: Optional[str] = Query(None, description="Filter by route ID"),
-    latitude: Optional[str] = Query(
+    route_id: str | None = Query(None, description="Filter by route ID"),
+    latitude: str | None = Query(
         None, description="Current latitude (decimal degrees)"
     ),
-    longitude: Optional[str] = Query(
+    longitude: str | None = Query(
         None, description="Current longitude (decimal degrees)"
     ),
-    speed_knots: Optional[str] = Query(None, description="Current speed in knots"),
-    status_filter: Optional[str] = Query(
+    speed_knots: str | None = Query(None, description="Current speed in knots"),
+    status_filter: str | None = Query(
         None,
         description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)",
     ),
-    category: Optional[str] = Query(
+    category: str | None = Query(
         None,
         description="Filter by POI category (comma-separated: departure,arrival,waypoint,alternate)",
     ),
@@ -209,14 +208,14 @@ async def get_pois_with_etas(
         # Parse status filter if provided
         status_filter_set = set()
         if status_filter:
-            status_filter_set = set(
+            status_filter_set = {
                 s.strip() for s in status_filter.split(",") if s.strip()
-            )
+            }
 
         # Parse category filter if provided
         category_filter = set()
         if category:
-            category_filter = set(c.strip() for c in category.split(",") if c.strip())
+            category_filter = {c.strip() for c in category.split(",") if c.strip()}
 
         if not poi_manager:
             raise HTTPException(
@@ -228,8 +227,8 @@ async def get_pois_with_etas(
 
         # Calculate ETA and distance for each POI
         from app.core.eta_service import get_eta_calculator
-        from app.services.flight_state import get_flight_state_manager
         from app.models.flight_status import ETAMode, FlightPhase
+        from app.services.flight_state import get_flight_state_manager
 
         eta_calc = get_eta_calculator()
 
@@ -424,5 +423,5 @@ async def get_pois_with_etas(
     except Exception as calculation_error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to calculate ETA: {str(calculation_error)}",
+            detail=f"Failed to calculate ETA: {calculation_error!s}",
         )

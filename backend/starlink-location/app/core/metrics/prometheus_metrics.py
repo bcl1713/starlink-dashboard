@@ -6,13 +6,13 @@
 # discoverability. Deferred to v0.4.0.
 
 import logging
-from typing import Dict, Generator
+from collections.abc import Generator
 
 from prometheus_client import (
-    Gauge,
-    Counter,
-    Histogram,
     CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
 )
 from prometheus_client.core import GaugeMetricFamily
 
@@ -23,7 +23,7 @@ REGISTRY: CollectorRegistry = CollectorRegistry()
 
 # Current position data for custom collector
 # This is updated by metric_updater functions and read by PositionCollector
-_current_position: Dict[str, float] = {
+_current_position: dict[str, float] = {
     "latitude": 0.0,
     "longitude": 0.0,
     "altitude": 0.0,

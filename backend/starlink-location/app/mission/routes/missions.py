@@ -7,10 +7,11 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from app.core.metrics import clear_mission_metrics
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.mission.models import MissionLeg
 from app.mission.storage import (
     delete_mission,
@@ -19,13 +20,12 @@ from app.mission.storage import (
     mission_exists,
     save_mission,
 )
-from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
-from app.core.metrics import clear_mission_metrics
+from app.services.route_manager import RouteManager
+
 from .utils import (
-    MissionListResponse,
     MissionErrorResponse,
+    MissionListResponse,
     refresh_timeline_after_save,
 )
 
@@ -109,7 +109,7 @@ async def create_mission(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to create mission: {type(e).__name__}: {e!s}",
         )
 
 
@@ -120,7 +120,7 @@ async def create_mission(
 async def list_missions_endpoint(
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    route_id: Optional[str] = Query(None, description="Filter by route ID"),
+    route_id: str | None = Query(None, description="Filter by route ID"),
 ) -> MissionListResponse:
     """List all missions with optional filtering.
 
@@ -163,7 +163,7 @@ async def list_missions_endpoint(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list missions: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to list missions: {type(e).__name__}: {e!s}",
         )
 
 
@@ -212,7 +212,7 @@ async def get_mission(mission_id: str) -> MissionLeg:
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to get mission: {type(e).__name__}: {e!s}",
         )
 
 
@@ -312,7 +312,7 @@ async def update_mission(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to update mission: {type(e).__name__}: {e!s}",
         )
 
 
@@ -409,5 +409,5 @@ async def delete_mission_endpoint(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to delete mission: {type(e).__name__}: {e!s}",
         )

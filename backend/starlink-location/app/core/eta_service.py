@@ -7,7 +7,6 @@ to Prometheus.
 """
 
 import logging
-from typing import Optional
 
 from app.services.eta_calculator import ETACalculator
 from app.services.poi_manager import POIManager
@@ -15,11 +14,11 @@ from app.services.poi_manager import POIManager
 logger = logging.getLogger(__name__)
 
 # Global singleton instance
-_eta_calculator: Optional[ETACalculator] = None
-_poi_manager: Optional[POIManager] = None
+_eta_calculator: ETACalculator | None = None
+_poi_manager: POIManager | None = None
 
 
-def initialize_eta_service(poi_manager: Optional[POIManager] = None) -> None:
+def initialize_eta_service(poi_manager: POIManager | None = None) -> None:
     """Initialize the ETA service with singleton instances.
 
     Args:
@@ -81,7 +80,7 @@ def update_eta_metrics(
     active_route=None,
     eta_mode=None,
     flight_phase=None,
-    poi_manager: Optional[POIManager] = None,
+    poi_manager: POIManager | None = None,
 ) -> dict:
     """Update ETA metrics for all POIs.
 
@@ -146,7 +145,7 @@ def update_eta_metrics(
         return {}
 
 
-def get_nearest_poi_metrics() -> Optional[dict]:
+def get_nearest_poi_metrics() -> dict | None:
     """Get metrics for the nearest POI.
 
     Returns:

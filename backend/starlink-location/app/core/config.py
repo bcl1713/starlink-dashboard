@@ -6,10 +6,11 @@
 
 import os
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any, Optional
 
 import yaml
 from pydantic import ValidationError
+from typing_extensions import Self
 
 from app.models.config import SimulationConfig
 
@@ -115,9 +116,9 @@ class ConfigManager:
     """Manager for loading and validating configuration."""
 
     _instance: Optional["ConfigManager"] = None
-    _config: Optional[SimulationConfig] = None
+    _config: SimulationConfig | None = None
 
-    def __new__(cls) -> "ConfigManager":
+    def __new__(cls) -> Self:
         """Implement singleton pattern."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -247,7 +248,7 @@ class ConfigManager:
                 ],
             )
 
-    def load(self, file_path: Optional[Path] = None) -> SimulationConfig:
+    def load(self, file_path: Path | None = None) -> SimulationConfig:
         """
         Load configuration from file or create default.
 
@@ -281,7 +282,7 @@ class ConfigManager:
             self.load()
         return self._config
 
-    def reload(self, file_path: Optional[Path] = None) -> SimulationConfig:
+    def reload(self, file_path: Path | None = None) -> SimulationConfig:
         """
         Reload configuration from file.
 

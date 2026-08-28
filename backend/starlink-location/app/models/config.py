@@ -1,7 +1,8 @@
 """Pydantic configuration models for Starlink simulator."""
 
-from pydantic import BaseModel, Field, field_validator
 from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class RouteConfig(BaseModel):

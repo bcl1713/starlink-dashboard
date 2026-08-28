@@ -3,13 +3,13 @@
 import csv
 import io
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
 from app.core.limiter import limiter
 from app.core.logging import get_logger
+
 from .prometheus import (
     EXPORT_METRICS,
     calculate_step,
@@ -61,7 +61,7 @@ async def export_starlink_csv(
     request: Request,
     start: datetime = Query(..., description="Start datetime (ISO 8601)"),
     end: datetime = Query(..., description="End datetime (ISO 8601)"),
-    step: Optional[int] = Query(
+    step: int | None = Query(
         None,
         description="Step interval in seconds (auto-calculated if not provided)",
         ge=1,
@@ -139,5 +139,5 @@ async def export_starlink_csv(
         logger.exception("Failed to export Starlink CSV: %s", str(e))
         raise HTTPException(
             status_code=500,
-            detail=f"Failed to query Prometheus: {str(e)}",
+            detail=f"Failed to query Prometheus: {e!s}",
         )

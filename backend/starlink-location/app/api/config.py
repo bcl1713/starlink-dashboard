@@ -1,6 +1,5 @@
 """Configuration management endpoint handler."""
 
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 
@@ -9,7 +8,7 @@ from app.models.config import SimulationConfig
 router = APIRouter()
 
 # Global config manager reference
-_coordinator: Optional[object] = None
+_coordinator: object | None = None
 
 
 def set_coordinator(coordinator):
@@ -73,7 +72,7 @@ async def get_config():
         return config.model_dump()
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Failed to get configuration: {str(e)}"
+            status_code=500, detail=f"Failed to get configuration: {e!s}"
         )
 
 
@@ -98,7 +97,7 @@ async def update_config(new_config: SimulationConfig):
         return new_config.model_dump()
     except Exception as e:
         raise HTTPException(
-            status_code=400, detail=f"Failed to update configuration: {str(e)}"
+            status_code=400, detail=f"Failed to update configuration: {e!s}"
         )
 
 
@@ -121,5 +120,5 @@ async def replace_config(new_config: SimulationConfig):
         return new_config.model_dump()
     except Exception as e:
         raise HTTPException(
-            status_code=400, detail=f"Failed to update configuration: {str(e)}"
+            status_code=400, detail=f"Failed to update configuration: {e!s}"
         )

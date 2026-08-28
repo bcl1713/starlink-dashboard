@@ -5,7 +5,6 @@
 # Splitting would fragment the POI domain model. Deferred to v0.4.0.
 
 from datetime import datetime, timezone
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -18,16 +17,16 @@ class POI(BaseModel):
     latitude: float = Field(..., description="Latitude in decimal degrees")
     longitude: float = Field(..., description="Longitude in decimal degrees")
     icon: str = Field(default="marker", description="Icon identifier for mapping")
-    category: Optional[str] = Field(
+    category: str | None = Field(
         default=None, description="POI category (e.g., 'airport', 'city')"
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, description="Detailed description of the POI"
     )
-    route_id: Optional[str] = Field(
+    route_id: str | None = Field(
         default=None, description="Associated route ID if route-specific"
     )
-    mission_id: Optional[str] = Field(
+    mission_id: str | None = Field(
         default=None, description="Associated mission ID if mission-scoped"
     )
     created_at: datetime = Field(
@@ -39,16 +38,16 @@ class POI(BaseModel):
         description="When POI was last updated",
     )
     # Route projection fields (calculated when route is active, cleared on deactivation)
-    projected_latitude: Optional[float] = Field(
+    projected_latitude: float | None = Field(
         default=None, description="Latitude of projection point on active route"
     )
-    projected_longitude: Optional[float] = Field(
+    projected_longitude: float | None = Field(
         default=None, description="Longitude of projection point on active route"
     )
-    projected_waypoint_index: Optional[int] = Field(
+    projected_waypoint_index: int | None = Field(
         default=None, description="Index of closest route point"
     )
-    projected_route_progress: Optional[float] = Field(
+    projected_route_progress: float | None = Field(
         default=None,
         description="Progress percentage (0-100) where POI projects on route",
     )
@@ -83,11 +82,10 @@ class POICreate(BaseModel):
         ..., description="Longitude in decimal degrees (-180 to 180)"
     )
     icon: str = Field(default="marker", description="Icon identifier")
-    category: Optional[str] = Field(default=None, description="POI category")
-    description: Optional[str] = Field(default=None, description="POI description")
-    mission_id: Optional[str] = Field(default=None, description="Associated mission ID")
-    route_id: Optional[str] = Field(default=None, description="Associated route ID")
-    mission_id: Optional[str] = Field(default=None, description="Associated mission ID")
+    category: str | None = Field(default=None, description="POI category")
+    description: str | None = Field(default=None, description="POI description")
+    mission_id: str | None = Field(default=None, description="Associated mission ID")
+    route_id: str | None = Field(default=None, description="Associated route ID")
 
     @field_validator("latitude")
     @classmethod
@@ -125,14 +123,14 @@ class POICreate(BaseModel):
 class POIUpdate(BaseModel):
     """Request model for updating a POI."""
 
-    name: Optional[str] = Field(default=None, description="Name of the POI")
-    latitude: Optional[float] = Field(default=None, description="Latitude (-90 to 90)")
-    longitude: Optional[float] = Field(
+    name: str | None = Field(default=None, description="Name of the POI")
+    latitude: float | None = Field(default=None, description="Latitude (-90 to 90)")
+    longitude: float | None = Field(
         default=None, description="Longitude (-180 to 180)"
     )
-    icon: Optional[str] = Field(default=None, description="Icon identifier")
-    category: Optional[str] = Field(default=None, description="POI category")
-    description: Optional[str] = Field(default=None, description="POI description")
+    icon: str | None = Field(default=None, description="Icon identifier")
+    category: str | None = Field(default=None, description="POI category")
+    description: str | None = Field(default=None, description="POI description")
 
     @field_validator("latitude")
     @classmethod
@@ -171,21 +169,21 @@ class POIResponse(BaseModel):
     latitude: float
     longitude: float
     icon: str
-    category: Optional[str]
+    category: str | None
     active: bool = Field(
         ...,
         description="Whether this POI is currently active (based on associated route/mission active status)",
     )
-    description: Optional[str]
-    route_id: Optional[str]
-    mission_id: Optional[str] = None
+    description: str | None
+    route_id: str | None
+    mission_id: str | None = None
     created_at: datetime
     updated_at: datetime
     # Route projection fields (only populated when route is active)
-    projected_latitude: Optional[float] = None
-    projected_longitude: Optional[float] = None
-    projected_waypoint_index: Optional[int] = None
-    projected_route_progress: Optional[float] = None
+    projected_latitude: float | None = None
+    projected_longitude: float | None = None
+    projected_waypoint_index: int | None = None
+    projected_route_progress: float | None = None
 
     model_config = {
         "json_schema_extra": {
@@ -215,10 +213,10 @@ class POIListResponse(BaseModel):
 
     pois: list[POIResponse] = Field(default_factory=list, description="List of POIs")
     total: int = Field(default=0, description="Total number of POIs")
-    route_id: Optional[str] = Field(
+    route_id: str | None = Field(
         default=None, description="Filter by route_id if applicable"
     )
-    mission_id: Optional[str] = Field(
+    mission_id: str | None = Field(
         default=None, description="Filter by mission_id if applicable"
     )
 
@@ -241,7 +239,7 @@ class POIWithETA(BaseModel):
     name: str = Field(..., description="POI name")
     latitude: float = Field(..., description="POI latitude in decimal degrees")
     longitude: float = Field(..., description="POI longitude in decimal degrees")
-    category: Optional[str] = Field(default=None, description="POI category")
+    category: str | None = Field(default=None, description="POI category")
     icon: str = Field(default="marker", description="Icon identifier")
     active: bool = Field(
         ...,
@@ -258,15 +256,15 @@ class POIWithETA(BaseModel):
         default=False,
         description="True when the active flight has not yet departed; anticipated ETAs will set this flag",
     )
-    flight_phase: Optional[str] = Field(
+    flight_phase: str | None = Field(
         default=None,
         description="Flight phase associated with this ETA (pre_departure, in_flight, post_arrival)",
     )
     distance_meters: float = Field(..., description="Distance to POI in meters")
-    bearing_degrees: Optional[float] = Field(
+    bearing_degrees: float | None = Field(
         default=None, description="Bearing to POI in degrees (0=North)"
     )
-    course_status: Optional[str] = Field(
+    course_status: str | None = Field(
         default=None,
         description="Course status relative to heading: 'on_course' (<45°), 'slightly_off' (45-90°), 'off_track' (90-135°), 'behind' (>135°)",
     )
@@ -274,19 +272,19 @@ class POIWithETA(BaseModel):
     is_on_active_route: bool = Field(
         default=False, description="Whether POI projects to active route"
     )
-    projected_latitude: Optional[float] = Field(
+    projected_latitude: float | None = Field(
         default=None, description="Projected point on route"
     )
-    projected_longitude: Optional[float] = Field(
+    projected_longitude: float | None = Field(
         default=None, description="Projected point on route"
     )
-    projected_waypoint_index: Optional[int] = Field(
+    projected_waypoint_index: int | None = Field(
         default=None, description="Index of closest route point"
     )
-    projected_route_progress: Optional[float] = Field(
+    projected_route_progress: float | None = Field(
         default=None, description="Progress % where POI projects on route"
     )
-    route_aware_status: Optional[str] = Field(
+    route_aware_status: str | None = Field(
         default=None,
         description="Route awareness status: 'ahead_on_route', 'already_passed', 'not_on_route', 'pre_departure', or None if no active route",
     )

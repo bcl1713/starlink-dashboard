@@ -7,34 +7,34 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Optional
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.mission.models import MissionLeg, MissionPhase, MissionLegTimeline
-from app.mission.storage import (
-    load_mission,
-    mission_exists,
-    list_missions,
-    save_mission,
-    load_mission_timeline,
-)
-from app.services.flight_state import get_flight_state_manager
 from app.core.metrics import (
-    update_mission_active_metric,
     clear_mission_metrics,
+    update_mission_active_metric,
     update_mission_phase_metric,
 )
-from app.services.route_manager import RouteManager
-from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
+from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.mission.models import MissionLeg, MissionLegTimeline, MissionPhase
+from app.mission.storage import (
+    list_missions,
+    load_mission,
+    load_mission_timeline,
+    mission_exists,
+    save_mission,
+)
 from app.mission.timeline_service import TimelineComputationError
+from app.services.flight_state import get_flight_state_manager
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
+
 from .utils import (
     MissionActivationResponse,
     MissionDeactivationResponse,
     MissionErrorResponse,
-    compute_and_store_timeline_for_mission,
     build_satellite_geojson,
+    compute_and_store_timeline_for_mission,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,10 +43,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/missions", tags=["missions"])
 
 # Global active mission ID (stored in memory; would be persisted in production)
-_active_mission_id: Optional[str] = None
+_active_mission_id: str | None = None
 
 
-def get_active_mission_id() -> Optional[str]:
+def get_active_mission_id() -> str | None:
     """Return the currently active mission ID, if any.
 
     Returns:
@@ -193,7 +193,7 @@ async def activate_mission(
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to compute mission timeline: {type(exc).__name__}: {str(exc)}",
+                detail=f"Failed to compute mission timeline: {type(exc).__name__}: {exc!s}",
             ) from exc
 
         # Update metrics for activated mission
@@ -214,7 +214,6 @@ async def activate_mission(
                 "Failed to reset flight state",
             )
             # Don't fail activation if flight state reset fails
-            pass
 
         logger.info(
             "Mission activated successfully",
@@ -235,7 +234,7 @@ async def activate_mission(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to activate mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to activate mission: {type(e).__name__}: {e!s}",
         )
 
 
@@ -323,7 +322,7 @@ async def deactivate_mission(
         logger.error("Failed to deactivate mission", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to deactivate mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to deactivate mission: {type(e).__name__}: {e!s}",
         )
 
 
@@ -376,7 +375,7 @@ async def get_active_mission() -> MissionLeg:
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get active mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to get active mission: {type(e).__name__}: {e!s}",
         )
 
 
@@ -476,5 +475,5 @@ async def get_active_mission_satellites_endpoint() -> dict:
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get active mission satellites: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to get active mission satellites: {type(e).__name__}: {e!s}",
         )

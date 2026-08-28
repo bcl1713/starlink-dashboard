@@ -1,7 +1,8 @@
-from fastapi.testclient import TestClient
+from uuid import uuid4
+
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.models.poi import POICreate
-from uuid import uuid4
+from fastapi.testclient import TestClient
 
 
 def test_delete_leg_scope_bug(client: TestClient):
@@ -40,10 +41,11 @@ def test_delete_leg_scope_bug(client: TestClient):
 
     # Create mission via API
     # Mocking build_mission_timeline to avoid errors if routes don't exist
+    from datetime import datetime, timezone
     from unittest.mock import patch
+
     from app.mission.models import MissionLegTimeline
     from app.mission.timeline_service import TimelineSummary
-    from datetime import datetime, timezone
 
     now = datetime.now(timezone.utc)
     timeline = MissionLegTimeline(mission_leg_id="test", segments=[])

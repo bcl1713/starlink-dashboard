@@ -1,7 +1,6 @@
 """ETA calculation caching service for improved performance."""
 
 import time
-from typing import Optional, Dict, Tuple
 from datetime import datetime, timezone
 
 from app.core.logging import get_logger
@@ -25,7 +24,7 @@ class ETACache:
             ttl_seconds: Time-to-live for cache entries in seconds
         """
         self.ttl_seconds = ttl_seconds
-        self._cache: Dict[str, Tuple[any, float]] = {}
+        self._cache: dict[str, tuple[any, float]] = {}
 
     def _make_key(
         self,
@@ -60,7 +59,7 @@ class ETACache:
         current_lat: float,
         current_lon: float,
         current_speed: float,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """
         Get cached ETA result if available and fresh.
 
@@ -163,9 +162,9 @@ class ETAHistoryTracker:
         self,
         waypoint_id: str,
         predicted_eta_seconds: float,
-        current_position: Tuple[float, float],
+        current_position: tuple[float, float],
         current_speed: float,
-        timestamp: Optional[datetime] = None,
+        timestamp: datetime | None = None,
     ) -> None:
         """
         Record an ETA prediction for later accuracy analysis.
@@ -199,7 +198,7 @@ class ETAHistoryTracker:
     def record_arrival(
         self,
         waypoint_id: str,
-        actual_arrival_time: Optional[datetime] = None,
+        actual_arrival_time: datetime | None = None,
     ) -> None:
         """
         Record actual arrival at a waypoint and calculate accuracy.

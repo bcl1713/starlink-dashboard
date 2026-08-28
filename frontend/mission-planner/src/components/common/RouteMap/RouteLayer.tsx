@@ -25,16 +25,19 @@ function splitAtAntimeridian(
   points: Array<{ latitude: number; longitude: number }>
 ): [number, number][][] {
   return points
-    .reduce<[number, number][][]>((segments, point, index) => {
-      if (
-        index > 0 &&
-        Math.abs(point.longitude - points[index - 1].longitude) > 180
-      ) {
-        segments.push([]);
-      }
-      segments[segments.length - 1].push([point.latitude, point.longitude]);
-      return segments;
-    }, [[]])
+    .reduce<[number, number][][]>(
+      (segments, point, index) => {
+        if (
+          index > 0 &&
+          Math.abs(point.longitude - points[index - 1].longitude) > 180
+        ) {
+          segments.push([]);
+        }
+        segments[segments.length - 1].push([point.latitude, point.longitude]);
+        return segments;
+      },
+      [[]]
+    )
     .filter((segment) => segment.length > 1);
 }
 

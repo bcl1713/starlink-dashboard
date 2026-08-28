@@ -2,7 +2,7 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 from app.models.poi import POI
 from app.models.route import ParsedRoute
@@ -122,9 +122,9 @@ class GeoJSONBuilder:
 
     @staticmethod
     def build_feature_collection(
-        route: Optional[ParsedRoute] = None,
-        pois: Optional[list[POI]] = None,
-        current_position: Optional[PositionData] = None,
+        route: ParsedRoute | None = None,
+        pois: list[POI] | None = None,
+        current_position: PositionData | None = None,
     ) -> dict[str, Any]:
         """
         Combine route, POIs, and current position into a FeatureCollection.
@@ -169,7 +169,7 @@ class GeoJSONBuilder:
         return feature_collection
 
     @staticmethod
-    def validate_geojson(geojson_obj: dict[str, Any]) -> tuple[bool, Optional[str]]:
+    def validate_geojson(geojson_obj: dict[str, Any]) -> tuple[bool, str | None]:
         """
         Validate GeoJSON structure.
 

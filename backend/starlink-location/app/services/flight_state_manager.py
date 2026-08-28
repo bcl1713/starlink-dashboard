@@ -4,7 +4,7 @@ The implementation now lives in app.services.flight_state.manager. This shim
 can be removed once all call sites are updated.
 """
 
-from app.services.flight_state.manager import (  # noqa: F401
+from app.services.flight_state.manager import (
     FlightStateManager,
     get_flight_state_manager,
 )

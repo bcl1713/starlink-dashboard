@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import starlink_grpc
-
 from app.live.coordinator import LiveCoordinator
 from app.models.config import (
     HeadingTrackerConfig,
@@ -22,6 +21,7 @@ from app.models.telemetry import (
     PositionData,
     TelemetryData,
 )
+
 from tests.conftest import default_mock_telemetry
 
 
@@ -447,12 +447,12 @@ class TestLiveCoordinatorInterface:
         coordinator = LiveCoordinator(config)
 
         # Check that all required methods exist
-        assert callable(getattr(coordinator, "update"))
-        assert callable(getattr(coordinator, "get_current_telemetry"))
-        assert callable(getattr(coordinator, "reset"))
-        assert callable(getattr(coordinator, "get_uptime_seconds"))
-        assert callable(getattr(coordinator, "get_config"))
-        assert callable(getattr(coordinator, "update_config"))
+        assert callable(coordinator.update)
+        assert callable(coordinator.get_current_telemetry)
+        assert callable(coordinator.reset)
+        assert callable(coordinator.get_uptime_seconds)
+        assert callable(coordinator.get_config)
+        assert callable(coordinator.update_config)
 
     @patch("app.live.coordinator.StarlinkClient")
     def test_polymorphic_usage(self, mock_client_class):

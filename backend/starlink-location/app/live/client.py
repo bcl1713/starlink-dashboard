@@ -7,7 +7,6 @@
 import logging
 import os
 from datetime import datetime
-from typing import Dict, Optional, Tuple
 
 import starlink_grpc
 from grpc import RpcError
@@ -43,7 +42,7 @@ class StarlinkClient:
 
     def __init__(
         self,
-        target: Optional[str] = None,
+        target: str | None = None,
         timeout: float = 5.0,
         connect_immediately: bool = False,
     ):
@@ -69,7 +68,7 @@ class StarlinkClient:
 
         self.target = target
         self.timeout = timeout
-        self.context: Optional[starlink_grpc.ChannelContext] = None
+        self.context: starlink_grpc.ChannelContext | None = None
         self._connected = False
         self.logger = logger
         self.connect_immediately = connect_immediately
@@ -155,7 +154,7 @@ class StarlinkClient:
             )
             return False
 
-    def get_status_data(self) -> Tuple[Dict, Dict, Dict]:
+    def get_status_data(self) -> tuple[dict, dict, dict]:
         """Get device status, obstruction, and alerts from Starlink dish.
 
         Returns:
@@ -177,7 +176,7 @@ class StarlinkClient:
             self.logger.error(f"Failed to get status data: {e}")
             raise
 
-    def get_location_data(self) -> Dict:
+    def get_location_data(self) -> dict:
         """Get GPS location data from Starlink dish.
 
         Returns:
@@ -197,7 +196,7 @@ class StarlinkClient:
             self.logger.error(f"Failed to get location data: {e}")
             raise
 
-    def get_gps_config(self) -> Dict:
+    def get_gps_config(self) -> dict:
         """Get GPS configuration and status from Starlink dish.
 
         Returns:
@@ -221,7 +220,7 @@ class StarlinkClient:
             self.logger.error(f"Failed to get GPS config: {e}")
             raise
 
-    def set_gps_config(self, enable: bool) -> Dict:
+    def set_gps_config(self, enable: bool) -> dict:
         """Set GPS configuration on Starlink dish.
 
         Args:
@@ -256,7 +255,7 @@ class StarlinkClient:
 
     def get_history_stats(
         self, parse_samples: int = -1
-    ) -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict, Dict]:
+    ) -> tuple[dict, dict, dict, dict, dict, dict, dict]:
         """Get historical statistics from Starlink dish.
 
         Args:
@@ -305,9 +304,9 @@ class StarlinkClient:
 
         try:
             # Get all required data
-            status, obstruction, alerts = self.get_status_data()
+            status, obstruction, _alerts = self.get_status_data()
             location = self.get_location_data()
-            general, drop, run, latency, loaded, usage, power = self.get_history_stats(
+            _general, _drop, _run, _latency, _loaded, _usage, _power = self.get_history_stats(
                 parse_samples=10
             )
 

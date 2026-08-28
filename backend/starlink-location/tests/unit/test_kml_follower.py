@@ -1,7 +1,6 @@
 """Unit tests for KML route follower."""
 
 import pytest
-
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.simulation.kml_follower import KMLRouteFollower
 
@@ -225,12 +224,12 @@ class TestKMLRouteFollower:
             positions.append((pos1, pos2))
 
         # At least some positions should differ
-        differ = any(
+        any(
             abs(pos1["latitude"] - pos2["latitude"]) > 0.00001
             for pos1, pos2 in positions
         )
         assert (
-            differ or True
+            True
         )  # Allow test to pass if randomness doesn't show difference
 
     def test_edge_case_single_point(self):

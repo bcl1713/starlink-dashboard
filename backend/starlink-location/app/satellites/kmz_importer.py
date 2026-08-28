@@ -12,7 +12,7 @@ import json
 import logging
 import zipfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 from xml.etree import ElementTree as ET
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 KML_NS = {"kml": "http://www.opengis.net/kml/2.2"}
 
 
-def _names_match(candidate: Optional[str], expected: Optional[str]) -> bool:
+def _names_match(candidate: str | None, expected: str | None) -> bool:
     """Return True when a Placemark name should satisfy the requested polygon."""
     if not expected:
         return True
@@ -37,7 +37,7 @@ def _names_match(candidate: Optional[str], expected: Optional[str]) -> bool:
     return expected_norm in tokens
 
 
-def extract_kmz(kmz_path: Path, extract_to: Optional[Path] = None) -> Optional[Path]:
+def extract_kmz(kmz_path: Path, extract_to: Path | None = None) -> Path | None:
     """Extract KMZ (zipped KML) to a temporary directory.
 
     Args:
@@ -61,12 +61,12 @@ def extract_kmz(kmz_path: Path, extract_to: Optional[Path] = None) -> Optional[P
         logger.info(f"Extracted KMZ to {extract_to}")
         return extract_to
 
-    except (zipfile.BadZipFile, IOError) as e:
+    except (OSError, zipfile.BadZipFile) as e:
         logger.error(f"Failed to extract KMZ: {e}")
         return None
 
 
-def find_kml_file(directory: Path) -> Optional[Path]:
+def find_kml_file(directory: Path) -> Path | None:
     """Find the main KML file in extracted KMZ directory.
 
     KMZ may contain multiple KML files; usually the first or named 'doc.kml'.
@@ -84,7 +84,7 @@ def find_kml_file(directory: Path) -> Optional[Path]:
     return None
 
 
-def parse_kml(kml_path: Path) -> Optional[ET.Element]:
+def parse_kml(kml_path: Path) -> ET.Element | None:
     """Parse KML file and return root element."""
     try:
         tree = ET.parse(kml_path)
@@ -96,8 +96,8 @@ def parse_kml(kml_path: Path) -> Optional[ET.Element]:
 
 
 def extract_polygon_from_kml(
-    kml_root: ET.Element, polygon_name: Optional[str] = None
-) -> Optional[List[Tuple[float, float]]]:
+    kml_root: ET.Element, polygon_name: str | None = None
+) -> list[tuple[float, float]] | None:
     """Extract polygon coordinates from KML Polygon geometry.
 
     Args:
@@ -148,10 +148,10 @@ def extract_polygon_from_kml(
 
 
 def polygon_to_geojson_feature(
-    coordinates: List[Tuple[float, float]],
+    coordinates: list[tuple[float, float]],
     name: str,
-    properties: Optional[Dict[str, Any]] = None,
-) -> Dict[str, Any]:
+    properties: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     """Convert polygon coordinates to GeoJSON Feature.
 
     Args:
@@ -180,9 +180,9 @@ def polygon_to_geojson_feature(
 
 def kmz_to_geojson(
     kmz_path: Path,
-    output_path: Optional[Path] = None,
-    polygon_mappings: Optional[Dict[str, str]] = None,
-) -> Optional[Dict[str, Any]]:
+    output_path: Path | None = None,
+    polygon_mappings: dict[str, str] | None = None,
+) -> dict[str, Any] | None:
     """Convert KMZ file to GeoJSON FeatureCollection.
 
     Args:
@@ -260,7 +260,7 @@ def kmz_to_geojson(
 
 def load_commka_coverage(
     kmz_path: Path, output_dir: Path = Path("data/sat_coverage")
-) -> Optional[Path]:
+) -> Path | None:
     """Load CommKa KMZ and convert to GeoJSON.
 
     Convenience function for standard CommKa coverage ingestion.
@@ -288,7 +288,7 @@ def load_commka_coverage(
     return output_path
 
 
-def load_geojson_polygon(geojson_path: Path) -> Optional[Dict[str, Any]]:
+def load_geojson_polygon(geojson_path: Path) -> dict[str, Any] | None:
     """Load a GeoJSON file containing polygon(s).
 
     Args:
@@ -304,6 +304,6 @@ def load_geojson_polygon(geojson_path: Path) -> Optional[Dict[str, Any]]:
     try:
         with open(geojson_path, "r") as f:
             return json.load(f)
-    except (IOError, json.JSONDecodeError) as e:
+    except (OSError, json.JSONDecodeError) as e:
         logger.error(f"Failed to load GeoJSON {geojson_path}: {e}")
         return None

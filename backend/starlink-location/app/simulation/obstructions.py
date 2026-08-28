@@ -2,7 +2,7 @@
 
 import random
 
-from app.models.config import ObstructionConfig, NetworkConfig
+from app.models.config import NetworkConfig, ObstructionConfig
 from app.models.telemetry import ObstructionData
 
 

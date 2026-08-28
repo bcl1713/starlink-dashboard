@@ -8,13 +8,13 @@ DEPRECATED: Import from app.services.route_eta instead.
 """
 
 # Re-export everything from the new route_eta module
-from app.services.route_eta import *  # noqa: F401, F403
+from app.services.route_eta import *
 
-__all__ = [  # noqa: F405
+__all__ = [
     "RouteETACalculator",
-    "project_point_to_line_segment",
-    "get_eta_cache_stats",
-    "get_eta_accuracy_stats",
-    "clear_eta_cache",
     "cleanup_eta_cache",
+    "clear_eta_cache",
+    "get_eta_accuracy_stats",
+    "get_eta_cache_stats",
+    "project_point_to_line_segment",
 ]

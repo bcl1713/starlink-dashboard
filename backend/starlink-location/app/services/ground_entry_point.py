@@ -6,13 +6,12 @@ import logging
 import math
 import os
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from ipaddress import AddressValueError, IPv4Address
-from typing import Callable
 
 import dns.resolver
 import httpx
-
 from app.core.metrics.prometheus_metrics import (
     starlink_ground_entry_point_info,
     starlink_ground_entry_point_latitude_degrees,
