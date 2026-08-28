@@ -1,6 +1,5 @@
 """GPS configuration endpoint handler."""
 
-
 from fastapi import APIRouter, HTTPException
 
 from app.models.gps import GPSConfigRequest, GPSConfigResponse

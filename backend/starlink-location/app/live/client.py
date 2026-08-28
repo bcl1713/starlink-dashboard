@@ -306,8 +306,8 @@ class StarlinkClient:
             # Get all required data
             status, obstruction, _alerts = self.get_status_data()
             location = self.get_location_data()
-            _general, _drop, _run, _latency, _loaded, _usage, _power = self.get_history_stats(
-                parse_samples=10
+            _general, _drop, _run, _latency, _loaded, _usage, _power = (
+                self.get_history_stats(parse_samples=10)
             )
 
             # Extract position data

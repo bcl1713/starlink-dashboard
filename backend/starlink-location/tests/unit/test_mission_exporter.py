@@ -141,12 +141,12 @@ class TestMissionTimelineExporters:
         df = mission_exporter._segment_rows(timeline, mission)
 
         assert {
-                "Ground Entry City",
-                "Ground Entry Country",
-                "Ground Entry IP",
-                "Ground Entry Latitude",
-                "Ground Entry Longitude",
-            } <= set(df.columns)
+            "Ground Entry City",
+            "Ground Entry Country",
+            "Ground Entry IP",
+            "Ground Entry Latitude",
+            "Ground Entry Longitude",
+        } <= set(df.columns)
         assert set(df["Ground Entry City"]) == {"Omaha"}
         assert set(df["Ground Entry Country"]) == {"US"}
         assert set(df["Ground Entry Latitude"]) == {41.2565}

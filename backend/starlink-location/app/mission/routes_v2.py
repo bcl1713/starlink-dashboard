@@ -675,9 +675,7 @@ def _generate_timelines_for_imported_legs(
                 logger.error(
                     f"Failed to generate timeline for imported leg {leg.id}: {e}"
                 )
-                warnings.append(
-                    f"Timeline generation failed for leg {leg.id}: {e!s}"
-                )
+                warnings.append(f"Timeline generation failed for leg {leg.id}: {e!s}")
 
     return warnings
 

@@ -1,6 +1,5 @@
 """Configuration management endpoint handler."""
 
-
 from fastapi import APIRouter, HTTPException
 
 from app.models.config import SimulationConfig

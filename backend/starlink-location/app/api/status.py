@@ -1,6 +1,5 @@
 """JSON status endpoint handler."""
 
-
 from fastapi import APIRouter, HTTPException
 
 router = APIRouter()

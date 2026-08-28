@@ -58,13 +58,9 @@ class SatelliteUpdate(BaseModel):
 
     satellite_id: str | None = Field(default=None, description="Satellite ID")
     transport: str | None = Field(default=None, description="Transport type")
-    longitude: float | None = Field(
-        default=None, description="Longitude (-180 to 180)"
-    )
+    longitude: float | None = Field(default=None, description="Longitude (-180 to 180)")
     slot: str | None = Field(default=None, description="Orbital slot name")
-    color: str | None = Field(
-        default=None, description="Display color in hex format"
-    )
+    color: str | None = Field(default=None, description="Display color in hex format")
 
 
 # Create router

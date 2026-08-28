@@ -125,9 +125,7 @@ class POIUpdate(BaseModel):
 
     name: str | None = Field(default=None, description="Name of the POI")
     latitude: float | None = Field(default=None, description="Latitude (-90 to 90)")
-    longitude: float | None = Field(
-        default=None, description="Longitude (-180 to 180)"
-    )
+    longitude: float | None = Field(default=None, description="Longitude (-180 to 180)")
     icon: str | None = Field(default=None, description="Icon identifier")
     category: str | None = Field(default=None, description="POI category")
     description: str | None = Field(default=None, description="POI description")

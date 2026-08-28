@@ -958,7 +958,12 @@ def _generate_route_map(
                 fontweight="bold",
                 color="#2c3e50",
                 zorder=11,
-                bbox={"facecolor": "white", "alpha": 0.7, "edgecolor": "none", "pad": 1},
+                bbox={
+                    "facecolor": "white",
+                    "alpha": 0.7,
+                    "edgecolor": "none",
+                    "pad": 1,
+                },
             )
         )
         marker_x.append(start_point.longitude)
@@ -989,7 +994,12 @@ def _generate_route_map(
                 fontweight="bold",
                 color="#2c3e50",
                 zorder=11,
-                bbox={"facecolor": "white", "alpha": 0.7, "edgecolor": "none", "pad": 1},
+                bbox={
+                    "facecolor": "white",
+                    "alpha": 0.7,
+                    "edgecolor": "none",
+                    "pad": 1,
+                },
             )
         )
         marker_x.append(end_point.longitude)
@@ -1023,7 +1033,10 @@ def _generate_route_map(
                         color="#2c3e50",
                         zorder=11,
                         bbox={
-                            "facecolor": "white", "alpha": 0.6, "edgecolor": "none", "pad": 0.5
+                            "facecolor": "white",
+                            "alpha": 0.6,
+                            "edgecolor": "none",
+                            "pad": 0.5,
                         },
                     )
                 )

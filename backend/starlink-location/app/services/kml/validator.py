@@ -7,7 +7,6 @@ class KMLParseError(Exception):
     """Raised when KML parsing fails."""
 
 
-
 def validate_kml_file(file_path: str | Path) -> tuple[bool, str | None]:
     """
     Validate a KML file without fully parsing it.
