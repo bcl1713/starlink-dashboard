@@ -4,17 +4,16 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import gc
 import inspect
 import json
 import threading
-import time
 from collections.abc import AsyncIterator, Awaitable
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 import pytest
-
 from app.services import prometheus_client
 from app.services.prometheus_client import (
     MonitoringPrometheusClient,
@@ -486,6 +485,59 @@ async def test_rate_limit_raises_retry_after() -> None:
 
 
 @pytest.mark.asyncio
+async def test_rate_limit_evicts_expired_identity_entries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = 1000.0
+    monkeypatch.setattr(prometheus_client.time, "monotonic", lambda: now)
+    client = make_client(successful_handler)
+
+    for index in range(200):
+        await client._enforce_rate_limit(f"expired-{index}")
+
+    now += 61
+    await client._enforce_rate_limit("current")
+
+    assert set(client._requests) == {"current"}
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_identity_storage_never_exceeds_hard_cap() -> None:
+    client = make_client(successful_handler)
+    cap = MonitoringPrometheusClient._max_rate_limit_identities
+
+    for index in range(10_000):
+        await client._enforce_rate_limit(f"identity-{index}")
+
+    assert len(client._requests) == cap
+    assert "identity-0" not in client._requests
+    assert f"identity-{9999}" in client._requests
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_lru_cap_preserves_active_identity_budget(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = 1000.0
+    monkeypatch.setattr(prometheus_client.time, "monotonic", lambda: now)
+    client = make_client(successful_handler, rate_limit_count=2)
+    cap = MonitoringPrometheusClient._max_rate_limit_identities
+
+    await client._enforce_rate_limit("active")
+    for index in range(cap - 1):
+        await client._enforce_rate_limit(f"identity-{index}")
+
+    await client._enforce_rate_limit("active")
+    await client._enforce_rate_limit("newcomer")
+
+    assert len(client._requests) == cap
+    assert "identity-0" not in client._requests
+    assert "active" in client._requests
+    with pytest.raises(MonitoringRateLimitError):
+        await client._enforce_rate_limit("active")
+
+
+@pytest.mark.asyncio
 async def test_semaphore_max_four_and_queue_full() -> None:
     active = 0
     max_active = 0
@@ -535,12 +587,15 @@ def test_process_wide_upstream_limit_across_threads_and_event_loops() -> None:
     lock = threading.Lock()
     release = threading.Event()
     ready = threading.Barrier(2)
+    all_slots_busy = threading.Event()
 
     async def handler(request: httpx.Request) -> httpx.Response:
         nonlocal active, max_active
         with lock:
             active += 1
             max_active = max(max_active, active)
+            if active == 4:
+                all_slots_busy.set()
         await asyncio.to_thread(release.wait)
         with lock:
             active -= 1
@@ -569,12 +624,7 @@ def test_process_wide_upstream_limit_across_threads_and_event_loops() -> None:
     first.start()
     second.start()
 
-    deadline = time.monotonic() + 1
-    while time.monotonic() < deadline:
-        with lock:
-            if max_active >= 4:
-                break
-        time.sleep(0.005)
+    assert all_slots_busy.wait(timeout=1)
 
     release.set()
     first.join(timeout=2)
@@ -590,11 +640,23 @@ def test_process_wide_upstream_limit_across_threads_and_event_loops() -> None:
 @pytest.mark.asyncio
 async def test_process_wide_queue_full_across_client_instances() -> None:
     release = asyncio.Event()
+    all_slots_busy = asyncio.Event()
+    active = 0
+    lock = asyncio.Lock()
 
     async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active
+        async with lock:
+            active += 1
+            if active == 4:
+                all_slots_busy.set()
         await release.wait()
-        expr = request.url.params["query"]
-        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        try:
+            expr = request.url.params["query"]
+            return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        finally:
+            async with lock:
+                active -= 1
 
     blocker = make_client(handler)
     queued = make_client(handler, admission_timeout_seconds=0.001)
@@ -602,7 +664,7 @@ async def test_process_wide_queue_full_across_client_instances() -> None:
     blocked = asyncio.create_task(
         blocker.get_history(range_seconds=60, step_seconds=10, client_id="a")
     )
-    await asyncio.sleep(0.01)
+    await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
 
     with pytest.raises(MonitoringUnavailableError):
         await queued.get_history(range_seconds=70, step_seconds=10, client_id="b")
@@ -613,13 +675,23 @@ async def test_process_wide_queue_full_across_client_instances() -> None:
 
 def test_process_wide_queue_full_across_event_loops() -> None:
     release = threading.Event()
-    first_ready = threading.Event()
+    all_slots_busy = threading.Event()
+    active = 0
+    lock = threading.Lock()
 
     async def handler(request: httpx.Request) -> httpx.Response:
-        first_ready.set()
+        nonlocal active
+        with lock:
+            active += 1
+            if active == 4:
+                all_slots_busy.set()
         await asyncio.to_thread(release.wait)
-        expr = request.url.params["query"]
-        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        try:
+            expr = request.url.params["query"]
+            return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        finally:
+            with lock:
+                active -= 1
 
     async def block_slots() -> None:
         client = make_client(handler)
@@ -635,7 +707,7 @@ def test_process_wide_queue_full_across_event_loops() -> None:
 
     blocker_thread = threading.Thread(target=run_blocker)
     blocker_thread.start()
-    assert first_ready.wait(timeout=1)
+    assert all_slots_busy.wait(timeout=1)
 
     async def queued_request() -> None:
         client = make_client(handler, admission_timeout_seconds=0.001)
@@ -663,11 +735,23 @@ def test_process_wide_queue_full_across_event_loops() -> None:
 @pytest.mark.asyncio
 async def test_cancelled_cross_loop_admission_does_not_leak_capacity() -> None:
     release = asyncio.Event()
+    all_slots_busy = asyncio.Event()
+    active = 0
+    lock = asyncio.Lock()
 
     async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active
+        async with lock:
+            active += 1
+            if active == 4:
+                all_slots_busy.set()
         await release.wait()
-        expr = request.url.params["query"]
-        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        try:
+            expr = request.url.params["query"]
+            return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        finally:
+            async with lock:
+                active -= 1
 
     blockers = [
         asyncio.create_task(
@@ -679,7 +763,7 @@ async def test_cancelled_cross_loop_admission_does_not_leak_capacity() -> None:
         )
         for index in range(4)
     ]
-    await asyncio.sleep(0.02)
+    await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
 
     waiting = asyncio.create_task(
         make_client(handler, admission_timeout_seconds=1).get_history(
@@ -688,7 +772,7 @@ async def test_cancelled_cross_loop_admission_does_not_leak_capacity() -> None:
             client_id="waiting",
         )
     )
-    await asyncio.sleep(0.02)
+    await asyncio.sleep(0)
     waiting.cancel()
     with pytest.raises(asyncio.CancelledError):
         await waiting
@@ -702,11 +786,23 @@ async def test_cancelled_cross_loop_admission_does_not_leak_capacity() -> None:
 @pytest.mark.asyncio
 async def test_awaitable_cancel_callback_forms_during_admission() -> None:
     release = asyncio.Event()
+    all_slots_busy = asyncio.Event()
+    active = 0
+    lock = asyncio.Lock()
 
     async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active
+        async with lock:
+            active += 1
+            if active == 4:
+                all_slots_busy.set()
         await release.wait()
-        expr = request.url.params["query"]
-        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        try:
+            expr = request.url.params["query"]
+            return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        finally:
+            async with lock:
+                active -= 1
 
     blockers = [
         asyncio.create_task(
@@ -718,7 +814,7 @@ async def test_awaitable_cancel_callback_forms_during_admission() -> None:
         )
         for index in range(4)
     ]
-    await asyncio.sleep(0.02)
+    await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
 
     false_future: asyncio.Future[bool] = asyncio.Future()
     false_future.set_result(False)
@@ -799,7 +895,7 @@ async def test_awaitable_cancel_callback_forms_during_shared_flight_wait() -> No
             cancel_callback=callback,
         )
     )
-    await entered.wait()
+    await asyncio.wait_for(_wait_for_flight_waiters(client, 2), timeout=1)
 
     with pytest.raises(asyncio.CancelledError):
         await waiter
@@ -829,7 +925,7 @@ async def test_single_flight_shares_results_errors_and_live_only_cache() -> None
     two = asyncio.create_task(
         client.get_history(range_seconds=60, step_seconds=10, client_id="b")
     )
-    await asyncio.sleep(0)
+    await asyncio.wait_for(_wait_for_flight_waiters(client, 2), timeout=1)
     release.set()
 
     first_response, second_response = await asyncio.gather(one, two)
@@ -904,17 +1000,29 @@ async def test_timeout_cancels_siblings_and_restores_capacity() -> None:
 @pytest.mark.asyncio
 async def test_queue_full_cleans_flight_and_internal_tasks() -> None:
     release = asyncio.Event()
+    all_slots_busy = asyncio.Event()
+    active = 0
+    lock = asyncio.Lock()
 
     async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active
+        async with lock:
+            active += 1
+            if active == 4:
+                all_slots_busy.set()
         await release.wait()
-        expr = request.url.params["query"]
-        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        try:
+            expr = request.url.params["query"]
+            return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        finally:
+            async with lock:
+                active -= 1
 
     client = make_client(handler, admission_timeout_seconds=0.001)
     task = asyncio.create_task(
         client.get_history(range_seconds=60, step_seconds=10, client_id="a")
     )
-    await asyncio.sleep(0.02)
+    await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
 
     with pytest.raises(MonitoringUnavailableError):
         await task
@@ -928,21 +1036,31 @@ async def test_queue_full_cleans_flight_and_internal_tasks() -> None:
 @pytest.mark.asyncio
 async def test_caller_cancellation_cleans_siblings_and_restores_capacity() -> None:
     cancelled: set[str] = set()
+    all_slots_busy = asyncio.Event()
+    active = 0
+    lock = asyncio.Lock()
 
     async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active
         expr = request.url.params["query"]
+        async with lock:
+            active += 1
+            if active == 4:
+                all_slots_busy.set()
         try:
             await asyncio.sleep(60)
         except asyncio.CancelledError:
             cancelled.add(expr)
             raise
-        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        finally:
+            async with lock:
+                active -= 1
 
     client = make_client(handler)
     task = asyncio.create_task(
         client.get_history(range_seconds=60, step_seconds=10, client_id="a")
     )
-    await asyncio.sleep(0.02)
+    await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
     task.cancel()
 
     with pytest.raises(asyncio.CancelledError):
@@ -1055,7 +1173,7 @@ async def test_disconnect_during_live_shared_flight_cancels_only_that_waiter() -
             cancel_event=disconnect,
         )
     )
-    await entered.wait()
+    await asyncio.wait_for(_wait_for_flight_waiters(client, 2), timeout=1)
     disconnect.set()
 
     with pytest.raises(asyncio.CancelledError):
@@ -1065,6 +1183,94 @@ async def test_disconnect_during_live_shared_flight_cancels_only_that_waiter() -
     response = await first
     assert response.series[0].samples[0].value == 1.0
     assert calls == 6
+
+
+@pytest.mark.asyncio
+async def test_abandoned_shield_wrapper_settled_after_disconnect_and_shared_error() -> (
+    None
+):
+    release = asyncio.Event()
+    entered = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    unhandled: list[object] = []
+    previous_handler = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _loop, context: unhandled.append(context))
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        entered.set()
+        await release.wait()
+        raise httpx.ConnectError("internal-url")
+
+    client = make_client(handler)
+    disconnect = asyncio.Event()
+    survivor = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    leaving = asyncio.create_task(
+        client.get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id="b",
+            cancel_event=disconnect,
+        )
+    )
+    try:
+        await asyncio.wait_for(_wait_for_flight_waiters(client, 2), timeout=1)
+        disconnect.set()
+
+        with pytest.raises(asyncio.CancelledError):
+            await leaving
+        release.set()
+        with pytest.raises(MonitoringPrometheusError) as exc:
+            await survivor
+
+        gc.collect()
+        await asyncio.sleep(0)
+    finally:
+        loop.set_exception_handler(previous_handler)
+    assert exc.value.code == "upstream_transport_error"
+    assert unhandled == []
+
+
+@pytest.mark.asyncio
+async def test_abandoned_shield_wrapper_settled_after_caller_cancel_and_success() -> (
+    None
+):
+    release = asyncio.Event()
+    entered = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    unhandled: list[object] = []
+    previous_handler = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _loop, context: unhandled.append(context))
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        entered.set()
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    client = make_client(handler)
+    survivor = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    leaving = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="b")
+    )
+    try:
+        await asyncio.wait_for(_wait_for_flight_waiters(client, 2), timeout=1)
+        leaving.cancel()
+
+        with pytest.raises(asyncio.CancelledError):
+            await leaving
+        release.set()
+        response = await survivor
+
+        gc.collect()
+        await asyncio.sleep(0)
+    finally:
+        loop.set_exception_handler(previous_handler)
+    assert response.series[0].samples[0].value == 1.0
+    assert unhandled == []
 
 
 @pytest.mark.asyncio
@@ -1103,9 +1309,11 @@ async def test_sole_waiter_disconnect_cancels_upstream() -> None:
 @pytest.mark.asyncio
 async def test_disconnect_callback_is_polled_while_waiting() -> None:
     release = asyncio.Event()
+    entered = asyncio.Event()
     disconnected = False
 
     async def handler(request: httpx.Request) -> httpx.Response:
+        entered.set()
         await release.wait()
         expr = request.url.params["query"]
         return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
@@ -1122,7 +1330,7 @@ async def test_disconnect_callback_is_polled_while_waiting() -> None:
             cancel_callback=callback,
         )
     )
-    await asyncio.sleep(0.02)
+    await asyncio.wait_for(entered.wait(), timeout=1)
     disconnected = True
 
     with pytest.raises(asyncio.CancelledError):
@@ -1133,11 +1341,23 @@ async def test_disconnect_callback_is_polled_while_waiting() -> None:
 @pytest.mark.asyncio
 async def test_disconnect_during_admission_and_no_pending_task_leaks() -> None:
     release = asyncio.Event()
+    all_slots_busy = asyncio.Event()
+    active = 0
+    lock = asyncio.Lock()
 
     async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active
+        async with lock:
+            active += 1
+            if active == 4:
+                all_slots_busy.set()
         await release.wait()
-        expr = request.url.params["query"]
-        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        try:
+            expr = request.url.params["query"]
+            return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+        finally:
+            async with lock:
+                active -= 1
 
     blockers = [make_client(handler) for _ in range(4)]
     blocking_tasks = [
@@ -1148,7 +1368,7 @@ async def test_disconnect_during_admission_and_no_pending_task_leaks() -> None:
         )
         for index, client in enumerate(blockers)
     ]
-    await asyncio.sleep(0.02)
+    await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
 
     disconnect = asyncio.Event()
     waiting = asyncio.create_task(
@@ -1159,7 +1379,7 @@ async def test_disconnect_during_admission_and_no_pending_task_leaks() -> None:
             cancel_event=disconnect,
         )
     )
-    await asyncio.sleep(0.02)
+    await asyncio.sleep(0)
     before = asyncio.all_tasks()
     disconnect.set()
     with pytest.raises(asyncio.CancelledError):
@@ -1242,3 +1462,14 @@ def _internal_pending_tasks() -> list[asyncio.Task[Any]]:
         and not task.done()
         and any(name in task.get_coro().__qualname__ for name in internal_names)
     ]
+
+
+async def _wait_for_flight_waiters(
+    client: MonitoringPrometheusClient,
+    count: int,
+) -> None:
+    while True:
+        async with client._flight_lock:
+            if any(flight.waiters == count for flight in client._flights.values()):
+                return
+        await asyncio.sleep(0)

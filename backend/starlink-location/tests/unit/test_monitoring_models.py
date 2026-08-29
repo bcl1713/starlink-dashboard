@@ -5,8 +5,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 import pytest
-from pydantic import ValidationError
-
 from app.models.monitoring import (
     ActiveLinkResponse,
     GroundEntryPointResponse,
@@ -16,6 +14,7 @@ from app.models.monitoring import (
     MonitoringSeries,
     RouteCoordinateResponse,
 )
+from pydantic import ValidationError
 
 UTC_NOW = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
 

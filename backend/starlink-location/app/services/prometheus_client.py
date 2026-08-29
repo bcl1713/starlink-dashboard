@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+# FR-004: This file intentionally exceeds 300 lines because Task 3 constrains
+# this cohesive trust/concurrency boundary to an exact four-file scope. A future
+# approved split should move process admission, single-flight lifecycle, and
+# rate-limit storage into separate internal modules.
 import asyncio
 import inspect
 import json
@@ -9,15 +13,13 @@ import math
 import os
 import threading
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, deque
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import ClassVar, TypeVar
 
 import httpx
-from pydantic import ValidationError
-
 from app.models.monitoring import (
     MonitoringHistoryRequest,
     MonitoringHistoryResponse,
@@ -25,6 +27,7 @@ from app.models.monitoring import (
     MonitoringSample,
     MonitoringSeries,
 )
+from pydantic import ValidationError
 
 T = TypeVar("T")
 
@@ -146,11 +149,12 @@ class MonitoringPrometheusClient:
         )
         self._rate_lock = asyncio.Lock()
         self._flight_lock = asyncio.Lock()
-        self._requests: dict[str, deque[float]] = defaultdict(deque)
+        self._requests: OrderedDict[str, deque[float]] = OrderedDict()
         self._flights: dict[tuple[int, int, int], _Flight] = {}
         self._cancel_poll_seconds = 0.01
 
     _upstream_gate: ClassVar[_ProcessWideCapacityGate] = _ProcessWideCapacityGate(4)
+    _max_rate_limit_identities: ClassVar[int] = 4096
 
     async def aclose(self) -> None:
         await self._client.aclose()
@@ -486,15 +490,43 @@ class MonitoringPrometheusClient:
     async def _enforce_rate_limit(self, client_id: str) -> None:
         now = time.monotonic()
         async with self._rate_lock:
-            entries = self._requests[client_id]
-            while entries and now - entries[0] >= self._rate_limit_window_seconds:
-                entries.popleft()
+            entries = self._requests.get(client_id)
+            if entries is None:
+                self._evict_expired_rate_limit_identities(now)
+                if len(self._requests) >= self._max_rate_limit_identities:
+                    # At hard cap, evict the least recently used identity. This
+                    # bounds server memory while preserving the active caller's
+                    # deterministic local budget; an evicted identity may regain
+                    # a fresh budget sooner than the full window.
+                    self._requests.popitem(last=False)
+                entries = deque()
+                self._requests[client_id] = entries
+            else:
+                self._prune_expired_entries(entries, now)
+                if not entries:
+                    self._requests.pop(client_id, None)
+                    entries = deque()
+                    self._requests[client_id] = entries
+                else:
+                    self._requests.move_to_end(client_id)
             if len(entries) >= self._rate_limit_count:
                 retry_after = max(
                     1, math.ceil(self._rate_limit_window_seconds - (now - entries[0]))
                 )
                 raise MonitoringRateLimitError(retry_after)
             entries.append(now)
+
+    def _evict_expired_rate_limit_identities(self, now: float) -> None:
+        while self._requests:
+            identity, entries = next(iter(self._requests.items()))
+            self._prune_expired_entries(entries, now)
+            if entries:
+                break
+            self._requests.pop(identity, None)
+
+    def _prune_expired_entries(self, entries: deque[float], now: float) -> None:
+        while entries and now - entries[0] >= self._rate_limit_window_seconds:
+            entries.popleft()
 
     def _utc_now(self) -> datetime:
         value = self._clock()
@@ -529,7 +561,7 @@ class MonitoringPrometheusClient:
             for watcher in watchers:
                 watcher.cancel()
             await asyncio.gather(*watchers, return_exceptions=True)
-            if cancel_operation and not operation.done():
+            if not operation.done():
                 operation.cancel()
                 await asyncio.gather(operation, return_exceptions=True)
 
