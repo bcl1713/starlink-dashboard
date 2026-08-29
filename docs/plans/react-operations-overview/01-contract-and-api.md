@@ -257,7 +257,7 @@ The binding backend, frontend, browser, CI, and docs paths are in the
    streaming proxy above. Add only ArcGIS to `img-src`.
 5. Run weather/config tests; expected PASS. Manually verify with `curl -I`
    during
-   [Task 14](03-runtime-and-browser-acceptance.md#task-14-rebuild-and-verify-an-isolated-exact-head-runtime)
+   [Task 14](03-runtime-and-browser-acceptance.md#task-14-prove-an-exact-head-isolated-real-stack)
    through the built Mission Planner Nginx (not Vite or direct FastAPI) that the
    tile response is same-origin, not a redirect, has
    `X-Content-Type-Options: nosniff`, and that `/overview` includes the intended
