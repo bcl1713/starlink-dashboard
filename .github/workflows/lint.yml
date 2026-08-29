@@ -1,11 +1,11 @@
 name: Code Quality (Linting & Formatting)
 
-# Trigger on PRs and pushes to main/development branches
+# Trigger on PRs and pushes to main/dev branches
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, dev]
   push:
-    branches: [main, develop]
+    branches: [main, dev]
 
 jobs:
   lint:
