@@ -22,6 +22,11 @@ type TimestampedPosition = Readonly<{
 
 type NumericSample = Readonly<{ observedAt: string; value: number | null }>;
 
+type SplitGeometry = Readonly<{
+  westernSegment: readonly Coordinate[];
+  easternSegment: readonly Coordinate[];
+}>;
+
 type Metrics = Readonly<{
   latency: Readonly<{
     currentMs: number | null;
@@ -51,6 +56,7 @@ type Route = Readonly<{
   id: string;
   name: string;
   active: boolean;
+  revisionAt: string | null;
   crossesInternationalDateLine: boolean;
   westernSegment: readonly Coordinate[];
   easternSegment: readonly Coordinate[];
@@ -68,6 +74,18 @@ type Poi = Readonly<{
 type PoiFilter = Readonly<{
   value: string;
   query: Readonly<{ category?: string }>;
+}>;
+
+type PoiResponse = Readonly<{
+  generatedAt: string | null;
+  items: readonly Poi[];
+}>;
+
+type RadarSource = Readonly<{
+  available: boolean;
+  frameAt: string | null;
+  state: HealthState;
+  error?: string;
 }>;
 
 type SourceFreshness = Readonly<{
@@ -99,6 +117,7 @@ type ActiveLink = Readonly<{
   observedAt: string;
   from: Coordinate | null;
   to: Coordinate | null;
+  splitGeometry?: SplitGeometry;
 }>;
 
 type MissionEvent = Readonly<{
@@ -133,17 +152,21 @@ export type OverviewScenario = Readonly<{
   nowIso: string;
   selectedPoiFilter: PoiFilter;
   telemetry: Readonly<{
+    currentObservedAt: string | null;
     currentPosition: Coordinate | null;
     positionHistory: readonly TimestampedPosition[];
+    positionHistorySplit?: SplitGeometry;
     metrics: Metrics;
   }>;
   route: Route;
-  pois: readonly Poi[];
+  pois: PoiResponse;
   groundEntryPoint: Readonly<{
     id: string;
     display: string;
+    observedAt: string | null;
     coordinate: Coordinate | null;
   }>;
+  radar: RadarSource;
   satellites: readonly Readonly<{
     id: string;
     name: string;
@@ -355,6 +378,7 @@ const baseRoute: Route = {
   id: 'route-transpacific-001',
   name: 'Seattle to Tokyo Operational Route',
   active: true,
+  revisionAt: '2026-02-03T15:30:00Z',
   crossesInternationalDateLine: false,
   westernSegment: [
     c(47.4502, -122.3088, 132),
@@ -372,14 +396,36 @@ const idlRoute: Route = {
   id: 'route-idl-001',
   name: 'Tokyo to Seattle IDL Return',
   active: true,
+  revisionAt: '2026-02-03T17:05:59Z',
   crossesInternationalDateLine: true,
-  westernSegment: [c(35.5494, 170.2, 21), c(49.4, 179.6, 11278)],
+  westernSegment: [
+    c(35.5494, 170.2, 21),
+    c(49.4, 179.6, 11278),
+    c(49.6976, 180, 11278),
+  ],
   easternSegment: [
+    c(49.6976, -180, 11278),
     c(50.1, -179.7, 11278),
     c(54.2, -165, 11278),
     c(47.4502, -122.3088, 132),
   ],
 };
+
+const routeAt = (revisionAt: string): Route => ({ ...baseRoute, revisionAt });
+
+const inactiveRoute = (
+  id: string,
+  name: string,
+  revisionAt: string | null = null
+): Route => ({
+  id,
+  name,
+  active: false,
+  revisionAt,
+  crossesInternationalDateLine: false,
+  westernSegment: [],
+  easternSegment: [],
+});
 
 const basePois = [
   {
@@ -460,6 +506,35 @@ const defaultFilter: PoiFilter = {
   query: { category: 'departure,arrival' },
 };
 const allPoisFilter: PoiFilter = { value: '', query: {} };
+
+const poiResponse = (
+  generatedAt: string | null,
+  filter: PoiFilter
+): PoiResponse => {
+  const categories =
+    filter.value === ''
+      ? null
+      : new Set<PoiCategory>(filter.value.split(',') as PoiCategory[]);
+
+  return {
+    generatedAt,
+    items:
+      categories === null
+        ? basePois
+        : basePois.filter((poi) => categories.has(poi.category)),
+  };
+};
+
+const radar = (
+  frameAt: string | null,
+  state: HealthState = 'ok',
+  error?: string
+): RadarSource => ({
+  available: frameAt !== null,
+  frameAt,
+  state,
+  ...(error === undefined ? {} : { error }),
+});
 
 const nominalHistory = [
   point('2026-02-03T15:29:57Z', c(52.22, -150.1, 10973), 471, 287),
@@ -668,17 +743,20 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T15:30:00Z',
     selectedPoiFilter: defaultFilter,
     telemetry: {
+      currentObservedAt: '2026-02-03T15:29:59Z',
       currentPosition: c(52.44, -151.12, 10973),
       positionHistory: nominalHistory,
       metrics: baseMetrics,
     },
-    route: baseRoute,
-    pois: basePois,
+    route: routeAt('2026-02-03T15:30:00Z'),
+    pois: poiResponse('2026-02-03T15:30:00Z', defaultFilter),
     groundEntryPoint: {
       id: 'gep-seattle-001',
       display: 'Seattle, WA',
+      observedAt: '2026-02-03T15:30:00Z',
       coordinate: c(47.6062, -122.3321, 0),
     },
+    radar: radar('2026-02-03T15:29:59Z'),
     satellites,
     activeLinks: normalLinks,
     missionEvents: baseEvents,
@@ -724,14 +802,14 @@ export const OVERVIEW_SCENARIOS = [
         pois: '2026-02-03T15:30:00Z',
         route: '2026-02-03T15:30:00Z',
         groundEntryPoint: '2026-02-03T15:30:00Z',
-        radar: '2026-02-03T15:29:00Z',
+        radar: '2026-02-03T15:29:59Z',
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
           state: 'ok',
           availability: 'available',
-          value: 'frame 2026-02-03T15:29:00Z',
+          value: 'frame 2026-02-03T15:29:59Z',
         },
         routeWest: {
           id: 'planned-route-west',
@@ -773,7 +851,7 @@ export const OVERVIEW_SCENARIOS = [
           id: 'flight-route-markers',
           state: 'ok',
           availability: 'available',
-          value: '7 POI markers',
+          value: '2 POI markers',
         },
         satellite: {
           id: 'satellites',
@@ -800,7 +878,7 @@ export const OVERVIEW_SCENARIOS = [
           value: 'current position observed 2026-02-03T15:29:59Z',
         },
       }),
-      baseRoute
+      routeAt('2026-02-03T15:30:00Z')
     ),
   },
   {
@@ -809,6 +887,7 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T15:31:00Z',
     selectedPoiFilter: defaultFilter,
     telemetry: {
+      currentObservedAt: '2026-02-03T15:30:59Z',
       currentPosition: c(39.8617, -104.6731, 1656),
       positionHistory: [
         point('2026-02-03T15:30:59Z', c(39.8617, -104.6731, 1656), 0, 0),
@@ -825,18 +904,15 @@ export const OVERVIEW_SCENARIOS = [
         0.8
       ),
     },
-    route: {
-      ...baseRoute,
-      id: 'route-none',
-      name: 'No Active Route',
-      active: false,
-    },
-    pois: [],
+    route: inactiveRoute('route-none', 'No Active Route'),
+    pois: { generatedAt: null, items: [] },
     groundEntryPoint: {
       id: 'gep-denver-001',
       display: 'Denver, CO',
+      observedAt: '2026-02-03T15:31:00Z',
       coordinate: c(39.7392, -104.9903, 0),
     },
+    radar: radar('2026-02-03T15:30:59Z'),
     satellites: [],
     activeLinks: [
       {
@@ -890,14 +966,14 @@ export const OVERVIEW_SCENARIOS = [
         pois: null,
         route: null,
         groundEntryPoint: '2026-02-03T15:31:00Z',
-        radar: '2026-02-03T15:30:00Z',
+        radar: '2026-02-03T15:30:59Z',
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
           state: 'ok',
           availability: 'available',
-          value: 'frame 2026-02-03T15:30:00Z',
+          value: 'frame 2026-02-03T15:30:59Z',
         },
         routeWest: {
           id: 'planned-route-west',
@@ -966,7 +1042,7 @@ export const OVERVIEW_SCENARIOS = [
           value: 'current position observed 2026-02-03T15:30:59Z',
         },
       }),
-      { ...baseRoute, id: 'route-none', name: 'No Active Route', active: false }
+      inactiveRoute('route-none', 'No Active Route')
     ),
   },
   {
@@ -975,6 +1051,7 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T15:10:00Z',
     selectedPoiFilter: allPoisFilter,
     telemetry: {
+      currentObservedAt: '2026-02-03T15:09:59Z',
       currentPosition: c(50.1, -135.2, 10668),
       positionHistory: [
         point('2026-02-03T15:09:59Z', c(50.1, -135.2, 10668), 466, 286),
@@ -987,13 +1064,15 @@ export const OVERVIEW_SCENARIOS = [
         1.4
       ),
     },
-    route: baseRoute,
-    pois: basePois,
+    route: routeAt('2026-02-03T15:10:00Z'),
+    pois: poiResponse('2026-02-03T15:10:00Z', allPoisFilter),
     groundEntryPoint: {
       id: 'gep-seattle-001',
       display: 'Seattle, WA',
+      observedAt: '2026-02-03T15:10:00Z',
       coordinate: c(47.6062, -122.3321, 0),
     },
+    radar: radar('2026-02-03T15:09:59Z'),
     satellites: [],
     activeLinks: [
       {
@@ -1053,14 +1132,14 @@ export const OVERVIEW_SCENARIOS = [
         pois: '2026-02-03T15:10:00Z',
         route: '2026-02-03T15:10:00Z',
         groundEntryPoint: '2026-02-03T15:10:00Z',
-        radar: '2026-02-03T15:09:00Z',
+        radar: '2026-02-03T15:09:59Z',
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
           state: 'ok',
           availability: 'available',
-          value: 'frame 2026-02-03T15:09:00Z',
+          value: 'frame 2026-02-03T15:09:59Z',
         },
         routeWest: {
           id: 'planned-route-west',
@@ -1129,7 +1208,7 @@ export const OVERVIEW_SCENARIOS = [
           value: 'current position observed 2026-02-03T15:09:59Z',
         },
       }),
-      baseRoute
+      routeAt('2026-02-03T15:10:00Z')
     ),
   },
   {
@@ -1138,6 +1217,7 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T16:05:00Z',
     selectedPoiFilter: defaultFilter,
     telemetry: {
+      currentObservedAt: '2026-02-03T15:30:00Z',
       currentPosition: c(53, -162, 11278),
       positionHistory: [
         point('2026-02-03T15:29:30Z', c(52.9, -161.5, 11278), 469, 287),
@@ -1159,13 +1239,15 @@ export const OVERVIEW_SCENARIOS = [
         1.8
       ),
     },
-    route: baseRoute,
-    pois: basePois,
+    route: routeAt('2026-02-03T15:30:00Z'),
+    pois: poiResponse('2026-02-03T15:30:00Z', defaultFilter),
     groundEntryPoint: {
       id: 'gep-seattle-001',
       display: 'Seattle, WA',
+      observedAt: '2026-02-03T15:30:00Z',
       coordinate: c(47.6062, -122.3321, 0),
     },
+    radar: radar('2026-02-03T15:30:00Z', 'stale'),
     satellites,
     activeLinks: [
       {
@@ -1187,7 +1269,7 @@ export const OVERVIEW_SCENARIOS = [
         },
         poi: {
           id: 'poi-quick-reference',
-          state: 'ok',
+          state: 'stale',
           value: '1 future departure/arrival POI',
         },
         latency: {
@@ -1197,18 +1279,18 @@ export const OVERVIEW_SCENARIOS = [
         },
         throughput: {
           id: 'throughput',
-          state: 'ok',
+          state: 'stale',
           value: '180.8 Mbps down / -21.4 Mbps up',
         },
         gep: {
           id: 'ground-entry-point',
-          state: 'ok',
+          state: 'stale',
           value: 'Seattle, WA',
         },
-        obstruction: { id: 'obstruction', state: 'ok', value: '1.8%' },
+        obstruction: { id: 'obstruction', state: 'stale', value: '1.8%' },
         packetLoss: {
           id: 'packet-loss',
-          state: 'ok',
+          state: 'stale',
           value: '0.4% current / 0.3% avg / 0.4% max',
         },
       }),
@@ -1216,27 +1298,27 @@ export const OVERVIEW_SCENARIOS = [
         telemetry: '2026-02-03T15:30:00Z',
         history: '2026-02-03T15:30:00Z',
         activeLink: '2026-02-03T15:30:00Z',
-        pois: '2026-02-03T16:05:00Z',
-        route: '2026-02-03T16:05:00Z',
-        groundEntryPoint: '2026-02-03T16:05:00Z',
-        radar: '2026-02-03T16:04:00Z',
+        pois: '2026-02-03T15:30:00Z',
+        route: '2026-02-03T15:30:00Z',
+        groundEntryPoint: '2026-02-03T15:30:00Z',
+        radar: '2026-02-03T15:30:00Z',
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
-          value: 'frame 2026-02-03T16:04:00Z',
+          value: 'frame 2026-02-03T15:30:00Z',
         },
         routeWest: {
           id: 'planned-route-west',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
           value: '3 western route points',
         },
         routeEast: {
           id: 'planned-route-east',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
           value: '3 eastern route points',
         },
@@ -1266,9 +1348,9 @@ export const OVERVIEW_SCENARIOS = [
         },
         markers: {
           id: 'flight-route-markers',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
-          value: '7 POI markers',
+          value: '2 POI markers',
         },
         satellite: {
           id: 'satellites',
@@ -1284,7 +1366,7 @@ export const OVERVIEW_SCENARIOS = [
         },
         gep: {
           id: 'ground-entry-point-layer',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
           value: 'Seattle, WA',
         },
@@ -1295,7 +1377,9 @@ export const OVERVIEW_SCENARIOS = [
           value: 'current position observed 2026-02-03T15:30:00Z',
         },
       }),
-      baseRoute
+      routeAt('2026-02-03T15:30:00Z'),
+      'stale',
+      'available'
     ),
   },
   {
@@ -1304,6 +1388,7 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T15:33:00Z',
     selectedPoiFilter: defaultFilter,
     telemetry: {
+      currentObservedAt: null,
       currentPosition: null,
       positionHistory: [point('2026-02-03T15:32:59Z', null, null, null)],
       metrics: metrics(
@@ -1314,13 +1399,18 @@ export const OVERVIEW_SCENARIOS = [
         null
       ),
     },
-    route: { ...baseRoute, active: false },
-    pois: [],
+    route: inactiveRoute(
+      'route-transpacific-001',
+      'Seattle to Tokyo Operational Route'
+    ),
+    pois: { generatedAt: null, items: [] },
     groundEntryPoint: {
       id: 'gep-unavailable',
       display: 'Unavailable',
+      observedAt: null,
       coordinate: null,
     },
+    radar: radar('2026-02-03T15:32:59Z'),
     satellites: [],
     activeLinks: [
       {
@@ -1386,14 +1476,14 @@ export const OVERVIEW_SCENARIOS = [
         pois: null,
         route: null,
         groundEntryPoint: null,
-        radar: '2026-02-03T15:32:00Z',
+        radar: '2026-02-03T15:32:59Z',
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
           state: 'ok',
           availability: 'available',
-          value: 'frame 2026-02-03T15:32:00Z',
+          value: 'frame 2026-02-03T15:32:59Z',
         },
         routeWest: {
           id: 'planned-route-west',
@@ -1462,7 +1552,10 @@ export const OVERVIEW_SCENARIOS = [
           value: 'current position unavailable',
         },
       }),
-      { ...baseRoute, active: false }
+      inactiveRoute(
+        'route-transpacific-001',
+        'Seattle to Tokyo Operational Route'
+      )
     ),
   },
   {
@@ -1471,6 +1564,7 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T15:34:00Z',
     selectedPoiFilter: defaultFilter,
     telemetry: {
+      currentObservedAt: '2026-02-03T15:33:59Z',
       currentPosition: c(52.55, -152.1, 10973),
       positionHistory: [
         point('2026-02-03T15:33:57Z', c(52.4, -151.7, 10973), 471, 287),
@@ -1492,13 +1586,15 @@ export const OVERVIEW_SCENARIOS = [
         1.2
       ),
     },
-    route: baseRoute,
-    pois: basePois,
+    route: routeAt('2026-02-03T15:34:00Z'),
+    pois: poiResponse('2026-02-03T15:34:00Z', defaultFilter),
     groundEntryPoint: {
       id: 'gep-seattle-001',
       display: 'Seattle, WA',
+      observedAt: '2026-02-03T15:34:00Z',
       coordinate: c(47.6062, -122.3321, 0),
     },
+    radar: radar(null, 'unavailable', 'radar tile failure'),
     satellites,
     activeLinks: [
       {
@@ -1608,7 +1704,7 @@ export const OVERVIEW_SCENARIOS = [
           id: 'flight-route-markers',
           state: 'ok',
           availability: 'available',
-          value: '7 POI markers',
+          value: '2 POI markers',
         },
         satellite: {
           id: 'satellites',
@@ -1646,11 +1742,16 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T17:06:00Z',
     selectedPoiFilter: defaultFilter,
     telemetry: {
+      currentObservedAt: '2026-02-03T17:05:59Z',
       currentPosition: c(54.05, -179.85, 11278),
       positionHistory: [
         point('2026-02-03T17:05:58Z', c(54.2, 179.4, 11278), 475, 273),
         point('2026-02-03T17:05:59Z', c(54.05, -179.85, 11278), 475, 273),
       ],
+      positionHistorySplit: {
+        westernSegment: [c(54.2, 179.4, 11278), c(54.08, 180, 11278)],
+        easternSegment: [c(54.08, -180, 11278), c(54.05, -179.85, 11278)],
+      },
       metrics: metrics(
         [
           sample('2026-02-03T17:05:55Z', 61),
@@ -1668,12 +1769,14 @@ export const OVERVIEW_SCENARIOS = [
       ),
     },
     route: idlRoute,
-    pois: basePois,
+    pois: poiResponse('2026-02-03T17:06:00Z', defaultFilter),
     groundEntryPoint: {
       id: 'gep-tokyo-001',
       display: 'Tokyo, JP',
+      observedAt: '2026-02-03T17:06:00Z',
       coordinate: c(35.6762, 139.6503, 0),
     },
+    radar: radar('2026-02-03T17:05:59Z'),
     satellites,
     activeLinks: [
       {
@@ -1682,6 +1785,10 @@ export const OVERVIEW_SCENARIOS = [
         observedAt: '2026-02-03T17:05:59Z',
         from: c(54.05, -179.85, 11278),
         to: c(53.9, 179.9, 550000),
+        splitGeometry: {
+          westernSegment: [c(53.9, 179.9, 550000), c(53.96, 180, 334767)],
+          easternSegment: [c(53.96, -180, 334767), c(54.05, -179.85, 11278)],
+        },
       },
       {
         id: 'xband-warning-idl',
@@ -1689,6 +1796,10 @@ export const OVERVIEW_SCENARIOS = [
         observedAt: '2026-02-03T17:05:59Z',
         from: c(54.2, 179.4, 11278),
         to: c(54.05, -179.85, 11278),
+        splitGeometry: {
+          westernSegment: [c(54.2, 179.4, 11278), c(54.08, 180, 11278)],
+          easternSegment: [c(54.08, -180, 11278), c(54.05, -179.85, 11278)],
+        },
       },
     ],
     missionEvents: [
@@ -1698,7 +1809,7 @@ export const OVERVIEW_SCENARIOS = [
         observedAt: '2026-02-03T17:05:59Z',
         type: 'waypoint',
         label: 'Crossed International Date Line',
-        coordinate: c(54.1, 179.7, 11278),
+        coordinate: c(54.08, 180, 11278),
       },
     ],
     expected: expected(
@@ -1737,28 +1848,28 @@ export const OVERVIEW_SCENARIOS = [
         history: '2026-02-03T17:05:59Z',
         activeLink: '2026-02-03T17:05:59Z',
         pois: '2026-02-03T17:06:00Z',
-        route: '2026-02-03T17:06:00Z',
+        route: '2026-02-03T17:05:59Z',
         groundEntryPoint: '2026-02-03T17:06:00Z',
-        radar: '2026-02-03T17:05:00Z',
+        radar: '2026-02-03T17:05:59Z',
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
           state: 'ok',
           availability: 'available',
-          value: 'frame 2026-02-03T17:05:00Z',
+          value: 'frame 2026-02-03T17:05:59Z',
         },
         routeWest: {
           id: 'planned-route-west',
           state: 'ok',
           availability: 'available',
-          value: '2 western IDL points',
+          value: '3 western IDL points',
         },
         routeEast: {
           id: 'planned-route-east',
           state: 'ok',
           availability: 'available',
-          value: '3 eastern IDL points',
+          value: '4 eastern IDL points',
         },
         linkNormal: {
           id: 'active-x-band-normal',
@@ -1776,19 +1887,19 @@ export const OVERVIEW_SCENARIOS = [
           id: 'position-history-west',
           state: 'ok',
           availability: 'available',
-          value: '1 western sample',
+          value: '2 western IDL points',
         },
         historyEast: {
           id: 'position-history-east',
           state: 'ok',
           availability: 'available',
-          value: '1 eastern sample',
+          value: '2 eastern IDL points',
         },
         markers: {
           id: 'flight-route-markers',
           state: 'ok',
           availability: 'available',
-          value: '7 POI markers',
+          value: '2 POI markers',
         },
         satellite: {
           id: 'satellites',
@@ -1824,6 +1935,7 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T15:35:00Z',
     selectedPoiFilter: defaultFilter,
     telemetry: {
+      currentObservedAt: '2026-02-03T15:34:59Z',
       currentPosition: c(52.8, -154.4, 11278),
       positionHistory: [
         point('2026-02-03T15:34:58Z', c(52.6, -153.6, 11278), 468, 287),
@@ -1845,13 +1957,15 @@ export const OVERVIEW_SCENARIOS = [
         10.5
       ),
     },
-    route: baseRoute,
-    pois: basePois,
+    route: routeAt('2026-02-03T15:35:00Z'),
+    pois: poiResponse('2026-02-03T15:35:00Z', defaultFilter),
     groundEntryPoint: {
       id: 'gep-seattle-001',
       display: 'Seattle, WA',
+      observedAt: '2026-02-03T15:35:00Z',
       coordinate: c(47.6062, -122.3321, 0),
     },
+    radar: radar('2026-02-03T15:34:59Z'),
     satellites,
     activeLinks: [
       {
@@ -1912,14 +2026,14 @@ export const OVERVIEW_SCENARIOS = [
         pois: '2026-02-03T15:35:00Z',
         route: '2026-02-03T15:35:00Z',
         groundEntryPoint: '2026-02-03T15:35:00Z',
-        radar: '2026-02-03T15:34:00Z',
+        radar: '2026-02-03T15:34:59Z',
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
           state: 'ok',
           availability: 'available',
-          value: 'frame 2026-02-03T15:34:00Z',
+          value: 'frame 2026-02-03T15:34:59Z',
         },
         routeWest: {
           id: 'planned-route-west',
@@ -1961,7 +2075,7 @@ export const OVERVIEW_SCENARIOS = [
           id: 'flight-route-markers',
           state: 'ok',
           availability: 'available',
-          value: '7 POI markers',
+          value: '2 POI markers',
         },
         satellite: {
           id: 'satellites',
@@ -1997,6 +2111,7 @@ export const OVERVIEW_SCENARIOS = [
     nowIso: '2026-02-03T15:36:00Z',
     selectedPoiFilter: defaultFilter,
     telemetry: {
+      currentObservedAt: '2026-02-03T15:35:59Z',
       currentPosition: c(53.1, -155.1, 11278),
       positionHistory: [
         point('2026-02-03T15:35:57Z', c(52.8, -154.4, 11278), 469, 287),
@@ -2019,13 +2134,15 @@ export const OVERVIEW_SCENARIOS = [
         4.9
       ),
     },
-    route: baseRoute,
-    pois: basePois,
+    route: routeAt('2026-02-03T15:36:00Z'),
+    pois: poiResponse('2026-02-03T15:36:00Z', defaultFilter),
     groundEntryPoint: {
       id: 'gep-seattle-001',
       display: 'Seattle, WA',
+      observedAt: '2026-02-03T15:36:00Z',
       coordinate: c(47.6062, -122.3321, 0),
     },
+    radar: radar('2026-02-03T15:35:59Z'),
     satellites: [
       {
         id: 'sat-44714',
@@ -2094,14 +2211,14 @@ export const OVERVIEW_SCENARIOS = [
         pois: '2026-02-03T15:36:00Z',
         route: '2026-02-03T15:36:00Z',
         groundEntryPoint: '2026-02-03T15:36:00Z',
-        radar: '2026-02-03T15:35:00Z',
+        radar: '2026-02-03T15:35:59Z',
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
           state: 'ok',
           availability: 'available',
-          value: 'frame 2026-02-03T15:35:00Z',
+          value: 'frame 2026-02-03T15:35:59Z',
         },
         routeWest: {
           id: 'planned-route-west',
@@ -2143,7 +2260,7 @@ export const OVERVIEW_SCENARIOS = [
           id: 'flight-route-markers',
           state: 'ok',
           availability: 'available',
-          value: '7 POI markers',
+          value: '2 POI markers',
         },
         satellite: {
           id: 'satellites',
