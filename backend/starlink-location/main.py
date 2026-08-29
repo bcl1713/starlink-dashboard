@@ -98,9 +98,7 @@ async def startup_event():
             rainviewer_service = RainViewerRadarService()
             app.state.rainviewer_radar_service = rainviewer_service
             _lifespan_state_keys.add("rainviewer_radar_service")
-            _lifespan_owned_resources["rainviewer_radar_service"] = (
-                rainviewer_service
-            )
+            _lifespan_owned_resources["rainviewer_radar_service"] = rainviewer_service
         logger.info_json(
             "Configuration loaded",
             extra_fields={
@@ -377,8 +375,7 @@ async def _cleanup_lifespan_resources(app: FastAPI) -> None:
         _lifespan_state_keys.discard("rainviewer_radar_service")
         if (
             rainviewer_service is not None
-            and app.state._state.get("rainviewer_radar_service")
-            is rainviewer_service
+            and app.state._state.get("rainviewer_radar_service") is rainviewer_service
         ):
             app.state._state.pop("rainviewer_radar_service", None)
             logger.info_json("Closing RainViewer radar service")
