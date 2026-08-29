@@ -1,5 +1,7 @@
 """Tests for weather radar API routes."""
 
+# Ruff 0.16.5 classifies these imports differently from repo and backend roots.
+# ruff: noqa: I001, RUF100
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,6 +10,7 @@ from tempfile import SpooledTemporaryFile
 import httpcore
 import httpx
 import pytest
+
 from app.api.weather import get_rainviewer_radar_service
 from app.services.rainviewer_transport import (
     PinnedAsyncHTTPTransport,
@@ -51,7 +54,7 @@ class FailingBackend(httpcore.AsyncNetworkBackend):
     def __init__(
         self,
         exc: BaseException | None = None,
-        streams: list[RawHTTPStream] | None = None,
+        streams: list[RawHTTPStream | BaseException] | None = None,
     ) -> None:
         self.exc = exc
         self.streams = streams or []
@@ -68,7 +71,10 @@ class FailingBackend(httpcore.AsyncNetworkBackend):
             raise self.exc
         if not self.streams:
             raise AssertionError("unexpected connection")
-        return self.streams.pop(0)
+        stream = self.streams.pop(0)
+        if isinstance(stream, BaseException):
+            raise stream
+        return stream
 
     async def connect_unix_socket(
         self, path: str, timeout: float | None = None, socket_options=None
@@ -153,12 +159,12 @@ def _metadata_http_response() -> bytes:
     )
 
 
-def _tile_http_response_then_read_error(secret: str) -> RawHTTPStream:
+def _tile_http_response_then_read_error(exc: BaseException) -> RawHTTPStream:
     headers = (
         b"HTTP/1.1 200 OK\r\nContent-Type: image/png\r\n"
         b"Content-Length: 13\r\nConnection: close\r\n\r\n"
     )
-    return RawHTTPStream(headers, read_exc=httpcore.ReadError(secret))
+    return RawHTTPStream(headers, read_exc=exc)
 
 
 def _assert_stable_weather_failure(response, caplog, status_code: int) -> None:
@@ -176,6 +182,10 @@ def _assert_stable_weather_failure(response, caplog, status_code: int) -> None:
         "tilecache.rainviewer.com",
         "8.8.8.8",
         "weather-maps.json",
+        "ProxyError",
+        "UnsupportedProtocol",
+        "Traceback",
+        "Unhandled exception",
     ]
     log_text = caplog.text
     body_text = response.text
@@ -235,6 +245,13 @@ def test_rainviewer_radar_tile_endpoint_maps_upstream_failures_to_502(client) ->
     [
         (httpcore.ConnectTimeout("SECRET timeout api.rainviewer.com 8.8.8.8"), 504),
         (httpcore.ConnectError("SECRET connect tilecache.rainviewer.com"), 502),
+        (httpcore.ProxyError("SECRET proxy tilecache.rainviewer.com 8.8.8.8"), 502),
+        (
+            httpcore.UnsupportedProtocol(
+                "SECRET protocol tilecache.rainviewer.com 8.8.8.8"
+            ),
+            502,
+        ),
     ],
 )
 def test_rainviewer_api_maps_pinned_connect_failures_without_leaks(
@@ -266,10 +283,38 @@ def test_rainviewer_api_maps_pinning_dns_failures_without_leaks(client, caplog) 
 
 
 @pytest.mark.parametrize(
+    "exc",
+    [
+        httpcore.ProxyError("SECRET tile proxy tilecache.rainviewer.com 8.8.8.8"),
+        httpcore.UnsupportedProtocol(
+            "SECRET tile protocol tilecache.rainviewer.com 8.8.8.8"
+        ),
+    ],
+)
+def test_rainviewer_api_maps_pinned_tile_connect_failures_without_leaks(
+    client, caplog, exc: BaseException
+) -> None:
+    service = _install_pinned_weather_service(
+        FailingBackend(streams=[RawHTTPStream(_metadata_http_response()), exc])
+    )
+    try:
+        response = client.get("/api/weather/radar/rainviewer/3/4/5.png")
+    finally:
+        client.portal.call(service.aclose)
+
+    _assert_stable_weather_failure(response, caplog, 502)
+
+
+@pytest.mark.parametrize(
     "stream",
     [
         RawHTTPStream(b"", tls_exc=httpcore.ConnectError("SECRET tls host 8.8.8.8")),
         RawHTTPStream(b"", read_exc=httpcore.RemoteProtocolError("SECRET protocol")),
+        RawHTTPStream(b"", read_exc=httpcore.ProxyError("SECRET proxy stream")),
+        RawHTTPStream(
+            b"",
+            read_exc=httpcore.UnsupportedProtocol("SECRET unsupported stream"),
+        ),
     ],
 )
 def test_rainviewer_api_maps_pinned_tls_and_protocol_without_leaks(
@@ -284,14 +329,24 @@ def test_rainviewer_api_maps_pinned_tls_and_protocol_without_leaks(
     _assert_stable_weather_failure(response, caplog, 502)
 
 
+@pytest.mark.parametrize(
+    "exc",
+    [
+        httpcore.ReadError("SECRET body read"),
+        httpcore.ProxyError("SECRET proxy body tilecache.rainviewer.com 8.8.8.8"),
+        httpcore.UnsupportedProtocol(
+            "SECRET unsupported body tilecache.rainviewer.com 8.8.8.8"
+        ),
+    ],
+)
 def test_rainviewer_api_maps_pinned_body_read_failure_without_leaks(
-    client, caplog
+    client, caplog, exc: BaseException
 ) -> None:
     service = _install_pinned_weather_service(
         FailingBackend(
             streams=[
                 RawHTTPStream(_metadata_http_response()),
-                _tile_http_response_then_read_error("SECRET body read"),
+                _tile_http_response_then_read_error(exc),
             ]
         )
     )

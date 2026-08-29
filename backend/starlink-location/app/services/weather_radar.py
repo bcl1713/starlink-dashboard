@@ -1,5 +1,7 @@
 """RainViewer weather radar tile proxy service."""
 
+# Ruff 0.16.5 classifies these imports differently from repo and backend roots.
+# ruff: noqa: I001, RUF100
 from __future__ import annotations
 
 import asyncio
@@ -15,11 +17,12 @@ from typing import Any
 
 import httpcore
 import httpx
+from httpx import StreamConsumed
+
 from app.services.rainviewer_transport import (
     PinnedAsyncHTTPTransport,
     RainViewerPinningError,
 )
-from httpx import StreamConsumed
 
 RAINVIEWER_METADATA_URL = "https://api.rainviewer.com/public/weather-maps.json"
 RAINVIEWER_TILE_ORIGIN = "https://tilecache.rainviewer.com"

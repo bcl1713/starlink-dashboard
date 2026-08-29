@@ -138,6 +138,10 @@ async def _map_httpcore_exceptions() -> AsyncIterator[None]:
         yield
     except RainViewerPinningError as exc:
         raise httpx.ConnectError("") from exc
+    except httpcore.ProxyError as exc:
+        raise httpx.ProxyError("") from exc
+    except httpcore.UnsupportedProtocol as exc:
+        raise httpx.UnsupportedProtocol("") from exc
     except httpcore.TimeoutException as exc:
         if isinstance(exc, httpcore.ConnectTimeout):
             raise httpx.ConnectTimeout("") from exc

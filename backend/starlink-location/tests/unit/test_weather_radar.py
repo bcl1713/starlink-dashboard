@@ -1,5 +1,7 @@
 """Tests for RainViewer weather radar fetching."""
 
+# Ruff 0.16.5 classifies these imports differently from repo and backend roots.
+# ruff: noqa: I001, RUF100
 from __future__ import annotations
 
 import asyncio
@@ -8,6 +10,7 @@ from collections.abc import Iterable
 
 import httpx
 import pytest
+
 from app.services.weather_radar import (
     InvalidRadarTileError,
     RainViewerRadarService,

@@ -84,6 +84,26 @@ class RecordingBackend(httpcore.AsyncNetworkBackend):
         raise AssertionError("unix sockets are not used for RainViewer")
 
 
+class FailingBackend(httpcore.AsyncNetworkBackend):
+    def __init__(self, exc: BaseException) -> None:
+        self.exc = exc
+
+    async def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: float | None = None,
+        local_address: str | None = None,
+        socket_options=None,
+    ):
+        raise self.exc
+
+    async def connect_unix_socket(
+        self, path: str, timeout: float | None = None, socket_options=None
+    ):
+        raise AssertionError("unix sockets are not used for RainViewer")
+
+
 @pytest.mark.parametrize(
     "addresses",
     [
@@ -166,3 +186,33 @@ async def test_http_transport_preserves_hostname_for_tls_sni_and_host_header() -
     assert backend.tcp_calls == [("8.8.8.8", 443)]
     assert backend.streams[0].sni == ["api.rainviewer.com"]
     assert b"Host: api.rainviewer.com" in backend.streams[0].writes[0]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("core_exc", "httpx_exc"),
+    [
+        (
+            httpcore.ProxyError("SECRET proxy api.rainviewer.com 8.8.8.8"),
+            httpx.ProxyError,
+        ),
+        (
+            httpcore.UnsupportedProtocol("SECRET protocol api.rainviewer.com 8.8.8.8"),
+            httpx.UnsupportedProtocol,
+        ),
+    ],
+)
+async def test_http_transport_maps_canonical_core_exceptions_without_message(
+    core_exc: BaseException, httpx_exc: type[httpx.HTTPError]
+) -> None:
+    transport = PinnedAsyncHTTPTransport(
+        resolver=FakeResolver(("8.8.8.8",)),
+        network_backend=FailingBackend(core_exc),
+    )
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        with pytest.raises(httpx_exc) as exc_info:
+            await client.get("https://api.rainviewer.com/public/weather-maps.json")
+
+    assert str(exc_info.value) == ""
+    assert exc_info.value.__cause__ is core_exc
