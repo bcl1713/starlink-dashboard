@@ -7,10 +7,12 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Iterable
+from tempfile import SpooledTemporaryFile
 
 import httpx
 import pytest
 
+from app.services import weather_radar_helpers
 from app.services.weather_radar import (
     InvalidRadarTileError,
     RainViewerRadarService,
@@ -19,6 +21,7 @@ from app.services.weather_radar import (
 )
 
 PNG = b"\x89PNG\r\n\x1a\nradar"
+REAL_SPOOLED_TEMPORARY_FILE = SpooledTemporaryFile
 METADATA = {
     "host": "https://tilecache.rainviewer.com",
     "radar": {
@@ -98,15 +101,37 @@ class BlockingTransport(ScriptedTransport):
         return _png_response()
 
 
+class TileBlockingTransport(ScriptedTransport):
+    def __init__(self, release: asyncio.Event) -> None:
+        super().__init__([])
+        self.release = release
+        self.cancelled = 0
+        self.tile_started = asyncio.Event()
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        if request.url.host == "api.rainviewer.com":
+            return _json_response(METADATA)
+        self.tile_started.set()
+        try:
+            await self.release.wait()
+        except asyncio.CancelledError:
+            self.cancelled += 1
+            raise
+        return _png_response()
+
+
 class BlockingBodyStream(httpx.AsyncByteStream):
     def __init__(self, first_chunk: bytes, release: asyncio.Event) -> None:
         self.first_chunk = first_chunk
         self.release = release
         self.closed = False
         self.cancelled = 0
+        self.waiting = asyncio.Event()
 
     async def __aiter__(self):
         yield self.first_chunk
+        self.waiting.set()
         try:
             await self.release.wait()
         except asyncio.CancelledError:
@@ -116,6 +141,45 @@ class BlockingBodyStream(httpx.AsyncByteStream):
 
     async def aclose(self) -> None:
         self.closed = True
+
+
+class CloseFailingBlockingBodyStream(BlockingBodyStream):
+    def __init__(self, first_chunk: bytes, release: asyncio.Event) -> None:
+        super().__init__(first_chunk, release)
+        self.close_failures = 0
+
+    async def aclose(self) -> None:
+        self.closed = True
+        self.close_failures += 1
+        raise httpx.ReadTimeout("sanitized close failure")
+
+
+class CloseFailingStream(httpx.AsyncByteStream):
+    def __init__(self, chunks: list[bytes], exc: BaseException | None = None) -> None:
+        self.chunks = chunks
+        self.exc = exc or httpx.ReadTimeout("sanitized close failure")
+        self.closed = 0
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            await asyncio.sleep(0)
+            yield chunk
+
+    async def aclose(self) -> None:
+        self.closed += 1
+        raise self.exc
+
+
+def _close_failing_response(content: bytes, headers: dict[str, str]) -> httpx.Response:
+    response = httpx.Response(200, content=content, headers=headers)
+    response.extensions["close_failures"] = 0
+
+    async def fail_close() -> None:
+        response.extensions["close_failures"] += 1
+        raise httpx.ReadTimeout("sanitized close failure")
+
+    response.aclose = fail_close
+    return response
 
 
 def _service(
@@ -581,19 +645,6 @@ async def test_all_metadata_waiters_disconnect_cancel_upstream_once() -> None:
 @pytest.mark.asyncio
 async def test_disconnect_while_waiting_for_tile_headers_cancels_upstream() -> None:
     release = asyncio.Event()
-
-    class TileBlockingTransport(BlockingTransport):
-        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
-            self.requests.append(request)
-            if request.url.host == "api.rainviewer.com":
-                return _json_response(METADATA)
-            try:
-                await self.release.wait()
-            except asyncio.CancelledError:
-                self.cancelled += 1
-                raise
-            raise AssertionError("tile request should have been cancelled")
-
     transport = TileBlockingTransport(release)
     service = _service(transport)
     disconnect = asyncio.Event()
@@ -610,6 +661,61 @@ async def test_disconnect_while_waiting_for_tile_headers_cancels_upstream() -> N
         await task
 
     assert transport.cancelled == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("wait_point", ["metadata_headers", "tile_headers"])
+async def test_cancel_checker_runtime_error_cancels_child_request(
+    wait_point: str,
+) -> None:
+    release = asyncio.Event()
+    if wait_point == "metadata_headers":
+        transport = BlockingTransport(release)
+        started = transport.metadata_started
+    else:
+        transport = TileBlockingTransport(release)
+        started = transport.tile_started
+    service = _service(transport)
+    checks = 0
+
+    async def broken_checker() -> bool:
+        nonlocal checks
+        checks += 1
+        if checks > 2:
+            raise RuntimeError("checker failed")
+        return False
+
+    task = asyncio.create_task(service.fetch_tile(0, 0, 0, broken_checker))
+    await asyncio.wait_for(started.wait(), timeout=1)
+
+    with pytest.raises(RainViewerRadarServiceError):
+        await task
+
+    assert transport.cancelled == 1
+
+
+@pytest.mark.asyncio
+async def test_cancel_checker_runtime_error_while_body_stalled_cancels_read() -> None:
+    release = asyncio.Event()
+    stream = BlockingBodyStream(PNG, release)
+    response = httpx.Response(200, headers={"Content-Type": "image/png"}, stream=stream)
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+    fail_checker = asyncio.Event()
+
+    async def broken_checker() -> bool:
+        if fail_checker.is_set():
+            raise RuntimeError("checker failed")
+        return False
+
+    task = asyncio.create_task(service.fetch_tile(0, 0, 0, broken_checker))
+    await asyncio.wait_for(stream.waiting.wait(), timeout=1)
+    fail_checker.set()
+
+    with pytest.raises(RainViewerRadarServiceError):
+        await task
+
+    assert stream.cancelled == 1
+    assert stream.closed is True
 
 
 @pytest.mark.asyncio
@@ -673,3 +779,84 @@ async def test_aclose_closes_owned_client_once() -> None:
     await service.aclose()
 
     assert transport.closed == 1
+
+
+@pytest.mark.asyncio
+async def test_valid_tile_close_failure_closes_spool_before_timeout(
+    monkeypatch,
+) -> None:
+    spools = []
+
+    class TrackingSpool:
+        def __init__(self, *, max_size: int) -> None:
+            self.inner = REAL_SPOOLED_TEMPORARY_FILE(max_size=max_size)
+            self.closed = 0
+            spools.append(self)
+
+        def write(self, content: bytes) -> int:
+            return self.inner.write(content)
+
+        def seek(self, offset: int) -> int:
+            return self.inner.seek(offset)
+
+        def read(self, size: int = -1) -> bytes:
+            return self.inner.read(size)
+
+        def close(self) -> None:
+            self.closed += 1
+            self.inner.close()
+
+    monkeypatch.setattr(weather_radar_helpers, "SpooledTemporaryFile", TrackingSpool)
+    response = _close_failing_response(PNG, {"Content-Type": "image/png"})
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+
+    with pytest.raises(RainViewerRadarTimeoutError) as exc_info:
+        await service.fetch_tile(3, 4, 5, _not_disconnected)
+
+    assert isinstance(exc_info.value.__cause__, httpx.ReadTimeout)
+    assert [spool.closed for spool in spools] == [1]
+
+
+@pytest.mark.asyncio
+async def test_invalid_tile_body_survives_close_failure() -> None:
+    response = _close_failing_response(b"not-png", {"Content-Type": "image/png"})
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+
+    with pytest.raises(RainViewerRadarServiceError) as exc_info:
+        await service.fetch_tile(3, 4, 5, _not_disconnected)
+
+    assert not isinstance(exc_info.value, RainViewerRadarTimeoutError)
+    assert response.extensions["close_failures"] == 1
+
+
+@pytest.mark.asyncio
+async def test_caller_cancellation_survives_tile_close_failure() -> None:
+    release = asyncio.Event()
+    stream = CloseFailingBlockingBodyStream(PNG, release)
+    response = httpx.Response(200, headers={"Content-Type": "image/png"}, stream=stream)
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+    task = asyncio.create_task(service.fetch_tile(0, 0, 0, _not_disconnected))
+    await asyncio.wait_for(stream.waiting.wait(), timeout=1)
+
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert stream.cancelled == 1
+    assert stream.close_failures == 1
+
+
+@pytest.mark.asyncio
+async def test_metadata_primary_error_survives_close_failure() -> None:
+    response = _close_failing_response(
+        b"not json",
+        {"Content-Type": "application/json"},
+    )
+    service = _service(ScriptedTransport([response]))
+
+    with pytest.raises(RainViewerRadarServiceError) as exc_info:
+        await service.fetch_tile(0, 0, 0, _not_disconnected)
+
+    assert not isinstance(exc_info.value, RainViewerRadarTimeoutError)
+    assert response.extensions["close_failures"] == 1
