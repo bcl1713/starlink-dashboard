@@ -27,6 +27,11 @@ type SplitGeometry = Readonly<{
   easternSegment: readonly Coordinate[];
 }>;
 
+type PositionHistorySplit = Readonly<{
+  westernSegment: readonly TimestampedPosition[];
+  easternSegment: readonly TimestampedPosition[];
+}>;
+
 type Metrics = Readonly<{
   latency: Readonly<{
     currentMs: number | null;
@@ -114,7 +119,7 @@ type PanelState = Readonly<{
 type ActiveLink = Readonly<{
   id: string;
   mode: 'normal' | 'warning' | 'unavailable';
-  observedAt: string;
+  observedAt: string | null;
   from: Coordinate | null;
   to: Coordinate | null;
   splitGeometry?: SplitGeometry;
@@ -155,7 +160,7 @@ export type OverviewScenario = Readonly<{
     currentObservedAt: string | null;
     currentPosition: Coordinate | null;
     positionHistory: readonly TimestampedPosition[];
-    positionHistorySplit?: SplitGeometry;
+    positionHistorySplit?: PositionHistorySplit;
     metrics: Metrics;
   }>;
   route: Route;
@@ -401,10 +406,10 @@ const idlRoute: Route = {
   westernSegment: [
     c(35.5494, 170.2, 21),
     c(49.4, 179.6, 11278),
-    c(49.6976, 180, 11278),
+    c(49.8, 180, 11278),
   ],
   easternSegment: [
-    c(49.6976, -180, 11278),
+    c(49.8, -180, 11278),
     c(50.1, -179.7, 11278),
     c(54.2, -165, 11278),
     c(47.4502, -122.3088, 132),
@@ -721,14 +726,15 @@ const expected = (
   layerStates: readonly LayerState[],
   route: Route,
   radarState: HealthState = 'ok',
-  radarFrameState = 'available'
+  radarFrameState = 'available',
+  routeState: HealthState = route.active ? 'ok' : 'unavailable'
 ): OverviewScenario['expected'] => ({
   topFivePoiIds,
   panelStates,
   sourceFreshness,
   layerStates,
   route: {
-    state: route.active ? 'ok' : 'unavailable',
+    state: routeState,
     westernPointCount: route.westernSegment.length,
     easternPointCount: route.easternSegment.length,
     crossesInternationalDateLine: route.crossesInternationalDateLine,
@@ -1342,7 +1348,7 @@ export const OVERVIEW_SCENARIOS = [
         },
         historyEast: {
           id: 'position-history-east',
-          state: 'ok',
+          state: 'stale',
           availability: 'empty',
           value: '0 eastern samples',
         },
@@ -1354,7 +1360,7 @@ export const OVERVIEW_SCENARIOS = [
         },
         satellite: {
           id: 'satellites',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
           value: '1 satellite',
         },
@@ -1379,7 +1385,8 @@ export const OVERVIEW_SCENARIOS = [
       }),
       routeAt('2026-02-03T15:30:00Z'),
       'stale',
-      'available'
+      'available',
+      'stale'
     ),
   },
   {
@@ -1416,7 +1423,7 @@ export const OVERVIEW_SCENARIOS = [
       {
         id: 'xband-unavailable',
         mode: 'unavailable',
-        observedAt: '2026-02-03T15:32:59Z',
+        observedAt: null,
         from: null,
         to: null,
       },
@@ -1745,12 +1752,18 @@ export const OVERVIEW_SCENARIOS = [
       currentObservedAt: '2026-02-03T17:05:59Z',
       currentPosition: c(54.05, -179.85, 11278),
       positionHistory: [
-        point('2026-02-03T17:05:58Z', c(54.2, 179.4, 11278), 475, 273),
-        point('2026-02-03T17:05:59Z', c(54.05, -179.85, 11278), 475, 273),
+        point('2026-02-03T17:05:57Z', c(54.2, 179.85, 11278), 474, 273),
+        point('2026-02-03T17:05:59Z', c(54.05, -179.85, 11278), 476, 273),
       ],
       positionHistorySplit: {
-        westernSegment: [c(54.2, 179.4, 11278), c(54.08, 180, 11278)],
-        easternSegment: [c(54.08, -180, 11278), c(54.05, -179.85, 11278)],
+        westernSegment: [
+          point('2026-02-03T17:05:57Z', c(54.2, 179.85, 11278), 474, 273),
+          point('2026-02-03T17:05:58Z', c(54.125, 180, 11278), 475, 273),
+        ],
+        easternSegment: [
+          point('2026-02-03T17:05:58Z', c(54.125, -180, 11278), 475, 273),
+          point('2026-02-03T17:05:59Z', c(54.05, -179.85, 11278), 476, 273),
+        ],
       },
       metrics: metrics(
         [
@@ -1786,19 +1799,19 @@ export const OVERVIEW_SCENARIOS = [
         from: c(54.05, -179.85, 11278),
         to: c(53.9, 179.9, 550000),
         splitGeometry: {
-          westernSegment: [c(53.9, 179.9, 550000), c(53.96, 180, 334767)],
-          easternSegment: [c(53.96, -180, 334767), c(54.05, -179.85, 11278)],
+          westernSegment: [c(54.05, -179.85, 11278), c(53.96, -180, 334511.2)],
+          easternSegment: [c(53.96, 180, 334511.2), c(53.9, 179.9, 550000)],
         },
       },
       {
         id: 'xband-warning-idl',
         mode: 'warning',
         observedAt: '2026-02-03T17:05:59Z',
-        from: c(54.2, 179.4, 11278),
+        from: c(54.2, 179.85, 11278),
         to: c(54.05, -179.85, 11278),
         splitGeometry: {
-          westernSegment: [c(54.2, 179.4, 11278), c(54.08, 180, 11278)],
-          easternSegment: [c(54.08, -180, 11278), c(54.05, -179.85, 11278)],
+          westernSegment: [c(54.2, 179.85, 11278), c(54.125, 180, 11278)],
+          easternSegment: [c(54.125, -180, 11278), c(54.05, -179.85, 11278)],
         },
       },
     ],
@@ -1806,10 +1819,10 @@ export const OVERVIEW_SCENARIOS = [
       ...baseEvents,
       {
         id: 'event-idl-crossed',
-        observedAt: '2026-02-03T17:05:59Z',
+        observedAt: '2026-02-03T17:05:58Z',
         type: 'waypoint',
         label: 'Crossed International Date Line',
-        coordinate: c(54.08, 180, 11278),
+        coordinate: c(54.125, 180, 11278),
       },
     ],
     expected: expected(
