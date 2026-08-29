@@ -20,6 +20,8 @@ from datetime import datetime, timedelta, timezone
 from typing import ClassVar, TypeVar
 
 import httpx
+from pydantic import ValidationError
+
 from app.models.monitoring import (
     MonitoringHistoryRequest,
     MonitoringHistoryResponse,
@@ -27,7 +29,6 @@ from app.models.monitoring import (
     MonitoringSample,
     MonitoringSeries,
 )
-from pydantic import ValidationError
 
 T = TypeVar("T")
 
