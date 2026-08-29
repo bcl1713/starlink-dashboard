@@ -42,7 +42,7 @@ class MonitoringHistoryResponse(BaseModel):
 
 class GroundEntryPointResponse(BaseModel):
     available: bool
-    observed_at: datetime
+    observed_at: datetime | None
     generated_at: datetime
     display: str | None
     city: str | None
@@ -87,7 +87,9 @@ Create `GET /api/monitoring/history` with:
 Create `GET /api/monitoring/ground-entry-point` returning
 `GroundEntryPointResponse`. It reads `get_cached_ground_entry_point()` only and
 returns HTTP 200 with `available=false` and null details when no cached value
-exists; it must not trigger internet discovery on request.
+exists. In that state `observed_at` is `None` while `generated_at` remains the
+required response-generation time; the route must not trigger internet discovery
+on request.
 
 ## Truthful freshness contract
 
@@ -253,8 +255,9 @@ The binding backend, frontend, browser, CI, and docs paths are in the
 3. Run focused tests; expected RED because endpoint returns 307.
 4. Implement the strict metadata-host/DNS/path/redirect checks and bounded
    streaming proxy above. Add only ArcGIS to `img-src`.
-5. Run weather/config tests; expected PASS. Manually verify with `curl -I` after
-   [Task 13](03-runtime-and-browser-acceptance.md#task-13-add-browser-acceptance-and-temporal-evidence)
+5. Run weather/config tests; expected PASS. Manually verify with `curl -I`
+   during
+   [Task 14](03-runtime-and-browser-acceptance.md#task-14-rebuild-and-verify-an-isolated-exact-head-runtime)
    through the built Mission Planner Nginx (not Vite or direct FastAPI) that the
    tile response is same-origin, not a redirect, has
    `X-Content-Type-Options: nosniff`, and that `/overview` includes the intended

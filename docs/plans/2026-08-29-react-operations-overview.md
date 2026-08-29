@@ -236,11 +236,12 @@ feature failure.
 3. Change only the lint workflow branch trigger/comment from `develop` to `dev`;
    preserve `main`, jobs, permissions, and events. Rerun the focused test and
    `pre-commit run --all-files`; expected PASS.
-4. Push this commit and verify with `gh pr checks 143 --watch` plus
+4. Commit: `ci: run lint checks for dev pull requests`.
+5. Push that commit, record its SHA, and verify with `gh pr checks 143 --watch`
+   plus
    `gh run list --workflow lint.yml --branch feature/react-operations-overview`
-   that the lint workflow attaches to PR #143 at this commit SHA.
+   that the lint workflow attaches to PR #143 at the recorded commit SHA.
    Missing/skipped checks fail the task.
-5. Commit: `ci: run lint checks for dev pull requests`.
 
 ### Task 2: Freeze the parity oracle and fixtures
 
