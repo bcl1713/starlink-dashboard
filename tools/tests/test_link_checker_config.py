@@ -1,4 +1,3 @@
-
 from copy import deepcopy
 from pathlib import Path
 
@@ -19,9 +18,7 @@ GithubActionsLoader.yaml_implicit_resolvers = deepcopy(
 
 for first_char, resolvers in list(GithubActionsLoader.yaml_implicit_resolvers.items()):
     GithubActionsLoader.yaml_implicit_resolvers[first_char] = [
-        (tag, regexp)
-        for tag, regexp in resolvers
-        if tag != "tag:yaml.org,2002:bool"
+        (tag, regexp) for tag, regexp in resolvers if tag != "tag:yaml.org,2002:bool"
     ]
 
 
