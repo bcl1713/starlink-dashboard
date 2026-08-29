@@ -6,13 +6,14 @@ import asyncio
 import contextlib
 import inspect
 import json
-from collections.abc import AsyncIterator
+import threading
+import time
+from collections.abc import AsyncIterator, Awaitable
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 import pytest
-
 from app.services import prometheus_client
 from app.services.prometheus_client import (
     MonitoringPrometheusClient,
@@ -256,6 +257,50 @@ async def test_rejects_malformed_utf8_bare_json_constant_and_huge_timestamp() ->
 
 
 @pytest.mark.asyncio
+async def test_deep_json_recursion_maps_to_stable_malformed_json() -> None:
+    body = b"[" * 1024 + b"0" + b"]" * 1024
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=body)
+
+    with pytest.raises(MonitoringPrometheusError) as exc:
+        await make_client(handler).get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id="deep-json",
+        )
+
+    assert exc.value.code == "malformed_json"
+    assert str(exc.value) == "malformed monitoring JSON"
+    assert "[" * 20 not in str(exc.value)
+
+
+@pytest.mark.asyncio
+async def test_huge_sample_value_overflow_maps_to_stable_bad_point() -> None:
+    huge_integer = "1" + ("0" * 4000)
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        expr = request.url.params["query"]
+        body = (
+            '{"status":"success","data":{"resultType":"matrix","result":[{"metric":'
+            f'{{"__name__":"{expr}"}},"values":[[1788004745,{huge_integer}]]'
+            "}]}}"
+        )
+        return httpx.Response(200, content=body)
+
+    with pytest.raises(MonitoringPrometheusError) as exc:
+        await make_client(handler).get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id="huge-value",
+        )
+
+    assert exc.value.code == "bad_point"
+    assert str(exc.value) == "malformed monitoring sample point"
+    assert huge_integer[:20] not in str(exc.value)
+
+
+@pytest.mark.asyncio
 async def test_accepts_one_identified_series_with_extra_string_labels() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         expr = request.url.params["query"]
@@ -483,6 +528,64 @@ async def test_process_wide_upstream_limit_across_client_instances() -> None:
     assert max_active <= 4
 
 
+def test_process_wide_upstream_limit_across_threads_and_event_loops() -> None:
+    active = 0
+    max_active = 0
+    lock = threading.Lock()
+    release = threading.Event()
+    ready = threading.Barrier(2)
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active, max_active
+        with lock:
+            active += 1
+            max_active = max(max_active, active)
+        await asyncio.to_thread(release.wait)
+        with lock:
+            active -= 1
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    async def run_client(client_id: str, range_seconds: int) -> None:
+        client = make_client(handler)
+        ready.wait(timeout=1)
+        await client.get_history(
+            range_seconds=range_seconds,
+            step_seconds=10,
+            client_id=client_id,
+        )
+
+    errors: list[BaseException] = []
+
+    def run_thread(client_id: str, range_seconds: int) -> None:
+        try:
+            asyncio.run(run_client(client_id, range_seconds))
+        except Exception as exc:  # noqa: BLE001 - thread must relay assertion errors.
+            errors.append(exc)
+
+    first = threading.Thread(target=run_thread, args=("thread-a", 60))
+    second = threading.Thread(target=run_thread, args=("thread-b", 70))
+    first.start()
+    second.start()
+
+    deadline = time.monotonic() + 1
+    while time.monotonic() < deadline:
+        with lock:
+            if max_active >= 4:
+                break
+        time.sleep(0.005)
+
+    release.set()
+    first.join(timeout=2)
+    second.join(timeout=2)
+
+    assert errors == []
+    assert not first.is_alive()
+    assert not second.is_alive()
+    assert max_active <= 4
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+
+
 @pytest.mark.asyncio
 async def test_process_wide_queue_full_across_client_instances() -> None:
     release = asyncio.Event()
@@ -505,6 +608,205 @@ async def test_process_wide_queue_full_across_client_instances() -> None:
 
     release.set()
     await blocked
+
+
+def test_process_wide_queue_full_across_event_loops() -> None:
+    release = threading.Event()
+    first_ready = threading.Event()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        first_ready.set()
+        await asyncio.to_thread(release.wait)
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    async def block_slots() -> None:
+        client = make_client(handler)
+        await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+
+    error: list[BaseException] = []
+
+    def run_blocker() -> None:
+        try:
+            asyncio.run(block_slots())
+        except Exception as exc:  # noqa: BLE001 - thread must relay assertion errors.
+            error.append(exc)
+
+    blocker_thread = threading.Thread(target=run_blocker)
+    blocker_thread.start()
+    assert first_ready.wait(timeout=1)
+
+    async def queued_request() -> None:
+        client = make_client(handler, admission_timeout_seconds=0.001)
+        try:
+            with pytest.raises(MonitoringUnavailableError):
+                await asyncio.wait_for(
+                    client.get_history(
+                        range_seconds=70,
+                        step_seconds=10,
+                        client_id="b",
+                    ),
+                    timeout=0.2,
+                )
+        finally:
+            release.set()
+
+    asyncio.run(queued_request())
+    blocker_thread.join(timeout=2)
+
+    assert error == []
+    assert not blocker_thread.is_alive()
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+
+
+@pytest.mark.asyncio
+async def test_cancelled_cross_loop_admission_does_not_leak_capacity() -> None:
+    release = asyncio.Event()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    blockers = [
+        asyncio.create_task(
+            make_client(handler).get_history(
+                range_seconds=60 + index,
+                step_seconds=10,
+                client_id=str(index),
+            )
+        )
+        for index in range(4)
+    ]
+    await asyncio.sleep(0.02)
+
+    waiting = asyncio.create_task(
+        make_client(handler, admission_timeout_seconds=1).get_history(
+            range_seconds=100,
+            step_seconds=10,
+            client_id="waiting",
+        )
+    )
+    await asyncio.sleep(0.02)
+    waiting.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await waiting
+
+    release.set()
+    await asyncio.gather(*blockers)
+
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+
+
+@pytest.mark.asyncio
+async def test_awaitable_cancel_callback_forms_during_admission() -> None:
+    release = asyncio.Event()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    blockers = [
+        asyncio.create_task(
+            make_client(handler).get_history(
+                range_seconds=60 + index,
+                step_seconds=10,
+                client_id=str(index),
+            )
+        )
+        for index in range(4)
+    ]
+    await asyncio.sleep(0.02)
+
+    false_future: asyncio.Future[bool] = asyncio.Future()
+    false_future.set_result(False)
+    callback_calls = 0
+
+    class AwaitableTrue:
+        def __await__(self) -> Any:
+            async def inner() -> bool:
+                return True
+
+            return inner().__await__()
+
+    def callback() -> bool | Awaitable[bool]:
+        nonlocal callback_calls
+        callback_calls += 1
+        if callback_calls == 1:
+            return false_future
+        return AwaitableTrue()
+
+    with pytest.raises(asyncio.CancelledError):
+        await make_client(handler, admission_timeout_seconds=1).get_history(
+            range_seconds=100,
+            step_seconds=10,
+            client_id="waiting",
+            cancel_callback=callback,
+        )
+
+    release.set()
+    await asyncio.gather(*blockers)
+    assert callback_calls >= 2
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+
+
+@pytest.mark.asyncio
+async def test_awaitable_cancel_callback_forms_during_shared_flight_wait() -> None:
+    release = asyncio.Event()
+    entered = asyncio.Event()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        entered.set()
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    true_future: asyncio.Future[bool] = asyncio.Future()
+    true_future.set_result(True)
+    false_future: asyncio.Future[bool] = asyncio.Future()
+    false_future.set_result(False)
+    callback_calls = 0
+
+    async def coroutine_false() -> bool:
+        return False
+
+    class AwaitableFalse:
+        def __await__(self) -> Any:
+            return coroutine_false().__await__()
+
+    def callback() -> bool | Awaitable[bool]:
+        nonlocal callback_calls
+        callback_calls += 1
+        if callback_calls == 1:
+            return false_future
+        if callback_calls == 2:
+            return coroutine_false()
+        if callback_calls == 3:
+            return AwaitableFalse()
+        return true_future
+
+    client = make_client(handler)
+    survivor = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    waiter = asyncio.create_task(
+        client.get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id="b",
+            cancel_callback=callback,
+        )
+    )
+    await entered.wait()
+
+    with pytest.raises(asyncio.CancelledError):
+        await waiter
+
+    release.set()
+    response = await survivor
+    assert response.series[0].samples[0].value == 1.0
+    assert callback_calls >= 4
 
 
 @pytest.mark.asyncio
@@ -535,6 +837,120 @@ async def test_single_flight_shares_results_errors_and_live_only_cache() -> None
 
     await client.get_history(range_seconds=60, step_seconds=10, client_id="c")
     assert calls == 12
+
+
+@pytest.mark.asyncio
+async def test_series_failure_cancels_blocked_siblings_and_restores_capacity() -> None:
+    cancelled: set[str] = set()
+    entered: set[str] = set()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        expr = request.url.params["query"]
+        if expr == EXPRESSIONS[0]:
+            while len(entered) < 3:
+                await asyncio.sleep(0)
+            return httpx.Response(200, content=b"{bad")
+        entered.add(expr)
+        try:
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            cancelled.add(expr)
+            raise
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    client = make_client(handler)
+    with pytest.raises(MonitoringPrometheusError) as exc:
+        await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+
+    assert exc.value.code == "malformed_json"
+    assert cancelled == set(EXPRESSIONS[1:4])
+    assert client._flights == {}
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+    assert not _internal_pending_tasks()
+
+
+@pytest.mark.asyncio
+async def test_timeout_cancels_siblings_and_restores_capacity() -> None:
+    cancelled: set[str] = set()
+    entered: set[str] = set()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        expr = request.url.params["query"]
+        if expr == EXPRESSIONS[0]:
+            while len(entered) < 3:
+                await asyncio.sleep(0)
+            raise httpx.TimeoutException("timeout http://secret")
+        entered.add(expr)
+        try:
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            cancelled.add(expr)
+            raise
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    client = make_client(handler)
+    with pytest.raises(MonitoringPrometheusError) as exc:
+        await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+
+    assert exc.value.code == "upstream_timeout"
+    assert "secret" not in str(exc.value)
+    assert cancelled == set(EXPRESSIONS[1:4])
+    assert client._flights == {}
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+    assert not _internal_pending_tasks()
+
+
+@pytest.mark.asyncio
+async def test_queue_full_cleans_flight_and_internal_tasks() -> None:
+    release = asyncio.Event()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    client = make_client(handler, admission_timeout_seconds=0.001)
+    task = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    await asyncio.sleep(0.02)
+
+    with pytest.raises(MonitoringUnavailableError):
+        await task
+
+    release.set()
+    assert client._flights == {}
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+    assert not _internal_pending_tasks()
+
+
+@pytest.mark.asyncio
+async def test_caller_cancellation_cleans_siblings_and_restores_capacity() -> None:
+    cancelled: set[str] = set()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        expr = request.url.params["query"]
+        try:
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            cancelled.add(expr)
+            raise
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    client = make_client(handler)
+    task = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    await asyncio.sleep(0.02)
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert cancelled == set(EXPRESSIONS[:4])
+    assert client._flights == {}
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+    assert not _internal_pending_tasks()
 
     async def failing(request: httpx.Request) -> httpx.Response:
         raise httpx.ConnectError("internal-url")
@@ -805,3 +1221,23 @@ async def test_no_coalescing_different_bucket_and_waiter_cancellation_isolated()
     release.set()
     await third
     assert calls == 12
+
+
+def _internal_pending_tasks() -> list[asyncio.Task[Any]]:
+    current = asyncio.current_task()
+    internal_names = (
+        "_fetch_history",
+        "_fetch_series",
+        "_acquire_upstream_slot",
+        "_await_with_disconnect",
+        "_watch_cancel_event",
+        "_watch_cancel_callback",
+        "_cleanup_flight",
+    )
+    return [
+        task
+        for task in asyncio.all_tasks()
+        if task is not current
+        and not task.done()
+        and any(name in task.get_coro().__qualname__ for name in internal_names)
+    ]

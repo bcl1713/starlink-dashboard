@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
 import math
 import os
+import threading
 import time
-import weakref
 from collections import defaultdict, deque
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
@@ -15,8 +16,6 @@ from datetime import datetime, timedelta, timezone
 from typing import ClassVar, TypeVar
 
 import httpx
-from pydantic import ValidationError
-
 from app.models.monitoring import (
     MonitoringHistoryRequest,
     MonitoringHistoryResponse,
@@ -24,6 +23,7 @@ from app.models.monitoring import (
     MonitoringSample,
     MonitoringSeries,
 )
+from pydantic import ValidationError
 
 T = TypeVar("T")
 
@@ -58,6 +58,38 @@ class MonitoringUnavailableError(MonitoringPrometheusError):
 
     def __init__(self) -> None:
         super().__init__("unavailable", "monitoring upstream capacity unavailable")
+
+
+class _ProcessWideCapacityGate:
+    """Thread-safe async admission gate shared by every event loop."""
+
+    def __init__(self, capacity: int) -> None:
+        self._capacity = capacity
+        self._in_use = 0
+        self._lock = threading.Lock()
+
+    def try_acquire(self) -> bool:
+        with self._lock:
+            if self._in_use >= self._capacity:
+                return False
+            self._in_use += 1
+            return True
+
+    def release(self) -> None:
+        with self._lock:
+            if self._in_use <= 0:
+                raise RuntimeError("monitoring upstream capacity underflow")
+            self._in_use -= 1
+
+    def in_use(self) -> int:
+        with self._lock:
+            return self._in_use
+
+    def reset_for_tests(self) -> None:
+        with self._lock:
+            if self._in_use:
+                raise RuntimeError("cannot reset monitoring capacity while in use")
+            self._in_use = 0
 
 
 @dataclass
@@ -117,9 +149,7 @@ class MonitoringPrometheusClient:
         self._flights: dict[tuple[int, int, int], _Flight] = {}
         self._cancel_poll_seconds = 0.01
 
-    _upstream_limiters: ClassVar[
-        weakref.WeakKeyDictionary[asyncio.AbstractEventLoop, asyncio.Semaphore]
-    ] = weakref.WeakKeyDictionary()
+    _upstream_gate: ClassVar[_ProcessWideCapacityGate] = _ProcessWideCapacityGate(4)
 
     async def aclose(self) -> None:
         await self._client.aclose()
@@ -169,6 +199,14 @@ class MonitoringPrometheusClient:
         finally:
             await self._release_waiter(key, flight)
 
+    @classmethod
+    def _inspect_upstream_slots_in_use_for_tests(cls) -> int:
+        return cls._upstream_gate.in_use()
+
+    @classmethod
+    def _reset_upstream_gate_for_tests(cls) -> None:
+        cls._upstream_gate.reset_for_tests()
+
     async def _join_or_start_flight(
         self,
         key: tuple[int, int, int],
@@ -212,12 +250,16 @@ class MonitoringPrometheusClient:
             if current is not flight:
                 return
             flight.waiters -= 1
+            should_await = False
             if flight.waiters <= 0 and not flight.task.done():
                 flight.task.cancel()
                 self._flights.pop(key, None)
+                should_await = True
             elif flight.waiters <= 0 and flight.task.done():
                 self._retrieve_task_exception(flight.task)
                 self._flights.pop(key, None)
+        if should_await:
+            await asyncio.gather(flight.task, return_exceptions=True)
 
     async def _fetch_history(
         self,
@@ -230,12 +272,14 @@ class MonitoringPrometheusClient:
         )
         point_budget = _PointBudget(max_points)
         tasks = [
-            self._fetch_series(
-                metric, expr, start, end, request.step_seconds, point_budget
+            asyncio.create_task(
+                self._fetch_series(
+                    metric, expr, start, end, request.step_seconds, point_budget
+                )
             )
             for metric, expr in PROMETHEUS_EXPRESSIONS
         ]
-        series = await asyncio.gather(*tasks)
+        series = await self._await_all_series_or_cancel(tasks)
         if sum(len(item.samples) for item in series) > max_points:
             raise MonitoringPrometheusError("too_many_points")
         return MonitoringHistoryResponse(
@@ -260,27 +304,51 @@ class MonitoringPrometheusClient:
         try:
             body = await self._query_range(expr, start, end, step_seconds)
         finally:
-            self._upstream_limiter().release()
+            self._upstream_gate.release()
         decoded = self._decode_json(body)
         samples = self._parse_prometheus_response(decoded, expr, point_budget)
         return MonitoringSeries(metric=metric, samples=samples)
 
     async def _acquire_upstream_slot(self) -> None:
-        try:
-            await asyncio.wait_for(
-                self._upstream_limiter().acquire(),
-                timeout=self._admission_timeout_seconds,
-            )
-        except TimeoutError as exc:
-            raise MonitoringUnavailableError() from exc
+        deadline = time.monotonic() + self._admission_timeout_seconds
+        while not self._upstream_gate.try_acquire():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise MonitoringUnavailableError()
+            await asyncio.sleep(min(self._cancel_poll_seconds, remaining))
 
-    def _upstream_limiter(self) -> asyncio.Semaphore:
-        loop = asyncio.get_running_loop()
-        limiter = self._upstream_limiters.get(loop)
-        if limiter is None:
-            limiter = asyncio.Semaphore(4)
-            self._upstream_limiters[loop] = limiter
-        return limiter
+    async def _await_all_series_or_cancel(
+        self,
+        tasks: list[asyncio.Task[MonitoringSeries]],
+    ) -> list[MonitoringSeries]:
+        pending = set(tasks)
+        try:
+            while pending:
+                done, pending = await asyncio.wait(
+                    pending,
+                    return_when=asyncio.FIRST_EXCEPTION,
+                )
+                first_error: BaseException | None = None
+                for task in done:
+                    if task.cancelled():
+                        first_error = asyncio.CancelledError()
+                        break
+                    error = task.exception()
+                    if error is not None:
+                        first_error = error
+                        break
+                if first_error is not None:
+                    for task in pending:
+                        task.cancel()
+                    await asyncio.gather(*pending, return_exceptions=True)
+                    raise first_error
+            return [task.result() for task in tasks]
+        except BaseException:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+            raise
 
     async def _query_range(
         self,
@@ -321,11 +389,16 @@ class MonitoringPrometheusClient:
     def _decode_json(self, body: bytes) -> object:
         try:
             return json.loads(body, parse_constant=self._reject_json_constant)
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise MonitoringPrometheusError("malformed_json") from exc
+        except MonitoringPrometheusError:
+            raise
+        except (ValueError, UnicodeDecodeError, RecursionError) as exc:
+            raise MonitoringPrometheusError(
+                "malformed_json",
+                "malformed monitoring JSON",
+            ) from exc
 
     def _reject_json_constant(self, _value: str) -> object:
-        raise MonitoringPrometheusError("malformed_json")
+        raise MonitoringPrometheusError("malformed_json", "malformed monitoring JSON")
 
     def _parse_prometheus_response(
         self,
@@ -400,8 +473,11 @@ class MonitoringPrometheusClient:
             raise MonitoringPrometheusError("bad_point")
         try:
             parsed = float(value)
-        except ValueError as exc:
-            raise MonitoringPrometheusError("bad_point") from exc
+        except (ValueError, OverflowError) as exc:
+            raise MonitoringPrometheusError(
+                "bad_point",
+                "malformed monitoring sample point",
+            ) from exc
         if not math.isfinite(parsed):
             return None
         return parsed
@@ -467,7 +543,7 @@ class MonitoringPrometheusClient:
         if cancel_callback is None:
             return
         result = cancel_callback()
-        if asyncio.iscoroutine(result):
+        if inspect.isawaitable(result):
             result = await result
         if result:
             raise asyncio.CancelledError
