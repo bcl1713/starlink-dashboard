@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import inspect
 import json
 from collections.abc import AsyncIterator
@@ -11,7 +12,7 @@ from typing import Any
 
 import httpx
 import pytest
-
+from app.services import prometheus_client
 from app.services.prometheus_client import (
     MonitoringPrometheusClient,
     MonitoringPrometheusError,
@@ -225,6 +226,132 @@ async def test_rejects_malformed_json_wrong_identity_and_bad_points() -> None:
 
 
 @pytest.mark.asyncio
+async def test_rejects_malformed_utf8_bare_json_constant_and_huge_timestamp() -> None:
+    bad_bodies = [
+        b"\xff",
+        json.dumps(prom_response(EXPRESSIONS[0], [[1788004745, "1"]]))
+        .replace("1788004745", "NaN", 1)
+        .encode(),
+        json.dumps(prom_response(EXPRESSIONS[0], [[1e300, "1"]])).encode(),
+    ]
+
+    for body in bad_bodies:
+
+        async def handler(request: httpx.Request, body: bytes = body) -> httpx.Response:
+            return httpx.Response(200, content=body)
+
+        with pytest.raises(MonitoringPrometheusError) as exc:
+            await make_client(handler).get_history(
+                range_seconds=60,
+                step_seconds=10,
+                client_id=str(body[:5]),
+            )
+
+        message = str(exc.value)
+        assert "prometheus:9090" not in message
+        decoded_prefix = body.decode("utf-8", errors="ignore")[:20]
+        if decoded_prefix:
+            assert decoded_prefix not in message
+
+
+@pytest.mark.asyncio
+async def test_accepts_one_identified_series_with_extra_string_labels() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        expr = request.url.params["query"]
+        return httpx.Response(
+            200,
+            json={
+                "status": "success",
+                "data": {
+                    "resultType": "matrix",
+                    "result": [
+                        {
+                            "metric": {
+                                "__name__": expr,
+                                "job": "starlink",
+                                "instance": "backend:8000",
+                            },
+                            "values": [[1788004745, "1"]],
+                        }
+                    ],
+                },
+            },
+        )
+
+    response = await make_client(handler).get_history(
+        range_seconds=60,
+        step_seconds=10,
+        client_id="labels",
+    )
+
+    assert [series.samples[0].value for series in response.series] == [1.0] * 6
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "metric",
+    [
+        {},
+        {"job": "starlink"},
+        {"__name__": "wrong"},
+        {"__name__": 1},
+        {"__name__": EXPRESSIONS[0], "job": 1},
+        {"__name__": EXPRESSIONS[0], 1: "starlink"},
+        [("__name__", EXPRESSIONS[0])],
+    ],
+)
+async def test_rejects_bad_metric_identity_labels(metric: object) -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "status": "success",
+                "data": {
+                    "resultType": "matrix",
+                    "result": [{"metric": metric, "values": [[1788004745, "1"]]}],
+                },
+            },
+        )
+
+    with pytest.raises(MonitoringPrometheusError):
+        await make_client(handler).get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id=str(metric),
+        )
+
+
+@pytest.mark.asyncio
+async def test_aggregate_point_budget_rejects_before_constructing_excess(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    constructed = 0
+    original_model = prometheus_client.MonitoringSample
+
+    class CountingSample(original_model):  # type: ignore[misc, valid-type]
+        def __init__(self, **data: Any) -> None:
+            nonlocal constructed
+            constructed += 1
+            super().__init__(**data)
+
+    monkeypatch.setattr(prometheus_client, "MonitoringSample", CountingSample)
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        expr = request.url.params["query"]
+        values = [[1788004745 + index, "1"] for index in range(8)]
+        return httpx.Response(200, json=prom_response(expr, values))
+
+    with pytest.raises(MonitoringPrometheusError):
+        await make_client(handler).get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id="budget",
+        )
+
+    assert constructed <= 42
+
+
+@pytest.mark.asyncio
 async def test_point_cap_and_non_finite_normalization() -> None:
     async def too_many(request: httpx.Request) -> httpx.Response:
         expr = request.url.params["query"]
@@ -315,13 +442,11 @@ async def test_rate_limit_raises_retry_after() -> None:
 async def test_semaphore_max_four_and_queue_full() -> None:
     active = 0
     max_active = 0
-    entered = asyncio.Event()
 
     async def handler(request: httpx.Request) -> httpx.Response:
         nonlocal active, max_active
         active += 1
         max_active = max(max_active, active)
-        entered.set()
         await asyncio.sleep(0.05)
         expr = request.url.params["query"]
         active -= 1
@@ -331,19 +456,54 @@ async def test_semaphore_max_four_and_queue_full() -> None:
     await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
     assert max_active <= 4
 
-    full_client = make_client(handler, admission_timeout_seconds=0.001)
+
+@pytest.mark.asyncio
+async def test_process_wide_upstream_limit_across_client_instances() -> None:
+    active = 0
+    max_active = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal active, max_active
+        active += 1
+        max_active = max(max_active, active)
+        await asyncio.sleep(0.02)
+        expr = request.url.params["query"]
+        active -= 1
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    first = make_client(handler)
+    second = make_client(handler)
+
     await asyncio.gather(
-        full_client._semaphore.acquire(),
-        full_client._semaphore.acquire(),
-        full_client._semaphore.acquire(),
-        full_client._semaphore.acquire(),
+        first.get_history(range_seconds=60, step_seconds=10, client_id="a"),
+        second.get_history(range_seconds=70, step_seconds=10, client_id="b"),
     )
+
+    assert max_active <= 4
+
+
+@pytest.mark.asyncio
+async def test_process_wide_queue_full_across_client_instances() -> None:
+    release = asyncio.Event()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    blocker = make_client(handler)
+    queued = make_client(handler, admission_timeout_seconds=0.001)
+
+    blocked = asyncio.create_task(
+        blocker.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    await asyncio.sleep(0.01)
+
     with pytest.raises(MonitoringUnavailableError):
-        await full_client.get_history(range_seconds=80, step_seconds=10, client_id="c")
-    full_client._semaphore.release()
-    full_client._semaphore.release()
-    full_client._semaphore.release()
-    full_client._semaphore.release()
+        await queued.get_history(range_seconds=70, step_seconds=10, client_id="b")
+
+    release.set()
+    await blocked
 
 
 @pytest.mark.asyncio
@@ -389,6 +549,217 @@ async def test_single_flight_shares_results_errors_and_live_only_cache() -> None
         await first
     with pytest.raises(MonitoringPrometheusError):
         await second
+
+
+@pytest.mark.asyncio
+async def test_completed_flight_success_never_caches_during_delayed_cleanup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = 0
+    cleanup_release = asyncio.Event()
+    original_cleanup = MonitoringPrometheusClient._cleanup_flight
+
+    async def delayed_cleanup(self: MonitoringPrometheusClient, *args: Any) -> None:
+        await cleanup_release.wait()
+        await original_cleanup(self, *args)
+
+    monkeypatch.setattr(MonitoringPrometheusClient, "_cleanup_flight", delayed_cleanup)
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    client = make_client(handler)
+    await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    await client.get_history(range_seconds=60, step_seconds=10, client_id="b")
+    cleanup_release.set()
+    await asyncio.sleep(0)
+
+    assert calls == 12
+
+
+@pytest.mark.asyncio
+async def test_completed_flight_error_never_caches_during_delayed_cleanup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = 0
+    cleanup_release = asyncio.Event()
+    original_cleanup = MonitoringPrometheusClient._cleanup_flight
+
+    async def delayed_cleanup(self: MonitoringPrometheusClient, *args: Any) -> None:
+        await cleanup_release.wait()
+        await original_cleanup(self, *args)
+
+    monkeypatch.setattr(MonitoringPrometheusClient, "_cleanup_flight", delayed_cleanup)
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        raise httpx.ConnectError("internal-url")
+
+    client = make_client(handler)
+    with pytest.raises(MonitoringPrometheusError):
+        await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    with pytest.raises(MonitoringPrometheusError):
+        await client.get_history(range_seconds=60, step_seconds=10, client_id="b")
+    cleanup_release.set()
+    await asyncio.sleep(0)
+
+    assert calls == 12
+
+
+@pytest.mark.asyncio
+async def test_disconnect_during_live_shared_flight_cancels_only_that_waiter() -> None:
+    release = asyncio.Event()
+    entered = asyncio.Event()
+    calls = 0
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        entered.set()
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    client = make_client(handler)
+    disconnect = asyncio.Event()
+    first = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    second = asyncio.create_task(
+        client.get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id="b",
+            cancel_event=disconnect,
+        )
+    )
+    await entered.wait()
+    disconnect.set()
+
+    with pytest.raises(asyncio.CancelledError):
+        await second
+
+    release.set()
+    response = await first
+    assert response.series[0].samples[0].value == 1.0
+    assert calls == 6
+
+
+@pytest.mark.asyncio
+async def test_sole_waiter_disconnect_cancels_upstream() -> None:
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        started.set()
+        try:
+            await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    client = make_client(handler)
+    disconnect = asyncio.Event()
+    task = asyncio.create_task(
+        client.get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id="a",
+            cancel_event=disconnect,
+        )
+    )
+    await started.wait()
+    disconnect.set()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    await asyncio.wait_for(cancelled.wait(), timeout=1)
+
+
+@pytest.mark.asyncio
+async def test_disconnect_callback_is_polled_while_waiting() -> None:
+    release = asyncio.Event()
+    disconnected = False
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    async def callback() -> bool:
+        return disconnected
+
+    client = make_client(handler)
+    task = asyncio.create_task(
+        client.get_history(
+            range_seconds=60,
+            step_seconds=10,
+            client_id="a",
+            cancel_callback=callback,
+        )
+    )
+    await asyncio.sleep(0.02)
+    disconnected = True
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    release.set()
+
+
+@pytest.mark.asyncio
+async def test_disconnect_during_admission_and_no_pending_task_leaks() -> None:
+    release = asyncio.Event()
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        await release.wait()
+        expr = request.url.params["query"]
+        return httpx.Response(200, json=prom_response(expr, [[1788004745, "1"]]))
+
+    blockers = [make_client(handler) for _ in range(4)]
+    blocking_tasks = [
+        asyncio.create_task(
+            client.get_history(
+                range_seconds=60 + index, step_seconds=10, client_id=str(index)
+            )
+        )
+        for index, client in enumerate(blockers)
+    ]
+    await asyncio.sleep(0.02)
+
+    disconnect = asyncio.Event()
+    waiting = asyncio.create_task(
+        make_client(handler).get_history(
+            range_seconds=80,
+            step_seconds=10,
+            client_id="waiting",
+            cancel_event=disconnect,
+        )
+    )
+    await asyncio.sleep(0.02)
+    before = asyncio.all_tasks()
+    disconnect.set()
+    with pytest.raises(asyncio.CancelledError):
+        await waiting
+
+    release.set()
+    await asyncio.gather(*blocking_tasks)
+    await asyncio.sleep(0)
+    leaked = [
+        task
+        for task in asyncio.all_tasks() - before
+        if task is not asyncio.current_task() and not task.done()
+    ]
+    for task in leaked:
+        task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
+    assert leaked == []
 
 
 @pytest.mark.asyncio
