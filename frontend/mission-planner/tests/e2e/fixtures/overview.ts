@@ -193,17 +193,17 @@ const panels = [
 
 const mapLayers = [
   ['Weather Radar', 'weather-radar', 'RainViewer'],
-  ['Planned Route - western segment', 'planned-route-west', 'active-route'],
-  ['Planned Route - eastern segment', 'planned-route-east', 'active-route'],
-  ['Active X-band Link - normal', 'active-x-band-normal', 'satellite-link'],
-  ['Active X-band Link - warning', 'active-x-band-warning', 'satellite-link'],
+  ['Planned Route — western segment', 'planned-route-west', 'active-route'],
+  ['Planned Route — eastern segment', 'planned-route-east', 'active-route'],
+  ['Active X-band Link — normal', 'active-x-band-normal', 'satellite-link'],
+  ['Active X-band Link — warning', 'active-x-band-warning', 'satellite-link'],
   [
-    'Position History - western segments',
+    'Position History — western segments',
     'position-history-west',
     'telemetry-history',
   ],
   [
-    'Position History - eastern segments',
+    'Position History — eastern segments',
     'position-history-east',
     'telemetry-history',
   ],
@@ -274,7 +274,7 @@ export const OVERVIEW_CONTRACT = {
       activeXBandLinkWarning: { color: 'yellow', width: 4, opacity: 0.9 },
       positionHistory: { color: 'blue', width: 3, opacity: 0.7 },
     },
-    basemap: { attribution: 'Tiles (c) Esri' },
+    basemap: { attribution: 'Tiles © Esri' },
   },
 } as const;
 
@@ -301,40 +301,51 @@ const sample = (observedAt: string, value: number | null): NumericSample => ({
   value,
 });
 
+const average = (values: readonly number[]): number | null => {
+  if (values.length === 0) return null;
+
+  return (
+    Math.round(
+      (values.reduce((total, value) => total + value, 0) / values.length) * 10
+    ) / 10
+  );
+};
+
+const validValues = (samples: readonly NumericSample[]): number[] =>
+  samples
+    .map((item) => item.value)
+    .filter((value): value is number => value !== null);
+
 const metrics = (
-  currentLatencyMs: number | null,
-  minLatencyMs: number | null,
-  averageLatencyMs: number | null,
-  maxLatencyMs: number | null,
-  currentPacketLossPercent: number | null,
-  averagePacketLossPercent: number | null,
-  maxPacketLossPercent: number | null,
+  latencyHistory: readonly NumericSample[],
+  packetLossHistory: readonly NumericSample[],
   downloadMbps: number | null,
   uploadMbps: number | null,
   obstructionPercent: number | null
 ): Metrics => ({
   latency: {
-    currentMs: currentLatencyMs,
+    currentMs: latencyHistory.at(-1)?.value ?? null,
     fiveMinute: {
-      minMs: minLatencyMs,
-      averageMs: averageLatencyMs,
-      maxMs: maxLatencyMs,
+      minMs:
+        validValues(latencyHistory).length === 0
+          ? null
+          : Math.min(...validValues(latencyHistory)),
+      averageMs: average(validValues(latencyHistory)),
+      maxMs:
+        validValues(latencyHistory).length === 0
+          ? null
+          : Math.max(...validValues(latencyHistory)),
     },
-    history: [
-      sample('2026-02-03T15:25:00Z', minLatencyMs),
-      sample('2026-02-03T15:27:30Z', averageLatencyMs),
-      sample('2026-02-03T15:30:00Z', currentLatencyMs),
-    ],
+    history: latencyHistory,
   },
   packetLoss: {
-    currentPercent: currentPacketLossPercent,
-    averagePercent: averagePacketLossPercent,
-    maxPercent: maxPacketLossPercent,
-    history: [
-      sample('2026-02-03T15:25:00Z', averagePacketLossPercent),
-      sample('2026-02-03T15:27:30Z', maxPacketLossPercent),
-      sample('2026-02-03T15:30:00Z', currentPacketLossPercent),
-    ],
+    currentPercent: packetLossHistory.at(-1)?.value ?? null,
+    averagePercent: average(validValues(packetLossHistory)),
+    maxPercent:
+      validValues(packetLossHistory).length === 0
+        ? null
+        : Math.max(...validValues(packetLossHistory)),
+    history: packetLossHistory,
   },
   throughput: { current: { downloadMbps, uploadMbps } },
   obstruction: { currentPercent: obstructionPercent },
@@ -429,7 +440,21 @@ const basePois = [
   },
 ] as const satisfies readonly Poi[];
 
-const baseMetrics = metrics(74, 60, 74, 88, 0.3, 0.2, 0.3, 192.4, 24.6, 1.2);
+const baseMetrics = metrics(
+  [
+    sample('2026-02-03T15:25:00Z', 60),
+    sample('2026-02-03T15:27:30Z', 88),
+    sample('2026-02-03T15:29:59Z', 74),
+  ],
+  [
+    sample('2026-02-03T15:25:00Z', 0),
+    sample('2026-02-03T15:27:30Z', 0.3),
+    sample('2026-02-03T15:29:59Z', 0.3),
+  ],
+  192.4,
+  24.6,
+  1.2
+);
 const defaultFilter: PoiFilter = {
   value: 'departure,arrival',
   query: { category: 'departure,arrival' },
@@ -493,155 +518,125 @@ const freshness = (values: SourceFreshness): SourceFreshness => ({
   radar: values.radar,
 });
 
-const fresh = (iso: string): SourceFreshness =>
-  freshness({
-    telemetry: iso,
-    history: iso,
-    activeLink: iso,
-    pois: iso,
-    route: iso,
-    groundEntryPoint: iso,
-    radar: iso,
-  });
+const clocksFor = (nowIso: string): readonly PanelState[] => {
+  const clockValues: Record<string, readonly string[]> = {
+    '2026-02-03T15:10:00Z': [
+      '15:10:00Z',
+      '10:10:00 EST',
+      '00:10:00 JST',
+      '09:10:00 CST',
+    ],
+    '2026-02-03T15:30:00Z': [
+      '15:30:00Z',
+      '10:30:00 EST',
+      '00:30:00 JST',
+      '09:30:00 CST',
+    ],
+    '2026-02-03T15:31:00Z': [
+      '15:31:00Z',
+      '10:31:00 EST',
+      '00:31:00 JST',
+      '09:31:00 CST',
+    ],
+    '2026-02-03T15:33:00Z': [
+      '15:33:00Z',
+      '10:33:00 EST',
+      '00:33:00 JST',
+      '09:33:00 CST',
+    ],
+    '2026-02-03T15:34:00Z': [
+      '15:34:00Z',
+      '10:34:00 EST',
+      '00:34:00 JST',
+      '09:34:00 CST',
+    ],
+    '2026-02-03T15:35:00Z': [
+      '15:35:00Z',
+      '10:35:00 EST',
+      '00:35:00 JST',
+      '09:35:00 CST',
+    ],
+    '2026-02-03T15:36:00Z': [
+      '15:36:00Z',
+      '10:36:00 EST',
+      '00:36:00 JST',
+      '09:36:00 CST',
+    ],
+    '2026-02-03T16:05:00Z': [
+      '16:05:00Z',
+      '11:05:00 EST',
+      '01:05:00 JST',
+      '10:05:00 CST',
+    ],
+    '2026-02-03T17:06:00Z': [
+      '17:06:00Z',
+      '12:06:00 EST',
+      '02:06:00 JST',
+      '11:06:00 CST',
+    ],
+  };
+  const values = clockValues[nowIso];
+
+  return [
+    { id: 'clock-utc', state: 'ok', value: values[0] },
+    { id: 'clock-washington-dc', state: 'ok', value: values[1] },
+    { id: 'clock-tokyo', state: 'ok', value: values[2] },
+    { id: 'clock-omaha', state: 'ok', value: values[3] },
+  ];
+};
 
 const panelsFor = (
+  nowIso: string,
   values: Readonly<{
-    map?: PanelState;
-    poi?: PanelState;
-    latency?: PanelState;
-    throughput?: PanelState;
-    gep?: PanelState;
-    obstruction?: PanelState;
-    packetLoss?: PanelState;
+    map: PanelState;
+    poi: PanelState;
+    latency: PanelState;
+    throughput: PanelState;
+    gep: PanelState;
+    obstruction: PanelState;
+    packetLoss: PanelState;
   }>
 ): readonly PanelState[] =>
   [
-    { id: 'clock-utc', state: 'ok', value: '15:30:00Z' },
-    { id: 'clock-washington-dc', state: 'ok', value: '10:30:00 EST' },
-    { id: 'clock-tokyo', state: 'ok', value: '00:30:00 JST' },
-    { id: 'clock-omaha', state: 'ok', value: '09:30:00 CST' },
-    values.map ?? {
-      id: 'current-position-map',
-      state: 'ok',
-      value: '52.4400, -151.1200 at 10,973 m',
-    },
-    values.poi ?? {
-      id: 'poi-quick-reference',
-      state: 'ok',
-      value: '1 future departure/arrival POI',
-    },
-    values.latency ?? {
-      id: 'network-latency',
-      state: 'ok',
-      value: '74 ms current / 60-74-88 ms five-minute',
-    },
-    values.throughput ?? {
-      id: 'throughput',
-      state: 'ok',
-      value: '192.4 Mbps down / -24.6 Mbps up',
-    },
-    values.gep ?? {
-      id: 'ground-entry-point',
-      state: 'ok',
-      value: 'Seattle, WA',
-    },
-    values.obstruction ?? { id: 'obstruction', state: 'ok', value: '1.2%' },
-    values.packetLoss ?? {
-      id: 'packet-loss',
-      state: 'ok',
-      value: '0.3% current / 0.2% avg / 0.3% max',
-    },
+    ...clocksFor(nowIso),
+    values.map,
+    values.poi,
+    values.latency,
+    values.throughput,
+    values.gep,
+    values.obstruction,
+    values.packetLoss,
   ] as const;
 
 const layersFor = (
   values: Readonly<{
-    radar?: LayerState;
-    routeWest?: LayerState;
-    routeEast?: LayerState;
-    linkNormal?: LayerState;
-    linkWarning?: LayerState;
-    historyWest?: LayerState;
-    historyEast?: LayerState;
-    markers?: LayerState;
-    satellite?: LayerState;
-    events?: LayerState;
-    gep?: LayerState;
-    current?: LayerState;
+    radar: LayerState;
+    routeWest: LayerState;
+    routeEast: LayerState;
+    linkNormal: LayerState;
+    linkWarning: LayerState;
+    historyWest: LayerState;
+    historyEast: LayerState;
+    markers: LayerState;
+    satellite: LayerState;
+    events: LayerState;
+    gep: LayerState;
+    current: LayerState;
   }>
 ): readonly LayerState[] =>
   [
-    values.radar ?? {
-      id: 'weather-radar',
-      state: 'ok',
-      availability: 'available',
-      value: 'frame 2026-02-03T15:29:00Z',
-    },
-    values.routeWest ?? {
-      id: 'planned-route-west',
-      state: 'ok',
-      availability: 'available',
-      value: '3 western route points',
-    },
-    values.routeEast ?? {
-      id: 'planned-route-east',
-      state: 'ok',
-      availability: 'available',
-      value: '3 eastern route points',
-    },
-    values.linkNormal ?? {
-      id: 'active-x-band-normal',
-      state: 'ok',
-      availability: 'available',
-      value: 'normal link observed 2026-02-03T15:29:59Z',
-    },
-    values.linkWarning ?? {
-      id: 'active-x-band-warning',
-      state: 'warning',
-      availability: 'available',
-      value: 'warning link standby 2026-02-03T15:29:59Z',
-    },
-    values.historyWest ?? {
-      id: 'position-history-west',
-      state: 'ok',
-      availability: 'available',
-      value: '2 western samples',
-    },
-    values.historyEast ?? {
-      id: 'position-history-east',
-      state: 'ok',
-      availability: 'empty',
-      value: '0 eastern samples',
-    },
-    values.markers ?? {
-      id: 'flight-route-markers',
-      state: 'ok',
-      availability: 'available',
-      value: '7 POI markers',
-    },
-    values.satellite ?? {
-      id: 'satellites',
-      state: 'ok',
-      availability: 'available',
-      value: '1 satellite',
-    },
-    values.events ?? {
-      id: 'mission-events',
-      state: 'ok',
-      availability: 'available',
-      value: '2 mission events',
-    },
-    values.gep ?? {
-      id: 'ground-entry-point-layer',
-      state: 'ok',
-      availability: 'available',
-      value: 'Seattle, WA',
-    },
-    values.current ?? {
-      id: 'current-position-layer',
-      state: 'ok',
-      availability: 'available',
-      value: 'current position observed 2026-02-03T15:29:59Z',
-    },
+    values.radar,
+    values.routeWest,
+    values.routeEast,
+    values.linkNormal,
+    values.linkWarning,
+    values.historyWest,
+    values.historyEast,
+    values.markers,
+    values.satellite,
+    values.events,
+    values.gep,
+    values.current,
   ] as const;
 
 const expected = (
@@ -689,9 +684,122 @@ export const OVERVIEW_SCENARIOS = [
     missionEvents: baseEvents,
     expected: expected(
       ['poi-arrive-rjtt'],
-      panelsFor({}),
-      fresh('2026-02-03T15:29:59Z'),
-      layersFor({}),
+      panelsFor('2026-02-03T15:30:00Z', {
+        map: {
+          id: 'current-position-map',
+          state: 'ok',
+          value: '52.4400, -151.1200 at 10,973 m',
+        },
+        poi: {
+          id: 'poi-quick-reference',
+          state: 'ok',
+          value: '1 future departure/arrival POI',
+        },
+        latency: {
+          id: 'network-latency',
+          state: 'ok',
+          value: '74 ms current / 60-74-88 ms five-minute',
+        },
+        throughput: {
+          id: 'throughput',
+          state: 'ok',
+          value: '192.4 Mbps down / -24.6 Mbps up',
+        },
+        gep: {
+          id: 'ground-entry-point',
+          state: 'ok',
+          value: 'Seattle, WA',
+        },
+        obstruction: { id: 'obstruction', state: 'ok', value: '1.2%' },
+        packetLoss: {
+          id: 'packet-loss',
+          state: 'ok',
+          value: '0.3% current / 0.2% avg / 0.3% max',
+        },
+      }),
+      freshness({
+        telemetry: '2026-02-03T15:29:59Z',
+        history: '2026-02-03T15:29:59Z',
+        activeLink: '2026-02-03T15:29:59Z',
+        pois: '2026-02-03T15:30:00Z',
+        route: '2026-02-03T15:30:00Z',
+        groundEntryPoint: '2026-02-03T15:30:00Z',
+        radar: '2026-02-03T15:29:00Z',
+      }),
+      layersFor({
+        radar: {
+          id: 'weather-radar',
+          state: 'ok',
+          availability: 'available',
+          value: 'frame 2026-02-03T15:29:00Z',
+        },
+        routeWest: {
+          id: 'planned-route-west',
+          state: 'ok',
+          availability: 'available',
+          value: '3 western route points',
+        },
+        routeEast: {
+          id: 'planned-route-east',
+          state: 'ok',
+          availability: 'available',
+          value: '3 eastern route points',
+        },
+        linkNormal: {
+          id: 'active-x-band-normal',
+          state: 'ok',
+          availability: 'available',
+          value: 'normal link observed 2026-02-03T15:29:59Z',
+        },
+        linkWarning: {
+          id: 'active-x-band-warning',
+          state: 'warning',
+          availability: 'available',
+          value: 'warning link standby 2026-02-03T15:29:59Z',
+        },
+        historyWest: {
+          id: 'position-history-west',
+          state: 'ok',
+          availability: 'available',
+          value: '2 western samples',
+        },
+        historyEast: {
+          id: 'position-history-east',
+          state: 'ok',
+          availability: 'empty',
+          value: '0 eastern samples',
+        },
+        markers: {
+          id: 'flight-route-markers',
+          state: 'ok',
+          availability: 'available',
+          value: '7 POI markers',
+        },
+        satellite: {
+          id: 'satellites',
+          state: 'ok',
+          availability: 'available',
+          value: '1 satellite',
+        },
+        events: {
+          id: 'mission-events',
+          state: 'ok',
+          availability: 'available',
+          value: '2 mission events',
+        },
+        gep: {
+          id: 'ground-entry-point-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'Seattle, WA',
+        },
+        current: {
+          id: 'current-position-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'current position observed 2026-02-03T15:29:59Z',
+        },
+      }),
       baseRoute
     ),
   },
@@ -705,7 +813,17 @@ export const OVERVIEW_SCENARIOS = [
       positionHistory: [
         point('2026-02-03T15:30:59Z', c(39.8617, -104.6731, 1656), 0, 0),
       ],
-      metrics: metrics(71, 65, 70, 78, 0.2, 0.2, 0.2, 188.1, 22.8, 0.8),
+      metrics: metrics(
+        [
+          sample('2026-02-03T15:30:55Z', 65),
+          sample('2026-02-03T15:30:57Z', 74),
+          sample('2026-02-03T15:30:59Z', 71),
+        ],
+        [sample('2026-02-03T15:30:59Z', 0.2)],
+        188.1,
+        22.8,
+        0.8
+      ),
     },
     route: {
       ...baseRoute,
@@ -732,16 +850,37 @@ export const OVERVIEW_SCENARIOS = [
     missionEvents: [],
     expected: expected(
       [],
-      panelsFor({
+      panelsFor('2026-02-03T15:31:00Z', {
         map: {
           id: 'current-position-map',
           state: 'ok',
-          value: 'No active route overlay',
+          value: '39.8617, -104.6731 at 1,656 m; no active route overlay',
         },
         poi: {
           id: 'poi-quick-reference',
           state: 'unavailable',
           value: 'No active route',
+        },
+        latency: {
+          id: 'network-latency',
+          state: 'ok',
+          value: '71 ms current / 65-70-74 ms five-minute',
+        },
+        throughput: {
+          id: 'throughput',
+          state: 'ok',
+          value: '188.1 Mbps down / -22.8 Mbps up',
+        },
+        gep: {
+          id: 'ground-entry-point',
+          state: 'ok',
+          value: 'Denver, CO',
+        },
+        obstruction: { id: 'obstruction', state: 'ok', value: '0.8%' },
+        packetLoss: {
+          id: 'packet-loss',
+          state: 'ok',
+          value: '0.2% current / 0.2% avg / 0.2% max',
         },
       }),
       freshness({
@@ -750,10 +889,16 @@ export const OVERVIEW_SCENARIOS = [
         activeLink: '2026-02-03T15:30:59Z',
         pois: null,
         route: null,
-        groundEntryPoint: '2026-02-03T15:30:59Z',
-        radar: '2026-02-03T15:30:59Z',
+        groundEntryPoint: '2026-02-03T15:31:00Z',
+        radar: '2026-02-03T15:30:00Z',
       }),
       layersFor({
+        radar: {
+          id: 'weather-radar',
+          state: 'ok',
+          availability: 'available',
+          value: 'frame 2026-02-03T15:30:00Z',
+        },
         routeWest: {
           id: 'planned-route-west',
           state: 'unavailable',
@@ -771,6 +916,24 @@ export const OVERVIEW_SCENARIOS = [
           state: 'ok',
           availability: 'empty',
           value: '0 eastern samples',
+        },
+        linkNormal: {
+          id: 'active-x-band-normal',
+          state: 'ok',
+          availability: 'available',
+          value: 'normal link observed 2026-02-03T15:30:59Z',
+        },
+        linkWarning: {
+          id: 'active-x-band-warning',
+          state: 'ok',
+          availability: 'empty',
+          value: 'no warning link',
+        },
+        historyWest: {
+          id: 'position-history-west',
+          state: 'ok',
+          availability: 'available',
+          value: '1 western sample',
         },
         markers: {
           id: 'flight-route-markers',
@@ -790,6 +953,18 @@ export const OVERVIEW_SCENARIOS = [
           availability: 'empty',
           value: '0 mission events',
         },
+        gep: {
+          id: 'ground-entry-point-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'Denver, CO',
+        },
+        current: {
+          id: 'current-position-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'current position observed 2026-02-03T15:30:59Z',
+        },
       }),
       { ...baseRoute, id: 'route-none', name: 'No Active Route', active: false }
     ),
@@ -804,7 +979,13 @@ export const OVERVIEW_SCENARIOS = [
       positionHistory: [
         point('2026-02-03T15:09:59Z', c(50.1, -135.2, 10668), 466, 286),
       ],
-      metrics: metrics(83, 83, 83, 83, 0.4, 0.4, 0.4, 0, 0, 1.4),
+      metrics: metrics(
+        [sample('2026-02-03T15:09:59Z', 83)],
+        [sample('2026-02-03T15:09:59Z', 0.4)],
+        0,
+        0,
+        1.4
+      ),
     },
     route: baseRoute,
     pois: basePois,
@@ -814,7 +995,15 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     satellites: [],
-    activeLinks: normalLinks,
+    activeLinks: [
+      {
+        id: 'xband-normal-sparse',
+        mode: 'normal',
+        observedAt: '2026-02-03T15:09:59Z',
+        from: c(50.1, -135.2, 10668),
+        to: c(50.4, -134.6, 550000),
+      },
+    ],
     missionEvents: [baseEvents[0]],
     expected: expected(
       [
@@ -824,15 +1013,97 @@ export const OVERVIEW_SCENARIOS = [
         'poi-waypoint-kamchatka',
         'poi-waypoint-hokkaido',
       ],
-      panelsFor({
+      panelsFor('2026-02-03T15:10:00Z', {
+        map: {
+          id: 'current-position-map',
+          state: 'ok',
+          value: '50.1000, -135.2000 at 10,668 m',
+        },
+        poi: {
+          id: 'poi-quick-reference',
+          state: 'ok',
+          value: '5 future POIs',
+        },
+        latency: {
+          id: 'network-latency',
+          state: 'ok',
+          value: '83 ms current / 83-83-83 ms five-minute',
+        },
         throughput: {
           id: 'throughput',
           state: 'warning',
           value: '0 Mbps down / 0 Mbps up',
         },
+        gep: {
+          id: 'ground-entry-point',
+          state: 'ok',
+          value: 'Seattle, WA',
+        },
+        obstruction: { id: 'obstruction', state: 'ok', value: '1.4%' },
+        packetLoss: {
+          id: 'packet-loss',
+          state: 'ok',
+          value: '0.4% current / 0.4% avg / 0.4% max',
+        },
       }),
-      fresh('2026-02-03T15:09:59Z'),
+      freshness({
+        telemetry: '2026-02-03T15:09:59Z',
+        history: '2026-02-03T15:09:59Z',
+        activeLink: '2026-02-03T15:09:59Z',
+        pois: '2026-02-03T15:10:00Z',
+        route: '2026-02-03T15:10:00Z',
+        groundEntryPoint: '2026-02-03T15:10:00Z',
+        radar: '2026-02-03T15:09:00Z',
+      }),
       layersFor({
+        radar: {
+          id: 'weather-radar',
+          state: 'ok',
+          availability: 'available',
+          value: 'frame 2026-02-03T15:09:00Z',
+        },
+        routeWest: {
+          id: 'planned-route-west',
+          state: 'ok',
+          availability: 'available',
+          value: '3 western route points',
+        },
+        routeEast: {
+          id: 'planned-route-east',
+          state: 'ok',
+          availability: 'available',
+          value: '3 eastern route points',
+        },
+        linkNormal: {
+          id: 'active-x-band-normal',
+          state: 'ok',
+          availability: 'available',
+          value: 'normal link observed 2026-02-03T15:09:59Z',
+        },
+        linkWarning: {
+          id: 'active-x-band-warning',
+          state: 'ok',
+          availability: 'empty',
+          value: 'no warning link',
+        },
+        historyWest: {
+          id: 'position-history-west',
+          state: 'ok',
+          availability: 'available',
+          value: '1 western sample',
+        },
+        historyEast: {
+          id: 'position-history-east',
+          state: 'ok',
+          availability: 'empty',
+          value: '0 eastern samples',
+        },
+        markers: {
+          id: 'flight-route-markers',
+          state: 'ok',
+          availability: 'available',
+          value: '7 POI markers',
+        },
         satellite: {
           id: 'satellites',
           state: 'unavailable',
@@ -844,6 +1115,18 @@ export const OVERVIEW_SCENARIOS = [
           state: 'ok',
           availability: 'available',
           value: '1 mission event',
+        },
+        gep: {
+          id: 'ground-entry-point-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'Seattle, WA',
+        },
+        current: {
+          id: 'current-position-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'current position observed 2026-02-03T15:09:59Z',
         },
       }),
       baseRoute
@@ -860,7 +1143,21 @@ export const OVERVIEW_SCENARIOS = [
         point('2026-02-03T15:29:30Z', c(52.9, -161.5, 11278), 469, 287),
         point('2026-02-03T15:30:00Z', c(53, -162, 11278), 469, 287),
       ],
-      metrics: metrics(88, 70, 81, 88, 0.4, 0.3, 0.4, 180.8, 21.4, 1.8),
+      metrics: metrics(
+        [
+          sample('2026-02-03T15:29:30Z', 70),
+          sample('2026-02-03T15:29:45Z', 85),
+          sample('2026-02-03T15:30:00Z', 88),
+        ],
+        [
+          sample('2026-02-03T15:29:30Z', 0.1),
+          sample('2026-02-03T15:29:45Z', 0.4),
+          sample('2026-02-03T15:30:00Z', 0.4),
+        ],
+        180.8,
+        21.4,
+        1.8
+      ),
     },
     route: baseRoute,
     pois: basePois,
@@ -870,33 +1167,126 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     satellites,
-    activeLinks: normalLinks,
+    activeLinks: [
+      {
+        id: 'xband-normal-stale',
+        mode: 'normal',
+        observedAt: '2026-02-03T15:30:00Z',
+        from: c(53, -162, 11278),
+        to: c(53.2, -148.8, 550000),
+      },
+    ],
     missionEvents: baseEvents,
     expected: expected(
       ['poi-arrive-rjtt'],
-      panelsFor({
-        map: { id: 'current-position-map', state: 'stale', value: '35m old' },
+      panelsFor('2026-02-03T16:05:00Z', {
+        map: {
+          id: 'current-position-map',
+          state: 'stale',
+          value: '53.0000, -162.0000 at 11,278 m; 35m old',
+        },
+        poi: {
+          id: 'poi-quick-reference',
+          state: 'ok',
+          value: '1 future departure/arrival POI',
+        },
         latency: {
           id: 'network-latency',
           state: 'stale',
           value: '88 ms current / 70-81-88 ms five-minute',
+        },
+        throughput: {
+          id: 'throughput',
+          state: 'ok',
+          value: '180.8 Mbps down / -21.4 Mbps up',
+        },
+        gep: {
+          id: 'ground-entry-point',
+          state: 'ok',
+          value: 'Seattle, WA',
+        },
+        obstruction: { id: 'obstruction', state: 'ok', value: '1.8%' },
+        packetLoss: {
+          id: 'packet-loss',
+          state: 'ok',
+          value: '0.4% current / 0.3% avg / 0.4% max',
         },
       }),
       freshness({
         telemetry: '2026-02-03T15:30:00Z',
         history: '2026-02-03T15:30:00Z',
         activeLink: '2026-02-03T15:30:00Z',
-        pois: '2026-02-03T16:04:59Z',
-        route: '2026-02-03T16:04:59Z',
-        groundEntryPoint: '2026-02-03T16:04:59Z',
-        radar: '2026-02-03T16:04:59Z',
+        pois: '2026-02-03T16:05:00Z',
+        route: '2026-02-03T16:05:00Z',
+        groundEntryPoint: '2026-02-03T16:05:00Z',
+        radar: '2026-02-03T16:04:00Z',
       }),
       layersFor({
+        radar: {
+          id: 'weather-radar',
+          state: 'ok',
+          availability: 'available',
+          value: 'frame 2026-02-03T16:04:00Z',
+        },
+        routeWest: {
+          id: 'planned-route-west',
+          state: 'ok',
+          availability: 'available',
+          value: '3 western route points',
+        },
+        routeEast: {
+          id: 'planned-route-east',
+          state: 'ok',
+          availability: 'available',
+          value: '3 eastern route points',
+        },
+        linkNormal: {
+          id: 'active-x-band-normal',
+          state: 'stale',
+          availability: 'available',
+          value: 'normal link observed 2026-02-03T15:30:00Z',
+        },
+        linkWarning: {
+          id: 'active-x-band-warning',
+          state: 'ok',
+          availability: 'empty',
+          value: 'no warning link',
+        },
         historyWest: {
           id: 'position-history-west',
           state: 'stale',
           availability: 'available',
           value: '2 stale western samples',
+        },
+        historyEast: {
+          id: 'position-history-east',
+          state: 'ok',
+          availability: 'empty',
+          value: '0 eastern samples',
+        },
+        markers: {
+          id: 'flight-route-markers',
+          state: 'ok',
+          availability: 'available',
+          value: '7 POI markers',
+        },
+        satellite: {
+          id: 'satellites',
+          state: 'ok',
+          availability: 'available',
+          value: '1 satellite',
+        },
+        events: {
+          id: 'mission-events',
+          state: 'ok',
+          availability: 'available',
+          value: '2 mission events',
+        },
+        gep: {
+          id: 'ground-entry-point-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'Seattle, WA',
         },
         current: {
           id: 'current-position-layer',
@@ -917,13 +1307,8 @@ export const OVERVIEW_SCENARIOS = [
       currentPosition: null,
       positionHistory: [point('2026-02-03T15:32:59Z', null, null, null)],
       metrics: metrics(
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
+        [sample('2026-02-03T15:32:59Z', null)],
+        [sample('2026-02-03T15:32:59Z', null)],
         null,
         null,
         null
@@ -957,7 +1342,7 @@ export const OVERVIEW_SCENARIOS = [
     ],
     expected: expected(
       [],
-      panelsFor({
+      panelsFor('2026-02-03T15:33:00Z', {
         map: {
           id: 'current-position-map',
           state: 'unavailable',
@@ -1001,9 +1386,15 @@ export const OVERVIEW_SCENARIOS = [
         pois: null,
         route: null,
         groundEntryPoint: null,
-        radar: '2026-02-03T15:32:59Z',
+        radar: '2026-02-03T15:32:00Z',
       }),
       layersFor({
+        radar: {
+          id: 'weather-radar',
+          state: 'ok',
+          availability: 'available',
+          value: 'frame 2026-02-03T15:32:00Z',
+        },
         routeWest: {
           id: 'planned-route-west',
           state: 'unavailable',
@@ -1044,7 +1435,7 @@ export const OVERVIEW_SCENARIOS = [
           id: 'flight-route-markers',
           state: 'unavailable',
           availability: 'unavailable',
-          value: 'POIs unavailable',
+          value: '0 POI markers',
         },
         satellite: {
           id: 'satellites',
@@ -1081,8 +1472,25 @@ export const OVERVIEW_SCENARIOS = [
     selectedPoiFilter: defaultFilter,
     telemetry: {
       currentPosition: c(52.55, -152.1, 10973),
-      positionHistory: nominalHistory,
-      metrics: baseMetrics,
+      positionHistory: [
+        point('2026-02-03T15:33:57Z', c(52.4, -151.7, 10973), 471, 287),
+        point('2026-02-03T15:33:59Z', c(52.55, -152.1, 10973), 472, 287),
+      ],
+      metrics: metrics(
+        [
+          sample('2026-02-03T15:33:55Z', 60),
+          sample('2026-02-03T15:33:57Z', 88),
+          sample('2026-02-03T15:33:59Z', 74),
+        ],
+        [
+          sample('2026-02-03T15:33:55Z', 0),
+          sample('2026-02-03T15:33:57Z', 0.3),
+          sample('2026-02-03T15:33:59Z', 0.3),
+        ],
+        192.4,
+        24.6,
+        1.2
+      ),
     },
     route: baseRoute,
     pois: basePois,
@@ -1092,24 +1500,65 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     satellites,
-    activeLinks: normalLinks,
+    activeLinks: [
+      {
+        id: 'xband-normal-radar-failure',
+        mode: 'normal',
+        observedAt: '2026-02-03T15:33:59Z',
+        from: c(52.55, -152.1, 10973),
+        to: c(53.2, -148.8, 550000),
+      },
+      {
+        id: 'xband-warning-radar-standby',
+        mode: 'warning',
+        observedAt: '2026-02-03T15:33:59Z',
+        from: c(52.55, -152.1, 10973),
+        to: c(47.6062, -122.3321, 0),
+      },
+    ],
     missionEvents: baseEvents,
     expected: expected(
       ['poi-arrive-rjtt'],
-      panelsFor({
+      panelsFor('2026-02-03T15:34:00Z', {
         map: {
           id: 'current-position-map',
           state: 'warning',
-          value: 'Radar unavailable; telemetry current',
+          value: '52.5500, -152.1000 at 10,973 m; radar unavailable',
+        },
+        poi: {
+          id: 'poi-quick-reference',
+          state: 'ok',
+          value: '1 future departure/arrival POI',
+        },
+        latency: {
+          id: 'network-latency',
+          state: 'ok',
+          value: '74 ms current / 60-74-88 ms five-minute',
+        },
+        throughput: {
+          id: 'throughput',
+          state: 'ok',
+          value: '192.4 Mbps down / -24.6 Mbps up',
+        },
+        gep: {
+          id: 'ground-entry-point',
+          state: 'ok',
+          value: 'Seattle, WA',
+        },
+        obstruction: { id: 'obstruction', state: 'ok', value: '1.2%' },
+        packetLoss: {
+          id: 'packet-loss',
+          state: 'ok',
+          value: '0.3% current / 0.2% avg / 0.3% max',
         },
       }),
       freshness({
         telemetry: '2026-02-03T15:33:59Z',
         history: '2026-02-03T15:33:59Z',
         activeLink: '2026-02-03T15:33:59Z',
-        pois: '2026-02-03T15:33:59Z',
-        route: '2026-02-03T15:33:59Z',
-        groundEntryPoint: '2026-02-03T15:33:59Z',
+        pois: '2026-02-03T15:34:00Z',
+        route: '2026-02-03T15:34:00Z',
+        groundEntryPoint: '2026-02-03T15:34:00Z',
         radar: null,
       }),
       layersFor({
@@ -1118,6 +1567,72 @@ export const OVERVIEW_SCENARIOS = [
           state: 'unavailable',
           availability: 'local-failure',
           value: 'radar tile failure',
+        },
+        routeWest: {
+          id: 'planned-route-west',
+          state: 'ok',
+          availability: 'available',
+          value: '3 western route points',
+        },
+        routeEast: {
+          id: 'planned-route-east',
+          state: 'ok',
+          availability: 'available',
+          value: '3 eastern route points',
+        },
+        linkNormal: {
+          id: 'active-x-band-normal',
+          state: 'ok',
+          availability: 'available',
+          value: 'normal link observed 2026-02-03T15:33:59Z',
+        },
+        linkWarning: {
+          id: 'active-x-band-warning',
+          state: 'warning',
+          availability: 'available',
+          value: 'warning link standby 2026-02-03T15:33:59Z',
+        },
+        historyWest: {
+          id: 'position-history-west',
+          state: 'ok',
+          availability: 'available',
+          value: '2 western samples',
+        },
+        historyEast: {
+          id: 'position-history-east',
+          state: 'ok',
+          availability: 'empty',
+          value: '0 eastern samples',
+        },
+        markers: {
+          id: 'flight-route-markers',
+          state: 'ok',
+          availability: 'available',
+          value: '7 POI markers',
+        },
+        satellite: {
+          id: 'satellites',
+          state: 'ok',
+          availability: 'available',
+          value: '1 satellite',
+        },
+        events: {
+          id: 'mission-events',
+          state: 'ok',
+          availability: 'available',
+          value: '2 mission events',
+        },
+        gep: {
+          id: 'ground-entry-point-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'Seattle, WA',
+        },
+        current: {
+          id: 'current-position-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'current position observed 2026-02-03T15:33:59Z',
         },
       }),
       baseRoute,
@@ -1136,7 +1651,21 @@ export const OVERVIEW_SCENARIOS = [
         point('2026-02-03T17:05:58Z', c(54.2, 179.4, 11278), 475, 273),
         point('2026-02-03T17:05:59Z', c(54.05, -179.85, 11278), 475, 273),
       ],
-      metrics: metrics(76, 61, 73, 86, 0.3, 0.2, 0.3, 185.2, 23.3, 1.1),
+      metrics: metrics(
+        [
+          sample('2026-02-03T17:05:55Z', 61),
+          sample('2026-02-03T17:05:57Z', 82),
+          sample('2026-02-03T17:05:59Z', 76),
+        ],
+        [
+          sample('2026-02-03T17:05:55Z', 0),
+          sample('2026-02-03T17:05:57Z', 0.3),
+          sample('2026-02-03T17:05:59Z', 0.3),
+        ],
+        185.2,
+        23.3,
+        1.1
+      ),
     },
     route: idlRoute,
     pois: basePois,
@@ -1146,12 +1675,27 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(35.6762, 139.6503, 0),
     },
     satellites,
-    activeLinks: normalLinks,
+    activeLinks: [
+      {
+        id: 'xband-normal-idl',
+        mode: 'normal',
+        observedAt: '2026-02-03T17:05:59Z',
+        from: c(54.05, -179.85, 11278),
+        to: c(53.9, 179.9, 550000),
+      },
+      {
+        id: 'xband-warning-idl',
+        mode: 'warning',
+        observedAt: '2026-02-03T17:05:59Z',
+        from: c(54.2, 179.4, 11278),
+        to: c(54.05, -179.85, 11278),
+      },
+    ],
     missionEvents: [
       ...baseEvents,
       {
         id: 'event-idl-crossed',
-        observedAt: '2026-02-03T17:05:00Z',
+        observedAt: '2026-02-03T17:05:59Z',
         type: 'waypoint',
         label: 'Crossed International Date Line',
         coordinate: c(54.1, 179.7, 11278),
@@ -1159,16 +1703,51 @@ export const OVERVIEW_SCENARIOS = [
     ],
     expected: expected(
       ['poi-arrive-rjtt'],
-      panelsFor({
+      panelsFor('2026-02-03T17:06:00Z', {
         map: {
           id: 'current-position-map',
           state: 'ok',
-          value: 'IDL split route at -179.8500 longitude',
+          value: '54.0500, -179.8500 at 11,278 m; IDL split route',
+        },
+        poi: {
+          id: 'poi-quick-reference',
+          state: 'ok',
+          value: '1 future departure/arrival POI',
+        },
+        latency: {
+          id: 'network-latency',
+          state: 'ok',
+          value: '76 ms current / 61-73-82 ms five-minute',
+        },
+        throughput: {
+          id: 'throughput',
+          state: 'ok',
+          value: '185.2 Mbps down / -23.3 Mbps up',
         },
         gep: { id: 'ground-entry-point', state: 'ok', value: 'Tokyo, JP' },
+        obstruction: { id: 'obstruction', state: 'ok', value: '1.1%' },
+        packetLoss: {
+          id: 'packet-loss',
+          state: 'ok',
+          value: '0.3% current / 0.2% avg / 0.3% max',
+        },
       }),
-      fresh('2026-02-03T17:05:59Z'),
+      freshness({
+        telemetry: '2026-02-03T17:05:59Z',
+        history: '2026-02-03T17:05:59Z',
+        activeLink: '2026-02-03T17:05:59Z',
+        pois: '2026-02-03T17:06:00Z',
+        route: '2026-02-03T17:06:00Z',
+        groundEntryPoint: '2026-02-03T17:06:00Z',
+        radar: '2026-02-03T17:05:00Z',
+      }),
       layersFor({
+        radar: {
+          id: 'weather-radar',
+          state: 'ok',
+          availability: 'available',
+          value: 'frame 2026-02-03T17:05:00Z',
+        },
         routeWest: {
           id: 'planned-route-west',
           state: 'ok',
@@ -1181,17 +1760,59 @@ export const OVERVIEW_SCENARIOS = [
           availability: 'available',
           value: '3 eastern IDL points',
         },
+        linkNormal: {
+          id: 'active-x-band-normal',
+          state: 'ok',
+          availability: 'available',
+          value: 'normal IDL link observed 2026-02-03T17:05:59Z',
+        },
+        linkWarning: {
+          id: 'active-x-band-warning',
+          state: 'warning',
+          availability: 'available',
+          value: 'warning IDL link observed 2026-02-03T17:05:59Z',
+        },
+        historyWest: {
+          id: 'position-history-west',
+          state: 'ok',
+          availability: 'available',
+          value: '1 western sample',
+        },
         historyEast: {
           id: 'position-history-east',
           state: 'ok',
           availability: 'available',
           value: '1 eastern sample',
         },
+        markers: {
+          id: 'flight-route-markers',
+          state: 'ok',
+          availability: 'available',
+          value: '7 POI markers',
+        },
+        satellite: {
+          id: 'satellites',
+          state: 'ok',
+          availability: 'available',
+          value: '1 satellite',
+        },
+        events: {
+          id: 'mission-events',
+          state: 'ok',
+          availability: 'available',
+          value: '3 mission events',
+        },
         gep: {
           id: 'ground-entry-point-layer',
           state: 'ok',
           availability: 'available',
           value: 'Tokyo, JP',
+        },
+        current: {
+          id: 'current-position-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'current position observed 2026-02-03T17:05:59Z',
         },
       }),
       idlRoute
@@ -1208,7 +1829,21 @@ export const OVERVIEW_SCENARIOS = [
         point('2026-02-03T15:34:58Z', c(52.6, -153.6, 11278), 468, 287),
         point('2026-02-03T15:34:59Z', c(52.8, -154.4, 11278), 468, 287),
       ],
-      metrics: metrics(205, 150, 181, 205, 5.4, 3.2, 5.4, 177.7, 20.1, 10.5),
+      metrics: metrics(
+        [
+          sample('2026-02-03T15:34:55Z', 150),
+          sample('2026-02-03T15:34:57Z', 188),
+          sample('2026-02-03T15:34:59Z', 205),
+        ],
+        [
+          sample('2026-02-03T15:34:55Z', 1),
+          sample('2026-02-03T15:34:57Z', 3.2),
+          sample('2026-02-03T15:34:59Z', 5.4),
+        ],
+        177.7,
+        20.1,
+        10.5
+      ),
     },
     route: baseRoute,
     pois: basePois,
@@ -1218,30 +1853,139 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     satellites,
-    activeLinks: normalLinks,
+    activeLinks: [
+      {
+        id: 'xband-normal-threshold',
+        mode: 'normal',
+        observedAt: '2026-02-03T15:34:59Z',
+        from: c(52.8, -154.4, 11278),
+        to: c(53.2, -148.8, 550000),
+      },
+      {
+        id: 'xband-warning-threshold',
+        mode: 'warning',
+        observedAt: '2026-02-03T15:34:59Z',
+        from: c(52.8, -154.4, 11278),
+        to: c(47.6062, -122.3321, 0),
+      },
+    ],
     missionEvents: baseEvents,
     expected: expected(
       ['poi-arrive-rjtt'],
-      panelsFor({
+      panelsFor('2026-02-03T15:35:00Z', {
+        map: {
+          id: 'current-position-map',
+          state: 'ok',
+          value: '52.8000, -154.4000 at 11,278 m',
+        },
+        poi: {
+          id: 'poi-quick-reference',
+          state: 'ok',
+          value: '1 future departure/arrival POI',
+        },
         latency: {
           id: 'network-latency',
           state: 'critical',
           value: '205 ms current / 150-181-205 ms five-minute',
         },
         obstruction: { id: 'obstruction', state: 'critical', value: '10.5%' },
+        throughput: {
+          id: 'throughput',
+          state: 'ok',
+          value: '177.7 Mbps down / -20.1 Mbps up',
+        },
+        gep: {
+          id: 'ground-entry-point',
+          state: 'ok',
+          value: 'Seattle, WA',
+        },
         packetLoss: {
           id: 'packet-loss',
           state: 'critical',
           value: '5.4% current / 3.2% avg / 5.4% max',
         },
       }),
-      fresh('2026-02-03T15:34:59Z'),
+      freshness({
+        telemetry: '2026-02-03T15:34:59Z',
+        history: '2026-02-03T15:34:59Z',
+        activeLink: '2026-02-03T15:34:59Z',
+        pois: '2026-02-03T15:35:00Z',
+        route: '2026-02-03T15:35:00Z',
+        groundEntryPoint: '2026-02-03T15:35:00Z',
+        radar: '2026-02-03T15:34:00Z',
+      }),
       layersFor({
+        radar: {
+          id: 'weather-radar',
+          state: 'ok',
+          availability: 'available',
+          value: 'frame 2026-02-03T15:34:00Z',
+        },
+        routeWest: {
+          id: 'planned-route-west',
+          state: 'ok',
+          availability: 'available',
+          value: '3 western route points',
+        },
+        routeEast: {
+          id: 'planned-route-east',
+          state: 'ok',
+          availability: 'available',
+          value: '3 eastern route points',
+        },
+        linkNormal: {
+          id: 'active-x-band-normal',
+          state: 'ok',
+          availability: 'available',
+          value: 'normal link observed 2026-02-03T15:34:59Z',
+        },
         linkWarning: {
           id: 'active-x-band-warning',
           state: 'critical',
           availability: 'available',
           value: 'warning link active 2026-02-03T15:34:59Z',
+        },
+        historyWest: {
+          id: 'position-history-west',
+          state: 'ok',
+          availability: 'available',
+          value: '2 western samples',
+        },
+        historyEast: {
+          id: 'position-history-east',
+          state: 'ok',
+          availability: 'empty',
+          value: '0 eastern samples',
+        },
+        markers: {
+          id: 'flight-route-markers',
+          state: 'ok',
+          availability: 'available',
+          value: '7 POI markers',
+        },
+        satellite: {
+          id: 'satellites',
+          state: 'ok',
+          availability: 'available',
+          value: '1 satellite',
+        },
+        events: {
+          id: 'mission-events',
+          state: 'ok',
+          availability: 'available',
+          value: '2 mission events',
+        },
+        gep: {
+          id: 'ground-entry-point-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'Seattle, WA',
+        },
+        current: {
+          id: 'current-position-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'current position observed 2026-02-03T15:34:59Z',
         },
       }),
       baseRoute
@@ -1259,7 +2003,21 @@ export const OVERVIEW_SCENARIOS = [
         point('2026-02-03T15:35:58Z', c(52.95, -154.75, 11278), 470, 287),
         point('2026-02-03T15:35:59Z', c(53.1, -155.1, 11278), 471, 287),
       ],
-      metrics: metrics(99, 82, 91, 99, 1.9, 1.3, 1.9, 201.5, 25.4, 4.9),
+      metrics: metrics(
+        [
+          sample('2026-02-03T15:35:55Z', 82),
+          sample('2026-02-03T15:35:57Z', 92),
+          sample('2026-02-03T15:35:59Z', 99),
+        ],
+        [
+          sample('2026-02-03T15:35:55Z', 0.1),
+          sample('2026-02-03T15:35:57Z', 1.9),
+          sample('2026-02-03T15:35:59Z', 1.9),
+        ],
+        201.5,
+        25.4,
+        4.9
+      ),
     },
     route: baseRoute,
     pois: basePois,
@@ -1296,32 +2054,120 @@ export const OVERVIEW_SCENARIOS = [
     ],
     expected: expected(
       ['poi-arrive-rjtt'],
-      panelsFor({
+      panelsFor('2026-02-03T15:36:00Z', {
+        map: {
+          id: 'current-position-map',
+          state: 'ok',
+          value: '53.1000, -155.1000 at 11,278 m',
+        },
+        poi: {
+          id: 'poi-quick-reference',
+          state: 'ok',
+          value: '1 future departure/arrival POI',
+        },
         latency: {
           id: 'network-latency',
           state: 'ok',
           value: '99 ms current / 82-91-99 ms five-minute',
         },
         obstruction: { id: 'obstruction', state: 'ok', value: '4.9%' },
+        throughput: {
+          id: 'throughput',
+          state: 'ok',
+          value: '201.5 Mbps down / -25.4 Mbps up',
+        },
+        gep: {
+          id: 'ground-entry-point',
+          state: 'ok',
+          value: 'Seattle, WA',
+        },
         packetLoss: {
           id: 'packet-loss',
           state: 'ok',
           value: '1.9% current / 1.3% avg / 1.9% max',
         },
       }),
-      fresh('2026-02-03T15:35:59Z'),
+      freshness({
+        telemetry: '2026-02-03T15:35:59Z',
+        history: '2026-02-03T15:35:59Z',
+        activeLink: '2026-02-03T15:35:59Z',
+        pois: '2026-02-03T15:36:00Z',
+        route: '2026-02-03T15:36:00Z',
+        groundEntryPoint: '2026-02-03T15:36:00Z',
+        radar: '2026-02-03T15:35:00Z',
+      }),
       layersFor({
+        radar: {
+          id: 'weather-radar',
+          state: 'ok',
+          availability: 'available',
+          value: 'frame 2026-02-03T15:35:00Z',
+        },
+        routeWest: {
+          id: 'planned-route-west',
+          state: 'ok',
+          availability: 'available',
+          value: '3 western route points',
+        },
+        routeEast: {
+          id: 'planned-route-east',
+          state: 'ok',
+          availability: 'available',
+          value: '3 eastern route points',
+        },
+        linkNormal: {
+          id: 'active-x-band-normal',
+          state: 'ok',
+          availability: 'available',
+          value: 'normal link observed 2026-02-03T15:35:59Z',
+        },
         linkWarning: {
           id: 'active-x-band-warning',
           state: 'ok',
           availability: 'empty',
           value: 'no warning link',
         },
+        historyWest: {
+          id: 'position-history-west',
+          state: 'ok',
+          availability: 'available',
+          value: '3 western samples',
+        },
+        historyEast: {
+          id: 'position-history-east',
+          state: 'ok',
+          availability: 'empty',
+          value: '0 eastern samples',
+        },
+        markers: {
+          id: 'flight-route-markers',
+          state: 'ok',
+          availability: 'available',
+          value: '7 POI markers',
+        },
+        satellite: {
+          id: 'satellites',
+          state: 'ok',
+          availability: 'available',
+          value: '1 satellite',
+        },
         events: {
           id: 'mission-events',
           state: 'ok',
           availability: 'available',
           value: '3 mission events',
+        },
+        gep: {
+          id: 'ground-entry-point-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'Seattle, WA',
+        },
+        current: {
+          id: 'current-position-layer',
+          state: 'ok',
+          availability: 'available',
+          value: 'current position observed 2026-02-03T15:35:59Z',
         },
       }),
       baseRoute

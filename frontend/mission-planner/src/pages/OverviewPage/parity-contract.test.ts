@@ -1,4 +1,6 @@
 // @ts-expect-error -- test source reads require Node APIs outside app types.
+import { createHash } from 'node:crypto';
+// @ts-expect-error -- test source reads require Node APIs outside app types.
 import { readFileSync } from 'node:fs';
 // @ts-expect-error -- test source reads require Node APIs outside app types.
 import { resolve } from 'node:path';
@@ -49,6 +51,80 @@ const EXPECTED_SCENARIO_IDS = [
 
 const PANEL_IDS = OVERVIEW_CONTRACT.panels.map((panel) => panel.id);
 const LAYER_IDS = OVERVIEW_CONTRACT.mapLayers.map((layer) => layer.id);
+const EXPECTED_LAYER_INVENTORY = [
+  {
+    concept: 'Weather Radar',
+    id: 'weather-radar',
+    source: 'RainViewer',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Planned Route — western segment',
+    id: 'planned-route-west',
+    source: 'active-route',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Planned Route — eastern segment',
+    id: 'planned-route-east',
+    source: 'active-route',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Active X-band Link — normal',
+    id: 'active-x-band-normal',
+    source: 'satellite-link',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Active X-band Link — warning',
+    id: 'active-x-band-warning',
+    source: 'satellite-link',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Position History — western segments',
+    id: 'position-history-west',
+    source: 'telemetry-history',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Position History — eastern segments',
+    id: 'position-history-east',
+    source: 'telemetry-history',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Flight route/POI markers',
+    id: 'flight-route-markers',
+    source: 'route-pois',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Satellites',
+    id: 'satellites',
+    source: 'satellite-positions',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Mission events',
+    id: 'mission-events',
+    source: 'mission-events',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Ground entry point',
+    id: 'ground-entry-point-layer',
+    source: 'ground-entry-point',
+    enabledByDefault: true,
+  },
+  {
+    concept: 'Current position',
+    id: 'current-position-layer',
+    source: 'telemetry',
+    enabledByDefault: true,
+  },
+];
 const FRESHNESS_KEYS = [
   'telemetry',
   'history',
@@ -74,6 +150,8 @@ type Poi = Scenario['pois'][number];
 type PositionSample = Scenario['telemetry']['positionHistory'][number];
 type ActiveLink = Scenario['activeLinks'][number];
 type Coordinate = Scenario['route']['westernSegment'][number];
+type NumericSample =
+  Scenario['telemetry']['metrics']['latency']['history'][number];
 
 const scenarioById = (id: string): Scenario => byId(OVERVIEW_SCENARIOS, id);
 
@@ -103,6 +181,116 @@ const expectExactIds = (
 ) => {
   expect(actualIds).toEqual(expectedIds);
   expect(new Set(actualIds).size).toBe(actualIds.length);
+};
+
+const latestIso = (values: readonly (string | null)[]): string | null =>
+  values
+    .filter((value): value is string => value !== null)
+    .sort()
+    .at(-1) ?? null;
+
+const latestPositionIso = (scenario: Scenario): string | null =>
+  latestIso(
+    scenario.telemetry.positionHistory.map((sample) =>
+      sample.coordinate === null ? null : sample.observedAt
+    )
+  );
+
+const latestActiveLinkIso = (scenario: Scenario): string | null =>
+  latestIso(
+    scenario.activeLinks.map((link) =>
+      link.from === null || link.to === null ? null : link.observedAt
+    )
+  );
+
+const latestEventIso = (scenario: Scenario): string | null =>
+  latestIso(scenario.missionEvents.map((event) => event.observedAt));
+
+const validValues = (samples: readonly NumericSample[]): number[] =>
+  samples
+    .map((sample) => sample.value)
+    .filter((value): value is number => value !== null);
+
+const mean = (values: readonly number[]): number | null =>
+  values.length === 0
+    ? null
+    : Math.round(
+        (values.reduce((total, value) => total + value, 0) / values.length) * 10
+      ) / 10;
+
+const currentValue = (samples: readonly NumericSample[]): number | null =>
+  samples.at(-1)?.value ?? null;
+
+const metricSummary = (samples: readonly NumericSample[]) => {
+  const values = validValues(samples);
+
+  return {
+    current: currentValue(samples),
+    min: values.length === 0 ? null : Math.min(...values),
+    average: mean(values),
+    max: values.length === 0 ? null : Math.max(...values),
+  };
+};
+
+const formatNumber = (value: number | null, digits = 0): string =>
+  value === null
+    ? 'No data'
+    : new Intl.NumberFormat('en-US', {
+        maximumFractionDigits: digits,
+        minimumFractionDigits: digits,
+      }).format(value);
+
+const formatCoordinate = (coordinate: Coordinate): string =>
+  `${coordinate.latitude.toFixed(4)}, ${coordinate.longitude.toFixed(
+    4
+  )} at ${formatNumber(coordinate.altitudeMeters)} m`;
+
+const classifyHighBad = (
+  value: number | null,
+  threshold: Readonly<{ warning: number; critical: number }>
+) => {
+  if (value === null) return 'unavailable';
+  if (value >= threshold.critical) return 'critical';
+  if (value >= threshold.warning) return 'warning';
+  return 'ok';
+};
+
+const countByLongitudeSign = (
+  samples: readonly PositionSample[],
+  side: 'west' | 'east'
+) =>
+  samples.filter((sample) => {
+    if (sample.coordinate === null) return false;
+    return side === 'west'
+      ? sample.coordinate.longitude < 0
+      : sample.coordinate.longitude >= 0;
+  }).length;
+
+const countLinks = (scenario: Scenario, mode: ActiveLink['mode']) =>
+  scenario.activeLinks.filter((link) => link.mode === mode).length;
+
+const freshnessIsCurrent = (scenario: Scenario, iso: string | null) =>
+  iso !== null && Date.parse(scenario.nowIso) - Date.parse(iso) <= 5_000;
+
+const expectChronologicalNoFuture = (
+  scenario: Scenario,
+  samples: readonly { observedAt: string }[]
+) => {
+  const timestamps = samples.map((sample) => sample.observedAt);
+
+  expect(timestamps).toEqual([...timestamps].sort());
+  for (const timestamp of timestamps) {
+    expect(timestamp).toMatch(ISO_UTC);
+    expect(timestamp <= scenario.nowIso).toBe(true);
+  }
+};
+
+const expectLayerValueContainsCount = (
+  scenario: Scenario,
+  layerId: string,
+  count: number
+) => {
+  expect(layerState(scenario, layerId).value).toContain(String(count));
 };
 
 describe('operations overview parity contract', () => {
@@ -135,6 +323,9 @@ describe('operations overview parity contract', () => {
       );
       expect(Object.keys(scenario.expected.sourceFreshness)).toEqual(
         FRESHNESS_KEYS
+      );
+      expect(panelState(scenario, 'clock-utc').value).toBe(
+        `${scenario.nowIso.slice(11, 19)}Z`
       );
 
       for (const value of Object.values(
@@ -171,20 +362,7 @@ describe('operations overview parity contract', () => {
       { concept: 'Packet Loss', id: 'packet-loss' },
     ]);
 
-    expect(OVERVIEW_CONTRACT.mapLayers.map((layer) => layer.concept)).toEqual([
-      'Weather Radar',
-      'Planned Route - western segment',
-      'Planned Route - eastern segment',
-      'Active X-band Link - normal',
-      'Active X-band Link - warning',
-      'Position History - western segments',
-      'Position History - eastern segments',
-      'Flight route/POI markers',
-      'Satellites',
-      'Mission events',
-      'Ground entry point',
-      'Current position',
-    ]);
+    expect(OVERVIEW_CONTRACT.mapLayers).toEqual(EXPECTED_LAYER_INVENTORY);
 
     expect(OVERVIEW_CONTRACT.poiOptions).toEqual([
       {
@@ -218,18 +396,34 @@ describe('operations overview parity contract', () => {
   });
 
   it('freezes timing, threshold, exact style, and basemap defaults', () => {
-    expect(OVERVIEW_CONTRACT.defaults.styles).toEqual({
-      plannedRouteWest: { color: 'dark-orange', width: 2, opacity: 0.9 },
-      plannedRouteEast: { color: 'dark-orange', width: 2, opacity: 1 },
-      activeXBandLinkNormal: { color: 'green', width: 4, opacity: 0.9 },
-      activeXBandLinkWarning: { color: 'yellow', width: 4, opacity: 0.9 },
-      positionHistory: { color: 'blue', width: 3, opacity: 0.7 },
-    });
-    expect(OVERVIEW_CONTRACT.defaults.radar).toEqual({
-      enabledByDefault: true,
-      opacity: 0.7,
-      minZoom: 0,
-      maxZoom: 7,
+    expect(OVERVIEW_CONTRACT.defaults).toEqual({
+      historyRangeSeconds: 1800,
+      historyStepSeconds: 1,
+      dashboardRefreshSeconds: 1,
+      radar: { enabledByDefault: true, opacity: 0.7, minZoom: 0, maxZoom: 7 },
+      clocks: [
+        { label: 'UTC (Zulu)', timezone: 'UTC', immutable: true },
+        { label: 'Washington DC', timezone: 'America/New_York' },
+        { label: 'Tokyo', timezone: 'Asia/Tokyo' },
+        { label: 'Omaha', timezone: 'America/Chicago' },
+      ],
+      thresholds: {
+        latencyMs: { warning: 100, critical: 200 },
+        obstructionPercent: { warning: 5, critical: 10, min: 0, max: 20 },
+        packetLossPercent: { warning: 2, critical: 5, min: 0, max: 100 },
+      },
+      throughput: {
+        download: { sign: 'positive', color: 'blue' },
+        upload: { sign: 'negative', color: 'green' },
+      },
+      styles: {
+        plannedRouteWest: { color: 'dark-orange', width: 2, opacity: 0.9 },
+        plannedRouteEast: { color: 'dark-orange', width: 2, opacity: 1 },
+        activeXBandLinkNormal: { color: 'green', width: 4, opacity: 0.9 },
+        activeXBandLinkWarning: { color: 'yellow', width: 4, opacity: 0.9 },
+        positionHistory: { color: 'blue', width: 3, opacity: 0.7 },
+      },
+      basemap: { attribution: 'Tiles © Esri' },
     });
   });
 
@@ -291,21 +485,209 @@ describe('operations overview parity contract', () => {
       expect(scenario.telemetry.metrics.obstruction).toHaveProperty(
         'currentPercent'
       );
-      expect(
-        scenario.telemetry.positionHistory.every((sample: PositionSample) =>
-          ISO_UTC.test(sample.observedAt)
-        )
-      ).toBe(true);
+      expectChronologicalNoFuture(scenario, scenario.telemetry.positionHistory);
+      expectChronologicalNoFuture(
+        scenario,
+        scenario.telemetry.metrics.latency.history
+      );
+      expectChronologicalNoFuture(
+        scenario,
+        scenario.telemetry.metrics.packetLoss.history
+      );
       expect(scenario.activeLinks.length).toBeGreaterThanOrEqual(1);
-      expect(
-        scenario.activeLinks.every((link: ActiveLink) =>
-          ISO_UTC.test(link.observedAt)
-        )
-      ).toBe(true);
+      expectChronologicalNoFuture(scenario, scenario.activeLinks);
+      expectChronologicalNoFuture(scenario, scenario.missionEvents);
       expect(Array.isArray(scenario.missionEvents)).toBe(true);
       expect(scenario.expected.route).toBeDefined();
       expect(scenario.expected.radar).toBeDefined();
     }
+  });
+
+  it('derives metric summaries, source freshness, and panel values from payloads', () => {
+    for (const scenario of OVERVIEW_SCENARIOS) {
+      const latency = metricSummary(scenario.telemetry.metrics.latency.history);
+      const packetLoss = metricSummary(
+        scenario.telemetry.metrics.packetLoss.history
+      );
+      const metrics = scenario.telemetry.metrics;
+
+      expect(metrics.latency.currentMs).toBe(latency.current);
+      expect(metrics.latency.fiveMinute.minMs).toBe(latency.min);
+      expect(metrics.latency.fiveMinute.averageMs).toBe(latency.average);
+      expect(metrics.latency.fiveMinute.maxMs).toBe(latency.max);
+      expect(metrics.packetLoss.currentPercent).toBe(packetLoss.current);
+      expect(metrics.packetLoss.averagePercent).toBe(packetLoss.average);
+      expect(metrics.packetLoss.maxPercent).toBe(packetLoss.max);
+
+      expect(scenario.expected.sourceFreshness.telemetry).toBe(
+        latestPositionIso(scenario)
+      );
+      expect(scenario.expected.sourceFreshness.history).toBe(
+        latestPositionIso(scenario)
+      );
+      expect(scenario.expected.sourceFreshness.activeLink).toBe(
+        latestActiveLinkIso(scenario)
+      );
+      expect(scenario.expected.sourceFreshness.pois).toBe(
+        scenario.pois.length === 0 ? null : scenario.nowIso
+      );
+      expect(scenario.expected.sourceFreshness.route).toBe(
+        scenario.route.active ? scenario.nowIso : null
+      );
+      expect(scenario.expected.sourceFreshness.groundEntryPoint).toBe(
+        scenario.groundEntryPoint.coordinate === null ? null : scenario.nowIso
+      );
+
+      if (metrics.latency.currentMs === null) {
+        expect(panelState(scenario, 'network-latency')).toMatchObject({
+          state: 'unavailable',
+          value: 'No latency data',
+        });
+      } else {
+        expect(panelState(scenario, 'network-latency').value).toBe(
+          `${metrics.latency.currentMs} ms current / ${metrics.latency.fiveMinute.minMs}-${metrics.latency.fiveMinute.averageMs}-${metrics.latency.fiveMinute.maxMs} ms five-minute`
+        );
+      }
+
+      if (metrics.packetLoss.currentPercent === null) {
+        expect(panelState(scenario, 'packet-loss')).toMatchObject({
+          state: 'unavailable',
+          value: 'No packet loss data',
+        });
+      } else {
+        expect(panelState(scenario, 'packet-loss').value).toBe(
+          `${metrics.packetLoss.currentPercent}% current / ${metrics.packetLoss.averagePercent}% avg / ${metrics.packetLoss.maxPercent}% max`
+        );
+      }
+
+      if (scenario.telemetry.currentPosition !== null) {
+        expect(panelState(scenario, 'current-position-map').value).toContain(
+          formatCoordinate(scenario.telemetry.currentPosition)
+        );
+      }
+      expect(layerState(scenario, 'ground-entry-point-layer').value).toBe(
+        scenario.groundEntryPoint.display === 'Unavailable'
+          ? 'ground entry point unavailable'
+          : scenario.groundEntryPoint.display
+      );
+      expectLayerValueContainsCount(
+        scenario,
+        'flight-route-markers',
+        scenario.pois.length
+      );
+      expectLayerValueContainsCount(
+        scenario,
+        'satellites',
+        scenario.satellites.length
+      );
+      expectLayerValueContainsCount(
+        scenario,
+        'mission-events',
+        scenario.missionEvents.length
+      );
+      if (scenario.expected.sourceFreshness.radar === null) {
+        expect(layerState(scenario, 'weather-radar')).toMatchObject({
+          state: 'unavailable',
+          availability: 'local-failure',
+        });
+      } else {
+        expect(layerState(scenario, 'weather-radar').value).toContain(
+          scenario.expected.sourceFreshness.radar
+        );
+      }
+      if (scenario.expected.sourceFreshness.activeLink !== null) {
+        const linkLayer =
+          countLinks(scenario, 'normal') > 0
+            ? layerState(scenario, 'active-x-band-normal')
+            : layerState(scenario, 'active-x-band-warning');
+
+        expect(linkLayer.value).toContain(
+          scenario.expected.sourceFreshness.activeLink
+        );
+      }
+    }
+  });
+
+  it('classifies thresholds from source payloads and keeps unrelated panels ok', () => {
+    const checked = ['overview-threshold-crossing', 'overview-recovery'];
+
+    for (const scenario of checked.map(scenarioById)) {
+      expect(panelState(scenario, 'network-latency').state).toBe(
+        classifyHighBad(
+          scenario.telemetry.metrics.latency.currentMs,
+          OVERVIEW_CONTRACT.defaults.thresholds.latencyMs
+        )
+      );
+      expect(panelState(scenario, 'obstruction').state).toBe(
+        classifyHighBad(
+          scenario.telemetry.metrics.obstruction.currentPercent,
+          OVERVIEW_CONTRACT.defaults.thresholds.obstructionPercent
+        )
+      );
+      expect(panelState(scenario, 'packet-loss').state).toBe(
+        classifyHighBad(
+          scenario.telemetry.metrics.packetLoss.currentPercent,
+          OVERVIEW_CONTRACT.defaults.thresholds.packetLossPercent
+        )
+      );
+
+      for (const panelId of [
+        'clock-utc',
+        'clock-washington-dc',
+        'clock-tokyo',
+        'clock-omaha',
+        'current-position-map',
+        'poi-quick-reference',
+        'throughput',
+        'ground-entry-point',
+      ]) {
+        expect(panelState(scenario, panelId).state).toBe('ok');
+      }
+      expect(freshnessIsCurrent(scenario, latestPositionIso(scenario))).toBe(
+        true
+      );
+    }
+  });
+
+  it('keeps IDL route, history, links, events, and freshness internally consistent', () => {
+    const idl = scenarioById('overview-idl');
+
+    expect(idl.route.crossesInternationalDateLine).toBe(true);
+    expect(idl.route.westernSegment.some((point) => point.longitude > 0)).toBe(
+      true
+    );
+    expect(idl.route.easternSegment.some((point) => point.longitude < 0)).toBe(
+      true
+    );
+    expect(countByLongitudeSign(idl.telemetry.positionHistory, 'west')).toBe(1);
+    expect(countByLongitudeSign(idl.telemetry.positionHistory, 'east')).toBe(1);
+    expect(layerState(idl, 'position-history-west').value).toBe(
+      '1 western sample'
+    );
+    expect(layerState(idl, 'position-history-east').value).toBe(
+      '1 eastern sample'
+    );
+    expect(countLinks(idl, 'normal')).toBe(1);
+    expect(countLinks(idl, 'warning')).toBe(1);
+    expect(
+      idl.activeLinks.some(
+        (link) =>
+          link.from !== null &&
+          link.to !== null &&
+          link.from.longitude > 0 &&
+          link.to.longitude < 0
+      )
+    ).toBe(true);
+    expect(idl.expected.sourceFreshness.activeLink).toBe(
+      latestActiveLinkIso(idl)
+    );
+    expect(layerState(idl, 'active-x-band-normal').value).toContain(
+      idl.expected.sourceFreshness.activeLink
+    );
+    expect(layerState(idl, 'active-x-band-warning').value).toContain(
+      idl.expected.sourceFreshness.activeLink
+    );
+    expect(latestEventIso(idl)).toBe('2026-02-03T17:05:59Z');
   });
 
   it('freezes localized scenario semantics', () => {
@@ -412,11 +794,13 @@ describe('operations overview parity contract', () => {
       expect(source).not.toContain(token);
     }
 
-    const first = JSON.stringify({ OVERVIEW_CONTRACT, OVERVIEW_SCENARIOS });
-    const second = JSON.stringify({ OVERVIEW_CONTRACT, OVERVIEW_SCENARIOS });
+    const canonical = JSON.stringify({ OVERVIEW_CONTRACT, OVERVIEW_SCENARIOS });
+    const digest = createHash('sha256').update(canonical).digest('hex');
 
-    expect(first).toBe(second);
-    expect(first).toMatch(/2026-02-03T15:30:00Z/);
-    expect(first).not.toMatch(/localhost|127\.0\.0\.1/);
+    expect(digest).toBe(
+      '8d814d18504d73afc3cc0d8c140740da0d9da09494a1c9a00695e4eaf33acfcb'
+    );
+    expect(canonical).toMatch(/2026-02-03T15:30:00Z/);
+    expect(canonical).not.toMatch(/localhost|127\.0\.0\.1/);
   });
 });
