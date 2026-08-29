@@ -42,6 +42,7 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.services.prometheus_client import MonitoringPrometheusClient
+from app.services.weather_radar import RainViewerRadarService
 from app.services.ground_entry_point import (
     maybe_refresh_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
@@ -92,6 +93,13 @@ async def startup_event():
             _lifespan_state_keys.add("monitoring_prometheus_client")
             _lifespan_owned_resources["monitoring_prometheus_client"] = (
                 monitoring_client
+            )
+        if "rainviewer_radar_service" not in app.state._state:
+            rainviewer_service = RainViewerRadarService()
+            app.state.rainviewer_radar_service = rainviewer_service
+            _lifespan_state_keys.add("rainviewer_radar_service")
+            _lifespan_owned_resources["rainviewer_radar_service"] = (
+                rainviewer_service
             )
         logger.info_json(
             "Configuration loaded",
@@ -360,6 +368,22 @@ async def _cleanup_lifespan_resources(app: FastAPI) -> None:
             logger.info_json("Closing monitoring Prometheus client")
             try:
                 await monitoring_client.aclose()
+            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
+                cleanup_error = cleanup_error or exc
+
+        rainviewer_service = _lifespan_owned_resources.pop(
+            "rainviewer_radar_service", None
+        )
+        _lifespan_state_keys.discard("rainviewer_radar_service")
+        if (
+            rainviewer_service is not None
+            and app.state._state.get("rainviewer_radar_service")
+            is rainviewer_service
+        ):
+            app.state._state.pop("rainviewer_radar_service", None)
+            logger.info_json("Closing RainViewer radar service")
+            try:
+                await rainviewer_service.aclose()
             except BaseException as exc:  # noqa: BLE001 - continue cleanup.
                 cleanup_error = cleanup_error or exc
 

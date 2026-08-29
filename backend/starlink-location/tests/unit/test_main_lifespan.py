@@ -12,6 +12,7 @@ STATE_KEYS = (
     "poi_manager",
     "route_manager",
     "monitoring_prometheus_client",
+    "rainviewer_radar_service",
 )
 
 
@@ -94,6 +95,20 @@ class BlockingMonitoringClient(TrackingMonitoringClient):
         await self.release.wait()
 
 
+class TrackingRainViewerService:
+    instances: ClassVar[list["TrackingRainViewerService"]] = []
+
+    def __init__(self, *, close_error: BaseException | None = None) -> None:
+        self.close_error = close_error
+        self.closed = 0
+        TrackingRainViewerService.instances.append(self)
+
+    async def aclose(self) -> None:
+        self.closed += 1
+        if self.close_error is not None:
+            raise self.close_error
+
+
 class FakeCoordinator:
     def __init__(self, _config) -> None:
         self.route_manager = None
@@ -141,11 +156,13 @@ def _assert_owned_state_clean() -> None:
 
 def _patch_startup_basics(monkeypatch) -> None:
     TrackingMonitoringClient.instances.clear()
+    TrackingRainViewerService.instances.clear()
     FakeRouteManager.instances.clear()
     config_manager = MagicMock()
     config_manager.load.return_value = _config()
     monkeypatch.setattr(main, "ConfigManager", lambda: config_manager)
     monkeypatch.setattr(main, "MonitoringPrometheusClient", TrackingMonitoringClient)
+    monkeypatch.setattr(main, "RainViewerRadarService", TrackingRainViewerService)
     monkeypatch.setattr(main, "SimulationCoordinator", FakeCoordinator)
     monkeypatch.setattr(main, "set_service_info", MagicMock())
 
@@ -225,6 +242,34 @@ async def test_monitoring_aclose_raises_once_and_detaches_state(
 
 
 @pytest.mark.asyncio
+async def test_owned_rainviewer_service_closes_once_and_detaches_state() -> None:
+    service = TrackingRainViewerService()
+    main.app.state.rainviewer_radar_service = service
+    main._lifespan_owned_resources["rainviewer_radar_service"] = service
+
+    await main.shutdown_event()
+    await main.shutdown_event()
+
+    assert service.closed == 1
+    assert "rainviewer_radar_service" not in main.app.state._state
+    assert "rainviewer_radar_service" not in main._lifespan_owned_resources
+
+
+@pytest.mark.asyncio
+async def test_rainviewer_close_error_takes_precedence_without_primary() -> None:
+    close_error = RuntimeError("rainviewer close failure")
+    service = TrackingRainViewerService(close_error=close_error)
+    main.app.state.rainviewer_radar_service = service
+    main._lifespan_owned_resources["rainviewer_radar_service"] = service
+
+    with pytest.raises(RuntimeError, match="rainviewer close failure"):
+        await main.shutdown_event()
+
+    assert service.closed == 1
+    assert "rainviewer_radar_service" not in main.app.state._state
+
+
+@pytest.mark.asyncio
 async def test_unowned_monitoring_client_survives_cleanup() -> None:
     client = TrackingMonitoringClient()
     main.app.state.monitoring_prometheus_client = client
@@ -271,6 +316,36 @@ async def test_concurrent_cleanup_closes_owned_monitoring_client_once() -> None:
     await second
 
     assert client.closed == 1
+
+
+@pytest.mark.asyncio
+async def test_lifespan_constructs_and_closes_rainviewer_service(monkeypatch) -> None:
+    _patch_startup_basics(monkeypatch)
+    monkeypatch.setattr(main, "POIManager", MagicMock)
+    monkeypatch.setattr(main, "initialize_eta_service", MagicMock())
+    monkeypatch.setattr(main, "shutdown_eta_service", MagicMock())
+    monkeypatch.setattr(main, "RouteManager", FakeRouteManager)
+
+    flight_state = MagicMock()
+    flight_state.get_status.return_value = SimpleNamespace(
+        phase=SimpleNamespace(value="pre_departure"),
+        eta_mode=SimpleNamespace(value="anticipated"),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "app.services.flight_state",
+        SimpleNamespace(get_flight_state_manager=lambda: flight_state),
+    )
+
+    async with main.lifespan(main.app):
+        assert len(TrackingRainViewerService.instances) == 1
+        assert (
+            main.app.state.rainviewer_radar_service
+            is TrackingRainViewerService.instances[0]
+        )
+
+    assert TrackingRainViewerService.instances[0].closed == 1
+    _assert_owned_state_clean()
 
 
 @pytest.mark.asyncio

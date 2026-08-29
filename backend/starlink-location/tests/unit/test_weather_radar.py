@@ -1,72 +1,367 @@
-"""Tests for RainViewer weather radar tile helpers."""
+"""Tests for RainViewer weather radar fetching."""
 
-from unittest.mock import Mock
-from urllib.error import URLError
+from __future__ import annotations
 
+import asyncio
+import json
+from collections.abc import Iterable
+
+import httpx
 import pytest
-from app.services.weather_radar import RainViewerRadarService
+from app.services.weather_radar import (
+    InvalidRadarTileError,
+    RainViewerRadarService,
+    RainViewerRadarServiceError,
+    RainViewerRadarTimeoutError,
+)
 
-RAINVIEWER_METADATA = {
+PNG = b"\x89PNG\r\n\x1a\nradar"
+METADATA = {
     "host": "https://tilecache.rainviewer.com",
     "radar": {
         "past": [
-            {"time": 1000, "path": "/v2/radar/old"},
-            {"time": 1600, "path": "/v2/radar/latest"},
+            {"time": 1000, "path": "/v2/radar/past"},
+            {"time": 1600, "path": "/v2/radar/newer-past"},
         ],
-        "nowcast": [],
+        "nowcast": [{"time": 1500, "path": "/v2/radar/nowcast"}],
     },
 }
 
 
-def test_rainviewer_service_builds_latest_radar_tile_url() -> None:
-    service = RainViewerRadarService(metadata_fetcher=lambda: RAINVIEWER_METADATA)
+def _json_response(data: object) -> httpx.Response:
+    return httpx.Response(200, content=json.dumps(data).encode("utf-8"))
 
-    tile_url = service.tile_url(z=4, x=5, y=6)
 
-    assert (
-        tile_url
-        == "https://tilecache.rainviewer.com/v2/radar/latest/512/4/5/6/2/1_1.png"
+def _png_response(
+    content: bytes = PNG, headers: dict[str, str] | None = None
+) -> httpx.Response:
+    merged = {"Content-Type": "image/png"}
+    if headers:
+        merged.update(headers)
+    return httpx.Response(200, content=content, headers=merged)
+
+
+class ScriptedTransport(httpx.AsyncBaseTransport):
+    def __init__(self, responses: Iterable[httpx.Response | BaseException]) -> None:
+        self.responses = list(responses)
+        self.requests: list[httpx.Request] = []
+        self.closed = 0
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        self.requests.append(request)
+        if not self.responses:
+            raise AssertionError("unexpected request")
+        response = self.responses.pop(0)
+        if isinstance(response, BaseException):
+            raise response
+        response.request = request
+        return response
+
+    async def aclose(self) -> None:
+        self.closed += 1
+
+
+class ChunkStream(httpx.AsyncByteStream):
+    def __init__(self, chunks: list[bytes]) -> None:
+        self.chunks = chunks
+        self.closed = False
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            await asyncio.sleep(0)
+            yield chunk
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
+def _service(
+    transport: ScriptedTransport,
+    *,
+    now: list[float] | None = None,
+    metadata_cache_ttl_seconds: float = 60,
+) -> RainViewerRadarService:
+    clock = (lambda: now[0]) if now is not None else None
+    client = httpx.AsyncClient(transport=transport, follow_redirects=False)
+    return RainViewerRadarService(
+        client=client,
+        metadata_cache_ttl_seconds=metadata_cache_ttl_seconds,
+        clock=clock,
+        tile_body_limit_bytes=32,
+        metadata_body_limit_bytes=256,
     )
 
 
-def test_rainviewer_service_prefers_nowcast_frame_when_available() -> None:
-    metadata = {
-        "host": "https://tilecache.rainviewer.com",
-        "radar": {
-            "past": [{"time": 1000, "path": "/v2/radar/past"}],
-            "nowcast": [{"time": 2000, "path": "/v2/radar/nowcast"}],
+async def _not_disconnected() -> bool:
+    return False
+
+
+async def _fetch(service: RainViewerRadarService, z=3, x=4, y=5):
+    tile = await service.fetch_tile(z, x, y, _not_disconnected)
+    try:
+        return tile.read()
+    finally:
+        tile.close()
+
+
+@pytest.mark.asyncio
+async def test_fetch_tile_returns_png_bytes_and_provider_frame_timestamp() -> None:
+    transport = ScriptedTransport([_json_response(METADATA), _png_response()])
+    service = _service(transport)
+
+    tile = await service.fetch_tile(3, 4, 5, _not_disconnected)
+    try:
+        assert tile.read() == PNG
+        assert tile.frame_timestamp == 1600
+        assert transport.requests[0].url == (
+            "https://api.rainviewer.com/public/weather-maps.json"
+        )
+        assert transport.requests[0].headers["accept-encoding"] == "identity"
+        assert transport.requests[1].url == (
+            "https://tilecache.rainviewer.com/v2/radar/newer-past/"
+            "512/3/4/5/2/1_1.png"
+        )
+    finally:
+        tile.close()
+        await service.aclose()
+
+
+@pytest.mark.asyncio
+async def test_xyz_validation_happens_before_upstream_work() -> None:
+    transport = ScriptedTransport([])
+    service = _service(transport)
+
+    with pytest.raises(InvalidRadarTileError):
+        await service.fetch_tile(8, 0, 0, _not_disconnected)
+    with pytest.raises(InvalidRadarTileError):
+        await service.fetch_tile(3, 8, 0, _not_disconnected)
+
+    assert transport.requests == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        {"host": "http://tilecache.rainviewer.com", "radar": {"past": []}},
+        {"host": "https://evil.example", "radar": {"past": []}},
+        {"host": "https://tilecache.rainviewer.com", "radar": {}},
+        {
+            "host": "https://tilecache.rainviewer.com",
+            "radar": {"past": [{"time": "soon", "path": "/v2/radar/a"}]},
         },
+        {
+            "host": "https://tilecache.rainviewer.com",
+            "radar": {"past": [{"time": 1, "path": "https://evil.example/a"}]},
+        },
+        {
+            "host": "https://tilecache.rainviewer.com",
+            "radar": {"past": [{"time": 1, "path": "/bad/a"}]},
+        },
+    ],
+)
+async def test_rejects_malformed_metadata(metadata) -> None:
+    service = _service(ScriptedTransport([_json_response(metadata)]))
+
+    with pytest.raises(RainViewerRadarServiceError):
+        await service.fetch_tile(0, 0, 0, _not_disconnected)
+
+
+@pytest.mark.asyncio
+async def test_rejects_oversize_metadata_body() -> None:
+    response = httpx.Response(200, content=b"x" * 300)
+    service = _service(ScriptedTransport([response]))
+
+    with pytest.raises(RainViewerRadarServiceError):
+        await service.fetch_tile(0, 0, 0, _not_disconnected)
+
+
+@pytest.mark.asyncio
+async def test_metadata_cache_uses_injected_clock_and_preserves_provider_time() -> None:
+    now = [10.0]
+    newer = {
+        "host": "https://tilecache.rainviewer.com",
+        "radar": {"past": [{"time": 2222, "path": "/v2/radar/next"}]},
     }
-    service = RainViewerRadarService(metadata_fetcher=lambda: metadata)
+    transport = ScriptedTransport(
+        [
+            _json_response(METADATA),
+            _png_response(),
+            _png_response(),
+            _json_response(newer),
+            _png_response(),
+        ]
+    )
+    service = _service(transport, now=now, metadata_cache_ttl_seconds=5)
 
-    assert service.tile_url(z=0, x=0, y=0).startswith(
-        "https://tilecache.rainviewer.com/v2/radar/nowcast/"
+    first = await service.fetch_tile(0, 0, 0, _not_disconnected)
+    first.close()
+    now[0] = 14.0
+    second = await service.fetch_tile(0, 0, 0, _not_disconnected)
+    second.close()
+    now[0] = 16.0
+    third = await service.fetch_tile(0, 0, 0, _not_disconnected)
+    third.close()
+
+    assert [request.url.host for request in transport.requests].count(
+        "api.rainviewer.com"
+    ) == 2
+    assert second.frame_timestamp == 1600
+    assert third.frame_timestamp == 2222
+
+
+@pytest.mark.asyncio
+async def test_metadata_fetch_is_single_flight_for_concurrent_callers() -> None:
+    release = asyncio.Event()
+    calls = 0
+
+    class BarrierTransport(ScriptedTransport):
+        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+            nonlocal calls
+            self.requests.append(request)
+            if request.url.host == "api.rainviewer.com":
+                calls += 1
+                await release.wait()
+                return _json_response(METADATA)
+            return _png_response()
+
+    service = _service(BarrierTransport([]))
+    tasks = [
+        asyncio.create_task(service.fetch_tile(0, 0, 0, _not_disconnected))
+        for _ in range(20)
+    ]
+    await asyncio.sleep(0)
+    release.set()
+    tiles = await asyncio.gather(*tasks)
+
+    assert calls == 1
+    for tile in tiles:
+        tile.close()
+
+
+@pytest.mark.asyncio
+async def test_manual_redirect_policy_validates_each_hop_and_exhaustion() -> None:
+    service = _service(
+        ScriptedTransport(
+            [
+                httpx.Response(302, headers={"Location": "/public/weather-maps.json"}),
+                _json_response(METADATA),
+                httpx.Response(
+                    302,
+                    headers={"Location": "/v2/radar/newer-past/512/3/4/5/2/1_1.png"},
+                ),
+                _png_response(),
+            ]
+        )
     )
 
+    assert await _fetch(service) == PNG
 
-def test_rainviewer_service_caches_metadata_between_tile_requests() -> None:
-    metadata_fetcher = Mock(return_value=RAINVIEWER_METADATA)
-    service = RainViewerRadarService(
-        metadata_fetcher=metadata_fetcher, cache_ttl_seconds=600
+    bad = _service(
+        ScriptedTransport(
+            [
+                _json_response(METADATA),
+                httpx.Response(302, headers={"Location": "https://evil.example/a"}),
+            ]
+        )
+    )
+    with pytest.raises(RainViewerRadarServiceError):
+        await bad.fetch_tile(3, 4, 5, _not_disconnected)
+
+    exhausted = _service(
+        ScriptedTransport(
+            [
+                _json_response(METADATA),
+                httpx.Response(
+                    302,
+                    headers={"Location": "/v2/radar/newer-past/512/3/4/5/2/1_1.png"},
+                ),
+                httpx.Response(
+                    302,
+                    headers={"Location": "/v2/radar/newer-past/512/3/4/5/2/1_1.png"},
+                ),
+                httpx.Response(
+                    302,
+                    headers={"Location": "/v2/radar/newer-past/512/3/4/5/2/1_1.png"},
+                ),
+                httpx.Response(
+                    302,
+                    headers={"Location": "/v2/radar/newer-past/512/3/4/5/2/1_1.png"},
+                ),
+            ]
+        )
+    )
+    with pytest.raises(RainViewerRadarServiceError):
+        await exhausted.fetch_tile(3, 4, 5, _not_disconnected)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "response",
+    [
+        httpx.Response(200, content=PNG, headers={"Content-Type": "text/plain"}),
+        httpx.Response(200, content=b"not-png", headers={"Content-Type": "image/png"}),
+        httpx.Response(
+            200,
+            content=PNG,
+            headers={"Content-Type": "image/png", "Content-Length": "33"},
+        ),
+        httpx.Response(500, content=b"no", headers={"Content-Type": "text/plain"}),
+    ],
+)
+async def test_rejects_invalid_tile_responses(response) -> None:
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+
+    with pytest.raises(RainViewerRadarServiceError):
+        await service.fetch_tile(3, 4, 5, _not_disconnected)
+
+
+@pytest.mark.asyncio
+async def test_irregular_raw_chunks_crossing_tile_cap_close_response() -> None:
+    stream = ChunkStream([PNG, b"a" * 20, b"b" * 20])
+    response = httpx.Response(200, headers={"Content-Type": "image/png"}, stream=stream)
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+
+    with pytest.raises(RainViewerRadarServiceError):
+        await service.fetch_tile(3, 4, 5, _not_disconnected)
+
+    assert stream.closed is True
+
+
+@pytest.mark.asyncio
+async def test_disconnect_cancellation_closes_response_stream() -> None:
+    stream = ChunkStream([PNG, b"payload"])
+    response = httpx.Response(200, headers={"Content-Type": "image/png"}, stream=stream)
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+    calls = 0
+
+    async def disconnected() -> bool:
+        nonlocal calls
+        calls += 1
+        return calls > 1
+
+    with pytest.raises(asyncio.CancelledError):
+        await service.fetch_tile(3, 4, 5, disconnected)
+
+    assert stream.closed is True
+
+
+@pytest.mark.asyncio
+async def test_timeout_maps_to_typed_timeout() -> None:
+    service = _service(
+        ScriptedTransport([httpx.ReadTimeout("do not leak upstream detail")])
     )
 
-    service.tile_url(z=1, x=2, y=3)
-    service.tile_url(z=1, x=2, y=4)
-
-    assert metadata_fetcher.call_count == 1
+    with pytest.raises(RainViewerRadarTimeoutError):
+        await service.fetch_tile(0, 0, 0, _not_disconnected)
 
 
-def test_rainviewer_service_rejects_zoom_levels_rainviewer_does_not_serve() -> None:
-    service = RainViewerRadarService(metadata_fetcher=lambda: RAINVIEWER_METADATA)
+@pytest.mark.asyncio
+async def test_aclose_closes_owned_client_once() -> None:
+    transport = ScriptedTransport([])
+    service = _service(transport)
 
-    with pytest.raises(ValueError, match="zoom"):
-        service.tile_url(z=8, x=0, y=0)
+    await service.aclose()
+    await service.aclose()
 
-
-def test_rainviewer_service_reports_unavailable_metadata() -> None:
-    service = RainViewerRadarService(
-        metadata_fetcher=lambda: (_ for _ in ()).throw(URLError("nope"))
-    )
-
-    with pytest.raises(RuntimeError, match="RainViewer metadata unavailable"):
-        service.tile_url(z=0, x=0, y=0)
+    assert transport.closed == 1
