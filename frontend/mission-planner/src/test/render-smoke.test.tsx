@@ -10,7 +10,7 @@ describe('React DOM test environment', () => {
     expect(
       screen.getByRole('button', {
         name: 'Mission planner unit test environment',
-      }),
+      })
     ).toBeInTheDocument();
   });
 
@@ -18,7 +18,7 @@ describe('React DOM test environment', () => {
     expect(
       screen.queryByRole('button', {
         name: 'Mission planner unit test environment',
-      }),
+      })
     ).not.toBeInTheDocument();
   });
 });
