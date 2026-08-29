@@ -183,6 +183,18 @@ class CountingStream(httpx.AsyncByteStream):
         self.closed += 1
 
 
+class CountingResponse(httpx.Response):
+    def __init__(self, close_error: BaseException | None = None) -> None:
+        super().__init__(200, headers={"Content-Type": "image/png"})
+        self.close_calls = 0
+        self.close_error = close_error
+
+    async def aclose(self) -> None:
+        self.close_calls += 1
+        if self.close_error is not None:
+            raise self.close_error
+
+
 def _close_failing_response(content: bytes, headers: dict[str, str]) -> httpx.Response:
     response = httpx.Response(200, content=content, headers=headers)
     response.extensions["close_failures"] = 0
@@ -541,22 +553,42 @@ async def test_rejects_noncanonical_tile_redirects(location: str) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "response",
+    ("response", "expected_error"),
     [
-        httpx.Response(200, content=PNG, headers={"Content-Type": "text/plain"}),
-        httpx.Response(200, content=b"not-png", headers={"Content-Type": "image/png"}),
-        httpx.Response(
-            200,
-            content=PNG,
-            headers={"Content-Type": "image/png", "Content-Length": "33"},
+        (
+            httpx.Response(200, content=PNG, headers={"Content-Type": "text/plain"}),
+            RainViewerRadarServiceError,
         ),
-        httpx.Response(500, content=b"no", headers={"Content-Type": "text/plain"}),
+        (
+            httpx.Response(
+                200,
+                content=b"not-png",
+                headers={"Content-Type": "image/png"},
+            ),
+            InvalidRadarTileError,
+        ),
+        (
+            httpx.Response(
+                200,
+                content=PNG,
+                headers={"Content-Type": "image/png", "Content-Length": "33"},
+            ),
+            RainViewerRadarServiceError,
+        ),
+        (
+            httpx.Response(
+                500,
+                content=b"no",
+                headers={"Content-Type": "text/plain"},
+            ),
+            RainViewerRadarServiceError,
+        ),
     ],
 )
-async def test_rejects_invalid_tile_responses(response) -> None:
+async def test_rejects_invalid_tile_responses(response, expected_error) -> None:
     service = _service(ScriptedTransport([_json_response(METADATA), response]))
 
-    with pytest.raises(RainViewerRadarServiceError):
+    with pytest.raises(expected_error):
         await service.fetch_tile(3, 4, 5, _not_disconnected)
 
 
@@ -779,6 +811,63 @@ async def test_await_with_cancel_reconciles_completed_child_during_checker_failu
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "child_result",
+    ["response", "response_close_failure", "exception", "running"],
+)
+async def test_await_with_cancel_true_checker_disposes_child_once(
+    child_result: str,
+) -> None:
+    close_error = (
+        RuntimeError("response close secondary")
+        if child_result == "response_close_failure"
+        else None
+    )
+    response = CountingResponse(close_error)
+    child_started = asyncio.Event()
+    child_release = asyncio.Event()
+    checker_started = asyncio.Event()
+
+    async def child():
+        child_started.set()
+        if child_result != "running":
+            await checker_started.wait()
+        else:
+            await child_release.wait()
+        if child_result == "exception":
+            raise httpx.ReadError("upstream detail")
+        return response
+
+    async def disconnected() -> bool:
+        checker_started.set()
+        await child_started.wait()
+        if child_result != "running":
+            await asyncio.sleep(0)
+        return True
+
+    async def probe() -> None:
+        with pytest.raises(asyncio.CancelledError):
+            await weather_radar_helpers.await_with_cancel(
+                child(),
+                cancel_check=disconnected,
+                poll_interval_seconds=0.001,
+            )
+
+    await _no_task_exception_noise(probe())
+
+    assert checker_started.is_set()
+    assert response.close_calls == (
+        1 if child_result in {"response", "response_close_failure"} else 0
+    )
+    pending = [
+        task
+        for task in asyncio.all_tasks()
+        if task is not asyncio.current_task() and not task.done()
+    ]
+    assert pending == []
+
+
+@pytest.mark.asyncio
 async def test_cancel_checker_runtime_error_while_body_stalled_cancels_read() -> None:
     release = asyncio.Event()
     stream = BlockingBodyStream(PNG, release)
@@ -959,14 +1048,135 @@ async def test_unexpected_spool_failure_closes_spool_and_response(monkeypatch) -
 
 
 @pytest.mark.asyncio
-async def test_invalid_tile_body_survives_close_failure() -> None:
-    response = _close_failing_response(b"not-png", {"Content-Type": "image/png"})
+async def test_spool_close_failure_preserves_write_primary(
+    monkeypatch,
+) -> None:
+    spools = []
+
+    class FailingCloseSpool:
+        def __init__(self, *, max_size: int) -> None:
+            self.closed = 0
+            spools.append(self)
+
+        def write(self, content: bytes) -> int:
+            raise OSError("write primary")
+
+        def close(self) -> None:
+            self.closed += 1
+            raise RuntimeError("spool close secondary")
+
+    monkeypatch.setattr(
+        weather_radar_helpers,
+        "SpooledTemporaryFile",
+        FailingCloseSpool,
+    )
+    response = _close_failing_response(PNG, {"Content-Type": "image/png"})
     service = _service(ScriptedTransport([_json_response(METADATA), response]))
 
     with pytest.raises(RainViewerRadarServiceError) as exc_info:
         await service.fetch_tile(3, 4, 5, _not_disconnected)
 
-    assert not isinstance(exc_info.value, RainViewerRadarTimeoutError)
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert str(exc_info.value.__cause__) == "write primary"
+    assert [spool.closed for spool in spools] == [1]
+    assert response.extensions["close_failures"] == 1
+
+
+@pytest.mark.asyncio
+async def test_spool_close_failure_preserves_caller_cancellation(
+    monkeypatch,
+) -> None:
+    release = asyncio.Event()
+    stream = CloseFailingBlockingBodyStream(PNG, release)
+    spools = []
+
+    class FailingCloseSpool:
+        def __init__(self, *, max_size: int) -> None:
+            self.inner = REAL_SPOOLED_TEMPORARY_FILE(max_size=max_size)
+            self.closed = 0
+            spools.append(self)
+
+        def write(self, content: bytes) -> int:
+            return self.inner.write(content)
+
+        def seek(self, offset: int) -> int:
+            return self.inner.seek(offset)
+
+        def read(self, size: int = -1) -> bytes:
+            return self.inner.read(size)
+
+        def close(self) -> None:
+            self.closed += 1
+            self.inner.close()
+            raise RuntimeError("spool close secondary")
+
+    monkeypatch.setattr(
+        weather_radar_helpers,
+        "SpooledTemporaryFile",
+        FailingCloseSpool,
+    )
+    response = httpx.Response(200, headers={"Content-Type": "image/png"}, stream=stream)
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+    task = asyncio.create_task(service.fetch_tile(0, 0, 0, _not_disconnected))
+    await asyncio.wait_for(stream.waiting.wait(), timeout=1)
+
+    task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert stream.cancelled == 1
+    assert stream.close_failures == 1
+    assert [spool.closed for spool in spools] == [1]
+
+
+@pytest.mark.asyncio
+async def test_spool_close_failure_preserves_invalid_body(monkeypatch) -> None:
+    spools = []
+
+    class InvalidBodyCloseFailingSpool:
+        def __init__(self, *, max_size: int) -> None:
+            self.inner = REAL_SPOOLED_TEMPORARY_FILE(max_size=max_size)
+            self.closed = 0
+            spools.append(self)
+
+        def write(self, content: bytes) -> int:
+            return self.inner.write(content)
+
+        def seek(self, offset: int) -> int:
+            return self.inner.seek(offset)
+
+        def read(self, size: int = -1) -> bytes:
+            return self.inner.read(size)
+
+        def close(self) -> None:
+            self.closed += 1
+            self.inner.close()
+            raise RuntimeError("spool close secondary")
+
+    monkeypatch.setattr(
+        weather_radar_helpers,
+        "SpooledTemporaryFile",
+        InvalidBodyCloseFailingSpool,
+    )
+    response = _close_failing_response(b"not-png", {"Content-Type": "image/png"})
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+
+    with pytest.raises(InvalidRadarTileError):
+        await service.fetch_tile(3, 4, 5, _not_disconnected)
+
+    assert [spool.closed for spool in spools] == [1]
+    assert response.extensions["close_failures"] == 1
+
+
+@pytest.mark.asyncio
+async def test_invalid_tile_body_survives_close_failure() -> None:
+    response = _close_failing_response(b"not-png", {"Content-Type": "image/png"})
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+
+    with pytest.raises(InvalidRadarTileError):
+        await service.fetch_tile(3, 4, 5, _not_disconnected)
+
     assert response.extensions["close_failures"] == 1
 
 

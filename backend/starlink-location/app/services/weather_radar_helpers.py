@@ -103,7 +103,6 @@ async def await_with_cancel(
             if done:
                 return task.result()
             if await cancel_check():
-                await _dispose_or_cancel_task(task)
                 raise asyncio.CancelledError()
     except BaseException:
         await _dispose_or_cancel_task(task)
@@ -147,7 +146,8 @@ async def consume_tile_response(
     try:
         await close_response(response)
     except BaseException:
-        tile.close()
+        with suppress(BaseException):
+            tile.close()
         raise
     return tile
 
@@ -193,10 +193,13 @@ def _raise_consumption_error(
     exc: BaseException, spool: SpooledTemporaryFile[bytes] | None = None
 ) -> NoReturn:
     if spool is not None:
-        spool.close()
+        with suppress(BaseException):
+            spool.close()
     if isinstance(exc, TIMEOUT_ERRORS):
         raise RainViewerRadarTimeoutError() from exc
     if isinstance(exc, asyncio.CancelledError):
+        raise exc
+    if isinstance(exc, (InvalidRadarTileError, RainViewerRadarServiceError)):
         raise exc
     if isinstance(exc, Exception):
         raise RainViewerRadarServiceError() from exc
@@ -247,7 +250,7 @@ async def _consume_tile_body(
             spool.write(content)
         spool.seek(0)
         if spool.read(len(PNG_SIGNATURE)) != PNG_SIGNATURE:
-            raise RainViewerRadarServiceError()
+            raise InvalidRadarTileError()
         spool.seek(0)
         return RadarTile(spool=spool, size_bytes=size, frame_timestamp=frame_timestamp)
     except BaseException as exc:  # noqa: BLE001
