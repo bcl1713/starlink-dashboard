@@ -147,11 +147,260 @@ type Scenario = OverviewScenario;
 type PanelState = Scenario['expected']['panelStates'][number];
 type LayerState = Scenario['expected']['layerStates'][number];
 type Poi = Scenario['pois']['items'][number];
+type Satellite = Scenario['satellites']['items'][number];
+type MissionEvent = Scenario['missionEvents']['items'][number];
 type PositionSample = Scenario['telemetry']['positionHistory'][number];
 type ActiveLink = Scenario['activeLinks'][number];
 type Coordinate = Scenario['route']['westernSegment'][number];
 type NumericSample =
   Scenario['telemetry']['metrics']['latency']['history'][number];
+const EXPECTED_PANEL_STATE_MAPS = {
+  'overview-nominal': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'ok',
+    'poi-quick-reference': 'ok',
+    'network-latency': 'ok',
+    throughput: 'ok',
+    'ground-entry-point': 'ok',
+    obstruction: 'ok',
+    'packet-loss': 'ok',
+  },
+  'overview-no-route': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'ok',
+    'poi-quick-reference': 'unavailable',
+    'network-latency': 'ok',
+    throughput: 'ok',
+    'ground-entry-point': 'ok',
+    obstruction: 'ok',
+    'packet-loss': 'ok',
+  },
+  'overview-sparse': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'ok',
+    'poi-quick-reference': 'ok',
+    'network-latency': 'ok',
+    throughput: 'warning',
+    'ground-entry-point': 'ok',
+    obstruction: 'ok',
+    'packet-loss': 'ok',
+  },
+  'overview-stale': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'stale',
+    'poi-quick-reference': 'stale',
+    'network-latency': 'stale',
+    throughput: 'stale',
+    'ground-entry-point': 'stale',
+    obstruction: 'stale',
+    'packet-loss': 'stale',
+  },
+  'overview-backend-failure': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'unavailable',
+    'poi-quick-reference': 'unavailable',
+    'network-latency': 'unavailable',
+    throughput: 'unavailable',
+    'ground-entry-point': 'unavailable',
+    obstruction: 'unavailable',
+    'packet-loss': 'unavailable',
+  },
+  'overview-radar-failure': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'warning',
+    'poi-quick-reference': 'ok',
+    'network-latency': 'ok',
+    throughput: 'ok',
+    'ground-entry-point': 'ok',
+    obstruction: 'ok',
+    'packet-loss': 'ok',
+  },
+  'overview-idl': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'ok',
+    'poi-quick-reference': 'ok',
+    'network-latency': 'ok',
+    throughput: 'ok',
+    'ground-entry-point': 'ok',
+    obstruction: 'ok',
+    'packet-loss': 'ok',
+  },
+  'overview-threshold-crossing': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'ok',
+    'poi-quick-reference': 'ok',
+    'network-latency': 'critical',
+    throughput: 'ok',
+    'ground-entry-point': 'ok',
+    obstruction: 'critical',
+    'packet-loss': 'critical',
+  },
+  'overview-recovery': {
+    'clock-utc': 'ok',
+    'clock-washington-dc': 'ok',
+    'clock-tokyo': 'ok',
+    'clock-omaha': 'ok',
+    'current-position-map': 'ok',
+    'poi-quick-reference': 'ok',
+    'network-latency': 'ok',
+    throughput: 'ok',
+    'ground-entry-point': 'ok',
+    obstruction: 'ok',
+    'packet-loss': 'ok',
+  },
+} as const satisfies Record<string, Record<string, PanelState['state']>>;
+const EXPECTED_LAYER_STATE_MAPS = {
+  'overview-nominal': {
+    'weather-radar': 'ok',
+    'planned-route-west': 'ok',
+    'planned-route-east': 'ok',
+    'active-x-band-normal': 'ok',
+    'active-x-band-warning': 'warning',
+    'position-history-west': 'ok',
+    'position-history-east': 'ok',
+    'flight-route-markers': 'ok',
+    satellites: 'ok',
+    'mission-events': 'ok',
+    'ground-entry-point-layer': 'ok',
+    'current-position-layer': 'ok',
+  },
+  'overview-no-route': {
+    'weather-radar': 'ok',
+    'planned-route-west': 'unavailable',
+    'planned-route-east': 'unavailable',
+    'active-x-band-normal': 'ok',
+    'active-x-band-warning': 'ok',
+    'position-history-west': 'ok',
+    'position-history-east': 'ok',
+    'flight-route-markers': 'unavailable',
+    satellites: 'unavailable',
+    'mission-events': 'unavailable',
+    'ground-entry-point-layer': 'ok',
+    'current-position-layer': 'ok',
+  },
+  'overview-sparse': {
+    'weather-radar': 'ok',
+    'planned-route-west': 'ok',
+    'planned-route-east': 'ok',
+    'active-x-band-normal': 'ok',
+    'active-x-band-warning': 'ok',
+    'position-history-west': 'ok',
+    'position-history-east': 'ok',
+    'flight-route-markers': 'ok',
+    satellites: 'unavailable',
+    'mission-events': 'ok',
+    'ground-entry-point-layer': 'ok',
+    'current-position-layer': 'ok',
+  },
+  'overview-stale': {
+    'weather-radar': 'stale',
+    'planned-route-west': 'stale',
+    'planned-route-east': 'stale',
+    'active-x-band-normal': 'stale',
+    'active-x-band-warning': 'stale',
+    'position-history-west': 'stale',
+    'position-history-east': 'stale',
+    'flight-route-markers': 'stale',
+    satellites: 'stale',
+    'mission-events': 'stale',
+    'ground-entry-point-layer': 'stale',
+    'current-position-layer': 'stale',
+  },
+  'overview-backend-failure': {
+    'weather-radar': 'ok',
+    'planned-route-west': 'unavailable',
+    'planned-route-east': 'unavailable',
+    'active-x-band-normal': 'unavailable',
+    'active-x-band-warning': 'unavailable',
+    'position-history-west': 'unavailable',
+    'position-history-east': 'unavailable',
+    'flight-route-markers': 'unavailable',
+    satellites: 'unavailable',
+    'mission-events': 'unavailable',
+    'ground-entry-point-layer': 'unavailable',
+    'current-position-layer': 'unavailable',
+  },
+  'overview-radar-failure': {
+    'weather-radar': 'unavailable',
+    'planned-route-west': 'ok',
+    'planned-route-east': 'ok',
+    'active-x-band-normal': 'ok',
+    'active-x-band-warning': 'warning',
+    'position-history-west': 'ok',
+    'position-history-east': 'ok',
+    'flight-route-markers': 'ok',
+    satellites: 'ok',
+    'mission-events': 'ok',
+    'ground-entry-point-layer': 'ok',
+    'current-position-layer': 'ok',
+  },
+  'overview-idl': {
+    'weather-radar': 'ok',
+    'planned-route-west': 'ok',
+    'planned-route-east': 'ok',
+    'active-x-band-normal': 'ok',
+    'active-x-band-warning': 'warning',
+    'position-history-west': 'ok',
+    'position-history-east': 'ok',
+    'flight-route-markers': 'ok',
+    satellites: 'ok',
+    'mission-events': 'ok',
+    'ground-entry-point-layer': 'ok',
+    'current-position-layer': 'ok',
+  },
+  'overview-threshold-crossing': {
+    'weather-radar': 'ok',
+    'planned-route-west': 'ok',
+    'planned-route-east': 'ok',
+    'active-x-band-normal': 'ok',
+    'active-x-band-warning': 'critical',
+    'position-history-west': 'ok',
+    'position-history-east': 'ok',
+    'flight-route-markers': 'ok',
+    satellites: 'ok',
+    'mission-events': 'ok',
+    'ground-entry-point-layer': 'ok',
+    'current-position-layer': 'ok',
+  },
+  'overview-recovery': {
+    'weather-radar': 'ok',
+    'planned-route-west': 'ok',
+    'planned-route-east': 'ok',
+    'active-x-band-normal': 'ok',
+    'active-x-band-warning': 'ok',
+    'position-history-west': 'ok',
+    'position-history-east': 'ok',
+    'flight-route-markers': 'ok',
+    satellites: 'ok',
+    'mission-events': 'ok',
+    'ground-entry-point-layer': 'ok',
+    'current-position-layer': 'ok',
+  },
+} as const satisfies Record<string, Record<string, LayerState['state']>>;
 type SplitGeometry = Readonly<{
   westernSegment: readonly Coordinate[];
   easternSegment: readonly Coordinate[];
@@ -200,21 +449,17 @@ const latestIso = (values: readonly (string | null)[]): string | null =>
 
 const latestPositionIso = (scenario: Scenario): string | null =>
   latestIso(
-    scenario.telemetry.positionHistory.map((sample) =>
-      sample.coordinate === null ? null : sample.observedAt
-    )
+    scenario.telemetry.positionHistory.map((sample) => sample.observedAt)
   );
 
 const latestHistoryIso = (scenario: Scenario): string | null =>
   latestIso([
-    ...scenario.telemetry.positionHistory.map((sample) =>
-      sample.coordinate === null ? null : sample.observedAt
+    ...scenario.telemetry.positionHistory.map((sample) => sample.observedAt),
+    ...scenario.telemetry.metrics.latency.history.map(
+      (sample) => sample.observedAt
     ),
-    ...scenario.telemetry.metrics.latency.history.map((sample) =>
-      sample.value === null ? null : sample.observedAt
-    ),
-    ...scenario.telemetry.metrics.packetLoss.history.map((sample) =>
-      sample.value === null ? null : sample.observedAt
+    ...scenario.telemetry.metrics.packetLoss.history.map(
+      (sample) => sample.observedAt
     ),
   ]);
 
@@ -222,7 +467,13 @@ const latestActiveLinkIso = (scenario: Scenario): string | null =>
   latestIso(scenario.activeLinks.map((link) => link.observedAt));
 
 const latestEventIso = (scenario: Scenario): string | null =>
-  latestIso(scenario.missionEvents.map((event) => event.observedAt));
+  latestIso(scenario.missionEvents.items.map((event) => event.observedAt));
+
+const satelliteItems = (scenario: Scenario): readonly Satellite[] =>
+  scenario.satellites.items;
+
+const missionEventItems = (scenario: Scenario): readonly MissionEvent[] =>
+  scenario.missionEvents.items;
 
 const validValues = (samples: readonly NumericSample[]): number[] =>
   samples
@@ -316,6 +567,12 @@ const sourceFreshnessFromPayload = (scenario: Scenario) => ({
   radar: scenario.radar.frameAt,
 });
 
+const poiGeneratedAtValues = (scenario: Scenario) => [
+  scenario.pois.generatedAt,
+  scenario.satellites.generatedAt,
+  scenario.missionEvents.generatedAt,
+];
+
 const expectChronologicalNoFuture = (
   scenario: Scenario,
   samples: readonly { observedAt: string | null }[]
@@ -338,6 +595,20 @@ const expectLayerValueContainsCount = (
 ) => {
   expect(layerState(scenario, layerId).value).toContain(String(count));
 };
+
+const expectedPanelStateMap = (
+  scenario: Scenario
+): Record<string, PanelState['state']> =>
+  Object.fromEntries(
+    scenario.expected.panelStates.map((state) => [state.id, state.state])
+  );
+
+const expectedLayerStateMap = (
+  scenario: Scenario
+): Record<string, LayerState['state']> =>
+  Object.fromEntries(
+    scenario.expected.layerStates.map((state) => [state.id, state.state])
+  );
 
 const expectNoLargeLongitudeJump = (segment: readonly Coordinate[]) => {
   for (let index = 1; index < segment.length; index += 1) {
@@ -691,12 +962,6 @@ describe('operations overview parity contract', () => {
 
   it('represents complete timestamped metric, position, link, event, and map payloads', () => {
     for (const scenario of OVERVIEW_SCENARIOS) {
-      expect(scenario.telemetry.metrics.latency.history.length).toBeGreaterThan(
-        0
-      );
-      expect(
-        scenario.telemetry.metrics.packetLoss.history.length
-      ).toBeGreaterThan(0);
       expect(
         Object.keys(scenario.telemetry.metrics.throughput.current)
       ).toEqual(['downloadMbps', 'uploadMbps']);
@@ -712,10 +977,30 @@ describe('operations overview parity contract', () => {
         scenario,
         scenario.telemetry.metrics.packetLoss.history
       );
+      if (scenario.id === 'overview-backend-failure') {
+        expect(scenario.telemetry.positionHistory).toEqual([]);
+        expect(scenario.telemetry.metrics.latency.history).toEqual([]);
+        expect(scenario.telemetry.metrics.packetLoss.history).toEqual([]);
+        expect(scenario.expected.sourceFreshness.history).toBeNull();
+      } else {
+        expect(
+          scenario.telemetry.metrics.latency.history.length
+        ).toBeGreaterThan(0);
+        expect(
+          scenario.telemetry.metrics.packetLoss.history.length
+        ).toBeGreaterThan(0);
+      }
       expect(scenario.activeLinks.length).toBeGreaterThanOrEqual(1);
       expectChronologicalNoFuture(scenario, scenario.activeLinks);
-      expectChronologicalNoFuture(scenario, scenario.missionEvents);
-      expect(Array.isArray(scenario.missionEvents)).toBe(true);
+      expectChronologicalNoFuture(scenario, missionEventItems(scenario));
+      expect(poiGeneratedAtValues(scenario)).toEqual([
+        scenario.pois.generatedAt,
+        scenario.pois.generatedAt,
+        scenario.pois.generatedAt,
+      ]);
+      expect(Array.isArray(scenario.pois.items)).toBe(true);
+      expect(Array.isArray(scenario.satellites.items)).toBe(true);
+      expect(Array.isArray(scenario.missionEvents.items)).toBe(true);
       expect(scenario.expected.route).toBeDefined();
       expect(scenario.expected.radar).toBeDefined();
       expect(scenario.radar).toMatchObject({
@@ -756,6 +1041,18 @@ describe('operations overview parity contract', () => {
       );
       expect(scenario.expected.sourceFreshness.telemetry).toBe(
         latestPositionIso(scenario)
+      );
+      expect(scenario.expected.sourceFreshness.history).toBe(
+        latestHistoryIso(scenario)
+      );
+      expect(scenario.expected.sourceFreshness.pois).toBe(
+        scenario.pois.generatedAt
+      );
+      expect(scenario.expected.sourceFreshness.pois).toBe(
+        scenario.satellites.generatedAt
+      );
+      expect(scenario.expected.sourceFreshness.pois).toBe(
+        scenario.missionEvents.generatedAt
       );
 
       if (metrics.latency.currentMs === null) {
@@ -798,12 +1095,12 @@ describe('operations overview parity contract', () => {
       expectLayerValueContainsCount(
         scenario,
         'satellites',
-        scenario.satellites.length
+        satelliteItems(scenario).length
       );
       expectLayerValueContainsCount(
         scenario,
         'mission-events',
-        scenario.missionEvents.length
+        missionEventItems(scenario).length
       );
       if (scenario.radar.available) {
         expect(scenario.expected.radar.state).toBe(scenario.radar.state);
@@ -919,9 +1216,27 @@ describe('operations overview parity contract', () => {
       expect(layerState(scenario, 'planned-route-east').state).toBe(
         states.route
       );
-      expect(layerState(scenario, 'active-x-band-normal').state).toBe(
-        countLinks(scenario, 'normal') > 0 ? states.activeLink : 'unavailable'
-      );
+      if (states.activeLink === 'unavailable') {
+        expect(layerState(scenario, 'active-x-band-normal').state).toBe(
+          'unavailable'
+        );
+        expect(layerState(scenario, 'active-x-band-warning').state).toBe(
+          'unavailable'
+        );
+      } else {
+        expect(layerState(scenario, 'active-x-band-normal').value).toContain(
+          freshness.activeLink
+        );
+        if (countLinks(scenario, 'warning') === 0) {
+          expect(
+            layerState(scenario, 'active-x-band-warning').availability
+          ).toBe('empty');
+        } else {
+          expect(layerState(scenario, 'active-x-band-warning').value).toContain(
+            freshness.activeLink
+          );
+        }
+      }
       expect(layerState(scenario, 'position-history-west').state).toBe(
         states.history
       );
@@ -934,19 +1249,29 @@ describe('operations overview parity contract', () => {
           : 'unavailable'
       );
       expect(layerState(scenario, 'satellites').state).toBe(
-        scenario.satellites.length > 0 ? states.telemetry : 'unavailable'
+        scenario.satellites.generatedAt !== null &&
+          satelliteItems(scenario).length > 0
+          ? states.pois
+          : 'unavailable'
       );
-      expect(layerState(scenario, 'mission-events')).toBeDefined();
+      expect(layerState(scenario, 'mission-events').state).toBe(
+        scenario.missionEvents.generatedAt !== null &&
+          missionEventItems(scenario).length > 0
+          ? states.pois
+          : 'unavailable'
+      );
       expect(layerState(scenario, 'ground-entry-point-layer').state).toBe(
         states.groundEntryPoint
       );
       expect(layerState(scenario, 'current-position-layer').state).toBe(
         states.telemetry
       );
-
-      for (const layer of OVERVIEW_CONTRACT.mapLayers) {
-        expect(layerState(scenario, layer.id)).toBeDefined();
-      }
+      expect(expectedPanelStateMap(scenario)).toEqual(
+        EXPECTED_PANEL_STATE_MAPS[scenario.id]
+      );
+      expect(expectedLayerStateMap(scenario)).toEqual(
+        EXPECTED_LAYER_STATE_MAPS[scenario.id]
+      );
     }
   });
 
@@ -1059,7 +1384,7 @@ describe('operations overview parity contract', () => {
     expect(layerState(idl, 'active-x-band-warning').value).toContain(
       idl.expected.sourceFreshness.activeLink
     );
-    const idlEvent = byId(idl.missionEvents, 'event-idl-crossed');
+    const idlEvent = byId(missionEventItems(idl), 'event-idl-crossed');
     const boundary = historySplit.westernSegment.at(-1);
 
     expect(latestEventIso(idl)).toBe('2026-02-03T17:05:58Z');
@@ -1210,7 +1535,7 @@ describe('operations overview parity contract', () => {
     const digest = createHash('sha256').update(canonical).digest('hex');
 
     expect(digest).toBe(
-      'dbdc5028bccc4805aa1ec05d342d9fff5286962d83cad68ebd2ef18b788d7389'
+      '82a98d18b1664fa531fdf739e9b8b73e5f1fe902f776f9be9aa7b648f452139c'
     );
     expect(canonical).toMatch(/2026-02-03T15:30:00Z/);
     expect(canonical).not.toMatch(/localhost|127\.0\.0\.1/);

@@ -86,6 +86,11 @@ type PoiResponse = Readonly<{
   items: readonly Poi[];
 }>;
 
+type SourceResponse<T> = Readonly<{
+  generatedAt: string | null;
+  items: readonly T[];
+}>;
+
 type RadarSource = Readonly<{
   available: boolean;
   frameAt: string | null;
@@ -172,13 +177,15 @@ export type OverviewScenario = Readonly<{
     coordinate: Coordinate | null;
   }>;
   radar: RadarSource;
-  satellites: readonly Readonly<{
-    id: string;
-    name: string;
-    coordinate: Coordinate;
-  }>[];
+  satellites: SourceResponse<
+    Readonly<{
+      id: string;
+      name: string;
+      coordinate: Coordinate;
+    }>
+  >;
   activeLinks: readonly ActiveLink[];
-  missionEvents: readonly MissionEvent[];
+  missionEvents: SourceResponse<MissionEvent>;
   expected: Readonly<{
     topFivePoiIds: readonly string[];
     panelStates: readonly PanelState[];
@@ -530,6 +537,11 @@ const poiResponse = (
   };
 };
 
+const sourceResponse = <T>(
+  generatedAt: string | null,
+  items: readonly T[]
+): SourceResponse<T> => ({ generatedAt, items });
+
 const radar = (
   frameAt: string | null,
   state: HealthState = 'ok',
@@ -763,9 +775,9 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     radar: radar('2026-02-03T15:29:59Z'),
-    satellites,
+    satellites: sourceResponse('2026-02-03T15:30:00Z', satellites),
     activeLinks: normalLinks,
-    missionEvents: baseEvents,
+    missionEvents: sourceResponse('2026-02-03T15:30:00Z', baseEvents),
     expected: expected(
       ['poi-arrive-rjtt'],
       panelsFor('2026-02-03T15:30:00Z', {
@@ -919,7 +931,7 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(39.7392, -104.9903, 0),
     },
     radar: radar('2026-02-03T15:30:59Z'),
-    satellites: [],
+    satellites: sourceResponse(null, []),
     activeLinks: [
       {
         id: 'xband-normal-no-route',
@@ -929,7 +941,7 @@ export const OVERVIEW_SCENARIOS = [
         to: c(40.1, -103.9, 550000),
       },
     ],
-    missionEvents: [],
+    missionEvents: sourceResponse(null, []),
     expected: expected(
       [],
       panelsFor('2026-02-03T15:31:00Z', {
@@ -1031,7 +1043,7 @@ export const OVERVIEW_SCENARIOS = [
         },
         events: {
           id: 'mission-events',
-          state: 'ok',
+          state: 'unavailable',
           availability: 'empty',
           value: '0 mission events',
         },
@@ -1079,7 +1091,7 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     radar: radar('2026-02-03T15:09:59Z'),
-    satellites: [],
+    satellites: sourceResponse('2026-02-03T15:10:00Z', []),
     activeLinks: [
       {
         id: 'xband-normal-sparse',
@@ -1089,7 +1101,7 @@ export const OVERVIEW_SCENARIOS = [
         to: c(50.4, -134.6, 550000),
       },
     ],
-    missionEvents: [baseEvents[0]],
+    missionEvents: sourceResponse('2026-02-03T15:10:00Z', [baseEvents[0]]),
     expected: expected(
       [
         'poi-waypoint-alaska',
@@ -1254,7 +1266,7 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     radar: radar('2026-02-03T15:30:00Z', 'stale'),
-    satellites,
+    satellites: sourceResponse('2026-02-03T15:30:00Z', satellites),
     activeLinks: [
       {
         id: 'xband-normal-stale',
@@ -1264,7 +1276,7 @@ export const OVERVIEW_SCENARIOS = [
         to: c(53.2, -148.8, 550000),
       },
     ],
-    missionEvents: baseEvents,
+    missionEvents: sourceResponse('2026-02-03T15:30:00Z', baseEvents),
     expected: expected(
       ['poi-arrive-rjtt'],
       panelsFor('2026-02-03T16:05:00Z', {
@@ -1336,7 +1348,7 @@ export const OVERVIEW_SCENARIOS = [
         },
         linkWarning: {
           id: 'active-x-band-warning',
-          state: 'ok',
+          state: 'stale',
           availability: 'empty',
           value: 'no warning link',
         },
@@ -1366,7 +1378,7 @@ export const OVERVIEW_SCENARIOS = [
         },
         events: {
           id: 'mission-events',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
           value: '2 mission events',
         },
@@ -1397,14 +1409,8 @@ export const OVERVIEW_SCENARIOS = [
     telemetry: {
       currentObservedAt: null,
       currentPosition: null,
-      positionHistory: [point('2026-02-03T15:32:59Z', null, null, null)],
-      metrics: metrics(
-        [sample('2026-02-03T15:32:59Z', null)],
-        [sample('2026-02-03T15:32:59Z', null)],
-        null,
-        null,
-        null
-      ),
+      positionHistory: [],
+      metrics: metrics([], [], null, null, null),
     },
     route: inactiveRoute(
       'route-transpacific-001',
@@ -1418,7 +1424,7 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: null,
     },
     radar: radar('2026-02-03T15:32:59Z'),
-    satellites: [],
+    satellites: sourceResponse(null, []),
     activeLinks: [
       {
         id: 'xband-unavailable',
@@ -1428,15 +1434,7 @@ export const OVERVIEW_SCENARIOS = [
         to: null,
       },
     ],
-    missionEvents: [
-      {
-        id: 'event-system-api-unavailable',
-        observedAt: '2026-02-03T15:32:59Z',
-        type: 'system',
-        label: 'Overview API unavailable',
-        coordinate: null,
-      },
-    ],
+    missionEvents: sourceResponse(null, []),
     expected: expected(
       [],
       panelsFor('2026-02-03T15:33:00Z', {
@@ -1542,9 +1540,9 @@ export const OVERVIEW_SCENARIOS = [
         },
         events: {
           id: 'mission-events',
-          state: 'warning',
-          availability: 'available',
-          value: '1 system event',
+          state: 'unavailable',
+          availability: 'unavailable',
+          value: '0 mission events unavailable',
         },
         gep: {
           id: 'ground-entry-point-layer',
@@ -1602,7 +1600,7 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     radar: radar(null, 'unavailable', 'radar tile failure'),
-    satellites,
+    satellites: sourceResponse('2026-02-03T15:34:00Z', satellites),
     activeLinks: [
       {
         id: 'xband-normal-radar-failure',
@@ -1619,7 +1617,7 @@ export const OVERVIEW_SCENARIOS = [
         to: c(47.6062, -122.3321, 0),
       },
     ],
-    missionEvents: baseEvents,
+    missionEvents: sourceResponse('2026-02-03T15:34:00Z', baseEvents),
     expected: expected(
       ['poi-arrive-rjtt'],
       panelsFor('2026-02-03T15:34:00Z', {
@@ -1790,7 +1788,7 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(35.6762, 139.6503, 0),
     },
     radar: radar('2026-02-03T17:05:59Z'),
-    satellites,
+    satellites: sourceResponse('2026-02-03T17:06:00Z', satellites),
     activeLinks: [
       {
         id: 'xband-normal-idl',
@@ -1815,7 +1813,7 @@ export const OVERVIEW_SCENARIOS = [
         },
       },
     ],
-    missionEvents: [
+    missionEvents: sourceResponse('2026-02-03T17:06:00Z', [
       ...baseEvents,
       {
         id: 'event-idl-crossed',
@@ -1824,7 +1822,7 @@ export const OVERVIEW_SCENARIOS = [
         label: 'Crossed International Date Line',
         coordinate: c(54.125, 180, 11278),
       },
-    ],
+    ]),
     expected: expected(
       ['poi-arrive-rjtt'],
       panelsFor('2026-02-03T17:06:00Z', {
@@ -1979,7 +1977,7 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     radar: radar('2026-02-03T15:34:59Z'),
-    satellites,
+    satellites: sourceResponse('2026-02-03T15:35:00Z', satellites),
     activeLinks: [
       {
         id: 'xband-normal-threshold',
@@ -1996,7 +1994,7 @@ export const OVERVIEW_SCENARIOS = [
         to: c(47.6062, -122.3321, 0),
       },
     ],
-    missionEvents: baseEvents,
+    missionEvents: sourceResponse('2026-02-03T15:35:00Z', baseEvents),
     expected: expected(
       ['poi-arrive-rjtt'],
       panelsFor('2026-02-03T15:35:00Z', {
@@ -2156,13 +2154,13 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     radar: radar('2026-02-03T15:35:59Z'),
-    satellites: [
+    satellites: sourceResponse('2026-02-03T15:36:00Z', [
       {
         id: 'sat-44714',
         name: 'STARLINK-1020',
         coordinate: c(52.7, -156, 550000),
       },
-    ],
+    ]),
     activeLinks: [
       {
         id: 'xband-normal-recovery',
@@ -2172,7 +2170,7 @@ export const OVERVIEW_SCENARIOS = [
         to: c(52.7, -156, 550000),
       },
     ],
-    missionEvents: [
+    missionEvents: sourceResponse('2026-02-03T15:36:00Z', [
       ...baseEvents,
       {
         id: 'event-network-recovered',
@@ -2181,7 +2179,7 @@ export const OVERVIEW_SCENARIOS = [
         label: 'Network metrics recovered',
         coordinate: c(53.1, -155.1, 11278),
       },
-    ],
+    ]),
     expected: expected(
       ['poi-arrive-rjtt'],
       panelsFor('2026-02-03T15:36:00Z', {
