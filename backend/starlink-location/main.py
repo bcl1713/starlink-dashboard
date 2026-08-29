@@ -67,11 +67,15 @@ _coordinator: SimulationCoordinator | LiveCoordinator | None = None
 _background_task = None
 _simulation_config = None
 _route_manager: RouteManager | None = None
+_poi_manager: POIManager | None = None
+_eta_service_initialized = False
+_lifespan_state_keys: set[str] = set()
 
 
 async def startup_event():
     """Initialize application on startup."""
     global _coordinator, _background_task, _simulation_config, _route_manager
+    global _poi_manager, _eta_service_initialized
 
     try:
         logger.info_json("Initializing Starlink Location Backend")
@@ -81,6 +85,7 @@ async def startup_event():
         config_manager = ConfigManager()
         _simulation_config = config_manager.load()
         app.state.monitoring_prometheus_client = MonitoringPrometheusClient()
+        _lifespan_state_keys.add("monitoring_prometheus_client")
         logger.info_json(
             "Configuration loaded",
             extra_fields={
@@ -138,6 +143,7 @@ async def startup_event():
 
         # Register coordinator with API modules
         app.state.coordinator = _coordinator
+        _lifespan_state_keys.add("coordinator")
         health.set_coordinator(_coordinator)
         status.set_coordinator(_coordinator)
         config.set_coordinator(_coordinator)
@@ -147,7 +153,9 @@ async def startup_event():
         logger.info_json("Initializing ETA service")
         try:
             poi_manager = POIManager()
+            _poi_manager = poi_manager
             initialize_eta_service(poi_manager)
+            _eta_service_initialized = True
             logger.info_json("ETA service initialized successfully")
         except Exception as e:
             logger.warning_json(
@@ -161,6 +169,7 @@ async def startup_event():
         try:
             # Note: metrics_export also gets POIManager but via route_manager injection below
             app.state.poi_manager = poi_manager
+            _lifespan_state_keys.add("poi_manager")
             logger.info_json("POIManager injected successfully")
         except Exception as e:
             logger.warning_json(
@@ -176,6 +185,7 @@ async def startup_event():
             _route_manager.start_watching()
             # mission_routes_v2, exporter, and package_exporter now use dependency injection via app.state
             app.state.route_manager = _route_manager
+            _lifespan_state_keys.add("route_manager")
 
             # Inject into metrics_export as well
             # from app.api import metrics_export
@@ -295,41 +305,87 @@ async def startup_event():
 
 async def shutdown_event():
     """Cleanup on shutdown."""
-    global _background_task, _route_manager
+    await _cleanup_lifespan_resources(app)
 
+
+async def _cleanup_lifespan_resources(app: FastAPI) -> None:
+    """Cleanup resources created during application startup."""
+    global _coordinator, _background_task, _simulation_config, _route_manager
+    global _poi_manager, _eta_service_initialized
+
+    cleanup_error: BaseException | None = None
     try:
         logger.info_json("Shutting down Starlink Location Backend")
 
-        if _background_task:
+        background_task = _background_task
+        _background_task = None
+        if background_task:
             logger.info_json("Cancelling background update task")
-            _background_task.cancel()
+            background_task.cancel()
             try:
-                await _background_task
+                await background_task
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
-            _background_task = None
+            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
+                cleanup_error = cleanup_error or exc
 
-        if _route_manager:
+        coordinator = _coordinator
+        poi_manager = _poi_manager
+        route_manager = _route_manager
+        _route_manager = None
+        if route_manager:
             logger.info_json("Stopping Route Manager watcher")
-            _route_manager.stop_watching()
-            _route_manager = None
+            try:
+                route_manager.stop_watching()
+            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
+                cleanup_error = cleanup_error or exc
 
-        monitoring_client = getattr(app.state, "monitoring_prometheus_client", None)
+        monitoring_client = app.state._state.pop("monitoring_prometheus_client", None)
+        _lifespan_state_keys.discard("monitoring_prometheus_client")
         if monitoring_client is not None:
             logger.info_json("Closing monitoring Prometheus client")
-            await monitoring_client.aclose()
-            app.state.monitoring_prometheus_client = None
+            try:
+                await monitoring_client.aclose()
+            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
+                cleanup_error = cleanup_error or exc
 
-        # Shutdown ETA service
-        logger.info_json("Shutting down ETA service")
-        shutdown_eta_service()
+        if _eta_service_initialized:
+            logger.info_json("Shutting down ETA service")
+            _eta_service_initialized = False
+            try:
+                shutdown_eta_service()
+            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
+                cleanup_error = cleanup_error or exc
+
+        _coordinator = None
+        _poi_manager = None
+        _simulation_config = None
+        owned_resources = {
+            "coordinator": coordinator,
+            "poi_manager": poi_manager,
+            "route_manager": route_manager,
+        }
+        for key, resource in owned_resources.items():
+            if key in _lifespan_state_keys or app.state._state.get(key) is resource:
+                app.state._state.pop(key, None)
+            _lifespan_state_keys.discard(key)
+        health.set_coordinator(None)
+        status.set_coordinator(None)
+        config.set_coordinator(None)
+        pois.set_coordinator(None)
+        gps.set_starlink_client(None)
 
         logger.info_json("Shutdown complete")
-    except Exception as e:
+    except BaseException as exc:  # noqa: BLE001 - preserve first cleanup error.
+        cleanup_error = cleanup_error or exc
+
+    if cleanup_error is not None:
         logger.error_json(
-            "Error during shutdown", extra_fields={"error": str(e)}, exc_info=True
+            "Error during lifespan cleanup",
+            extra_fields={"error_type": type(cleanup_error).__name__},
+            exc_info=True,
         )
-        raise
+        raise cleanup_error
 
 
 async def _background_update_loop(poi_manager=None):
@@ -463,47 +519,35 @@ async def _background_update_loop(poi_manager=None):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
+    primary_error: BaseException | None = None
     try:
         await startup_event()
     except BaseException:
         try:
-            await _close_monitoring_prometheus_client(app)
-        except BaseException as close_exc:
+            await _cleanup_lifespan_resources(app)
+        except BaseException as close_exc:  # noqa: BLE001 - preserve startup error.
             logger.error_json(
-                "Error closing monitoring Prometheus client after startup failure",
-                extra_fields={"error": str(close_exc)},
+                "Error during lifespan cleanup",
+                extra_fields={"error_type": type(close_exc).__name__},
                 exc_info=True,
             )
         raise
     try:
         yield
+    except BaseException as exc:
+        primary_error = exc
+        raise
     finally:
-        shutdown_error: BaseException | None = None
         try:
-            await shutdown_event()
-        except BaseException as exc:
-            shutdown_error = exc
-        try:
-            await _close_monitoring_prometheus_client(app)
-        except BaseException as close_exc:
-            if shutdown_error is None:
+            await _cleanup_lifespan_resources(app)
+        except BaseException as cleanup_exc:
+            if primary_error is None:
                 raise
             logger.error_json(
-                "Error closing monitoring Prometheus client after shutdown failure",
-                extra_fields={"error": str(close_exc)},
+                "Error during lifespan cleanup",
+                extra_fields={"error_type": type(cleanup_exc).__name__},
                 exc_info=True,
             )
-        if shutdown_error is not None:
-            raise shutdown_error
-
-
-async def _close_monitoring_prometheus_client(app: FastAPI) -> None:
-    monitoring_client = getattr(app.state, "monitoring_prometheus_client", None)
-    if monitoring_client is None:
-        return
-    app.state.monitoring_prometheus_client = None
-    logger.info_json("Closing monitoring Prometheus client")
-    await monitoring_client.aclose()
 
 
 # Create FastAPI application
