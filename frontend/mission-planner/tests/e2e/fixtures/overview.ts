@@ -775,9 +775,9 @@ export const OVERVIEW_SCENARIOS = [
       coordinate: c(47.6062, -122.3321, 0),
     },
     radar: radar('2026-02-03T15:29:59Z'),
-    satellites: sourceResponse('2026-02-03T15:30:00Z', satellites),
+    satellites: sourceResponse('2026-02-03T15:29:30Z', satellites),
     activeLinks: normalLinks,
-    missionEvents: sourceResponse('2026-02-03T15:30:00Z', baseEvents),
+    missionEvents: sourceResponse('2026-02-03T15:29:30Z', baseEvents),
     expected: expected(
       ['poi-arrive-rjtt'],
       panelsFor('2026-02-03T15:30:00Z', {
@@ -873,13 +873,13 @@ export const OVERVIEW_SCENARIOS = [
         },
         satellite: {
           id: 'satellites',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
           value: '1 satellite',
         },
         events: {
           id: 'mission-events',
-          state: 'ok',
+          state: 'stale',
           availability: 'available',
           value: '2 mission events',
         },

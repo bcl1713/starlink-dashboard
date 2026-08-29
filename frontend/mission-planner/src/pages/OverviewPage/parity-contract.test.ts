@@ -283,8 +283,8 @@ const EXPECTED_LAYER_STATE_MAPS = {
     'position-history-west': 'ok',
     'position-history-east': 'ok',
     'flight-route-markers': 'ok',
-    satellites: 'ok',
-    'mission-events': 'ok',
+    satellites: 'stale',
+    'mission-events': 'stale',
     'ground-entry-point-layer': 'ok',
     'current-position-layer': 'ok',
   },
@@ -566,12 +566,6 @@ const sourceFreshnessFromPayload = (scenario: Scenario) => ({
   groundEntryPoint: scenario.groundEntryPoint.observedAt,
   radar: scenario.radar.frameAt,
 });
-
-const poiGeneratedAtValues = (scenario: Scenario) => [
-  scenario.pois.generatedAt,
-  scenario.satellites.generatedAt,
-  scenario.missionEvents.generatedAt,
-];
 
 const expectChronologicalNoFuture = (
   scenario: Scenario,
@@ -993,11 +987,6 @@ describe('operations overview parity contract', () => {
       expect(scenario.activeLinks.length).toBeGreaterThanOrEqual(1);
       expectChronologicalNoFuture(scenario, scenario.activeLinks);
       expectChronologicalNoFuture(scenario, missionEventItems(scenario));
-      expect(poiGeneratedAtValues(scenario)).toEqual([
-        scenario.pois.generatedAt,
-        scenario.pois.generatedAt,
-        scenario.pois.generatedAt,
-      ]);
       expect(Array.isArray(scenario.pois.items)).toBe(true);
       expect(Array.isArray(scenario.satellites.items)).toBe(true);
       expect(Array.isArray(scenario.missionEvents.items)).toBe(true);
@@ -1047,12 +1036,6 @@ describe('operations overview parity contract', () => {
       );
       expect(scenario.expected.sourceFreshness.pois).toBe(
         scenario.pois.generatedAt
-      );
-      expect(scenario.expected.sourceFreshness.pois).toBe(
-        scenario.satellites.generatedAt
-      );
-      expect(scenario.expected.sourceFreshness.pois).toBe(
-        scenario.missionEvents.generatedAt
       );
 
       if (metrics.latency.currentMs === null) {
@@ -1144,11 +1127,37 @@ describe('operations overview parity contract', () => {
   it('derives source-age panel and layer states from the five-second refresh threshold', () => {
     for (const scenario of OVERVIEW_SCENARIOS) {
       const freshness = sourceFreshnessFromPayload(scenario);
+      const poiAgeMs = sourceAgeMs(scenario, scenario.pois.generatedAt);
+      const satelliteAgeMs = sourceAgeMs(
+        scenario,
+        scenario.satellites.generatedAt
+      );
+      const missionEventAgeMs = sourceAgeMs(
+        scenario,
+        scenario.missionEvents.generatedAt
+      );
       const states = {
         telemetry: sourceState(scenario, freshness.telemetry),
         history: sourceState(scenario, freshness.history),
         activeLink: sourceState(scenario, freshness.activeLink),
-        pois: sourceState(scenario, freshness.pois),
+        pois:
+          poiAgeMs === null
+            ? 'unavailable'
+            : poiAgeMs > staleThresholdMs
+              ? 'stale'
+              : 'ok',
+        satellites:
+          satelliteAgeMs === null
+            ? 'unavailable'
+            : satelliteAgeMs > staleThresholdMs
+              ? 'stale'
+              : 'ok',
+        missionEvents:
+          missionEventAgeMs === null
+            ? 'unavailable'
+            : missionEventAgeMs > staleThresholdMs
+              ? 'stale'
+              : 'ok',
         route: scenario.route.active
           ? sourceState(scenario, freshness.route)
           : 'unavailable',
@@ -1251,13 +1260,13 @@ describe('operations overview parity contract', () => {
       expect(layerState(scenario, 'satellites').state).toBe(
         scenario.satellites.generatedAt !== null &&
           satelliteItems(scenario).length > 0
-          ? states.pois
+          ? states.satellites
           : 'unavailable'
       );
       expect(layerState(scenario, 'mission-events').state).toBe(
         scenario.missionEvents.generatedAt !== null &&
           missionEventItems(scenario).length > 0
-          ? states.pois
+          ? states.missionEvents
           : 'unavailable'
       );
       expect(layerState(scenario, 'ground-entry-point-layer').state).toBe(
@@ -1535,7 +1544,7 @@ describe('operations overview parity contract', () => {
     const digest = createHash('sha256').update(canonical).digest('hex');
 
     expect(digest).toBe(
-      '82a98d18b1664fa531fdf739e9b8b73e5f1fe902f776f9be9aa7b648f452139c'
+      'afb878e9890474c8988a1fb95d1ab302b9951028a1f649907e8ae2591b94fe44'
     );
     expect(canonical).toMatch(/2026-02-03T15:30:00Z/);
     expect(canonical).not.toMatch(/localhost|127\.0\.0\.1/);
