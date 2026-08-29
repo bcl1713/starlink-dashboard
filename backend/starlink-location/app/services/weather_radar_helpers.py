@@ -38,14 +38,11 @@ SYSTEM_EXIT_ERRORS = (
 
 CancelCheck = Callable[[], Awaitable[bool]]
 
-
+# fmt: off
 class InvalidRadarTileError(ValueError): ...
-
-
 class RainViewerRadarServiceError(RuntimeError): ...
-
-
 class RainViewerRadarTimeoutError(RainViewerRadarServiceError): ...
+# fmt: on
 
 
 @dataclass(frozen=True)
