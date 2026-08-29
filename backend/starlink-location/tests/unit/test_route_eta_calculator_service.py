@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.models.route import (
     ParsedRoute,
     RouteMetadata,
@@ -13,8 +12,8 @@ from app.models.route import (
 )
 from app.services.route_eta_calculator import (
     RouteETACalculator,
-    clear_eta_cache,
     cleanup_eta_cache,
+    clear_eta_cache,
 )
 
 

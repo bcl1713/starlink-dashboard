@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
-
 import app.mission.exporter as mission_exporter
+import app.mission.exporter.__main__ as mission_exporter_main
+import pytest
 from app.mission.exporter import (
     ExportGenerationError,
     TimelineExportFormat,
@@ -122,6 +122,35 @@ class TestMissionTimelineExporters:
         assert "X-Band" in output
         assert "CommKa" in output
         assert "StarShield" in output
+
+    def test_generate_csv_includes_ground_entry_point_columns(
+        self, monkeypatch, mission, timeline
+    ):
+        monkeypatch.setattr(
+            mission_exporter_main,
+            "get_cached_ground_entry_point",
+            lambda: mission_exporter.GroundEntryPoint(
+                ip="203.0.113.10",
+                city="Omaha",
+                country="US",
+                latitude=41.2565,
+                longitude=-95.9345,
+            ),
+        )
+
+        df = mission_exporter._segment_rows(timeline, mission)
+
+        assert {
+            "Ground Entry City",
+            "Ground Entry Country",
+            "Ground Entry IP",
+            "Ground Entry Latitude",
+            "Ground Entry Longitude",
+        } <= set(df.columns)
+        assert set(df["Ground Entry City"]) == {"Omaha"}
+        assert set(df["Ground Entry Country"]) == {"US"}
+        assert set(df["Ground Entry Latitude"]) == {41.2565}
+        assert set(df["Ground Entry Longitude"]) == {-95.9345}
 
     def test_generate_pptx_starts_with_zip_header(self, mission, timeline):
         output = generate_timeline_export(

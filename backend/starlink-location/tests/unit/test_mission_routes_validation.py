@@ -1,10 +1,11 @@
 """Unit tests for mission route validation logic."""
 
-import pytest
 from unittest.mock import MagicMock, patch
-from fastapi import HTTPException, status
+
+import pytest
 from app.mission.models import MissionLeg, TransportConfig
 from app.mission.routes import create_mission, update_mission
+from fastapi import HTTPException, status
 
 
 @pytest.mark.asyncio

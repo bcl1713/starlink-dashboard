@@ -1,7 +1,6 @@
 """Tests for network metrics simulator."""
 
 import pytest
-
 from app.simulation.network import NetworkSimulator
 
 
@@ -75,7 +74,7 @@ class TestNetworkSimulator:
             latencies.append(data.latency_ms)
 
         # Should have variation
-        unique_latencies = len(set([round(lat, 1) for lat in latencies]))
+        unique_latencies = len({round(lat, 1) for lat in latencies})
         assert unique_latencies > 1
 
     def test_latency_spikes(self, simulator):
@@ -104,8 +103,8 @@ class TestNetworkSimulator:
             up_throughputs.append(data.throughput_up_mbps)
 
         # Should have variation
-        unique_down = len(set([round(t, 1) for t in down_throughputs]))
-        unique_up = len(set([round(t, 1) for t in up_throughputs]))
+        unique_down = len({round(t, 1) for t in down_throughputs})
+        unique_up = len({round(t, 1) for t in up_throughputs})
         assert unique_down > 1
         assert unique_up > 1
 
@@ -118,7 +117,7 @@ class TestNetworkSimulator:
             packet_losses.append(data.packet_loss_percent)
 
         # Should have variation
-        unique_losses = len(set([round(p, 2) for p in packet_losses]))
+        unique_losses = len({round(p, 2) for p in packet_losses})
         assert unique_losses > 1
 
     def test_reset(self, simulator):

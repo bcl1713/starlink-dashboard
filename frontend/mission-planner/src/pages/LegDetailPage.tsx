@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMission, useUpdateLeg } from '../hooks/api/useMissions';
 import { useTimeline } from '../hooks/api/useTimeline';
@@ -9,9 +9,15 @@ import { LegConfigTabs } from './LegDetailPage/LegConfigTabs';
 import { LegMapVisualization } from './LegDetailPage/LegMapVisualization';
 import { TimingSection } from './LegDetailPage/TimingSection';
 import { TimelinePreviewSection } from '../components/timeline/TimelinePreviewSection';
+import { Button } from '../components/ui/button';
 import type { SatelliteConfig } from '../types/satellite';
-import type { AARConfig } from '../types/aar';
+import type {
+  AARConfig,
+  ManualAARTrack,
+  ManualRouteSplice,
+} from '../types/aar';
 import type { TimelinePreviewRequest } from '../services/timeline';
+import { ManualRouteEstimateControls } from '../components/aar/ManualRouteEstimateControls';
 
 export function LegDetailPage() {
   const { missionId, legId } = useParams<{
@@ -27,6 +33,13 @@ export function LegDetailPage() {
 
   // Find the current leg
   const leg = mission?.legs.find((l) => l.id === legId);
+  const [manualRouteSpliceOverride, setManualRouteSplice] = useState<
+    ManualRouteSplice | null | undefined
+  >();
+  const manualRouteSplice =
+    manualRouteSpliceOverride === undefined
+      ? (leg?.transports.manual_route_splice ?? undefined)
+      : (manualRouteSpliceOverride ?? undefined);
 
   // Use custom hook for data management
   const {
@@ -71,6 +84,8 @@ export function LegDetailPage() {
           override_end_time: s.override_end_time,
           override_start_elapsed: s.override_start_elapsed,
         })),
+        manual_aar_tracks: aarConfig.manualTracks,
+        manual_route_splice: manualRouteSplice,
         ku_overrides: satelliteConfig.ku_outages.map((k) => ({
           id: k.id,
           start_time: k.start_time,
@@ -87,6 +102,8 @@ export function LegDetailPage() {
     satelliteConfig.ka_outages,
     satelliteConfig.ku_outages,
     aarConfig.segments,
+    aarConfig.manualTracks,
+    manualRouteSplice,
   ]);
 
   // Memoize preview options to prevent unnecessary hook re-runs
@@ -117,6 +134,39 @@ export function LegDetailPage() {
     setHasUnsavedChanges(true);
   };
 
+  const handleManualTrackSave = async (track: ManualAARTrack) => {
+    if (!leg) {
+      throw new Error('The leg is no longer available. Reload and try again.');
+    }
+
+    const updatedAARConfig = {
+      ...aarConfig,
+      manualTracks: aarConfig.manualTracks.some(
+        (existingTrack) => existingTrack.id === track.id
+      )
+        ? aarConfig.manualTracks.map((existingTrack) =>
+            existingTrack.id === track.id ? track : existingTrack
+          )
+        : [...aarConfig.manualTracks, track],
+    };
+    await updateLegMutation.mutateAsync({
+      ...leg,
+      transports: {
+        initial_x_satellite_id:
+          satelliteConfig.xband_starting_satellite || 'X-1',
+        initial_ka_satellite_ids: ['AOR', 'POR', 'IOR'],
+        x_transitions: satelliteConfig.xband_transitions,
+        ka_outages: satelliteConfig.ka_outages,
+        aar_windows: updatedAARConfig.segments,
+        manual_aar_tracks: updatedAARConfig.manualTracks,
+        manual_route_splice: manualRouteSplice,
+        ku_overrides: satelliteConfig.ku_outages,
+      },
+    });
+    setAARConfig(updatedAARConfig);
+    setHasUnsavedChanges(false);
+  };
+
   const handleBackClick = () => {
     if (hasUnsavedChanges) {
       if (
@@ -144,6 +194,8 @@ export function LegDetailPage() {
           x_transitions: satelliteConfig.xband_transitions,
           ka_outages: satelliteConfig.ka_outages,
           aar_windows: aarConfig.segments,
+          manual_aar_tracks: aarConfig.manualTracks,
+          manual_route_splice: manualRouteSplice,
           ku_overrides: satelliteConfig.ku_outages,
         },
       });
@@ -197,8 +249,10 @@ export function LegDetailPage() {
   // Loading state
   if (isMissionLoading) {
     return (
-      <div className="container mx-auto p-6">
-        <p className="text-muted-foreground">Loading leg configuration...</p>
+      <div className="app-page">
+        <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">
+          Loading leg configuration...
+        </div>
       </div>
     );
   }
@@ -206,20 +260,23 @@ export function LegDetailPage() {
   // Leg not found state
   if (!leg) {
     return (
-      <div className="container mx-auto p-6">
-        <p className="text-red-600">Leg not found</p>
-        <button
-          className="mt-4 px-4 py-2 border rounded-md hover:bg-gray-100"
+      <div className="app-page">
+        <div className="status-critical rounded-xl border p-4" role="alert">
+          Leg not found
+        </div>
+        <Button
+          className="mt-4"
+          variant="outline"
           onClick={() => navigate(`/missions/${missionId}`)}
         >
           Back to Mission
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="app-page min-w-0 space-y-6">
       <LegHeader
         missionId={missionId || ''}
         legId={legId || ''}
@@ -227,9 +284,9 @@ export function LegDetailPage() {
         onBackClick={handleBackClick}
       />
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.9fr)]">
         {/* Left Column: Configuration Tabs */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <TimingSection
             leg={leg}
             timeline={timeline || null}
@@ -244,6 +301,17 @@ export function LegDetailPage() {
             waypointNames={waypointNames}
             onSatelliteConfigChange={handleSatelliteConfigChange}
             onAARConfigChange={handleAARConfigChange}
+            onManualTrackSave={handleManualTrackSave}
+          />
+
+          <ManualRouteEstimateControls
+            tracks={aarConfig.manualTracks}
+            splice={manualRouteSplice}
+            estimate={preview?.derived_route_estimate}
+            onChange={(splice) => {
+              setManualRouteSplice(splice ?? null);
+              setHasUnsavedChanges(true);
+            }}
           />
 
           <TimelinePreviewSection
@@ -253,20 +321,16 @@ export function LegDetailPage() {
             error={error}
           />
 
-          <div className="flex justify-end space-x-4">
-            <button
-              className="px-4 py-2 border rounded-md hover:bg-gray-100"
+          <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
+            <Button
+              variant="outline"
               onClick={() => navigate(`/missions/${missionId}`)}
             >
               Cancel
-            </button>
-            <button
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              onClick={handleSave}
-              disabled={updateLegMutation.isPending}
-            >
+            </Button>
+            <Button onClick={handleSave} disabled={updateLegMutation.isPending}>
               {updateLegMutation.isPending ? 'Saving...' : 'Save Changes'}
-            </button>
+            </Button>
           </div>
         </div>
 

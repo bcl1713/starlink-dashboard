@@ -1,16 +1,16 @@
 """Tests for route models with timing extensions (Phase 1 - ETA Route Timing)."""
 
-import pytest
 from datetime import datetime, timezone
 
+import pytest
 from app.models.route import (
-    RoutePoint,
-    RouteWaypoint,
-    RouteMetadata,
-    RouteTimingProfile,
     ParsedRoute,
-    RouteResponse,
     RouteDetailResponse,
+    RouteMetadata,
+    RoutePoint,
+    RouteResponse,
+    RouteTimingProfile,
+    RouteWaypoint,
 )
 
 

@@ -1,0 +1,67 @@
+name: Publish GHCR images
+
+on:
+  push:
+    branches: [dev]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Build and publish immutable images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - image: ghcr.io/${{ github.repository }}/starlink-location
+            context: ./backend/starlink-location
+            file: ./backend/starlink-location/Dockerfile
+          - image: ghcr.io/${{ github.repository }}/mission-planner
+            context: ./frontend/mission-planner
+            file: ./frontend/mission-planner/Dockerfile
+          - image: ghcr.io/${{ github.repository }}/prometheus
+            context: .
+            file: ./deployment/prometheus/Dockerfile
+          - image: ghcr.io/${{ github.repository }}/grafana
+            context: .
+            file: ./deployment/grafana/Dockerfile
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Validate GHCR build contract
+        run: python tools/check_publish_ghcr_workflow.py
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Derive immutable image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=ref,event=tag
+
+      - name: Build and publish image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}

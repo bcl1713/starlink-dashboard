@@ -109,6 +109,11 @@ degrees of the AAR heading.
 
 ### Step 4: Review Timeline & Export
 
+If a Manual AR track is selected to estimate a route replacement, review the
+[Manual AR Derived-Route Estimates](./manual-ar-derived-route-estimates.md)
+before relying on the preview or exported timing. The source KML remains the
+planned reference; a feasible replacement is an explicitly labelled estimate.
+
 The system computes a **timeline** showing communication status across your
 entire route:
 

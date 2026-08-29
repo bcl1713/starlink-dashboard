@@ -4,12 +4,23 @@ from pathlib import Path
 import pytest
 
 # Constants
-DOCS_DIR = Path(__file__).parent.parent.parent / "docs"
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DOCS_DIR = PROJECT_ROOT / "docs"
+
 
 def get_markdown_files():
     if not DOCS_DIR.exists():
         return []
     return list(DOCS_DIR.rglob("*.md"))
+
+
+def get_repository_markdown_files():
+    excluded_directories = {".git", ".venv", "node_modules", "venv"}
+    return [
+        path
+        for path in PROJECT_ROOT.rglob("*.md")
+        if excluded_directories.isdisjoint(path.parts)
+    ]
 
 @pytest.mark.parametrize("file_path", get_markdown_files())
 def test_markdown_file_not_empty(file_path):
@@ -66,3 +77,39 @@ def test_internal_links(file_path):
         if not resolved_path.exists():
             # Failure
             pytest.fail(f"Broken link in {file_path.relative_to(DOCS_DIR.parent)}: '{target}' -> {resolved_path} does not exist.")
+
+
+@pytest.mark.parametrize("file_path", get_repository_markdown_files())
+def test_root_relative_internal_links(file_path):
+    """Ensure repository-root-relative Markdown links resolve."""
+    content = file_path.read_text(encoding="utf-8")
+    for target in re.findall(r"\[[^]]*\]\((/[^)]+)\)", content):
+        url_path = target.split("#", 1)[0]
+        resolved_path = PROJECT_ROOT / url_path.lstrip("/")
+        assert resolved_path.exists(), (
+            f"Broken root-relative link in {file_path.relative_to(PROJECT_ROOT)}: "
+            f"'{target}'"
+        )
+
+
+@pytest.mark.parametrize(
+    "inventory_path",
+    [
+        Path("docs/setup/installation-steps.md"),
+        Path("docs/features-overview.md"),
+    ],
+)
+def test_current_repository_inventories_name_agents_file(inventory_path):
+    """Keep current-tree inventories aligned with the root agent guide."""
+    assert (PROJECT_ROOT / "AGENTS.md").is_file()
+    content = (PROJECT_ROOT / inventory_path).read_text(encoding="utf-8")
+    assert "AGENTS.md" in content
+    assert "CLAUDE.md" not in content
+
+
+def test_reference_inventory_avoids_volatile_agents_size():
+    """Do not publish a numeric size for the frequently changing AGENTS file."""
+    content = (PROJECT_ROOT / "docs/index/reference.md").read_text(
+        encoding="utf-8"
+    )
+    assert not re.search(r"\|\s*AGENTS\.md\s*\|\s*\d+\s*(?:K?B|bytes?)", content)

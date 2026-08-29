@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
+from app.mission import storage
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.mission.storage import (
     compute_file_checksum,
@@ -20,9 +20,9 @@ from app.mission.storage import (
     get_mission_path,
     list_missions,
     load_mission,
+    load_mission_metadata_v2,
     load_mission_timeline,
     load_mission_v2,
-    load_mission_metadata_v2,
     mission_exists,
     save_mission,
     save_mission_timeline,
@@ -222,7 +222,7 @@ class TestMissionStorage:
         """Test saving/loading mission with complex transport configuration."""
         from datetime import datetime, timezone
 
-        from app.mission.models import XTransition, AARWindow, KaOutage
+        from app.mission.models import AARWindow, KaOutage, XTransition
 
         mission = MissionLeg(
             id="complex-mission",
@@ -718,6 +718,39 @@ class TestHierarchicalMissionStorageV2:
         assert loaded.metadata == sample_mission_with_legs.metadata
         # Verify leg count matches
         assert len(loaded.legs) == len(sample_mission_with_legs.legs)
+
+    def test_list_mission_metadata_v2_orders_newest_first_with_legacy_fallback(
+        self, temp_missions_dir
+    ):
+        """List ordering uses persisted timestamps before deterministic legacy IDs."""
+
+        def write_metadata(mission_id, **metadata):
+            mission_dir = temp_missions_dir / mission_id
+            mission_dir.mkdir()
+            (mission_dir / "mission.json").write_text(
+                json.dumps({"id": mission_id, "name": mission_id, **metadata})
+            )
+
+        for index in range(27):
+            write_metadata(
+                f"mission-{index:02d}",
+                updated_at=f"2026-01-{index + 1:02d}T00:00:00Z",
+            )
+        write_metadata("legacy-created", created_at="2025-12-31T00:00:00Z")
+        write_metadata("legacy-invalid", updated_at="not-a-timestamp")
+        write_metadata("legacy-missing")
+
+        missions = storage.list_mission_metadata_v2()
+
+        assert len(missions) == 30
+        assert [mission.id for mission in missions[:2]] == [
+            "mission-26",
+            "mission-25",
+        ]
+        assert [mission.id for mission in missions[-2:]] == [
+            "legacy-invalid",
+            "legacy-missing",
+        ]
 
     def test_load_mission_metadata_v2_handles_invalid_json(self, temp_missions_dir):
         """Test that invalid JSON is handled gracefully."""

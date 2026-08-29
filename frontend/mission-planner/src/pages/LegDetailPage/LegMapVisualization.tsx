@@ -15,9 +15,7 @@ interface LegMapVisualizationProps {
   timelinePreview?: Timeline | null;
 }
 
-/**
- * Map visualization component showing the route with all overlays
- */
+/** Displays the route and operational overlays without changing planning data. */
 export function LegMapVisualization({
   routeCoordinates,
   satelliteConfig,
@@ -28,34 +26,45 @@ export function LegMapVisualization({
   timelinePreview,
 }: LegMapVisualizationProps) {
   return (
-    <div className="sticky top-6 h-fit">
-      <h2 className="text-xl font-semibold mb-4">Route Visualization</h2>
+    <section
+      className="min-w-0 lg:sticky lg:top-6 lg:h-fit"
+      aria-labelledby="route-map-heading"
+    >
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+            Operational workspace
+          </p>
+          <h2
+            id="route-map-heading"
+            className="text-xl font-semibold text-foreground"
+          >
+            Route Visualization
+          </h2>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          Open the map legend for layer keys
+        </span>
+      </div>
+      {timelinePreview?.derived_route_estimate?.available && (
+        <p className="mb-2 text-xs text-muted-foreground">
+          Estimated map layer: derived estimate, not telemetry.
+        </p>
+      )}
       <RouteMap
         coordinates={routeCoordinates}
         xbandTransitions={satelliteConfig.xband_transitions}
         kaTransitions={kaTransitions}
         aarSegments={aarConfig.segments}
+        manualAARTracks={aarConfig.manualTracks}
         kaOutages={satelliteConfig.ka_outages || []}
         kuOutages={satelliteConfig.ku_outages || []}
         waypoints={waypointNames}
         waypointObjects={availableWaypoints}
         timelinePreview={timelinePreview}
-        height="600px"
+        derivedRouteEstimate={timelinePreview?.derived_route_estimate}
+        height="clamp(20rem, 50vw, 37.5rem)"
       />
-      <div className="mt-4 text-sm text-gray-600 space-y-1">
-        <p>• Blue line: Flight route</p>
-        <p>• Blue circles: X-Band transition points</p>
-        <p>• Green circles: Ka satellite transitions</p>
-        <p>• Yellow dashed line: AAR segments</p>
-        {timelinePreview && (
-          <>
-            <p>• Green segments: Nominal communication status</p>
-            <p>• Yellow segments: Degraded communication status</p>
-            <p>• Red segments: Critical communication status</p>
-          </>
-        )}
-        <p>• See below map for Ka/Ku outage timeline</p>
-      </div>
-    </div>
+    </section>
   );
 }

@@ -2,7 +2,6 @@
 
 import logging
 import time
-from typing import Optional
 
 import starlink_grpc
 from grpc import RpcError
@@ -34,7 +33,7 @@ class LiveCoordinator:
             ValueError: If configuration is invalid
         """
         if not isinstance(config, SimulationConfig):
-            raise ValueError("config must be a SimulationConfig instance")
+            raise TypeError("config must be a SimulationConfig instance")
 
         self.config = config
         self.start_time = time.time()
@@ -54,7 +53,7 @@ class LiveCoordinator:
         self.speed_tracker = SpeedTracker(smoothing_duration_seconds=120.0)
 
         # Last known good state for graceful degradation
-        self._last_valid_telemetry: Optional[TelemetryData] = None
+        self._last_valid_telemetry: TelemetryData | None = None
         self._connection_status: bool = False
 
         logger.info(
@@ -83,7 +82,7 @@ class LiveCoordinator:
             )
             self._connection_status = False
 
-    def update(self) -> Optional[TelemetryData]:
+    def update(self) -> TelemetryData | None:
         """
         Update telemetry from Starlink dish.
 
@@ -261,5 +260,19 @@ class LiveCoordinator:
         try:
             self.client.disconnect()
             logger.info("LiveCoordinator shut down successfully")
-        except Exception as e:
+        except (
+            starlink_grpc.GrpcError,
+            RpcError,
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.warning(f"Error during shutdown: {e}")

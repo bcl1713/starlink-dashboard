@@ -3,7 +3,6 @@
 import tempfile
 from pathlib import Path
 
-
 from app.satellites.catalog import Satellite, SatelliteCatalog, load_satellite_catalog
 
 

@@ -3,7 +3,6 @@ import type { POI, POICreate, POIUpdate } from '../../services/pois';
 import { useRoutes } from '../../hooks/api/useRoutes';
 import { useMissions } from '../../hooks/api/useMissions';
 import { Input } from '../ui/input';
-import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { IconPicker } from '../ui/IconPicker';
 
@@ -22,7 +21,6 @@ const CATEGORY_OPTIONS = [
 interface POIFormProps {
   poi?: POI;
   onSubmit: (data: POICreate | POIUpdate) => void;
-  onCancel: () => void;
   isLoading?: boolean;
   error?: string;
   selectedCoords?: { lat: number; lng: number };
@@ -31,7 +29,6 @@ interface POIFormProps {
 export function POIForm({
   poi,
   onSubmit,
-  onCancel,
   isLoading,
   error,
   selectedCoords,
@@ -102,7 +99,7 @@ export function POIForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form id="poi-form" onSubmit={handleSubmit} className="space-y-4">
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
           {error}
@@ -253,20 +250,6 @@ export function POIForm({
             ))}
           </select>
         </div>
-      </div>
-
-      <div className="flex gap-2 justify-end pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isLoading}
-        >
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Save POI'}
-        </Button>
       </div>
     </form>
   );

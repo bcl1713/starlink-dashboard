@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
-import { exportImportApi } from '../../services/export-import';
+import {
+  exportImportApi,
+  formatMissionImportError,
+} from '../../services/export-import';
 import type { ImportResult } from '../../types/export';
 
 interface ImportDialogProps {
@@ -39,7 +42,7 @@ export function ImportDialog({ open, onClose, onSuccess }: ImportDialogProps) {
         errors: [
           {
             field: 'general',
-            message: error instanceof Error ? error.message : 'Unknown error',
+            message: formatMissionImportError(error),
           },
         ],
       });

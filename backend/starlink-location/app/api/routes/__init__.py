@@ -4,14 +4,14 @@ from fastapi import APIRouter
 
 # Import routers from submodules
 from app.api.routes import (
-    management,
-    upload,
-    download,
-    delete,
-    stats,
-    eta,
-    timing,
     cache,
+    delete,
+    download,
+    eta,
+    management,
+    stats,
+    timing,
+    upload,
 )
 
 # Create main router with /api/routes prefix

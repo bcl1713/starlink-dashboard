@@ -8,16 +8,13 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.mission.timeline_builder.aar import ResolvedAARWindow
-from app.mission.models import MissionLeg, Transport, KaOutage, KuOutageOverride
-from app.models.route import ParsedRoute
-from app.satellites.rules import EventType, MissionEvent, RuleEngine
-from app.satellites.catalog import get_satellite_catalog
-from app.services.poi_manager import POIManager
+from app.mission.models import KaOutage, KuOutageOverride, MissionLeg, Transport
 from app.mission.timeline_builder.coverage import (
     CoverageAnalysisResult,
     RouteSample,
@@ -26,6 +23,10 @@ from app.mission.timeline_builder.utils import (
     DEFAULT_CRUISE_ALTITUDE_M,
     nearest_waypoint_name,
 )
+from app.models.route import ParsedRoute
+from app.satellites.catalog import get_satellite_catalog
+from app.satellites.rules import EventType, MissionEvent, RuleEngine
+from app.services.poi_manager import POIManager
 
 logger = logging.getLogger(__name__)
 

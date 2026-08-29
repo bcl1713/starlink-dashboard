@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api import (
+    active_x_link,
     config,
     export,
     flight_status,
@@ -38,6 +39,10 @@ from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.services.ground_entry_point import (
+    maybe_refresh_ground_entry_point_metrics,
+    refresh_ground_entry_point_metrics,
+)
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 from app.core.limiter import limiter
@@ -85,6 +90,23 @@ async def startup_event():
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
 
+        try:
+            entry_point = refresh_ground_entry_point_metrics()
+            if entry_point is not None:
+                logger.info_json(
+                    "Ground entry point discovered",
+                    extra_fields={
+                        "city": entry_point.city,
+                        "country": entry_point.country,
+                    },
+                )
+        except Exception as e:  # pragma: no cover - defensive startup guard
+            logger.warning_json(
+                "Failed to publish ground entry point metrics",
+                extra_fields={"error": str(e)},
+                exc_info=True,
+            )
+
         if _simulation_config.mode == "live":
             # Initialize LiveCoordinator for real terminal data
             logger.info_json("Initializing LiveCoordinator for live mode")
@@ -112,6 +134,7 @@ async def startup_event():
         )
 
         # Register coordinator with API modules
+        app.state.coordinator = _coordinator
         health.set_coordinator(_coordinator)
         status.set_coordinator(_coordinator)
         config.set_coordinator(_coordinator)
@@ -305,12 +328,26 @@ async def _background_update_loop(poi_manager=None):
 
     update_count = 0
     error_count = 0
+    try:
+        ground_entry_refresh_interval_seconds = float(
+            os.getenv("STARLINK_GROUND_ENTRY_REFRESH_SECONDS", "1")
+        )
+    except ValueError:
+        ground_entry_refresh_interval_seconds = 1.0
+        logger.warning_json(
+            "Invalid STARLINK_GROUND_ENTRY_REFRESH_SECONDS; using default",
+            extra_fields={"value": os.getenv("STARLINK_GROUND_ENTRY_REFRESH_SECONDS")},
+        )
 
     try:
         logger.info_json("Background update loop started")
 
         while True:
             try:
+                maybe_refresh_ground_entry_point_metrics(
+                    refresh_interval_seconds=ground_entry_refresh_interval_seconds
+                )
+
                 if _coordinator:
                     telemetry = _coordinator.update()
                     update_count += 1
@@ -439,6 +476,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-Total-Count"],
 )
 
 # Mount data/sat_coverage directory for satellite coverage overlays (Ka/CommKa GeoJSON)
@@ -486,6 +524,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # Register API routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
+app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(flight_status.router, tags=["Flight Status"])

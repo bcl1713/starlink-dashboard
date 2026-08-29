@@ -1,7 +1,6 @@
 """Tests for position simulator."""
 
 import pytest
-
 from app.simulation.position import PositionSimulator
 
 
@@ -88,7 +87,7 @@ class TestPositionSimulator:
             assert config.altitude_min_feet <= pos.altitude <= config.altitude_max_feet
 
         # Should have variation
-        assert len(set([int(a) for a in altitudes])) > 1
+        assert len({int(a) for a in altitudes}) > 1
 
     def test_set_progress(self, simulator):
         """Test setting progress along route."""

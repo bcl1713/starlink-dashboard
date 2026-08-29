@@ -38,6 +38,12 @@
 - **[Prerequisites Verification](./prerequisites-verification.md)**: Verify
   system meets all requirements before installation
 
+### Deployment Runbooks
+
+- **[Portainer GHCR Deployment](../deployment/portainer-ghcr.md)**: Git-based
+  Portainer deployment, immutable GHCR image selection, rollback, and live
+  release-gate requirements
+
 ---
 
 ## Overview
@@ -178,7 +184,7 @@ After successful setup:
 **Useful links:**
 
 - [API Reference](../api/README.md)
-- [Route Management](../../CLAUDE.md#route-management)
+- [Route Management](../route-api-endpoints.md)
 - [Troubleshooting](../troubleshooting/README.md)
 
 ---
@@ -194,7 +200,7 @@ After successful setup:
 **Resources:**
 
 - [Design Document](../architecture/design-document.md) - Architecture overview
-- [CLAUDE.md](../../CLAUDE.md) - Development guide
+- [AGENTS.md](../../AGENTS.md) - Development guide
 - [Troubleshooting Guide](../troubleshooting/README.md) - Common problems
 
 ---

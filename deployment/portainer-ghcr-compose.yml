@@ -1,0 +1,94 @@
+# Portainer Git-stack profile. Supply required image and host-path values in
+# Portainer; this profile intentionally does not load a repository .env file.
+services:
+  starlink-location:
+    image: ghcr.io/bcl1713/starlink-dashboard/starlink-location:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
+    # Deliberately on-demand: start the Portainer stack when needed.
+    restart: "no"
+    environment:
+      STARLINK_MODE: ${STARLINK_MODE:-simulation}
+      SIMULATION_MODE: ${SIMULATION_MODE:-true}
+      STARLINK_DISH_HOST: ${STARLINK_DISH_HOST:-192.168.100.1}
+      STARLINK_DISH_PORT: ${STARLINK_DISH_PORT:-9200}
+      TIMEZONE_TAKEOFF: ${TIMEZONE_TAKEOFF:-America/Los_Angeles}
+      TIMEZONE_LANDING: ${TIMEZONE_LANDING:-Europe/London}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - type: bind
+        source: ${STARLINK_APP_DATA_PATH:?Set the persistent application data host path}
+        target: /app/data
+      - type: bind
+        source: ${STARLINK_ROUTE_DATA_PATH:?Set the persistent route data host path}
+        target: /data
+    networks:
+      starlink-net: {}
+      proxy:
+        aliases:
+          - starlink-location
+
+  prometheus:
+    image: ghcr.io/bcl1713/starlink-dashboard/prometheus:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
+    # Deliberately on-demand: start the Portainer stack when needed.
+    restart: "no"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=${PROMETHEUS_RETENTION:-1y}
+    volumes:
+      - type: bind
+        source: ${STARLINK_PROMETHEUS_DATA_PATH:?Set the persistent Prometheus data host path}
+        target: /prometheus
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+    networks:
+      starlink-net: {}
+      proxy:
+        aliases:
+          - prometheus
+
+  grafana:
+    image: ghcr.io/bcl1713/starlink-dashboard/grafana:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
+    # Deliberately on-demand: start the Portainer stack when needed.
+    restart: "no"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set in Portainer}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: grafana-clock-panel,yesoreyeram-infinity-datasource 3.11.1
+      GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 1s
+    volumes:
+      - type: bind
+        source: ${STARLINK_GRAFANA_DATA_PATH:?Set the persistent Grafana data host path}
+        target: /var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_started
+    networks:
+      starlink-net: {}
+      proxy:
+        aliases:
+          - grafana
+
+  mission-planner:
+    image: ghcr.io/bcl1713/starlink-dashboard/mission-planner:${STARLINK_IMAGE_TAG:?Set an immutable GHCR image tag}
+    # Deliberately on-demand: start the Portainer stack when needed.
+    restart: "no"
+    depends_on:
+      starlink-location:
+        condition: service_healthy
+    networks:
+      starlink-net: {}
+      proxy:
+        aliases:
+          - mission-planner
+
+networks:
+  starlink-net:
+    driver: bridge
+  proxy:
+    external: true
+    name: ${STARLINK_PROXY_NETWORK:-proxy}

@@ -108,17 +108,47 @@ The backend provides these endpoints for integration:
 3. Check backend service is running: `docker compose ps`
 4. Review backend logs: `docker compose logs starlink-location`
 
-### Map Panel Not Displaying
+### Fullscreen Overview Map or Aircraft Marker
 
-**Problem:** Geomap shows gray background without map tiles
+**Basemap:** Fullscreen Overview uses the keyless ArcGIS World Imagery
+MapServer/XYZ basemap. The panel includes Esri attribution and does not depend
+on CARTO or an API key. A gray map can therefore indicate failed external tile
+loading, but it is separate from whether the aircraft marker is present.
 
-**Solutions:**
+**Current Position verification:** The Current Position panel needs a current,
+reported latitude, longitude, and heading. Grafana joins those values into one
+current frame and renders one plane marker; its rotation comes from the joined
+heading value. Confirm that all three telemetry series return current values
+before treating a missing marker as a map-tile issue:
 
-1. Verify internet connectivity (tiles load from OpenStreetMap)
-2. Try zooming in/out or panning
-3. Refresh the page (Ctrl+R or Cmd+R)
-4. Check browser console for CORS errors
-5. Verify route endpoint available: `curl <http://localhost:8000/route.geojson`>
+```bash
+curl -G http://localhost:9090/api/v1/query \
+  --data-urlencode 'query=starlink_dish_latitude_degrees'
+curl -G http://localhost:9090/api/v1/query \
+  --data-urlencode 'query=starlink_dish_longitude_degrees'
+curl -G http://localhost:9090/api/v1/query \
+  --data-urlencode 'query=starlink_dish_heading_degrees'
+```
+
+**When the position changes but no marker appears:** Treat this as a visual or
+dashboard-configuration investigation, not as a reason to alter simulation
+telemetry. Work through the following checks:
+
+1. In Fullscreen Overview, inspect the **Current Position** panel and its
+   marker layer. It must use the joined current frame for latitude, longitude,
+   altitude, and heading, rather than a raw latitude-only frame.
+2. Confirm Grafana provisioning loaded
+   `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`, then
+   reload the provisioned dashboard or restart Grafana if the deployed version
+   is stale.
+3. Open the browser developer console and network panel. Resolve JavaScript,
+   panel, tile, and CORS errors before changing backend or simulator behavior.
+4. Pan or zoom the map and refresh the page to distinguish a tile-load problem
+   from a marker-layer problem.
+
+**Weather layer scope:** Weather Radar (RainViewer) is a separate,
+deployment-safe layer. It was not changed as part of the ArcGIS basemap and
+Current Position marker update.
 
 ### High Latency or Slow Responsiveness
 

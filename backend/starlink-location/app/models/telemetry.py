@@ -1,7 +1,6 @@
 """Pydantic telemetry data models for Starlink simulator."""
 
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -46,7 +45,7 @@ class EnvironmentalData(BaseModel):
         default=100.0, description="Signal quality as percentage (0-100)"
     )
     uptime_seconds: float = Field(default=0.0, description="System uptime in seconds")
-    temperature_celsius: Optional[float] = Field(
+    temperature_celsius: float | None = Field(
         default=None, description="Equipment temperature in Celsius"
     )
 

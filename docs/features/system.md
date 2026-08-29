@@ -20,7 +20,8 @@ All system configuration via `.env` file.
 - `PROMETHEUS_PORT` - Prometheus port (default: 9090)
 - `GRAFANA_PORT` - Grafana port (default: 3000)
 
-**See:** [CLAUDE.md - Configuration](../../CLAUDE.md#configuration)
+**See:**
+[Environment Variables](../setup/configuration/environment-variables.md)
 
 ### Configuration API
 

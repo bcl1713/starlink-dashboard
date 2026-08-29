@@ -6,8 +6,7 @@
 
 import logging
 import os
-from datetime import datetime
-from typing import Dict, Optional, Tuple
+from datetime import datetime, timezone
 
 import starlink_grpc
 from grpc import RpcError
@@ -43,7 +42,7 @@ class StarlinkClient:
 
     def __init__(
         self,
-        target: Optional[str] = None,
+        target: str | None = None,
         timeout: float = 5.0,
         connect_immediately: bool = False,
     ):
@@ -69,7 +68,7 @@ class StarlinkClient:
 
         self.target = target
         self.timeout = timeout
-        self.context: Optional[starlink_grpc.ChannelContext] = None
+        self.context: starlink_grpc.ChannelContext | None = None
         self._connected = False
         self.logger = logger
         self.connect_immediately = connect_immediately
@@ -121,7 +120,21 @@ class StarlinkClient:
             try:
                 self.context.close()
                 self.logger.info("Disconnected from Starlink dish")
-            except Exception as e:
+            except (
+                starlink_grpc.GrpcError,
+                RpcError,
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 self.logger.warning(f"Error closing connection: {e}")
             finally:
                 self.context = None
@@ -149,13 +162,25 @@ class StarlinkClient:
             self.logger.warning(f"Connection test failed: {type(e).__name__}: {e}")
             self._connected = False
             return False
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             self.logger.error(
                 f"Unexpected error during connection test: {type(e).__name__}: {e}"
             )
             return False
 
-    def get_status_data(self) -> Tuple[Dict, Dict, Dict]:
+    def get_status_data(self) -> tuple[dict, dict, dict]:
         """Get device status, obstruction, and alerts from Starlink dish.
 
         Returns:
@@ -177,7 +202,7 @@ class StarlinkClient:
             self.logger.error(f"Failed to get status data: {e}")
             raise
 
-    def get_location_data(self) -> Dict:
+    def get_location_data(self) -> dict:
         """Get GPS location data from Starlink dish.
 
         Returns:
@@ -197,7 +222,7 @@ class StarlinkClient:
             self.logger.error(f"Failed to get location data: {e}")
             raise
 
-    def get_gps_config(self) -> Dict:
+    def get_gps_config(self) -> dict:
         """Get GPS configuration and status from Starlink dish.
 
         Returns:
@@ -221,7 +246,7 @@ class StarlinkClient:
             self.logger.error(f"Failed to get GPS config: {e}")
             raise
 
-    def set_gps_config(self, enable: bool) -> Dict:
+    def set_gps_config(self, enable: bool) -> dict:
         """Set GPS configuration on Starlink dish.
 
         Args:
@@ -256,7 +281,7 @@ class StarlinkClient:
 
     def get_history_stats(
         self, parse_samples: int = -1
-    ) -> Tuple[Dict, Dict, Dict, Dict, Dict, Dict, Dict]:
+    ) -> tuple[dict, dict, dict, dict, dict, dict, dict]:
         """Get historical statistics from Starlink dish.
 
         Args:
@@ -305,10 +330,10 @@ class StarlinkClient:
 
         try:
             # Get all required data
-            status, obstruction, alerts = self.get_status_data()
+            status, obstruction, _alerts = self.get_status_data()
             location = self.get_location_data()
-            general, drop, run, latency, loaded, usage, power = self.get_history_stats(
-                parse_samples=10
+            _general, _drop, _run, _latency, _loaded, _usage, _power = (
+                self.get_history_stats(parse_samples=10)
             )
 
             # Extract position data
@@ -348,10 +373,17 @@ class StarlinkClient:
                 packet_loss_percent=float(packet_loss),
             )
 
-            # Extract obstruction data
-            obstruction_fraction = obstruction.get("fraction_obstructed", 0.0)
+            # Extract obstruction data.
+            # starlink_grpc.status_data() returns fraction_obstructed on the
+            # general status dict, while the separate obstruction dict contains
+            # only wedge detail/validity metadata. Fall back to the obstruction
+            # dict for compatibility with older mocks.
+            obstruction_fraction = status.get(
+                "fraction_obstructed",
+                obstruction.get("fraction_obstructed", 0.0),
+            )
             obstruction_pct = ObstructionData(
-                obstruction_percent=float(obstruction_fraction * 100)
+                obstruction_percent=float((obstruction_fraction or 0.0) * 100)
             )
 
             # Extract environmental data
@@ -365,7 +397,7 @@ class StarlinkClient:
             )
 
             return TelemetryData(
-                timestamp=datetime.now(),
+                timestamp=datetime.now(timezone.utc),
                 position=position,
                 network=network,
                 obstruction=obstruction_pct,
@@ -393,5 +425,17 @@ class StarlinkClient:
         """Ensure connection is closed on garbage collection."""
         try:
             self.disconnect()
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
             pass

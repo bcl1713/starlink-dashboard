@@ -4,12 +4,11 @@ Tests cover telemetry collection, heading calculation, error handling,
 and graceful degradation using mocked StarlinkClient.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
 import starlink_grpc
-
 from app.live.coordinator import LiveCoordinator
 from app.models.config import (
     HeadingTrackerConfig,
@@ -22,6 +21,7 @@ from app.models.telemetry import (
     PositionData,
     TelemetryData,
 )
+
 from tests.conftest import default_mock_telemetry
 
 
@@ -67,7 +67,7 @@ class TestLiveCoordinatorInitialization:
 
     def test_init_invalid_config(self):
         """Test initialization fails with invalid config type."""
-        with pytest.raises(ValueError, match="must be a SimulationConfig"):
+        with pytest.raises(TypeError, match="must be a SimulationConfig"):
             LiveCoordinator({"invalid": "config"})
 
     @patch("app.live.coordinator.StarlinkClient")
@@ -141,7 +141,7 @@ class TestLiveCoordinatorUpdate:
         # Create mock telemetry with movement
         initial_telemetry = default_mock_telemetry()
         second_telemetry = TelemetryData(
-            timestamp=datetime.now() + timedelta(seconds=5),
+            timestamp=datetime.now(timezone.utc) + timedelta(seconds=5),
             position=PositionData(
                 latitude=40.7200,  # Moved north
                 longitude=-74.0060,
@@ -447,12 +447,12 @@ class TestLiveCoordinatorInterface:
         coordinator = LiveCoordinator(config)
 
         # Check that all required methods exist
-        assert callable(getattr(coordinator, "update"))
-        assert callable(getattr(coordinator, "get_current_telemetry"))
-        assert callable(getattr(coordinator, "reset"))
-        assert callable(getattr(coordinator, "get_uptime_seconds"))
-        assert callable(getattr(coordinator, "get_config"))
-        assert callable(getattr(coordinator, "update_config"))
+        assert callable(coordinator.update)
+        assert callable(coordinator.get_current_telemetry)
+        assert callable(coordinator.reset)
+        assert callable(coordinator.get_uptime_seconds)
+        assert callable(coordinator.get_config)
+        assert callable(coordinator.update_config)
 
     @patch("app.live.coordinator.StarlinkClient")
     def test_polymorphic_usage(self, mock_client_class):

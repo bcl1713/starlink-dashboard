@@ -1,20 +1,21 @@
 """Integration tests for mission v2 API endpoints."""
 
-import pytest
+import asyncio
 from datetime import datetime, timedelta, timezone
-from uuid import uuid4
-from fastapi.testclient import TestClient
 from unittest.mock import patch
+from uuid import uuid4
 
+import pytest
 from app.mission.models import (
     Mission,
     MissionLeg,
-    TransportConfig,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
-    MissionLegTimeline,
+    TransportConfig,
 )
 from app.mission.timeline_service import TimelineSummary
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -55,7 +56,6 @@ def cleanup_test_missions_v2():
     # We should rely on the test to delete, or implement a cleanup that scans directories.
     # For now, we'll try to delete specifically created missions in tests if possible,
     # or rely on unique IDs to avoid collision.
-    pass
 
 
 class TestMissionV2CreateEndpoint:
@@ -112,6 +112,40 @@ class TestMissionV2CreateEndpoint:
             call_args = mock_save.call_args
             assert call_args[0][0] == test_mission_v2.legs[0].id
             assert call_args[0][1] == timeline
+
+
+class TestMissionV2ListEndpoint:
+    """Tests for the paginated v2 mission listing contract."""
+
+    def test_cors_exposes_total_header_to_the_mission_planner(self, client):
+        """Browser clients can read the pagination total from a CORS response."""
+        response = client.get(
+            "/health",
+            headers={"Origin": "http://localhost:5173"},
+        )
+
+        assert response.status_code == 200
+        assert response.headers["access-control-expose-headers"] == "X-Total-Count"
+
+    def test_list_missions_returns_total_header_and_requested_page(self, monkeypatch):
+        """The additive total header lets clients paginate without breaking arrays."""
+        from app.mission.routes_v2 import list_missions
+        from fastapi import Response
+
+        missions = [
+            Mission(id=f"mission-{index}", name=f"Mission {index}")
+            for index in range(26)
+        ]
+        monkeypatch.setattr(
+            "app.mission.routes_v2.list_mission_metadata_v2",
+            lambda: missions,
+        )
+        response = Response()
+
+        page = asyncio.run(list_missions(response, limit=25, offset=25))
+
+        assert response.headers["X-Total-Count"] == "26"
+        assert [mission.id for mission in page] == ["mission-25"]
 
 
 class TestMissionV2UpdateEndpoint:
@@ -257,3 +291,24 @@ class TestMissionV2UpdateEndpoint:
         assert updated_data["updated_at"] > created_data["updated_at"]
         # Verify created_at stayed the same
         assert updated_data["created_at"] == created_data["created_at"]
+
+
+class TestMissionPackageImportLimits:
+    """Regression coverage for the mission-package upload contract."""
+
+    def test_import_rejects_an_oversize_package_with_attributable_413(self, client):
+        """The application layer preserves its documented package-size rejection."""
+        package = b"x" * (100 * 1024 * 1024 + 1)
+
+        response = client.post(
+            "/api/v2/missions/import",
+            files={"file": ("oversize.zip", package, "application/zip")},
+        )
+
+        assert response.status_code == 413
+        assert response.json()["detail"] == {
+            "code": "mission_package_too_large",
+            "layer": "application",
+            "max_bytes": 100 * 1024 * 1024,
+            "received_bytes": len(package),
+        }

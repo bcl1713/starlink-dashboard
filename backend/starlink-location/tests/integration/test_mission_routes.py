@@ -1,25 +1,25 @@
 """Integration tests for mission planning CRUD endpoints."""
 
-import pytest
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
-from fastapi.testclient import TestClient
 
+import pytest
 from app.mission.models import (
     MissionLeg,
+    MissionLegTimeline,
+    MissionPhase,
+    TimelineSegment,
+    TimelineStatus,
     Transport,
     TransportConfig,
     TransportState,
-    TimelineSegment,
-    TimelineStatus,
-    MissionLegTimeline,
     XTransition,
-    MissionPhase,
 )
 from app.mission.storage import delete_mission, delete_mission_timeline, mission_exists
 from app.mission.timeline_service import TimelineSummary
-from main import app
 from app.models.route import ParsedRoute, RouteMetadata
+from fastapi.testclient import TestClient
+from main import app
 
 
 # Fixtures for test missions

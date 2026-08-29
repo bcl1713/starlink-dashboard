@@ -7,32 +7,33 @@ import time
 from pathlib import Path
 
 from app.mission.call_availability import normalize_call_availability_timeline
+from app.mission.derived_route import (
+    build_derived_route_estimate,
+    derived_route_for_estimate,
+)
 from app.mission.models import MissionLeg, MissionLegTimeline, Transport
 from app.mission.state import generate_transport_intervals
 from app.mission.timeline import assemble_mission_timeline
-from app.services.poi_manager import POIManager
-from app.services.route_manager import RouteManager
-from app.satellites.coverage import CoverageSampler
-from app.satellites.kmz_importer import load_commka_coverage
-from app.satellites.rules import RuleEngine
-from app.satellites.catalog import get_satellite_catalog
-
+from app.mission.timeline_builder.aar import (
+    apply_manual_aar_tracks,
+    apply_x_transitions,
+    resolve_aar_windows,
+)
 from app.mission.timeline_builder.calculator import (
-    TimelineComputationError,
+    TIMELINE_SAMPLE_INTERVAL_SECONDS,
     RouteTemporalProjector,
+    TimelineComputationError,
     derive_mission_window,
     generate_timeline_samples,
     route_takeoff_delta,
     route_with_adjusted_departure,
-    TIMELINE_SAMPLE_INTERVAL_SECONDS,
 )
 from app.mission.timeline_builder.coverage import analyze_ka_coverage
 from app.mission.timeline_builder.events import (
     apply_ka_events,
-    apply_x_azimuth_events,
     apply_manual_outages,
+    apply_x_azimuth_events,
 )
-from app.mission.timeline_builder.aar import resolve_aar_windows, apply_x_transitions
 from app.mission.timeline_builder.pois import sync_ka_pois, sync_x_aar_pois
 from app.mission.timeline_builder.stats import (
     TimelineSummary,
@@ -40,6 +41,12 @@ from app.mission.timeline_builder.stats import (
     attach_statistics,
     summarize_timeline,
 )
+from app.satellites.catalog import get_satellite_catalog
+from app.satellites.coverage import CoverageSampler
+from app.satellites.kmz_importer import load_commka_coverage
+from app.satellites.rules import RuleEngine
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +92,22 @@ def build_mission_timeline(
         raise TimelineComputationError(f"Route {mission.route_id} not loaded")
 
     route = route_with_adjusted_departure(route, mission.adjusted_departure_time)
+    splice = mission.transports.manual_route_splice
+    selected_track = None
+    splice_available = False
+    if splice:
+        selected_track = next(
+            (
+                track
+                for track in mission.transports.manual_aar_tracks
+                if track.id == splice.enabled_track_id
+            ),
+            None,
+        )
+        if selected_track:
+            estimate = build_derived_route_estimate(route, selected_track, splice)
+            splice_available = estimate.available
+            route = derived_route_for_estimate(route, estimate)
     mission_start, mission_end = derive_mission_window(route)
     projector = RouteTemporalProjector(route, mission_start, mission_end)
 
@@ -129,6 +152,17 @@ def build_mission_timeline(
         rule_engine.add_aar_window_events(
             window.start_time, window.end_time, window.name
         )
+    # The selected replacement track is an estimated route basis only when its
+    # splice is feasible.  Other saved Manual AR tracks remain independent X
+    # overlays; an unavailable selected splice leaves planned output unchanged.
+    manual_tracks = [
+        track
+        for track in mission.transports.manual_aar_tracks
+        if not splice or track.id != splice.enabled_track_id
+    ]
+    if selected_track and splice_available:
+        manual_tracks.append(selected_track)
+    apply_manual_aar_tracks(rule_engine, manual_tracks, projector)
 
     transition_schedule = apply_x_transitions(
         rule_engine, mission, projector, aar_windows
@@ -246,10 +280,10 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
 
 # Re-export key types for backward compatibility
 __all__ = [
-    "build_mission_timeline",
+    "RouteTemporalProjector",
     "TimelineComputationError",
     "TimelineSummary",
-    "RouteTemporalProjector",
+    "build_mission_timeline",
     "route_takeoff_delta",
     "route_with_adjusted_departure",
 ]

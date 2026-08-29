@@ -1,4 +1,5 @@
 import { apiClient } from './api-client';
+import type { ManualRouteSplice } from '../types/aar';
 
 export interface TimelineSegment {
   id: string;
@@ -29,6 +30,40 @@ export interface Timeline {
   advisories?: unknown[];
   statistics?: Record<string, unknown>;
   samples?: RouteSample[] | null;
+  route_basis?: 'planned' | 'derived_estimate';
+  derived_route_estimate?: DerivedRouteEstimate | null;
+}
+
+export interface DerivedRouteAnchor {
+  segment_index: number;
+  fraction: number;
+  progress_nm: number;
+  latitude: number;
+  longitude: number;
+  connector_nm: number;
+}
+
+export interface DerivedRouteEstimate {
+  available: boolean;
+  estimated: boolean;
+  unavailable_reason?: string | null;
+  points?: Array<{
+    latitude: number;
+    longitude: number;
+    altitude?: number | null;
+    provenance: string;
+  }>;
+  planned_distance_nm?: number;
+  derived_distance_nm?: number;
+  planned_duration_seconds?: number;
+  derived_duration_seconds?: number;
+  delta_seconds?: number;
+  speed_knots?: number | null;
+  speed_source?: string | null;
+  confidence?: string;
+  warnings?: string[];
+  leave_anchor?: DerivedRouteAnchor | null;
+  rejoin_anchor?: DerivedRouteAnchor | null;
 }
 
 export interface TimelinePreviewRequest {
@@ -53,6 +88,15 @@ export interface TimelinePreviewRequest {
       override_end_time?: string | null;
       override_start_elapsed?: string | null;
     }>;
+    manual_aar_tracks: Array<{
+      id: string;
+      name: string;
+      points: Array<{
+        latitude: number;
+        longitude: number;
+      }>;
+    }>;
+    manual_route_splice?: ManualRouteSplice | null;
     ku_overrides: Array<Record<string, unknown>>;
   };
   adjusted_departure_time?: string;

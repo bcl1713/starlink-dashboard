@@ -1,7 +1,6 @@
 """Tests for obstruction simulator."""
 
 import pytest
-
 from app.simulation.obstructions import ObstructionSimulator
 
 
@@ -35,7 +34,7 @@ class TestObstructionSimulator:
             obstructions.append(data.obstruction_percent)
 
         # Should have variation
-        unique_obstructions = len(set([round(o, 1) for o in obstructions]))
+        unique_obstructions = len({round(o, 1) for o in obstructions})
         assert unique_obstructions > 1
 
     def test_correlation_with_latency_low(self, simulator):

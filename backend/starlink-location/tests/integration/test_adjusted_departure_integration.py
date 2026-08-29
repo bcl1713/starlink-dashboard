@@ -1,21 +1,24 @@
 """Integration tests for adjusted departure time API endpoints."""
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 
+import pytest
 from app.mission.models import (
+    ManualAARTrack,
+    ManualAARTrackPoint,
+    ManualRouteSplice,
     Mission,
     MissionLeg,
-    TransportConfig,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
-    MissionLegTimeline,
+    TransportConfig,
 )
 from app.mission.timeline_service import TimelineSummary
-from app.models.route import ParsedRoute, RoutePoint, RouteTimingProfile, RouteMetadata
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -496,6 +499,105 @@ class TestPreviewLegTimelineAdjustedDepartureTime:
             == "2025-10-27T17:25:00+00:00"
         )
 
+        client.delete(f"/api/v2/missions/{mission_id}")
+
+    def test_preview_returns_derived_estimate_for_selected_feasible_manual_ar_track(
+        self,
+        client: TestClient,
+        test_route_with_timing,
+        mock_timeline_generation,
+    ):
+        """Preview resolves the selected feasible Manual AR estimate without a 500."""
+        mission_id = f"test-mission-{uuid4().hex[:8]}"
+        leg_id = f"test-leg-{uuid4().hex[:8]}"
+        leg = MissionLeg(
+            id=leg_id,
+            name="Test Leg",
+            route_id="test-route-001",
+            transports=TransportConfig(initial_x_satellite_id="X-1"),
+        )
+        mission = Mission(id=mission_id, name="Test Mission", legs=[leg])
+        selected_track = ManualAARTrack(
+            id="selected-manual-ar",
+            name="Selected Manual AR",
+            points=[
+                ManualAARTrackPoint(latitude=35.1, longitude=-120.2),
+                ManualAARTrackPoint(latitude=35.8, longitude=-120.8),
+            ],
+        )
+        preview_transports = TransportConfig(
+            initial_x_satellite_id="X-1",
+            manual_aar_tracks=[selected_track],
+            manual_route_splice=ManualRouteSplice(
+                enabled_track_id=selected_track.id,
+            ),
+        )
+
+        with patch("app.mission.routes_v2.build_mission_timeline") as mock_build, patch(
+            "app.mission.routes_v2.save_mission_timeline"
+        ):
+            mock_build.return_value = mock_timeline_generation
+            assert (
+                client.post(
+                    "/api/v2/missions", json=mission.model_dump(mode="json")
+                ).status_code
+                == 201
+            )
+
+            original_route_manager = client.app.state.route_manager
+            route_manager = MagicMock()
+            route_manager.get_route.return_value = test_route_with_timing
+            client.app.state.route_manager = route_manager
+            try:
+                response = client.post(
+                    f"/api/v2/missions/{mission_id}/legs/{leg_id}/timeline/preview",
+                    json={"transports": preview_transports.model_dump(mode="json")},
+                )
+            finally:
+                client.app.state.route_manager = original_route_manager
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["route_basis"] == "derived_estimate"
+        assert body["derived_route_estimate"]["available"] is True
+
+        unavailable_transports = preview_transports.model_copy(
+            update={
+                "manual_aar_tracks": [
+                    ManualAARTrack(
+                        id="remote-manual-ar",
+                        name="Remote Manual AR",
+                        points=[
+                            ManualAARTrackPoint(latitude=55.0, longitude=-100.0),
+                            ManualAARTrackPoint(latitude=56.0, longitude=-101.0),
+                        ],
+                    )
+                ],
+                "manual_route_splice": ManualRouteSplice(
+                    enabled_track_id="remote-manual-ar"
+                ),
+            }
+        )
+        original_route_manager = client.app.state.route_manager
+        route_manager = MagicMock()
+        route_manager.get_route.return_value = test_route_with_timing
+        client.app.state.route_manager = route_manager
+        try:
+            unavailable_response = client.post(
+                f"/api/v2/missions/{mission_id}/legs/{leg_id}/timeline/preview",
+                json={"transports": unavailable_transports.model_dump(mode="json")},
+            )
+        finally:
+            client.app.state.route_manager = original_route_manager
+
+        assert unavailable_response.status_code == 200
+        unavailable_body = unavailable_response.json()
+        assert unavailable_body["route_basis"] == "planned"
+        assert unavailable_body["derived_route_estimate"]["available"] is False
+        assert (
+            unavailable_body["derived_route_estimate"]["unavailable_reason"]
+            == "no_feasible_splice"
+        )
         client.delete(f"/api/v2/missions/{mission_id}")
 
 

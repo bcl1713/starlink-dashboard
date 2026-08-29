@@ -1,12 +1,13 @@
 """Tests for Prometheus metrics."""
 
-from prometheus_client import generate_latest
+import math
 
 from app.core.metrics import (
     REGISTRY,
-    update_metrics_from_telemetry,
     set_service_info,
+    update_metrics_from_telemetry,
 )
+from prometheus_client import generate_latest
 
 
 class TestMetricsFormatting:
@@ -78,7 +79,7 @@ class TestMetricsFormatting:
                 if len(parts) >= 2:
                     try:
                         value = float(parts[-1])
-                        assert not (value != value)  # Check not NaN
+                        assert not math.isnan(value)
                     except (ValueError, IndexError):
                         # Some lines may have different format
                         pass

@@ -52,7 +52,7 @@ Read in order:
 Read in order:
 
 1. [README.md](../../README.md) - Overview (5 min)
-2. [CLAUDE.md](../../CLAUDE.md) - Development config (10 min)
+2. [AGENTS.md](../../AGENTS.md) - Development config (10 min)
 3. [architecture/design-document.md](../architecture/design-document.md) -
    Architecture (15 min)
 4. [CONTRIBUTING.md](../../CONTRIBUTING.md) - How to contribute (15 min)

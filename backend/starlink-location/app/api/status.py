@@ -1,13 +1,11 @@
 """JSON status endpoint handler."""
 
-from typing import Optional
-
 from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 
 # Global status state
-_coordinator: Optional[object] = None
+_coordinator: object | None = None
 
 
 def set_coordinator(coordinator):
@@ -82,5 +80,17 @@ async def status():
                 "temperature_celsius": telemetry.environmental.temperature_celsius,
             },
         }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get status: {e!s}")

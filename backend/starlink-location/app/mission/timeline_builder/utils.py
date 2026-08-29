@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.mission.timeline_builder.calculator import RouteTemporalProjector
@@ -74,7 +75,7 @@ def pick_satellite(values: Sequence[str]) -> str | None:
     """Pick a satellite from a collection (sorts and returns first)."""
     if not values:
         return None
-    return sorted(values)[0]
+    return min(values)
 
 
 def nearest_waypoint_name(

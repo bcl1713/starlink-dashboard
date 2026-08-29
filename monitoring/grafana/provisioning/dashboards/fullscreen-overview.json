@@ -363,10 +363,12 @@
       "id": 1,
       "options": {
         "basemap": {
-          "config": {},
-          "name": "Layer 0",
-          "noRepeat": false,
-          "type": "default"
+          "config": {
+            "attribution": "Tiles © Esri",
+            "url": "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          },
+          "name": "ArcGIS World Imagery",
+          "type": "xyz"
         },
         "controls": {
           "mouseWheelZoom": true,
@@ -382,7 +384,7 @@
               "attribution": "Weather radar \u00a9 Rain Viewer / MeteoLab Inc.",
               "maxZoom": 7,
               "minZoom": 0,
-              "url": "http://localhost:8000/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
+              "url": "/api/datasources/proxy/uid/infinity/api/weather/radar/rainviewer/{z}/{x}/{y}.png?refresh=${__to:date:YYYYMMDDHHmm}"
             },
             "name": "Weather Radar (RainViewer)",
             "noRepeat": false,
@@ -401,7 +403,6 @@
                 "opacity": 0.9
               }
             },
-            "filterByRefId": "H",
             "filterData": {
               "id": "byRefId",
               "options": "H"
@@ -426,7 +427,6 @@
                 "opacity": 1
               }
             },
-            "filterByRefId": "H_EAST",
             "filterData": {
               "id": "byRefId",
               "options": "H_EAST"
@@ -438,6 +438,54 @@
             },
             "name": "Planned Route (KML) - Eastern Hemisphere",
             "tooltip": false,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "green"
+                },
+                "lineWidth": 4,
+                "opacity": 0.9
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "ActiveXLinkNormal"
+            },
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Active X-band Link - Normal",
+            "tooltip": true,
+            "type": "route"
+          },
+          {
+            "config": {
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "yellow"
+                },
+                "lineWidth": 4,
+                "opacity": 0.9
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "ActiveXLinkWarning"
+            },
+            "location": {
+              "latitude": "latitude",
+              "longitude": "longitude",
+              "mode": "coords"
+            },
+            "name": "Active X-band Link - Warning",
+            "tooltip": true,
             "type": "route"
           },
           {
@@ -658,6 +706,61 @@
           },
           {
             "config": {
+              "coords": {
+                "lat": "starlink_ground_entry_point_latitude_degrees",
+                "lon": "starlink_ground_entry_point_longitude_degrees"
+              },
+              "showLegend": false,
+              "style": {
+                "color": {
+                  "fixed": "blue"
+                },
+                "opacity": 1,
+                "rotation": {
+                  "fixed": 0,
+                  "max": 360,
+                  "min": -360,
+                  "mode": "mod"
+                },
+                "size": {
+                  "fixed": 12,
+                  "max": 20,
+                  "min": 5,
+                  "mode": "fixed"
+                },
+                "symbol": {
+                  "fixed": "img/icons/marker/circle.svg",
+                  "mode": "fixed"
+                },
+                "text": {
+                  "fixed": "GEP",
+                  "mode": "fixed"
+                },
+                "textConfig": {
+                  "fontSize": 12,
+                  "offsetX": 0,
+                  "offsetY": 18,
+                  "textAlign": "center",
+                  "textBaseline": "middle"
+                }
+              }
+            },
+            "filterData": {
+              "id": "byRefId",
+              "options": "joinByField-GP_LAT-GP_LON"
+            },
+            "layer-tooltip": true,
+            "location": {
+              "latitude": "ground_entry_latitude",
+              "longitude": "ground_entry_longitude",
+              "mode": "coords"
+            },
+            "name": "Ground Entry Point",
+            "tooltip": true,
+            "type": "markers"
+          },
+          {
+            "config": {
               "showLegend": false,
               "style": {
                 "color": {
@@ -695,7 +798,6 @@
                 }
               }
             },
-            "filterByRefId": "A",
             "filterData": {
               "id": "byRefId",
               "options": "joinByField-A-B-C-D"
@@ -835,35 +937,53 @@
         },
         {
           "cacheDurationSeconds": 5,
+          "columns": [],
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
             "uid": "infinity"
           },
           "filterExpression": "",
+          "filters": [],
           "format": "table",
-          "parser": "json",
+          "global_query_id": "",
+          "parser": "backend",
           "refId": "H",
           "root_selector": "coordinates",
           "source": "url",
+          "type": "json",
           "url": "/api/route/coordinates/west",
           "urlOptions": {
+            "params": []
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
             "params": []
           }
         },
         {
           "cacheDurationSeconds": 5,
+          "columns": [],
           "datasource": {
             "type": "yesoreyeram-infinity-datasource",
             "uid": "infinity"
           },
           "filterExpression": "",
+          "filters": [],
           "format": "table",
-          "parser": "json",
+          "global_query_id": "",
+          "parser": "backend",
           "refId": "H_EAST",
           "root_selector": "coordinates",
           "source": "url",
+          "type": "json",
           "url": "/api/route/coordinates/east",
           "urlOptions": {
+            "params": []
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
             "params": []
           }
         },
@@ -956,6 +1076,84 @@
             "method": "GET",
             "params": []
           }
+        },
+        {
+          "cacheDurationSeconds": 1,
+          "columns": [],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "hide": false,
+          "parser": "backend",
+          "refId": "ActiveXLinkNormal",
+          "root_selector": "coordinates",
+          "source": "url",
+          "type": "json",
+          "url": "/api/active-x-link?state=normal",
+          "urlOptions": {
+            "params": []
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
+            "params": []
+          }
+        },
+        {
+          "cacheDurationSeconds": 1,
+          "columns": [],
+          "datasource": {
+            "type": "yesoreyeram-infinity-datasource",
+            "uid": "infinity"
+          },
+          "filterExpression": "",
+          "filters": [],
+          "format": "table",
+          "global_query_id": "",
+          "hide": false,
+          "parser": "backend",
+          "refId": "ActiveXLinkWarning",
+          "root_selector": "coordinates",
+          "source": "url",
+          "type": "json",
+          "url": "/api/active-x-link?state=warning",
+          "urlOptions": {
+            "params": []
+          },
+          "url_options": {
+            "data": "",
+            "method": "GET",
+            "params": []
+          }
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_ground_entry_point_latitude_degrees",
+          "instant": true,
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "ground_entry_latitude",
+          "refId": "GP_LAT"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_ground_entry_point_longitude_degrees",
+          "instant": true,
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "ground_entry_longitude",
+          "refId": "GP_LON"
         }
       ],
       "title": "Current Position",
@@ -986,6 +1184,17 @@
           "filter": {
             "id": "byRefId",
             "options": "/^(?:E_EAST|F_EAST)$/"
+          },
+          "id": "joinByField",
+          "options": {
+            "byField": "Time",
+            "mode": "inner"
+          }
+        },
+        {
+          "filter": {
+            "id": "byRefId",
+            "options": "/^(?:GP_LAT|GP_LON)$/"
           },
           "id": "joinByField",
           "options": {
@@ -1386,7 +1595,12 @@
       "id": 2,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "min", "max", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "max",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1529,7 +1743,12 @@
       "id": 3,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "max", "min", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "min",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1559,6 +1778,135 @@
       ],
       "title": "Download/Upload Throughput",
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 7,
+        "x": 0,
+        "y": 26
+      },
+      "id": 205,
+      "options": {
+        "colorMode": "value",
+        "graphOrientation": "auto",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "name",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "expr": "starlink_ground_entry_point_info",
+          "instant": true,
+          "legendFormat": "{{display}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Ground Entry Point",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PBFA97CFB590B2093"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 20,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "yellow",
+                "value": 5
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 7,
+        "y": 26
+      },
+      "id": 206,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "values": false,
+          "fields": "",
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true
+      },
+      "pluginVersion": "12.2.1",
+      "targets": [
+        {
+          "expr": "starlink_dish_obstruction_percent",
+          "interval": "1s",
+          "intervalFactor": 1,
+          "legendFormat": "Obstruction",
+          "refId": "A"
+        }
+      ],
+      "title": "Obstruction %",
+      "type": "gauge"
     },
     {
       "datasource": {
@@ -1630,14 +1978,18 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 18,
-        "x": 0,
+        "w": 7,
+        "x": 11,
         "y": 26
       },
       "id": 4,
       "options": {
         "legend": {
-          "calcs": ["lastNotNull", "max", "mean"],
+          "calcs": [
+            "lastNotNull",
+            "max",
+            "mean"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1665,7 +2017,11 @@
   "preload": false,
   "refresh": "1s",
   "schemaVersion": 42,
-  "tags": ["starlink", "fullscreen", "overview"],
+  "tags": [
+    "starlink",
+    "fullscreen",
+    "overview"
+  ],
   "templating": {
     "list": [
       {
@@ -1719,7 +2075,14 @@
     "to": "now"
   },
   "timepicker": {
-    "refresh_intervals": ["1s", "5s", "10s", "30s", "1m", "5m"]
+    "refresh_intervals": [
+      "1s",
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m"
+    ]
   },
   "timezone": "utc",
   "title": "Fullscreen Overview",

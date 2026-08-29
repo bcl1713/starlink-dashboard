@@ -8,7 +8,6 @@ Reference ellipsoid: WGS84
 """
 
 import math
-from typing import Tuple
 
 # WGS84 ellipsoid parameters
 WGS84_SEMI_MAJOR_AXIS = 6378137.0  # meters (a)
@@ -21,7 +20,7 @@ GEOSTATIONARY_ALTITUDE = 35786000.0  # meters
 
 def ecef_from_geodetic(
     latitude: float, longitude: float, altitude: float = 0.0
-) -> Tuple[float, float, float]:
+) -> tuple[float, float, float]:
     """Convert geodetic coordinates to ECEF (Earth-Centered, Earth-Fixed).
 
     Args:
@@ -52,7 +51,7 @@ def ecef_from_geodetic(
     return x, y, z
 
 
-def geodetic_from_ecef(x: float, y: float, z: float) -> Tuple[float, float, float]:
+def geodetic_from_ecef(x: float, y: float, z: float) -> tuple[float, float, float]:
     """Convert ECEF coordinates to geodetic coordinates.
 
     Uses iterative method for improved accuracy.
@@ -100,11 +99,11 @@ def geodetic_from_ecef(x: float, y: float, z: float) -> Tuple[float, float, floa
 
 
 def azimuth_elevation_from_ecef(
-    observer_ecef: Tuple[float, float, float],
-    target_ecef: Tuple[float, float, float],
+    observer_ecef: tuple[float, float, float],
+    target_ecef: tuple[float, float, float],
     observer_lat_deg: float,
     observer_lon_deg: float,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Calculate azimuth and elevation from observer to target in ECEF.
 
     Args:
@@ -165,7 +164,7 @@ def look_angles(
     aircraft_alt_m: float,
     satellite_lon_deg: float,
     satellite_alt_m: float = GEOSTATIONARY_ALTITUDE,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """Calculate look angles (azimuth, elevation) from aircraft to satellite.
 
     Simplified wrapper for geostationary satellites (fixed latitude at equator).

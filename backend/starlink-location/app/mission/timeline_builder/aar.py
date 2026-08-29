@@ -6,14 +6,14 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from app.mission.models import MissionLeg
-from app.models.route import ParsedRoute
-from app.satellites.rules import RuleEngine
+from app.mission.models import ManualAARTrack, MissionLeg
 from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,
     ensure_timezone,
 )
 from app.mission.timeline_builder.utils import timestamp_for_waypoint
+from app.models.route import ParsedRoute
+from app.satellites.rules import RuleEngine
 
 logger = logging.getLogger(__name__)
 
@@ -88,12 +88,41 @@ def resolve_aar_windows(
     return windows
 
 
+def apply_manual_aar_tracks(
+    rule_engine: RuleEngine,
+    tracks: list[ManualAARTrack],
+    projector: RouteTemporalProjector,
+) -> None:
+    """Project manual AR track points onto route time and degrade X over the span.
+
+    Each geographic track point maps to its closest position on the planned
+    route. The earliest and latest projected timestamps delimit the manual AR
+    operation. This preserves route timing, including antimeridian-aware route
+    projection, while making the track an explicit X-band degradation rather
+    than an implicit replacement for the planned route.
+    """
+    for track in tracks:
+        projections = [
+            projector.project(point.latitude, point.longitude) for point in track.points
+        ]
+        start_time = min(projection.timestamp for projection in projections)
+        end_time = max(projection.timestamp for projection in projections)
+        if end_time <= start_time:
+            logger.warning(
+                "Skipping manual AR track %s: all points project to one route time",
+                track.id,
+            )
+            continue
+        rule_engine.add_manual_aar_track_events(
+            start_time, end_time, track.id, track.name
+        )
+
+
 def parse_elapsed_offset(value: str) -> timedelta:
     """Parse flight-deck mission elapsed values such as T+02:15."""
 
     raw = value.strip().upper()
-    if raw.startswith("T+"):
-        raw = raw[2:]
+    raw = raw.removeprefix("T+")
     parts = raw.split(":")
     if len(parts) not in (2, 3):
         raise ValueError("Elapsed AAR override must use T+HH:MM or T+HH:MM:SS")

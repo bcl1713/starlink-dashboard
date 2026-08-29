@@ -26,6 +26,8 @@ covers all configuration options for the Starlink Dashboard.
   volumes
 - **[Logging Configuration](./logging-configuration.md)** - Log levels and
   formats
+- **[Mission Package Upload Limit](./mission-package-upload-limits.md)** - 100
+  MiB import contract, proxy alignment, and verification
 
 ---
 
@@ -172,7 +174,7 @@ docker compose logs | rg -i error
 Configuration complete! Proceed to:
 
 - **[API Reference](../../api/README.md)** - Explore endpoints
-- **[Route Management](../../../CLAUDE.md#route-management)** - Upload routes
+- **[Route Management](../../route-api-endpoints.md)** - Upload routes
 - **[Troubleshooting](../../troubleshooting/README.md)** - Common issues
 
 ---

@@ -32,8 +32,12 @@ Create and manage missions with transport configurations.
 ### Real-Time Timeline Preview
 
 The preview recalculates automatically after a short debounce whenever you edit
-satellite transitions, outages, or AAR windows. You can make a change, watch
-the route and status colors update, and only save once the result looks sane.
+satellite transitions, outages, AAR windows, or manual AR tracks. A manual AR
+track is projected onto the planned route: its earliest and latest projected
+points bound an X-Band degraded interval. The manual track remains an orange
+dashed geographic overlay; it does not replace or redraw the planned route.
+You can make a change, watch the route and status colors update, and only save
+once the result looks sane.
 The preview panel shows an Unsaved badge whenever the current configuration
 differs from the persisted leg.
 

@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 
 from app.mission.models import MissionLeg
-from app.models.route import ParsedRoute
-from app.services.poi_manager import POIManager, POICreate
 from app.mission.timeline_builder.coverage import CoverageAnalysisResult
 from app.mission.timeline_builder.utils import find_waypoint_coordinates
+from app.models.route import ParsedRoute
+from app.services.poi_manager import POICreate, POIManager
 
 logger = logging.getLogger(__name__)
 

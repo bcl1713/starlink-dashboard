@@ -3,29 +3,29 @@
 # FR-004: File exceeds 300 lines (304 lines) because route upload handles KML
 # parsing, validation, POI extraction, storage, and route initialization.
 # Splitting would fragment the upload workflow. Deferred to v0.4.0.
-
+import asyncio
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Annotated
 
 from fastapi import (
     APIRouter,
+    Depends,
     File,
     HTTPException,
     Query,
-    UploadFile,
-    Depends,
-    status,
     Request,
+    UploadFile,
+    status,
 )
-from app.core.limiter import limiter
 
+from app.core.limiter import limiter
 from app.core.logging import get_logger
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.models.poi import POICreate
 from app.models.route import ParsedRoute, RouteResponse, RouteWaypoint
+from app.services.kml_parser import KMLParseError, parse_kml_file
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
-from app.services.kml_parser import parse_kml_file, KMLParseError
 
 logger = get_logger(__name__)
 
@@ -34,7 +34,7 @@ router = APIRouter()
 
 def _resolve_waypoint_metadata(
     waypoint: RouteWaypoint, fallback_index: int
-) -> Tuple[str, str, str, Optional[str]]:
+) -> tuple[str, str, str, str | None]:
     """Map a RouteWaypoint role to POI category/icon and derive a safe name/description.
 
     Converts waypoint role information into appropriate POI metadata, selecting
@@ -88,7 +88,7 @@ def _import_waypoints_as_pois(
     route_id: str,
     parsed_route: ParsedRoute,
     poi_manager: POIManager,
-) -> Tuple[int, int]:
+) -> tuple[int, int]:
     """Create POIs for the supplied route using its waypoint metadata.
 
     Iterates through all waypoints in the parsed route and creates corresponding
@@ -117,7 +117,19 @@ def _import_waypoints_as_pois(
                 f"Removed {removed} existing POIs prior to re-import for route "
                 f"{route_id}"
             )
-    except Exception as exc:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:
         logger.error(f"Failed to delete existing POIs for route {route_id}: {exc}")
 
     for idx, waypoint in enumerate(parsed_route.waypoints, start=1):
@@ -154,7 +166,19 @@ def _import_waypoints_as_pois(
             )
             poi_manager.create_poi(poi)
             created += 1
-        except Exception as exc:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:
             logger.error(
                 f"Failed to create POI for waypoint {waypoint.name or idx} on "
                 f"route {route_id}: {exc}"
@@ -173,13 +197,15 @@ def _import_waypoints_as_pois(
 @limiter.limit("10/minute")
 async def upload_route(
     request: Request,
-    import_pois: bool = Query(
-        default=True,
-        description="Import POIs from waypoint placemarks in the uploaded KML",
-    ),
-    file: UploadFile = File(...),
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    import_pois: Annotated[
+        bool,
+        Query(
+            description="Import POIs from waypoint placemarks in the uploaded KML",
+        ),
+    ] = True,
+    file: Annotated[UploadFile, File()] = ...,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> RouteResponse:
     """Upload a new KML route file.
 
@@ -230,8 +256,7 @@ async def upload_route(
 
         # Write file to disk
         content = await file.read()
-        with open(file_path, "wb") as f:
-            f.write(content)
+        await asyncio.to_thread(file_path.write_bytes, content)
 
         logger.info(f"KML file uploaded: {file.filename} (size: {len(content)} bytes)")
 
@@ -241,8 +266,20 @@ async def upload_route(
         # Explicitly load the route file (watchdog may not pick it up in tests)
         try:
             route_manager._load_route_file(file_path)
-        except Exception as e:
-            logger.error(f"Error loading route file {file_path}: {str(e)}")
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
+            logger.error(f"Error loading route file {file_path}: {e!s}")
 
         parsed_route = route_manager.get_route(route_id)
 
@@ -300,9 +337,21 @@ async def upload_route(
 
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Error uploading route {file.filename}: {str(e)}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.error(f"Error uploading route {file.filename}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error uploading route: {str(e)}",
+            detail=f"Error uploading route: {e!s}",
         )

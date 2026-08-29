@@ -17,8 +17,6 @@ import {
   SelectValue,
 } from '../components/ui/select';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
 // Step options
 const STEP_OPTIONS = [
   { value: 'auto', label: 'Auto' },
@@ -78,7 +76,7 @@ export function DataExportPage() {
         params.set('step', step);
       }
 
-      const url = `${API_BASE_URL}/api/export/starlink-csv?${params.toString()}`;
+      const url = `/api/export/starlink-csv?${params.toString()}`;
 
       // Fetch the CSV
       const response = await fetch(url);
@@ -124,7 +122,8 @@ export function DataExportPage() {
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Data Export</h1>
         <p className="text-gray-600 mt-2">
-          Export historical Starlink telemetry data to CSV
+          Export historical Starlink telemetry and Ground Entry Point data to
+          CSV
         </p>
       </div>
 
@@ -216,6 +215,9 @@ export function DataExportPage() {
             <li>Position: latitude, longitude, altitude, speed, heading</li>
             <li>Network: latency, throughput (up/down), packet loss</li>
             <li>Signal: obstruction percent, signal quality</li>
+            <li>
+              Ground Entry Point: latitude, longitude, city, country, and IP
+            </li>
           </ul>
         </CardContent>
       </Card>

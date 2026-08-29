@@ -1,9 +1,8 @@
 """Unit tests for satellite communication constraint rules engine."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.mission.models import Transport
 from app.satellites.rules import ConstraintConfig, EventType, MissionEvent, RuleEngine
 
@@ -13,7 +12,7 @@ class TestMissionEvent:
 
     def test_event_creation(self):
         """Test creating a mission event."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         event = MissionEvent(
             timestamp=now,
             event_type=EventType.X_TRANSITION_START,
@@ -29,7 +28,7 @@ class TestMissionEvent:
 
     def test_event_sorting(self):
         """Test sorting events by timestamp."""
-        base_time = datetime.utcnow()
+        base_time = datetime.now(timezone.utc)
 
         event1 = MissionEvent(
             timestamp=base_time + timedelta(hours=1),
@@ -101,7 +100,7 @@ class TestRuleEngine:
             aircraft_lon=0.0,
             aircraft_alt=0.0,
             satellite_lon=0.0,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
         # Should return valid boolean and azimuth
@@ -121,7 +120,7 @@ class TestRuleEngine:
             aircraft_lon=0.0,
             aircraft_alt=0.0,
             satellite_lon=0.0,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             is_aar_mode=False,
         )
 
@@ -134,7 +133,7 @@ class TestRuleEngine:
     def test_add_x_transition_events(self):
         """Test adding X transition degrade events."""
         engine = RuleEngine()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         engine.add_x_transition_events(now, "X-1", is_aar_mode=False)
 
@@ -153,7 +152,7 @@ class TestRuleEngine:
     def test_add_ka_coverage_events(self):
         """Test adding Ka coverage entry/exit events."""
         engine = RuleEngine()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         end = now + timedelta(hours=1)
 
         engine.add_ka_coverage_events(now, end, "POR")
@@ -168,7 +167,7 @@ class TestRuleEngine:
     def test_add_manual_outage_events(self):
         """Test adding manual outage window events."""
         engine = RuleEngine()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         end = now + timedelta(hours=2)
 
         engine.add_manual_outage_events(now, end, Transport.KA, "Scheduled maintenance")
@@ -183,7 +182,7 @@ class TestRuleEngine:
     def test_add_takeoff_landing_buffers(self):
         """Test adding takeoff and landing buffer events."""
         engine = RuleEngine()
-        departure = datetime.utcnow()
+        departure = datetime.now(timezone.utc)
         landing = departure + timedelta(hours=10)
 
         engine.add_takeoff_landing_buffers(departure, landing)
@@ -223,7 +222,7 @@ class TestRuleEngine:
     def test_add_aar_window_events(self):
         """Test adding AAR window events."""
         engine = RuleEngine()
-        start = datetime.utcnow() + timedelta(hours=2)
+        start = datetime.now(timezone.utc) + timedelta(hours=2)
         end = start + timedelta(minutes=45)
 
         engine.add_aar_window_events(start, end, "AAR-1")
@@ -238,7 +237,7 @@ class TestRuleEngine:
     def test_get_sorted_events(self):
         """Test getting events in sorted order."""
         engine = RuleEngine()
-        base_time = datetime.utcnow()
+        base_time = datetime.now(timezone.utc)
 
         # Add events out of order
         engine.add_aar_window_events(
@@ -255,7 +254,7 @@ class TestRuleEngine:
     def test_generate_advisories(self):
         """Test generating human-readable advisories."""
         engine = RuleEngine()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         engine.add_x_transition_events(now + timedelta(hours=2), "X-1")
 
@@ -268,7 +267,7 @@ class TestRuleEngine:
     def test_clear_events(self):
         """Test clearing all events."""
         engine = RuleEngine()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         engine.add_x_transition_events(now, "X-1")
         assert len(engine.events) > 0
@@ -279,7 +278,7 @@ class TestRuleEngine:
     def test_multiple_transport_events(self):
         """Test engine with events from multiple transports."""
         engine = RuleEngine()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         engine.add_x_transition_events(now, "X-1")
         engine.add_ka_coverage_events(
@@ -306,7 +305,7 @@ class TestRuleEngine:
     def test_event_severity_levels(self):
         """Test that events have appropriate severity levels."""
         engine = RuleEngine()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         engine.add_takeoff_landing_buffers(now, now + timedelta(hours=10))
         events = engine.get_sorted_events()
@@ -323,7 +322,7 @@ class TestRuleEngine:
         config2 = ConstraintConfig(transition_buffer_minutes=20)
         engine2 = RuleEngine(config=config2)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         engine1.add_x_transition_events(now, "X-1")
         engine2.add_x_transition_events(now, "X-1")
@@ -351,7 +350,7 @@ class TestRuleEngine:
             aircraft_lon=0.0,
             aircraft_alt=0.0,
             satellite_lon=0.0,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             is_aar_mode=False,  # Normal ops
         )
 
@@ -360,7 +359,7 @@ class TestRuleEngine:
             aircraft_lon=0.0,
             aircraft_alt=0.0,
             satellite_lon=0.0,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             is_aar_mode=True,  # AAR mode
         )
 
@@ -384,7 +383,7 @@ class TestRuleEngine:
             aircraft_lon=0.0,
             aircraft_alt=0.0,
             satellite_lon=0.0,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             heading_deg=20.0,
             is_aar_mode=False,
         )
@@ -408,7 +407,7 @@ class TestRuleEngine:
             aircraft_lon=0.0,
             aircraft_alt=0.0,
             satellite_lon=0.0,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             heading_deg=0.0,
             is_aar_mode=False,
         )
@@ -418,7 +417,7 @@ class TestRuleEngine:
             aircraft_lon=0.0,
             aircraft_alt=0.0,
             satellite_lon=0.0,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             heading_deg=0.0,
             is_aar_mode=True,
         )
@@ -442,7 +441,7 @@ class TestRuleEngine:
             aircraft_lon=0.0,
             aircraft_alt=0.0,
             satellite_lon=0.0,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             is_aar_mode=False,
         )
 

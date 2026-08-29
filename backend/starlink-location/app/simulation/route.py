@@ -5,7 +5,6 @@
 # Splitting would fragment the synthesis algorithm. Deferred to v0.4.0.
 
 import math
-from typing import Tuple
 
 
 def degrees_to_radians(degrees: float) -> float:
@@ -64,7 +63,7 @@ def calculate_bearing(lat1: float, lon1: float, lat2: float, lon2: float) -> flo
 
 def calculate_destination(
     start_lat: float, start_lon: float, bearing: float, distance_km: float
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """
     Calculate destination point given start, bearing, and distance.
 
@@ -147,7 +146,7 @@ class CircularRoute:
 
             self.points.append((lat, lon, heading))
 
-    def get_point(self, progress: float) -> Tuple[float, float, float]:
+    def get_point(self, progress: float) -> tuple[float, float, float]:
         """
         Get point on route based on progress.
 
@@ -164,7 +163,7 @@ class CircularRoute:
         index = int(progress * len(self.points)) % len(self.points)
         return self.points[index]
 
-    def get_segment(self, progress: float) -> Tuple[float, float, float]:
+    def get_segment(self, progress: float) -> tuple[float, float, float]:
         """
         Get interpolated point on route with smooth heading.
 
@@ -252,7 +251,7 @@ class StraightRoute:
         self.bearing = radians_to_degrees(math.atan2(y, x))
         self.bearing = (self.bearing + 360) % 360
 
-    def get_segment(self, progress: float) -> Tuple[float, float, float]:
+    def get_segment(self, progress: float) -> tuple[float, float, float]:
         """
         Get interpolated point on straight route.
 

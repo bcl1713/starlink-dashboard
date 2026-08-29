@@ -1,13 +1,14 @@
 """Tests for configuration loading and validation."""
 
 import os
-import pytest
 import tempfile
-import yaml
 from pathlib import Path
 
+import pytest
+import yaml
 from app.core.config import ConfigManager, _convert_env_value
-from app.models.config import SimulationConfig, HeadingTrackerConfig
+from app.models.config import HeadingTrackerConfig, SimulationConfig
+from pydantic import ValidationError
 
 
 class TestEnvValueConversion:
@@ -93,22 +94,22 @@ class TestConfigValidation:
 
     def test_invalid_radius_negative(self):
         """Test that negative radius raises validation error."""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises(ValidationError):  # ValidationError
             SimulationConfig(route={"radius_km": -50.0})
 
     def test_invalid_latency_spike_probability(self):
         """Test that invalid spike probability raises error."""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises(ValidationError):  # ValidationError
             SimulationConfig(network={"spike_probability": 1.5})
 
     def test_invalid_packet_loss_percent(self):
         """Test that invalid packet loss percentage raises error."""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises(ValidationError):  # ValidationError
             SimulationConfig(network={"packet_loss_max_percent": 150.0})
 
     def test_invalid_update_interval(self):
         """Test that invalid update interval raises error."""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises(ValidationError):  # ValidationError
             SimulationConfig(update_interval_seconds=-1.0)
 
 
@@ -188,22 +189,22 @@ class TestHeadingTrackerConfig:
 
     def test_invalid_negative_distance(self):
         """Test that negative distance raises validation error."""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises(ValidationError):  # ValidationError
             HeadingTrackerConfig(min_distance_meters=-10.0)
 
     def test_invalid_zero_distance(self):
         """Test that zero distance raises validation error."""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises(ValidationError):  # ValidationError
             HeadingTrackerConfig(min_distance_meters=0.0)
 
     def test_invalid_negative_age(self):
         """Test that negative max age raises validation error."""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises(ValidationError):  # ValidationError
             HeadingTrackerConfig(max_age_seconds=-5.0)
 
     def test_invalid_zero_age(self):
         """Test that zero max age raises validation error."""
-        with pytest.raises(Exception):  # ValidationError
+        with pytest.raises(ValidationError):  # ValidationError
             HeadingTrackerConfig(max_age_seconds=0.0)
 
     def test_heading_tracker_in_simulation_config(self):

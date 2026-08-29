@@ -2,8 +2,9 @@ import { Polyline, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import type { LatLngExpression } from 'leaflet';
 import type { XBandTransition } from '../../../types/satellite';
-import type { AARSegment } from '../../../types/aar';
+import type { AARSegment, ManualAARTrack } from '../../../types/aar';
 import type { KaTransition } from '../../../types/timeline';
+import type { DerivedRouteEstimate } from '../../../services/timeline';
 import { logger } from '../../../utils/logger';
 import { formatTime24Hour } from '@/lib/utils';
 
@@ -12,10 +13,32 @@ interface RouteLayerProps {
   xbandTransitions: XBandTransition[];
   kaTransitions: KaTransition[];
   aarSegments: AARSegment[];
+  manualAARTracks: ManualAARTrack[];
   getWaypointCoordinateIndex: (waypointName: string) => number;
   coordinates: LatLngExpression[];
   normalizedCoordinates: LatLngExpression[];
   isIDLCrossing: boolean;
+  derivedRouteEstimate?: DerivedRouteEstimate | null;
+}
+
+function splitAtAntimeridian(
+  points: Array<{ latitude: number; longitude: number }>
+): [number, number][][] {
+  return points
+    .reduce<[number, number][][]>(
+      (segments, point, index) => {
+        if (
+          index > 0 &&
+          Math.abs(point.longitude - points[index - 1].longitude) > 180
+        ) {
+          segments.push([]);
+        }
+        segments[segments.length - 1].push([point.latitude, point.longitude]);
+        return segments;
+      },
+      [[]]
+    )
+    .filter((segment) => segment.length > 1);
 }
 
 /**
@@ -26,23 +49,42 @@ export function RouteLayer({
   xbandTransitions,
   kaTransitions,
   aarSegments,
+  manualAARTracks,
   getWaypointCoordinateIndex,
   normalizedCoordinates,
+  isIDLCrossing,
+  derivedRouteEstimate,
 }: RouteLayerProps) {
+  const getManualTrackPoints = (track: ManualAARTrack): [number, number][] => {
+    const crossesAntimeridian = track.points.some(
+      (point, index) =>
+        index > 0 &&
+        Math.abs(point.longitude - track.points[index - 1].longitude) > 180
+    );
+    const normalizeLongitude = isIDLCrossing || crossesAntimeridian;
+
+    return track.points.map((point) => [
+      point.latitude,
+      normalizeLongitude && point.longitude < 0
+        ? point.longitude + 360
+        : point.longitude,
+    ]);
+  };
+
   // Create X-Band transition icon
   const createXBandIcon = () => {
     return L.divIcon({
       className: 'xband-marker',
-      html: '<div style="width: 16px; height: 16px; background: #3B82F6; border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
+      html: '<div style="width: 16px; height: 16px; background: var(--route-handoff); border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
       iconSize: [16, 16],
     });
   };
 
-  // Create Ka transition icon (green)
+  // Create Ka transition icon
   const createKaIcon = () => {
     return L.divIcon({
       className: 'ka-marker',
-      html: '<div style="width: 16px; height: 16px; background: #10B981; border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
+      html: '<div style="width: 16px; height: 16px; background: var(--route-transition); border-radius: 50%; border: 2px solid white; box-sizing: border-box;"></div>',
       iconSize: [16, 16],
     });
   };
@@ -51,8 +93,29 @@ export function RouteLayer({
     <>
       {/* Render route segments */}
       {routeSegments.map((segment, idx) => (
-        <Polyline key={idx} positions={segment} color="blue" weight={3} />
+        <Polyline
+          key={idx}
+          positions={segment}
+          color="var(--route-reference)"
+          weight={4}
+          opacity={0.9}
+        />
       ))}
+
+      {derivedRouteEstimate?.available &&
+        splitAtAntimeridian(derivedRouteEstimate.points || []).map(
+          (segment, index) => (
+            <Polyline
+              key={`derived-estimate-${index}`}
+              positions={segment}
+              color="var(--route-manual-track)"
+              weight={5}
+              opacity={0.95}
+            >
+              <Popup>Estimated route (derived, not telemetry)</Popup>
+            </Polyline>
+          )
+        )}
 
       {/* Render X-Band transition markers */}
       {xbandTransitions.map((transition) => {
@@ -130,7 +193,7 @@ export function RouteLayer({
           <Polyline
             key={`aar-${idx}`}
             positions={segmentCoordinates}
-            color="#FFC107"
+            color="var(--route-air-refuel)"
             weight={6}
             opacity={0.7}
             dashArray="5, 5"
@@ -142,6 +205,19 @@ export function RouteLayer({
           </Polyline>
         );
       })}
+
+      {manualAARTracks.map((track) => (
+        <Polyline
+          key={`manual-aar-${track.id}`}
+          positions={getManualTrackPoints(track)}
+          color="var(--route-manual-track)"
+          weight={5}
+          opacity={0.9}
+          dashArray="8, 6"
+        >
+          <Popup>Manual AR Track: {track.name}</Popup>
+        </Polyline>
+      ))}
     </>
   );
 }

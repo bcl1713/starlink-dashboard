@@ -6,13 +6,13 @@
 # discoverability. Deferred to v0.4.0.
 
 import logging
-from typing import Dict, Generator
+from collections.abc import Generator
 
 from prometheus_client import (
-    Gauge,
-    Counter,
-    Histogram,
     CollectorRegistry,
+    Counter,
+    Gauge,
+    Histogram,
 )
 from prometheus_client.core import GaugeMetricFamily
 
@@ -23,7 +23,7 @@ REGISTRY: CollectorRegistry = CollectorRegistry()
 
 # Current position data for custom collector
 # This is updated by metric_updater functions and read by PositionCollector
-_current_position: Dict[str, float] = {
+_current_position: dict[str, float] = {
     "latitude": 0.0,
     "longitude": 0.0,
     "altitude": 0.0,
@@ -128,6 +128,32 @@ starlink_network_throughput_up_mbps_current = Gauge(
 starlink_network_packet_loss_percent = Gauge(
     "starlink_network_packet_loss_percent",
     "Packet loss as percentage (0-100)",
+    registry=REGISTRY,
+)
+
+starlink_ground_entry_point_latitude_degrees = Gauge(
+    "starlink_ground_entry_point_latitude_degrees",
+    "Ground entry point latitude in decimal degrees",
+    registry=REGISTRY,
+)
+
+starlink_ground_entry_point_longitude_degrees = Gauge(
+    "starlink_ground_entry_point_longitude_degrees",
+    "Ground entry point longitude in decimal degrees",
+    registry=REGISTRY,
+)
+
+starlink_ground_entry_point_location = Gauge(
+    "starlink_ground_entry_point_location",
+    "Ground entry point location with labels for Grafana geomap display",
+    labelnames=["lat", "lon", "city", "region", "country", "ip", "display"],
+    registry=REGISTRY,
+)
+
+starlink_ground_entry_point_info = Gauge(
+    "starlink_ground_entry_point_info",
+    "Ground entry point identity information",
+    labelnames=["city", "region", "country", "ip", "display"],
     registry=REGISTRY,
 )
 

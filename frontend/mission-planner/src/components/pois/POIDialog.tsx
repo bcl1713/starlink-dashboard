@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { usePOI, useCreatePOI, useUpdatePOI } from '../../hooks/api/usePOIs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Button } from '../ui/button';
 import { POIForm } from './POIForm';
 import { POIMap } from './POIMap';
 import type { POICreate, POIUpdate, POI } from '../../services/pois';
@@ -126,44 +127,59 @@ export function POIDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="grid max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>{isNew ? 'Create POI' : 'Edit POI'}</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Form */}
-          <div>
-            <POIForm
-              poi={poi}
-              onSubmit={handleSubmit}
-              onCancel={() => onOpenChange(false)}
-              isLoading={isLoading}
-              error={error}
-              selectedCoords={currentCoords || undefined}
-            />
-          </div>
-
-          {/* Map for positioning */}
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">
-              Click on the map to set the POI position
-            </p>
-            <div className="h-80 border rounded-lg overflow-hidden">
-              <POIMap
-                pois={mapPOIs}
-                onMapClick={handleMapClick}
-                center={
-                  currentCoords
-                    ? [currentCoords.lat, currentCoords.lng]
-                    : poi
-                      ? [poi.latitude, poi.longitude]
-                      : [0, 0]
-                }
-                zoom={currentCoords || poi ? 10 : 3}
+        <div className="min-h-0 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Form */}
+            <div>
+              <POIForm
+                poi={poi}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+                error={error}
+                selectedCoords={currentCoords || undefined}
               />
             </div>
+
+            {/* Map for positioning */}
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">
+                Click on the map to set the POI position
+              </p>
+              <div className="h-80 overflow-hidden rounded-lg border">
+                <POIMap
+                  pois={mapPOIs}
+                  onMapClick={handleMapClick}
+                  center={
+                    currentCoords
+                      ? [currentCoords.lat, currentCoords.lng]
+                      : poi
+                        ? [poi.latitude, poi.longitude]
+                        : [0, 0]
+                  }
+                  zoom={currentCoords || poi ? 10 : 3}
+                />
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div className="flex justify-end gap-2 border-t pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button form="poi-form" type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : 'Save POI'}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

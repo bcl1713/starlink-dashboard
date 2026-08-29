@@ -22,5 +22,5 @@ def rainviewer_radar_tile(z: int, x: int, y: int) -> RedirectResponse:
     return RedirectResponse(
         url=tile_url,
         status_code=307,
-        headers={"Cache-Control": "public, max-age=300"},
+        headers={"Cache-Control": "no-store"},
     )

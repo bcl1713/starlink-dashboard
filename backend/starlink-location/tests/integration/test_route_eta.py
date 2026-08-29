@@ -1,9 +1,9 @@
 """Integration tests for ETA route timing extraction from real KML files."""
 
-import pytest
 from datetime import datetime
 from pathlib import Path
 
+import pytest
 from app.services.kml_parser import parse_kml_file
 
 
@@ -138,7 +138,7 @@ class TestRouteTimingIntegration:
 
     def test_parse_all_legs_without_crash(self, kml_routes_dir):
         """Parse all available leg KML files to verify robustness."""
-        kml_files = sorted(list(kml_routes_dir.glob("Leg *.kml")))
+        kml_files = sorted(kml_routes_dir.glob("Leg *.kml"))
 
         if not kml_files:
             pytest.skip("No Leg KML files found")
@@ -150,7 +150,19 @@ class TestRouteTimingIntegration:
                 assert parsed_route is not None, f"Failed to parse {kml_file.name}"
                 assert len(parsed_route.points) > 0, f"No points in {kml_file.name}"
                 parsed_routes.append((kml_file.name, parsed_route))
-            except Exception as e:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 pytest.fail(f"Failed to parse {kml_file.name}: {e}")
 
         assert (

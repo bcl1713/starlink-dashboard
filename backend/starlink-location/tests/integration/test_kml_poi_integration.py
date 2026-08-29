@@ -6,7 +6,6 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from app.models.poi import POICreate
 from app.services.geojson import GeoJSONBuilder
 from app.services.kml_parser import parse_kml_file
@@ -90,7 +89,7 @@ class TestKMLPOIIntegration:
         assert len(routes) > 0
 
         # Get specific route
-        route_id = list(routes.keys())[0]
+        route_id = next(iter(routes.keys()))
         route = route_manager_instance.get_route(route_id)
         assert route is not None
 
@@ -352,7 +351,7 @@ class TestKMLPOIIntegration:
         # Load and manage route
         route_manager_instance._load_route_file(sample_kml_file)
         routes = route_manager_instance.list_routes()
-        route_id = list(routes.keys())[0]
+        route_id = next(iter(routes.keys()))
         route_manager_instance.activate_route(route_id)
 
         # Get active route

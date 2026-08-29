@@ -10,9 +10,9 @@ advisories.
 # structures that form the mission data domain. Splitting would fragment the
 # semantic data model. Deferred to v0.4.0.
 
+import itertools
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -69,7 +69,7 @@ class XTransition(BaseModel):
     target_satellite_id: str = Field(
         ..., description="Target satellite ID (e.g., 'X-1', 'X-2')"
     )
-    target_beam_id: Optional[str] = Field(
+    target_beam_id: str | None = Field(
         default=None,
         description="Optional target beam ID for same-satellite transitions",
     )
@@ -161,15 +161,15 @@ class AARWindow(BaseModel):
         ...,
         description="Name of the ending waypoint (from KML) for AAR segment",
     )
-    override_start_time: Optional[datetime] = Field(
+    override_start_time: datetime | None = Field(
         default=None,
         description="Optional pilot-projected AAR start override (UTC, ISO-8601)",
     )
-    override_end_time: Optional[datetime] = Field(
+    override_end_time: datetime | None = Field(
         default=None,
         description="Optional pilot-projected AAR end override (UTC, ISO-8601)",
     )
-    override_start_elapsed: Optional[str] = Field(
+    override_start_elapsed: str | None = Field(
         default=None,
         description=(
             "Optional flight-deck mission elapsed AAR start override "
@@ -188,6 +188,78 @@ class AARWindow(BaseModel):
     }
 
 
+class ManualAARTrackPoint(BaseModel):
+    """An operator-entered geographic point on a manual AAR track."""
+
+    latitude: float = Field(
+        ..., description="Point latitude in decimal degrees (-90 to 90)"
+    )
+    longitude: float = Field(
+        ..., description="Point longitude in decimal degrees (-180 to 180)"
+    )
+
+    @field_validator("latitude")
+    @classmethod
+    def validate_latitude(cls, value: float) -> float:
+        """Reject coordinates outside the valid latitude range."""
+        if not -90 <= value <= 90:
+            raise ValueError("Latitude must be between -90 and 90 degrees")
+        return value
+
+    @field_validator("longitude")
+    @classmethod
+    def validate_longitude(cls, value: float) -> float:
+        """Reject coordinates outside the valid longitude range."""
+        if not -180 <= value <= 180:
+            raise ValueError("Longitude must be between -180 and 180 degrees")
+        return value
+
+
+class ManualAARTrack(BaseModel):
+    """An operator-created AAR track independent of the planned route KML."""
+
+    id: str = Field(..., description="Unique manual AAR track identifier")
+    name: str = Field(
+        ..., description="Operator-facing manual track name", min_length=1
+    )
+    points: list[ManualAARTrackPoint] = Field(
+        ..., description="Ordered manual AAR track points"
+    )
+
+    @field_validator("points")
+    @classmethod
+    def validate_points(
+        cls, points: list[ManualAARTrackPoint]
+    ) -> list[ManualAARTrackPoint]:
+        """Require a line with no duplicate consecutive points."""
+        if len(points) < 2:
+            raise ValueError("Manual AAR track must contain at least two points")
+        for previous, current in itertools.pairwise(points):
+            if (
+                previous.latitude == current.latitude
+                and previous.longitude == current.longitude
+            ):
+                raise ValueError(
+                    "Manual AAR track contains a duplicate consecutive point"
+                )
+        return points
+
+
+class ManualRouteSplice(BaseModel):
+    """Saved operator selection/override for one estimated Manual AR splice.
+
+    Derived geometry and timings intentionally do not belong in persisted
+    mission data; callers rebuild them from the source route and raw track.
+    """
+
+    enabled_track_id: str = Field(..., min_length=1)
+    leave_segment_index: int | None = Field(default=None, ge=0)
+    leave_fraction: float | None = Field(default=None, ge=0, le=1)
+    rejoin_segment_index: int | None = Field(default=None, ge=0)
+    rejoin_fraction: float | None = Field(default=None, ge=0, le=1)
+    speed_knots: float | None = Field(default=None, gt=0, le=1000)
+
+
 class KuOutageOverride(BaseModel):
     """Manual override for Ku transport outage (LEO link failure).
 
@@ -203,7 +275,7 @@ class KuOutageOverride(BaseModel):
     duration_seconds: float = Field(
         ..., description="Duration of outage in seconds", gt=0
     )
-    reason: Optional[str] = Field(
+    reason: str | None = Field(
         default=None, description="Reason for Ku outage override"
     )
 
@@ -242,6 +314,14 @@ class TransportConfig(BaseModel):
         default_factory=list,
         description="Air-refueling segments",
     )
+    manual_aar_tracks: list[ManualAARTrack] = Field(
+        default_factory=list,
+        description="Operator-created AAR tracks independent of the planned route",
+    )
+    manual_route_splice: ManualRouteSplice | None = Field(
+        default=None,
+        description="Optional selected Manual AR replacement estimate input only",
+    )
     ku_overrides: list[KuOutageOverride] = Field(
         default_factory=list,
         description="Manual Ku outage overrides",
@@ -255,6 +335,7 @@ class TransportConfig(BaseModel):
                 "x_transitions": [],
                 "ka_outages": [],
                 "aar_windows": [],
+                "manual_aar_tracks": [],
                 "ku_overrides": [],
             }
         }
@@ -331,7 +412,7 @@ class MissionLeg(BaseModel):
         description="Human-readable mission name",
         min_length=1,
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None,
         description="Detailed mission description",
     )
@@ -343,7 +424,7 @@ class MissionLeg(BaseModel):
         ...,
         description="Transport and satellite configuration",
     )
-    adjusted_departure_time: Optional[datetime] = Field(
+    adjusted_departure_time: datetime | None = Field(
         default=None,
         description="Optional override for departure time (UTC, ISO-8601). When set, "
         "all waypoint times and timeline segments are adjusted by the calculated offset "
@@ -361,7 +442,7 @@ class MissionLeg(BaseModel):
         default=False,
         description="Whether this mission is currently active",
     )
-    notes: Optional[str] = Field(
+    notes: str | None = Field(
         default=None,
         description="Planner notes or remarks",
     )
@@ -379,7 +460,7 @@ class MissionLeg(BaseModel):
 
     def get_time_offset_seconds(
         self, original_departure_time: datetime
-    ) -> Optional[float]:
+    ) -> float | None:
         """Calculate time offset in seconds from original departure time.
 
         Args:
@@ -422,7 +503,7 @@ class Mission(BaseModel):
 
     id: str = Field(..., description="Unique mission identifier (UUID or slug)")
     name: str = Field(..., description="Human-readable mission name", min_length=1)
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, description="Detailed mission description"
     )
     legs: list[MissionLeg] = Field(
@@ -467,10 +548,10 @@ class Mission(BaseModel):
 class MissionUpdate(BaseModel):
     """Partial update model for mission metadata (name and description only)."""
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         default=None, description="Updated mission name", min_length=1
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         default=None, description="Updated mission description"
     )
 
@@ -556,7 +637,7 @@ class RouteSampleData(BaseModel):
         ...,
         description="Sample longitude coordinate",
     )
-    altitude: Optional[float] = Field(
+    altitude: float | None = Field(
         default=None,
         description="Sample altitude in meters (optional)",
     )
@@ -586,7 +667,7 @@ class MissionLegTimeline(BaseModel):
         default_factory=dict,
         description="Summary statistics (e.g., degraded_seconds, critical_seconds)",
     )
-    samples: Optional[list[RouteSampleData]] = Field(
+    samples: list[RouteSampleData] | None = Field(
         default=None,
         description="Route samples (lat/lon/timestamp) for map rendering in preview mode (optional)",
     )

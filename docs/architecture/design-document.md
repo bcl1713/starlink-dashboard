@@ -11,7 +11,7 @@ Please see: **[Architecture Documentation](./README.md)**
 - **[Overview & Objectives](./README.md)** - Project goals
 - **[System Architecture](./README.md#system-stack)** - Component design
 - **[Core Components](./README.md)** - Backend, Prometheus, Grafana
-- **[Development Workflow](../../CLAUDE.md)** - Docker rebuild process
+- **[Development Workflow](../../AGENTS.md)** - Docker rebuild process
 - **[Setup Guide](../setup/README.md)** - Installation instructions
 
 ---

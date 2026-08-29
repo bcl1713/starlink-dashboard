@@ -30,6 +30,15 @@ npm run build
 npm run lint
 ```
 
+### API base contract
+
+The Mission Planner always calls origin-relative `/api/...` endpoints. Do not
+set `VITE_API_URL`: service methods already include `/api`, so setting it to
+`/api` produces invalid `/api/api/...` requests. The Vite development server
+and production Nginx image both proxy `/api/` to the backend. A simulation
+deployment intentionally starts with an empty mission collection; it does not
+seed a fixture automatically.
+
 ## Project Structure
 
 ```text

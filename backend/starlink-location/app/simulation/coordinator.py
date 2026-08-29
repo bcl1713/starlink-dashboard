@@ -6,23 +6,22 @@
 
 import logging
 import time
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
 
+from app.core.metrics import (
+    starlink_current_waypoint_index,
+    starlink_route_progress_percent,
+)
 from app.models.config import SimulationConfig
 from app.models.telemetry import (
     EnvironmentalData,
     TelemetryData,
 )
 from app.services.speed_tracker import SpeedTracker
+from app.simulation.kml_follower import KMLRouteFollower
 from app.simulation.network import NetworkSimulator
 from app.simulation.obstructions import ObstructionSimulator
 from app.simulation.position import PositionSimulator
-from app.simulation.kml_follower import KMLRouteFollower
-from app.core.metrics import (
-    starlink_route_progress_percent,
-    starlink_current_waypoint_index,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +49,7 @@ class SimulationCoordinator:
         self.speed_tracker = SpeedTracker(smoothing_duration_seconds=120.0)
 
         # Last known good state for graceful degradation
-        self._last_valid_telemetry: Optional[TelemetryData] = None
+        self._last_valid_telemetry: TelemetryData | None = None
 
         # Route Manager for KML route integration (Phase 5 feature)
         self.route_manager = None
@@ -75,12 +74,24 @@ class SimulationCoordinator:
             telemetry = self._generate_telemetry()
             self._last_valid_telemetry = telemetry
             return telemetry
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
             # Graceful degradation: return last known good state
             if self._last_valid_telemetry:
                 # Update timestamp but return old data
                 return TelemetryData(
-                    timestamp=datetime.now(),
+                    timestamp=datetime.now(timezone.utc),
                     position=self._last_valid_telemetry.position,
                     network=self._last_valid_telemetry.network,
                     obstruction=self._last_valid_telemetry.obstruction,
@@ -214,7 +225,7 @@ class SimulationCoordinator:
         self._update_route_metrics()
 
         return TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=position_data,
             network=network_data,
             obstruction=obstruction_data,

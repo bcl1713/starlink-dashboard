@@ -6,21 +6,21 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.mission.models import MissionLeg, TransportState, MissionLegTimeline
+from app.core.metrics import (
+    update_mission_comm_state_metric,
+    update_mission_duration_metrics,
+    update_mission_next_conflict_metric,
+    update_mission_timeline_timestamp,
+)
+from app.mission.models import MissionLeg, MissionLegTimeline, TransportState
+from app.mission.storage import save_mission_timeline
 from app.mission.timeline_service import (
     TimelineComputationError,
     TimelineSummary,
     build_mission_timeline,
 )
-from app.mission.storage import save_mission_timeline
-from app.core.metrics import (
-    update_mission_duration_metrics,
-    update_mission_next_conflict_metric,
-    update_mission_comm_state_metric,
-    update_mission_timeline_timestamp,
-)
-from app.services.route_manager import RouteManager
 from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
 

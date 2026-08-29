@@ -65,9 +65,9 @@ export function LegHeader({
       <Button variant="ghost" onClick={onBackClick} className="mb-4">
         ← Back to Mission
       </Button>
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">Leg Configuration</h1>
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold sm:text-3xl">Leg Configuration</h1>
           <p className="text-muted-foreground">
             Mission: {missionId} | Leg: {legId}
           </p>
@@ -77,7 +77,7 @@ export function LegHeader({
             </p>
           )}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-2 self-stretch sm:self-auto">
           <input
             ref={fileInputRef}
             type="file"
@@ -87,6 +87,7 @@ export function LegHeader({
           />
           <Button
             variant="outline"
+            className="w-full sm:w-auto"
             onClick={handleUpdateRouteClick}
             disabled={updateRouteMutation.isPending}
           >

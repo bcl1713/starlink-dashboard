@@ -93,7 +93,7 @@ def format_offset(delta: timedelta) -> str:
     return f"T{sign}{hours:02d}:{minutes:02d}"
 
 
-def format_seconds_hms(value: float | int) -> str:
+def format_seconds_hms(value: float) -> str:
     """Format seconds as human-readable HH:MM:SS, handling negative values.
 
     Args:
@@ -102,7 +102,7 @@ def format_seconds_hms(value: float | int) -> str:
     Returns:
         Formatted duration string (e.g., "02:30:45" or "-01:15:30")
     """
-    total_seconds = int(round(value))
+    total_seconds = round(value)
     sign = "-" if total_seconds < 0 else ""
     total_seconds = abs(total_seconds)
     hours, remainder = divmod(total_seconds, 3600)

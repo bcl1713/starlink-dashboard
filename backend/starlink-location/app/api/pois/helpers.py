@@ -4,9 +4,9 @@ import logging
 import math
 from pathlib import Path
 
+from app.mission.storage import load_mission
 from app.models.poi import POI
 from app.services.route_manager import RouteManager
-from app.mission.storage import load_mission
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +98,19 @@ def calculate_poi_active_status(
             try:
                 active_route_id = Path(active_route.metadata.file_path).stem
                 return active_route_id == poi.route_id
-            except Exception as e:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
                 logger.warning(
                     "Failed to extract active route ID from path '%s': %s",
                     active_route.metadata.file_path,
@@ -112,7 +124,19 @@ def calculate_poi_active_status(
         try:
             mission = load_mission(poi.mission_id)
             return mission.is_active if mission else False
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             # Mission not found or error loading
             logger.warning(
                 "Failed to load mission '%s' for active status check: %s",

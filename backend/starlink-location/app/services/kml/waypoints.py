@@ -3,7 +3,6 @@
 import logging
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 from app.models.route import RouteWaypoint
 from app.services.kml.geometry import CoordinateTriple
@@ -16,17 +15,17 @@ logger = logging.getLogger(__name__)
 class WaypointData:
     """Represents a waypoint placemark extracted from the KML document."""
 
-    name: Optional[str]
-    description: Optional[str]
-    style_url: Optional[str]
-    coordinate: Optional[CoordinateTriple]
-    altitude_mode: Optional[str]
+    name: str | None
+    description: str | None
+    style_url: str | None
+    coordinate: CoordinateTriple | None
+    altitude_mode: str | None
     order: int
 
 
 def identify_primary_waypoints(
-    route_name: Optional[str], waypoints: list[WaypointData]
-) -> tuple[Optional[WaypointData], Optional[WaypointData]]:
+    route_name: str | None, waypoints: list[WaypointData]
+) -> tuple[WaypointData | None, WaypointData | None]:
     """Identify departure and arrival waypoints from route name.
 
     Parses route name in format "DEPARTURE-ARRIVAL" (e.g., "RKSO-KADW").
@@ -39,8 +38,8 @@ def identify_primary_waypoints(
     Returns:
         Tuple of (departure_waypoint, arrival_waypoint), either may be None
     """
-    departure_code: Optional[str] = None
-    arrival_code: Optional[str] = None
+    departure_code: str | None = None
+    arrival_code: str | None = None
 
     # Extract airport codes from route name (e.g., "RKSO-KADW" → RKSO, KADW)
     if route_name:
@@ -94,10 +93,10 @@ def identify_primary_waypoints(
 
 def match_waypoint_by_code(
     waypoints: list[WaypointData],
-    code: Optional[str],
+    code: str | None,
     *,
     prefer_last: bool,
-) -> Optional[WaypointData]:
+) -> WaypointData | None:
     """Find a waypoint whose name matches the supplied code.
 
     Args:
@@ -115,17 +114,20 @@ def match_waypoint_by_code(
     iterator = reversed(waypoints) if prefer_last else iter(waypoints)
 
     for waypoint in iterator:
-        if waypoint.name and waypoint.coordinate:
-            if waypoint.name.upper() == code_upper:
-                return waypoint
+        if (
+            waypoint.name
+            and waypoint.coordinate
+            and waypoint.name.upper() == code_upper
+        ):
+            return waypoint
 
     return None
 
 
 def build_route_waypoints(
     waypoints: list[WaypointData],
-    departure_wp: Optional[WaypointData],
-    arrival_wp: Optional[WaypointData],
+    departure_wp: WaypointData | None,
+    arrival_wp: WaypointData | None,
 ) -> list[RouteWaypoint]:
     """Convert waypoint data into RouteWaypoint models with basic role tagging and timing extraction.
 
@@ -144,7 +146,7 @@ def build_route_waypoints(
         if coord is None:
             continue
 
-        role: Optional[str] = None
+        role: str | None = None
         if departure_wp and waypoint.order == departure_wp.order:
             role = "departure"
         elif arrival_wp and waypoint.order == arrival_wp.order:

@@ -22,14 +22,14 @@ Deferred for future refactoring with potential separation of:
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.models.poi import POIETAListResponse, POIWithETA
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
 
 from .helpers import (
     calculate_bearing,
@@ -40,7 +40,7 @@ from .helpers import (
 logger = logging.getLogger(__name__)
 
 # Global coordinator reference for accessing telemetry
-_coordinator: Optional[object] = None
+_coordinator: object | None = None
 
 
 def set_coordinator(coordinator: object) -> None:
@@ -67,28 +67,39 @@ router = APIRouter(tags=["pois"])
     summary="Get all POIs with real-time ETA data",
 )
 async def get_pois_with_etas(
-    route_id: Optional[str] = Query(None, description="Filter by route ID"),
-    latitude: Optional[str] = Query(
-        None, description="Current latitude (decimal degrees)"
-    ),
-    longitude: Optional[str] = Query(
-        None, description="Current longitude (decimal degrees)"
-    ),
-    speed_knots: Optional[str] = Query(None, description="Current speed in knots"),
-    status_filter: Optional[str] = Query(
-        None,
-        description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)",
-    ),
-    category: Optional[str] = Query(
-        None,
-        description="Filter by POI category (comma-separated: departure,arrival,waypoint,alternate)",
-    ),
-    active_only: bool = Query(
-        True,
-        description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_id: Annotated[str | None, Query(description="Filter by route ID")] = None,
+    latitude: Annotated[
+        str | None,
+        Query(description="Current latitude (decimal degrees)"),
+    ] = None,
+    longitude: Annotated[
+        str | None,
+        Query(description="Current longitude (decimal degrees)"),
+    ] = None,
+    speed_knots: Annotated[
+        str | None,
+        Query(description="Current speed in knots"),
+    ] = None,
+    status_filter: Annotated[
+        str | None,
+        Query(
+            description="Filter by course status (comma-separated: on_course,slightly_off,off_track,behind)",
+        ),
+    ] = None,
+    category: Annotated[
+        str | None,
+        Query(
+            description="Filter by POI category (comma-separated: departure,arrival,waypoint,alternate)",
+        ),
+    ] = None,
+    active_only: Annotated[
+        bool,
+        Query(
+            description="Filter to show only active POIs (default: true). Set to false to see all POIs with active field populated.",
+        ),
+    ] = True,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> POIETAListResponse:
     """Get all POIs with real-time ETA and distance data.
 
@@ -146,7 +157,19 @@ async def get_pois_with_etas(
                             if _coordinator.position_sim.progress
                             else None
                         )
-            except Exception:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
                 # Fall back to query parameters if coordinator fails
                 latitude = None
                 longitude = None
@@ -160,7 +183,19 @@ async def get_pois_with_etas(
         if active_route and active_route.metadata and active_route.metadata.file_path:
             try:
                 active_route_id = Path(active_route.metadata.file_path).stem
-            except Exception as exc:  # pragma: no cover - defensive guard
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as exc:  # pragma: no cover - defensive guard
                 logger.debug("Failed to derive active route ID from metadata: %s", exc)
                 active_route_id = active_route.metadata.file_path
 
@@ -202,21 +237,33 @@ async def get_pois_with_etas(
                 route_calculator = RouteETACalculator(active_route)
                 progress_info = route_calculator.get_route_progress(latitude, longitude)
                 current_route_progress = progress_info.get("progress_percent")
-            except Exception as exc:  # pragma: no cover - defensive guard
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as exc:  # pragma: no cover - defensive guard
                 logger.debug("Failed to calculate route progress for POI ETAs: %s", exc)
                 current_route_progress = None
 
         # Parse status filter if provided
         status_filter_set = set()
         if status_filter:
-            status_filter_set = set(
+            status_filter_set = {
                 s.strip() for s in status_filter.split(",") if s.strip()
-            )
+            }
 
         # Parse category filter if provided
         category_filter = set()
         if category:
-            category_filter = set(c.strip() for c in category.split(",") if c.strip())
+            category_filter = {c.strip() for c in category.split(",") if c.strip()}
 
         if not poi_manager:
             raise HTTPException(
@@ -228,8 +275,8 @@ async def get_pois_with_etas(
 
         # Calculate ETA and distance for each POI
         from app.core.eta_service import get_eta_calculator
-        from app.services.flight_state import get_flight_state_manager
         from app.models.flight_status import ETAMode, FlightPhase
+        from app.services.flight_state import get_flight_state_manager
 
         eta_calc = get_eta_calculator()
 
@@ -237,7 +284,19 @@ async def get_pois_with_etas(
         try:
             flight_state = get_flight_state_manager()
             status_snapshot = flight_state.get_status()
-        except Exception as state_error:  # pragma: no cover - defensive guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as state_error:  # pragma: no cover - defensive guard
             logger.debug("Flight state unavailable for POI ETAs: %s", state_error)
 
         if status_snapshot:
@@ -375,9 +434,8 @@ async def get_pois_with_etas(
 
             # Apply category filter if specified
             # Include POIs with null category (manually created) always
-            if category_filter and poi.category:
-                if poi.category not in category_filter:
-                    continue
+            if category_filter and poi.category and poi.category not in category_filter:
+                continue
 
             # Calculate active status for this POI
             active_status = calculate_poi_active_status(
@@ -421,8 +479,20 @@ async def get_pois_with_etas(
 
         return POIETAListResponse(pois=pois_with_eta, total=len(pois_with_eta))
 
-    except Exception as calculation_error:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as calculation_error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to calculate ETA: {str(calculation_error)}",
+            detail=f"Failed to calculate ETA: {calculation_error!s}",
         )

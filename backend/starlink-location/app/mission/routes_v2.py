@@ -4,56 +4,65 @@
 # CRUD, timeline management, export dispatch, and validation workflows that must
 # coordinate across storage, KML parsing, and state machines. Separation would
 # create circular imports. Deferred to v0.4.0.
-
+import asyncio
 import json
 import logging
 import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Annotated
+
 from fastapi import (
     APIRouter,
+    Depends,
+    File,
     HTTPException,
     Query,
-    status,
-    UploadFile,
-    File,
-    Depends,
     Request,
+    Response,
+    UploadFile,
+    status,
 )
 from fastapi.responses import StreamingResponse
-from app.core.limiter import limiter
 
+from app.core.limiter import limiter
+from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.mission.derived_route import build_derived_route_estimate
 from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
+from app.mission.package import export_mission_package
 from app.mission.storage import (
-    save_mission_v2,
-    load_mission_v2,
-    save_mission_timeline,
-    load_mission_timeline,
     delete_mission_timeline,
     get_mission_lock,
-    load_mission_metadata_v2,
+    list_mission_metadata_v2,
+    load_mission_timeline,
+    load_mission_v2,
+    save_mission_timeline,
+    save_mission_v2,
 )
-from app.mission.package import export_mission_package
+from app.mission.timeline_builder.calculator import (
+    derive_mission_window,
+    route_with_adjusted_departure,
+)
 from app.mission.timeline_service import build_mission_timeline
 from app.mission.validation import validate_adjusted_departure_time
-from app.services.route_manager import RouteManager
-from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
+from app.models.poi import POICreate
 from app.satellites.coverage import CoverageSampler
-from app.mission.timeline_builder.calculator import derive_mission_window
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_PAGINATION_LIMIT = 10  # Default number of missions to return
 MAX_PAGINATION_LIMIT = 100  # Maximum number of missions to return
+MISSION_PACKAGE_MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+MISSION_PACKAGE_ENDPOINT_MARKER = "Imported by mission-package endpoint sync"
 
 router = APIRouter(prefix="/api/v2/missions", tags=["missions-v2"])
 
 # Global manager instances (set by main.py during startup)
-_coverage_sampler: Optional[CoverageSampler] = None
+_coverage_sampler: CoverageSampler | None = None
 
 
 def set_coverage_sampler(coverage_sampler: CoverageSampler) -> None:
@@ -65,8 +74,8 @@ def set_coverage_sampler(coverage_sampler: CoverageSampler) -> None:
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=Mission)
 async def create_mission(
     mission: Mission,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> Mission:
     """Create a new hierarchical mission with legs.
 
@@ -87,7 +96,7 @@ async def create_mission(
                 if leg.route_id:
                     try:
                         logger.info(f"Generating timeline for leg {leg.id}")
-                        timeline, summary = build_mission_timeline(
+                        timeline, _summary = build_mission_timeline(
                             mission=leg,
                             route_manager=route_manager,
                             poi_manager=poi_manager,
@@ -98,24 +107,51 @@ async def create_mission(
                             leg.id, timeline, parent_mission_id=mission.id
                         )
                         logger.info(f"Timeline generated and saved for leg {leg.id}")
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to generate timeline for leg {leg.id}: {e}"
+                    except (
+                        RuntimeError,
+                        ValueError,
+                        OSError,
+                        KeyError,
+                        TypeError,
+                        AttributeError,
+                        LookupError,
+                        ConnectionError,
+                        TimeoutError,
+                        ImportError,
+                        EOFError,
+                    ):
+                        logger.exception(
+                            f"Failed to generate timeline for leg {leg.id}"
                         )
                         # Don't fail creation if timeline generation fails
         return mission
-    except Exception as e:
-        logger.error(f"Failed to create mission: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to create mission")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to create mission: {type(e).__name__}: {e!s}",
         )
 
 
 @router.get("", response_model=list[Mission])
 async def list_missions(
-    limit: int = Query(DEFAULT_PAGINATION_LIMIT, ge=1, le=MAX_PAGINATION_LIMIT),
-    offset: int = Query(0, ge=0),
+    response: Response,
+    limit: Annotated[
+        int, Query(ge=1, le=MAX_PAGINATION_LIMIT)
+    ] = DEFAULT_PAGINATION_LIMIT,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[Mission]:
     """List all missions (metadata only, without legs).
 
@@ -127,27 +163,26 @@ async def list_missions(
         List of missions with metadata only (empty legs arrays)
     """
     try:
-        from pathlib import Path
-
-        missions_dir = Path("data/missions")
-
-        if not missions_dir.exists():
-            return []
-
-        missions = []
-        for mission_dir in sorted(missions_dir.iterdir()):
-            if mission_dir.is_dir():
-                # Use metadata-only loading for efficiency
-                mission = load_mission_metadata_v2(mission_dir.name)
-                if mission:
-                    missions.append(mission)
-
+        missions = list_mission_metadata_v2()
+        response.headers["X-Total-Count"] = str(len(missions))
         return missions[offset : offset + limit]
-    except Exception as e:
-        logger.error(f"Failed to list missions: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to list missions")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to list missions: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to list missions: {type(e).__name__}: {e!s}",
         )
 
 
@@ -219,19 +254,31 @@ async def update_mission(mission_id: str, updates: MissionUpdate) -> Mission:
             return mission
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to update mission {mission_id}: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(f"Failed to update mission {mission_id}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to update mission: {type(e).__name__}: {e!s}",
         )
 
 
 @router.delete("/{mission_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_mission_endpoint(
     mission_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> None:
     """Delete a mission and all associated legs, routes, and POIs.
 
@@ -300,9 +347,9 @@ async def delete_mission_endpoint(
                                     file_path.unlink()
                                     logger.info(f"Deleted route file: {file_path}")
                                     deleted_routes_count += 1
-                                except OSError as e:
-                                    logger.error(
-                                        f"Failed to delete route file {file_path}: {e}"
+                                except OSError:
+                                    logger.exception(
+                                        f"Failed to delete route file {file_path}"
                                     )
 
                             # Remove from route manager cache
@@ -310,8 +357,20 @@ async def delete_mission_endpoint(
                             logger.info(
                                 f"Deleted route {leg.route_id} associated with leg {leg.id}"
                             )
-                    except Exception as e:
-                        logger.error(f"Failed to delete route {leg.route_id}: {e}")
+                    except (
+                        RuntimeError,
+                        ValueError,
+                        OSError,
+                        KeyError,
+                        TypeError,
+                        AttributeError,
+                        LookupError,
+                        ConnectionError,
+                        TimeoutError,
+                        ImportError,
+                        EOFError,
+                    ):
+                        logger.exception(f"Failed to delete route {leg.route_id}")
                         # Don't fail entire mission deletion if route deletion fails
 
                 # Delete mission POIs
@@ -324,8 +383,20 @@ async def delete_mission_endpoint(
                         logger.info(
                             f"Deleted {mission_pois_deleted} POIs for mission {mission_id}"
                         )
-                    except Exception as e:
-                        logger.error(f"Failed to delete mission POIs: {e}")
+                    except (
+                        RuntimeError,
+                        ValueError,
+                        OSError,
+                        KeyError,
+                        TypeError,
+                        AttributeError,
+                        LookupError,
+                        ConnectionError,
+                        TimeoutError,
+                        ImportError,
+                        EOFError,
+                    ):
+                        logger.exception("Failed to delete mission POIs")
                         # Don't fail entire mission deletion if POI deletion fails
 
             # Delete entire mission directory
@@ -334,9 +405,9 @@ async def delete_mission_endpoint(
                 try:
                     shutil.rmtree(mission_dir)
                     logger.info(f"Deleted mission directory: {mission_dir}")
-                except OSError as e:
-                    logger.error(
-                        f"Failed to delete mission directory {mission_dir}: {e}"
+                except OSError:
+                    logger.exception(
+                        f"Failed to delete mission directory {mission_dir}"
                     )
                     raise HTTPException(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -347,14 +418,26 @@ async def delete_mission_endpoint(
                 f"Mission {mission_id} deleted successfully with {leg_count} leg(s), "
                 f"{deleted_routes_count} route(s), {deleted_pois_count} POI(s)"
             )
-            return None
+            return
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to delete mission {mission_id}: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(f"Failed to delete mission {mission_id}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to delete mission: {type(e).__name__}: {e!s}",
         )
 
 
@@ -363,8 +446,8 @@ async def delete_mission_endpoint(
 async def export_mission(
     request: Request,
     mission_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> StreamingResponse:
     """Export mission as zip package."""
     try:
@@ -379,8 +462,20 @@ async def export_mission(
             media_type="application/zip",
             headers={"Content-Disposition": f'attachment; filename="{mission_id}.zip"'},
         )
-    except Exception as e:
-        logger.error(f"Export failed: {e}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Export failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
@@ -444,15 +539,35 @@ def _import_routes_from_zip(
 
             # Save route KML to routes directory
             routes_dir = Path(route_manager.routes_dir)
+            routes_dir.mkdir(parents=True, exist_ok=True)
             kml_path = routes_dir / f"{route_id}.kml"
             with open(kml_path, "wb") as f:
                 f.write(kml_content)
 
+            # Package import must make routes immediately available to the
+            # endpoint and timeline restoration that follows; do not rely on
+            # the filesystem watcher noticing the copied file in time.
+            route_manager._load_route_file(str(kml_path))
+            if route_manager.get_route(route_id) is None:
+                raise ValueError("route could not be parsed after import")
+
             routes_imported += 1
             logger.info(f"Imported route: {route_id}")
-        except Exception as e:
-            logger.error(f"Failed to import route {route_file}: {e}")
-            warnings.append(f"Route {route_file}: {str(e)}")
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
+            logger.exception(f"Failed to import route {route_file}")
+            warnings.append(f"Route {route_file}: {e!s}")
 
     return routes_imported, warnings
 
@@ -514,12 +629,36 @@ def _import_satellite_pois(
                     poi_manager.create_poi(poi)
                     satellites_imported += 1
                     logger.info(f"Imported satellite POI: {poi.name}")
-            except Exception as e:
-                logger.error(f"Failed to import satellite POI: {e}")
-                warnings.append(f"Satellite POI: {str(e)}")
-    except Exception as e:
-        logger.error(f"Failed to process satellite POIs: {e}")
-        warnings.append(f"Satellites file: {str(e)}")
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
+                logger.exception("Failed to import satellite POI")
+                warnings.append(f"Satellite POI: {e!s}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to process satellite POIs")
+        warnings.append(f"Satellites file: {e!s}")
 
     return satellites_imported, satellites_updated, warnings
 
@@ -566,14 +705,97 @@ def _import_leg_pois(
                     poi_manager.create_poi(poi)
                     pois_imported += 1
                     logger.info(f"Imported POI: {poi.name}")
-                except Exception as e:
-                    logger.error(f"Failed to import POI from {poi_file}: {e}")
-                    warnings.append(f"POI in {poi_file}: {str(e)}")
-        except Exception as e:
-            logger.error(f"Failed to process POI file {poi_file}: {e}")
-            warnings.append(f"POI file {poi_file}: {str(e)}")
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as e:
+                    logger.exception(f"Failed to import POI from {poi_file}")
+                    warnings.append(f"POI in {poi_file}: {e!s}")
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
+            logger.exception(f"Failed to process POI file {poi_file}")
+            warnings.append(f"POI file {poi_file}: {e!s}")
 
     return pois_imported, warnings
+
+
+def _endpoint_marker(leg_id: str, role: str) -> str:
+    """Return the durable ownership marker for one imported leg endpoint."""
+    return f"{MISSION_PACKAGE_ENDPOINT_MARKER}; leg={leg_id}; role={role}"
+
+
+def _synchronize_imported_endpoint_pois(
+    mission: Mission,
+    route_manager: RouteManager,
+    poi_manager: POIManager,
+) -> tuple[int, list[str]]:
+    """Restore exactly one owned departure and arrival POI for each imported leg.
+
+    Endpoint POIs are owned by the mission/route association plus a durable
+    marker in their description. Re-imports only replace those owned markers,
+    leaving explicit user POIs and other mission or satellite events untouched.
+    """
+    created = 0
+    warnings = []
+
+    for leg in mission.legs:
+        route = route_manager.get_route(leg.route_id)
+        if route is None:
+            warnings.append(
+                f"Endpoint POIs not restored for leg {leg.id}: route unavailable"
+            )
+            continue
+        if not route.points:
+            warnings.append(
+                f"Endpoint POIs not restored for leg {leg.id}: route has no endpoints"
+            )
+            continue
+
+        endpoints = (
+            ("departure", "airport", route.points[0]),
+            ("arrival", "flag", route.points[-1]),
+        )
+        owned_markers = {_endpoint_marker(leg.id, role) for role, _, _ in endpoints}
+        for poi in poi_manager.list_pois(route_id=leg.route_id, mission_id=mission.id):
+            if poi.description in owned_markers:
+                poi_manager.delete_poi(poi.id)
+
+        for role, icon, point in endpoints:
+            poi_manager.create_poi(
+                POICreate(
+                    name=f"{leg.name} {role.title()}",
+                    latitude=point.latitude,
+                    longitude=point.longitude,
+                    icon=icon,
+                    category=role,
+                    description=_endpoint_marker(leg.id, role),
+                    route_id=leg.route_id,
+                    mission_id=mission.id,
+                )
+            )
+            created += 1
+
+    return created, warnings
 
 
 def _generate_timelines_for_imported_legs(
@@ -599,7 +821,7 @@ def _generate_timelines_for_imported_legs(
         if leg.route_id:
             try:
                 logger.info(f"Generating timeline for imported leg {leg.id}")
-                timeline, summary = build_mission_timeline(
+                timeline, _summary = build_mission_timeline(
                     mission=leg,
                     route_manager=route_manager,
                     poi_manager=poi_manager,
@@ -608,13 +830,23 @@ def _generate_timelines_for_imported_legs(
                 )
                 save_mission_timeline(leg.id, timeline, parent_mission_id=mission.id)
                 logger.info(f"Timeline generated and saved for imported leg {leg.id}")
-            except Exception as e:
-                logger.error(
-                    f"Failed to generate timeline for imported leg {leg.id}: {e}"
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as e:
+                logger.exception(
+                    f"Failed to generate timeline for imported leg {leg.id}"
                 )
-                warnings.append(
-                    f"Timeline generation failed for leg {leg.id}: {str(e)}"
-                )
+                warnings.append(f"Timeline generation failed for leg {leg.id}: {e!s}")
 
     return warnings
 
@@ -623,9 +855,9 @@ def _generate_timelines_for_imported_legs(
 @limiter.limit("5/minute")
 async def import_mission(
     request: Request,
-    file: UploadFile = File(...),
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    file: Annotated[UploadFile, File()] = ...,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict:
     """Import mission from zip package.
 
@@ -639,6 +871,7 @@ async def import_mission(
         warnings = []
         routes_imported = 0
         pois_imported = 0
+        endpoint_pois_restored = 0
         satellites_imported = 0
         satellites_updated = 0
 
@@ -650,15 +883,18 @@ async def import_mission(
             # Save uploaded file
             contents = await file.read()
 
-            MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
-            if len(contents) > MAX_UPLOAD_SIZE:
+            if len(contents) > MISSION_PACKAGE_MAX_UPLOAD_BYTES:
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail="File too large",
+                    detail={
+                        "code": "mission_package_too_large",
+                        "layer": "application",
+                        "max_bytes": MISSION_PACKAGE_MAX_UPLOAD_BYTES,
+                        "received_bytes": len(contents),
+                    },
                 )
 
-            with open(zip_path, "wb") as f:
-                f.write(contents)
+            await asyncio.to_thread(zip_path.write_bytes, contents)
 
             # Extract and validate
             with zipfile.ZipFile(zip_path, "r") as zf:
@@ -708,6 +944,18 @@ async def import_mission(
                         zf, poi_manager, poi_files, satellite_file, tmppath
                     )
                     warnings.extend(poi_warnings)
+
+                    if route_manager:
+                        endpoint_pois_restored, endpoint_warnings = (
+                            _synchronize_imported_endpoint_pois(
+                                mission, route_manager, poi_manager
+                            )
+                        )
+                        warnings.extend(endpoint_warnings)
+                    else:
+                        warnings.append(
+                            "Endpoint POIs not restored: route manager unavailable"
+                        )
                 else:
                     warnings.append("POI manager not available, POIs not imported")
 
@@ -718,6 +966,7 @@ async def import_mission(
                     "leg_count": len(mission.legs),
                     "routes_imported": routes_imported,
                     "pois_imported": pois_imported,
+                    "endpoint_pois_restored": endpoint_pois_restored,
                     "satellites_imported": satellites_imported,
                     "satellites_updated": satellites_updated,
                     "warnings": warnings,
@@ -739,11 +988,25 @@ async def import_mission(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid zip file"
         )
-    except Exception as e:
-        logger.error(f"Import failed: {e}")
+    except HTTPException:
+        raise
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Import failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Import failed: {str(e)}",
+            detail=f"Import failed: {e!s}",
         )
 
 
@@ -753,8 +1016,8 @@ async def import_mission(
 async def add_leg_to_mission(
     mission_id: str,
     leg: MissionLeg,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> MissionLeg:
     """Add a new leg to an existing mission.
 
@@ -792,7 +1055,7 @@ async def add_leg_to_mission(
             if route_manager:
                 try:
                     logger.info(f"Generating timeline for new leg {leg.id}")
-                    timeline, summary = build_mission_timeline(
+                    timeline, _summary = build_mission_timeline(
                         mission=leg,
                         route_manager=route_manager,
                         poi_manager=poi_manager,
@@ -803,9 +1066,21 @@ async def add_leg_to_mission(
                         leg.id, timeline, parent_mission_id=mission_id
                     )
                     logger.info(f"Timeline generated and saved for new leg {leg.id}")
-                except Exception as e:
-                    logger.error(
-                        f"Failed to generate timeline for new leg {leg.id}: {e}"
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ):
+                    logger.exception(
+                        f"Failed to generate timeline for new leg {leg.id}"
                     )
                     # Don't fail the save if timeline generation fails
 
@@ -813,11 +1088,23 @@ async def add_leg_to_mission(
             return leg
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to add leg to mission: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to add leg to mission")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to add leg to mission: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to add leg to mission: {type(e).__name__}: {e!s}",
         )
 
 
@@ -826,8 +1113,8 @@ async def update_leg(
     mission_id: str,
     leg_id: str,
     updated_leg: MissionLeg,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict:
     """Update an existing leg in a mission.
 
@@ -881,7 +1168,19 @@ async def update_leg(
                             updated_leg.adjusted_departure_time, original_start
                         )
                         warnings.extend(validation_warnings)
-                    except Exception as e:
+                    except (
+                        RuntimeError,
+                        ValueError,
+                        OSError,
+                        KeyError,
+                        TypeError,
+                        AttributeError,
+                        LookupError,
+                        ConnectionError,
+                        TimeoutError,
+                        ImportError,
+                        EOFError,
+                    ) as e:
                         logger.warning(
                             f"Failed to validate adjusted departure time: {e}"
                         )
@@ -906,7 +1205,7 @@ async def update_leg(
                         f"Generating timeline for leg {leg_id} with "
                         f"adjusted_departure_time={updated_leg.adjusted_departure_time}"
                     )
-                    timeline, summary = build_mission_timeline(
+                    timeline, _summary = build_mission_timeline(
                         mission=updated_leg,
                         route_manager=route_manager,
                         poi_manager=poi_manager,
@@ -926,13 +1225,24 @@ async def update_leg(
                         leg_id, timeline, parent_mission_id=mission_id
                     )
                     logger.info(f"Timeline saved to disk for leg {leg_id}")
-                except Exception as e:
-                    logger.error(
-                        f"Failed to generate timeline for leg {leg_id}: {e}",
-                        exc_info=True,
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as e:
+                    logger.exception(
+                        f"Failed to generate timeline for leg {leg_id}",
                     )
                     warnings.append(
-                        f"Timeline regeneration failed: {str(e)}. "
+                        f"Timeline regeneration failed: {e!s}. "
                         "Exported documents may show stale timing. "
                         "Please check that the route KML is properly uploaded."
                     )
@@ -944,11 +1254,23 @@ async def update_leg(
             }
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to update leg: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to update leg")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update leg: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to update leg: {type(e).__name__}: {e!s}",
         )
 
 
@@ -956,8 +1278,8 @@ async def update_leg(
 async def delete_leg(
     mission_id: str,
     leg_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ):
     """Delete a leg from a mission (cascade deletes route and POIs).
 
@@ -1019,8 +1341,20 @@ async def delete_leg(
                         logger.info(
                             f"Deleted route {leg.route_id} associated with leg {leg_id}"
                         )
-                except Exception as e:
-                    logger.error(f"Failed to delete route {leg.route_id}: {e}")
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ):
+                    logger.exception(f"Failed to delete route {leg.route_id}")
                     # Don't fail the entire leg deletion if route deletion fails
 
             # 2. Delete POIs associated with this leg
@@ -1037,8 +1371,20 @@ async def delete_leg(
                         logger.info(
                             f"No route associated with leg {leg_id}, skipping POI deletion"
                         )
-                except Exception as e:
-                    logger.error(f"Failed to delete leg POIs: {e}")
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ):
+                    logger.exception("Failed to delete leg POIs")
                     # Don't fail the entire leg deletion if POI deletion fails
 
             # 3. Remove leg from mission and save
@@ -1052,8 +1398,8 @@ async def delete_leg(
                 try:
                     leg_file.unlink()
                     logger.info(f"Deleted leg file: {leg_file}")
-                except OSError as e:
-                    logger.error(f"Failed to delete leg file {leg_file}: {e}")
+                except OSError:
+                    logger.exception(f"Failed to delete leg file {leg_file}")
                     raise
 
             # 5. Delete leg timeline file
@@ -1063,14 +1409,26 @@ async def delete_leg(
             logger.info(
                 f"Deleted leg {leg_id} from mission {mission_id} with route {route_id}"
             )
-            return None
+            return
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to delete leg {leg_id}: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(f"Failed to delete leg {leg_id}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete leg: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to delete leg: {type(e).__name__}: {e!s}",
         )
 
 
@@ -1078,8 +1436,8 @@ async def delete_leg(
 async def activate_leg(
     mission_id: str,
     leg_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict:
     """Activate a specific leg (deactivates all others in the mission).
 
@@ -1129,15 +1487,27 @@ async def activate_leg(
                     )
                     route_manager.activate_route(active_leg.route_id)
                     logger.info(f"Route {active_leg.route_id} activated successfully")
-                except Exception as e:
-                    logger.error(f"Failed to activate route {active_leg.route_id}: {e}")
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ):
+                    logger.exception(f"Failed to activate route {active_leg.route_id}")
                     # Don't fail leg activation if route activation fails
 
             # Generate timeline for the activated leg
             if active_leg and route_manager:
                 try:
                     logger.info(f"Generating timeline for leg {leg_id}")
-                    timeline, summary = build_mission_timeline(
+                    timeline, _summary = build_mission_timeline(
                         mission=active_leg,
                         route_manager=route_manager,
                         poi_manager=poi_manager,
@@ -1148,8 +1518,20 @@ async def activate_leg(
                         leg_id, timeline, parent_mission_id=mission_id
                     )
                     logger.info(f"Timeline generated and saved for leg {leg_id}")
-                except Exception as e:
-                    logger.error(f"Failed to generate timeline for leg {leg_id}: {e}")
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ):
+                    logger.exception(f"Failed to generate timeline for leg {leg_id}")
                     # Don't fail activation if timeline generation fails
                     # Return success but note the timeline issue in logs
 
@@ -1158,18 +1540,30 @@ async def activate_leg(
             return {"status": "success", "active_leg_id": leg_id}
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to activate leg: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to activate leg")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to activate leg: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to activate leg: {type(e).__name__}: {e!s}",
         )
 
 
 @router.post("/{mission_id}/legs/deactivate", response_model=dict)
 async def deactivate_all_legs(
     mission_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict:
     """Deactivate all legs in the mission.
 
@@ -1207,8 +1601,20 @@ async def deactivate_all_legs(
                             )
                             route_manager.deactivate_route(leg.route_id)
                     logger.info(f"Deactivated all routes for mission {mission_id}")
-                except Exception as e:
-                    logger.error(f"Failed to deactivate routes: {e}")
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ):
+                    logger.exception("Failed to deactivate routes")
                     # Don't fail the overall deactivation if route deactivation fails
 
             logger.info(f"Deactivated all legs in mission {mission_id}")
@@ -1216,11 +1622,23 @@ async def deactivate_all_legs(
             return {"status": "success", "message": "All legs deactivated"}
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to deactivate legs: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception("Failed to deactivate legs")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to deactivate legs: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to deactivate legs: {type(e).__name__}: {e!s}",
         )
 
 
@@ -1294,9 +1712,9 @@ async def update_leg_route(
     request: Request,
     mission_id: str,
     leg_id: str,
-    file: UploadFile = File(...),
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    file: Annotated[UploadFile, File()] = ...,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict:
     """Update a leg's route via KML file upload.
 
@@ -1370,11 +1788,22 @@ async def update_leg_route(
             # Save new KML file to disk
             try:
                 contents = await file.read()
-                with open(new_route_path, "wb") as f:
-                    f.write(contents)
+                await asyncio.to_thread(new_route_path.write_bytes, contents)
                 logger.info(f"Saved new route file: {new_route_path}")
-            except Exception as e:
-                logger.error(f"Failed to save route file: {e}")
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
+                logger.exception("Failed to save route file")
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail="Failed to save route file",
@@ -1396,13 +1825,25 @@ async def update_leg_route(
                     new_route_path.unlink()
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Invalid KML file: {str(e)}",
+                    detail=f"Invalid KML file: {e!s}",
                 )
-            except Exception as e:
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
                 # Clean up file on parse failure
                 if new_route_path.exists():
                     new_route_path.unlink()
-                logger.error(f"Failed to parse KML file: {e}")
+                logger.exception("Failed to parse KML file")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Failed to parse KML file",
@@ -1420,7 +1861,19 @@ async def update_leg_route(
 
                         # Remove from route manager cache
                         route_manager._routes.pop(old_route_id, None)
-                except Exception as e:
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as e:
                     logger.warning(f"Failed to delete old route file: {e}")
                     # Don't fail the update if old file deletion fails
 
@@ -1459,7 +1912,19 @@ async def update_leg_route(
                     logger.info(
                         f"Deleted {deleted_pois} POIs for old route {old_route_id}"
                     )
-                except Exception as e:
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as e:
                     logger.warning(f"Failed to delete old POIs: {e}")
 
             # Import new POIs from KML waypoints
@@ -1471,7 +1936,19 @@ async def update_leg_route(
                     logger.info(
                         f"Imported {created} POIs from new route (skipped {skipped})"
                     )
-                except Exception as e:
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as e:
                     logger.warning(f"Failed to import POIs from new route: {e}")
 
             # Update leg in mission
@@ -1481,8 +1958,20 @@ async def update_leg_route(
             try:
                 save_mission_v2(mission)
                 logger.info(f"Saved updated mission {mission_id}")
-            except Exception as e:
-                logger.error(f"Failed to save mission: {e}")
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
+                logger.exception("Failed to save mission")
                 # Clean up new route file on failure
                 if new_route_path.exists():
                     new_route_path.unlink()
@@ -1495,7 +1984,7 @@ async def update_leg_route(
             if route_manager:
                 try:
                     logger.info(f"Regenerating timeline for leg {leg_id}")
-                    timeline, summary = build_mission_timeline(
+                    timeline, _summary = build_mission_timeline(
                         mission=leg,
                         route_manager=route_manager,
                         poi_manager=poi_manager,
@@ -1508,9 +1997,21 @@ async def update_leg_route(
                     logger.info(
                         f"Timeline regenerated and saved for leg {leg_id} with new route"
                     )
-                except Exception as e:
-                    logger.error(f"Failed to regenerate timeline for leg {leg_id}: {e}")
-                    warnings.append(f"Timeline regeneration failed: {str(e)}")
+                except (
+                    RuntimeError,
+                    ValueError,
+                    OSError,
+                    KeyError,
+                    TypeError,
+                    AttributeError,
+                    LookupError,
+                    ConnectionError,
+                    TimeoutError,
+                    ImportError,
+                    EOFError,
+                ) as e:
+                    logger.exception(f"Failed to regenerate timeline for leg {leg_id}")
+                    warnings.append(f"Timeline regeneration failed: {e!s}")
 
             return {
                 "leg": leg.model_dump(),
@@ -1519,11 +2020,23 @@ async def update_leg_route(
 
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to update route for leg {leg_id}: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(f"Failed to update route for leg {leg_id}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to update route: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to update route: {type(e).__name__}: {e!s}",
         )
 
 
@@ -1566,11 +2079,23 @@ async def get_leg_timeline(mission_id: str, leg_id: str) -> dict:
         return timeline.model_dump(mode="json")
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Failed to get timeline for leg {leg_id}: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(f"Failed to get timeline for leg {leg_id}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve timeline: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to retrieve timeline: {type(e).__name__}: {e!s}",
         )
 
 
@@ -1579,8 +2104,8 @@ async def preview_leg_timeline(
     mission_id: str,
     leg_id: str,
     preview_request: dict,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict:
     """Generate a real-time timeline preview for a mission leg.
 
@@ -1662,7 +2187,7 @@ async def preview_leg_timeline(
         logger.info(
             f"Generating timeline preview for leg {leg_id} in mission {mission_id}"
         )
-        timeline, summary = build_mission_timeline(
+        timeline, _summary = build_mission_timeline(
             mission=preview_leg,
             route_manager=route_manager,
             poi_manager=poi_manager,
@@ -1671,16 +2196,60 @@ async def preview_leg_timeline(
             include_samples=True,
         )
 
-        return timeline.model_dump(mode="json")
+        response = timeline.model_dump(mode="json")
+        splice = preview_leg.transports.manual_route_splice
+        if splice:
+            source_route = route_manager.get_route(preview_leg.route_id)
+            selected_track = next(
+                (
+                    track
+                    for track in preview_leg.transports.manual_aar_tracks
+                    if track.id == splice.enabled_track_id
+                ),
+                None,
+            )
+            if source_route is None or selected_track is None:
+                response["route_basis"] = "planned"
+                response["derived_route_estimate"] = {
+                    "available": False,
+                    "estimated": True,
+                    "unavailable_reason": "selected_track_not_found",
+                }
+            else:
+                preview_route = route_with_adjusted_departure(
+                    source_route, preview_leg.adjusted_departure_time
+                )
+                estimate = build_derived_route_estimate(
+                    preview_route, selected_track, splice
+                )
+                response["route_basis"] = (
+                    "derived_estimate" if estimate.available else "planned"
+                )
+                response["derived_route_estimate"] = estimate.as_dict()
+        else:
+            response["route_basis"] = "planned"
+            response["derived_route_estimate"] = None
+        return response
 
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(
-            f"Failed to generate timeline preview for leg {leg_id}: {e}",
-            exc_info=True,
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.exception(
+            f"Failed to generate timeline preview for leg {leg_id}",
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate preview: {type(e).__name__}: {str(e)}",
+            detail=f"Failed to generate preview: {type(e).__name__}: {e!s}",
         )
