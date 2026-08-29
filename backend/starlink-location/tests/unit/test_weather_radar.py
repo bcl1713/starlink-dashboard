@@ -8,7 +8,6 @@ from collections.abc import Iterable
 
 import httpx
 import pytest
-
 from app.services.weather_radar import (
     InvalidRadarTileError,
     RainViewerRadarService,

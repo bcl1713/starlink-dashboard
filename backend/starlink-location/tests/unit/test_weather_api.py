@@ -8,7 +8,6 @@ from tempfile import SpooledTemporaryFile
 import httpcore
 import httpx
 import pytest
-
 from app.api.weather import get_rainviewer_radar_service
 from app.services.rainviewer_transport import (
     PinnedAsyncHTTPTransport,
