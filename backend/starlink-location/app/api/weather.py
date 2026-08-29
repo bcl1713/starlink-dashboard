@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Request
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response
 
 from app.services.weather_radar import (
@@ -21,9 +23,14 @@ def get_rainviewer_radar_service(request: Request) -> RainViewerRadarService:
 
 
 @router.get("/radar/rainviewer/{z}/{x}/{y}.png")
-async def rainviewer_radar_tile(z: int, x: int, y: int, request: Request) -> Response:
+async def rainviewer_radar_tile(
+    z: int,
+    x: int,
+    y: int,
+    request: Request,
+    service: Annotated[RainViewerRadarService, Depends(get_rainviewer_radar_service)],
+) -> Response:
     """Return a validated RainViewer PNG radar tile through the backend origin."""
-    service = get_rainviewer_radar_service(request)
     try:
         tile = await service.fetch_tile(z, x, y, request.is_disconnected)
     except InvalidRadarTileError as exc:

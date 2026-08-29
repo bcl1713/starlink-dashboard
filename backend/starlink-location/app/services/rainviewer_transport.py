@@ -5,6 +5,8 @@ from __future__ import annotations
 import ipaddress
 import socket
 import ssl
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Protocol
 
 import dns.asyncresolver
@@ -120,12 +122,46 @@ class _HTTPXResponseStream(httpx.AsyncByteStream):
     def __init__(self, stream: httpcore.AsyncByteStream) -> None:
         self._stream = stream
 
-    async def __aiter__(self):
-        async for chunk in self._stream:
-            yield chunk
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        async with _map_httpcore_exceptions():
+            async for chunk in self._stream:
+                yield chunk
 
     async def aclose(self) -> None:
-        await self._stream.aclose()
+        async with _map_httpcore_exceptions():
+            await self._stream.aclose()
+
+
+@asynccontextmanager
+async def _map_httpcore_exceptions() -> AsyncIterator[None]:
+    try:
+        yield
+    except RainViewerPinningError as exc:
+        raise httpx.ConnectError("") from exc
+    except httpcore.TimeoutException as exc:
+        if isinstance(exc, httpcore.ConnectTimeout):
+            raise httpx.ConnectTimeout("") from exc
+        if isinstance(exc, httpcore.ReadTimeout):
+            raise httpx.ReadTimeout("") from exc
+        if isinstance(exc, httpcore.WriteTimeout):
+            raise httpx.WriteTimeout("") from exc
+        if isinstance(exc, httpcore.PoolTimeout):
+            raise httpx.PoolTimeout("") from exc
+        raise httpx.TimeoutException("") from exc
+    except httpcore.NetworkError as exc:
+        if isinstance(exc, httpcore.ConnectError):
+            raise httpx.ConnectError("") from exc
+        if isinstance(exc, httpcore.ReadError):
+            raise httpx.ReadError("") from exc
+        if isinstance(exc, httpcore.WriteError):
+            raise httpx.WriteError("") from exc
+        raise httpx.NetworkError("") from exc
+    except httpcore.ProtocolError as exc:
+        if isinstance(exc, httpcore.RemoteProtocolError):
+            raise httpx.RemoteProtocolError("") from exc
+        if isinstance(exc, httpcore.LocalProtocolError):
+            raise httpx.LocalProtocolError("") from exc
+        raise httpx.ProtocolError("") from exc
 
 
 class PinnedAsyncHTTPTransport(httpx.AsyncBaseTransport):
@@ -161,7 +197,8 @@ class PinnedAsyncHTTPTransport(httpx.AsyncBaseTransport):
             content=request.stream,
             extensions=request.extensions,
         )
-        core_response = await self._pool.handle_async_request(core_request)
+        async with _map_httpcore_exceptions():
+            core_response = await self._pool.handle_async_request(core_request)
         return httpx.Response(
             status_code=core_response.status,
             headers=core_response.headers,
