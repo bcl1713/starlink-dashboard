@@ -832,9 +832,14 @@ def test_process_wide_queue_full_across_event_loops() -> None:
 
 
 @pytest.mark.asyncio
-async def test_cancelled_cross_loop_admission_does_not_leak_capacity() -> None:
+async def test_cancelled_cross_loop_admission_does_not_leak_capacity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     release = asyncio.Event()
     all_slots_busy = asyncio.Event()
+    admission_entered = threading.Event()
+    admission_entries = 0
+    admission_lock = threading.Lock()
     active = 0
     lock = asyncio.Lock()
 
@@ -864,14 +869,29 @@ async def test_cancelled_cross_loop_admission_does_not_leak_capacity() -> None:
     ]
     await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
 
+    waiting_client = make_client(handler, admission_timeout_seconds=1)
+    original_acquire = waiting_client._acquire_upstream_slot
+
+    async def observed_acquire() -> None:
+        nonlocal admission_entries
+        with admission_lock:
+            admission_entries += 1
+        admission_entered.set()
+        await original_acquire()
+
+    monkeypatch.setattr(waiting_client, "_acquire_upstream_slot", observed_acquire)
     waiting = asyncio.create_task(
-        make_client(handler, admission_timeout_seconds=1).get_history(
+        waiting_client.get_history(
             range_seconds=100,
             step_seconds=10,
             client_id="waiting",
         )
     )
-    await asyncio.sleep(0)
+    assert await asyncio.wait_for(
+        asyncio.to_thread(admission_entered.wait, 1),
+        timeout=1.5,
+    )
+    assert admission_entries >= 1
     waiting.cancel()
     with pytest.raises(asyncio.CancelledError):
         await waiting
@@ -1438,9 +1458,13 @@ async def test_disconnect_callback_is_polled_while_waiting() -> None:
 
 
 @pytest.mark.asyncio
-async def test_disconnect_during_admission_and_no_pending_task_leaks() -> None:
+async def test_disconnect_during_admission_and_no_pending_task_leaks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     release = asyncio.Event()
     all_slots_busy = asyncio.Event()
+    admission_entered = asyncio.Event()
+    admission_entries = 0
     active = 0
     lock = asyncio.Lock()
 
@@ -1470,15 +1494,26 @@ async def test_disconnect_during_admission_and_no_pending_task_leaks() -> None:
     await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
 
     disconnect = asyncio.Event()
+    waiting_client = make_client(handler)
+    original_acquire = waiting_client._acquire_upstream_slot
+
+    async def observed_acquire() -> None:
+        nonlocal admission_entries
+        admission_entries += 1
+        admission_entered.set()
+        await original_acquire()
+
+    monkeypatch.setattr(waiting_client, "_acquire_upstream_slot", observed_acquire)
     waiting = asyncio.create_task(
-        make_client(handler).get_history(
+        waiting_client.get_history(
             range_seconds=80,
             step_seconds=10,
             client_id="waiting",
             cancel_event=disconnect,
         )
     )
-    await asyncio.sleep(0)
+    await asyncio.wait_for(admission_entered.wait(), timeout=1)
+    assert admission_entries >= 1
     before = asyncio.all_tasks()
     disconnect.set()
     with pytest.raises(asyncio.CancelledError):
