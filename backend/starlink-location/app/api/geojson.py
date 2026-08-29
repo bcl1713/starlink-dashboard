@@ -5,12 +5,16 @@
 # formatting for map visualization. Splitting would obscure the rendering pipeline.
 # Deferred to v0.4.0.
 
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
 
 from app.core.config import ConfigManager
 from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.models.monitoring import RouteCoordinatesResponse
+from app.models.route import ParsedRoute
 from app.services.geojson import GeoJSONBuilder
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
@@ -20,6 +24,10 @@ config_manager = ConfigManager()
 
 # Create API router
 router = APIRouter(prefix="/api", tags=["geojson"])
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 @router.get("/route.geojson", response_model=dict, summary="Get route as GeoJSON")
@@ -111,11 +119,22 @@ async def get_route_geojson(
     return feature_collection
 
 
+def _route_revision_at(route: ParsedRoute) -> datetime | None:
+    """Return persisted source modification time for a parsed route."""
+    file_path = route.metadata.file_path
+    if not file_path:
+        return None
+    try:
+        return datetime.fromtimestamp(Path(file_path).stat().st_mtime, tz=timezone.utc)
+    except OSError:
+        return None
+
+
 def _get_route_coordinates_filtered(
     route_id: str | None,
     route_manager: RouteManager,
     hemisphere: str | None = None,
-) -> dict[str, Any]:
+) -> RouteCoordinatesResponse:
     """
     Helper function to get route coordinates, optionally filtered by hemisphere.
 
@@ -127,12 +146,14 @@ def _get_route_coordinates_filtered(
         Dictionary with coordinates, total, route_id, route_name
     """
     if not route_manager:
-        return {
-            "coordinates": [],
-            "total": 0,
-            "route_id": None,
-            "route_name": None,
-        }
+        return RouteCoordinatesResponse(
+            coordinates=[],
+            total=0,
+            route_id=None,
+            route_name=None,
+            revision_at=None,
+            generated_at=_utc_now(),
+        )
 
     route = None
 
@@ -144,12 +165,14 @@ def _get_route_coordinates_filtered(
         route = route_manager.get_active_route()
 
     if not route:
-        return {
-            "coordinates": [],
-            "total": 0,
-            "route_id": None,
-            "route_name": None,
-        }
+        return RouteCoordinatesResponse(
+            coordinates=[],
+            total=0,
+            route_id=None,
+            route_name=None,
+            revision_at=None,
+            generated_at=_utc_now(),
+        )
 
     # Convert route points to tabular format with IDL handling
     coordinates = []
@@ -170,8 +193,8 @@ def _get_route_coordinates_filtered(
                 {
                     "latitude": p1.latitude,
                     "longitude": p1.longitude,
-                    "altitude": p1.altitude,
-                    "sequence": p1.sequence,
+                    "altitude_meters": p1.altitude,
+                    "sequence": float(p1.sequence),
                 }
             )
 
@@ -227,7 +250,7 @@ def _get_route_coordinates_filtered(
                             {
                                 "latitude": lat_at_180,
                                 "longitude": lon_to_add,
-                                "altitude": alt_at_180,
+                                "altitude_meters": alt_at_180,
                                 "sequence": p1.sequence + fraction,
                             }
                         )
@@ -235,17 +258,19 @@ def _get_route_coordinates_filtered(
     # Extract route ID from file path (e.g., "test_fix.kml" -> "test_fix")
     route_id_str = route.metadata.file_path.split("/")[-1].split(".")[0]
 
-    return {
-        "coordinates": coordinates,
-        "total": len(coordinates),
-        "route_id": route_id_str,
-        "route_name": route.metadata.name,
-    }
+    return RouteCoordinatesResponse(
+        coordinates=coordinates,
+        total=len(coordinates),
+        route_id=route_id_str,
+        route_name=route.metadata.name,
+        revision_at=_route_revision_at(route),
+        generated_at=_utc_now(),
+    )
 
 
 @router.get(
     "/route/coordinates",
-    response_model=dict,
+    response_model=RouteCoordinatesResponse,
     summary="Get route coordinates as tabular data",
 )
 async def get_route_coordinates(
@@ -254,7 +279,7 @@ async def get_route_coordinates(
         Query(description="Specific route ID (uses active if not provided)"),
     ] = None,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
-) -> dict[str, Any]:
+) -> RouteCoordinatesResponse:
     """
     Get active route coordinates in tabular format for Grafana geomap route layer.
 
@@ -278,7 +303,7 @@ async def get_route_coordinates(
 
 @router.get(
     "/route/coordinates/west",
-    response_model=dict,
+    response_model=RouteCoordinatesResponse,
     summary="Get route coordinates in western hemisphere (IDL-safe)",
 )
 async def get_route_coordinates_west(
@@ -287,7 +312,7 @@ async def get_route_coordinates_west(
         Query(description="Specific route ID (uses active if not provided)"),
     ] = None,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
-) -> dict[str, Any]:
+) -> RouteCoordinatesResponse:
     """
     Get active route coordinates in western hemisphere (longitude < 0) for Grafana geomap.
 
@@ -306,7 +331,7 @@ async def get_route_coordinates_west(
 
 @router.get(
     "/route/coordinates/east",
-    response_model=dict,
+    response_model=RouteCoordinatesResponse,
     summary="Get route coordinates in eastern hemisphere (IDL-safe)",
 )
 async def get_route_coordinates_east(
@@ -315,7 +340,7 @@ async def get_route_coordinates_east(
         Query(description="Specific route ID (uses active if not provided)"),
     ] = None,
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
-) -> dict[str, Any]:
+) -> RouteCoordinatesResponse:
     """
     Get active route coordinates in eastern hemisphere (longitude >= 0) for Grafana geomap.
 

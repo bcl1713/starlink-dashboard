@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -112,11 +112,74 @@ class ActiveLinkResponse(StrictMonitoringModel):
     generated_at: datetime
 
 
+class ActiveXLinkCoordinate(StrictMonitoringModel):
+    """Single aircraft or satellite endpoint in an active X-band link."""
+
+    satellite_id: str
+    state: str
+    color: str
+    relative_azimuth_degrees: float
+    in_forbidden_window: bool
+    point: str
+    sequence: int
+    latitude: float
+    longitude: float
+    observed_at: datetime | None
+
+
+class ActiveXLinkItem(StrictMonitoringModel):
+    """One rendered active X-band link segment."""
+
+    satellite_id: str
+    state: str
+    color: str
+    relative_azimuth_degrees: float
+    in_forbidden_window: bool
+    coordinates: list[ActiveXLinkCoordinate]
+
+
+class ActiveXLinkResponse(StrictMonitoringModel):
+    """Typed active X-band overlay response with truthful freshness fields."""
+
+    coordinates: list[ActiveXLinkCoordinate]
+    links: list[ActiveXLinkItem]
+    total: int
+    satellite_id: str | None
+    pending_satellite_id: str | None
+    handoff: dict[str, Any]
+    state: str | None
+    color: str | None
+    relative_azimuth_degrees: float | None
+    in_forbidden_window: bool | None
+    observed_at: datetime | None
+    generated_at: datetime
+
+
 class RouteCoordinateResponse(StrictMonitoringModel):
     """Route coordinate freshness response."""
 
     latitude: float
     longitude: float
     altitude_meters: float | None = None
+    revision_at: datetime | None
+    generated_at: datetime
+
+
+class RouteCoordinatePoint(StrictMonitoringModel):
+    """Single tabular route coordinate."""
+
+    latitude: float
+    longitude: float
+    altitude_meters: float | None = None
+    sequence: float
+
+
+class RouteCoordinatesResponse(StrictMonitoringModel):
+    """Tabular route coordinate response with source and response freshness."""
+
+    coordinates: list[RouteCoordinatePoint]
+    total: int
+    route_id: str | None
+    route_name: str | None
     revision_at: datetime | None
     generated_at: datetime

@@ -8,6 +8,7 @@ import os
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from ipaddress import AddressValueError, IPv4Address
 
 import dns.resolver
@@ -41,6 +42,7 @@ class GroundEntryPoint:
     latitude: float
     longitude: float
     region: str = ""
+    observed_at: datetime | None = None
 
     @property
     def label(self) -> str:
@@ -62,11 +64,13 @@ class GroundEntryPointResolver:
         geolocator: Callable[[str], GroundEntryPoint | None] | None = None,
         poll_interval_seconds: float = _DEFAULT_REFRESH_INTERVAL_SECONDS,
         time_source: Callable[[], float] | None = None,
+        clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._ip_resolver = ip_resolver or resolve_public_ip
         self._geolocator = geolocator or geolocate_public_ip
         self._poll_interval_seconds = poll_interval_seconds
         self._time_source = time_source or time.monotonic
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._last_lookup_at: float | None = None
         self._current_ip: str | None = None
         self._current_entry: GroundEntryPoint | None = None
@@ -74,11 +78,6 @@ class GroundEntryPointResolver:
 
     def current(self) -> GroundEntryPoint | None:
         """Return the most recently resolved ground entry point."""
-        configured = _entry_point_from_environment()
-        if configured is not None:
-            self._current_ip = configured.ip or self._current_ip
-            self._current_entry = configured
-            return configured
         return self._current_entry
 
     def invalidate(self, clear_geolocation_cache: bool = False) -> None:
@@ -93,9 +92,10 @@ class GroundEntryPointResolver:
         """Refresh public IP state and geolocate only when the IP changes."""
         configured = _entry_point_from_environment()
         if configured is not None:
-            self._current_ip = configured.ip or self._current_ip
-            self._current_entry = configured
-            return configured
+            observed = self._with_observed_at(configured)
+            self._current_ip = observed.ip or self._current_ip
+            self._current_entry = observed
+            return observed
 
         now = self._time_source()
         if (
@@ -158,10 +158,29 @@ class GroundEntryPointResolver:
         if entry is None:
             return self._current_entry
 
-        self._entry_cache[ip] = entry
+        observed = self._with_observed_at(entry)
+        self._entry_cache[ip] = observed
         self._current_ip = ip
-        self._current_entry = entry
-        return entry
+        self._current_entry = observed
+        return observed
+
+    def _with_observed_at(self, entry_point: GroundEntryPoint) -> GroundEntryPoint:
+        observed_at = entry_point.observed_at or self._utc_now()
+        return GroundEntryPoint(
+            ip=entry_point.ip,
+            city=entry_point.city,
+            country=entry_point.country,
+            latitude=entry_point.latitude,
+            longitude=entry_point.longitude,
+            region=entry_point.region,
+            observed_at=observed_at,
+        )
+
+    def _utc_now(self) -> datetime:
+        value = self._clock()
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("ground entry point clock must be timezone-aware")
+        return value.astimezone(timezone.utc)
 
 
 def resolve_public_ip(timeout_seconds: float = 2.0) -> str | None:

@@ -579,8 +579,17 @@ class MonitoringPrometheusClient:
                 watcher.cancel()
             await asyncio.gather(*watchers, return_exceptions=True)
             if not operation.done():
-                operation.cancel()
-                await asyncio.gather(operation, return_exceptions=True)
+                if cancel_operation:
+                    operation.cancel()
+                    await asyncio.gather(operation, return_exceptions=True)
+                else:
+                    operation.add_done_callback(self._settle_abandoned_operation)
+
+    def _settle_abandoned_operation(self, operation: asyncio.Future[T]) -> None:
+        try:
+            operation.exception()
+        except asyncio.CancelledError:
+            return
 
     def _check_cancel(self, cancel_event: asyncio.Event | None) -> None:
         if cancel_event is not None and cancel_event.is_set():

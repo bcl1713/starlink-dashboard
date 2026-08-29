@@ -20,6 +20,7 @@ from app.api import (
     gps,
     health,
     metrics,
+    monitoring,
     pois,
     routes,
     status,
@@ -39,6 +40,7 @@ from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.services.prometheus_client import MonitoringPrometheusClient
 from app.services.ground_entry_point import (
     maybe_refresh_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
@@ -78,6 +80,7 @@ async def startup_event():
         logger.info_json("Loading configuration")
         config_manager = ConfigManager()
         _simulation_config = config_manager.load()
+        app.state.monitoring_prometheus_client = MonitoringPrometheusClient()
         logger.info_json(
             "Configuration loaded",
             extra_fields={
@@ -311,6 +314,12 @@ async def shutdown_event():
             _route_manager.stop_watching()
             _route_manager = None
 
+        monitoring_client = getattr(app.state, "monitoring_prometheus_client", None)
+        if monitoring_client is not None:
+            logger.info_json("Closing monitoring Prometheus client")
+            await monitoring_client.aclose()
+            app.state.monitoring_prometheus_client = None
+
         # Shutdown ETA service
         logger.info_json("Shutting down ETA service")
         shutdown_eta_service()
@@ -524,6 +533,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # Register API routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
+app.include_router(monitoring.router, tags=["Monitoring"])
 app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])

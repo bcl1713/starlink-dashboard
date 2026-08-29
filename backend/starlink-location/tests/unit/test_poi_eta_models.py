@@ -2,7 +2,9 @@
 
 from datetime import datetime, timezone
 
+import pytest
 from app.models.poi import POIETAListResponse, POIWithETA
+from pydantic import ValidationError
 
 
 def test_poi_with_eta_defaults():
@@ -68,3 +70,24 @@ def test_poi_eta_list_response_defaults():
     assert response.pois == []
     assert response.total == 0
     assert before <= response.timestamp <= after
+
+
+def test_poi_eta_timestamp_is_calculation_generated_at_and_utc_typed():
+    """The legacy timestamp field is the calculation time, not telemetry freshness."""
+    calculated_at = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+
+    response = POIETAListResponse(timestamp=calculated_at)
+
+    assert response.timestamp == calculated_at
+    assert response.model_dump(mode="json")["timestamp"] == "2026-08-29T12:00:00Z"
+
+
+def test_poi_eta_response_rejects_extra_fields_and_naive_timestamp():
+    with pytest.raises(ValidationError):
+        POIETAListResponse(timestamp=datetime(2026, 8, 29, 12, 0))  # noqa: DTZ001
+
+    with pytest.raises(ValidationError):
+        POIETAListResponse(
+            timestamp=datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc),
+            observed_at=datetime(2026, 8, 29, 11, 59, tzinfo=timezone.utc),
+        )

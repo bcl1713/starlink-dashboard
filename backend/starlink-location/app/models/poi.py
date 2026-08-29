@@ -6,7 +6,7 @@
 
 from datetime import datetime, timezone
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class POI(BaseModel):
@@ -317,6 +317,17 @@ class POIWithETA(BaseModel):
 class POIETAListResponse(BaseModel):
     """Response model for POI ETA list endpoint."""
 
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "pois": [],
+                "total": 0,
+                "timestamp": "2025-10-30T10:00:00Z",
+            }
+        },
+    )
+
     pois: list[POIWithETA] = Field(
         default_factory=list, description="List of POIs with ETA data"
     )
@@ -326,12 +337,9 @@ class POIETAListResponse(BaseModel):
         description="When this data was calculated",
     )
 
-    model_config = {
-        "json_schema_extra": {
-            "example": {
-                "pois": [],
-                "total": 0,
-                "timestamp": "2025-10-30T10:00:00",
-            }
-        }
-    }
+    @model_validator(mode="after")
+    def _timestamp_must_be_utc_aware(self) -> "POIETAListResponse":
+        if self.timestamp.tzinfo is None or self.timestamp.utcoffset() is None:
+            raise ValueError("timestamp must be timezone-aware")
+        self.timestamp = self.timestamp.astimezone(timezone.utc)
+        return self

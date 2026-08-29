@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from app.core.metrics import REGISTRY
 from app.services import ground_entry_point as gep
 from app.services.ground_entry_point import (
@@ -458,3 +460,124 @@ def test_resolver_reuses_cached_geolocation_when_prior_ip_returns() -> None:
     assert second is not None
     assert third is first
     assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
+
+
+def test_resolver_successful_discovery_sets_observed_at() -> None:
+    observed = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: "203.0.113.10",
+        geolocator=lambda ip: GroundEntryPoint(
+            ip=ip,
+            city="Omaha",
+            region="Nebraska",
+            country="US",
+            latitude=41.2565,
+            longitude=-95.9345,
+        ),
+        poll_interval_seconds=0.0,
+        clock=lambda: observed,
+    )
+
+    entry = resolver.refresh(force=True)
+
+    assert entry is not None
+    assert entry.observed_at == observed
+
+
+def test_cached_read_preserves_observed_at_without_refreshing_request_time() -> None:
+    observed = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+    now = observed
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: "203.0.113.10",
+        geolocator=lambda ip: GroundEntryPoint(
+            ip=ip,
+            city="Omaha",
+            country="US",
+            latitude=41.2565,
+            longitude=-95.9345,
+        ),
+        poll_interval_seconds=60.0,
+        time_source=lambda: now.timestamp(),
+        clock=lambda: now,
+    )
+
+    first = resolver.refresh()
+    now = datetime(2026, 8, 29, 12, 5, tzinfo=timezone.utc)
+    cached = resolver.current()
+
+    assert first is not None
+    assert cached is first
+    assert cached.observed_at == observed
+
+
+def test_actual_refresh_updates_observed_at_when_public_ip_changes() -> None:
+    observed_times = iter(
+        [
+            datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc),
+            datetime(2026, 8, 29, 12, 5, tzinfo=timezone.utc),
+        ]
+    )
+    now = 0.0
+    resolved_ips = iter(["203.0.113.10", "198.51.100.24"])
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: next(resolved_ips),
+        geolocator=lambda ip: GroundEntryPoint(
+            ip=ip,
+            city="Omaha" if ip == "203.0.113.10" else "Dallas",
+            country="US",
+            latitude=41.2565,
+            longitude=-95.9345,
+        ),
+        poll_interval_seconds=0.0,
+        time_source=lambda: now,
+        clock=lambda: next(observed_times),
+    )
+
+    first = resolver.refresh()
+    now = 1.0
+    second = resolver.refresh()
+
+    assert first is not None
+    assert second is not None
+    assert first.observed_at == datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+    assert second.observed_at == datetime(2026, 8, 29, 12, 5, tzinfo=timezone.utc)
+
+
+def test_invalidation_and_unavailable_state_do_not_stamp_stale_cache() -> None:
+    observed = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: "203.0.113.10",
+        geolocator=lambda ip: GroundEntryPoint(
+            ip=ip,
+            city="Omaha",
+            country="US",
+            latitude=41.2565,
+            longitude=-95.9345,
+        ),
+        poll_interval_seconds=0.0,
+        clock=lambda: observed,
+    )
+    assert resolver.refresh() is not None
+
+    resolver.invalidate()
+
+    assert resolver.current() is None
+    assert resolver.refresh(force=True) is not None
+
+
+def test_environment_config_refresh_sets_observed_at(monkeypatch) -> None:
+    observed = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", "41.2565")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", "-95.9345")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_CITY", "Omaha")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_REGION", "Nebraska")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_COUNTRY", "US")
+
+    resolver = GroundEntryPointResolver(clock=lambda: observed)
+
+    entry = resolver.refresh(force=True)
+
+    assert entry is not None
+    assert entry.observed_at == observed
+    assert entry.label == "Omaha, Nebraska"

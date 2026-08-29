@@ -1,0 +1,367 @@
+"""Route-level tests for typed monitoring endpoints."""
+
+from __future__ import annotations
+
+import asyncio
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+import pytest
+from app.api import monitoring
+from app.models.monitoring import (
+    GroundEntryPointResponse,
+    MonitoringHistoryResponse,
+    MonitoringSample,
+    MonitoringSeries,
+)
+from app.services.prometheus_client import (
+    MonitoringPrometheusError,
+    MonitoringRateLimitError,
+    MonitoringUnavailableError,
+)
+from fastapi.testclient import TestClient
+from main import app
+from starlette.responses import Response
+
+UTC_NOW = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+
+
+class FakeMonitoringClient:
+    def __init__(self, response: MonitoringHistoryResponse | None = None) -> None:
+        self.response = response or _history_response(1800, 1)
+        self.calls: list[dict[str, Any]] = []
+        self.release = asyncio.Event()
+
+    async def get_history(self, **kwargs: Any) -> MonitoringHistoryResponse:
+        self.calls.append(kwargs)
+        await self.release.wait()
+        return self.response
+
+
+def _history_response(
+    range_seconds: int, step_seconds: int
+) -> MonitoringHistoryResponse:
+    return MonitoringHistoryResponse(
+        generated_at=UTC_NOW,
+        window_start=UTC_NOW - timedelta(seconds=range_seconds),
+        window_end=UTC_NOW,
+        range_seconds=range_seconds,
+        step_seconds=step_seconds,
+        series=[
+            MonitoringSeries(
+                metric=metric,
+                samples=[
+                    MonitoringSample(
+                        timestamp=UTC_NOW - timedelta(seconds=step_seconds),
+                        value=1.0,
+                    )
+                ],
+            )
+            for metric in MonitoringHistoryResponse.metric_order()
+        ],
+    )
+
+
+@pytest.fixture
+def client() -> TestClient:
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+def override_monitoring_client(fake: Any) -> None:
+    app.dependency_overrides[monitoring.get_monitoring_client] = lambda: fake
+
+
+def test_history_defaults_success_headers_body_and_safe_upstream_controls(
+    client: TestClient,
+) -> None:
+    fake = FakeMonitoringClient(_history_response(1800, 1))
+    fake.release.set()
+    override_monitoring_client(fake)
+
+    response = client.get(
+        "/api/monitoring/history",
+        params={
+            "query": "up",
+            "url": "http://evil",
+            "headers": "secret",
+            "credentials": "secret",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert response.json() == {
+        "generated_at": "2026-08-29T12:00:00Z",
+        "window_start": "2026-08-29T11:30:00Z",
+        "window_end": "2026-08-29T12:00:00Z",
+        "range_seconds": 1800,
+        "step_seconds": 1,
+        "series": [
+            {
+                "metric": metric,
+                "samples": [
+                    {
+                        "timestamp": "2026-08-29T11:59:59Z",
+                        "value": 1.0,
+                    }
+                ],
+            }
+            for metric in MonitoringHistoryResponse.metric_order()
+        ],
+    }
+    assert fake.calls == [
+        {
+            "range_seconds": 1800,
+            "step_seconds": 1,
+            "client_id": "monitoring-history",
+            "cancel_callback": fake.calls[0]["cancel_callback"],
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"range_seconds": 60, "step_seconds": 1},
+        {"range_seconds": 3600, "step_seconds": 60},
+    ],
+)
+def test_history_accepts_bounds(client: TestClient, params: dict[str, int]) -> None:
+    fake = FakeMonitoringClient(
+        _history_response(params["range_seconds"], params["step_seconds"])
+    )
+    fake.release.set()
+    override_monitoring_client(fake)
+
+    response = client.get("/api/monitoring/history", params=params)
+
+    assert response.status_code == 200
+    assert response.json()["range_seconds"] == params["range_seconds"]
+    assert response.json()["step_seconds"] == params["step_seconds"]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"range_seconds": 59},
+        {"range_seconds": 3601},
+        {"step_seconds": 0},
+        {"step_seconds": 61},
+    ],
+)
+def test_history_rejects_bounds_with_422(
+    client: TestClient, params: dict[str, int]
+) -> None:
+    fake = FakeMonitoringClient()
+    fake.release.set()
+    override_monitoring_client(fake)
+
+    response = client.get("/api/monitoring/history", params=params)
+
+    assert response.status_code == 422
+    assert fake.calls == []
+
+
+def test_history_empty_series_are_returned(client: TestClient) -> None:
+    fake = FakeMonitoringClient(
+        MonitoringHistoryResponse(
+            generated_at=UTC_NOW,
+            window_start=UTC_NOW - timedelta(seconds=60),
+            window_end=UTC_NOW,
+            range_seconds=60,
+            step_seconds=10,
+            series=[
+                MonitoringSeries(metric=metric, samples=[])
+                for metric in MonitoringHistoryResponse.metric_order()
+            ],
+        )
+    )
+    fake.release.set()
+    override_monitoring_client(fake)
+
+    response = client.get(
+        "/api/monitoring/history",
+        params={"range_seconds": 60, "step_seconds": 10},
+    )
+
+    assert response.status_code == 200
+    assert all(series["samples"] == [] for series in response.json()["series"])
+
+
+@pytest.mark.parametrize(
+    ("error", "status_code", "detail", "headers"),
+    [
+        (
+            MonitoringPrometheusError("malformed_json", "secret http://prometheus"),
+            502,
+            {"code": "monitoring_upstream_error"},
+            {},
+        ),
+        (
+            MonitoringPrometheusError("upstream_timeout", "secret body"),
+            504,
+            {"code": "monitoring_upstream_timeout"},
+            {},
+        ),
+        (
+            MonitoringRateLimitError(7),
+            429,
+            {"code": "monitoring_rate_limited"},
+            {"retry-after": "7"},
+        ),
+        (
+            MonitoringUnavailableError(),
+            503,
+            {"code": "monitoring_capacity_unavailable"},
+            {},
+        ),
+    ],
+)
+def test_history_maps_safe_errors_without_leaking_details(
+    client: TestClient,
+    error: Exception,
+    status_code: int,
+    detail: dict[str, str],
+    headers: dict[str, str],
+) -> None:
+    class FailingClient:
+        async def get_history(self, **kwargs: Any) -> MonitoringHistoryResponse:
+            raise error
+
+    override_monitoring_client(FailingClient())
+
+    response = client.get("/api/monitoring/history")
+
+    assert response.status_code == status_code
+    assert response.json() == {"detail": detail}
+    for key, value in headers.items():
+        assert response.headers[key] == value
+    assert "prometheus" not in response.text
+    assert "secret" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_history_uses_request_disconnect_as_live_cancellation() -> None:
+    class DisconnectedRequest:
+        app = app
+
+        async def is_disconnected(self) -> bool:
+            return True
+
+    class CancelAwareClient:
+        async def get_history(self, **kwargs: Any) -> MonitoringHistoryResponse:
+            assert await kwargs["cancel_callback"]() is True
+            raise asyncio.CancelledError
+
+    with pytest.raises(asyncio.CancelledError):
+        await monitoring.get_monitoring_history(
+            request=DisconnectedRequest(),
+            response=Response(),
+            range_seconds=1800,
+            step_seconds=1,
+            prometheus=CancelAwareClient(),
+        )
+
+
+@pytest.mark.asyncio
+async def test_history_route_preserves_client_single_flight_coalescing() -> None:
+    fake = FakeMonitoringClient()
+    first = asyncio.create_task(
+        monitoring.get_monitoring_history(
+            request=type("Request", (), {"is_disconnected": lambda self: False})(),
+            response=Response(),
+            range_seconds=1800,
+            step_seconds=1,
+            prometheus=fake,
+        )
+    )
+    second = asyncio.create_task(
+        monitoring.get_monitoring_history(
+            request=type("Request", (), {"is_disconnected": lambda self: False})(),
+            response=Response(),
+            range_seconds=1800,
+            step_seconds=1,
+            prometheus=fake,
+        )
+    )
+    await asyncio.sleep(0)
+    assert len(fake.calls) == 2
+    assert fake.calls[0]["range_seconds"] == fake.calls[1]["range_seconds"]
+    fake.release.set()
+
+    first_response, second_response = await asyncio.gather(first, second)
+    assert first_response == second_response
+
+
+def test_ground_entry_point_returns_unavailable_without_discovery(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(monitoring, "get_cached_ground_entry_point", lambda: None)
+    monkeypatch.setattr(monitoring, "_utc_now", lambda: UTC_NOW)
+
+    response = client.get("/api/monitoring/ground-entry-point")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "available": False,
+        "observed_at": None,
+        "generated_at": "2026-08-29T12:00:00Z",
+        "display": None,
+        "city": None,
+        "region": None,
+        "country": None,
+        "latitude": None,
+        "longitude": None,
+    }
+
+
+def test_ground_entry_point_returns_safe_available_body_without_ip_leakage(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    observed_at = datetime(2026, 8, 29, 11, 45, tzinfo=timezone.utc)
+    entry = monitoring.GroundEntryPoint(
+        ip="203.0.113.10",
+        city="Omaha",
+        region="Nebraska",
+        country="US",
+        latitude=41.2565,
+        longitude=-95.9345,
+        observed_at=observed_at,
+    )
+    monkeypatch.setattr(monitoring, "get_cached_ground_entry_point", lambda: entry)
+    monkeypatch.setattr(monitoring, "_utc_now", lambda: UTC_NOW)
+
+    response = client.get("/api/monitoring/ground-entry-point")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "available": True,
+        "observed_at": "2026-08-29T11:45:00Z",
+        "generated_at": "2026-08-29T12:00:00Z",
+        "display": "Omaha, Nebraska",
+        "city": "Omaha",
+        "region": "Nebraska",
+        "country": "US",
+        "latitude": 41.2565,
+        "longitude": -95.9345,
+    }
+    assert "203.0.113.10" not in response.text
+    assert "ip" not in response.json()
+
+
+def test_monitoring_openapi_uses_exact_response_models(client: TestClient) -> None:
+    schema = client.get("/openapi.json").json()
+    history = schema["paths"]["/api/monitoring/history"]["get"]
+    gep = schema["paths"]["/api/monitoring/ground-entry-point"]["get"]
+
+    assert (
+        history["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        == "#/components/schemas/MonitoringHistoryResponse"
+    )
+    assert (
+        gep["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+        == "#/components/schemas/GroundEntryPointResponse"
+    )
+    assert "ip" not in GroundEntryPointResponse.model_fields
