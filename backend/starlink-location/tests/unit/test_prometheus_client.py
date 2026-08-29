@@ -486,6 +486,36 @@ async def test_rate_limit_raises_retry_after() -> None:
 
 
 @pytest.mark.asyncio
+async def test_rate_limit_blocks_thirteenth_request_without_churn_reset(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = 1000.0
+    monkeypatch.setattr(prometheus_client.time, "monotonic", lambda: now)
+    client = make_client(successful_handler)
+    cap = MonitoringPrometheusClient._max_rate_limit_identities
+
+    for _ in range(12):
+        await client._enforce_rate_limit("original")
+
+    with pytest.raises(MonitoringRateLimitError):
+        await client._enforce_rate_limit("original")
+
+    for index in range(cap - 1):
+        await client._enforce_rate_limit(f"churn-{index}")
+
+    for index in range(20):
+        with pytest.raises(MonitoringRateLimitError) as exc:
+            await client._enforce_rate_limit(f"blocked-churn-{index}")
+        assert exc.value.retry_after_seconds == 60
+
+    assert len(client._requests) == cap
+    assert "original" in client._requests
+    with pytest.raises(MonitoringRateLimitError) as exc:
+        await client._enforce_rate_limit("original")
+    assert exc.value.retry_after_seconds == 60
+
+
+@pytest.mark.asyncio
 async def test_rate_limit_evicts_expired_identity_entries(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -503,39 +533,66 @@ async def test_rate_limit_evicts_expired_identity_entries(
 
 
 @pytest.mark.asyncio
-async def test_rate_limit_identity_storage_never_exceeds_hard_cap() -> None:
-    client = make_client(successful_handler)
-    cap = MonitoringPrometheusClient._max_rate_limit_identities
-
-    for index in range(10_000):
-        await client._enforce_rate_limit(f"identity-{index}")
-
-    assert len(client._requests) == cap
-    assert "identity-0" not in client._requests
-    assert f"identity-{9999}" in client._requests
-
-
-@pytest.mark.asyncio
-async def test_rate_limit_lru_cap_preserves_active_identity_budget(
+async def test_rate_limit_unseen_identity_fails_closed_at_unexpired_hard_cap(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     now = 1000.0
     monkeypatch.setattr(prometheus_client.time, "monotonic", lambda: now)
-    client = make_client(successful_handler, rate_limit_count=2)
+    client = make_client(successful_handler)
     cap = MonitoringPrometheusClient._max_rate_limit_identities
 
-    await client._enforce_rate_limit("active")
+    for index in range(cap):
+        await client._enforce_rate_limit(f"identity-{index}")
+
+    with pytest.raises(MonitoringRateLimitError) as exc:
+        await client._enforce_rate_limit("newcomer")
+
+    assert len(client._requests) == cap
+    assert "newcomer" not in client._requests
+    assert "identity-0" in client._requests
+    assert exc.value.retry_after_seconds == 60
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_known_identity_still_accounts_at_full_cap(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = 1000.0
+    monkeypatch.setattr(prometheus_client.time, "monotonic", lambda: now)
+    client = make_client(successful_handler)
+    cap = MonitoringPrometheusClient._max_rate_limit_identities
+
+    await client._enforce_rate_limit("known")
     for index in range(cap - 1):
         await client._enforce_rate_limit(f"identity-{index}")
 
-    await client._enforce_rate_limit("active")
-    await client._enforce_rate_limit("newcomer")
+    for _ in range(11):
+        await client._enforce_rate_limit("known")
 
     assert len(client._requests) == cap
-    assert "identity-0" not in client._requests
-    assert "active" in client._requests
-    with pytest.raises(MonitoringRateLimitError):
-        await client._enforce_rate_limit("active")
+    assert "known" in client._requests
+    with pytest.raises(MonitoringRateLimitError) as exc:
+        await client._enforce_rate_limit("known")
+    assert exc.value.retry_after_seconds == 60
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_prunes_full_cap_then_accepts_unseen_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = 1000.0
+    monkeypatch.setattr(prometheus_client.time, "monotonic", lambda: now)
+    client = make_client(successful_handler)
+    cap = MonitoringPrometheusClient._max_rate_limit_identities
+
+    for index in range(cap):
+        await client._enforce_rate_limit(f"identity-{index}")
+
+    now += 61
+    await client._enforce_rate_limit("newcomer")
+
+    assert len(client._requests) == 1
+    assert set(client._requests) == {"newcomer"}
 
 
 @pytest.mark.asyncio
