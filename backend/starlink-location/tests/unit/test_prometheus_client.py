@@ -596,6 +596,47 @@ async def test_rate_limit_prunes_full_cap_then_accepts_unseen_identity(
 
 
 @pytest.mark.asyncio
+async def test_rate_limit_full_cap_sweep_uses_actual_earliest_expiry(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    now = 1000.0
+    monkeypatch.setattr(prometheus_client.time, "monotonic", lambda: now)
+    client = make_client(successful_handler)
+    cap = MonitoringPrometheusClient._max_rate_limit_identities
+
+    await client._enforce_rate_limit("a")
+
+    now = 1010.0
+    for index in range(cap - 1):
+        await client._enforce_rate_limit(f"identity-{index}")
+
+    now = 1050.0
+    await client._enforce_rate_limit("a")
+
+    assert len(client._requests) == cap
+    assert list(client._requests["a"]) == [1000.0, 1050.0]
+    assert "identity-0" in client._requests
+
+    now = 1060.0
+    with pytest.raises(MonitoringRateLimitError) as exc:
+        await client._enforce_rate_limit("newcomer")
+
+    assert exc.value.retry_after_seconds == 10
+    assert len(client._requests) == cap
+    assert list(client._requests["a"]) == [1050.0]
+    assert "newcomer" not in client._requests
+    assert "identity-0" in client._requests
+
+    now = 1070.0
+    await client._enforce_rate_limit("newcomer")
+
+    assert len(client._requests) == 2
+    assert set(client._requests) == {"a", "newcomer"}
+    assert list(client._requests["a"]) == [1050.0]
+    assert list(client._requests["newcomer"]) == [1070.0]
+
+
+@pytest.mark.asyncio
 async def test_semaphore_max_four_and_queue_full() -> None:
     active = 0
     max_active = 0

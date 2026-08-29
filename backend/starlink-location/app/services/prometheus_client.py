@@ -493,22 +493,22 @@ class MonitoringPrometheusClient:
         async with self._rate_lock:
             entries = self._requests.get(client_id)
             if entries is None:
-                self._evict_expired_rate_limit_identities(now)
                 if len(self._requests) >= self._max_rate_limit_identities:
-                    raise MonitoringRateLimitError(
-                        self._retry_after_until_next_identity_expires(now)
-                    )
+                    self._sweep_expired_rate_limit_identities(now)
+                    if len(self._requests) >= self._max_rate_limit_identities:
+                        raise MonitoringRateLimitError(
+                            self._retry_after_until_next_identity_expires(now)
+                        )
+                else:
+                    self._evict_leading_expired_rate_limit_identities(now)
                 entries = deque()
                 self._requests[client_id] = entries
             else:
-                previous_first = entries[0] if entries else None
                 self._prune_expired_entries(entries, now)
                 if not entries:
                     self._requests.pop(client_id, None)
                     entries = deque()
                     self._requests[client_id] = entries
-                elif entries[0] != previous_first:
-                    self._reorder_rate_limit_identity(client_id, entries)
             if len(entries) >= self._rate_limit_count:
                 retry_after = max(
                     1, math.ceil(self._rate_limit_window_seconds - (now - entries[0]))
@@ -517,17 +517,24 @@ class MonitoringPrometheusClient:
             entries.append(now)
 
     def _retry_after_until_next_identity_expires(self, now: float) -> int:
-        if not self._requests:
-            return 1
-        _, entries = next(iter(self._requests.items()))
-        if not entries:
+        oldest_timestamp = min(
+            (entries[0] for entries in self._requests.values() if entries),
+            default=None,
+        )
+        if oldest_timestamp is None:
             return 1
         seconds_until_expiry = math.ceil(
-            self._rate_limit_window_seconds - (now - entries[0])
+            self._rate_limit_window_seconds - (now - oldest_timestamp)
         )
         return max(1, min(self._rate_limit_window_seconds, seconds_until_expiry))
 
-    def _evict_expired_rate_limit_identities(self, now: float) -> None:
+    def _sweep_expired_rate_limit_identities(self, now: float) -> None:
+        for identity, entries in list(self._requests.items()):
+            self._prune_expired_entries(entries, now)
+            if not entries:
+                self._requests.pop(identity, None)
+
+    def _evict_leading_expired_rate_limit_identities(self, now: float) -> None:
         while self._requests:
             identity, entries = next(iter(self._requests.items()))
             self._prune_expired_entries(entries, now)
@@ -538,23 +545,6 @@ class MonitoringPrometheusClient:
     def _prune_expired_entries(self, entries: deque[float], now: float) -> None:
         while entries and now - entries[0] >= self._rate_limit_window_seconds:
             entries.popleft()
-
-    def _reorder_rate_limit_identity(
-        self,
-        client_id: str,
-        entries: deque[float],
-    ) -> None:
-        self._requests.pop(client_id, None)
-        rebuilt: OrderedDict[str, deque[float]] = OrderedDict()
-        inserted = False
-        for identity, existing_entries in self._requests.items():
-            if not inserted and entries[0] <= existing_entries[0]:
-                rebuilt[client_id] = entries
-                inserted = True
-            rebuilt[identity] = existing_entries
-        if not inserted:
-            rebuilt[client_id] = entries
-        self._requests = rebuilt
 
     def _utc_now(self) -> datetime:
         value = self._clock()
