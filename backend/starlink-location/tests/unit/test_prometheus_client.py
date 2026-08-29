@@ -14,7 +14,6 @@ from typing import Any
 
 import httpx
 import pytest
-
 from app.services import prometheus_client
 from app.services.prometheus_client import (
     MonitoringPrometheusClient,
