@@ -1,5 +1,7 @@
 """Tests for RainViewer pinned HTTP transport."""
 
+# Ruff 0.16.5 classifies these imports differently from repo and backend roots.
+# ruff: noqa: I001, RUF100
 from __future__ import annotations
 
 import ssl
