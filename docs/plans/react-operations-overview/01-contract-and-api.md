@@ -43,6 +43,7 @@ class MonitoringHistoryResponse(BaseModel):
 class GroundEntryPointResponse(BaseModel):
     available: bool
     observed_at: datetime
+    generated_at: datetime
     display: str | None
     city: str | None
     region: str | None
@@ -67,9 +68,17 @@ Create `GET /api/monitoring/history` with:
   `starlink_network_throughput_down_mbps_current`,
   `starlink_network_throughput_up_mbps_current`, and
   `starlink_network_packet_loss_percent`.
-- A server timeout, response-size/point ceiling of
-  `6 * (range_seconds / step_seconds + 1)`, cancellation propagation, and no
-  query text, hostname, URL, headers, or credentials accepted from a request.
+- Accept exactly zero or one Prometheus matrix result per allow-listed metric;
+  reject multiple labeled series as `502` rather than selecting
+  nondeterministically. Require `status="success"`, `data.resultType="matrix"`,
+  exact metric identity, two-element `[timestamp, value]` points, monotonic
+  timestamps, and no duplicate timestamps. Reject malformed or extra response
+  shapes.
+- A server timeout; an integer point ceiling of
+  `6 * (range_seconds // step_seconds + 1)` across accepted/decoded points; and
+  a configured upstream body-byte ceiling enforced while streaming before JSON
+  parsing. Propagate client-disconnect cancellation and accept no query text,
+  hostname, URL, headers, or credentials from a request.
 - `NaN`, `+Inf`, and `-Inf` normalized to `null`; timestamps normalized to UTC;
   series always returned in the literal order above, including empty samples.
 - `502` with a stable safe detail code for malformed/upstream error and `504`
@@ -79,6 +88,34 @@ Create `GET /api/monitoring/ground-entry-point` returning
 `GroundEntryPointResponse`. It reads `get_cached_ground_entry_point()` only and
 returns HTTP 200 with `available=false` and null details when no cached value
 exists; it must not trigger internet discovery on request.
+
+## Truthful freshness contract
+
+Freshness is source-specific; client receipt time is transport telemetry, never
+presented as source freshness:
+
+- `/api/status.timestamp` is the telemetry observation time.
+- POI ETA `timestamp` is calculation/generation time, not observation time.
+- Add a typed active-link response in `app/models/monitoring.py` and return both
+  coordinator telemetry `observed_at` and response `generated_at` from
+  `app/api/active_x_link.py`; cache reads must retain the original observation.
+- Wrap west/east coordinates in a typed response with `revision_at` derived from
+  the active route's persisted source/version modification time and a separate
+  `generated_at`; change `app/api/geojson.py` and its contract tests. Static
+  route freshness changes only when that revision changes.
+- History sample timestamps are Prometheus observation timestamps;
+  `MonitoringHistoryResponse.generated_at` is only response generation time.
+- Add `observed_at` to cached `GroundEntryPoint` state in
+  `app/services/ground_entry_point.py` at successful discovery/config refresh,
+  preserve it across `get_cached_ground_entry_point()` reads, and expose it plus
+  request-time `generated_at`. Never stamp stale cached discovery with request
+  time. Test unchanged-cache, actual refresh, invalidation, and unavailable GEP.
+- RainViewer frame time comes from the selected provider frame metadata;
+  metadata fetch/generation time is separate. Client freshness uses frame time.
+
+Source stale/recovery tests must advance each applicable source clock, prove
+generation alone cannot make an old observation/revision fresh, and label a
+source `Unknown freshness` when its truthful source time is absent.
 
 Define matching TypeScript DTOs in
 `frontend/mission-planner/src/types/monitoring.ts`. Also define dedicated DTOs
@@ -111,57 +148,8 @@ before map work:
 
 ## Exact file map
 
-### Backend
-
-- Create: `backend/starlink-location/app/models/monitoring.py`
-- Create: `backend/starlink-location/app/services/prometheus_client.py`
-- Create: `backend/starlink-location/app/api/monitoring.py`
-- Modify: `backend/starlink-location/app/api/weather.py`
-- Modify: `backend/starlink-location/app/services/weather_radar.py`
-- Modify: `backend/starlink-location/main.py`
-- Create: `backend/starlink-location/tests/unit/test_monitoring_models.py`
-- Create: `backend/starlink-location/tests/unit/test_prometheus_client.py`
-- Create: `backend/starlink-location/tests/unit/test_monitoring_api.py`
-- Modify: `backend/starlink-location/tests/unit/test_weather_api.py`
-
-### Frontend
-
-- Modify: `frontend/mission-planner/package.json`
-- Modify: `frontend/mission-planner/package-lock.json`
-- Create: `frontend/mission-planner/vitest.config.ts`
-- Modify: `frontend/mission-planner/src/App.tsx`
-- Modify: `frontend/mission-planner/src/index.css`
-- Modify: `frontend/mission-planner/nginx.conf`
-- Create: `frontend/mission-planner/src/types/monitoring.ts`
-- Create: `frontend/mission-planner/src/services/monitoring.ts`
-- Create: `frontend/mission-planner/src/services/monitoring.test.ts`
-- Create: `frontend/mission-planner/src/pages/OverviewPage.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/OverviewGrid.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/OverviewControls.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/WorldClocks.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/ClockSettings.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/OperationalMap.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/LayerDisclosure.tsx`
-- Create:
-  `frontend/mission-planner/src/pages/OverviewPage/POIQuickReference.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/MetricChart.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/MetricSummary.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/ObstructionGauge.tsx`
-- Create:
-  `frontend/mission-planner/src/pages/OverviewPage/GroundEntryPointCard.tsx`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/useOverviewData.ts`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/preferences.ts`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/history.ts`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/geometry.ts`
-- Create: `frontend/mission-planner/src/pages/OverviewPage/formatters.ts`
-- Create tests beside pure/component modules as `*.test.ts(x)`.
-- Create: `frontend/mission-planner/tests/e2e/overview.spec.ts`
-- Create: `frontend/mission-planner/tests/e2e/overview-continuity.spec.ts`
-- Create: `frontend/mission-planner/tests/e2e/fixtures/overview.ts`
-- Modify: `frontend/mission-planner/tests/e2e/api-origin.spec.ts`
-
-Keep production TypeScript files near or below the repository's 300-line target;
-split components rather than creating a monolithic dashboard page.
+The binding backend, frontend, browser, CI, and docs paths are in the
+[exact file map](00-exact-file-map.md). Do not substitute approximate paths.
 
 ## Test-first API tasks and commit boundaries
 
@@ -174,8 +162,10 @@ split components rather than creating a monolithic dashboard page.
 
 1. Test exact model schema, UTC serialization, forbidden extra keys, stable
    series ordering, parameter bounds, fixed query map, exact
-   `/api/v1/query_range` parameters, timeout, cancellation, malformed JSON,
-   upstream error, empty results, point ceiling, and non-finite normalization.
+   `/api/v1/query_range` parameters, timeout/disconnect cancellation, malformed
+   JSON, upstream error, empty result, exact matrix shape, rejection of multiple
+   series, identity mismatch, integer point ceiling, streaming body-byte
+   ceiling, and non-finite normalization.
 2. Explicitly test that caller PromQL, URL, hostname, and headers cannot enter
    the client API.
 3. Run focused tests and observe import failures:
@@ -187,7 +177,14 @@ split components rather than creating a monolithic dashboard page.
    ```
 
 4. Implement strict Pydantic DTOs and a small async `httpx` client with the six
-   constant expressions. Run again; expected PASS.
+   constant expressions. Apply a documented per-client rate limit of 12 history
+   requests/minute, a process-wide semaphore of 4 upstream range queries,
+   cancellation on disconnect, and single-flight coalescing of identical
+   `(range_seconds, step_seconds, 10-second window bucket)` requests. Waiters
+   share only a live result/error; cancellation of one waiter does not cancel a
+   query still used by others, and no result cache survives the bucket. Return
+   `429` with `Retry-After` when the per-client limit is exceeded and `503` when
+   the bounded concurrency queue is full. Run again; expected PASS.
 5. Run:
 
    ```bash
@@ -208,10 +205,13 @@ split components rather than creating a monolithic dashboard page.
 
 **Steps:**
 
-1. Write TestClient tests for exact successful response heads/body fields,
+1. Write TestClient tests for exact successful response headers/body fields,
    default and boundary parameters, 422 outside bounds, empty series,
    `available=false` GEP, safe available GEP, 502/504 mapping, no IP leakage,
-   and router registration/OpenAPI response models.
+   429/503 mapping, coalescing, disconnect cancellation, and router
+   registration/OpenAPI response models. Add compatibility tests for POI
+   generation time, active-link observation/generation time, route revision
+   time, and GEP cache observation time from the freshness contract.
 2. Run focused tests; expected RED: 404/import failure.
 3. Implement the router and include it in `main.py`.
 4. Run focused tests; expected PASS. Then run:
@@ -230,20 +230,33 @@ split components rather than creating a monolithic dashboard page.
 
 **Steps:**
 
-1. Add tests for valid XYZ bounds, provider metadata failure, tile timeout,
-   non-image/wrong content type, maximum body size, byte passthrough,
-   `image/png`, bounded cache headers, and no redirect/`Location` header.
-2. Add a config test asserting CSP `img-src` permits only `'self'`, `data:`,
-   existing OSM, and `https://server.arcgisonline.com`; RainViewer must not be
-   in CSP because FastAPI proxies it. Keep `connect-src` same-origin plus the
-   existing WebSocket allowances; do not add Prometheus or Grafana.
+1. Add tests requiring metadata fetches to use exactly
+   `https://api.rainviewer.com/public/weather-maps.json` and provider tile URLs
+   to use exactly `https://tilecache.rainviewer.com` (no suffix matching).
+   Require every redirect target to remain on its respective exact HTTPS host,
+   with no userinfo, custom port, IP literal, or localhost. DNS resolution must
+   contain no private, loopback, link-local, multicast, unspecified, or reserved
+   address. Resolve and pin the validated addresses for the connection to
+   prevent DNS rebinding. Validate metadata host, path template, XYZ bounds,
+   selected frame path/time, and final path after every redirect; either disable
+   redirects or revalidate each hop with a small hop cap. Cover metadata
+   failure, timeout, non-image content, streaming body cap (abort as bytes cross
+   the limit), byte passthrough, `image/png`, bounded cache headers, and no
+   downstream redirect. Malformed hosts/redirects return a stable safe upstream
+   code and never expose URL, host, resolved IP, or body in response/log
+   assertions.
+2. Add `tools/tests/test_mission_planner_nginx.py` asserting CSP `img-src`
+   permits only `'self'`, `data:`, existing OSM, and
+   `https://server.arcgisonline.com`; RainViewer must not be in CSP because
+   FastAPI proxies it. Keep `connect-src` same-origin plus the existing
+   WebSocket allowances; do not add Prometheus or Grafana.
 3. Run focused tests; expected RED because endpoint returns 307.
-4. Implement backend streaming/byte proxy with a fixed provider host obtained by
-   the existing metadata service, strict tile validation, timeout and body cap.
-   Add only ArcGIS to `img-src`.
+4. Implement the strict metadata-host/DNS/path/redirect checks and bounded
+   streaming proxy above. Add only ArcGIS to `img-src`.
 5. Run weather/config tests; expected PASS. Manually verify with `curl -I` after
    [Task 13](03-runtime-and-browser-acceptance.md#task-13-add-browser-acceptance-and-temporal-evidence)
-   that the tile response is same-origin, not a redirect, has
+   through the built Mission Planner Nginx (not Vite or direct FastAPI) that the
+   tile response is same-origin, not a redirect, has
    `X-Content-Type-Options: nosniff`, and that `/overview` includes the intended
    CSP.
 6. Commit: `fix(weather): proxy radar tiles for browser CSP`.
@@ -254,9 +267,11 @@ split components rather than creating a monolithic dashboard page.
 
 **Steps:**
 
-1. Test exact API paths and query encoding, zod parsing, finite coordinate
-   validation, null history samples, `poi_id` mapping, cancellation, and safe
-   malformed-response failures. Assert requests are origin-relative.
+1. Test exact API paths/query encoding, all six POI options including omitted
+   query for All POIs, zod parsing, finite coordinates, null history samples,
+   `poi_id` mapping, cancellation, and safe malformed failures. Assert requests
+   are origin-relative. Parse and preserve every observation, generation,
+   revision, and RainViewer frame timestamp without conflating client receipt.
 2. Run focused Vitest; expected RED.
 3. Implement DTO schemas and service functions only; do not add UI.
 4. Run focused tests, `npm run lint`, and `npm run build`; expected PASS.

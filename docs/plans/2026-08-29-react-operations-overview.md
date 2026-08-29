@@ -131,6 +131,13 @@ Use origin-relative requests through
 - `GET /api/weather/radar/rainviewer/{z}/{x}/{y}.png` — same-origin tile bytes
   after this plan's backend change.
 
+The POI filter is a single-select control with exactly these labels and request
+values, in order: `Departure & Arrival` → `departure,arrival` (default),
+`All POIs` → empty category, `Departure Only` → `departure`, `Arrival Only` →
+`arrival`, `Waypoints Only` → `waypoint`, and `Alternates Only` → `alternate`.
+For `All POIs`, omit `category` entirely (no `category=`); otherwise encode one
+`category` query parameter whose comma remains data, never two parameters.
+
 Do not send the Grafana query-model fallback latitude, longitude, or speed to
 `/api/pois/etas`; coordinator telemetry remains authoritative.
 
@@ -168,7 +175,10 @@ permits it.
 **Files:**
 
 - Create: `frontend/mission-planner/vitest.config.ts`
+- Create: `frontend/mission-planner/src/test/setup.ts`
+- Create: `frontend/mission-planner/src/test/render-smoke.test.tsx`
 - Modify: `frontend/mission-planner/package.json`
+- Modify: `frontend/mission-planner/package-lock.json`
 
 **Baseline evidence:**
 `npm ci --legacy-peer-deps && npm run build && npm run lint` passes at the
@@ -180,11 +190,17 @@ feature failure.
 
 **Steps:**
 
-1. Add a failing harness assertion (or demonstrate the baseline command) that
-   proves unit discovery includes `src/**/*.{test,spec}.{ts,tsx}` but excludes
-   `tests/e2e/**` and Playwright output directories.
-2. Create a dedicated Vitest config with the React/Vite environment and an
-   explicit unit-test include/exclude. Add
+1. Add a failing React DOM smoke test that calls Testing Library `render` on a
+   small React component and asserts its accessible text is in `document` using
+   `@testing-library/jest-dom`; this must fail before jsdom/configuration
+   exists.
+2. Run `npm install --save-dev jsdom` so `package.json` and `package-lock.json`
+   change together. Create `src/test/setup.ts` importing
+   `@testing-library/jest-dom/vitest`, and a viable `vitest.config.ts` using
+   `defineConfig`, `@vitejs/plugin-react`, `plugins: [react()]`,
+   `test.environment: "jsdom"`, `test.setupFiles: ["./src/test/setup.ts"]`,
+   explicit `src/**/*.{test,spec}.{ts,tsx}` include, and exclusions for
+   `tests/e2e/**`, `test-results/**`, and `playwright-report/**`. Add
    `"test:unit": "vitest run --config vitest.config.ts"` to package scripts. Do
    not rename, import, or otherwise adapt Playwright specs for Vitest.
 3. Run:
@@ -195,13 +211,36 @@ feature failure.
    npx playwright test --list
    ```
 
-   Expected: unit tests run without collecting `tests/e2e`; Playwright lists
-   browser tests independently. Neither command reports the cross-runner
-   `test.describe` error.
+   Expected: the actual React DOM render smoke test passes in jsdom, unit tests
+   do not collect `tests/e2e`, Playwright lists browser tests independently, and
+   neither command reports the cross-runner `test.describe` error.
 
 4. Use `npm run test:unit -- <focused-path>` for all later Vitest steps and
    `npx playwright test ...` only for browser acceptance.
 5. Commit: `test: separate frontend unit and browser suites`.
+
+### Task 1A: Attach lint CI to the actual integration branch
+
+**Files:**
+
+- Modify: `.github/workflows/lint.yml`
+- Modify: `tools/tests/test_link_checker_config.py`
+
+**Steps:**
+
+1. Add a failing YAML-aware workflow contract test asserting both `pull_request`
+   and `push` branches are exactly `main` and `dev`, and rejecting `develop`.
+   Preserve the existing link-checker assertion in the same test module.
+2. Run `python -m pytest tools/tests/test_link_checker_config.py -q`; expected
+   RED because the workflow currently targets `develop`.
+3. Change only the lint workflow branch trigger/comment from `develop` to `dev`;
+   preserve `main`, jobs, permissions, and events. Rerun the focused test and
+   `pre-commit run --all-files`; expected PASS.
+4. Push this commit and verify with `gh pr checks 143 --watch` plus
+   `gh run list --workflow lint.yml --branch feature/react-operations-overview`
+   that the lint workflow attaches to PR #143 at this commit SHA.
+   Missing/skipped checks fail the task.
+5. Commit: `ci: run lint checks for dev pull requests`.
 
 ### Task 2: Freeze the parity oracle and fixtures
 
@@ -215,13 +254,13 @@ feature failure.
 
 1. Encode deterministic nominal, no-route, sparse, stale, backend failure, radar
    failure, IDL, threshold-crossing, and recovery fixtures. Include all eleven
-   panels and twelve map layers.
+   panels, twelve map layers, and all six exact POI filter label/value pairs.
 2. Add a test asserting the fixture's defaults against the inventory in the
    [parity contract](#parity-contract), the
    [API contract](react-operations-overview/01-contract-and-api.md), and the
    [refresh/preferences contract](react-operations-overview/02-dashboard-ui.md)
-   (30-minute range, 1-second refresh, four clocks, thresholds, category
-   defaults `departure,arrival`, radar on).
+   (30-minute range, 1-second refresh, four clocks, thresholds, exact POI filter
+   order/default/empty-query semantics, radar on).
 3. Run:
 
    ```bash

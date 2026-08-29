@@ -17,8 +17,10 @@ than buried inside a feature commit. It may be a separate docs-only PR targeting
 Do not edit these during core code tasks:
 
 - `docs/setup/quick-start.md` and installation verification/access URLs.
-- `docs/setup/configuration/environment-variables.md` for `PROMETHEUS_URL` if it
-  becomes operator-configurable.
+- `.env.example` and `docs/setup/configuration/environment-variables.md` must
+  unconditionally add `PROMETHEUS_URL`, document default
+  `http://prometheus:9090`, state that it is backend/internal-only, and warn
+  never to expose it to browser configuration.
 - `docs/grafana-configuration.md` and `docs/grafana-dashboards.md` to describe
   dual-run status, **not** retirement.
 - `docs/troubleshooting/services/grafana.md` to retain Grafana support.
@@ -97,11 +99,14 @@ work only after all of the following are documented and approved:
    accessible alternative has a React equivalent or explicit owner-approved
    retirement.
 2. All deterministic states and all six exact viewport sizes pass.
-3. Five refreshes plus manual refresh preserve map/chart/filter/focus state.
+3. A settled continuous capture measured at >=20 fps across five scheduled plus
+   manual refresh preserves map/chart/filter/focus state with no capture gaps.
 4. Existing mission, route, POI, satellite, import/export, and configuration
    workflows are regression-clean.
 5. React has no Grafana endpoint, plugin, session, datasource-proxy, dashboard,
-   or asset dependency.
+   or asset dependency, proven by static searches, a runtime with Grafana
+   unavailable, and browser-network assertions forbidding port 3000/Grafana
+   paths while React remains functional.
 6. A production-representative soak establishes acceptable update latency,
    browser memory/network, Prometheus load, and interruption recovery.
 7. Operator sign-off, rollback drill, docs/SOP migration, bookmark/link audit,

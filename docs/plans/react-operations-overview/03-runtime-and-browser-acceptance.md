@@ -13,127 +13,169 @@ and the
 
 ### Task 13: Add browser acceptance and temporal evidence
 
-**Files:** Playwright overview specs, fixtures, API-origin spec, optional
-checked in screenshot baselines only if repository convention approves them.
+**Files:**
+
+- Modify: `frontend/mission-planner/package.json`
+- Modify: `frontend/mission-planner/package-lock.json`
+- Create/modify: `frontend/mission-planner/tests/e2e/overview.spec.ts`
+- Create/modify:
+  `frontend/mission-planner/tests/e2e/overview-continuity.spec.ts`
+- Modify: `frontend/mission-planner/tests/e2e/api-origin.spec.ts`
+- Modify: `frontend/mission-planner/tests/e2e/fixtures/overview.ts`
 
 **Steps:**
 
-1. Route all API/tile responses in Playwright to deterministic fixtures. Assert
-   all eleven panel concepts and twelve map layers, controls, filters, states,
-   accessibility names, same-origin requests, no console/page errors, and no
-   failed first-party requests.
-2. Parameterize exact viewports: `1920x1080`, `1280x800`, `1024x768`,
-   `768x1024`, `390x844`, and `320x568`.
-3. For every viewport assert
-   `document.documentElement.scrollWidth <= document.documentElement.clientWidth`.
-   Capture named full-page and initial viewport screenshots.
-4. At 1920×1080 additionally prove primary content hierarchy and no below-fold
-   loss except secondary detail. At 768/1024 prove map precedes full-width POI
-   and charts and is at least 320 px high. At 390/320 prove status-first order,
-   UTC immediate visibility, cards/disclosures retain every function, and map
-   interaction can be entered/exited without scroll trapping.
-5. Run the continuity scenario at 1-second cadence for five scheduled refreshes
-   plus manual refresh. At each frame record DOM/screenshot, request timestamps,
-   chart point counts, Leaflet instance/viewport, selected filters/layers,
-   focus, and console output. Expected: no blanking, count regression, state
-   reset, focus loss, layout jump, or request burst.
-6. Run nominal, empty, partial/total error, stale, recovery, IDL,
-   threshold-crossing, radar failure, basemap failure, and device rotation.
-7. Add automated accessibility checks available in the project plus manual
-   keyboard-only, screen-reader smoke, WCAG 2.2 AA contrast, reduced-motion, and
-   44×44 touch-target evidence.
-8. Run:
+1. Route API/tile responses to deterministic fixtures. Assert all eleven panel
+   concepts, twelve map layers, controls, states, accessible names, same-origin
+   requests, no console/page errors, and no failed first-party requests.
+2. At both `1280x800` desktop and `390x844` mobile, select each POI option in
+   exact order and assert state ownership, accessible name/value, responsive
+   disclosure, persistence across reload/refresh, and the request URL. Prove All
+   POIs sends no `category` parameter and every other value has exact encoding.
+3. Parameterize `1920x1080`, `1280x800`, `1024x768`, `768x1024`, `390x844`, and
+   `320x568`. At each, assert no root horizontal overflow and capture named
+   full-page/initial screenshots. Prove the size-specific hierarchy, map height,
+   disclosure parity, UTC visibility, touch behavior, and no scroll trap.
+4. Add `@axe-core/playwright` as a dev dependency with
+   `npm install --save-dev @axe-core/playwright`, changing both package files.
+   Run `npx playwright test tests/e2e/overview.spec.ts --grep @axe`; zero
+   serious or critical violations are allowed. Retain manual keyboard-only,
+   screen-reader smoke, WCAG 2.2 AA contrast, reduced-motion, and 44x44 target
+   evidence.
+5. For fullscreen, capture screenshots and assert overflow/layout before entry,
+   during native fullscreen, during kiosk fallback after a forced API rejection,
+   and after exit. Prove filter/layer/map/dashboard state survives every phase,
+   focus enters sensibly, and focus returns to the trigger after exit.
+6. For continuity, wait until initial data and remote tile activity settle. Then
+   use Chromium CDP compositor screencast (or an equivalently timestamped
+   continuous capture) at a measured **>=20 fps** without gaps across at least
+   five scheduled one-second refreshes plus one manual refresh. Undersampling or
+   a capture gap is a coverage failure, never a pass.
+7. Assign every refresh/request a correlation ID in the fixture and evidence.
+   Per frame, record timestamp, cycle/request start/completion, console/page
+   errors, chart point counts, stable panel-region bounding boxes/pixel hashes,
+   Leaflet map/layer object identities, viewport, filter/layer state, and focus.
+   Assert stable regions/contracts never become empty, instances do not reset,
+   counts do not regress unexpectedly, and no focus loss/layout jump/burst
+   occurs.
+8. Run nominal, empty, partial/total error, truthful per-source stale/recovery,
+   IDL, thresholds, radar/basemap failure, and rotation. Use the same fixture,
+   viewport, stable-region contract, and cadence again at final exact head.
+9. Add executable no-Grafana tests: static search fails on Grafana URL/port
+   3000, `/api/datasources/proxy`, dashboard/plugin assets, or Grafana imports
+   in Overview production bundles; with Grafana routes aborted/unavailable,
+   React remains functional and browser network asserts no request targets port
+   3000, Grafana paths, sessions, plugins, dashboards, or assets.
+10. Run:
 
-   ```bash
-   cd frontend/mission-planner
-   npm run build
-   npx playwright test tests/e2e/overview.spec.ts \
-     tests/e2e/overview-continuity.spec.ts tests/e2e/api-origin.spec.ts
-   ```
+    ```bash
+    cd frontend/mission-planner
+    npm run build
+    npm run test:unit
+    npx playwright test tests/e2e/overview.spec.ts \
+      tests/e2e/overview-continuity.spec.ts tests/e2e/api-origin.spec.ts
+    ```
 
-   Expected: all projects/scenarios PASS and artifacts identify exact HEAD.
+    Expected: all scenarios pass; traces, screencast cadence report, and
+    screenshots identify exact HEAD.
 
-9. Commit: `test: add operations overview browser acceptance`.
+11. Commit: `test: add operations overview browser acceptance`.
 
-### Task 14: Rebuild and verify the real dual-run stack
+### Task 14: Prove an exact-head isolated real stack
 
-**Files:** no feature files unless a proven defect requires returning to its own
-test-first task/commit.
+**Files:** no feature files. A defect returns to its owning TDD task/commit,
+then this entire exact-head task reruns. Runtime manifests/evidence stay outside
+Git.
 
 **Steps:**
 
-1. Because backend Python changed, use the binding clean rebuild sequence:
+1. Require `git status --porcelain` empty; set immutable
+   `SHA=$(git rev-parse HEAD)`, `PROJECT=react-overview-${SHA:0:12}`, and
+   `EVIDENCE=/home/brian/starlink-dashboard-react-overview-evidence/$SHA/task-14`.
+   Create that mode-0700 directory. No evidence-producing commit may follow this
+   run; if HEAD changes, use a new SHA-qualified directory and rerun.
+2. Create `$EVIDENCE/runtime.env` only from `.env.example` plus explicit
+   non-secret simulation values; never read/reuse `.env` or credentials. Set
+   unique test credentials and fixed candidate host ports `18000`, `19090`,
+   `13000`, and `15173`; preflight with `ss` and Docker inspection and abort if
+   any port/name is occupied. Do not stop or alter the occupying resource.
+3. Render
+   `docker compose --env-file "$EVIDENCE/runtime.env" config --format json` to
+   evidence, then generate `$EVIDENCE/compose.isolated.yml` with a checked
+   Python transform. It must remove every `env_file`, replace all fixed
+   `container_name` values with `${PROJECT}-<service>`, replace host ports with
+   the four preflighted ports, use `${PROJECT}-<volume>` and `${PROJECT}-net`,
+   preserve bind mounts as absolute repository paths/read-only where possible,
+   and use task-owned disposable state volumes. Validate the generated model
+   rejects unqualified names, normal ports, external volumes/networks, and build
+   contexts outside this exact worktree. `docker compose -p` alone is forbidden.
+4. Build backend and Mission Planner from the clean exact worktree without cache
+   into SHA-qualified image tags and apply OCI labels
+   `org.opencontainers.image.revision=$SHA` and
+   `org.opencontainers.image.source=<repository URL>`. Pull pinned Compose base
+   images, record source refs/digests, `docker image inspect` IDs/RepoDigests/
+   labels, and generated Compose digest before startup. The isolated manifest
+   references only those recorded image IDs/tags; it does not rebuild at `up`.
+5. Start only with
+   `docker compose -p "$PROJECT" -f "$EVIDENCE/compose.isolated.yml" up -d --no-build`.
+   Record project name, SHA, Compose labels, container IDs, configured/running
+   image IDs, ports, networks, volume names, endpoints, `docker compose ps`, and
+   health results. Assert each running image ID equals its recorded built/pulled
+   image and each container has the task project label; provenance mismatch
+   fails.
+6. Run real Chromium against `http://127.0.0.1:15173/overview` at all six exact
+   viewports. Retain screenshots, traces, HAR, console/page errors, panel/layer/
+   state checks, POI filters, responsive hierarchy, axe/manual accessibility,
+   fullscreen four-phase evidence, and Nginx response headers. Prove the exact
+   CSP on the Nginx-served SPA and `nosniff`/same-origin/no-redirect tile
+   behavior, not merely direct FastAPI or mocked-preview behavior.
+7. Repeat the >=20 fps settled temporal test across five scheduled plus manual
+   refresh on this real runtime with stable regions/object identity and
+   correlated network/console evidence. Run React/Grafana parity over the same
+   30-minute simulation window, IDL, interruption/recovery, outage,
+   bounded-memory/network soak, and disposition every delta. Then stop only
+   `${PROJECT}-grafana`, prove React remains functional, and assert HAR contains
+   no Grafana/3000 request.
+8. Run exact-head gates and store logs under `$EVIDENCE/commands/`:
 
    ```bash
-   cd /home/brian/starlink-dashboard-react-overview
-   docker compose down
-   docker compose build --no-cache
-   docker compose up -d
-   docker compose ps
-   curl --fail http://localhost:8000/health
-   curl --fail http://localhost:5173/overview
-   curl --fail 'http://localhost:8000/api/monitoring/history?range_seconds=60&step_seconds=1'
-   curl --fail http://localhost:3000/api/health
-   ```
-
-   Expected: `starlink-location`, Prometheus, Grafana, and Mission Planner are
-   healthy/running; both UIs respond; history contains every named series.
-
-2. Run Grafana and React side by side over the same 30-minute simulation window.
-   Capture current metric deltas, chart extrema/rolling values, route/history,
-   position/heading, GEP, X-link geometry, POI ordering, and layer visibility.
-   Differences require a disposition: defect fixed and retested, or explicit
-   owner-approved semantic equivalence. Silence is not a disposition.
-3. Exercise an IDL route, backend interruption/recovery, internet/radar outage,
-   and manual refresh. Record network transfer rate and browser memory over a
-   representative soak; verify bounded history does not grow after 30 minutes.
-4. Run full exact-head gates:
-
-   ```bash
-   git status --short
-   git rev-parse HEAD
+   git status --porcelain && test "$(git rev-parse HEAD)" = "$SHA"
    python -m pytest tools/tests/test_fullscreen_overview_dashboard.py -q
-   cd backend/starlink-location && python -m pytest -q
-   cd ../../frontend/mission-planner && npm run lint && npm run build
-   npm run test:unit
-   npx playwright test
-   cd ../.. && pre-commit run --all-files
+   python -m pytest tools/tests/test_mission_planner_nginx.py -q
+   (cd backend/starlink-location && python -m pytest -q)
+   (cd frontend/mission-planner && npm run lint && npm run build && npm run test:unit)
+   (cd frontend/mission-planner && npx playwright test)
+   pre-commit run --all-files
    git diff --check
    ```
 
-5. Store command logs, screenshots, traces, accessibility notes, and parity
-   table in the PR evidence, not as unexplained generated repository files.
-6. Cleanup even after failure:
-
-   ```bash
-   cd /home/brian/starlink-dashboard-react-overview
-   docker compose logs --no-color > /tmp/react-overview-compose.log
-   docker compose down --remove-orphans
-   docker compose ps
-   ```
-
-   Expected final runtime evidence: no project containers or orphaned preview
-   servers remain; Playwright's configured web server has exited; ports used by
-   this work are no longer held by test processes. Do not use `-v`, because
-   deleting operational volumes is not test cleanup.
-
-7. No commit unless verification reveals a necessary change; route fixes back to
-   their owning task and rerun exact-head gates.
+9. Before teardown, copy Compose logs, inspect JSON, health responses, manifest,
+   its SHA-256, screenshots/traces/HAR, accessibility notes, parity table, and
+   cadence report into `$EVIDENCE`; create and verify `SHA256SUMS`. Record every
+   retained absolute path in `$EVIDENCE/MANIFEST.txt`.
+10. In a `trap` that runs after success/failure, run `down --remove-orphans`
+    against only the generated manifest/project, without `-v`; preserve all
+    pre-existing volumes and resources. Remove only explicitly task-owned
+    disposable volumes after evidence retention. Verify by project label/name,
+    `docker ps -a`, `docker network ls`, volume inspection, `ss` on four ports,
+    and browser-process command lines that no task container, network, port, or
+    Playwright/Chromium process remains. Re-run `sha256sum -c` and verify every
+    manifest path exists. Cleanup failure fails Task 14.
+11. No commit. PR evidence links the SHA-qualified durable directory/artifacts.
 
 ## Security, privacy, and CSP acceptance
 
-- Browser traffic remains same-origin `/api/...`; no direct Prometheus, Grafana
-  datasource proxy, RainViewer host, or internal Docker hostname.
-- Monitoring query templates are constants. Validate range/step before the
-  upstream call, cap returned points/body, apply timeouts, cancel disconnected
-  requests, redact upstream details, and retain the existing rate limiter where
-  appropriate.
-- No public IP in the frontend GEP contract, logs, screenshots, tooltips, or
-  accessibility text. Display fields render as React text, never HTML.
-- Validate coordinates, values, labels, URLs, and IANA zones at trust
-  boundaries. Reject non-finite values and do not use `dangerouslySetInnerHTML`.
-- CSP adds only the exact ArcGIS HTTPS origin to `img-src`. Radar is proxied.
-  Preserve `object-src 'none'`, `frame-ancestors 'none'`, `form-action 'self'`,
-  `base-uri 'self'`, and fullscreen permissions. Do not broaden `connect-src`.
-- Verify security headers on successful SPA, API, and tile responses and verify
-  browser console has no CSP violations in every acceptance viewport.
+- Browser traffic remains same-origin `/api/...`; no direct Prometheus, Grafana,
+  RainViewer, datasource proxy, or internal Docker hostname.
+- Enforce Phase 1 deterministic shape/body/point limits, rate/concurrency/
+  cancellation/coalescing, RainViewer host/DNS/path/redirect checks, and safe
+  errors. Security tests exercise rejection paths, not prose assurances.
+- No public IP in GEP frontend contracts, logs, evidence, tooltips, or
+  accessible text. Render display fields as React text; never use
+  `dangerouslySetInnerHTML`.
+- CSP adds only exact ArcGIS HTTPS to `img-src`; radar is proxied. Preserve
+  `object-src 'none'`, `frame-ancestors 'none'`, `form-action 'self'`,
+  `base-uri 'self'`, fullscreen permissions, and current `connect-src`.
+- Verify security headers through Mission Planner Nginx on SPA/API/tile
+  responses and no CSP console violation at every real-stack acceptance
+  viewport.

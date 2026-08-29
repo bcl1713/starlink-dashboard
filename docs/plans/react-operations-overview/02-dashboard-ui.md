@@ -31,8 +31,11 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
 - Keep last valid panel/layer data during background fetch and partial failures.
   Never reset map viewport, selected POI categories, layer toggles, expanded
   disclosures, chart visibility, focus, or fullscreen styling on refresh.
-- Every response's source/server timestamp updates per-source freshness. Show
-  global last-success and localized source state. Define stale as
+- Apply the Phase 1 truthful freshness clock for each source: telemetry/history
+  observation, active-link observation, POI generation, route revision, GEP
+  observation, and radar frame time. Response generation/client receipt update
+  transport last-success only and cannot freshen an older source. Show global
+  transport last-success and localized source state. Define stale as
   `age > max(5 seconds, 3 * active refresh seconds)`; paused data is labeled
   `Paused — last updated …`, not stale merely because the operator paused.
 - Distinguish initial loading, empty, stale, partial error, total error, and
@@ -47,6 +50,11 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
 - Radar defaults to `true`, can be toggled from the layer disclosure, and is
   persisted. A failed radar layer shows a localized status and toggle/retry;
   vector layers continue.
+- Own the six-option POI filter in page preferences with the exact ordered
+  label/value contract in the master plan. Default to `departure,arrival`, omit
+  the query for All POIs, preserve selection across refresh/recovery, rotation,
+  responsive disclosure, remount, and fullscreen, and expose one keyboard/touch
+  operable labeled control on desktop and mobile.
 
 ## Test-first dashboard tasks and commit boundaries
 
@@ -78,9 +86,13 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
    invalid IANA zone rejection, labels/offsets, immutable first UTC clock,
    preference migration, malformed localStorage fallback, refresh choices,
    default 1 second, paused state, radar default-on/toggle persistence, one
-   shared timer, and timer cleanup on unmount.
-2. Add keyboard and accessible-name tests for every control; enforce 44×44 CSS
-   px touch targets in the responsive classes.
+   shared timer, and timer cleanup on unmount. Test all six POI labels/values in
+   exact order, default state, All POIs empty/omitted-query encoding,
+   persistence migration, and preservation through five scheduled plus manual
+   refreshes.
+2. Add keyboard/accessibility tests for every control, including POI filter
+   selection and its responsive desktop/mobile disclosure; enforce 44×44 CSS px
+   touch targets in responsive classes.
 3. Run focused tests; expected RED, then implement and expect PASS.
 4. Commit: `feat(frontend): add configurable overview controls and clocks`.
 
@@ -94,7 +106,10 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
    refresh cadence, manual refresh while paused, duplicate click suppression,
    hidden-tab suspension, visibility catch-up, abort on unmount, localized
    errors, retained last-good data, stale threshold, paused label, recovery
-   announcement, and preservation of user state.
+   announcement, and preservation of user state. Independently age telemetry,
+   history, POI generation, active-link observation, route revision, cached GEP
+   observation, and radar frame clocks; prove response generation/receipt cannot
+   hide stale source data and test unknown-time/recovery semantics.
 2. Use fake timers and deterministic query mocks. Assert five scheduled
    refreshes plus one manual refresh do not produce an undefined last-good
    snapshot between valid responses.
@@ -142,9 +157,12 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
 1. Test `/` redirects with replacement to `/overview`, Overview appears first in
    navigation, brand links to `/overview`, `aria-current` is present, all old
    routes still resolve, and browser Back behavior is preserved.
-2. Test one `main`, skip link, logical headings, visible focus, keyboard
-   fullscreen entry/exit, fullscreen failure fallback to kiosk styling, reduced
-   motion, polite status live region, and no one-second live spam.
+2. Test one `main`, skip link, logical headings, visible focus, reduced motion,
+   polite status live region, and no one-second live spam. For fullscreen,
+   assert screenshots and overflow/layout before entry, during native
+   fullscreen, during kiosk fallback after rejected/unsupported API, and after
+   exit; prove controls/filter/layers/map viewport survive and triggering focus
+   is restored.
 3. Implement desktop grid and responsive stacking/disclosure from
    [Responsive acceptance details](#responsive-acceptance-details). Fullscreen
    API invocation must occur only from a user gesture; exiting must retain
