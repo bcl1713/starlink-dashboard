@@ -19,9 +19,6 @@ from app.services.rainviewer_transport import (
     RainViewerPinningError,
 )
 from app.services.weather_radar_helpers import (
-    RAINVIEWER_MAX_FRAME_EPOCH,
-    RAINVIEWER_MIN_FRAME_EPOCH,
-    RAINVIEWER_METADATA_HOST,
     RAINVIEWER_METADATA_URL,
     RAINVIEWER_TILE_HOST,
     CancelCheck,
@@ -39,8 +36,12 @@ from app.services.weather_radar_helpers import (
     tile_url,
     validate_frame_path,
     validate_url,
-    validate_xyz,
 )
+
+RAINVIEWER_MAX_ZOOM = 7
+RAINVIEWER_MIN_FRAME_EPOCH = 946684800
+RAINVIEWER_MAX_FRAME_EPOCH = 4102444800
+RAINVIEWER_METADATA_HOST = "api.rainviewer.com"
 
 __all__ = [
     "InvalidRadarTileError",
@@ -58,6 +59,14 @@ class _RainViewerHTTPXLogFilter(logging.Filter):
             RAINVIEWER_METADATA_HOST not in message
             and RAINVIEWER_TILE_HOST not in message
         )
+
+
+def validate_xyz(z: int, x: int, y: int) -> None:
+    if z < 0 or z > RAINVIEWER_MAX_ZOOM:
+        raise InvalidRadarTileError()
+    upper = 2**z
+    if x < 0 or y < 0 or x >= upper or y >= upper:
+        raise InvalidRadarTileError()
 
 
 class RainViewerRadarService:

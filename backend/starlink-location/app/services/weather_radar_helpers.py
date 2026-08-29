@@ -16,15 +16,10 @@ import httpx
 from httpx import StreamConsumed
 
 RAINVIEWER_METADATA_URL = "https://api.rainviewer.com/public/weather-maps.json"
-RAINVIEWER_TILE_ORIGIN = "https://tilecache.rainviewer.com"
 RAINVIEWER_TILE_HOST = "tilecache.rainviewer.com"
-RAINVIEWER_METADATA_HOST = "api.rainviewer.com"
-RAINVIEWER_MAX_ZOOM = 7
 RAINVIEWER_TILE_SIZE = 512
 RAINVIEWER_COLOR_SCHEME = 2
 RAINVIEWER_OPTIONS = "1_1"
-RAINVIEWER_MIN_FRAME_EPOCH = 946684800
-RAINVIEWER_MAX_FRAME_EPOCH = 4102444800
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 FRAME_PATH_RE = re.compile(r"^/v2/radar/(0|[1-9][0-9]*)$")
 TIMEOUT_ERRORS = (httpx.TimeoutException, httpcore.TimeoutException)
@@ -44,16 +39,13 @@ SYSTEM_EXIT_ERRORS = (
 CancelCheck = Callable[[], Awaitable[bool]]
 
 
-class InvalidRadarTileError(ValueError):
-    pass
+class InvalidRadarTileError(ValueError): ...
 
 
-class RainViewerRadarServiceError(RuntimeError):
-    pass
+class RainViewerRadarServiceError(RuntimeError): ...
 
 
-class RainViewerRadarTimeoutError(RainViewerRadarServiceError):
-    pass
+class RainViewerRadarTimeoutError(RainViewerRadarServiceError): ...
 
 
 @dataclass(frozen=True)
@@ -74,14 +66,6 @@ class RadarTile:
 
     def close(self) -> None:
         self.spool.close()
-
-
-def validate_xyz(z: int, x: int, y: int) -> None:
-    if z < 0 or z > RAINVIEWER_MAX_ZOOM:
-        raise InvalidRadarTileError()
-    upper = 2**z
-    if x < 0 or y < 0 or x >= upper or y >= upper:
-        raise InvalidRadarTileError()
 
 
 def tile_url(frame: RadarFrame, z: int, x: int, y: int) -> str:
@@ -106,8 +90,8 @@ def resolve_redirect(current: str, location: str) -> str:
         return location
     if location.startswith("/"):
         if current == RAINVIEWER_METADATA_URL:
-            return f"https://{RAINVIEWER_METADATA_HOST}{location}"
-        return f"{RAINVIEWER_TILE_ORIGIN}{location}"
+            return f"https://api.rainviewer.com{location}"
+        return f"https://tilecache.rainviewer.com{location}"
     raise RainViewerRadarServiceError()
 
 
