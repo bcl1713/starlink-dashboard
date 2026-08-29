@@ -97,6 +97,10 @@ class RouteMetadata(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="When route was imported",
     )
+    source_revision_at: datetime | None = Field(
+        default=None,
+        description="Source KML file revision captured from the parsed bytes",
+    )
     point_count: int = Field(..., description="Total number of points in route")
 
 

@@ -1,8 +1,10 @@
 """KML file parser for converting KML routes to ParsedRoute objects."""
 
 import logging
+import os
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +47,34 @@ class PlacemarkData:
     order: int
 
 
+def _read_stable_file(file_path: Path) -> tuple[str, datetime]:
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            before = os.fstat(f.fileno())
+            content = f.read()
+            after = os.fstat(f.fileno())
+    except OSError as e:
+        raise KMLParseError(f"Failed to read KML file: {e}")
+
+    if not _same_file_revision(before, after):
+        raise KMLParseError("KML file changed while reading")
+
+    revision_at = datetime.fromtimestamp(
+        before.st_mtime_ns / 1_000_000_000,
+        tz=timezone.utc,
+    )
+    return content, revision_at
+
+
+def _same_file_revision(before: os.stat_result, after: os.stat_result) -> bool:
+    return (
+        before.st_dev == after.st_dev
+        and before.st_ino == after.st_ino
+        and before.st_mtime_ns == after.st_mtime_ns
+        and before.st_size == after.st_size
+    )
+
+
 def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
     """
     Parse a KML file and convert to ParsedRoute object.
@@ -66,11 +96,7 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
     if not file_path.suffix.lower() == ".kml":
         raise KMLParseError(f"File is not a KML file: {file_path}")
 
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except OSError as e:
-        raise KMLParseError(f"Failed to read KML file: {e}")
+    content, source_revision_at = _read_stable_file(file_path)
 
     try:
         root = ET.fromstring(content)
@@ -171,6 +197,7 @@ def parse_kml_file(file_path: str | Path) -> ParsedRoute | None:
         name=route_name,
         description=route_description,
         file_path=str(file_path.absolute()),
+        source_revision_at=source_revision_at,
         point_count=len(points),
     )
 

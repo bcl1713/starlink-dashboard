@@ -23,6 +23,13 @@ logger = logging.getLogger(__name__)
 LinkState = Literal["normal", "warning"]
 
 
+class _TelemetryUnset:
+    pass
+
+
+_TELEMETRY_UNSET = _TelemetryUnset()
+
+
 def empty_active_x_link(state: str | None = None) -> dict[str, Any]:
     """Return an empty, Grafana-friendly active-X link response."""
     return {
@@ -44,7 +51,7 @@ def build_active_x_link(
     route_manager: Any,
     poi_manager: Any,
     state_filter: LinkState | None = None,
-    telemetry: TelemetryData | None = None,
+    telemetry: TelemetryData | None | _TelemetryUnset = _TELEMETRY_UNSET,
 ) -> dict[str, Any]:
     """Build a two-point route from aircraft to active X-band satellite.
 
@@ -54,7 +61,7 @@ def build_active_x_link(
     The visual state is derived from the existing normal X-band forbidden
     relative-azimuth rule window (135°–225°).
     """
-    if telemetry is None:
+    if telemetry is _TELEMETRY_UNSET:
         try:
             telemetry = coordinator.get_current_telemetry() if coordinator else None
         except (

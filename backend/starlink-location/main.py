@@ -5,6 +5,7 @@ import os
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,6 +71,7 @@ _route_manager: RouteManager | None = None
 _poi_manager: POIManager | None = None
 _eta_service_initialized = False
 _lifespan_state_keys: set[str] = set()
+_lifespan_owned_resources: dict[str, Any] = {}
 
 
 async def startup_event():
@@ -84,8 +86,13 @@ async def startup_event():
         logger.info_json("Loading configuration")
         config_manager = ConfigManager()
         _simulation_config = config_manager.load()
-        app.state.monitoring_prometheus_client = MonitoringPrometheusClient()
-        _lifespan_state_keys.add("monitoring_prometheus_client")
+        if "monitoring_prometheus_client" not in app.state._state:
+            monitoring_client = MonitoringPrometheusClient()
+            app.state.monitoring_prometheus_client = monitoring_client
+            _lifespan_state_keys.add("monitoring_prometheus_client")
+            _lifespan_owned_resources["monitoring_prometheus_client"] = (
+                monitoring_client
+            )
         logger.info_json(
             "Configuration loaded",
             extra_fields={
@@ -340,9 +347,16 @@ async def _cleanup_lifespan_resources(app: FastAPI) -> None:
             except BaseException as exc:  # noqa: BLE001 - continue cleanup.
                 cleanup_error = cleanup_error or exc
 
-        monitoring_client = app.state._state.pop("monitoring_prometheus_client", None)
+        monitoring_client = _lifespan_owned_resources.pop(
+            "monitoring_prometheus_client", None
+        )
         _lifespan_state_keys.discard("monitoring_prometheus_client")
-        if monitoring_client is not None:
+        if (
+            monitoring_client is not None
+            and app.state._state.get("monitoring_prometheus_client")
+            is monitoring_client
+        ):
+            app.state._state.pop("monitoring_prometheus_client", None)
             logger.info_json("Closing monitoring Prometheus client")
             try:
                 await monitoring_client.aclose()

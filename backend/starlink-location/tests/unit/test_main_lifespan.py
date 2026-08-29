@@ -25,6 +25,7 @@ def clean_lifespan_state(monkeypatch):
         "poi_manager": main._poi_manager,
         "eta_service_initialized": main._eta_service_initialized,
         "lifespan_state_keys": set(main._lifespan_state_keys),
+        "lifespan_owned_resources": dict(main._lifespan_owned_resources),
         "background_enabled": main._background_updates_enabled,
     }
     state_snapshot = dict(main.app.state._state)
@@ -36,6 +37,7 @@ def clean_lifespan_state(monkeypatch):
     main._poi_manager = None
     main._eta_service_initialized = False
     main._lifespan_state_keys.clear()
+    main._lifespan_owned_resources.clear()
     for key in STATE_KEYS:
         main.app.state._state.pop(key, None)
 
@@ -59,6 +61,8 @@ def clean_lifespan_state(monkeypatch):
     main._eta_service_initialized = original["eta_service_initialized"]
     main._lifespan_state_keys.clear()
     main._lifespan_state_keys.update(original["lifespan_state_keys"])
+    main._lifespan_owned_resources.clear()
+    main._lifespan_owned_resources.update(original["lifespan_owned_resources"])
     main._background_updates_enabled = original["background_enabled"]
     main.app.state._state.clear()
     main.app.state._state.update(state_snapshot)
@@ -76,6 +80,18 @@ class TrackingMonitoringClient:
         self.closed += 1
         if self.close_error is not None:
             raise self.close_error
+
+
+class BlockingMonitoringClient(TrackingMonitoringClient):
+    def __init__(self, *, entered: asyncio.Event, release: asyncio.Event) -> None:
+        super().__init__()
+        self.entered = entered
+        self.release = release
+
+    async def aclose(self) -> None:
+        self.closed += 1
+        self.entered.set()
+        await self.release.wait()
 
 
 class FakeCoordinator:
@@ -195,6 +211,7 @@ async def test_monitoring_aclose_raises_once_and_detaches_state(
     close_error = RuntimeError("secret token should not be logged")
     client = TrackingMonitoringClient(close_error=close_error)
     main.app.state.monitoring_prometheus_client = client
+    main._lifespan_owned_resources["monitoring_prometheus_client"] = client
 
     with pytest.raises(RuntimeError, match="secret token"):
         await main.shutdown_event()
@@ -203,6 +220,55 @@ async def test_monitoring_aclose_raises_once_and_detaches_state(
     assert "monitoring_prometheus_client" not in main.app.state._state
 
     await main.shutdown_event()
+
+    assert client.closed == 1
+
+
+@pytest.mark.asyncio
+async def test_unowned_monitoring_client_survives_cleanup() -> None:
+    client = TrackingMonitoringClient()
+    main.app.state.monitoring_prometheus_client = client
+
+    await main.shutdown_event()
+
+    assert client.closed == 0
+    assert main.app.state.monitoring_prometheus_client is client
+
+
+@pytest.mark.asyncio
+async def test_replacement_monitoring_client_survives_owned_cleanup() -> None:
+    owned = TrackingMonitoringClient()
+    replacement = TrackingMonitoringClient()
+    main.app.state.monitoring_prometheus_client = replacement
+    main._lifespan_owned_resources["monitoring_prometheus_client"] = owned
+
+    await main.shutdown_event()
+
+    assert owned.closed == 0
+    assert replacement.closed == 0
+    assert main.app.state.monitoring_prometheus_client is replacement
+
+
+@pytest.mark.asyncio
+async def test_concurrent_cleanup_closes_owned_monitoring_client_once() -> None:
+    entered = asyncio.Event()
+    release = asyncio.Event()
+    client = BlockingMonitoringClient(entered=entered, release=release)
+    main.app.state.monitoring_prometheus_client = client
+    main._lifespan_owned_resources["monitoring_prometheus_client"] = client
+
+    first = asyncio.create_task(main.shutdown_event())
+    await entered.wait()
+    second = asyncio.create_task(main.shutdown_event())
+    await asyncio.sleep(0)
+
+    assert client.closed == 1
+    assert "monitoring_prometheus_client" not in main.app.state._state
+    assert "monitoring_prometheus_client" not in main._lifespan_owned_resources
+
+    release.set()
+    await first
+    await second
 
     assert client.closed == 1
 
@@ -285,6 +351,35 @@ async def test_successful_lifespan_after_failed_startup_cleans_normally(
 
 
 @pytest.mark.asyncio
+async def test_lifespan_retains_preexisting_monitoring_client(monkeypatch) -> None:
+    _patch_startup_basics(monkeypatch)
+    monkeypatch.setattr(main, "POIManager", MagicMock)
+    monkeypatch.setattr(main, "initialize_eta_service", MagicMock())
+    monkeypatch.setattr(main, "shutdown_eta_service", MagicMock())
+    monkeypatch.setattr(main, "RouteManager", FakeRouteManager)
+    preexisting = TrackingMonitoringClient()
+    main.app.state.monitoring_prometheus_client = preexisting
+
+    flight_state = MagicMock()
+    flight_state.get_status.return_value = SimpleNamespace(
+        phase=SimpleNamespace(value="pre_departure"),
+        eta_mode=SimpleNamespace(value="anticipated"),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "app.services.flight_state",
+        SimpleNamespace(get_flight_state_manager=lambda: flight_state),
+    )
+
+    async with main.lifespan(main.app):
+        assert main.app.state.monitoring_prometheus_client is preexisting
+
+    assert preexisting.closed == 0
+    assert main.app.state.monitoring_prometheus_client is preexisting
+    assert "monitoring_prometheus_client" not in main._lifespan_owned_resources
+
+
+@pytest.mark.asyncio
 async def test_repeated_cleanup_is_idempotent_and_awaits_background_task() -> None:
     started = asyncio.Event()
     cancelled = asyncio.Event()
@@ -312,6 +407,7 @@ async def test_repeated_cleanup_is_idempotent_and_awaits_background_task() -> No
     main.app.state.poi_manager = main._poi_manager
     main.app.state.route_manager = route_manager
     main.app.state.monitoring_prometheus_client = client
+    main._lifespan_owned_resources["monitoring_prometheus_client"] = client
 
     await started.wait()
     await main.shutdown_event()

@@ -1,7 +1,9 @@
 """Unit tests for RouteManager functionality."""
 
+import os
 import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -175,6 +177,31 @@ class TestRouteManager:
         # Should be in errors
         errors = route_manager.get_route_errors()
         assert "invalid" in errors
+
+    def test_failed_reload_preserves_previous_cached_route(
+        self, route_manager, temp_routes_dir
+    ):
+        """Test invalid reload records an error without replacing cached route."""
+        kml_file = temp_routes_dir / "route.kml"
+        first_revision = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        first_revision_ns = int(first_revision.timestamp() * 1_000_000_000)
+        kml_file.write_text(VALID_KML_CONTENT)
+
+        os.utime(kml_file, ns=(first_revision_ns, first_revision_ns))
+        route_manager._load_route_file(str(kml_file))
+        cached = route_manager.get_route("route")
+        assert cached is not None
+
+        second_revision = datetime(2026, 1, 2, tzinfo=timezone.utc)
+        second_revision_ns = int(second_revision.timestamp() * 1_000_000_000)
+        kml_file.write_text(INVALID_KML_CONTENT)
+        os.utime(kml_file, ns=(second_revision_ns, second_revision_ns))
+
+        route_manager._load_route_file(str(kml_file))
+
+        assert route_manager.get_route("route") is cached
+        assert cached.metadata.source_revision_at == first_revision
+        assert route_manager.get_route_errors()["route"]
 
     def test_get_route_errors(self, route_manager, temp_routes_dir):
         """Test error tracking."""

@@ -1,6 +1,9 @@
 """Unit tests for KML parser functionality."""
 
+import builtins
+import os
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -197,6 +200,12 @@ class TestKMLParser:
 
     def test_parse_kml_metadata(self, valid_kml_file):
         """Test that metadata is correctly extracted."""
+        revision = datetime(2026, 1, 1, 12, 30, tzinfo=timezone.utc)
+        os_revision_ns = int(revision.timestamp() * 1_000_000_000)
+        valid_kml_file.touch()
+
+        os.utime(valid_kml_file, ns=(os_revision_ns, os_revision_ns))
+
         result = parse_kml_file(valid_kml_file)
 
         assert result.metadata.name == "Test Route"
@@ -204,6 +213,49 @@ class TestKMLParser:
         assert result.metadata.file_path == str(valid_kml_file.absolute())
         assert result.metadata.point_count == 3
         assert result.metadata.imported_at is not None
+        assert result.metadata.source_revision_at == revision
+
+    def test_parse_kml_rejects_file_mutated_during_read(self, valid_kml_file):
+        """Test parser never publishes bytes with a mismatched file revision."""
+        mutated_content = VALID_KML_CONTENT.replace("Test Route", "Mutated Route")
+        real_open = builtins.open
+        mutated = False
+
+        class MutatingReader:
+            def __init__(self, wrapped):
+                self.wrapped = wrapped
+
+            def __enter__(self):
+                self.wrapped.__enter__()
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return self.wrapped.__exit__(exc_type, exc, traceback)
+
+            def fileno(self):
+                return self.wrapped.fileno()
+
+            def read(self):
+                nonlocal mutated
+                content = self.wrapped.read()
+                if not mutated:
+                    mutated = True
+                    valid_kml_file.write_text(mutated_content)
+                return content
+
+        def mutating_open(path, *args, **kwargs):
+            opened = real_open(path, *args, **kwargs)
+            if Path(path) == valid_kml_file:
+                return MutatingReader(opened)
+            return opened
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(builtins, "open", mutating_open)
+        try:
+            with pytest.raises(KMLParseError, match="changed while reading"):
+                parse_kml_file(valid_kml_file)
+        finally:
+            monkeypatch.undo()
 
     def test_parse_kml_with_folder(self, valid_kml_folder_file):
         """Test parsing KML with folder structure."""

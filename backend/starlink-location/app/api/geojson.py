@@ -6,7 +6,6 @@
 # Deferred to v0.4.0.
 
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Query
@@ -121,13 +120,7 @@ async def get_route_geojson(
 
 def _route_revision_at(route: ParsedRoute) -> datetime | None:
     """Return persisted source modification time for a parsed route."""
-    file_path = route.metadata.file_path
-    if not file_path:
-        return None
-    try:
-        return datetime.fromtimestamp(Path(file_path).stat().st_mtime, tz=timezone.utc)
-    except OSError:
-        return None
+    return route.metadata.source_revision_at
 
 
 def _get_route_coordinates_filtered(
