@@ -170,6 +170,19 @@ class CloseFailingStream(httpx.AsyncByteStream):
         raise self.exc
 
 
+class CountingStream(httpx.AsyncByteStream):
+    def __init__(self, chunks: list[bytes]) -> None:
+        self.chunks = chunks
+        self.closed = 0
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            yield chunk
+
+    async def aclose(self) -> None:
+        self.closed += 1
+
+
 def _close_failing_response(content: bytes, headers: dict[str, str]) -> httpx.Response:
     response = httpx.Response(200, content=content, headers=headers)
     response.extensions["close_failures"] = 0
@@ -210,6 +223,24 @@ async def _wait_until(condition, *, timeout: float = 1.0) -> None:
         if asyncio.get_running_loop().time() >= deadline:
             raise AssertionError("condition was not reached")
         await asyncio.sleep(0)
+
+
+async def _no_task_exception_noise(coro) -> None:
+    loop = asyncio.get_running_loop()
+    original = loop.get_exception_handler()
+    contexts = []
+
+    def capture(loop, context) -> None:
+        contexts.append(context)
+
+    loop.set_exception_handler(capture)
+    try:
+        await coro
+        await asyncio.sleep(0)
+    finally:
+        loop.set_exception_handler(original)
+
+    assert contexts == []
 
 
 async def _fetch(service: RainViewerRadarService, z=3, x=4, y=5):
@@ -695,6 +726,59 @@ async def test_cancel_checker_runtime_error_cancels_child_request(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("checker_exc", "child_exc"),
+    [
+        (RuntimeError("checker failed"), None),
+        (asyncio.CancelledError(), None),
+        (RuntimeError("checker failed"), httpx.ReadError("upstream detail")),
+        (asyncio.CancelledError(), httpx.ReadError("upstream detail")),
+    ],
+)
+async def test_await_with_cancel_reconciles_completed_child_during_checker_failure(
+    checker_exc: BaseException,
+    child_exc: BaseException | None,
+) -> None:
+    stream = CountingStream([PNG])
+    response = httpx.Response(200, headers={"Content-Type": "image/png"}, stream=stream)
+    child_done = asyncio.Event()
+    checker_started = asyncio.Event()
+
+    async def child():
+        await child_done.wait()
+        if child_exc is not None:
+            raise child_exc
+        return response
+
+    async def broken_checker() -> bool:
+        checker_started.set()
+        child_done.set()
+        await asyncio.sleep(0)
+        raise checker_exc
+
+    async def probe() -> None:
+        with pytest.raises(type(checker_exc)) as exc_info:
+            await weather_radar_helpers.await_with_cancel(
+                child(),
+                cancel_check=broken_checker,
+                poll_interval_seconds=0.001,
+            )
+        assert exc_info.value is checker_exc
+
+    await _no_task_exception_noise(probe())
+
+    if child_exc is None:
+        assert stream.closed == 1
+    assert checker_started.is_set()
+    pending = [
+        task
+        for task in asyncio.all_tasks()
+        if task is not asyncio.current_task() and not task.done()
+    ]
+    assert pending == []
+
+
+@pytest.mark.asyncio
 async def test_cancel_checker_runtime_error_while_body_stalled_cancels_read() -> None:
     release = asyncio.Event()
     stream = BlockingBodyStream(PNG, release)
@@ -716,6 +800,36 @@ async def test_cancel_checker_runtime_error_while_body_stalled_cancels_read() ->
 
     assert stream.cancelled == 1
     assert stream.closed is True
+
+
+@pytest.mark.asyncio
+async def test_cancel_checker_cancelled_error_body_boundary_closes_stream() -> None:
+    release = asyncio.Event()
+    stream = BlockingBodyStream(PNG, release)
+    response = httpx.Response(200, headers={"Content-Type": "image/png"}, stream=stream)
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+    fail_checker = asyncio.Event()
+
+    async def broken_checker() -> bool:
+        if fail_checker.is_set():
+            raise asyncio.CancelledError()
+        return False
+
+    task = asyncio.create_task(service.fetch_tile(0, 0, 0, broken_checker))
+    await asyncio.wait_for(stream.waiting.wait(), timeout=1)
+    fail_checker.set()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert stream.cancelled == 1
+    assert stream.closed is True
+    pending = [
+        task
+        for task in asyncio.all_tasks()
+        if task is not asyncio.current_task() and not task.done()
+    ]
+    assert pending == []
 
 
 @pytest.mark.asyncio
@@ -815,6 +929,33 @@ async def test_valid_tile_close_failure_closes_spool_before_timeout(
 
     assert isinstance(exc_info.value.__cause__, httpx.ReadTimeout)
     assert [spool.closed for spool in spools] == [1]
+
+
+@pytest.mark.asyncio
+async def test_unexpected_spool_failure_closes_spool_and_response(monkeypatch) -> None:
+    spools = []
+
+    class FailingSpool:
+        def __init__(self, *, max_size: int) -> None:
+            self.closed = 0
+            spools.append(self)
+
+        def write(self, content: bytes) -> int:
+            raise OSError("disk full")
+
+        def close(self) -> None:
+            self.closed += 1
+
+    monkeypatch.setattr(weather_radar_helpers, "SpooledTemporaryFile", FailingSpool)
+    response = _close_failing_response(PNG, {"Content-Type": "image/png"})
+    service = _service(ScriptedTransport([_json_response(METADATA), response]))
+
+    with pytest.raises(RainViewerRadarServiceError) as exc_info:
+        await service.fetch_tile(3, 4, 5, _not_disconnected)
+
+    assert isinstance(exc_info.value.__cause__, OSError)
+    assert [spool.closed for spool in spools] == [1]
+    assert response.extensions["close_failures"] == 1
 
 
 @pytest.mark.asyncio

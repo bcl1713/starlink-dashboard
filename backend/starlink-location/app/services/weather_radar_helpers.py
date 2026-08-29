@@ -23,18 +23,6 @@ RAINVIEWER_OPTIONS = "1_1"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 FRAME_PATH_RE = re.compile(r"^/v2/radar/(0|[1-9][0-9]*)$")
 TIMEOUT_ERRORS = (httpx.TimeoutException, httpcore.TimeoutException)
-RADAR_IO_ERRORS = (
-    httpx.HTTPError,
-    httpcore.NetworkError,
-    httpcore.ProtocolError,
-    RuntimeError,
-)
-SYSTEM_EXIT_ERRORS = (
-    asyncio.CancelledError,
-    GeneratorExit,
-    KeyboardInterrupt,
-    SystemExit,
-)
 
 CancelCheck = Callable[[], Awaitable[bool]]
 
@@ -115,16 +103,23 @@ async def await_with_cancel(
             if done:
                 return task.result()
             if await cancel_check():
-                task.cancel()
-                with suppress(BaseException):
-                    await task
+                await _dispose_or_cancel_task(task)
                 raise asyncio.CancelledError()
     except BaseException:
-        if not task.done():
-            task.cancel()
-            with suppress(BaseException):
-                await task
+        await _dispose_or_cancel_task(task)
         raise
+
+
+async def _dispose_or_cancel_task(task: asyncio.Future[Any]) -> None:
+    if task.done():
+        with suppress(BaseException):
+            result = task.result()
+            if isinstance(result, httpx.Response):
+                await close_response(result)
+        return
+    task.cancel()
+    with suppress(BaseException):
+        await task
 
 
 async def consume_tile_response(
@@ -255,11 +250,7 @@ async def _consume_tile_body(
             raise RainViewerRadarServiceError()
         spool.seek(0)
         return RadarTile(spool=spool, size_bytes=size, frame_timestamp=frame_timestamp)
-    except TIMEOUT_ERRORS as exc:
-        _raise_consumption_error(exc, spool)
-    except RADAR_IO_ERRORS as exc:
-        _raise_consumption_error(exc, spool)
-    except SYSTEM_EXIT_ERRORS as exc:
+    except BaseException as exc:  # noqa: BLE001
         _raise_consumption_error(exc, spool)
 
 
@@ -277,11 +268,7 @@ async def _consume_limited_raw(response: httpx.Response, limit: int) -> bytes:
         if len(content) > limit:
             raise RainViewerRadarServiceError()
         return content
-    except TIMEOUT_ERRORS as exc:
-        _raise_consumption_error(exc)
-    except RADAR_IO_ERRORS as exc:
-        _raise_consumption_error(exc)
-    except SYSTEM_EXIT_ERRORS as exc:
+    except BaseException as exc:  # noqa: BLE001
         _raise_consumption_error(exc)
     return b"".join(chunks)
 
