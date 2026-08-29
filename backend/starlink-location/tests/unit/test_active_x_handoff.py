@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
-
 from app.mission.models import Mission, MissionLeg, TransportConfig, XTransition
 from app.mission.storage import save_mission_v2
 from app.models.poi import POI

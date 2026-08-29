@@ -7,9 +7,7 @@ import io
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.api.export import csv_export, prometheus
-
 
 GROUND_ENTRY_COLUMNS = [
     "ground_entry_latitude",

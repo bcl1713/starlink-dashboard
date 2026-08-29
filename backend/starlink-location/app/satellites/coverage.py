@@ -13,7 +13,6 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +26,11 @@ class CoverageEvent:
     satellite_id: str
     latitude: float
     longitude: float
-    metadata: Optional[dict] = None
+    metadata: dict | None = None
 
 
 def point_in_polygon(
-    point: Tuple[float, float], polygon: List[Tuple[float, float]]
+    point: tuple[float, float], polygon: list[tuple[float, float]]
 ) -> bool:
     """Test if a point is inside a polygon using ray casting algorithm.
 
@@ -50,16 +49,18 @@ def point_in_polygon(
     for i in range(1, n + 1):
         p2_lon, p2_lat = polygon[i % n]
 
-        if lat > min(p1_lat, p2_lat):
-            if lat <= max(p1_lat, p2_lat):
-                if lon <= max(p1_lon, p2_lon):
-                    if p1_lat != p2_lat:
-                        x_intersect = (lat - p1_lat) * (p2_lon - p1_lon) / (
-                            p2_lat - p1_lat
-                        ) + p1_lon
+        if (
+            lat > min(p1_lat, p2_lat)
+            and lat <= max(p1_lat, p2_lat)
+            and lon <= max(p1_lon, p2_lon)
+        ):
+            if p1_lat != p2_lat:
+                x_intersect = (lat - p1_lat) * (p2_lon - p1_lon) / (
+                    p2_lat - p1_lat
+                ) + p1_lon
 
-                    if p1_lon == p2_lon or lon <= x_intersect:
-                        inside = not inside
+            if p1_lon == p2_lon or lon <= x_intersect:
+                inside = not inside
 
         p1_lon, p1_lat = p2_lon, p2_lat
 
@@ -69,7 +70,7 @@ def point_in_polygon(
 class CoverageSampler:
     """Samples route for satellite coverage entry/exit events."""
 
-    def __init__(self, coverage_geojson_path: Optional[Path] = None):
+    def __init__(self, coverage_geojson_path: Path | None = None):
         """Initialize sampler with optional coverage data.
 
         Args:
@@ -138,12 +139,12 @@ class CoverageSampler:
                 f"({sum(len(rings) for rings in self.satellite_polygons.values())} total rings)"
             )
 
-        except (IOError, json.JSONDecodeError) as e:
+        except (OSError, json.JSONDecodeError) as e:
             logger.error(f"Failed to load coverage GeoJSON: {e}")
             self.coverage_data = None
             self.satellite_polygons = {}
 
-    def check_coverage_at_point(self, latitude: float, longitude: float) -> List[str]:
+    def check_coverage_at_point(self, latitude: float, longitude: float) -> list[str]:
         """Check which satellites cover a given point.
 
         Handles multi-ring polygons (e.g., coverage split by International Date Line).
@@ -175,9 +176,9 @@ class CoverageSampler:
 
     def sample_route_coverage(
         self,
-        waypoints: List[Tuple[float, float, datetime]],
+        waypoints: list[tuple[float, float, datetime]],
         sample_interval_seconds: int = 60,
-    ) -> List[CoverageEvent]:
+    ) -> list[CoverageEvent]:
         """Sample route for coverage entry/exit events.
 
         Walks through waypoints at specified interval and detects coverage changes.
@@ -249,11 +250,11 @@ class CoverageSampler:
         """
         from app.satellites.geometry import look_angles
 
-        azimuth, elevation = look_angles(aircraft_lat, aircraft_lon, 0, satellite_lon)
+        _azimuth, elevation = look_angles(aircraft_lat, aircraft_lon, 0, satellite_lon)
         return elevation
 
     def save_coverage_events(
-        self, events: List[CoverageEvent], output_path: Path
+        self, events: list[CoverageEvent], output_path: Path
     ) -> None:
         """Save coverage events to JSON for caching/analysis.
 
@@ -279,10 +280,10 @@ class CoverageSampler:
             with open(output_path, "w") as f:
                 json.dump(event_dicts, f, indent=2)
             logger.info(f"Saved {len(events)} coverage events to {output_path}")
-        except IOError as e:
+        except OSError as e:
             logger.error(f"Failed to save coverage events: {e}")
 
-    def load_coverage_events(self, input_path: Path) -> List[CoverageEvent]:
+    def load_coverage_events(self, input_path: Path) -> list[CoverageEvent]:
         """Load coverage events from JSON cache.
 
         Args:
@@ -311,6 +312,6 @@ class CoverageSampler:
             ]
             logger.info(f"Loaded {len(events)} coverage events from {input_path}")
             return events
-        except (IOError, json.JSONDecodeError, ValueError) as e:
+        except (OSError, json.JSONDecodeError, ValueError) as e:
             logger.error(f"Failed to load coverage events: {e}")
             return []

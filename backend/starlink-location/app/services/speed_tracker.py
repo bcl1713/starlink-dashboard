@@ -4,7 +4,6 @@ import logging
 import math
 import time
 from collections import deque
-from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +36,11 @@ class SpeedTracker:
         self.min_distance_meters = min_distance_meters
 
         # Store position updates: (latitude, longitude, timestamp)
-        self._position_history: deque[Tuple[float, float, float]] = deque()
+        self._position_history: deque[tuple[float, float, float]] = deque()
         self._last_speed: float = 0.0
 
     def update(
-        self, latitude: float, longitude: float, timestamp: Optional[float] = None
+        self, latitude: float, longitude: float, timestamp: float | None = None
     ) -> float:
         """
         Update with new position and calculate speed.

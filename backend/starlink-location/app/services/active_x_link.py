@@ -55,7 +55,19 @@ def build_active_x_link(
     """
     try:
         telemetry = coordinator.get_current_telemetry() if coordinator else None
-    except Exception as exc:  # pragma: no cover - defensive live-mode guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as exc:  # pragma: no cover - defensive live-mode guard
         logger.debug("Active X link unavailable: telemetry missing: %s", exc)
         return empty_active_x_link(state_filter)
 

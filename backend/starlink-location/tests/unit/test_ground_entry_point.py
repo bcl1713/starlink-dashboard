@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from prometheus_client import generate_latest
-
 from app.core.metrics import REGISTRY
 from app.services import ground_entry_point as gep
 from app.services.ground_entry_point import (
@@ -13,6 +11,8 @@ from app.services.ground_entry_point import (
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
+from prometheus_client import generate_latest
+from typing_extensions import Self
 
 
 def setup_function() -> None:
@@ -61,7 +61,6 @@ def test_resolve_public_ip_falls_back_to_dns_when_trace_has_no_ipv4(
 
     def trace_lookup(timeout_seconds: float) -> None:
         lookup_order.append(f"trace:{timeout_seconds}")
-        return None
 
     def dns_lookup(timeout_seconds: float) -> str:
         lookup_order.append(f"dns:{timeout_seconds}")
@@ -192,7 +191,7 @@ def test_geolocate_public_ip_parses_ipinfo_region(monkeypatch) -> None:
         def __init__(self, **kwargs) -> None:
             self.kwargs = kwargs
 
-        def __enter__(self) -> "FakeClient":
+        def __enter__(self) -> Self:
             return self
 
         def __exit__(self, *args) -> None:

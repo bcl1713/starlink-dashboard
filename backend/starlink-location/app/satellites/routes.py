@@ -8,16 +8,15 @@ category="satellite" in the POI system.
 # FR-004: File exceeds 300 lines (341 lines) because satellite API bridges POI
 # storage, satellite metadata, rule evaluation, and coverage calculations.
 # Splitting would fragment satellite domain logic. Deferred to v0.4.0.
-
 import logging
-from typing import List, Optional
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.mission.dependencies import get_poi_manager
 from app.models.poi import POICreate, POIUpdate
 from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_poi_manager
 
 logger = logging.getLogger(__name__)
 
@@ -50,32 +49,28 @@ class SatelliteCreate(BaseModel):
     longitude: float = Field(
         ..., description="Longitude in decimal degrees (-180 to 180)"
     )
-    slot: Optional[str] = Field(default=None, description="Orbital slot name")
+    slot: str | None = Field(default=None, description="Orbital slot name")
     color: str = Field(default="#FFFFFF", description="Display color in hex format")
 
 
 class SatelliteUpdate(BaseModel):
     """Request model for updating a satellite."""
 
-    satellite_id: Optional[str] = Field(default=None, description="Satellite ID")
-    transport: Optional[str] = Field(default=None, description="Transport type")
-    longitude: Optional[float] = Field(
-        default=None, description="Longitude (-180 to 180)"
-    )
-    slot: Optional[str] = Field(default=None, description="Orbital slot name")
-    color: Optional[str] = Field(
-        default=None, description="Display color in hex format"
-    )
+    satellite_id: str | None = Field(default=None, description="Satellite ID")
+    transport: str | None = Field(default=None, description="Transport type")
+    longitude: float | None = Field(default=None, description="Longitude (-180 to 180)")
+    slot: str | None = Field(default=None, description="Orbital slot name")
+    color: str | None = Field(default=None, description="Display color in hex format")
 
 
 # Create router
 router = APIRouter(prefix="/api/satellites", tags=["satellites"])
 
 
-@router.get("", response_model=List[SatelliteResponse])
+@router.get("", response_model=list[SatelliteResponse])
 async def list_satellites(
-    poi_manager: POIManager = Depends(get_poi_manager),
-) -> List[SatelliteResponse]:
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
+) -> list[SatelliteResponse]:
     """List all available satellites in the catalog.
 
     Returns all satellites from the POI system where category="satellite".
@@ -139,7 +134,7 @@ async def list_satellites(
 )
 async def create_satellite(
     satellite_create: SatelliteCreate,
-    poi_manager: POIManager = Depends(get_poi_manager),
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> SatelliteResponse:
     """Create a new satellite.
 
@@ -202,10 +197,22 @@ async def create_satellite(
             slot=poi.description,
             color=color,
         )
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to create satellite: {str(e)}",
+            detail=f"Failed to create satellite: {e!s}",
         )
 
 
@@ -215,7 +222,7 @@ async def create_satellite(
 async def update_satellite(
     satellite_id: str,
     satellite_update: SatelliteUpdate,
-    poi_manager: POIManager = Depends(get_poi_manager),
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> SatelliteResponse:
     """Update an existing satellite.
 
@@ -252,12 +259,14 @@ async def update_satellite(
         )
 
     # Validate longitude if provided
-    if satellite_update.longitude is not None:
-        if not -180 <= satellite_update.longitude <= 180:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Longitude must be between -180 and 180 degrees",
-            )
+    if (
+        satellite_update.longitude is not None
+        and not -180 <= satellite_update.longitude <= 180
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Longitude must be between -180 and 180 degrees",
+        )
 
     try:
         # Build update payload
@@ -298,10 +307,22 @@ async def update_satellite(
         )
     except HTTPException:
         raise
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to update satellite: {str(e)}",
+            detail=f"Failed to update satellite: {e!s}",
         )
 
 
@@ -312,7 +333,7 @@ async def update_satellite(
 )
 async def delete_satellite(
     satellite_id: str,
-    poi_manager: POIManager = Depends(get_poi_manager),
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> None:
     """Delete a satellite.
 

@@ -8,51 +8,51 @@
 import logging
 import math
 from datetime import datetime, timezone
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from app.models.telemetry import TelemetryData
-    from app.models.route import ParsedRoute
-    from app.services.poi_manager import POIManager
     from app.core.config import ConfigManager
+    from app.models.route import ParsedRoute
+    from app.models.telemetry import TelemetryData
+    from app.services.poi_manager import POIManager
 
 from app.core.metrics.prometheus_metrics import (
     _current_position,
+    mission_active_info,
+    mission_comm_state,
+    mission_critical_seconds,
+    mission_degraded_seconds,
+    mission_next_conflict_seconds,
+    mission_phase_state,
+    mission_timeline_generated_timestamp,
+    simulation_updates_total,
+    starlink_dish_altitude_feet,
+    starlink_dish_heading_degrees,
     starlink_dish_latitude_degrees,
     starlink_dish_longitude_degrees,
-    starlink_dish_altitude_feet,
-    starlink_dish_speed_knots,
-    starlink_dish_heading_degrees,
-    starlink_network_latency_ms_current,
-    starlink_network_throughput_down_mbps_current,
-    starlink_network_throughput_up_mbps_current,
-    starlink_network_packet_loss_percent,
-    starlink_network_latency_ms,
-    starlink_network_throughput_down_mbps,
-    starlink_network_throughput_up_mbps,
     starlink_dish_obstruction_percent,
-    starlink_signal_quality_percent,
-    starlink_uptime_seconds,
-    starlink_flight_phase,
-    starlink_eta_mode,
-    starlink_flight_departure_time_unix,
-    starlink_flight_arrival_time_unix,
-    starlink_time_until_departure_seconds,
-    starlink_eta_poi_seconds,
-    starlink_distance_to_poi_meters,
-    simulation_updates_total,
-    starlink_dish_uptime_seconds,
-    starlink_dish_thermal_throttle,
     starlink_dish_outage_active,
-    starlink_service_info,
+    starlink_dish_speed_knots,
+    starlink_dish_thermal_throttle,
+    starlink_dish_uptime_seconds,
+    starlink_distance_to_poi_meters,
+    starlink_eta_mode,
+    starlink_eta_poi_seconds,
+    starlink_flight_arrival_time_unix,
+    starlink_flight_departure_time_unix,
+    starlink_flight_phase,
     starlink_mode_info,
-    mission_active_info,
-    mission_phase_state,
-    mission_next_conflict_seconds,
-    mission_timeline_generated_timestamp,
-    mission_comm_state,
-    mission_degraded_seconds,
-    mission_critical_seconds,
+    starlink_network_latency_ms,
+    starlink_network_latency_ms_current,
+    starlink_network_packet_loss_percent,
+    starlink_network_throughput_down_mbps,
+    starlink_network_throughput_down_mbps_current,
+    starlink_network_throughput_up_mbps,
+    starlink_network_throughput_up_mbps_current,
+    starlink_service_info,
+    starlink_signal_quality_percent,
+    starlink_time_until_departure_seconds,
+    starlink_uptime_seconds,
 )
 
 logger = logging.getLogger(__name__)
@@ -104,7 +104,6 @@ def update_metrics_from_telemetry(
 
     # Position metrics
     # Update custom collector's position data
-    global _current_position
     _current_position["latitude"] = telemetry.position.latitude
     _current_position["longitude"] = telemetry.position.longitude
     _current_position["altitude"] = telemetry.position.altitude
@@ -156,7 +155,19 @@ def update_metrics_from_telemetry(
         # Automatic departure detection (speed-based)
         try:
             flight_state.check_departure(telemetry.position.speed)
-        except Exception as departure_error:  # pragma: no cover - defensive guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as departure_error:  # pragma: no cover - defensive guard
             logger.warning(f"Departure detection error: {departure_error}")
 
         # Automatic arrival detection when an active route is available
@@ -174,11 +185,35 @@ def update_metrics_from_telemetry(
                     flight_state.check_arrival(
                         distance_remaining, telemetry.position.speed
                     )
-            except Exception as arrival_error:  # pragma: no cover - defensive guard
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as arrival_error:  # pragma: no cover - defensive guard
                 logger.debug(f"Arrival detection skipped: {arrival_error}")
 
         flight_status = flight_state.get_status()
-    except Exception as state_error:  # pragma: no cover - defensive guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as state_error:  # pragma: no cover - defensive guard
         logger.warning(f"Flight state manager unavailable: {state_error}")
 
     # Update Flight Status metrics
@@ -233,7 +268,19 @@ def update_metrics_from_telemetry(
                 timing_profile.flight_status = flight_status.phase.value
                 timing_profile.actual_departure_time = flight_status.departure_time
                 timing_profile.actual_arrival_time = flight_status.arrival_time
-            except Exception as sync_error:  # pragma: no cover - defensive guard
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ) as sync_error:  # pragma: no cover - defensive guard
                 logger.debug(
                     f"Failed to sync route timing profile with flight status: {sync_error}"
                 )
@@ -269,7 +316,19 @@ def update_metrics_from_telemetry(
 
         starlink_time_until_departure_seconds.set(time_until_departure)
 
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         logger.warning(f"Error updating flight status metrics: {e}")
 
     # Update POI/ETA metrics
@@ -299,7 +358,7 @@ def update_metrics_from_telemetry(
         )
 
         # Update Prometheus gauges with ETA data
-        for poi_id, metrics_data in eta_metrics.items():
+        for metrics_data in eta_metrics.values():
             poi_name = metrics_data.get("poi_name", "unknown")
             poi_category = metrics_data.get("poi_category", "")
             eta_seconds = metrics_data.get("eta_seconds", -1)
@@ -317,7 +376,19 @@ def update_metrics_from_telemetry(
                 name=poi_name, category=poi_category, eta_type=eta_type
             ).set(distance_meters)
 
-    except Exception as e:
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
         logger.warning(f"Error updating POI/ETA metrics: {e}")
 
     # Increment update counter
@@ -372,7 +443,6 @@ def clear_telemetry_metrics() -> None:
     # Route metrics are only cleared when route is deactivated
 
     # Clear custom position collector data
-    global _current_position
     _current_position["latitude"] = math.nan
     _current_position["longitude"] = math.nan
     _current_position["altitude"] = math.nan
@@ -435,7 +505,19 @@ def update_mission_active_metric(mission_id: str, route_id: str) -> None:
     """
     try:
         mission_active_info.labels(mission_id=mission_id, route_id=route_id).set(1)
-    except Exception as e:  # pragma: no cover - defensive guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:  # pragma: no cover - defensive guard
         logger.warning(f"Failed to update mission active metric: {e}")
 
 
@@ -474,7 +556,19 @@ def clear_mission_metrics(mission_id: str) -> None:
             )
         mission_degraded_seconds.labels(mission_id=mission_id).set(math.nan)
         mission_critical_seconds.labels(mission_id=mission_id).set(math.nan)
-    except Exception as e:  # pragma: no cover - defensive guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:  # pragma: no cover - defensive guard
         logger.warning(f"Failed to clear mission metrics: {e}")
 
 
@@ -500,7 +594,19 @@ def update_mission_phase_metric(mission_id: str, phase: str) -> None:
         phase_map = {"pre_departure": 0, "in_flight": 1, "post_arrival": 2}
         phase_value = phase_map.get(phase, 0)
         mission_phase_state.labels(mission_id=mission_id).set(phase_value)
-    except Exception as e:  # pragma: no cover - defensive guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:  # pragma: no cover - defensive guard
         logger.warning(f"Failed to update mission phase metric: {e}")
 
 
@@ -525,7 +631,19 @@ def update_mission_timeline_timestamp(mission_id: str, timestamp: float) -> None
         mission_timeline_generated_timestamp.labels(mission_id=mission_id).set(
             timestamp
         )
-    except Exception as e:  # pragma: no cover - defensive guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:  # pragma: no cover - defensive guard
         logger.warning(f"Failed to update mission timeline timestamp metric: {e}")
 
 
@@ -553,7 +671,19 @@ def update_mission_comm_state_metric(
         mission_comm_state.labels(mission_id=mission_id, transport=transport).set(
             state_value
         )
-    except Exception as e:  # pragma: no cover
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:  # pragma: no cover
         logger.warning(f"Failed to update mission comm state metric: {e}")
 
 
@@ -581,7 +711,19 @@ def update_mission_duration_metrics(
     try:
         mission_degraded_seconds.labels(mission_id=mission_id).set(degraded_seconds)
         mission_critical_seconds.labels(mission_id=mission_id).set(critical_seconds)
-    except Exception as e:  # pragma: no cover
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:  # pragma: no cover
         logger.warning(f"Failed to update mission duration metrics: {e}")
 
 
@@ -605,5 +747,17 @@ def update_mission_next_conflict_metric(mission_id: str, seconds: float) -> None
     """
     try:
         mission_next_conflict_seconds.labels(mission_id=mission_id).set(seconds)
-    except Exception as e:  # pragma: no cover
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:  # pragma: no cover
         logger.warning(f"Failed to update mission next conflict metric: {e}")

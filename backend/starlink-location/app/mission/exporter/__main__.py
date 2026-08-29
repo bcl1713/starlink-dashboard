@@ -16,34 +16,27 @@ import io
 import json
 import logging
 import re
+
 import matplotlib
 
 matplotlib.use("Agg")  # Headless mode for Docker
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cfeature
-from adjustText import adjust_text
-from matplotlib.lines import Line2D
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
 import pandas as pd
+from adjustText import adjust_text
+from matplotlib.lines import Line2D
 from pptx import Presentation
-from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
+from pptx.util import Inches, Pt
 
 from app.mission.call_availability import normalize_call_availability_timeline
-from app.mission.models import (
-    Mission,
-    MissionLeg,
-    MissionLegTimeline,
-    TimelineSegment,
-    TimelineStatus,
-    Transport,
-)
 from app.mission.exporter.formatting import (
     compose_time_block,
     ensure_timezone,
@@ -54,25 +47,33 @@ from app.mission.exporter.formatting import (
     humanize_metric_name,
     mission_start_timestamp,
 )
+from app.mission.exporter.pptx_styling import (
+    add_footer_bar,
+    add_header_bar,
+    add_logo,
+)
 from app.mission.exporter.transport_utils import (
-    TRANSPORT_DISPLAY,
     STATUS_COLORS,
+    TRANSPORT_DISPLAY,
     display_transport_state,
     segment_is_x_ku_warning,
     serialize_transport_list,
 )
-from app.mission.exporter.pptx_styling import (
-    add_header_bar,
-    add_footer_bar,
-    add_logo,
+from app.mission.models import (
+    Mission,
+    MissionLeg,
+    MissionLegTimeline,
+    TimelineSegment,
+    TimelineStatus,
+    Transport,
 )
-from app.services.poi_manager import POIManager
-from app.services.route_manager import RouteManager
+from app.mission.timeline_builder.calculator import route_with_adjusted_departure
 from app.services.ground_entry_point import (
     GroundEntryPoint,
     get_cached_ground_entry_point,
 )
-from app.mission.timeline_builder.calculator import route_with_adjusted_departure
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,7 @@ class TimelineExportFormat(str, Enum):
     PPTX = "pptx"
 
     @classmethod
-    def from_string(cls, raw: str) -> "TimelineExportFormat":
+    def from_string(cls, raw: str) -> TimelineExportFormat:
         """Parse user-supplied format strings case-insensitively."""
         value = (raw or "").strip().lower()
         try:
@@ -957,7 +958,12 @@ def _generate_route_map(
                 fontweight="bold",
                 color="#2c3e50",
                 zorder=11,
-                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", pad=1),
+                bbox={
+                    "facecolor": "white",
+                    "alpha": 0.7,
+                    "edgecolor": "none",
+                    "pad": 1,
+                },
             )
         )
         marker_x.append(start_point.longitude)
@@ -988,7 +994,12 @@ def _generate_route_map(
                 fontweight="bold",
                 color="#2c3e50",
                 zorder=11,
-                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none", pad=1),
+                bbox={
+                    "facecolor": "white",
+                    "alpha": 0.7,
+                    "edgecolor": "none",
+                    "pad": 1,
+                },
             )
         )
         marker_x.append(end_point.longitude)
@@ -1021,9 +1032,12 @@ def _generate_route_map(
                         fontweight="bold",
                         color="#2c3e50",
                         zorder=11,
-                        bbox=dict(
-                            facecolor="white", alpha=0.6, edgecolor="none", pad=0.5
-                        ),
+                        bbox={
+                            "facecolor": "white",
+                            "alpha": 0.6,
+                            "edgecolor": "none",
+                            "pad": 0.5,
+                        },
                     )
                 )
                 marker_x.append(poi["lon"])
@@ -1041,7 +1055,7 @@ def _generate_route_map(
                 expand=(1.3, 1.5),
                 force_explode=(0.3, 1.0),
                 lim=1000,
-                arrowprops=dict(arrowstyle="->", color="gray", lw=0.5),
+                arrowprops={"arrowstyle": "->", "color": "gray", "lw": 0.5},
             )
 
     # Phase 12: Add legend inset to map
@@ -1577,7 +1591,19 @@ def _cover_metadata_line(
             from app.mission.storage import load_mission_v2
 
             metadata_source = load_mission_v2(parent_mission_id) or mission
-        except Exception:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ):
             metadata_source = mission
 
     metadata = getattr(metadata_source, "metadata", None) or {}

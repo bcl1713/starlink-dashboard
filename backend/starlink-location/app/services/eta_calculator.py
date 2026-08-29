@@ -7,11 +7,12 @@ ETACalculator class with all methods integrated.
 DEPRECATED: Import from app.services.eta instead.
 """
 
+from typing import TYPE_CHECKING, Optional
+
+from app.models.flight_status import ETAMode, FlightPhase
+from app.models.poi import POI
 from app.services.eta.calculator import ETACalculator as _ETACalculator
 from app.services.eta.projection import ETAProjection
-from app.models.poi import POI
-from app.models.flight_status import ETAMode, FlightPhase
-from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.models.route import ParsedRoute, RouteWaypoint
@@ -39,10 +40,10 @@ class ETACalculator(_ETACalculator):
         current_lat: float,
         current_lon: float,
         pois: list[POI],
-        speed_knots: Optional[float] = None,
+        speed_knots: float | None = None,
         active_route: Optional["ParsedRoute"] = None,
         eta_mode: ETAMode = ETAMode.ESTIMATED,
-        flight_phase: Optional[FlightPhase] = None,
+        flight_phase: FlightPhase | None = None,
     ) -> dict[str, dict]:
         """
         Calculate distance and ETA metrics for all POIs with dual-mode support.
@@ -65,7 +66,7 @@ class ETACalculator(_ETACalculator):
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         DEPRECATED: Use _calculate_route_aware_eta_estimated or _calculate_route_aware_eta_anticipated instead.
 
@@ -81,8 +82,8 @@ class ETACalculator(_ETACalculator):
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
-        current_speed_knots: Optional[float] = None,
-    ) -> Optional[float]:
+        current_speed_knots: float | None = None,
+    ) -> float | None:
         """Calculate ETA using segment-based speeds with speed blending (estimated/in-flight mode)."""
         return self._projection._calculate_route_aware_eta_estimated(
             current_lat, current_lon, poi, active_route, current_speed_knots
@@ -94,7 +95,7 @@ class ETACalculator(_ETACalculator):
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
-    ) -> Optional[float]:
+    ) -> float | None:
         """Calculate ETA using expected times from flight plan (anticipated/pre-departure mode)."""
         return self._projection._calculate_route_aware_eta_anticipated(
             current_lat, current_lon, poi, active_route
@@ -106,8 +107,8 @@ class ETACalculator(_ETACalculator):
         current_lon: float,
         destination_waypoint: "RouteWaypoint",
         active_route: "ParsedRoute",
-        current_speed_knots: Optional[float] = None,
-    ) -> Optional[float]:
+        current_speed_knots: float | None = None,
+    ) -> float | None:
         """Calculate ETA for a waypoint with speed blending (estimated/in-flight mode)."""
         return self._projection._calculate_on_route_eta_estimated(
             current_lat,
@@ -123,7 +124,7 @@ class ETACalculator(_ETACalculator):
         current_lon: float,
         destination_waypoint: "RouteWaypoint",
         active_route: "ParsedRoute",
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         Calculate ETA for a waypoint that is on the active route.
 
@@ -139,8 +140,8 @@ class ETACalculator(_ETACalculator):
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
-        current_speed_knots: Optional[float] = None,
-    ) -> Optional[float]:
+        current_speed_knots: float | None = None,
+    ) -> float | None:
         """Calculate ETA for off-route POI with speed blending (estimated/in-flight mode)."""
         return self._projection._calculate_off_route_eta_with_projection_estimated(
             current_lat, current_lon, poi, active_route, current_speed_knots
@@ -152,7 +153,7 @@ class ETACalculator(_ETACalculator):
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         Calculate ETA for a POI that is off-route but has projection data.
 

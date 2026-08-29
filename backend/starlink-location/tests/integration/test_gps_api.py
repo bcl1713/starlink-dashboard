@@ -1,7 +1,8 @@
 """Integration tests for GPS configuration API endpoint."""
 
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestGPSConfigAPI:
@@ -103,7 +104,7 @@ class TestGPSConfigAPIWithClient:
     @pytest.mark.asyncio
     async def test_gps_config_get_dish_unavailable(self, test_client, mock_client):
         """Test GET GPS config returns 503 when dish is unavailable."""
-        mock_client.get_gps_config.side_effect = Exception("Connection failed")
+        mock_client.get_gps_config.side_effect = RuntimeError("Connection failed")
 
         with patch("app.api.gps._starlink_client", mock_client):
             response = test_client.get("/api/v2/gps/config")

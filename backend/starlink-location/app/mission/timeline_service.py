@@ -7,35 +7,32 @@ import time
 from pathlib import Path
 
 from app.mission.call_availability import normalize_call_availability_timeline
+from app.mission.derived_route import (
+    build_derived_route_estimate,
+    derived_route_for_estimate,
+)
 from app.mission.models import MissionLeg, MissionLegTimeline, Transport
 from app.mission.state import generate_transport_intervals
 from app.mission.timeline import assemble_mission_timeline
-from app.services.poi_manager import POIManager
-from app.services.route_manager import RouteManager
-from app.satellites.coverage import CoverageSampler
-from app.satellites.kmz_importer import load_commka_coverage
-from app.satellites.rules import RuleEngine
-from app.satellites.catalog import get_satellite_catalog
-
-from app.mission.timeline_builder.calculator import (
-    TimelineComputationError,
-    RouteTemporalProjector,
-    derive_mission_window,
-    generate_timeline_samples,
-    route_takeoff_delta,
-    route_with_adjusted_departure,
-    TIMELINE_SAMPLE_INTERVAL_SECONDS,
-)
-from app.mission.timeline_builder.coverage import analyze_ka_coverage
-from app.mission.timeline_builder.events import (
-    apply_ka_events,
-    apply_x_azimuth_events,
-    apply_manual_outages,
-)
 from app.mission.timeline_builder.aar import (
     apply_manual_aar_tracks,
     apply_x_transitions,
     resolve_aar_windows,
+)
+from app.mission.timeline_builder.calculator import (
+    TIMELINE_SAMPLE_INTERVAL_SECONDS,
+    RouteTemporalProjector,
+    TimelineComputationError,
+    derive_mission_window,
+    generate_timeline_samples,
+    route_takeoff_delta,
+    route_with_adjusted_departure,
+)
+from app.mission.timeline_builder.coverage import analyze_ka_coverage
+from app.mission.timeline_builder.events import (
+    apply_ka_events,
+    apply_manual_outages,
+    apply_x_azimuth_events,
 )
 from app.mission.timeline_builder.pois import sync_ka_pois, sync_x_aar_pois
 from app.mission.timeline_builder.stats import (
@@ -44,10 +41,12 @@ from app.mission.timeline_builder.stats import (
     attach_statistics,
     summarize_timeline,
 )
-from app.mission.derived_route import (
-    build_derived_route_estimate,
-    derived_route_for_estimate,
-)
+from app.satellites.catalog import get_satellite_catalog
+from app.satellites.coverage import CoverageSampler
+from app.satellites.kmz_importer import load_commka_coverage
+from app.satellites.rules import RuleEngine
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 logger = logging.getLogger(__name__)
 
@@ -281,10 +280,10 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
 
 # Re-export key types for backward compatibility
 __all__ = [
-    "build_mission_timeline",
+    "RouteTemporalProjector",
     "TimelineComputationError",
     "TimelineSummary",
-    "RouteTemporalProjector",
+    "build_mission_timeline",
     "route_takeoff_delta",
     "route_with_adjusted_departure",
 ]

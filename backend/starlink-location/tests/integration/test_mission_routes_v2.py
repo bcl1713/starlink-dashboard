@@ -1,21 +1,21 @@
 """Integration tests for mission v2 API endpoints."""
 
 import asyncio
-import pytest
 from datetime import datetime, timedelta, timezone
-from uuid import uuid4
-from fastapi.testclient import TestClient
 from unittest.mock import patch
+from uuid import uuid4
 
+import pytest
 from app.mission.models import (
     Mission,
     MissionLeg,
-    TransportConfig,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
-    MissionLegTimeline,
+    TransportConfig,
 )
 from app.mission.timeline_service import TimelineSummary
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -56,7 +56,6 @@ def cleanup_test_missions_v2():
     # We should rely on the test to delete, or implement a cleanup that scans directories.
     # For now, we'll try to delete specifically created missions in tests if possible,
     # or rely on unique IDs to avoid collision.
-    pass
 
 
 class TestMissionV2CreateEndpoint:
@@ -130,9 +129,8 @@ class TestMissionV2ListEndpoint:
 
     def test_list_missions_returns_total_header_and_requested_page(self, monkeypatch):
         """The additive total header lets clients paginate without breaking arrays."""
-        from fastapi import Response
-
         from app.mission.routes_v2 import list_missions
+        from fastapi import Response
 
         missions = [
             Mission(id=f"mission-{index}", name=f"Mission {index}")

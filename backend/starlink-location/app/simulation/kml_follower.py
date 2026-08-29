@@ -3,7 +3,7 @@
 import logging
 import math
 import random
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from app.models.route import ParsedRoute
 
@@ -187,7 +187,7 @@ class KMLRouteFollower:
         """Get route name."""
         return self.route.metadata.name
 
-    def get_segment_speed_at_progress(self, progress: float) -> Optional[float]:
+    def get_segment_speed_at_progress(self, progress: float) -> float | None:
         """
         Get expected segment speed at current progress (Phase 5 timing integration).
 

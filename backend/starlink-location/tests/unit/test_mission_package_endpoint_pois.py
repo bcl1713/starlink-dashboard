@@ -6,7 +6,6 @@ import json
 import zipfile
 from datetime import datetime, timezone
 
-from fastapi import UploadFile
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.mission.routes_v2 import (
     _synchronize_imported_endpoint_pois,
@@ -16,6 +15,7 @@ from app.models.poi import POICreate
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from fastapi import UploadFile
 from starlette.requests import Request
 
 
@@ -101,9 +101,16 @@ def test_synchronize_imported_endpoint_pois_restores_persists_and_reconciles(
     assert all(poi.mission_id == mission.id for poi in endpoints)
 
     persisted = POIManager(pois_file=tmp_path / "pois.json").list_pois()
-    assert len(
-        [poi for poi in persisted if poi.description and "mission-package endpoint" in poi.description]
-    ) == 2
+    assert (
+        len(
+            [
+                poi
+                for poi in persisted
+                if poi.description and "mission-package endpoint" in poi.description
+            ]
+        )
+        == 2
+    )
 
     created, warnings = _synchronize_imported_endpoint_pois(
         mission, route_manager, poi_manager
@@ -129,7 +136,9 @@ def test_synchronize_imported_endpoint_pois_warns_for_missing_route(tmp_path):
     )
 
     assert created == 0
-    assert warnings == ["Endpoint POIs not restored for leg imported-leg: route unavailable"]
+    assert warnings == [
+        "Endpoint POIs not restored for leg imported-leg: route unavailable"
+    ]
 
 
 def test_package_import_restores_endpoint_pois_and_reimport_is_idempotent(
@@ -172,7 +181,9 @@ def test_package_import_restores_endpoint_pois_and_reimport_is_idempotent(
         return asyncio.run(
             import_mission(
                 request=request,
-                file=UploadFile(file=io.BytesIO(package.getvalue()), filename="mission.zip"),
+                file=UploadFile(
+                    file=io.BytesIO(package.getvalue()), filename="mission.zip"
+                ),
                 route_manager=route_manager,
                 poi_manager=poi_manager,
             )

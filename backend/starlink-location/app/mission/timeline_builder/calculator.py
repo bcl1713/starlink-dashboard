@@ -3,22 +3,23 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from app.satellites.coverage import CoverageSampler
 
-from app.models.route import ParsedRoute
-from app.services.route_eta_calculator import RouteETACalculator
-from app.simulation.route import calculate_bearing
 from app.mission.timeline_builder.coverage import RouteSample
 from app.mission.timeline_builder.utils import (
     DEFAULT_CRUISE_ALTITUDE_M,
     interpolate_altitude,
     interpolate_longitude,
 )
+from app.models.route import ParsedRoute
+from app.services.route_eta_calculator import RouteETACalculator
+from app.simulation.route import calculate_bearing
 
 
 def ensure_timezone(value: datetime) -> datetime:
@@ -191,10 +192,14 @@ class RouteTemporalProjector:
                 1e-6,
             )
             fraction = (distance - self.cumulative_distances[index - 1]) / span
-            return ensure_timezone(previous.expected_arrival_time) + (
-                ensure_timezone(current.expected_arrival_time)
-                - ensure_timezone(previous.expected_arrival_time)
-            ) * fraction
+            return (
+                ensure_timezone(previous.expected_arrival_time)
+                + (
+                    ensure_timezone(current.expected_arrival_time)
+                    - ensure_timezone(previous.expected_arrival_time)
+                )
+                * fraction
+            )
         ratio = max(0.0, min(1.0, distance / self.total_distance))
         return self.start_time + timedelta(seconds=ratio * self.duration_seconds)
 
@@ -222,7 +227,10 @@ class RouteTemporalProjector:
                 )
         ratio = max(
             0.0,
-            min(1.0, (timestamp - self.start_time).total_seconds() / self.duration_seconds),
+            min(
+                1.0,
+                (timestamp - self.start_time).total_seconds() / self.duration_seconds,
+            ),
         )
         return self.total_distance * ratio
 
@@ -351,7 +359,6 @@ def generate_timeline_samples(
 
     samples: list[RouteSample] = []
     total_duration = max(projector.duration_seconds, 0.0)
-    total_distance = projector.total_distance
 
     step = 0
     while True:

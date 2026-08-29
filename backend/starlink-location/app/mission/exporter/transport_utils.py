@@ -6,7 +6,7 @@ and conflict detection without manager dependencies.
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from app.mission.models import (
     TimelineSegment,

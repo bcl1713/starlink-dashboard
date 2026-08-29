@@ -1,7 +1,8 @@
 """End-to-end simulation tests."""
 
-import pytest
 import asyncio
+
+import pytest
 
 
 @pytest.mark.asyncio

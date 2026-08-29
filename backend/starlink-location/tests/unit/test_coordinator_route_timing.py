@@ -1,15 +1,15 @@
 """Tests for coordinator speed handling with route timing data."""
 
-import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 
+import pytest
+from app.models.config import PositionConfig, RouteConfig, SimulationConfig
 from app.models.route import (
-    RoutePoint,
-    RouteMetadata,
     ParsedRoute,
+    RouteMetadata,
+    RoutePoint,
     RouteTimingProfile,
 )
-from app.models.config import SimulationConfig, PositionConfig, RouteConfig
 from app.simulation.coordinator import SimulationCoordinator
 from app.simulation.kml_follower import KMLRouteFollower
 
@@ -46,7 +46,9 @@ class TestCoordinatorRouteTiming:
                 longitude=127.0,
                 altitude=10000,
                 sequence=0,
-                expected_arrival_time=datetime(2025, 11, 3, 12, 0, 0),
+                expected_arrival_time=datetime(
+                    2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc
+                ),
                 expected_segment_speed_knots=None,
             ),
             RoutePoint(
@@ -54,7 +56,9 @@ class TestCoordinatorRouteTiming:
                 longitude=126.0,
                 altitude=10000,
                 sequence=1,
-                expected_arrival_time=datetime(2025, 11, 3, 12, 15, 0),
+                expected_arrival_time=datetime(
+                    2025, 11, 3, 12, 15, 0, tzinfo=timezone.utc
+                ),
                 expected_segment_speed_knots=450.0,  # Actual expected speed
             ),
             RoutePoint(
@@ -62,7 +66,9 @@ class TestCoordinatorRouteTiming:
                 longitude=125.0,
                 altitude=10000,
                 sequence=2,
-                expected_arrival_time=datetime(2025, 11, 3, 12, 30, 0),
+                expected_arrival_time=datetime(
+                    2025, 11, 3, 12, 30, 0, tzinfo=timezone.utc
+                ),
                 expected_segment_speed_knots=460.0,
             ),
             RoutePoint(
@@ -70,7 +76,9 @@ class TestCoordinatorRouteTiming:
                 longitude=124.0,
                 altitude=10000,
                 sequence=3,
-                expected_arrival_time=datetime(2025, 11, 3, 12, 45, 0),
+                expected_arrival_time=datetime(
+                    2025, 11, 3, 12, 45, 0, tzinfo=timezone.utc
+                ),
                 expected_segment_speed_knots=440.0,
             ),
             RoutePoint(
@@ -78,14 +86,16 @@ class TestCoordinatorRouteTiming:
                 longitude=123.0,
                 altitude=10000,
                 sequence=4,
-                expected_arrival_time=datetime(2025, 11, 3, 13, 0, 0),
+                expected_arrival_time=datetime(
+                    2025, 11, 3, 13, 0, 0, tzinfo=timezone.utc
+                ),
                 expected_segment_speed_knots=450.0,
             ),
         ]
 
         timing_profile = RouteTimingProfile(
-            departure_time=datetime(2025, 11, 3, 12, 0, 0),
-            arrival_time=datetime(2025, 11, 3, 13, 0, 0),
+            departure_time=datetime(2025, 11, 3, 12, 0, 0, tzinfo=timezone.utc),
+            arrival_time=datetime(2025, 11, 3, 13, 0, 0, tzinfo=timezone.utc),
             total_expected_duration_seconds=3600,
             has_timing_data=True,
             segment_count_with_timing=4,

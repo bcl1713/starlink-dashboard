@@ -9,12 +9,15 @@ This module organizes mission API endpoints into logical groups:
 
 from fastapi import APIRouter
 
+from .activation import get_active_mission_id
+from .activation import router as activation_router
 from .missions import (
-    router as missions_router,
     create_mission,
     update_mission,
 )
-from .activation import router as activation_router, get_active_mission_id
+from .missions import (
+    router as missions_router,
+)
 from .operations import router as operations_router
 
 # Create combined router for all mission operations
@@ -29,8 +32,8 @@ router.include_router(operations_router)
 
 # Export public API
 __all__ = [
-    "router",
-    "get_active_mission_id",
     "create_mission",
+    "get_active_mission_id",
+    "router",
     "update_mission",
 ]

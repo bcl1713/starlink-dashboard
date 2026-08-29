@@ -1,19 +1,20 @@
 """Unit tests for label helper functions."""
 
+from datetime import datetime, timezone
+
 import pytest
-from datetime import datetime
 from app.core.labels import (
+    apply_common_labels,
+    get_geographic_labels,
     get_mode_label,
     get_status_label,
-    get_geographic_labels,
-    apply_common_labels,
 )
 from app.models.telemetry import (
-    TelemetryData,
-    PositionData,
+    EnvironmentalData,
     NetworkData,
     ObstructionData,
-    EnvironmentalData,
+    PositionData,
+    TelemetryData,
 )
 
 
@@ -104,7 +105,7 @@ class TestApplyCommonLabels:
     def mock_telemetry(self):
         """Create a mock telemetry object."""
         return TelemetryData(
-            timestamp=datetime.now(),
+            timestamp=datetime.now(timezone.utc),
             position=PositionData(
                 latitude=40.7128,
                 longitude=-74.0060,

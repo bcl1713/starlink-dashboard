@@ -3,7 +3,6 @@
 import logging
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ class CoordinateTriple:
 
     longitude: float
     latitude: float
-    altitude: Optional[float] = None
+    altitude: float | None = None
 
 
 @dataclass
@@ -26,19 +25,19 @@ class PlacemarkGeometry:
 
     kind: str
     coordinates: list[CoordinateTriple]
-    altitude_mode: Optional[str] = None
+    altitude_mode: str | None = None
 
 
 @dataclass
 class LineStyleInfo:
     """Line style attributes declared on a Placemark."""
 
-    color: Optional[str] = None
-    width: Optional[float] = None
+    color: str | None = None
+    width: float | None = None
     extra: dict[str, str] = field(default_factory=dict)
 
 
-def parse_geometry(placemark_elem: ET.Element) -> Optional[PlacemarkGeometry]:
+def parse_geometry(placemark_elem: ET.Element) -> PlacemarkGeometry | None:
     """Parse geometry for a Placemark.
 
     Args:
@@ -77,7 +76,7 @@ def parse_geometry(placemark_elem: ET.Element) -> Optional[PlacemarkGeometry]:
     return None
 
 
-def parse_line_style(placemark_elem: ET.Element) -> Optional[LineStyleInfo]:
+def parse_line_style(placemark_elem: ET.Element) -> LineStyleInfo | None:
     """Parse inline LineStyle data if present on the Placemark.
 
     Args:
@@ -140,7 +139,7 @@ def parse_coordinates(coords_text: str) -> list[CoordinateTriple]:
     return coordinates
 
 
-def get_element_text(element: ET.Element, tag: str) -> Optional[str]:
+def get_element_text(element: ET.Element, tag: str) -> str | None:
     """
     Get text content from an XML element.
 
@@ -158,8 +157,8 @@ def get_element_text(element: ET.Element, tag: str) -> Optional[str]:
 
 
 def coordinates_match(
-    coord_a: Optional[CoordinateTriple],
-    coord_b: Optional[CoordinateTriple],
+    coord_a: CoordinateTriple | None,
+    coord_b: CoordinateTriple | None,
     tolerance: float = 1e-4,
 ) -> bool:
     """Check if two coordinates refer to the same location within tolerance.
@@ -229,7 +228,7 @@ def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
         >>> distance = haversine_distance(40.7128, -74.0060, 34.0522, -118.2437)
         >>> # Distance from New York to Los Angeles: ~3,944 km
     """
-    from math import radians, cos, sin, asin, sqrt
+    from math import asin, cos, radians, sin, sqrt
 
     # Convert all coordinates from degrees to radians for trigonometric calculations
     lat1_rad = radians(lat1)

@@ -3,15 +3,15 @@
 from datetime import datetime, timezone
 
 from app.core.metrics import (
+    REGISTRY,
+    clear_mission_metrics,
     mission_active_info,
-    mission_phase_state,
     mission_next_conflict_seconds,
+    mission_phase_state,
     mission_timeline_generated_timestamp,
     update_mission_active_metric,
-    clear_mission_metrics,
     update_mission_phase_metric,
     update_mission_timeline_timestamp,
-    REGISTRY,
 )
 
 

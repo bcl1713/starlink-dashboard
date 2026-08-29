@@ -12,7 +12,6 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
 
 from app.mission.models import Transport
 from app.satellites.geometry import is_in_azimuth_range, look_angles
@@ -47,11 +46,11 @@ class MissionEvent:
     timestamp: datetime
     event_type: EventType
     transport: Transport
-    affected_transport: Optional[Transport] = None  # What transport is affected
+    affected_transport: Transport | None = None  # What transport is affected
     severity: str = "warning"  # "info", "warning", "critical"
     reason: str = ""
-    satellite_id: Optional[str] = None
-    metadata: Dict = field(default_factory=dict)
+    satellite_id: str | None = None
+    metadata: dict = field(default_factory=dict)
 
     def __lt__(self, other: "MissionEvent") -> bool:
         """Allow sorting by timestamp."""
@@ -77,14 +76,14 @@ class ConstraintConfig:
 class RuleEngine:
     """Evaluates communication constraints and generates mission events."""
 
-    def __init__(self, config: Optional[ConstraintConfig] = None):
+    def __init__(self, config: ConstraintConfig | None = None):
         """Initialize rule engine with optional custom config.
 
         Args:
             config: ConstraintConfig for azimuth/buffer settings
         """
         self.config = config or ConstraintConfig()
-        self.events: List[MissionEvent] = []
+        self.events: list[MissionEvent] = []
 
     def evaluate_x_azimuth_window(
         self,
@@ -92,10 +91,10 @@ class RuleEngine:
         aircraft_lon: float,
         aircraft_alt: float,
         satellite_lon: float,
-        timestamp: datetime,  # noqa: ARG002 (timestamp reserved for future logging)
+        timestamp: datetime,
         is_aar_mode: bool = False,
         heading_deg: float | None = None,
-    ) -> Tuple[bool, float, Dict[str, float | bool]]:
+    ) -> tuple[bool, float, dict[str, float | bool]]:
         """Evaluate if aircraft-to-satellite azimuth violates constraints.
 
         Args:
@@ -113,7 +112,7 @@ class RuleEngine:
             aircraft_lat, aircraft_lon, aircraft_alt, satellite_lon
         )
         relative_azimuth = _relative_to_heading(azimuth, heading_deg)
-        debug_metadata: Dict[str, float | bool] = {
+        debug_metadata: dict[str, float | bool] = {
             "absolute_azimuth_degrees": azimuth,
             "relative_azimuth_degrees": relative_azimuth,
             "elevation_degrees": elevation,
@@ -366,7 +365,7 @@ class RuleEngine:
             ]
         )
 
-    def get_sorted_events(self) -> List[MissionEvent]:
+    def get_sorted_events(self) -> list[MissionEvent]:
         """Get all events sorted by timestamp.
 
         Returns:
@@ -374,7 +373,7 @@ class RuleEngine:
         """
         return sorted(self.events)
 
-    def generate_advisories(self) -> List[str]:
+    def generate_advisories(self) -> list[str]:
         """Generate human-readable mission advisories from events.
 
         Returns:

@@ -7,8 +7,8 @@ and exports.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Dict, List, Sequence
+from collections.abc import Sequence
+from datetime import datetime, timezone
 
 from app.mission.models import (
     MissionLegTimeline,
@@ -24,8 +24,8 @@ def build_timeline_segments(
     mission_id: str,
     mission_start: datetime,
     mission_end: datetime,
-    intervals: Dict[Transport, Sequence[TransportInterval]],
-) -> List[TimelineSegment]:
+    intervals: dict[Transport, Sequence[TransportInterval]],
+) -> list[TimelineSegment]:
     """Merge per-transport intervals into mission timeline segments.
 
     Args:
@@ -49,7 +49,7 @@ def build_timeline_segments(
         mission_end,
         intervals,
     )
-    segments: List[TimelineSegment] = []
+    segments: list[TimelineSegment] = []
 
     for i in range(len(boundaries) - 1):
         start = boundaries[i]
@@ -105,7 +105,7 @@ def assemble_mission_timeline(
     mission_id: str,
     mission_start: datetime,
     mission_end: datetime,
-    intervals: Dict[Transport, Sequence[TransportInterval]],
+    intervals: dict[Transport, Sequence[TransportInterval]],
 ) -> MissionLegTimeline:
     """Create MissionLegTimeline model from interval data."""
     segments = build_timeline_segments(
@@ -125,8 +125,8 @@ def assemble_mission_timeline(
 def _collect_boundaries(
     mission_start: datetime,
     mission_end: datetime,
-    intervals: Dict[Transport, Sequence[TransportInterval]],
-) -> List[datetime]:
+    intervals: dict[Transport, Sequence[TransportInterval]],
+) -> list[datetime]:
     boundaries = {mission_start, mission_end}
 
     for transport_intervals in intervals.values():
@@ -141,14 +141,14 @@ def _collect_boundaries(
 
 def _interval_at(
     transport: Transport,
-    intervals: Dict[Transport, Sequence[TransportInterval]],
+    intervals: dict[Transport, Sequence[TransportInterval]],
     timestamp: datetime,
 ) -> TransportInterval | None:
     transport_intervals = intervals.get(transport) or []
     for interval in transport_intervals:
         interval_end = interval.end
         if interval_end is None:
-            interval_end = datetime.max
+            interval_end = datetime.max.replace(tzinfo=timezone.utc)
 
         if interval.start <= timestamp < interval_end:
             return interval
@@ -173,8 +173,8 @@ def _derive_status(
     return TimelineStatus.CRITICAL
 
 
-def _collect_reasons(intervals: Sequence[TransportInterval | None]) -> List[str]:
-    reasons: List[str] = []
+def _collect_reasons(intervals: Sequence[TransportInterval | None]) -> list[str]:
+    reasons: list[str] = []
     seen = set()
     for interval in intervals:
         if not interval:

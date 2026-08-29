@@ -2,10 +2,9 @@
 
 import logging
 import re
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
 
-from app.models.route import RoutePoint, RouteWaypoint, RouteTimingProfile
+from app.models.route import RoutePoint, RouteTimingProfile, RouteWaypoint
 from app.services.kml.geometry import haversine_distance
 
 logger = logging.getLogger(__name__)
@@ -17,8 +16,8 @@ TIMESTAMP_PATTERN = re.compile(
 
 
 def extract_timestamp_from_description(
-    description: Optional[str],
-) -> Optional[datetime]:
+    description: str | None,
+) -> datetime | None:
     """
     Extract timestamp from waypoint description.
 
@@ -34,7 +33,7 @@ def extract_timestamp_from_description(
         >>> desc = "Airport\\n Time Over Waypoint: 2025-10-27 16:51:13Z"
         >>> ts = extract_timestamp_from_description(desc)
         >>> ts.isoformat()
-        '2025-10-27T16:51:13'
+        '2025-10-27T16:51:13+00:00'
     """
     if not description:
         return None
@@ -46,7 +45,9 @@ def extract_timestamp_from_description(
     try:
         timestamp_str = match.group(1)
         # Parse format: "2025-10-27 16:51:13"
-        return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+        return datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S").replace(
+            tzinfo=timezone.utc
+        )
     except (ValueError, IndexError) as e:
         logger.debug(f"Failed to parse timestamp from description: {e}")
         return None
@@ -176,7 +177,7 @@ def build_route_timing_profile(
     route_name: str,
     points: list[RoutePoint],
     waypoints: list[RouteWaypoint],
-) -> Optional[RouteTimingProfile]:
+) -> RouteTimingProfile | None:
     """
     Build RouteTimingProfile with departure/arrival times and total duration.
 

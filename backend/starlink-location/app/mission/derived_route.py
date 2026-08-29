@@ -10,6 +10,7 @@ with its provenance.
 
 from __future__ import annotations
 
+import itertools
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from math import asin, atan2, cos, degrees, isfinite, radians, sin, sqrt
@@ -103,22 +104,35 @@ def distance_nm(left: tuple[float, float], right: tuple[float, float]) -> float:
     return 2 * EARTH_RADIUS_NM * asin(min(1.0, sqrt(value)))
 
 
-def _interpolate(left: RoutePoint, right: RoutePoint, fraction: float) -> tuple[float, float, float | None]:
+def _interpolate(
+    left: RoutePoint, right: RoutePoint, fraction: float
+) -> tuple[float, float, float | None]:
     longitude = _normalise_longitude(
-        left.longitude + _wrapped_delta_longitude(left.longitude, right.longitude) * fraction
+        left.longitude
+        + _wrapped_delta_longitude(left.longitude, right.longitude) * fraction
     )
     altitude = None
     if left.altitude is not None and right.altitude is not None:
         altitude = left.altitude + (right.altitude - left.altitude) * fraction
-    return (left.latitude + (right.latitude - left.latitude) * fraction, longitude, altitude)
+    return (
+        left.latitude + (right.latitude - left.latitude) * fraction,
+        longitude,
+        altitude,
+    )
 
 
-def _project_to_segment(point: tuple[float, float], start: RoutePoint, end: RoutePoint) -> tuple[float, float, float, float | None]:
+def _project_to_segment(
+    point: tuple[float, float], start: RoutePoint, end: RoutePoint
+) -> tuple[float, float, float, float | None]:
     """Project in a local unwrapped tangent plane; valid for route segments."""
     reference_latitude = radians((start.latitude + end.latitude + point[0]) / 3)
-    x_end = radians(_wrapped_delta_longitude(start.longitude, end.longitude)) * cos(reference_latitude)
+    x_end = radians(_wrapped_delta_longitude(start.longitude, end.longitude)) * cos(
+        reference_latitude
+    )
     y_end = radians(end.latitude - start.latitude)
-    x_point = radians(_wrapped_delta_longitude(start.longitude, point[1])) * cos(reference_latitude)
+    x_point = radians(_wrapped_delta_longitude(start.longitude, point[1])) * cos(
+        reference_latitude
+    )
     y_point = radians(point[0] - start.latitude)
     denominator = x_end * x_end + y_end * y_end
     if denominator <= 1e-18:
@@ -127,23 +141,41 @@ def _project_to_segment(point: tuple[float, float], start: RoutePoint, end: Rout
     return (fraction, *_interpolate(start, end, fraction))
 
 
-def _candidate_anchors(route: ParsedRoute, point: tuple[float, float]) -> list[SpliceAnchor]:
+def _candidate_anchors(
+    route: ParsedRoute, point: tuple[float, float]
+) -> list[SpliceAnchor]:
     cumulative = 0.0
     anchors: list[SpliceAnchor] = []
     for index, (start, end) in enumerate(zip(route.points, route.points[1:])):
-        segment_nm = distance_nm((start.latitude, start.longitude), (end.latitude, end.longitude))
+        segment_nm = distance_nm(
+            (start.latitude, start.longitude), (end.latitude, end.longitude)
+        )
         if segment_nm <= 1e-9:
             continue
         fraction, latitude, longitude, _ = _project_to_segment(point, start, end)
         connector = distance_nm(point, (latitude, longitude))
         if connector <= MAX_ANCHOR_CONNECTOR_NM:
-            anchors.append(SpliceAnchor(index, fraction, cumulative + segment_nm * fraction, latitude, longitude, connector))
+            anchors.append(
+                SpliceAnchor(
+                    index,
+                    fraction,
+                    cumulative + segment_nm * fraction,
+                    latitude,
+                    longitude,
+                    connector,
+                )
+            )
         cumulative += segment_nm
-    return sorted(anchors, key=lambda item: (item.connector_nm, item.segment_index, item.fraction))[:MAX_CANDIDATES]
+    return sorted(
+        anchors, key=lambda item: (item.connector_nm, item.segment_index, item.fraction)
+    )[:MAX_CANDIDATES]
 
 
 def _route_distance(points: list[DerivedRoutePoint]) -> float:
-    return sum(distance_nm((left.latitude, left.longitude), (right.latitude, right.longitude)) for left, right in zip(points, points[1:]))
+    return sum(
+        distance_nm((left.latitude, left.longitude), (right.latitude, right.longitude))
+        for left, right in itertools.pairwise(points)
+    )
 
 
 def _segment_lengths(route: ParsedRoute) -> list[float]:
@@ -170,7 +202,9 @@ def _weighted_median(values: list[tuple[float, float]]) -> float | None:
     return valid[-1][0]
 
 
-def _speed(route: ParsedRoute, leave_progress: float, rejoin_progress: float) -> tuple[float, str]:
+def _speed(
+    route: ParsedRoute, leave_progress: float, rejoin_progress: float
+) -> tuple[float, str]:
     lengths = _segment_lengths(route)
     total = sum(lengths)
     local_limit = total * 0.1
@@ -197,7 +231,12 @@ def _speed(route: ParsedRoute, leave_progress: float, rejoin_progress: float) ->
     profile = route.timing_profile
     duration = profile.get_total_duration() if profile else None
     if duration is not None and duration > 0:
-        total = sum(distance_nm((left.latitude, left.longitude), (right.latitude, right.longitude)) for left, right in zip(route.points, route.points[1:]))
+        total = sum(
+            distance_nm(
+                (left.latitude, left.longitude), (right.latitude, right.longitude)
+            )
+            for left, right in zip(route.points, route.points[1:])
+        )
         if total > 0:
             return total / (duration / 3600.0), "planned_total_distance_duration"
     return AR_DIVERSION_ASSUMED_SPEED_KTAS, "assumed_400_ktas"
@@ -219,18 +258,35 @@ def _local_speed(route: ParsedRoute, progress: float) -> float | None:
 def _bearing(left: tuple[float, float], right: tuple[float, float]) -> float:
     lat1, lon1, lat2, lon2 = map(radians, (*left, *right))
     delta_lon = radians(_wrapped_delta_longitude(degrees(lon1), degrees(lon2)))
-    return (degrees(atan2(sin(delta_lon) * cos(lat2), cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(delta_lon))) + 360) % 360
+    return (
+        degrees(
+            atan2(
+                sin(delta_lon) * cos(lat2),
+                cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(delta_lon),
+            )
+        )
+        + 360
+    ) % 360
 
 
-def _turn_angle(first: tuple[float, float], vertex: tuple[float, float], last: tuple[float, float]) -> float:
+def _turn_angle(
+    first: tuple[float, float], vertex: tuple[float, float], last: tuple[float, float]
+) -> float:
     return abs((_bearing(first, vertex) - _bearing(vertex, last) + 180) % 360 - 180)
 
 
 def _anchor_timestamp(route: ParsedRoute, anchor: SpliceAnchor) -> datetime | None:
     left, right = route.points[anchor.segment_index : anchor.segment_index + 2]
-    if not left.expected_arrival_time or not right.expected_arrival_time or right.expected_arrival_time <= left.expected_arrival_time:
+    if (
+        not left.expected_arrival_time
+        or not right.expected_arrival_time
+        or right.expected_arrival_time <= left.expected_arrival_time
+    ):
         return None
-    return left.expected_arrival_time + (right.expected_arrival_time - left.expected_arrival_time) * anchor.fraction
+    return (
+        left.expected_arrival_time
+        + (right.expected_arrival_time - left.expected_arrival_time) * anchor.fraction
+    )
 
 
 def derived_route_for_estimate(
@@ -242,7 +298,11 @@ def derived_route_for_estimate(
     unchanged, the diversion is timed with the selected effective speed, and
     downstream source points receive exactly one splice delta.
     """
-    if not estimate.available or not estimate.leave_anchor or not estimate.rejoin_anchor:
+    if (
+        not estimate.available
+        or not estimate.leave_anchor
+        or not estimate.rejoin_anchor
+    ):
         return source_route
 
     leave_time = _anchor_timestamp(source_route, estimate.leave_anchor)
@@ -265,9 +325,13 @@ def derived_route_for_estimate(
     for sequence, point in enumerate(estimate.points):
         if first_diversion < sequence <= last_diversion:
             prior = estimate.points[sequence - 1]
-            elapsed += distance_nm(
-                (prior.latitude, prior.longitude), (point.latitude, point.longitude)
-            ) / diversion_distance * estimate.derived_duration_seconds
+            elapsed += (
+                distance_nm(
+                    (prior.latitude, prior.longitude), (point.latitude, point.longitude)
+                )
+                / diversion_distance
+                * estimate.derived_duration_seconds
+            )
         timestamp: datetime | None = None
         if point.provenance == "planned" and point.source_index is not None:
             timestamp = source_route.points[point.source_index].expected_arrival_time
@@ -297,12 +361,21 @@ def derived_route_for_estimate(
 
 
 def _override_anchor(
-    route: ParsedRoute, point: tuple[float, float], segment_index: int | None, fraction: float | None
+    route: ParsedRoute,
+    point: tuple[float, float],
+    segment_index: int | None,
+    fraction: float | None,
 ) -> SpliceAnchor | None:
-    if segment_index is None or fraction is None or segment_index >= len(route.points) - 1:
+    if (
+        segment_index is None
+        or fraction is None
+        or segment_index >= len(route.points) - 1
+    ):
         return None
     start, end = route.points[segment_index : segment_index + 2]
-    segment_nm = distance_nm((start.latitude, start.longitude), (end.latitude, end.longitude))
+    segment_nm = distance_nm(
+        (start.latitude, start.longitude), (end.latitude, end.longitude)
+    )
     if segment_nm <= 1e-9:
         return None
     latitude, longitude, _ = _interpolate(start, end, fraction)
@@ -310,7 +383,9 @@ def _override_anchor(
     connector = distance_nm(point, (latitude, longitude))
     if connector > MAX_ANCHOR_CONNECTOR_NM:
         return None
-    return SpliceAnchor(segment_index, fraction, progress, latitude, longitude, connector)
+    return SpliceAnchor(
+        segment_index, fraction, progress, latitude, longitude, connector
+    )
 
 
 def _splice_points(
@@ -318,7 +393,9 @@ def _splice_points(
 ) -> list[DerivedRoutePoint]:
     return [
         *[
-            DerivedRoutePoint(point.latitude, point.longitude, point.altitude, "planned", index)
+            DerivedRoutePoint(
+                point.latitude, point.longitude, point.altitude, "planned", index
+            )
             for index, point in enumerate(route.points[: leave.segment_index + 1])
         ],
         DerivedRoutePoint(leave.latitude, leave.longitude, None, "entry_connector"),
@@ -328,7 +405,9 @@ def _splice_points(
         ],
         DerivedRoutePoint(rejoin.latitude, rejoin.longitude, None, "exit_connector"),
         *[
-            DerivedRoutePoint(point.latitude, point.longitude, point.altitude, "planned", index)
+            DerivedRoutePoint(
+                point.latitude, point.longitude, point.altitude, "planned", index
+            )
             for index, point in enumerate(
                 route.points[rejoin.segment_index + 1 :], start=rejoin.segment_index + 1
             )
@@ -337,8 +416,16 @@ def _splice_points(
 
 
 def _diversion_distance(points: list[DerivedRoutePoint]) -> float:
-    start = next(index for index, point in enumerate(points) if point.provenance == "entry_connector")
-    end = next(index for index, point in enumerate(points) if point.provenance == "exit_connector")
+    start = next(
+        index
+        for index, point in enumerate(points)
+        if point.provenance == "entry_connector"
+    )
+    end = next(
+        index
+        for index, point in enumerate(points)
+        if point.provenance == "exit_connector"
+    )
     return _route_distance(points[start : end + 1])
 
 
@@ -363,8 +450,12 @@ def build_derived_route_estimate(
             override.rejoin_fraction,
         )
     ):
-        leave = _override_anchor(route, entry_point, override.leave_segment_index, override.leave_fraction)
-        rejoin = _override_anchor(route, exit_point, override.rejoin_segment_index, override.rejoin_fraction)
+        leave = _override_anchor(
+            route, entry_point, override.leave_segment_index, override.leave_fraction
+        )
+        rejoin = _override_anchor(
+            route, exit_point, override.rejoin_segment_index, override.rejoin_fraction
+        )
         pairs = [(leave, rejoin)] if leave and rejoin else []
         invalid_override = not pairs
     else:
@@ -380,11 +471,23 @@ def build_derived_route_estimate(
     if not pairs:
         return DerivedRouteEstimate(
             False,
-            unavailable_reason="invalid_splice_override" if invalid_override else "no_feasible_splice",
+            unavailable_reason=(
+                "invalid_splice_override" if invalid_override else "no_feasible_splice"
+            ),
         )
 
     planned_total = route.get_total_distance() / 1852.0
-    scored: list[tuple[float, SpliceAnchor, SpliceAnchor, list[DerivedRoutePoint], float, float, str]] = []
+    scored: list[
+        tuple[
+            float,
+            SpliceAnchor,
+            SpliceAnchor,
+            list[DerivedRoutePoint],
+            float,
+            float,
+            str,
+        ]
+    ] = []
     for leave, rejoin in pairs:
         speed, source = _speed(route, leave.progress_nm, rejoin.progress_nm)
         points = _splice_points(route, track, leave, rejoin)
@@ -393,9 +496,15 @@ def build_derived_route_estimate(
         inbound = route.points[leave.segment_index]
         outbound = route.points[rejoin.segment_index + 1]
         entry_turn = _turn_angle(
-            (inbound.latitude, inbound.longitude), (leave.latitude, leave.longitude), entry_point
+            (inbound.latitude, inbound.longitude),
+            (leave.latitude, leave.longitude),
+            entry_point,
         )
-        exit_turn = _turn_angle(exit_point, (rejoin.latitude, rejoin.longitude), (outbound.latitude, outbound.longitude))
+        exit_turn = _turn_angle(
+            exit_point,
+            (rejoin.latitude, rejoin.longitude),
+            (outbound.latitude, outbound.longitude),
+        )
         delay = (diversion - replaced) / speed * 3600
         leave_speed = _local_speed(route, leave.progress_nm)
         rejoin_speed = _local_speed(route, rejoin.progress_nm)
@@ -414,14 +523,21 @@ def build_derived_route_estimate(
         scored.append((score, leave, rejoin, points, diversion, speed, source))
     scored.sort(
         key=lambda candidate: (
-            candidate[0], candidate[1].connector_nm + candidate[2].connector_nm,
-            candidate[1].segment_index, candidate[1].fraction,
-            candidate[2].segment_index, candidate[2].fraction,
+            candidate[0],
+            candidate[1].connector_nm + candidate[2].connector_nm,
+            candidate[1].segment_index,
+            candidate[1].fraction,
+            candidate[2].segment_index,
+            candidate[2].fraction,
         )
     )
     _, leave, rejoin, points, diversion, inferred_speed, speed_source = scored[0]
-    speed = override.speed_knots if override and override.speed_knots else inferred_speed
-    leave_time, rejoin_time = _anchor_timestamp(route, leave), _anchor_timestamp(route, rejoin)
+    speed = (
+        override.speed_knots if override and override.speed_knots else inferred_speed
+    )
+    leave_time, rejoin_time = _anchor_timestamp(route, leave), _anchor_timestamp(
+        route, rejoin
+    )
     replaced = rejoin.progress_nm - leave.progress_nm
     planned_duration = (
         (rejoin_time - leave_time).total_seconds()
@@ -429,16 +545,32 @@ def build_derived_route_estimate(
         else replaced / speed * 3600
     )
     derived_duration = diversion / speed * 3600
-    confidence = "high" if len(scored) == 1 or scored[1][0] - scored[0][0] > 0.05 else "low"
-    warnings = [] if confidence == "high" else ["Multiple feasible splice anchors have similar scores."]
+    confidence = (
+        "high" if len(scored) == 1 or scored[1][0] - scored[0][0] > 0.05 else "low"
+    )
+    warnings = (
+        []
+        if confidence == "high"
+        else ["Multiple feasible splice anchors have similar scores."]
+    )
     if leave_time is None or rejoin_time is None:
-        warnings.append("Replaced planned duration uses distance/speed because source timestamps are not monotonic.")
+        warnings.append(
+            "Replaced planned duration uses distance/speed because source timestamps are not monotonic."
+        )
     if override and override.speed_knots:
         speed_source = "operator_override"
     return DerivedRouteEstimate(
-        True, points=points, leave_anchor=leave, rejoin_anchor=rejoin,
-        planned_distance_nm=planned_total, derived_distance_nm=_route_distance(points),
-        planned_duration_seconds=planned_duration, derived_duration_seconds=derived_duration,
-        delta_seconds=derived_duration - planned_duration, speed_knots=speed,
-        speed_source=speed_source, confidence=confidence, warnings=warnings,
+        True,
+        points=points,
+        leave_anchor=leave,
+        rejoin_anchor=rejoin,
+        planned_distance_nm=planned_total,
+        derived_distance_nm=_route_distance(points),
+        planned_duration_seconds=planned_duration,
+        derived_duration_seconds=derived_duration,
+        delta_seconds=derived_duration - planned_duration,
+        speed_knots=speed,
+        speed_source=speed_source,
+        confidence=confidence,
+        warnings=warnings,
     )

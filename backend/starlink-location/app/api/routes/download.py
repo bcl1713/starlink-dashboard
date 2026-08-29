@@ -1,14 +1,15 @@
 """Route download endpoint."""
 
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Depends, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import FileResponse
-from app.core.limiter import limiter
 
+from app.core.limiter import limiter
 from app.core.logging import get_logger
-from app.services.route_manager import RouteManager
 from app.mission.dependencies import get_route_manager
+from app.services.route_manager import RouteManager
 
 logger = get_logger(__name__)
 
@@ -20,7 +21,7 @@ router = APIRouter()
 async def download_route(
     request: Request,
     route_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> FileResponse:
     """Download a KML route file.
 

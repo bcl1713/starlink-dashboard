@@ -5,9 +5,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-
 from app.models.flight_status import ETAMode, FlightPhase
-from app.models.route import ParsedRoute, RouteMetadata, RouteTimingProfile, RoutePoint
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
 from app.services.flight_state import get_flight_state_manager
 
 

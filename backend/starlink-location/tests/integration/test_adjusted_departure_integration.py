@@ -1,24 +1,24 @@
 """Integration tests for adjusted departure time API endpoints."""
 
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
-from fastapi.testclient import TestClient
-from unittest.mock import patch, MagicMock
 
+import pytest
 from app.mission.models import (
     ManualAARTrack,
     ManualAARTrackPoint,
     ManualRouteSplice,
     Mission,
     MissionLeg,
-    TransportConfig,
+    MissionLegTimeline,
     TimelineSegment,
     TimelineStatus,
-    MissionLegTimeline,
+    TransportConfig,
 )
 from app.mission.timeline_service import TimelineSummary
-from app.models.route import ParsedRoute, RoutePoint, RouteTimingProfile, RouteMetadata
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -500,7 +500,6 @@ class TestPreviewLegTimelineAdjustedDepartureTime:
         )
 
         client.delete(f"/api/v2/missions/{mission_id}")
-
 
     def test_preview_returns_derived_estimate_for_selected_feasible_manual_ar_track(
         self,

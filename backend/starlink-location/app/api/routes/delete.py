@@ -1,13 +1,14 @@
 """Route deletion endpoint."""
 
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.logging import get_logger
-from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
+from app.services.route_manager import RouteManager
 
 logger = get_logger(__name__)
 
@@ -19,8 +20,8 @@ router = APIRouter()
 )
 async def delete_route(
     route_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> None:
     """Delete a route and its associated POIs.
 
@@ -64,9 +65,21 @@ async def delete_route(
         # Remove from route manager cache
         route_manager._routes.pop(route_id, None)
 
-    except Exception as e:
-        logger.error(f"Error deleting route {route_id}: {str(e)}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.error(f"Error deleting route {route_id}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error deleting route: {str(e)}",
+            detail=f"Error deleting route: {e!s}",
         )

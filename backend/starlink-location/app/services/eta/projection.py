@@ -6,11 +6,11 @@
 # Deferred to v0.4.0.
 
 import logging
-from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Optional
 
-from app.models.poi import POI
 from app.models.flight_status import ETAMode, FlightPhase
+from app.models.poi import POI
 from app.services.eta.calculator import ETACalculator
 
 if TYPE_CHECKING:
@@ -43,10 +43,10 @@ class ETAProjection:
         current_lat: float,
         current_lon: float,
         pois: list[POI],
-        speed_knots: Optional[float] = None,
+        speed_knots: float | None = None,
         active_route: Optional["ParsedRoute"] = None,
         eta_mode: ETAMode = ETAMode.ESTIMATED,
-        flight_phase: Optional[FlightPhase] = None,
+        flight_phase: FlightPhase | None = None,
     ) -> dict[str, dict]:
         """
         Calculate distance and ETA metrics for all POIs with dual-mode support.
@@ -136,8 +136,8 @@ class ETAProjection:
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
-        current_speed_knots: Optional[float] = None,
-    ) -> Optional[float]:
+        current_speed_knots: float | None = None,
+    ) -> float | None:
         """
         Calculate ETA using segment-based speeds with speed blending (estimated/in-flight mode).
 
@@ -204,7 +204,7 @@ class ETAProjection:
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         Calculate ETA using expected times from flight plan (anticipated/pre-departure mode).
 
@@ -242,20 +242,20 @@ class ETAProjection:
             # First, try to find matching waypoint on route by name
             # This handles explicitly named waypoints in the KML
             for waypoint in active_route.waypoints:
-                if waypoint.name and waypoint.name.upper() == poi.name.upper():
+                if (
+                    waypoint.name
+                    and waypoint.name.upper() == poi.name.upper()
+                    and waypoint.expected_arrival_time
+                ):
                     # Found matching waypoint with expected arrival time
-                    if waypoint.expected_arrival_time:
-                        # Calculate time until expected arrival
-                        time_until_arrival = (
-                            waypoint.expected_arrival_time - current_time
-                        )
-                        eta_seconds = time_until_arrival.total_seconds()
+                    time_until_arrival = waypoint.expected_arrival_time - current_time
+                    eta_seconds = time_until_arrival.total_seconds()
 
-                        # Return positive ETA or -1 if time has passed
-                        if eta_seconds > 0:
-                            return eta_seconds
-                        else:
-                            return -1.0
+                    # Return positive ETA or -1 if time has passed
+                    if eta_seconds > 0:
+                        return eta_seconds
+                    else:
+                        return -1.0
 
             # Second, try to use POI's projected waypoint index
             # This is set by route-aware projection for off-route POIs
@@ -279,7 +279,19 @@ class ETAProjection:
             # If no waypoint found, return None to fall back to distance/speed
             return None
 
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.debug(f"Anticipated ETA calculation failed for {poi.name}: {e}")
             return None
 
@@ -289,8 +301,8 @@ class ETAProjection:
         current_lon: float,
         destination_waypoint: "RouteWaypoint",
         active_route: "ParsedRoute",
-        current_speed_knots: Optional[float] = None,
-    ) -> Optional[float]:
+        current_speed_knots: float | None = None,
+    ) -> float | None:
         """
         Calculate ETA for a waypoint with speed blending (estimated/in-flight mode).
 
@@ -375,7 +387,19 @@ class ETAProjection:
 
             return None
 
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.debug(f"On-route estimated ETA calculation failed: {e}")
             return None
 
@@ -385,8 +409,8 @@ class ETAProjection:
         current_lon: float,
         poi: POI,
         active_route: "ParsedRoute",
-        current_speed_knots: Optional[float] = None,
-    ) -> Optional[float]:
+        current_speed_knots: float | None = None,
+    ) -> float | None:
         """
         Calculate ETA for off-route POI with speed blending (estimated/in-flight mode).
 
@@ -498,7 +522,19 @@ class ETAProjection:
 
             return None
 
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.debug(
                 f"Off-route estimated ETA calculation with projection failed for {poi.name}: {e}"
             )

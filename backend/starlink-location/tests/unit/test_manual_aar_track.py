@@ -4,8 +4,6 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 import pytest
-from pydantic import ValidationError
-
 from app.mission.derived_route import build_derived_route_estimate
 from app.mission.models import (
     ManualAARTrack,
@@ -19,6 +17,7 @@ from app.mission.models import (
 from app.mission.storage import load_mission_v2, save_mission_v2
 from app.mission.timeline_service import build_mission_timeline
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
+from pydantic import ValidationError
 
 
 def _timed_manual_track_route(start: datetime) -> ParsedRoute:
@@ -223,10 +222,16 @@ def test_selected_feasible_splice_drives_samples_eta_and_selected_x_interval():
     )
 
     baseline, _ = build_mission_timeline(
-        baseline_leg, route_manager=route_manager, coverage_sampler=None, include_samples=True
+        baseline_leg,
+        route_manager=route_manager,
+        coverage_sampler=None,
+        include_samples=True,
     )
     estimated, _ = build_mission_timeline(
-        estimated_leg, route_manager=route_manager, coverage_sampler=None, include_samples=True
+        estimated_leg,
+        route_manager=route_manager,
+        coverage_sampler=None,
+        include_samples=True,
     )
 
     assert source_route.model_dump(mode="json") == source_before
@@ -235,13 +240,19 @@ def test_selected_feasible_splice_drives_samples_eta_and_selected_x_interval():
         source_route, manual_track, estimated_leg.transports.manual_route_splice
     )
     assert estimate.available is True
-    assert (estimated.segments[-1].end_time - baseline.segments[-1].end_time).total_seconds() == pytest.approx(
-        estimate.delta_seconds
-    )
+    assert (
+        estimated.segments[-1].end_time - baseline.segments[-1].end_time
+    ).total_seconds() == pytest.approx(estimate.delta_seconds)
     degraded = [
-        segment for segment in estimated.segments if segment.status == TimelineStatus.DEGRADED
+        segment
+        for segment in estimated.segments
+        if segment.status == TimelineStatus.DEGRADED
     ]
-    assert any("Estimated AR deviation" in reason for segment in degraded for reason in segment.reasons)
+    assert any(
+        "Estimated AR deviation" in reason
+        for segment in degraded
+        for reason in segment.reasons
+    )
 
 
 def test_unavailable_selected_splice_leaves_planned_timeline_unchanged():
@@ -274,12 +285,18 @@ def test_unavailable_selected_splice_leaves_planned_timeline_unchanged():
     )
 
     baseline, _ = build_mission_timeline(
-        baseline_leg, route_manager=route_manager, coverage_sampler=None, include_samples=True
+        baseline_leg,
+        route_manager=route_manager,
+        coverage_sampler=None,
+        include_samples=True,
     )
     unavailable, _ = build_mission_timeline(
-        unavailable_leg, route_manager=route_manager, coverage_sampler=None, include_samples=True
+        unavailable_leg,
+        route_manager=route_manager,
+        coverage_sampler=None,
+        include_samples=True,
     )
 
-    assert unavailable.model_dump(mode="json", exclude={"created_at"}) == baseline.model_dump(
+    assert unavailable.model_dump(
         mode="json", exclude={"created_at"}
-    )
+    ) == baseline.model_dump(mode="json", exclude={"created_at"})

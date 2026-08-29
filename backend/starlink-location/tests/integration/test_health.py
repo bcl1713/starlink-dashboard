@@ -1,7 +1,8 @@
 """Integration tests for health check endpoint."""
 
-import pytest
 import asyncio
+
+import pytest
 
 
 @pytest.mark.asyncio

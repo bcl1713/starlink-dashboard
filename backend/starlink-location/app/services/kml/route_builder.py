@@ -2,7 +2,6 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from app.services.kml.geometry import (
     CoordinateTriple,
@@ -18,18 +17,18 @@ logger = logging.getLogger(__name__)
 class RouteSegmentData:
     """Represents a line segment placemark for the planned route."""
 
-    name: Optional[str]
-    description: Optional[str]
-    style: Optional[LineStyleInfo]
+    name: str | None
+    description: str | None
+    style: LineStyleInfo | None
     coordinates: list[CoordinateTriple]
-    altitude_mode: Optional[str]
+    altitude_mode: str | None
     order: int
 
 
 def build_primary_route(
     route_segments: list[RouteSegmentData],
-    start_coord: Optional[CoordinateTriple],
-    end_coord: Optional[CoordinateTriple],
+    start_coord: CoordinateTriple | None,
+    end_coord: CoordinateTriple | None,
 ) -> list[CoordinateTriple]:
     """Construct the primary coordinate chain from the available segments.
 
@@ -162,8 +161,8 @@ def filter_segments_by_style(
 
 def find_next_segment_index(
     segments: list[RouteSegmentData],
-    current: Optional[CoordinateTriple],
-) -> tuple[Optional[int], bool]:
+    current: CoordinateTriple | None,
+) -> tuple[int | None, bool]:
     """Locate the next segment that connects to the current coordinate.
 
     Args:

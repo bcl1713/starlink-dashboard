@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.models.flight_status import ETAMode, FlightPhase
 from app.models.poi import POI
 from app.models.route import (
@@ -241,7 +240,7 @@ class TestETACalculator:
         assert "poi-3" in metrics
 
         # All metrics should have required keys
-        for poi_id, metric in metrics.items():
+        for metric in metrics.values():
             assert "distance_meters" in metric
             assert "eta_seconds" in metric
             assert "passed" in metric

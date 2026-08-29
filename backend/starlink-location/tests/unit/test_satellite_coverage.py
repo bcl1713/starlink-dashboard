@@ -2,9 +2,8 @@
 
 import json
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-
 
 from app.satellites.coverage import CoverageEvent, CoverageSampler, point_in_polygon
 
@@ -107,7 +106,7 @@ class TestCoverageEvent:
 
     def test_coverage_event_creation(self):
         """Test creating a coverage event."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         event = CoverageEvent(
             timestamp=now,
             event_type="entry",
@@ -124,7 +123,7 @@ class TestCoverageEvent:
 
     def test_coverage_event_with_metadata(self):
         """Test event with metadata."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         event = CoverageEvent(
             timestamp=now,
             event_type="exit",
@@ -344,7 +343,7 @@ class TestCoverageSampler:
             sampler = CoverageSampler(geojson_path)
 
             # Simulate route going into and out of coverage
-            base_time = datetime.utcnow()
+            base_time = datetime.now(timezone.utc)
             waypoints = [
                 (37.0, -123.0, base_time),  # Outside
                 (37.5, -121.5, base_time + timedelta(minutes=1)),  # Inside
@@ -368,14 +367,14 @@ class TestCoverageSampler:
         """Test saving and loading coverage events."""
         events = [
             CoverageEvent(
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 event_type="entry",
                 satellite_id="POR",
                 latitude=30.0,
                 longitude=120.0,
             ),
             CoverageEvent(
-                timestamp=datetime.utcnow() + timedelta(hours=1),
+                timestamp=datetime.now(timezone.utc) + timedelta(hours=1),
                 event_type="exit",
                 satellite_id="POR",
                 latitude=30.0,

@@ -7,7 +7,6 @@ to Prometheus.
 """
 
 import logging
-from typing import Optional
 
 from app.services.eta_calculator import ETACalculator
 from app.services.poi_manager import POIManager
@@ -15,11 +14,11 @@ from app.services.poi_manager import POIManager
 logger = logging.getLogger(__name__)
 
 # Global singleton instance
-_eta_calculator: Optional[ETACalculator] = None
-_poi_manager: Optional[POIManager] = None
+_eta_calculator: ETACalculator | None = None
+_poi_manager: POIManager | None = None
 
 
-def initialize_eta_service(poi_manager: Optional[POIManager] = None) -> None:
+def initialize_eta_service(poi_manager: POIManager | None = None) -> None:
     """Initialize the ETA service with singleton instances.
 
     Args:
@@ -31,8 +30,20 @@ def initialize_eta_service(poi_manager: Optional[POIManager] = None) -> None:
         _poi_manager = poi_manager or POIManager()
         _eta_calculator = ETACalculator(smoothing_duration_seconds=120.0)
         logger.info("ETA service initialized successfully (120s speed smoothing)")
-    except Exception as e:
-        logger.error(f"Failed to initialize ETA service: {e}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
+        logger.exception("Failed to initialize ETA service")
         raise
 
 
@@ -45,8 +56,6 @@ def get_eta_calculator() -> ETACalculator:
     Raises:
         RuntimeError: If service not initialized
     """
-    global _eta_calculator
-
     if _eta_calculator is None:
         raise RuntimeError(
             "ETA service not initialized. Call initialize_eta_service() first."
@@ -64,8 +73,6 @@ def get_poi_manager() -> POIManager:
     Raises:
         RuntimeError: If service not initialized
     """
-    global _poi_manager
-
     if _poi_manager is None:
         raise RuntimeError(
             "ETA service not initialized. Call initialize_eta_service() first."
@@ -81,7 +88,7 @@ def update_eta_metrics(
     active_route=None,
     eta_mode=None,
     flight_phase=None,
-    poi_manager: Optional[POIManager] = None,
+    poi_manager: POIManager | None = None,
 ) -> dict:
     """Update ETA metrics for all POIs.
 
@@ -141,12 +148,24 @@ def update_eta_metrics(
         )
 
         return metrics
-    except Exception as e:
-        logger.error(f"Error updating ETA metrics: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
+        logger.exception("Error updating ETA metrics")
         return {}
 
 
-def get_nearest_poi_metrics() -> Optional[dict]:
+def get_nearest_poi_metrics() -> dict | None:
     """Get metrics for the nearest POI.
 
     Returns:
@@ -158,8 +177,20 @@ def get_nearest_poi_metrics() -> Optional[dict]:
         # Note: This requires tracking in the ETACalculator
         # For now, this is a placeholder for future enhancement
         return None
-    except Exception as e:
-        logger.error(f"Error getting nearest POI metrics: {e}", exc_info=True)
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
+        logger.exception("Error getting nearest POI metrics")
         return None
 
 
@@ -171,5 +202,17 @@ def shutdown_eta_service() -> None:
         logger.info("Shutting down ETA service")
         _eta_calculator = None
         _poi_manager = None
-    except Exception as e:
-        logger.error(f"Error during ETA service shutdown: {e}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ):
+        logger.exception("Error during ETA service shutdown")

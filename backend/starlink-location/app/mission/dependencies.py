@@ -1,6 +1,7 @@
 from fastapi import Request
-from app.services.route_manager import RouteManager
+
 from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
 
 
 def get_route_manager(request: Request) -> RouteManager:

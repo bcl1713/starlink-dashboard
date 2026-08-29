@@ -1,7 +1,8 @@
 """Integration tests for configuration API endpoint."""
 
-import pytest
 import asyncio
+
+import pytest
 
 
 @pytest.mark.asyncio

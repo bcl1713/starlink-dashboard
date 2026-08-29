@@ -1,6 +1,6 @@
 """Active X-band satellite link overlay endpoint."""
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, Query, Request
 
@@ -23,13 +23,15 @@ def get_coordinator(request: Request) -> Any:
     summary="Get active X-band aircraft-to-satellite link coordinates",
 )
 async def get_active_x_link(
-    state: Literal["normal", "warning"] | None = Query(
-        None,
-        description="Optional state filter for split Grafana route layers",
-    ),
-    coordinator: Any = Depends(get_coordinator),
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    state: Annotated[
+        Literal["normal", "warning"] | None,
+        Query(
+            description="Optional state filter for split Grafana route layers",
+        ),
+    ] = None,
+    coordinator: Annotated[Any, Depends(get_coordinator)] = None,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict[str, Any]:
     """Return two route points for the current aircraft-to-active-X satellite link."""
     return build_active_x_link(

@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from app.mission.models import (
     Mission,
     MissionLeg,
@@ -11,8 +10,8 @@ from app.mission.models import (
     TimelineStatus,
     TransportState,
 )
-from app.mission.package.__main__ import generate_mission_combined_csv
 from app.mission.package import export_mission_package
+from app.mission.package.__main__ import generate_mission_combined_csv
 
 
 @pytest.fixture
@@ -117,13 +116,11 @@ def test_export_mission_package_uses_temp_files_for_mission_exports(
         if output_path:
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write("dummy csv content")
-        return None
 
     def pptx_side_effect(mission, output_path=None, **kwargs):
         if output_path:
             with open(output_path, "wb") as f:
                 f.write(b"dummy pptx content")
-        return None
 
     mock_gen_csv.side_effect = csv_side_effect
     mock_gen_pptx.side_effect = pptx_side_effect

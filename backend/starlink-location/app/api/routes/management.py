@@ -1,15 +1,15 @@
 """Route management endpoints (list, get, activate, deactivate)."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.logging import get_logger
-from app.models.route import RouteListResponse, RouteDetailResponse, RouteResponse
-from app.services.route_manager import RouteManager
+from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.models.route import RouteDetailResponse, RouteListResponse, RouteResponse
 from app.services.poi_manager import POIManager
-from app.mission.dependencies import get_route_manager, get_poi_manager
+from app.services.route_manager import RouteManager
 
 logger = get_logger(__name__)
 
@@ -19,8 +19,8 @@ router = APIRouter()
 
 @router.get("/", response_model=RouteListResponse, summary="List all routes")
 async def list_routes(
-    active: Optional[bool] = Query(None, description="Filter by active status"),
-    route_manager: RouteManager = Depends(get_route_manager),
+    active: Annotated[bool | None, Query(description="Filter by active status")] = None,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> RouteListResponse:
     """
     List all available KML routes.
@@ -50,7 +50,19 @@ async def list_routes(
         from app.services.flight_state import get_flight_state_manager
 
         flight_status_snapshot = get_flight_state_manager().get_status()
-    except Exception as state_error:  # pragma: no cover - defensive guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as state_error:  # pragma: no cover - defensive guard
         logger.debug("Flight state unavailable while listing routes: %s", state_error)
 
     routes_list = []
@@ -100,8 +112,8 @@ async def list_routes(
 )
 async def get_route_detail(
     route_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> RouteDetailResponse:
     """Get detailed information about a specific route with timing/flight metadata."""
     if not route_manager:
@@ -138,7 +150,19 @@ async def get_route_detail(
             status_snapshot = get_flight_state_manager().get_status()
             flight_phase = status_snapshot.phase.value
             eta_mode = status_snapshot.eta_mode.value
-        except Exception as state_error:  # pragma: no cover - defensive guard
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as state_error:  # pragma: no cover - defensive guard
             logger.debug("Flight state unavailable for route detail: %s", state_error)
 
     return RouteDetailResponse(
@@ -169,8 +193,8 @@ async def get_route_detail(
 )
 async def activate_route(
     route_id: str,
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> RouteResponse:
     """
     Activate a route for tracking and visualization.
@@ -213,7 +237,19 @@ async def activate_route(
             )
             # Reload POIs to ensure in-memory cache has the projection data
             poi_manager.reload_pois()
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to calculate POI projections: {e}")
 
     has_timing_data = False
@@ -224,8 +260,8 @@ async def activate_route(
         flight_phase = parsed_route.timing_profile.flight_status
 
     try:
-        from app.services.flight_state import get_flight_state_manager
         from app.models.route import RouteTimingProfile
+        from app.services.flight_state import get_flight_state_manager
 
         status_snapshot = get_flight_state_manager().get_status()
         flight_phase = status_snapshot.phase.value
@@ -239,7 +275,19 @@ async def activate_route(
         timing_profile.flight_status = flight_phase
         timing_profile.actual_departure_time = status_snapshot.departure_time
         timing_profile.actual_arrival_time = status_snapshot.arrival_time
-    except Exception as state_error:  # pragma: no cover - defensive guard
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as state_error:  # pragma: no cover - defensive guard
         logger.debug("Flight state unavailable while activating route: %s", state_error)
 
     return RouteResponse(
@@ -258,8 +306,8 @@ async def activate_route(
 
 @router.post("/deactivate", response_model=dict, summary="Deactivate active route")
 async def deactivate_route(
-    route_manager: RouteManager = Depends(get_route_manager),
-    poi_manager: POIManager = Depends(get_poi_manager),
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
+    poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict:
     """
     Deactivate the currently active route.
@@ -283,7 +331,19 @@ async def deactivate_route(
                 f"Cleared projections for {cleared_count} POIs on route "
                 f"deactivation"
             )
-        except Exception as e:
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as e:
             logger.error(f"Failed to clear POI projections: {e}")
 
     return {"message": "Route deactivated successfully"}

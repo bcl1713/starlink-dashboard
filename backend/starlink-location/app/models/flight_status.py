@@ -2,7 +2,6 @@
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -33,11 +32,11 @@ class FlightStatus(BaseModel):
         default=ETAMode.ANTICIPATED,
         description="Current ETA calculation mode (anticipated or estimated)",
     )
-    active_route_id: Optional[str] = Field(
+    active_route_id: str | None = Field(
         default=None,
         description="Identifier of the active route associated with this flight, if any",
     )
-    active_route_name: Optional[str] = Field(
+    active_route_name: str | None = Field(
         default=None,
         description="Human-readable name of the active route associated with this flight",
     )
@@ -45,19 +44,19 @@ class FlightStatus(BaseModel):
         default=False,
         description="Whether the active route provides timing metadata for anticipated ETAs",
     )
-    scheduled_departure_time: Optional[datetime] = Field(
+    scheduled_departure_time: datetime | None = Field(
         default=None,
         description="Scheduled departure time (UTC, ISO-8601) from the active route timing profile",
     )
-    scheduled_arrival_time: Optional[datetime] = Field(
+    scheduled_arrival_time: datetime | None = Field(
         default=None,
         description="Scheduled arrival time (UTC, ISO-8601) from the active route timing profile",
     )
-    departure_time: Optional[datetime] = Field(
+    departure_time: datetime | None = Field(
         default=None,
         description="Actual departure time (UTC, ISO-8601) when detected/manual",
     )
-    arrival_time: Optional[datetime] = Field(
+    arrival_time: datetime | None = Field(
         default=None,
         description="Actual arrival time (UTC, ISO-8601) when detected/manual",
     )
@@ -65,19 +64,19 @@ class FlightStatus(BaseModel):
         default=0.0,
         description="Seconds aircraft has maintained speed above departure threshold",
     )
-    last_departure_check_time: Optional[datetime] = Field(
+    last_departure_check_time: datetime | None = Field(
         default=None,
         description="Last time departure was checked (for speed persistence tracking)",
     )
-    last_arrival_check_time: Optional[datetime] = Field(
+    last_arrival_check_time: datetime | None = Field(
         default=None,
         description="Last time arrival was checked (for dwell time tracking)",
     )
-    time_until_departure_seconds: Optional[float] = Field(
+    time_until_departure_seconds: float | None = Field(
         default=None,
         description="Seconds until departure (positive pre-departure, 0 once departed, negative if delayed)",
     )
-    time_since_departure_seconds: Optional[float] = Field(
+    time_since_departure_seconds: float | None = Field(
         default=None,
         description="Seconds since departure (only populated after departure is detected)",
     )
@@ -109,11 +108,11 @@ class FlightStatusResponse(BaseModel):
 
     phase: FlightPhase = Field(..., description="Current flight phase")
     eta_mode: ETAMode = Field(..., description="Current ETA calculation mode")
-    active_route_id: Optional[str] = Field(
+    active_route_id: str | None = Field(
         default=None,
         description="Identifier of the active route associated with this flight, if any",
     )
-    active_route_name: Optional[str] = Field(
+    active_route_name: str | None = Field(
         default=None,
         description="Human-readable name of the active route associated with this flight",
     )
@@ -121,25 +120,25 @@ class FlightStatusResponse(BaseModel):
         default=False,
         description="Whether the active route provides timing metadata",
     )
-    scheduled_departure_time: Optional[datetime] = Field(
+    scheduled_departure_time: datetime | None = Field(
         default=None,
         description="Scheduled departure time (UTC, ISO-8601) from the active route timing profile",
     )
-    scheduled_arrival_time: Optional[datetime] = Field(
+    scheduled_arrival_time: datetime | None = Field(
         default=None,
         description="Scheduled arrival time (UTC, ISO-8601) from the active route timing profile",
     )
-    departure_time: Optional[datetime] = Field(
+    departure_time: datetime | None = Field(
         default=None, description="Actual departure time when detected"
     )
-    arrival_time: Optional[datetime] = Field(
+    arrival_time: datetime | None = Field(
         default=None, description="Actual arrival time when detected"
     )
-    time_until_departure_seconds: Optional[float] = Field(
+    time_until_departure_seconds: float | None = Field(
         default=None,
         description="Seconds until departure (positive pre-departure, 0 once departed, negative if delayed)",
     )
-    time_since_departure_seconds: Optional[float] = Field(
+    time_since_departure_seconds: float | None = Field(
         default=None,
         description="Seconds since departure (only populated after departure)",
     )
@@ -175,7 +174,7 @@ class ManualFlightPhaseTransition(BaseModel):
         ...,
         description="Target flight phase (pre_departure, in_flight, post_arrival)",
     )
-    reason: Optional[str] = Field(
+    reason: str | None = Field(
         default=None, description="Reason for manual transition (for logging)"
     )
 
@@ -192,11 +191,11 @@ class ManualFlightPhaseTransition(BaseModel):
 class DepartureUpdateRequest(BaseModel):
     """Manual override request for setting departure time and transitioning to in-flight."""
 
-    timestamp: Optional[datetime] = Field(
+    timestamp: datetime | None = Field(
         default=None,
         description="Explicit departure timestamp (UTC, ISO-8601). Defaults to now if omitted.",
     )
-    reason: Optional[str] = Field(
+    reason: str | None = Field(
         default=None,
         description="Optional reason for the manual departure trigger (for audit logging).",
     )
@@ -214,11 +213,11 @@ class DepartureUpdateRequest(BaseModel):
 class ArrivalUpdateRequest(BaseModel):
     """Manual override request for setting arrival time and transitioning to post-arrival."""
 
-    timestamp: Optional[datetime] = Field(
+    timestamp: datetime | None = Field(
         default=None,
         description="Explicit arrival timestamp (UTC, ISO-8601). Defaults to now if omitted.",
     )
-    reason: Optional[str] = Field(
+    reason: str | None = Field(
         default=None,
         description="Optional reason for the manual arrival trigger (for audit logging).",
     )

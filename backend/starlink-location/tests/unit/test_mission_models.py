@@ -4,15 +4,14 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.mission.models import (
     AARWindow,
     KaOutage,
     KuOutageOverride,
     Mission,
     MissionLeg,
-    MissionPhase,
     MissionLegTimeline,
+    MissionPhase,
     TimelineAdvisory,
     TimelineSegment,
     TimelineStatus,

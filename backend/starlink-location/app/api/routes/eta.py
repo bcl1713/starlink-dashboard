@@ -1,15 +1,16 @@
 """Route ETA calculation endpoints."""
 
+from typing import Annotated
+
 # FR-004: File exceeds 300 lines (311 lines) because route ETA API combines
 # multiple ETA calculation modes, status filtering, and distance metrics.
 # Splitting would fragment related ETA calculation endpoints. Deferred to v0.4.0.
-
-from fastapi import APIRouter, HTTPException, Query, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.logging import get_logger
-from app.services.route_manager import RouteManager
-from app.services.route_eta_calculator import RouteETACalculator
 from app.mission.dependencies import get_route_manager
+from app.services.route_eta_calculator import RouteETACalculator
+from app.services.route_manager import RouteManager
 
 logger = get_logger(__name__)
 
@@ -23,13 +24,13 @@ router = APIRouter()
 async def calculate_eta_to_waypoint(
     route_id: str,
     waypoint_index: int,
-    current_position_lat: float = Query(
-        ..., description="Current latitude in decimal degrees"
-    ),
-    current_position_lon: float = Query(
-        ..., description="Current longitude in decimal degrees"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
+    current_position_lat: Annotated[
+        float, Query(description="Current latitude in decimal degrees")
+    ] = ...,
+    current_position_lon: Annotated[
+        float, Query(description="Current longitude in decimal degrees")
+    ] = ...,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict:
     """Calculate estimated time of arrival (ETA) to a specific waypoint.
 
@@ -81,26 +82,42 @@ async def calculate_eta_to_waypoint(
             current_position_lon,
         )
         return eta_data
-    except Exception as e:
-        logger.error(f"Error calculating ETA for route {route_id}: {str(e)}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.error(f"Error calculating ETA for route {route_id}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calculating ETA: {str(e)}",
+            detail=f"Error calculating ETA: {e!s}",
         )
 
 
 @router.get("/{route_id}/eta/location", summary="Calculate ETA to arbitrary location")
 async def calculate_eta_to_location(
     route_id: str,
-    latitude: float = Query(..., description="Target latitude in decimal degrees"),
-    longitude: float = Query(..., description="Target longitude in decimal degrees"),
-    current_position_lat: float = Query(
-        ..., description="Current latitude in decimal degrees"
-    ),
-    current_position_lon: float = Query(
-        ..., description="Current longitude in decimal degrees"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
+    latitude: Annotated[
+        float, Query(description="Target latitude in decimal degrees")
+    ] = ...,
+    longitude: Annotated[
+        float, Query(description="Target longitude in decimal degrees")
+    ] = ...,
+    current_position_lat: Annotated[
+        float, Query(description="Current latitude in decimal degrees")
+    ] = ...,
+    current_position_lon: Annotated[
+        float, Query(description="Current longitude in decimal degrees")
+    ] = ...,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict:
     """Calculate estimated time of arrival (ETA) to an arbitrary location.
 
@@ -144,24 +161,36 @@ async def calculate_eta_to_location(
             current_position_lon,
         )
         return eta_data
-    except Exception as e:
-        logger.error(f"Error calculating ETA for route {route_id}: {str(e)}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.error(f"Error calculating ETA for route {route_id}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calculating ETA: {str(e)}",
+            detail=f"Error calculating ETA: {e!s}",
         )
 
 
 @router.get("/{route_id}/progress", summary="Get route progress metrics")
 async def get_route_progress(
     route_id: str,
-    current_position_lat: float = Query(
-        ..., description="Current latitude in decimal degrees"
-    ),
-    current_position_lon: float = Query(
-        ..., description="Current longitude in decimal degrees"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
+    current_position_lat: Annotated[
+        float, Query(description="Current latitude in decimal degrees")
+    ] = ...,
+    current_position_lon: Annotated[
+        float, Query(description="Current longitude in decimal degrees")
+    ] = ...,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict:
     """Get route progress metrics including distance traveled and ETA to destination.
 
@@ -202,22 +231,36 @@ async def get_route_progress(
             current_position_lon,
         )
         return progress_data
-    except Exception as e:
-        logger.error(f"Error calculating route progress for {route_id}: {str(e)}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.error(f"Error calculating route progress for {route_id}: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calculating progress: {str(e)}",
+            detail=f"Error calculating progress: {e!s}",
         )
 
 
 @router.get("/live-mode/active-route-eta", summary="Get active route ETA for live mode")
 async def get_live_mode_active_route_eta(
-    current_position_lat: float = Query(..., description="Current latitude"),
-    current_position_lon: float = Query(..., description="Current longitude"),
-    current_speed_knots: float = Query(
-        default=500.0, description="Current speed in knots"
-    ),
-    route_manager: RouteManager = Depends(get_route_manager),
+    current_position_lat: Annotated[float, Query(description="Current latitude")] = ...,
+    current_position_lon: Annotated[
+        float, Query(description="Current longitude")
+    ] = ...,
+    current_speed_knots: Annotated[
+        float, Query(description="Current speed in knots")
+    ] = 500.0,
+    route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict:
     """Get ETA calculations for the active route in live mode.
 
@@ -307,9 +350,21 @@ async def get_live_mode_active_route_eta(
             "timing_profile": timing_info,
             "next_waypoint_eta": next_eta,
         }
-    except Exception as e:
-        logger.error(f"Error calculating live mode ETA: {str(e)}")
+    except (
+        RuntimeError,
+        ValueError,
+        OSError,
+        KeyError,
+        TypeError,
+        AttributeError,
+        LookupError,
+        ConnectionError,
+        TimeoutError,
+        ImportError,
+        EOFError,
+    ) as e:
+        logger.error(f"Error calculating live mode ETA: {e!s}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error calculating ETA: {str(e)}",
+            detail=f"Error calculating ETA: {e!s}",
         )
