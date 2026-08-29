@@ -133,9 +133,10 @@ class GroundEntryPointResolver:
 
         cached_entry = self._entry_cache.get(ip)
         if cached_entry is not None:
+            observed = self._with_observed_at(cached_entry, preserve_existing=False)
             self._current_ip = ip
-            self._current_entry = cached_entry
-            return cached_entry
+            self._current_entry = observed
+            return observed
 
         try:
             entry = self._geolocator(ip)
@@ -158,14 +159,23 @@ class GroundEntryPointResolver:
         if entry is None:
             return self._current_entry
 
-        observed = self._with_observed_at(entry)
-        self._entry_cache[ip] = observed
+        observed = self._with_observed_at(entry, preserve_existing=False)
+        self._entry_cache[ip] = self._without_observed_at(entry)
         self._current_ip = ip
         self._current_entry = observed
         return observed
 
-    def _with_observed_at(self, entry_point: GroundEntryPoint) -> GroundEntryPoint:
-        observed_at = entry_point.observed_at or self._utc_now()
+    def _with_observed_at(
+        self,
+        entry_point: GroundEntryPoint,
+        *,
+        preserve_existing: bool = True,
+    ) -> GroundEntryPoint:
+        observed_at = (
+            entry_point.observed_at
+            if preserve_existing and entry_point.observed_at is not None
+            else self._utc_now()
+        )
         return GroundEntryPoint(
             ip=entry_point.ip,
             city=entry_point.city,
@@ -174,6 +184,17 @@ class GroundEntryPointResolver:
             longitude=entry_point.longitude,
             region=entry_point.region,
             observed_at=observed_at,
+        )
+
+    def _without_observed_at(self, entry_point: GroundEntryPoint) -> GroundEntryPoint:
+        return GroundEntryPoint(
+            ip=entry_point.ip,
+            city=entry_point.city,
+            country=entry_point.country,
+            latitude=entry_point.latitude,
+            longitude=entry_point.longitude,
+            region=entry_point.region,
+            observed_at=None,
         )
 
     def _utc_now(self) -> datetime:
@@ -306,7 +327,7 @@ def discover_ground_entry_point(
     """Discover the public egress IP and geolocate it."""
     configured = _entry_point_from_environment()
     if configured is not None:
-        return configured
+        return GroundEntryPointResolver()._with_observed_at(configured)
 
     resolver = GroundEntryPointResolver(
         ip_resolver=lambda: resolve_public_ip(

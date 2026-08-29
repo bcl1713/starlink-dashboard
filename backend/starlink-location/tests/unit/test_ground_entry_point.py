@@ -458,7 +458,88 @@ def test_resolver_reuses_cached_geolocation_when_prior_ip_returns() -> None:
 
     assert first is not None
     assert second is not None
-    assert third is first
+    assert third is not None
+    assert first.ip == third.ip
+    assert third.city == "Omaha"
+    assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
+
+
+def test_configured_ground_entry_point_success_gets_current_observation(
+    monkeypatch,
+) -> None:
+    observed = datetime(2026, 8, 29, 12, 5, tzinfo=timezone.utc)
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", "41.2565")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", "-95.9345")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_CITY", "Omaha")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_COUNTRY", "US")
+
+    resolver = GroundEntryPointResolver(clock=lambda: observed)
+
+    entry = resolver.refresh(force=True)
+
+    assert entry is not None
+    assert entry.city == "Omaha"
+    assert entry.observed_at == observed
+
+
+def test_discover_configured_ground_entry_point_success_gets_observation(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", "41.2565")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", "-95.9345")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_CITY", "Omaha")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_COUNTRY", "US")
+
+    entry = gep.discover_ground_entry_point()
+
+    assert entry is not None
+    assert entry.city == "Omaha"
+    assert entry.observed_at is not None
+
+
+def test_returning_prior_ip_gets_fresh_observation_without_geolocating_again() -> None:
+    clocks = iter(
+        [
+            datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc),
+            datetime(2026, 8, 29, 12, 1, tzinfo=timezone.utc),
+            datetime(2026, 8, 29, 12, 2, tzinfo=timezone.utc),
+        ]
+    )
+    resolved_ips = iter(["203.0.113.10", "198.51.100.24", "203.0.113.10"])
+    geolocate_calls: list[str] = []
+
+    def geolocate_ip(ip: str) -> GroundEntryPoint:
+        geolocate_calls.append(ip)
+        city = "Omaha" if ip == "203.0.113.10" else "Dallas"
+        latitude = 41.2565 if ip == "203.0.113.10" else 32.7767
+        longitude = -95.9345 if ip == "203.0.113.10" else -96.797
+        return GroundEntryPoint(
+            ip=ip,
+            city=city,
+            country="US",
+            latitude=latitude,
+            longitude=longitude,
+        )
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: next(resolved_ips),
+        geolocator=geolocate_ip,
+        poll_interval_seconds=0.0,
+        clock=lambda: next(clocks),
+    )
+
+    first = resolver.refresh()
+    second = resolver.refresh()
+    third = resolver.refresh()
+
+    assert first is not None
+    assert second is not None
+    assert third is not None
+    assert first.observed_at == datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+    assert second.observed_at == datetime(2026, 8, 29, 12, 1, tzinfo=timezone.utc)
+    assert third.observed_at == datetime(2026, 8, 29, 12, 2, tzinfo=timezone.utc)
+    assert third.ip == first.ip
+    assert third is not first
     assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
 
 

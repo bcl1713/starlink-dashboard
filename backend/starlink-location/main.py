@@ -329,6 +329,7 @@ async def shutdown_event():
         logger.error_json(
             "Error during shutdown", extra_fields={"error": str(e)}, exc_info=True
         )
+        raise
 
 
 async def _background_update_loop(poi_manager=None):
@@ -462,9 +463,47 @@ async def _background_update_loop(poi_manager=None):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
-    await startup_event()
-    yield
-    await shutdown_event()
+    try:
+        await startup_event()
+    except BaseException:
+        try:
+            await _close_monitoring_prometheus_client(app)
+        except BaseException as close_exc:
+            logger.error_json(
+                "Error closing monitoring Prometheus client after startup failure",
+                extra_fields={"error": str(close_exc)},
+                exc_info=True,
+            )
+        raise
+    try:
+        yield
+    finally:
+        shutdown_error: BaseException | None = None
+        try:
+            await shutdown_event()
+        except BaseException as exc:
+            shutdown_error = exc
+        try:
+            await _close_monitoring_prometheus_client(app)
+        except BaseException as close_exc:
+            if shutdown_error is None:
+                raise
+            logger.error_json(
+                "Error closing monitoring Prometheus client after shutdown failure",
+                extra_fields={"error": str(close_exc)},
+                exc_info=True,
+            )
+        if shutdown_error is not None:
+            raise shutdown_error
+
+
+async def _close_monitoring_prometheus_client(app: FastAPI) -> None:
+    monitoring_client = getattr(app.state, "monitoring_prometheus_client", None)
+    if monitoring_client is None:
+        return
+    app.state.monitoring_prometheus_client = None
+    logger.info_json("Closing monitoring Prometheus client")
+    await monitoring_client.aclose()
 
 
 # Create FastAPI application

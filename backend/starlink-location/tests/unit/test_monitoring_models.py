@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 import pytest
 from app.models.monitoring import (
     ActiveLinkResponse,
+    ActiveXHandoff,
+    ActiveXLinkResponse,
     GroundEntryPointResponse,
     MonitoringHistoryRequest,
     MonitoringHistoryResponse,
@@ -136,3 +138,54 @@ def test_phase_one_freshness_dtos_are_strict_and_utc_aware() -> None:
 
     with pytest.raises(ValidationError):
         ActiveLinkResponse(active=True, generated_at=UTC_NOW, extra=True)
+
+
+def test_active_x_handoff_dto_is_strict_fixed_payload() -> None:
+    handoff = ActiveXHandoff(
+        phase="outside",
+        transition_id=None,
+        transition_satellite_id=None,
+        radius_meters=200000.0,
+        distance_to_transition_meters=None,
+        in_handoff_zone=False,
+        route_progress_percent=None,
+        transition_progress_percent=None,
+    )
+
+    response = ActiveXLinkResponse(
+        coordinates=[],
+        links=[],
+        total=0,
+        satellite_id=None,
+        pending_satellite_id=None,
+        handoff=handoff,
+        state=None,
+        color=None,
+        relative_azimuth_degrees=None,
+        in_forbidden_window=None,
+        observed_at=None,
+        generated_at=UTC_NOW,
+    )
+
+    assert set(type(response.handoff).model_fields) == {
+        "phase",
+        "transition_id",
+        "transition_satellite_id",
+        "radius_meters",
+        "distance_to_transition_meters",
+        "in_handoff_zone",
+        "route_progress_percent",
+        "transition_progress_percent",
+    }
+    with pytest.raises(ValidationError):
+        ActiveXHandoff(
+            phase="outside",
+            transition_id=None,
+            transition_satellite_id=None,
+            radius_meters=200000.0,
+            distance_to_transition_meters=None,
+            in_handoff_zone=False,
+            route_progress_percent=None,
+            transition_progress_percent=None,
+            unexpected=True,
+        )

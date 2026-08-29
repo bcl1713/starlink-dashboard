@@ -6,7 +6,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TypedDict
 
 from app.mission.models import MissionLeg, XTransition
 from app.models.route import ParsedRoute
@@ -26,13 +26,26 @@ class XHandoffTracker:
     committed_transition_ids: set[str] = field(default_factory=set)
 
 
+class ActiveXHandoffPayload(TypedDict):
+    """Fixed source payload for active X-band handoff state."""
+
+    phase: str
+    transition_id: str | None
+    transition_satellite_id: str | None
+    radius_meters: float
+    distance_to_transition_meters: float | None
+    in_handoff_zone: bool
+    route_progress_percent: float | None
+    transition_progress_percent: float | None
+
+
 @dataclass(frozen=True)
 class ActiveXContext:
     """Current and pending X-band satellite context for a live position."""
 
     current_satellite_id: str | None
     pending_satellite_id: str | None
-    handoff: dict[str, Any]
+    handoff: ActiveXHandoffPayload
 
 
 _HANDOFF_TRACKERS: dict[str, XHandoffTracker] = {}
@@ -49,7 +62,7 @@ def reset_x_handoff_state() -> None:
     _HANDOFF_TRACKERS.clear()
 
 
-def empty_handoff_context(route_progress: float | None = None) -> dict[str, Any]:
+def empty_handoff_context(route_progress: float | None = None) -> ActiveXHandoffPayload:
     """Return the default handoff context payload."""
 
     return {
@@ -154,7 +167,7 @@ def _handoff_context(
     transition_progress: float,
     telemetry: TelemetryData,
     route_progress: float,
-) -> dict[str, Any]:
+) -> ActiveXHandoffPayload:
     aircraft = telemetry.position
     distance_meters = _distance_meters(
         aircraft.latitude,

@@ -64,6 +64,7 @@ async def get_active_x_link(
         route_manager=route_manager,
         poi_manager=poi_manager,
         state_filter=state,
+        telemetry=telemetry,
     )
     for coordinate in payload["coordinates"]:
         coordinate["observed_at"] = observed_at

@@ -44,6 +44,7 @@ def build_active_x_link(
     route_manager: Any,
     poi_manager: Any,
     state_filter: LinkState | None = None,
+    telemetry: TelemetryData | None = None,
 ) -> dict[str, Any]:
     """Build a two-point route from aircraft to active X-band satellite.
 
@@ -53,23 +54,24 @@ def build_active_x_link(
     The visual state is derived from the existing normal X-band forbidden
     relative-azimuth rule window (135°–225°).
     """
-    try:
-        telemetry = coordinator.get_current_telemetry() if coordinator else None
-    except (
-        RuntimeError,
-        ValueError,
-        OSError,
-        KeyError,
-        TypeError,
-        AttributeError,
-        LookupError,
-        ConnectionError,
-        TimeoutError,
-        ImportError,
-        EOFError,
-    ) as exc:  # pragma: no cover - defensive live-mode guard
-        logger.debug("Active X link unavailable: telemetry missing: %s", exc)
-        return empty_active_x_link(state_filter)
+    if telemetry is None:
+        try:
+            telemetry = coordinator.get_current_telemetry() if coordinator else None
+        except (
+            RuntimeError,
+            ValueError,
+            OSError,
+            KeyError,
+            TypeError,
+            AttributeError,
+            LookupError,
+            ConnectionError,
+            TimeoutError,
+            ImportError,
+            EOFError,
+        ) as exc:  # pragma: no cover - defensive live-mode guard
+            logger.debug("Active X link unavailable: telemetry missing: %s", exc)
+            return empty_active_x_link(state_filter)
 
     if telemetry is None:
         return empty_active_x_link(state_filter)

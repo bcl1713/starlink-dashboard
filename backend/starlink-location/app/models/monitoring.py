@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -138,6 +138,19 @@ class ActiveXLinkItem(StrictMonitoringModel):
     coordinates: list[ActiveXLinkCoordinate]
 
 
+class ActiveXHandoff(StrictMonitoringModel):
+    """Fixed active X-band handoff state payload."""
+
+    phase: str
+    transition_id: str | None
+    transition_satellite_id: str | None
+    radius_meters: float
+    distance_to_transition_meters: float | None
+    in_handoff_zone: bool
+    route_progress_percent: float | None
+    transition_progress_percent: float | None
+
+
 class ActiveXLinkResponse(StrictMonitoringModel):
     """Typed active X-band overlay response with truthful freshness fields."""
 
@@ -146,7 +159,7 @@ class ActiveXLinkResponse(StrictMonitoringModel):
     total: int
     satellite_id: str | None
     pending_satellite_id: str | None
-    handoff: dict[str, Any]
+    handoff: ActiveXHandoff
     state: str | None
     color: str | None
     relative_azimuth_degrees: float | None

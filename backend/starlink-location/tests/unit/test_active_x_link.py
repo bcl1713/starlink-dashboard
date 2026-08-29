@@ -22,9 +22,21 @@ from main import app
 class StaticCoordinator:
     def __init__(self, telemetry: TelemetryData):
         self.telemetry = telemetry
+        self.reads = 0
 
     def get_current_telemetry(self) -> TelemetryData:
+        self.reads += 1
         return self.telemetry
+
+
+class ChangingCoordinator:
+    def __init__(self, telemetry: list[TelemetryData]):
+        self.telemetry = iter(telemetry)
+        self.reads = 0
+
+    def get_current_telemetry(self) -> TelemetryData:
+        self.reads += 1
+        return next(self.telemetry)
 
 
 class StaticRouteManager:
@@ -308,3 +320,86 @@ def test_active_x_link_cached_observation_stays_stable_while_generated_advances(
     assert first["observed_at"] == second["observed_at"]
     assert first["generated_at"] == "2026-08-29T12:00:00Z"
     assert second["generated_at"] == "2026-08-29T12:01:00Z"
+
+
+def test_active_x_link_endpoint_uses_one_observation_for_coordinates_and_timestamp(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.mission import storage
+
+    jan1 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    jan2 = datetime(2026, 1, 2, tzinfo=timezone.utc)
+    coordinator = ChangingCoordinator(
+        [
+            _telemetry(latitude=1.0, longitude=2.0, heading=90.0, timestamp=jan1),
+            _telemetry(latitude=3.0, longitude=4.0, heading=90.0, timestamp=jan2),
+        ]
+    )
+
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
+    monkeypatch.setattr(
+        active_x_link_api,
+        "_utc_now",
+        lambda: datetime(2026, 1, 3, tzinfo=timezone.utc),
+    )
+    save_mission_v2(
+        Mission(
+            id="mission",
+            name="Mission",
+            legs=[
+                MissionLeg(
+                    id="leg",
+                    name="Leg",
+                    route_id="test-route",
+                    is_active=True,
+                    transports=TransportConfig(initial_x_satellite_id="X-1"),
+                )
+            ],
+        )
+    )
+    app.dependency_overrides[active_x_link_api.get_coordinator] = lambda: coordinator
+    app.dependency_overrides[get_route_manager] = lambda: StaticRouteManager(_route())
+    app.dependency_overrides[get_poi_manager] = lambda: StaticPOIManager(
+        [_satellite("X-1", 30.0)]
+    )
+
+    with TestClient(app) as client:
+        response = client.get("/api/active-x-link")
+
+    app.dependency_overrides.clear()
+    assert response.status_code == 200
+    body = response.json()
+    assert coordinator.reads == 1
+    assert body["observed_at"] == "2026-01-01T00:00:00Z"
+    assert body["coordinates"][0]["observed_at"] == "2026-01-01T00:00:00Z"
+    assert body["coordinates"][0]["latitude"] == 1.0
+    assert body["coordinates"][0]["longitude"] == 2.0
+
+
+def test_active_x_link_openapi_uses_strict_handoff_schema() -> None:
+    with TestClient(app) as client:
+        schema = client.get("/openapi.json").json()
+
+    handoff = schema["components"]["schemas"]["ActiveXHandoff"]
+    properties = handoff["properties"]
+    assert handoff["additionalProperties"] is False
+    assert set(properties) == {
+        "phase",
+        "transition_id",
+        "transition_satellite_id",
+        "radius_meters",
+        "distance_to_transition_meters",
+        "in_handoff_zone",
+        "route_progress_percent",
+        "transition_progress_percent",
+    }
+    assert properties["phase"]["type"] == "string"
+    assert properties["radius_meters"]["type"] == "number"
+    assert properties["in_handoff_zone"]["type"] == "boolean"
+    assert properties["transition_id"]["anyOf"] == [
+        {"type": "string"},
+        {"type": "null"},
+    ]
+    assert schema["components"]["schemas"]["ActiveXLinkResponse"]["properties"][
+        "handoff"
+    ] == {"$ref": "#/components/schemas/ActiveXHandoff"}

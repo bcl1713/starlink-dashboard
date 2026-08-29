@@ -6,6 +6,7 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+import httpx
 import pytest
 from app.api import monitoring
 from app.models.monitoring import (
@@ -15,6 +16,7 @@ from app.models.monitoring import (
     MonitoringSeries,
 )
 from app.services.prometheus_client import (
+    MonitoringPrometheusClient,
     MonitoringPrometheusError,
     MonitoringRateLimitError,
     MonitoringUnavailableError,
@@ -71,6 +73,21 @@ def client() -> TestClient:
 
 def override_monitoring_client(fake: Any) -> None:
     app.dependency_overrides[monitoring.get_monitoring_client] = lambda: fake
+
+
+def _prometheus_matrix_response(expr: str) -> dict[str, Any]:
+    return {
+        "status": "success",
+        "data": {
+            "resultType": "matrix",
+            "result": [
+                {
+                    "metric": {"__name__": expr},
+                    "values": [[1788004799.0, "1"]],
+                }
+            ],
+        },
+    }
 
 
 def test_history_defaults_success_headers_body_and_safe_upstream_controls(
@@ -295,6 +312,131 @@ async def test_history_route_preserves_client_single_flight_coalescing() -> None
     assert first_response == second_response
 
 
+@pytest.mark.asyncio
+async def test_history_route_coalesces_real_prometheus_client_upstream_requests() -> (
+    None
+):
+    upstream_seen: list[str] = []
+    first_upstream_request = asyncio.Event()
+    release_upstream = asyncio.Event()
+    loop_errors: list[dict[str, Any]] = []
+    loop = asyncio.get_running_loop()
+    previous_handler = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _loop, context: loop_errors.append(context))
+
+    async def upstream_handler(request: httpx.Request) -> httpx.Response:
+        expr = request.url.params["query"]
+        upstream_seen.append(expr)
+        first_upstream_request.set()
+        await release_upstream.wait()
+        return httpx.Response(200, json=_prometheus_matrix_response(expr))
+
+    prometheus = MonitoringPrometheusClient(
+        base_url="http://prometheus:9090",
+        transport=httpx.MockTransport(upstream_handler),
+        clock=lambda: UTC_NOW,
+    )
+    app.dependency_overrides[monitoring.get_monitoring_client] = lambda: prometheus
+
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://testserver",
+        ) as route_client:
+            first = asyncio.create_task(route_client.get("/api/monitoring/history"))
+            await asyncio.wait_for(first_upstream_request.wait(), timeout=1)
+            second = asyncio.create_task(route_client.get("/api/monitoring/history"))
+            release_upstream.set()
+            first_response, second_response = await asyncio.gather(first, second)
+
+        assert first_response.status_code == 200
+        assert second_response.status_code == 200
+        assert first_response.json() == second_response.json()
+        assert len(upstream_seen) == 6
+        assert sorted(upstream_seen) == sorted(
+            [
+                "starlink_dish_latitude_degrees",
+                "starlink_dish_longitude_degrees",
+                "starlink_network_latency_ms_current",
+                "starlink_network_throughput_down_mbps_current",
+                "starlink_network_throughput_up_mbps_current",
+                "starlink_network_packet_loss_percent",
+            ]
+        )
+        await asyncio.sleep(0)
+        assert _monitoring_internal_pending_tasks() == []
+        assert loop_errors == []
+    finally:
+        app.dependency_overrides.clear()
+        await prometheus.aclose()
+        loop.set_exception_handler(previous_handler)
+
+
+@pytest.mark.asyncio
+async def test_history_route_waiter_cancellation_does_not_cancel_shared_flight(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    upstream_seen: list[str] = []
+    first_upstream_request = asyncio.Event()
+    two_waiters = asyncio.Event()
+    release_upstream = asyncio.Event()
+    loop_errors: list[dict[str, Any]] = []
+    loop = asyncio.get_running_loop()
+    previous_handler = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _loop, context: loop_errors.append(context))
+
+    async def upstream_handler(request: httpx.Request) -> httpx.Response:
+        expr = request.url.params["query"]
+        upstream_seen.append(expr)
+        first_upstream_request.set()
+        await release_upstream.wait()
+        return httpx.Response(200, json=_prometheus_matrix_response(expr))
+
+    prometheus = MonitoringPrometheusClient(
+        base_url="http://prometheus:9090",
+        transport=httpx.MockTransport(upstream_handler),
+        clock=lambda: UTC_NOW,
+    )
+    original_join = prometheus._join_or_start_flight
+
+    async def observed_join(*args: Any, **kwargs: Any) -> Any:
+        flight = await original_join(*args, **kwargs)
+        if flight.waiters == 2:
+            two_waiters.set()
+        return flight
+
+    monkeypatch.setattr(prometheus, "_join_or_start_flight", observed_join)
+    app.dependency_overrides[monitoring.get_monitoring_client] = lambda: prometheus
+
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://testserver",
+        ) as route_client:
+            survivor = asyncio.create_task(route_client.get("/api/monitoring/history"))
+            await asyncio.wait_for(first_upstream_request.wait(), timeout=1)
+            cancelled = asyncio.create_task(route_client.get("/api/monitoring/history"))
+            await asyncio.wait_for(two_waiters.wait(), timeout=1)
+            cancelled.cancel()
+            release_upstream.set()
+
+            survivor_response = await survivor
+            with pytest.raises(asyncio.CancelledError):
+                await cancelled
+
+        assert survivor_response.status_code == 200
+        assert len(upstream_seen) == 6
+        await asyncio.sleep(0)
+        assert _monitoring_internal_pending_tasks() == []
+        assert loop_errors == []
+    finally:
+        app.dependency_overrides.clear()
+        await prometheus.aclose()
+        loop.set_exception_handler(previous_handler)
+
+
 def test_ground_entry_point_returns_unavailable_without_discovery(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -349,6 +491,26 @@ def test_ground_entry_point_returns_safe_available_body_without_ip_leakage(
     }
     assert "203.0.113.10" not in response.text
     assert "ip" not in response.json()
+
+
+def _monitoring_internal_pending_tasks() -> list[asyncio.Task[Any]]:
+    current = asyncio.current_task()
+    names = (
+        "_fetch_history",
+        "_fetch_series",
+        "_acquire_upstream_slot",
+        "_await_with_disconnect",
+        "_watch_cancel_event",
+        "_watch_cancel_callback",
+        "_cleanup_flight",
+    )
+    return [
+        task
+        for task in asyncio.all_tasks()
+        if task is not current
+        and not task.done()
+        and any(name in task.get_coro().__qualname__ for name in names)
+    ]
 
 
 def test_monitoring_openapi_uses_exact_response_models(client: TestClient) -> None:
