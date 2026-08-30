@@ -84,6 +84,14 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     [lifecycle]
   );
 
+  useEffect(() => {
+    mountOverviewLifecycle(lifecycle);
+    return () => {
+      invalidateOverviewLifecycle(lifecycle);
+      registry.abortAll();
+    };
+  }, [lifecycle, registry]);
+
   const {
     radarRefreshToken,
     retryRadar,
@@ -187,17 +195,13 @@ export function useOverviewData(options: UseOverviewDataOptions) {
   });
 
   useEffect(() => {
-    const generation = mountOverviewLifecycle(lifecycle);
+    const generation = lifecycle.generation;
     Promise.resolve().then(() => {
       if (isOverviewLifecycleCurrent(lifecycle, generation)) {
         void runCycle('bootstrap');
       }
     });
-    return () => {
-      invalidateOverviewLifecycle(lifecycle);
-      registry.abortAll();
-    };
-  }, [lifecycle, registry, runCycle]);
+  }, [lifecycle, runCycle]);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;

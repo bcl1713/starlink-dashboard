@@ -464,6 +464,33 @@ describe('useOverviewData scheduling', () => {
     expect(svc.getStatus).toHaveBeenCalledTimes(2);
   });
 
+  it('projects initially disabled radar as unavailable without request or error', () => {
+    const { calls, svc } = services();
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: false,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+
+    expect(calls).toEqual([]);
+    expect(result.current.snapshot.radar).toMatchObject({
+      availability: 'unavailable',
+      phase: 'unavailable',
+      freshness: 'unknown',
+      sourceTimestamp: null,
+      transportLastAttemptAt: null,
+      transportLastSuccessAt: null,
+      pending: false,
+      paused: false,
+      error: null,
+    });
+    expect(result.current.snapshot.radar.data).toBeUndefined();
+  });
+
   it.each([
     ['success', {}, 'success'],
     [
