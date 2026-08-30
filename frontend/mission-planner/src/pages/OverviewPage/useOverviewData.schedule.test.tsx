@@ -24,7 +24,6 @@ import type { OverviewRefreshCadence } from './preferences';
 import { useOverviewData } from './useOverviewData';
 import type {
   OverviewRefreshController,
-  OverviewRefreshReason,
   UseOverviewRefreshOptions,
 } from './useOverviewRefresh';
 
@@ -93,12 +92,6 @@ vi.mock('./useOverviewRefresh', async () => {
         return promise;
       }, [runQueued]);
 
-      const runRefresh = React.useCallback(
-        (reason: OverviewRefreshReason) =>
-          Promise.resolve().then(() => onRefresh(reason)),
-        [onRefresh]
-      );
-
       React.useEffect(() => {
         mounted.current = true;
         return () => {
@@ -122,7 +115,7 @@ vi.mock('./useOverviewRefresh', async () => {
             if (!cancelled) schedule();
             if (cancelled || active.current) return;
             active.current = true;
-            const promise = runRefresh('scheduled');
+            const promise = onRefresh('scheduled');
             if (refreshHarness.enabled) refreshHarness.scheduled.push(promise);
             promise
               .catch(() => {})
@@ -137,7 +130,7 @@ vi.mock('./useOverviewRefresh', async () => {
           cancelled = true;
           if (timeout !== null) clearTimeout(timeout);
         };
-      }, [cadence, now, runQueued, runRefresh]);
+      }, [cadence, now, onRefresh, runQueued]);
 
       return { isManualRefreshPending: pending, manualRefresh };
     },
@@ -714,17 +707,22 @@ describe('useOverviewData scheduling', () => {
       await act(flush);
       expect(result.current.controller.isManualRefreshPending).toBe(true);
       expect(svc.getStatus).toHaveBeenCalledTimes(2);
-      const activeScheduled = refreshHarness.scheduled[0].then(
+      const scheduledRunCycle = refreshHarness.scheduled[0];
+      const activeScheduled = scheduledRunCycle.then(
         () => 'resolved',
         (error: unknown) => String((error as Error).message)
       );
+      expect(refreshHarness.scheduled[0]).toBe(scheduledRunCycle);
       unmount();
       gate.reject(new Error('Overview refresh unmounted'));
+      await expect(scheduledRunCycle).resolves.toBeUndefined();
       await expect(activeScheduled).resolves.toBe('resolved');
-      await expect(queued).rejects.toThrow(/unmounted/i);
-      await expect(result.current.controller.manualRefresh()).rejects.toThrow(
-        /unmounted/i
-      );
+      await expect(queued).rejects.toMatchObject({
+        message: 'Overview refresh unmounted',
+      });
+      await expect(
+        result.current.controller.manualRefresh()
+      ).rejects.toMatchObject({ message: 'Overview refresh unmounted' });
       expect(observed).toEqual([]);
     } finally {
       console.error = originalError;
