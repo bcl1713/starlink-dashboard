@@ -24,6 +24,28 @@ import type {
   RouteCoordinates,
 } from '../types/monitoring';
 
+function safeIsCancel(value: unknown): boolean {
+  try {
+    return axios.isCancel(value);
+  } catch {
+    return false;
+  }
+}
+
+function safeGetCause(value: unknown): unknown {
+  if (
+    (typeof value !== 'object' && typeof value !== 'function') ||
+    value === null
+  ) {
+    return undefined;
+  }
+  try {
+    return Reflect.get(value, 'cause');
+  } catch {
+    return undefined;
+  }
+}
+
 async function request<T>(
   url: `/api/${string}`,
   config: AxiosRequestConfig | undefined,
@@ -33,9 +55,9 @@ async function request<T>(
     const response = await apiClient.get<unknown>(url, config);
     return parse(response.data, response.headers);
   } catch (error) {
-    const cause = error instanceof Error ? error.cause : undefined;
-    if (axios.isCancel(error)) throw error;
-    if (axios.isCancel(cause)) throw cause;
+    if (safeIsCancel(error)) throw error;
+    const cause = safeGetCause(error);
+    if (safeIsCancel(cause)) throw cause;
     throw error;
   }
 }

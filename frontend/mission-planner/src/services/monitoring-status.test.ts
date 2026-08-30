@@ -1,14 +1,36 @@
 import axios, { CanceledError } from 'axios';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 
 import { apiClient } from './api-client';
 import { getStatus } from './monitoring';
+import {
+  parseActiveXLink,
+  parseGroundEntryPoint,
+  parseMonitoringHistory,
+  parsePOIETAs,
+  parseRainViewerRadarTile,
+  parseRouteCoordinates,
+  parseStatus,
+} from './monitoring-schemas';
 import {
   missing,
   setAt,
   statusPayload,
   withResponse,
 } from './monitoring-test-fixtures';
+import type {
+  ActiveXLink,
+  ActiveXLinkCoordinate,
+  ActiveXLinkHandoff,
+  ActiveXLinkSegment,
+  GroundEntryPoint,
+  MonitoringHistory,
+  OverviewStatus,
+  POIETA,
+  POIETAResponse,
+  RainViewerRadarTile,
+  RouteCoordinates,
+} from '../types/monitoring';
 import { OverviewDataValidationError } from '../types/monitoring';
 
 vi.mock('./api-client', () => ({ apiClient: { get: vi.fn() } }));
@@ -40,6 +62,42 @@ async function expectStatusInvalid(payload: unknown) {
 }
 
 describe('status overview service', () => {
+  it('keeps parser return types exactly aligned with monitoring DTOs', () => {
+    expectTypeOf<
+      ReturnType<typeof parseStatus>
+    >().toEqualTypeOf<OverviewStatus>();
+    expectTypeOf<
+      ReturnType<typeof parseMonitoringHistory>
+    >().toEqualTypeOf<MonitoringHistory>();
+    expectTypeOf<
+      ReturnType<typeof parseGroundEntryPoint>
+    >().toEqualTypeOf<GroundEntryPoint>();
+    expectTypeOf<
+      ReturnType<typeof parseRouteCoordinates>
+    >().toEqualTypeOf<RouteCoordinates>();
+    expectTypeOf<
+      ReturnType<typeof parsePOIETAs>
+    >().toEqualTypeOf<POIETAResponse>();
+    expectTypeOf<
+      ReturnType<typeof parsePOIETAs>['pois'][number]
+    >().toEqualTypeOf<POIETA>();
+    expectTypeOf<
+      ReturnType<typeof parseActiveXLink>
+    >().toEqualTypeOf<ActiveXLink>();
+    expectTypeOf<
+      ReturnType<typeof parseActiveXLink>['coordinates'][number]
+    >().toEqualTypeOf<ActiveXLinkCoordinate>();
+    expectTypeOf<
+      ReturnType<typeof parseActiveXLink>['links'][number]
+    >().toEqualTypeOf<ActiveXLinkSegment>();
+    expectTypeOf<
+      ReturnType<typeof parseActiveXLink>['handoff']
+    >().toEqualTypeOf<ActiveXLinkHandoff>();
+    expectTypeOf<
+      ReturnType<typeof parseRainViewerRadarTile>
+    >().toEqualTypeOf<RainViewerRadarTile>();
+  });
+
   it('requests /api/status with signal identity and preserves timestamps', async () => {
     const signal = new AbortController().signal;
     respond({
@@ -114,4 +172,85 @@ describe('status overview service', () => {
     getMock.mockRejectedValueOnce(transport);
     await expect(getStatus()).rejects.toBe(transport);
   });
+
+  it('classifies direct cancellation before touching a hostile cause getter', async () => {
+    const directCancel = new CanceledError('stopped');
+    const causeGetter = vi.fn(() => {
+      throw new Error('cause getter should not run');
+    });
+    Object.defineProperty(directCancel, 'cause', { get: causeGetter });
+
+    getMock.mockRejectedValueOnce(directCancel);
+
+    await expect(getStatus()).rejects.toBe(directCancel);
+    expect(causeGetter).not.toHaveBeenCalled();
+  });
+
+  it('preserves hostile non-cancellation rejections by identity', async () => {
+    const causeGetterError = new Error('hostile cause');
+    const errorWithThrowingCause = new Error('api error');
+    Object.defineProperty(errorWithThrowingCause, 'cause', {
+      get() {
+        throw causeGetterError;
+      },
+    });
+    await expectRejectedByIdentity(errorWithThrowingCause);
+
+    const cancelGetterError = new Error('hostile cancel flag');
+    const objectWithThrowingCancelFlag = Object.defineProperty(
+      {},
+      '__CANCEL__',
+      {
+        get() {
+          throw cancelGetterError;
+        },
+      }
+    );
+    await expectRejectedByIdentity(objectWithThrowingCancelFlag);
+
+    const causeWithThrowingCancelFlag = Object.defineProperty(
+      {},
+      '__CANCEL__',
+      {
+        get() {
+          throw new Error('hostile cause cancel flag');
+        },
+      }
+    );
+    const objectWithHostileCause = { cause: causeWithThrowingCancelFlag };
+    await expectRejectedByIdentity(objectWithHostileCause);
+
+    const proxyWithThrowingPrototypeTrap = new Proxy(
+      {},
+      {
+        getPrototypeOf() {
+          throw new Error('prototype trap should not replace rejection');
+        },
+      }
+    );
+    await expectRejectedByIdentity(proxyWithThrowingPrototypeTrap);
+
+    const proxyWithThrowingGetTraps = new Proxy(
+      {},
+      {
+        get(_target, property) {
+          if (property === '__CANCEL__' || property === 'cause') {
+            throw new Error(`${String(property)} trap`);
+          }
+          return undefined;
+        },
+      }
+    );
+    await expectRejectedByIdentity(proxyWithThrowingGetTraps);
+
+    await expectRejectedByIdentity('offline');
+
+    const ordinary = { response: { status: 503 } };
+    await expectRejectedByIdentity(ordinary);
+  });
 });
+
+async function expectRejectedByIdentity(rejection: unknown) {
+  getMock.mockRejectedValueOnce(rejection);
+  await expect(getStatus()).rejects.toBe(rejection);
+}
