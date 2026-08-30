@@ -1,0 +1,168 @@
+import { act, renderHook } from '@testing-library/react';
+import { StrictMode } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { OverviewPOIFilter } from '../../types/monitoring';
+import {
+  activeXLinkPayload,
+  availableGep,
+  historyPayload,
+  poiPayload,
+  routePayload,
+  statusPayload,
+} from '../../services/monitoring-test-fixtures';
+import type { OverviewDataServices } from './overview-data-types';
+import { useOverviewData } from './useOverviewData';
+
+const flush = () => act(async () => Promise.resolve());
+
+function services() {
+  const calls: string[] = [];
+  const record = <T,>(name: string, value: T) =>
+    vi.fn(() => {
+      calls.push(name);
+      return Promise.resolve(structuredClone(value));
+    });
+  const svc = {
+    getStatus: record('status', statusPayload),
+    getMonitoringHistory: record('history', historyPayload),
+    getGroundEntryPoint: record('gep', availableGep),
+    getPOIETAs: record('pois', poiPayload),
+    getSatelliteETAs: record('satellites', poiPayload),
+    getMissionEventETAs: record('missionEvents', poiPayload),
+    getRouteCoordinates: vi.fn((direction) => {
+      calls.push(direction);
+      return Promise.resolve(structuredClone(routePayload));
+    }),
+    getActiveXLink: vi.fn((state) => {
+      calls.push(state);
+      return Promise.resolve({ ...structuredClone(activeXLinkPayload), state });
+    }),
+  } as unknown as OverviewDataServices;
+  return { calls, svc };
+}
+
+describe('useOverviewData scheduling', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  it('bootstraps exactly ten HTTP calls with shared grouped signals and no radar HTTP', async () => {
+    const { calls, svc } = services();
+    const { result, unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 1,
+        poiFilter: 'departure,arrival',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    expect(calls).toEqual([]);
+    await flush();
+    expect(calls).toEqual([
+      'status',
+      'pois',
+      'satellites',
+      'missionEvents',
+      'normal',
+      'warning',
+      'west',
+      'east',
+      'gep',
+      'history',
+    ]);
+    expect(svc.getActiveXLink).toHaveBeenNthCalledWith(
+      1,
+      'normal',
+      (svc.getActiveXLink as ReturnType<typeof vi.fn>).mock.calls[1][1]
+    );
+    expect(svc.getRouteCoordinates).toHaveBeenNthCalledWith(
+      1,
+      'west',
+      (svc.getRouteCoordinates as ReturnType<typeof vi.fn>).mock.calls[1][1]
+    );
+    expect(result.current.snapshot.initialState).toBe('ready');
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each([
+    [1, { selected: 30, active: 60, route: 12, gep: 1, history: 3 }],
+    [10, { selected: 3, active: 6, route: 6, gep: 1, history: 3 }],
+    [30, { selected: 1, active: 2, route: 2, gep: 1, history: 1 }],
+  ] as const)(
+    'matches the 30s cadence table for %s seconds',
+    async (cadence, expected) => {
+      let now = 1_777_294_800_000;
+      const { svc } = services();
+      renderHook(() =>
+        useOverviewData({
+          cadence,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+        })
+      );
+      await flush();
+      vi.clearAllMocks();
+      for (let second = 1; second <= 30; second += 1) {
+        now += 1000;
+        await act(async () => vi.advanceTimersByTime(1000));
+      }
+      expect(svc.getStatus).toHaveBeenCalledTimes(expected.selected);
+      expect(svc.getPOIETAs).toHaveBeenCalledTimes(expected.selected);
+      expect(svc.getSatelliteETAs).toHaveBeenCalledTimes(expected.selected);
+      expect(svc.getMissionEventETAs).toHaveBeenCalledTimes(expected.selected);
+      expect(svc.getActiveXLink).toHaveBeenCalledTimes(expected.active);
+      expect(svc.getRouteCoordinates).toHaveBeenCalledTimes(expected.route);
+      expect(svc.getGroundEntryPoint).toHaveBeenCalledTimes(expected.gep);
+      expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(expected.history);
+    }
+  );
+
+  it('keeps one Task8 timer and one bootstrap under StrictMode', async () => {
+    const { calls, svc } = services();
+    const { unmount } = renderHook(
+      () =>
+        useOverviewData({
+          cadence: 1,
+          poiFilter: 'arrival',
+          radarEnabled: true,
+          services: svc,
+          now: () => 1_777_294_800_000,
+        }),
+      { wrapper: StrictMode }
+    );
+    await flush();
+    expect(calls).toHaveLength(10);
+    expect(vi.getTimerCount()).toBeLessThanOrEqual(1);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('runs an explicit manual refresh hidden or paused and preserves controller identity', async () => {
+    const { svc } = services();
+    const visibility = {
+      isHidden: () => true,
+      subscribe: vi.fn(() => vi.fn()),
+    };
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: 'waypoint' as OverviewPOIFilter,
+        radarEnabled: false,
+        services: svc,
+        visibility,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await flush();
+    const manual = result.current.controller.manualRefresh;
+    await act(async () => manual());
+    expect(result.current.controller.manualRefresh).toBe(manual);
+    expect(result.current.snapshot.manualResult).toBe('success');
+    expect(svc.getStatus).toHaveBeenCalledTimes(2);
+  });
+});

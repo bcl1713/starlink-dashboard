@@ -15,6 +15,7 @@ interface ParsedInstant {
 
 const timestampPattern =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
+const unixEpochDay = daysFromCivil('1970', '01', '01');
 
 export function compareAwareTimestampInstants(
   first: string,
@@ -33,6 +34,31 @@ export function compareAwareTimestampInstants(
   return leftFraction < rightFraction ? -1 : 1;
 }
 
+export function compareAwareTimestampToEpochMilliseconds(
+  timestamp: string,
+  epochMilliseconds: number,
+  offsetSeconds?: number
+): -1 | 0 | 1 | null {
+  const instant = parseInstant(timestamp);
+  if (
+    instant === null ||
+    !Number.isSafeInteger(epochMilliseconds) ||
+    (offsetSeconds !== undefined && !Number.isSafeInteger(offsetSeconds))
+  ) {
+    return null;
+  }
+  const targetMilliseconds =
+    BigInt(epochMilliseconds) + BigInt(offsetSeconds ?? 0) * 1000n;
+  const width = Math.max(instant.fraction.length, 3);
+  const scale = 10n ** BigInt(width);
+  const unixSeconds = instant.seconds - unixEpochDay * 86_400n;
+  const timestampUnits =
+    unixSeconds * scale + BigInt(instant.fraction.padEnd(width, '0') || '0');
+  const targetUnits = targetMilliseconds * 10n ** BigInt(width - 3);
+  if (timestampUnits === targetUnits) return 0;
+  return timestampUnits < targetUnits ? -1 : 1;
+}
+
 export function isStrictlyChronological(
   timestamps: readonly string[]
 ): boolean {
@@ -49,7 +75,7 @@ export function isStrictlyChronological(
 
 function parseInstant(value: string): ParsedInstant | null {
   const match = timestampPattern.exec(value);
-  if (!match) return null;
+  if (!match || !awareTimestampSchema.safeParse(value).success) return null;
   const [, year, month, day, hour, minute, second, fraction = '', offset] =
     match;
   const localSeconds =

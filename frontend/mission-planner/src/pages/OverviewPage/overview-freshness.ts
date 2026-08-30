@@ -1,0 +1,258 @@
+import axios from 'axios';
+import {
+  compareAwareTimestampInstants,
+  compareAwareTimestampToEpochMilliseconds,
+} from '../../services/monitoring-validation';
+import type {
+  GroundEntryPoint,
+  MonitoringHistory,
+  OverviewStatus,
+  POIETAResponse,
+} from '../../types/monitoring';
+import type {
+  OverviewDataSnapshot,
+  OverviewActiveLinkData,
+  OverviewFreshnessState,
+  OverviewRadarData,
+  OverviewRouteData,
+  OverviewSourceError,
+  OverviewSourceKey,
+  OverviewSourceSlot,
+} from './overview-data-types';
+
+export const SOURCE_LABELS = {
+  telemetry: 'Telemetry',
+  history: 'History',
+  activeLink: 'Active link',
+  pois: 'POIs',
+  satellites: 'Satellite ETAs',
+  missionEvents: 'Mission events',
+  route: 'Route',
+  groundEntryPoint: 'Ground entry point',
+  radar: 'Weather radar',
+} as const;
+
+const METRICS = [
+  'latitude_degrees',
+  'longitude_degrees',
+  'latency_ms',
+  'throughput_down_mbps',
+  'throughput_up_mbps',
+  'packet_loss_percent',
+] as const;
+
+export function safeNow(now: () => number): number | null {
+  try {
+    const value = now();
+    return Number.isSafeInteger(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function computeSourceFreshness(
+  timestamp: string | null,
+  nowMs: number,
+  cadenceSeconds: number
+): { freshness: OverviewFreshnessState; ageSeconds: number | null } {
+  if (timestamp === null || !Number.isSafeInteger(nowMs)) {
+    return { freshness: 'unknown', ageSeconds: null };
+  }
+  const future = compareAwareTimestampToEpochMilliseconds(timestamp, nowMs, 5);
+  if (future === null || future > 0) {
+    return { freshness: 'unknown', ageSeconds: null };
+  }
+  const staleSeconds = Math.max(5, 3 * cadenceSeconds);
+  const stale = compareAwareTimestampToEpochMilliseconds(
+    timestamp,
+    nowMs,
+    -staleSeconds
+  );
+  const sameOrFutureNow = compareAwareTimestampToEpochMilliseconds(
+    timestamp,
+    nowMs
+  );
+  const ageSeconds =
+    sameOrFutureNow !== null && sameOrFutureNow >= 0
+      ? 0
+      : computeWholeAgeSeconds(timestamp, nowMs);
+  return {
+    freshness: stale === null ? 'unknown' : stale < 0 ? 'stale' : 'fresh',
+    ageSeconds,
+  };
+}
+
+export function classifyOverviewError(
+  error: unknown,
+  signalAborted: boolean
+): OverviewSourceError | null {
+  if (signalAborted || safeIsCancel(error)) return null;
+  if (
+    safeGet(error, 'name') === 'OverviewDataValidationError' &&
+    safeGet(error, 'code') === 'invalid_overview_data' &&
+    typeof safeGet(error, 'source') === 'string'
+  ) {
+    return { code: 'invalid-data', message: 'Source data was invalid.' };
+  }
+  return { code: 'request-failed', message: 'Source refresh failed.' };
+}
+
+export function radarOutcome(frameTimestamp: string) {
+  const sourceTimestamp = radarTimestampFromFrame(frameTimestamp);
+  return sourceTimestamp === null
+    ? {
+        ok: false as const,
+        error: {
+          code: 'invalid-data' as const,
+          message: 'Source data was invalid.' as const,
+        },
+      }
+    : { ok: true as const, data: { frameTimestamp } };
+}
+
+export function transitionAnnouncement(
+  snapshot: OverviewDataSnapshot,
+  slot: OverviewSourceKey,
+  previous: OverviewSourceSlot<unknown>,
+  next: OverviewSourceSlot<unknown>
+): string | null {
+  const label = SOURCE_LABELS[slot];
+  const enteredError = !previous.error && next.error;
+  const enteredStale =
+    previous.freshness !== 'stale' && next.freshness === 'stale';
+  const recovered =
+    (previous.error || previous.freshness === 'stale') &&
+    !next.error &&
+    next.freshness !== 'stale';
+  const message = enteredError
+    ? `${label} refresh failed.`
+    : enteredStale
+      ? `${label} data is stale.`
+      : recovered
+        ? `${label} recovered.`
+        : snapshot.announcement;
+  return message === snapshot.announcement ? snapshot.announcement : message;
+}
+
+export function sourceTimestamp(source: string, data: unknown): string | null {
+  if (source === 'telemetry') return (data as OverviewStatus).timestamp;
+  if (source === 'history') return historyTimestamp(data as MonitoringHistory);
+  if (
+    source === 'pois' ||
+    source === 'satellites' ||
+    source === 'missionEvents'
+  ) {
+    return (data as POIETAResponse).timestamp;
+  }
+  if (source === 'activeLink')
+    return activeTimestamp(data as OverviewActiveLinkData);
+  if (source === 'route') return routeTimestamp(data as OverviewRouteData);
+  if (source === 'groundEntryPoint') {
+    const gep = data as GroundEntryPoint;
+    return gep.available ? gep.observed_at : null;
+  }
+  if (source === 'radar') {
+    return radarTimestampFromFrame((data as OverviewRadarData).frameTimestamp);
+  }
+  return null;
+}
+
+export function semanticUnavailable(source: string, data: unknown): boolean {
+  if (source === 'groundEntryPoint')
+    return !(data as GroundEntryPoint).available;
+  if (source !== 'route') return false;
+  const route = data as OverviewRouteData;
+  return (
+    route.west.route_id === null &&
+    route.east.route_id === null &&
+    route.west.total === 0 &&
+    route.east.total === 0
+  );
+}
+
+export function radarTimestampFromFrame(frame: string): string | null {
+  if (!/^(0|[1-9][0-9]*)$/.test(frame)) return null;
+  const seconds = Number(frame);
+  if (
+    !Number.isSafeInteger(seconds) ||
+    seconds < 946_684_800 ||
+    seconds > 4_102_444_800
+  ) {
+    return null;
+  }
+  return new Date(seconds * 1000).toISOString().replace('.000', '');
+}
+
+function historyTimestamp(history: MonitoringHistory): string | null {
+  let oldest: string | null = null;
+  for (const metric of METRICS) {
+    const series = history.series.find((item) => item.metric === metric);
+    if (!series || series.samples.length === 0) return null;
+    let latest = series.samples[0].timestamp;
+    for (const sample of series.samples.slice(1)) {
+      if (compareText(sample.timestamp, latest) > 0) latest = sample.timestamp;
+    }
+    if (oldest === null || compareText(latest, oldest) < 0) oldest = latest;
+  }
+  return oldest;
+}
+
+function activeTimestamp(data: OverviewActiveLinkData): string | null {
+  const normal = data.normal.observed_at;
+  const warning = data.warning.observed_at;
+  if (normal === null || warning === null) return null;
+  return compareText(normal, warning) <= 0 ? normal : warning;
+}
+
+function routeTimestamp(data: OverviewRouteData): string | null {
+  const west = data.west.revision_at;
+  const east = data.east.revision_at;
+  if (west === null || east === null) return null;
+  return compareText(west, east) <= 0 ? west : east;
+}
+
+function compareText(left: string, right: string): number {
+  return compareAwareTimestampInstants(left, right);
+}
+
+function computeWholeAgeSeconds(
+  timestamp: string,
+  nowMs: number
+): number | null {
+  let low = 0;
+  let high = Math.max(0, Math.ceil(Math.abs(nowMs) / 1000) + 31_622_400_000);
+  while (low < high) {
+    const middle = Math.floor((low + high + 1) / 2);
+    const comparison = compareAwareTimestampToEpochMilliseconds(
+      timestamp,
+      nowMs,
+      -middle
+    );
+    if (comparison === null) return null;
+    if (comparison <= 0) low = middle;
+    else high = middle - 1;
+  }
+  return low;
+}
+
+function safeIsCancel(error: unknown): boolean {
+  try {
+    return axios.isCancel(error);
+  } catch {
+    return false;
+  }
+}
+
+function safeGet(value: unknown, key: string): unknown {
+  if (
+    (typeof value !== 'object' && typeof value !== 'function') ||
+    value === null
+  ) {
+    return undefined;
+  }
+  try {
+    return Reflect.get(value, key);
+  } catch {
+    return undefined;
+  }
+}
