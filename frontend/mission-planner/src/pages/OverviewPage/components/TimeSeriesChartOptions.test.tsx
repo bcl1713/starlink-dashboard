@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { NetworkLatencyPanel } from './NetworkLatencyPanel';
 import { TimeSeriesChart } from './TimeSeriesChart';
+import { history, NOW, samples, slot } from './metric-panel-test-fixtures';
 import type { TimeSeriesDefinition, TimeSeriesRow } from './metric-panel-types';
 
 const uplotMock = vi.hoisted(() => {
@@ -42,16 +44,6 @@ const series: readonly TimeSeriesDefinition[] = [
     color: '#177a55',
     unit: 'Mbps',
     display: 'magnitude',
-  },
-];
-
-const latencySeries: readonly TimeSeriesDefinition[] = [
-  {
-    key: 'latency',
-    label: 'Latency',
-    color: '#1769aa',
-    unit: 'ms',
-    display: 'signed',
   },
 ];
 
@@ -120,25 +112,57 @@ describe('TimeSeriesChart constructor options', () => {
     ).toEqual([0, 9]);
   });
 
-  it('passes latency unit formatting without changing label identity', () => {
+  it('passes public latency panel order, colors, ms units, gaps, and auto domain', () => {
     render(
-      <TimeSeriesChart
-        accessibleName="Latency chart"
-        rows={rows}
-        series={latencySeries}
-        yRange="auto"
-        zeroBaseline
-        emptyText="No data"
+      <NetworkLatencyPanel
+        slot={slot(
+          history([
+            {
+              metric: 'latency_ms',
+              samples: samples([
+                ['2026-08-29T12:24:59Z', 300],
+                ['2026-08-29T12:25:00Z', 100],
+                ['2026-08-29T12:26:00Z', null],
+                ['2026-08-29T12:27:00Z', -1],
+                ['2026-08-29T12:30:00Z', 200],
+              ]),
+            },
+          ])
+        )}
+        now={NOW}
+        retryPending={false}
       />
     );
 
+    expect(
+      screen.getByRole('img', { name: 'Network Latency chart' })
+    ).toBeVisible();
+    expect(uplotMock.created[0].data).toEqual([
+      [1788006299, 1788006300, 1788006360, 1788006420, 1788006600],
+      [300, 100, null, null, 200],
+      [300, 100, 100, 100, 100],
+      [300, 200, 200, 200, 150],
+      [300, 300, 300, 300, 200],
+    ]);
     expect(uplotMock.created[0].options.series).toMatchObject([
       {},
-      { label: 'Latency', stroke: '#1769aa', spanGaps: false },
+      { label: 'Current', stroke: '#1769aa', spanGaps: false },
+      { label: 'Min (5m)', stroke: '#177a55', spanGaps: false },
+      { label: 'Avg (5m)', stroke: '#a96900', spanGaps: false },
+      { label: 'Max (5m)', stroke: '#b42318', spanGaps: false },
     ]);
     expect(formatSeriesValue(1, 15)).toBe('15 ms');
+    expect(formatSeriesValue(2, 12.5)).toBe('12.5 ms');
+    expect(formatSeriesValue(3, 0)).toBe('0 ms');
+    expect(formatSeriesValue(4, 99)).toBe('99 ms');
+    expect(formatSeriesValue(1, null)).toBe('Unavailable');
     expect(formatSeriesValue(1, Number.NaN)).toBe('Unavailable');
     expect(formatSeriesValue(1, undefined)).toBe('Unavailable');
+    expect(formatSeriesValue(4, Number.NEGATIVE_INFINITY)).toBe('Unavailable');
+    const range = uplotMock.created[0].options.scales?.y?.range;
+    expect(
+      typeof range === 'function' ? range({} as uPlot, 4, 9, 'y') : null
+    ).toEqual([0, 9]);
   });
 
   it('passes packet-loss unit formatting and fixed y-domain exactly', () => {
