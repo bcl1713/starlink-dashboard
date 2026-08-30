@@ -30,6 +30,11 @@ describe('buildThroughputPanelData', () => {
       [null, -5],
       [200, -10],
     ]);
+    expect(data.tableRows.map((row) => row.values)).toEqual([
+      [100, null],
+      [null, 5],
+      [200, 10],
+    ]);
     expect(data.tableRows[2].timestamp).toBe('2026-08-29T12:30:00Z');
     expect(data.download).toEqual({
       current: 200,
@@ -43,5 +48,28 @@ describe('buildThroughputPanelData', () => {
       mean: 7.5,
       max: 10,
     });
+  });
+
+  it('uses download spelling when download and upload are the same instant', () => {
+    const data = buildThroughputPanelData(
+      history([
+        {
+          metric: 'throughput_up_mbps',
+          samples: samples([['2026-08-29T12:30:00.0Z', 10]]),
+        },
+        {
+          metric: 'throughput_down_mbps',
+          samples: samples([['2026-08-29T12:30:00.00Z', 20]]),
+        },
+      ]),
+      NOW
+    );
+
+    expect(data.tableRows).toHaveLength(1);
+    expect(data.tableRows[0]).toMatchObject({
+      timestamp: '2026-08-29T12:30:00.00Z',
+      values: [20, 10],
+    });
+    expect(data.chartRows[0].values).toEqual([20, -10]);
   });
 });

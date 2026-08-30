@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../../../components/ui/card';
+import { formatUtcTimestamp } from './metric-panel-time';
 import type { OverviewPanelStateProps } from './metric-panel-types';
 
 export function OverviewPanelState<T>(
@@ -39,7 +40,12 @@ export function OverviewPanelState<T>(
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">{state.text}</p>
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">{state.text}</p>
+            <p className="text-xs text-muted-foreground">
+              {sourceTimestampText(props.slot.sourceTimestamp)}
+            </p>
+          </div>
           {showRetry ? (
             <Button
               type="button"
@@ -59,11 +65,7 @@ export function OverviewPanelState<T>(
 }
 
 function panelState<T>(slot: OverviewPanelStateProps<T>['slot']) {
-  if (
-    slot.data === undefined &&
-    slot.pending &&
-    slot.phase === 'initial-loading'
-  ) {
+  if (slot.data === undefined && slot.pending) {
     return { kind: 'loading', text: 'Loading' } as const;
   }
   if (slot.error !== null || slot.phase === 'error') {
@@ -86,4 +88,9 @@ function panelState<T>(slot: OverviewPanelStateProps<T>['slot']) {
   }
   if (slot.data !== undefined) return { kind: 'ready', text: 'Ready' } as const;
   return { kind: 'unknown', text: 'Unavailable' } as const;
+}
+
+function sourceTimestampText(timestamp: string | null): string {
+  if (timestamp === null) return 'Source timestamp unavailable';
+  return `Source ${formatUtcTimestamp(timestamp)}`;
 }

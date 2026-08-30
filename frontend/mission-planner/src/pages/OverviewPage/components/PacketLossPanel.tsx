@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode } from 'react';
 
 import { classifyPacketLoss, formatPercent } from '../formatters';
 import { buildPacketLossPanelData } from './metric-panel-data';
@@ -49,19 +49,16 @@ export function PacketLossPanel(props: HistoryMetricPanelProps): ReactNode {
                 { label: 'Max', value: formatPercent(data.summary.max) },
               ]}
             />
-            <TimeSeriesChart
-              accessibleName="Packet Loss chart"
-              rows={data.chartRows}
-              series={SERIES}
-              yRange={[0, 100]}
-              zeroBaseline
-              emptyText="No packet loss history available."
-              className={
-                props.presentation === 'compact'
-                  ? '[&_[data-testid=time-series-chart-host]]:min-h-[180px]'
-                  : '[&_[data-testid=time-series-chart-host]]:min-h-[240px]'
-              }
-            />
+            <div style={chartHeight(props.presentation)}>
+              <TimeSeriesChart
+                accessibleName="Packet Loss chart"
+                rows={data.chartRows}
+                series={SERIES}
+                yRange={[0, 100]}
+                zeroBaseline
+                emptyText="No packet loss history available."
+              />
+            </div>
             <MetricHistoryDisclosure
               rows={data.tableRows}
               series={SERIES}
@@ -72,4 +69,13 @@ export function PacketLossPanel(props: HistoryMetricPanelProps): ReactNode {
       }}
     </OverviewPanelState>
   );
+}
+
+function chartHeight(
+  presentation: HistoryMetricPanelProps['presentation']
+): CSSProperties {
+  return {
+    '--time-series-chart-height':
+      presentation === 'compact' ? '180px' : '240px',
+  } as CSSProperties;
 }

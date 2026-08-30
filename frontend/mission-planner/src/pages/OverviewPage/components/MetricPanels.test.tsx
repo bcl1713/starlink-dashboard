@@ -43,9 +43,11 @@ describe('metric history panels', () => {
       'Network Latency'
     );
     expect(screen.getByText('Critical')).toBeVisible();
-    expect(
-      screen.getByTestId('time-series-chart-host').parentElement
-    ).toHaveClass('[&_[data-testid=time-series-chart-host]]:min-h-[180px]');
+    const host = screen.getByTestId('time-series-chart-host');
+    expect(host).toHaveClass('min-h-[var(--time-series-chart-height,240px)]');
+    expect(host.parentElement?.parentElement).toHaveStyle({
+      '--time-series-chart-height': '180px',
+    });
     fireEvent.click(screen.getByRole('button', { name: 'History' }));
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('2026-08-29 12:30:00 UTC')).toBeVisible();

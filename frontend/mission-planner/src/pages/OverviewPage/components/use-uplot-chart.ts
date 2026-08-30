@@ -83,31 +83,27 @@ export function useUPlotChart(
           plotRef.current.setSize(size);
           lastSize.current = size;
         } catch {
+          destroyPlot(plotRef.current);
           plotRef.current = null;
         }
       }
     };
 
+    let observer: ResizeObserver | null = null;
     try {
-      observerRef.current = new ResizeObserver(() => ensurePlot());
-      observerRef.current.observe(host);
+      observer = new ResizeObserver(() => ensurePlot());
+      observerRef.current = observer;
+      observer.observe(host);
     } catch {
+      disconnectObserver(observer);
       observerRef.current = null;
     }
     ensurePlot();
 
     return () => {
-      try {
-        observerRef.current?.disconnect();
-      } catch {
-        // ignored
-      }
+      disconnectObserver(observerRef.current);
       observerRef.current = null;
-      try {
-        plotRef.current?.destroy();
-      } catch {
-        // ignored
-      }
+      destroyPlot(plotRef.current);
       plotRef.current = null;
       lastRows.current = null;
       lastSize.current = null;
@@ -120,6 +116,7 @@ export function useUPlotChart(
       plotRef.current.setData(toUPlotData(props.rows, seriesCount));
       lastRows.current = props.rows;
     } catch {
+      destroyPlot(plotRef.current);
       plotRef.current = null;
     }
   }, [props.rows, seriesCount]);
@@ -166,6 +163,22 @@ function labelPlot(plot: UPlotInstance, accessibleName: string): void {
     for (const canvas of plot.root.querySelectorAll('canvas')) {
       canvas.setAttribute('aria-hidden', 'true');
     }
+  } catch {
+    // ignored
+  }
+}
+
+function disconnectObserver(observer: ResizeObserver | null): void {
+  try {
+    observer?.disconnect();
+  } catch {
+    // ignored
+  }
+}
+
+function destroyPlot(plot: UPlotInstance | null): void {
+  try {
+    plot?.destroy();
   } catch {
     // ignored
   }

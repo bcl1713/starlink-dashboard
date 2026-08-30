@@ -36,7 +36,6 @@ export interface TimeSeriesChartProps {
   readonly yRange: readonly [number, number] | 'auto';
   readonly zeroBaseline: boolean;
   readonly emptyText: string;
-  readonly className?: string;
 }
 
 export interface HistoryMetricPanelProps {

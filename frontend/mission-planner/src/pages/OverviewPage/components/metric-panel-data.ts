@@ -1,11 +1,9 @@
-import {
-  awareTimestampToChartEpochSeconds,
-  compareAwareTimestampInstants,
-} from '../../../services/monitoring-validation';
+import { awareTimestampToChartEpochSeconds } from '../../../services/monitoring-validation';
 import type { MonitoringHistory } from '../../../types/monitoring';
 import {
   buildThroughputRenderSeries,
   mergeTimestampedSamples,
+  summarizeLatency as summarizeExactLatency,
   type NumericHistorySample,
 } from '../history';
 import type {
@@ -15,8 +13,7 @@ import type {
   ThroughputPanelData,
   TimeSeriesRow,
 } from './metric-panel-types';
-
-const EMPTY_SUMMARY: MetricSummary = freezeSummary(null, null, null, null);
+import { buildRawThroughputRows } from './metric-panel-throughput';
 
 export function buildLatencyPanelData(
   history: MonitoringHistory,
@@ -26,7 +23,7 @@ export function buildLatencyPanelData(
   if (samples === null) return emptyLatency();
   const tableRows = rowsFromSamples(samples, (sample, index, all) => [
     validNonnegative(sample.value) ? sample.value : null,
-    ...rolling(all, index, sample.timestamp, validNonnegative),
+    ...rollingLatency(all, index, sample.timestamp),
   ]);
   return freezePanel({
     chartRows: collapseChartRows(tableRows),
@@ -43,7 +40,7 @@ export function buildThroughputPanelData(
   const upload = selectCanonicalSeries(history, 'throughput_up_mbps', now);
   if (download === null || upload === null) return emptyThroughput();
   const rendered = buildThroughputRenderSeries(download, upload);
-  const tableRows = rowsFromSamples(
+  const chartRows = rowsFromSamples(
     rendered.map((row) => ({
       timestamp: row.timestamp,
       value: [row.downloadMbps, row.uploadMbps] as const,
@@ -56,8 +53,12 @@ export function buildThroughputPanelData(
       ];
     }
   );
+  const tableRows = rowsFromSamples(
+    buildRawThroughputRows(download, upload),
+    (sample) => sample.value
+  );
   return freezePanel({
-    chartRows: collapseChartRows(tableRows),
+    chartRows: collapseChartRows(chartRows),
     tableRows,
     download: summarize(download, validNonnegative),
     upload: summarize(upload, validNonnegative),
@@ -128,28 +129,20 @@ function collapseChartRows(
   return freezeArray([...byEpoch.values()]);
 }
 
-function rolling<T extends { timestamp: string; value: unknown }>(
-  samples: readonly T[],
+function rollingLatency(
+  samples: readonly NumericHistorySample[],
   index: number,
-  timestamp: string,
-  accepts: (value: unknown) => value is number
+  timestamp: string
 ): readonly [number | null, number | null, number | null] {
-  const lower = awareTimestampToChartEpochSeconds(timestamp);
-  if (lower === null) return [null, null, null];
-  const start = lower - 300;
-  const values = samples
-    .slice(0, index + 1)
-    .filter((sample) => {
-      const seconds = awareTimestampToChartEpochSeconds(sample.timestamp);
-      return (
-        seconds !== null &&
-        seconds >= start &&
-        compareAwareTimestampInstants(sample.timestamp, timestamp) <= 0 &&
-        accepts(sample.value)
-      );
-    })
-    .map((sample) => sample.value as number);
-  return summarizeValues(values);
+  try {
+    const summary = summarizeExactLatency(
+      samples.slice(0, index + 1),
+      timestamp
+    );
+    return [summary.min, summary.mean, summary.max];
+  } catch {
+    return [null, null, null];
+  }
 }
 
 function latestRollingSummary(
@@ -157,23 +150,13 @@ function latestRollingSummary(
   accepts: (value: unknown) => value is number
 ): MetricSummary {
   const latest = [...samples].reverse().find((sample) => accepts(sample.value));
-  if (!latest) return EMPTY_SUMMARY;
-  const seconds = awareTimestampToChartEpochSeconds(latest.timestamp);
-  if (seconds === null) return EMPTY_SUMMARY;
-  const values = samples
-    .filter((sample) => {
-      const sampleSeconds = awareTimestampToChartEpochSeconds(sample.timestamp);
-      return (
-        sampleSeconds !== null &&
-        sampleSeconds >= seconds - 300 &&
-        compareAwareTimestampInstants(sample.timestamp, latest.timestamp) <=
-          0 &&
-        accepts(sample.value)
-      );
-    })
-    .map((sample) => sample.value as number);
-  const [min, mean, max] = summarizeValues(values);
-  return freezeSummary(latest.value, min, mean, max);
+  if (!latest) return emptySummary();
+  try {
+    const summary = summarizeExactLatency(samples, latest.timestamp);
+    return freezeSummary(latest.value, summary.min, summary.mean, summary.max);
+  } catch {
+    return emptySummary();
+  }
 }
 
 function summarize(
@@ -194,8 +177,12 @@ function summarizeValues(
   if (values.length === 0) return [null, null, null];
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const mean =
-    values.reduce((total, value) => total + value, 0) / values.length;
+  let count = 0;
+  let mean = 0;
+  for (const value of values) {
+    count += 1;
+    mean += (value - mean) / count;
+  }
   return [positiveZero(min), positiveZero(mean), positiveZero(max)];
 }
 
@@ -221,16 +208,20 @@ function freezeSummary(
   });
 }
 
+function emptySummary(): MetricSummary {
+  return freezeSummary(null, null, null, null);
+}
+
 function emptyLatency(): LatencyPanelData {
-  return freezePanel({ chartRows: [], tableRows: [], summary: EMPTY_SUMMARY });
+  return freezePanel({ chartRows: [], tableRows: [], summary: emptySummary() });
 }
 
 function emptyThroughput(): ThroughputPanelData {
   return freezePanel({
     chartRows: [],
     tableRows: [],
-    download: EMPTY_SUMMARY,
-    upload: EMPTY_SUMMARY,
+    download: emptySummary(),
+    upload: emptySummary(),
   });
 }
 

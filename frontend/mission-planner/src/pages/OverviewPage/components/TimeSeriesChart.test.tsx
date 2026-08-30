@@ -158,4 +158,77 @@ describe('TimeSeriesChart', () => {
     );
     expect(uplotMock.createdPlots[0].setData).toHaveBeenCalledTimes(1);
   });
+
+  it('sends six distinct post-creation row references without recreating', () => {
+    const { rerender } = render(
+      <TimeSeriesChart
+        accessibleName="Latency chart"
+        rows={rows}
+        series={series}
+        yRange="auto"
+        zeroBaseline
+        emptyText="No data"
+      />
+    );
+    const host = screen.getByTestId('time-series-chart-host');
+    vi.spyOn(host, 'getBoundingClientRect').mockReturnValue({
+      width: 640,
+      height: 240,
+      x: 0,
+      y: 0,
+      top: 0,
+      right: 640,
+      bottom: 240,
+      left: 0,
+      toJSON: () => ({}),
+    });
+    MockResizeObserver.callbacks[0]?.([], {} as ResizeObserver);
+
+    for (let index = 0; index < 6; index += 1) {
+      rerender(
+        <TimeSeriesChart
+          accessibleName="Latency chart"
+          rows={[{ ...rows[0], values: [index] }]}
+          series={series}
+          yRange="auto"
+          zeroBaseline
+          emptyText="No data"
+        />
+      );
+    }
+
+    expect(uplotMock.createdPlots).toHaveLength(1);
+    expect(uplotMock.createdPlots[0].setData).toHaveBeenCalledTimes(6);
+  });
+
+  it('encodes domain, zero baseline, colors, and spanGaps in constructor options', () => {
+    render(
+      <TimeSeriesChart
+        accessibleName="Latency chart"
+        rows={rows}
+        series={series}
+        yRange={[0, 100]}
+        zeroBaseline
+        emptyText="No data"
+      />
+    );
+    const host = screen.getByTestId('time-series-chart-host');
+    vi.spyOn(host, 'getBoundingClientRect').mockReturnValue({
+      width: 640,
+      height: 240,
+      x: 0,
+      y: 0,
+      top: 0,
+      right: 640,
+      bottom: 240,
+      left: 0,
+      toJSON: () => ({}),
+    });
+    MockResizeObserver.callbacks[0]?.([], {} as ResizeObserver);
+
+    expect(uplotMock.createdPlots[0].options).toMatchObject({
+      scales: { y: { range: expect.any(Function) } },
+      series: [{}, { label: 'Latency', stroke: '#1769aa', spanGaps: false }],
+    });
+  });
 });

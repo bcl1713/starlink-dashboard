@@ -52,4 +52,48 @@ describe('OverviewPanelState', () => {
     expect(screen.queryByText('hidden')).not.toBeInTheDocument();
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
+
+  it('treats no data plus pending as initial loading regardless of phase', () => {
+    render(
+      <OverviewPanelState
+        title="Panel"
+        slot={{ ...slot(undefined, 'refreshing'), pending: true }}
+        retryPending={false}
+      >
+        {() => <p>hidden</p>}
+      </OverviewPanelState>
+    );
+
+    expect(screen.getByText('Loading')).toBeVisible();
+  });
+
+  it('renders retained source timestamps for error, stale, paused, and ready states', () => {
+    const retained = {
+      ...slot({ value: 1 }, 'error'),
+      sourceTimestamp: '2026-08-29T12:30:00Z',
+    } as const;
+
+    const { rerender } = render(
+      <OverviewPanelState title="Panel" slot={retained} retryPending={false}>
+        {(data) => <p>Value {data.value}</p>}
+      </OverviewPanelState>
+    );
+
+    expect(screen.getByText('Source 2026-08-29 12:30:00 UTC')).toBeVisible();
+    expect(screen.getByText('Value 1')).toBeVisible();
+
+    rerender(
+      <OverviewPanelState
+        title="Panel"
+        slot={{ ...slot({ value: 2 }, 'ready'), sourceTimestamp: null }}
+        retryPending={false}
+      >
+        {(data) => <p>Value {data.value}</p>}
+      </OverviewPanelState>
+    );
+
+    expect(screen.getByText('Ready')).toBeVisible();
+    expect(screen.getByText('Source timestamp unavailable')).toBeVisible();
+    expect(screen.getByText('Value 2')).toBeVisible();
+  });
 });

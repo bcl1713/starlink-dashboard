@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode } from 'react';
 
 import { formatThroughputMbps } from '../formatters';
 import { buildThroughputPanelData } from './metric-panel-data';
@@ -52,32 +52,45 @@ export function ThroughputPanel(props: HistoryMetricPanelProps): ReactNode {
                   value: formatThroughputMbps(data.download.current),
                 },
                 {
-                  label: 'Upload current',
-                  value: formatThroughputMbps(data.upload.current),
-                },
-                {
                   label: 'Download mean',
                   value: formatThroughputMbps(data.download.mean),
+                },
+                {
+                  label: 'Download min',
+                  value: formatThroughputMbps(data.download.min),
+                },
+                {
+                  label: 'Download max',
+                  value: formatThroughputMbps(data.download.max),
+                },
+                {
+                  label: 'Upload current',
+                  value: formatThroughputMbps(data.upload.current),
                 },
                 {
                   label: 'Upload mean',
                   value: formatThroughputMbps(data.upload.mean),
                 },
+                {
+                  label: 'Upload min',
+                  value: formatThroughputMbps(data.upload.min),
+                },
+                {
+                  label: 'Upload max',
+                  value: formatThroughputMbps(data.upload.max),
+                },
               ]}
             />
-            <TimeSeriesChart
-              accessibleName="Download/Upload Throughput chart"
-              rows={data.chartRows}
-              series={SERIES}
-              yRange="auto"
-              zeroBaseline
-              emptyText="No throughput history available."
-              className={
-                props.presentation === 'compact'
-                  ? '[&_[data-testid=time-series-chart-host]]:min-h-[180px]'
-                  : '[&_[data-testid=time-series-chart-host]]:min-h-[240px]'
-              }
-            />
+            <div style={chartHeight(props.presentation)}>
+              <TimeSeriesChart
+                accessibleName="Download/Upload Throughput chart"
+                rows={data.chartRows}
+                series={SERIES}
+                yRange="auto"
+                zeroBaseline
+                emptyText="No throughput history available."
+              />
+            </div>
             <MetricHistoryDisclosure
               rows={data.tableRows}
               series={SERIES}
@@ -88,4 +101,13 @@ export function ThroughputPanel(props: HistoryMetricPanelProps): ReactNode {
       }}
     </OverviewPanelState>
   );
+}
+
+function chartHeight(
+  presentation: HistoryMetricPanelProps['presentation']
+): CSSProperties {
+  return {
+    '--time-series-chart-height':
+      presentation === 'compact' ? '180px' : '240px',
+  } as CSSProperties;
 }

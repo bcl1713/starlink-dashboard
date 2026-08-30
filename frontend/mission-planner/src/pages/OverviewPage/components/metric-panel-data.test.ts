@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLatencyPanelData } from './metric-panel-data';
+import {
+  buildLatencyPanelData,
+  buildThroughputPanelData,
+} from './metric-panel-data';
 import { history, samples } from './metric-panel-test-fixtures';
 
 describe('metric panel adapter edge cases', () => {
@@ -36,6 +39,18 @@ describe('metric panel adapter edge cases', () => {
       summary: { current: null, min: null, mean: null, max: null },
     });
     expect(first).not.toBe(second);
+    expect(first.summary).not.toBe(second.summary);
     expect(Object.isFrozen(first.tableRows)).toBe(true);
+    expect(Object.isFrozen(first.summary)).toBe(true);
+  });
+
+  it('returns detached throughput summaries in empty result graphs', () => {
+    const first = buildThroughputPanelData(history([]), 'invalid');
+    const second = buildThroughputPanelData(history([]), 'invalid');
+
+    expect(first.download).not.toBe(first.upload);
+    expect(first.download).not.toBe(second.download);
+    expect(Object.isFrozen(first.download)).toBe(true);
+    expect(Object.isFrozen(first.upload)).toBe(true);
   });
 });

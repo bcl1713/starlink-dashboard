@@ -38,8 +38,25 @@ describe('MetricHistoryDisclosure', () => {
 
     expect(button).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByText('Latest 300 of 301 samples')).toBeVisible();
+    const scroller = screen.getByRole('region', {
+      name: 'Metric history table',
+    });
+    expect(scroller).toHaveClass('overflow-x-auto');
+    expect(scroller).toHaveAttribute('tabIndex', '0');
     expect(screen.getAllByRole('row')).toHaveLength(301);
     expect(screen.queryByText('0.0 ms')).not.toBeInTheDocument();
     expect(screen.getByText('300.0 ms')).toBeVisible();
+  });
+
+  it('does not add keyboard focus when the table is not truncated', () => {
+    render(
+      <MetricHistoryDisclosure rows={[]} series={series} caption="History" />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'History' }));
+
+    expect(
+      screen.getByRole('region', { name: 'Metric history table' })
+    ).not.toHaveAttribute('tabIndex');
   });
 });

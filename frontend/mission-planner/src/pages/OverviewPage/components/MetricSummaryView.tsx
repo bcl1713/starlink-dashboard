@@ -20,7 +20,7 @@ interface MetricSummaryViewProps {
 
 export function MetricSummaryView(props: MetricSummaryViewProps): ReactNode {
   const visible =
-    props.presentation === 'compact' ? props.items.slice(0, 2) : props.items;
+    props.presentation === 'compact' ? compactItems(props.items) : props.items;
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -41,6 +41,13 @@ export function MetricSummaryView(props: MetricSummaryViewProps): ReactNode {
       </dl>
     </div>
   );
+}
+
+function compactItems(items: readonly SummaryItem[]): readonly SummaryItem[] {
+  const prioritized = items.filter((item) =>
+    /\b(Current|Mean)\b/.test(item.label)
+  );
+  return prioritized.length > 0 ? prioritized : items.slice(0, 2);
 }
 
 function toneClass(tone: ThresholdTone): string {

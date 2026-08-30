@@ -49,35 +49,41 @@ export function MetricHistoryDisclosure(
         History
       </Button>
       {tableOpen ? (
-        <div id={id} aria-label="Metric history table">
-          <Table>
-            <TableCaption>{caption}</TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                {props.series.map((series) => (
-                  <TableHead key={series.key}>{series.label}</TableHead>
+        <Table
+          containerClassName="overflow-x-auto"
+          containerProps={{
+            id,
+            role: 'region',
+            'aria-label': 'Metric history table',
+            tabIndex: props.rows.length > 300 ? 0 : undefined,
+          }}
+        >
+          <TableCaption>{caption}</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Timestamp</TableHead>
+              {props.series.map((series) => (
+                <TableHead key={series.key}>{series.label}</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row) => (
+              <TableRow key={`${row.timestamp}-${row.epochSeconds}`}>
+                <TableCell>
+                  <time dateTime={row.timestamp}>
+                    {formatUtcTimestamp(row.timestamp)}
+                  </time>
+                </TableCell>
+                {props.series.map((series, index) => (
+                  <TableCell key={series.key}>
+                    {formatTableValue(row.values[index], series)}
+                  </TableCell>
                 ))}
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow key={`${row.timestamp}-${row.epochSeconds}`}>
-                  <TableCell>
-                    <time dateTime={row.timestamp}>
-                      {formatUtcTimestamp(row.timestamp)}
-                    </time>
-                  </TableCell>
-                  {props.series.map((series, index) => (
-                    <TableCell key={series.key}>
-                      {formatTableValue(row.values[index], series)}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+            ))}
+          </TableBody>
+        </Table>
       ) : null}
     </div>
   );
@@ -89,6 +95,5 @@ function formatTableValue(
 ): string {
   if (typeof value !== 'number' || !Number.isFinite(value))
     return 'Unavailable';
-  const display = series.display === 'magnitude' ? Math.abs(value) : value;
-  return `${display.toFixed(1)} ${series.unit}`;
+  return `${value.toFixed(1)} ${series.unit}`;
 }

@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode } from 'react';
 
 import { classifyLatency, formatLatencyMs } from '../formatters';
 import { buildLatencyPanelData } from './metric-panel-data';
@@ -71,19 +71,16 @@ export function NetworkLatencyPanel(props: HistoryMetricPanelProps): ReactNode {
                 { label: 'Max', value: formatLatencyMs(data.summary.max) },
               ]}
             />
-            <TimeSeriesChart
-              accessibleName="Network Latency chart"
-              rows={data.chartRows}
-              series={SERIES}
-              yRange="auto"
-              zeroBaseline
-              emptyText="No latency history available."
-              className={
-                props.presentation === 'compact'
-                  ? '[&_[data-testid=time-series-chart-host]]:min-h-[180px]'
-                  : '[&_[data-testid=time-series-chart-host]]:min-h-[240px]'
-              }
-            />
+            <div style={chartHeight(props.presentation)}>
+              <TimeSeriesChart
+                accessibleName="Network Latency chart"
+                rows={data.chartRows}
+                series={SERIES}
+                yRange="auto"
+                zeroBaseline
+                emptyText="No latency history available."
+              />
+            </div>
             <MetricHistoryDisclosure
               rows={data.tableRows}
               series={SERIES}
@@ -94,4 +91,13 @@ export function NetworkLatencyPanel(props: HistoryMetricPanelProps): ReactNode {
       }}
     </OverviewPanelState>
   );
+}
+
+function chartHeight(
+  presentation: HistoryMetricPanelProps['presentation']
+): CSSProperties {
+  return {
+    '--time-series-chart-height':
+      presentation === 'compact' ? '180px' : '240px',
+  } as CSSProperties;
 }

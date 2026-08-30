@@ -69,4 +69,45 @@ describe('buildLatencyPanelData', () => {
       summary: { current: null, min: null, mean: null, max: null },
     });
   });
+
+  it('uses exact timestamp arithmetic for five-minute rolling membership', () => {
+    const data = buildLatencyPanelData(
+      history([
+        {
+          metric: 'latency_ms',
+          samples: samples([
+            ['2026-08-29T12:25:00.0000000Z', 100],
+            ['2026-08-29T12:30:00.0000001Z', 200],
+          ]),
+        },
+      ]),
+      '2026-08-29T12:30:00.0000001Z'
+    );
+
+    expect(data.tableRows[1].values).toEqual([200, 200, 200, 200]);
+    expect(data.summary).toEqual({
+      current: 200,
+      min: 200,
+      mean: 200,
+      max: 200,
+    });
+  });
+
+  it('returns finite means for large finite retained values', () => {
+    const data = buildLatencyPanelData(
+      history([
+        {
+          metric: 'latency_ms',
+          samples: samples([
+            ['2026-08-29T12:29:59Z', Number.MAX_VALUE],
+            ['2026-08-29T12:30:00Z', Number.MAX_VALUE],
+          ]),
+        },
+      ]),
+      NOW
+    );
+
+    expect(data.summary.mean).toBe(Number.MAX_VALUE);
+    expect(data.tableRows[1].values[2]).toBe(Number.MAX_VALUE);
+  });
 });
