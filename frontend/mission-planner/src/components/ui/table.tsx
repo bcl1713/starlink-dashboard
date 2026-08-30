@@ -5,12 +5,17 @@ import { cn } from '@/lib/utils';
 type TableProps = React.HTMLAttributes<HTMLTableElement> & {
   readonly containerClassName?: string;
   readonly containerProps?: React.HTMLAttributes<HTMLDivElement>;
+  readonly containerRef?: React.Ref<HTMLDivElement>;
 };
 
 const Table = React.forwardRef<HTMLTableElement, TableProps>(
-  ({ className, containerClassName, containerProps, ...props }, ref) => (
+  (
+    { className, containerClassName, containerProps, containerRef, ...props },
+    ref
+  ) => (
     <div
       {...containerProps}
+      ref={containerRef}
       className={cn('relative w-full overflow-x-auto', containerClassName)}
     >
       <table

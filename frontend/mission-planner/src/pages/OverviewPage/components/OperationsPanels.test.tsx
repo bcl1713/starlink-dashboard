@@ -33,6 +33,32 @@ describe('operations panels', () => {
     expect(screen.getByText(/above display range/)).toBeVisible();
   });
 
+  it.each([
+    [4, 'Normal', '4% - Normal'],
+    [5, 'Warning', '5% - Warning'],
+    [10, 'Critical', '10% - Critical'],
+    [Number.NaN, 'Unavailable', 'Unavailable'],
+  ])('renders exact obstruction threshold %s', (value, label, ariaText) => {
+    render(
+      <ObstructionGauge
+        slot={slot({
+          obstruction: { obstruction_percent: value },
+        } as OverviewStatus)}
+        retryPending={false}
+      />
+    );
+
+    const meter = screen.getByRole('meter', {
+      name: 'Obstruction percentage',
+    });
+    expect(
+      screen.getByRole('region', { name: 'Obstruction %' })
+    ).toHaveTextContent(label);
+    expect(meter).toHaveAttribute('aria-valuetext', ariaText);
+    if (Number.isFinite(value)) expect(meter).toHaveAttribute('aria-valuenow');
+    else expect(meter).not.toHaveAttribute('aria-valuenow');
+  });
+
   it('renders only approved GEP fields and calls focus for valid coordinates', () => {
     const focus = vi.fn();
     const gep: GroundEntryPoint = {
@@ -92,5 +118,33 @@ describe('operations panels', () => {
     expect(screen.getByText('Moderate')).toBeVisible();
     expect(screen.getAllByText('Normal').length).toBeGreaterThan(0);
     expect(screen.getAllByRole('row')).toHaveLength(6);
+    expect(
+      screen.getByRole('table', { name: 'POI Quick Reference (Top 5)' })
+    ).toBeVisible();
+  });
+
+  it('omits GEP focus button for invalid coordinates', () => {
+    render(
+      <GroundEntryPointPanel
+        slot={slot({
+          available: true,
+          display: 'Bad POP',
+          city: null,
+          region: null,
+          country: null,
+          latitude: Infinity,
+          longitude: -122.3,
+          observed_at: null,
+          generated_at: '2026-08-29T12:00:00Z',
+        } as GroundEntryPoint)}
+        retryPending={false}
+        onFocusCoordinates={vi.fn()}
+      />
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Focus map' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Coordinates')).toBeVisible();
   });
 });

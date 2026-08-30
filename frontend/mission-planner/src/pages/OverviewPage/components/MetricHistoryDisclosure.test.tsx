@@ -1,5 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { MetricHistoryDisclosure } from './MetricHistoryDisclosure';
 import type { TimeSeriesDefinition, TimeSeriesRow } from './metric-panel-types';
@@ -42,7 +48,7 @@ describe('MetricHistoryDisclosure', () => {
       name: 'Metric history table',
     });
     expect(scroller).toHaveClass('overflow-x-auto');
-    expect(scroller).toHaveAttribute('tabIndex', '0');
+    expect(scroller).not.toHaveAttribute('tabIndex');
     expect(screen.getAllByRole('row')).toHaveLength(301);
     expect(screen.queryByText('0.0 ms')).not.toBeInTheDocument();
     expect(screen.getByText('300.0 ms')).toBeVisible();
@@ -58,5 +64,57 @@ describe('MetricHistoryDisclosure', () => {
     expect(
       screen.getByRole('region', { name: 'Metric history table' })
     ).not.toHaveAttribute('tabIndex');
+  });
+
+  it('focuses the sole labelled scroller only when measured content overflows', async () => {
+    let resizeCallback: ResizeObserverCallback | null = null;
+    class MockResizeObserver {
+      observe = vi.fn();
+      disconnect = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+    }
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+
+    try {
+      render(
+        <MetricHistoryDisclosure
+          rows={[
+            {
+              timestamp: '2026-08-29T12:00:00Z',
+              epochSeconds: 1,
+              values: [1],
+            },
+          ]}
+          series={series}
+          caption="Latency history"
+        />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      const scroller = screen.getByRole('region', {
+        name: 'Metric history table',
+      });
+
+      Object.defineProperty(scroller, 'clientWidth', {
+        configurable: true,
+        value: 500,
+      });
+      Object.defineProperty(scroller, 'scrollWidth', {
+        configurable: true,
+        value: 500,
+      });
+      act(() => resizeCallback?.([], {} as ResizeObserver));
+      expect(scroller).not.toHaveAttribute('tabIndex');
+
+      Object.defineProperty(scroller, 'scrollWidth', {
+        configurable: true,
+        value: 501,
+      });
+      act(() => resizeCallback?.([], {} as ResizeObserver));
+      await waitFor(() => expect(scroller).toHaveAttribute('tabIndex', '0'));
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

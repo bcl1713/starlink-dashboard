@@ -1,5 +1,12 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { type ReactNode, useId, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button } from '../../../components/ui/button';
 import {
@@ -24,12 +31,54 @@ export function MetricHistoryDisclosure(
   props: MetricHistoryDisclosureProps
 ): ReactNode {
   const [tableOpen, setTableOpen] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const tableRef = useRef<HTMLTableElement | null>(null);
   const id = useId();
   const rows = props.rows.slice(-300);
   const caption =
     props.rows.length > 300
       ? `Latest 300 of ${props.rows.length} samples`
       : props.caption;
+
+  const measureOverflow = useCallback(() => {
+    const scroller = scrollerRef.current;
+    if (scroller === null) {
+      setHasOverflow(false);
+      return;
+    }
+    try {
+      setHasOverflow(scroller.scrollWidth > scroller.clientWidth);
+    } catch {
+      setHasOverflow(false);
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!tableOpen) return undefined;
+    const scroller = scrollerRef.current;
+    if (scroller === null) return undefined;
+    let observer: ResizeObserver | null = null;
+    try {
+      observer = new ResizeObserver(() => measureOverflow());
+      observer.observe(scroller);
+      if (tableRef.current !== null) observer.observe(tableRef.current);
+    } catch {
+      try {
+        observer?.disconnect();
+      } catch {
+        // ignored
+      }
+      return undefined;
+    }
+    return () => {
+      try {
+        observer?.disconnect();
+      } catch {
+        // ignored
+      }
+    };
+  }, [measureOverflow, props.rows, props.series, tableOpen]);
 
   return (
     <div className="space-y-3">
@@ -39,7 +88,12 @@ export function MetricHistoryDisclosure(
         variant="outline"
         aria-expanded={tableOpen}
         aria-controls={id}
-        onClick={() => setTableOpen((open) => !open)}
+        onClick={() =>
+          setTableOpen((open) => {
+            if (open) setHasOverflow(false);
+            return !open;
+          })
+        }
       >
         {tableOpen ? (
           <ChevronUp className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -50,12 +104,14 @@ export function MetricHistoryDisclosure(
       </Button>
       {tableOpen ? (
         <Table
+          ref={tableRef}
+          containerRef={scrollerRef}
           containerClassName="overflow-x-auto"
           containerProps={{
             id,
             role: 'region',
             'aria-label': 'Metric history table',
-            tabIndex: props.rows.length > 300 ? 0 : undefined,
+            tabIndex: hasOverflow ? 0 : undefined,
           }}
         >
           <TableCaption>{caption}</TableCaption>

@@ -72,4 +72,75 @@ describe('buildThroughputPanelData', () => {
     });
     expect(data.chartRows[0].values).toEqual([20, -10]);
   });
+
+  it('retains the union of independently capped download and upload series', () => {
+    const data = buildThroughputPanelData(
+      history([
+        {
+          metric: 'throughput_down_mbps',
+          samples: Array.from({ length: 1802 }, (_, index) => ({
+            timestamp: fractionalTimestamp(index, 0),
+            value: index,
+          })),
+        },
+        {
+          metric: 'throughput_up_mbps',
+          samples: Array.from({ length: 1802 }, (_, index) => ({
+            timestamp: fractionalTimestamp(index, 5),
+            value: index,
+          })),
+        },
+      ]),
+      NOW
+    );
+
+    expect(data.tableRows).toHaveLength(3602);
+    expect(data.tableRows[0].timestamp).toBe('2026-08-29T12:00:00.20Z');
+    expect(data.tableRows[1].timestamp).toBe('2026-08-29T12:00:00.25Z');
+    expect(data.download.current).toBe(1801);
+    expect(data.upload.current).toBe(1801);
+  });
+
+  it('keeps large finite throughput means finite and rejects invalid values', () => {
+    const data = buildThroughputPanelData(
+      history([
+        {
+          metric: 'throughput_down_mbps',
+          samples: [
+            { timestamp: '2026-08-29T12:29:58Z', value: Number.MAX_VALUE },
+            { timestamp: '2026-08-29T12:29:59Z', value: Number.MAX_VALUE },
+            { timestamp: '2026-08-29T12:30:00Z', value: -1 },
+          ],
+        },
+        {
+          metric: 'throughput_up_mbps',
+          samples: [
+            { timestamp: '2026-08-29T12:29:58Z', value: Number.NaN },
+            { timestamp: '2026-08-29T12:29:59Z', value: Infinity },
+            { timestamp: '2026-08-29T12:30:00Z', value: 5 },
+          ],
+        },
+      ]),
+      NOW
+    );
+
+    expect(data.download.mean).toBe(Number.MAX_VALUE);
+    expect(data.upload).toEqual({ current: 5, min: 5, mean: 5, max: 5 });
+    expect(data.tableRows.map((row) => row.values)).toEqual([
+      [Number.MAX_VALUE, null],
+      [Number.MAX_VALUE, null],
+      [null, 5],
+    ]);
+  });
 });
+
+function fractionalTimestamp(index: number, extraTenths: number): string {
+  const tenths = index + 1;
+  const totalSeconds = Math.floor(tenths / 10);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const fraction = tenths % 10;
+  return `2026-08-29T12:${String(minutes).padStart(2, '0')}:${String(
+    seconds
+  ).padStart(2, '0')}.${fraction}${extraTenths}Z`;
+}

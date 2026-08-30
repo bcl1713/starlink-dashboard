@@ -20,6 +20,7 @@ const SERIES: readonly TimeSeriesDefinition[] = Object.freeze([
     display: 'signed',
   },
 ]);
+const Y_RANGE: readonly [number, number] = Object.freeze([0, 100]);
 
 export function PacketLossPanel(props: HistoryMetricPanelProps): ReactNode {
   return (
@@ -54,7 +55,7 @@ export function PacketLossPanel(props: HistoryMetricPanelProps): ReactNode {
                 accessibleName="Packet Loss chart"
                 rows={data.chartRows}
                 series={SERIES}
-                yRange={[0, 100]}
+                yRange={Y_RANGE}
                 zeroBaseline
                 emptyText="No packet loss history available."
               />

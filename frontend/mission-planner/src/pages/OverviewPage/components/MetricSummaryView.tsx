@@ -8,6 +8,7 @@ export type ThresholdTone = 'normal' | 'warning' | 'critical' | 'unavailable';
 interface SummaryItem {
   readonly label: string;
   readonly value: string;
+  readonly compactPriority?: 'current' | 'mean';
 }
 
 interface MetricSummaryViewProps {
@@ -44,8 +45,8 @@ export function MetricSummaryView(props: MetricSummaryViewProps): ReactNode {
 }
 
 function compactItems(items: readonly SummaryItem[]): readonly SummaryItem[] {
-  const prioritized = items.filter((item) =>
-    /\b(Current|Mean)\b/.test(item.label)
+  const prioritized = items.filter(
+    (item) => item.compactPriority !== undefined
   );
   return prioritized.length > 0 ? prioritized : items.slice(0, 2);
 }

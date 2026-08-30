@@ -110,4 +110,56 @@ describe('buildLatencyPanelData', () => {
     expect(data.summary.mean).toBe(Number.MAX_VALUE);
     expect(data.tableRows[1].values[2]).toBe(Number.MAX_VALUE);
   });
+
+  it('caps latency history at the latest 1801 retained samples', () => {
+    const data = buildLatencyPanelData(
+      history([
+        {
+          metric: 'latency_ms',
+          samples: Array.from({ length: 1802 }, (_, index) => ({
+            timestamp: secondTimestamp(index),
+            value: index,
+          })),
+        },
+      ]),
+      '2026-08-29T12:30:01Z'
+    );
+
+    expect(data.tableRows).toHaveLength(1801);
+    expect(data.tableRows[0].timestamp).toBe('2026-08-29T12:00:01Z');
+    expect(data.summary.current).toBe(1801);
+  }, 10_000);
+
+  it('treats nonfinite and negative latency as null without poisoning summaries', () => {
+    const data = buildLatencyPanelData(
+      history([
+        {
+          metric: 'latency_ms',
+          samples: [
+            { timestamp: '2026-08-29T12:29:58Z', value: Number.NaN },
+            { timestamp: '2026-08-29T12:29:59Z', value: Infinity },
+            { timestamp: '2026-08-29T12:30:00Z', value: -1 },
+            { timestamp: '2026-08-29T12:30:01Z', value: 10 },
+          ],
+        },
+      ]),
+      '2026-08-29T12:30:01Z'
+    );
+
+    expect(data.tableRows.map((row) => row.values[0])).toEqual([
+      null,
+      null,
+      null,
+      10,
+    ]);
+    expect(data.summary).toEqual({ current: 10, min: 10, mean: 10, max: 10 });
+  });
 });
+
+function secondTimestamp(offset: number): string {
+  const minute = Math.floor(offset / 60);
+  const second = offset % 60;
+  return `2026-08-29T12:${String(minute).padStart(2, '0')}:${String(
+    second
+  ).padStart(2, '0')}Z`;
+}

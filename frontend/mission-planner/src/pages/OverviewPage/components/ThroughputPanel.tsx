@@ -50,10 +50,12 @@ export function ThroughputPanel(props: HistoryMetricPanelProps): ReactNode {
                 {
                   label: 'Download current',
                   value: formatThroughputMbps(data.download.current),
+                  compactPriority: 'current',
                 },
                 {
                   label: 'Download mean',
                   value: formatThroughputMbps(data.download.mean),
+                  compactPriority: 'mean',
                 },
                 {
                   label: 'Download min',
@@ -66,10 +68,12 @@ export function ThroughputPanel(props: HistoryMetricPanelProps): ReactNode {
                 {
                   label: 'Upload current',
                   value: formatThroughputMbps(data.upload.current),
+                  compactPriority: 'current',
                 },
                 {
                   label: 'Upload mean',
                   value: formatThroughputMbps(data.upload.mean),
+                  compactPriority: 'mean',
                 },
                 {
                   label: 'Upload min',

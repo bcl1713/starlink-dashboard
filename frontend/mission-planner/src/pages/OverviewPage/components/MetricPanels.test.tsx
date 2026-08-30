@@ -76,4 +76,66 @@ describe('metric history panels', () => {
       screen.getByRole('region', { name: 'Packet Loss' })
     ).toHaveTextContent('Critical');
   });
+
+  it('keeps upload current and mean visible in compact throughput summaries', () => {
+    render(
+      <ThroughputPanel
+        slot={slot(metricHistory)}
+        now={NOW}
+        retryPending={false}
+        presentation="compact"
+      />
+    );
+
+    expect(screen.getByText('Download current')).toBeVisible();
+    expect(screen.getByText('Download mean')).toBeVisible();
+    expect(screen.getByText('Upload current')).toBeVisible();
+    expect(screen.getByText('Upload mean')).toBeVisible();
+    expect(screen.queryByText('Upload max')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['2026-08-29T12:30:00Z', 99, 'Normal'],
+    ['2026-08-29T12:30:01Z', 100, 'Warning'],
+    ['2026-08-29T12:30:02Z', 200, 'Critical'],
+  ])('renders exact latency threshold %s %s', (timestamp, value, label) => {
+    render(
+      <NetworkLatencyPanel
+        slot={slot(
+          history([
+            { metric: 'latency_ms', samples: samples([[timestamp, value]]) },
+          ])
+        )}
+        now={timestamp}
+        retryPending={false}
+      />
+    );
+
+    expect(
+      screen.getByRole('region', { name: 'Network Latency' })
+    ).toHaveTextContent(label);
+  });
+
+  it.each([
+    ['2026-08-29T12:30:00Z', 1, 'Normal'],
+    ['2026-08-29T12:30:01Z', 2, 'Warning'],
+    ['2026-08-29T12:30:02Z', 5, 'Critical'],
+    ['2026-08-29T12:30:03Z', Number.NaN, 'Unavailable'],
+  ])('renders exact packet loss threshold %s %s', (timestamp, value, label) => {
+    render(
+      <PacketLossPanel
+        slot={slot(
+          history([
+            { metric: 'packet_loss_percent', samples: [{ timestamp, value }] },
+          ])
+        )}
+        now={timestamp}
+        retryPending={false}
+      />
+    );
+
+    expect(
+      screen.getByRole('region', { name: 'Packet Loss' })
+    ).toHaveTextContent(label);
+  });
 });

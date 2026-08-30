@@ -17,7 +17,7 @@ export function formatUtcTimestamp(timestamp: string): string {
   const hour = secondOfDay / 3_600n;
   const minute = (secondOfDay % 3_600n) / 60n;
   const second = secondOfDay % 60n;
-  return `${pad(civil.year, 4)}-${pad(civil.month, 2)}-${pad(
+  return `${formatYear(civil.year)}-${pad(civil.month, 2)}-${pad(
     civil.day,
     2
   )} ${pad(hour, 2)}:${pad(minute, 2)}:${pad(second, 2)} UTC`;
@@ -97,4 +97,9 @@ function floorMod(dividend: bigint, divisor: bigint): bigint {
 
 function pad(value: bigint, width: number): string {
   return value.toString().padStart(width, '0');
+}
+
+function formatYear(year: bigint): string {
+  if (year < 0n) return `-${(-year).toString().padStart(4, '0')}`;
+  return pad(year, 4);
 }

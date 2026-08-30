@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildLatencyPanelData,
+  buildPacketLossPanelData,
   buildThroughputPanelData,
 } from './metric-panel-data';
 import { history, samples } from './metric-panel-test-fixtures';
@@ -52,5 +53,36 @@ describe('metric panel adapter edge cases', () => {
     expect(first.download).not.toBe(second.download);
     expect(Object.isFrozen(first.download)).toBe(true);
     expect(Object.isFrozen(first.upload)).toBe(true);
+  });
+
+  it('returns empty shapes for missing and duplicate canonical permutations', () => {
+    const duplicate = history([
+      { metric: 'latency_ms', samples: [] },
+      { metric: 'latency_ms', samples: [] },
+      { metric: 'throughput_down_mbps', samples: [] },
+      { metric: 'throughput_down_mbps', samples: [] },
+      { metric: 'throughput_up_mbps', samples: [] },
+      { metric: 'packet_loss_percent', samples: [] },
+      { metric: 'packet_loss_percent', samples: [] },
+    ]);
+
+    expect(
+      buildLatencyPanelData(history([]), '2026-08-29T12:00:00Z').chartRows
+    ).toHaveLength(0);
+    expect(
+      buildLatencyPanelData(duplicate, '2026-08-29T12:00:00Z').chartRows
+    ).toHaveLength(0);
+    expect(
+      buildThroughputPanelData(history([]), '2026-08-29T12:00:00Z').chartRows
+    ).toHaveLength(0);
+    expect(
+      buildThroughputPanelData(duplicate, '2026-08-29T12:00:00Z').chartRows
+    ).toHaveLength(0);
+    expect(
+      buildPacketLossPanelData(history([]), '2026-08-29T12:00:00Z').chartRows
+    ).toHaveLength(0);
+    expect(
+      buildPacketLossPanelData(duplicate, '2026-08-29T12:00:00Z').chartRows
+    ).toHaveLength(0);
   });
 });

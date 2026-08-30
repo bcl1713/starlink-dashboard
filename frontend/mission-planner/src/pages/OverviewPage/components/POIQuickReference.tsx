@@ -9,6 +9,7 @@ import {
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -46,6 +47,7 @@ function POITable({ response }: { readonly response: POIETAResponse }) {
   );
   return (
     <Table>
+      <TableCaption>POI Quick Reference (Top 5)</TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead>ETA</TableHead>

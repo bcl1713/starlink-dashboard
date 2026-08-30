@@ -96,4 +96,82 @@ describe('OverviewPanelState', () => {
     expect(screen.getByText('Source timestamp unavailable')).toBeVisible();
     expect(screen.getByText('Value 2')).toBeVisible();
   });
+
+  it.each([
+    ['initial', slot(undefined, 'refreshing'), 'Loading', false],
+    [
+      'refreshing',
+      { ...slot({ value: 1 }, 'refreshing'), pending: true },
+      'Refreshing',
+      true,
+    ],
+    [
+      'unavailable',
+      { ...slot({ value: 1 }), availability: 'unavailable' as const },
+      'Unavailable',
+      true,
+    ],
+    ['paused', slot({ value: 1 }, 'paused'), 'Paused', true],
+    [
+      'unknown',
+      { ...slot(undefined), availability: 'unknown' as const },
+      'Unavailable',
+      false,
+    ],
+  ])(
+    'renders %s state with correct retained content',
+    (_name, state, text, data) => {
+      render(
+        <OverviewPanelState title="Panel" slot={state} retryPending={false}>
+          {(item) => <p>Value {item?.value}</p>}
+        </OverviewPanelState>
+      );
+
+      expect(screen.getByText(text)).toBeVisible();
+      if (data) expect(screen.getByText('Value 1')).toBeVisible();
+      else expect(screen.queryByText(/Value/)).not.toBeInTheDocument();
+    }
+  );
+
+  it('recovers from stale and error to ready without persistent local state', () => {
+    const { rerender } = render(
+      <OverviewPanelState
+        title="Panel"
+        slot={{ ...slot({ value: 1 }, 'stale'), freshness: 'stale' }}
+        retryPending={false}
+        onRetry={vi.fn()}
+      >
+        {(item) => <p>Value {item.value}</p>}
+      </OverviewPanelState>
+    );
+    expect(screen.getByText('Stale')).toBeVisible();
+
+    rerender(
+      <OverviewPanelState
+        title="Panel"
+        slot={slot({ value: 2 }, 'error')}
+        retryPending={false}
+        onRetry={vi.fn()}
+      >
+        {(item) => <p>Value {item.value}</p>}
+      </OverviewPanelState>
+    );
+    expect(screen.getByText('Source refresh failed.')).toBeVisible();
+
+    rerender(
+      <OverviewPanelState
+        title="Panel"
+        slot={slot({ value: 3 })}
+        retryPending={false}
+      >
+        {(item) => <p>Value {item.value}</p>}
+      </OverviewPanelState>
+    );
+
+    expect(screen.getByText('Ready')).toBeVisible();
+    expect(screen.getByText('Value 3')).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Retry' })
+    ).not.toBeInTheDocument();
+  });
 });
