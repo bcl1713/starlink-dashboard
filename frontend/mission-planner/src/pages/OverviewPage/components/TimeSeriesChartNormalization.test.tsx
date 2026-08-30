@@ -3,30 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TimeSeriesChart } from './TimeSeriesChart';
 import type { TimeSeriesDefinition, TimeSeriesRow } from './metric-panel-types';
+import { MockResizeObserver, createdPlots, resetUPlotMock } from './uplot.mock';
 
-const uplotMock = vi.hoisted(() => {
-  const createdPlots: {
-    root: HTMLDivElement;
-    setData: ReturnType<typeof vi.fn>;
-    data: unknown;
-  }[] = [];
-  class MockUPlot {
-    readonly root = document.createElement('div');
-    readonly setData = vi.fn();
-    readonly setSize = vi.fn();
-    readonly destroy = vi.fn();
-    readonly data: unknown;
-
-    constructor(_options: unknown, data: unknown, target: HTMLElement) {
-      this.data = data;
-      target.append(this.root);
-      createdPlots.push(this);
-    }
-  }
-  return { createdPlots, MockUPlot };
-});
-
-vi.mock('uplot', () => ({ default: uplotMock.MockUPlot }));
+vi.mock('uplot', async () => ({
+  default: (await import('./uplot.mock')).MockUPlot,
+}));
 
 const series: readonly TimeSeriesDefinition[] = [
   {
@@ -38,18 +19,8 @@ const series: readonly TimeSeriesDefinition[] = [
   },
 ];
 
-class MockResizeObserver {
-  static callbacks: ResizeObserverCallback[] = [];
-  observe = vi.fn();
-  disconnect = vi.fn();
-  constructor(callback: ResizeObserverCallback) {
-    MockResizeObserver.callbacks.push(callback);
-  }
-}
-
 beforeEach(() => {
-  uplotMock.createdPlots.length = 0;
-  MockResizeObserver.callbacks = [];
+  resetUPlotMock();
   vi.stubGlobal('ResizeObserver', MockResizeObserver);
 });
 
@@ -77,7 +48,7 @@ describe('TimeSeriesChart public row normalization', () => {
     sizeHost();
     MockResizeObserver.callbacks[0]?.([], {} as ResizeObserver);
 
-    expect(uplotMock.createdPlots[0].data).toEqual([
+    expect(createdPlots[0].data).toEqual([
       [3, 4],
       [null, null],
     ]);
@@ -97,10 +68,7 @@ describe('TimeSeriesChart public row normalization', () => {
     ]) as readonly unknown[] as readonly TimeSeriesRow[];
     rerender(renderChartElement(updateRows));
 
-    expect(uplotMock.createdPlots[0].setData).toHaveBeenCalledWith([
-      [5],
-      [null],
-    ]);
+    expect(createdPlots[0].setData).toHaveBeenCalledWith([[5], [null]]);
   });
 });
 

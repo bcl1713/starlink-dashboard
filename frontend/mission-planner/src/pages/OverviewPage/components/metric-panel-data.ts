@@ -3,7 +3,6 @@ import type { MonitoringHistory } from '../../../types/monitoring';
 import {
   buildThroughputRenderSeries,
   mergeTimestampedSamples,
-  summarizeLatency as summarizeExactLatency,
   type NumericHistorySample,
 } from '../history';
 import type {
@@ -13,23 +12,29 @@ import type {
   ThroughputPanelData,
   TimeSeriesRow,
 } from './metric-panel-types';
+import {
+  buildLinearLatencyPanel,
+  type LatencyProjectionInstrumentation,
+} from './metric-panel-latency';
 import { buildRawThroughputRows } from './metric-panel-throughput';
+
+export type { LatencyProjectionInstrumentation };
 
 export function buildLatencyPanelData(
   history: MonitoringHistory,
   now: string
 ): LatencyPanelData {
+  return buildLatencyPanelDataWithInstrumentation(history, now);
+}
+
+export function buildLatencyPanelDataWithInstrumentation(
+  history: MonitoringHistory,
+  now: string,
+  instrumentation?: LatencyProjectionInstrumentation
+): LatencyPanelData {
   const samples = selectCanonicalSeries(history, 'latency_ms', now);
   if (samples === null) return emptyLatency();
-  const tableRows = rowsFromSamples(samples, (sample, index, all) => [
-    validNonnegative(sample.value) ? sample.value : null,
-    ...rollingLatency(all, index, sample.timestamp),
-  ]);
-  return freezePanel({
-    chartRows: collapseChartRows(tableRows),
-    tableRows,
-    summary: latestRollingSummary(samples, validNonnegative),
-  });
+  return buildLinearLatencyPanel(samples, instrumentation);
 }
 
 export function buildThroughputPanelData(
@@ -127,36 +132,6 @@ function collapseChartRows(
   const byEpoch = new Map<number, TimeSeriesRow>();
   for (const row of rows) byEpoch.set(row.epochSeconds, row);
   return freezeArray([...byEpoch.values()]);
-}
-
-function rollingLatency(
-  samples: readonly NumericHistorySample[],
-  index: number,
-  timestamp: string
-): readonly [number | null, number | null, number | null] {
-  try {
-    const summary = summarizeExactLatency(
-      samples.slice(0, index + 1),
-      timestamp
-    );
-    return [summary.min, summary.mean, summary.max];
-  } catch {
-    return [null, null, null];
-  }
-}
-
-function latestRollingSummary(
-  samples: readonly NumericHistorySample[],
-  accepts: (value: unknown) => value is number
-): MetricSummary {
-  const latest = [...samples].reverse().find((sample) => accepts(sample.value));
-  if (!latest) return emptySummary();
-  try {
-    const summary = summarizeExactLatency(samples, latest.timestamp);
-    return freezeSummary(latest.value, summary.min, summary.mean, summary.max);
-  } catch {
-    return emptySummary();
-  }
 }
 
 function summarize(

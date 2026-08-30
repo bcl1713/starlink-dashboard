@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode, useMemo } from 'react';
 
 import { classifyLatency, formatLatencyMs } from '../formatters';
 import { buildLatencyPanelData } from './metric-panel-data';
@@ -10,6 +10,7 @@ import type {
   HistoryMetricPanelProps,
   TimeSeriesDefinition,
 } from './metric-panel-types';
+import type { MonitoringHistory } from '../../../types/monitoring';
 
 const SERIES: readonly TimeSeriesDefinition[] = Object.freeze([
   {
@@ -52,49 +53,66 @@ export function NetworkLatencyPanel(props: HistoryMetricPanelProps): ReactNode {
       headingAs={props.headingAs}
     >
       {(history) => {
-        const data = buildLatencyPanelData(history, props.now);
-        const threshold = classifyLatency(data.summary.current);
         return (
-          <div className="space-y-4">
-            <MetricSummaryView
-              currentLabel={`Current ${formatLatencyMs(data.summary.current)}`}
-              status={threshold.label}
-              tone={threshold.state === 'ok' ? 'normal' : threshold.state}
-              presentation={props.presentation}
-              items={[
-                {
-                  label: 'Current',
-                  value: formatLatencyMs(data.summary.current),
-                  compactPriority: 'current',
-                },
-                { label: 'Min', value: formatLatencyMs(data.summary.min) },
-                {
-                  label: 'Mean',
-                  value: formatLatencyMs(data.summary.mean),
-                  compactPriority: 'mean',
-                },
-                { label: 'Max', value: formatLatencyMs(data.summary.max) },
-              ]}
-            />
-            <div style={chartHeight(props.presentation)}>
-              <TimeSeriesChart
-                accessibleName="Network Latency chart"
-                rows={data.chartRows}
-                series={SERIES}
-                yRange="auto"
-                zeroBaseline
-                emptyText="No latency history available."
-              />
-            </div>
-            <MetricHistoryDisclosure
-              rows={data.tableRows}
-              series={SERIES}
-              caption="Network latency history"
-            />
-          </div>
+          <NetworkLatencyContent
+            history={history}
+            now={props.now}
+            presentation={props.presentation}
+          />
         );
       }}
     </OverviewPanelState>
+  );
+}
+
+function NetworkLatencyContent(
+  props: Pick<HistoryMetricPanelProps, 'now' | 'presentation'> & {
+    readonly history: MonitoringHistory;
+  }
+): ReactNode {
+  const data = useMemo(
+    () => buildLatencyPanelData(props.history, props.now),
+    [props.history, props.now]
+  );
+  const threshold = classifyLatency(data.summary.current);
+  return (
+    <div className="space-y-4">
+      <MetricSummaryView
+        currentLabel={`Current ${formatLatencyMs(data.summary.current)}`}
+        status={threshold.label}
+        tone={threshold.state === 'ok' ? 'normal' : threshold.state}
+        presentation={props.presentation}
+        items={[
+          {
+            label: 'Current',
+            value: formatLatencyMs(data.summary.current),
+            compactPriority: 'current',
+          },
+          { label: 'Min', value: formatLatencyMs(data.summary.min) },
+          {
+            label: 'Mean',
+            value: formatLatencyMs(data.summary.mean),
+            compactPriority: 'mean',
+          },
+          { label: 'Max', value: formatLatencyMs(data.summary.max) },
+        ]}
+      />
+      <div style={chartHeight(props.presentation)}>
+        <TimeSeriesChart
+          accessibleName="Network Latency chart"
+          rows={data.chartRows}
+          series={SERIES}
+          yRange="auto"
+          zeroBaseline
+          emptyText="No latency history available."
+        />
+      </div>
+      <MetricHistoryDisclosure
+        rows={data.tableRows}
+        series={SERIES}
+        caption="Network latency history"
+      />
+    </div>
   );
 }
 

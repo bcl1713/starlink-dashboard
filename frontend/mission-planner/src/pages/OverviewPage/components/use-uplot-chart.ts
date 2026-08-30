@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import uPlot from 'uplot';
 
 import type {
@@ -25,35 +25,16 @@ export function useUPlotChart(
   const latestRows = useRef(props.rows);
   const lastRows = useRef<readonly unknown[] | null>(null);
   const lastSize = useRef<{ width: number; height: number } | null>(null);
-  const seriesCount = props.series.length;
+  const [structural] = useState(() => {
+    return {
+      options: buildOptions(props.series, props.yRange, props.zeroBaseline),
+      seriesCount: props.series.length,
+    };
+  });
 
   useLayoutEffect(() => {
     latestRows.current = props.rows;
   }, [props.rows]);
-
-  const options = useMemo<uPlot.Options>(
-    () => ({
-      width: MIN_WIDTH,
-      height: MIN_HEIGHT,
-      cursor: { show: false },
-      legend: { show: false },
-      scales: {
-        x: { time: true },
-        y: buildYScale(props.yRange, props.zeroBaseline),
-      },
-      axes: [{}, {}],
-      series: [
-        {},
-        ...props.series.map((series) => ({
-          label: series.label,
-          stroke: series.color,
-          spanGaps: false,
-          value: buildValueFormatter(series),
-        })),
-      ],
-    }),
-    [props.series, props.yRange, props.zeroBaseline]
-  );
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -66,8 +47,8 @@ export function useUPlotChart(
       if (plotRef.current === null) {
         try {
           plotRef.current = new uPlot(
-            { ...options, width: size.width, height: size.height },
-            toUPlotData(latestRows.current, seriesCount),
+            { ...structural.options, width: size.width, height: size.height },
+            toUPlotData(latestRows.current, structural.seriesCount),
             host
           );
           lastRows.current = latestRows.current;
@@ -112,20 +93,47 @@ export function useUPlotChart(
       lastRows.current = null;
       lastSize.current = null;
     };
-  }, [options, props.accessibleName, seriesCount]);
+  }, [props.accessibleName, structural]);
 
   useLayoutEffect(() => {
     if (plotRef.current === null || lastRows.current === props.rows) return;
     try {
-      plotRef.current.setData(toUPlotData(props.rows, seriesCount));
+      plotRef.current.setData(toUPlotData(props.rows, structural.seriesCount));
       lastRows.current = props.rows;
     } catch {
       destroyPlot(plotRef.current);
       plotRef.current = null;
     }
-  }, [props.rows, seriesCount]);
+  }, [props.rows, structural]);
 
   return hostRef;
+}
+
+function buildOptions(
+  series: readonly TimeSeriesDefinition[],
+  yRange: TimeSeriesChartProps['yRange'],
+  zeroBaseline: boolean
+): uPlot.Options {
+  return {
+    width: MIN_WIDTH,
+    height: MIN_HEIGHT,
+    cursor: { show: false },
+    legend: { show: false },
+    scales: {
+      x: { time: true },
+      y: buildYScale(yRange, zeroBaseline),
+    },
+    axes: [{}, {}],
+    series: [
+      {},
+      ...series.map((definition) => ({
+        label: definition.label,
+        stroke: definition.color,
+        spanGaps: false,
+        value: buildValueFormatter(definition),
+      })),
+    ],
+  };
 }
 
 function readValidSize(element: HTMLElement) {

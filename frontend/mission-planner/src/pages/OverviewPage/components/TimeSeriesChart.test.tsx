@@ -3,39 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TimeSeriesChart } from './TimeSeriesChart';
 import type { TimeSeriesDefinition, TimeSeriesRow } from './metric-panel-types';
+import { MockResizeObserver, createdPlots, resetUPlotMock } from './uplot.mock';
 
-const uplotMock = vi.hoisted(() => {
-  const createdPlots: {
-    root: HTMLDivElement;
-    setData: ReturnType<typeof vi.fn>;
-    setSize: ReturnType<typeof vi.fn>;
-    destroy: ReturnType<typeof vi.fn>;
-    options: unknown;
-    data: unknown;
-    target: HTMLElement;
-  }[] = [];
-  class MockUPlot {
-    readonly root = document.createElement('div');
-    readonly setData = vi.fn();
-    readonly setSize = vi.fn();
-    readonly destroy = vi.fn();
-    readonly options: unknown;
-    readonly data: unknown;
-    readonly target: HTMLElement;
-
-    constructor(options: unknown, data: unknown, target: HTMLElement) {
-      this.options = options;
-      this.data = data;
-      this.target = target;
-      this.root.append(document.createElement('canvas'));
-      target.append(this.root);
-      createdPlots.push(this);
-    }
-  }
-  return { createdPlots, MockUPlot };
-});
-
-vi.mock('uplot', () => ({ default: uplotMock.MockUPlot }));
+vi.mock('uplot', async () => ({
+  default: (await import('./uplot.mock')).MockUPlot,
+}));
 
 const series: readonly TimeSeriesDefinition[] = [
   {
@@ -52,18 +24,8 @@ const rows: readonly TimeSeriesRow[] = [
   { timestamp: '2026-08-29T12:00:01Z', epochSeconds: 2, values: [null] },
 ];
 
-class MockResizeObserver {
-  static callbacks: ResizeObserverCallback[] = [];
-  observe = vi.fn();
-  disconnect = vi.fn();
-  constructor(callback: ResizeObserverCallback) {
-    MockResizeObserver.callbacks.push(callback);
-  }
-}
-
 beforeEach(() => {
-  uplotMock.createdPlots.length = 0;
-  MockResizeObserver.callbacks = [];
+  resetUPlotMock();
   vi.stubGlobal('ResizeObserver', MockResizeObserver);
 });
 
@@ -92,18 +54,18 @@ describe('TimeSeriesChart', () => {
       toJSON: () => ({}),
     });
 
-    expect(uplotMock.createdPlots).toHaveLength(0);
+    expect(createdPlots).toHaveLength(0);
     MockResizeObserver.callbacks[0]?.([], {} as ResizeObserver);
 
-    expect(uplotMock.createdPlots).toHaveLength(1);
+    expect(createdPlots).toHaveLength(1);
     expect(screen.getByRole('img', { name: 'Latency chart' })).toBe(
-      uplotMock.createdPlots[0].root
+      createdPlots[0].root
     );
     expect(container.querySelector('canvas')).toHaveAttribute(
       'aria-hidden',
       'true'
     );
-    expect(uplotMock.createdPlots[0].data).toEqual([
+    expect(createdPlots[0].data).toEqual([
       [1, 2],
       [10, null],
     ]);
@@ -143,7 +105,7 @@ describe('TimeSeriesChart', () => {
         emptyText="No data"
       />
     );
-    expect(uplotMock.createdPlots[0].setData).not.toHaveBeenCalled();
+    expect(createdPlots[0].setData).not.toHaveBeenCalled();
 
     const nextRows = [{ ...rows[0], values: [11] }] as const;
     rerender(
@@ -156,7 +118,109 @@ describe('TimeSeriesChart', () => {
         emptyText="No data"
       />
     );
-    expect(uplotMock.createdPlots[0].setData).toHaveBeenCalledTimes(1);
+    expect(createdPlots[0].setData).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the mounted plot for semantically equal recreated structure', () => {
+    const { rerender } = render(
+      <TimeSeriesChart
+        accessibleName="Latency chart"
+        rows={rows}
+        series={[...series]}
+        yRange={[0, 100]}
+        zeroBaseline
+        emptyText="No data"
+      />
+    );
+    const host = screen.getByTestId('time-series-chart-host');
+    vi.spyOn(host, 'getBoundingClientRect').mockReturnValue({
+      width: 640,
+      height: 240,
+      x: 0,
+      y: 0,
+      top: 0,
+      right: 640,
+      bottom: 240,
+      left: 0,
+      toJSON: () => ({}),
+    });
+    MockResizeObserver.callbacks[0]?.([], {} as ResizeObserver);
+    const observerCount = MockResizeObserver.callbacks.length;
+    const root = createdPlots[0].root;
+
+    rerender(
+      <TimeSeriesChart
+        accessibleName="Latency chart"
+        rows={rows}
+        series={series.map((definition) => ({ ...definition }))}
+        yRange={[0, 100]}
+        zeroBaseline
+        emptyText="No data"
+      />
+    );
+
+    expect(createdPlots).toHaveLength(1);
+    expect(createdPlots[0].root).toBe(root);
+    expect(createdPlots[0].destroy).not.toHaveBeenCalled();
+    expect(MockResizeObserver.callbacks).toHaveLength(observerCount);
+  });
+
+  it('remounts deliberate structural changes when the parent changes key', () => {
+    const renderChart = (key: string, nextSeries = series) => (
+      <TimeSeriesChart
+        key={key}
+        accessibleName="Latency chart"
+        rows={rows}
+        series={nextSeries}
+        yRange="auto"
+        zeroBaseline
+        emptyText="No data"
+      />
+    );
+    const { rerender } = render(renderChart('latency'));
+    const host = screen.getByTestId('time-series-chart-host');
+    vi.spyOn(host, 'getBoundingClientRect').mockReturnValue({
+      width: 640,
+      height: 240,
+      x: 0,
+      y: 0,
+      top: 0,
+      right: 640,
+      bottom: 240,
+      left: 0,
+      toJSON: () => ({}),
+    });
+    MockResizeObserver.callbacks[0]?.([], {} as ResizeObserver);
+
+    rerender(
+      renderChart('throughput', [
+        ...series,
+        {
+          key: 'jitter',
+          label: 'Jitter',
+          color: '#177a55',
+          unit: 'ms',
+          display: 'signed',
+        },
+      ])
+    );
+    const nextHost = screen.getByTestId('time-series-chart-host');
+    vi.spyOn(nextHost, 'getBoundingClientRect').mockReturnValue({
+      width: 640,
+      height: 240,
+      x: 0,
+      y: 0,
+      top: 0,
+      right: 640,
+      bottom: 240,
+      left: 0,
+      toJSON: () => ({}),
+    });
+    MockResizeObserver.callbacks[1]?.([], {} as ResizeObserver);
+
+    expect(createdPlots).toHaveLength(2);
+    expect(createdPlots[0].destroy).toHaveBeenCalledTimes(1);
+    expect(createdPlots[1].destroy).not.toHaveBeenCalled();
   });
 
   it('sends six distinct post-creation row references without recreating', () => {
@@ -197,8 +261,8 @@ describe('TimeSeriesChart', () => {
       );
     }
 
-    expect(uplotMock.createdPlots).toHaveLength(1);
-    expect(uplotMock.createdPlots[0].setData).toHaveBeenCalledTimes(6);
+    expect(createdPlots).toHaveLength(1);
+    expect(createdPlots[0].setData).toHaveBeenCalledTimes(6);
   });
 
   it('encodes domain, zero baseline, colors, and spanGaps in constructor options', () => {
@@ -226,7 +290,7 @@ describe('TimeSeriesChart', () => {
     });
     MockResizeObserver.callbacks[0]?.([], {} as ResizeObserver);
 
-    expect(uplotMock.createdPlots[0].options).toMatchObject({
+    expect(createdPlots[0].options).toMatchObject({
       scales: { y: { range: expect.any(Function) } },
       series: [{}, { label: 'Latency', stroke: '#1769aa', spanGaps: false }],
     });

@@ -3,29 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TimeSeriesChart } from './TimeSeriesChart';
 import type { TimeSeriesDefinition, TimeSeriesRow } from './metric-panel-types';
+import { MockResizeObserver, createdPlots, resetUPlotMock } from './uplot.mock';
 
-const uplotMock = vi.hoisted(() => {
-  const createdPlots: {
-    root: HTMLDivElement;
-    setData: ReturnType<typeof vi.fn>;
-    setSize: ReturnType<typeof vi.fn>;
-    destroy: ReturnType<typeof vi.fn>;
-  }[] = [];
-  class MockUPlot {
-    readonly root = document.createElement('div');
-    readonly setData = vi.fn();
-    readonly setSize = vi.fn();
-    readonly destroy = vi.fn();
-
-    constructor() {
-      this.root.append(document.createElement('canvas'));
-      createdPlots.push(this);
-    }
-  }
-  return { createdPlots, MockUPlot };
-});
-
-vi.mock('uplot', () => ({ default: uplotMock.MockUPlot }));
+vi.mock('uplot', async () => ({
+  default: (await import('./uplot.mock')).MockUPlot,
+}));
 
 const series: readonly TimeSeriesDefinition[] = [
   {
@@ -40,24 +22,8 @@ const rows: readonly TimeSeriesRow[] = [
   { timestamp: '2026-08-29T12:00:00Z', epochSeconds: 1, values: [10] },
 ];
 
-class MockResizeObserver {
-  static instances: MockResizeObserver[] = [];
-  static throwOnObserve = false;
-  observe = vi.fn(() => {
-    if (MockResizeObserver.throwOnObserve) throw new Error('observe failed');
-  });
-  disconnect = vi.fn();
-  readonly callback: ResizeObserverCallback;
-  constructor(callback: ResizeObserverCallback) {
-    this.callback = callback;
-    MockResizeObserver.instances.push(this);
-  }
-}
-
 beforeEach(() => {
-  uplotMock.createdPlots.length = 0;
-  MockResizeObserver.instances = [];
-  MockResizeObserver.throwOnObserve = false;
+  resetUPlotMock();
   vi.stubGlobal('ResizeObserver', MockResizeObserver);
 });
 
@@ -92,11 +58,9 @@ describe('uPlot lifecycle', () => {
       unmount();
     }
 
-    expect(uplotMock.createdPlots).toHaveLength(20);
+    expect(createdPlots).toHaveLength(20);
     expect(
-      uplotMock.createdPlots.every(
-        (plot) => plot.destroy.mock.calls.length === 1
-      )
+      createdPlots.every((plot) => plot.destroy.mock.calls.length === 1)
     ).toBe(true);
     expect(
       MockResizeObserver.instances.every(
@@ -106,7 +70,7 @@ describe('uPlot lifecycle', () => {
   });
 
   it('disconnects an observer once when observe throws', () => {
-    MockResizeObserver.throwOnObserve = true;
+    MockResizeObserver.throwObserve = true;
 
     const { unmount } = render(
       <TimeSeriesChart
@@ -149,7 +113,7 @@ describe('uPlot lifecycle', () => {
     };
     vi.spyOn(host, 'getBoundingClientRect').mockReturnValue(size);
     MockResizeObserver.instances[0].callback([], {} as ResizeObserver);
-    uplotMock.createdPlots[0].setData.mockImplementationOnce(() => {
+    createdPlots[0].setData.mockImplementationOnce(() => {
       throw new Error('setData failed');
     });
 
@@ -165,6 +129,6 @@ describe('uPlot lifecycle', () => {
     );
     unmount();
 
-    expect(uplotMock.createdPlots[0].destroy).toHaveBeenCalledTimes(1);
+    expect(createdPlots[0].destroy).toHaveBeenCalledTimes(1);
   });
 });

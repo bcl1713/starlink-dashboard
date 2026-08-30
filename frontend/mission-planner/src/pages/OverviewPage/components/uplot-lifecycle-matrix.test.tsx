@@ -4,37 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TimeSeriesChart } from './TimeSeriesChart';
 import type { TimeSeriesDefinition, TimeSeriesRow } from './metric-panel-types';
+import {
+  MockResizeObserver,
+  createdPlots,
+  resetUPlotMock,
+  uplotMockFlags,
+} from './uplot.mock';
 
-const uplotMock = vi.hoisted(() => {
-  const created: {
-    root: HTMLDivElement;
-    setData: ReturnType<typeof vi.fn>;
-    setSize: ReturnType<typeof vi.fn>;
-    destroy: ReturnType<typeof vi.fn>;
-    options: unknown;
-    data: unknown;
-  }[] = [];
-  const flags = { throwConstructor: false };
-  class MockUPlot {
-    readonly root = document.createElement('div');
-    readonly setData = vi.fn();
-    readonly setSize = vi.fn();
-    readonly destroy = vi.fn();
-    readonly options: unknown;
-    readonly data: unknown;
-    constructor(options: unknown, data: unknown, target: HTMLElement) {
-      if (flags.throwConstructor) throw new Error('constructor failed');
-      this.options = options;
-      this.data = data;
-      this.root.append(document.createElement('canvas'));
-      target.append(this.root);
-      created.push(this);
-    }
-  }
-  return { created, flags, MockUPlot };
-});
-
-vi.mock('uplot', () => ({ default: uplotMock.MockUPlot }));
+vi.mock('uplot', async () => ({
+  default: (await import('./uplot.mock')).MockUPlot,
+}));
 
 const series: readonly TimeSeriesDefinition[] = [
   {
@@ -58,26 +37,8 @@ const rows: readonly TimeSeriesRow[] = [
   { timestamp: '2026-08-29T12:00:01Z', epochSeconds: 2, values: [20, -5] },
 ];
 
-class MockResizeObserver {
-  static callbacks: ResizeObserverCallback[] = [];
-  static throwConstructor = false;
-  static throwObserve = false;
-  observe = vi.fn(() => {
-    if (MockResizeObserver.throwObserve) throw new Error('observe failed');
-  });
-  disconnect = vi.fn();
-  constructor(callback: ResizeObserverCallback) {
-    if (MockResizeObserver.throwConstructor) throw new Error('observer failed');
-    MockResizeObserver.callbacks.push(callback);
-  }
-}
-
 beforeEach(() => {
-  uplotMock.created.length = 0;
-  uplotMock.flags.throwConstructor = false;
-  MockResizeObserver.callbacks = [];
-  MockResizeObserver.throwConstructor = false;
-  MockResizeObserver.throwObserve = false;
+  resetUPlotMock();
   vi.stubGlobal('ResizeObserver', MockResizeObserver);
 });
 
@@ -107,12 +68,12 @@ describe('uPlot lifecycle matrix', () => {
       callback([], {} as ResizeObserver)
     );
 
-    expect(uplotMock.created).toHaveLength(2);
-    expect(uplotMock.created[0].destroy).toHaveBeenCalledTimes(1);
-    expect(uplotMock.created[1].destroy).not.toHaveBeenCalled();
+    expect(createdPlots).toHaveLength(2);
+    expect(createdPlots[0].destroy).toHaveBeenCalledTimes(1);
+    expect(createdPlots[1].destroy).not.toHaveBeenCalled();
 
     unmount();
-    expect(uplotMock.created[1].destroy).toHaveBeenCalledTimes(1);
+    expect(createdPlots[1].destroy).toHaveBeenCalledTimes(1);
   });
 
   it('ignores invalid dimensions, rounds and clamps valid size changes', () => {
@@ -136,13 +97,13 @@ describe('uPlot lifecycle matrix', () => {
     rect.mockReturnValue(domRect(5000, 100));
     MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
 
-    expect(uplotMock.created).toHaveLength(1);
-    expect(uplotMock.created[0].options).toMatchObject({
+    expect(createdPlots).toHaveLength(1);
+    expect(createdPlots[0].options).toMatchObject({
       width: 240,
       height: 800,
     });
-    expect(uplotMock.created[0].setSize).toHaveBeenCalledTimes(1);
-    expect(uplotMock.created[0].setSize).toHaveBeenCalledWith({
+    expect(createdPlots[0].setSize).toHaveBeenCalledTimes(1);
+    expect(createdPlots[0].setSize).toHaveBeenCalledWith({
       width: 4096,
       height: 160,
     });
@@ -153,49 +114,49 @@ describe('uPlot lifecycle matrix', () => {
     MockResizeObserver.throwConstructor = true;
     const first = renderChart([]);
     expect(screen.getByText('No data')).toBeVisible();
-    expect(uplotMock.created).toHaveLength(0);
+    expect(createdPlots).toHaveLength(0);
     first.unmount();
 
-    uplotMock.created.length = 0;
+    createdPlots.length = 0;
     MockResizeObserver.throwConstructor = false;
     MockResizeObserver.throwObserve = true;
-    uplotMock.flags.throwConstructor = true;
+    uplotMockFlags.throwConstructor = true;
     renderChart([]);
     sizeHost(640, 240);
     MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
     expect(screen.getByText('No data')).toBeVisible();
-    expect(uplotMock.created).toHaveLength(0);
+    expect(createdPlots).toHaveLength(0);
   });
 
   it('cleans up once after setData, setSize, and destroy failures', () => {
     const { rerender, unmount } = renderChart();
     sizeHost(640, 240);
     MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
-    uplotMock.created[0].setSize.mockImplementationOnce(() => {
+    createdPlots[0].setSize.mockImplementationOnce(() => {
       throw new Error('setSize failed');
     });
     sizeHost(700, 240);
     MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
-    expect(uplotMock.created[0].destroy).toHaveBeenCalledTimes(1);
+    expect(createdPlots[0].destroy).toHaveBeenCalledTimes(1);
 
     sizeHost(700, 240);
     MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
-    uplotMock.created[1].setData.mockImplementationOnce(() => {
+    createdPlots[1].setData.mockImplementationOnce(() => {
       throw new Error('setData failed');
     });
     rerenderChart(rerender, [
       { timestamp: '2026-08-29T12:00:02Z', epochSeconds: 3, values: [30, -6] },
     ]);
-    expect(uplotMock.created[1].destroy).toHaveBeenCalledTimes(1);
+    expect(createdPlots[1].destroy).toHaveBeenCalledTimes(1);
 
     sizeHost(700, 240);
     MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
-    expect(uplotMock.created).toHaveLength(3);
-    uplotMock.created[2].destroy.mockImplementationOnce(() => {
+    expect(createdPlots).toHaveLength(3);
+    createdPlots[2].destroy.mockImplementationOnce(() => {
       throw new Error('destroy failed');
     });
     unmount();
-    expect(uplotMock.created[2].destroy).toHaveBeenCalledTimes(1);
+    expect(createdPlots[2].destroy).toHaveBeenCalledTimes(1);
   });
 
   it('survives observer observe and measurement hostility with fallback text', () => {
@@ -214,7 +175,7 @@ describe('uPlot lifecycle matrix', () => {
     MockResizeObserver.callbacks.at(-1)?.([], {} as ResizeObserver);
 
     expect(screen.getByText('No data')).toBeVisible();
-    expect(uplotMock.created).toHaveLength(0);
+    expect(createdPlots).toHaveLength(0);
   });
 });
 

@@ -8,9 +8,9 @@ export const latitudeSchema = finiteNumberSchema.min(-90).max(90);
 export const longitudeSchema = finiteNumberSchema.min(-180).max(180);
 export const azimuthSchema = finiteNumberSchema.min(0).max(360);
 
-interface ParsedInstant {
-  seconds: bigint;
-  fraction: string;
+export interface AwareTimestampInstant {
+  readonly seconds: bigint;
+  readonly fraction: string;
 }
 
 const timestampPattern =
@@ -33,6 +33,12 @@ export function compareAwareTimestampInstants(
   const rightFraction = right.fraction.padEnd(width, '0');
   if (leftFraction === rightFraction) return 0;
   return leftFraction < rightFraction ? -1 : 1;
+}
+
+export function parseAwareTimestampInstant(
+  timestamp: string
+): AwareTimestampInstant | null {
+  return parseInstant(timestamp);
 }
 
 export function compareAwareTimestampToEpochMilliseconds(
@@ -65,6 +71,12 @@ export function awareTimestampToChartEpochSeconds(
 ): number | null {
   const instant = parseInstant(timestamp);
   if (instant === null) return null;
+  return awareInstantToChartEpochSeconds(instant);
+}
+
+export function awareInstantToChartEpochSeconds(
+  instant: AwareTimestampInstant
+): number | null {
   const unixSeconds = instant.seconds - unixEpochDay * 86_400n;
   const fraction = instant.fraction.replace(/0+$/, '');
   const scale = 10n ** BigInt(fraction.length);
@@ -90,7 +102,7 @@ export function isStrictlyChronological(
   return true;
 }
 
-function parseInstant(value: string): ParsedInstant | null {
+function parseInstant(value: string): AwareTimestampInstant | null {
   const match = timestampPattern.exec(value);
   if (!match || !awareTimestampSchema.safeParse(value).success) return null;
   const [, year, month, day, hour, minute, second, fraction = '', offset] =

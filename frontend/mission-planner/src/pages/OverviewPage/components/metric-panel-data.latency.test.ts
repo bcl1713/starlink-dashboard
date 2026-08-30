@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLatencyPanelData } from './metric-panel-data';
+import {
+  buildLatencyPanelData,
+  buildLatencyPanelDataWithInstrumentation,
+  type LatencyProjectionInstrumentation,
+} from './metric-panel-data';
 import { history, NOW, samples } from './metric-panel-test-fixtures';
 
 describe('buildLatencyPanelData', () => {
@@ -93,6 +97,38 @@ describe('buildLatencyPanelData', () => {
     });
   });
 
+  it('keeps exact inclusive boundaries with adversarial fractional instants', () => {
+    const data = buildLatencyPanelData(
+      history([
+        {
+          metric: 'latency_ms',
+          samples: samples([
+            ['2026-08-29T12:24:59.9999999Z', 10],
+            ['2026-08-29T12:25:00.0000000Z', 20],
+            ['2026-08-29T12:25:00.0000001Z', 30],
+            ['2026-08-29T12:30:00.0000000Z', null],
+            ['2026-08-29T12:30:00.0000001Z', 40],
+          ]),
+        },
+      ]),
+      '2026-08-29T12:30:00.0000001Z'
+    );
+
+    expect(data.tableRows.map((row) => row.values)).toEqual([
+      [10, 10, 10, 10],
+      [20, 10, 15, 20],
+      [30, 10, 20, 30],
+      [null, 20, 25, 30],
+      [40, 30, 35, 40],
+    ]);
+    expect(data.summary).toEqual({
+      current: 40,
+      min: 30,
+      mean: 35,
+      max: 40,
+    });
+  });
+
   it('returns finite means for large finite retained values', () => {
     const data = buildLatencyPanelData(
       history([
@@ -111,8 +147,16 @@ describe('buildLatencyPanelData', () => {
     expect(data.tableRows[1].values[2]).toBe(Number.MAX_VALUE);
   });
 
-  it('caps latency history at the latest 1801 retained samples', () => {
-    const data = buildLatencyPanelData(
+  it('caps latency history and projects 1801 samples with linear visits', () => {
+    const instrumentation: LatencyProjectionInstrumentation = {
+      parsed: 0,
+      visited: 0,
+      enqueued: 0,
+      dequeued: 0,
+      minQueueOperations: 0,
+      maxQueueOperations: 0,
+    };
+    const data = buildLatencyPanelDataWithInstrumentation(
       history([
         {
           metric: 'latency_ms',
@@ -122,13 +166,21 @@ describe('buildLatencyPanelData', () => {
           })),
         },
       ]),
-      '2026-08-29T12:30:01Z'
+      '2026-08-29T12:30:01Z',
+      instrumentation
     );
 
     expect(data.tableRows).toHaveLength(1801);
     expect(data.tableRows[0].timestamp).toBe('2026-08-29T12:00:01Z');
     expect(data.summary.current).toBe(1801);
-  }, 10_000);
+    expect(data.tableRows.at(-1)?.values).toEqual([1801, 1501, 1651, 1801]);
+    expect(instrumentation.parsed).toBe(1801);
+    expect(instrumentation.visited).toBe(1801);
+    expect(instrumentation.enqueued).toBe(1801);
+    expect(instrumentation.dequeued).toBe(1500);
+    expect(instrumentation.minQueueOperations).toBeLessThanOrEqual(3602);
+    expect(instrumentation.maxQueueOperations).toBeLessThanOrEqual(3602);
+  });
 
   it('treats nonfinite and negative latency as null without poisoning summaries', () => {
     const data = buildLatencyPanelData(

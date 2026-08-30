@@ -5,30 +5,11 @@ import { NetworkLatencyPanel } from './NetworkLatencyPanel';
 import { TimeSeriesChart } from './TimeSeriesChart';
 import { history, NOW, samples, slot } from './metric-panel-test-fixtures';
 import type { TimeSeriesDefinition, TimeSeriesRow } from './metric-panel-types';
+import { MockResizeObserver, createdPlots, resetUPlotMock } from './uplot.mock';
 
-const uplotMock = vi.hoisted(() => {
-  const created: { options: uPlot.Options; data: unknown }[] = [];
-  class MockUPlot {
-    readonly root = document.createElement('div');
-    readonly setData = vi.fn();
-    readonly setSize = vi.fn();
-    readonly destroy = vi.fn();
-    constructor(options: uPlot.Options, data: unknown, target: HTMLElement) {
-      this.root.append(document.createElement('canvas'));
-      target.append(this.root);
-      created.push({ options, data });
-    }
-  }
-  return { created, MockUPlot };
-});
-
-vi.mock('uplot', () => ({ default: uplotMock.MockUPlot }));
-
-class MockResizeObserver {
-  observe = vi.fn();
-  disconnect = vi.fn();
-  constructor() {}
-}
+vi.mock('uplot', async () => ({
+  default: (await import('./uplot.mock')).MockUPlot,
+}));
 
 const series: readonly TimeSeriesDefinition[] = [
   {
@@ -63,7 +44,7 @@ const rows: readonly TimeSeriesRow[] = [
 ];
 
 beforeEach(() => {
-  uplotMock.created.length = 0;
+  resetUPlotMock();
   vi.stubGlobal('ResizeObserver', MockResizeObserver);
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     width: 640,
@@ -92,12 +73,19 @@ describe('TimeSeriesChart constructor options', () => {
     );
 
     expect(screen.getByRole('img', { name: 'Throughput chart' })).toBeVisible();
-    expect(uplotMock.created[0].data).toEqual([
+    expect(createdPlots[0].data).toEqual([
       [1, 2],
       [10, 20],
       [null, -5],
     ]);
-    expect(uplotMock.created[0].options.series).toMatchObject([
+    expect(createdPlots[0].options).toMatchObject({
+      series: [
+        {},
+        { label: 'Download', stroke: '#1769aa', spanGaps: false },
+        { label: 'Upload', stroke: '#177a55', spanGaps: false },
+      ],
+    });
+    expect(createdPlots[0].options.series).toMatchObject([
       {},
       { label: 'Download', stroke: '#1769aa', spanGaps: false },
       { label: 'Upload', stroke: '#177a55', spanGaps: false },
@@ -106,7 +94,7 @@ describe('TimeSeriesChart constructor options', () => {
     expect(formatSeriesValue(2, -5.5)).toBe('5.5 Mbps');
     expect(formatSeriesValue(2, null)).toBe('Unavailable');
     expect(formatSeriesValue(2, Number.POSITIVE_INFINITY)).toBe('Unavailable');
-    const range = uplotMock.created[0].options.scales?.y?.range;
+    const range = createdPlots[0].options.scales?.y?.range;
     expect(
       typeof range === 'function' ? range({} as uPlot, 4, 9, 'y') : null
     ).toEqual([0, 9]);
@@ -137,14 +125,14 @@ describe('TimeSeriesChart constructor options', () => {
     expect(
       screen.getByRole('img', { name: 'Network Latency chart' })
     ).toBeVisible();
-    expect(uplotMock.created[0].data).toEqual([
+    expect(createdPlots[0].data).toEqual([
       [1788006299, 1788006300, 1788006360, 1788006420, 1788006600],
       [300, 100, null, null, 200],
       [300, 100, 100, 100, 100],
       [300, 200, 200, 200, 150],
       [300, 300, 300, 300, 200],
     ]);
-    expect(uplotMock.created[0].options.series).toMatchObject([
+    expect(createdPlots[0].options.series).toMatchObject([
       {},
       { label: 'Current', stroke: '#1769aa', spanGaps: false },
       { label: 'Min (5m)', stroke: '#177a55', spanGaps: false },
@@ -159,7 +147,7 @@ describe('TimeSeriesChart constructor options', () => {
     expect(formatSeriesValue(1, Number.NaN)).toBe('Unavailable');
     expect(formatSeriesValue(1, undefined)).toBe('Unavailable');
     expect(formatSeriesValue(4, Number.NEGATIVE_INFINITY)).toBe('Unavailable');
-    const range = uplotMock.created[0].options.scales?.y?.range;
+    const range = createdPlots[0].options.scales?.y?.range;
     expect(
       typeof range === 'function' ? range({} as uPlot, 4, 9, 'y') : null
     ).toEqual([0, 9]);
@@ -177,13 +165,13 @@ describe('TimeSeriesChart constructor options', () => {
       />
     );
 
-    expect(uplotMock.created[0].options.series).toMatchObject([
+    expect(createdPlots[0].options.series).toMatchObject([
       {},
       { label: 'Packet loss', stroke: '#b42318', spanGaps: false },
     ]);
     expect(formatSeriesValue(1, 2)).toBe('2 percent');
     expect(formatSeriesValue(1, 2.345)).toBe('2.345 percent');
-    const range = uplotMock.created[0].options.scales?.y?.range;
+    const range = createdPlots[0].options.scales?.y?.range;
     expect(
       typeof range === 'function' ? range({} as uPlot, 4, 9, 'y') : null
     ).toEqual([0, 100]);
@@ -191,7 +179,7 @@ describe('TimeSeriesChart constructor options', () => {
 });
 
 function formatSeriesValue(seriesIndex: number, value: unknown): string {
-  const seriesOptions = uplotMock.created[0].options.series?.[seriesIndex];
+  const seriesOptions = createdPlots[0].options.series?.[seriesIndex];
   const formatter = seriesOptions?.value;
   expect(formatter).toEqual(expect.any(Function));
   return String(

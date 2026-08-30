@@ -6,30 +6,11 @@ import { PacketLossPanel } from './PacketLossPanel';
 import { ThroughputPanel } from './ThroughputPanel';
 import { history, NOW, samples, slot } from './metric-panel-test-fixtures';
 import type { HistoryMetricPanelProps } from './metric-panel-types';
+import { MockResizeObserver, createdPlots, resetUPlotMock } from './uplot.mock';
 
-const uplotMock = vi.hoisted(() => {
-  const created: { root: HTMLDivElement; destroy: ReturnType<typeof vi.fn> }[] =
-    [];
-  class MockUPlot {
-    readonly root = document.createElement('div');
-    readonly setData = vi.fn();
-    readonly setSize = vi.fn();
-    readonly destroy = vi.fn();
-    constructor(_options: unknown, _data: unknown, target: HTMLElement) {
-      target.append(this.root);
-      created.push(this);
-    }
-  }
-  return { created, MockUPlot };
-});
-
-vi.mock('uplot', () => ({ default: uplotMock.MockUPlot }));
-
-class MockResizeObserver {
-  observe = vi.fn();
-  disconnect = vi.fn();
-  constructor() {}
-}
+vi.mock('uplot', async () => ({
+  default: (await import('./uplot.mock')).MockUPlot,
+}));
 
 const metricHistory = history([
   {
@@ -60,7 +41,7 @@ const panels: readonly [
 ];
 
 beforeEach(() => {
-  uplotMock.created.length = 0;
+  resetUPlotMock();
   vi.stubGlobal('ResizeObserver', MockResizeObserver);
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
     width: 640,
@@ -87,7 +68,7 @@ describe('history panel presentation', () => {
       const { rerender } = render(
         <Panel slot={slot(metricHistory)} now={NOW} retryPending={false} />
       );
-      const root = uplotMock.created[0].root;
+      const root = createdPlots[0].root;
       fireEvent.click(screen.getByRole('button', { name: 'History' }));
       expect(screen.getByRole('table')).toBeVisible();
 
@@ -100,9 +81,9 @@ describe('history panel presentation', () => {
         />
       );
 
-      expect(uplotMock.created).toHaveLength(1);
-      expect(uplotMock.created[0].root).toBe(root);
-      expect(uplotMock.created[0].destroy).not.toHaveBeenCalled();
+      expect(createdPlots).toHaveLength(1);
+      expect(createdPlots[0].root).toBe(root);
+      expect(createdPlots[0].destroy).not.toHaveBeenCalled();
       expect(screen.getByRole('table')).toBeVisible();
       expect(
         screen.getByTestId('time-series-chart-host').parentElement
