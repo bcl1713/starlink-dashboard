@@ -24,7 +24,7 @@ export function OverviewPanelState<T>(
     try {
       void Promise.resolve(props.onRetry?.()).catch(() => undefined);
     } catch {
-      // Retry failures are announced by Task9 source state, not local state.
+      // Retry failures are announced by orchestration source state, not local state.
     }
   };
 

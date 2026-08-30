@@ -61,7 +61,7 @@ describe('operations panels', () => {
     expect(focus).toHaveBeenCalledWith({ latitude: 47.6, longitude: -122.3 });
   });
 
-  it('renders POI top five with Task7 exclusions and urgency boundaries', () => {
+  it('renders POI top five with applicability exclusions and urgency boundaries', () => {
     render(
       <POIQuickReference
         retryPending={false}
