@@ -14,7 +14,6 @@ import * as Q from './overview-requests';
 import * as F from './overview-freshness';
 
 type CycleReason = 'scheduled' | 'manual' | 'bootstrap' | 'visibility';
-
 export function useOverviewData(options: UseOverviewDataOptions): Result {
   const {
     cadence,
@@ -43,7 +42,6 @@ export function useOverviewData(options: UseOverviewDataOptions): Result {
     sawFilter = useRef(false),
     sawRadar = useRef(false);
   const latest = useRef({ cadence, poiFilter, radarEnabled, now, visibility });
-
   useEffect(() => {
     latest.current = { cadence, poiFilter, radarEnabled, now, visibility };
   }, [cadence, now, poiFilter, radarEnabled, visibility]);
@@ -267,11 +265,14 @@ export function useOverviewData(options: UseOverviewDataOptions): Result {
       }
       const nowMs = F.safeNow(latest.current.now);
       if (nowMs === null) return;
-      const outcome = result.ok
+      const outcome: R.SlotOutcome = result.ok
         ? F.radarOutcome(result.frameTimestamp)
         : {
             ok: false as const,
-            error: F.classifyOverviewError(result.error, false),
+            error: {
+              code: 'request-failed',
+              message: 'Source refresh failed.',
+            },
           };
       setSnapshot((state) =>
         R.commitSlots(

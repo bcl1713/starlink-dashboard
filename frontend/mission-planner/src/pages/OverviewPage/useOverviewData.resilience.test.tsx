@@ -379,6 +379,95 @@ describe('useOverviewData resilience', () => {
     });
   });
 
+  it('records accepted canceled radar failures as fixed request failures', async () => {
+    const svc = services();
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 1,
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    const token = result.current.controller.radarRefreshToken;
+    act(() =>
+      result.current.controller.reportRadarResult(token, {
+        ok: true,
+        frameTimestamp: '1777294800',
+      })
+    );
+    act(() =>
+      result.current.controller.reportRadarResult(token, {
+        ok: false,
+        error: new axios.CanceledError('radar canceled'),
+      })
+    );
+    expect(result.current.snapshot.radar.error).toEqual({
+      code: 'request-failed',
+      message: 'Source refresh failed.',
+    });
+    expect(result.current.snapshot.radar.transportLastAttemptAt).toBe(
+      1_777_294_800_000
+    );
+    expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
+      '1777294800'
+    );
+  });
+
+  it('does not inspect validation-shaped or hostile radar failure values', async () => {
+    const svc = services();
+    let accessed = false;
+    const hostile = Object.defineProperty({ ok: false }, 'error', {
+      get() {
+        accessed = true;
+        throw new Error('error getter was inspected');
+      },
+    }) as { readonly ok: false; readonly error: unknown };
+    const validation = {
+      name: 'OverviewDataValidationError',
+      code: 'invalid_overview_data',
+      source: 'radar',
+    };
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 1,
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_801_000,
+      })
+    );
+    await act(flush);
+    const token = result.current.controller.radarRefreshToken;
+    act(() =>
+      result.current.controller.reportRadarResult(token, {
+        ok: true,
+        frameTimestamp: '1777294800',
+      })
+    );
+    act(() =>
+      result.current.controller.reportRadarResult(token, {
+        ok: false,
+        error: validation,
+      })
+    );
+    expect(result.current.snapshot.radar.error).toEqual({
+      code: 'request-failed',
+      message: 'Source refresh failed.',
+    });
+    act(() => result.current.controller.reportRadarResult(token, hostile));
+    expect(accessed).toBe(false);
+    expect(result.current.snapshot.radar.error).toEqual({
+      code: 'request-failed',
+      message: 'Source refresh failed.',
+    });
+    expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
+      '1777294800'
+    );
+  });
+
   it('ignores malformed, future, stale, disabled, and superseded radar tokens', async () => {
     const svc = services();
     const { result, rerender } = renderHook(

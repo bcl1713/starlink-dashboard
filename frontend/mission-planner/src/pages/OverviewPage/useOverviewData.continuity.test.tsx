@@ -9,6 +9,7 @@ import {
   routePayload,
   statusPayload,
 } from '../../services/monitoring-test-fixtures';
+import { mergeTelemetryBatch } from './overview-data-types';
 import type { OverviewDataServices } from './overview-data-types';
 import { useOverviewData } from './useOverviewData';
 
@@ -112,6 +113,33 @@ describe('useOverviewData continuity', () => {
     expect(other.result.current.snapshot.history.data).toEqual(
       result.current.snapshot.history.data
     );
+  });
+
+  it('keeps telemetry-only history pending without fabricated metadata', async () => {
+    const historyGate = deferred<typeof historyPayload>();
+    const svc = baseServices({
+      getMonitoringHistory: vi.fn(() => historyGate.promise),
+      getStatus: vi.fn(() =>
+        Promise.resolve({
+          ...structuredClone(statusPayload),
+          timestamp: '2026-08-29T18:00:04Z',
+        })
+      ),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_804_000,
+      })
+    );
+    await act(flush);
+    expect(result.current.snapshot.history.data).toBeUndefined();
+    expect(result.current.snapshot.history.transportLastSuccessAt).toBeNull();
+    expect(result.current.snapshot.history.transportLastAttemptAt).toBeNull();
+    expect(result.current.snapshot.history.availability).toBe('unknown');
   });
 
   it('commits grouped active link and route pairs atomically without mixed generations', async () => {
@@ -219,6 +247,68 @@ describe('useOverviewData continuity', () => {
       )
     ).toBe(true);
     expect(history?.generated_at).toBe(historyPayload.generated_at);
+  });
+
+  it('maps six telemetry metrics and preserves history order, cap, and metadata', () => {
+    const serverHistory = {
+      ...structuredClone(historyPayload),
+      window_start: '2026-08-29T12:00:00Z',
+      window_end: '2026-08-29T12:30:01Z',
+      series: historyPayload.series.map((series) => ({
+        ...series,
+        samples: [],
+      })),
+    };
+    const statuses = Array.from({ length: 1802 }, (_, index) => ({
+      ...structuredClone(statusPayload),
+      timestamp: `2026-08-29T12:${String(Math.trunc(index / 60)).padStart(
+        2,
+        '0'
+      )}:${String(index % 60).padStart(2, '0')}Z`,
+      position: {
+        ...statusPayload.position,
+        latitude: index,
+        longitude: -index,
+      },
+      network: {
+        ...statusPayload.network,
+        latency_ms: index + 1,
+        throughput_down_mbps: index + 2,
+        throughput_up_mbps: index + 3,
+        packet_loss_percent: index + 4,
+      },
+    }));
+    const merged = mergeTelemetryBatch(
+      undefined,
+      serverHistory,
+      statuses,
+      1_788_006_601_000
+    );
+    expect(merged).toMatchObject({
+      generated_at: historyPayload.generated_at,
+      window_start: '2026-08-29T12:00:00Z',
+      window_end: '2026-08-29T12:30:01Z',
+      range_seconds: historyPayload.range_seconds,
+      step_seconds: historyPayload.step_seconds,
+    });
+    expect(merged?.series.map((series) => series.metric)).toEqual([
+      'latitude_degrees',
+      'longitude_degrees',
+      'latency_ms',
+      'throughput_down_mbps',
+      'throughput_up_mbps',
+      'packet_loss_percent',
+    ]);
+    for (const series of merged?.series ?? []) {
+      expect(series.samples.length).toBeLessThanOrEqual(1801);
+      expect(series.samples.at(0)?.timestamp).toBe('2026-08-29T12:00:01Z');
+      expect(series.samples.at(-1)?.timestamp).toBe('2026-08-29T12:30:01Z');
+    }
+    expect(
+      merged?.series.some((series) =>
+        ['altitude', 'obstruction_percent'].includes(series.metric)
+      )
+    ).toBe(false);
   });
 
   it('preserves a real history failure while appending local telemetry', async () => {
