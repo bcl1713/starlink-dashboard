@@ -6,40 +6,29 @@ import {
   getPOIETAs,
   getSatelliteETAs,
 } from './monitoring';
+import {
+  aware,
+  missing,
+  poi,
+  poiPayload,
+  setAt,
+  withResponse,
+} from './monitoring-test-fixtures';
 import { OVERVIEW_POI_FILTER_OPTIONS } from '../types/monitoring';
 
 vi.mock('./api-client', () => ({ apiClient: { get: vi.fn() } }));
 
 const getMock = vi.mocked(apiClient.get);
-const aware = '2026-08-29T12:34:56Z';
-const poi = {
-  poi_id: 'poi-1',
-  name: 'Departure',
-  latitude: 39,
-  longitude: -104,
-  category: 'departure',
-  icon: 'plane-takeoff',
-  active: true,
-  eta_seconds: -1,
-  eta_type: 'anticipated',
-  is_pre_departure: true,
-  flight_phase: 'pre_departure',
-  distance_meters: 0,
-  bearing_degrees: 360,
-  course_status: 'on_course',
-  is_on_active_route: true,
-  projected_latitude: 39,
-  projected_longitude: -104,
-  projected_waypoint_index: 0,
-  projected_route_progress: 100,
-  route_aware_status: 'pre_departure',
-};
-const payload = { pois: [poi], total: 1, timestamp: aware };
 
 beforeEach(() => getMock.mockReset());
 
 function respond(data: unknown) {
-  getMock.mockResolvedValueOnce({ data });
+  getMock.mockResolvedValueOnce(withResponse(data));
+}
+
+async function expectPoiInvalid(payload: unknown) {
+  respond(payload);
+  await expect(getPOIETAs()).rejects.toMatchObject({ source: 'poi-etas' });
 }
 
 describe('POI ETA overview service', () => {
@@ -65,7 +54,7 @@ describe('POI ETA overview service', () => {
     ] as const;
 
     for (const [call, params] of cases) {
-      respond(params ? payload : { pois: [], total: 0, timestamp: aware });
+      respond(params ? poiPayload : { pois: [], total: 0, timestamp: aware });
       await call();
       expect(getMock).toHaveBeenLastCalledWith(
         '/api/pois/etas',
@@ -74,16 +63,17 @@ describe('POI ETA overview service', () => {
     }
   });
 
-  it('parses enum and nullable variants while preserving timestamp text', async () => {
+  it('parses every enum, null, and sentinel variant', async () => {
     const variants = [
       { ...poi, eta_type: 'estimated', flight_phase: 'in_flight' },
       { ...poi, flight_phase: 'post_arrival', course_status: 'slightly_off' },
       {
         ...poi,
         course_status: 'off_track',
-        route_aware_status: 'already_passed',
+        route_aware_status: 'ahead_on_route',
       },
-      { ...poi, course_status: 'behind', route_aware_status: 'not_on_route' },
+      { ...poi, course_status: 'behind', route_aware_status: 'already_passed' },
+      { ...poi, route_aware_status: 'not_on_route' },
       {
         ...poi,
         category: null,
@@ -103,33 +93,54 @@ describe('POI ETA overview service', () => {
       timestamp: aware,
     };
     respond(response);
-
     await expect(getPOIETAs()).resolves.toEqual(response);
   });
 
-  it('rejects malformed nested POI ETA contracts and management id', async () => {
+  it('rejects malformed POI ETA contracts and management id', async () => {
     const invalidPois = [
       { ...poi, id: 'management-id' },
       { ...poi, poi_id: undefined },
+      { ...poi, poi_id: 123 },
+      { ...poi, name: 123 },
+      { ...poi, icon: 123 },
+      { ...poi, active: 'true' },
       { ...poi, latitude: -91 },
+      { ...poi, latitude: NaN },
+      { ...poi, latitude: '39' },
       { ...poi, longitude: 181 },
+      { ...poi, longitude: Infinity },
+      { ...poi, longitude: '-104' },
       { ...poi, eta_seconds: Infinity },
+      { ...poi, eta_seconds: '1' },
       { ...poi, eta_type: 'actual' },
       { ...poi, flight_phase: 'taxi' },
       { ...poi, distance_meters: -1 },
+      { ...poi, distance_meters: NaN },
+      { ...poi, bearing_degrees: -1 },
       { ...poi, bearing_degrees: 361 },
+      { ...poi, bearing_degrees: Infinity },
       { ...poi, course_status: 'lost' },
+      { ...poi, is_on_active_route: 'true' },
       { ...poi, projected_latitude: null },
       { ...poi, projected_longitude: null },
+      { ...poi, projected_latitude: -91 },
+      { ...poi, projected_longitude: 181 },
+      { ...poi, projected_latitude: NaN },
       { ...poi, projected_waypoint_index: -1 },
       { ...poi, projected_waypoint_index: 1.2 },
+      { ...poi, projected_waypoint_index: Infinity },
+      { ...poi, projected_route_progress: -1 },
       { ...poi, projected_route_progress: 101 },
+      { ...poi, projected_route_progress: Infinity },
       { ...poi, route_aware_status: 'missed' },
+      { ...poi, extra: true },
     ];
     const invalid = [
-      { ...payload, total: 2 },
-      { ...payload, timestamp: '2026-08-29T12:34:56' },
-      { ...payload, extra: true },
+      setAt(poiPayload, ['total'], 2),
+      setAt(poiPayload, ['total'], -1),
+      setAt(poiPayload, ['timestamp'], '2026-08-29T12:34:56'),
+      setAt(poiPayload, ['timestamp'], missing),
+      setAt(poiPayload, ['extra'], true),
       ...invalidPois.map((badPoi) => ({
         pois: [badPoi],
         total: 1,
@@ -137,9 +148,6 @@ describe('POI ETA overview service', () => {
       })),
     ];
 
-    for (const bad of invalid) {
-      respond(bad);
-      await expect(getPOIETAs()).rejects.toMatchObject({ source: 'poi-etas' });
-    }
+    for (const bad of invalid) await expectPoiInvalid(bad);
   });
 });

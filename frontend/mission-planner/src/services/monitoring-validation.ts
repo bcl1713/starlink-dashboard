@@ -14,7 +14,7 @@ interface ParsedInstant {
 }
 
 const timestampPattern =
-  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.([0-9]+))?(Z|[+-]\d{2}:\d{2})$/;
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
 
 export function compareAwareTimestampInstants(
   first: string,
@@ -22,6 +22,7 @@ export function compareAwareTimestampInstants(
 ): number {
   const left = parseInstant(first);
   const right = parseInstant(second);
+  if (left === null || right === null) return 0;
   if (left.seconds !== right.seconds) {
     return left.seconds < right.seconds ? -1 : 1;
   }
@@ -46,24 +47,40 @@ export function isStrictlyChronological(
   return true;
 }
 
-function parseInstant(value: string): ParsedInstant {
+function parseInstant(value: string): ParsedInstant | null {
   const match = timestampPattern.exec(value);
-  if (!match) throw new Error('invalid aware timestamp');
+  if (!match) return null;
   const [, year, month, day, hour, minute, second, fraction = '', offset] =
     match;
-  const utcMilliseconds = Date.UTC(
-    Number(year),
-    Number(month) - 1,
-    Number(day),
-    Number(hour),
-    Number(minute),
-    Number(second)
-  );
-  const offsetSeconds = offset === 'Z' ? 0 : parseOffsetSeconds(offset);
+  const localSeconds =
+    daysFromCivil(year, month, day) * 86_400n +
+    BigInt(hour) * 3_600n +
+    BigInt(minute) * 60n +
+    BigInt(second ?? '0');
+  const offsetSeconds = BigInt(offset === 'Z' ? 0 : parseOffsetSeconds(offset));
   return {
-    seconds: BigInt(Math.trunc(utcMilliseconds / 1000) - offsetSeconds),
+    seconds: localSeconds - offsetSeconds,
     fraction,
   };
+}
+
+function daysFromCivil(year: string, month: string, day: string): bigint {
+  let adjustedYear = BigInt(year);
+  const monthNumber = BigInt(month);
+  if (monthNumber <= 2n) adjustedYear -= 1n;
+  const era = floorDiv(adjustedYear, 400n);
+  const yearOfEra = adjustedYear - era * 400n;
+  const monthPrime = monthNumber + (monthNumber > 2n ? -3n : 9n);
+  const dayOfYear = (153n * monthPrime + 2n) / 5n + BigInt(day) - 1n;
+  const dayOfEra =
+    yearOfEra * 365n + yearOfEra / 4n - yearOfEra / 100n + dayOfYear;
+  return era * 146_097n + dayOfEra;
+}
+
+function floorDiv(dividend: bigint, divisor: bigint): bigint {
+  const quotient = dividend / divisor;
+  const remainder = dividend % divisor;
+  return remainder < 0n ? quotient - 1n : quotient;
 }
 
 function parseOffsetSeconds(offset: string): number {

@@ -2,74 +2,91 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from './api-client';
 import { getRouteCoordinates } from './monitoring';
+import {
+  routeCoordinate,
+  routePayload,
+  setAt,
+  withResponse,
+} from './monitoring-test-fixtures';
 
 vi.mock('./api-client', () => ({ apiClient: { get: vi.fn() } }));
 
 const getMock = vi.mocked(apiClient.get);
-const aware = '2026-08-29T12:34:56Z';
-const coordinate = {
-  latitude: 39,
-  longitude: -104,
-  altitude_meters: null,
-  sequence: 1.5,
-};
-const payload = {
-  route_id: 'route-1',
-  route_name: null,
-  revision_at: '2026-08-29T12:00:00+00:00',
-  generated_at: aware,
-  total: 1,
-  coordinates: [coordinate],
-};
 
 beforeEach(() => getMock.mockReset());
 
 function respond(data: unknown) {
-  getMock.mockResolvedValueOnce({ data });
+  getMock.mockResolvedValueOnce(withResponse(data));
+}
+
+async function expectRouteInvalid(payload: unknown) {
+  respond(payload);
+  await expect(getRouteCoordinates('west')).rejects.toMatchObject({
+    source: 'route-coordinates',
+  });
 }
 
 describe('route coordinates overview service', () => {
-  it('requests exact directional endpoints and preserves revision/generated timestamps', async () => {
+  it('requests exact directional endpoints and parses nullable ids/names', async () => {
     const signal = new AbortController().signal;
-    respond(payload);
-
-    await expect(getRouteCoordinates('west', signal)).resolves.toEqual(payload);
+    respond(routePayload);
+    await expect(getRouteCoordinates('west', signal)).resolves.toEqual(
+      routePayload
+    );
     expect(getMock).toHaveBeenCalledWith('/api/route/coordinates/west', {
       signal,
     });
 
-    const named = { ...payload, route_name: 'Westbound', revision_at: null };
-    respond(named);
-    await expect(getRouteCoordinates('east')).resolves.toEqual(named);
+    const nullable = {
+      ...routePayload,
+      route_id: null,
+      route_name: null,
+      revision_at: null,
+    };
+    respond(nullable);
+    await expect(getRouteCoordinates('east')).resolves.toEqual(nullable);
     expect(getMock).toHaveBeenLastCalledWith('/api/route/coordinates/east', {
       signal: undefined,
     });
   });
 
-  it('rejects malformed route contracts', async () => {
+  it('accepts fractional sequence and finite altitude variants', async () => {
+    const payload = {
+      ...routePayload,
+      coordinates: [
+        { ...routeCoordinate, altitude_meters: -20, sequence: 1.5 },
+      ],
+    };
+    respond(payload);
+    await expect(getRouteCoordinates('west')).resolves.toEqual(payload);
+  });
+
+  it('rejects malformed route contracts by isolated mutation', async () => {
     const invalid = [
-      { ...payload, total: 2 },
-      { ...payload, total: 1.5 },
-      { ...payload, route_id: 123 },
-      { ...payload, route_name: 123 },
-      { ...payload, revision_at: '2026-08-29T12:00:00' },
-      { ...payload, generated_at: '2026-08-29T12:34:56' },
-      { ...payload, extra: true },
-      { ...payload, coordinates: [{ ...coordinate, latitude: -91 }] },
-      { ...payload, coordinates: [{ ...coordinate, longitude: 181 }] },
-      {
-        ...payload,
-        coordinates: [{ ...coordinate, altitude_meters: Infinity }],
-      },
-      { ...payload, coordinates: [{ ...coordinate, sequence: NaN }] },
-      { ...payload, coordinates: [{ ...coordinate, x: 1 }] },
+      setAt(routePayload, ['total'], -1),
+      setAt(routePayload, ['total'], 2),
+      setAt(routePayload, ['total'], 1.5),
+      setAt(routePayload, ['total'], '1'),
+      setAt(routePayload, ['route_id'], 123),
+      setAt(routePayload, ['route_name'], 123),
+      setAt(routePayload, ['revision_at'], '2026-08-29T12:00:00'),
+      setAt(routePayload, ['generated_at'], '2026-08-29T12:34:56'),
+      setAt(routePayload, ['extra'], true),
+      setAt(routePayload, ['coordinates', 0, 'latitude'], -91),
+      setAt(routePayload, ['coordinates', 0, 'latitude'], 91),
+      setAt(routePayload, ['coordinates', 0, 'latitude'], NaN),
+      setAt(routePayload, ['coordinates', 0, 'latitude'], '39'),
+      setAt(routePayload, ['coordinates', 0, 'longitude'], -181),
+      setAt(routePayload, ['coordinates', 0, 'longitude'], 181),
+      setAt(routePayload, ['coordinates', 0, 'longitude'], Infinity),
+      setAt(routePayload, ['coordinates', 0, 'longitude'], '-104'),
+      setAt(routePayload, ['coordinates', 0, 'altitude_meters'], Infinity),
+      setAt(routePayload, ['coordinates', 0, 'altitude_meters'], '1'),
+      setAt(routePayload, ['coordinates', 0, 'sequence'], NaN),
+      setAt(routePayload, ['coordinates', 0, 'sequence'], '1'),
+      setAt(routePayload, ['coordinates', 0, 'x'], 1),
     ];
 
-    for (const bad of invalid) {
-      respond(bad);
-      await expect(getRouteCoordinates('west')).rejects.toMatchObject({
-        source: 'route-coordinates',
-      });
-    }
+    for (const bad of invalid) await expectRouteInvalid(bad);
   });
 });

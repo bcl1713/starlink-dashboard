@@ -2,79 +2,44 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from './api-client';
 import { getActiveXLink } from './monitoring';
+import {
+  activeXLinkPayload,
+  setAt,
+  withResponse,
+  xLinkHandoff,
+} from './monitoring-test-fixtures';
 
 vi.mock('./api-client', () => ({ apiClient: { get: vi.fn() } }));
 
 const getMock = vi.mocked(apiClient.get);
-const aware = '2026-08-29T12:34:56Z';
-const coordinate = {
-  satellite_id: 'sat-1',
-  state: 'normal',
-  color: 'green',
-  relative_azimuth_degrees: 12.5,
-  in_forbidden_window: false,
-  point: 'aircraft',
-  sequence: 0,
-  latitude: 39,
-  longitude: -104,
-  observed_at: null,
-};
-const handoff = {
-  phase: 'outside',
-  transition_id: null,
-  transition_satellite_id: null,
-  radius_meters: 1000,
-  distance_to_transition_meters: null,
-  in_handoff_zone: false,
-  route_progress_percent: null,
-  transition_progress_percent: null,
-};
-const payload = {
-  coordinates: [coordinate],
-  links: [
-    {
-      satellite_id: 'sat-1',
-      state: 'normal',
-      color: 'green',
-      relative_azimuth_degrees: 12.5,
-      in_forbidden_window: false,
-      coordinates: [
-        coordinate,
-        { ...coordinate, point: 'satellite', sequence: 1 },
-      ],
-    },
-  ],
-  total: 1,
-  satellite_id: 'sat-1',
-  pending_satellite_id: null,
-  handoff,
-  state: 'normal',
-  color: 'green',
-  relative_azimuth_degrees: 12.5,
-  in_forbidden_window: false,
-  observed_at: null,
-  generated_at: aware,
-};
 
 beforeEach(() => getMock.mockReset());
 
 function respond(data: unknown) {
-  getMock.mockResolvedValueOnce({ data });
+  getMock.mockResolvedValueOnce(withResponse(data));
+}
+
+async function expectActiveInvalid(payload: unknown) {
+  respond(payload);
+  await expect(getActiveXLink('normal')).rejects.toMatchObject({
+    source: 'active-x-link',
+  });
 }
 
 describe('active X-link overview service', () => {
   it('requests exact state params and parses populated and empty filtered states', async () => {
     const signal = new AbortController().signal;
-    respond(payload);
-
-    await expect(getActiveXLink('warning', signal)).resolves.toEqual(payload);
+    respond(activeXLinkPayload);
+    await expect(getActiveXLink('warning', signal)).resolves.toEqual(
+      activeXLinkPayload
+    );
     expect(getMock).toHaveBeenCalledWith('/api/active-x-link', {
       params: { state: 'warning' },
       signal,
     });
 
     const empty = {
-      ...payload,
+      ...activeXLinkPayload,
       coordinates: [],
       links: [],
       total: 0,
@@ -87,13 +52,25 @@ describe('active X-link overview service', () => {
     await expect(getActiveXLink('normal')).resolves.toEqual(empty);
   });
 
-  it('parses handoff phase variants and nullable top-level state fields', async () => {
+  it('parses link enums, handoff phases, nullables, and observed timestamps', async () => {
     const variants = [
-      { ...payload, handoff: { ...handoff, phase: 'in_handoff_zone' } },
-      { ...payload, handoff: { ...handoff, phase: 'committed' } },
+      setAt(activeXLinkPayload, ['coordinates', 0, 'state'], 'warning'),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'color'], 'yellow'),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'point'], 'satellite'),
+      setAt(activeXLinkPayload, ['links', 0, 'state'], 'warning'),
+      setAt(activeXLinkPayload, ['links', 0, 'color'], 'yellow'),
       {
-        ...payload,
+        ...activeXLinkPayload,
+        handoff: { ...xLinkHandoff, phase: 'in_handoff_zone' },
+      },
+      {
+        ...activeXLinkPayload,
+        handoff: { ...xLinkHandoff, phase: 'committed' },
+      },
+      {
+        ...activeXLinkPayload,
         satellite_id: null,
+        pending_satellite_id: null,
         state: null,
         color: null,
         relative_azimuth_degrees: null,
@@ -108,45 +85,84 @@ describe('active X-link overview service', () => {
     }
   });
 
-  it('rejects malformed nested coordinate, link, and handoff data', async () => {
+  it('rejects malformed coordinate, link, handoff, and top-level data', async () => {
     const invalid = [
-      { ...payload, total: 2 },
-      { ...payload, generated_at: '2026-08-29T12:34:56' },
-      { ...payload, handoff: null },
-      { ...payload, state: 'alert' },
-      { ...payload, color: 'red' },
-      { ...payload, relative_azimuth_degrees: 361 },
-      { ...payload, observed_at: '2026-08-29T12:34:56' },
-      { ...payload, extra: true },
-      { ...payload, coordinates: [{ ...coordinate, point: 'ground' }] },
-      { ...payload, coordinates: [{ ...coordinate, sequence: -1 }] },
-      { ...payload, coordinates: [{ ...coordinate, latitude: 91 }] },
-      { ...payload, coordinates: [{ ...coordinate, observed_at: 'naive' }] },
-      {
-        ...payload,
-        links: [
-          {
-            ...payload.links[0],
-            coordinates: [{ ...coordinate, extra: true }],
-          },
-        ],
-      },
-      { ...payload, handoff: { ...handoff, phase: 'pending' } },
-      { ...payload, handoff: { ...handoff, radius_meters: -1 } },
-      {
-        ...payload,
-        handoff: { ...handoff, distance_to_transition_meters: -1 },
-      },
-      { ...payload, handoff: { ...handoff, route_progress_percent: 101 } },
-      { ...payload, handoff: { ...handoff, transition_progress_percent: -1 } },
-      { ...payload, handoff: { ...handoff, extra: true } },
+      setAt(activeXLinkPayload, ['total'], -1),
+      setAt(activeXLinkPayload, ['total'], 2),
+      setAt(activeXLinkPayload, ['generated_at'], '2026-08-29T12:34:56'),
+      setAt(activeXLinkPayload, ['handoff'], null),
+      setAt(activeXLinkPayload, ['state'], 'alert'),
+      setAt(activeXLinkPayload, ['color'], 'red'),
+      setAt(activeXLinkPayload, ['relative_azimuth_degrees'], -1),
+      setAt(activeXLinkPayload, ['relative_azimuth_degrees'], 361),
+      setAt(activeXLinkPayload, ['relative_azimuth_degrees'], Infinity),
+      setAt(activeXLinkPayload, ['in_forbidden_window'], 'false'),
+      setAt(activeXLinkPayload, ['observed_at'], '2026-08-29T12:34:56'),
+      setAt(activeXLinkPayload, ['extra'], true),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'state'], 'alert'),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'color'], 'red'),
+      setAt(
+        activeXLinkPayload,
+        ['coordinates', 0, 'relative_azimuth_degrees'],
+        -1
+      ),
+      setAt(
+        activeXLinkPayload,
+        ['coordinates', 0, 'relative_azimuth_degrees'],
+        361
+      ),
+      setAt(
+        activeXLinkPayload,
+        ['coordinates', 0, 'relative_azimuth_degrees'],
+        Infinity
+      ),
+      setAt(
+        activeXLinkPayload,
+        ['coordinates', 0, 'in_forbidden_window'],
+        'no'
+      ),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'point'], 'ground'),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'sequence'], -1),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'sequence'], 1.5),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'latitude'], 91),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'latitude'], NaN),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'longitude'], -181),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'longitude'], Infinity),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'observed_at'], 'naive'),
+      setAt(activeXLinkPayload, ['coordinates', 0, 'extra'], true),
+      setAt(activeXLinkPayload, ['links', 0, 'state'], 'alert'),
+      setAt(activeXLinkPayload, ['links', 0, 'color'], 'red'),
+      setAt(activeXLinkPayload, ['links', 0, 'relative_azimuth_degrees'], -1),
+      setAt(activeXLinkPayload, ['links', 0, 'relative_azimuth_degrees'], 361),
+      setAt(
+        activeXLinkPayload,
+        ['links', 0, 'relative_azimuth_degrees'],
+        Infinity
+      ),
+      setAt(activeXLinkPayload, ['links', 0, 'in_forbidden_window'], 'no'),
+      setAt(activeXLinkPayload, ['links', 0, 'extra'], true),
+      setAt(activeXLinkPayload, ['links', 0, 'coordinates', 0, 'extra'], true),
+      setAt(activeXLinkPayload, ['handoff', 'phase'], 'pending'),
+      setAt(activeXLinkPayload, ['handoff', 'transition_id'], 1),
+      setAt(activeXLinkPayload, ['handoff', 'transition_satellite_id'], 1),
+      setAt(activeXLinkPayload, ['handoff', 'radius_meters'], -1),
+      setAt(activeXLinkPayload, ['handoff', 'radius_meters'], Infinity),
+      setAt(
+        activeXLinkPayload,
+        ['handoff', 'distance_to_transition_meters'],
+        -1
+      ),
+      setAt(
+        activeXLinkPayload,
+        ['handoff', 'distance_to_transition_meters'],
+        Infinity
+      ),
+      setAt(activeXLinkPayload, ['handoff', 'in_handoff_zone'], 'false'),
+      setAt(activeXLinkPayload, ['handoff', 'route_progress_percent'], 101),
+      setAt(activeXLinkPayload, ['handoff', 'transition_progress_percent'], -1),
+      setAt(activeXLinkPayload, ['handoff', 'extra'], true),
     ];
 
-    for (const bad of invalid) {
-      respond(bad);
-      await expect(getActiveXLink('normal')).rejects.toMatchObject({
-        source: 'active-x-link',
-      });
-    }
+    for (const bad of invalid) await expectActiveInvalid(bad);
   });
 });

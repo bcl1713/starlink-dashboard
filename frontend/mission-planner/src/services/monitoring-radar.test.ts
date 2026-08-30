@@ -82,9 +82,17 @@ describe('RainViewer radar tile service', () => {
     for (const coords of [
       { z: -1, x: 0, y: 0 },
       { z: 8, x: 0, y: 0 },
+      { z: NaN, x: 0, y: 0 },
+      { z: Infinity, x: 0, y: 0 },
       { z: 2.5, x: 0, y: 0 },
+      { z: 2, x: -1, y: 0 },
+      { z: 2, x: 1.5, y: 0 },
       { z: 2, x: 4, y: 0 },
+      { z: 2, x: NaN, y: 0 },
       { z: 2, x: 0, y: 4 },
+      { z: 2, x: 0, y: -1 },
+      { z: 2, x: 0, y: 1.5 },
+      { z: 2, x: 0, y: NaN },
       { z: 2, x: Number.POSITIVE_INFINITY, y: 0 },
     ]) {
       await expect(getRainViewerRadarTile(coords)).rejects.toMatchObject({
@@ -101,6 +109,7 @@ describe('RainViewer radar tile service', () => {
   it('rejects invalid radar binary and headers', async () => {
     for (const response of [
       { data: new Uint8Array(pngBytes()), headers: goodHeaders() },
+      { data: pngBytes(0), headers: goodHeaders() },
       { data: pngBytes(7), headers: goodHeaders() },
       { data: pngBytes(2 * 1024 * 1024 + 1), headers: goodHeaders() },
       {
@@ -167,6 +176,20 @@ describe('RainViewer radar tile service', () => {
         data: pngBytes(),
         headers: {
           'content-type': 'image/png',
+          'x-radar-frame-timestamp': '-946684800',
+        },
+      },
+      {
+        data: pngBytes(),
+        headers: {
+          'content-type': 'image/png',
+          'x-radar-frame-timestamp': ' 946684800',
+        },
+      },
+      {
+        data: pngBytes(),
+        headers: {
+          'content-type': 'image/png',
           'x-radar-frame-timestamp': '946684800 ',
         },
       },
@@ -176,6 +199,13 @@ describe('RainViewer radar tile service', () => {
           'content-type': 'image/png',
           'x-radar-frame-timestamp': '9e8',
         },
+      },
+      {
+        data: pngBytes(),
+        headers: new AxiosHeaders({
+          'content-type': 'image/png',
+          'x-radar-frame-timestamp': ['946684800', '946684801'],
+        }),
       },
     ]) {
       respond(response.data, response.headers);

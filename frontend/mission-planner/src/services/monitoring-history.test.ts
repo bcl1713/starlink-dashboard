@@ -2,44 +2,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from './api-client';
 import { getMonitoringHistory } from './monitoring';
+import {
+  historyPayload,
+  historyMetrics,
+  missing,
+  setAt,
+  withResponse,
+} from './monitoring-test-fixtures';
 import { OverviewDataValidationError } from '../types/monitoring';
 
 vi.mock('./api-client', () => ({ apiClient: { get: vi.fn() } }));
 
 const getMock = vi.mocked(apiClient.get);
-const aware = '2026-08-29T12:34:56.789123Z';
-const metrics = [
-  'latitude_degrees',
-  'longitude_degrees',
-  'latency_ms',
-  'throughput_down_mbps',
-  'throughput_up_mbps',
-  'packet_loss_percent',
-] as const;
-
-const historyPayload = {
-  generated_at: aware,
-  window_start: '2026-08-29T12:00:00-06:00',
-  window_end: '2026-08-29T12:30:00-06:00',
-  range_seconds: 1800,
-  step_seconds: 1,
-  series: metrics.map((metric, index) => ({
-    metric,
-    samples: [
-      { timestamp: `2026-08-29T12:00:0${index}.000001Z`, value: index },
-      { timestamp: `2026-08-29T12:00:0${index}.000002Z`, value: null },
-    ],
-  })),
-};
 
 beforeEach(() => getMock.mockReset());
 
 function respond(data: unknown) {
-  getMock.mockResolvedValueOnce({ data });
+  getMock.mockResolvedValueOnce(withResponse(data));
 }
 
-function withSeries(series: unknown[]) {
-  return { ...historyPayload, series };
+function withFirstSeriesSamples(
+  samples: { timestamp: string; value: number | null }[]
+) {
+  return setAt(historyPayload, ['series', 0, 'samples'], samples);
 }
 
 async function expectHistoryInvalid(payload: unknown) {
@@ -53,7 +38,7 @@ async function expectHistoryInvalid(payload: unknown) {
 }
 
 describe('monitoring history overview service', () => {
-  it('requests exact params, preserves backend metric serialization and timestamps', async () => {
+  it('requests exact params, preserves metric serialization and timestamps', async () => {
     const signal = new AbortController().signal;
     respond(historyPayload);
 
@@ -69,100 +54,92 @@ describe('monitoring history overview service', () => {
 
   it('uses monitoring history defaults', async () => {
     respond(historyPayload);
-
     await getMonitoringHistory();
-
     expect(getMock).toHaveBeenCalledWith('/api/monitoring/history', {
       params: { range_seconds: 1800, step_seconds: 1 },
       signal: undefined,
     });
   });
 
-  it('accepts full-precision chronological instants that Date.parse collapses', async () => {
-    const precise = withSeries(
-      historyPayload.series.map((series, index) =>
-        index === 0
-          ? {
-              ...series,
-              samples: [
-                { timestamp: '2026-08-29T12:00:00.000001Z', value: 1 },
-                { timestamp: '2026-08-29T12:00:00.000002Z', value: 2 },
-              ],
-            }
-          : series
-      )
-    );
-    respond(precise);
+  it('accepts every required timestamp chronology form without normalizing text', async () => {
+    const accepted = [
+      ['2026-08-29T12:00Z', '2026-08-29T12:01Z'],
+      ['0000-02-29T00:00Z', '0000-03-01T00:00Z'],
+      ['0099-12-31T23:59:59Z', '0100-01-01T00:00:00Z'],
+      ['1969-12-31T23:59:59.999999Z', '1970-01-01T00:00:00Z'],
+      ['2025-12-31T23:30:00-01:00', '2026-01-01T02:00:00+00:00'],
+      ['2026-08-29T12:00:00+01:00', '2026-08-29T11:30:00Z'],
+      ['2026-08-29T12:00:00.000001Z', '2026-08-29T12:00:00.000002Z'],
+      ['2026-08-29T12:00:00.123456789Z', '2026-08-29T12:00:00.123456790Z'],
+    ];
 
-    await expect(getMonitoringHistory()).resolves.toEqual(precise);
+    for (const [first, second] of accepted) {
+      const payload = withFirstSeriesSamples([
+        { timestamp: first, value: 1 },
+        { timestamp: second, value: 2 },
+      ]);
+      respond(payload);
+      await expect(getMonitoringHistory()).resolves.toEqual(payload);
+    }
   });
 
-  it('rejects malformed history contracts including metric order and name keys', async () => {
-    const duplicate = withSeries(
-      historyPayload.series.map((series, index) =>
-        index === 1 ? { ...series, metric: 'latitude_degrees' } : series
-      )
+  it('rejects equal instants, coercion, bad structure, and bad ranges in isolation', async () => {
+    const duplicateMetric = setAt(
+      historyPayload,
+      ['series', 1, 'metric'],
+      historyMetrics[0]
     );
-    const wrongOrder = withSeries([
-      historyPayload.series[1],
-      historyPayload.series[0],
-      ...historyPayload.series.slice(2),
-    ]);
-    const nameKey = withSeries(
-      historyPayload.series.map(({ metric, ...series }) => ({
+    const wrongOrder = {
+      ...historyPayload,
+      series: [
+        historyPayload.series[1],
+        historyPayload.series[0],
+        ...historyPayload.series.slice(2),
+      ],
+    };
+    const nameKey = {
+      ...historyPayload,
+      series: historyPayload.series.map(({ metric, ...series }) => ({
         ...series,
         name: metric,
-      }))
-    );
-    const equalOffsetInstants = withSeries([
-      {
-        ...historyPayload.series[0],
-        samples: [
-          { timestamp: '2026-08-29T12:00:00Z', value: 1 },
-          { timestamp: '2026-08-29T07:00:00-05:00', value: 2 },
-        ],
-      },
-      ...historyPayload.series.slice(1),
-    ]);
-    const offsetInversion = withSeries([
-      {
-        ...historyPayload.series[0],
-        samples: [
-          { timestamp: '2026-08-29T12:00:00+01:00', value: 1 },
-          { timestamp: '2026-08-29T11:30:00+01:00', value: 2 },
-        ],
-      },
-      ...historyPayload.series.slice(1),
-    ]);
-
+      })),
+    };
     const invalid = [
-      { ...historyPayload, range_seconds: 59 },
-      { ...historyPayload, range_seconds: 60.5 },
-      { ...historyPayload, step_seconds: 61 },
-      { ...historyPayload, generated_at: '2026-08-29T12:34:56' },
+      setAt(historyPayload, ['range_seconds'], 59),
+      setAt(historyPayload, ['range_seconds'], 3601),
+      setAt(historyPayload, ['range_seconds'], 60.5),
+      setAt(historyPayload, ['range_seconds'], '1800'),
+      setAt(historyPayload, ['step_seconds'], 0),
+      setAt(historyPayload, ['step_seconds'], 61),
+      setAt(historyPayload, ['step_seconds'], 1.5),
+      setAt(historyPayload, ['generated_at'], '2026-08-29T12:34:56'),
+      setAt(historyPayload, ['window_start'], '2026-08-29T12:34:56'),
+      setAt(historyPayload, ['window_end'], '2026-08-29T12:34:56'),
       { ...historyPayload, series: historyPayload.series.slice(1) },
-      { ...historyPayload, series: [{ ...historyPayload.series[0], x: 1 }] },
-      duplicate,
+      setAt(historyPayload, ['series', 0, 'extra'], true),
+      setAt(historyPayload, ['series', 0, 'samples', 0, 'extra'], true),
+      setAt(historyPayload, ['series', 0, 'samples', 0, 'value'], NaN),
+      setAt(historyPayload, ['series', 0, 'samples', 0, 'value'], '1'),
+      setAt(historyPayload, ['series', 0, 'samples', 0, 'value'], missing),
+      setAt(
+        historyPayload,
+        ['series', 0, 'samples', 0, 'timestamp'],
+        '2026-08-29T12:00:00'
+      ),
+      duplicateMetric,
       wrongOrder,
       nameKey,
-      equalOffsetInstants,
-      offsetInversion,
-      withSeries([
-        {
-          ...historyPayload.series[0],
-          samples: [{ timestamp: aware, value: Number.NaN }],
-        },
-        ...historyPayload.series.slice(1),
+      withFirstSeriesSamples([
+        { timestamp: '2026-08-29T12:00:00Z', value: 1 },
+        { timestamp: '2026-08-29T07:00:00-05:00', value: 2 },
       ]),
-      withSeries([
-        { ...historyPayload.series[0], samples: [{ timestamp: aware }] },
+      withFirstSeriesSamples([
+        { timestamp: '2026-08-29T12:00:00.1Z', value: 1 },
+        { timestamp: '2026-08-29T12:00:00.1000Z', value: 2 },
       ]),
-      withSeries([
-        {
-          ...historyPayload.series[0],
-          samples: [{ timestamp: '2026-08-29T12:00:00', value: 1 }],
-        },
-        ...historyPayload.series.slice(1),
+      withFirstSeriesSamples([
+        { timestamp: '2026-08-29T12:00:00+01:00', value: 1 },
+        { timestamp: '2026-08-29T11:30:00+01:00', value: 2 },
       ]),
     ];
 
@@ -170,7 +147,7 @@ describe('monitoring history overview service', () => {
   });
 
   it('emits sanitized validation errors', async () => {
-    respond({ ...historyPayload, generated_at: 'naive' });
+    respond(setAt(historyPayload, ['generated_at'], 'naive'));
 
     try {
       await getMonitoringHistory();

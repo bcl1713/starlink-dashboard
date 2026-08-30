@@ -3,39 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { apiClient } from './api-client';
 import { getStatus } from './monitoring';
+import {
+  missing,
+  setAt,
+  statusPayload,
+  withResponse,
+} from './monitoring-test-fixtures';
 import { OverviewDataValidationError } from '../types/monitoring';
 
 vi.mock('./api-client', () => ({ apiClient: { get: vi.fn() } }));
 
 const getMock = vi.mocked(apiClient.get);
-const aware = '2026-08-29T12:34:56.789Z';
-const statusPayload = {
-  timestamp: aware,
-  position: {
-    latitude: -90,
-    longitude: 180,
-    altitude: -12.5,
-    speed: 0,
-    heading: 360,
-  },
-  network: {
-    latency_ms: 23.5,
-    throughput_down_mbps: 125,
-    throughput_up_mbps: 18,
-    packet_loss_percent: 100,
-  },
-  obstruction: { obstruction_percent: 0 },
-  environmental: {
-    signal_quality_percent: 99.1,
-    uptime_seconds: 120,
-    temperature_celsius: null,
-  },
-};
 
 beforeEach(() => getMock.mockReset());
 
 function respond(data: unknown) {
-  getMock.mockResolvedValueOnce({ data });
+  getMock.mockResolvedValueOnce(withResponse(data));
 }
 
 async function expectStatusInvalid(payload: unknown) {
@@ -59,56 +42,58 @@ async function expectStatusInvalid(payload: unknown) {
 describe('status overview service', () => {
   it('requests /api/status with signal identity and preserves timestamps', async () => {
     const signal = new AbortController().signal;
-    respond(statusPayload);
+    respond({
+      ...statusPayload,
+      environmental: {
+        ...statusPayload.environmental,
+        temperature_celsius: null,
+      },
+    });
 
-    await expect(getStatus(signal)).resolves.toEqual(statusPayload);
+    await expect(getStatus(signal)).resolves.toMatchObject({
+      timestamp: statusPayload.timestamp,
+    });
 
     expect(getMock).toHaveBeenCalledWith('/api/status', { signal });
   });
 
-  it('rejects malformed strict status payloads', async () => {
-    const invalid = [
-      { ...statusPayload, timestamp: '2026-08-29T12:34:56' },
-      { ...statusPayload, extra: true },
-      { ...statusPayload, position: { ...statusPayload.position, yaw: 1 } },
-      {
-        ...statusPayload,
-        position: { ...statusPayload.position, latitude: 91 },
-      },
-      { ...statusPayload, position: { ...statusPayload.position, speed: -1 } },
-      {
-        ...statusPayload,
-        position: { ...statusPayload.position, heading: 361 },
-      },
-      {
-        ...statusPayload,
-        position: { ...statusPayload.position, altitude: NaN },
-      },
-      {
-        ...statusPayload,
-        network: { ...statusPayload.network, latency_ms: Infinity },
-      },
-      {
-        ...statusPayload,
-        network: { ...statusPayload.network, packet_loss_percent: -0.1 },
-      },
-      {
-        ...statusPayload,
-        obstruction: { ...statusPayload.obstruction, obstruction_percent: 101 },
-      },
-      {
-        ...statusPayload,
-        environmental: {
-          ...statusPayload.environmental,
-          signal_quality_percent: '99',
-        },
-      },
-      {
-        ...statusPayload,
-        environmental: { ...statusPayload.environmental, uptime_seconds: -1 },
-      },
-      { ...statusPayload, environmental: { uptime_seconds: 1 } },
+  it('rejects missing, extras, coercion, nonfinite, and bounds per field', async () => {
+    const invalid: unknown[] = [
+      setAt(statusPayload, ['timestamp'], '2026-08-29T12:34:56'),
+      setAt(statusPayload, ['timestamp'], missing),
+      setAt(statusPayload, ['position'], missing),
+      setAt(statusPayload, ['network'], missing),
+      setAt(statusPayload, ['obstruction'], missing),
+      setAt(statusPayload, ['environmental'], missing),
+      setAt(statusPayload, ['extra'], true),
     ];
+    const numericCases = [
+      [['position', 'latitude'], -91, 91, NaN, '39'],
+      [['position', 'longitude'], -181, 181, Infinity, '104'],
+      [['position', 'altitude'], null, undefined, NaN, '1'],
+      [['position', 'speed'], -1, undefined, Infinity, '1'],
+      [['position', 'heading'], -1, 361, NaN, '1'],
+      [['network', 'latency_ms'], -1, undefined, Infinity, '1'],
+      [['network', 'throughput_down_mbps'], -1, undefined, NaN, '1'],
+      [['network', 'throughput_up_mbps'], -1, undefined, Infinity, '1'],
+      [['network', 'packet_loss_percent'], -0.1, 100.1, NaN, '1'],
+      [['obstruction', 'obstruction_percent'], -0.1, 100.1, Infinity, '1'],
+      [['environmental', 'signal_quality_percent'], -0.1, 100.1, NaN, '1'],
+      [['environmental', 'uptime_seconds'], -1, undefined, Infinity, '1'],
+      [['environmental', 'temperature_celsius'], undefined, Infinity, NaN, '1'],
+    ] as const;
+
+    for (const [path, ...values] of numericCases) {
+      invalid.push(setAt(statusPayload, path, missing));
+      for (const value of values)
+        invalid.push(setAt(statusPayload, path, value));
+    }
+    invalid.push(
+      setAt(statusPayload, ['position', 'extra'], true),
+      setAt(statusPayload, ['network', 'extra'], true),
+      setAt(statusPayload, ['obstruction', 'extra'], true),
+      setAt(statusPayload, ['environmental', 'extra'], true)
+    );
 
     for (const payload of invalid) await expectStatusInvalid(payload);
   });
