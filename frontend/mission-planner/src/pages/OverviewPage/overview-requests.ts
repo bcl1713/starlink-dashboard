@@ -17,11 +17,9 @@ import type {
   OverviewDataServices,
   OverviewManualResult,
   OverviewSourceKey,
-  UseOverviewDataOptions,
 } from './overview-data-types';
 import { mergeTelemetryBatch } from './overview-data-types';
 import {
-  HTTP_SLOTS,
   type OverviewHttpSlot,
   type SlotCommit,
   type SlotOutcome,
@@ -32,7 +30,6 @@ import {
   classifyOverviewError,
   historyContains,
 } from './overview-freshness';
-import type { OverviewCycleReason } from './overview-lifecycle';
 
 export const DEFAULT_SERVICES: OverviewDataServices = {
   getStatus,
@@ -44,17 +41,6 @@ export const DEFAULT_SERVICES: OverviewDataServices = {
   getRouteCoordinates,
   getActiveXLink,
 };
-
-const PERIODS = {
-  telemetry: 1,
-  pois: 1,
-  satellites: 1,
-  missionEvents: 1,
-  activeLink: 1,
-  route: 5,
-  groundEntryPoint: 30,
-  history: 10,
-} as const satisfies Record<OverviewHttpSlot, number>;
 
 type RequestRecord = {
   controller: AbortController;
@@ -134,24 +120,6 @@ export function createOverviewRequestRegistry(services: OverviewDataServices) {
   };
 }
 
-export function dueSlots(
-  reason: OverviewCycleReason,
-  cadence: UseOverviewDataOptions['cadence'],
-  anchors: Map<OverviewHttpSlot, number>,
-  nowMs: number
-): OverviewHttpSlot[] {
-  if (reason === 'manual' || reason === 'bootstrap') return [...HTTP_SLOTS];
-  if (cadence === 'paused') return [];
-  return HTTP_SLOTS.filter((slot) => {
-    const previous = anchors.get(slot);
-    const period = Math.max(cadence, PERIODS[slot]) * 1000;
-    return previous === undefined || Math.max(0, nowMs - previous) >= period;
-  });
-}
-
-export const cadenceSeconds = (cadence: UseOverviewDataOptions['cadence']) =>
-  cadence === 'paused' ? 30 : cadence;
-
 export function manualResultFromOutcomes(
   outcomes: readonly { outcome: SlotOutcome }[]
 ): OverviewManualResult {
@@ -211,16 +179,6 @@ export function buildSlotCommits(
       (status) => !historyContains(history, status.timestamp)
     ),
   };
-}
-
-export function safeHidden(
-  visibility: UseOverviewDataOptions['visibility']
-): boolean {
-  try {
-    return visibility?.isHidden() ?? false;
-  } catch {
-    return false;
-  }
 }
 
 export function defaultVisibility() {

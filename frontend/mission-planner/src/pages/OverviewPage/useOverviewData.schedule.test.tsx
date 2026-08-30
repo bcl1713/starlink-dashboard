@@ -1,5 +1,5 @@
-import { act, renderHook } from '@testing-library/react';
-import { StrictMode } from 'react';
+import { act, render, renderHook } from '@testing-library/react';
+import { StrictMode, useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
@@ -281,20 +281,49 @@ describe('useOverviewData scheduling', () => {
 
   it('keeps one Task8 timer and one bootstrap under StrictMode', async () => {
     const { calls, svc } = services();
-    const { unmount } = renderHook(
-      () =>
-        useOverviewData({
-          cadence: 1,
-          poiFilter: 'arrival',
-          radarEnabled: true,
-          services: svc,
-          now: () => 1_777_294_800_000,
-        }),
-      { wrapper: StrictMode }
+    const announcements: string[] = [];
+    function Probe() {
+      const { snapshot } = useOverviewData({
+        cadence: 1,
+        poiFilter: 'arrival',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      });
+      useEffect(() => {
+        if (snapshot.announcement)
+          announcements.push(
+            `${snapshot.initialState}:${snapshot.announcement}`
+          );
+      }, [snapshot]);
+      return null;
+    }
+    const { unmount } = render(
+      <StrictMode>
+        <Probe />
+      </StrictMode>
     );
     await act(flush);
     expect(calls).toHaveLength(10);
+    expect(announcements).toEqual(['ready:Overview ready.']);
     expect(vi.getTimerCount()).toBeLessThanOrEqual(1);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('bootstraps the latest ordinary mount with exactly ten calls', async () => {
+    const { calls, svc } = services();
+    const { unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 1,
+        poiFilter: 'arrival',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    expect(calls).toHaveLength(10);
     unmount();
     expect(vi.getTimerCount()).toBe(0);
   });

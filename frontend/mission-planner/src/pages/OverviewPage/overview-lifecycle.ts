@@ -1,8 +1,3 @@
-import { HTTP_SLOTS, type OverviewHttpSlot } from './overview-data-reducer';
-import type { UseOverviewDataOptions } from './overview-data-types';
-import { safeNow } from './overview-freshness';
-import { dueSlots, safeHidden } from './overview-requests';
-
 export type OverviewCycleReason =
   | 'scheduled'
   | 'manual'
@@ -67,45 +62,8 @@ export function beginOverviewCycle(lifecycle: OverviewLifecycle): number {
   return lifecycle.generation;
 }
 
-export function beginOverviewCyclePlan(
-  lifecycle: OverviewLifecycle,
-  reason: OverviewCycleReason,
-  current: Pick<UseOverviewDataOptions, 'cadence' | 'now' | 'visibility'>,
-  anchors: Map<OverviewHttpSlot, number>
-) {
-  const generation = beginOverviewCycle(lifecycle);
-  if (
-    lifecycle.invalidated ||
-    !isOverviewLifecycleCurrent(lifecycle, generation) ||
-    ((reason === 'scheduled' || reason === 'visibility') &&
-      (current.cadence === 'paused' || safeHidden(current.visibility)))
-  ) {
-    return { generation, nowMs: null, selected: [] };
-  }
-  const nowMs = safeNow(current.now ?? Date.now);
-  if (nowMs === null) return { generation, nowMs, selected: [] };
-  const didReset = applyCycleReset(
-    lifecycle,
-    generation,
-    anchors,
-    nowMs,
-    reason
-  );
-  return {
-    generation,
-    nowMs,
-    selected: didReset ? [] : dueSlots(reason, current.cadence, anchors, nowMs),
-  };
-}
-
-export function finishOverviewCycle(
-  lifecycle: OverviewLifecycle,
-  generation: number,
-  anchors: Map<OverviewHttpSlot, number>,
-  now: () => number
-): void {
+export function finishOverviewCycle(lifecycle: OverviewLifecycle): void {
   lifecycle.activeCycles = Math.max(0, lifecycle.activeCycles - 1);
-  resetOverviewAnchorsWhenIdle(lifecycle, generation, anchors, now);
 }
 
 export function markOverviewResetPending(lifecycle: OverviewLifecycle): void {
@@ -115,42 +73,52 @@ export function markOverviewResetPending(lifecycle: OverviewLifecycle): void {
 export function resetOverviewAnchorsWhenIdle(
   lifecycle: OverviewLifecycle,
   generation: number,
-  anchors: Map<OverviewHttpSlot, number>,
-  now: () => number
-): boolean {
-  if (
-    !isOverviewLifecycleCurrent(lifecycle, generation) ||
-    !lifecycle.resetPending ||
-    lifecycle.activeCycles !== 0 ||
-    lifecycle.invalidated
-  ) {
-    return false;
-  }
-  const nowMs = safeNow(now);
-  if (nowMs === null) return false;
-  resetOverviewAnchors(anchors, nowMs);
-  lifecycle.resetPending = false;
-  return true;
+  reset: () => boolean
+): void {
+  if (!isOverviewResetReady(lifecycle, generation)) return;
+  if (!reset()) return;
+  clearOverviewResetPending(lifecycle, generation);
 }
 
-function applyCycleReset(
+export function finishOverviewCyclePlan(
   lifecycle: OverviewLifecycle,
   generation: number,
-  anchors: Map<OverviewHttpSlot, number>,
-  nowMs: number,
-  reason: OverviewCycleReason
+  reset: () => boolean
+): void {
+  finishOverviewCycle(lifecycle);
+  resetOverviewAnchorsWhenIdle(lifecycle, generation, reset);
+}
+
+export function isOverviewResetReady(
+  lifecycle: OverviewLifecycle,
+  generation: number
 ): boolean {
-  if (
-    !isOverviewLifecycleCurrent(lifecycle, generation) ||
-    !lifecycle.resetPending
-  ) {
-    return false;
-  }
-  if (lifecycle.activeCycles === 1) {
-    resetOverviewAnchors(anchors, nowMs);
+  return (
+    isOverviewLifecycleCurrent(lifecycle, generation) &&
+    lifecycle.resetPending &&
+    lifecycle.activeCycles === 0 &&
+    !lifecycle.invalidated
+  );
+}
+
+export function isOverviewCycleResetReady(
+  lifecycle: OverviewLifecycle,
+  generation: number
+): boolean {
+  return (
+    isOverviewLifecycleCurrent(lifecycle, generation) &&
+    lifecycle.resetPending &&
+    lifecycle.activeCycles === 1 &&
+    !lifecycle.invalidated
+  );
+}
+
+export function clearOverviewResetPending(
+  lifecycle: OverviewLifecycle,
+  generation: number
+): void {
+  if (isOverviewLifecycleCurrent(lifecycle, generation))
     lifecycle.resetPending = false;
-  }
-  return reason !== 'manual';
 }
 
 export async function raceOverviewLifecycle<T>(
@@ -169,11 +137,4 @@ export async function raceOverviewLifecycle<T>(
       return obsolete;
     }),
   ]);
-}
-
-function resetOverviewAnchors(
-  anchors: Map<OverviewHttpSlot, number>,
-  nowMs: number
-): void {
-  HTTP_SLOTS.forEach((slot) => anchors.set(slot, nowMs));
 }

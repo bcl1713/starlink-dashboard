@@ -22,21 +22,24 @@ import type {
 import {
   DEFAULT_SERVICES,
   buildSlotCommits,
-  cadenceSeconds,
   createOverviewRequestRegistry,
   defaultVisibility,
   manualResultFromOutcomes,
 } from './overview-requests';
 import {
   beginOverviewCyclePlan,
-  finishOverviewCycle,
+  cadenceSeconds,
+  resetAnchorsAt,
+} from './overview-cycle-policy';
+import {
+  finishOverviewCyclePlan,
   invalidateOverviewLifecycle,
-  isOverviewLifecycleCurrent as isLifecycleCurrent,
+  isOverviewLifecycleCurrent,
   markOverviewResetPending,
   mountOverviewLifecycle,
   OverviewLifecycle,
   raceOverviewLifecycle,
-  resetOverviewAnchorsWhenIdle as resetIdleAnchors,
+  resetOverviewAnchorsWhenIdle,
   type OverviewCycleReason,
 } from './overview-lifecycle';
 import {
@@ -45,7 +48,6 @@ import {
   safeNow,
 } from './overview-freshness';
 import { useOverviewRefresh } from './useOverviewRefresh';
-
 type DataSnapshot = ReturnType<typeof emptyOverviewSnapshot>;
 type CycleOutcome = Readonly<{ slot: OverviewHttpSlot; outcome: SlotOutcome }>;
 type RadarState = { gen: number; token: number; avail: OverviewAvailability };
@@ -61,13 +63,12 @@ export function useOverviewData(options: UseOverviewDataOptions) {
   } = options;
   const [snapshot, setSnapshot] = useState(emptyOverviewSnapshot);
   const [radarRefreshToken, setRadarRefreshToken] = useState(0);
-  const { registry, lifecycle } = useMemo(
-    () => ({
-      registry: createOverviewRequestRegistry(
-        providedServices ?? DEFAULT_SERVICES
-      ),
-      lifecycle: new OverviewLifecycle(),
-    }),
+  const [registry, lifecycle] = useMemo(
+    () =>
+      [
+        createOverviewRequestRegistry(providedServices ?? DEFAULT_SERVICES),
+        new OverviewLifecycle(),
+      ] as const,
     [providedServices]
   );
   const anchors = useRef(new Map<OverviewHttpSlot, number>());
@@ -77,11 +78,10 @@ export function useOverviewData(options: UseOverviewDataOptions) {
   const latest = useRef({ cadence, poiFilter, radarEnabled, now, visibility });
   latest.current = { cadence, poiFilter, radarEnabled, now, visibility };
   const setCurrentSnapshot = useCallback(
-    (generation: number, update: (snapshot: DataSnapshot) => DataSnapshot) => {
+    (gen: number, update: (snapshot: DataSnapshot) => DataSnapshot) =>
       setSnapshot((state) =>
-        isLifecycleCurrent(lifecycle, generation) ? update(state) : state
-      );
-    },
+        isOverviewLifecycleCurrent(lifecycle, gen) ? update(state) : state
+      ),
     [lifecycle]
   );
   const incrementRadarToken = useCallback(() => {
@@ -122,19 +122,19 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     [setCurrentSnapshot]
   );
   const runCycle = useCallback(
-    async (reason: OverviewCycleReason) => {
-      const current = latest.current;
+    async (why: OverviewCycleReason) => {
       const anchorMap = anchors.current;
       const { generation, nowMs, selected } = beginOverviewCyclePlan(
         lifecycle,
-        reason,
-        current,
+        why,
+        latest.current,
         anchorMap
       );
+      const current = latest.current;
       try {
         if (nowMs === null || selected.length === 0) return;
-        if (reason === 'manual') incrementRadarToken();
-        if (reason === 'manual')
+        if (why === 'manual') incrementRadarToken();
+        if (why === 'manual')
           setCurrentSnapshot(generation, (state) =>
             setManualResult(state, 'idle')
           );
@@ -143,24 +143,21 @@ export function useOverviewData(options: UseOverviewDataOptions) {
         );
         for (const slot of selected) anchorMap.set(slot, nowMs);
         const outcomes = await Promise.all(
-          selected.map(async (slot) => {
-            const outcome = await raceOverviewLifecycle(
+          selected.map(async (slot) => ({
+            slot,
+            outcome: await raceOverviewLifecycle(
               registry.start(slot, current.poiFilter),
               lifecycle
-            );
-            return { slot, outcome };
-          })
+            ),
+          }))
         );
         if (lifecycle.invalidated) return;
         const manualResult =
-          reason === 'manual' ? manualResultFromOutcomes(outcomes) : undefined;
+          why === 'manual' ? manualResultFromOutcomes(outcomes) : undefined;
         await commitBatch(outcomes, nowMs, generation, manualResult);
       } finally {
-        finishOverviewCycle(
-          lifecycle,
-          generation,
-          anchors.current,
-          latest.current.now
+        finishOverviewCyclePlan(lifecycle, generation, () =>
+          resetAnchorsAt(anchors.current, latest.current.now)
         );
       }
     },
@@ -168,9 +165,12 @@ export function useOverviewData(options: UseOverviewDataOptions) {
   );
   const rc = useOverviewRefresh({ cadence, now, onRefresh: runCycle });
   useEffect(() => {
-    mountOverviewLifecycle(lifecycle);
+    const gen = mountOverviewLifecycle(lifecycle);
     const radarState = radar.current;
-    Promise.resolve().then(() => void runCycle('bootstrap'));
+    Promise.resolve().then(() => {
+      if (isOverviewLifecycleCurrent(lifecycle, gen))
+        void runCycle('bootstrap');
+    });
     return () => {
       invalidateOverviewLifecycle(lifecycle);
       radarState.gen += 1;
@@ -182,7 +182,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     try {
       unsubscribe = visibility.subscribe(() => void runCycle('visibility'));
     } catch {
-      unsubscribe = undefined;
+      void unsubscribe;
     }
     return () => {
       try {
@@ -230,8 +230,9 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       return;
     }
     markOverviewResetPending(lifecycle);
-    const getNow = latest.current.now;
-    resetIdleAnchors(lifecycle, lifecycle.generation, anchors.current, getNow);
+    resetOverviewAnchorsWhenIdle(lifecycle, lifecycle.generation, () =>
+      resetAnchorsAt(anchors.current, latest.current.now)
+    );
     const nowMs = safeNow(latest.current.now);
     const paused = cadence === 'paused';
     setSnapshot((state) =>
