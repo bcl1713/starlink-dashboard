@@ -79,7 +79,26 @@ export function formatOverviewClock(
       second: '2-digit',
       timeZoneName: 'longOffset',
     });
-    const parts = formatter.formatToParts(now);
+    const resolvedOptions = formatter.resolvedOptions;
+    if (typeof resolvedOptions !== 'function') {
+      return null;
+    }
+    const resolved = resolvedOptions.call(formatter) as unknown;
+    if (
+      !resolved ||
+      typeof resolved !== 'object' ||
+      typeof (resolved as { timeZone?: unknown }).timeZone !== 'string'
+    ) {
+      return null;
+    }
+    const formatToParts = formatter.formatToParts;
+    if (typeof formatToParts !== 'function') {
+      return null;
+    }
+    const parts = formatToParts.call(formatter, now) as unknown;
+    if (!Array.isArray(parts)) {
+      return null;
+    }
     const hour = parts.find((part) => part.type === 'hour')?.value;
     const minute = parts.find((part) => part.type === 'minute')?.value;
     const second = parts.find((part) => part.type === 'second')?.value;

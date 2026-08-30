@@ -142,6 +142,63 @@ describe('overview preferences persistence', () => {
     ).toBe(Object.prototype);
   });
 
+  it('guards storage proxy lookup, apply, and return traps for load and save', () => {
+    const defaults = createDefaultOverviewPreferences();
+    const stored = JSON.stringify({ radarEnabled: false });
+    const proxyStorage = new Proxy(memoryStorage(stored), {
+      get(target, prop, receiver) {
+        if (prop === 'getItem') {
+          return new Proxy(target.getItem, {
+            apply() {
+              throw new Error('get apply');
+            },
+          });
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+
+    expect(loadOverviewPreferences(proxyStorage)).toEqual(defaults);
+    expect(
+      loadOverviewPreferences({
+        getItem: () =>
+          new Proxy(
+            {},
+            {
+              get() {
+                throw new Error('return trap');
+              },
+            }
+          ) as never,
+        setItem() {},
+      })
+    ).toEqual(defaults);
+    expect(
+      saveOverviewPreferences(
+        {
+          getItem: () => null,
+          get setItem() {
+            throw new Error('set lookup');
+          },
+        } as unknown as OverviewStorage,
+        defaults
+      )
+    ).toEqual({ ok: false, reason: 'storage-failure' });
+    expect(
+      saveOverviewPreferences(
+        {
+          getItem: () => null,
+          setItem: new Proxy(() => {}, {
+            apply() {
+              throw new Error('set apply');
+            },
+          }),
+        },
+        defaults
+      )
+    ).toEqual({ ok: false, reason: 'storage-failure' });
+  });
+
   it('migrates recognized fields independently and validates options', () => {
     const loaded = loadOverviewPreferences(
       memoryStorage(
@@ -178,6 +235,38 @@ describe('overview preferences persistence', () => {
       'waypoint',
       'alternate',
     ]);
+  });
+
+  it('defaults every malformed field independently without spreading pollution keys', () => {
+    const loaded = loadOverviewPreferences(
+      memoryStorage(
+        JSON.stringify({
+          version: 1,
+          clocks: 'wrong',
+          refreshCadence: '1',
+          radarEnabled: 'false',
+          poiFilter: 7,
+          disclosures: {
+            controlsExpanded: 'true',
+            additionalClocksExpanded: true,
+            clockSettingsExpanded: null,
+          },
+          __proto__: { polluted: true },
+          prototype: { polluted: true },
+          constructor: { prototype: { polluted: true } },
+        })
+      )
+    );
+
+    expect(loaded).toEqual({
+      ...createDefaultOverviewPreferences(),
+      disclosures: {
+        controlsExpanded: false,
+        additionalClocksExpanded: true,
+        clockSettingsExpanded: false,
+      },
+    });
+    expect(({} as { polluted?: boolean }).polluted).toBeUndefined();
   });
 
   it('normalizes persisted clocks with UTC first, canonical ids, limits, and duplicates', () => {
@@ -218,6 +307,39 @@ describe('overview preferences persistence', () => {
       'tz:America/Phoenix',
       'tz:America/Anchorage',
       'tz:Pacific/Honolulu',
+    ]);
+  });
+
+  it('enforces clock label and zone boundaries, aliases, case, and first duplicates', () => {
+    const label64 = 'x'.repeat(64);
+    const label65 = 'x'.repeat(65);
+    const zone100 = `${'A'.repeat(92)}/Chicago`;
+    const zone101 = `${'A'.repeat(93)}/Chicago`;
+    const loaded = loadOverviewPreferences(
+      memoryStorage(
+        JSON.stringify({
+          clocks: [
+            { timeZone: 'utc', label: 'lower utc ignored label' },
+            { timeZone: 'Etc/UTC', label: 'alias utc ignored label' },
+            { timeZone: 'America/Chicago', label: 'C1' },
+            { timeZone: 'america/chicago', label: 'C2' },
+            { timeZone: 'Europe/London', label: 'x' },
+            { timeZone: 'Europe/Paris', label: label64 },
+            { timeZone: 'Asia/Tokyo', label: '' },
+            { timeZone: 'Asia/Seoul', label: label65 },
+            { timeZone: '', label: 'empty zone' },
+            { timeZone: zone100, label: 'bad zone at max length' },
+            { timeZone: zone101, label: 'too long zone' },
+          ],
+        })
+      )
+    );
+
+    expect(loaded.clocks).toEqual([
+      { id: 'utc', timeZone: 'UTC', label: 'UTC (Zulu)' },
+      { id: 'tz:America/Chicago', timeZone: 'America/Chicago', label: 'C1' },
+      { id: 'tz:Europe/London', timeZone: 'Europe/London', label: 'x' },
+      { id: 'tz:Europe/Paris', timeZone: 'Europe/Paris', label: label64 },
     ]);
   });
 

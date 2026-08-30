@@ -66,6 +66,18 @@ describe('OverviewControls', () => {
       ['Paused', 'paused'],
     ]);
     expect(
+      within(screen.getByRole('combobox', { name: 'POI category' }))
+        .getAllByRole('option')
+        .map((option) => [option.textContent, option.getAttribute('value')])
+    ).toEqual([
+      ['Departure & Arrival', 'departure,arrival'],
+      ['All POIs', ''],
+      ['Departure Only', 'departure'],
+      ['Arrival Only', 'arrival'],
+      ['Waypoints Only', 'waypoint'],
+      ['Alternates Only', 'alternate'],
+    ]);
+    expect(
       screen.getAllByRole('combobox', { name: 'POI category' })
     ).toHaveLength(1);
     expect(
@@ -75,6 +87,21 @@ describe('OverviewControls', () => {
     expect(
       screen.getByRole('button', { name: 'Refresh overview' })
     ).toHaveClass('min-h-11');
+    for (const control of [
+      screen.getByRole('button', { name: 'Overview controls' }),
+      screen.getByRole('combobox', { name: 'Refresh cadence' }),
+      screen.getByRole('combobox', { name: 'POI category' }),
+      screen.getByRole('button', { name: 'Refresh overview' }),
+    ]) {
+      expect(control).toHaveClass('focus-visible:ring-2');
+      expect(control).toHaveClass('min-h-11');
+    }
+    expect(
+      screen.getByRole('checkbox', { name: 'Weather radar' }).tagName
+    ).toBe('INPUT');
+    expect(
+      screen.getByRole('combobox', { name: 'Refresh cadence' }).tagName
+    ).toBe('SELECT');
 
     fireEvent.change(
       screen.getByRole('combobox', { name: 'Refresh cadence' }),
@@ -128,6 +155,37 @@ describe('OverviewControls', () => {
     ).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('stays controlled across rerender and remount with the same fixture', () => {
+    const preferences = {
+      ...createDefaultOverviewPreferences(),
+      refreshCadence: 5 as const,
+      radarEnabled: false,
+      poiFilter: 'waypoint' as const,
+      disclosures: {
+        controlsExpanded: true,
+        additionalClocksExpanded: false,
+        clockSettingsExpanded: true,
+      },
+    };
+    const first = renderControls(preferences);
+
+    expect(
+      screen.getByRole('combobox', { name: 'Refresh cadence' })
+    ).toHaveValue('5');
+    expect(screen.getByRole('combobox', { name: 'POI category' })).toHaveValue(
+      'waypoint'
+    );
+    expect(screen.getByText('Radar off')).toBeVisible();
+    first.unmount();
+    renderControls(preferences);
+    expect(
+      screen.getByRole('combobox', { name: 'Refresh cadence' })
+    ).toHaveValue('5');
+    expect(screen.getByRole('combobox', { name: 'POI category' })).toHaveValue(
+      'waypoint'
+    );
+  });
+
   it('validates add clock input before emitting callbacks', () => {
     const { props } = renderControls({
       ...createDefaultOverviewPreferences(),
@@ -155,6 +213,16 @@ describe('OverviewControls', () => {
     });
     fireEvent.change(screen.getByLabelText('Clock label'), {
       target: { value: 'Zulu' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add clock' }));
+    expect(screen.getByText('Clock already exists.')).toBeVisible();
+    expect(props.onAddClock).toHaveBeenCalledTimes(1);
+
+    fireEvent.change(screen.getByLabelText('Clock time zone'), {
+      target: { value: 'America/New_York' },
+    });
+    fireEvent.change(screen.getByLabelText('Clock label'), {
+      target: { value: 'Duplicate canonical' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Add clock' }));
     expect(screen.getByText('Clock already exists.')).toBeVisible();
@@ -202,5 +270,33 @@ describe('OverviewControls', () => {
     );
     expect(props.onMoveClock).toHaveBeenCalledWith('tz:Asia/Tokyo', 'down');
     expect(props.onRemoveClock).toHaveBeenCalledWith('tz:Asia/Tokyo');
+  });
+
+  it('renders hostile labels literally and suppresses invalid relabel callbacks', () => {
+    const preferences = {
+      ...createDefaultOverviewPreferences(),
+      clocks: [
+        { id: 'utc', timeZone: 'UTC', label: 'UTC (Zulu)' },
+        {
+          id: 'tz:Europe/London',
+          timeZone: 'Europe/London',
+          label: '<img src=x onerror=1>',
+        },
+      ],
+      disclosures: {
+        controlsExpanded: true,
+        additionalClocksExpanded: false,
+        clockSettingsExpanded: true,
+      },
+    };
+    const { props } = renderControls(preferences);
+
+    expect(screen.getByDisplayValue('<img src=x onerror=1>')).toBeVisible();
+    expect(document.querySelector('img')).toBeNull();
+    fireEvent.change(screen.getByLabelText('Relabel <img src=x onerror=1>'), {
+      target: { value: ' '.repeat(65) },
+    });
+    fireEvent.blur(screen.getByLabelText('Relabel <img src=x onerror=1>'));
+    expect(props.onRelabelClock).not.toHaveBeenCalled();
   });
 });

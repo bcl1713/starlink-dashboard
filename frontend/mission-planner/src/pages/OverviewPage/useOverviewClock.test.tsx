@@ -39,6 +39,83 @@ describe('overview clock formatting', () => {
     expect(formatOverviewClock(new Date(), 'UTC')).toBeNull();
     spy.mockRestore();
   });
+
+  it('guards resolvedOptions and formatToParts traps before formatting', () => {
+    const now = new Date('2026-01-02T03:04:05Z');
+    const trapCases: Array<() => object> = [
+      function () {
+        return {
+          get resolvedOptions() {
+            throw new Error('resolved getter');
+          },
+          formatToParts: () => [
+            { type: 'hour', value: '03' },
+            { type: 'minute', value: '04' },
+            { type: 'second', value: '05' },
+            { type: 'timeZoneName', value: 'GMT' },
+          ],
+        };
+      },
+      function () {
+        return {
+          resolvedOptions: () => {
+            throw new Error('resolved call');
+          },
+          formatToParts: () => [],
+        };
+      },
+      function () {
+        return {
+          resolvedOptions: () => null,
+          formatToParts: () => [],
+        };
+      },
+      function () {
+        return {
+          resolvedOptions: () =>
+            new Proxy(
+              {},
+              {
+                get() {
+                  throw new Error('resolved return trap');
+                },
+              }
+            ),
+          formatToParts: () => [],
+        };
+      },
+      function () {
+        return {
+          resolvedOptions: () => ({ timeZone: 'UTC' }),
+          get formatToParts() {
+            throw new Error('parts getter');
+          },
+        };
+      },
+      function () {
+        return {
+          resolvedOptions: () => ({ timeZone: 'UTC' }),
+          formatToParts: () => {
+            throw new Error('parts call');
+          },
+        };
+      },
+      function () {
+        return {
+          resolvedOptions: () => ({ timeZone: 'UTC' }),
+          formatToParts: () => null,
+        };
+      },
+    ];
+
+    for (const makeFormatter of trapCases) {
+      vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(
+        makeFormatter as never
+      );
+      expect(formatOverviewClock(now, 'UTC')).toBeNull();
+      vi.mocked(Intl.DateTimeFormat).mockRestore();
+    }
+  });
 });
 
 describe('useOverviewClock', () => {

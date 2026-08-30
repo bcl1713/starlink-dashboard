@@ -52,4 +52,38 @@ describe('OverviewClocks', () => {
     expect(screen.getByText('Time unavailable')).toBeVisible();
     expect(document.querySelector('img')).toBeNull();
   });
+
+  it('locates, synthesizes, and deduplicates UTC without mutating clocks', () => {
+    const now = new Date('2026-01-02T03:04:05Z');
+    const misordered = [
+      { id: 'tokyo', timeZone: 'Asia/Tokyo', label: 'Tokyo' },
+      { id: 'utc', timeZone: 'UTC', label: 'Zulu Direct' },
+      { id: 'etc', timeZone: 'Etc/UTC', label: 'Zulu Duplicate' },
+    ];
+    const original = JSON.stringify(misordered);
+    const { rerender } = render(
+      <OverviewClocks
+        clocks={misordered}
+        expanded
+        now={now}
+        onExpandedChange={() => {}}
+      />
+    );
+
+    expect(screen.getAllByRole('article')[0]).toHaveTextContent('Zulu Direct');
+    expect(screen.queryByText('Zulu Duplicate')).toBeNull();
+    expect(JSON.stringify(misordered)).toBe(original);
+
+    rerender(
+      <OverviewClocks
+        clocks={[{ id: 'tokyo', timeZone: 'Asia/Tokyo', label: 'Tokyo' }]}
+        expanded
+        now={now}
+        onExpandedChange={() => {}}
+      />
+    );
+
+    expect(screen.getAllByRole('article')[0]).toHaveTextContent('UTC (Zulu)');
+    expect(screen.getByText('Tokyo')).toBeVisible();
+  });
 });

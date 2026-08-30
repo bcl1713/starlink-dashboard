@@ -25,6 +25,7 @@ describe('useOverviewRefresh', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -72,6 +73,40 @@ describe('useOverviewRefresh', () => {
     expect(onRefresh).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the latest callback without replacing the active timer', async () => {
+    let now = 0;
+    const first = vi.fn(async () => {});
+    const second = vi.fn(async () => {});
+    const { rerender } = renderHook(
+      ({ onRefresh }) =>
+        useOverviewRefresh({ cadence: 1, now: () => now, onRefresh }),
+      { initialProps: { onRefresh: first } }
+    );
+
+    expect(vi.getTimerCount()).toBe(1);
+    rerender({ onRefresh: second });
+    expect(vi.getTimerCount()).toBe(1);
+    now = 1000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledWith('scheduled');
+  });
+
+  it('uses Date.now when no clock provider is supplied', async () => {
+    const dateNow = vi.spyOn(Date, 'now').mockReturnValue(250);
+    const onRefresh = vi.fn(async () => {});
+    renderHook(() => useOverviewRefresh({ cadence: 1, onRefresh }));
+
+    expect(dateNow).toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
+    await act(async () => vi.advanceTimersByTime(749));
+    expect(onRefresh).not.toHaveBeenCalled();
+    dateNow.mockReturnValue(1000);
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(onRefresh).toHaveBeenCalledWith('scheduled');
+    dateNow.mockRestore();
+  });
+
   it('coalesces manual requests during a slow scheduled refresh', async () => {
     let now = 0;
     const gate = deferred();
@@ -98,6 +133,49 @@ describe('useOverviewRefresh', () => {
     await act(async () => first);
     expect(calls).toEqual(['scheduled', 'manual']);
     expect(result.current.isManualRefreshPending).toBe(false);
+  });
+
+  it('drops scheduled ticks while active and queues one manual after scheduled rejection', async () => {
+    let now = 0;
+    const gate = deferred();
+    const calls: OverviewRefreshReason[] = [];
+    const onRefresh = vi.fn((reason: OverviewRefreshReason) => {
+      calls.push(reason);
+      if (reason === 'scheduled') {
+        return gate.promise;
+      }
+      return Promise.resolve();
+    });
+    const { result } = renderHook(() =>
+      useOverviewRefresh({ cadence: 1, now: () => now, onRefresh })
+    );
+
+    now = 1000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    now = 5000;
+    await act(async () => vi.advanceTimersByTime(4000));
+    const queued = result.current.manualRefresh();
+    gate.reject(new Error('scheduled failed'));
+    await act(async () => expect(queued).resolves.toBeUndefined());
+    expect(calls).toEqual(['scheduled', 'manual']);
+  });
+
+  it('releases pending state after manual rejection and allows the next manual', async () => {
+    const onRefresh = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('manual failed'))
+      .mockResolvedValueOnce(undefined);
+    const { result } = renderHook(() =>
+      useOverviewRefresh({ cadence: 'paused', onRefresh })
+    );
+
+    const first = result.current.manualRefresh();
+    await act(async () =>
+      expect(first).rejects.toEqual(Error('manual failed'))
+    );
+    expect(result.current.isManualRefreshPending).toBe(false);
+    await act(async () => result.current.manualRefresh());
+    expect(onRefresh).toHaveBeenCalledTimes(2);
   });
 
   it('recovers from rejection and settles unmount cases exactly', async () => {

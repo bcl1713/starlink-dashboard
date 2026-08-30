@@ -41,6 +41,47 @@ function ClockCard({
   );
 }
 
+const UTC_CLOCK: OverviewClockPreference = {
+  id: 'utc',
+  timeZone: 'UTC',
+  label: 'UTC (Zulu)',
+};
+
+function isCanonicalUtc(clock: OverviewClockPreference): boolean {
+  if (clock.id === 'utc') {
+    return true;
+  }
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: clock.timeZone,
+    });
+    const resolvedOptions = formatter.resolvedOptions;
+    if (typeof resolvedOptions !== 'function') {
+      return false;
+    }
+    const resolved = resolvedOptions.call(formatter) as unknown;
+    if (!resolved || typeof resolved !== 'object') {
+      return false;
+    }
+    const timeZone = (resolved as { timeZone?: unknown }).timeZone;
+    return timeZone === 'UTC' || timeZone === 'Etc/UTC';
+  } catch {
+    return false;
+  }
+}
+
+function visibleClocks(clocks: readonly OverviewClockPreference[]): {
+  utc: OverviewClockPreference;
+  additional: readonly OverviewClockPreference[];
+} {
+  const utc =
+    clocks.find((clock) => clock.id === 'utc') ?? clocks.find(isCanonicalUtc);
+  return {
+    utc: utc ?? UTC_CLOCK,
+    additional: clocks.filter((clock) => !isCanonicalUtc(clock)),
+  };
+}
+
 export function OverviewClocks({
   clocks,
   now,
@@ -48,11 +89,11 @@ export function OverviewClocks({
   onExpandedChange,
 }: OverviewClocksProps) {
   const additionalId = useId();
-  const [utc, ...additional] = clocks;
+  const { utc, additional } = visibleClocks(clocks);
 
   return (
     <section className="space-y-3">
-      {utc ? <ClockCard clock={utc} now={now} /> : null}
+      <ClockCard clock={utc} now={now} />
       <button
         type="button"
         className="min-h-11 min-w-11 rounded-md border px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
