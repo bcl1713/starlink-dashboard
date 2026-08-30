@@ -148,12 +148,17 @@ function toUPlotData(
   rows: readonly TimeSeriesChartProps['rows'][number][],
   seriesCount = rows[0]?.values.length ?? 0
 ) {
+  const acceptedRows = rows.filter((row) => Number.isFinite(row.epochSeconds));
   return [
-    rows.map((row) => row.epochSeconds),
+    acceptedRows.map((row) => row.epochSeconds),
     ...Array.from({ length: seriesCount }, (_, index) =>
-      rows.map((row) => row.values[index])
+      acceptedRows.map((row) => normalizeValue(row.values[index]))
     ),
   ] as uPlot.AlignedData;
+}
+
+function normalizeValue(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function labelPlot(plot: UPlotInstance, accessibleName: string): void {

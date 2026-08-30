@@ -85,4 +85,127 @@ describe('metric panel adapter edge cases', () => {
       buildPacketLossPanelData(duplicate, '2026-08-29T12:00:00Z').chartRows
     ).toHaveLength(0);
   });
+
+  it('rejects duplicate upload even when download is canonical and unique', () => {
+    const duplicateUpload = history([
+      {
+        metric: 'throughput_down_mbps',
+        samples: samples([['2026-08-29T12:00:00Z', 10]]),
+      },
+      {
+        metric: 'throughput_up_mbps',
+        samples: samples([['2026-08-29T12:00:00Z', 1]]),
+      },
+      {
+        metric: 'throughput_up_mbps',
+        samples: samples([['2026-08-29T12:00:01Z', 2]]),
+      },
+    ]);
+
+    expect(
+      buildThroughputPanelData(duplicateUpload, '2026-08-29T12:00:01Z')
+    ).toEqual({
+      chartRows: [],
+      tableRows: [],
+      download: { current: null, min: null, mean: null, max: null },
+      upload: { current: null, min: null, mean: null, max: null },
+    });
+  });
+
+  it.each([
+    [
+      'latency',
+      () =>
+        buildLatencyPanelData(
+          history([
+            {
+              metric: 'latency_ms',
+              samples: samples([
+                ['2026-08-29T12:00:00+01:00', 1],
+                ['2026-08-29T11:00:01Z', 2],
+              ]),
+            },
+          ]),
+          '2026-08-29T11:00:01Z'
+        ).tableRows,
+    ],
+    [
+      'throughput',
+      () =>
+        buildThroughputPanelData(
+          history([
+            {
+              metric: 'throughput_down_mbps',
+              samples: samples([
+                ['2026-08-29T12:00:00+01:00', 1],
+                ['2026-08-29T11:00:01Z', 2],
+              ]),
+            },
+            {
+              metric: 'throughput_up_mbps',
+              samples: samples([
+                ['2026-08-29T12:00:00+01:00', 1],
+                ['2026-08-29T11:00:01Z', 2],
+              ]),
+            },
+          ]),
+          '2026-08-29T11:00:01Z'
+        ).tableRows,
+    ],
+    [
+      'packet loss',
+      () =>
+        buildPacketLossPanelData(
+          history([
+            {
+              metric: 'packet_loss_percent',
+              samples: samples([
+                ['2026-08-29T12:00:00+01:00', 1],
+                ['2026-08-29T11:00:01Z', 2],
+              ]),
+            },
+          ]),
+          '2026-08-29T11:00:01Z'
+        ).tableRows,
+    ],
+  ])('orders offset-equivalent samples through %s adapter', (_name, build) => {
+    const rows = build();
+
+    expect(rows.map((row) => row.timestamp)).toEqual([
+      '2026-08-29T12:00:00+01:00',
+      '2026-08-29T11:00:01Z',
+    ]);
+    expect(rows.every((row) => Number.isFinite(row.epochSeconds))).toBe(true);
+  });
+
+  it.each([
+    ['0000', '0000-01-01T00:00:00-01:00'],
+    ['9999', '9999-12-31T23:59:59.999999999+00:00'],
+  ])('projects year %s endpoint through each adapter', (_year, timestamp) => {
+    const latencyRows = buildLatencyPanelData(
+      history([{ metric: 'latency_ms', samples: samples([[timestamp, 1]]) }]),
+      timestamp
+    ).tableRows;
+    const throughputRows = buildThroughputPanelData(
+      history([
+        {
+          metric: 'throughput_down_mbps',
+          samples: samples([[timestamp, 1]]),
+        },
+        { metric: 'throughput_up_mbps', samples: samples([[timestamp, 1]]) },
+      ]),
+      timestamp
+    ).tableRows;
+    const packetRows = buildPacketLossPanelData(
+      history([
+        { metric: 'packet_loss_percent', samples: samples([[timestamp, 1]]) },
+      ]),
+      timestamp
+    ).tableRows;
+
+    for (const rows of [latencyRows, throughputRows, packetRows]) {
+      expect(rows[0].timestamp).toBe(timestamp);
+      expect(Number.isFinite(rows[0].epochSeconds)).toBe(true);
+    }
+  });
 });

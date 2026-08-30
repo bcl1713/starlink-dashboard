@@ -117,4 +117,150 @@ describe('MetricHistoryDisclosure', () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it('reacts to content, series, and dimension changes in the scroller', async () => {
+    let resizeCallback: ResizeObserverCallback | null = null;
+    const observe = vi.fn();
+    class MockResizeObserver {
+      observe = observe;
+      disconnect = vi.fn();
+      constructor(callback: ResizeObserverCallback) {
+        resizeCallback = callback;
+      }
+    }
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+
+    try {
+      const { rerender } = render(
+        <MetricHistoryDisclosure
+          rows={[row(1, [1])]}
+          series={series}
+          caption="Latency history"
+        />
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'History' }));
+      const scroller = screen.getByRole('region', {
+        name: 'Metric history table',
+      });
+      setWidths(scroller, 700, 700);
+      act(() => resizeCallback?.([], {} as ResizeObserver));
+      expect(scroller).not.toHaveAttribute('tabIndex');
+
+      const widerSeries = [
+        ...series,
+        {
+          key: 'jitter',
+          label: 'Jitter',
+          color: '#177a55',
+          unit: 'ms',
+          display: 'signed',
+        },
+      ] as const;
+      rerender(
+        <MetricHistoryDisclosure
+          rows={[row(1, [1, 2]), row(2, [3, 4])]}
+          series={widerSeries}
+          caption="Latency history"
+        />
+      );
+      expect(observe).toHaveBeenCalled();
+      setWidths(scroller, 400, 900);
+      act(() => resizeCallback?.([], {} as ResizeObserver));
+      await waitFor(() => expect(scroller).toHaveAttribute('tabIndex', '0'));
+
+      setWidths(scroller, 900, 900);
+      act(() => resizeCallback?.([], {} as ResizeObserver));
+      await waitFor(() => expect(scroller).not.toHaveAttribute('tabIndex'));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it.each(['absent', 'constructor', 'observe', 'measurement'] as const)(
+    'keeps the scroller usable when ResizeObserver %s is hostile',
+    (hostility) => {
+      if (hostility === 'absent') {
+        vi.stubGlobal('ResizeObserver', undefined);
+      } else if (hostility === 'constructor') {
+        vi.stubGlobal(
+          'ResizeObserver',
+          class {
+            constructor() {
+              throw new Error('observer failed');
+            }
+          }
+        );
+      } else {
+        class MockResizeObserver {
+          static callback: ResizeObserverCallback | null = null;
+          observe = vi.fn(() => {
+            if (hostility === 'observe') throw new Error('observe failed');
+          });
+          disconnect = vi.fn();
+          constructor(callback: ResizeObserverCallback) {
+            MockResizeObserver.callback = callback;
+          }
+        }
+        vi.stubGlobal('ResizeObserver', MockResizeObserver);
+      }
+
+      try {
+        render(
+          <MetricHistoryDisclosure
+            rows={[row(1, [1])]}
+            series={series}
+            caption="Latency history"
+          />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'History' }));
+        const scroller = screen.getByRole('region', {
+          name: 'Metric history table',
+        });
+        if (hostility === 'measurement') {
+          Object.defineProperty(scroller, 'scrollWidth', {
+            configurable: true,
+            get() {
+              throw new Error('measurement failed');
+            },
+          });
+          Object.defineProperty(scroller, 'clientWidth', {
+            configurable: true,
+            value: 1,
+          });
+          const observer = ResizeObserver as unknown as {
+            callback: ResizeObserverCallback | null;
+          };
+          act(() => observer.callback?.([], {} as ResizeObserver));
+        }
+
+        expect(screen.getByRole('table')).toBeVisible();
+        expect(scroller).not.toHaveAttribute('tabIndex');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    }
+  );
 });
+
+function row(epochSeconds: number, values: readonly number[]): TimeSeriesRow {
+  return {
+    timestamp: `2026-08-29T12:00:0${epochSeconds}Z`,
+    epochSeconds,
+    values,
+  };
+}
+
+function setWidths(
+  scroller: HTMLElement,
+  clientWidth: number,
+  scrollWidth: number
+): void {
+  Object.defineProperty(scroller, 'clientWidth', {
+    configurable: true,
+    value: clientWidth,
+  });
+  Object.defineProperty(scroller, 'scrollWidth', {
+    configurable: true,
+    value: scrollWidth,
+  });
+}

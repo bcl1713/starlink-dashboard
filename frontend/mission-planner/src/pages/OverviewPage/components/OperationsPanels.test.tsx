@@ -37,7 +37,10 @@ describe('operations panels', () => {
     [4, 'Normal', '4% - Normal'],
     [5, 'Warning', '5% - Warning'],
     [10, 'Critical', '10% - Critical'],
+    [-1, 'Unavailable', 'Unavailable'],
     [Number.NaN, 'Unavailable', 'Unavailable'],
+    [Number.POSITIVE_INFINITY, 'Unavailable', 'Unavailable'],
+    [101, 'Unavailable', 'Unavailable'],
   ])('renders exact obstruction threshold %s', (value, label, ariaText) => {
     render(
       <ObstructionGauge
@@ -55,7 +58,8 @@ describe('operations panels', () => {
       screen.getByRole('region', { name: 'Obstruction %' })
     ).toHaveTextContent(label);
     expect(meter).toHaveAttribute('aria-valuetext', ariaText);
-    if (Number.isFinite(value)) expect(meter).toHaveAttribute('aria-valuenow');
+    if (Number.isFinite(value) && value >= 0 && value <= 100)
+      expect(meter).toHaveAttribute('aria-valuenow');
     else expect(meter).not.toHaveAttribute('aria-valuenow');
   });
 
@@ -85,6 +89,31 @@ describe('operations panels', () => {
     expect(screen.queryByText('generated_at')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Focus map' }));
     expect(focus).toHaveBeenCalledWith({ latitude: 47.6, longitude: -122.3 });
+  });
+
+  it('projects GEP available false as semantic unavailable without mutating source slot', () => {
+    const gep: GroundEntryPoint = Object.freeze({
+      available: false,
+      observed_at: '2026-08-29T12:00:00Z',
+      generated_at: '2026-08-29T12:00:01Z',
+      display: 'Hidden POP',
+      city: 'Seattle',
+      region: 'WA',
+      country: 'US',
+      latitude: 47.6,
+      longitude: -122.3,
+    });
+    const source = Object.freeze(slot(gep));
+
+    render(<GroundEntryPointPanel slot={source} retryPending={false} />);
+
+    const region = screen.getByRole('region', { name: 'Ground Entry Point' });
+    expect(region).toHaveTextContent('Unavailable');
+    expect(region).toHaveTextContent('Source 2026-08-29 12:30:00 UTC');
+    expect(region).not.toHaveTextContent('Ready');
+    expect(source.availability).toBe('available');
+    expect(source.phase).toBe('ready');
+    expect(source.data).toBe(gep);
   });
 
   it('renders POI top five with applicability exclusions and urgency boundaries', () => {
@@ -122,6 +151,31 @@ describe('operations panels', () => {
       screen.getByRole('table', { name: 'POI Quick Reference (Top 5)' })
     ).toBeVisible();
   });
+
+  it.each([
+    [-1, 'Unavailable'],
+    [Number.POSITIVE_INFINITY, 'Unavailable'],
+  ])(
+    'renders POI invalid ETA %s as unavailable in the visible top five',
+    (eta, label) => {
+      render(
+        <POIQuickReference
+          retryPending={false}
+          slot={slot({
+            total: 1,
+            timestamp: '2026-08-29T12:00:00Z',
+            pois: [
+              poi({ poi_id: 'invalid', name: 'Invalid ETA', eta_seconds: eta }),
+            ],
+          })}
+        />
+      );
+
+      const row = screen.getByRole('row', { name: /Invalid ETA/ });
+      expect(row).toHaveTextContent(label);
+      expect(row).toHaveTextContent('—');
+    }
+  );
 
   it('omits GEP focus button for invalid coordinates', () => {
     render(

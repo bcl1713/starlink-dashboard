@@ -48,6 +48,10 @@ describe('metric history panels', () => {
     expect(host.parentElement?.parentElement).toHaveStyle({
       '--time-series-chart-height': '180px',
     });
+    expect(screen.getByText('Current')).toBeVisible();
+    expect(screen.getByText('Mean')).toBeVisible();
+    expect(screen.queryByText('Min')).not.toBeInTheDocument();
+    expect(screen.queryByText('Max')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'History' }));
     expect(screen.getByRole('table')).toBeInTheDocument();
     expect(screen.getByText('2026-08-29 12:30:00 UTC')).toBeVisible();
@@ -98,6 +102,8 @@ describe('metric history panels', () => {
     ['2026-08-29T12:30:00Z', 99, 'Normal'],
     ['2026-08-29T12:30:01Z', 100, 'Warning'],
     ['2026-08-29T12:30:02Z', 200, 'Critical'],
+    ['2026-08-29T12:30:03Z', -1, 'Unavailable'],
+    ['2026-08-29T12:30:04Z', Number.POSITIVE_INFINITY, 'Unavailable'],
   ])('renders exact latency threshold %s %s', (timestamp, value, label) => {
     render(
       <NetworkLatencyPanel
@@ -120,6 +126,9 @@ describe('metric history panels', () => {
     ['2026-08-29T12:30:00Z', 1, 'Normal'],
     ['2026-08-29T12:30:01Z', 2, 'Warning'],
     ['2026-08-29T12:30:02Z', 5, 'Critical'],
+    ['2026-08-29T12:30:03Z', -1, 'Unavailable'],
+    ['2026-08-29T12:30:04Z', Number.POSITIVE_INFINITY, 'Unavailable'],
+    ['2026-08-29T12:30:05Z', 101, 'Unavailable'],
     ['2026-08-29T12:30:03Z', Number.NaN, 'Unavailable'],
   ])('renders exact packet loss threshold %s %s', (timestamp, value, label) => {
     render(

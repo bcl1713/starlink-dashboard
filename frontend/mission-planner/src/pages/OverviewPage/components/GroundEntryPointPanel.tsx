@@ -22,10 +22,11 @@ export interface GroundEntryPointPanelProps {
 export function GroundEntryPointPanel(
   props: GroundEntryPointPanelProps
 ): ReactNode {
+  const slot = projectGroundEntryPointSlot(props.slot);
   return (
     <OverviewPanelState
       title="Ground Entry Point"
-      slot={props.slot}
+      slot={slot}
       retryPending={props.retryPending}
       onRetry={props.onRetry}
       headingAs={props.headingAs}
@@ -86,6 +87,17 @@ export function GroundEntryPointPanel(
       }}
     </OverviewPanelState>
   );
+}
+
+function projectGroundEntryPointSlot(
+  slot: OverviewSourceSlot<GroundEntryPoint>
+): OverviewSourceSlot<GroundEntryPoint> {
+  if (slot.data?.available !== false) return slot;
+  return {
+    ...slot,
+    availability: 'unavailable',
+    phase: slot.phase === 'ready' ? 'unavailable' : slot.phase,
+  };
 }
 
 function Detail(props: {

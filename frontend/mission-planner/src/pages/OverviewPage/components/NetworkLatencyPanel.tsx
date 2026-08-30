@@ -65,9 +65,14 @@ export function NetworkLatencyPanel(props: HistoryMetricPanelProps): ReactNode {
                 {
                   label: 'Current',
                   value: formatLatencyMs(data.summary.current),
+                  compactPriority: 'current',
                 },
                 { label: 'Min', value: formatLatencyMs(data.summary.min) },
-                { label: 'Mean', value: formatLatencyMs(data.summary.mean) },
+                {
+                  label: 'Mean',
+                  value: formatLatencyMs(data.summary.mean),
+                  compactPriority: 'mean',
+                },
                 { label: 'Max', value: formatLatencyMs(data.summary.max) },
               ]}
             />

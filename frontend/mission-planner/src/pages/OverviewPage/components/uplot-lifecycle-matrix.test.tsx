@@ -121,6 +121,14 @@ describe('uPlot lifecycle matrix', () => {
     const rect = vi.spyOn(host, 'getBoundingClientRect');
     rect.mockReturnValue(domRect(0, Number.NaN));
     MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
+    rect.mockReturnValue(domRect(-1, 240));
+    MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
+    rect.mockReturnValue(domRect(Number.POSITIVE_INFINITY, 240));
+    MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
+    rect.mockImplementationOnce(() => {
+      throw new Error('measurement failed');
+    });
+    MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
     rect.mockReturnValue(domRect(120.4, 900.6));
     MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
     rect.mockReturnValue(domRect(120.4, 900.6));
@@ -154,6 +162,7 @@ describe('uPlot lifecycle matrix', () => {
     uplotMock.flags.throwConstructor = true;
     renderChart([]);
     sizeHost(640, 240);
+    MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
     expect(screen.getByText('No data')).toBeVisible();
     expect(uplotMock.created).toHaveLength(0);
   });
@@ -179,10 +188,33 @@ describe('uPlot lifecycle matrix', () => {
     ]);
     expect(uplotMock.created[1].destroy).toHaveBeenCalledTimes(1);
 
-    uplotMock.created[1].destroy.mockImplementationOnce(() => {
+    sizeHost(700, 240);
+    MockResizeObserver.callbacks[0]([], {} as ResizeObserver);
+    expect(uplotMock.created).toHaveLength(3);
+    uplotMock.created[2].destroy.mockImplementationOnce(() => {
       throw new Error('destroy failed');
     });
     unmount();
+    expect(uplotMock.created[2].destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('survives observer observe and measurement hostility with fallback text', () => {
+    MockResizeObserver.throwObserve = true;
+    const first = renderChart([]);
+    expect(MockResizeObserver.callbacks).toHaveLength(1);
+    expect(screen.getByText('No data')).toBeVisible();
+    first.unmount();
+
+    MockResizeObserver.throwObserve = false;
+    renderChart([]);
+    const host = screen.getByTestId('time-series-chart-host');
+    vi.spyOn(host, 'getBoundingClientRect').mockImplementation(() => {
+      throw new Error('measurement failed');
+    });
+    MockResizeObserver.callbacks.at(-1)?.([], {} as ResizeObserver);
+
+    expect(screen.getByText('No data')).toBeVisible();
+    expect(uplotMock.created).toHaveLength(0);
   });
 });
 
