@@ -70,11 +70,9 @@ export function adaptRouteCoordinates(
     }
     return [
       {
-        latitude: coordinate.latitude,
+        latitude: positiveZero(coordinate.latitude),
         longitude: normalizeLongitude(coordinate.longitude),
-        altitudeMeters: Number.isFinite(coordinate.altitude_meters)
-          ? coordinate.altitude_meters
-          : null,
+        altitudeMeters: finiteValueOrNull(coordinate.altitude_meters),
         timestamp: null,
       },
     ];
@@ -85,9 +83,9 @@ export function adaptPositionHistory(
   points: readonly PositionHistoryPoint[]
 ): readonly OverviewGeometryPoint[] {
   return points.map((point) => ({
-    latitude: point.latitude,
+    latitude: positiveZero(point.latitude),
     longitude: normalizeLongitude(point.longitude),
-    altitudeMeters: point.altitudeMeters,
+    altitudeMeters: finiteValueOrNull(point.altitudeMeters),
     timestamp: point.timestamp,
   }));
 }
@@ -104,7 +102,7 @@ export function adaptActiveLinkSegment(
     }
     return [
       {
-        latitude: coordinate.latitude,
+        latitude: positiveZero(coordinate.latitude),
         longitude: normalizeLongitude(coordinate.longitude),
         altitudeMeters: null,
         timestamp: coordinate.observed_at,
@@ -194,9 +192,13 @@ function interpolateTimestamp(
   const second = parseInstant(end);
   if (first === null || second === null) return null;
   const milliseconds = interpolateMilliseconds(first, second, fraction);
-  if (milliseconds < -8_640_000_000_000_000n) return null;
-  if (milliseconds > 8_640_000_000_000_000n) return null;
-  return formatUtc(new Date(Number(milliseconds)).toISOString());
+  if (
+    milliseconds < -8_640_000_000_000_000n ||
+    milliseconds > 8_640_000_000_000_000n
+  )
+    return null;
+  const iso = new Date(Number(milliseconds)).toISOString();
+  return iso.endsWith('.000Z') ? `${iso.slice(0, -5)}Z` : iso;
 }
 
 function parseInstant(value: string): ParsedInstant | null {
@@ -230,7 +232,7 @@ function interpolateMilliseconds(
   const numerator =
     startUnits * weight.denominator +
     (endUnits - startUnits) * weight.numerator;
-  return floorDiv(numerator * 1000n, weight.denominator * scale);
+  return (numerator * 1000n) / (weight.denominator * scale);
 }
 
 function instantUnits(instant: ParsedInstant, width: number): bigint {
@@ -254,16 +256,14 @@ function parseUnitDecimal(value: number) {
   };
 }
 
-function formatUtc(value: string): string {
-  return value.endsWith('.000Z') ? `${value.slice(0, -5)}Z` : value;
-}
-
 function interpolateFinite(start: number, end: number, fraction: number) {
-  if (Math.abs(start) > Math.abs(end)) {
-    const result = start * (1 - fraction) + end * fraction;
-    return Number.isFinite(result) ? positiveZero(result) : null;
-  }
-  const result = end * fraction + start * (1 - fraction);
+  if (fraction === 0) return positiveZero(start);
+  if (fraction === 1) return positiveZero(end);
+  if (start === end) return positiveZero(start);
+  const delta = end - start;
+  const result = Number.isFinite(delta)
+    ? start + delta * fraction
+    : start * (1 - fraction) + end * fraction;
   return Number.isFinite(result) ? positiveZero(result) : null;
 }
 
@@ -286,15 +286,14 @@ function floorDiv(dividend: bigint, divisor: bigint): bigint {
   return remainder < 0n ? quotient - 1n : quotient;
 }
 
-function parseOffsetSeconds(offset: string): bigint {
-  const sign = offset[0] === '-' ? -1 : 1;
-  return BigInt(
-    sign * (Number(offset.slice(1, 3)) * 3600 + Number(offset.slice(4, 6)) * 60)
-  );
-}
+// prettier-ignore
+function parseOffsetSeconds(offset: string): bigint { const sign = offset[0] === '-' ? -1 : 1; return BigInt(sign * (Number(offset.slice(1, 3)) * 3600 + Number(offset.slice(4, 6)) * 60)); }
 
 // prettier-ignore
 function positiveZero(value: number): number { return Object.is(value, -0) ? 0 : value; }
+
+// prettier-ignore
+function finiteValueOrNull(value: number | null | undefined): number | null { return isFiniteNumber(value) ? positiveZero(value) : null; }
 
 // prettier-ignore
 function isFiniteNumber(value: number | null | undefined): value is number { return typeof value === 'number' && Number.isFinite(value); }

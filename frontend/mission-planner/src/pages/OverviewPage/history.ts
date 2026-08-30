@@ -122,12 +122,8 @@ export function summarizePacketLoss(
 ): MetricSummary {
   if (!Number.isFinite(windowSeconds) || windowSeconds < 0)
     throw new RangeError('Invalid windowSeconds');
-  return summarize(
-    samples,
-    now,
-    windowSeconds,
-    (value) => value >= 0 && value <= 100
-  );
+  // prettier-ignore
+  return summarize(samples, now, windowSeconds, (value) => value >= 0 && value <= 100);
 }
 
 // prettier-ignore
@@ -172,18 +168,23 @@ function summarize(
   }
   if (valid.length === 0) return UNAVAILABLE_SUMMARY;
   valid.sort((left, right) => compareInstants(left.instant, right.instant));
-  const values = valid.map(({ value }) => value);
-  const max = positiveZero(Math.max(...values));
-  const min = positiveZero(Math.min(...values));
-  // prettier-ignore
-  const mean = max === 0 ? 0 : positiveZero(max * (values.reduce((sum, value) => sum + value / max, 0) / values.length));
+  let count = 0;
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  let mean = 0;
+  for (const { value } of valid) {
+    count += 1;
+    if (value < min) min = value;
+    if (value > max) max = value;
+    mean += (value - mean) / count;
+  }
   return {
     available: true,
-    current: positiveZero(values[values.length - 1]),
-    min,
+    current: positiveZero(valid[valid.length - 1].value),
+    min: positiveZero(min),
     mean: Number.isFinite(mean) ? mean : null,
-    max,
-    count: values.length,
+    max: positiveZero(max),
+    count,
   };
 }
 

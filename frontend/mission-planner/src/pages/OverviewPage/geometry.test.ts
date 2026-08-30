@@ -121,22 +121,53 @@ describe('overview geometry utilities', () => {
         point(0, 170, null, '0000-01-01T00:00:00.999999999Z'),
         point(10, -170, null, '0000-01-01T00:00:00.999999999Z'),
       ])[0][1].timestamp
-    ).toBe('0000-01-01T00:00:00.999Z');
+    ).toBe('0000-01-01T00:00:01Z');
+    expect(
+      splitAtInternationalDateLine([
+        point(0, 170, null, '1969-12-31T23:59:59.999Z'),
+        point(10, -170, null, '1969-12-31T23:59:59.999Z'),
+      ])[0][1].timestamp
+    ).toBe('1969-12-31T23:59:59.999Z');
     expect(
       splitAtInternationalDateLine([
         point(0, 170, null, '+010000-01-01T00:00:00Z'),
         point(10, -170, null, '+010000-01-01T00:00:00Z'),
       ])[0][1].timestamp
     ).toBeNull();
+    for (const [start, end] of [
+      ['1969-12-31T23:59:59.999999999Z', '1970-01-01T00:00:00Z'],
+      ['1970-01-01T00:00:00Z', '1969-12-31T23:59:59.999999999Z'],
+    ]) {
+      expect(
+        splitAtInternationalDateLine([
+          point(0, 170, null, start),
+          point(10, -170, null, end),
+        ])[0][1].timestamp
+      ).toBe('1970-01-01T00:00:00Z');
+    }
+    expect(
+      splitAtInternationalDateLine([
+        point(0, 170, null, '1969-12-31T23:59:59.998Z'),
+        point(10, -170, null, '1969-12-31T23:59:59.996Z'),
+      ])[0][1].timestamp
+    ).toBe('1969-12-31T23:59:59.997Z');
   });
 
-  it('keeps extreme altitude interpolation finite or null', () => {
-    const boundary = splitAtInternationalDateLine([
-      point(0, 170, Number.MAX_VALUE),
-      point(10, -170, -Number.MAX_VALUE),
-    ])[0][1];
-    expect(boundary.altitudeMeters).toBe(0);
-    expect(Object.is(boundary.altitudeMeters, -0)).toBe(false);
+  it('keeps extreme altitude interpolation exact and finite', () => {
+    for (const altitude of [0, -0, Number.MIN_VALUE, Number.MAX_VALUE]) {
+      const boundary = splitAtInternationalDateLine([
+        point(0, 170, altitude),
+        point(10, -170, altitude),
+      ])[0][1].altitudeMeters;
+      expect(boundary).toBe(Object.is(altitude, -0) ? 0 : altitude);
+      expect(Object.is(boundary, -0)).toBe(false);
+    }
+    expect(
+      splitAtInternationalDateLine([
+        point(0, 170, Number.MAX_VALUE),
+        point(10, -170, -Number.MAX_VALUE),
+      ])[0][1].altitudeMeters
+    ).toBe(0);
   });
 
   it('supports repeated crossings without intra-segment jumps over 180 degrees', () => {
@@ -186,7 +217,7 @@ describe('overview geometry utilities', () => {
             in_forbidden_window: false,
             point: 'aircraft',
             sequence: 0,
-            latitude: 0,
+            latitude: -0,
             longitude: 170,
             observed_at: '2026-08-29T12:00:00Z',
           },
@@ -214,9 +245,22 @@ describe('overview geometry utilities', () => {
       },
     ];
 
+    expect(
+      adaptRouteCoordinates({
+        ...route,
+        coordinates: [
+          { latitude: -0, longitude: -0, altitude_meters: -0, sequence: 0 },
+        ],
+      })
+    ).toEqual([point(0, 0, 0, null)]);
     expect(adaptRouteCoordinates(route)).toEqual([point(1, -179, 100, null)]);
-    expect(adaptPositionHistory(history)).toEqual([point(1, 2, null, 't')]);
+    expect(adaptPositionHistory([{ ...history[0], latitude: -0 }])).toEqual([
+      point(0, 2, null, 't'),
+    ]);
     expect(adaptActiveLinkSegment(links[0])).toHaveLength(2);
+    expect(Object.is(adaptActiveLinkSegment(links[0])[0].latitude, -0)).toBe(
+      false
+    );
     const split = splitActiveLinkSegments(links);
     expect(split[0].link).toBe(links[0]);
     expect(split[1].link).toBe(links[1]);

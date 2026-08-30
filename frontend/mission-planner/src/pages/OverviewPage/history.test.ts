@@ -172,6 +172,22 @@ describe('overview history utilities', () => {
     expect(Object.is(summary.min, -0)).toBe(false);
   });
 
+  it('summarizes large valid inputs without spread argument limits', () => {
+    const samples = Array.from({ length: 200_000 }, (_, index) => ({
+      timestamp: `2026-08-29T12:00:00.${String(index + 1).padStart(6, '0')}Z`,
+      value: index % 2,
+    }));
+
+    expect(summarizeLatency(samples, '2026-08-29T12:00:01Z')).toEqual({
+      available: true,
+      current: 1,
+      min: 0,
+      mean: 0.5,
+      max: 1,
+      count: 200_000,
+    });
+  });
+
   it('builds throughput union with sanitized null gaps and negated uploads', () => {
     const download = deepFreeze([
       { timestamp: '2026-08-29T12:00:00Z', value: 10 },
