@@ -96,10 +96,17 @@ export function createOverviewRequestRegistry(
     const promise = runSlot(services, slot, filter, controller.signal)
       .then(
         (data): SlotOutcome => ({ ok: true, data }),
-        (error): SlotOutcome => ({
-          ok: false,
-          error: classifyOverviewError(error, controller.signal.aborted),
-        })
+        (error): SlotOutcome => {
+          const classified = classifyOverviewError(
+            error,
+            controller.signal.aborted
+          );
+          return {
+            ok: false,
+            error: classified,
+            manualFailure: classified === null && !controller.signal.aborted,
+          };
+        }
       )
       .then((outcome) => {
         if ((generations.get(slot) ?? 0) === generation)
@@ -168,7 +175,7 @@ export function manualResultFromOutcomes(
   let failures = 0;
   for (const { outcome } of outcomes) {
     if (outcome.ok) successes += 1;
-    else failures += 1;
+    else if (outcome.error || outcome.manualFailure) failures += 1;
   }
   return successes + failures === 0
     ? 'idle'
@@ -188,6 +195,7 @@ export function buildSlotCommits(
   const commits: SlotCommit[] = [];
   const accepted: OverviewStatus[] = [];
   let serverHistory: MonitoringHistory | undefined;
+  let historyOutcome: SlotOutcome | undefined;
   for (const { slot, outcome } of outcomes) {
     if (
       slot === 'telemetry' &&
@@ -197,8 +205,10 @@ export function buildSlotCommits(
       accepted.push(outcome.data as OverviewStatus);
     if (slot === 'history' && outcome.ok) {
       serverHistory = outcome.data as MonitoringHistory;
+      historyOutcome = outcome;
       continue;
     }
+    if (slot === 'history') historyOutcome = outcome;
     commits.push([slot, outcome]);
   }
   const telemetry = [...pendingTelemetry, ...accepted];
@@ -208,14 +218,20 @@ export function buildSlotCommits(
     telemetry,
     nowMs
   );
-  return history
-    ? {
-        commits: [...commits, ['history', { ok: true, data: history }]],
-        pending: telemetry.filter(
-          (status) => !historyContains(history, status.timestamp)
-        ),
-      }
-    : { commits, pending: telemetry.reduce(appendPending, []) };
+  if (!history)
+    return { commits, pending: telemetry.reduce(appendPending, []) };
+  const historyCommit: SlotCommit =
+    historyOutcome?.ok === true
+      ? ['history', { ok: true, data: history }]
+      : historyOutcome === undefined
+        ? ['history', { ok: false, error: null, data: history }]
+        : ['history', { ...historyOutcome, data: history }];
+  return {
+    commits: [...commits.filter(([slot]) => slot !== 'history'), historyCommit],
+    pending: telemetry.filter(
+      (status) => !historyContains(history, status.timestamp)
+    ),
+  };
 }
 
 export function safeHidden(

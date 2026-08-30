@@ -1,12 +1,13 @@
 import {
-  computeFreshnessForSource,
-  semanticUnavailable,
-  sourceTimestamp,
+  computeFreshnessForSource as freshnessOf,
+  semanticUnavailable as unavailable,
+  sourceTimestamp as timestampOf,
 } from './overview-freshness';
 import type {
   OverviewDataSnapshot,
   OverviewManualResult,
-  OverviewSourceError,
+  OverviewSlotData,
+  OverviewSlotOutcome,
   OverviewSourceKey,
   OverviewSourceSlot,
 } from './overview-data-types';
@@ -24,22 +25,18 @@ export const HTTP_SLOTS = [
 ] as const;
 export type OverviewHttpSlot = (typeof HTTP_SLOTS)[number];
 
-export type OverviewSlotData = OverviewDataSnapshot[OverviewSourceKey]['data'];
 type AnySlot = OverviewSourceSlot<unknown>;
-export type SlotOutcome =
-  | { ok: true; data: OverviewSlotData }
-  | { ok: false; error: OverviewSourceError | null };
+export type SlotOutcome = OverviewSlotOutcome;
 export type SlotCommit = readonly [OverviewSourceKey, SlotOutcome];
 
-export function emptyOverviewSnapshot(): OverviewDataSnapshot {
-  return projectSnapshot(
+export const emptyOverviewSnapshot = () =>
+  projectSnapshot(
     Object.fromEntries(
       SOURCE_ORDER.map((key) => [key, emptySlot()])
     ) as SlotMap,
     'idle',
     null
   );
-}
 
 export type SlotMap = {
   -readonly [K in OverviewSourceKey]: OverviewDataSnapshot[K];
@@ -49,7 +46,7 @@ export function startSlots(
   snapshot: OverviewDataSnapshot,
   slots: readonly OverviewHttpSlot[],
   paused: boolean
-): OverviewDataSnapshot {
+) {
   const next = cloneSlots(snapshot);
   const writable = next as Record<string, AnySlot>;
   for (const slot of slots)
@@ -64,28 +61,51 @@ export function commitSlots(
   cadenceSeconds: number,
   paused: boolean,
   manualResult?: OverviewManualResult
-): OverviewDataSnapshot {
+) {
   const slots = cloneSlots(snapshot),
     before = cloneSlots(snapshot);
   const writable = slots as Record<string, AnySlot>;
   for (const [slot, outcome] of outcomes) {
     const previous = slots[slot];
     if (!outcome.ok && outcome.error === null) {
+      const timestamp =
+        outcome.data === undefined
+          ? previous.sourceTimestamp
+          : timestampOf(slot, outcome.data);
+      const freshness =
+        outcome.data === undefined || paused
+          ? previous.freshness
+          : freshnessOf(slot, timestamp, nowMs, cadenceSeconds).freshness;
       writable[slot] = phaseSlot({
         ...(previous as AnySlot),
+        data: outcome.data ?? previous.data,
         pending: false,
+        paused,
+        freshness,
+        sourceTimestamp: timestamp,
       });
       continue;
     }
     writable[slot] = phaseSlot(
       outcome.ok
-        ? // prettier-ignore
-          successSlot(slot, previous, outcome.data, nowMs, cadenceSeconds, paused)
+        ? successSlot(
+            slot,
+            previous,
+            outcome.data,
+            nowMs,
+            cadenceSeconds,
+            paused
+          )
         : {
             ...previous,
+            data: outcome.data ?? previous.data,
             pending: false,
             paused,
             error: outcome.error,
+            sourceTimestamp:
+              outcome.data === undefined
+                ? previous.sourceTimestamp
+                : timestampOf(slot, outcome.data),
             transportLastAttemptAt: nowMs,
           }
     );
@@ -103,7 +123,7 @@ export function projectFreshness(
   nowMs: number,
   cadenceSeconds: number,
   paused: boolean
-): OverviewDataSnapshot {
+) {
   const slots = cloneSlots(snapshot),
     before = cloneSlots(snapshot);
   const writable = slots as Record<string, AnySlot>;
@@ -111,8 +131,8 @@ export function projectFreshness(
     const current = slots[slot] as AnySlot;
     const freshness = paused
       ? current.freshness
-      : // prettier-ignore
-        computeFreshnessForSource(slot, current.sourceTimestamp, nowMs, cadenceSeconds).freshness;
+      : freshnessOf(slot, current.sourceTimestamp, nowMs, cadenceSeconds)
+          .freshness;
     writable[slot] = phaseSlot({ ...current, freshness, paused });
   }
   return projectSnapshot(
@@ -122,17 +142,11 @@ export function projectFreshness(
   );
 }
 
-export function projectPaused(
-  snapshot: OverviewDataSnapshot,
-  paused: boolean
-): OverviewDataSnapshot {
+export function projectPaused(snapshot: OverviewDataSnapshot, paused: boolean) {
   const slots = cloneSlots(snapshot);
-  const writable = slots as Record<string, (typeof slots)[OverviewSourceKey]>;
+  const writable = slots as Record<string, AnySlot>;
   for (const source of SOURCE_ORDER) {
-    writable[source] = phaseSlot<unknown>({
-      ...(slots[source] as AnySlot),
-      paused,
-    }) as (typeof slots)[OverviewSourceKey];
+    writable[source] = phaseSlot({ ...(slots[source] as AnySlot), paused });
   }
   return projectSnapshot(slots, snapshot.manualResult, snapshot.announcement);
 }
@@ -140,7 +154,7 @@ export function projectPaused(
 export function setManualResult(
   snapshot: OverviewDataSnapshot,
   manualResult: OverviewManualResult
-): OverviewDataSnapshot {
+) {
   const announcement =
     manualResult === 'success'
       ? 'Manual refresh complete.'
@@ -158,9 +172,7 @@ export function setManualResult(
   );
 }
 
-export function withRadarDisabled(
-  snapshot: OverviewDataSnapshot
-): OverviewDataSnapshot {
+export function withRadarDisabled(snapshot: OverviewDataSnapshot) {
   return projectRadar(snapshot, {
     availability: 'unavailable',
     pending: false,
@@ -168,24 +180,17 @@ export function withRadarDisabled(
   });
 }
 
-export function withRadarRetry(
+export const withRadarRetry = (
   snapshot: OverviewDataSnapshot,
   paused: boolean
-): OverviewDataSnapshot {
-  return projectRadar(snapshot, { pending: true, paused, error: null });
-}
+) => projectRadar(snapshot, { pending: true, paused, error: null });
 
-export function withRadarEnabled(
+export const withRadarEnabled = (
   snapshot: OverviewDataSnapshot,
   availability: AnySlot['availability']
-): OverviewDataSnapshot {
-  return projectRadar(snapshot, { availability });
-}
+) => projectRadar(snapshot, { availability });
 
-function projectRadar(
-  snapshot: OverviewDataSnapshot,
-  patch: Partial<AnySlot>
-): OverviewDataSnapshot {
+function projectRadar(snapshot: OverviewDataSnapshot, patch: Partial<AnySlot>) {
   const slots = cloneSlots(snapshot);
   slots.radar = phaseSlot({ ...slots.radar, ...patch }) as typeof slots.radar;
   return projectSnapshot(slots, snapshot.manualResult, snapshot.announcement);
@@ -213,20 +218,19 @@ function successSlot(
   nowMs: number,
   cadenceSeconds: number,
   paused: boolean
-): AnySlot {
-  const unavailable = semanticUnavailable(slot, data);
-  const timestamp = sourceTimestamp(slot, data);
+) {
+  const isUnavailable = unavailable(slot, data);
+  const timestamp = timestampOf(slot, data);
   const freshness = paused
     ? previous.freshness
-    : computeFreshnessForSource(slot, timestamp, nowMs, cadenceSeconds)
-        .freshness;
+    : freshnessOf(slot, timestamp, nowMs, cadenceSeconds).freshness;
   return phaseSlot({
     ...previous,
     data,
     pending: false,
     paused,
     error: null,
-    availability: unavailable ? 'unavailable' : 'available',
+    availability: isUnavailable ? 'unavailable' : 'available',
     freshness,
     sourceTimestamp: timestamp,
     transportLastAttemptAt: nowMs,

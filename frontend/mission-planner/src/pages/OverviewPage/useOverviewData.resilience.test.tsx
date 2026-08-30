@@ -142,8 +142,9 @@ describe('useOverviewData resilience', () => {
       { initialProps: { radarEnabled: true } }
     );
     await act(flush);
+    const token = result.current.controller.radarRefreshToken;
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: true,
         frameTimestamp: '1788004800',
       })
@@ -155,7 +156,7 @@ describe('useOverviewData resilience', () => {
     expect(result.current.snapshot.radar.transportLastSuccessAt).toBe(now);
     now = Number.NaN;
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: false,
         error: new Error('radar failed'),
       })
@@ -164,7 +165,7 @@ describe('useOverviewData resilience', () => {
     rerender({ radarEnabled: false });
     await act(flush);
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: false,
         error: new Error('radar failed'),
       })
@@ -191,8 +192,9 @@ describe('useOverviewData resilience', () => {
       { initialProps: { radarEnabled: true } }
     );
     await act(flush);
+    const token = result.current.controller.radarRefreshToken;
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: true,
         frameTimestamp: '1777294800',
       })
@@ -202,7 +204,7 @@ describe('useOverviewData resilience', () => {
     await act(flush);
     expect(result.current.snapshot.radar.availability).toBe('unavailable');
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: true,
         frameTimestamp: '1777294801',
       })
@@ -232,8 +234,9 @@ describe('useOverviewData resilience', () => {
       { initialProps: { radarEnabled: true } }
     );
     await act(flush);
+    const token = result.current.controller.radarRefreshToken;
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: true,
         frameTimestamp: '1777294800',
       })
@@ -296,14 +299,15 @@ describe('useOverviewData resilience', () => {
       })
     );
     await act(flush);
+    const token = result.current.controller.radarRefreshToken;
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: true,
         frameTimestamp: '1777294800',
       })
     );
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: false,
         error: new Error('radar failed'),
       })
@@ -319,10 +323,22 @@ describe('useOverviewData resilience', () => {
       '1777294800'
     );
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: true,
         frameTimestamp: '1777294801',
       })
+    );
+    expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
+      '1777294800'
+    );
+    act(() =>
+      result.current.controller.reportRadarResult(
+        result.current.controller.radarRefreshToken,
+        {
+          ok: true,
+          frameTimestamp: '1777294801',
+        }
+      )
     );
     expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
       '1777294801'
@@ -341,14 +357,15 @@ describe('useOverviewData resilience', () => {
       })
     );
     await act(flush);
+    const token = result.current.controller.radarRefreshToken;
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: true,
         frameTimestamp: '1777294800',
       })
     );
     act(() =>
-      result.current.controller.reportRadarResult({
+      result.current.controller.reportRadarResult(token, {
         ok: true,
         frameTimestamp: '01777294800',
       })
@@ -360,6 +377,76 @@ describe('useOverviewData resilience', () => {
       code: 'invalid-data',
       message: 'Source data was invalid.',
     });
+  });
+
+  it('ignores malformed, future, stale, disabled, and superseded radar tokens', async () => {
+    const svc = services();
+    const { result, rerender } = renderHook(
+      ({ radarEnabled }) =>
+        useOverviewData({
+          cadence: 1,
+          poiFilter: '',
+          radarEnabled,
+          services: svc,
+          now: () => 1_777_294_800_000,
+        }),
+      { initialProps: { radarEnabled: true } }
+    );
+    await act(flush);
+    const initial = result.current.controller.radarRefreshToken;
+    act(() =>
+      result.current.controller.reportRadarResult(initial, {
+        ok: true,
+        frameTimestamp: '1777294800',
+      })
+    );
+    for (const token of [Number.NaN, initial + 1, -1]) {
+      act(() =>
+        result.current.controller.reportRadarResult(token, {
+          ok: true,
+          frameTimestamp: '1777294801',
+        })
+      );
+    }
+    expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
+      '1777294800'
+    );
+    rerender({ radarEnabled: false });
+    await act(flush);
+    act(() =>
+      result.current.controller.reportRadarResult(initial, {
+        ok: true,
+        frameTimestamp: '1777294801',
+      })
+    );
+    rerender({ radarEnabled: true });
+    await act(flush);
+    act(() =>
+      result.current.controller.reportRadarResult(initial, {
+        ok: true,
+        frameTimestamp: '1777294802',
+      })
+    );
+    expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
+      '1777294800'
+    );
+    act(() => result.current.controller.retryRadar());
+    const current = result.current.controller.radarRefreshToken;
+    act(() =>
+      result.current.controller.reportRadarResult(initial, {
+        ok: true,
+        frameTimestamp: '1777294803',
+      })
+    );
+    act(() =>
+      result.current.controller.reportRadarResult(current, {
+        ok: true,
+        frameTimestamp: '1777294804',
+      })
+    );
+    expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
+      '1777294804'
+    );
   });
 
   it('recomputes retained freshness on resume without transport mutation', async () => {

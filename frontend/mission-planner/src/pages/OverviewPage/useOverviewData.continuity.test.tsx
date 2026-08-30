@@ -220,4 +220,45 @@ describe('useOverviewData continuity', () => {
     ).toBe(true);
     expect(history?.generated_at).toBe(historyPayload.generated_at);
   });
+
+  it('preserves a real history failure while appending local telemetry', async () => {
+    const telemetryTime = '2026-08-29T18:00:05Z';
+    const svc = baseServices({
+      getStatus: vi
+        .fn()
+        .mockResolvedValueOnce(structuredClone(statusPayload))
+        .mockResolvedValueOnce({
+          ...structuredClone(statusPayload),
+          timestamp: telemetryTime,
+        }),
+      getMonitoringHistory: vi
+        .fn()
+        .mockResolvedValueOnce(structuredClone(historyPayload))
+        .mockRejectedValueOnce(new Error('history down')),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_788_026_405_000,
+      })
+    );
+    await act(flush);
+    const successAt = result.current.snapshot.history.transportLastSuccessAt;
+    await act(async () => result.current.controller.manualRefresh());
+    expect(result.current.snapshot.history.error).toEqual({
+      code: 'request-failed',
+      message: 'Source refresh failed.',
+    });
+    expect(result.current.snapshot.history.transportLastSuccessAt).toBe(
+      successAt
+    );
+    expect(
+      result.current.snapshot.history.data?.series.every((series) =>
+        series.samples.some((sample) => sample.timestamp === telemetryTime)
+      )
+    ).toBe(true);
+  });
 });

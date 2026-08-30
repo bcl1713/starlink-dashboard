@@ -207,6 +207,61 @@ describe('useOverviewData scheduling', () => {
     expect(svc.getStatus).toHaveBeenCalledTimes(2);
   });
 
+  it('resolves the manual promise only after the result is committed', async () => {
+    const { svc } = services();
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    let observed = 'unresolved';
+    const manual = result.current.controller.manualRefresh().then(() => {
+      observed = result.current.snapshot.manualResult;
+    });
+    await act(async () => manual);
+    expect(observed).toBe('success');
+    expect(result.current.snapshot.manualResult).toBe('success');
+  });
+
+  it('does not increment the radar token for bootstrap, scheduled, visibility, or filter work', async () => {
+    let now = 1_777_294_800_000;
+    let listener = () => {};
+    const { svc } = services();
+    const visibility = {
+      isHidden: () => false,
+      subscribe: vi.fn((callback: () => void) => {
+        listener = callback;
+        return vi.fn();
+      }),
+    };
+    const { result, rerender } = renderHook(
+      ({ poiFilter }) =>
+        useOverviewData({
+          cadence: 1,
+          poiFilter,
+          radarEnabled: true,
+          services: svc,
+          visibility,
+          now: () => now,
+        }),
+      { initialProps: { poiFilter: 'arrival' as OverviewPOIFilter } }
+    );
+    await act(flush);
+    expect(result.current.controller.radarRefreshToken).toBe(0);
+    now += 1000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    await act(flush);
+    act(listener);
+    rerender({ poiFilter: 'departure' });
+    await act(flush);
+    expect(result.current.controller.radarRefreshToken).toBe(0);
+  });
+
   it('honors first-five due counts and coalesces cadence reset to a full new period', async () => {
     let now = 1_777_294_800_000;
     const { svc } = services();
