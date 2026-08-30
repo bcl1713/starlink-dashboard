@@ -54,6 +54,48 @@ function services(overrides: Partial<OverviewDataServices> = {}) {
 }
 
 describe('useOverviewData resilience', () => {
+  it('ignores abort-ignoring old lifecycle results after service replacement', async () => {
+    const oldStatus = deferred<typeof statusPayload>();
+    const oldServices = services({
+      getStatus: vi.fn(() => oldStatus.promise),
+    });
+    const newServices = services({
+      getStatus: vi.fn(() =>
+        Promise.resolve({
+          ...structuredClone(statusPayload),
+          timestamp: '2026-08-29T18:00:10Z',
+        })
+      ),
+    });
+    const { result, rerender } = renderHook(
+      ({ svc }) =>
+        useOverviewData({
+          cadence: 'paused',
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => 1_777_294_810_000,
+        }),
+      { initialProps: { svc: oldServices } }
+    );
+    await act(flush);
+    rerender({ svc: newServices });
+    await act(flush);
+    expect(result.current.snapshot.telemetry.data?.timestamp).toBe(
+      '2026-08-29T18:00:10Z'
+    );
+    const before = result.current.snapshot;
+    oldStatus.resolve({
+      ...structuredClone(statusPayload),
+      timestamp: '2026-08-29T18:00:01Z',
+    });
+    await act(flush);
+    expect(result.current.snapshot).toBe(before);
+    expect(result.current.snapshot.globalTransportLastSuccessAt).toBe(
+      1_777_294_810_000
+    );
+  });
+
   it('treats independent failures, semantic unavailable, and manual results separately', async () => {
     const svc = services({
       getPOIETAs: vi.fn(() => Promise.reject(new Error('poi failed'))),
@@ -175,6 +217,61 @@ describe('useOverviewData resilience', () => {
       '1788004800'
     );
     expect(svc.getStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('makes retained radar callbacks no-ops after unmount', async () => {
+    const svc = services();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { result, unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    const controller = result.current.controller;
+    const token = controller.radarRefreshToken;
+    unmount();
+    act(() => controller.retryRadar());
+    act(() =>
+      controller.reportRadarResult(token, {
+        ok: true,
+        frameTimestamp: '1777294800',
+      })
+    );
+    expect(errorSpy).not.toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
+
+  it('does not mutate frozen service payloads', async () => {
+    const telemetry = structuredClone(statusPayload);
+    const history = structuredClone(historyPayload);
+    Object.freeze(telemetry);
+    Object.freeze(telemetry.position);
+    Object.freeze(telemetry.network);
+    Object.freeze(history);
+    Object.freeze(history.series);
+    const svc = services({
+      getStatus: vi.fn(() => Promise.resolve(telemetry)),
+      getMonitoringHistory: vi.fn(() => Promise.resolve(history)),
+    });
+    const beforeTelemetry = structuredClone(telemetry);
+    const beforeHistory = structuredClone(history);
+    renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    expect(telemetry).toEqual(beforeTelemetry);
+    expect(history).toEqual(beforeHistory);
   });
 
   it('restores radar availability after re-enable and ignores stale toggle reports', async () => {

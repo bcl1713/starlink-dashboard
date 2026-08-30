@@ -14,23 +14,21 @@ import {
   getStatus,
 } from '../../services/monitoring';
 import type {
-  OverviewActiveLinkData,
   OverviewDataServices,
   OverviewManualResult,
-  OverviewRouteData,
   OverviewSourceKey,
   UseOverviewDataOptions,
 } from './overview-data-types';
 import { mergeTelemetryBatch } from './overview-data-types';
-import { HTTP_SLOTS } from './overview-data-reducer';
-import type {
-  OverviewHttpSlot,
-  SlotCommit,
-  SlotOutcome,
+import {
+  HTTP_SLOTS,
+  type OverviewHttpSlot,
+  type SlotCommit,
+  type SlotOutcome,
 } from './overview-data-reducer';
 import {
   acceptTelemetry,
-  appendPending,
+  boundPendingTelemetry,
   classifyOverviewError,
   historyContains,
 } from './overview-freshness';
@@ -57,24 +55,13 @@ const PERIODS = {
   history: 10,
 } as const satisfies Record<OverviewHttpSlot, number>;
 
-export interface RequestRegistry {
-  abortAll(): void;
-  start(
-    slot: OverviewHttpSlot,
-    filter: OverviewPOIFilter,
-    replace?: boolean
-  ): Promise<SlotOutcome>;
-}
-
 type RequestRecord = {
   controller: AbortController;
   generation: number;
   promise: Promise<SlotOutcome>;
 };
 
-export function createOverviewRequestRegistry(
-  services: OverviewDataServices
-): RequestRegistry {
+export function createOverviewRequestRegistry(services: OverviewDataServices) {
   const records = new Map<OverviewHttpSlot, RequestRecord>();
   const generations = new Map<OverviewHttpSlot, number>();
   const outcomes = new Map<OverviewHttpSlot, SlotOutcome>();
@@ -177,13 +164,9 @@ export function manualResultFromOutcomes(
     if (outcome.ok) successes += 1;
     else if (outcome.error || outcome.manualFailure) failures += 1;
   }
-  return successes + failures === 0
-    ? 'idle'
-    : failures === 0
-      ? 'success'
-      : successes === 0
-        ? 'failure'
-        : 'partial';
+  if (successes + failures === 0) return 'idle';
+  if (failures === 0) return 'success';
+  return successes === 0 ? 'failure' : 'partial';
 }
 
 export function buildSlotCommits(
@@ -218,8 +201,7 @@ export function buildSlotCommits(
     telemetry,
     nowMs
   );
-  if (!history)
-    return { commits, pending: telemetry.reduce(appendPending, []) };
+  if (!history) return { commits, pending: boundPendingTelemetry(telemetry) };
   const historyCommit: SlotCommit =
     historyOutcome?.ok === true
       ? ['history', { ok: true, data: history }]
@@ -256,6 +238,11 @@ export function defaultVisibility() {
   };
 }
 
+export const createRegistry = createOverviewRequestRegistry;
+export const slotCommits = buildSlotCommits;
+export const resultFromOutcomes = manualResultFromOutcomes;
+export const seconds = cadenceSeconds;
+
 async function runSlot(
   services: OverviewDataServices,
   slot: OverviewHttpSlot,
@@ -276,24 +263,35 @@ async function runSlot(
   }
   if (slot === 'activeLink') {
     const [normal, warning] = await settlePair(
-      services.getActiveXLink('normal', signal),
-      services.getActiveXLink('warning', signal)
+      () => services.getActiveXLink('normal', signal),
+      () => services.getActiveXLink('warning', signal)
     );
-    return { normal, warning } satisfies OverviewActiveLinkData;
+    return { normal, warning };
   }
   const [west, east] = await settlePair(
-    services.getRouteCoordinates('west', signal),
-    services.getRouteCoordinates('east', signal)
+    () => services.getRouteCoordinates('west', signal),
+    () => services.getRouteCoordinates('east', signal)
   );
-  return { west, east } satisfies OverviewRouteData;
+  return { west, east };
 }
 
 async function settlePair<T>(
-  left: Promise<T>,
-  right: Promise<T>
+  left: () => Promise<T>,
+  right: () => Promise<T>
 ): Promise<[T, T]> {
-  const [first, second] = await Promise.allSettled([left, right]);
+  const [first, second] = await Promise.allSettled([
+    startSupplier(left),
+    startSupplier(right),
+  ]);
   if (first.status === 'rejected') throw first.reason;
   if (second.status === 'rejected') throw second.reason;
   return [first.value, second.value];
+}
+
+function startSupplier<T>(supplier: () => Promise<T>): Promise<T> {
+  try {
+    return Promise.resolve(supplier());
+  } catch (error) {
+    return Promise.reject(error);
+  }
 }

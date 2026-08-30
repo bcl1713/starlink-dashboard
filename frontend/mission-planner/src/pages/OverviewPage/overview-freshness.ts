@@ -9,14 +9,13 @@ import type {
   OverviewStatus,
   POIETAResponse,
 } from '../../types/monitoring';
+import { mergeTimestampedSamples } from './history';
 import type {
   OverviewActiveLinkData,
-  OverviewFreshnessState,
   OverviewRadarData,
   OverviewRouteData,
   OverviewSourceError,
 } from './overview-data-types';
-export { SOURCE_LABELS } from './overview-data-types';
 
 const METRICS = [
   'latitude_degrees',
@@ -48,17 +47,16 @@ export function acceptTelemetry(
   return comparison !== null && comparison <= 0;
 }
 
-export function appendPending(
-  pending: readonly OverviewStatus[],
-  status: OverviewStatus
+export function boundPendingTelemetry(
+  statuses: readonly OverviewStatus[]
 ): OverviewStatus[] {
-  return [
-    ...pending.filter(
-      (item) =>
-        compareAwareTimestampInstants(item.timestamp, status.timestamp) !== 0
-    ),
-    status,
-  ];
+  const newest = latestStatusTimestamp(statuses);
+  if (newest === null) return [];
+  return mergeTimestampedSamples(
+    [],
+    statuses.map((status) => ({ timestamp: status.timestamp, value: status })),
+    newest
+  ).map((sample) => sample.value);
 }
 
 export function historyContains(
@@ -73,22 +71,14 @@ export function historyContains(
   );
 }
 
-export function computeSourceFreshness(
-  timestamp: string | null,
-  nowMs: number,
-  cadenceSeconds: number
-): { freshness: OverviewFreshnessState; ageSeconds: number | null } {
-  return computeFreshnessForSource('', timestamp, nowMs, cadenceSeconds);
-}
-
 export function computeFreshnessForSource(
   source: string,
   timestamp: string | null,
   nowMs: number,
   cadenceSeconds: number
-): { freshness: OverviewFreshnessState; ageSeconds: number | null } {
+): { freshness: 'fresh' | 'stale' | 'unknown'; ageSeconds: number | null } {
   if (timestamp === null || !Number.isSafeInteger(nowMs)) {
-    return { freshness: 'unknown', ageSeconds: null };
+    return { freshness: 'unknown' as const, ageSeconds: null };
   }
   const future = compareSourceTimestampToEpochMilliseconds(
     source,
@@ -97,7 +87,7 @@ export function computeFreshnessForSource(
     5
   );
   if (future === null || future > 0) {
-    return { freshness: 'unknown', ageSeconds: null };
+    return { freshness: 'unknown' as const, ageSeconds: null };
   }
   const staleSeconds = Math.max(5, 3 * cadenceSeconds);
   const stale = compareSourceTimestampToEpochMilliseconds(
@@ -230,9 +220,11 @@ function historyTimestamp(history: MonitoringHistory): string | null {
     if (!series || series.samples.length === 0) return null;
     let latest = series.samples[0].timestamp;
     for (const sample of series.samples.slice(1)) {
-      if (compareText(sample.timestamp, latest) > 0) latest = sample.timestamp;
+      if (compareAwareTimestampInstants(sample.timestamp, latest) > 0)
+        latest = sample.timestamp;
     }
-    if (oldest === null || compareText(latest, oldest) < 0) oldest = latest;
+    if (oldest === null || compareAwareTimestampInstants(latest, oldest) < 0)
+      oldest = latest;
   }
   return oldest;
 }
@@ -241,18 +233,14 @@ function activeTimestamp(data: OverviewActiveLinkData): string | null {
   const normal = data.normal.observed_at;
   const warning = data.warning.observed_at;
   if (normal === null || warning === null) return null;
-  return compareText(normal, warning) <= 0 ? normal : warning;
+  return compareAwareTimestampInstants(normal, warning) <= 0 ? normal : warning;
 }
 
 function routeTimestamp(data: OverviewRouteData): string | null {
   const west = data.west.revision_at;
   const east = data.east.revision_at;
   if (west === null || east === null) return null;
-  return compareText(west, east) <= 0 ? west : east;
-}
-
-function compareText(left: string, right: string): number {
-  return compareAwareTimestampInstants(left, right);
+  return compareAwareTimestampInstants(west, east) <= 0 ? west : east;
 }
 
 function computeWholeAgeSeconds(
@@ -286,15 +274,27 @@ function safeIsCancel(error: unknown): boolean {
 }
 
 function safeGet(value: unknown, key: string): unknown {
-  if (
-    (typeof value !== 'object' && typeof value !== 'function') ||
-    value === null
-  ) {
-    return undefined;
-  }
+  if (value === null) return undefined;
+  const kind = typeof value;
+  if (kind !== 'object' && kind !== 'function') return undefined;
   try {
-    return Reflect.get(value, key);
+    return Reflect.get(value as object, key);
   } catch {
     return undefined;
   }
+}
+
+function latestStatusTimestamp(
+  statuses: readonly OverviewStatus[]
+): string | null {
+  let latest: string | null = null;
+  for (const { timestamp } of statuses) {
+    if (
+      latest === null ||
+      compareAwareTimestampInstants(timestamp, latest) > 0
+    ) {
+      latest = timestamp;
+    }
+  }
+  return latest;
 }

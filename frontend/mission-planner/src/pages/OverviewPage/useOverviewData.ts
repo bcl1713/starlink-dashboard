@@ -2,123 +2,119 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { OverviewStatus } from '../../types/monitoring';
 import { useOverviewRefresh } from './useOverviewRefresh';
-import * as R from './overview-data-reducer';
-import type {
-  OverviewManualResult,
-  OverviewRadarReport,
-  OverviewSourceKey,
-  UseOverviewDataOptions,
-  UseOverviewDataResult as Result,
-} from './overview-data-types';
-import * as Q from './overview-requests';
-import * as F from './overview-freshness';
-
+import * as State from './overview-data-reducer';
+import type { OverviewHttpSlot, SlotOutcome } from './overview-data-reducer';
+import type * as Types from './overview-data-types';
+import * as Req from './overview-requests';
+import * as Fresh from './overview-freshness';
 type CycleReason = 'scheduled' | 'manual' | 'bootstrap' | 'visibility';
-export function useOverviewData(options: UseOverviewDataOptions): Result {
+type DataSnapshot = ReturnType<typeof State.emptyOverviewSnapshot>;
+type CycleOutcome = Readonly<{ slot: OverviewHttpSlot; outcome: SlotOutcome }>;
+const DEFAULT_VISIBILITY = Req.defaultVisibility();
+export function useOverviewData(options: Types.UseOverviewDataOptions) {
   const {
     cadence,
     poiFilter,
     radarEnabled,
-    services = Q.DEFAULT_SERVICES,
+    services = Req.DEFAULT_SERVICES,
     now = Date.now,
-    visibility = Q.defaultVisibility(),
+    visibility = DEFAULT_VISIBILITY,
   } = options;
-  const [snapshot, setSnapshot] = useState(R.emptyOverviewSnapshot);
+  const [snapshot, setSnapshot] = useState(State.emptyOverviewSnapshot);
   const [radarRefreshToken, setRadarRefreshToken] = useState(0);
-  const registry = useMemo(
-    () => Q.createOverviewRequestRegistry(services),
-    [services]
-  );
-  const mounted = useRef(false),
-    generation = useRef(0);
-  const anchors = useRef(new Map<R.OverviewHttpSlot, number>());
+  const registry = useMemo(() => Req.createRegistry(services), [services]);
+  const life = useRef({ mounted: false, gen: 0, active: 0, reset: false });
+  const anchors = useRef(new Map<OverviewHttpSlot, number>());
   const pendingTelemetry = useRef<OverviewStatus[]>([]);
-  const activeCycles = useRef(0),
-    pendingReset = useRef(false);
-  const radarGeneration = useRef(0);
-  const radarToken = useRef(0);
-  const radarAvailability = useRef(snapshot.radar.availability);
-  const sawCadence = useRef(false),
-    sawFilter = useRef(false),
-    sawRadar = useRef(false);
+  const radar = useRef({
+    gen: 0,
+    token: 0,
+    avail: snapshot.radar.availability,
+  });
+  const seen = useRef({ cadence: false, filter: false, radar: false });
   const latest = useRef({ cadence, poiFilter, radarEnabled, now, visibility });
   useEffect(() => {
     latest.current = { cadence, poiFilter, radarEnabled, now, visibility };
   }, [cadence, now, poiFilter, radarEnabled, visibility]);
-
   const resetAnchors = useCallback((nowMs: number) => {
-    for (const slot of R.HTTP_SLOTS) anchors.current.set(slot, nowMs);
+    for (const slot of State.HTTP_SLOTS) anchors.current.set(slot, nowMs);
   }, []);
-
+  const isCurrent = useCallback(
+    (gen: number) => life.current.mounted && life.current.gen === gen,
+    []
+  );
+  const setSnapshotIfCurrent = useCallback(
+    (gen: number, update: (snapshot: DataSnapshot) => DataSnapshot) => {
+      setSnapshot((state) => (isCurrent(gen) ? update(state) : state));
+    },
+    [isCurrent]
+  );
   const incrementRadarToken = useCallback(() => {
     setRadarRefreshToken((value) => {
       const next = value === Number.MAX_SAFE_INTEGER ? 0 : value + 1;
-      radarToken.current = next;
-      radarGeneration.current = next;
+      radar.current.token = next;
+      radar.current.gen = next;
       return next;
     });
   }, []);
-
   const finishResetIfIdle = useCallback(() => {
-    if (!pendingReset.current || activeCycles.current !== 0) return false;
-    const nowMs = F.safeNow(latest.current.now);
+    if (!life.current.reset || life.current.active !== 0) return false;
+    const nowMs = Fresh.safeNow(latest.current.now);
     if (nowMs === null) return false;
     resetAnchors(nowMs);
-    pendingReset.current = false;
+    life.current.reset = false;
     return true;
   }, [resetAnchors]);
-
   const commitBatch = useCallback(
     (
-      outcomes: readonly {
-        slot: OverviewSourceKey;
-        outcome: R.SlotOutcome;
-      }[],
+      outcomes: readonly CycleOutcome[],
       nowMs: number,
-      manualResult?: OverviewManualResult
+      gen: number,
+      manualResult?: DataSnapshot['manualResult']
     ) => {
-      if (!mounted.current) return;
+      if (!isCurrent(gen)) return;
       flushSync(() => {
-        setSnapshot((current) => {
-          const { commits, pending } = Q.buildSlotCommits(
+        setSnapshotIfCurrent(gen, (current) => {
+          const { commits, pending } = Req.slotCommits(
             outcomes,
             current.history.data,
             pendingTelemetry.current,
             nowMs
           );
           pendingTelemetry.current = pending;
-          return R.commitSlots(
+          return State.commitSlots(
             current,
             commits,
             nowMs,
-            Q.cadenceSeconds(latest.current.cadence),
+            Req.seconds(latest.current.cadence),
             latest.current.cadence === 'paused',
             manualResult
           );
         });
       });
     },
-    []
+    [isCurrent, setSnapshotIfCurrent]
   );
-
   const runCycle = useCallback(
     async (reason: CycleReason) => {
-      activeCycles.current += 1;
+      const gen = life.current.gen;
+      life.current.active += 1;
       const current = latest.current;
       try {
+        if (!isCurrent(gen)) return;
         if (
           (reason === 'scheduled' || reason === 'visibility') &&
-          (current.cadence === 'paused' || Q.safeHidden(current.visibility))
+          (current.cadence === 'paused' || Req.safeHidden(current.visibility))
         )
           return;
-        const nowMs = F.safeNow(current.now);
+        const nowMs = Fresh.safeNow(current.now);
         if (nowMs === null) return;
-        if (pendingReset.current) {
-          if (activeCycles.current === 1) resetAnchors(nowMs);
-          if (activeCycles.current === 1) pendingReset.current = false;
+        if (life.current.reset) {
+          if (life.current.active === 1) resetAnchors(nowMs);
+          if (life.current.active === 1) life.current.reset = false;
           if (reason !== 'manual') return;
         }
-        const selected = Q.dueSlots(
+        const selected = Req.dueSlots(
           reason,
           current.cadence,
           anchors.current,
@@ -127,9 +123,11 @@ export function useOverviewData(options: UseOverviewDataOptions): Result {
         if (selected.length === 0) return;
         if (reason === 'manual') incrementRadarToken();
         if (reason === 'manual')
-          setSnapshot((state) => R.setManualResult(state, 'idle'));
-        setSnapshot((state) =>
-          R.startSlots(state, selected, current.cadence === 'paused')
+          setSnapshotIfCurrent(gen, (state) =>
+            State.setManualResult(state, 'idle')
+          );
+        setSnapshotIfCurrent(gen, (state) =>
+          State.startSlots(state, selected, current.cadence === 'paused')
         );
         for (const slot of selected) anchors.current.set(slot, nowMs);
         const outcomes = await Promise.all(
@@ -141,38 +139,41 @@ export function useOverviewData(options: UseOverviewDataOptions): Result {
         await commitBatch(
           outcomes,
           nowMs,
-          reason === 'manual' ? Q.manualResultFromOutcomes(outcomes) : undefined
+          gen,
+          reason === 'manual' ? Req.resultFromOutcomes(outcomes) : undefined
         );
       } finally {
-        activeCycles.current -= 1;
-        finishResetIfIdle();
+        life.current.active -= 1;
+        if (isCurrent(gen)) finishResetIfIdle();
       }
     },
     [
       commitBatch,
       finishResetIfIdle,
       incrementRadarToken,
+      isCurrent,
       registry,
       resetAnchors,
+      setSnapshotIfCurrent,
     ]
   );
-
   const rc = useOverviewRefresh({ cadence, now, onRefresh: runCycle });
-
   useEffect(() => {
-    mounted.current = true;
-    const mountGeneration = ++generation.current;
+    life.current.mounted = true;
+    const mountGen = ++life.current.gen;
+    const lifeRef = life.current;
+    const radarRef = radar.current;
     Promise.resolve().then(() => {
-      if (mounted.current && generation.current === mountGeneration)
+      if (life.current.mounted && life.current.gen === mountGen)
         void runCycle('bootstrap');
     });
     return () => {
-      mounted.current = false;
-      generation.current += 1;
+      lifeRef.mounted = false;
+      lifeRef.gen += 1;
+      radarRef.gen += 1;
       registry.abortAll();
     };
   }, [registry, runCycle]);
-
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     try {
@@ -188,85 +189,83 @@ export function useOverviewData(options: UseOverviewDataOptions): Result {
       }
     };
   }, [runCycle, visibility]);
-
   useEffect(() => {
-    if (sawRadar.current) radarGeneration.current += 1;
-    else sawRadar.current = true;
+    const gen = life.current.gen;
+    if (seen.current.radar) radar.current.gen += 1;
+    else seen.current.radar = true;
     if (!radarEnabled) {
-      setSnapshot((state) => {
-        radarAvailability.current = state.radar.availability;
-        return R.withRadarDisabled(state);
+      setSnapshotIfCurrent(gen, (state) => {
+        radar.current.avail = state.radar.availability;
+        return State.withRadarDisabled(state);
       });
     } else {
-      const nowMs = F.safeNow(latest.current.now);
-      setSnapshot((state) => {
-        const restored = R.withRadarEnabled(state, radarAvailability.current);
+      const nowMs = Fresh.safeNow(latest.current.now);
+      setSnapshotIfCurrent(gen, (state) => {
+        const restored = State.withRadarEnabled(state, radar.current.avail);
         return nowMs === null
           ? restored
-          : R.projectFreshness(
+          : State.projectFreshness(
               restored,
               nowMs,
-              Q.cadenceSeconds(latest.current.cadence),
+              Req.seconds(latest.current.cadence),
               latest.current.cadence === 'paused'
             );
       });
     }
-  }, [radarEnabled]);
-
+  }, [radarEnabled, setSnapshotIfCurrent]);
   const retryRadar = useCallback(() => {
-    if (!latest.current.radarEnabled) return;
-    radarGeneration.current += 1;
+    if (!life.current.mounted || !latest.current.radarEnabled) return;
+    radar.current.gen += 1;
     incrementRadarToken();
     setSnapshot((state) =>
-      R.withRadarRetry(state, latest.current.cadence === 'paused')
+      State.withRadarRetry(state, latest.current.cadence === 'paused')
     );
   }, [incrementRadarToken]);
-
   useEffect(() => {
-    if (!sawCadence.current) {
-      sawCadence.current = true;
+    if (!seen.current.cadence) {
+      seen.current.cadence = true;
       return;
     }
-    pendingReset.current = true;
+    life.current.reset = true;
     finishResetIfIdle();
-    const nowMs = F.safeNow(latest.current.now);
+    const nowMs = Fresh.safeNow(latest.current.now);
     setSnapshot((state) =>
       cadence === 'paused' || nowMs === null
-        ? R.projectPaused(state, cadence === 'paused')
-        : R.projectFreshness(state, nowMs, Q.cadenceSeconds(cadence), false)
+        ? State.projectPaused(state, cadence === 'paused')
+        : State.projectFreshness(state, nowMs, Req.seconds(cadence), false)
     );
   }, [cadence, finishResetIfIdle]);
-
   useEffect(() => {
-    if (!sawFilter.current) {
-      sawFilter.current = true;
+    if (!seen.current.filter) {
+      seen.current.filter = true;
       return;
     }
-    const nowMs = F.safeNow(latest.current.now);
+    const gen = life.current.gen;
+    const nowMs = Fresh.safeNow(latest.current.now);
     if (nowMs === null) return;
     anchors.current.set('pois', nowMs);
-    setSnapshot((state) =>
-      R.startSlots(state, ['pois'], latest.current.cadence === 'paused')
+    setSnapshotIfCurrent(gen, (state) =>
+      State.startSlots(state, ['pois'], latest.current.cadence === 'paused')
     );
     registry
       .start('pois', poiFilter, true)
-      .then((outcome) => commitBatch([{ slot: 'pois', outcome }], nowMs));
-  }, [commitBatch, poiFilter, registry]);
-
+      .then((outcome) => commitBatch([{ slot: 'pois', outcome }], nowMs, gen));
+  }, [commitBatch, poiFilter, registry, setSnapshotIfCurrent]);
   const reportRadarResult = useCallback(
-    (token: number, result: OverviewRadarReport) => {
+    (token: number, result: Types.OverviewRadarReport) => {
       if (
         !Number.isSafeInteger(token) ||
-        token !== radarToken.current ||
-        token !== radarGeneration.current ||
+        token !== radar.current.token ||
+        token !== radar.current.gen ||
+        !life.current.mounted ||
         !latest.current.radarEnabled
       ) {
         return;
       }
-      const nowMs = F.safeNow(latest.current.now);
+      const nowMs = Fresh.safeNow(latest.current.now);
       if (nowMs === null) return;
-      const outcome: R.SlotOutcome = result.ok
-        ? F.radarOutcome(result.frameTimestamp)
+      const outcome: SlotOutcome = result.ok
+        ? Fresh.radarOutcome(result.frameTimestamp)
         : {
             ok: false as const,
             error: {
@@ -275,18 +274,17 @@ export function useOverviewData(options: UseOverviewDataOptions): Result {
             },
           };
       setSnapshot((state) =>
-        R.commitSlots(
+        State.commitSlots(
           state,
           [['radar', outcome]],
           nowMs,
-          Q.cadenceSeconds(latest.current.cadence),
+          Req.seconds(latest.current.cadence),
           latest.current.cadence === 'paused'
         )
       );
     },
     []
   );
-
   return {
     snapshot,
     controller: {

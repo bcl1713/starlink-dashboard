@@ -299,6 +299,69 @@ describe('useOverviewData scheduling', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('keeps the default visibility listener stable across snapshot renders', async () => {
+    const { svc } = services();
+    const add = vi.spyOn(document, 'addEventListener');
+    const remove = vi.spyOn(document, 'removeEventListener');
+    const { result, unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    act(() =>
+      result.current.controller.reportRadarResult(0, {
+        ok: true,
+        frameTimestamp: '1777294800',
+      })
+    );
+    await act(async () => result.current.controller.manualRefresh());
+    expect(
+      add.mock.calls.filter(([event]) => event === 'visibilitychange')
+    ).toHaveLength(1);
+    expect(
+      remove.mock.calls.filter(([event]) => event === 'visibilitychange')
+    ).toHaveLength(0);
+    unmount();
+    expect(
+      remove.mock.calls.filter(([event]) => event === 'visibilitychange')
+    ).toHaveLength(1);
+    add.mockRestore();
+    remove.mockRestore();
+  });
+
+  it('starts both grouped suppliers when the first throws synchronously', async () => {
+    const states: string[] = [];
+    const { svc } = services();
+    svc.getActiveXLink = vi.fn((state: 'normal' | 'warning') => {
+      states.push(state);
+      if (state === 'normal') throw new Error('normal failed');
+      return Promise.resolve({
+        ...structuredClone(activeXLinkPayload),
+        state,
+      } as ActiveXLink);
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    expect(states).toEqual(['normal', 'warning']);
+    expect(result.current.snapshot.activeLink.error).toEqual({
+      code: 'request-failed',
+      message: 'Source refresh failed.',
+    });
+  });
+
   it('runs an explicit manual refresh hidden or paused and preserves controller identity', async () => {
     const { svc } = services();
     const visibility = {
@@ -677,15 +740,13 @@ describe('useOverviewData scheduling', () => {
       .mockResolvedValueOnce(structuredClone(statusPayload))
       .mockImplementationOnce(() => gate.promise);
     const observed: string[] = [];
-    const originalError = console.error;
-    const originalWarn = console.warn;
     const capture = (...args: unknown[]) => {
       const text = args.map(String).join('\n');
       if (/act\(|unmounted component|flushSync/i.test(text))
         observed.push(text);
     };
-    console.error = capture;
-    console.warn = capture;
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(capture);
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(capture);
     const { result, unmount } = renderHook(() =>
       useOverviewData({
         cadence: 1,
@@ -725,8 +786,8 @@ describe('useOverviewData scheduling', () => {
       ).rejects.toMatchObject({ message: 'Overview refresh unmounted' });
       expect(observed).toEqual([]);
     } finally {
-      console.error = originalError;
-      console.warn = originalWarn;
+      errorSpy.mockRestore();
+      warnSpy.mockRestore();
     }
   });
 

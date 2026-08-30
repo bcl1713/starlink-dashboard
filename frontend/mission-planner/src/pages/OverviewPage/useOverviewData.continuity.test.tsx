@@ -9,7 +9,10 @@ import {
   routePayload,
   statusPayload,
 } from '../../services/monitoring-test-fixtures';
+import type { OverviewStatus } from '../../types/monitoring';
 import type { OverviewDataServices } from './overview-data-types';
+import { HISTORY_MAX_SAMPLES } from './history';
+import { buildSlotCommits } from './overview-requests';
 import { useOverviewData } from './useOverviewData';
 
 const flush = async () => {
@@ -51,6 +54,55 @@ function baseServices(overrides: Partial<OverviewDataServices> = {}) {
 }
 
 describe('useOverviewData continuity', () => {
+  it('bounds and deduplicates telemetry pending before any server history success', () => {
+    let pending: OverviewStatus[] = Array.from(
+      { length: HISTORY_MAX_SAMPLES + 20 },
+      (_, index) => ({
+        ...structuredClone(statusPayload),
+        timestamp: `2026-08-29T12:${String(Math.floor(index / 60)).padStart(
+          2,
+          '0'
+        )}:${String(index % 60).padStart(2, '0')}Z`,
+      })
+    );
+    const duplicate = {
+      ...structuredClone(statusPayload),
+      timestamp: pending.at(-1)?.timestamp ?? '2026-08-29T12:30:20Z',
+      network: {
+        ...statusPayload.network,
+        latency_ms: 999,
+      },
+    };
+
+    const result = buildSlotCommits(
+      [
+        {
+          slot: 'telemetry',
+          outcome: { ok: true, data: duplicate },
+        },
+        {
+          slot: 'history',
+          outcome: {
+            ok: false,
+            error: {
+              code: 'request-failed',
+              message: 'Source refresh failed.',
+            },
+          },
+        },
+      ],
+      undefined,
+      pending,
+      1_788_008_220_000
+    );
+
+    pending = result.pending;
+    expect(result.commits.some(([slot]) => slot === 'history')).toBe(true);
+    expect(pending).toHaveLength(HISTORY_MAX_SAMPLES);
+    expect(pending.at(0)?.timestamp).toBe('2026-08-29T12:00:20Z');
+    expect(pending.at(-1)?.network.latency_ms).toBe(999);
+  });
+
   it('holds telemetry samples before server history and reconciles both completion orders identically', async () => {
     const telemetryTime = '2026-08-29T18:00:05Z';
     const nextTelemetryTime = '2026-08-29T18:30:05Z';

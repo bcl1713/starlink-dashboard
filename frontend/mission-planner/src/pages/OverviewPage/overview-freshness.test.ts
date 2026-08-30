@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { compareAwareTimestampToEpochMilliseconds } from '../../services/monitoring-validation';
 import {
   classifyOverviewError,
-  computeSourceFreshness,
+  computeFreshnessForSource,
   radarTimestampFromFrame,
   semanticUnavailable,
   sourceTimestamp,
@@ -52,22 +52,38 @@ describe('overview freshness', () => {
 
   it('classifies fresh, stale, future-tolerated, and unknown source timestamps', () => {
     expect(
-      computeSourceFreshness('2026-08-29T12:00:05Z', 1_788_004_800_000, 1)
+      computeFreshnessForSource(
+        '',
+        '2026-08-29T12:00:05Z',
+        1_788_004_800_000,
+        1
+      )
     ).toEqual({ freshness: 'fresh', ageSeconds: 0 });
     expect(
-      computeSourceFreshness('2026-08-29T12:00:06Z', 1_788_004_800_000, 1)
+      computeFreshnessForSource(
+        '',
+        '2026-08-29T12:00:06Z',
+        1_788_004_800_000,
+        1
+      )
     ).toEqual({ freshness: 'unknown', ageSeconds: null });
     expect(
-      computeSourceFreshness('2026-08-29T11:59:55Z', 1_788_004_800_000, 1)
+      computeFreshnessForSource(
+        '',
+        '2026-08-29T11:59:55Z',
+        1_788_004_800_000,
+        1
+      )
     ).toEqual({ freshness: 'fresh', ageSeconds: 5 });
     expect(
-      computeSourceFreshness(
+      computeFreshnessForSource(
+        '',
         '2026-08-29T11:59:54.999999999Z',
         1_788_004_800_000,
         1
       )
     ).toEqual({ freshness: 'stale', ageSeconds: 5 });
-    expect(computeSourceFreshness(null, 1_788_004_800_000, 30)).toEqual({
+    expect(computeFreshnessForSource('', null, 1_788_004_800_000, 30)).toEqual({
       freshness: 'unknown',
       ageSeconds: null,
     });
