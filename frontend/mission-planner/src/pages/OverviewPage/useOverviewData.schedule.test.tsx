@@ -304,7 +304,7 @@ describe('useOverviewData scheduling', () => {
     }
   });
 
-  it('does not increment the radar token for bootstrap, scheduled, visibility, or filter work', async () => {
+  it('does not increment the radar token for bootstrap, scheduled, visibility, filter, cadence, or reports', async () => {
     let now = 1_777_294_800_000;
     let listener = () => {};
     const { svc } = services();
@@ -316,24 +316,38 @@ describe('useOverviewData scheduling', () => {
       }),
     };
     const { result, rerender } = renderHook(
-      ({ poiFilter }) =>
+      ({ cadence, poiFilter }) =>
         useOverviewData({
-          cadence: 1,
+          cadence,
           poiFilter,
           radarEnabled: true,
           services: svc,
           visibility,
           now: () => now,
         }),
-      { initialProps: { poiFilter: 'arrival' as OverviewPOIFilter } }
+      {
+        initialProps: {
+          cadence: 1 as OverviewRefreshCadence,
+          poiFilter: 'arrival' as OverviewPOIFilter,
+        },
+      }
     );
     await act(flush);
+    expect(result.current.controller.radarRefreshToken).toBe(0);
+    act(() =>
+      result.current.controller.reportRadarResult(0, {
+        ok: true,
+        frameTimestamp: '1777294800',
+      })
+    );
     expect(result.current.controller.radarRefreshToken).toBe(0);
     now += 1000;
     await act(async () => vi.advanceTimersByTime(1000));
     await act(flush);
     act(listener);
-    rerender({ poiFilter: 'departure' });
+    rerender({ cadence: 10, poiFilter: 'arrival' });
+    await act(flush);
+    rerender({ cadence: 10, poiFilter: 'departure' });
     await act(flush);
     expect(result.current.controller.radarRefreshToken).toBe(0);
   });
@@ -537,33 +551,60 @@ describe('useOverviewData scheduling', () => {
     expect(signals.every((signal) => signal.aborted)).toBe(true);
   });
 
-  it('settles active and queued manual refresh promises on unmount', async () => {
+  it('rejects a manual queued behind active scheduled work on unmount without warnings', async () => {
+    let now = 1_777_294_800_000;
     const gate = deferred<typeof statusPayload>();
     const { svc } = services();
     svc.getStatus = vi
       .fn()
       .mockResolvedValueOnce(structuredClone(statusPayload))
       .mockImplementationOnce(() => gate.promise);
+    const observed: string[] = [];
+    const originalError = console.error;
+    const originalWarn = console.warn;
+    const capture = (...args: unknown[]) => {
+      const text = args.map(String).join('\n');
+      if (/act\(|unmounted component|flushSync/i.test(text))
+        observed.push(text);
+    };
+    console.error = capture;
+    console.warn = capture;
     const { result, unmount } = renderHook(() =>
       useOverviewData({
-        cadence: 'paused',
+        cadence: 1,
         poiFilter: '',
         radarEnabled: true,
         services: svc,
-        now: () => 1_777_294_800_000,
+        now: () => now,
       })
     );
-    await act(flush);
-    const active = result.current.controller.manualRefresh();
-    const queued = result.current.controller.manualRefresh();
-    expect(queued).toBe(active);
-    unmount();
-    gate.reject(new Error('unmounted'));
-    await expect(active).resolves.toBeUndefined();
-    await expect(queued).resolves.toBeUndefined();
-    await expect(result.current.controller.manualRefresh()).rejects.toThrow(
-      /unmounted/i
-    );
+    try {
+      await act(flush);
+      now += 1000;
+      await act(async () => vi.advanceTimersByTime(1000));
+      await act(flush);
+      expect(svc.getStatus).toHaveBeenCalledTimes(2);
+      expect(result.current.controller.isManualRefreshPending).toBe(false);
+      const queued = result.current.controller.manualRefresh();
+      await act(flush);
+      expect(result.current.controller.isManualRefreshPending).toBe(true);
+      expect(svc.getStatus).toHaveBeenCalledTimes(2);
+      const activeScheduled = gate.promise.then(
+        () => 'resolved',
+        (error: unknown) => String((error as Error).message)
+      );
+      unmount();
+      gate.reject(new Error('scheduled unmounted'));
+      await expect(activeScheduled).resolves.toBe('scheduled unmounted');
+      await expect(queued).rejects.toThrow(/unmounted/i);
+      await expect(result.current.controller.manualRefresh()).rejects.toThrow(
+        /unmounted/i
+      );
+      expect(observed).toEqual([]);
+    } finally {
+      console.error = originalError;
+      console.warn = originalWarn;
+    }
   });
 
   it('anchors filter-immediate attempts before the next scheduled cadence', async () => {
@@ -649,6 +690,54 @@ describe('useOverviewData scheduling', () => {
     await act(flush);
     expect(result.current.snapshot.pois.data?.timestamp).toBe(
       '2026-08-29T18:00:02Z'
+    );
+  });
+
+  it('bootstrap follows a selected POI replacement before terminal commit', async () => {
+    const first = deferred<typeof poiPayload>();
+    const latest = {
+      ...structuredClone(poiPayload),
+      timestamp: '2026-08-29T18:00:03Z',
+    };
+    const { svc } = services();
+    svc.getPOIETAs = vi
+      .fn()
+      .mockImplementationOnce((_filter, signal: AbortSignal) => {
+        signal.addEventListener('abort', () =>
+          first.reject(new Error('bootstrap stale'))
+        );
+        return first.promise;
+      })
+      .mockResolvedValueOnce(latest);
+    const { result, rerender } = renderHook(
+      ({ poiFilter }) =>
+        useOverviewData({
+          cadence: 'paused',
+          poiFilter,
+          radarEnabled: true,
+          services: svc,
+          now: () => 1_777_294_803_000,
+        }),
+      { initialProps: { poiFilter: 'arrival' as OverviewPOIFilter } }
+    );
+    await act(flush);
+    expect(result.current.snapshot.initialState).toBe('initial-loading');
+    rerender({ poiFilter: 'departure' });
+    await act(flush);
+    expect(result.current.snapshot.pois.data?.timestamp).toBe(
+      '2026-08-29T18:00:03Z'
+    );
+    expect(result.current.snapshot.initialState).toBe('ready');
+    expect(result.current.snapshot.manualResult).toBe('idle');
+    expect(svc.getPOIETAs).toHaveBeenNthCalledWith(
+      1,
+      'arrival',
+      expect.any(AbortSignal)
+    );
+    expect(svc.getPOIETAs).toHaveBeenNthCalledWith(
+      2,
+      'departure',
+      expect.any(AbortSignal)
     );
   });
 });

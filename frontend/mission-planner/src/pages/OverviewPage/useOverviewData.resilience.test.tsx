@@ -252,6 +252,7 @@ describe('useOverviewData resilience', () => {
   });
 
   it('increments radar token only for actual manual starts and enabled retry', async () => {
+    let throwNow = false;
     const gate = deferred<typeof statusPayload>();
     const svc = services({
       getStatus: vi
@@ -266,17 +267,34 @@ describe('useOverviewData resilience', () => {
           poiFilter: '',
           radarEnabled,
           services: svc,
-          now: () => 1_777_294_800_000,
+          now: () => {
+            if (throwNow) throw new Error('now inspected');
+            return 1_777_294_800_000;
+          },
         }),
       { initialProps: { radarEnabled: true } }
     );
     await act(flush);
-    expect(result.current.controller.radarRefreshToken).toBe(0);
+    const oldToken = result.current.controller.radarRefreshToken;
+    expect(oldToken).toBe(0);
     const first = result.current.controller.manualRefresh();
     const second = result.current.controller.manualRefresh();
     expect(second).toBe(first);
     await act(flush);
     expect(result.current.controller.radarRefreshToken).toBe(1);
+    let inspected = false;
+    const hostile = Object.defineProperty({ ok: true }, 'frameTimestamp', {
+      get() {
+        inspected = true;
+        throw new Error('frame inspected');
+      },
+    }) as { readonly ok: true; readonly frameTimestamp: string };
+    const before = result.current.snapshot;
+    throwNow = true;
+    act(() => result.current.controller.reportRadarResult(oldToken, hostile));
+    expect(result.current.snapshot).toBe(before);
+    expect(inspected).toBe(false);
+    throwNow = false;
     gate.resolve(structuredClone(statusPayload));
     await act(async () => first);
     act(() => result.current.controller.retryRadar());
@@ -577,41 +595,136 @@ describe('useOverviewData resilience', () => {
     );
   });
 
-  it('announces direct error-to-stale and stale-to-error transitions as entered states', async () => {
-    let now = 1_777_294_800_000;
-    const svc = services({
-      getStatus: vi
-        .fn()
-        .mockResolvedValueOnce({
-          ...structuredClone(statusPayload),
-          timestamp: '2026-04-27T13:00:00Z',
-        })
-        .mockRejectedValueOnce(new Error('down')),
-    });
-    const { result, rerender } = renderHook(
-      ({ cadence }) =>
+  it('announces true stale-to-error as the entered error state', async () => {
+    vi.useFakeTimers();
+    try {
+      let now = 1_777_294_800_000;
+      const svc = services({
+        getStatus: vi
+          .fn()
+          .mockResolvedValueOnce({
+            ...structuredClone(statusPayload),
+            timestamp: '2026-04-27T12:59:50Z',
+          })
+          .mockRejectedValueOnce(new Error('down')),
+      });
+      const { result } = renderHook(() =>
         useOverviewData({
-          cadence,
+          cadence: 1,
           poiFilter: '',
           radarEnabled: true,
           services: svc,
           now: () => now,
-        }),
-      { initialProps: { cadence: 1 as 1 | 'paused' } }
-    );
-    await act(flush);
-    rerender({ cadence: 'paused' as const });
-    now += 10_000;
-    rerender({ cadence: 1 as const });
-    await act(flush);
-    expect(result.current.snapshot.announcement).toBe(
-      'Telemetry data is stale.'
-    );
-    await act(async () => result.current.controller.manualRefresh());
-    expect(result.current.snapshot.announcement).toBe(
-      'Manual refresh completed with partial failures.'
-    );
-    expect(result.current.snapshot.telemetry.error).toBeTruthy();
+        })
+      );
+      await act(flush);
+      expect(result.current.snapshot.telemetry.phase).toBe('stale');
+      now += 1000;
+      await act(async () => vi.advanceTimersByTime(1000));
+      await act(flush);
+      expect(result.current.snapshot.telemetry.error).toEqual({
+        code: 'request-failed',
+        message: 'Source refresh failed.',
+      });
+      expect(result.current.snapshot.announcement).toBe(
+        'Telemetry refresh failed.'
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('announces true error-to-stale as the entered stale state', async () => {
+    vi.useFakeTimers();
+    try {
+      let now = 1_777_294_800_000;
+      const telemetry = {
+        ...structuredClone(statusPayload),
+        timestamp: '2026-04-27T13:00:00Z',
+      };
+      const svc = services({
+        getStatus: vi
+          .fn()
+          .mockResolvedValueOnce(telemetry)
+          .mockRejectedValueOnce(new Error('down'))
+          .mockResolvedValueOnce(telemetry),
+        getMissionEventETAs: vi.fn(() =>
+          Promise.reject(new Error('events down'))
+        ),
+      });
+      const { result } = renderHook(() =>
+        useOverviewData({
+          cadence: 1,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+        })
+      );
+      await act(flush);
+      expect(result.current.snapshot.telemetry.freshness).toBe('fresh');
+      now += 1000;
+      await act(async () => vi.advanceTimersByTime(1000));
+      await act(flush);
+      expect(result.current.snapshot.telemetry.phase).toBe('error');
+      expect(result.current.snapshot.announcement).toBe(
+        'Telemetry refresh failed.'
+      );
+      now += 6000;
+      await act(async () => vi.advanceTimersByTime(1000));
+      await act(flush);
+      expect(result.current.snapshot.telemetry.error).toBeNull();
+      expect(result.current.snapshot.telemetry.phase).toBe('stale');
+      expect(result.current.snapshot.announcement).toBe(
+        'Telemetry data is stale.'
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('announces standalone error-to-ready recovery without manual masking', async () => {
+    vi.useFakeTimers();
+    try {
+      let now = 1_777_294_800_000;
+      const svc = services({
+        getSatelliteETAs: vi
+          .fn()
+          .mockRejectedValueOnce(new Error('satellite down'))
+          .mockResolvedValue(structuredClone(poiPayload)),
+        getMissionEventETAs: vi.fn(() =>
+          Promise.reject(new Error('events down'))
+        ),
+      });
+      const { result } = renderHook(() =>
+        useOverviewData({
+          cadence: 1,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+        })
+      );
+      await act(flush);
+      expect(result.current.snapshot.announcement).toBe(
+        'Satellite ETAs refresh failed.'
+      );
+      now += 1000;
+      await act(async () => vi.advanceTimersByTime(1000));
+      await act(flush);
+      expect(result.current.snapshot.satellites.phase).toBe('ready');
+      expect(result.current.snapshot.missionEvents.phase).toBe('error');
+      expect(result.current.snapshot.announcement).toBe(
+        'Satellite ETAs recovered.'
+      );
+      const repeated = result.current.snapshot.announcement;
+      now += 1000;
+      await act(async () => vi.advanceTimersByTime(1000));
+      await act(flush);
+      expect(result.current.snapshot.announcement).toBe(repeated);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('emits exact priority announcements with deduplication', async () => {

@@ -9,7 +9,6 @@ import {
   routePayload,
   statusPayload,
 } from '../../services/monitoring-test-fixtures';
-import { mergeTelemetryBatch } from './overview-data-types';
 import type { OverviewDataServices } from './overview-data-types';
 import { useOverviewData } from './useOverviewData';
 
@@ -249,49 +248,162 @@ describe('useOverviewData continuity', () => {
     expect(history?.generated_at).toBe(historyPayload.generated_at);
   });
 
-  it('maps six telemetry metrics and preserves history order, cap, and metadata', () => {
+  it('maps six telemetry metrics through the hook without fabricated series', async () => {
+    const telemetryTime = '2026-08-29T12:30:01Z';
+    const telemetry = {
+      ...structuredClone(statusPayload),
+      timestamp: telemetryTime,
+      position: {
+        ...statusPayload.position,
+        latitude: 12,
+        longitude: -34,
+        altitude: 1234,
+      },
+      network: {
+        ...statusPayload.network,
+        latency_ms: 45,
+        throughput_down_mbps: 67,
+        throughput_up_mbps: 8,
+        packet_loss_percent: 9,
+      },
+      obstruction: { obstruction_percent: 99 },
+    };
+    const serverHistory = {
+      ...structuredClone(historyPayload),
+      window_start: '2026-08-29T12:00:01Z',
+      window_end: telemetryTime,
+      series: historyPayload.series.map((series) => ({
+        ...series,
+        samples: [],
+      })),
+    };
+    const svc = baseServices({
+      getStatus: vi.fn(() => Promise.resolve(telemetry)),
+      getMonitoringHistory: vi.fn(() => Promise.resolve(serverHistory)),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_788_006_601_000,
+      })
+    );
+    await act(flush);
+    const byMetric = Object.fromEntries(
+      result.current.snapshot.history.data?.series.map((series) => [
+        series.metric,
+        series.samples,
+      ]) ?? []
+    );
+    expect(byMetric.latitude_degrees).toEqual([
+      { timestamp: telemetryTime, value: 12 },
+    ]);
+    expect(byMetric.longitude_degrees).toEqual([
+      { timestamp: telemetryTime, value: -34 },
+    ]);
+    expect(byMetric.latency_ms).toEqual([
+      { timestamp: telemetryTime, value: 45 },
+    ]);
+    expect(byMetric.throughput_down_mbps).toEqual([
+      { timestamp: telemetryTime, value: 67 },
+    ]);
+    expect(byMetric.throughput_up_mbps).toEqual([
+      { timestamp: telemetryTime, value: 8 },
+    ]);
+    expect(byMetric.packet_loss_percent).toEqual([
+      { timestamp: telemetryTime, value: 9 },
+    ]);
+    expect(byMetric.altitude).toBeUndefined();
+    expect(byMetric.obstruction_percent).toBeUndefined();
+  });
+
+  it('includes the exact history horizon and prunes older samples through the hook', async () => {
+    const lower = '2026-08-29T12:00:01Z';
+    const upper = '2026-08-29T12:30:01Z';
+    const tooOld = '2026-08-29T12:00:00.999999Z';
+    const serverHistory = {
+      ...structuredClone(historyPayload),
+      window_start: lower,
+      window_end: upper,
+      series: historyPayload.series.map((series, index) => ({
+        ...series,
+        samples: [
+          { timestamp: tooOld, value: -1 },
+          { timestamp: lower, value: index },
+          { timestamp: upper, value: index + 10 },
+        ],
+      })),
+    };
+    const svc = baseServices({
+      getStatus: vi.fn(() =>
+        Promise.resolve({
+          ...structuredClone(statusPayload),
+          timestamp: '2026-08-29T12:31:00Z',
+        })
+      ),
+      getMonitoringHistory: vi.fn(() => Promise.resolve(serverHistory)),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_788_006_601_000,
+      })
+    );
+    await act(flush);
+    for (const series of result.current.snapshot.history.data?.series ?? []) {
+      expect(series.samples.map((sample) => sample.timestamp)).toEqual([
+        lower,
+        upper,
+      ]);
+    }
+  });
+
+  it('caps hook-level history while preserving server metadata and metric order', async () => {
     const serverHistory = {
       ...structuredClone(historyPayload),
       window_start: '2026-08-29T12:00:00Z',
       window_end: '2026-08-29T12:30:01Z',
       series: historyPayload.series.map((series) => ({
         ...series,
-        samples: [],
+        samples: Array.from({ length: 1802 }, (_, index) => ({
+          timestamp: `2026-08-29T12:00:01.${String(index).padStart(6, '0')}Z`,
+          value: index,
+        })),
       })),
     };
-    const statuses = Array.from({ length: 1802 }, (_, index) => ({
-      ...structuredClone(statusPayload),
-      timestamp: `2026-08-29T12:${String(Math.trunc(index / 60)).padStart(
-        2,
-        '0'
-      )}:${String(index % 60).padStart(2, '0')}Z`,
-      position: {
-        ...statusPayload.position,
-        latitude: index,
-        longitude: -index,
-      },
-      network: {
-        ...statusPayload.network,
-        latency_ms: index + 1,
-        throughput_down_mbps: index + 2,
-        throughput_up_mbps: index + 3,
-        packet_loss_percent: index + 4,
-      },
-    }));
-    const merged = mergeTelemetryBatch(
-      undefined,
-      serverHistory,
-      statuses,
-      1_788_006_601_000
+    const svc = baseServices({
+      getStatus: vi.fn(() =>
+        Promise.resolve({
+          ...structuredClone(statusPayload),
+          timestamp: '2026-08-29T12:31:00Z',
+        })
+      ),
+      getMonitoringHistory: vi.fn(() => Promise.resolve(serverHistory)),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_788_006_601_000,
+      })
     );
-    expect(merged).toMatchObject({
+    await act(flush);
+    const history = result.current.snapshot.history.data;
+    expect(history).toMatchObject({
       generated_at: historyPayload.generated_at,
       window_start: '2026-08-29T12:00:00Z',
       window_end: '2026-08-29T12:30:01Z',
       range_seconds: historyPayload.range_seconds,
       step_seconds: historyPayload.step_seconds,
     });
-    expect(merged?.series.map((series) => series.metric)).toEqual([
+    expect(history?.series.map((series) => series.metric)).toEqual([
       'latitude_degrees',
       'longitude_degrees',
       'latency_ms',
@@ -299,13 +411,17 @@ describe('useOverviewData continuity', () => {
       'throughput_up_mbps',
       'packet_loss_percent',
     ]);
-    for (const series of merged?.series ?? []) {
-      expect(series.samples.length).toBeLessThanOrEqual(1801);
-      expect(series.samples.at(0)?.timestamp).toBe('2026-08-29T12:00:01Z');
-      expect(series.samples.at(-1)?.timestamp).toBe('2026-08-29T12:30:01Z');
+    for (const series of history?.series ?? []) {
+      expect(series.samples).toHaveLength(1801);
+      expect(series.samples.at(0)?.timestamp).toBe(
+        '2026-08-29T12:00:01.000001Z'
+      );
+      expect(series.samples.at(-1)?.timestamp).toBe(
+        '2026-08-29T12:00:01.001801Z'
+      );
     }
     expect(
-      merged?.series.some((series) =>
+      history?.series.some((series) =>
         ['altitude', 'obstruction_percent'].includes(series.metric)
       )
     ).toBe(false);
