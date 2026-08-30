@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { StrictMode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { OverviewPOIFilter } from '../../types/monitoring';
 import {
@@ -12,9 +12,12 @@ import {
   statusPayload,
 } from '../../services/monitoring-test-fixtures';
 import type { OverviewDataServices } from './overview-data-types';
+import type { OverviewRefreshCadence } from './preferences';
 import { useOverviewData } from './useOverviewData';
 
-const flush = () => act(async () => Promise.resolve());
+const flush = async () => {
+  for (let count = 0; count < 8; count += 1) await Promise.resolve();
+};
 
 function services() {
   const calls: string[] = [];
@@ -47,6 +50,11 @@ describe('useOverviewData scheduling', () => {
     vi.useFakeTimers();
   });
 
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
   it('bootstraps exactly ten HTTP calls with shared grouped signals and no radar HTTP', async () => {
     const { calls, svc } = services();
     const { result, unmount } = renderHook(() =>
@@ -59,7 +67,7 @@ describe('useOverviewData scheduling', () => {
       })
     );
     expect(calls).toEqual([]);
-    await flush();
+    await act(flush);
     expect(calls).toEqual([
       'status',
       'pois',
@@ -105,11 +113,12 @@ describe('useOverviewData scheduling', () => {
           now: () => now,
         })
       );
-      await flush();
+      await act(flush);
       vi.clearAllMocks();
       for (let second = 1; second <= 30; second += 1) {
         now += 1000;
         await act(async () => vi.advanceTimersByTime(1000));
+        await act(flush);
       }
       expect(svc.getStatus).toHaveBeenCalledTimes(expected.selected);
       expect(svc.getPOIETAs).toHaveBeenCalledTimes(expected.selected);
@@ -135,7 +144,7 @@ describe('useOverviewData scheduling', () => {
         }),
       { wrapper: StrictMode }
     );
-    await flush();
+    await act(flush);
     expect(calls).toHaveLength(10);
     expect(vi.getTimerCount()).toBeLessThanOrEqual(1);
     unmount();
@@ -158,11 +167,91 @@ describe('useOverviewData scheduling', () => {
         now: () => 1_777_294_800_000,
       })
     );
-    await flush();
+    await act(flush);
     const manual = result.current.controller.manualRefresh;
     await act(async () => manual());
     expect(result.current.controller.manualRefresh).toBe(manual);
     expect(result.current.snapshot.manualResult).toBe('success');
     expect(svc.getStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('honors first-five due counts and coalesces cadence reset to a full new period', async () => {
+    let now = 1_777_294_800_000;
+    const { svc } = services();
+    const { rerender } = renderHook(
+      ({ cadence }) =>
+        useOverviewData({
+          cadence,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+        }),
+      { initialProps: { cadence: 1 as OverviewRefreshCadence } }
+    );
+    await act(flush);
+    vi.clearAllMocks();
+    for (let second = 1; second <= 5; second += 1) {
+      now += 1000;
+      await act(async () => vi.advanceTimersByTime(1000));
+      await act(flush);
+    }
+    expect(svc.getStatus).toHaveBeenCalledTimes(5);
+    expect(svc.getPOIETAs).toHaveBeenCalledTimes(5);
+    expect(svc.getActiveXLink).toHaveBeenCalledTimes(10);
+    expect(svc.getRouteCoordinates).toHaveBeenCalledTimes(2);
+    expect(svc.getGroundEntryPoint).not.toHaveBeenCalled();
+    expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+
+    rerender({ cadence: 10 as const });
+    await act(flush);
+    vi.clearAllMocks();
+    now += 9_000;
+    await act(async () => vi.advanceTimersByTime(9_000));
+    await act(flush);
+    expect(svc.getStatus).not.toHaveBeenCalled();
+    now += 6_000;
+    await act(async () => vi.advanceTimersByTime(6_000));
+    await act(flush);
+    expect(svc.getStatus).toHaveBeenCalledTimes(1);
+    expect(svc.getRouteCoordinates).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not advance anchors while hidden or while reset time is invalid', async () => {
+    let now = Number.NaN;
+    let hidden = false;
+    const { svc } = services();
+    const visibility = {
+      isHidden: () => hidden,
+      subscribe: vi.fn(() => vi.fn()),
+    };
+    const { rerender } = renderHook(
+      ({ cadence }) =>
+        useOverviewData({
+          cadence,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          visibility,
+          now: () => now,
+        }),
+      { initialProps: { cadence: 1 as OverviewRefreshCadence } }
+    );
+    await act(flush);
+    expect(svc.getStatus).not.toHaveBeenCalled();
+    now = 1_777_294_800_000;
+    rerender({ cadence: 10 as const });
+    hidden = true;
+    await act(async () => vi.advanceTimersByTime(10_000));
+    await act(flush);
+    expect(svc.getStatus).not.toHaveBeenCalled();
+    hidden = false;
+    await act(async () => vi.advanceTimersByTime(10_000));
+    await act(flush);
+    expect(svc.getStatus).not.toHaveBeenCalled();
+    now += 10_000;
+    await act(async () => vi.advanceTimersByTime(10_000));
+    await act(flush);
+    expect(svc.getStatus).toHaveBeenCalledTimes(1);
   });
 });

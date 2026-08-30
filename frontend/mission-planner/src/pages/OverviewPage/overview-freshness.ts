@@ -10,27 +10,13 @@ import type {
   POIETAResponse,
 } from '../../types/monitoring';
 import type {
-  OverviewDataSnapshot,
   OverviewActiveLinkData,
   OverviewFreshnessState,
   OverviewRadarData,
   OverviewRouteData,
   OverviewSourceError,
-  OverviewSourceKey,
-  OverviewSourceSlot,
 } from './overview-data-types';
-
-export const SOURCE_LABELS = {
-  telemetry: 'Telemetry',
-  history: 'History',
-  activeLink: 'Active link',
-  pois: 'POIs',
-  satellites: 'Satellite ETAs',
-  missionEvents: 'Mission events',
-  route: 'Route',
-  groundEntryPoint: 'Ground entry point',
-  radar: 'Weather radar',
-} as const;
+export { SOURCE_LABELS } from './overview-data-types';
 
 const METRICS = [
   'latitude_degrees',
@@ -50,7 +36,50 @@ export function safeNow(now: () => number): number | null {
   }
 }
 
+export function acceptTelemetry(
+  status: OverviewStatus,
+  nowMs: number
+): boolean {
+  const comparison = compareAwareTimestampToEpochMilliseconds(
+    status.timestamp,
+    nowMs,
+    5
+  );
+  return comparison !== null && comparison <= 0;
+}
+
+export function appendPending(
+  pending: readonly OverviewStatus[],
+  status: OverviewStatus
+): OverviewStatus[] {
+  return [
+    ...pending.filter(
+      (item) =>
+        compareAwareTimestampInstants(item.timestamp, status.timestamp) !== 0
+    ),
+    status,
+  ];
+}
+
+export function historyContains(
+  history: MonitoringHistory,
+  timestamp: string
+): boolean {
+  return history.series.every((series) =>
+    series.samples.some((sample) => sample.timestamp === timestamp)
+  );
+}
+
 export function computeSourceFreshness(
+  timestamp: string | null,
+  nowMs: number,
+  cadenceSeconds: number
+): { freshness: OverviewFreshnessState; ageSeconds: number | null } {
+  return computeFreshnessForSource('', timestamp, nowMs, cadenceSeconds);
+}
+
+export function computeFreshnessForSource(
+  source: string,
   timestamp: string | null,
   nowMs: number,
   cadenceSeconds: number
@@ -58,24 +87,31 @@ export function computeSourceFreshness(
   if (timestamp === null || !Number.isSafeInteger(nowMs)) {
     return { freshness: 'unknown', ageSeconds: null };
   }
-  const future = compareAwareTimestampToEpochMilliseconds(timestamp, nowMs, 5);
+  const future = compareSourceTimestampToEpochMilliseconds(
+    source,
+    timestamp,
+    nowMs,
+    5
+  );
   if (future === null || future > 0) {
     return { freshness: 'unknown', ageSeconds: null };
   }
   const staleSeconds = Math.max(5, 3 * cadenceSeconds);
-  const stale = compareAwareTimestampToEpochMilliseconds(
+  const stale = compareSourceTimestampToEpochMilliseconds(
+    source,
     timestamp,
     nowMs,
     -staleSeconds
   );
-  const sameOrFutureNow = compareAwareTimestampToEpochMilliseconds(
+  const sameOrFutureNow = compareSourceTimestampToEpochMilliseconds(
+    source,
     timestamp,
     nowMs
   );
   const ageSeconds =
     sameOrFutureNow !== null && sameOrFutureNow >= 0
       ? 0
-      : computeWholeAgeSeconds(timestamp, nowMs);
+      : computeWholeAgeSeconds(source, timestamp, nowMs);
   return {
     freshness: stale === null ? 'unknown' : stale < 0 ? 'stale' : 'fresh',
     ageSeconds,
@@ -110,30 +146,6 @@ export function radarOutcome(frameTimestamp: string) {
     : { ok: true as const, data: { frameTimestamp } };
 }
 
-export function transitionAnnouncement(
-  snapshot: OverviewDataSnapshot,
-  slot: OverviewSourceKey,
-  previous: OverviewSourceSlot<unknown>,
-  next: OverviewSourceSlot<unknown>
-): string | null {
-  const label = SOURCE_LABELS[slot];
-  const enteredError = !previous.error && next.error;
-  const enteredStale =
-    previous.freshness !== 'stale' && next.freshness === 'stale';
-  const recovered =
-    (previous.error || previous.freshness === 'stale') &&
-    !next.error &&
-    next.freshness !== 'stale';
-  const message = enteredError
-    ? `${label} refresh failed.`
-    : enteredStale
-      ? `${label} data is stale.`
-      : recovered
-        ? `${label} recovered.`
-        : snapshot.announcement;
-  return message === snapshot.announcement ? snapshot.announcement : message;
-}
-
 export function sourceTimestamp(source: string, data: unknown): string | null {
   if (source === 'telemetry') return (data as OverviewStatus).timestamp;
   if (source === 'history') return historyTimestamp(data as MonitoringHistory);
@@ -152,7 +164,9 @@ export function sourceTimestamp(source: string, data: unknown): string | null {
     return gep.available ? gep.observed_at : null;
   }
   if (source === 'radar') {
-    return radarTimestampFromFrame((data as OverviewRadarData).frameTimestamp);
+    return radarTimestampFromFrame((data as OverviewRadarData).frameTimestamp)
+      ? (data as OverviewRadarData).frameTimestamp
+      : null;
   }
   return null;
 }
@@ -181,6 +195,29 @@ export function radarTimestampFromFrame(frame: string): string | null {
     return null;
   }
   return new Date(seconds * 1000).toISOString().replace('.000', '');
+}
+
+export function compareSourceTimestampToEpochMilliseconds(
+  source: string,
+  timestamp: string,
+  epochMilliseconds: number,
+  offsetSeconds?: number
+): -1 | 0 | 1 | null {
+  if (source !== 'radar') {
+    return compareAwareTimestampToEpochMilliseconds(
+      timestamp,
+      epochMilliseconds,
+      offsetSeconds
+    );
+  }
+  const iso = radarTimestampFromFrame(timestamp);
+  return iso === null
+    ? null
+    : compareAwareTimestampToEpochMilliseconds(
+        iso,
+        epochMilliseconds,
+        offsetSeconds
+      );
 }
 
 function historyTimestamp(history: MonitoringHistory): string | null {
@@ -216,6 +253,7 @@ function compareText(left: string, right: string): number {
 }
 
 function computeWholeAgeSeconds(
+  source: string,
   timestamp: string,
   nowMs: number
 ): number | null {
@@ -223,7 +261,8 @@ function computeWholeAgeSeconds(
   let high = Math.max(0, Math.ceil(Math.abs(nowMs) / 1000) + 31_622_400_000);
   while (low < high) {
     const middle = Math.floor((low + high + 1) / 2);
-    const comparison = compareAwareTimestampToEpochMilliseconds(
+    const comparison = compareSourceTimestampToEpochMilliseconds(
+      source,
       timestamp,
       nowMs,
       -middle

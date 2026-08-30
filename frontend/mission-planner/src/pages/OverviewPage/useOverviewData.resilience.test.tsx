@@ -11,8 +11,23 @@ import {
   statusPayload,
   unavailableGep,
 } from '../../services/monitoring-test-fixtures';
+import type { OverviewPOIFilter } from '../../types/monitoring';
 import type { OverviewDataServices } from './overview-data-types';
 import { useOverviewData } from './useOverviewData';
+
+const flush = async () => {
+  for (let count = 0; count < 8; count += 1) await Promise.resolve();
+};
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 function services(overrides: Partial<OverviewDataServices> = {}) {
   return {
@@ -55,7 +70,7 @@ describe('useOverviewData resilience', () => {
         now: () => 1_777_294_800_000,
       })
     );
-    await act(async () => Promise.resolve());
+    await act(flush);
     expect(result.current.snapshot.initialState).toBe('partial-error');
     await act(async () => result.current.controller.manualRefresh());
     expect(result.current.snapshot.manualResult).toBe('partial');
@@ -83,7 +98,7 @@ describe('useOverviewData resilience', () => {
         now: () => 1_777_294_800_000,
       })
     );
-    await act(async () => Promise.resolve());
+    await act(flush);
     expect(result.current.snapshot.telemetry.error).toBeNull();
     unmount();
     await expect(result.current.controller.manualRefresh()).rejects.toThrow(
@@ -105,7 +120,7 @@ describe('useOverviewData resilience', () => {
         }),
       { initialProps: { radarEnabled: true } }
     );
-    await act(async () => Promise.resolve());
+    await act(flush);
     act(() =>
       result.current.controller.reportRadarResult({
         ok: true,
@@ -115,9 +130,7 @@ describe('useOverviewData resilience', () => {
     expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
       '1788004800'
     );
-    expect(result.current.snapshot.radar.sourceTimestamp).toBe(
-      '2026-08-29T12:00:00Z'
-    );
+    expect(result.current.snapshot.radar.sourceTimestamp).toBe('1788004800');
     expect(result.current.snapshot.radar.transportLastSuccessAt).toBe(now);
     now = Number.NaN;
     act(() =>
@@ -128,7 +141,7 @@ describe('useOverviewData resilience', () => {
     );
     expect(result.current.snapshot.radar.error).toBeNull();
     rerender({ radarEnabled: false });
-    await act(async () => Promise.resolve());
+    await act(flush);
     act(() =>
       result.current.controller.reportRadarResult({
         ok: false,
@@ -158,7 +171,7 @@ describe('useOverviewData resilience', () => {
         now: () => 1_777_294_800_000,
       })
     );
-    await act(async () => Promise.resolve());
+    await act(flush);
     expect(result.current.snapshot.announcement).toBe(
       'Telemetry refresh failed.'
     );
@@ -166,5 +179,108 @@ describe('useOverviewData resilience', () => {
     expect(result.current.snapshot.announcement).toBe(
       'Manual refresh complete.'
     );
+  });
+
+  it('replaces only the selected POI filter and commits the latest generation', async () => {
+    const first = deferred<typeof poiPayload>();
+    const latest = {
+      ...structuredClone(poiPayload),
+      timestamp: '2026-08-29T18:00:01Z',
+    };
+    const svc = services({
+      getPOIETAs: vi
+        .fn()
+        .mockResolvedValueOnce(structuredClone(poiPayload))
+        .mockImplementationOnce((_filter, signal: AbortSignal) => {
+          signal.addEventListener('abort', () =>
+            first.reject(new axios.CanceledError('stale'))
+          );
+          return first.promise;
+        })
+        .mockResolvedValueOnce(latest),
+    });
+    const { result, rerender } = renderHook(
+      ({ poiFilter }) =>
+        useOverviewData({
+          cadence: 'paused',
+          poiFilter,
+          radarEnabled: true,
+          services: svc,
+          now: () => 1_777_294_801_000,
+        }),
+      { initialProps: { poiFilter: 'arrival' as OverviewPOIFilter } }
+    );
+    await act(flush);
+    rerender({ poiFilter: 'waypoint' });
+    rerender({ poiFilter: 'departure' });
+    await act(flush);
+    expect(result.current.snapshot.pois.data?.timestamp).toBe(
+      '2026-08-29T18:00:01Z'
+    );
+    expect(svc.getSatelliteETAs).toHaveBeenCalledTimes(1);
+    expect(svc.getMissionEventETAs).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps grouped pair data atomic when one member fails', async () => {
+    const svc = services({
+      getActiveXLink: vi
+        .fn()
+        .mockResolvedValueOnce({
+          ...structuredClone(activeXLinkPayload),
+          state: 'normal',
+        })
+        .mockResolvedValueOnce({
+          ...structuredClone(activeXLinkPayload),
+          state: 'warning',
+        })
+        .mockResolvedValueOnce({
+          ...structuredClone(activeXLinkPayload),
+          state: 'normal',
+          observed_at: '2026-08-29T18:00:01Z',
+        })
+        .mockRejectedValueOnce(new Error('warning failed')),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_801_000,
+      })
+    );
+    await act(flush);
+    const previous = result.current.snapshot.activeLink.data;
+    await act(async () => result.current.controller.manualRefresh());
+    expect(result.current.snapshot.activeLink.data).toEqual(previous);
+    expect(result.current.snapshot.activeLink.error).toEqual({
+      code: 'request-failed',
+      message: 'Source refresh failed.',
+    });
+  });
+
+  it('fails open for hostile visibility and swallows cleanup failures', async () => {
+    const svc = services();
+    const visibility = {
+      isHidden: vi.fn(() => {
+        throw new Error('hidden trap');
+      }),
+      subscribe: vi.fn(() => () => {
+        throw new Error('unsubscribe trap');
+      }),
+    };
+    const { unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        visibility,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    expect(svc.getStatus).toHaveBeenCalledTimes(1);
+    expect(() => unmount()).not.toThrow();
   });
 });

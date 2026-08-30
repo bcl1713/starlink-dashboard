@@ -5,17 +5,16 @@ import {
   computeSourceFreshness,
   semanticUnavailable,
   sourceTimestamp,
-  transitionAnnouncement,
 } from './overview-freshness';
 import type {
   OverviewDataSnapshot,
-  OverviewInitialState,
   OverviewManualResult,
   OverviewSourceError,
   OverviewSourceKey,
   OverviewSourcePhase,
   OverviewSourceSlot,
 } from './overview-data-types';
+import { batchAnnouncement } from './overview-data-types';
 
 export const HTTP_SLOTS = [
   'telemetry',
@@ -33,6 +32,7 @@ export type OverviewSlotData = OverviewDataSnapshot[OverviewSourceKey]['data'];
 export type SlotOutcome =
   | { ok: true; data: OverviewSlotData }
   | { ok: false; error: OverviewSourceError | null };
+export type SlotCommit = readonly [OverviewSourceKey, SlotOutcome];
 
 export function emptyOverviewSnapshot(): OverviewDataSnapshot {
   return projectSnapshot(
@@ -45,7 +45,7 @@ export function emptyOverviewSnapshot(): OverviewDataSnapshot {
 }
 
 export type SlotMap = {
-  [K in OverviewSourceKey]: OverviewDataSnapshot[K];
+  -readonly [K in OverviewSourceKey]: OverviewDataSnapshot[K];
 };
 
 export function startSlots(
@@ -60,31 +60,44 @@ export function startSlots(
   return projectSnapshot(next, snapshot.manualResult, snapshot.announcement);
 }
 
-export function commitSlot(
+export function commitSlots(
   snapshot: OverviewDataSnapshot,
-  slot: OverviewSourceKey,
-  outcome: SlotOutcome,
+  outcomes: readonly SlotCommit[],
   nowMs: number,
   cadenceSeconds: number,
-  paused: boolean
+  paused: boolean,
+  manualResult?: OverviewManualResult
 ): OverviewDataSnapshot {
   const slots = cloneSlots(snapshot);
-  const previous = slots[slot];
-  const next = outcome.ok
-    ? successSlot(slot, previous, outcome.data, nowMs, cadenceSeconds, paused)
-    : {
-        ...previous,
-        pending: false,
-        paused,
-        error: outcome.error,
-        transportLastAttemptAt: nowMs,
-      };
-  (slots as Record<string, OverviewSourceSlot<unknown>>)[slot] =
-    phaseSlot(next);
+  const before = cloneSlots(snapshot);
+  const writable = slots as Record<string, OverviewSourceSlot<unknown>>;
+  for (const [slot, outcome] of outcomes) {
+    const previous = slots[slot];
+    if (!outcome.ok && outcome.error === null) continue;
+    writable[slot] = phaseSlot(
+      outcome.ok
+        ? successSlot(
+            slot,
+            previous,
+            outcome.data,
+            nowMs,
+            cadenceSeconds,
+            paused
+          )
+        : {
+            ...previous,
+            pending: false,
+            paused,
+            error: outcome.error,
+            transportLastAttemptAt: nowMs,
+          }
+    );
+  }
+  const result = manualResult ?? snapshot.manualResult;
   return projectSnapshot(
     slots,
-    snapshot.manualResult,
-    transitionAnnouncement(snapshot, slot, previous, slots[slot])
+    result,
+    batchAnnouncement(snapshot, before, slots, result)
   );
 }
 
@@ -109,12 +122,6 @@ export function setManualResult(
   );
 }
 
-export function withManualIdle(
-  snapshot: OverviewDataSnapshot
-): OverviewDataSnapshot {
-  return projectSnapshot(cloneSlots(snapshot), 'idle', snapshot.announcement);
-}
-
 export function withRadarDisabled(
   snapshot: OverviewDataSnapshot
 ): OverviewDataSnapshot {
@@ -130,17 +137,18 @@ export function withRadarDisabled(
 
 export function mergeTelemetryIntoHistory(
   history: MonitoringHistory | undefined,
-  status: OverviewStatus,
+  status: OverviewStatus | readonly OverviewStatus[],
   nowMs: number
 ): MonitoringHistory | undefined {
   if (!history) return undefined;
-  const sample = statusSamples(status);
+  const statuses = Array.isArray(status) ? status : [status];
+  const samples = statuses.map(statusSamples);
   const mergeNow = latestTimestamp([
     history.window_end,
     ...history.series.flatMap((series) =>
       series.samples.map((item) => item.timestamp)
     ),
-    status.timestamp,
+    ...statuses.map((item) => item.timestamp),
   ]);
   return {
     ...history,
@@ -149,7 +157,7 @@ export function mergeTelemetryIntoHistory(
       samples: [
         ...mergeTimestampedSamples(
           series.samples,
-          [sample[series.metric]],
+          samples.flatMap((sample) => sample[series.metric] ?? []),
           mergeNow ?? new Date(nowMs).toISOString().replace('.000', '')
         ),
       ],
@@ -199,7 +207,9 @@ function successSlot(
   });
 }
 
-function phaseSlot<T>(slot: OverviewSourceSlot<T>): OverviewSourceSlot<T> {
+export function phaseSlot<T>(
+  slot: OverviewSourceSlot<T>
+): OverviewSourceSlot<T> {
   let phase: OverviewSourcePhase = 'ready';
   if (slot.data === undefined && slot.pending) phase = 'initial-loading';
   else if (slot.error) phase = 'error';
@@ -210,7 +220,7 @@ function phaseSlot<T>(slot: OverviewSourceSlot<T>): OverviewSourceSlot<T> {
   return { ...slot, phase };
 }
 
-function projectSnapshot(
+export function projectSnapshot(
   slots: SlotMap,
   manualResult: OverviewManualResult,
   announcement: string | null
@@ -223,7 +233,7 @@ function projectSnapshot(
     (slot) => slot.data === undefined && slot.error !== null
   );
   const anyError = Object.values(slots).some((slot) => slot.error !== null);
-  const initialState: OverviewInitialState = incomplete
+  const initialState = incomplete
     ? 'initial-loading'
     : totalFailure
       ? 'total-error'
@@ -250,7 +260,7 @@ function projectSnapshot(
   };
 }
 
-function cloneSlots(snapshot: OverviewDataSnapshot): SlotMap {
+export function cloneSlots(snapshot: OverviewDataSnapshot): SlotMap {
   return {
     telemetry: snapshot.telemetry,
     history: snapshot.history,
@@ -285,10 +295,6 @@ function statusSamples(status: OverviewStatus) {
 function latestTimestamp(values: readonly string[]): string | null {
   return values.reduce<string | null>((latest, value) => {
     if (latest === null) return value;
-    return sourceOrder(value, latest) > 0 ? value : latest;
+    return compareAwareTimestampInstants(value, latest) > 0 ? value : latest;
   }, null);
-}
-
-function sourceOrder(left: string, right: string): number {
-  return compareAwareTimestampInstants(left, right);
 }

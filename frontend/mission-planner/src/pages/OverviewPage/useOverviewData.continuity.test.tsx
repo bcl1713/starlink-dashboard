@@ -12,6 +12,10 @@ import {
 import type { OverviewDataServices } from './overview-data-types';
 import { useOverviewData } from './useOverviewData';
 
+const flush = async () => {
+  for (let count = 0; count < 8; count += 1) await Promise.resolve();
+};
+
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (error: unknown) => void;
@@ -71,13 +75,13 @@ describe('useOverviewData continuity', () => {
         now: () => 1_777_294_804_000,
       })
     );
-    await act(async () => Promise.resolve());
+    await act(flush);
     const manual = result.current.controller.manualRefresh();
-    await act(async () => Promise.resolve());
+    await act(flush);
     expect(result.current.snapshot.history.data).toBeUndefined();
     historyGate.resolve(structuredClone(historyPayload));
     await act(async () => manual);
-    await act(async () => Promise.resolve());
+    await act(flush);
     expect(result.current.snapshot.history.data).toMatchObject({
       generated_at: historyPayload.generated_at,
       window_start: historyPayload.window_start,
@@ -103,7 +107,7 @@ describe('useOverviewData continuity', () => {
         now: () => 1_777_294_804_000,
       })
     );
-    await act(async () => Promise.resolve());
+    await act(flush);
     await act(async () => other.result.current.controller.manualRefresh());
     expect(other.result.current.snapshot.history.data).toEqual(
       result.current.snapshot.history.data
@@ -131,7 +135,7 @@ describe('useOverviewData continuity', () => {
         now: () => 1_777_294_800_000,
       })
     );
-    await act(async () => Promise.resolve());
+    await act(flush);
     expect(result.current.snapshot.route.data).toBeUndefined();
     routeGate.resolve({ ...structuredClone(routePayload), route_id: 'new' });
     await act(async () => routeGate.promise);
