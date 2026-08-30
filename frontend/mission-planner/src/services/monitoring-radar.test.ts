@@ -46,6 +46,21 @@ describe('RainViewer radar tile service', () => {
       '/api/weather/radar/rainviewer/2/3/0.png',
       { responseType: 'arraybuffer', signal }
     );
+    expect(getMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts minimum and maximum valid PNG byte lengths', async () => {
+    const minimum = pngBytes(8);
+    respond(minimum, goodHeaders());
+    await expect(getRainViewerRadarTile({ z: 1, x: 0, y: 0 })).resolves.toEqual(
+      { bytes: minimum, frameTimestamp: '946684800' }
+    );
+
+    const maximum = pngBytes(2 * 1024 * 1024);
+    respond(maximum, goodHeaders());
+    await expect(getRainViewerRadarTile({ z: 1, x: 1, y: 1 })).resolves.toEqual(
+      { bytes: maximum, frameTimestamp: '946684800' }
+    );
   });
 
   it('parses lowercase plain-object headers and preserves timestamp text', async () => {
@@ -97,6 +112,26 @@ describe('RainViewer radar tile service', () => {
         data: pngBytes(),
         headers: {
           'content-type': 'image/png',
+        },
+      },
+      {
+        data: pngBytes(),
+        headers: {
+          'content-type': 'image/png',
+          'x-radar-frame-timestamp': 946684800,
+        },
+      },
+      {
+        data: pngBytes(),
+        headers: {
+          'content-type': 'image/png',
+          'x-radar-frame-timestamp': ['946684800', '946684801'],
+        },
+      },
+      {
+        data: pngBytes(),
+        headers: {
+          'content-type': 'image/png',
           'x-radar-frame-timestamp': '0946684800',
         },
       },
@@ -119,6 +154,27 @@ describe('RainViewer radar tile service', () => {
         headers: {
           'content-type': 'image/png',
           'x-radar-frame-timestamp': '1.5',
+        },
+      },
+      {
+        data: pngBytes(),
+        headers: {
+          'content-type': 'image/png',
+          'x-radar-frame-timestamp': '+946684800',
+        },
+      },
+      {
+        data: pngBytes(),
+        headers: {
+          'content-type': 'image/png',
+          'x-radar-frame-timestamp': '946684800 ',
+        },
+      },
+      {
+        data: pngBytes(),
+        headers: {
+          'content-type': 'image/png',
+          'x-radar-frame-timestamp': '9e8',
         },
       },
     ]) {

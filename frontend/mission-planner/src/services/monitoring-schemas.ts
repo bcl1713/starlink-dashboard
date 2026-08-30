@@ -5,14 +5,16 @@ import {
   type OverviewDataSource,
   type RainViewerRadarTile,
 } from '../types/monitoring';
-
-const awareTimestamp = z.iso.datetime({ offset: true });
-const finite = z.number().finite();
-const nonNegative = finite.min(0);
-const percent = finite.min(0).max(100);
-const latitude = finite.min(-90).max(90);
-const longitude = finite.min(-180).max(180);
-const azimuth = finite.min(0).max(360);
+import {
+  awareTimestampSchema as awareTimestamp,
+  azimuthSchema as azimuth,
+  finiteNumberSchema as finite,
+  isStrictlyChronological,
+  latitudeSchema as latitude,
+  longitudeSchema as longitude,
+  nonNegativeNumberSchema as nonNegative,
+  percentSchema as percent,
+} from './monitoring-validation';
 const issue = (ctx: z.RefinementCtx, message: string) =>
   ctx.addIssue({ code: 'custom', message });
 
@@ -37,15 +39,11 @@ const historySampleSchema = z.strictObject({
 });
 
 const historySeriesSchema = z.strictObject({
-  name: z.enum(historySeriesNames),
+  metric: z.enum(historySeriesNames),
   samples: z.array(historySampleSchema).superRefine((samples, ctx) => {
-    for (let index = 1; index < samples.length; index += 1) {
-      if (
-        Date.parse(samples[index].timestamp) <=
-        Date.parse(samples[index - 1].timestamp)
-      ) {
-        issue(ctx, 'samples must be chronological');
-      }
+    const timestamps = samples.map((sample) => sample.timestamp);
+    if (!isStrictlyChronological(timestamps)) {
+      issue(ctx, 'samples must be chronological');
     }
   }),
 });
@@ -61,8 +59,8 @@ const monitoringHistorySchema = z
   })
   .superRefine((value, ctx) => {
     value.series.forEach((series, index) => {
-      if (series.name !== historySeriesNames[index]) {
-        issue(ctx, 'series names must match required order');
+      if (series.metric !== historySeriesNames[index]) {
+        issue(ctx, 'series metrics must match required order');
       }
     });
   });

@@ -97,7 +97,7 @@ export interface MonitoringHistory {
   range_seconds: number;
   step_seconds: number;
   series: {
-    name:
+    metric:
       | 'latitude_degrees'
       | 'longitude_degrees'
       | 'latency_ms'
