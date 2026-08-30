@@ -123,7 +123,10 @@ export interface UseOverviewDataOptions {
   readonly visibility?: OverviewVisibility;
 }
 export type OverviewInitialState =
-  'initial-loading' | 'ready' | 'partial-error' | 'total-error';
+  | 'initial-loading'
+  | 'ready'
+  | 'partial-error'
+  | 'total-error';
 export type OverviewManualResult = 'idle' | 'success' | 'partial' | 'failure';
 export interface OverviewDataSnapshot {
   readonly telemetry: OverviewSourceSlot<OverviewStatus>;
