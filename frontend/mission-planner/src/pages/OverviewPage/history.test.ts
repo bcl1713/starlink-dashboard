@@ -144,6 +144,34 @@ describe('overview history utilities', () => {
     );
   });
 
+  it('handles exact fractional windows and finite summary arithmetic', () => {
+    expect(
+      summarizePacketLoss(
+        [{ timestamp: '2026-08-29T11:59:59.99999995Z', value: 1 }],
+        '2026-08-29T12:00:00Z',
+        1e-7
+      )
+    ).toMatchObject({ available: true, current: 1, count: 1 });
+    expect(
+      summarizePacketLoss(
+        [{ timestamp: '2026-08-29T12:00:00Z', value: 1 }],
+        '2026-08-29T12:00:00Z',
+        Number.MIN_VALUE
+      )
+    ).toMatchObject({ available: true, current: 1, count: 1 });
+    const summary = summarizeLatency(
+      [
+        { timestamp: '2026-08-29T12:00:00Z', value: Number.MAX_VALUE },
+        { timestamp: '2026-08-29T12:00:01Z', value: Number.MAX_VALUE },
+        { timestamp: '2026-08-29T12:00:02Z', value: -0 },
+      ],
+      '2026-08-29T12:00:02Z'
+    );
+    expect(Number.isFinite(summary.mean)).toBe(true);
+    expect(Object.is(summary.current, -0)).toBe(false);
+    expect(Object.is(summary.min, -0)).toBe(false);
+  });
+
   it('builds throughput union with sanitized null gaps and negated uploads', () => {
     const download = deepFreeze([
       { timestamp: '2026-08-29T12:00:00Z', value: 10 },

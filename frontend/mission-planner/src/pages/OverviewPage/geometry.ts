@@ -2,26 +2,17 @@ import { awareTimestampSchema } from '../../services/monitoring-validation';
 import type { ActiveXLink, RouteCoordinates } from '../../types/monitoring';
 import type { PositionHistoryPoint } from './history';
 
-export interface OverviewGeometryPoint {
-  readonly latitude: number;
-  readonly longitude: number;
-  readonly altitudeMeters: number | null;
-  readonly timestamp: string | null;
-}
+// prettier-ignore
+export interface OverviewGeometryPoint { readonly latitude: number; readonly longitude: number; readonly altitudeMeters: number | null; readonly timestamp: string | null }
 
 export type GeometryInputPoint = OverviewGeometryPoint | null;
+type ParsedInstant = Readonly<{ seconds: bigint; fraction: string }>;
 
-interface ParsedInstant {
-  readonly milliseconds: number;
-}
+// prettier-ignore
+export interface SplitActiveLinkSegment { readonly link: ActiveXLink['links'][number]; readonly segments: readonly (readonly OverviewGeometryPoint[])[] }
 
-export interface SplitActiveLinkSegment {
-  readonly link: ActiveXLink['links'][number];
-  readonly segments: readonly (readonly OverviewGeometryPoint[])[];
-}
-
-const timestampPattern =
-  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
+// prettier-ignore
+const timestampPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
 const unixEpochDay = daysFromCivil('1970', '01', '01');
 
 export function normalizeLongitude(longitude: number): number {
@@ -153,14 +144,8 @@ function normalizePoint(
   };
 }
 
-function buildCrossing(
-  start: OverviewGeometryPoint,
-  end: OverviewGeometryPoint
-): {
-  readonly fraction: number;
-  readonly departure: OverviewGeometryPoint;
-  readonly opposite: OverviewGeometryPoint;
-} | null {
+// prettier-ignore
+function buildCrossing(start: OverviewGeometryPoint, end: OverviewGeometryPoint): { readonly fraction: number; readonly departure: OverviewGeometryPoint; readonly opposite: OverviewGeometryPoint } | null {
   const delta = end.longitude - start.longitude;
   if (Math.abs(delta) <= 180) return null;
   const adjustedEnd = delta > 180 ? end.longitude - 360 : end.longitude + 360;
@@ -189,8 +174,7 @@ function interpolatePoint(
 ): OverviewGeometryPoint {
   const altitude =
     isFiniteNumber(start.altitudeMeters) && isFiniteNumber(end.altitudeMeters)
-      ? start.altitudeMeters +
-        (end.altitudeMeters - start.altitudeMeters) * fraction
+      ? interpolateFinite(start.altitudeMeters, end.altitudeMeters, fraction)
       : null;
   return {
     latitude: start.latitude + (end.latitude - start.latitude) * fraction,
@@ -209,12 +193,10 @@ function interpolateTimestamp(
   const first = parseInstant(start);
   const second = parseInstant(end);
   if (first === null || second === null) return null;
-  const milliseconds = truncTowardZero(
-    first.milliseconds + (second.milliseconds - first.milliseconds) * fraction
-  );
-  if (!Number.isFinite(milliseconds) || Math.abs(milliseconds) > 8.64e15)
-    return null;
-  return formatUtc(new Date(milliseconds).toISOString());
+  const milliseconds = interpolateMilliseconds(first, second, fraction);
+  if (milliseconds < -8_640_000_000_000_000n) return null;
+  if (milliseconds > 8_640_000_000_000_000n) return null;
+  return formatUtc(new Date(Number(milliseconds)).toISOString());
 }
 
 function parseInstant(value: string): ParsedInstant | null {
@@ -223,24 +205,66 @@ function parseInstant(value: string): ParsedInstant | null {
   const [, year, month, day, hour, minute, second, fraction = '', offset] =
     match;
   const seconds =
-    Number(daysFromCivil(year, month, day) - unixEpochDay) * 86_400 +
-    Number(hour) * 3_600 +
-    Number(minute) * 60 +
-    Number(second ?? '0') -
-    (offset === 'Z' ? 0 : parseOffsetSeconds(offset));
-  return { milliseconds: seconds * 1000 + fractionMilliseconds(fraction) };
+    (daysFromCivil(year, month, day) - unixEpochDay) * 86_400n +
+    BigInt(hour) * 3_600n +
+    BigInt(minute) * 60n +
+    BigInt(second ?? '0') -
+    (offset === 'Z' ? 0n : parseOffsetSeconds(offset));
+  return { seconds, fraction: fraction.replace(/0+$/, '') };
 }
 
-function fractionMilliseconds(fraction: string): number {
-  return Number(`0.${fraction || '0'}`) * 1000;
+function interpolateMilliseconds(
+  start: ParsedInstant,
+  end: ParsedInstant,
+  fraction: number
+): bigint {
+  const weight = parseUnitDecimal(fraction);
+  const width = Math.max(
+    start.fraction.length,
+    end.fraction.length,
+    weight.scale
+  );
+  const scale = 10n ** BigInt(width);
+  const startUnits = instantUnits(start, width);
+  const endUnits = instantUnits(end, width);
+  const numerator =
+    startUnits * weight.denominator +
+    (endUnits - startUnits) * weight.numerator;
+  return floorDiv(numerator * 1000n, weight.denominator * scale);
+}
+
+function instantUnits(instant: ParsedInstant, width: number): bigint {
+  return (
+    instant.seconds * 10n ** BigInt(width) +
+    BigInt(instant.fraction.padEnd(width, '0') || '0')
+  );
+}
+
+function parseUnitDecimal(value: number) {
+  const match = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(String(value));
+  if (!match) return { numerator: 0n, denominator: 1n, scale: 0 };
+  const digits = `${match[1]}${match[2] ?? ''}`.replace(/^0+(?=\d)/, '');
+  const scale = Math.max(0, (match[2]?.length ?? 0) - Number(match[3] ?? 0));
+  const exponent = Number(match[3] ?? 0);
+  return {
+    numerator:
+      scale === 0 ? BigInt(digits) * 10n ** BigInt(exponent) : BigInt(digits),
+    denominator: 10n ** BigInt(scale),
+    scale,
+  };
 }
 
 function formatUtc(value: string): string {
   return value.endsWith('.000Z') ? `${value.slice(0, -5)}Z` : value;
 }
 
-function truncTowardZero(value: number): number {
-  return value < 0 ? Math.ceil(value) : Math.floor(value);
+function interpolateFinite(start: number, end: number, fraction: number) {
+  if (Math.abs(start) > Math.abs(end)) {
+    const result = start * (1 - fraction) + end * fraction;
+    return Number.isFinite(result) ? positiveZero(result) : null;
+  }
+  const result = end * fraction + start * (1 - fraction);
+  return Number.isFinite(result) ? positiveZero(result) : null;
 }
 
 function daysFromCivil(year: string, month: string, day: string): bigint {
@@ -262,17 +286,15 @@ function floorDiv(dividend: bigint, divisor: bigint): bigint {
   return remainder < 0n ? quotient - 1n : quotient;
 }
 
-function parseOffsetSeconds(offset: string): number {
+function parseOffsetSeconds(offset: string): bigint {
   const sign = offset[0] === '-' ? -1 : 1;
-  return (
+  return BigInt(
     sign * (Number(offset.slice(1, 3)) * 3600 + Number(offset.slice(4, 6)) * 60)
   );
 }
 
-function positiveZero(value: number): number {
-  return Object.is(value, -0) ? 0 : value;
-}
+// prettier-ignore
+function positiveZero(value: number): number { return Object.is(value, -0) ? 0 : value; }
 
-function isFiniteNumber(value: number | null | undefined): value is number {
-  return typeof value === 'number' && Number.isFinite(value);
-}
+// prettier-ignore
+function isFiniteNumber(value: number | null | undefined): value is number { return typeof value === 'number' && Number.isFinite(value); }

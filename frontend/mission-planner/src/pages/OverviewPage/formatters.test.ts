@@ -115,6 +115,26 @@ describe('overview formatters and POI utilities', () => {
     expect(formatPosition(39, -181, 0)).toBe('—');
   });
 
+  it('formats huge finite values without exponent corruption', () => {
+    expect(formatThroughputMbps(Number.MAX_VALUE)).toMatch(
+      /^[0-9][0-9,]*(\.[0-9])? Mbps$/
+    );
+    expect(formatThroughputMbps(-Number.MAX_VALUE)).toMatch(
+      /^-[0-9][0-9,]*(\.[0-9])? Mbps$/
+    );
+    expect(formatAltitudeMeters(1e21)).toBe('1,000,000,000,000,000,000,000 m');
+    expect(formatAltitudeMeters(Number.MAX_VALUE)).not.toContain('e');
+    expect(formatPercent(-0)).toBe('0%');
+    expect(classifyObstruction(-0).displayValue).toBe(0);
+    expect(Object.is(classifyObstruction(-0).displayValue, -0)).toBe(false);
+  });
+
+  it('rounds finite values without leaking negative zero', () => {
+    expect(formatThroughputMbps(-0.04)).toBe('0 Mbps');
+    expect(formatThroughputMbps(-0.05)).toBe('-0.1 Mbps');
+    expect(formatLatencyMs(-0)).toBe('0 ms');
+  });
+
   it('classifies threshold and obstruction boundaries', () => {
     expect(classifyLatency(99.99).state).toBe('ok');
     expect(classifyLatency(100).state).toBe('warning');

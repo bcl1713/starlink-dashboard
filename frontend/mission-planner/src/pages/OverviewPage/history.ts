@@ -55,7 +55,7 @@ export function alignPositionHistory(
       }
       target.set(instantKey(instant), {
         timestamp: sample.timestamp,
-        value,
+        value: positiveZero(value),
         instant,
       });
     }
@@ -173,13 +173,16 @@ function summarize(
   if (valid.length === 0) return UNAVAILABLE_SUMMARY;
   valid.sort((left, right) => compareInstants(left.instant, right.instant));
   const values = valid.map(({ value }) => value);
-  const total = values.reduce((sum, value) => sum + value, 0);
+  const max = positiveZero(Math.max(...values));
+  const min = positiveZero(Math.min(...values));
+  // prettier-ignore
+  const mean = max === 0 ? 0 : positiveZero(max * (values.reduce((sum, value) => sum + value / max, 0) / values.length));
   return {
     available: true,
-    current: values[values.length - 1],
-    min: Math.min(...values),
-    mean: total / values.length,
-    max: Math.max(...values),
+    current: positiveZero(values[values.length - 1]),
+    min,
+    mean: Number.isFinite(mean) ? mean : null,
+    max,
     count: values.length,
   };
 }
@@ -213,22 +216,16 @@ function applyThroughput(
 function validateNow(now: string): ParsedInstant { const instant = parseInstant(now); if (instant === null) throw new RangeError('Invalid now timestamp'); return instant; }
 
 function shiftSeconds(instant: ParsedInstant, seconds: number): ParsedInstant {
-  const whole = Math.trunc(seconds);
-  const fractional = seconds - whole;
-  if (fractional === 0)
-    return {
-      seconds: instant.seconds - BigInt(whole),
-      fraction: instant.fraction,
-    };
-  const width = Math.max(instant.fraction.length, decimalPlaces(fractional));
+  const decimal = parseNonnegativeNumberDecimal(seconds);
+  const width = Math.max(instant.fraction.length, decimal.scale);
   const scale = 10n ** BigInt(width);
-  const current = BigInt(instant.fraction.padEnd(width, '0') || '0');
-  let fraction = current - BigInt(Math.round(fractional * Number(scale)));
-  let shiftedSeconds = instant.seconds - BigInt(whole);
-  if (fraction < 0n) {
-    shiftedSeconds -= 1n;
-    fraction += scale;
-  }
+  const current =
+    instant.seconds * scale +
+    BigInt(instant.fraction.padEnd(width, '0') || '0');
+  const shifted =
+    current - decimal.units * 10n ** BigInt(width - decimal.scale);
+  const shiftedSeconds = floorDiv(shifted, scale);
+  const fraction = shifted - shiftedSeconds * scale;
   return {
     seconds: shiftedSeconds,
     fraction: String(fraction).padStart(width, '0').replace(/0+$/, ''),
@@ -236,7 +233,16 @@ function shiftSeconds(instant: ParsedInstant, seconds: number): ParsedInstant {
 }
 
 // prettier-ignore
-function decimalPlaces(value: number): number { const dot = String(value).indexOf('.'); return dot === -1 ? 0 : String(value).length - dot - 1; }
+function parseNonnegativeNumberDecimal(value: number): { units: bigint; scale: number } {
+  const match = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(String(value));
+  if (!match) throw new RangeError('Invalid windowSeconds');
+  const digits = `${match[1]}${match[2] ?? ''}`.replace(/^0+(?=\d)/, '');
+  const decimalPlaces = (match[2]?.length ?? 0) - Number(match[3] ?? 0);
+  if (decimalPlaces <= 0) {
+    return { units: BigInt(digits) * 10n ** BigInt(-decimalPlaces), scale: 0 };
+  }
+  return { units: BigInt(digits), scale: decimalPlaces };
+}
 
 function parseInstant(value: string): ParsedInstant | null {
   const match = timestampPattern.exec(value);
@@ -245,13 +251,7 @@ function parseInstant(value: string): ParsedInstant | null {
     match;
   const offsetSign = offset[0] === '-' ? -1 : 1;
   const offsetSeconds =
-    offset === 'Z'
-      ? 0n
-      : BigInt(
-          offsetSign *
-            (Number(offset.slice(1, 3)) * 3600 +
-              Number(offset.slice(4, 6)) * 60)
-        );
+    offset === 'Z' ? 0n : BigInt(offsetSign * parseOffsetSeconds(offset));
   const localSeconds =
     daysFromCivil(year, month, day) * 86_400n +
     BigInt(hour) * 3_600n +
@@ -263,15 +263,8 @@ function parseInstant(value: string): ParsedInstant | null {
   };
 }
 
-function compareInstants(left: ParsedInstant, right: ParsedInstant): number {
-  if (left.seconds !== right.seconds)
-    return left.seconds < right.seconds ? -1 : 1;
-  const width = Math.max(left.fraction.length, right.fraction.length);
-  const leftFraction = left.fraction.padEnd(width, '0');
-  const rightFraction = right.fraction.padEnd(width, '0');
-  if (leftFraction === rightFraction) return 0;
-  return leftFraction < rightFraction ? -1 : 1;
-}
+// prettier-ignore
+function compareInstants(left: ParsedInstant, right: ParsedInstant): number { if (left.seconds !== right.seconds) return left.seconds < right.seconds ? -1 : 1; const width = Math.max(left.fraction.length, right.fraction.length); const leftFraction = left.fraction.padEnd(width, '0'); const rightFraction = right.fraction.padEnd(width, '0'); if (leftFraction === rightFraction) return 0; return leftFraction < rightFraction ? -1 : 1; }
 
 function instantKey(instant: ParsedInstant): string {
   return `${instant.seconds}:${instant.fraction}`;
@@ -290,6 +283,14 @@ function daysFromCivil(year: string, month: string, day: string): bigint {
     yearOfEra * 365n + yearOfEra / 4n - yearOfEra / 100n + dayOfYear;
   return era * 146_097n + dayOfEra;
 }
+
+function floorDiv(dividend: bigint, divisor: bigint): bigint {
+  const quotient = dividend / divisor;
+  return dividend % divisor < 0n ? quotient - 1n : quotient;
+}
+
+// prettier-ignore
+function parseOffsetSeconds(offset: string): number { return Number(offset.slice(1, 3)) * 3600 + Number(offset.slice(4, 6)) * 60; }
 
 // prettier-ignore
 function positiveZero(value: number): number { return Object.is(value, -0) ? 0 : value; }

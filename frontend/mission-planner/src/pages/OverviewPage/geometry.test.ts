@@ -109,6 +109,36 @@ describe('overview geometry utilities', () => {
     ).toMatchObject({ altitudeMeters: null, timestamp: null });
   });
 
+  it('truncates synthetic timestamps exactly at TimeClip boundaries', () => {
+    expect(
+      splitAtInternationalDateLine([
+        point(0, 170, null, '9999-12-31T23:59:59.999999999Z'),
+        point(10, -170, null, '9999-12-31T23:59:59.999999999Z'),
+      ])[0][1].timestamp
+    ).toBe('9999-12-31T23:59:59.999Z');
+    expect(
+      splitAtInternationalDateLine([
+        point(0, 170, null, '0000-01-01T00:00:00.999999999Z'),
+        point(10, -170, null, '0000-01-01T00:00:00.999999999Z'),
+      ])[0][1].timestamp
+    ).toBe('0000-01-01T00:00:00.999Z');
+    expect(
+      splitAtInternationalDateLine([
+        point(0, 170, null, '+010000-01-01T00:00:00Z'),
+        point(10, -170, null, '+010000-01-01T00:00:00Z'),
+      ])[0][1].timestamp
+    ).toBeNull();
+  });
+
+  it('keeps extreme altitude interpolation finite or null', () => {
+    const boundary = splitAtInternationalDateLine([
+      point(0, 170, Number.MAX_VALUE),
+      point(10, -170, -Number.MAX_VALUE),
+    ])[0][1];
+    expect(boundary.altitudeMeters).toBe(0);
+    expect(Object.is(boundary.altitudeMeters, -0)).toBe(false);
+  });
+
   it('supports repeated crossings without intra-segment jumps over 180 degrees', () => {
     const segments = splitAtInternationalDateLine([
       point(0, 170),
