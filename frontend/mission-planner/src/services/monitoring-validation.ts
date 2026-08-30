@@ -73,34 +73,6 @@ export function isStrictlyChronological(
   return true;
 }
 
-export class LifecycleGeneration {
-  mounted = false;
-  gen = 0;
-  active = 0;
-  reset = false;
-  invalidated = false;
-  invalidation = Promise.resolve();
-  private release = () => {};
-  constructor() {
-    this.renew();
-  }
-  renew() {
-    let done = false;
-    this.invalidated = false;
-    this.invalidation = new Promise<void>((resolve) => {
-      this.release = () => {
-        if (done) return;
-        done = true;
-        resolve();
-      };
-    });
-  }
-  invalidate() {
-    this.invalidated = true;
-    this.release();
-  }
-}
-
 function parseInstant(value: string): ParsedInstant | null {
   const match = timestampPattern.exec(value);
   if (!match || !awareTimestampSchema.safeParse(value).success) return null;

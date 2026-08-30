@@ -60,11 +60,38 @@ type RequestRecord = {
   generation: number;
   promise: Promise<SlotOutcome>;
 };
-type LifecycleInvalidation = {
-  invalidated: boolean;
-  invalidation: Promise<void>;
-};
 const OBSOLETE_OUTCOME: SlotOutcome = { ok: false, error: null };
+
+class RequestLifecycle {
+  mounted = false;
+  gen = 0;
+  active = 0;
+  reset = false;
+  invalidated = false;
+  invalidation = Promise.resolve();
+  private release = () => {};
+  constructor() {
+    this.renew();
+  }
+  renew() {
+    let done = false;
+    this.invalidated = false;
+    this.invalidation = new Promise<void>((resolve) => {
+      this.release = () => {
+        if (done) return;
+        done = true;
+        resolve();
+      };
+    });
+  }
+  invalidate() {
+    this.invalidated = true;
+    this.release();
+  }
+}
+
+export type OverviewRequestLifecycle = RequestLifecycle;
+export const createOverviewRequestLifecycle = () => new RequestLifecycle();
 
 export function createOverviewRequestRegistry(services: OverviewDataServices) {
   const records = new Map<OverviewHttpSlot, RequestRecord>();
@@ -159,7 +186,7 @@ export const cadenceSeconds = (cadence: UseOverviewDataOptions['cadence']) =>
 
 export function raceLifecycle(
   promise: Promise<SlotOutcome>,
-  lifecycle: LifecycleInvalidation
+  lifecycle: OverviewRequestLifecycle
 ): Promise<SlotOutcome> {
   return lifecycle.invalidated
     ? Promise.resolve(OBSOLETE_OUTCOME)
