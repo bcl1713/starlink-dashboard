@@ -2,7 +2,15 @@ import { act, renderHook } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { OverviewPOIFilter } from '../../types/monitoring';
+import type {
+  ActiveXLink,
+  GroundEntryPoint,
+  MonitoringHistory,
+  OverviewPOIFilter,
+  OverviewStatus,
+  POIETAResponse,
+  RouteCoordinates,
+} from '../../types/monitoring';
 import {
   activeXLinkPayload,
   availableGep,
@@ -90,16 +98,30 @@ describe('useOverviewData scheduling', () => {
       'gep',
       'history',
     ]);
-    expect(svc.getActiveXLink).toHaveBeenNthCalledWith(
-      1,
-      'normal',
-      (svc.getActiveXLink as ReturnType<typeof vi.fn>).mock.calls[1][1]
+    const activeCalls = (svc.getActiveXLink as ReturnType<typeof vi.fn>).mock
+      .calls;
+    const routeCalls = (svc.getRouteCoordinates as ReturnType<typeof vi.fn>)
+      .mock.calls;
+    const historyArgs = (svc.getMonitoringHistory as ReturnType<typeof vi.fn>)
+      .mock.calls[0][0];
+    expect(svc.getStatus).toHaveBeenCalledWith(expect.any(AbortSignal));
+    expect(svc.getPOIETAs).toHaveBeenCalledWith(
+      'departure,arrival',
+      expect.any(AbortSignal)
     );
-    expect(svc.getRouteCoordinates).toHaveBeenNthCalledWith(
-      1,
-      'west',
-      (svc.getRouteCoordinates as ReturnType<typeof vi.fn>).mock.calls[1][1]
+    expect(svc.getSatelliteETAs).toHaveBeenCalledWith(expect.any(AbortSignal));
+    expect(svc.getMissionEventETAs).toHaveBeenCalledWith(
+      expect.any(AbortSignal)
     );
+    expect(svc.getGroundEntryPoint).toHaveBeenCalledWith(
+      expect.any(AbortSignal)
+    );
+    expect(historyArgs).toMatchObject({ rangeSeconds: 1800, stepSeconds: 1 });
+    expect(historyArgs.signal).toBeInstanceOf(AbortSignal);
+    expect(activeCalls[0]).toEqual(['normal', activeCalls[1][1]]);
+    expect(activeCalls[1]).toEqual(['warning', activeCalls[0][1]]);
+    expect(routeCalls[0]).toEqual(['west', routeCalls[1][1]]);
+    expect(routeCalls[1]).toEqual(['east', routeCalls[0][1]]);
     expect(result.current.snapshot.initialState).toBe('ready');
     unmount();
     expect(vi.getTimerCount()).toBe(0);
@@ -294,6 +316,48 @@ describe('useOverviewData scheduling', () => {
     await act(async () => vi.advanceTimersByTime(9_000));
     await act(flush);
     expect(svc.getStatus).not.toHaveBeenCalled();
+  });
+
+  it('aborts all eight owned slot controllers on unmount', async () => {
+    const signals: AbortSignal[] = [];
+    const gates: ReturnType<typeof deferred<unknown>>[] = [];
+    const never = <T,>(signal: AbortSignal): Promise<T> => {
+      const gate = deferred<unknown>();
+      signals.push(signal);
+      gates.push(gate);
+      return gate.promise as Promise<T>;
+    };
+    const svc = services().svc;
+    svc.getStatus = vi.fn((signal) => never<OverviewStatus>(signal));
+    svc.getPOIETAs = vi.fn((_filter, signal) => never<POIETAResponse>(signal));
+    svc.getSatelliteETAs = vi.fn((signal) => never<POIETAResponse>(signal));
+    svc.getMissionEventETAs = vi.fn((signal) => never<POIETAResponse>(signal));
+    svc.getActiveXLink = vi.fn((_state, signal) => never<ActiveXLink>(signal));
+    svc.getRouteCoordinates = vi.fn((_direction, signal) =>
+      never<RouteCoordinates>(signal)
+    );
+    svc.getGroundEntryPoint = vi.fn((signal) =>
+      never<GroundEntryPoint>(signal)
+    );
+    svc.getMonitoringHistory = vi.fn((args) =>
+      never<MonitoringHistory>(args.signal)
+    );
+    const { unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    unmount();
+    for (const gate of gates) gate.reject(new Error('unmounted'));
+    await act(flush);
+    expect(signals).toHaveLength(10);
+    expect(new Set(signals).size).toBe(8);
+    expect(signals.every((signal) => signal.aborted)).toBe(true);
   });
 
   it('anchors filter-immediate attempts before the next scheduled cadence', async () => {

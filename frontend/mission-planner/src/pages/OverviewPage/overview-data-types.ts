@@ -145,12 +145,13 @@ export interface OverviewDataSnapshot {
   readonly globalTransportLastSuccessAt: number | null;
   readonly announcement: string | null;
 }
+export type OverviewRadarReport =
+  | { readonly ok: true; readonly frameTimestamp: string }
+  | { readonly ok: false; readonly error: unknown };
 export interface OverviewDataController extends OverviewRefreshController {
-  reportRadarResult(
-    result:
-      | { readonly ok: true; readonly frameTimestamp: string }
-      | { readonly ok: false; readonly error: unknown }
-  ): void;
+  readonly radarRefreshToken: number;
+  retryRadar(): void;
+  reportRadarResult(result: OverviewRadarReport): void;
 }
 export interface UseOverviewDataResult {
   readonly snapshot: OverviewDataSnapshot;

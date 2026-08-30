@@ -5,7 +5,18 @@ import {
   classifyOverviewError,
   computeSourceFreshness,
   radarTimestampFromFrame,
+  semanticUnavailable,
+  sourceTimestamp,
 } from './overview-freshness';
+import {
+  activeXLinkPayload,
+  availableGep,
+  historyPayload,
+  poiPayload,
+  routePayload,
+  statusPayload,
+  unavailableGep,
+} from '../../services/monitoring-test-fixtures';
 
 describe('overview freshness', () => {
   it('compares aware timestamps to epochs exactly across offsets and fractions', () => {
@@ -67,6 +78,101 @@ describe('overview freshness', () => {
     expect(radarTimestampFromFrame('4102444800')).toBe('2100-01-01T00:00:00Z');
     expect(radarTimestampFromFrame('0946684800')).toBeNull();
     expect(radarTimestampFromFrame('4102444801')).toBeNull();
+  });
+
+  it('extracts timestamps for all canonical freshness sources', () => {
+    expect(sourceTimestamp('telemetry', statusPayload)).toBe(
+      statusPayload.timestamp
+    );
+    expect(sourceTimestamp('pois', poiPayload)).toBe(poiPayload.timestamp);
+    expect(sourceTimestamp('satellites', poiPayload)).toBe(
+      poiPayload.timestamp
+    );
+    expect(sourceTimestamp('missionEvents', poiPayload)).toBe(
+      poiPayload.timestamp
+    );
+    expect(
+      sourceTimestamp('groundEntryPoint', {
+        ...availableGep,
+        observed_at: '2026-08-29T12:00:00Z',
+      })
+    ).toBe('2026-08-29T12:00:00Z');
+    expect(sourceTimestamp('radar', { frameTimestamp: '946684800' })).toBe(
+      '946684800'
+    );
+  });
+
+  it('uses grouped older timestamps, tie order, and null propagation', () => {
+    expect(
+      sourceTimestamp('activeLink', {
+        normal: {
+          ...activeXLinkPayload,
+          observed_at: '2026-08-29T12:00:00Z',
+        },
+        warning: {
+          ...activeXLinkPayload,
+          observed_at: '2026-08-29T12:00:01Z',
+        },
+      })
+    ).toBe('2026-08-29T12:00:00Z');
+    expect(
+      sourceTimestamp('route', {
+        west: { ...routePayload, revision_at: '2026-08-29T12:00:00Z' },
+        east: { ...routePayload, revision_at: '2026-08-29T12:00:00Z' },
+      })
+    ).toBe('2026-08-29T12:00:00Z');
+    expect(
+      sourceTimestamp('activeLink', {
+        normal: { ...activeXLinkPayload, observed_at: null },
+        warning: {
+          ...activeXLinkPayload,
+          observed_at: '2026-08-29T12:00:00Z',
+        },
+      })
+    ).toBeNull();
+    expect(sourceTimestamp('groundEntryPoint', unavailableGep)).toBeNull();
+  });
+
+  it('uses the oldest latest history metric and preserves canonical tie text', () => {
+    const history = {
+      ...historyPayload,
+      series: historyPayload.series.map((series, index) => ({
+        ...series,
+        samples: [
+          {
+            timestamp:
+              index === 0
+                ? '2026-08-29T07:00:00-05:00'
+                : '2026-08-29T12:00:00Z',
+            value: index,
+          },
+          { timestamp: '2026-08-29T12:00:01Z', value: index },
+        ],
+      })),
+    };
+    expect(sourceTimestamp('history', history)).toBe('2026-08-29T12:00:01Z');
+    expect(
+      sourceTimestamp('history', {
+        ...history,
+        series: history.series.map((series) => ({ ...series, samples: [] })),
+      })
+    ).toBeNull();
+  });
+
+  it('detects route and GEP semantic unavailable states', () => {
+    expect(semanticUnavailable('groundEntryPoint', unavailableGep)).toBe(true);
+    expect(
+      semanticUnavailable('route', {
+        west: { ...routePayload, route_id: null, total: 0 },
+        east: { ...routePayload, route_id: null, total: 0 },
+      })
+    ).toBe(true);
+    expect(
+      semanticUnavailable('route', {
+        west: routePayload,
+        east: routePayload,
+      })
+    ).toBe(false);
   });
 
   it('sanitizes cancellation, validation, and hostile request errors', () => {
