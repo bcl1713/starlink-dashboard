@@ -9,14 +9,30 @@ export interface FormattedOverviewClock {
 }
 
 function nextSecondDelay(date: Date): number {
-  const remainder = date.getTime() % 1000;
+  const remainder = ((date.getTime() % 1000) + 1000) % 1000;
   return remainder === 0 ? 1000 : 1000 - remainder;
+}
+
+function safeReadNow(now: OverviewNow, fallback: Date): Date {
+  try {
+    const next = now();
+    return next instanceof Date && Number.isFinite(next.getTime())
+      ? next
+      : fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 export function useOverviewClock(now: OverviewNow = () => new Date()): Date {
   const nowRef = useRef(now);
   const mountedRef = useRef(false);
-  const [current, setCurrent] = useState(() => now());
+  const lastValidRef = useRef<Date | null>(null);
+  const [current, setCurrent] = useState(() => {
+    const initial = safeReadNow(now, new Date(0));
+    lastValidRef.current = initial;
+    return initial;
+  });
 
   useEffect(() => {
     nowRef.current = now;
@@ -25,17 +41,18 @@ export function useOverviewClock(now: OverviewNow = () => new Date()): Date {
   useEffect(() => {
     mountedRef.current = true;
     let timeout: ReturnType<typeof setTimeout> | null = null;
-    const schedule = () => {
+    const schedule = (from: Date) => {
       timeout = setTimeout(() => {
-        const next = nowRef.current();
         if (!mountedRef.current) {
           return;
         }
+        const next = safeReadNow(nowRef.current, lastValidRef.current ?? from);
+        lastValidRef.current = next;
         setCurrent(next);
-        schedule();
-      }, nextSecondDelay(nowRef.current()));
+        schedule(next);
+      }, nextSecondDelay(from));
     };
-    schedule();
+    schedule(lastValidRef.current ?? new Date(0));
     return () => {
       mountedRef.current = false;
       if (timeout !== null) {

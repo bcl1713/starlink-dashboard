@@ -42,31 +42,35 @@ function ClockRow({
 }: ClockRowProps) {
   const relabelId = useId();
   const [draft, setDraft] = useState(clock.label);
+  const [isEditing, setEditing] = useState(false);
   const isUtc = clock.id === 'utc';
-  const trimmed = draft.trim();
+  const visibleDraft = isEditing ? draft : clock.label;
+  const trimmed = visibleDraft.trim();
   const canRelabel = trimmed.length >= 1 && trimmed.length <= 64;
 
   return (
     <div className="grid gap-2 rounded-md border p-3 sm:grid-cols-[1fr_auto]">
       <div className="space-y-2">
         <label className="text-sm font-medium" htmlFor={relabelId}>
-          Relabel {clock.label}
+          {`Relabel ${clock.label}`}
         </label>
         {isUtc ? (
-          <p className="text-sm text-muted-foreground">
-            UTC is always shown first.
-          </p>
+          <p className="text-sm text-muted-foreground">UTC first.</p>
         ) : (
           <input
             id={relabelId}
-            aria-label={`Relabel ${clock.label}`}
             className="min-h-11 w-full rounded-md border px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
+            value={visibleDraft}
+            onFocus={() => (setDraft(clock.label), setEditing(true))}
+            onChange={(event) => (
+              setDraft(event.target.value),
+              setEditing(true)
+            )}
             onBlur={() => {
               if (canRelabel && trimmed !== clock.label) {
                 onRelabelClock(clock.id, trimmed);
               }
+              setEditing(false);
             }}
           />
         )}

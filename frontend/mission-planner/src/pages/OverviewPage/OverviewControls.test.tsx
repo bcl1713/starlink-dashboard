@@ -278,7 +278,7 @@ describe('OverviewControls', () => {
     };
     const { props } = renderControls(preferences);
 
-    expect(screen.getByText('UTC is always shown first.')).toBeVisible();
+    expect(screen.getByText('UTC first.')).toBeVisible();
     expect(
       screen.queryByRole('button', { name: 'Remove UTC (Zulu)' })
     ).toBeNull();
@@ -327,5 +327,81 @@ describe('OverviewControls', () => {
     });
     fireEvent.blur(screen.getByLabelText('Relabel <img src=x onerror=1>'));
     expect(props.onRelabelClock).not.toHaveBeenCalled();
+  });
+
+  it('syncs relabel drafts from controlled labels when not editing', () => {
+    const preferences = {
+      ...createDefaultOverviewPreferences(),
+      disclosures: {
+        controlsExpanded: true,
+        additionalClocksExpanded: false,
+        clockSettingsExpanded: true,
+      },
+    };
+    const { rerender, props } = renderControls(preferences);
+
+    rerender(
+      <OverviewControls
+        {...props}
+        preferences={{
+          ...preferences,
+          clocks: preferences.clocks.map((clock) =>
+            clock.id === 'tz:Asia/Tokyo'
+              ? { ...clock, label: 'Tokyo External' }
+              : clock
+          ),
+        }}
+      />
+    );
+    expect(screen.getByLabelText('Relabel Tokyo External')).toHaveValue(
+      'Tokyo External'
+    );
+  });
+
+  it('preserves active relabel drafts until blur and then resumes syncing', () => {
+    const preferences = {
+      ...createDefaultOverviewPreferences(),
+      disclosures: {
+        controlsExpanded: true,
+        additionalClocksExpanded: false,
+        clockSettingsExpanded: true,
+      },
+    };
+    const { rerender, props } = renderControls(preferences);
+    const tokyo = screen.getByLabelText('Relabel Tokyo');
+
+    fireEvent.focus(tokyo);
+    fireEvent.change(tokyo, { target: { value: ' Tokyo Active ' } });
+    const externallyUpdated = {
+      ...preferences,
+      clocks: preferences.clocks.map((clock) =>
+        clock.id === 'tz:Asia/Tokyo'
+          ? { ...clock, label: 'Tokyo External' }
+          : clock
+      ),
+    };
+    rerender(<OverviewControls {...props} preferences={externallyUpdated} />);
+    expect(screen.getByLabelText('Relabel Tokyo External')).toHaveValue(
+      ' Tokyo Active '
+    );
+
+    fireEvent.blur(screen.getByLabelText('Relabel Tokyo External'));
+    expect(props.onRelabelClock).toHaveBeenCalledWith(
+      'tz:Asia/Tokyo',
+      'Tokyo Active'
+    );
+
+    const finalPreferences = {
+      ...externallyUpdated,
+      clocks: externallyUpdated.clocks.map((clock) =>
+        clock.id === 'tz:Asia/Tokyo'
+          ? { ...clock, label: 'Tokyo Final' }
+          : clock
+      ),
+    };
+    rerender(<OverviewControls {...props} preferences={finalPreferences} />);
+    expect(screen.getByLabelText('Relabel Tokyo Final')).toHaveValue(
+      'Tokyo Final'
+    );
   });
 });

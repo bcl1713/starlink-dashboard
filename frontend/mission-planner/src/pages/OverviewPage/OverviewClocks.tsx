@@ -71,10 +71,16 @@ function visibleClocks(clocks: readonly OverviewClockPreference[]): {
   utc: OverviewClockPreference;
   additional: readonly OverviewClockPreference[];
 } {
-  const utc = clocks.find(isCanonicalUtc);
+  const resolved = clocks.map((clock) => ({
+    clock,
+    isUtc: isCanonicalUtc(clock),
+  }));
+  const utc = resolved.find((item) => item.isUtc)?.clock;
   return {
     utc: utc ?? UTC_CLOCK,
-    additional: clocks.filter((clock) => !isCanonicalUtc(clock)),
+    additional: resolved
+      .filter((item) => !item.isUtc)
+      .map((item) => item.clock),
   };
 }
 

@@ -18,6 +18,22 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
+function throwingThenable(error: Error) {
+  return {
+    get then() {
+      throw error;
+    },
+  };
+}
+
+function hostileThenCall(error: Error) {
+  return {
+    then() {
+      throw error;
+    },
+  };
+}
+
 describe('useOverviewRefresh', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -212,6 +228,119 @@ describe('useOverviewRefresh', () => {
     expect(result.current.isManualRefreshPending).toBe(false);
     await act(async () => result.current.manualRefresh());
     expect(onRefresh).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    [
+      'sync throw',
+      () => {
+        throw new Error('sync manual');
+      },
+    ],
+    ['then getter throw', () => throwingThenable(new Error('then getter'))],
+    ['then call throw', () => hostileThenCall(new Error('then call'))],
+  ])(
+    'settles manual refresh after %s and preserves promise identity',
+    async (_label, firstRefresh) => {
+      const onRefresh = vi
+        .fn()
+        .mockImplementationOnce(firstRefresh as never)
+        .mockResolvedValueOnce(undefined);
+      const { result } = renderHook(() =>
+        useOverviewRefresh({ cadence: 'paused', onRefresh })
+      );
+
+      let first!: Promise<void>;
+      let same!: Promise<void>;
+      let observed!: Promise<unknown>;
+      await act(async () => {
+        first = result.current.manualRefresh();
+        observed = first.catch((error: Error) => error);
+        same = result.current.manualRefresh();
+      });
+
+      expect(first).toBe(same);
+      await act(async () => expect(observed).resolves.toBeInstanceOf(Error));
+      expect(result.current.isManualRefreshPending).toBe(false);
+      await act(async () =>
+        expect(result.current.manualRefresh()).resolves.toBeUndefined()
+      );
+      expect(onRefresh).toHaveBeenCalledTimes(2);
+    }
+  );
+
+  it.each([
+    [
+      'sync throw',
+      () => {
+        throw new Error('sync scheduled');
+      },
+    ],
+    ['then getter throw', () => throwingThenable(new Error('then getter'))],
+    ['then call throw', () => hostileThenCall(new Error('then call'))],
+  ])('recovers scheduled refresh after %s', async (_label, firstRefresh) => {
+    let now = 0;
+    const onRefresh = vi
+      .fn()
+      .mockImplementationOnce(firstRefresh as never)
+      .mockResolvedValueOnce(undefined);
+    renderHook(() =>
+      useOverviewRefresh({ cadence: 1, now: () => now, onRefresh })
+    );
+
+    now = 1000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    await act(async () => Promise.resolve());
+    expect(vi.getTimerCount()).toBe(1);
+
+    now = 2000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    expect(onRefresh).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(1);
+  });
+
+  it.each([
+    [
+      'throwing',
+      () => {
+        throw new Error('now failed');
+      },
+    ],
+    ['NaN', () => Number.NaN],
+    ['positive infinity', () => Number.POSITIVE_INFINITY],
+    ['negative infinity', () => Number.NEGATIVE_INFINITY],
+  ])(
+    'does not schedule timers for %s refresh providers',
+    async (_label, now) => {
+      const onRefresh = vi.fn(async () => {});
+      const { rerender } = renderHook(
+        ({ now: provider }) =>
+          useOverviewRefresh({ cadence: 1, now: provider, onRefresh }),
+        { initialProps: { now } }
+      );
+
+      expect(vi.getTimerCount()).toBe(0);
+      await act(async () => vi.advanceTimersByTime(5000));
+      expect(onRefresh).not.toHaveBeenCalled();
+
+      rerender({ now: () => 250 });
+      expect(vi.getTimerCount()).toBe(1);
+      await act(async () => vi.advanceTimersByTime(750));
+      expect(onRefresh).toHaveBeenCalledWith('scheduled');
+    }
+  );
+
+  it('normalizes negative epoch boundaries for refresh scheduling', async () => {
+    const now = -1000;
+    const onRefresh = vi.fn(async () => {});
+    renderHook(() =>
+      useOverviewRefresh({ cadence: 1, now: () => now, onRefresh })
+    );
+
+    await act(async () => vi.advanceTimersByTime(999));
+    expect(onRefresh).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(onRefresh).toHaveBeenCalledTimes(1);
   });
 
   it('recovers from rejection and settles unmount cases exactly', async () => {

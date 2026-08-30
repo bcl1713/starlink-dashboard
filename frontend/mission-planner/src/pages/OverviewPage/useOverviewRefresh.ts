@@ -22,8 +22,16 @@ function nextDelay(
     return null;
   }
   const interval = cadence * 1000;
-  const current = now();
-  const remainder = current % interval;
+  let current: number;
+  try {
+    current = now();
+  } catch {
+    return null;
+  }
+  if (!Number.isFinite(current)) {
+    return null;
+  }
+  const remainder = ((current % interval) + interval) % interval;
   return remainder === 0 ? interval : interval - remainder;
 }
 
@@ -46,6 +54,10 @@ export function useOverviewRefresh(
     latestRef.current = { onRefresh, now };
   }, [onRefresh, now]);
 
+  const runRefresh = useCallback((reason: OverviewRefreshReason) => {
+    return Promise.resolve().then(() => latestRef.current.onRefresh(reason));
+  }, []);
+
   const rerender = useCallback(() => {
     if (mountedRef.current) {
       setManualRefreshPending(
@@ -63,15 +75,15 @@ export function useOverviewRefresh(
     activeRef.current = true;
     manualActiveRef.current = queued.promise;
     rerender();
-    latestRef.current
-      .onRefresh('manual')
+    runRefresh('manual')
       .then(queued.resolve, queued.reject)
       .finally(() => {
         activeRef.current = false;
         manualActiveRef.current = null;
         rerender();
-      });
-  }, [rerender]);
+      })
+      .catch(() => {});
+  }, [rerender, runRefresh]);
 
   const manualRefresh = useCallback((): Promise<void> => {
     if (!mountedRef.current) {
@@ -115,8 +127,7 @@ export function useOverviewRefresh(
           return;
         }
         activeRef.current = true;
-        latestRef.current
-          .onRefresh('scheduled')
+        runRefresh('scheduled')
           .catch(() => {})
           .finally(() => {
             activeRef.current = false;
@@ -131,7 +142,7 @@ export function useOverviewRefresh(
         clearTimeout(timeout);
       }
     };
-  }, [cadence, runManualQueue]);
+  }, [cadence, now, runManualQueue, runRefresh]);
 
   useEffect(() => {
     return () => {

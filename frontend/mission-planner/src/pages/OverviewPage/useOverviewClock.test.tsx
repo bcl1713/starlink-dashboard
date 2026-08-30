@@ -149,4 +149,53 @@ describe('useOverviewClock', () => {
     unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  it('falls back deterministically when the initial clock provider fails', () => {
+    const invalidDates = [
+      () => {
+        throw new Error('clock provider');
+      },
+      () => new Date(Number.NaN),
+      () => new Date(Number.POSITIVE_INFINITY),
+      () => null as unknown as Date,
+    ];
+
+    for (const now of invalidDates) {
+      const { result, unmount } = renderHook(() => useOverviewClock(now));
+      expect(result.current.toISOString()).toBe('1970-01-01T00:00:00.000Z');
+      expect(vi.getTimerCount()).toBe(1);
+      unmount();
+      expect(vi.getTimerCount()).toBe(0);
+    }
+  });
+
+  it('preserves the last valid clock value through invalid reads and recovers', () => {
+    let current = new Date('2026-01-02T00:00:00.250Z') as Date | 'throw';
+    const now = vi.fn(() => {
+      if (current === 'throw') {
+        throw new Error('later provider');
+      }
+      return current;
+    });
+    const { result, unmount } = renderHook(() => useOverviewClock(now));
+
+    expect(result.current.toISOString()).toBe('2026-01-02T00:00:00.250Z');
+    expect(vi.getTimerCount()).toBe(1);
+    current = new Date(Number.NaN);
+    act(() => vi.advanceTimersByTime(750));
+    expect(result.current.toISOString()).toBe('2026-01-02T00:00:00.250Z');
+    expect(vi.getTimerCount()).toBe(1);
+
+    current = 'throw';
+    act(() => vi.advanceTimersByTime(750));
+    expect(result.current.toISOString()).toBe('2026-01-02T00:00:00.250Z');
+    expect(vi.getTimerCount()).toBe(1);
+
+    current = new Date('2026-01-02T00:00:02.000Z');
+    act(() => vi.advanceTimersByTime(750));
+    expect(result.current.toISOString()).toBe('2026-01-02T00:00:02.000Z');
+    expect(vi.getTimerCount()).toBe(1);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
 });

@@ -111,4 +111,34 @@ describe('OverviewClocks', () => {
     expect(screen.getByText('New York')).toBeVisible();
     expect(JSON.stringify(clocks)).toBe(original);
   });
+
+  it('canonicalizes each clock once per render before partitioning', () => {
+    const OriginalDateTimeFormat = Intl.DateTimeFormat;
+    let canonicalChecks = 0;
+    const spy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function (
+      ...args: ConstructorParameters<typeof Intl.DateTimeFormat>
+    ) {
+      const [, options] = args;
+      if (options && typeof options === 'object' && !('hour' in options)) {
+        canonicalChecks += 1;
+      }
+      return new OriginalDateTimeFormat(...args);
+    } as never);
+
+    render(
+      <OverviewClocks
+        clocks={[
+          { id: 'utc', timeZone: 'UTC', label: 'UTC (Zulu)' },
+          { id: 'tokyo', timeZone: 'Asia/Tokyo', label: 'Tokyo' },
+          { id: 'nyc', timeZone: 'America/New_York', label: 'New York' },
+        ]}
+        expanded
+        now={new Date('2026-01-02T03:04:05Z')}
+        onExpandedChange={() => {}}
+      />
+    );
+
+    expect(canonicalChecks).toBe(3);
+    spy.mockRestore();
+  });
 });
