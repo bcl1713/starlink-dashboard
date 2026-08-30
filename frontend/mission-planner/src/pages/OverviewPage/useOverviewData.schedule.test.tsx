@@ -278,7 +278,7 @@ describe('useOverviewData scheduling and anchors', () => {
     expect(result.current.controller.radarRefreshToken).toBe(0);
   });
 
-  it('uses Task8 manual identity for duplicate manual and queued-behind-scheduled refreshes', async () => {
+  it('manual refresh Promise identity', async () => {
     overviewRefreshObserver.enabled = true;
     let now = 1_777_294_800_000;
     const manualGate = deferred<typeof statusPayload>();
@@ -324,7 +324,7 @@ describe('useOverviewData scheduling and anchors', () => {
     expect(overviewRefreshObserver.manual).toHaveLength(2);
   });
 
-  it('keeps the Task8 timer chain when callbacks change between ticks', async () => {
+  it('scheduler timer-chain stability', async () => {
     let now = 0;
     const firstRefresh = vi.fn(() => Promise.resolve());
     const secondRefresh = vi.fn(() => Promise.resolve());

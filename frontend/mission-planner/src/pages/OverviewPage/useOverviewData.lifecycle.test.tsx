@@ -32,7 +32,7 @@ describe('useOverviewData lifecycle and service replacement', () => {
     vi.useRealTimers();
   });
 
-  it('keeps one Task8 timer and one bootstrap under StrictMode', async () => {
+  it('one shared refresh timer and one bootstrap under StrictMode', async () => {
     const { calls, svc } = createCallCountingServices();
     const announcements: string[] = [];
     function Probe() {
