@@ -1,25 +1,55 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type { OverviewStatus } from '../../types/monitoring';
-import { useOverviewRefresh } from './useOverviewRefresh';
-import * as slots from './overview-data-reducer';
+import {
+  commitSlots,
+  emptyOverviewSnapshot,
+  projectFreshness,
+  projectPaused,
+  setManualResult,
+  startSlots,
+  type OverviewHttpSlot,
+  type SlotOutcome,
+  withRadarDisabled,
+  withRadarEnabled,
+  withRadarRetry,
+} from './overview-data-reducer';
 import type {
   OverviewAvailability,
   OverviewRadarReport,
   UseOverviewDataOptions,
 } from './overview-data-types';
-import { cadenceSeconds } from './overview-requests';
-import * as flow from './overview-requests';
-import { safeNow } from './overview-freshness';
-import * as fresh from './overview-freshness';
-type CycleReason = 'scheduled' | 'manual' | 'bootstrap' | 'visibility';
-type DataSnapshot = ReturnType<typeof slots.emptyOverviewSnapshot>;
-type CycleOutcome = Readonly<{
-  slot: slots.OverviewHttpSlot;
-  outcome: slots.SlotOutcome;
-}>;
+import {
+  DEFAULT_SERVICES,
+  buildSlotCommits,
+  cadenceSeconds,
+  createOverviewRequestRegistry,
+  defaultVisibility,
+  manualResultFromOutcomes,
+} from './overview-requests';
+import {
+  beginOverviewCyclePlan,
+  finishOverviewCycle,
+  invalidateOverviewLifecycle,
+  isOverviewLifecycleCurrent as isLifecycleCurrent,
+  markOverviewResetPending,
+  mountOverviewLifecycle,
+  OverviewLifecycle,
+  raceOverviewLifecycle,
+  resetOverviewAnchorsWhenIdle as resetIdleAnchors,
+  type OverviewCycleReason,
+} from './overview-lifecycle';
+import {
+  REQUEST_FAILED_ERROR,
+  radarOutcome,
+  safeNow,
+} from './overview-freshness';
+import { useOverviewRefresh } from './useOverviewRefresh';
+
+type DataSnapshot = ReturnType<typeof emptyOverviewSnapshot>;
+type CycleOutcome = Readonly<{ slot: OverviewHttpSlot; outcome: SlotOutcome }>;
 type RadarState = { gen: number; token: number; avail: OverviewAvailability };
-const DEFAULT_VISIBILITY = flow.defaultVisibility();
+const DEFAULT_VISIBILITY = defaultVisibility();
 export function useOverviewData(options: UseOverviewDataOptions) {
   const {
     cadence,
@@ -29,31 +59,30 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     now = Date.now,
     visibility = DEFAULT_VISIBILITY,
   } = options;
-  const [snapshot, setSnapshot] = useState(slots.emptyOverviewSnapshot);
+  const [snapshot, setSnapshot] = useState(emptyOverviewSnapshot);
   const [radarRefreshToken, setRadarRefreshToken] = useState(0);
-  const registry = useMemo(
-    () =>
-      flow.createOverviewRequestRegistry(
-        providedServices ?? flow.DEFAULT_SERVICES
+  const { registry, lifecycle } = useMemo(
+    () => ({
+      registry: createOverviewRequestRegistry(
+        providedServices ?? DEFAULT_SERVICES
       ),
+      lifecycle: new OverviewLifecycle(),
+    }),
     [providedServices]
   );
-  const lifecycle = useMemo(() => flow.createOverviewRequestLifecycle(), []);
-  const anchors = useRef(new Map<slots.OverviewHttpSlot, number>());
+  const anchors = useRef(new Map<OverviewHttpSlot, number>());
   const pendingTelemetry = useRef<OverviewStatus[]>([]);
   const radar = useRef<RadarState>({ gen: 0, token: 0, avail: 'unknown' });
   const seen = useRef({ cadence: false, filter: false, radar: false });
   const latest = useRef({ cadence, poiFilter, radarEnabled, now, visibility });
   latest.current = { cadence, poiFilter, radarEnabled, now, visibility };
-  const isCurrent = useCallback(
-    (gen: number) => lifecycle.mounted && lifecycle.gen === gen,
-    [lifecycle]
-  );
-  const setSnapshotIfCurrent = useCallback(
-    (gen: number, update: (snapshot: DataSnapshot) => DataSnapshot) => {
-      setSnapshot((state) => (isCurrent(gen) ? update(state) : state));
+  const setCurrentSnapshot = useCallback(
+    (generation: number, update: (snapshot: DataSnapshot) => DataSnapshot) => {
+      setSnapshot((state) =>
+        isLifecycleCurrent(lifecycle, generation) ? update(state) : state
+      );
     },
-    [isCurrent]
+    [lifecycle]
   );
   const incrementRadarToken = useCallback(() => {
     setRadarRefreshToken((value) => {
@@ -63,14 +92,6 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       return next;
     });
   }, []);
-  const finishResetIfIdle = useCallback(() => {
-    if (!lifecycle.reset || lifecycle.active !== 0 || lifecycle.invalidated)
-      return;
-    const nowMs = safeNow(latest.current.now);
-    if (nowMs === null) return;
-    slots.HTTP_SLOTS.forEach((slot) => anchors.current.set(slot, nowMs));
-    lifecycle.reset = false;
-  }, [lifecycle]);
   const commitBatch = useCallback(
     (
       outcomes: readonly CycleOutcome[],
@@ -78,17 +99,16 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       gen: number,
       manualResult?: DataSnapshot['manualResult']
     ) => {
-      if (!isCurrent(gen)) return;
       flushSync(() => {
-        setSnapshotIfCurrent(gen, (current) => {
-          const { commits, pending } = flow.buildSlotCommits(
+        setCurrentSnapshot(gen, (current) => {
+          const { commits, pending } = buildSlotCommits(
             outcomes,
             current.history.data,
             pendingTelemetry.current,
             nowMs
           );
           pendingTelemetry.current = pending;
-          return slots.commitSlots(
+          return commitSlots(
             current,
             commits,
             nowMs,
@@ -99,51 +119,32 @@ export function useOverviewData(options: UseOverviewDataOptions) {
         });
       });
     },
-    [isCurrent, setSnapshotIfCurrent]
+    [setCurrentSnapshot]
   );
   const runCycle = useCallback(
-    async (reason: CycleReason) => {
-      const gen = lifecycle.gen;
-      lifecycle.active += 1;
+    async (reason: OverviewCycleReason) => {
       const current = latest.current;
       const anchorMap = anchors.current;
+      const { generation, nowMs, selected } = beginOverviewCyclePlan(
+        lifecycle,
+        reason,
+        current,
+        anchorMap
+      );
       try {
-        if (lifecycle.invalidated || !isCurrent(gen)) return;
-        if (
-          (reason === 'scheduled' || reason === 'visibility') &&
-          (current.cadence === 'paused' || flow.safeHidden(current.visibility))
-        )
-          return;
-        const nowMs = safeNow(current.now);
-        if (nowMs === null) return;
-        if (lifecycle.reset) {
-          if (lifecycle.active === 1) {
-            slots.HTTP_SLOTS.forEach((slot) =>
-              anchors.current.set(slot, nowMs)
-            );
-            lifecycle.reset = false;
-          }
-          if (reason !== 'manual') return;
-        }
-        const selected = flow.dueSlots(
-          reason,
-          current.cadence,
-          anchorMap,
-          nowMs
-        );
-        if (selected.length === 0) return;
+        if (nowMs === null || selected.length === 0) return;
         if (reason === 'manual') incrementRadarToken();
         if (reason === 'manual')
-          setSnapshotIfCurrent(gen, (state) =>
-            slots.setManualResult(state, 'idle')
+          setCurrentSnapshot(generation, (state) =>
+            setManualResult(state, 'idle')
           );
-        setSnapshotIfCurrent(gen, (state) =>
-          slots.startSlots(state, selected, current.cadence === 'paused')
+        setCurrentSnapshot(generation, (state) =>
+          startSlots(state, selected, current.cadence === 'paused')
         );
         for (const slot of selected) anchorMap.set(slot, nowMs);
         const outcomes = await Promise.all(
           selected.map(async (slot) => {
-            const outcome = await flow.raceLifecycle(
+            const outcome = await raceOverviewLifecycle(
               registry.start(slot, current.poiFilter),
               lifecycle
             );
@@ -152,42 +153,30 @@ export function useOverviewData(options: UseOverviewDataOptions) {
         );
         if (lifecycle.invalidated) return;
         const manualResult =
-          reason === 'manual'
-            ? flow.manualResultFromOutcomes(outcomes)
-            : undefined;
-        await commitBatch(outcomes, nowMs, gen, manualResult);
+          reason === 'manual' ? manualResultFromOutcomes(outcomes) : undefined;
+        await commitBatch(outcomes, nowMs, generation, manualResult);
       } finally {
-        lifecycle.active -= 1;
-        if (isCurrent(gen)) finishResetIfIdle();
+        finishOverviewCycle(
+          lifecycle,
+          generation,
+          anchors.current,
+          latest.current.now
+        );
       }
     },
-    [
-      commitBatch,
-      finishResetIfIdle,
-      incrementRadarToken,
-      isCurrent,
-      lifecycle,
-      registry,
-      setSnapshotIfCurrent,
-    ]
+    [commitBatch, incrementRadarToken, lifecycle, registry, setCurrentSnapshot]
   );
   const rc = useOverviewRefresh({ cadence, now, onRefresh: runCycle });
   useEffect(() => {
-    if (lifecycle.invalidated) lifecycle.renew();
-    lifecycle.mounted = true;
-    const mountGen = ++lifecycle.gen;
+    mountOverviewLifecycle(lifecycle);
     const radarState = radar.current;
-    Promise.resolve().then(
-      () => void (isCurrent(mountGen) && runCycle('bootstrap'))
-    );
+    Promise.resolve().then(() => void runCycle('bootstrap'));
     return () => {
-      lifecycle.mounted = false;
-      lifecycle.gen += 1;
-      lifecycle.invalidate();
+      invalidateOverviewLifecycle(lifecycle);
       radarState.gen += 1;
       registry.abortAll();
     };
-  }, [isCurrent, lifecycle, registry, runCycle]);
+  }, [lifecycle, registry, runCycle]);
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
     try {
@@ -204,35 +193,35 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     };
   }, [runCycle, visibility]);
   useEffect(() => {
-    const gen = lifecycle.gen;
+    const gen = lifecycle.generation;
     if (seen.current.radar) radar.current.gen += 1;
     else seen.current.radar = true;
     if (!radarEnabled) {
-      setSnapshotIfCurrent(gen, (state) => {
+      setCurrentSnapshot(gen, (state) => {
         radar.current.avail = state.radar.availability;
-        return slots.withRadarDisabled(state);
+        return withRadarDisabled(state);
       });
       return;
     }
     const nowMs = safeNow(latest.current.now);
-    setSnapshotIfCurrent(gen, (state) => {
-      const restored = slots.withRadarEnabled(state, radar.current.avail);
+    setCurrentSnapshot(gen, (state) => {
+      const restored = withRadarEnabled(state, radar.current.avail);
       return nowMs === null
         ? restored
-        : slots.projectFreshness(
+        : projectFreshness(
             restored,
             nowMs,
             cadenceSeconds(latest.current.cadence),
             latest.current.cadence === 'paused'
           );
     });
-  }, [lifecycle, radarEnabled, setSnapshotIfCurrent]);
+  }, [lifecycle, radarEnabled, setCurrentSnapshot]);
   const retryRadar = useCallback(() => {
     if (!lifecycle.mounted || !latest.current.radarEnabled) return;
     radar.current.gen += 1;
     incrementRadarToken();
     setSnapshot((state) =>
-      slots.withRadarRetry(state, latest.current.cadence === 'paused')
+      withRadarRetry(state, latest.current.cadence === 'paused')
     );
   }, [incrementRadarToken, lifecycle]);
   useEffect(() => {
@@ -240,32 +229,34 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       seen.current.cadence = true;
       return;
     }
-    lifecycle.reset = true;
-    finishResetIfIdle();
+    markOverviewResetPending(lifecycle);
+    const getNow = latest.current.now;
+    resetIdleAnchors(lifecycle, lifecycle.generation, anchors.current, getNow);
     const nowMs = safeNow(latest.current.now);
     const paused = cadence === 'paused';
     setSnapshot((state) =>
       paused || nowMs === null
-        ? slots.projectPaused(state, paused)
-        : slots.projectFreshness(state, nowMs, cadenceSeconds(cadence), false)
+        ? projectPaused(state, paused)
+        : projectFreshness(state, nowMs, cadenceSeconds(cadence), false)
     );
-  }, [cadence, finishResetIfIdle, lifecycle]);
+  }, [cadence, lifecycle]);
   useEffect(() => {
     if (!seen.current.filter) {
       seen.current.filter = true;
       return;
     }
-    const gen = lifecycle.gen;
+    const gen = lifecycle.generation;
     const nowMs = safeNow(latest.current.now);
     if (nowMs === null) return;
     anchors.current.set('pois', nowMs);
-    setSnapshotIfCurrent(gen, (state) =>
-      slots.startSlots(state, ['pois'], latest.current.cadence === 'paused')
+    setCurrentSnapshot(gen, (state) =>
+      startSlots(state, ['pois'], latest.current.cadence === 'paused')
     );
-    flow
-      .raceLifecycle(registry.start('pois', poiFilter, true), lifecycle)
-      .then((outcome) => commitBatch([{ slot: 'pois', outcome }], nowMs, gen));
-  }, [commitBatch, lifecycle, poiFilter, registry, setSnapshotIfCurrent]);
+    raceOverviewLifecycle(
+      registry.start('pois', poiFilter, true),
+      lifecycle
+    ).then((outcome) => commitBatch([{ slot: 'pois', outcome }], nowMs, gen));
+  }, [commitBatch, lifecycle, poiFilter, registry, setCurrentSnapshot]);
   const reportRadarResult = useCallback(
     (token: number, result: OverviewRadarReport) => {
       if (
@@ -280,10 +271,10 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       const nowMs = safeNow(latest.current.now);
       if (nowMs === null) return;
       const outcome = result.ok
-        ? fresh.radarOutcome(result.frameTimestamp)
-        : { ok: false as const, error: fresh.REQUEST_FAILED_ERROR };
+        ? radarOutcome(result.frameTimestamp)
+        : { ok: false as const, error: REQUEST_FAILED_ERROR };
       setSnapshot((state) =>
-        slots.commitSlots(
+        commitSlots(
           state,
           [['radar', outcome]],
           nowMs,

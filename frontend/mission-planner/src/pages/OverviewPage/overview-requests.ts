@@ -32,6 +32,7 @@ import {
   classifyOverviewError,
   historyContains,
 } from './overview-freshness';
+import type { OverviewCycleReason } from './overview-lifecycle';
 
 export const DEFAULT_SERVICES: OverviewDataServices = {
   getStatus,
@@ -60,39 +61,6 @@ type RequestRecord = {
   generation: number;
   promise: Promise<SlotOutcome>;
 };
-const OBSOLETE_OUTCOME: SlotOutcome = { ok: false, error: null };
-
-class RequestLifecycle {
-  mounted = false;
-  gen = 0;
-  active = 0;
-  reset = false;
-  invalidated = false;
-  invalidation = Promise.resolve();
-  private release = () => {};
-  constructor() {
-    this.renew();
-  }
-  renew() {
-    let done = false;
-    this.invalidated = false;
-    this.invalidation = new Promise<void>((resolve) => {
-      this.release = () => {
-        if (done) return;
-        done = true;
-        resolve();
-      };
-    });
-  }
-  invalidate() {
-    this.invalidated = true;
-    this.release();
-  }
-}
-
-export type OverviewRequestLifecycle = RequestLifecycle;
-export const createOverviewRequestLifecycle = () => new RequestLifecycle();
-
 export function createOverviewRequestRegistry(services: OverviewDataServices) {
   const records = new Map<OverviewHttpSlot, RequestRecord>();
   const generations = new Map<OverviewHttpSlot, number>();
@@ -167,7 +135,7 @@ export function createOverviewRequestRegistry(services: OverviewDataServices) {
 }
 
 export function dueSlots(
-  reason: 'scheduled' | 'manual' | 'bootstrap' | 'visibility',
+  reason: OverviewCycleReason,
   cadence: UseOverviewDataOptions['cadence'],
   anchors: Map<OverviewHttpSlot, number>,
   nowMs: number
@@ -183,18 +151,6 @@ export function dueSlots(
 
 export const cadenceSeconds = (cadence: UseOverviewDataOptions['cadence']) =>
   cadence === 'paused' ? 30 : cadence;
-
-export function raceLifecycle(
-  promise: Promise<SlotOutcome>,
-  lifecycle: OverviewRequestLifecycle
-): Promise<SlotOutcome> {
-  return lifecycle.invalidated
-    ? Promise.resolve(OBSOLETE_OUTCOME)
-    : Promise.race([
-        promise,
-        lifecycle.invalidation.then(() => OBSOLETE_OUTCOME),
-      ]);
-}
 
 export function manualResultFromOutcomes(
   outcomes: readonly { outcome: SlotOutcome }[]
