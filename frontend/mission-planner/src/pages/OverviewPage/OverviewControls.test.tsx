@@ -91,11 +91,15 @@ describe('OverviewControls', () => {
       screen.getByRole('button', { name: 'Overview controls' }),
       screen.getByRole('combobox', { name: 'Refresh cadence' }),
       screen.getByRole('combobox', { name: 'POI category' }),
+      screen.getByRole('checkbox', { name: 'Weather radar' }),
       screen.getByRole('button', { name: 'Refresh overview' }),
     ]) {
       expect(control).toHaveClass('focus-visible:ring-2');
       expect(control).toHaveClass('min-h-11');
     }
+    expect(screen.getByRole('checkbox', { name: 'Weather radar' })).toHaveClass(
+      'min-w-11'
+    );
     expect(
       screen.getByRole('checkbox', { name: 'Weather radar' }).tagName
     ).toBe('INPUT');
@@ -119,6 +123,31 @@ describe('OverviewControls', () => {
     expect(props.onPOIFilterChange).toHaveBeenCalledWith('alternate');
     expect(props.onRadarEnabledChange).toHaveBeenCalledWith(false);
     expect(props.onManualRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('consumes rejecting manual refresh clicks while controlled state recovers', async () => {
+    const onManualRefresh = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('refresh failed'))
+      .mockResolvedValueOnce(undefined);
+    const { rerender, props } = renderControls(undefined, {
+      onManualRefresh,
+      manualRefreshPending: false,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh overview' }));
+    await Promise.resolve();
+    rerender(
+      <OverviewControls
+        {...props}
+        onManualRefresh={onManualRefresh}
+        manualRefreshPending={false}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh overview' }));
+    await Promise.resolve();
+
+    expect(onManualRefresh).toHaveBeenCalledTimes(2);
   });
 
   it('respects manual disabled state and controlled disclosure rerenders', () => {

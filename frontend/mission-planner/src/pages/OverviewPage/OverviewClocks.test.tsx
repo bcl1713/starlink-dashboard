@@ -86,4 +86,29 @@ describe('OverviewClocks', () => {
     expect(screen.getAllByRole('article')[0]).toHaveTextContent('UTC (Zulu)');
     expect(screen.getByText('Tokyo')).toBeVisible();
   });
+
+  it('uses guarded canonical UTC ahead of hostile ids and keeps fake UTC additional', () => {
+    const clocks = [
+      { id: 'utc', timeZone: 'Asia/Tokyo', label: 'Fake UTC' },
+      { id: 'real', timeZone: 'UTC', label: 'Real UTC' },
+      { id: 'alias', timeZone: 'Etc/UTC', label: 'Alias UTC' },
+      { id: 'nyc', timeZone: 'America/New_York', label: 'New York' },
+    ];
+    const original = JSON.stringify(clocks);
+
+    render(
+      <OverviewClocks
+        clocks={clocks}
+        expanded
+        now={new Date('2026-01-02T03:04:05Z')}
+        onExpandedChange={() => {}}
+      />
+    );
+
+    expect(screen.getAllByRole('article')[0]).toHaveTextContent('Real UTC');
+    expect(screen.getByText('Fake UTC')).toBeVisible();
+    expect(screen.queryByText('Alias UTC')).toBeNull();
+    expect(screen.getByText('New York')).toBeVisible();
+    expect(JSON.stringify(clocks)).toBe(original);
+  });
 });

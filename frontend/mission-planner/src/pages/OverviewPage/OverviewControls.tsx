@@ -129,24 +129,25 @@ export function OverviewControls({
   const addDisabled = preferences.clocks.length >= 8;
 
   const addClock = () => {
-    if (addDisabled) {
-      setValidation('Clock limit reached.');
-      return;
-    }
+    if (addDisabled) return setValidation('Clock limit reached.');
     const clock = validateOverviewClockInput({
       timeZone: timeZoneDraft,
       label: labelDraft,
     });
-    if (!clock) {
-      setValidation('Enter a valid label and time zone.');
-      return;
-    }
+    if (!clock) return setValidation('Enter a valid label and time zone.');
     if (preferences.clocks.some((item) => item.id === clock.id)) {
       setValidation('Clock already exists.');
       return;
     }
     setValidation('');
     onAddClock({ timeZone: clock.timeZone, label: clock.label });
+  };
+  const manualRefresh = () => {
+    try {
+      void Promise.resolve(onManualRefresh()).catch(() => {});
+    } catch {
+      return undefined;
+    }
   };
 
   return (
@@ -204,6 +205,7 @@ export function OverviewControls({
             <input
               type="checkbox"
               aria-label="Weather radar"
+              className="min-h-11 min-w-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               checked={preferences.radarEnabled}
               onChange={(event) => onRadarEnabledChange(event.target.checked)}
             />
@@ -213,7 +215,7 @@ export function OverviewControls({
             type="button"
             className="min-h-11 min-w-11 rounded-md border px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
             disabled={manualRefreshPending}
-            onClick={() => void onManualRefresh()}
+            onClick={manualRefresh}
           >
             Refresh overview
           </button>

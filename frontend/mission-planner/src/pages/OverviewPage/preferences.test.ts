@@ -39,6 +39,20 @@ function expectDeepFrozen(value: unknown): void {
   }
 }
 
+function expectFreshFrozenNoop(
+  actual: ReturnType<typeof createDefaultOverviewPreferences>,
+  expected: ReturnType<typeof createDefaultOverviewPreferences>
+): void {
+  expect(actual).toEqual(expected);
+  expect(actual).not.toBe(expected);
+  expect(actual.clocks).not.toBe(expected.clocks);
+  expect(actual.disclosures).not.toBe(expected.disclosures);
+  for (const [index, clock] of actual.clocks.entries()) {
+    expect(clock).not.toBe(expected.clocks[index]);
+  }
+  expectDeepFrozen(actual);
+}
+
 describe('overview preferences persistence', () => {
   it('creates fresh recursively frozen defaults with the public constants', () => {
     const first = createDefaultOverviewPreferences();
@@ -382,5 +396,133 @@ describe('overview preferences persistence', () => {
     expect(
       moveOverviewClock(added, 'tz:Europe/London', 'up').clocks[3].id
     ).toBe('tz:Europe/London');
+  });
+
+  it('guards Intl resolvedOptions lookup, call, and return traps for clocks', () => {
+    const base = createDefaultOverviewPreferences();
+    const trapCases: Array<() => object> = [
+      () => ({
+        get resolvedOptions() {
+          throw new Error('resolved lookup');
+        },
+      }),
+      () => ({
+        resolvedOptions: () => {
+          throw new Error('resolved call');
+        },
+      }),
+      () => ({
+        resolvedOptions: () =>
+          new Proxy(
+            {},
+            {
+              get() {
+                throw new Error('resolved return');
+              },
+            }
+          ),
+      }),
+    ];
+
+    for (const makeFormatter of trapCases) {
+      const spy = vi
+        .spyOn(Intl, 'DateTimeFormat')
+        .mockImplementation(function () {
+          return makeFormatter();
+        } as never);
+      try {
+        expectFreshFrozenNoop(
+          addOverviewClock(base, {
+            timeZone: 'Europe/London',
+            label: 'London',
+          }),
+          base
+        );
+      } finally {
+        spy.mockRestore();
+      }
+    }
+  });
+
+  it('returns fresh recursively frozen graphs for every no-op clock mutation', () => {
+    let full = createDefaultOverviewPreferences();
+    for (const [timeZone, label] of [
+      ['Europe/London', 'London'],
+      ['America/Los_Angeles', 'LA'],
+      ['America/Denver', 'Denver'],
+      ['America/Phoenix', 'Phoenix'],
+    ] as const) {
+      full = addOverviewClock(full, { timeZone, label });
+    }
+
+    for (const [actual, expected] of [
+      [
+        addOverviewClock(createDefaultOverviewPreferences(), {
+          timeZone: 'No/Such',
+          label: 'Bad',
+        }),
+        createDefaultOverviewPreferences(),
+      ],
+      [
+        addOverviewClock(createDefaultOverviewPreferences(), {
+          timeZone: 'UTC',
+          label: 'Duplicate UTC',
+        }),
+        createDefaultOverviewPreferences(),
+      ],
+      [
+        addOverviewClock(full, {
+          timeZone: 'Pacific/Honolulu',
+          label: 'Honolulu',
+        }),
+        full,
+      ],
+      [
+        relabelOverviewClock(createDefaultOverviewPreferences(), 'utc', 'Zulu'),
+        createDefaultOverviewPreferences(),
+      ],
+      [
+        relabelOverviewClock(
+          createDefaultOverviewPreferences(),
+          'missing',
+          'Missing'
+        ),
+        createDefaultOverviewPreferences(),
+      ],
+      [
+        relabelOverviewClock(
+          createDefaultOverviewPreferences(),
+          'tz:Asia/Tokyo',
+          ''
+        ),
+        createDefaultOverviewPreferences(),
+      ],
+      [
+        moveOverviewClock(
+          createDefaultOverviewPreferences(),
+          'tz:America/New_York',
+          'up'
+        ),
+        createDefaultOverviewPreferences(),
+      ],
+      [
+        moveOverviewClock(
+          createDefaultOverviewPreferences(),
+          'missing',
+          'down'
+        ),
+        createDefaultOverviewPreferences(),
+      ],
+      [
+        removeOverviewClock(createDefaultOverviewPreferences(), 'utc'),
+        createDefaultOverviewPreferences(),
+      ],
+      [
+        removeOverviewClock(createDefaultOverviewPreferences(), 'missing'),
+        createDefaultOverviewPreferences(),
+      ],
+    ] as const) {
+      expectFreshFrozenNoop(actual, expected);
+    }
   });
 });

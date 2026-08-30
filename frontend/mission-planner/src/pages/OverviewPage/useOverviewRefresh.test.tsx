@@ -152,12 +152,48 @@ describe('useOverviewRefresh', () => {
 
     now = 1000;
     await act(async () => vi.advanceTimersByTime(1000));
+    expect(vi.getTimerCount()).toBe(1);
     now = 5000;
     await act(async () => vi.advanceTimersByTime(4000));
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(1);
     const queued = result.current.manualRefresh();
     gate.reject(new Error('scheduled failed'));
     await act(async () => expect(queued).resolves.toBeUndefined());
     expect(calls).toEqual(['scheduled', 'manual']);
+  });
+
+  it('keeps one timer through slow scheduled ticks and resumes next boundary after settlement', async () => {
+    let now = 0;
+    const gate = deferred();
+    const calls: OverviewRefreshReason[] = [];
+    const onRefresh = vi.fn((reason: OverviewRefreshReason) => {
+      calls.push(reason);
+      return reason === 'scheduled' && calls.length === 1
+        ? gate.promise
+        : Promise.resolve();
+    });
+    renderHook(() =>
+      useOverviewRefresh({ cadence: 1, now: () => now, onRefresh })
+    );
+
+    now = 1000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    expect(calls).toEqual(['scheduled']);
+    expect(vi.getTimerCount()).toBe(1);
+    for (let boundary = 2; boundary <= 5; boundary += 1) {
+      now = boundary * 1000;
+      await act(async () => vi.advanceTimersByTime(1000));
+      expect(calls).toEqual(['scheduled']);
+      expect(vi.getTimerCount()).toBe(1);
+    }
+
+    gate.resolve();
+    await act(async () => gate.promise);
+    now = 6000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    expect(calls).toEqual(['scheduled', 'scheduled']);
+    expect(vi.getTimerCount()).toBe(1);
   });
 
   it('releases pending state after manual rejection and allows the next manual', async () => {
@@ -213,6 +249,39 @@ describe('useOverviewRefresh', () => {
     );
   });
 
+  it('replaces cadence timers while scheduled work is unresolved', async () => {
+    let now = 0;
+    const gate = deferred();
+    const calls: OverviewRefreshReason[] = [];
+    const onRefresh = vi.fn((reason: OverviewRefreshReason) => {
+      calls.push(reason);
+      return reason === 'scheduled' && calls.length === 1
+        ? gate.promise
+        : Promise.resolve();
+    });
+    const { rerender } = renderHook(
+      ({ cadence }) =>
+        useOverviewRefresh({ cadence, now: () => now, onRefresh }),
+      { initialProps: { cadence: 1 as OverviewRefreshCadence } }
+    );
+
+    now = 1000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    expect(calls).toEqual(['scheduled']);
+    expect(vi.getTimerCount()).toBe(1);
+    rerender({ cadence: 5 });
+    expect(vi.getTimerCount()).toBe(1);
+    now = 5000;
+    await act(async () => vi.advanceTimersByTime(4000));
+    expect(calls).toEqual(['scheduled']);
+    expect(vi.getTimerCount()).toBe(1);
+    gate.resolve();
+    await act(async () => gate.promise);
+    now = 10000;
+    await act(async () => vi.advanceTimersByTime(5000));
+    expect(calls).toEqual(['scheduled', 'scheduled']);
+  });
+
   it('rejects queued manual work on unmount and keeps combined timers bounded', async () => {
     let nowMs = 0;
     const gate = deferred();
@@ -235,6 +304,21 @@ describe('useOverviewRefresh', () => {
     await queuedExpectation;
 
     const strict = renderHook(
+      () => {
+        useOverviewClock(() => new Date(nowMs));
+        return useOverviewRefresh({
+          cadence: 1,
+          now: () => nowMs,
+          onRefresh: async () => {},
+        });
+      },
+      { wrapper: StrictMode }
+    );
+    expect(vi.getTimerCount()).toBe(2);
+    strict.unmount();
+    expect(vi.getTimerCount()).toBe(0);
+
+    const refreshOnly = renderHook(
       () =>
         useOverviewRefresh({
           cadence: 1,
@@ -244,6 +328,6 @@ describe('useOverviewRefresh', () => {
       { wrapper: StrictMode }
     );
     expect(vi.getTimerCount()).toBeLessThanOrEqual(1);
-    strict.unmount();
+    refreshOnly.unmount();
   });
 });

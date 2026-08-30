@@ -48,9 +48,6 @@ const UTC_CLOCK: OverviewClockPreference = {
 };
 
 function isCanonicalUtc(clock: OverviewClockPreference): boolean {
-  if (clock.id === 'utc') {
-    return true;
-  }
   try {
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: clock.timeZone,
@@ -64,7 +61,7 @@ function isCanonicalUtc(clock: OverviewClockPreference): boolean {
       return false;
     }
     const timeZone = (resolved as { timeZone?: unknown }).timeZone;
-    return timeZone === 'UTC' || timeZone === 'Etc/UTC';
+    return timeZone === 'UTC';
   } catch {
     return false;
   }
@@ -74,8 +71,7 @@ function visibleClocks(clocks: readonly OverviewClockPreference[]): {
   utc: OverviewClockPreference;
   additional: readonly OverviewClockPreference[];
 } {
-  const utc =
-    clocks.find((clock) => clock.id === 'utc') ?? clocks.find(isCanonicalUtc);
+  const utc = clocks.find(isCanonicalUtc);
   return {
     utc: utc ?? UTC_CLOCK,
     additional: clocks.filter((clock) => !isCanonicalUtc(clock)),

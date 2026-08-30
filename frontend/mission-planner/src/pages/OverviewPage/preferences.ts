@@ -225,7 +225,7 @@ function withClocks(
   clocks: readonly OverviewClockPreference[]
 ): OverviewPreferences {
   return preference(
-    normalizeClocks(clocks),
+    clocks,
     p.refreshCadence,
     p.radarEnabled,
     p.poiFilter,

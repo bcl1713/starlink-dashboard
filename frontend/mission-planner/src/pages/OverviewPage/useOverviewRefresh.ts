@@ -107,8 +107,11 @@ export function useOverviewRefresh(
         return;
       }
       timeout = setTimeout(() => {
-        if (cancelled || activeRef.current) {
+        timeout = null;
+        if (!cancelled) {
           schedule();
+        }
+        if (cancelled || activeRef.current) {
           return;
         }
         activeRef.current = true;
@@ -118,7 +121,6 @@ export function useOverviewRefresh(
           .finally(() => {
             activeRef.current = false;
             runManualQueue();
-            schedule();
           });
       }, delay);
     };
