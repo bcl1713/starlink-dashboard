@@ -16,6 +16,7 @@ interface ParsedInstant {
 const timestampPattern =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
 const unixEpochDay = daysFromCivil('1970', '01', '01');
+const timeClipSeconds = 8_640_000_000_000n;
 
 export function compareAwareTimestampInstants(
   first: string,
@@ -57,6 +58,22 @@ export function compareAwareTimestampToEpochMilliseconds(
   const targetUnits = targetMilliseconds * 10n ** BigInt(width - 3);
   if (timestampUnits === targetUnits) return 0;
   return timestampUnits < targetUnits ? -1 : 1;
+}
+
+export function awareTimestampToChartEpochSeconds(
+  timestamp: string
+): number | null {
+  const instant = parseInstant(timestamp);
+  if (instant === null) return null;
+  const unixSeconds = instant.seconds - unixEpochDay * 86_400n;
+  const fraction = instant.fraction.replace(/0+$/, '');
+  const scale = 10n ** BigInt(fraction.length);
+  const units = unixSeconds * scale + BigInt(fraction || '0');
+  const clipUnits = timeClipSeconds * scale;
+  if (units < -clipUnits || units > clipUnits) return null;
+  const projected =
+    Number(unixSeconds) + (fraction === '' ? 0 : Number(`0.${fraction}`));
+  return Number.isFinite(projected) ? projected : null;
 }
 
 export function isStrictlyChronological(
