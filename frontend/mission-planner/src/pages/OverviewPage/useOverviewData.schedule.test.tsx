@@ -311,6 +311,55 @@ describe('useOverviewData scheduling', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('does not bootstrap or commit after an ordinary mount unmounts before the bootstrap microtask', async () => {
+    const { calls, svc } = services();
+    const observedSnapshots: string[] = [];
+    const observedAnnouncements: string[] = [];
+
+    function Probe() {
+      const { snapshot } = useOverviewData({
+        cadence: 1,
+        poiFilter: 'arrival',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      });
+      useEffect(() => {
+        if (
+          snapshot.initialState !== 'initial-loading' ||
+          snapshot.announcement !== null ||
+          snapshot.globalTransportLastSuccessAt !== null ||
+          snapshot.telemetry.pending ||
+          snapshot.history.pending ||
+          snapshot.pois.pending
+        ) {
+          observedSnapshots.push(snapshot.initialState);
+        }
+        if (snapshot.announcement) {
+          observedAnnouncements.push(snapshot.announcement);
+        }
+      }, [snapshot]);
+      return null;
+    }
+
+    const { unmount } = render(<Probe />);
+    unmount();
+    await act(flush);
+
+    expect(calls).toEqual([]);
+    expect(svc.getStatus).not.toHaveBeenCalled();
+    expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+    expect(svc.getGroundEntryPoint).not.toHaveBeenCalled();
+    expect(svc.getPOIETAs).not.toHaveBeenCalled();
+    expect(svc.getSatelliteETAs).not.toHaveBeenCalled();
+    expect(svc.getMissionEventETAs).not.toHaveBeenCalled();
+    expect(svc.getRouteCoordinates).not.toHaveBeenCalled();
+    expect(svc.getActiveXLink).not.toHaveBeenCalled();
+    expect(observedSnapshots).toEqual([]);
+    expect(observedAnnouncements).toEqual([]);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('bootstraps the latest ordinary mount with exactly ten calls', async () => {
     const { calls, svc } = services();
     const { unmount } = renderHook(() =>

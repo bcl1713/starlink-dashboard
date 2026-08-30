@@ -1,7 +1,7 @@
 import {
-  computeFreshnessForSource as freshnessOf,
-  semanticUnavailable as unavailable,
-  sourceTimestamp as timestampOf,
+  computeFreshnessForSource,
+  semanticUnavailable,
+  sourceTimestamp,
 } from './overview-freshness';
 import type {
   OverviewDataSnapshot,
@@ -11,23 +11,11 @@ import type {
   OverviewSourceKey,
   OverviewSourceSlot,
 } from './overview-data-types';
-import { batchAnnouncement, SOURCE_ORDER } from './overview-data-types';
-
-export const HTTP_SLOTS = [
-  'telemetry',
-  'pois',
-  'satellites',
-  'missionEvents',
-  'activeLink',
-  'route',
-  'groundEntryPoint',
-  'history',
-] as const;
-export type OverviewHttpSlot = (typeof HTTP_SLOTS)[number];
+import { batchAnnouncement } from './overview-announcements';
+import { SOURCE_ORDER, type OverviewHttpSlot } from './overview-sources';
 
 type AnySlot = OverviewSourceSlot<unknown>;
-export type SlotOutcome = OverviewSlotOutcome;
-export type SlotCommit = readonly [OverviewSourceKey, SlotOutcome];
+export type SlotCommit = readonly [OverviewSourceKey, OverviewSlotOutcome];
 
 export const emptyOverviewSnapshot = () =>
   projectSnapshot(
@@ -62,8 +50,8 @@ export function commitSlots(
   paused: boolean,
   manualResult?: OverviewManualResult
 ) {
-  const slots = cloneSlots(snapshot),
-    before = cloneSlots(snapshot);
+  const slots = cloneSlots(snapshot);
+  const before = cloneSlots(snapshot);
   const writable = slots as Record<string, AnySlot>;
   for (const [slot, outcome] of outcomes) {
     const previous = slots[slot];
@@ -71,11 +59,12 @@ export function commitSlots(
       const timestamp =
         outcome.data === undefined
           ? previous.sourceTimestamp
-          : timestampOf(slot, outcome.data);
+          : sourceTimestamp(slot, outcome.data);
       const freshness =
         outcome.data === undefined || paused
           ? previous.freshness
-          : freshnessOf(slot, timestamp, nowMs, cadenceSeconds).freshness;
+          : computeFreshnessForSource(slot, timestamp, nowMs, cadenceSeconds)
+              .freshness;
       writable[slot] = phaseSlot({
         ...(previous as AnySlot),
         data: outcome.data ?? previous.data,
@@ -105,7 +94,7 @@ export function commitSlots(
             sourceTimestamp:
               outcome.data === undefined
                 ? previous.sourceTimestamp
-                : timestampOf(slot, outcome.data),
+                : sourceTimestamp(slot, outcome.data),
             transportLastAttemptAt: nowMs,
           }
     );
@@ -124,15 +113,19 @@ export function projectFreshness(
   cadenceSeconds: number,
   paused: boolean
 ) {
-  const slots = cloneSlots(snapshot),
-    before = cloneSlots(snapshot);
+  const slots = cloneSlots(snapshot);
+  const before = cloneSlots(snapshot);
   const writable = slots as Record<string, AnySlot>;
   for (const slot of Object.keys(slots) as OverviewSourceKey[]) {
     const current = slots[slot] as AnySlot;
     const freshness = paused
       ? current.freshness
-      : freshnessOf(slot, current.sourceTimestamp, nowMs, cadenceSeconds)
-          .freshness;
+      : computeFreshnessForSource(
+          slot,
+          current.sourceTimestamp,
+          nowMs,
+          cadenceSeconds
+        ).freshness;
     writable[slot] = phaseSlot({ ...current, freshness, paused });
   }
   return projectSnapshot(
@@ -219,11 +212,12 @@ function successSlot(
   cadenceSeconds: number,
   paused: boolean
 ) {
-  const isUnavailable = unavailable(slot, data);
-  const timestamp = timestampOf(slot, data);
+  const isUnavailable = semanticUnavailable(slot, data);
+  const timestamp = sourceTimestamp(slot, data);
   const freshness = paused
     ? previous.freshness
-    : freshnessOf(slot, timestamp, nowMs, cadenceSeconds).freshness;
+    : computeFreshnessForSource(slot, timestamp, nowMs, cadenceSeconds)
+        .freshness;
   return phaseSlot({
     ...previous,
     data,

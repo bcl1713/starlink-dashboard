@@ -1,8 +1,4 @@
-import type {
-  MonitoringHistory,
-  OverviewPOIFilter,
-  OverviewStatus,
-} from '../../types/monitoring';
+import type { OverviewPOIFilter } from '../../types/monitoring';
 import {
   getActiveXLink,
   getGroundEntryPoint,
@@ -16,20 +12,10 @@ import {
 import type {
   OverviewDataServices,
   OverviewManualResult,
-  OverviewSourceKey,
+  OverviewSlotOutcome,
 } from './overview-data-types';
-import { mergeTelemetryBatch } from './overview-data-types';
-import {
-  type OverviewHttpSlot,
-  type SlotCommit,
-  type SlotOutcome,
-} from './overview-data-reducer';
-import {
-  acceptTelemetry,
-  boundPendingTelemetry,
-  classifyOverviewError,
-  historyContains,
-} from './overview-freshness';
+import { classifyOverviewError } from './overview-request-errors';
+import type { OverviewHttpSlot } from './overview-sources';
 
 export const DEFAULT_SERVICES: OverviewDataServices = {
   getStatus,
@@ -45,12 +31,12 @@ export const DEFAULT_SERVICES: OverviewDataServices = {
 type RequestRecord = {
   controller: AbortController;
   generation: number;
-  promise: Promise<SlotOutcome>;
+  promise: Promise<OverviewSlotOutcome>;
 };
 export function createOverviewRequestRegistry(services: OverviewDataServices) {
   const records = new Map<OverviewHttpSlot, RequestRecord>();
   const generations = new Map<OverviewHttpSlot, number>();
-  const outcomes = new Map<OverviewHttpSlot, SlotOutcome>();
+  const outcomes = new Map<OverviewHttpSlot, OverviewSlotOutcome>();
 
   const start = (
     slot: OverviewHttpSlot,
@@ -68,8 +54,8 @@ export function createOverviewRequestRegistry(services: OverviewDataServices) {
     generations.set(slot, generation);
     const promise = runSlot(services, slot, filter, controller.signal)
       .then(
-        (data): SlotOutcome => ({ ok: true, data }),
-        (error): SlotOutcome => {
+        (data): OverviewSlotOutcome => ({ ok: true, data }),
+        (error): OverviewSlotOutcome => {
           const classified = classifyOverviewError(
             error,
             controller.signal.aborted
@@ -121,7 +107,7 @@ export function createOverviewRequestRegistry(services: OverviewDataServices) {
 }
 
 export function manualResultFromOutcomes(
-  outcomes: readonly { outcome: SlotOutcome }[]
+  outcomes: readonly { outcome: OverviewSlotOutcome }[]
 ): OverviewManualResult {
   let successes = 0;
   let failures = 0;
@@ -132,65 +118,6 @@ export function manualResultFromOutcomes(
   if (successes + failures === 0) return 'idle';
   if (failures === 0) return 'success';
   return successes === 0 ? 'failure' : 'partial';
-}
-
-export function buildSlotCommits(
-  outcomes: readonly { slot: OverviewSourceKey; outcome: SlotOutcome }[],
-  historyData: MonitoringHistory | undefined,
-  pendingTelemetry: readonly OverviewStatus[],
-  nowMs: number
-): { commits: SlotCommit[]; pending: OverviewStatus[] } {
-  const commits: SlotCommit[] = [];
-  const accepted: OverviewStatus[] = [];
-  let serverHistory: MonitoringHistory | undefined;
-  let historyOutcome: SlotOutcome | undefined;
-  for (const { slot, outcome } of outcomes) {
-    if (
-      slot === 'telemetry' &&
-      outcome.ok &&
-      acceptTelemetry(outcome.data as OverviewStatus, nowMs)
-    )
-      accepted.push(outcome.data as OverviewStatus);
-    if (slot === 'history' && outcome.ok) {
-      serverHistory = outcome.data as MonitoringHistory;
-      historyOutcome = outcome;
-      continue;
-    }
-    if (slot === 'history') historyOutcome = outcome;
-    commits.push([slot, outcome]);
-  }
-  const telemetry = [...pendingTelemetry, ...accepted];
-  const history = mergeTelemetryBatch(
-    historyData,
-    serverHistory,
-    telemetry,
-    nowMs
-  );
-  if (!history) return { commits, pending: boundPendingTelemetry(telemetry) };
-  const historyCommit: SlotCommit =
-    historyOutcome?.ok === true
-      ? ['history', { ok: true, data: history }]
-      : historyOutcome === undefined
-        ? ['history', { ok: false, error: null, data: history }]
-        : ['history', { ...historyOutcome, data: history }];
-  return {
-    commits: [...commits.filter(([slot]) => slot !== 'history'), historyCommit],
-    pending: telemetry.filter(
-      (status) => !historyContains(history, status.timestamp)
-    ),
-  };
-}
-
-export function defaultVisibility() {
-  return {
-    isHidden: () =>
-      typeof document === 'undefined' ? false : document.hidden === true,
-    subscribe(listener: () => void) {
-      if (typeof document === 'undefined') return () => {};
-      document.addEventListener('visibilitychange', listener);
-      return () => document.removeEventListener('visibilitychange', listener);
-    },
-  };
 }
 
 async function runSlot(

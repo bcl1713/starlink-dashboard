@@ -12,7 +12,7 @@ import {
 import type { OverviewStatus } from '../../types/monitoring';
 import type { OverviewDataServices } from './overview-data-types';
 import { HISTORY_MAX_SAMPLES } from './history';
-import { buildSlotCommits } from './overview-requests';
+import { buildSlotCommits } from './overview-history-continuity';
 import { useOverviewData } from './useOverviewData';
 
 const flush = async () => {

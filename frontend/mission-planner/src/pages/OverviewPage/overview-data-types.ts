@@ -9,8 +9,6 @@ import type {
   POIETAResponse,
   RouteCoordinates,
 } from '../../types/monitoring';
-import { compareAwareTimestampInstants } from '../../services/monitoring-validation';
-import { mergeTimestampedSamples } from './history';
 import type { OverviewRefreshCadence } from './preferences';
 import type { OverviewRefreshController } from './useOverviewRefresh';
 
@@ -24,28 +22,7 @@ export type OverviewSourceKey =
   | 'route'
   | 'groundEntryPoint'
   | 'radar';
-export const SOURCE_LABELS = {
-  telemetry: 'Telemetry',
-  history: 'History',
-  activeLink: 'Active link',
-  pois: 'POIs',
-  satellites: 'Satellite ETAs',
-  missionEvents: 'Mission events',
-  route: 'Route',
-  groundEntryPoint: 'Ground entry point',
-  radar: 'Weather radar',
-} as const satisfies Record<OverviewSourceKey, string>;
-export const SOURCE_ORDER = [
-  'telemetry',
-  'history',
-  'activeLink',
-  'pois',
-  'satellites',
-  'missionEvents',
-  'route',
-  'groundEntryPoint',
-  'radar',
-] as const satisfies readonly OverviewSourceKey[];
+
 export type OverviewCanonicalFreshnessKey =
   | 'telemetry'
   | 'history'
@@ -165,134 +142,4 @@ export interface OverviewDataController extends OverviewRefreshController {
 export interface UseOverviewDataResult {
   readonly snapshot: OverviewDataSnapshot;
   readonly controller: OverviewDataController;
-}
-
-export function batchAnnouncement(
-  snapshot: OverviewDataSnapshot,
-  before: { [K in OverviewSourceKey]: OverviewDataSnapshot[K] },
-  after: { [K in OverviewSourceKey]: OverviewDataSnapshot[K] },
-  manualResult: OverviewManualResult
-): string | null {
-  const manual =
-    manualResult !== snapshot.manualResult && manualResult === 'success'
-      ? 'Manual refresh complete.'
-      : manualResult !== snapshot.manualResult && manualResult === 'partial'
-        ? 'Manual refresh completed with partial failures.'
-        : manualResult !== snapshot.manualResult && manualResult === 'failure'
-          ? 'Manual refresh failed.'
-          : null;
-  if (manual) return dedupe(snapshot.announcement, manual);
-  const projected = projectInitial(after);
-  const initial =
-    snapshot.initialState !== 'ready' && projected === 'ready'
-      ? 'Overview ready.'
-      : snapshot.initialState !== 'total-error' && projected === 'total-error'
-        ? 'Overview data failed to load.'
-        : null;
-  if (initial) return dedupe(snapshot.announcement, initial);
-  for (const kind of ['error', 'stale', 'recovery'] as const) {
-    for (const source of SOURCE_ORDER) {
-      const previous = before[source];
-      const next = after[source];
-      const message =
-        kind === 'error' && !previous.error && next.error
-          ? `${SOURCE_LABELS[source]} refresh failed.`
-          : kind === 'stale' &&
-              previous.freshness !== 'stale' &&
-              next.freshness === 'stale'
-            ? `${SOURCE_LABELS[source]} data is stale.`
-            : kind === 'recovery' &&
-                (previous.error || previous.freshness === 'stale') &&
-                !next.error &&
-                next.freshness !== 'stale'
-              ? `${SOURCE_LABELS[source]} recovered.`
-              : null;
-      if (message) return dedupe(snapshot.announcement, message);
-    }
-  }
-  return snapshot.announcement;
-}
-
-function dedupe(previous: string | null, next: string): string | null {
-  return previous === next ? previous : next;
-}
-
-function projectInitial(slots: {
-  [K in OverviewSourceKey]: OverviewDataSnapshot[K];
-}): OverviewInitialState {
-  const required = [slots.telemetry, slots.history, slots.pois];
-  if (required.some((slot) => slot.data === undefined && slot.error === null)) {
-    return 'initial-loading';
-  }
-  if (required.every((slot) => slot.data === undefined && slot.error)) {
-    return 'total-error';
-  }
-  return Object.values(slots).some((slot) => slot.error)
-    ? 'partial-error'
-    : 'ready';
-}
-
-export function mergeTelemetryBatch(
-  retained: MonitoringHistory | undefined,
-  server: MonitoringHistory | undefined,
-  statuses: readonly OverviewStatus[],
-  nowMs: number
-): MonitoringHistory | undefined {
-  const history = server ?? retained;
-  if (!history) return undefined;
-  const statusSamples = statuses.map(samplesFromStatus);
-  const mergeNow = latestTimestamp([
-    ...(retained ? historyTimestamps(retained) : []),
-    ...(server ? [server.window_end, ...historyTimestamps(server)] : []),
-    ...statuses.map((item) => item.timestamp),
-  ]);
-  return {
-    ...history,
-    series: history.series.map((series) => ({
-      ...series,
-      samples: [
-        ...mergeTimestampedSamples(
-          [
-            ...(retained?.series.find((item) => item.metric === series.metric)
-              ?.samples ?? []),
-            ...statusSamples.flatMap((sample) => sample[series.metric] ?? []),
-          ],
-          server?.series.find((item) => item.metric === series.metric)
-            ?.samples ?? [],
-          mergeNow ?? new Date(nowMs).toISOString().replace('.000', '')
-        ),
-      ],
-    })),
-  };
-}
-
-function samplesFromStatus(status: OverviewStatus) {
-  const timestamp = status.timestamp;
-  return {
-    latitude_degrees: { timestamp, value: status.position.latitude },
-    longitude_degrees: { timestamp, value: status.position.longitude },
-    latency_ms: { timestamp, value: status.network.latency_ms },
-    throughput_down_mbps: {
-      timestamp,
-      value: status.network.throughput_down_mbps,
-    },
-    throughput_up_mbps: { timestamp, value: status.network.throughput_up_mbps },
-    packet_loss_percent: {
-      timestamp,
-      value: status.network.packet_loss_percent,
-    },
-  };
-}
-
-function latestTimestamp(values: readonly string[]): string | null {
-  return values.reduce<string | null>((latest, value) => {
-    if (latest === null) return value;
-    return compareAwareTimestampInstants(value, latest) > 0 ? value : latest;
-  }, null);
-}
-
-function historyTimestamps(history: MonitoringHistory): string[] {
-  return history.series.flatMap((series) =>
-    series.samples.map((item) => item.timestamp)
-  );
 }

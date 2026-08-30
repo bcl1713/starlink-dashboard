@@ -1,14 +1,19 @@
-import { HTTP_SLOTS, type OverviewHttpSlot } from './overview-data-reducer';
 import type { UseOverviewDataOptions } from './overview-data-types';
 import { safeNow } from './overview-freshness';
 import {
   beginOverviewCycle,
-  clearOverviewResetPending,
-  isOverviewCycleResetReady,
+  finishOverviewCycle,
   isOverviewLifecycleCurrent,
-  type OverviewCycleReason,
   type OverviewLifecycle,
 } from './overview-lifecycle';
+import { HTTP_SLOTS, type OverviewHttpSlot } from './overview-sources';
+import { safeHidden } from './overview-visibility';
+
+export type OverviewCycleReason =
+  | 'scheduled'
+  | 'manual'
+  | 'bootstrap'
+  | 'visibility';
 
 const PERIODS = {
   telemetry: 1,
@@ -74,16 +79,6 @@ export function dueSlots(
 export const cadenceSeconds = (cadence: UseOverviewDataOptions['cadence']) =>
   cadence === 'paused' ? 30 : cadence;
 
-export function safeHidden(
-  visibility: UseOverviewDataOptions['visibility']
-): boolean {
-  try {
-    return visibility?.isHidden() ?? false;
-  } catch {
-    return false;
-  }
-}
-
 export function resetOverviewAnchors(
   anchors: Map<OverviewHttpSlot, number>,
   nowMs: number
@@ -99,4 +94,60 @@ export function resetAnchorsAt(
   if (nowMs === null) return false;
   resetOverviewAnchors(anchors, nowMs);
   return true;
+}
+
+export function markOverviewResetPending(lifecycle: OverviewLifecycle): void {
+  lifecycle.resetPending = true;
+}
+
+export function resetOverviewAnchorsWhenIdle(
+  lifecycle: OverviewLifecycle,
+  generation: number,
+  reset: () => boolean
+): void {
+  if (!isOverviewResetReady(lifecycle, generation)) return;
+  if (!reset()) return;
+  clearOverviewResetPending(lifecycle, generation);
+}
+
+export function finishOverviewCyclePlan(
+  lifecycle: OverviewLifecycle,
+  generation: number,
+  reset: () => boolean
+): void {
+  finishOverviewCycle(lifecycle);
+  resetOverviewAnchorsWhenIdle(lifecycle, generation, reset);
+}
+
+function isOverviewResetReady(
+  lifecycle: OverviewLifecycle,
+  generation: number
+): boolean {
+  return (
+    isOverviewLifecycleCurrent(lifecycle, generation) &&
+    lifecycle.resetPending &&
+    lifecycle.activeCycles === 0 &&
+    !lifecycle.invalidated
+  );
+}
+
+function isOverviewCycleResetReady(
+  lifecycle: OverviewLifecycle,
+  generation: number
+): boolean {
+  return (
+    isOverviewLifecycleCurrent(lifecycle, generation) &&
+    lifecycle.resetPending &&
+    lifecycle.activeCycles === 1 &&
+    !lifecycle.invalidated
+  );
+}
+
+function clearOverviewResetPending(
+  lifecycle: OverviewLifecycle,
+  generation: number
+): void {
+  if (isOverviewLifecycleCurrent(lifecycle, generation)) {
+    lifecycle.resetPending = false;
+  }
 }

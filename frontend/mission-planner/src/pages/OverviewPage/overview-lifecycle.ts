@@ -1,9 +1,3 @@
-export type OverviewCycleReason =
-  | 'scheduled'
-  | 'manual'
-  | 'bootstrap'
-  | 'visibility';
-
 export class OverviewLifecycle {
   mounted = false;
   generation = 0;
@@ -64,61 +58,6 @@ export function beginOverviewCycle(lifecycle: OverviewLifecycle): number {
 
 export function finishOverviewCycle(lifecycle: OverviewLifecycle): void {
   lifecycle.activeCycles = Math.max(0, lifecycle.activeCycles - 1);
-}
-
-export function markOverviewResetPending(lifecycle: OverviewLifecycle): void {
-  lifecycle.resetPending = true;
-}
-
-export function resetOverviewAnchorsWhenIdle(
-  lifecycle: OverviewLifecycle,
-  generation: number,
-  reset: () => boolean
-): void {
-  if (!isOverviewResetReady(lifecycle, generation)) return;
-  if (!reset()) return;
-  clearOverviewResetPending(lifecycle, generation);
-}
-
-export function finishOverviewCyclePlan(
-  lifecycle: OverviewLifecycle,
-  generation: number,
-  reset: () => boolean
-): void {
-  finishOverviewCycle(lifecycle);
-  resetOverviewAnchorsWhenIdle(lifecycle, generation, reset);
-}
-
-export function isOverviewResetReady(
-  lifecycle: OverviewLifecycle,
-  generation: number
-): boolean {
-  return (
-    isOverviewLifecycleCurrent(lifecycle, generation) &&
-    lifecycle.resetPending &&
-    lifecycle.activeCycles === 0 &&
-    !lifecycle.invalidated
-  );
-}
-
-export function isOverviewCycleResetReady(
-  lifecycle: OverviewLifecycle,
-  generation: number
-): boolean {
-  return (
-    isOverviewLifecycleCurrent(lifecycle, generation) &&
-    lifecycle.resetPending &&
-    lifecycle.activeCycles === 1 &&
-    !lifecycle.invalidated
-  );
-}
-
-export function clearOverviewResetPending(
-  lifecycle: OverviewLifecycle,
-  generation: number
-): void {
-  if (isOverviewLifecycleCurrent(lifecycle, generation))
-    lifecycle.resetPending = false;
 }
 
 export async function raceOverviewLifecycle<T>(

@@ -1,4 +1,3 @@
-import axios from 'axios';
 import {
   compareAwareTimestampInstants,
   compareAwareTimestampToEpochMilliseconds,
@@ -9,12 +8,10 @@ import type {
   OverviewStatus,
   POIETAResponse,
 } from '../../types/monitoring';
-import { mergeTimestampedSamples } from './history';
 import type {
   OverviewActiveLinkData,
   OverviewRadarData,
   OverviewRouteData,
-  OverviewSourceError,
 } from './overview-data-types';
 
 const METRICS = [
@@ -25,10 +22,6 @@ const METRICS = [
   'throughput_up_mbps',
   'packet_loss_percent',
 ] as const;
-export const REQUEST_FAILED_ERROR = {
-  code: 'request-failed',
-  message: 'Source refresh failed.',
-} as const;
 
 export function safeNow(now: () => number): number | null {
   try {
@@ -37,60 +30,6 @@ export function safeNow(now: () => number): number | null {
   } catch {
     return null;
   }
-}
-
-export function acceptTelemetry(
-  status: OverviewStatus,
-  nowMs: number
-): boolean {
-  const comparison = compareAwareTimestampToEpochMilliseconds(
-    status.timestamp,
-    nowMs,
-    5
-  );
-  return comparison !== null && comparison <= 0;
-}
-
-export function boundPendingTelemetry(
-  statuses: readonly OverviewStatus[]
-): OverviewStatus[] {
-  const samples: { timestamp: string; value: OverviewStatus }[] = [];
-  let newest: string | null = null;
-  for (const status of statuses) {
-    let timestamp: string;
-    try {
-      if (typeof status.timestamp !== 'string') continue;
-      timestamp = status.timestamp;
-    } catch {
-      continue;
-    }
-    if (compareAwareTimestampToEpochMilliseconds(timestamp, 0) === null) {
-      continue;
-    }
-    samples.push({ timestamp, value: status });
-    if (
-      newest === null ||
-      compareAwareTimestampInstants(timestamp, newest) > 0
-    ) {
-      newest = timestamp;
-    }
-  }
-  if (newest === null) return [];
-  return mergeTimestampedSamples([], samples, newest).map(
-    (sample) => sample.value
-  );
-}
-
-export function historyContains(
-  history: MonitoringHistory,
-  timestamp: string
-): boolean {
-  return history.series.every((series) =>
-    series.samples.some(
-      (sample) =>
-        compareAwareTimestampInstants(sample.timestamp, timestamp) === 0
-    )
-  );
 }
 
 export function computeFreshnessForSource(
@@ -131,21 +70,6 @@ export function computeFreshnessForSource(
     freshness: stale === null ? 'unknown' : stale < 0 ? 'stale' : 'fresh',
     ageSeconds,
   };
-}
-
-export function classifyOverviewError(
-  error: unknown,
-  signalAborted: boolean
-): OverviewSourceError | null {
-  if (signalAborted || safeIsCancel(error)) return null;
-  if (
-    safeGet(error, 'name') === 'OverviewDataValidationError' &&
-    safeGet(error, 'code') === 'invalid_overview_data' &&
-    typeof safeGet(error, 'source') === 'string'
-  ) {
-    return { code: 'invalid-data', message: 'Source data was invalid.' };
-  }
-  return { code: 'request-failed', message: 'Source refresh failed.' };
 }
 
 export function radarOutcome(frameTimestamp: string) {
@@ -278,23 +202,4 @@ function computeWholeAgeSeconds(
     else high = middle - 1;
   }
   return low;
-}
-
-function safeIsCancel(error: unknown): boolean {
-  try {
-    return axios.isCancel(error);
-  } catch {
-    return false;
-  }
-}
-
-function safeGet(value: unknown, key: string): unknown {
-  if (value === null) return undefined;
-  const kind = typeof value;
-  if (kind !== 'object' && kind !== 'function') return undefined;
-  try {
-    return Reflect.get(value as object, key);
-  } catch {
-    return undefined;
-  }
 }

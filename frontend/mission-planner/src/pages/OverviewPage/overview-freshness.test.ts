@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { compareAwareTimestampToEpochMilliseconds } from '../../services/monitoring-validation';
 import {
-  classifyOverviewError,
   computeFreshnessForSource,
   radarTimestampFromFrame,
   semanticUnavailable,
   sourceTimestamp,
 } from './overview-freshness';
+import { classifyOverviewError } from './overview-request-errors';
 import {
   activeXLinkPayload,
   availableGep,
