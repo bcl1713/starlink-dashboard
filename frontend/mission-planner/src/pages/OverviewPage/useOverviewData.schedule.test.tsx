@@ -21,6 +21,7 @@ import {
 } from '../../services/monitoring-test-fixtures';
 import type { OverviewDataServices } from './overview-data-types';
 import type { OverviewRefreshCadence } from './preferences';
+import { SOURCE_ORDER } from './overview-sources';
 import { useOverviewData } from './useOverviewData';
 import type {
   OverviewRefreshController,
@@ -489,6 +490,39 @@ describe('useOverviewData scheduling', () => {
       error: null,
     });
     expect(result.current.snapshot.radar.data).toBeUndefined();
+  });
+
+  it('leaves initial enabled radar and empty sources loading before bootstrap', () => {
+    const { calls, svc } = services();
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+
+    expect(calls).toEqual([]);
+    expect(result.current.snapshot.initialState).toBe('initial-loading');
+    expect(result.current.snapshot.manualResult).toBe('idle');
+    expect(result.current.snapshot.globalTransportLastSuccessAt).toBeNull();
+    expect(result.current.snapshot.announcement).toBeNull();
+    for (const source of SOURCE_ORDER) {
+      expect(result.current.snapshot[source]).toMatchObject({
+        availability: 'unknown',
+        phase: 'initial-loading',
+        freshness: 'unknown',
+        sourceTimestamp: null,
+        transportLastAttemptAt: null,
+        transportLastSuccessAt: null,
+        pending: false,
+        paused: false,
+        error: null,
+      });
+      expect(result.current.snapshot[source].data).toBeUndefined();
+    }
   });
 
   it.each([

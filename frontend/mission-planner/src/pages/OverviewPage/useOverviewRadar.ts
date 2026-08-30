@@ -48,7 +48,7 @@ export function useOverviewRadar(options: {
     token: 0,
     availability: 'unknown',
   });
-  const seenRadar = useRef(false);
+  const previousRadarEnabled = useRef(radarEnabled);
 
   const incrementRadarToken = useCallback(() => {
     setRadarRefreshToken((value) => {
@@ -105,8 +105,9 @@ export function useOverviewRadar(options: {
 
   useEffect(() => {
     const generation = lifecycle.generation;
-    if (seenRadar.current) radar.current.generation += 1;
-    else seenRadar.current = true;
+    const changed = previousRadarEnabled.current !== radarEnabled;
+    previousRadarEnabled.current = radarEnabled;
+    if (changed) radar.current.generation += 1;
 
     if (!radarEnabled) {
       setCurrentSnapshot(generation, (state) => {
@@ -115,6 +116,8 @@ export function useOverviewRadar(options: {
       });
       return;
     }
+
+    if (!changed) return;
 
     const nowMs = safeNow(latest.current.now ?? Date.now);
     setCurrentSnapshot(generation, (state) => {
