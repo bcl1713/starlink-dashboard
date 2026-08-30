@@ -924,4 +924,120 @@ describe('useOverviewData scheduling', () => {
       expect.any(AbortSignal)
     );
   });
+
+  it('settles obsolete scheduled cycles and lets the new lifecycle reset cadence', async () => {
+    refreshHarness.enabled = true;
+    let now = 1_777_294_800_000;
+    const oldStatus = deferred<typeof statusPayload>();
+    const old = services().svc;
+    old.getStatus = vi
+      .fn()
+      .mockResolvedValueOnce(structuredClone(statusPayload))
+      .mockImplementationOnce(() => oldStatus.promise);
+    const fresh = services().svc;
+    fresh.getStatus = vi.fn(() =>
+      Promise.resolve({
+        ...structuredClone(statusPayload),
+        timestamp: '2026-08-29T18:00:10Z',
+      })
+    );
+    const { result, rerender } = renderHook(
+      ({ svc, cadence }) =>
+        useOverviewData({
+          cadence,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+        }),
+      {
+        initialProps: {
+          svc: old,
+          cadence: 1 as OverviewRefreshCadence,
+        },
+      }
+    );
+    await act(flush);
+    now += 1000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    await act(flush);
+    const obsoleteScheduled = refreshHarness.scheduled.at(-1);
+    expect(obsoleteScheduled).toBeDefined();
+
+    rerender({ svc: fresh, cadence: 1 });
+    await act(flush);
+    await expect(obsoleteScheduled).resolves.toBeUndefined();
+    expect(result.current.snapshot.telemetry.data?.timestamp).toBe(
+      '2026-08-29T18:00:10Z'
+    );
+
+    rerender({ svc: fresh, cadence: 10 });
+    await act(flush);
+    vi.clearAllMocks();
+    now += 9_000;
+    await act(async () => vi.advanceTimersByTime(9_000));
+    await act(flush);
+    expect(fresh.getStatus).not.toHaveBeenCalled();
+    now += 1_000;
+    await act(async () => vi.advanceTimersByTime(1_000));
+    await act(flush);
+    expect(fresh.getStatus).not.toHaveBeenCalled();
+    now += 10_000;
+    await act(async () => vi.advanceTimersByTime(10_000));
+    await act(flush);
+    expect(fresh.getStatus).toHaveBeenCalledTimes(1);
+    oldStatus.reject(new Error('late old failure'));
+    await act(flush);
+    expect(result.current.snapshot.telemetry.data?.timestamp).toBe(
+      '2026-08-29T18:00:10Z'
+    );
+  });
+
+  it('settles obsolete manual cycles while the replacement lifecycle proceeds', async () => {
+    const oldStatus = deferred<typeof statusPayload>();
+    const old = services().svc;
+    old.getStatus = vi
+      .fn()
+      .mockResolvedValueOnce(structuredClone(statusPayload))
+      .mockImplementationOnce(() => oldStatus.promise);
+    const fresh = services().svc;
+    fresh.getStatus = vi.fn(() =>
+      Promise.resolve({
+        ...structuredClone(statusPayload),
+        timestamp: '2026-08-29T18:00:11Z',
+      })
+    );
+    const { result, rerender } = renderHook(
+      ({ svc }) =>
+        useOverviewData({
+          cadence: 'paused',
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => 1_777_294_811_000,
+        }),
+      { initialProps: { svc: old } }
+    );
+    await act(flush);
+    const manual = result.current.controller.manualRefresh();
+    await act(flush);
+    expect(result.current.controller.isManualRefreshPending).toBe(true);
+    rerender({ svc: fresh });
+    await act(flush);
+    await expect(manual).resolves.toBeUndefined();
+    expect(result.current.snapshot.manualResult).toBe('idle');
+    expect(result.current.snapshot.telemetry.data?.timestamp).toBe(
+      '2026-08-29T18:00:11Z'
+    );
+    await act(async () => result.current.controller.manualRefresh());
+    expect(result.current.snapshot.manualResult).toBe('success');
+    oldStatus.resolve({
+      ...structuredClone(statusPayload),
+      timestamp: '2026-08-29T18:00:01Z',
+    });
+    await act(flush);
+    expect(result.current.snapshot.telemetry.data?.timestamp).toBe(
+      '2026-08-29T18:00:11Z'
+    );
+  });
 });

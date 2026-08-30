@@ -25,6 +25,10 @@ const METRICS = [
   'throughput_up_mbps',
   'packet_loss_percent',
 ] as const;
+export const REQUEST_FAILED_ERROR = {
+  code: 'request-failed',
+  message: 'Source refresh failed.',
+} as const;
 
 export function safeNow(now: () => number): number | null {
   try {
@@ -50,13 +54,31 @@ export function acceptTelemetry(
 export function boundPendingTelemetry(
   statuses: readonly OverviewStatus[]
 ): OverviewStatus[] {
-  const newest = latestStatusTimestamp(statuses);
+  const samples: { timestamp: string; value: OverviewStatus }[] = [];
+  let newest: string | null = null;
+  for (const status of statuses) {
+    let timestamp: string;
+    try {
+      if (typeof status.timestamp !== 'string') continue;
+      timestamp = status.timestamp;
+    } catch {
+      continue;
+    }
+    if (compareAwareTimestampToEpochMilliseconds(timestamp, 0) === null) {
+      continue;
+    }
+    samples.push({ timestamp, value: status });
+    if (
+      newest === null ||
+      compareAwareTimestampInstants(timestamp, newest) > 0
+    ) {
+      newest = timestamp;
+    }
+  }
   if (newest === null) return [];
-  return mergeTimestampedSamples(
-    [],
-    statuses.map((status) => ({ timestamp: status.timestamp, value: status })),
-    newest
-  ).map((sample) => sample.value);
+  return mergeTimestampedSamples([], samples, newest).map(
+    (sample) => sample.value
+  );
 }
 
 export function historyContains(
@@ -184,9 +206,8 @@ export function radarTimestampFromFrame(frame: string): string | null {
     !Number.isSafeInteger(seconds) ||
     seconds < 946_684_800 ||
     seconds > 4_102_444_800
-  ) {
+  )
     return null;
-  }
   return new Date(seconds * 1000).toISOString().replace('.000', '');
 }
 
@@ -196,18 +217,12 @@ export function compareSourceTimestampToEpochMilliseconds(
   epochMilliseconds: number,
   offsetSeconds?: number
 ): -1 | 0 | 1 | null {
-  if (source !== 'radar') {
-    return compareAwareTimestampToEpochMilliseconds(
-      timestamp,
-      epochMilliseconds,
-      offsetSeconds
-    );
-  }
-  const iso = radarTimestampFromFrame(timestamp);
-  return iso === null
+  const comparable =
+    source === 'radar' ? radarTimestampFromFrame(timestamp) : timestamp;
+  return comparable === null
     ? null
     : compareAwareTimestampToEpochMilliseconds(
-        iso,
+        comparable,
         epochMilliseconds,
         offsetSeconds
       );
@@ -282,19 +297,4 @@ function safeGet(value: unknown, key: string): unknown {
   } catch {
     return undefined;
   }
-}
-
-function latestStatusTimestamp(
-  statuses: readonly OverviewStatus[]
-): string | null {
-  let latest: string | null = null;
-  for (const { timestamp } of statuses) {
-    if (
-      latest === null ||
-      compareAwareTimestampInstants(timestamp, latest) > 0
-    ) {
-      latest = timestamp;
-    }
-  }
-  return latest;
 }

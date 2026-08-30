@@ -11,7 +11,11 @@ import {
   statusPayload,
   unavailableGep,
 } from '../../services/monitoring-test-fixtures';
-import type { OverviewPOIFilter } from '../../types/monitoring';
+import type {
+  ActiveXLink,
+  OverviewPOIFilter,
+  RouteCoordinates,
+} from '../../types/monitoring';
 import type { OverviewDataServices } from './overview-data-types';
 import { useOverviewData } from './useOverviewData';
 
@@ -244,6 +248,106 @@ describe('useOverviewData resilience', () => {
     );
     expect(errorSpy).not.toHaveBeenCalled();
     errorSpy.mockRestore();
+  });
+
+  it('does not sample now or inspect hostile retained radar reports after unmount', async () => {
+    let nowCalls = 0;
+    let okAccessed = false;
+    let frameAccessed = false;
+    let errorAccessed = false;
+    const svc = services();
+    const { result, unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => {
+          nowCalls += 1;
+          return 1_777_294_800_000;
+        },
+      })
+    );
+    await act(flush);
+    const controller = result.current.controller;
+    const token = controller.radarRefreshToken;
+    const beforeUnmountNowCalls = nowCalls;
+    const hostileOk = Object.defineProperty({}, 'ok', {
+      get() {
+        okAccessed = true;
+        throw new Error('ok getter');
+      },
+    }) as { readonly ok: true; readonly frameTimestamp: string };
+    const hostileFrame = Object.defineProperty({ ok: true }, 'frameTimestamp', {
+      get() {
+        frameAccessed = true;
+        throw new Error('frame getter');
+      },
+    }) as { readonly ok: true; readonly frameTimestamp: string };
+    const hostileError = Object.defineProperty({ ok: false }, 'error', {
+      get() {
+        errorAccessed = true;
+        throw new Error('error getter');
+      },
+    }) as { readonly ok: false; readonly error: unknown };
+    unmount();
+    act(() => controller.reportRadarResult(token, hostileOk));
+    act(() => controller.reportRadarResult(token, hostileFrame));
+    act(() => controller.reportRadarResult(token, hostileError));
+    expect(nowCalls).toBe(beforeUnmountNowCalls);
+    expect(okAccessed).toBe(false);
+    expect(frameAccessed).toBe(false);
+    expect(errorAccessed).toBe(false);
+  });
+
+  it('starts active link and route siblings for hostile thenables and sync throws', async () => {
+    const activeStates: string[] = [];
+    const routeDirections: string[] = [];
+    const hostileThenable = {
+      get then() {
+        throw new Error('hostile thenable');
+      },
+    };
+    const svc = services({
+      getActiveXLink: vi.fn((state: 'normal' | 'warning') => {
+        activeStates.push(state);
+        return state === 'normal'
+          ? (hostileThenable as unknown as Promise<ActiveXLink>)
+          : Promise.resolve({
+              ...structuredClone(activeXLinkPayload),
+              state,
+            } as ActiveXLink);
+      }),
+      getRouteCoordinates: vi.fn((direction: 'west' | 'east') => {
+        routeDirections.push(direction);
+        if (direction === 'west') throw new Error('west failed');
+        return Promise.resolve(
+          structuredClone(routePayload) as RouteCoordinates
+        );
+      }),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    expect(activeStates).toEqual(['normal', 'warning']);
+    expect(routeDirections).toEqual(['west', 'east']);
+    expect(result.current.snapshot.activeLink.error).toEqual({
+      code: 'request-failed',
+      message: 'Source refresh failed.',
+    });
+    expect(result.current.snapshot.route.error).toEqual({
+      code: 'request-failed',
+      message: 'Source refresh failed.',
+    });
+    expect(result.current.snapshot.activeLink.data).toBeUndefined();
+    expect(result.current.snapshot.route.data).toBeUndefined();
   });
 
   it('does not mutate frozen service payloads', async () => {

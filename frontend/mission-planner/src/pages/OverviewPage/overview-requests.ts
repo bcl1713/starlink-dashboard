@@ -60,6 +60,11 @@ type RequestRecord = {
   generation: number;
   promise: Promise<SlotOutcome>;
 };
+type LifecycleInvalidation = {
+  invalidated: boolean;
+  invalidation: Promise<void>;
+};
+const OBSOLETE_OUTCOME: SlotOutcome = { ok: false, error: null };
 
 export function createOverviewRequestRegistry(services: OverviewDataServices) {
   const records = new Map<OverviewHttpSlot, RequestRecord>();
@@ -149,10 +154,19 @@ export function dueSlots(
   });
 }
 
-export function cadenceSeconds(
-  cadence: UseOverviewDataOptions['cadence']
-): number {
-  return cadence === 'paused' ? 30 : cadence;
+export const cadenceSeconds = (cadence: UseOverviewDataOptions['cadence']) =>
+  cadence === 'paused' ? 30 : cadence;
+
+export function raceLifecycle(
+  promise: Promise<SlotOutcome>,
+  lifecycle: LifecycleInvalidation
+): Promise<SlotOutcome> {
+  return lifecycle.invalidated
+    ? Promise.resolve(OBSOLETE_OUTCOME)
+    : Promise.race([
+        promise,
+        lifecycle.invalidation.then(() => OBSOLETE_OUTCOME),
+      ]);
 }
 
 export function manualResultFromOutcomes(
@@ -238,11 +252,6 @@ export function defaultVisibility() {
   };
 }
 
-export const createRegistry = createOverviewRequestRegistry;
-export const slotCommits = buildSlotCommits;
-export const resultFromOutcomes = manualResultFromOutcomes;
-export const seconds = cadenceSeconds;
-
 async function runSlot(
   services: OverviewDataServices,
   slot: OverviewHttpSlot,
@@ -279,19 +288,12 @@ async function settlePair<T>(
   left: () => Promise<T>,
   right: () => Promise<T>
 ): Promise<[T, T]> {
-  const [first, second] = await Promise.allSettled([
-    startSupplier(left),
-    startSupplier(right),
-  ]);
+  const [first, second] = await Promise.allSettled(
+    [left, right].map(
+      (supplier) => new Promise<T>((resolve) => resolve(supplier()))
+    )
+  );
   if (first.status === 'rejected') throw first.reason;
   if (second.status === 'rejected') throw second.reason;
   return [first.value, second.value];
-}
-
-function startSupplier<T>(supplier: () => Promise<T>): Promise<T> {
-  try {
-    return Promise.resolve(supplier());
-  } catch (error) {
-    return Promise.reject(error);
-  }
 }
