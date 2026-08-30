@@ -1,7 +1,10 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import uPlot from 'uplot';
 
-import type { TimeSeriesChartProps } from './metric-panel-types';
+import type {
+  TimeSeriesChartProps,
+  TimeSeriesDefinition,
+} from './metric-panel-types';
 
 type UPlotInstance = uPlot;
 
@@ -45,6 +48,7 @@ export function useUPlotChart(
           label: series.label,
           stroke: series.color,
           spanGaps: false,
+          value: buildValueFormatter(series),
         })),
       ],
     }),
@@ -159,6 +163,23 @@ function toUPlotData(
 
 function normalizeValue(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function buildValueFormatter(
+  definition: TimeSeriesDefinition
+): uPlot.Series.Value {
+  return (_self, rawValue) => {
+    const value = normalizeValue(rawValue);
+    if (value === null) return 'Unavailable';
+    const displayed =
+      definition.display === 'magnitude' ? Math.abs(value) : value;
+    return `${formatFiniteNumber(displayed)} ${definition.unit}`;
+  };
+}
+
+function formatFiniteNumber(value: number): string {
+  const normalized = Object.is(value, -0) ? 0 : value;
+  return String(normalized);
 }
 
 function labelPlot(plot: UPlotInstance, accessibleName: string): void {

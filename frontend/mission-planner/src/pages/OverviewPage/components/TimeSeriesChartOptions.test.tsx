@@ -45,6 +45,26 @@ const series: readonly TimeSeriesDefinition[] = [
   },
 ];
 
+const latencySeries: readonly TimeSeriesDefinition[] = [
+  {
+    key: 'latency',
+    label: 'Latency',
+    color: '#1769aa',
+    unit: 'ms',
+    display: 'signed',
+  },
+];
+
+const packetLossSeries: readonly TimeSeriesDefinition[] = [
+  {
+    key: 'packetLoss',
+    label: 'Packet loss',
+    color: '#b42318',
+    unit: 'percent',
+    display: 'signed',
+  },
+];
+
 const rows: readonly TimeSeriesRow[] = [
   { timestamp: '2026-08-29T12:00:00Z', epochSeconds: 1, values: [10, null] },
   { timestamp: '2026-08-29T12:00:01Z', epochSeconds: 2, values: [20, -5] },
@@ -67,7 +87,7 @@ beforeEach(() => {
 });
 
 describe('TimeSeriesChart constructor options', () => {
-  it('passes ordered data, null gaps, colors, domain and zero-baseline range', () => {
+  it('passes throughput order, sign, colors, units, gaps, and zero baseline', () => {
     render(
       <TimeSeriesChart
         accessibleName="Throughput chart"
@@ -85,32 +105,74 @@ describe('TimeSeriesChart constructor options', () => {
       [10, 20],
       [null, -5],
     ]);
-    expect(uplotMock.created[0].options.series).toEqual([
+    expect(uplotMock.created[0].options.series).toMatchObject([
       {},
       { label: 'Download', stroke: '#1769aa', spanGaps: false },
       { label: 'Upload', stroke: '#177a55', spanGaps: false },
     ]);
+    expect(formatSeriesValue(1, 12.34)).toBe('12.34 Mbps');
+    expect(formatSeriesValue(2, -5.5)).toBe('5.5 Mbps');
+    expect(formatSeriesValue(2, null)).toBe('Unavailable');
+    expect(formatSeriesValue(2, Number.POSITIVE_INFINITY)).toBe('Unavailable');
     const range = uplotMock.created[0].options.scales?.y?.range;
     expect(
       typeof range === 'function' ? range({} as uPlot, 4, 9, 'y') : null
     ).toEqual([0, 9]);
   });
 
-  it('passes fixed y-domain exactly when configured', () => {
+  it('passes latency unit formatting without changing label identity', () => {
+    render(
+      <TimeSeriesChart
+        accessibleName="Latency chart"
+        rows={rows}
+        series={latencySeries}
+        yRange="auto"
+        zeroBaseline
+        emptyText="No data"
+      />
+    );
+
+    expect(uplotMock.created[0].options.series).toMatchObject([
+      {},
+      { label: 'Latency', stroke: '#1769aa', spanGaps: false },
+    ]);
+    expect(formatSeriesValue(1, 15)).toBe('15 ms');
+    expect(formatSeriesValue(1, Number.NaN)).toBe('Unavailable');
+    expect(formatSeriesValue(1, undefined)).toBe('Unavailable');
+  });
+
+  it('passes packet-loss unit formatting and fixed y-domain exactly', () => {
     render(
       <TimeSeriesChart
         accessibleName="Packet Loss chart"
         rows={rows}
-        series={series}
+        series={packetLossSeries}
         yRange={[0, 100]}
         zeroBaseline
         emptyText="No data"
       />
     );
 
+    expect(uplotMock.created[0].options.series).toMatchObject([
+      {},
+      { label: 'Packet loss', stroke: '#b42318', spanGaps: false },
+    ]);
+    expect(formatSeriesValue(1, 2)).toBe('2 percent');
+    expect(formatSeriesValue(1, 2.345)).toBe('2.345 percent');
     const range = uplotMock.created[0].options.scales?.y?.range;
     expect(
       typeof range === 'function' ? range({} as uPlot, 4, 9, 'y') : null
     ).toEqual([0, 100]);
   });
 });
+
+function formatSeriesValue(seriesIndex: number, value: unknown): string {
+  const seriesOptions = uplotMock.created[0].options.series?.[seriesIndex];
+  const formatter = seriesOptions?.value;
+  expect(formatter).toEqual(expect.any(Function));
+  return String(
+    typeof formatter === 'function'
+      ? formatter({} as uPlot, value as number, seriesIndex, 0)
+      : formatter
+  );
+}
