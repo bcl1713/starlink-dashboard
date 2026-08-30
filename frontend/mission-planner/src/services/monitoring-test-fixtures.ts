@@ -152,6 +152,10 @@ export const xLinkCoordinate = {
   observed_at: null,
 };
 
+const makeXLinkCoordinate = (
+  overrides: Partial<typeof xLinkCoordinate> = {}
+): typeof xLinkCoordinate => ({ ...xLinkCoordinate, ...overrides });
+
 export const xLinkHandoff = {
   phase: 'outside',
   transition_id: null,
@@ -164,7 +168,7 @@ export const xLinkHandoff = {
 };
 
 export const activeXLinkPayload = {
-  coordinates: [xLinkCoordinate],
+  coordinates: [makeXLinkCoordinate()],
   links: [
     {
       satellite_id: 'sat-1',
@@ -173,15 +177,15 @@ export const activeXLinkPayload = {
       relative_azimuth_degrees: 12.5,
       in_forbidden_window: false,
       coordinates: [
-        xLinkCoordinate,
-        { ...xLinkCoordinate, point: 'satellite', sequence: 1 },
+        makeXLinkCoordinate(),
+        makeXLinkCoordinate({ point: 'satellite', sequence: 1 }),
       ],
     },
   ],
   total: 1,
   satellite_id: 'sat-1',
   pending_satellite_id: null,
-  handoff: xLinkHandoff,
+  handoff: { ...xLinkHandoff },
   state: 'normal',
   color: 'green',
   relative_azimuth_degrees: 12.5,

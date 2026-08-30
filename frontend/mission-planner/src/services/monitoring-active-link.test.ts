@@ -4,6 +4,7 @@ import { apiClient } from './api-client';
 import { getActiveXLink } from './monitoring';
 import {
   activeXLinkPayload,
+  clone,
   setAt,
   withResponse,
   xLinkHandoff,
@@ -26,7 +27,49 @@ async function expectActiveInvalid(payload: unknown) {
   });
 }
 
+function expectNoSharedObjectReferences(value: unknown) {
+  const seen = new WeakSet<object>();
+  const visit = (candidate: unknown) => {
+    if (candidate === null || typeof candidate !== 'object') return;
+    expect(seen.has(candidate)).toBe(false);
+    seen.add(candidate);
+    for (const child of Object.values(candidate)) visit(child);
+  };
+
+  visit(value);
+}
+
 describe('active X-link overview service', () => {
+  it('keeps structurally equal active link coordinates reference-isolated', () => {
+    const topCoordinate = activeXLinkPayload.coordinates[0];
+    const nestedCoordinate = activeXLinkPayload.links[0].coordinates[0];
+
+    expect(topCoordinate).toEqual(nestedCoordinate);
+    expect(topCoordinate).not.toBe(nestedCoordinate);
+    expect(activeXLinkPayload.handoff).toEqual(xLinkHandoff);
+    expect(activeXLinkPayload.handoff).not.toBe(xLinkHandoff);
+    expectNoSharedObjectReferences(activeXLinkPayload);
+    expectNoSharedObjectReferences(clone(activeXLinkPayload));
+  });
+
+  it('isolates setAt mutations between top-level and nested link coordinates', () => {
+    const topMutation = setAt(
+      activeXLinkPayload,
+      ['coordinates', 0, 'state'],
+      'warning'
+    );
+    expect(topMutation.coordinates[0].state).toBe('warning');
+    expect(topMutation.links[0].coordinates[0].state).toBe('normal');
+
+    const nestedMutation = setAt(
+      activeXLinkPayload,
+      ['links', 0, 'coordinates', 0, 'state'],
+      'warning'
+    );
+    expect(nestedMutation.coordinates[0].state).toBe('normal');
+    expect(nestedMutation.links[0].coordinates[0].state).toBe('warning');
+  });
+
   it('requests exact state params and parses populated and empty filtered states', async () => {
     const signal = new AbortController().signal;
     respond(activeXLinkPayload);
