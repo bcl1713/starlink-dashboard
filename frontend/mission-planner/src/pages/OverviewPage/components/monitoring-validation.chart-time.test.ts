@@ -3,6 +3,24 @@ import { describe, expect, it } from 'vitest';
 import { awareTimestampToChartEpochSeconds } from '../../../services/monitoring-validation';
 
 describe('awareTimestampToChartEpochSeconds', () => {
+  it('does not expose structurally forgeable parsed instants publicly', async () => {
+    const exported = await import('../../../services/monitoring-validation');
+
+    expect(Object.keys(exported).sort()).toEqual([
+      'awareTimestampSchema',
+      'awareTimestampToChartEpochSeconds',
+      'azimuthSchema',
+      'compareAwareTimestampInstants',
+      'compareAwareTimestampToEpochMilliseconds',
+      'finiteNumberSchema',
+      'isStrictlyChronological',
+      'latitudeSchema',
+      'longitudeSchema',
+      'nonNegativeNumberSchema',
+      'percentSchema',
+    ]);
+  });
+
   it('projects accepted aware timestamps to finite Unix seconds', () => {
     expect(awareTimestampToChartEpochSeconds('1970-01-01T00:00:00Z')).toBe(0);
     expect(awareTimestampToChartEpochSeconds('1970-01-01T00:00:00.5Z')).toBe(
@@ -33,5 +51,16 @@ describe('awareTimestampToChartEpochSeconds', () => {
     expect(
       awareTimestampToChartEpochSeconds('275760-09-13T00:00:00Z')
     ).toBeNull();
+  });
+
+  it('is total for hostile JavaScript callers and large accepted fractions', () => {
+    expect(
+      awareTimestampToChartEpochSeconds(null as unknown as string)
+    ).toBeNull();
+    expect(
+      awareTimestampToChartEpochSeconds(
+        `2026-08-29T12:00:00.${'1'.repeat(100_000)}Z`
+      )
+    ).toBe(1_788_004_800.1111112);
   });
 });

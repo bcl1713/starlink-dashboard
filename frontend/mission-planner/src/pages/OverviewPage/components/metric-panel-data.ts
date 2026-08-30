@@ -12,29 +12,16 @@ import type {
   ThroughputPanelData,
   TimeSeriesRow,
 } from './metric-panel-types';
-import {
-  buildLinearLatencyPanel,
-  type LatencyProjectionInstrumentation,
-} from './metric-panel-latency';
+import { buildLinearLatencyPanel } from './metric-panel-latency';
 import { buildRawThroughputRows } from './metric-panel-throughput';
-
-export type { LatencyProjectionInstrumentation };
 
 export function buildLatencyPanelData(
   history: MonitoringHistory,
   now: string
 ): LatencyPanelData {
-  return buildLatencyPanelDataWithInstrumentation(history, now);
-}
-
-export function buildLatencyPanelDataWithInstrumentation(
-  history: MonitoringHistory,
-  now: string,
-  instrumentation?: LatencyProjectionInstrumentation
-): LatencyPanelData {
   const samples = selectCanonicalSeries(history, 'latency_ms', now);
   if (samples === null) return emptyLatency();
-  return buildLinearLatencyPanel(samples, instrumentation);
+  return buildLinearLatencyPanel(samples);
 }
 
 export function buildThroughputPanelData(

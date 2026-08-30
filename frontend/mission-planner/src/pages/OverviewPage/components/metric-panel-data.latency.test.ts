@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { buildLatencyPanelData } from './metric-panel-data';
 import {
-  buildLatencyPanelData,
-  buildLatencyPanelDataWithInstrumentation,
+  buildLinearLatencyPanel,
   type LatencyProjectionInstrumentation,
-} from './metric-panel-data';
+} from './metric-panel-latency';
 import { history, NOW, samples } from './metric-panel-test-fixtures';
 
 describe('buildLatencyPanelData', () => {
@@ -156,17 +156,11 @@ describe('buildLatencyPanelData', () => {
       minQueueOperations: 0,
       maxQueueOperations: 0,
     };
-    const data = buildLatencyPanelDataWithInstrumentation(
-      history([
-        {
-          metric: 'latency_ms',
-          samples: Array.from({ length: 1802 }, (_, index) => ({
-            timestamp: secondTimestamp(index),
-            value: index,
-          })),
-        },
-      ]),
-      '2026-08-29T12:30:01Z',
+    const data = buildLinearLatencyPanel(
+      Array.from({ length: 1801 }, (_, index) => ({
+        timestamp: secondTimestamp(index + 1),
+        value: index + 1,
+      })),
       instrumentation
     );
 

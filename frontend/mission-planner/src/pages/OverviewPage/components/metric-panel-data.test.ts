@@ -8,6 +8,16 @@ import {
 import { history, samples } from './metric-panel-test-fixtures';
 
 describe('metric panel adapter edge cases', () => {
+  it('keeps the frozen production adapter export surface narrow', async () => {
+    const exported = await import('./metric-panel-data');
+
+    expect(Object.keys(exported).sort()).toEqual([
+      'buildLatencyPanelData',
+      'buildPacketLossPanelData',
+      'buildThroughputPanelData',
+    ]);
+  });
+
   it('keeps distinct exact table instants but collapses numeric chart collisions to later exact instant', () => {
     const data = buildLatencyPanelData(
       history([

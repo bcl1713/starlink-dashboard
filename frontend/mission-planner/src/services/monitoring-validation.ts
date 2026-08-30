@@ -8,7 +8,7 @@ export const latitudeSchema = finiteNumberSchema.min(-90).max(90);
 export const longitudeSchema = finiteNumberSchema.min(-180).max(180);
 export const azimuthSchema = finiteNumberSchema.min(0).max(360);
 
-export interface AwareTimestampInstant {
+interface AwareTimestampInstant {
   readonly seconds: bigint;
   readonly fraction: string;
 }
@@ -33,12 +33,6 @@ export function compareAwareTimestampInstants(
   const rightFraction = right.fraction.padEnd(width, '0');
   if (leftFraction === rightFraction) return 0;
   return leftFraction < rightFraction ? -1 : 1;
-}
-
-export function parseAwareTimestampInstant(
-  timestamp: string
-): AwareTimestampInstant | null {
-  return parseInstant(timestamp);
 }
 
 export function compareAwareTimestampToEpochMilliseconds(
@@ -69,22 +63,16 @@ export function compareAwareTimestampToEpochMilliseconds(
 export function awareTimestampToChartEpochSeconds(
   timestamp: string
 ): number | null {
+  if (typeof timestamp !== 'string') return null;
   const instant = parseInstant(timestamp);
   if (instant === null) return null;
-  return awareInstantToChartEpochSeconds(instant);
-}
-
-export function awareInstantToChartEpochSeconds(
-  instant: AwareTimestampInstant
-): number | null {
   const unixSeconds = instant.seconds - unixEpochDay * 86_400n;
   const fraction = instant.fraction.replace(/0+$/, '');
-  const scale = 10n ** BigInt(fraction.length);
-  const units = unixSeconds * scale + BigInt(fraction || '0');
-  const clipUnits = timeClipSeconds * scale;
-  if (units < -clipUnits || units > clipUnits) return null;
+  if (unixSeconds < -timeClipSeconds || unixSeconds > timeClipSeconds) {
+    return null;
+  }
   const projected =
-    Number(unixSeconds) + (fraction === '' ? 0 : Number(`0.${fraction}`));
+    Number(unixSeconds) + (fraction === '' ? 0 : fractionToNumber(fraction));
   return Number.isFinite(projected) ? projected : null;
 }
 
@@ -143,4 +131,8 @@ function parseOffsetSeconds(offset: string): number {
   const hours = Number(offset.slice(1, 3));
   const minutes = Number(offset.slice(4, 6));
   return sign * (hours * 3600 + minutes * 60);
+}
+
+function fractionToNumber(fraction: string): number {
+  return Number(`0.${fraction.slice(0, 20)}`);
 }

@@ -176,6 +176,83 @@ describe('TimeSeriesChart constructor options', () => {
       typeof range === 'function' ? range({} as uPlot, 4, 9, 'y') : null
     ).toEqual([0, 100]);
   });
+
+  it('retains mounted structural options until an explicit key recreates', () => {
+    const { rerender } = render(
+      <TimeSeriesChart
+        accessibleName="Throughput chart"
+        rows={rows}
+        series={series}
+        yRange="auto"
+        zeroBaseline
+        emptyText="No data"
+      />
+    );
+    const plot = createdPlots[0];
+    const observer = MockResizeObserver.instances[0];
+    const changedSeries: readonly TimeSeriesDefinition[] = [
+      {
+        key: 'packetLoss',
+        label: 'Packet loss',
+        color: '#b42318',
+        unit: 'percent',
+        display: 'signed',
+      },
+    ];
+
+    rerender(
+      <TimeSeriesChart
+        accessibleName="Throughput chart"
+        rows={rows}
+        series={changedSeries}
+        yRange={[0, 100]}
+        zeroBaseline={false}
+        emptyText="No data"
+      />
+    );
+
+    expect(createdPlots).toHaveLength(1);
+    expect(createdPlots[0]).toBe(plot);
+    expect(MockResizeObserver.instances[0]).toBe(observer);
+    expect(plot.destroy).not.toHaveBeenCalled();
+    expect(plot.options.series).toMatchObject([
+      {},
+      { label: 'Download', stroke: '#1769aa' },
+      { label: 'Upload', stroke: '#177a55' },
+    ]);
+    const retainedRange = plot.options.scales?.y?.range;
+    expect(
+      typeof retainedRange === 'function'
+        ? retainedRange({} as uPlot, 4, 9, 'y')
+        : null
+    ).toEqual([0, 9]);
+
+    rerender(
+      <TimeSeriesChart
+        key="packet-loss"
+        accessibleName="Packet Loss chart"
+        rows={rows}
+        series={changedSeries}
+        yRange={[0, 100]}
+        zeroBaseline={false}
+        emptyText="No data"
+      />
+    );
+
+    expect(createdPlots).toHaveLength(2);
+    expect(plot.destroy).toHaveBeenCalledTimes(1);
+    expect(observer.disconnect).toHaveBeenCalledTimes(1);
+    expect(createdPlots[1].options.series).toMatchObject([
+      {},
+      { label: 'Packet loss', stroke: '#b42318' },
+    ]);
+    const recreatedRange = createdPlots[1].options.scales?.y?.range;
+    expect(
+      typeof recreatedRange === 'function'
+        ? recreatedRange({} as uPlot, 4, 9, 'y')
+        : null
+    ).toEqual([0, 100]);
+  });
 });
 
 function formatSeriesValue(seriesIndex: number, value: unknown): string {

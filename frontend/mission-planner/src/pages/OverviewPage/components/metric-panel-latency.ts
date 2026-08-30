@@ -1,9 +1,10 @@
-import {
-  awareInstantToChartEpochSeconds,
-  parseAwareTimestampInstant,
-  type AwareTimestampInstant,
-} from '../../../services/monitoring-validation';
 import type { NumericHistorySample } from '../history';
+import {
+  compareLatencyInstants,
+  parseLatencyTimestampInstant,
+  shiftLatencyInstantSeconds,
+  type LatencyTimestampInstant,
+} from './metric-panel-latency-time';
 import type { LatencyPanelData, TimeSeriesRow } from './metric-panel-types';
 
 export interface LatencyProjectionInstrumentation {
@@ -17,8 +18,8 @@ export interface LatencyProjectionInstrumentation {
 
 type ParsedLatencySample = Readonly<{
   timestamp: string;
-  epochSeconds: number | null;
-  instant: AwareTimestampInstant;
+  epochSeconds: number;
+  instant: LatencyTimestampInstant;
   value: number | null;
 }>;
 
@@ -43,10 +44,10 @@ export function buildLinearLatencyPanel(
 
   for (const sample of parsed) {
     if (instrumentation) instrumentation.visited += 1;
-    const cutoff = shiftInstantSeconds(sample.instant, 300);
+    const cutoff = shiftLatencyInstantSeconds(sample.instant, 300);
     while (
       head < window.length &&
-      compareInstants(window[head].instant, cutoff) < 0
+      compareLatencyInstants(window[head].instant, cutoff) < 0
     ) {
       const removed = window[head];
       head += 1;
@@ -94,17 +95,15 @@ export function buildLinearLatencyPanel(
       latestMean = rowMean;
       latestMax = max;
     }
-    if (sample.epochSeconds !== null) {
-      tableRows.push(
-        freezeObject({
-          timestamp: sample.timestamp,
-          epochSeconds: sample.epochSeconds,
-          values: freezeArray(
-            [sample.value, min, rowMean, max].map(positiveZeroOrNull)
-          ),
-        })
-      );
-    }
+    tableRows.push(
+      freezeObject({
+        timestamp: sample.timestamp,
+        epochSeconds: sample.epochSeconds,
+        values: freezeArray(
+          [sample.value, min, rowMean, max].map(positiveZeroOrNull)
+        ),
+      })
+    );
   }
 
   return freezeObject({
@@ -126,12 +125,12 @@ function parseLatencySamples(
   const parsed: ParsedLatencySample[] = [];
   for (const sample of samples) {
     if (instrumentation) instrumentation.parsed += 1;
-    const instant = parseAwareTimestampInstant(sample.timestamp);
-    if (instant === null) continue;
+    const timestamp = parseLatencyTimestampInstant(sample.timestamp);
+    if (timestamp === null) continue;
     parsed.push({
       timestamp: sample.timestamp,
-      epochSeconds: awareInstantToChartEpochSeconds(instant),
-      instant,
+      epochSeconds: timestamp.epochSeconds,
+      instant: timestamp.instant,
       value: validNonnegative(sample.value) ? positiveZero(sample.value) : null,
     });
   }
@@ -141,14 +140,14 @@ function parseLatencySamples(
 function dropExpired(
   queue: readonly ParsedLatencySample[],
   head: number,
-  cutoff: AwareTimestampInstant,
+  cutoff: LatencyTimestampInstant,
   instrumentation: LatencyProjectionInstrumentation | undefined,
   kind: 'min' | 'max'
 ): number {
   let nextHead = head;
   while (
     nextHead < queue.length &&
-    compareInstants(queue[nextHead].instant, cutoff) < 0
+    compareLatencyInstants(queue[nextHead].instant, cutoff) < 0
   ) {
     nextHead += 1;
     incrementQueueOperation(instrumentation, kind);
@@ -201,29 +200,6 @@ function collapseChartRows(
   const byEpoch = new Map<number, TimeSeriesRow>();
   for (const row of rows) byEpoch.set(row.epochSeconds, row);
   return freezeArray([...byEpoch.values()]);
-}
-
-function compareInstants(
-  left: AwareTimestampInstant,
-  right: AwareTimestampInstant
-): number {
-  if (left.seconds !== right.seconds)
-    return left.seconds < right.seconds ? -1 : 1;
-  const width = Math.max(left.fraction.length, right.fraction.length);
-  const leftFraction = left.fraction.padEnd(width, '0');
-  const rightFraction = right.fraction.padEnd(width, '0');
-  if (leftFraction === rightFraction) return 0;
-  return leftFraction < rightFraction ? -1 : 1;
-}
-
-function shiftInstantSeconds(
-  instant: AwareTimestampInstant,
-  seconds: number
-): AwareTimestampInstant {
-  return {
-    seconds: instant.seconds - BigInt(seconds),
-    fraction: instant.fraction,
-  };
 }
 
 function validNonnegative(value: unknown): value is number {
