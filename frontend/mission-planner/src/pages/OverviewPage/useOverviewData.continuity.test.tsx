@@ -52,66 +52,107 @@ function baseServices(overrides: Partial<OverviewDataServices> = {}) {
 
 describe('useOverviewData continuity', () => {
   it('holds telemetry samples before server history and reconciles both completion orders identically', async () => {
-    const historyGate = deferred<typeof historyPayload>();
-    const first = baseServices({
-      getMonitoringHistory: vi.fn(() => historyGate.promise),
-      getStatus: vi
-        .fn()
-        .mockResolvedValueOnce({
-          ...structuredClone(statusPayload),
-          timestamp: '2026-08-29T18:00:04Z',
+    const telemetryTime = '2026-08-29T18:00:04Z';
+    const nextTelemetryTime = '2026-08-29T18:30:05Z';
+    const firstServerHistory = {
+      ...structuredClone(historyPayload),
+      window_start: '2026-08-29T18:00:00Z',
+      window_end: telemetryTime,
+      series: historyPayload.series.map((series) => ({
+        ...series,
+        samples: [],
+      })),
+    };
+    const nextServerHistory = {
+      ...structuredClone(historyPayload),
+      generated_at: '2026-08-29T18:30:05Z',
+      window_start: '2026-08-29T18:00:05Z',
+      window_end: nextTelemetryTime,
+      series: historyPayload.series.map((series) => ({
+        ...series,
+        samples: [],
+      })),
+    };
+
+    async function renderOrder(order: 'telemetry-first' | 'history-first') {
+      let nowMs = 1_788_026_404_000;
+      const statusGate = deferred<typeof statusPayload>();
+      const historyGate = deferred<typeof historyPayload>();
+      const svc = baseServices({
+        getStatus: vi
+          .fn()
+          .mockImplementationOnce(() => statusGate.promise)
+          .mockResolvedValueOnce({
+            ...structuredClone(statusPayload),
+            timestamp: nextTelemetryTime,
+          }),
+        getMonitoringHistory: vi
+          .fn()
+          .mockImplementationOnce(() => historyGate.promise)
+          .mockResolvedValueOnce(nextServerHistory),
+      });
+      const rendered = renderHook(() =>
+        useOverviewData({
+          cadence: 'paused',
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => nowMs,
         })
-        .mockResolvedValueOnce({
+      );
+      await act(flush);
+      if (order === 'telemetry-first') {
+        statusGate.resolve({
           ...structuredClone(statusPayload),
-          timestamp: '2026-08-29T18:00:04Z',
-        }),
-    });
-    const { result } = renderHook(() =>
-      useOverviewData({
-        cadence: 'paused',
-        poiFilter: '',
-        radarEnabled: true,
-        services: first,
-        now: () => 1_777_294_804_000,
-      })
+          timestamp: telemetryTime,
+        });
+        await act(flush);
+        expect(rendered.result.current.snapshot.history.data).toBeUndefined();
+        historyGate.resolve(firstServerHistory);
+      } else {
+        historyGate.resolve(firstServerHistory);
+        await act(flush);
+        expect(rendered.result.current.snapshot.history.data).toBeUndefined();
+        statusGate.resolve({
+          ...structuredClone(statusPayload),
+          timestamp: telemetryTime,
+        });
+      }
+      await act(flush);
+      return {
+        ...rendered,
+        advanceToNextCycle() {
+          nowMs = 1_788_028_205_000;
+        },
+      };
+    }
+
+    const telemetryFirst = await renderOrder('telemetry-first');
+    const historyFirst = await renderOrder('history-first');
+    expect(telemetryFirst.result.current.snapshot.history.data).toEqual(
+      historyFirst.result.current.snapshot.history.data
     );
-    await act(flush);
-    const manual = result.current.controller.manualRefresh();
-    await act(flush);
-    expect(result.current.snapshot.history.data).toBeUndefined();
-    historyGate.resolve(structuredClone(historyPayload));
-    await act(async () => manual);
-    await act(flush);
-    expect(result.current.snapshot.history.data).toMatchObject({
-      generated_at: historyPayload.generated_at,
-      window_start: historyPayload.window_start,
-      window_end: historyPayload.window_end,
+
+    telemetryFirst.advanceToNextCycle();
+    await act(async () =>
+      telemetryFirst.result.current.controller.manualRefresh()
+    );
+    const reconciled = telemetryFirst.result.current.snapshot.history.data;
+    expect(reconciled).toMatchObject({
+      generated_at: nextServerHistory.generated_at,
+      window_start: nextServerHistory.window_start,
+      window_end: nextServerHistory.window_end,
       range_seconds: historyPayload.range_seconds,
       step_seconds: historyPayload.step_seconds,
     });
-
-    const second = baseServices({
-      getStatus: vi.fn(() =>
-        Promise.resolve({
-          ...structuredClone(statusPayload),
-          timestamp: '2026-08-29T18:00:04Z',
-        })
-      ),
-    });
-    const other = renderHook(() =>
-      useOverviewData({
-        cadence: 'paused',
-        poiFilter: '',
-        radarEnabled: true,
-        services: second,
-        now: () => 1_777_294_804_000,
-      })
-    );
-    await act(flush);
-    await act(async () => other.result.current.controller.manualRefresh());
-    expect(other.result.current.snapshot.history.data).toEqual(
-      result.current.snapshot.history.data
-    );
+    for (const series of reconciled?.series ?? []) {
+      expect(
+        series.samples.some((sample) => sample.timestamp === telemetryTime)
+      ).toBe(false);
+      expect(
+        series.samples.some((sample) => sample.timestamp === nextTelemetryTime)
+      ).toBe(true);
+    }
   });
 
   it('keeps telemetry-only history pending without fabricated metadata', async () => {

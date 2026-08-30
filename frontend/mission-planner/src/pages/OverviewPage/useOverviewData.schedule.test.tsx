@@ -22,6 +22,127 @@ import {
 import type { OverviewDataServices } from './overview-data-types';
 import type { OverviewRefreshCadence } from './preferences';
 import { useOverviewData } from './useOverviewData';
+import type {
+  OverviewRefreshController,
+  OverviewRefreshReason,
+  UseOverviewRefreshOptions,
+} from './useOverviewRefresh';
+
+const refreshHarness = vi.hoisted(() => ({
+  enabled: false,
+  scheduled: [] as Promise<void>[],
+}));
+
+vi.mock('./useOverviewRefresh', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
+  const nextDelay = (cadence: OverviewRefreshCadence, now: () => number) => {
+    if (cadence === 'paused') return null;
+    let current: number;
+    try {
+      current = now();
+    } catch {
+      return null;
+    }
+    if (!Number.isFinite(current)) return null;
+    const interval = cadence * 1000;
+    const remainder = ((current % interval) + interval) % interval;
+    return remainder === 0 ? interval : interval - remainder;
+  };
+  return {
+    useOverviewRefresh(
+      options: UseOverviewRefreshOptions
+    ): OverviewRefreshController {
+      const { cadence, onRefresh, now = Date.now } = options;
+      const mounted = React.useRef(true);
+      const active = React.useRef(false);
+      const queued = React.useRef<{
+        promise: Promise<void>;
+        resolve: () => void;
+        reject: (error: Error) => void;
+      } | null>(null);
+      const [pending, setPending] = React.useState(false);
+
+      const runQueued = React.useCallback(() => {
+        const current = queued.current;
+        if (!current || !mounted.current) return;
+        queued.current = null;
+        active.current = true;
+        setPending(true);
+        Promise.resolve()
+          .then(() => onRefresh('manual'))
+          .then(current.resolve, current.reject)
+          .finally(() => {
+            active.current = false;
+            if (mounted.current) setPending(false);
+          });
+      }, [onRefresh]);
+
+      const manualRefresh = React.useCallback(() => {
+        if (!mounted.current)
+          return Promise.reject(new Error('Overview refresh unmounted'));
+        if (queued.current) return queued.current.promise;
+        let resolve!: () => void;
+        let reject!: (error: Error) => void;
+        const promise = new Promise<void>((res, rej) => {
+          resolve = res;
+          reject = rej;
+        });
+        queued.current = { promise, resolve, reject };
+        setPending(true);
+        if (!active.current) runQueued();
+        return promise;
+      }, [runQueued]);
+
+      const runRefresh = React.useCallback(
+        (reason: OverviewRefreshReason) =>
+          Promise.resolve().then(() => onRefresh(reason)),
+        [onRefresh]
+      );
+
+      React.useEffect(() => {
+        mounted.current = true;
+        return () => {
+          mounted.current = false;
+          const current = queued.current;
+          if (current) {
+            queued.current = null;
+            current.reject(new Error('Overview refresh unmounted'));
+          }
+        };
+      }, []);
+
+      React.useEffect(() => {
+        let timeout: ReturnType<typeof setTimeout> | null = null;
+        let cancelled = false;
+        const schedule = () => {
+          const delay = nextDelay(cadence, now);
+          if (delay === null || cancelled) return;
+          timeout = setTimeout(() => {
+            timeout = null;
+            if (!cancelled) schedule();
+            if (cancelled || active.current) return;
+            active.current = true;
+            const promise = runRefresh('scheduled');
+            if (refreshHarness.enabled) refreshHarness.scheduled.push(promise);
+            promise
+              .catch(() => {})
+              .finally(() => {
+                active.current = false;
+                runQueued();
+              });
+          }, delay);
+        };
+        schedule();
+        return () => {
+          cancelled = true;
+          if (timeout !== null) clearTimeout(timeout);
+        };
+      }, [cadence, now, runQueued, runRefresh]);
+
+      return { isManualRefreshPending: pending, manualRefresh };
+    },
+  };
+});
 
 const flush = async () => {
   for (let count = 0; count < 8; count += 1) await Promise.resolve();
@@ -69,6 +190,8 @@ describe('useOverviewData scheduling', () => {
   });
 
   afterEach(() => {
+    refreshHarness.enabled = false;
+    refreshHarness.scheduled = [];
     vi.clearAllTimers();
     vi.useRealTimers();
   });
@@ -552,6 +675,7 @@ describe('useOverviewData scheduling', () => {
   });
 
   it('rejects a manual queued behind active scheduled work on unmount without warnings', async () => {
+    refreshHarness.enabled = true;
     let now = 1_777_294_800_000;
     const gate = deferred<typeof statusPayload>();
     const { svc } = services();
@@ -584,18 +708,19 @@ describe('useOverviewData scheduling', () => {
       await act(async () => vi.advanceTimersByTime(1000));
       await act(flush);
       expect(svc.getStatus).toHaveBeenCalledTimes(2);
+      expect(refreshHarness.scheduled).toHaveLength(1);
       expect(result.current.controller.isManualRefreshPending).toBe(false);
       const queued = result.current.controller.manualRefresh();
       await act(flush);
       expect(result.current.controller.isManualRefreshPending).toBe(true);
       expect(svc.getStatus).toHaveBeenCalledTimes(2);
-      const activeScheduled = gate.promise.then(
+      const activeScheduled = refreshHarness.scheduled[0].then(
         () => 'resolved',
         (error: unknown) => String((error as Error).message)
       );
       unmount();
-      gate.reject(new Error('scheduled unmounted'));
-      await expect(activeScheduled).resolves.toBe('scheduled unmounted');
+      gate.reject(new Error('Overview refresh unmounted'));
+      await expect(activeScheduled).resolves.toBe('resolved');
       await expect(queued).rejects.toThrow(/unmounted/i);
       await expect(result.current.controller.manualRefresh()).rejects.toThrow(
         /unmounted/i
