@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { MonitoringHistory, OverviewStatus } from '../../types/monitoring';
+import type { OverviewStatus } from '../../types/monitoring';
 import { useOverviewRefresh } from './useOverviewRefresh';
 import {
   commitSlots,
   emptyOverviewSnapshot,
   HTTP_SLOTS,
-  mergeTelemetryIntoHistory,
+  projectFreshness,
+  projectPaused,
   setManualResult,
   startSlots,
   withRadarDisabled,
   type OverviewHttpSlot,
-  type SlotCommit,
   type SlotOutcome,
 } from './overview-data-reducer';
 import type {
@@ -20,23 +20,20 @@ import type {
   UseOverviewDataResult,
 } from './overview-data-types';
 import {
-  acceptTelemetry,
-  appendPending,
-  classifyOverviewError,
-  historyContains,
-  radarOutcome,
-  safeNow,
-} from './overview-freshness';
-import {
+  buildSlotCommits,
   DEFAULT_SERVICES,
   cadenceSeconds,
   createOverviewRequestRegistry,
   defaultVisibility,
   dueSlots,
   manualResultFromOutcomes,
-  projectPaused,
   safeHidden,
 } from './overview-requests';
+import {
+  classifyOverviewError,
+  radarOutcome,
+  safeNow,
+} from './overview-freshness';
 
 export function useOverviewData(
   options: UseOverviewDataOptions
@@ -60,6 +57,8 @@ export function useOverviewData(
   const pendingTelemetry = useRef<OverviewStatus[]>([]);
   const activeCycles = useRef(0);
   const pendingReset = useRef(false);
+  const radarGeneration = useRef(0);
+  const radarAvailability = useRef(snapshot.radar.availability);
   const sawCadence = useRef(false);
   const sawFilter = useRef(false);
   const latest = useRef({ cadence, poiFilter, radarEnabled, now, visibility });
@@ -89,43 +88,13 @@ export function useOverviewData(
     ) => {
       if (!mounted.current) return;
       setSnapshot((current) => {
-        const commits: SlotCommit[] = [];
-        for (const { slot, outcome } of outcomes) {
-          if (slot === 'telemetry' && outcome.ok) {
-            const status = outcome.data as OverviewStatus;
-            if (acceptTelemetry(status, nowMs)) {
-              if (current.history.data) {
-                const history = mergeTelemetryIntoHistory(
-                  current.history.data,
-                  status,
-                  nowMs
-                );
-                if (history)
-                  commits.push(['history', { ok: true, data: history }]);
-              } else {
-                pendingTelemetry.current = appendPending(
-                  pendingTelemetry.current,
-                  status
-                );
-              }
-            }
-          }
-          if (slot === 'history' && outcome.ok) {
-            const history = mergeTelemetryIntoHistory(
-              outcome.data as MonitoringHistory,
-              pendingTelemetry.current,
-              nowMs
-            );
-            if (history) {
-              pendingTelemetry.current = pendingTelemetry.current.filter(
-                (status) => !historyContains(history, status.timestamp)
-              );
-              commits.push(['history', { ok: true, data: history }]);
-              continue;
-            }
-          }
-          commits.push([slot, outcome]);
-        }
+        const { commits, pending } = buildSlotCommits(
+          outcomes,
+          current.history.data,
+          pendingTelemetry.current,
+          nowMs
+        );
+        pendingTelemetry.current = pending;
         return commitSlots(
           current,
           commits,
@@ -153,8 +122,10 @@ export function useOverviewData(
         const nowMs = safeNow(current.now);
         if (nowMs === null) return;
         if (pendingReset.current) {
-          resetAnchors(nowMs);
-          pendingReset.current = false;
+          if (activeCycles.current === 1) {
+            resetAnchors(nowMs);
+            pendingReset.current = false;
+          }
           if (reason !== 'manual') return;
         }
         const selected = dueSlots(
@@ -228,7 +199,31 @@ export function useOverviewData(
   }, [runCycle, visibility]);
 
   useEffect(() => {
-    if (!radarEnabled) setSnapshot(withRadarDisabled);
+    radarGeneration.current += 1;
+    if (!radarEnabled) {
+      setSnapshot((state) => {
+        radarAvailability.current = state.radar.availability;
+        return withRadarDisabled(state);
+      });
+    } else {
+      const nowMs = safeNow(latest.current.now);
+      if (nowMs !== null) {
+        setSnapshot((state) =>
+          projectFreshness(
+            {
+              ...state,
+              radar: {
+                ...state.radar,
+                availability: radarAvailability.current,
+              },
+            },
+            nowMs,
+            cadenceSeconds(latest.current.cadence),
+            latest.current.cadence === 'paused'
+          )
+        );
+      }
+    }
   }, [radarEnabled]);
 
   useEffect(() => {
@@ -238,7 +233,12 @@ export function useOverviewData(
     }
     pendingReset.current = true;
     finishResetIfIdle();
-    setSnapshot((state) => projectPaused(state, cadence === 'paused'));
+    const nowMs = safeNow(latest.current.now);
+    setSnapshot((state) =>
+      cadence === 'paused' || nowMs === null
+        ? projectPaused(state, cadence === 'paused')
+        : projectFreshness(state, nowMs, cadenceSeconds(cadence), false)
+    );
   }, [cadence, finishResetIfIdle]);
 
   useEffect(() => {
@@ -246,13 +246,15 @@ export function useOverviewData(
       sawFilter.current = true;
       return;
     }
-    registry.start('pois', poiFilter, true).then((outcome) => {
-      const nowMs = safeNow(latest.current.now);
-      if (nowMs !== null) commitBatch([{ slot: 'pois', outcome }], nowMs);
-    });
+    const nowMs = safeNow(latest.current.now);
+    if (nowMs === null) return;
+    anchors.current.set('pois', nowMs);
     setSnapshot((state) =>
       startSlots(state, ['pois'], latest.current.cadence === 'paused')
     );
+    registry
+      .start('pois', poiFilter, true)
+      .then((outcome) => commitBatch([{ slot: 'pois', outcome }], nowMs));
   }, [commitBatch, poiFilter, registry]);
 
   const reportRadarResult = useCallback(
@@ -262,6 +264,7 @@ export function useOverviewData(
         | { readonly ok: false; readonly error: unknown }
     ) => {
       const nowMs = safeNow(latest.current.now);
+      const reportGeneration = radarGeneration.current;
       if (nowMs === null || !latest.current.radarEnabled) return;
       const outcome = result.ok
         ? radarOutcome(result.frameTimestamp)
@@ -270,13 +273,15 @@ export function useOverviewData(
             error: classifyOverviewError(result.error, false),
           };
       setSnapshot((state) =>
-        commitSlots(
-          state,
-          [['radar', outcome]],
-          nowMs,
-          cadenceSeconds(latest.current.cadence),
-          latest.current.cadence === 'paused'
-        )
+        reportGeneration === radarGeneration.current
+          ? commitSlots(
+              state,
+              [['radar', outcome]],
+              nowMs,
+              cadenceSeconds(latest.current.cadence),
+              latest.current.cadence === 'paused'
+            )
+          : state
       );
     },
     []

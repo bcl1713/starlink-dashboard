@@ -9,6 +9,8 @@ import type {
   POIETAResponse,
   RouteCoordinates,
 } from '../../types/monitoring';
+import { compareAwareTimestampInstants } from '../../services/monitoring-validation';
+import { mergeTimestampedSamples } from './history';
 import type { OverviewRefreshCadence } from './preferences';
 import type { OverviewRefreshController } from './useOverviewRefresh';
 
@@ -218,4 +220,69 @@ function projectInitial(slots: {
   return Object.values(slots).some((slot) => slot.error)
     ? 'partial-error'
     : 'ready';
+}
+
+export function mergeTelemetryBatch(
+  retained: MonitoringHistory | undefined,
+  server: MonitoringHistory | undefined,
+  statuses: readonly OverviewStatus[],
+  nowMs: number
+): MonitoringHistory | undefined {
+  const history = server ?? retained;
+  if (!history) return undefined;
+  const statusSamples = statuses.map(samplesFromStatus);
+  const mergeNow = latestTimestamp([
+    ...(retained ? historyTimestamps(retained) : []),
+    ...(server ? [server.window_end, ...historyTimestamps(server)] : []),
+    ...statuses.map((item) => item.timestamp),
+  ]);
+  return {
+    ...history,
+    series: history.series.map((series) => ({
+      ...series,
+      samples: [
+        ...mergeTimestampedSamples(
+          [
+            ...(retained?.series.find((item) => item.metric === series.metric)
+              ?.samples ?? []),
+            ...statusSamples.flatMap((sample) => sample[series.metric] ?? []),
+          ],
+          server?.series.find((item) => item.metric === series.metric)
+            ?.samples ?? [],
+          mergeNow ?? new Date(nowMs).toISOString().replace('.000', '')
+        ),
+      ],
+    })),
+  };
+}
+
+function samplesFromStatus(status: OverviewStatus) {
+  const timestamp = status.timestamp;
+  return {
+    latitude_degrees: { timestamp, value: status.position.latitude },
+    longitude_degrees: { timestamp, value: status.position.longitude },
+    latency_ms: { timestamp, value: status.network.latency_ms },
+    throughput_down_mbps: {
+      timestamp,
+      value: status.network.throughput_down_mbps,
+    },
+    throughput_up_mbps: { timestamp, value: status.network.throughput_up_mbps },
+    packet_loss_percent: {
+      timestamp,
+      value: status.network.packet_loss_percent,
+    },
+  };
+}
+
+function latestTimestamp(values: readonly string[]): string | null {
+  return values.reduce<string | null>((latest, value) => {
+    if (latest === null) return value;
+    return compareAwareTimestampInstants(value, latest) > 0 ? value : latest;
+  }, null);
+}
+
+function historyTimestamps(history: MonitoringHistory): string[] {
+  return history.series.flatMap((series) =>
+    series.samples.map((item) => item.timestamp)
+  );
 }

@@ -1,7 +1,5 @@
-import type { MonitoringHistory, OverviewStatus } from '../../types/monitoring';
-import { compareAwareTimestampInstants } from '../../services/monitoring-validation';
-import { mergeTimestampedSamples } from './history';
 import {
+  computeFreshnessForSource,
   computeSourceFreshness,
   semanticUnavailable,
   sourceTimestamp,
@@ -14,7 +12,7 @@ import type {
   OverviewSourcePhase,
   OverviewSourceSlot,
 } from './overview-data-types';
-import { batchAnnouncement } from './overview-data-types';
+import { batchAnnouncement, SOURCE_ORDER } from './overview-data-types';
 
 export const HTTP_SLOTS = [
   'telemetry',
@@ -73,7 +71,13 @@ export function commitSlots(
   const writable = slots as Record<string, OverviewSourceSlot<unknown>>;
   for (const [slot, outcome] of outcomes) {
     const previous = slots[slot];
-    if (!outcome.ok && outcome.error === null) continue;
+    if (!outcome.ok && outcome.error === null) {
+      writable[slot] = phaseSlot({
+        ...(previous as OverviewSourceSlot<unknown>),
+        pending: false,
+      });
+      continue;
+    }
     writable[slot] = phaseSlot(
       outcome.ok
         ? successSlot(
@@ -99,6 +103,44 @@ export function commitSlots(
     result,
     batchAnnouncement(snapshot, before, slots, result)
   );
+}
+
+export function projectFreshness(
+  snapshot: OverviewDataSnapshot,
+  nowMs: number,
+  cadenceSeconds: number,
+  paused: boolean
+): OverviewDataSnapshot {
+  const slots = cloneSlots(snapshot);
+  const writable = slots as Record<string, OverviewSourceSlot<unknown>>;
+  for (const slot of Object.keys(slots) as OverviewSourceKey[]) {
+    const current = slots[slot] as OverviewSourceSlot<unknown>;
+    const freshness = paused
+      ? current.freshness
+      : computeFreshnessForSource(
+          slot,
+          current.sourceTimestamp,
+          nowMs,
+          cadenceSeconds
+        ).freshness;
+    writable[slot] = phaseSlot({ ...current, freshness, paused });
+  }
+  return projectSnapshot(slots, snapshot.manualResult, snapshot.announcement);
+}
+
+export function projectPaused(
+  snapshot: OverviewDataSnapshot,
+  paused: boolean
+): OverviewDataSnapshot {
+  const slots = cloneSlots(snapshot);
+  const writable = slots as Record<string, (typeof slots)[OverviewSourceKey]>;
+  for (const source of SOURCE_ORDER) {
+    writable[source] = phaseSlot<unknown>({
+      ...(slots[source] as OverviewSourceSlot<unknown>),
+      paused,
+    }) as (typeof slots)[OverviewSourceKey];
+  }
+  return projectSnapshot(slots, snapshot.manualResult, snapshot.announcement);
 }
 
 export function setManualResult(
@@ -133,36 +175,6 @@ export function withRadarDisabled(
     error: null,
   });
   return projectSnapshot(slots, snapshot.manualResult, snapshot.announcement);
-}
-
-export function mergeTelemetryIntoHistory(
-  history: MonitoringHistory | undefined,
-  status: OverviewStatus | readonly OverviewStatus[],
-  nowMs: number
-): MonitoringHistory | undefined {
-  if (!history) return undefined;
-  const statuses = Array.isArray(status) ? status : [status];
-  const samples = statuses.map(statusSamples);
-  const mergeNow = latestTimestamp([
-    history.window_end,
-    ...history.series.flatMap((series) =>
-      series.samples.map((item) => item.timestamp)
-    ),
-    ...statuses.map((item) => item.timestamp),
-  ]);
-  return {
-    ...history,
-    series: history.series.map((series) => ({
-      ...series,
-      samples: [
-        ...mergeTimestampedSamples(
-          series.samples,
-          samples.flatMap((sample) => sample[series.metric] ?? []),
-          mergeNow ?? new Date(nowMs).toISOString().replace('.000', '')
-        ),
-      ],
-    })),
-  };
 }
 
 function emptySlot<T>(): OverviewSourceSlot<T> {
@@ -272,29 +284,4 @@ export function cloneSlots(snapshot: OverviewDataSnapshot): SlotMap {
     groundEntryPoint: snapshot.groundEntryPoint,
     radar: snapshot.radar,
   };
-}
-
-function statusSamples(status: OverviewStatus) {
-  const timestamp = status.timestamp;
-  return {
-    latitude_degrees: { timestamp, value: status.position.latitude },
-    longitude_degrees: { timestamp, value: status.position.longitude },
-    latency_ms: { timestamp, value: status.network.latency_ms },
-    throughput_down_mbps: {
-      timestamp,
-      value: status.network.throughput_down_mbps,
-    },
-    throughput_up_mbps: { timestamp, value: status.network.throughput_up_mbps },
-    packet_loss_percent: {
-      timestamp,
-      value: status.network.packet_loss_percent,
-    },
-  };
-}
-
-function latestTimestamp(values: readonly string[]): string | null {
-  return values.reduce<string | null>((latest, value) => {
-    if (latest === null) return value;
-    return compareAwareTimestampInstants(value, latest) > 0 ? value : latest;
-  }, null);
 }

@@ -19,6 +19,16 @@ const flush = async () => {
   for (let count = 0; count < 8; count += 1) await Promise.resolve();
 };
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 function services() {
   const calls: string[] = [];
   const record = <T,>(name: string, value: T) =>
@@ -253,5 +263,60 @@ describe('useOverviewData scheduling', () => {
     await act(async () => vi.advanceTimersByTime(10_000));
     await act(flush);
     expect(svc.getStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps cadence reset pending while another cycle is active', async () => {
+    let now = 1_777_294_800_000;
+    const gate = deferred<typeof statusPayload>();
+    const { svc } = services();
+    svc.getStatus = vi.fn(() => gate.promise);
+    const { rerender } = renderHook(
+      ({ cadence }) =>
+        useOverviewData({
+          cadence,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+        }),
+      { initialProps: { cadence: 1 as OverviewRefreshCadence } }
+    );
+    await act(flush);
+    rerender({ cadence: 10 as const });
+    now += 10_000;
+    await act(async () => vi.advanceTimersByTime(10_000));
+    await act(flush);
+    expect(svc.getStatus).toHaveBeenCalledTimes(1);
+    gate.resolve(structuredClone(statusPayload));
+    await act(flush);
+    vi.clearAllMocks();
+    now += 9_000;
+    await act(async () => vi.advanceTimersByTime(9_000));
+    await act(flush);
+    expect(svc.getStatus).not.toHaveBeenCalled();
+  });
+
+  it('anchors filter-immediate attempts before the next scheduled cadence', async () => {
+    let now = 0;
+    const { svc } = services();
+    const { rerender } = renderHook(
+      ({ poiFilter }) =>
+        useOverviewData({
+          cadence: 1,
+          poiFilter,
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+        }),
+      { initialProps: { poiFilter: 'arrival' as OverviewPOIFilter } }
+    );
+    await act(flush);
+    now = 500;
+    rerender({ poiFilter: 'departure' });
+    await act(flush);
+    now = 1000;
+    await act(async () => vi.advanceTimersByTime(1000));
+    await act(flush);
+    expect(svc.getPOIETAs).toHaveBeenCalledTimes(2);
   });
 });

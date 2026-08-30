@@ -1,4 +1,8 @@
-import type { OverviewPOIFilter } from '../../types/monitoring';
+import type {
+  MonitoringHistory,
+  OverviewPOIFilter,
+  OverviewStatus,
+} from '../../types/monitoring';
 import {
   getActiveXLink,
   getGroundEntryPoint,
@@ -10,24 +14,26 @@ import {
   getStatus,
 } from '../../services/monitoring';
 import type {
-  OverviewDataSnapshot,
   OverviewActiveLinkData,
   OverviewDataServices,
   OverviewManualResult,
   OverviewRouteData,
   OverviewSourceKey,
-  OverviewSourceSlot,
   UseOverviewDataOptions,
 } from './overview-data-types';
-import { SOURCE_ORDER } from './overview-data-types';
-import {
-  cloneSlots,
-  HTTP_SLOTS,
-  phaseSlot,
-  projectSnapshot,
+import { mergeTelemetryBatch } from './overview-data-types';
+import { HTTP_SLOTS } from './overview-data-reducer';
+import type {
+  OverviewHttpSlot,
+  SlotCommit,
+  SlotOutcome,
 } from './overview-data-reducer';
-import type { OverviewHttpSlot, SlotOutcome } from './overview-data-reducer';
-import { classifyOverviewError } from './overview-freshness';
+import {
+  acceptTelemetry,
+  appendPending,
+  classifyOverviewError,
+  historyContains,
+} from './overview-freshness';
 
 export const DEFAULT_SERVICES: OverviewDataServices = {
   getStatus,
@@ -162,7 +168,7 @@ export function manualResultFromOutcomes(
   let failures = 0;
   for (const { outcome } of outcomes) {
     if (outcome.ok) successes += 1;
-    else if (outcome.error) failures += 1;
+    else failures += 1;
   }
   return successes + failures === 0
     ? 'idle'
@@ -171,6 +177,45 @@ export function manualResultFromOutcomes(
       : successes === 0
         ? 'failure'
         : 'partial';
+}
+
+export function buildSlotCommits(
+  outcomes: readonly { slot: OverviewSourceKey; outcome: SlotOutcome }[],
+  historyData: MonitoringHistory | undefined,
+  pendingTelemetry: readonly OverviewStatus[],
+  nowMs: number
+): { commits: SlotCommit[]; pending: OverviewStatus[] } {
+  const commits: SlotCommit[] = [];
+  const accepted: OverviewStatus[] = [];
+  let serverHistory: MonitoringHistory | undefined;
+  for (const { slot, outcome } of outcomes) {
+    if (
+      slot === 'telemetry' &&
+      outcome.ok &&
+      acceptTelemetry(outcome.data as OverviewStatus, nowMs)
+    )
+      accepted.push(outcome.data as OverviewStatus);
+    if (slot === 'history' && outcome.ok) {
+      serverHistory = outcome.data as MonitoringHistory;
+      continue;
+    }
+    commits.push([slot, outcome]);
+  }
+  const telemetry = [...pendingTelemetry, ...accepted];
+  const history = mergeTelemetryBatch(
+    historyData,
+    serverHistory,
+    telemetry,
+    nowMs
+  );
+  return history
+    ? {
+        commits: [...commits, ['history', { ok: true, data: history }]],
+        pending: telemetry.filter(
+          (status) => !historyContains(history, status.timestamp)
+        ),
+      }
+    : { commits, pending: telemetry.reduce(appendPending, []) };
 }
 
 export function safeHidden(
@@ -193,21 +238,6 @@ export function defaultVisibility() {
       return () => document.removeEventListener('visibilitychange', listener);
     },
   };
-}
-
-export function projectPaused(
-  snapshot: OverviewDataSnapshot,
-  paused: boolean
-): OverviewDataSnapshot {
-  const slots = cloneSlots(snapshot);
-  const writable = slots as Record<string, (typeof slots)[OverviewSourceKey]>;
-  for (const source of SOURCE_ORDER) {
-    writable[source] = phaseSlot<unknown>({
-      ...(slots[source] as OverviewSourceSlot<unknown>),
-      paused,
-    }) as (typeof slots)[OverviewSourceKey];
-  }
-  return projectSnapshot(slots, snapshot.manualResult, snapshot.announcement);
 }
 
 async function runSlot(

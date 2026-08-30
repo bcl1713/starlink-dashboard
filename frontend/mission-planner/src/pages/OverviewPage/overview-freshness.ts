@@ -66,7 +66,10 @@ export function historyContains(
   timestamp: string
 ): boolean {
   return history.series.every((series) =>
-    series.samples.some((sample) => sample.timestamp === timestamp)
+    series.samples.some(
+      (sample) =>
+        compareAwareTimestampInstants(sample.timestamp, timestamp) === 0
+    )
   );
 }
 

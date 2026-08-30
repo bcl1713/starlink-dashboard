@@ -142,4 +142,82 @@ describe('useOverviewData continuity', () => {
     expect(result.current.snapshot.route.data?.west.route_id).toBe('old');
     expect(result.current.snapshot.route.data?.east.route_id).toBe('new');
   });
+
+  it('keeps same-cycle telemetry when server history also completes', async () => {
+    const telemetryTime = '2026-08-29T18:00:04Z';
+    const svc = baseServices({
+      getStatus: vi.fn(() =>
+        Promise.resolve({
+          ...structuredClone(statusPayload),
+          timestamp: telemetryTime,
+        })
+      ),
+      getMonitoringHistory: vi.fn(() =>
+        Promise.resolve({
+          ...structuredClone(historyPayload),
+          series: historyPayload.series.map((series) => ({
+            ...series,
+            samples: series.samples.slice(0, 1),
+          })),
+        })
+      ),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_788_026_404_000,
+      })
+    );
+    await act(flush);
+    await act(async () => result.current.controller.manualRefresh());
+    const history = result.current.snapshot.history.data;
+    expect(
+      history?.series.every((series) =>
+        series.samples.some((sample) => sample.timestamp === telemetryTime)
+      )
+    ).toBe(true);
+  });
+
+  it('lets duplicate server samples including null win over telemetry samples', async () => {
+    const telemetryTime = '2026-08-29T18:00:04Z';
+    const serverHistory = {
+      ...structuredClone(historyPayload),
+      window_end: telemetryTime,
+      series: historyPayload.series.map((series) => ({
+        ...series,
+        samples: [{ timestamp: telemetryTime, value: null }],
+      })),
+    };
+    const svc = baseServices({
+      getStatus: vi.fn(() =>
+        Promise.resolve({
+          ...structuredClone(statusPayload),
+          timestamp: telemetryTime,
+        })
+      ),
+      getMonitoringHistory: vi.fn(() => Promise.resolve(serverHistory)),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_788_026_404_000,
+      })
+    );
+    await act(flush);
+    const history = result.current.snapshot.history.data;
+    expect(
+      history?.series.every(
+        (series) =>
+          series.samples.find((sample) => sample.timestamp === telemetryTime)
+            ?.value === null
+      )
+    ).toBe(true);
+    expect(history?.generated_at).toBe(historyPayload.generated_at);
+  });
 });

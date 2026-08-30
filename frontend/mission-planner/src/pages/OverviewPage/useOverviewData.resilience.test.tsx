@@ -106,6 +106,27 @@ describe('useOverviewData resilience', () => {
     );
   });
 
+  it('clears pending after neutral cancellation and does not report manual success', async () => {
+    const svc = services({
+      getStatus: vi.fn(() => Promise.reject(new axios.CanceledError('stop'))),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 'paused',
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => 1_777_294_800_000,
+      })
+    );
+    await act(flush);
+    expect(result.current.snapshot.telemetry.pending).toBe(false);
+    expect(result.current.snapshot.telemetry.error).toBeNull();
+    await act(async () => result.current.controller.manualRefresh());
+    expect(result.current.snapshot.manualResult).toBe('partial');
+    expect(result.current.snapshot.telemetry.error).toBeNull();
+  });
+
   it('handles radar reports without HTTP, retains data while disabled, and ignores invalid now', async () => {
     let now = 1_777_294_800_000;
     const svc = services();
@@ -153,6 +174,83 @@ describe('useOverviewData resilience', () => {
       '1788004800'
     );
     expect(svc.getStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores radar availability after re-enable and ignores stale toggle reports', async () => {
+    let now = 1_777_294_800_000;
+    const svc = services();
+    const { result, rerender } = renderHook(
+      ({ radarEnabled }) =>
+        useOverviewData({
+          cadence: 1,
+          poiFilter: '',
+          radarEnabled,
+          services: svc,
+          now: () => now,
+        }),
+      { initialProps: { radarEnabled: true } }
+    );
+    await act(flush);
+    act(() =>
+      result.current.controller.reportRadarResult({
+        ok: true,
+        frameTimestamp: '1777294800',
+      })
+    );
+    expect(result.current.snapshot.radar.availability).toBe('available');
+    rerender({ radarEnabled: false });
+    await act(flush);
+    expect(result.current.snapshot.radar.availability).toBe('unavailable');
+    act(() =>
+      result.current.controller.reportRadarResult({
+        ok: true,
+        frameTimestamp: '1777294801',
+      })
+    );
+    expect(result.current.snapshot.radar.data?.frameTimestamp).toBe(
+      '1777294800'
+    );
+    now += 10_000;
+    rerender({ radarEnabled: true });
+    await act(flush);
+    expect(result.current.snapshot.radar.availability).toBe('available');
+    expect(result.current.snapshot.radar.freshness).toBe('stale');
+  });
+
+  it('recomputes retained freshness on resume without transport mutation', async () => {
+    let now = 1_777_294_800_000;
+    const svc = services({
+      getStatus: vi.fn(() =>
+        Promise.resolve({
+          ...structuredClone(statusPayload),
+          timestamp: '2026-04-27T13:00:00Z',
+        })
+      ),
+    });
+    const { result, rerender } = renderHook(
+      ({ cadence }) =>
+        useOverviewData({
+          cadence,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+        }),
+      { initialProps: { cadence: 1 as 1 | 'paused' } }
+    );
+    await act(flush);
+    expect(result.current.snapshot.telemetry.freshness).toBe('fresh');
+    const successAt = result.current.snapshot.telemetry.transportLastSuccessAt;
+    rerender({ cadence: 'paused' as const });
+    now += 10_000;
+    await act(flush);
+    expect(result.current.snapshot.telemetry.freshness).toBe('fresh');
+    rerender({ cadence: 1 as const });
+    await act(flush);
+    expect(result.current.snapshot.telemetry.freshness).toBe('stale');
+    expect(result.current.snapshot.telemetry.transportLastSuccessAt).toBe(
+      successAt
+    );
   });
 
   it('emits exact priority announcements with deduplication', async () => {
