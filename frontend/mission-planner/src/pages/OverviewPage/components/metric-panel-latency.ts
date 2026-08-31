@@ -15,6 +15,9 @@ export interface LatencyProjectionInstrumentation {
   dequeued: number;
   minQueueOperations: number;
   maxQueueOperations: number;
+  meanAdds: number;
+  meanRemoves: number;
+  meanReads: number;
 }
 
 type ParsedLatencySample = Readonly<{
@@ -54,6 +57,7 @@ export function buildLinearLatencyPanel(
       if (instrumentation) instrumentation.dequeued += 1;
       if (removed.value !== null) {
         mean.remove(removed.value);
+        if (instrumentation) instrumentation.meanRemoves += 1;
       }
     }
     minHead = dropExpired(minQueue, minHead, cutoff, instrumentation, 'min');
@@ -63,6 +67,7 @@ export function buildLinearLatencyPanel(
     if (instrumentation) instrumentation.enqueued += 1;
     if (sample.value !== null) {
       mean.add(sample.value);
+      if (instrumentation) instrumentation.meanAdds += 1;
       minHead = pushMonotonic(
         minQueue,
         minHead,
@@ -82,6 +87,7 @@ export function buildLinearLatencyPanel(
 
     const min = mean.count === 0 ? null : (minQueue[minHead]?.value ?? null);
     const max = mean.count === 0 ? null : (maxQueue[maxHead]?.value ?? null);
+    if (instrumentation) instrumentation.meanReads += 1;
     const rowMean = mean.mean();
     if (sample.value !== null) {
       latestMin = min;

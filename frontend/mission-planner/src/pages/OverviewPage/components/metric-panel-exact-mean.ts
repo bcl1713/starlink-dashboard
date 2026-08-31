@@ -1,6 +1,7 @@
 const doubleView = new DataView(new ArrayBuffer(8));
 const fractionMask = (1n << 52n) - 1n;
 const hiddenBit = 1n << 52n;
+const accumulatorExponent = -1074;
 
 type DoubleParts = Readonly<{
   coefficient: bigint;
@@ -8,7 +9,7 @@ type DoubleParts = Readonly<{
 }>;
 
 export class ExactRollingMean {
-  readonly #bins = new Map<number, bigint>();
+  #coefficient = 0n;
   #count = 0;
 
   get count(): number {
@@ -27,34 +28,17 @@ export class ExactRollingMean {
 
   mean(): number | null {
     if (this.#count === 0) return null;
-    const total = this.#sumToLowestExponent();
-    if (total.coefficient === 0n) return 0;
+    if (this.#coefficient === 0n) return 0;
     return rationalToNearestDouble(
-      total.coefficient,
-      total.exponent,
+      this.#coefficient,
+      accumulatorExponent,
       this.#count
     );
   }
 
   #addParts(parts: DoubleParts, direction: bigint): void {
-    const next =
-      (this.#bins.get(parts.exponent) ?? 0n) + parts.coefficient * direction;
-    if (next === 0n) this.#bins.delete(parts.exponent);
-    else this.#bins.set(parts.exponent, next);
-  }
-
-  #sumToLowestExponent(): DoubleParts {
-    let lowest: number | null = null;
-    for (const exponent of this.#bins.keys()) {
-      if (lowest === null || exponent < lowest) lowest = exponent;
-    }
-    if (lowest === null) return { coefficient: 0n, exponent: 0 };
-
-    let coefficient = 0n;
-    for (const [exponent, value] of this.#bins) {
-      coefficient += value << BigInt(exponent - lowest);
-    }
-    return { coefficient, exponent: lowest };
+    const shift = parts.exponent - accumulatorExponent;
+    this.#coefficient += (parts.coefficient << BigInt(shift)) * direction;
   }
 }
 

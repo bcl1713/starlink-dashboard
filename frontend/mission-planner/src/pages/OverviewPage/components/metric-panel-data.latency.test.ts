@@ -193,6 +193,9 @@ describe('buildLatencyPanelData', () => {
       dequeued: 0,
       minQueueOperations: 0,
       maxQueueOperations: 0,
+      meanAdds: 0,
+      meanRemoves: 0,
+      meanReads: 0,
     };
     const data = buildLinearLatencyPanel(
       Array.from({ length: 1801 }, (_, index) => ({
@@ -212,6 +215,9 @@ describe('buildLatencyPanelData', () => {
     expect(instrumentation.dequeued).toBe(1500);
     expect(instrumentation.minQueueOperations).toBeLessThanOrEqual(3602);
     expect(instrumentation.maxQueueOperations).toBeLessThanOrEqual(3602);
+    expect(instrumentation.meanAdds).toBe(1801);
+    expect(instrumentation.meanRemoves).toBe(1500);
+    expect(instrumentation.meanReads).toBe(1801);
   });
 
   it('treats nonfinite and negative latency as null without poisoning summaries', () => {
