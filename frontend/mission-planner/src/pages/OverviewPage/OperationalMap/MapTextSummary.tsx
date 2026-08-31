@@ -25,7 +25,10 @@ export function MapTextSummary({
 }) {
   const byId = new Map(states.map((state) => [state.id, state]));
   return (
-    <section className="operational-map__panel operational-map__summary">
+    <section
+      className="operational-map__panel operational-map__summary"
+      tabIndex={0}
+    >
       <h3>Operational map textual equivalent</h3>
       <p>
         Basemap: {basemapStatus.phase}. {basemapStatus.message}

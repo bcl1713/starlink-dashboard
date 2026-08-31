@@ -46,7 +46,12 @@ function POITable({ response }: { readonly response: POIETAResponse }) {
     [response.pois]
   );
   return (
-    <Table>
+    <Table
+      containerProps={{
+        'aria-label': 'POI quick reference table scroll area',
+        tabIndex: 0,
+      }}
+    >
       <TableCaption>POI Quick Reference (Top 5)</TableCaption>
       <TableHeader>
         <TableRow>

@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-
 const mission = {
   id: 'manual-route-mission',
   name: 'Manual Route Mission',
@@ -51,7 +50,6 @@ const mission = {
     },
   ],
 };
-
 type Splice = {
   enabled_track_id: string;
   leave_segment_index?: number;
@@ -60,7 +58,6 @@ type Splice = {
   rejoin_fraction?: number;
   speed_knots?: number;
 };
-
 function derivedEstimate(
   trackId: string,
   splice?: Splice
@@ -73,7 +70,6 @@ function derivedEstimate(
       unavailable_reason: 'no_feasible_splice',
     };
   }
-
   const antimeridian = trackId === 'low-confidence-track';
   return {
     available: true,
@@ -83,9 +79,7 @@ function derivedEstimate(
     derived_distance_nm: 1600,
     delta_seconds: 900,
     speed_knots: splice.speed_knots ?? 400,
-    speed_source: splice.speed_knots
-      ? 'operator_override'
-      : 'assumed_400_ktas',
+    speed_source: splice.speed_knots ? 'operator_override' : 'assumed_400_ktas',
     leave_anchor: {
       segment_index: splice.leave_segment_index ?? 0,
       fraction: splice.leave_fraction ?? 0.25,
@@ -116,7 +110,6 @@ function derivedEstimate(
         ],
   };
 }
-
 async function mockManualRouteApis(
   page: Page,
   persistedMission: typeof mission,
@@ -176,7 +169,6 @@ async function mockManualRouteApis(
     await route.fulfill({ json: { pois: [], total: 0 } });
   });
 }
-
 test.describe('Manual AR derived route estimates', () => {
   test('persists a feasible selected estimate with overrides and explicitly reverts it', async ({
     page,
@@ -201,7 +193,6 @@ test.describe('Manual AR derived route estimates', () => {
         await route.fulfill({ json: { leg: updatedLeg, warnings: [] } });
       }
     );
-
     await page.goto('/missions/manual-route-mission/legs/manual-route-leg');
     const estimateButtons = page.getByRole('button', {
       name: /as estimated route$/,
@@ -211,13 +202,14 @@ test.describe('Manual AR derived route estimates', () => {
       'Use Low confidence diversion as estimated route',
       'Use Remote diversion as estimated route',
     ]);
-
     const feasible = page.getByRole('button', {
       name: 'Use Feasible diversion as estimated route',
     });
     await feasible.click();
     await expect(feasible).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('status')).toContainText('Estimated route active');
+    await expect(page.getByRole('status')).toContainText(
+      'Estimated route active'
+    );
     await expect(page.getByRole('status')).toContainText(
       'Basis: derived estimate; confidence: high.'
     );
@@ -227,7 +219,6 @@ test.describe('Manual AR derived route estimates', () => {
     await expect(
       page.getByText('Estimated map layer: derived estimate, not telemetry.')
     ).toBeVisible();
-
     await page.getByText('Optional anchor and speed overrides').click();
     await page.getByLabel('Leave segment override').fill('1');
     await page.getByLabel('Leave fraction override').fill('0.2');
@@ -237,27 +228,28 @@ test.describe('Manual AR derived route estimates', () => {
     await expect(page.getByRole('status')).toContainText(
       '450 KTAS (operator override)'
     );
-
     await page.getByRole('button', { name: 'Save Changes' }).click();
-    await expect.poll(() => savedSplice).toEqual({
-      enabled_track_id: 'feasible-track',
-      leave_segment_index: 1,
-      leave_fraction: 0.2,
-      rejoin_segment_index: 2,
-      rejoin_fraction: 0.8,
-      speed_knots: 450,
-    });
-
+    await expect
+      .poll(() => savedSplice)
+      .toEqual({
+        enabled_track_id: 'feasible-track',
+        leave_segment_index: 1,
+        leave_fraction: 0.2,
+        rejoin_segment_index: 2,
+        rejoin_fraction: 0.8,
+        speed_knots: 450,
+      });
     await page.reload();
     await expect(feasible).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByLabel('Estimated route speed override')).toHaveValue('450');
+    await expect(page.getByLabel('Estimated route speed override')).toHaveValue(
+      '450'
+    );
     await page.getByRole('button', { name: 'Revert to planned route' }).click();
     await expect(feasible).toHaveAttribute('aria-pressed', 'false');
     await expect(
       page.getByRole('button', { name: 'Revert to planned route' })
     ).not.toBeVisible();
   });
-
   test('shows low-confidence and unavailable planned fallback states on mobile without drawing an antimeridian world span', async ({
     page,
   }) => {
@@ -267,7 +259,6 @@ test.describe('Manual AR derived route estimates', () => {
     await mockManualRouteApis(page, persistedMission, (routeBasis) => {
       unavailableRouteBasis = routeBasis;
     });
-
     await page.goto('/missions/manual-route-mission/legs/manual-route-leg');
     await page
       .getByRole('button', {
@@ -287,11 +278,12 @@ test.describe('Manual AR derived route estimates', () => {
       'path[stroke="var(--route-manual-track)"][stroke-opacity="0.95"]'
     );
     await expect(visibleMapPaths).toHaveCount(2);
-
     await page
       .getByRole('button', { name: 'Use Remote diversion as estimated route' })
       .click();
-    await expect(page.getByRole('alert')).toContainText('Planned route retained');
+    await expect(page.getByRole('alert')).toContainText(
+      'Planned route retained'
+    );
     await expect(page.getByRole('alert')).toContainText(
       'No feasible estimate (no_feasible_splice). The planned route and timeline remain in use.'
     );
