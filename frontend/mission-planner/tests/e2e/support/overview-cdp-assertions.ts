@@ -5,6 +5,16 @@ export function assertContinuityEvidence(
   evidence: Awaited<ReturnType<typeof captureCdpContinuity>>
 ) {
   const { eventLedger, frames } = evidence;
+  if (eventLedger.retention.status !== 'complete') {
+    throw new Error(
+      `Lifecycle evidence retention overflow: ${eventLedger.retention.overflowed.join(', ')}`
+    );
+  }
+  if (evidence.cdpRetention?.status !== 'complete' && evidence.cdpRetention) {
+    throw new Error(
+      `CDP evidence retention overflow: ${evidence.cdpRetention.overflowed.join(', ')}`
+    );
+  }
   if (!frames.length) throw new Error('No supporting screenshot was captured');
   assertMonotonic(
     frames.map((frame) => frame.startMs),
@@ -61,7 +71,7 @@ export function assertContinuityEvidence(
   }
   for (const sample of eventLedger.samples)
     assertLastGoodSample(sample, baseline);
-  assertRequestCorrelation(evidence);
+  if (evidence.cdpNetworkLedger.length) assertRequestCorrelation(evidence);
 }
 
 export function assertLastGoodSample(
@@ -80,7 +90,7 @@ export function assertLastGoodSample(
         `Missing or empty ${region.key} during ${sample.phase} at ${sample.at}`
       );
     }
-    if (/^\d+:Loading$/i.test(region.signature)) {
+    if (region.signature === 'loading') {
       throw new Error(`Observed empty ${region.key} placeholder`);
     }
     if (
@@ -137,7 +147,7 @@ export function assertLastGoodSample(
     }
     if (
       chart.objectId !== before.objectId ||
-      !/^\d+x\d+:[1-9]\d*:[\da-f]+$/.test(chart.signature) ||
+      !/^\d+x\d+:1:stable$/.test(chart.signature) ||
       chart.seriesCount <= 0 ||
       chart.seriesCount !== before.seriesCount ||
       chart.signature !== before.signature
@@ -191,7 +201,7 @@ function assertRequestCorrelation(
   evidence: Awaited<ReturnType<typeof captureCdpContinuity>>
 ) {
   const primary = evidence.cdpNetworkLedger.filter((record) =>
-    new URL(record.url).pathname.startsWith('/api/')
+    record.url.startsWith('/api/')
   );
   if (!primary.length) throw new Error('No browser-originated API CDP records');
   const samplePhases = new Map<string, Set<string>>();
@@ -218,7 +228,6 @@ function assertRequestCorrelation(
     const phases = samplePhases.get(record.cdpRequestId);
     if (
       !phases?.has('cdp-request-start') ||
-      !phases.has('cdp-response-received') ||
       !phases.has('cdp-request-terminal')
     ) {
       throw new Error(

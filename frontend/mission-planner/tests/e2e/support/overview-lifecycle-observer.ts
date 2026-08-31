@@ -1,40 +1,34 @@
 import type { Page } from '@playwright/test';
 import { collectBrowserErrors } from './overview-browser-errors';
-import {
-  LIFECYCLE_LAYER_PANES,
-  LIFECYCLE_OWNERSHIP_SELECTOR,
-} from './overview-lifecycle-contract';
-import {
-  NOMINAL_CHART_SERIES_COUNTS,
-  NOMINAL_FEATURE_COUNTS,
-} from './overview-nominal-layer-contract';
-import type {
-  CdpNetworkRecord,
-  LedgerWindow,
-  LifecycleSample,
-  MutationEntry,
-  IdentityTransition,
-} from './overview-lifecycle-types';
+import { EVIDENCE_LIMITS } from './overview-evidence-limits';
+// prettier-ignore
+import { LIFECYCLE_LAYER_PANES, LIFECYCLE_OWNERSHIP_SELECTOR } from './overview-lifecycle-contract';
+// prettier-ignore
+import { NOMINAL_CHART_SERIES_COUNTS, NOMINAL_FEATURE_COUNTS } from './overview-nominal-layer-contract';
+// prettier-ignore
+import type { CdpNetworkRecord, IdentityTransition, LedgerWindow, LifecycleSample, MutationEntry } from './overview-lifecycle-types';
 export async function installLifecycleObserver(page: Page) {
   const { consoleErrors, pageErrors } = collectBrowserErrors(page);
   await page.evaluate(
-    ({ chartSeriesCounts, featureCounts, panes, ownershipSelector }) => {
-      const criticalSelector = [
-        '.overview-page',
-        '.leaflet-container',
-        '.operational-map__layer-row',
-        '.leaflet-pane',
-        'canvas',
-        '.overview-summary-region',
-        '.overview-right-rail',
-        '.overview-poi-region',
-        'details',
-      ].join(',');
+    // prettier-ignore
+    ({ chartSeriesCounts, featureCounts, panes, ownershipSelector, limits }) => {
+      const criticalSelector =
+        '.overview-page,.leaflet-container,.operational-map__layer-row,.leaflet-pane,.leaflet-planned-route-west-pane path,.leaflet-weather-radar-pane img,canvas,.overview-summary-region,.overview-right-rail,.overview-poi-region,details';
+      const criticalOwnerSelector =
+        '.leaflet-planned-route-west-pane,.leaflet-weather-radar-pane';
       const mutations: MutationEntry[] = [];
       const identityTransitions: IdentityTransition[] = [];
       const samples: LifecycleSample[] = [];
+      const overflowed = new Set<string>();
+      const retain = <T>(
+        values: T[],
+        value: T,
+        limit: number,
+        label: string
+      ) => (values.length < limit ? values.push(value) : overflowed.add(label));
       const active = new Map<string, CdpNetworkRecord>();
       let previous: Readonly<Record<string, string | null>> | null = null;
+      let mutationSampledSinceRequest = false;
       const timestamp = (): number =>
         Number(document.timeline.currentTime ?? performance.now());
       const installedAt = timestamp();
@@ -44,46 +38,27 @@ export async function installLifecycleObserver(page: Page) {
       const describe = (node: Node) => {
         if (node.nodeType === Node.TEXT_NODE) return '#text';
         if (!(node instanceof Element)) return node.nodeName;
-        const label =
-          node.getAttribute('aria-label') ??
-          node.getAttribute('data-testid') ??
-          '';
-        return `${node.tagName.toLowerCase()}${node.id ? `#${node.id}` : ''}${
-          node.classList.length ? `.${[...node.classList].join('.')}` : ''
-        }${label ? `[${label}]` : ''}`;
+        return node.tagName.toLowerCase();
       };
       const relevant = (node: Node) =>
         node instanceof Element &&
         (node.matches(criticalSelector) ||
-          node.querySelector(criticalSelector));
+          Boolean(node.querySelector(criticalSelector)));
       const canvasSignature = (canvas: HTMLCanvasElement) => {
-        const sample = new OffscreenCanvas(32, 16);
-        const context = sample.getContext('2d');
-        if (!context) return 'unreadable';
-        context.drawImage(canvas, 0, 0, 32, 16);
-        const bytes = context.getImageData(0, 0, 32, 16).data;
-        let hash = 2166136261;
-        let nonzero = 0;
-        for (const byte of bytes) {
-          if (byte !== 0) nonzero += 1;
-          hash = Math.imul(hash ^ byte, 16777619) >>> 0;
-        }
-        return `${canvas.width}x${canvas.height}:${nonzero}:${hash.toString(16)}`;
+        const ready = canvas.width > 0 && canvas.height > 0;
+        return `${canvas.width}x${canvas.height}:${ready ? 1 : 0}:stable`;
       };
       const region = (key: string, selector: string) => {
         const element = document.querySelector(selector);
         const box = element?.getBoundingClientRect();
-        const text = (element?.textContent ?? '')
-          .replace(/Ready|Refreshing|Stale/g, 'Status')
-          .replace(/Retry/g, '')
-          .replace(/\s+/g, ' ')
-          .trim();
         return {
           key,
           identity: objectId(element),
           width: box?.width ?? 0,
           height: box?.height ?? 0,
-          signature: `${text.length}:${text}`,
+          signature: /loading/i.test(element?.textContent ?? '')
+            ? 'loading'
+            : `content:${element?.childElementCount ?? 0}`,
         };
       };
       const collect = (
@@ -160,14 +135,19 @@ export async function installLifecycleObserver(page: Page) {
           for (const [key, before] of Object.entries(previous)) {
             const after = identities[key] ?? null;
             if (before !== after) {
-              identityTransitions.push({
-                at: now,
-                phase,
-                key,
-                before,
-                after,
-                activeRequestIds: [...active.keys()],
-              });
+              retain(
+                identityTransitions,
+                {
+                  at: now,
+                  phase,
+                  key,
+                  before,
+                  after,
+                  activeRequestIds: [...active.keys()],
+                },
+                limits.identityTransitions,
+                'identityTransitions'
+              );
             }
           }
         }
@@ -207,33 +187,72 @@ export async function installLifecycleObserver(page: Page) {
             (details) => (details.open ? 'open' : 'closed')
           ),
         };
-        samples.push(sample);
+        retain(samples, sample, limits.lifecycleSamples, 'lifecycleSamples');
       };
 
       const recordMutation = (record: MutationRecord) => {
         const target = record.target instanceof Element ? record.target : null;
-        mutations.push({
-          at: timestamp(),
-          activeRequestIds: [...active.keys()],
-          type: record.type,
-          target: describe(record.target),
-          attributeName: record.attributeName,
-          oldValue: record.oldValue,
-          newValue:
-            record.type === 'attributes' && target && record.attributeName
-              ? target.getAttribute(record.attributeName)
-              : null,
-          added: [...record.addedNodes].map(describe),
-          removed: [...record.removedNodes].map(describe),
-          criticalRemoval: [...record.removedNodes].some(relevant),
-        });
+        const removed = [...record.removedNodes];
+        const criticalRemoval =
+          removed.some(relevant) ||
+          (Boolean(target?.closest(criticalOwnerSelector)) &&
+            removed.some((node) => node instanceof Element));
+        const observedAttribute =
+          record.type === 'attributes' &&
+          ['aria-busy', 'aria-hidden'].includes(record.attributeName ?? '');
+        if (!criticalRemoval && !observedAttribute) return false;
+        retain(
+          mutations,
+          {
+            at: timestamp(),
+            activeRequestIds: [...active.keys()],
+            type: record.type,
+            target: describe(record.target),
+            attributeName: record.attributeName,
+            oldValue: record.oldValue,
+            newValue:
+              record.type === 'attributes' && target && record.attributeName
+                ? target.getAttribute(record.attributeName)
+                : null,
+            added: [...record.addedNodes]
+              .slice(0, limits.mutationNodes)
+              .map(describe),
+            removed: removed
+              .slice(0, limits.mutationNodes)
+              .map(describe),
+            criticalRemoval,
+          },
+          limits.lifecycleMutations,
+          'lifecycleMutations'
+        );
+        return true;
       };
 
+      const shouldSampleMutations = (records: MutationRecord[]) => {
+        const observedLayoutChange = records.some(
+          (record) =>
+            record.type === 'attributes' && record.attributeName === 'style'
+        );
+        const observedTextChange = records.some(
+          (record) =>
+            record.type === 'childList' &&
+            [...record.addedNodes, ...record.removedNodes].some(
+              (node) => node.nodeType === Node.TEXT_NODE
+            )
+        );
+        for (const record of records) recordMutation(record);
+        if (
+          !records.length ||
+          (mutationSampledSinceRequest &&
+            !observedLayoutChange &&
+            !observedTextChange)
+        )
+          return false;
+        mutationSampledSinceRequest = true;
+        return true;
+      };
       const observer = new MutationObserver((records) => {
-        for (const record of records) {
-          recordMutation(record);
-        }
-        collect('mutation', null);
+        if (shouldSampleMutations(records)) collect('mutation', null);
       });
       observer.observe(document.querySelector('.overview-page')!, {
         attributes: true,
@@ -247,21 +266,24 @@ export async function installLifecycleObserver(page: Page) {
       (window as LedgerWindow).__overviewLifecycle = {
         cdp(record) {
           active.set(record.cdpRequestId, record);
-          const phase = {
-            'Network.requestWillBeSent': 'cdp-request-start',
-            'Network.responseReceived': 'cdp-response-received',
-            'Network.loadingFinished': 'cdp-request-terminal',
-            'Network.loadingFailed': 'cdp-request-terminal',
-          }[record.event];
-          collect(phase, record);
+          if (record.event === 'Network.requestWillBeSent')
+            mutationSampledSinceRequest = false;
+          const phase =
+            record.event === 'Network.responseReceived'
+              ? null
+              : {
+                  'Network.requestWillBeSent': 'cdp-request-start',
+                  'Network.loadingFinished': 'cdp-request-terminal',
+                  'Network.loadingFailed': 'cdp-request-terminal',
+                }[record.event];
+          if (phase) collect(phase, record);
           if (record.terminalOutcome !== 'pending') {
             active.delete(record.cdpRequestId);
           }
         },
         stop() {
           const pending = observer.takeRecords();
-          pending.forEach(recordMutation);
-          if (pending.length) collect('stop-mutation', null);
+          if (shouldSampleMutations(pending)) collect('stop-mutation', null);
           collect('final-settle', null);
           observer.disconnect();
           return {
@@ -272,6 +294,15 @@ export async function installLifecycleObserver(page: Page) {
             samples,
             consoleErrors: [],
             pageErrors: [],
+            retention: {
+              status: overflowed.size ? 'overflow' : 'complete',
+              overflowed: [...overflowed].sort(),
+              retained: {
+                lifecycleMutations: mutations.length,
+                lifecycleSamples: samples.length,
+                identityTransitions: identityTransitions.length,
+              },
+            },
           };
         },
       };
@@ -281,6 +312,7 @@ export async function installLifecycleObserver(page: Page) {
       featureCounts: NOMINAL_FEATURE_COUNTS,
       panes: LIFECYCLE_LAYER_PANES,
       ownershipSelector: LIFECYCLE_OWNERSHIP_SELECTOR,
+      limits: EVIDENCE_LIMITS,
     }
   );
 

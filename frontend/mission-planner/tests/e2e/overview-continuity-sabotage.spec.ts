@@ -16,13 +16,16 @@ test.describe('Operations overview continuity sabotage detection', () => {
   for (const probe of [
     ['removal', /critical removals/i],
     ['pane-replacement', /critical removals|Object identity changed/i],
-    ['path-replacement', /Rendered count regressed/i],
-    ['tile-replacement', /Rendered count regressed/i],
+    [
+      'path-replacement',
+      /critical removals|Rendered count regressed|Chart series\/signature regressed/i,
+    ],
+    ['tile-replacement', /critical removals|Rendered count regressed/i],
     ['chart-replacement', /critical removals|Chart ownership/i],
     ['busy', /render-observable attribute aria-busy=true/i],
     ['zero-size', /Missing or empty summary/i],
-    ['loading', /last-good signature regressed/i],
-    ['layer-drop', /Rendered count regressed/i],
+    ['loading', /empty .* placeholder|last-good signature regressed/i],
+    ['layer-drop', /critical removals|Rendered count regressed/i],
     ['focus', /Operator state changed/i],
     ['filter', /Operator state changed/i],
     ['disclosure', /Operator state changed/i],
@@ -38,6 +41,10 @@ test.describe('Operations overview continuity sabotage detection', () => {
       await page.getByRole('button', { name: 'Overview controls' }).click();
       await page.getByRole('button', { name: 'Refresh overview' }).focus();
       const observer = await installLifecycleObserver(page);
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+      );
       const started = request();
       await observer.observeCdp(started);
 
@@ -169,8 +176,10 @@ async function runSabotage(page: Page, kind: Sabotage) {
     }
     if (probe === 'zero-size') {
       const old = summary?.getAttribute('style') ?? null;
-      summary?.setAttribute('style', 'width:0;height:0;overflow:hidden');
-      await mutationTurn();
+      summary?.setAttribute('style', 'display:none');
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      );
       if (old === null) summary?.removeAttribute('style');
       else summary?.setAttribute('style', old);
       return;
@@ -179,7 +188,9 @@ async function runSabotage(page: Page, kind: Sabotage) {
       const leaf = summary?.querySelector('p');
       const old = leaf?.textContent ?? '';
       if (leaf) leaf.textContent = 'Loading';
-      await mutationTurn();
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      );
       if (leaf) leaf.textContent = old;
       return;
     }

@@ -2,12 +2,9 @@ import { createHash } from 'node:crypto';
 import type { Page, TestInfo } from '@playwright/test';
 
 import { writeOverviewArtifact } from './overview-artifacts';
+import { startCdpNetworkCapture } from './overview-cdp-network';
+import { EVIDENCE_LIMITS } from './overview-evidence-limits';
 import { installLifecycleObserver } from './overview-lifecycle-observer';
-import type {
-  CdpNetworkEvent,
-  CdpNetworkRecord,
-  LifecycleLedger,
-} from './overview-lifecycle-types';
 import type { OverviewRouter } from './overview-router';
 
 export interface ScreenshotFrameEvidence {
@@ -20,25 +17,6 @@ export interface ScreenshotFrameEvidence {
     readonly source: 'page-screenshot';
     readonly viewport: { width: number; height: number } | null;
   };
-}
-
-interface CdpRequestEvent {
-  readonly requestId: string;
-  readonly timestamp: number;
-  readonly type?: string;
-  readonly request: { readonly url: string; readonly method: string };
-}
-
-interface CdpResponseEvent {
-  readonly requestId: string;
-  readonly timestamp: number;
-  readonly response: { readonly status: number };
-}
-
-interface CdpTerminalEvent {
-  readonly requestId: string;
-  readonly timestamp: number;
-  readonly errorText?: string;
 }
 
 export async function installElementIdentity(page: Page) {
@@ -56,87 +34,6 @@ export async function installElementIdentity(page: Page) {
       },
     });
   });
-}
-
-export async function startCdpNetworkCapture(
-  page: Page,
-  observe: (record: CdpNetworkRecord) => Promise<void>
-) {
-  const session = await page.context().newCDPSession(page);
-  const records = new Map<string, CdpNetworkRecord>();
-  const events: CdpNetworkEvent[] = [];
-  const reports: Promise<void>[] = [];
-  const report = (record: CdpNetworkRecord) => reports.push(observe(record));
-  session.on('Network.requestWillBeSent', (event: CdpRequestEvent) => {
-    const record: CdpNetworkRecord = {
-      cdpRequestId: event.requestId,
-      event: 'Network.requestWillBeSent',
-      url: event.request.url,
-      method: event.request.method,
-      type: event.type ?? 'Other',
-      requestTimestamp: event.timestamp,
-      responseTimestamp: null,
-      terminalTimestamp: null,
-      terminalOutcome: 'pending',
-      status: null,
-      failureText: null,
-    };
-    events.push({
-      name: 'Network.requestWillBeSent',
-      cdpRequestId: event.requestId,
-      timestamp: event.timestamp,
-      url: event.request.url,
-      method: event.request.method,
-      status: null,
-      failureText: null,
-    });
-    records.set(event.requestId, record);
-    report(record);
-  });
-  session.on('Network.responseReceived', (event: CdpResponseEvent) => {
-    const record = records.get(event.requestId);
-    if (record) {
-      const responseRecord = {
-        ...record,
-        event: 'Network.responseReceived' as const,
-        responseTimestamp: event.timestamp,
-        status: event.response.status,
-      };
-      events.push({
-        name: 'Network.responseReceived',
-        cdpRequestId: event.requestId,
-        timestamp: event.timestamp,
-        url: record.url,
-        method: record.method,
-        status: event.response.status,
-        failureText: null,
-      });
-      records.set(event.requestId, responseRecord);
-      report(responseRecord);
-    }
-  });
-  session.on('Network.loadingFinished', (event: CdpTerminalEvent) => {
-    terminal(records, events, event, 'finished', null, report);
-  });
-  session.on('Network.loadingFailed', (event: CdpTerminalEvent) => {
-    terminal(
-      records,
-      events,
-      event,
-      'failed',
-      event.errorText ?? 'unknown',
-      report
-    );
-  });
-  await session.send('Network.enable');
-  return {
-    records: () => [...records.values()],
-    events: () => [...events],
-    stop: async () => {
-      await Promise.all(reports);
-      await session.detach();
-    },
-  };
 }
 
 export async function captureCdpContinuity(
@@ -193,44 +90,45 @@ export async function captureCdpContinuity(
     eventLedger,
     cdpNetworkLedger: cdp.records(),
     cdpNetworkEvents: cdp.events(),
+    cdpRetention: cdp.retention(),
     fixtureRequestLedger: router.records,
     cycles: router.cycles,
   };
-  await persistEvidence(testInfo, name, payload, eventLedger, representative);
+  const artifact = {
+    captureMetadata: payload.captureMetadata,
+    frames: payload.frames,
+    eventLedger: {
+      installedAt: eventLedger.installedAt,
+      stoppedAt: eventLedger.stoppedAt,
+      mutations: eventLedger.mutations,
+      identityTransitions: eventLedger.identityTransitions,
+      retention: eventLedger.retention,
+      sampleCount: eventLedger.samples.length,
+      sampleIndex: eventLedger.samples.map((sample) => ({
+        at: sample.at,
+        phase: sample.phase,
+        cdpRequestId: sample.request?.cdpRequestId ?? null,
+      })),
+    },
+    cdpNetworkLedger: payload.cdpNetworkLedger,
+    cdpNetworkEvents: payload.cdpNetworkEvents,
+    cdpRetention: payload.cdpRetention,
+    fixtureRequestLedger: payload.fixtureRequestLedger.map((record) => ({
+      id: record.id,
+      cycle: record.cycle,
+      event: record.event,
+      kind: record.kind,
+      source: record.source,
+      method: record.method,
+      url: new URL(record.url).pathname,
+      status: record.status,
+      outcome: record.outcome,
+      firstParty: record.firstParty,
+    })),
+    cycles: payload.cycles,
+  };
+  await persistEvidence(testInfo, name, artifact, representative);
   return payload;
-}
-
-function terminal(
-  records: Map<string, CdpNetworkRecord>,
-  events: CdpNetworkEvent[],
-  event: CdpTerminalEvent,
-  outcome: 'finished' | 'failed',
-  failureText: string | null,
-  report: (record: CdpNetworkRecord) => void
-) {
-  const record = records.get(event.requestId);
-  if (!record) return;
-  const terminalRecord = {
-    ...record,
-    event:
-      outcome === 'finished'
-        ? ('Network.loadingFinished' as const)
-        : ('Network.loadingFailed' as const),
-    terminalTimestamp: event.timestamp,
-    terminalOutcome: outcome,
-    failureText,
-  } satisfies CdpNetworkRecord;
-  events.push({
-    name: terminalRecord.event,
-    cdpRequestId: event.requestId,
-    timestamp: event.timestamp,
-    url: record.url,
-    method: record.method,
-    status: terminalRecord.status,
-    failureText,
-  });
-  records.set(event.requestId, terminalRecord);
-  report(terminalRecord);
 }
 
 function scheduledTelemetryCycles(router: OverviewRouter) {
@@ -276,7 +174,6 @@ async function persistEvidence(
   testInfo: TestInfo,
   name: string,
   payload: unknown,
-  ledger: LifecycleLedger,
   representative: Buffer | null
 ) {
   const json = JSON.stringify(payload, null, 2);
@@ -285,10 +182,6 @@ async function persistEvidence(
     contentType: 'application/json',
   });
   await writeOverviewArtifact(`event-continuity-${name}.json`, json);
-  await writeOverviewArtifact(
-    `event-ledger-${name}.json`,
-    JSON.stringify(ledger, null, 2)
-  );
   if (representative) {
     await testInfo.attach(`raw-capture-${name}-representative`, {
       body: representative,
@@ -296,7 +189,8 @@ async function persistEvidence(
     });
     await writeOverviewArtifact(
       `raw-capture-${name}-representative.png`,
-      representative
+      representative,
+      EVIDENCE_LIMITS.screenshotBytes
     );
   }
 }

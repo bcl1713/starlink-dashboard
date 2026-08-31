@@ -28,6 +28,12 @@ export interface CdpNetworkRecord {
   readonly failureText: string | null;
 }
 
+export interface RetentionOutcome {
+  readonly status: 'complete' | 'overflow';
+  readonly overflowed: readonly string[];
+  readonly retained: Readonly<Record<string, number>>;
+}
+
 export interface LifecycleLedger {
   readonly installedAt: number;
   readonly stoppedAt: number;
@@ -36,6 +42,7 @@ export interface LifecycleLedger {
   readonly samples: readonly LifecycleSample[];
   readonly consoleErrors: readonly string[];
   readonly pageErrors: readonly string[];
+  readonly retention: RetentionOutcome;
 }
 
 export interface MutationEntry {
