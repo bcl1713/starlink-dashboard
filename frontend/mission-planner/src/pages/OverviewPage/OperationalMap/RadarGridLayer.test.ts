@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe('RadarGridLayer real attachment', () => {
-  it('reconciles attached create bursts, map refreshes, unload, disable, retry, and wrapped token zero', async () => {
+  it('reconciles manual createTile and tileunload calls on an attached layer with map refreshes, disable, retry, and wrapped token zero', async () => {
     const harness = createAttachedHarness();
     const loadVisible = vi.spyOn(harness.manager, 'loadVisibleTiles');
     harness.reset();

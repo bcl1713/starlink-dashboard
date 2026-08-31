@@ -60,7 +60,7 @@ export function mapProps(
   };
 }
 
-export function snapshot(offset: number) {
+export function snapshot(offset: number, radarError = false) {
   return makeOverviewSnapshot({
     heading: 90 + offset,
     routeWest: [
@@ -75,6 +75,8 @@ export function snapshot(offset: number) {
       ['2026-08-29T12:00:00Z', 10 + offset, -10],
       ['2026-08-29T12:00:01Z', 11 + offset, -11],
     ],
+    radarPhase: radarError ? 'error' : undefined,
+    radarError,
   });
 }
 
@@ -92,27 +94,27 @@ export function expectMap(map: L.Map | null): L.Map {
 
 export function installMatchMedia(matches: boolean) {
   const listeners = new Set<(event: MediaQueryListEvent) => void>();
+  const add = vi.fn(
+    (_type: string, listener: EventListenerOrEventListenerObject) => {
+      if (typeof listener === 'function') listeners.add(listener as never);
+    }
+  );
+  const remove = vi.fn(
+    (_type: string, listener: EventListenerOrEventListenerObject) => {
+      if (typeof listener === 'function') listeners.delete(listener as never);
+    }
+  );
   vi.stubGlobal('matchMedia', (query: string) => ({
     matches: query.includes('min-width') ? matches : false,
     media: query,
     onchange: null,
-    addEventListener: (
-      _type: string,
-      listener: EventListenerOrEventListenerObject
-    ) => {
-      if (typeof listener === 'function') listeners.add(listener as never);
-    },
-    removeEventListener: (
-      _type: string,
-      listener: EventListenerOrEventListenerObject
-    ) => {
-      if (typeof listener === 'function') listeners.delete(listener as never);
-    },
+    addEventListener: add,
+    removeEventListener: remove,
     addListener: vi.fn(),
     removeListener: vi.fn(),
     dispatchEvent: vi.fn(),
   }));
-  return { listeners };
+  return { add, remove, listeners };
 }
 
 export function only<T>(set: ReadonlySet<T>): T {
@@ -135,15 +137,19 @@ export function createRadarTile(
 export function trackObjectUrls() {
   let next = 0;
   const active = new Set<string>();
+  const created: string[] = [];
+  const revoked: string[] = [];
   vi.spyOn(URL, 'createObjectURL').mockImplementation(() => {
     const url = `blob:owned-${(next += 1)}`;
+    created.push(url);
     active.add(url);
     return url;
   });
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation((url) => {
+    revoked.push(url);
     active.delete(url);
   });
-  return { active };
+  return { active, created, revoked };
 }
 
 export function leafletEventCount(map: L.Map): number {
@@ -156,4 +162,73 @@ export function layerCount(map: L.Map): number {
   let count = 0;
   map.eachLayer(() => (count += 1));
   return count;
+}
+
+export function layerEventCount(layer: L.Evented | null): number {
+  if (!layer) return 0;
+  return Object.values(
+    (layer as unknown as { _events?: Record<string, unknown[]> })._events ?? {}
+  ).reduce((total, listeners) => total + listeners.length, 0);
+}
+
+export function layerEventTypeCount(
+  layer: L.Evented | null,
+  type: string
+): number {
+  if (!layer) return 0;
+  const listeners = (
+    layer as unknown as { _events?: Record<string, unknown[]> }
+  )._events?.[type];
+  return listeners?.length ?? 0;
+}
+
+export function installImageListenerTracker() {
+  const originalAdd = HTMLImageElement.prototype.addEventListener;
+  const originalRemove = HTMLImageElement.prototype.removeEventListener;
+  const active = new WeakMap<
+    HTMLImageElement,
+    Map<string, Set<EventListenerOrEventListenerObject>>
+  >();
+  vi.spyOn(HTMLImageElement.prototype, 'addEventListener').mockImplementation(
+    function add(
+      this: HTMLImageElement,
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions
+    ) {
+      const byType = active.get(this) ?? new Map();
+      const listeners = byType.get(type) ?? new Set();
+      listeners.add(listener);
+      byType.set(type, listeners);
+      active.set(this, byType);
+      return Reflect.apply(originalAdd, this, [
+        type,
+        listener,
+        options,
+      ]) as void;
+    }
+  );
+  vi.spyOn(
+    HTMLImageElement.prototype,
+    'removeEventListener'
+  ).mockImplementation(function remove(
+    this: HTMLImageElement,
+    type: string,
+    listener: EventListenerOrEventListenerObject,
+    options?: boolean | EventListenerOptions
+  ) {
+    active.get(this)?.get(type)?.delete(listener);
+    return Reflect.apply(originalRemove, this, [
+      type,
+      listener,
+      options,
+    ]) as void;
+  });
+  return {
+    activeFor(element: HTMLImageElement): number {
+      let total = 0;
+      active.get(element)?.forEach((listeners) => (total += listeners.size));
+      return total;
+    },
+  };
 }

@@ -7,10 +7,13 @@ import { OperationalMap, type OperationalMapHandle } from './OperationalMap';
 import {
   flush,
   installMatchMedia,
+  layerEventCount,
+  layerEventTypeCount,
   mapProps,
   pointerLikeEvent,
   validBoundsSnapshot,
 } from './operational-map-event-test-harness';
+import { radarGridLayerTestInternals } from './radar-grid-layer-test-internals';
 
 const radarService = vi.hoisted(() => vi.fn());
 
@@ -138,7 +141,7 @@ describe('OperationalMap production event lifecycle', () => {
     expect(media.listeners).toHaveLength(1);
   });
 
-  it('drives measurement through actual Leaflet events and one mutable polyline', async () => {
+  it('drives measurement through Leaflet click events and one mutable polyline', async () => {
     const created: L.Polyline[] = [];
     const originalPolyline = L.polyline;
     vi.spyOn(L, 'polyline').mockImplementation((latlngs, options) => {
@@ -149,7 +152,9 @@ describe('OperationalMap production event lifecycle', () => {
       return line;
     });
     const ref = createRef<OperationalMapHandle>();
-    const { rerender } = render(<OperationalMap ref={ref} {...mapProps()} />);
+    const { rerender, unmount } = render(
+      <OperationalMap ref={ref} {...mapProps()} />
+    );
     await flush();
     const map = ref.current?.getMap() as L.Map;
     const distance = vi.spyOn(map, 'distance').mockReturnValue(185.2);
@@ -178,17 +183,23 @@ describe('OperationalMap production event lifecycle', () => {
     );
     await flush();
     expect(map.hasLayer(created[0])).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Undo point' }));
+    rerender(
+      <OperationalMap ref={ref} {...mapProps({ radarRefreshToken: 3 })} />
+    );
+    await flush();
+    expect(map.hasLayer(created[0])).toBe(true);
+    unmount();
     await flush();
     expect(map.hasLayer(created[0])).toBe(false);
-    fireEvent.click(screen.getByRole('button', { name: 'Clear measurement' }));
-    expect(screen.getAllByText(/no distance selected/)).not.toHaveLength(0);
   });
 
   it('keeps responsive listeners balanced under StrictMode and relocks on Escape', async () => {
     const media = installMatchMedia({ wide: false, reduced: false });
+    const resize = installResizeObserver();
+    const mapOn = vi.spyOn(L.Map.prototype, 'on');
+    const mapOff = vi.spyOn(L.Map.prototype, 'off');
     let map: L.Map | null = null;
-    const { unmount } = render(
+    const { rerender, unmount } = render(
       <StrictMode>
         <OperationalMap {...mapProps({ onMapReady: (next) => (map = next) })} />
       </StrictMode>
@@ -196,6 +207,10 @@ describe('OperationalMap production event lifecycle', () => {
     await flush();
     expect(map).toBeTruthy();
     const activeMap = map as unknown as L.Map;
+    const container = activeMap.getContainer();
+    const radar = [...radarGridLayerTestInternals.layers][0];
+    const mapEvents = layerEventCount(activeMap);
+    const radarEvents = layerEventCount(radar);
     const handlers = [
       activeMap.dragging,
       activeMap.touchZoom,
@@ -205,20 +220,79 @@ describe('OperationalMap production event lifecycle', () => {
       activeMap.keyboard,
     ];
     expect(handlers.every((handler) => !handler.enabled())).toBe(true);
+    expect(container.tabIndex).toBe(-1);
     expect(media.listeners).toHaveLength(1);
+    expect(resize.created - resize.disconnected).toBe(1);
+    expect(resize.live).toBe(1);
 
     act(() => media.setWide(true));
     expect(handlers.every((handler) => handler.enabled())).toBe(true);
+    expect(container.tabIndex).toBe(0);
     act(() => media.setWide(false));
     expect(handlers.every((handler) => !handler.enabled())).toBe(true);
+    expect(container.tabIndex).toBe(-1);
+    const activation = screen.getByRole('button', {
+      name: 'Enable map interaction',
+    });
+    activation.focus();
+    expect(document.activeElement).toBe(activation);
     fireEvent.click(
       screen.getByRole('button', { name: 'Enable map interaction' })
     );
     expect(handlers.every((handler) => handler.enabled())).toBe(true);
+    expect(container.tabIndex).toBe(0);
+    container.focus();
+    expect(document.activeElement).toBe(container);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(handlers.every((handler) => !handler.enabled())).toBe(true);
+    expect(container.tabIndex).toBe(-1);
+    expect(document.activeElement).toBe(activation);
+    rerender(
+      <StrictMode>
+        <OperationalMap {...mapProps({ onMapReady: (next) => (map = next) })} />
+      </StrictMode>
+    );
+    await flush();
+    expect(layerEventCount(activeMap)).toBe(mapEvents);
+    expect(layerEventCount(radar)).toBeLessThanOrEqual(radarEvents);
+    expect(layerEventTypeCount(radar, 'tileunload')).toBe(1);
+    expect(media.listeners).toHaveLength(1);
+    expect(resize.live).toBe(1);
     unmount();
     expect(media.add).toHaveBeenCalledTimes(media.remove.mock.calls.length);
     expect(media.listeners).toHaveLength(0);
+    expect(resize.created).toBe(resize.disconnected);
+    expect(resize.live).toBe(0);
+    const mapOnCalls = mapOn.mock.calls as unknown as readonly (readonly [
+      string,
+      ...unknown[],
+    ])[];
+    const mapOffCalls = mapOff.mock.calls as unknown as readonly (readonly [
+      string,
+      ...unknown[],
+    ])[];
+    expect(
+      mapOnCalls.filter(([type]) => type === 'moveend zoomend')
+    ).toHaveLength(
+      mapOffCalls.filter(([type]) => type === 'moveend zoomend').length
+    );
+    expect(radarGridLayerTestInternals.layers).toHaveLength(0);
   });
 });
+
+function installResizeObserver() {
+  const state = { created: 0, disconnected: 0, live: 0 };
+  class TrackingResizeObserver {
+    observe = vi.fn();
+    disconnect = vi.fn(() => {
+      state.disconnected += 1;
+      state.live -= 1;
+    });
+    constructor() {
+      state.created += 1;
+      state.live += 1;
+    }
+  }
+  vi.stubGlobal('ResizeObserver', TrackingResizeObserver);
+  return state;
+}

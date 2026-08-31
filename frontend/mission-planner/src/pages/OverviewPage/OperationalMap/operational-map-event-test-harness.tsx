@@ -90,3 +90,21 @@ export function pointerLikeEvent(): Event {
     ? new MouseEvent('click')
     : new PointerEvent('pointerup');
 }
+
+export function layerEventCount(layer: L.Evented | undefined): number {
+  if (!layer) return 0;
+  return Object.values(
+    (layer as unknown as { _events?: Record<string, unknown[]> })._events ?? {}
+  ).reduce((total, listeners) => total + listeners.length, 0);
+}
+
+export function layerEventTypeCount(
+  layer: L.Evented | undefined,
+  type: string
+): number {
+  if (!layer) return 0;
+  const listeners = (
+    layer as unknown as { _events?: Record<string, unknown[]> }
+  )._events?.[type];
+  return listeners?.length ?? 0;
+}
