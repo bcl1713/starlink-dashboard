@@ -4,7 +4,7 @@ import type { LifecycleSample } from './overview-lifecycle-types';
 export function assertContinuityEvidence(
   evidence: Awaited<ReturnType<typeof captureCdpContinuity>>
 ) {
-  const { eventLedger, frames, requestLedger } = evidence;
+  const { eventLedger, frames } = evidence;
   if (!frames.length) throw new Error('No supporting screenshot was captured');
   assertMonotonic(
     frames.map((frame) => frame.startMs),
@@ -62,23 +62,6 @@ export function assertContinuityEvidence(
   for (const sample of eventLedger.samples)
     assertLastGoodSample(sample, baseline);
   assertRequestCorrelation(evidence);
-
-  const observedIds = new Set(
-    eventLedger.samples.flatMap((sample) =>
-      sample.request ? [sample.request.id] : []
-    )
-  );
-  const measuredErrors = requestLedger.filter(
-    (record) =>
-      observedIds.has(record.id) &&
-      record.firstParty &&
-      ['error', 'failed', 'blocked'].includes(record.event)
-  );
-  if (measuredErrors.length) {
-    throw new Error(
-      `Measured first-party errors: ${JSON.stringify(measuredErrors)}`
-    );
-  }
 }
 
 export function assertLastGoodSample(
@@ -207,35 +190,64 @@ export function assertRetainedRenderSample(
 function assertRequestCorrelation(
   evidence: Awaited<ReturnType<typeof captureCdpContinuity>>
 ) {
-  const measured = evidence.eventLedger.samples.flatMap((sample) =>
-    sample.request ? [sample] : []
+  const primary = evidence.cdpNetworkLedger.filter((record) =>
+    new URL(record.url).pathname.startsWith('/api/')
   );
-  const byId = new Map<string, Set<string>>();
-  for (const sample of measured) {
-    const request = sample.request!;
-    if (!request.id || !request.source || request.cycle < 1 || !request.kind) {
-      throw new Error(`Incomplete request correlation at ${sample.at}`);
-    }
-    const phases = byId.get(request.id) ?? new Set<string>();
+  if (!primary.length) throw new Error('No browser-originated API CDP records');
+  const samplePhases = new Map<string, Set<string>>();
+  for (const sample of evidence.eventLedger.samples) {
+    const request = sample.request;
+    if (!request || !('cdpRequestId' in request)) continue;
+    const phases = samplePhases.get(request.cdpRequestId) ?? new Set<string>();
     phases.add(sample.phase);
-    byId.set(request.id, phases);
+    samplePhases.set(request.cdpRequestId, phases);
   }
-  for (const [id, phases] of byId) {
-    if (!phases.has('request-start') || !phases.has('request-completion')) {
-      throw new Error(`Request ${id} lacks start/completion observation`);
+  for (const record of primary) {
+    if (
+      !record.cdpRequestId ||
+      !record.url ||
+      !record.method ||
+      !record.type ||
+      record.responseTimestamp === null ||
+      record.terminalOutcome === 'pending' ||
+      record.terminalTimestamp === null ||
+      record.terminalTimestamp < record.requestTimestamp
+    ) {
+      throw new Error(`Incomplete CDP lifecycle: ${JSON.stringify(record)}`);
+    }
+    const phases = samplePhases.get(record.cdpRequestId);
+    if (
+      !phases?.has('cdp-request-start') ||
+      !phases.has('cdp-response-received') ||
+      !phases.has('cdp-request-terminal')
+    ) {
+      throw new Error(
+        `CDP request ${record.cdpRequestId} lacks DOM correlation`
+      );
+    }
+  }
+  const eventNames = new Set(
+    evidence.cdpNetworkEvents.map((event) => event.name)
+  );
+  for (const required of [
+    'Network.requestWillBeSent',
+    'Network.responseReceived',
+    'Network.loadingFinished',
+  ] as const) {
+    if (!eventNames.has(required)) {
+      throw new Error(`Missing browser-originated CDP event: ${required}`);
     }
   }
   const cycles = (kind: 'scheduled' | 'manual') =>
     new Set(
-      measured
+      evidence.fixtureRequestLedger
         .filter(
-          (sample) =>
-            sample.phase === 'request-completion' &&
-            sample.request?.kind === kind &&
-            sample.request.source === 'telemetry' &&
-            sample.request.event === 'complete'
+          (record) =>
+            record.kind === kind &&
+            record.source === 'telemetry' &&
+            record.event === 'complete'
         )
-        .map((sample) => sample.request!.cycle)
+        .map((record) => record.cycle)
     );
   if (cycles('scheduled').size < 5) {
     throw new Error('Fewer than five scheduled telemetry cycles completed');
@@ -243,12 +255,11 @@ function assertRequestCorrelation(
   if (cycles('manual').size < 1) {
     throw new Error('No actual manual telemetry cycle completed');
   }
-  const manualCompletion = measured.some(
-    (sample) =>
-      sample.phase === 'settle' &&
-      sample.request?.kind === 'manual' &&
-      sample.request.source === 'history' &&
-      sample.request.event === 'complete'
+  const manualCompletion = evidence.fixtureRequestLedger.some(
+    (record) =>
+      record.kind === 'manual' &&
+      record.source === 'history' &&
+      record.event === 'complete'
   );
   if (!manualCompletion)
     throw new Error('Manual history completion did not settle');

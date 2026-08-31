@@ -4,11 +4,11 @@ import { openOverview } from './support/overview-assertions';
 import { assertContinuityEvidence } from './support/overview-cdp-assertions';
 import { installElementIdentity } from './support/overview-cdp-capture';
 import { installLifecycleObserver } from './support/overview-lifecycle-observer';
-import type { LifecycleLedger } from './support/overview-lifecycle-types';
-import {
-  installOverviewRouter,
-  type RecordedOverviewRequest,
-} from './support/overview-router';
+import type {
+  CdpNetworkRecord,
+  LifecycleLedger,
+} from './support/overview-lifecycle-types';
+import { installOverviewRouter } from './support/overview-router';
 
 test.describe('Operations overview continuity sabotage detection', () => {
   test.describe.configure({ mode: 'serial' });
@@ -38,11 +38,15 @@ test.describe('Operations overview continuity sabotage detection', () => {
       await page.getByRole('button', { name: 'Overview controls' }).click();
       await page.getByRole('button', { name: 'Refresh overview' }).focus();
       const observer = await installLifecycleObserver(page);
-      const started = request('start');
-      await observer.report(started);
+      const started = request();
+      await observer.observeCdp(started);
 
       await runSabotage(page, probe[0]);
-      await observer.report({ ...started, event: 'complete', completedAt: 2 });
+      await observer.observeCdp({
+        ...started,
+        terminalOutcome: 'finished',
+        terminalTimestamp: 2,
+      });
       const ledger = await observer.stop();
 
       expect(() => assertContinuityEvidence(evidence(ledger))).toThrow(
@@ -58,14 +62,18 @@ test.describe('Operations overview continuity sabotage detection', () => {
     await installElementIdentity(page);
     await openOverview(page);
     const observer = await installLifecycleObserver(page);
-    const started = request('start');
-    await observer.report(started);
+    const started = request();
+    await observer.observeCdp(started);
 
     await page.locator('.overview-map-region').evaluate((element) => {
       element.setAttribute('aria-busy', 'true');
       element.setAttribute('aria-busy', 'false');
     });
-    await observer.report({ ...started, event: 'complete', completedAt: 2 });
+    await observer.observeCdp({
+      ...started,
+      terminalOutcome: 'finished',
+      terminalTimestamp: 2,
+    });
 
     const ledger = await observer.stop();
     const attributes = ledger.mutations.filter(
@@ -203,21 +211,20 @@ async function runSabotage(page: Page, kind: Sabotage) {
   }, kind);
 }
 
-function request(event: RecordedOverviewRequest['event']) {
+function request() {
   return {
-    id: 'sabotage-request',
-    cycle: 1,
-    event,
-    kind: 'manual',
-    source: 'telemetry',
+    cdpRequestId: 'sabotage-request',
+    event: 'Network.requestWillBeSent',
     method: 'GET',
     url: 'http://localhost/api/status',
-    status: event === 'start' ? null : 200,
-    outcome: event === 'start' ? 'pending' : 'complete',
-    firstParty: true,
-    startedAt: 1,
-    completedAt: event === 'start' ? null : 2,
-  } satisfies RecordedOverviewRequest;
+    type: 'Fetch',
+    requestTimestamp: 1,
+    responseTimestamp: null,
+    terminalTimestamp: null,
+    terminalOutcome: 'pending',
+    status: null,
+    failureText: null,
+  } satisfies CdpNetworkRecord;
 }
 
 function evidence(ledger: LifecycleLedger) {
@@ -236,7 +243,9 @@ function evidence(ledger: LifecycleLedger) {
         },
       },
     ],
-    requestLedger: [],
+    cdpNetworkLedger: [],
+    cdpNetworkEvents: [],
+    fixtureRequestLedger: [],
     cycles: [],
   };
 }

@@ -1,5 +1,4 @@
 import type { Page } from '@playwright/test';
-import type { RecordedOverviewRequest } from './overview-router';
 import { collectBrowserErrors } from './overview-browser-errors';
 import {
   LIFECYCLE_LAYER_PANES,
@@ -10,6 +9,7 @@ import {
   NOMINAL_FEATURE_COUNTS,
 } from './overview-nominal-layer-contract';
 import type {
+  CdpNetworkRecord,
   LedgerWindow,
   LifecycleSample,
   MutationEntry,
@@ -33,7 +33,7 @@ export async function installLifecycleObserver(page: Page) {
       const mutations: MutationEntry[] = [];
       const identityTransitions: IdentityTransition[] = [];
       const samples: LifecycleSample[] = [];
-      const active = new Map<string, RecordedOverviewRequest>();
+      const active = new Map<string, CdpNetworkRecord>();
       let previous: Readonly<Record<string, string | null>> | null = null;
       const timestamp = (): number =>
         Number(document.timeline.currentTime ?? performance.now());
@@ -88,7 +88,7 @@ export async function installLifecycleObserver(page: Page) {
       };
       const collect = (
         phase: string,
-        request: RecordedOverviewRequest | null
+        request: CdpNetworkRecord | null
       ): void => {
         const root = document.querySelector('.overview-page');
         const map = document.querySelector('.leaflet-container');
@@ -245,19 +245,17 @@ export async function installLifecycleObserver(page: Page) {
       });
       collect('baseline', null);
       (window as LedgerWindow).__overviewLifecycle = {
-        request(record) {
-          active.set(record.id, record);
-          collect(
-            record.event === 'start' ? 'request-start' : 'request-completion',
-            record
-          );
-          if (record.event === 'start') {
-            queueMicrotask(() => collect('pending', record));
-          } else {
-            setTimeout(() => {
-              collect('settle', record);
-              active.delete(record.id);
-            }, 50);
+        cdp(record) {
+          active.set(record.cdpRequestId, record);
+          const phase = {
+            'Network.requestWillBeSent': 'cdp-request-start',
+            'Network.responseReceived': 'cdp-response-received',
+            'Network.loadingFinished': 'cdp-request-terminal',
+            'Network.loadingFailed': 'cdp-request-terminal',
+          }[record.event];
+          collect(phase, record);
+          if (record.terminalOutcome !== 'pending') {
+            active.delete(record.cdpRequestId);
           }
         },
         stop() {
@@ -287,9 +285,11 @@ export async function installLifecycleObserver(page: Page) {
   );
 
   return {
-    report: (record: RecordedOverviewRequest) =>
+    observeCdp: (record: CdpNetworkRecord) =>
       page.evaluate((value) => {
-        (window as LedgerWindow).__overviewLifecycle?.request(value);
+        const lifecycle = (window as LedgerWindow).__overviewLifecycle;
+        if (!lifecycle) throw new Error('Lifecycle observer was not installed');
+        lifecycle.cdp(value);
       }, record),
     stop: async () => {
       const ledger = await page.evaluate(() =>

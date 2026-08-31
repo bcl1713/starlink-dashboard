@@ -1,4 +1,32 @@
-import type { RecordedOverviewRequest } from './overview-router';
+export type CdpNetworkEventName =
+  | 'Network.requestWillBeSent'
+  | 'Network.responseReceived'
+  | 'Network.loadingFinished'
+  | 'Network.loadingFailed';
+
+export interface CdpNetworkEvent {
+  readonly name: CdpNetworkEventName;
+  readonly cdpRequestId: string;
+  readonly timestamp: number;
+  readonly url: string | null;
+  readonly method: string | null;
+  readonly status: number | null;
+  readonly failureText: string | null;
+}
+
+export interface CdpNetworkRecord {
+  readonly cdpRequestId: string;
+  readonly event: CdpNetworkEventName;
+  readonly url: string;
+  readonly method: string;
+  readonly type: string;
+  readonly requestTimestamp: number;
+  readonly responseTimestamp: number | null;
+  readonly terminalTimestamp: number | null;
+  readonly terminalOutcome: 'finished' | 'failed' | 'pending';
+  readonly status: number | null;
+  readonly failureText: string | null;
+}
 
 export interface LifecycleLedger {
   readonly installedAt: number;
@@ -35,9 +63,9 @@ export interface IdentityTransition {
 export interface LifecycleSample {
   readonly at: number;
   readonly phase: string;
-  readonly request: RecordedOverviewRequest | null;
+  readonly request: CdpNetworkRecord | null;
   readonly activeRequestIds: readonly string[];
-  readonly activeRequests: readonly RecordedOverviewRequest[];
+  readonly activeRequests: readonly CdpNetworkRecord[];
   readonly identities: Readonly<Record<string, string | null>>;
   readonly regions: readonly RegionSample[];
   readonly layers: readonly LayerSample[];
@@ -80,7 +108,7 @@ export interface ChartSample {
 
 export type LedgerWindow = Window & {
   __overviewLifecycle?: {
-    request(record: RecordedOverviewRequest): void;
+    cdp(record: CdpNetworkRecord): void;
     stop(): LifecycleLedger;
   };
   __overviewObjectId?: (object: object | null | undefined) => string | null;
