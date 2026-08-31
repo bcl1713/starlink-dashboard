@@ -33,6 +33,7 @@ describe('OverviewClocks', () => {
     fireEvent.click(button);
     expect(onExpandedChange).toHaveBeenCalledWith(true);
     expect(container.querySelector('[aria-live]')).toBeNull();
+    expect(container.querySelector('section')).toBeNull();
   });
 
   it('renders expanded clocks, unavailable states, and hostile labels as text', () => {

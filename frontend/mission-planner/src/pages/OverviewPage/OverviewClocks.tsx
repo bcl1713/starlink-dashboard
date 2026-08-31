@@ -94,7 +94,7 @@ export function OverviewClocks({
   const { utc, additional } = visibleClocks(clocks);
 
   return (
-    <section className="space-y-3">
+    <div className="space-y-3">
       <ClockCard clock={utc} now={now} />
       <button
         type="button"
@@ -114,6 +114,6 @@ export function OverviewClocks({
           <ClockCard key={clock.id} clock={clock} now={now} />
         ))}
       </div>
-    </section>
+    </div>
   );
 }
