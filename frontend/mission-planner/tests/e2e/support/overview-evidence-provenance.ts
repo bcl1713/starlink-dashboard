@@ -13,6 +13,7 @@ export interface EvidenceProvenance {
     readonly executablePath: string;
   };
   readonly captureStartedAtUtc: string;
+  readonly captureFinishedAtUtc: string;
 }
 
 const required = [
@@ -59,5 +60,6 @@ export function captureEvidenceProvenance(): EvidenceProvenance | undefined {
         process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? 'managed',
     },
     captureStartedAtUtc: process.env.OVERVIEW_EVIDENCE_CAPTURE_STARTED_AT_UTC!,
+    captureFinishedAtUtc: new Date().toISOString(),
   };
 }
