@@ -68,6 +68,58 @@ describe('prioritySummary', () => {
     expect(prioritySummary(withTelemetry({}, latency))).toContain(text);
   });
 
+  it.each([
+    [Number.NaN, -104, 'NaN latitude'],
+    [Number.POSITIVE_INFINITY, -104, 'infinite latitude'],
+    [39, Number.NEGATIVE_INFINITY, 'infinite longitude'],
+    [90.0001, -104, 'latitude above range'],
+    [-90.0001, -104, 'latitude below range'],
+    [39, 180.0001, 'longitude above range'],
+    [39, -180.0001, 'longitude below range'],
+  ])('reports unavailable for %s retained position', (latitude, longitude) => {
+    const snapshot = makeOverviewSnapshot();
+    expect(
+      prioritySummary({
+        ...snapshot,
+        telemetry: {
+          ...snapshot.telemetry,
+          data: {
+            ...snapshot.telemetry.data!,
+            position: {
+              ...snapshot.telemetry.data!.position,
+              latitude,
+              longitude,
+            },
+          },
+        },
+      })
+    ).toContain('Position unavailable');
+  });
+
+  it.each([
+    [-90, -180],
+    [90, 180],
+    [0, 0],
+  ])('formats finite position boundary %s,%s', (latitude, longitude) => {
+    const snapshot = makeOverviewSnapshot();
+    const summary = prioritySummary({
+      ...snapshot,
+      telemetry: {
+        ...snapshot.telemetry,
+        data: {
+          ...snapshot.telemetry.data!,
+          position: {
+            ...snapshot.telemetry.data!.position,
+            latitude,
+            longitude,
+          },
+        },
+      },
+    });
+    expect(summary).toContain('Position ');
+    expect(summary).not.toContain('Position unavailable');
+  });
+
   it('renders hostile route text as plain summary text', () => {
     const snapshot = makeOverviewSnapshot();
     expect(

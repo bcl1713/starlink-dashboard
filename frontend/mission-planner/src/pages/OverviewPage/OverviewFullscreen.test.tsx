@@ -152,6 +152,90 @@ describe('useOverviewFullscreen', () => {
     expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
   });
 
+  it('keeps B active after A emits a stale fullscreenerror', () => {
+    const first = deferred();
+    const second = deferred();
+    const request = vi
+      .fn<() => Promise<void>>()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    render(<Harness request={request} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent(document, new Event('fullscreenerror'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
+
+    fireEvent(document, new Event('fullscreenerror'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
+    second.reject(new Error('second'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
+  });
+
+  it('lets B enter kiosk after A settles through a stale rejection', async () => {
+    const first = deferred();
+    const second = deferred();
+    const request = vi
+      .fn<() => Promise<void>>()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    render(<Harness request={request} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    first.reject(new Error('first'));
+    await Promise.resolve();
+    fireEvent(document, new Event('fullscreenerror'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
+  });
+
+  it('neutralizes multiple stale superseded errors before current error', () => {
+    const first = deferred();
+    const second = deferred();
+    const third = deferred();
+    const request = vi
+      .fn<() => Promise<void>>()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise)
+      .mockReturnValueOnce(third.promise);
+    render(<Harness request={request} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent(document, new Event('fullscreenerror'));
+    fireEvent(document, new Event('fullscreenerror'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
+
+    fireEvent(document, new Event('fullscreenerror'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
+  });
+
+  it('keeps native B ownership when A emits an old error after success', () => {
+    const first = deferred();
+    const second = deferred();
+    const request = vi
+      .fn<() => Promise<void>>()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    render(<Harness request={request} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    setFullscreenElement(root());
+    fireEvent(document, new Event('fullscreenchange'));
+    fireEvent(document, new Event('fullscreenerror'));
+
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'native'
+    );
+    expect(document.documentElement).not.toHaveClass('overview-kiosk-active');
+  });
+
   it('exits kiosk view with Escape', () => {
     render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'Enter' }));

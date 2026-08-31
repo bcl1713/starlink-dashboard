@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { useState } from 'react';
+import { StrictMode, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { OverviewGrid, useOverviewLayoutMode } from './OverviewGrid';
@@ -11,6 +11,8 @@ function installMatchMedia(width: number) {
     query: string;
     listeners: Set<Listener>;
     list: MediaQueryList;
+    add: number;
+    remove: number;
   }[] = [];
 
   const matches = (query: string) => {
@@ -23,14 +25,18 @@ function installMatchMedia(width: number) {
     const record = {
       query,
       listeners: new Set<Listener>(),
+      add: 0,
+      remove: 0,
       list: {
         media: query,
         matches: matches(query),
         onchange: null,
         addEventListener: (_type: string, listener: Listener) => {
+          record.add += 1;
           record.listeners.add(listener);
         },
         removeEventListener: (_type: string, listener: Listener) => {
+          record.remove += 1;
           record.listeners.delete(listener);
         },
         addListener: (listener: Listener) => record.listeners.add(listener),
@@ -63,6 +69,24 @@ function installMatchMedia(width: number) {
         (total, record) => total + record.listeners.size,
         0
       );
+    },
+    countsByQuery() {
+      const counts = new Map<
+        string,
+        { add: number; remove: number; active: number }
+      >();
+      for (const record of records) {
+        const count = counts.get(record.query) ?? {
+          add: 0,
+          remove: 0,
+          active: 0,
+        };
+        count.add += record.add;
+        count.remove += record.remove;
+        count.active += record.listeners.size;
+        counts.set(record.query, count);
+      }
+      return counts;
     },
   };
 }
@@ -217,44 +241,41 @@ describe('OverviewGrid', () => {
     );
   });
 
-  it('transitions modes without remounting children or losing input state', async () => {
+  it('balances exact StrictMode media listeners across all four transitions', async () => {
     const media = installMatchMedia(390);
-    const { rerender } = render(
-      <>
+    const { unmount } = render(
+      <StrictMode>
         <ModeProbe />
         {grid()}
-      </>
+      </StrictMode>
     );
 
     const input = screen.getByLabelText('Map sentinel');
-    input.focus();
-    input.setAttribute('data-owned-node', 'stable');
+    const clock = screen.getByText('POI sentinel');
     fireEvent.change(input, { target: { value: 'operator note' } });
+    for (const count of media.countsByQuery().values()) {
+      expect(count).toEqual({ add: 4, remove: 2, active: 2 });
+    }
 
     for (const [width, mode] of [
       [768, 'tablet'],
       [1024, 'desktop'],
       [1536, 'wide'],
-      [767, 'mobile'],
+      [390, 'mobile'],
     ] as const) {
       media.resize(width);
       await waitFor(() =>
         expect(screen.getByLabelText('layout mode')).toHaveTextContent(mode)
       );
-      rerender(
-        <>
-          <ModeProbe />
-          {grid()}
-        </>
-      );
       expect(screen.getByLabelText('Map sentinel')).toBe(input);
-      expect(screen.getByLabelText('Map sentinel')).toHaveAttribute(
-        'data-owned-node',
-        'stable'
-      );
+      expect(screen.getByText('POI sentinel')).toBe(clock);
+      expect(input).toHaveValue('operator note');
     }
 
-    expect(media.listenerCount()).toBeGreaterThan(0);
-    expect(screen.getByLabelText('Map sentinel')).toHaveValue('operator note');
+    unmount();
+    for (const count of media.countsByQuery().values()) {
+      expect(count).toEqual({ add: 4, remove: 4, active: 0 });
+    }
+    expect(media.listenerCount()).toBe(0);
   });
 });

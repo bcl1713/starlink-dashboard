@@ -58,10 +58,18 @@ function latencyState(status: OverviewStatus | undefined): string {
 
 function positionState(status: OverviewStatus | undefined): string {
   if (!status) return 'Position unavailable';
-  return `Position ${formatCoordinates(
-    status.position.latitude,
-    status.position.longitude
-  )}`;
+  const { latitude, longitude } = status.position;
+  if (
+    !Number.isFinite(latitude) ||
+    !Number.isFinite(longitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    return 'Position unavailable';
+  }
+  return `Position ${formatCoordinates(latitude, longitude)}`;
 }
 
 export function prioritySummary(snapshot: OverviewDataSnapshot): string {

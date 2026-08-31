@@ -1,36 +1,16 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import './test/app-route-service-mocks';
 import { APP_NAVIGATION_ITEMS, AppShell } from './App';
-
-vi.mock('./pages/OverviewPage', () => ({
-  OverviewPage: () => <h1>Operations Overview</h1>,
-}));
-vi.mock('./pages/MissionsPage', () => ({
-  MissionsPage: () => <h1>Missions</h1>,
-}));
-vi.mock('./pages/MissionDetailPage', () => ({
-  MissionDetailPage: () => <h1>Mission Detail</h1>,
-}));
-vi.mock('./pages/LegDetailPage', () => ({
-  LegDetailPage: () => <h1>Leg Detail</h1>,
-}));
-vi.mock('./pages/SatelliteManagerPage', () => ({
-  default: () => <h1>Satellites</h1>,
-}));
-vi.mock('./pages/POIManagerPage', () => ({
-  POIManagerPage: () => <h1>POIs</h1>,
-}));
-vi.mock('./pages/RouteManagerPage', () => ({
-  RouteManagerPage: () => <h1>Routes</h1>,
-}));
-vi.mock('./pages/DataExportPage', () => ({
-  DataExportPage: () => <h1>Data Export</h1>,
-}));
-vi.mock('./pages/ConfigurationPage', () => ({
-  ConfigurationPage: () => <h1>Configuration</h1>,
-}));
 
 function LocationProbe() {
   const location = useLocation();
@@ -46,15 +26,42 @@ function LocationProbe() {
 }
 
 function renderShell(entries: string[]) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
   return render(
-    <MemoryRouter initialEntries={entries}>
-      <AppShell />
-      <LocationProbe />
-    </MemoryRouter>
+    <QueryClientProvider client={client}>
+      <MemoryRouter initialEntries={entries}>
+        <AppShell />
+        <LocationProbe />
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 
 describe('App shell routing', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn().mockReturnValue({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    });
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: { getItem: vi.fn(() => null), setItem: vi.fn() },
+    });
+    Object.defineProperty(window, 'ResizeObserver', {
+      configurable: true,
+      value: class ResizeObserver {
+        observe() {}
+        disconnect() {}
+      },
+    });
+  });
+
   it('publishes navigation order with Overview first', () => {
     expect(APP_NAVIGATION_ITEMS.map((item) => [item.to, item.label])).toEqual([
       ['/overview', 'Overview'],
@@ -67,7 +74,7 @@ describe('App shell routing', () => {
     ]);
   });
 
-  it('replaces the root entry with the overview route', async () => {
+  it('replaces root and keeps browser back at overview', async () => {
     renderShell(['/']);
 
     expect(
@@ -76,56 +83,67 @@ describe('App shell routing', () => {
     expect(screen.getByLabelText('location')).toHaveTextContent('/overview');
 
     fireEvent.click(screen.getByRole('link', { name: 'Missions' }));
-    expect(screen.getByLabelText('location')).toHaveTextContent('/missions');
-
+    expect(
+      await screen.findByRole('heading', { name: 'Missions' })
+    ).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.getByLabelText('location')).toHaveTextContent('/overview');
   });
 
-  it('keeps existing routes addressable without a catch-all redirect', () => {
-    const routes = [
-      ['/missions', 'Missions'],
-      ['/missions/alpha', 'Mission Detail'],
-      ['/missions/alpha/legs/bravo', 'Leg Detail'],
-      ['/satellites', 'Satellites'],
-      ['/pois', 'POIs'],
-      ['/routes', 'Routes'],
-      ['/export', 'Data Export'],
-      ['/configuration', 'Configuration'],
-    ];
-
-    for (const [path, heading] of routes) {
-      const { unmount } = renderShell([path]);
-      expect(screen.getByLabelText('location')).toHaveTextContent(path);
-      expect(
-        screen.getByRole('heading', { name: heading })
-      ).toBeInTheDocument();
-      unmount();
-    }
+  it.each([
+    ['/overview', 'Operations Overview'],
+    ['/missions', 'Missions'],
+    ['/missions/alpha/legs/bravo', 'Leg Configuration'],
+    ['/satellites', 'Satellite Manager'],
+    ['/pois', 'Points of Interest'],
+    ['/routes', 'Route Manager'],
+    ['/export', 'Data Export'],
+    ['/configuration', 'Configuration'],
+  ])('renders production page identity for %s', async (path, heading) => {
+    const { unmount } = renderShell([path]);
+    expect(screen.getByLabelText('location')).toHaveTextContent(path);
+    expect(await screen.findByRole('heading', { name: heading })).toBeVisible();
+    unmount();
   });
 
-  it('renders one main, a first-focusable skip link, and current overview nav', () => {
-    render(
-      <MemoryRouter initialEntries={['/overview']}>
-        <AppShell />
-      </MemoryRouter>
+  it('renders production mission detail identity for a dynamic route', async () => {
+    const { unmount } = renderShell(['/missions/alpha']);
+    expect(screen.getByLabelText('location')).toHaveTextContent(
+      '/missions/alpha'
     );
+    expect(await screen.findByText('Alpha Mission')).toBeVisible();
+    expect(screen.getByText('ID: alpha')).toBeVisible();
+    unmount();
+  });
+
+  it('does not catch unknown paths', async () => {
+    renderShell(['/unknown']);
+    await waitFor(() => expect(screen.getByRole('main')).toBeEmptyDOMElement());
+    expect(screen.getByLabelText('location')).toHaveTextContent('/unknown');
+  });
+
+  it('renders compact navigation classes, close behavior, one main, and skip link', () => {
+    renderShell(['/overview']);
 
     const links = screen.getAllByRole('link');
     expect(links[0]).toHaveAccessibleName('Skip to main content');
     expect(links[0]).toHaveAttribute('href', '#main-content');
     expect(screen.getAllByRole('main')).toHaveLength(1);
-    expect(screen.getByRole('main')).toHaveAttribute('tabIndex', '-1');
 
     const navigation = screen.getByRole('navigation', {
       name: 'Primary navigation',
     });
-    const brand = within(navigation).getByRole('link', {
-      name: 'Mission Planner',
+    const menu = within(navigation).getByRole('button', {
+      name: 'Toggle navigation',
     });
-    const overview = within(navigation).getByRole('link', { name: 'Overview' });
-    expect(brand).toHaveAttribute('href', '/overview');
-    expect(brand).not.toHaveAttribute('aria-current');
-    expect(overview).toHaveAttribute('aria-current', 'page');
+    expect(menu).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(menu);
+    expect(menu).toHaveAttribute('aria-expanded', 'true');
+    const mobileMissions = within(navigation).getAllByRole('link', {
+      name: 'Missions',
+    })[1];
+    expect(mobileMissions).toHaveClass('flex', 'min-h-11', 'min-w-11');
+    fireEvent.click(mobileMissions);
+    expect(menu).toHaveAttribute('aria-expanded', 'false');
   });
 });

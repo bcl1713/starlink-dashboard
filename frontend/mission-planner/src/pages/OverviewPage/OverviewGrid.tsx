@@ -102,6 +102,7 @@ export function useOverviewFullscreen(
     readonly target: HTMLElement;
   } | null>(null);
   const generationRef = useRef(0);
+  const staleErrorDebtRef = useRef(0);
   const ownsNativeRef = useRef(false);
 
   useEffect(() => {
@@ -140,6 +141,10 @@ export function useOverviewFullscreen(
       if (target) restoreFocus(triggerRef.current, target);
     };
     const onError = () => {
+      if (staleErrorDebtRef.current > 0) {
+        staleErrorDebtRef.current -= 1;
+        return;
+      }
       const attempt = attemptRef.current;
       if (!attempt) return;
       attemptRef.current = null;
@@ -162,6 +167,7 @@ export function useOverviewFullscreen(
       mountedRef.current = false;
       generationRef.current += 1;
       attemptRef.current = null;
+      staleErrorDebtRef.current = 0;
       ownsNativeRef.current = false;
       ownerDocument.removeEventListener('fullscreenchange', onChange);
       ownerDocument.removeEventListener('fullscreenerror', onError);
@@ -185,12 +191,16 @@ export function useOverviewFullscreen(
         return;
       }
       const id = generationRef.current + 1;
+      if (attemptRef.current) staleErrorDebtRef.current += 1;
       generationRef.current = id;
       attemptRef.current = { id, target };
       try {
         await target.requestFullscreen();
       } catch {
-        if (attemptRef.current?.id !== id || !mountedRef.current) return;
+        if (attemptRef.current?.id !== id || !mountedRef.current) {
+          if (staleErrorDebtRef.current > 0) staleErrorDebtRef.current -= 1;
+          return;
+        }
         attemptRef.current = null;
         ownerDocument.documentElement.classList.add('overview-kiosk-active');
         ownsNativeRef.current = false;
