@@ -5,6 +5,7 @@ import {
   shiftParsedAwareTimestampSeconds,
   type ParsedAwareTimestampInstant,
 } from '../../../services/monitoring-timestamp-internal';
+import { ExactRollingMean } from './metric-panel-exact-mean';
 import type { LatencyPanelData, TimeSeriesRow } from './metric-panel-types';
 
 export interface LatencyProjectionInstrumentation {
@@ -35,8 +36,7 @@ export function buildLinearLatencyPanel(
   let head = 0;
   let minHead = 0;
   let maxHead = 0;
-  let count = 0;
-  let mean = 0;
+  const mean = new ExactRollingMean();
   let latestCurrent: number | null = null;
   let latestMin: number | null = null;
   let latestMean: number | null = null;
@@ -53,13 +53,7 @@ export function buildLinearLatencyPanel(
       head += 1;
       if (instrumentation) instrumentation.dequeued += 1;
       if (removed.value !== null) {
-        if (count === 1) {
-          count = 0;
-          mean = 0;
-        } else {
-          mean += (mean - removed.value) / (count - 1);
-          count -= 1;
-        }
+        mean.remove(removed.value);
       }
     }
     minHead = dropExpired(minQueue, minHead, cutoff, instrumentation, 'min');
@@ -68,8 +62,7 @@ export function buildLinearLatencyPanel(
     window.push(sample);
     if (instrumentation) instrumentation.enqueued += 1;
     if (sample.value !== null) {
-      count += 1;
-      mean += (sample.value - mean) / count;
+      mean.add(sample.value);
       minHead = pushMonotonic(
         minQueue,
         minHead,
@@ -87,9 +80,9 @@ export function buildLinearLatencyPanel(
       latestCurrent = sample.value;
     }
 
-    const min = count === 0 ? null : (minQueue[minHead]?.value ?? null);
-    const max = count === 0 ? null : (maxQueue[maxHead]?.value ?? null);
-    const rowMean = count === 0 || !Number.isFinite(mean) ? null : mean;
+    const min = mean.count === 0 ? null : (minQueue[minHead]?.value ?? null);
+    const max = mean.count === 0 ? null : (maxQueue[maxHead]?.value ?? null);
+    const rowMean = mean.mean();
     if (sample.value !== null) {
       latestMin = min;
       latestMean = rowMean;

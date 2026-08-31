@@ -147,6 +147,44 @@ describe('buildLatencyPanelData', () => {
     expect(data.tableRows[1].values[2]).toBe(Number.MAX_VALUE);
   });
 
+  it('keeps retained small means when an expired extreme leaves the window', () => {
+    const data = buildLatencyPanelData(
+      history([
+        {
+          metric: 'latency_ms',
+          samples: samples([
+            ['2026-08-29T12:00:00Z', Number.MAX_VALUE],
+            ['2026-08-29T12:04:59Z', 1],
+            ['2026-08-29T12:05:00.0001Z', 1],
+          ]),
+        },
+      ]),
+      '2026-08-29T12:05:00.0001Z'
+    );
+
+    expect(data.tableRows[2].values[2]).toBe(1);
+    expect(data.summary.mean).toBe(1);
+  });
+
+  it('retains positive subnormal means when an expired extreme leaves', () => {
+    const data = buildLatencyPanelData(
+      history([
+        {
+          metric: 'latency_ms',
+          samples: samples([
+            ['2026-08-29T12:00:00Z', Number.MAX_VALUE],
+            ['2026-08-29T12:04:59Z', Number.MIN_VALUE],
+            ['2026-08-29T12:05:00.0001Z', Number.MIN_VALUE],
+          ]),
+        },
+      ]),
+      '2026-08-29T12:05:00.0001Z'
+    );
+
+    expect(data.tableRows[2].values[2]).toBe(Number.MIN_VALUE);
+    expect(data.summary.mean).toBe(Number.MIN_VALUE);
+  });
+
   it('caps latency history and projects 1801 samples with linear visits', () => {
     const instrumentation: LatencyProjectionInstrumentation = {
       parsed: 0,
