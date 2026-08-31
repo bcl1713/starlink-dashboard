@@ -1,11 +1,13 @@
-import { fireEvent, screen } from '@testing-library/react';
-import { StrictMode } from 'react';
+import { act, fireEvent, screen } from '@testing-library/react';
+import { StrictMode, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   finishOverviewProductionCycle,
   getOverviewProductionMocks,
+  installTrackedOverviewLayoutMedia,
   installOverviewProductionBrowser,
+  overviewLayoutCounts,
   renderWithOverviewClient,
   resolveOverviewProductionServices,
 } from './OverviewPage/production-test-harness';
@@ -146,6 +148,88 @@ describe('OverviewPage production StrictMode persistence', () => {
       chart
     );
   }, 20_000);
+
+  it('shares one production layout listener owner across clocks and grid in StrictMode', async () => {
+    const media = installTrackedOverviewLayoutMedia(390);
+    const { unmount } = renderWithOverviewClient(
+      <StrictMode>
+        <RerenderableOverviewPage />
+      </StrictMode>
+    );
+    await finishOverviewProductionCycle();
+    const map = screen.getByRole('region', { name: 'Operational map' });
+    const utcClock = screen.getByLabelText(/UTC \(Zulu\):/).closest('article');
+
+    expect(
+      screen.getByRole('button', { name: 'Additional clocks' })
+    ).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByTestId('overview-grid')).toHaveAttribute(
+      'data-layout-mode',
+      'mobile'
+    );
+    expect(media.countsByQuery()).toEqual(
+      overviewLayoutCounts({
+        add: 1,
+        remove: 0,
+        active: 1,
+      })
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Trigger overview rerender' })
+    );
+    await finishOverviewProductionCycle();
+    expect(media.countsByQuery()).toEqual(
+      overviewLayoutCounts({
+        add: 1,
+        remove: 0,
+        active: 1,
+      })
+    );
+
+    for (const [width, mode, additionalHidden] of [
+      [768, 'tablet', true],
+      [1024, 'desktop', false],
+      [1536, 'wide', false],
+      [390, 'mobile', true],
+    ] as const) {
+      act(() => media.resize(width));
+      expect(screen.getByTestId('overview-grid')).toHaveAttribute(
+        'data-layout-mode',
+        mode
+      );
+      expect(
+        screen.getByRole('button', { name: 'Additional clocks' })
+      ).toHaveAttribute('aria-expanded', 'false');
+      const additionalClocks = document.getElementById(
+        screen
+          .getByRole('button', { name: 'Additional clocks' })
+          .getAttribute('aria-controls') ?? ''
+      );
+      expect(additionalClocks).toHaveProperty('hidden', additionalHidden);
+      expect(screen.getByRole('region', { name: 'Operational map' })).toBe(map);
+      expect(screen.getByLabelText(/UTC \(Zulu\):/).closest('article')).toBe(
+        utcClock
+      );
+      expect(media.countsByQuery()).toEqual(
+        overviewLayoutCounts({
+          add: 1,
+          remove: 0,
+          active: 1,
+        })
+      );
+    }
+
+    unmount();
+    expect(media.countsByQuery()).toEqual(
+      overviewLayoutCounts({
+        add: 1,
+        remove: 1,
+        active: 0,
+      })
+    );
+    expect(media.liveListenerCount()).toBe(0);
+  }, 20_000);
 });
 
 function installStorage(setItem: ReturnType<typeof vi.fn>) {
@@ -160,6 +244,24 @@ function renderStrictOverview() {
     <StrictMode>
       <OverviewPage />
     </StrictMode>
+  );
+}
+
+function RerenderableOverviewPage() {
+  const [rerenders, setRerenders] = useState(0);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="sr-only"
+        onClick={() => setRerenders((current) => current + 1)}
+      >
+        Trigger overview rerender
+      </button>
+      <OverviewPage key="overview-page" />
+      <span hidden>{rerenders}</span>
+    </>
   );
 }
 

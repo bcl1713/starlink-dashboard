@@ -7,7 +7,13 @@ import {
   type RefObject,
 } from 'react';
 
-export type OverviewLayoutMode = 'mobile' | 'tablet' | 'desktop' | 'wide';
+export {
+  OverviewLayoutProvider,
+  useOverviewLayoutMode,
+  type OverviewLayoutMode,
+} from './overview-layout';
+import { useOverviewLayoutMode } from './overview-layout';
+
 export type OverviewFullscreenMode = 'inline' | 'native' | 'kiosk';
 
 export interface OverviewGridProps {
@@ -26,52 +32,6 @@ export interface OverviewFullscreenController {
   readonly enterPending: boolean;
   readonly enterFromUserGesture: () => Promise<void>;
   readonly exitFromUserGesture: () => Promise<void>;
-}
-
-function layoutMode(width: number): OverviewLayoutMode {
-  if (width >= 1536) return 'wide';
-  if (width >= 1024) return 'desktop';
-  if (width >= 768) return 'tablet';
-  return 'mobile';
-}
-
-function currentLayoutMode(): OverviewLayoutMode {
-  if (typeof window === 'undefined') return 'desktop';
-  return layoutMode(window.innerWidth);
-}
-
-export function useOverviewLayoutMode(): OverviewLayoutMode {
-  const [mode, setMode] = useState(currentLayoutMode);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') {
-      return undefined;
-    }
-    const queries = [
-      window.matchMedia('(min-width: 1536px)'),
-      window.matchMedia('(min-width: 1024px) and (max-width: 1535px)'),
-      window.matchMedia('(min-width: 768px) and (max-width: 1023px)'),
-      window.matchMedia('(max-width: 767px)'),
-    ];
-    const update = () => {
-      if (queries[0].matches) setMode('wide');
-      else if (queries[1].matches) setMode('desktop');
-      else if (queries[2].matches) setMode('tablet');
-      else setMode('mobile');
-    };
-
-    update();
-    for (const query of queries) {
-      query.addEventListener('change', update);
-    }
-    return () => {
-      for (const query of queries) {
-        query.removeEventListener('change', update);
-      }
-    };
-  }, []);
-
-  return mode;
 }
 
 function restoreFocus(

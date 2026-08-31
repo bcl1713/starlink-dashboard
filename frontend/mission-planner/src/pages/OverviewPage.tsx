@@ -17,6 +17,7 @@ import { OverviewControls } from './OverviewPage/OverviewControls';
 import { OverviewClocks } from './OverviewPage/OverviewClocks';
 import {
   OverviewGrid,
+  OverviewLayoutProvider,
   useOverviewFullscreen,
   useOverviewLayoutMode,
 } from './OverviewPage/OverviewGrid';
@@ -33,6 +34,14 @@ import { POIQuickReference } from './OverviewPage/components/POIQuickReference';
 import { prioritySummary } from './OverviewPage/priority-summary';
 
 export function OverviewPage() {
+  return (
+    <OverviewLayoutProvider>
+      <OverviewPageContent />
+    </OverviewLayoutProvider>
+  );
+}
+
+function OverviewPageContent() {
   const pageRef = useRef<HTMLDivElement | null>(null);
   const fullscreenButtonRef = useRef<HTMLButtonElement | null>(null);
   const operationalMapRef = useRef<OperationalMapHandle | null>(null);
