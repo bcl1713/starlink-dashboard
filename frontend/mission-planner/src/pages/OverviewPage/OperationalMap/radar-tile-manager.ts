@@ -1,38 +1,26 @@
-import type { OverviewDataController } from '../overview-data-types';
 import type { RainViewerRadarTile } from '../../../types/monitoring';
+import type {
+  RadarTileCoord,
+  RadarTileManagerOptions,
+  RecordState,
+} from './radar-tile-types';
+import {
+  decodeUrl,
+  dedupe,
+  isAbortError,
+  once,
+  radarStats,
+  tileKey,
+} from './radar-tile-utils';
 
-export interface RadarTileCoord {
-  readonly z: number;
-  readonly x: number;
-  readonly y: number;
-}
+export type { RadarTileCoord } from './radar-tile-types';
 
-interface RadarTileManagerOptions {
-  readonly loadTile: (
-    coord: RadarTileCoord & { readonly signal: AbortSignal }
-  ) => Promise<RainViewerRadarTile>;
-  readonly reportRadarResult: OverviewDataController['reportRadarResult'];
-  readonly createObjectUrl?: (blob: Blob) => string;
-  readonly revokeObjectUrl?: (url: string) => void;
-}
-
-interface RecordState {
-  readonly key: string;
-  readonly generation: number;
-  readonly controller: AbortController;
-  readonly promise: Promise<RainViewerRadarTile>;
-  readonly coord: RadarTileCoord;
-  objectUrl: string | null;
-  image: HTMLImageElement | null;
-  done: ((error?: Error | null, tile?: HTMLElement) => void) | null;
-  settled: boolean;
-}
-
-const MAX_IN_FLIGHT = 8;
-const MAX_TRACKED = 96;
+const MAX_IN_FLIGHT = 8,
+  MAX_TRACKED = 96;
 
 export function createRadarTileManager(options: RadarTileManagerOptions) {
-  let generation = 0;
+  let generationId = 0;
+  let requestId = 0;
   const records = new Map<string, RecordState>();
   const objectUrls = new Set<string>();
   const createObjectUrl =
@@ -49,8 +37,8 @@ export function createRadarTileManager(options: RadarTileManagerOptions) {
     readonly token: number;
     readonly tiles: readonly RadarTileCoord[];
   }): Promise<void> {
-    generation += 1;
-    const currentGeneration = generation;
+    generationId += 1;
+    const currentGeneration = generationId;
     const unique = dedupe(tiles);
     cancelExcept(new Set(unique.map(tileKey)));
     if (unique.length > MAX_TRACKED) {
@@ -63,17 +51,18 @@ export function createRadarTileManager(options: RadarTileManagerOptions) {
     const outcomes: RainViewerRadarTile[] = [];
     const failures: unknown[] = [];
     for (let index = 0; index < unique.length; index += MAX_IN_FLIGHT) {
-      if (currentGeneration !== generation) return;
+      if (currentGeneration !== generationId) return;
       const batch = unique.slice(index, index + MAX_IN_FLIGHT);
       const settled = await Promise.allSettled(
         batch.map((coord) => requestRecord(coord))
       );
       for (const result of settled) {
-        if (result.status === 'fulfilled') outcomes.push(result.value);
-        else failures.push(result.reason);
+        if (result.status === 'fulfilled') {
+          if (result.value) outcomes.push(result.value);
+        } else failures.push(result.reason);
       }
     }
-    if (currentGeneration !== generation) return;
+    if (currentGeneration !== generationId) return;
     if (failures.length > 0) {
       reportOnce(currentGeneration, token, { ok: false, error: failures[0] });
       return;
@@ -94,23 +83,32 @@ export function createRadarTileManager(options: RadarTileManagerOptions) {
     const key = tileKey(coord);
     const record = records.get(key);
     if (record) {
+      record.cleanupImage?.();
       record.image = image;
       record.done = once(done);
+      record.cleanupImage = bindImage(record);
       if (record.objectUrl) image.src = record.objectUrl;
     } else {
-      records.set(key, {
+      const nextRequestId = requestId + 1;
+      const next: RecordState = {
         key,
-        generation,
-        coord,
+        generationId,
+        requestId: nextRequestId,
         controller: new AbortController(),
         promise: Promise.resolve({
           bytes: new ArrayBuffer(0),
           frameTimestamp: '',
         }),
         objectUrl: null,
+        candidateUrl: null,
         image,
         done: once(done),
         settled: true,
+        cleanupImage: null,
+      };
+      next.cleanupImage = bindImage(next);
+      records.set(key, {
+        ...next,
       });
     }
   }
@@ -120,41 +118,47 @@ export function createRadarTileManager(options: RadarTileManagerOptions) {
     const record = records.get(key);
     if (!record) return;
     record.controller.abort();
-    if (record.objectUrl) revoke(record.objectUrl);
+    disposeRecord(record);
     records.delete(key);
   }
 
-  function requestRecord(coord: RadarTileCoord): Promise<RainViewerRadarTile> {
+  function requestRecord(
+    coord: RadarTileCoord
+  ): Promise<RainViewerRadarTile | null> {
     const key = tileKey(coord);
-    const currentGeneration = generation;
+    const currentGeneration = generationId;
     const existing = records.get(key);
     if (
       existing &&
-      existing.generation === currentGeneration &&
+      existing.generationId === currentGeneration &&
       !existing.settled
     )
       return existing.promise;
     const controller = new AbortController();
-    if (existing?.generation !== currentGeneration)
+    if (existing?.generationId !== currentGeneration)
       existing?.controller.abort();
+    const currentRequest = requestId + 1;
+    requestId = currentRequest;
     let loaded: Promise<RainViewerRadarTile>;
     try {
       loaded = options.loadTile({ ...coord, signal: controller.signal });
     } catch (error) {
       loaded = Promise.reject(error);
     }
-    const promise = loaded
+    const promise: Promise<RainViewerRadarTile | null> = loaded
       .then(async (tile) => {
-        await replaceUrl(key, tile.bytes);
-        const record = records.get(key);
+        await replaceUrl(key, currentRequest, tile.bytes);
+        const record = findRecord(key, currentRequest);
         if (record) {
           record.settled = true;
-          record.done?.(null, record.image ?? undefined);
         }
         return tile;
       })
       .catch((error: unknown) => {
-        const record = records.get(key);
+        const record = findRecord(key, currentRequest);
+        if (!record || isAbortError(error) || controller.signal.aborted) {
+          return null;
+        }
         if (record) {
           record.settled = true;
           record.done?.(
@@ -163,54 +167,111 @@ export function createRadarTileManager(options: RadarTileManagerOptions) {
         }
         throw error;
       });
-    records.set(key, {
+    existing?.cleanupImage?.();
+    const nextRecord: RecordState = {
       key,
-      generation: currentGeneration,
-      coord,
+      generationId: currentGeneration,
+      requestId: currentRequest,
       controller,
       promise,
       objectUrl: existing?.objectUrl ?? null,
+      candidateUrl: null,
       image: existing?.image ?? null,
       done: existing?.done ?? null,
       settled: false,
-    });
+      cleanupImage: null,
+    };
+    nextRecord.cleanupImage = bindImage(nextRecord);
+    records.set(key, nextRecord);
     return promise;
   }
 
-  async function replaceUrl(key: string, bytes: ArrayBuffer): Promise<void> {
-    const record = records.get(key);
-    if (!record) return;
+  async function replaceUrl(
+    key: string,
+    currentRequest: number,
+    bytes: ArrayBuffer
+  ): Promise<void> {
     const url = createObjectUrl(new Blob([bytes], { type: 'image/png' }));
     objectUrls.add(url);
+    const record = findRecord(key, currentRequest);
+    if (!record) {
+      revoke(url);
+      return;
+    }
     try {
       await decodeUrl(url);
     } catch (error) {
       revoke(url);
       throw error;
     }
-    const old = record.objectUrl;
-    record.objectUrl = url;
-    if (record.image) record.image.src = url;
-    if (old) revoke(old);
+    const current = findRecord(key, currentRequest);
+    if (!current) {
+      revoke(url);
+      return;
+    }
+    if (current.candidateUrl) revoke(current.candidateUrl);
+    current.candidateUrl = url;
+    if (current.image) current.image.src = url;
   }
 
   function cancelExcept(visible: ReadonlySet<string>): void {
     for (const [key, record] of records) {
       if (!visible.has(key)) {
         record.controller.abort();
-        if (record.objectUrl) revoke(record.objectUrl);
+        disposeRecord(record);
         records.delete(key);
       }
     }
   }
 
   function destroy(): void {
-    generation += 1;
+    generationId += 1;
     for (const record of records.values()) {
       record.controller.abort();
-      if (record.objectUrl) revoke(record.objectUrl);
+      disposeRecord(record);
     }
     records.clear();
+  }
+
+  function bindImage(record: RecordState): () => void {
+    const image = record.image;
+    if (!image) return () => undefined;
+    const onLoad = () => {
+      const current = findRecord(record.key, record.requestId);
+      if (!current || current.image !== image || !current.candidateUrl) return;
+      const old = current.objectUrl;
+      current.objectUrl = current.candidateUrl;
+      current.candidateUrl = null;
+      if (old) revoke(old);
+      current.done?.(null, image);
+    };
+    const onError = () => {
+      const current = findRecord(record.key, record.requestId);
+      if (!current || current.image !== image || !current.candidateUrl) return;
+      revoke(current.candidateUrl);
+      current.candidateUrl = null;
+      current.done?.(new Error('Radar tile image failed.'));
+    };
+    image.addEventListener('load', onLoad);
+    image.addEventListener('error', onError);
+    return () => {
+      image.removeEventListener('load', onLoad);
+      image.removeEventListener('error', onError);
+    };
+  }
+
+  function disposeRecord(record: RecordState): void {
+    record.cleanupImage?.();
+    record.cleanupImage = null;
+    if (record.candidateUrl) revoke(record.candidateUrl);
+    if (record.objectUrl) revoke(record.objectUrl);
+    record.candidateUrl = null;
+    record.objectUrl = null;
+  }
+
+  function findRecord(key: string, currentRequest: number): RecordState | null {
+    const record = records.get(key);
+    return record?.requestId === currentRequest ? record : null;
   }
 
   function revoke(url: string): void {
@@ -220,9 +281,9 @@ export function createRadarTileManager(options: RadarTileManagerOptions) {
   function reportOnce(
     currentGeneration: number,
     token: number,
-    result: Parameters<OverviewDataController['reportRadarResult']>[1]
+    result: Parameters<RadarTileManagerOptions['reportRadarResult']>[1]
   ): void {
-    if (currentGeneration === generation)
+    if (currentGeneration === generationId)
       options.reportRadarResult(token, result);
   }
 
@@ -232,39 +293,8 @@ export function createRadarTileManager(options: RadarTileManagerOptions) {
     unloadTile,
     destroy,
     stats: () => ({
-      inFlight: [...records.values()].filter((record) => !record.settled)
-        .length,
-      tracked: records.size,
+      ...radarStats(records),
       objectUrls: objectUrls.size,
     }),
   };
-}
-
-function once(
-  done: (error?: Error | null, tile?: HTMLElement) => void
-): (error?: Error | null, tile?: HTMLElement) => void {
-  let called = false;
-  return (error, tile) => {
-    if (called) return;
-    called = true;
-    done(error, tile);
-  };
-}
-
-async function decodeUrl(url: string): Promise<void> {
-  const image = new Image();
-  image.src = url;
-  if ('decode' in image && typeof image.decode === 'function') {
-    await image.decode();
-  }
-}
-
-function dedupe(tiles: readonly RadarTileCoord[]): RadarTileCoord[] {
-  const byKey = new Map<string, RadarTileCoord>();
-  for (const tile of tiles) byKey.set(tileKey(tile), tile);
-  return [...byKey.values()];
-}
-
-export function tileKey({ z, x, y }: RadarTileCoord): string {
-  return `${z}/${x}/${y}`;
 }

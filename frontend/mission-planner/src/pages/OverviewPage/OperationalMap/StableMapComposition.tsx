@@ -10,6 +10,7 @@ import {
   createDefaultLayerVisibility,
 } from './operational-map-contract';
 import type {
+  BasemapStatus,
   OperationalFeature,
   OperationalMapProps,
 } from './operational-map-types';
@@ -22,6 +23,7 @@ export function StableMapComposition({
   mobileActive,
   mobileLocked,
   onMapReady,
+  onBasemapStatusChange,
   onSelect,
   radarEnabled,
   radarRefreshToken,
@@ -33,6 +35,7 @@ export function StableMapComposition({
   readonly mobileActive: boolean;
   readonly mobileLocked: boolean;
   readonly onMapReady: ((map: LeafletMap) => void) | undefined;
+  readonly onBasemapStatusChange: (status: BasemapStatus) => void;
   readonly onSelect: (id: string) => void;
   readonly radarEnabled: boolean;
   readonly radarRefreshToken: number;
@@ -40,7 +43,7 @@ export function StableMapComposition({
   readonly visibility: OperationalMapProps['initialLayerVisibility'];
 }) {
   const map = useMap();
-  useStableMapBase(map, mapRef, onMapReady);
+  useStableMapBase(map, mapRef, onMapReady, onBasemapStatusChange);
   useStableFeatureLayers({
     features,
     map,
@@ -60,7 +63,8 @@ export function StableMapComposition({
 function useStableMapBase(
   map: LeafletMap,
   mapRef: React.MutableRefObject<LeafletMap | null>,
-  onMapReady: ((map: LeafletMap) => void) | undefined
+  onMapReady: ((map: LeafletMap) => void) | undefined,
+  onBasemapStatusChange: (status: BasemapStatus) => void
 ) {
   useEffect(() => {
     if (mapRef.current) return;
@@ -69,13 +73,31 @@ function useStableMapBase(
     for (const layer of OPERATIONAL_LAYERS) {
       map.createPane(layer.id).style.zIndex = String(layer.pane);
     }
-    L.tileLayer(ARCGIS_WORLD_IMAGERY_URL, {
+    const basemap = L.tileLayer(ARCGIS_WORLD_IMAGERY_URL, {
       attribution: ARCGIS_WORLD_IMAGERY_ATTRIBUTION,
       pane: 'operational-basemap',
-    }).addTo(map);
+    });
+    const markReady = () =>
+      onBasemapStatusChange({
+        phase: 'ready',
+        message: 'Basemap tiles loaded.',
+      });
+    const markFailed = () =>
+      onBasemapStatusChange({
+        phase: 'unavailable',
+        message: 'Unable to load basemap tiles.',
+      });
+    basemap.on('tileload', markReady);
+    basemap.on('tileerror', markFailed);
+    basemap.addTo(map);
     L.control.scale().addTo(map);
     onMapReady?.(map);
-  }, [map, mapRef, onMapReady]);
+    return () => {
+      basemap.off('tileload', markReady);
+      basemap.off('tileerror', markFailed);
+      basemap.remove();
+    };
+  }, [map, mapRef, onBasemapStatusChange, onMapReady]);
 }
 
 function useMapInteraction(

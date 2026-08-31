@@ -22,6 +22,7 @@ interface SnapshotOptions {
   readonly routeError?: boolean;
   readonly radarPhase?: OverviewSourcePhase;
   readonly radarError?: boolean;
+  readonly heading?: number;
 }
 
 const timestamp = '2026-08-29T12:00:00Z';
@@ -37,7 +38,7 @@ export function makeOverviewSnapshot(
     poi('poi-a', 'Departure <script>', 39, -104, 'departure'),
   ]);
   return {
-    telemetry: slot(status(), 'ready', timestamp),
+    telemetry: slot(status(options.heading), 'ready', timestamp),
     history: slot(history(options.history ?? []), 'ready', timestamp),
     activeLink: slot(
       { normal: activeNormal, warning: activeWarning },
@@ -236,7 +237,7 @@ function poi(
   };
 }
 
-function status(): OverviewStatus {
+function status(heading = 90): OverviewStatus {
   return {
     timestamp,
     position: {
@@ -244,7 +245,7 @@ function status(): OverviewStatus {
       longitude: -104,
       altitude: 1,
       speed: 2,
-      heading: 90,
+      heading,
     },
     network: {
       latency_ms: 1,

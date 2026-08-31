@@ -20,6 +20,7 @@ import {
   createHistoryIdRegistry,
 } from './build-operational-features';
 import type {
+  BasemapStatus,
   OperationalMapHandle,
   OperationalMapProps,
 } from './operational-map-types';
@@ -62,6 +63,10 @@ export const OperationalMap = forwardRef<
   const [measureMode, setMeasureMode] = useState(false);
   const [mobileLocked, setMobileLocked] = useState(false);
   const [mobileActive, setMobileActive] = useState(false);
+  const [basemapStatus, setBasemapStatus] = useState<BasemapStatus>({
+    phase: 'ready',
+    message: 'Basemap tiles loaded.',
+  });
   const activationButton = useRef<HTMLButtonElement | null>(null);
   const performedInitialFit = useRef(false);
   const readyMap = useRef<LeafletMap | null>(null);
@@ -216,6 +221,7 @@ export const OperationalMap = forwardRef<
           mobileActive={mobileActive}
           mobileLocked={mobileLocked}
           onMapReady={onMapReady}
+          onBasemapStatusChange={setBasemapStatus}
           onSelect={(id) => {
             setSelectedId(id);
             setDismissedMissingId(null);
@@ -277,6 +283,7 @@ export const OperationalMap = forwardRef<
           onDismissMissing={() => setDismissedMissingId(selectedId)}
         />
         <MapTextSummary
+          basemapStatus={basemapStatus}
           measurementText={measurementText}
           selectedFeature={selectedFeature}
           states={layerStates}

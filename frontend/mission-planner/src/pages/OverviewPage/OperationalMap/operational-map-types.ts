@@ -70,6 +70,11 @@ export interface OperationalLayerState {
   readonly message: string;
 }
 
+export interface BasemapStatus {
+  readonly phase: 'ready' | 'unavailable';
+  readonly message: string;
+}
+
 export interface OperationalMapProps {
   readonly snapshot: OverviewDataSnapshot;
   readonly radarEnabled: boolean;

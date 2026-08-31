@@ -5,16 +5,17 @@ import {
   RADAR_ATTRIBUTION,
 } from './operational-map-contract';
 import {
-  tileKey,
   type RadarTileCoord,
   type createRadarTileManager,
 } from './radar-tile-manager';
+import { tileKey } from './radar-tile-utils';
 
 type Done = (error?: Error | null, tile?: HTMLElement) => void;
 
 export interface RadarLayer extends L.GridLayer {
   visibleTiles: Map<string, RadarTileCoord>;
   refreshVisible(): void;
+  scheduleRefresh(): void;
 }
 
 export function createRadarLayer(
@@ -30,16 +31,21 @@ export function createRadarLayer(
       image.alt = '';
       this.visibleTiles.set(key, coord);
       manager.registerTile(coord, image, done);
-      void manager.loadVisibleTiles({
-        token: currentToken(),
-        tiles: [...this.visibleTiles.values()],
-      });
+      this.scheduleRefresh();
       return image;
     },
     refreshVisible() {
       void manager.loadVisibleTiles({
         token: currentToken(),
         tiles: [...this.visibleTiles.values()],
+      });
+    },
+    scheduleRefresh() {
+      if (this.refreshScheduled) return;
+      this.refreshScheduled = true;
+      queueMicrotask(() => {
+        this.refreshScheduled = false;
+        this.refreshVisible();
       });
     },
   });
@@ -56,12 +62,15 @@ export function createRadarLayer(
     updateWhenIdle: true,
   });
   layer.visibleTiles = new Map<string, RadarTileCoord>();
+  (layer as RadarLayer & { refreshScheduled: boolean }).refreshScheduled =
+    false;
   layer.on('tileunload', (event: L.TileEvent) => {
     const coords = event.coords;
     if (!coords) return;
     const coord = { z: coords.z, x: coords.x, y: coords.y };
     layer.visibleTiles.delete(tileKey(coord));
     manager.unloadTile(coord);
+    layer.scheduleRefresh();
   });
   return layer;
 }

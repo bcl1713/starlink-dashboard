@@ -67,7 +67,9 @@ export function useStableFeatureLayers({
       else {
         const created = createLayer(feature, onSelect);
         registry.current.set(feature.id, created);
+        created.on('add', () => applyHeading(created, feature));
         group.addLayer(created);
+        applyHeading(created, feature);
       }
     }
     for (const [id, layer] of registry.current) {
@@ -112,7 +114,6 @@ function createLayer(
           }
         );
   bindLabel(layer, feature);
-  applyHeading(layer, feature);
   layer.on('click', () => onSelect(feature.id));
   return layer;
 }

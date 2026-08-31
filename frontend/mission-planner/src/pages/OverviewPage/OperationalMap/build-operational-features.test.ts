@@ -107,6 +107,57 @@ describe('operational feature building', () => {
     expect(merged).toEqual(['history:west:1']);
   });
 
+  it('chooses global merge ownership independent of predecessor order', () => {
+    const registry = createHistoryIdRegistry();
+    historyIds(registry, [
+      ['2026-08-29T12:00:00Z', 10, -10],
+      ['2026-08-29T12:00:01Z', 11, -11],
+      ['2026-08-29T12:00:02Z', 12, 1],
+      ['2026-08-29T12:00:03Z', 13, -12],
+      ['2026-08-29T12:00:04Z', 14, -13],
+      ['2026-08-29T12:00:05Z', 15, -14],
+    ]);
+    const merged = historyIds(registry, [
+      ['2026-08-29T12:00:01Z', 11, -11],
+      ['2026-08-29T12:00:03Z', 13, -12],
+      ['2026-08-29T12:00:04Z', 14, -13],
+      ['2026-08-29T12:00:05Z', 15, -14],
+    ]);
+
+    expect(merged).toEqual(['history:west:2']);
+  });
+
+  it('keeps history source metadata to ordered real samples across IDL', () => {
+    const registry = createHistoryIdRegistry();
+    const features = buildOperationalFeatures(
+      makeOverviewSnapshot({
+        history: [
+          ['2026-08-29T12:00:00Z', 10, 179],
+          ['2026-08-29T12:00:10Z', 11, -179],
+          ['2026-08-29T12:00:20Z', 12, -178],
+        ],
+      }),
+      registry
+    ).features.filter((feature) => feature.kind === 'history-segment');
+    const sourcePoints = features.flatMap((feature) =>
+      feature.geometry.type === 'line'
+        ? (feature.geometry.sourcePoints ?? [])
+        : []
+    );
+
+    expect(sourcePoints.map((point) => point.timestamp)).toEqual([
+      '2026-08-29T12:00:00Z',
+      '2026-08-29T12:00:10Z',
+      '2026-08-29T12:00:20Z',
+    ]);
+    expect(sourcePoints.map((point) => point.longitude)).toEqual([
+      179, -179, -178,
+    ]);
+    expect(
+      sourcePoints.some((point) => Math.abs(point.longitude) === 180)
+    ).toBe(false);
+  });
+
   it('derives retained last-good source state from non-ready slots with data', () => {
     const output = buildOperationalFeatures(
       makeOverviewSnapshot({ routePhase: 'error', routeError: true }),

@@ -139,21 +139,31 @@ function activeLinkFeatures(
 }
 
 function historyRuns(snapshot: OverviewDataSnapshot): readonly HistoryRun[] {
-  const raw = snapshot.history.data
-    ? splitAtInternationalDateLine(
-        adaptPositionHistory(alignPositionHistory(snapshot.history.data))
-      )
+  const source = snapshot.history.data
+    ? adaptPositionHistory(alignPositionHistory(snapshot.history.data))
     : [];
-  return raw.flatMap((segment) => {
+  const realByTimestamp = new Map(
+    source.flatMap((point) =>
+      point.timestamp ? [[point.timestamp, point]] : []
+    )
+  );
+  return splitAtInternationalDateLine(source).flatMap((segment) => {
     const runs: HistoryRun[] = [];
     let current: OverviewGeometryPoint[] = [];
     let hemisphere: 'west' | 'east' | null = null;
     const flush = () => {
       if (current.length > 1 && hemisphere) {
+        const real = current.flatMap((point) => {
+          const sourcePoint = point.timestamp
+            ? realByTimestamp.get(point.timestamp)
+            : undefined;
+          return sourcePoint ? [sourcePoint] : [];
+        });
         runs.push({
           hemisphere,
           points: current,
-          timestamps: current.flatMap((point) =>
+          sourcePoints: real,
+          timestamps: real.flatMap((point) =>
             point.timestamp ? [point.timestamp] : []
           ),
         });

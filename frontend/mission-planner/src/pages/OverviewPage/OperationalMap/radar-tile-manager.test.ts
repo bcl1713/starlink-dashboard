@@ -5,6 +5,74 @@ import { createRadarTileManager } from './radar-tile-manager';
 const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]).buffer;
 
 describe('radar tile manager', () => {
+  it('ignores stale same-key completions after a newer generation is bound', async () => {
+    const report = vi.fn();
+    const revokeObjectUrl = vi.fn();
+    const resolvers: ((value: {
+      bytes: ArrayBuffer;
+      frameTimestamp: string;
+    }) => void)[] = [];
+    let nextUrl = 0;
+    const image = document.createElement('img');
+    const manager = createRadarTileManager({
+      loadTile: vi.fn(
+        (): Promise<{ bytes: ArrayBuffer; frameTimestamp: string }> =>
+          new Promise((resolve) => {
+            resolvers.push(resolve);
+          })
+      ),
+      reportRadarResult: report,
+      createObjectUrl: vi.fn(() => `blob:${(nextUrl += 1)}`),
+      revokeObjectUrl,
+    });
+    const coord = { z: 1, x: 0, y: 0 };
+    manager.registerTile(coord, image, vi.fn());
+
+    const first = manager.loadVisibleTiles({ token: 1, tiles: [coord] });
+    const second = manager.loadVisibleTiles({ token: 2, tiles: [coord] });
+    resolvers[1]?.({ bytes: png.slice(0), frameTimestamp: '222' });
+    await second;
+    image.dispatchEvent(new Event('load'));
+
+    expect(image.src).toContain('blob:1');
+    expect(report).toHaveBeenCalledExactlyOnceWith(2, {
+      ok: true,
+      frameTimestamp: '222',
+    });
+    resolvers[0]?.({ bytes: png.slice(0), frameTimestamp: '111' });
+    await first;
+
+    expect(image.src).toContain('blob:1');
+    expect(revokeObjectUrl).not.toHaveBeenCalledWith('blob:1');
+    expect(report).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats unload-only pending aborts as neutral and reports nothing', async () => {
+    const report = vi.fn();
+    const rejectors: ((error: Error) => void)[] = [];
+    const manager = createRadarTileManager({
+      loadTile: vi.fn(
+        (): Promise<{ bytes: ArrayBuffer; frameTimestamp: string }> =>
+          new Promise((_, reject) => {
+            rejectors.push(reject);
+          })
+      ),
+      reportRadarResult: report,
+      createObjectUrl: vi.fn(() => 'blob:unused'),
+      revokeObjectUrl: vi.fn(),
+    });
+    const coord = { z: 7, x: 0, y: 0 };
+    manager.registerTile(coord, document.createElement('img'), vi.fn());
+    const pending = manager.loadVisibleTiles({ token: 7, tiles: [coord] });
+
+    manager.unloadTile(coord);
+    rejectors[0]?.(new DOMException('leaving', 'AbortError'));
+    await pending;
+
+    expect(report).not.toHaveBeenCalled();
+    expect(manager.stats()).toEqual({ inFlight: 0, tracked: 0, objectUrls: 0 });
+  });
+
   it('captures the visible generation token and reports the oldest frame once', async () => {
     const report = vi.fn();
     const manager = createRadarTileManager({

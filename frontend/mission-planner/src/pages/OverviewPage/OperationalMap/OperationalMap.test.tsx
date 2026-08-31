@@ -1,5 +1,6 @@
 import { createRef } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import L from 'leaflet';
 import { describe, expect, it, vi } from 'vitest';
 
 import { OperationalMap, type OperationalMapHandle } from './OperationalMap';
@@ -83,10 +84,59 @@ describe('OperationalMap', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Departure <script>/ }));
     expect(screen.getAllByText('Departure <script>').length).toBeGreaterThan(0);
+    expect(screen.getByText(/Category: departure/)).toBeInTheDocument();
+    expect(screen.getByText(/ETA seconds: 120/)).toBeInTheDocument();
     expect(document.body.querySelector('script')).toBeNull();
     expect(
       screen.getByText('Operational map textual equivalent')
     ).toBeInTheDocument();
+  });
+
+  it.each([
+    [0, '0deg'],
+    [90, '90deg'],
+    [359, '359deg'],
+    [450, '90deg'],
+    [-10, '350deg'],
+  ])(
+    'applies initial aircraft heading %s after marker mount',
+    async (heading, expected) => {
+      render(
+        <OperationalMap
+          {...mapProps({ snapshot: makeOverviewSnapshot({ heading }) })}
+        />
+      );
+
+      await act(async () => undefined);
+      const aircraft = document.querySelector('.operational-map__aircraft');
+      expect(aircraft).toBeInstanceOf(HTMLElement);
+      expect(
+        (aircraft as HTMLElement).style.getPropertyValue('--aircraft-heading')
+      ).toBe(expected);
+    }
+  );
+
+  it('keeps basemap status independent and recovers on tile load', async () => {
+    let map: L.Map | null = null;
+    render(
+      <OperationalMap {...mapProps({ onMapReady: (next) => (map = next) })} />
+    );
+    await act(async () => undefined);
+    const basemap = findBasemap(map);
+
+    act(() => {
+      basemap.fire('tileerror', { error: new Error('<img src=x>') });
+    });
+    expect(screen.getByText(/Basemap: unavailable/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Unable to load basemap tiles/)
+    ).toBeInTheDocument();
+    expect(document.body.querySelector('img[src="x"]')).toBeNull();
+
+    act(() => {
+      basemap.fire('tileload');
+    });
+    expect(screen.getByText(/Basemap: ready/)).toBeInTheDocument();
   });
 
   it('locks mobile interaction until activation and restores on Escape', () => {
@@ -126,6 +176,20 @@ function mapProps(
     onRadarEnabledChange: vi.fn(),
     ...overrides,
   };
+}
+
+function findBasemap(map: L.Map | null): L.TileLayer {
+  let basemap: L.TileLayer | null = null;
+  map?.eachLayer((layer) => {
+    if (
+      layer instanceof L.TileLayer &&
+      layer.options.pane === 'operational-basemap'
+    ) {
+      basemap = layer;
+    }
+  });
+  if (!basemap) throw new Error('Missing basemap layer');
+  return basemap;
 }
 
 function installMatchMedia(matches: boolean) {

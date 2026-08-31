@@ -7,6 +7,7 @@ import type {
 export interface HistoryRun {
   readonly hemisphere: 'west' | 'east';
   readonly points: readonly OverviewGeometryPoint[];
+  readonly sourcePoints: readonly OverviewGeometryPoint[];
   readonly timestamps: readonly string[];
 }
 
@@ -36,9 +37,9 @@ export function createHistoryIdRegistry(): HistoryIdRegistry {
         geometry: {
           type: 'line',
           points: run.points,
-          sourcePoints: run.points,
+          sourcePoints: run.sourcePoints,
         },
-        details: [{ label: 'Samples', value: String(run.points.length) }],
+        details: [{ label: 'Samples', value: String(run.sourcePoints.length) }],
       })) satisfies OperationalFeature[];
       previous = runs.map((run, index) => ({
         id: features[index].id,
@@ -57,28 +58,31 @@ function assignHistoryIds(
 ): string[] {
   const assigned = new Map<number, string>();
   const usedPrior = new Set<string>();
-  for (const prior of previous) {
-    const winner = runs
-      .map((run, index) => ({
+  const candidates = previous
+    .flatMap((prior) =>
+      runs.map((run, index) => ({
         index,
-        run,
+        prior,
         overlap: overlapTimestamps(prior.timestamps, run.timestamps),
+        run,
       }))
-      .filter(
-        (item) =>
-          item.run.hemisphere === prior.hemisphere && item.overlap.length
-      )
-      .sort(
-        (left, right) =>
-          right.overlap.length - left.overlap.length ||
-          left.overlap[0].localeCompare(right.overlap[0]) ||
-          left.index - right.index
-      )
-      .find((item) => !assigned.has(item.index));
-    if (winner) {
-      assigned.set(winner.index, prior.id);
-      usedPrior.add(prior.id);
+    )
+    .filter(
+      (item) =>
+        item.prior.hemisphere === item.run.hemisphere && item.overlap.length
+    )
+    .sort(
+      (left, right) =>
+        right.overlap.length - left.overlap.length ||
+        left.prior.id.localeCompare(right.prior.id) ||
+        left.index - right.index
+    );
+  for (const candidate of candidates) {
+    if (assigned.has(candidate.index) || usedPrior.has(candidate.prior.id)) {
+      continue;
     }
+    assigned.set(candidate.index, candidate.prior.id);
+    usedPrior.add(candidate.prior.id);
   }
   for (const [index, run] of runs.entries()) {
     if (assigned.has(index)) continue;
