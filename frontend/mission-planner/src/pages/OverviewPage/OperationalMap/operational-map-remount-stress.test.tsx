@@ -1,8 +1,12 @@
-import { render } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import L from 'leaflet';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OperationalMap } from './OperationalMap';
+import {
+  OPERATIONAL_LAYERS,
+  createDefaultLayerVisibility,
+} from './operational-map-contract';
 import {
   collectOwnership,
   createRadarTile,
@@ -45,21 +49,30 @@ afterEach(() => {
 });
 
 describe('OperationalMap complete remount ownership', () => {
-  it('cleans production owners and restores fresh defaults over twenty mounts', async () => {
+  it('dirties mount-local UI state then restores fresh defaults over twenty mounts', async () => {
     const urls = trackObjectUrls();
     const media = installMatchMedia(false);
     const imageListeners = installImageListenerTracker();
     const resize = installResizeObserver();
     const microtasks = installMicrotaskTracker();
+    const measureLines: L.Polyline[] = [];
+    const originalPolyline = L.polyline;
+    vi.spyOn(L, 'polyline').mockImplementation((latlngs, options) => {
+      const line = originalPolyline(latlngs, options);
+      if (options?.dashArray === '4 4') measureLines.push(line);
+      return line;
+    });
     let previous: ReturnType<typeof collectOwnership> | null = null;
 
     for (let count = 0; count < 20; count += 1) {
       let map: L.Map | null = null;
       const reportRadarResult = vi.fn();
+      const onLayerVisibilityChange = vi.fn();
       const { unmount } = render(
         <OperationalMap
           {...mapProps({
             onMapReady: (next) => (map = next),
+            onLayerVisibilityChange,
             reportRadarResult,
           })}
         />
@@ -73,6 +86,7 @@ describe('OperationalMap complete remount ownership', () => {
       expect(ownership.basemap).toBeInstanceOf(L.TileLayer);
       expect(activeMap.getContainer().tabIndex).toBe(-1);
       expect(document.activeElement).toBe(document.body);
+      expectFreshMountLocalDefaults(activeMap, measureLines);
       expect(radarGridLayerTestInternals.managers).toHaveLength(1);
       expect(radarGridLayerTestInternals.layers).toHaveLength(1);
       expect(media.listeners).toHaveLength(1);
@@ -105,6 +119,13 @@ describe('OperationalMap complete remount ownership', () => {
       expect(urls.active).toHaveLength(1);
       expect(imageListeners.activeFor(tile)).toBeGreaterThan(0);
 
+      await dirtyMountLocalState(activeMap, measureLines);
+      expect(onLayerVisibilityChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          'planned-route-west': false,
+        })
+      );
+
       unmount();
       await flush();
 
@@ -131,8 +152,82 @@ describe('OperationalMap complete remount ownership', () => {
     expect(resize.disconnected).toBe(resize.created);
     expect(media.add).toHaveBeenCalledTimes(media.remove.mock.calls.length);
     expect(urls.active).toHaveLength(0);
-  });
+  }, 20000);
 });
+
+function expectFreshMountLocalDefaults(
+  map: L.Map,
+  measureLines: readonly L.Polyline[]
+): void {
+  const defaults = createDefaultLayerVisibility(true);
+  expect(
+    screen.queryByRole('region', { name: 'Feature details' })
+  ).not.toBeInTheDocument();
+  expect(document.querySelector('details')?.open).toBe(true);
+  for (const layer of OPERATIONAL_LAYERS) {
+    if (layer.id === 'weather-radar') continue;
+    expect(
+      (screen.getByLabelText(layer.label) as HTMLInputElement).checked
+    ).toBe(defaults[layer.id]);
+  }
+  expect(
+    screen.getByRole('button', { name: 'Measure distance' })
+  ).toHaveAttribute('aria-pressed', 'false');
+  expect(screen.getAllByText('Measurement: no distance selected')).toHaveLength(
+    2
+  );
+  expect(measureLines.every((line) => !map.hasLayer(line))).toBe(true);
+  expect(
+    screen.getByRole('button', { name: 'Enable map interaction' })
+  ).toBeInTheDocument();
+  expect(map.getContainer().tabIndex).toBe(-1);
+  expect(document.activeElement).toBe(document.body);
+}
+
+async function dirtyMountLocalState(
+  map: L.Map,
+  measureLines: readonly L.Polyline[]
+): Promise<void> {
+  const measurementLine = measureLines[measureLines.length - 1];
+  expect(measurementLine).toBeInstanceOf(L.Polyline);
+  expect(map.hasLayer(measurementLine)).toBe(false);
+  vi.spyOn(map, 'distance').mockReturnValue(185.2);
+
+  fireEvent.click(screen.getByRole('button', { name: 'Current position' }));
+  expect(
+    screen.getByRole('heading', { name: 'Current position' })
+  ).toBeInTheDocument();
+
+  fireEvent.click(screen.getByText('Operational layers'));
+  expect(document.querySelector('details')?.open).toBe(false);
+  fireEvent.click(screen.getByLabelText('Planned Route — western segment'));
+  expect(
+    screen.getByLabelText('Planned Route — western segment')
+  ).not.toBeChecked();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Measure distance' }));
+  await flush();
+  act(() => {
+    map.fire('click', { latlng: L.latLng(39, -104) });
+    map.fire('click', { latlng: L.latLng(39, -103.998) });
+  });
+  await flush();
+  expect(map.hasLayer(measurementLine)).toBe(true);
+  expect(
+    screen.getByRole('button', { name: 'Measure distance' })
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getAllByText(/0.1 nautical miles/)).not.toHaveLength(0);
+
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Enable map interaction' })
+  );
+  expect(
+    screen.getByRole('button', { name: 'Return to page scrolling' })
+  ).toBeInTheDocument();
+  expect(map.getContainer().tabIndex).toBe(0);
+  map.getContainer().focus();
+  expect(document.activeElement).toBe(map.getContainer());
+}
 
 function installResizeObserver() {
   const state = { created: 0, disconnected: 0, live: 0 };

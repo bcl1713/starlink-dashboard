@@ -206,19 +206,25 @@ describe('OperationalMap production lifecycle ownership', () => {
     const baselineRadarEvents = layerEventCount(radar);
     const baselineLayers = layerCount(expectMap(map));
     const baselineMediaListeners = media.listeners.size;
-    const baselineReports = reportRadarResult.mock.calls.length;
-    const baselineCreateUrls = urls.created.length;
     const baselineFocus = document.activeElement;
+    let expectedReports = reportRadarResult.mock.calls.length;
 
     for (let count = 0; count < 20; count += 1) {
-      const tile = createRadarTile(
-        radar,
-        { z: 1, x: count, y: 0 } as L.Coords,
-        vi.fn()
-      );
+      const reportsBefore = reportRadarResult.mock.calls.length;
+      const createdBefore = urls.created.length;
+      const revokedBefore = urls.revoked.length;
+      const activeBefore = urls.active.size;
+      const coords = { z: 1, x: count, y: 0 } as L.Coords;
+      const tile = createRadarTile(radar, coords, vi.fn());
       await flush();
       tile.dispatchEvent(new Event('load'));
       await flush();
+      expectedReports += 1;
+      expect(reportRadarResult.mock.calls).toHaveLength(expectedReports);
+      expect(reportRadarResult.mock.calls[reportsBefore]).toEqual([
+        1,
+        { ok: true, frameTimestamp: '1777294800' },
+      ]);
       expect(imageListeners.activeFor(tile)).toBeGreaterThan(0);
       expect(manager.stats().tracked).toBeGreaterThan(0);
       const beforeToken = urls.created.length;
@@ -231,14 +237,24 @@ describe('OperationalMap production lifecycle ownership', () => {
       );
       await flush();
       await flush();
-      expect(urls.created.length).toBeGreaterThan(beforeToken);
+      expect(urls.created).toHaveLength(beforeToken + 1);
       tile.dispatchEvent(new Event('load'));
       await flush();
+      expectedReports += 1;
+      expect(reportRadarResult.mock.calls).toHaveLength(expectedReports);
+      expect(reportRadarResult.mock.calls[reportsBefore + 1]).toEqual([
+        count + 2,
+        { ok: true, frameTimestamp: '1777294800' },
+      ]);
       fireEvent.click(
         screen.getByRole('button', { name: 'Retry weather radar' })
       );
       expect(retryRadar).toHaveBeenCalledTimes(count + 1);
+      expect(reportRadarResult.mock.calls).toHaveLength(expectedReports);
       rerender(<OperationalMap {...props} radarEnabled={false} />);
+      act(() => {
+        radar.fire('tileunload', { coords });
+      });
       await flush();
       expect(manager.stats()).toEqual({
         inFlight: 0,
@@ -252,17 +268,22 @@ describe('OperationalMap production lifecycle ownership', () => {
       expect(layerEventTypeCount(radar, 'tileunload')).toBe(1);
       expect(media.listeners.size).toBe(baselineMediaListeners);
       expect(pendingMicrotasks).toBe(0);
+      expect(urls.created).toHaveLength(createdBefore + 2);
+      expect(urls.revoked).toHaveLength(revokedBefore + 2);
+      expect(urls.active).toHaveLength(activeBefore);
       rerender(<OperationalMap {...props} radarEnabled={true} />);
       await flush();
       expect(leafletEventCount(expectMap(map))).toBe(baselineEvents);
       expect(layerCount(expectMap(map))).toBe(baselineLayers);
-      expect(reportRadarResult.mock.calls.length).toBeGreaterThanOrEqual(
-        baselineReports
-      );
-      expect(urls.created.length).toBeGreaterThanOrEqual(baselineCreateUrls);
+      expect(reportRadarResult.mock.calls).toHaveLength(expectedReports);
+      expect(urls.created).toHaveLength(createdBefore + 2);
+      expect(urls.revoked).toHaveLength(revokedBefore + 2);
+      expect(urls.active).toHaveLength(activeBefore);
       expect(urls.active.size).toBe(manager.stats().objectUrls);
       expect(document.activeElement).toBe(baselineFocus);
     }
+    expect(reportRadarResult.mock.calls).toHaveLength(expectedReports);
+    expect(expectedReports).toBe(40);
 
     unmount();
     await flush();
