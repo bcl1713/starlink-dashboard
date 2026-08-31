@@ -1,10 +1,10 @@
 import type { NumericHistorySample } from '../history';
 import {
-  compareLatencyInstants,
-  parseLatencyTimestampInstant,
-  shiftLatencyInstantSeconds,
-  type LatencyTimestampInstant,
-} from './metric-panel-latency-time';
+  compareParsedAwareTimestampInstants,
+  parseAwareTimestampForChart,
+  shiftParsedAwareTimestampSeconds,
+  type ParsedAwareTimestampInstant,
+} from '../../../services/monitoring-timestamp-internal';
 import type { LatencyPanelData, TimeSeriesRow } from './metric-panel-types';
 
 export interface LatencyProjectionInstrumentation {
@@ -19,7 +19,7 @@ export interface LatencyProjectionInstrumentation {
 type ParsedLatencySample = Readonly<{
   timestamp: string;
   epochSeconds: number;
-  instant: LatencyTimestampInstant;
+  instant: ParsedAwareTimestampInstant;
   value: number | null;
 }>;
 
@@ -44,10 +44,10 @@ export function buildLinearLatencyPanel(
 
   for (const sample of parsed) {
     if (instrumentation) instrumentation.visited += 1;
-    const cutoff = shiftLatencyInstantSeconds(sample.instant, 300);
+    const cutoff = shiftParsedAwareTimestampSeconds(sample.instant, 300);
     while (
       head < window.length &&
-      compareLatencyInstants(window[head].instant, cutoff) < 0
+      compareParsedAwareTimestampInstants(window[head].instant, cutoff) < 0
     ) {
       const removed = window[head];
       head += 1;
@@ -125,7 +125,7 @@ function parseLatencySamples(
   const parsed: ParsedLatencySample[] = [];
   for (const sample of samples) {
     if (instrumentation) instrumentation.parsed += 1;
-    const timestamp = parseLatencyTimestampInstant(sample.timestamp);
+    const timestamp = parseAwareTimestampForChart(sample.timestamp);
     if (timestamp === null) continue;
     parsed.push({
       timestamp: sample.timestamp,
@@ -140,14 +140,14 @@ function parseLatencySamples(
 function dropExpired(
   queue: readonly ParsedLatencySample[],
   head: number,
-  cutoff: LatencyTimestampInstant,
+  cutoff: ParsedAwareTimestampInstant,
   instrumentation: LatencyProjectionInstrumentation | undefined,
   kind: 'min' | 'max'
 ): number {
   let nextHead = head;
   while (
     nextHead < queue.length &&
-    compareLatencyInstants(queue[nextHead].instant, cutoff) < 0
+    compareParsedAwareTimestampInstants(queue[nextHead].instant, cutoff) < 0
   ) {
     nextHead += 1;
     incrementQueueOperation(instrumentation, kind);
