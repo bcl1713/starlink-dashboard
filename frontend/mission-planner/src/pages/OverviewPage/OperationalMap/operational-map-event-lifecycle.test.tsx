@@ -99,9 +99,13 @@ describe('OperationalMap production event lifecycle', () => {
     expect(distance).toHaveBeenCalled();
     expect(screen.getAllByText(/0.1 nautical miles/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole('button', { name: 'Undo point' }));
-    expect(screen.getAllByText(/no distance selected/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/no distance selected/).length).toBeGreaterThan(
+      0
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Clear measurement' }));
-    expect(screen.getAllByText(/no distance selected/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/no distance selected/).length).toBeGreaterThan(
+      0
+    );
   });
 
   it('uses actual matchMedia listeners for mobile lock and removes them on unmount', () => {
