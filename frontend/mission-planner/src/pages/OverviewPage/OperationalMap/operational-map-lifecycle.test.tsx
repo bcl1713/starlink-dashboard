@@ -1,133 +1,169 @@
-import { act, render } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import L from 'leaflet';
-import { afterEach, describe, expect, it, type MockInstance, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OperationalMap } from './OperationalMap';
-import { makeOverviewSnapshot } from './test-fixtures';
+import {
+  collectOwnership,
+  createRadarTile,
+  expectMap,
+  expectSameOwnership,
+  flush,
+  installMatchMedia,
+  layerCount,
+  leafletEventCount,
+  mapProps,
+  only,
+  snapshot,
+  trackObjectUrls,
+} from './operational-map-lifecycle-test-harness';
+import { radarGridLayerTestInternals } from './radar-grid-layer-test-internals';
+
+const radarService = vi.hoisted(() => vi.fn());
+const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]).buffer;
 
 vi.mock('../../../services/monitoring', () => ({
-  getRainViewerRadarTile: vi.fn(() =>
-    Promise.resolve({
-      bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]).buffer,
-      frameTimestamp: '1777294800',
-    })
-  ),
+  getRainViewerRadarTile: radarService,
 }));
+
+beforeEach(() => {
+  radarService.mockResolvedValue({
+    bytes: png.slice(0),
+    frameTimestamp: '1777294800',
+  });
+  Object.defineProperty(HTMLImageElement.prototype, 'decode', {
+    configurable: true,
+    value: vi.fn(() => Promise.resolve()),
+  });
+  vi.spyOn(URL, 'createObjectURL').mockImplementation(
+    () => `blob:lifecycle-${Math.random()}`
+  );
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
+  radarGridLayerTestInternals.reset();
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  radarGridLayerTestInternals.reset();
 });
 
-describe('OperationalMap lifecycle', () => {
-  it('keeps vector groups, radar, and basemap identities across data and token rerenders', async () => {
+describe('OperationalMap production lifecycle ownership', () => {
+  it('keeps production map ownership stable through five data rerenders then one manual token', async () => {
+    const media = installMatchMedia(false);
+    const addLayer = vi.spyOn(L.LayerGroup.prototype, 'addLayer');
+    const removeLayer = vi.spyOn(L.LayerGroup.prototype, 'removeLayer');
+    const setLatLng = vi.spyOn(L.Marker.prototype, 'setLatLng');
+    const setLatLngs = vi.spyOn(L.Polyline.prototype, 'setLatLngs');
+    const setStyle = vi.spyOn(L.Polyline.prototype, 'setStyle');
+    const setIcon = vi.spyOn(L.Marker.prototype, 'setIcon');
+    const fitBounds = vi.spyOn(L.Map.prototype, 'fitBounds');
     let map: L.Map | null = null;
     const props = mapProps({ onMapReady: (next) => (map = next) });
     const { rerender } = render(<OperationalMap {...props} />);
-    await act(async () => undefined);
+    await flush();
 
-    const first = collectLayerIdentities(map);
+    const first = collectOwnership(expectMap(map));
     expect(first.groups).toHaveLength(11);
-    expect(first.radar).toBeTruthy();
-    expect(first.basemap).toBeTruthy();
+    expect(first.radar).toBeInstanceOf(L.GridLayer);
+    expect(first.basemap).toBeInstanceOf(L.TileLayer);
+    expect(first.features.get('current-position')).toBeInstanceOf(L.Marker);
+    expect(first.features.get('route:west:route-west:0')).toBeInstanceOf(
+      L.Polyline
+    );
+    expect(radarGridLayerTestInternals.managers).toHaveLength(1);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Enable map interaction' })
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Current position' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Measure distance' }));
+    act(() => expectMap(map).fire('click', { latlng: L.latLng(39, -104) }));
+    const disclosure = document.querySelector('details');
+    expect(disclosure?.open).toBe(true);
+    const center = expectMap(map).getCenter();
+    const zoom = expectMap(map).getZoom();
+    const baselineAdds = addLayer.mock.calls.length;
+    const baselineRemoves = removeLayer.mock.calls.length;
+    fitBounds.mockClear();
 
     for (let count = 0; count < 5; count += 1) {
       rerender(
         <OperationalMap
           {...props}
-          radarRefreshToken={count + 2}
-          snapshot={makeOverviewSnapshot({
-            history: [
-              ['2026-08-29T12:00:00Z', 10 + count, -10],
-              ['2026-08-29T12:00:01Z', 11 + count, -11],
-            ],
-          })}
+          radarRefreshToken={1}
+          snapshot={snapshot(count + 1)}
         />
       );
-      await act(async () => undefined);
-      const next = collectLayerIdentities(map);
-      expect(next.groups).toEqual(first.groups);
-      expect(next.radar).toBe(first.radar);
-      expect(next.basemap).toBe(first.basemap);
+      await flush();
+      expectSameOwnership(collectOwnership(expectMap(map)), first);
+      expect(expectMap(map).getCenter()).toEqual(center);
+      expect(expectMap(map).getZoom()).toBe(zoom);
+      expect(
+        screen.getByRole('heading', { name: 'Current position' })
+      ).toBeInTheDocument();
+      expect(
+        screen.getAllByText(/no distance selected|0.0 nautical miles/)
+      ).not.toHaveLength(0);
+      expect(
+        screen.getByRole('button', { name: 'Return to page scrolling' })
+      ).toBeInTheDocument();
+      expect(disclosure?.open).toBe(true);
     }
+
+    rerender(
+      <OperationalMap {...props} radarRefreshToken={2} snapshot={snapshot(6)} />
+    );
+    await flush();
+    expectSameOwnership(collectOwnership(expectMap(map)), first);
+    expect(addLayer.mock.calls.length).toBe(baselineAdds);
+    expect(removeLayer.mock.calls.length).toBe(baselineRemoves);
+    expect(fitBounds).not.toHaveBeenCalled();
+    expect(setLatLng).toHaveBeenCalled();
+    expect(setLatLngs).toHaveBeenCalled();
+    expect(setStyle).toHaveBeenCalled();
+    expect(setIcon).toHaveBeenCalled();
+    expect(media.listeners).toHaveLength(1);
   });
 
-  it('returns listener, observer, map, layer, inflight, and URL counters to baseline over 20 mounts', async () => {
-    let activeObservers = 0;
-    class TrackingResizeObserver {
-      observe = vi.fn();
-      disconnect = vi.fn(() => {
-        activeObservers -= 1;
-      });
-      constructor() {
-        activeObservers += 1;
-      }
-    }
-    vi.stubGlobal('ResizeObserver', TrackingResizeObserver);
-    const addDocument = vi.spyOn(document, 'addEventListener');
-    const removeDocument = vi.spyOn(document, 'removeEventListener');
-    const createObjectURL = vi
-      .spyOn(URL, 'createObjectURL')
-      .mockReturnValue('blob:lifecycle');
-    const revokeObjectURL = vi
-      .spyOn(URL, 'revokeObjectURL')
-      .mockImplementation(() => undefined);
+  it('settles production radar manager and Leaflet ownership over repeated enable cycles', async () => {
+    const urls = trackObjectUrls();
+    let map: L.Map | null = null;
+    const props = mapProps({ onMapReady: (next) => (map = next) });
+    const { rerender, unmount } = render(<OperationalMap {...props} />);
+    await flush();
+    const radar = only(radarGridLayerTestInternals.layers);
+    const manager = only(radarGridLayerTestInternals.managers);
+    const baselineEvents = leafletEventCount(expectMap(map));
+    const baselineLayers = layerCount(expectMap(map));
 
-    for (let index = 0; index < 20; index += 1) {
-      const { unmount } = render(<OperationalMap {...mapProps()} />);
-      await act(async () => undefined);
-      unmount();
-      await act(async () => undefined);
-
-      expect(document.querySelectorAll('.leaflet-container')).toHaveLength(0);
-      expect(document.querySelectorAll('.leaflet-layer')).toHaveLength(0);
-      expect(activeObservers).toBe(0);
-      expect(createObjectURL).toHaveBeenCalledTimes(
-        revokeObjectURL.mock.calls.length
+    for (let count = 0; count < 20; count += 1) {
+      const tile = createRadarTile(
+        radar,
+        { z: 1, x: count, y: 0 } as L.Coords,
+        vi.fn()
       );
-      expect(listenerDelta(addDocument, removeDocument, 'keydown')).toBe(0);
+      await flush();
+      tile.dispatchEvent(new Event('load'));
+      await flush();
+      rerender(<OperationalMap {...props} radarEnabled={false} />);
+      await flush();
+      expect(manager.stats()).toEqual({
+        inFlight: 0,
+        tracked: 0,
+        objectUrls: 0,
+      });
+      expect(urls.active).toHaveLength(0);
+      expect(layerCount(expectMap(map))).toBe(baselineLayers - 1);
+      rerender(<OperationalMap {...props} radarEnabled={true} />);
+      await flush();
+      expect(leafletEventCount(expectMap(map))).toBe(baselineEvents);
     }
+
+    unmount();
+    await flush();
+    expect(radarGridLayerTestInternals.managers).toHaveLength(0);
+    expect(radarGridLayerTestInternals.layers).toHaveLength(0);
+    expect(urls.active).toHaveLength(0);
   });
 });
-
-function collectLayerIdentities(map: L.Map | null) {
-  const groups: number[] = [];
-  let radar: L.Layer | null = null;
-  let basemap: L.Layer | null = null;
-  map?.eachLayer((layer) => {
-    if (layer instanceof L.TileLayer) basemap = layer;
-    else if (layer instanceof L.GridLayer) radar = layer;
-    else if (layer instanceof L.LayerGroup) groups.push(L.Util.stamp(layer));
-  });
-  return { groups: groups.sort((left, right) => left - right), radar, basemap };
-}
-
-function listenerDelta(
-  add: MockInstance<typeof document.addEventListener>,
-  remove: MockInstance<typeof document.removeEventListener>,
-  type: string
-): number {
-  return (
-    add.mock.calls.filter((call) => call[0] === type).length -
-    remove.mock.calls.filter((call) => call[0] === type).length
-  );
-}
-
-function mapProps(
-  overrides: Partial<React.ComponentProps<typeof OperationalMap>> = {}
-): React.ComponentProps<typeof OperationalMap> {
-  return {
-    snapshot: makeOverviewSnapshot({
-      routeWest: [
-        { latitude: 39, longitude: -104 },
-        { latitude: 40, longitude: -103 },
-      ],
-    }),
-    radarEnabled: true,
-    radarRefreshToken: 1,
-    retryRadar: vi.fn(),
-    reportRadarResult: vi.fn(),
-    onRadarEnabledChange: vi.fn(),
-    ...overrides,
-  };
-}

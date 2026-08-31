@@ -34,6 +34,7 @@ import {
   prefersReducedMotion,
 } from './operational-map-helpers';
 import { StableMapComposition } from './StableMapComposition';
+import { useMeasurementLine } from './useMeasurementLine';
 
 export type { OperationalMapHandle } from './operational-map-types';
 
@@ -150,19 +151,7 @@ export const OperationalMap = forwardRef<
     return () => observer.disconnect();
   }, [map]);
 
-  useEffect(() => {
-    if (!map) return;
-    const line = L.polyline(measurePoints, {
-      color: '#f8fafc',
-      dashArray: '4 4',
-      pane: 'current-position-layer',
-      weight: 2,
-    });
-    if (measurePoints.length > 1) line.addTo(map);
-    return () => {
-      line.remove();
-    };
-  }, [map, measurePoints]);
+  useMeasurementLine(map, measurePoints);
 
   useEffect(() => {
     if (!map) return;

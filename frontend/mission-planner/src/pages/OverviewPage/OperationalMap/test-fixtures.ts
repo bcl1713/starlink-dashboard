@@ -16,7 +16,9 @@ type LatLon = Readonly<{ latitude: number; longitude: number }>;
 
 interface SnapshotOptions {
   readonly routeWest?: readonly LatLon[];
+  readonly routeEast?: readonly LatLon[];
   readonly activeNormal?: readonly LatLon[];
+  readonly activeWarning?: readonly LatLon[];
   readonly history?: readonly (readonly [string, number, number])[];
   readonly routePhase?: OverviewSourcePhase;
   readonly routeError?: boolean;
@@ -31,9 +33,9 @@ export function makeOverviewSnapshot(
   options: SnapshotOptions = {}
 ): OverviewDataSnapshot {
   const routeWest = route('route-west', options.routeWest ?? []);
-  const routeEast = route('route-east', []);
+  const routeEast = route('route-east', options.routeEast ?? []);
   const activeNormal = activeLink('normal', options.activeNormal ?? []);
-  const activeWarning = activeLink('warning', []);
+  const activeWarning = activeLink('warning', options.activeWarning ?? []);
   const pois = poiResponse([
     poi('poi-a', 'Departure <script>', 39, -104, 'departure'),
   ]);

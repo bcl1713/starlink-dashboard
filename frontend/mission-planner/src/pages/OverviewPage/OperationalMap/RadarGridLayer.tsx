@@ -5,6 +5,7 @@ import { useMap } from 'react-leaflet';
 import { getRainViewerRadarTile } from '../../../services/monitoring';
 import type { OverviewDataController } from '../overview-data-types';
 import { createRadarLayer } from './radar-grid-layer-factory';
+import { radarGridLayerTestInternals } from './radar-grid-layer-test-internals';
 import { createRadarTileManager } from './radar-tile-manager';
 
 interface RadarGridLayerProps {
@@ -43,6 +44,16 @@ export function RadarGridLayer({
   );
   /* eslint-enable react-hooks/refs */
 
+  useEffect(() => {
+    if (!radarGridLayerTestInternals.enabled) return;
+    radarTestManagers.add(manager);
+    radarTestLayers.add(layer);
+    return () => {
+      radarTestManagers.delete(manager);
+      radarTestLayers.delete(layer);
+    };
+  }, [layer, manager]);
+
   useEffect(() => () => manager.destroy(), [manager]);
 
   useEffect(() => {
@@ -78,3 +89,6 @@ function ensureRadarPane(map: L.Map): void {
   const pane = map.createPane('weather-radar');
   pane.style.zIndex = '200';
 }
+
+const { managers: radarTestManagers, layers: radarTestLayers } =
+  radarGridLayerTestInternals;

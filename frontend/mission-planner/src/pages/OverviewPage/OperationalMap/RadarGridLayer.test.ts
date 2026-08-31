@@ -1,83 +1,171 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { Coords } from 'leaflet';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createRadarLayer } from './radar-grid-layer-factory';
+import {
+  createAttachedHarness,
+  finishChanged,
+  flush,
+  lastLoad,
+  trackUrls,
+  waitFor,
+  waitForSrc,
+} from './radar-grid-layer-test-harness';
 
-type Done = (error?: Error | null, tile?: HTMLElement) => void;
+beforeEach(() => {
+  Object.defineProperty(HTMLImageElement.prototype, 'decode', {
+    configurable: true,
+    value: vi.fn(() => Promise.resolve()),
+  });
+});
 
-describe('RadarGridLayer', () => {
-  it('registers tile images synchronously and reconciles once after boundary', async () => {
-    const manager = {
-      loadVisibleTiles: vi.fn(),
-      registerTile: vi.fn(),
-      unloadTile: vi.fn(),
-      destroy: vi.fn(),
-      stats: vi.fn(),
-    };
-    const layer = createRadarLayer(manager, {
-      token: () => 0,
-      enabledEpoch: () => 0,
-    });
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('RadarGridLayer real attachment', () => {
+  it('reconciles attached create bursts, map refreshes, unload, disable, retry, and wrapped token zero', async () => {
+    const harness = createAttachedHarness();
+    const loadVisible = vi.spyOn(harness.manager, 'loadVisibleTiles');
+    harness.reset();
+    loadVisible.mockClear();
     const done = vi.fn();
-
-    const tile = (
-      layer as unknown as {
-        createTile(coords: Coords, done: Done): HTMLElement;
-      }
-    ).createTile({ x: 2, y: 3, z: 4 } as Coords, done);
-
-    expect(tile).toBeInstanceOf(HTMLImageElement);
-    expect(manager.registerTile).toHaveBeenCalledExactlyOnceWith(
-      { z: 4, x: 2, y: 3 },
-      tile,
-      done
+    const tiles = Array.from({ length: 3 }, (_, x) =>
+      harness.create({ z: 2, x, y: 1 }, done)
     );
-    expect(manager.loadVisibleTiles).not.toHaveBeenCalled();
-    await Promise.resolve();
-    expect(manager.loadVisibleTiles).toHaveBeenCalledExactlyOnceWith({
-      token: 0,
-      tiles: [{ z: 4, x: 2, y: 3 }],
+
+    await flush();
+    expect(loadVisible).toHaveBeenCalledTimes(1);
+    expect(harness.loadTile).toHaveBeenCalledTimes(3);
+    await harness.finishAll(tiles);
+    await lastLoad(loadVisible);
+    expect(harness.report).toHaveBeenCalledExactlyOnceWith(10, {
+      ok: true,
+      frameTimestamp: '100',
     });
-    expect(layer.options).toMatchObject({
-      attribution: 'Weather radar © Rain Viewer / MeteoLab Inc.',
-      keepBuffer: 0,
-      maxZoom: 7,
-      minZoom: 0,
-      opacity: 0.7,
-      pane: 'weather-radar',
-      updateWhenIdle: true,
+
+    harness.map.fire('moveend');
+    harness.layer.scheduleRefresh();
+    await flush();
+    expect(loadVisible).toHaveBeenCalledTimes(1);
+    harness.map.fire('zoomend');
+    harness.layer.scheduleRefresh();
+    await flush();
+    expect(loadVisible).toHaveBeenCalledTimes(1);
+    const afterInitial = [tiles[0].src, tiles[2].src];
+    harness.layer.fire('tileunload', { coords: { z: 2, x: 1, y: 1 } });
+    await flush();
+    expect(loadVisible).toHaveBeenCalledTimes(2);
+    await finishChanged([tiles[0], tiles[2]], afterInitial);
+    await flush();
+    harness.manager.destroy();
+    harness.map.removeLayer(harness.layer);
+    expect(harness.manager.stats()).toEqual({
+      inFlight: 0,
+      tracked: 0,
+      objectUrls: 0,
     });
+
+    harness.token = Number.MAX_SAFE_INTEGER;
+    harness.layer.addTo(harness.map);
+    const retryTiles = [
+      harness.create({ z: 2, x: 0, y: 1 }, vi.fn()),
+      harness.create({ z: 2, x: 2, y: 1 }, vi.fn()),
+    ];
+    await flush();
+    await harness.finishAll(retryTiles);
+    await flush();
+    expect(harness.loadTile).toHaveBeenCalledTimes(10);
+    harness.token = 0;
+    const afterMaxToken = retryTiles.map((tile) => tile.src);
+    harness.layer.scheduleRefresh();
+    await flush();
+    await finishChanged(retryTiles, afterMaxToken);
+    await flush();
+    expect(harness.loadTile).toHaveBeenCalledTimes(15);
+    harness.destroy();
   });
 
-  it('unloads tiles neutrally and schedules a reconciled generation', async () => {
-    const manager = {
-      loadVisibleTiles: vi.fn(),
-      registerTile: vi.fn(),
-      unloadTile: vi.fn(),
-      destroy: vi.fn(),
-      stats: vi.fn(),
-    };
-    const layer = createRadarLayer(manager, {
-      token: () => 11,
-      enabledEpoch: () => 0,
-    });
-    const api = layer as unknown as {
-      createTile(coords: Coords, done: Done): HTMLElement;
-    };
+  it('holds service concurrency at eight and reports a partial batch failure once', async () => {
+    const harness = createAttachedHarness({ deferred: true });
+    const loadVisible = vi.spyOn(harness.manager, 'loadVisibleTiles');
+    harness.reset();
+    loadVisible.mockClear();
+    const tiles = Array.from({ length: 16 }, (_, x) =>
+      harness.create({ z: 3, x, y: 0 }, vi.fn())
+    );
 
-    api.createTile({ x: 0, y: 0, z: 1 } as Coords, vi.fn());
-    api.createTile({ x: 1, y: 0, z: 1 } as Coords, vi.fn());
-    layer.fire('tileunload', { coords: { x: 0, y: 0, z: 1 } });
-    await Promise.resolve();
+    await flush();
+    expect(harness.maxActive).toBe(8);
+    expect(harness.maxActive).toBeLessThanOrEqual(8);
+    harness.resolveBatch(0, 8);
+    for (const image of tiles.slice(0, 8)) {
+      await waitForSrc(image, 'blob:');
+      image.dispatchEvent(new Event('load'));
+    }
+    await flush();
+    await waitFor(() => harness.gateCount >= 16);
+    expect(harness.maxActive).toBe(8);
+    harness.resolveBatch(8, 16, 12);
+    await harness.finishAll(tiles.filter((_, index) => index !== 12));
+    await lastLoad(loadVisible);
 
-    expect(manager.unloadTile).toHaveBeenCalledExactlyOnceWith({
-      z: 1,
-      x: 0,
-      y: 0,
+    expect(harness.report).toHaveBeenCalledExactlyOnceWith(10, {
+      ok: false,
+      error: expect.any(Error),
     });
-    expect(manager.loadVisibleTiles).toHaveBeenCalledExactlyOnceWith({
-      token: 11,
-      tiles: [{ z: 1, x: 1, y: 0 }],
+    harness.destroy();
+  });
+
+  it('rejects decode failures, restores target image errors, and ignores superseded candidates', async () => {
+    const urls = trackUrls();
+    const harness = createAttachedHarness();
+    const loadVisible = vi.spyOn(harness.manager, 'loadVisibleTiles');
+    harness.reset();
+    loadVisible.mockClear();
+    const image = harness.create({ z: 4, x: 0, y: 0 }, vi.fn());
+    await flush();
+    await waitForSrc(image, 'blob:1');
+    image.dispatchEvent(new Event('load'));
+    await lastLoad(loadVisible);
+    expect(image.src).toContain('blob:1');
+
+    harness.token = 11;
+    harness.layer.scheduleRefresh();
+    await flush();
+    await waitForSrc(image, 'blob:2');
+    image.dispatchEvent(new Event('error'));
+    await lastLoad(loadVisible);
+    expect(image.src).toContain('blob:1');
+    expect(urls.active.has('blob:2')).toBe(false);
+    expect(harness.report).toHaveBeenLastCalledWith(11, {
+      ok: false,
+      error: expect.any(Error),
     });
+
+    vi.mocked(HTMLImageElement.prototype.decode).mockRejectedValueOnce(
+      new Error('decode failed')
+    );
+    harness.token = 12;
+    harness.layer.scheduleRefresh();
+    await flush();
+    await lastLoad(loadVisible);
+    expect(harness.report).toHaveBeenLastCalledWith(12, {
+      ok: false,
+      error: expect.any(Error),
+    });
+
+    harness.token = 13;
+    harness.layer.scheduleRefresh();
+    await flush();
+    await waitForSrc(image, 'blob:4');
+    harness.token = 14;
+    harness.layer.scheduleRefresh();
+    await flush();
+    image.dispatchEvent(new Event('load'));
+    await waitForSrc(image, 'blob:5');
+    image.dispatchEvent(new Event('load'));
+    await lastLoad(loadVisible);
+    expect(image.src).toContain('blob:5');
+    expect(urls.active.has('blob:4')).toBe(false);
+    harness.destroy();
   });
 });
