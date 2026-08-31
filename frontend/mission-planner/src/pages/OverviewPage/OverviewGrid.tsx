@@ -23,6 +23,7 @@ export interface OverviewGridProps {
 export interface OverviewFullscreenController {
   readonly mode: OverviewFullscreenMode;
   readonly fallbackMessage: string | null;
+  readonly enterPending: boolean;
   readonly enterFromUserGesture: () => Promise<void>;
   readonly exitFromUserGesture: () => Promise<void>;
 }
@@ -95,14 +96,15 @@ export function useOverviewFullscreen(
 ): OverviewFullscreenController {
   const [mode, setMode] = useState<OverviewFullscreenMode>('inline');
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
+  const [enterPending, setEnterPending] = useState(false);
   const modeRef = useRef(mode);
   const mountedRef = useRef(false);
   const attemptRef = useRef<{
     readonly id: number;
     readonly target: HTMLElement;
+    readonly promise: Promise<void>;
   } | null>(null);
   const generationRef = useRef(0);
-  const staleErrorDebtRef = useRef(0);
   const ownsNativeRef = useRef(false);
 
   useEffect(() => {
@@ -125,6 +127,7 @@ export function useOverviewFullscreen(
       const fullscreenElement = ownerDocument.fullscreenElement;
       if (fullscreenElement === target && target) {
         attemptRef.current = null;
+        setEnterPending(false);
         ownsNativeRef.current = true;
         root.classList.remove('overview-kiosk-active');
         setMode('native');
@@ -141,13 +144,10 @@ export function useOverviewFullscreen(
       if (target) restoreFocus(triggerRef.current, target);
     };
     const onError = () => {
-      if (staleErrorDebtRef.current > 0) {
-        staleErrorDebtRef.current -= 1;
-        return;
-      }
       const attempt = attemptRef.current;
       if (!attempt) return;
       attemptRef.current = null;
+      setEnterPending(false);
       enterKiosk(attempt.target);
     };
     const onKeyDown = (event: KeyboardEvent) => {
@@ -156,6 +156,7 @@ export function useOverviewFullscreen(
       root.classList.remove('overview-kiosk-active');
       ownsNativeRef.current = false;
       attemptRef.current = null;
+      setEnterPending(false);
       setMode('inline');
       setFallbackMessage(null);
       if (target) restoreFocus(triggerRef.current, target);
@@ -167,7 +168,7 @@ export function useOverviewFullscreen(
       mountedRef.current = false;
       generationRef.current += 1;
       attemptRef.current = null;
-      staleErrorDebtRef.current = 0;
+      setEnterPending(false);
       ownsNativeRef.current = false;
       ownerDocument.removeEventListener('fullscreenchange', onChange);
       ownerDocument.removeEventListener('fullscreenerror', onError);
@@ -179,35 +180,46 @@ export function useOverviewFullscreen(
   return {
     mode,
     fallbackMessage,
+    enterPending,
     enterFromUserGesture: async () => {
       const target = targetRef.current;
       if (!target?.requestFullscreen) {
         ownerDocument.documentElement.classList.add('overview-kiosk-active');
         ownsNativeRef.current = false;
         attemptRef.current = null;
+        setEnterPending(false);
         setMode('kiosk');
         setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
         target?.focus();
         return;
       }
+      if (attemptRef.current) return attemptRef.current.promise;
       const id = generationRef.current + 1;
-      if (attemptRef.current) staleErrorDebtRef.current += 1;
       generationRef.current = id;
-      attemptRef.current = { id, target };
+      let request: Promise<void>;
       try {
-        await target.requestFullscreen();
+        request = target.requestFullscreen();
       } catch {
-        if (attemptRef.current?.id !== id || !mountedRef.current) {
-          if (staleErrorDebtRef.current > 0) staleErrorDebtRef.current -= 1;
-          return;
-        }
-        attemptRef.current = null;
         ownerDocument.documentElement.classList.add('overview-kiosk-active');
         ownsNativeRef.current = false;
         setMode('kiosk');
         setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
         target.focus();
+        return;
       }
+      const promise = request.catch(() => {
+        if (attemptRef.current?.id !== id || !mountedRef.current) return;
+        attemptRef.current = null;
+        setEnterPending(false);
+        ownerDocument.documentElement.classList.add('overview-kiosk-active');
+        ownsNativeRef.current = false;
+        setMode('kiosk');
+        setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
+        target.focus();
+      });
+      attemptRef.current = { id, target, promise };
+      setEnterPending(true);
+      await promise;
     },
     exitFromUserGesture: async () => {
       const target = targetRef.current;
@@ -217,6 +229,7 @@ export function useOverviewFullscreen(
       }
       ownerDocument.documentElement.classList.remove('overview-kiosk-active');
       attemptRef.current = null;
+      setEnterPending(false);
       ownsNativeRef.current = false;
       setMode('inline');
       setFallbackMessage(null);

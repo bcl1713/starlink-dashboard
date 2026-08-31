@@ -2,7 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { StrictMode, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { OverviewGrid, useOverviewLayoutMode } from './OverviewGrid';
+import { OverviewGrid } from './OverviewGrid';
+import { OverviewClocks } from './OverviewClocks';
 
 type Listener = (event: MediaQueryListEvent) => void;
 
@@ -91,10 +92,6 @@ function installMatchMedia(width: number) {
   };
 }
 
-function ModeProbe() {
-  return <output aria-label="layout mode">{useOverviewLayoutMode()}</output>;
-}
-
 function StatefulSentinel() {
   const [value, setValue] = useState('');
   return (
@@ -105,7 +102,7 @@ function StatefulSentinel() {
   );
 }
 
-function grid() {
+function grid(includeClocks = false) {
   return (
     <OverviewGrid
       map={<StatefulSentinel />}
@@ -134,10 +131,23 @@ function grid() {
         </article>
       }
       latency={
-        <article>
-          <h2>Network Latency</h2>
-          <p>Latency sentinel</p>
-        </article>
+        includeClocks ? (
+          <OverviewClocks
+            clocks={[
+              { id: 'utc', label: 'UTC (Zulu)', timeZone: 'UTC' },
+              { id: 'tokyo', label: 'Tokyo', timeZone: 'Asia/Tokyo' },
+            ]}
+            expanded={true}
+            layoutMode="desktop"
+            now={new Date('2026-08-31T05:00:00.000Z')}
+            onExpandedChange={() => {}}
+          />
+        ) : (
+          <article>
+            <h2>Network Latency</h2>
+            <p>Latency sentinel</p>
+          </article>
+        )
       }
       throughput={
         <article>
@@ -241,20 +251,16 @@ describe('OverviewGrid', () => {
     );
   });
 
-  it('balances exact StrictMode media listeners across all four transitions', async () => {
+  it('balances exact StrictMode media listeners across all four layout queries', async () => {
     const media = installMatchMedia(390);
-    const { unmount } = render(
-      <StrictMode>
-        <ModeProbe />
-        {grid()}
-      </StrictMode>
-    );
+    const { unmount } = render(<StrictMode>{grid(true)}</StrictMode>);
 
     const input = screen.getByLabelText('Map sentinel');
-    const clock = screen.getByText('POI sentinel');
+    const mapChild = input.parentElement;
+    const clock = screen.getByLabelText(/UTC \(Zulu\):/).closest('article');
     fireEvent.change(input, { target: { value: 'operator note' } });
     for (const count of media.countsByQuery().values()) {
-      expect(count).toEqual({ add: 4, remove: 2, active: 2 });
+      expect(count).toEqual({ add: 2, remove: 1, active: 1 });
     }
 
     for (const [width, mode] of [
@@ -265,16 +271,24 @@ describe('OverviewGrid', () => {
     ] as const) {
       media.resize(width);
       await waitFor(() =>
-        expect(screen.getByLabelText('layout mode')).toHaveTextContent(mode)
+        expect(screen.getByTestId('overview-grid')).toHaveAttribute(
+          'data-layout-mode',
+          mode
+        )
       );
       expect(screen.getByLabelText('Map sentinel')).toBe(input);
-      expect(screen.getByText('POI sentinel')).toBe(clock);
+      expect(screen.getByLabelText('Map sentinel').parentElement).toBe(
+        mapChild
+      );
+      expect(screen.getByLabelText(/UTC \(Zulu\):/).closest('article')).toBe(
+        clock
+      );
       expect(input).toHaveValue('operator note');
     }
 
     unmount();
     for (const count of media.countsByQuery().values()) {
-      expect(count).toEqual({ add: 4, remove: 4, active: 0 });
+      expect(count).toEqual({ add: 2, remove: 2, active: 0 });
     }
     expect(media.listenerCount()).toBe(0);
   });

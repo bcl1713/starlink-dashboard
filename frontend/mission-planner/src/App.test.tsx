@@ -100,10 +100,21 @@ describe('App shell routing', () => {
     ['/export', 'Data Export'],
     ['/configuration', 'Configuration'],
   ])('renders production page identity for %s', async (path, heading) => {
+    const consoleError = path.includes('/legs/')
+      ? spyConsoleError()
+      : undefined;
     const { unmount } = renderShell([path]);
     expect(screen.getByLabelText('location')).toHaveTextContent(path);
     expect(await screen.findByRole('heading', { name: heading })).toBeVisible();
     unmount();
+    if (consoleError) {
+      expect(consoleError.messages()).toEqual([
+        expect.stringContaining(
+          'Select is changing from uncontrolled to controlled'
+        ),
+      ]);
+      consoleError.restore();
+    }
   });
 
   it('renders production mission detail identity for a dynamic route', async () => {
@@ -117,9 +128,14 @@ describe('App shell routing', () => {
   });
 
   it('does not catch unknown paths', async () => {
+    const consoleError = spyConsoleError();
     renderShell(['/unknown']);
     await waitFor(() => expect(screen.getByRole('main')).toBeEmptyDOMElement());
     expect(screen.getByLabelText('location')).toHaveTextContent('/unknown');
+    expect(consoleError.messages()).toEqual([
+      expect.stringContaining('No routes matched location "/unknown"'),
+    ]);
+    consoleError.restore();
   });
 
   it('renders compact navigation classes, close behavior, one main, and skip link', () => {
@@ -147,3 +163,16 @@ describe('App shell routing', () => {
     expect(menu).toHaveAttribute('aria-expanded', 'false');
   });
 });
+
+function spyConsoleError() {
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  return {
+    messages: () =>
+      [...error.mock.calls, ...warn.mock.calls].map((call) => String(call[0])),
+    restore: () => {
+      error.mockRestore();
+      warn.mockRestore();
+    },
+  };
+}

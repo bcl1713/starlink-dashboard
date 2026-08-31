@@ -163,6 +163,7 @@ export function OverviewPage() {
           ref={fullscreenButtonRef}
           type="button"
           className="overview-fullscreen-button"
+          disabled={fullscreen.mode === 'inline' && fullscreen.enterPending}
           aria-describedby={
             fullscreen.fallbackMessage
               ? 'overview-fullscreen-message'

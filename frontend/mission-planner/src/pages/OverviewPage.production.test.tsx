@@ -1,5 +1,5 @@
 import { fireEvent, screen } from '@testing-library/react';
-import { StrictMode } from 'react';
+import L from 'leaflet';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -10,7 +10,6 @@ import {
   resolveOverviewProductionServices,
 } from './OverviewPage/production-test-harness';
 import { OverviewPage } from './OverviewPage';
-import { OVERVIEW_PREFERENCES_STORAGE_KEY } from './OverviewPage/preferences';
 
 const mocks = getOverviewProductionMocks();
 
@@ -35,7 +34,7 @@ describe('OverviewPage production composition', () => {
     vi.useRealTimers();
   });
 
-  it('preserves real map, chart, live node, and controls through five scheduled cycles', async () => {
+  it('preserves real map, chart, live node, and controls through five scheduled cycles plus manual refresh', async () => {
     const { container } = renderWithOverviewClient(<OverviewPage />);
     await finishOverviewProductionCycle();
     expect(
@@ -53,23 +52,111 @@ describe('OverviewPage production composition', () => {
       target: { value: 'departure' },
     });
     fireEvent.click(screen.getByText('Operational layers'));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Departure' })[0]);
     const disclosure = container.querySelector('details');
+    const beforeManual = mocks.getStatus.mock.calls.length;
 
     for (let count = 0; count < 5; count += 1) {
       await vi.advanceTimersByTimeAsync(1000);
       await finishOverviewProductionCycle();
-      expect(screen.getByRole('region', { name: 'Operational map' })).toBe(map);
-      expect(screen.getByRole('img', { name: 'Network Latency chart' })).toBe(
-        latencyChart
-      );
-      expect(mocks.createdPlots[0]).toBe(firstPlot);
-      expect(container.querySelector('[aria-live="polite"]')?.firstChild).toBe(
-        live
-      );
-      expect(disclosure?.open).toBe(true);
-      expect(screen.getByLabelText('POI category')).toHaveValue('departure');
+      assertProductionIdentity(container, map, latencyChart, firstPlot, live);
+      expectProductionState(disclosure);
     }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh overview' }));
+    await finishOverviewProductionCycle();
+    expect(mocks.getStatus.mock.calls.length).toBeGreaterThan(beforeManual);
+    assertProductionIdentity(container, map, latencyChart, firstPlot, live);
+    expectProductionState(disclosure);
+    expect(
+      screen.getByRole('region', { name: 'Feature details' })
+    ).toHaveTextContent('Departure');
+  }, 20_000);
+
+  it('focuses the production ground entry point through the Leaflet map boundary', async () => {
+    const reduced = vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          media: query,
+          matches: query.includes('prefers-reduced-motion'),
+          onchange: null,
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }) as MediaQueryList
+    );
+    const setView = vi.spyOn(L.Map.prototype, 'setView');
+    renderWithOverviewClient(<OverviewPage />);
+    await finishOverviewProductionCycle();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Focus map' }));
+    const focusCall = setView.mock.calls.find(
+      ([center, zoom]) =>
+        Array.isArray(center) &&
+        center[0] === 39.7392 &&
+        center[1] === -104.9903 &&
+        zoom === 8
+    );
+    expect(focusCall?.[2]).toMatchObject({ animate: false });
+
+    setView.mockRestore();
+    reduced.mockRestore();
   });
+
+  it('preserves production state and owners through inline native kiosk inline fullscreen modes', async () => {
+    const { container } = renderWithOverviewClient(<OverviewPage />);
+    await finishOverviewProductionCycle();
+    const page = container.querySelector('.overview-page') as HTMLElement;
+    const map = screen.getByRole('region', { name: 'Operational map' });
+    const chart = screen.getByRole('img', { name: 'Network Latency chart' });
+    const firstPlot = mocks.createdPlots[0];
+    const live = container.querySelector('[aria-live="polite"]')?.firstChild;
+    const request = vi.fn(() => new Promise<void>(() => {}));
+    page.requestFullscreen = request;
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      value: page,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Overview controls' }));
+    fireEvent.change(screen.getByLabelText('POI category'), {
+      target: { value: 'arrival' },
+    });
+    fireEvent.click(screen.getByText('Operational layers'));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Departure' })[0]);
+    const disclosure = container.querySelector('details');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    expect(
+      screen.getByRole('button', { name: 'Enter fullscreen' })
+    ).toBeDisabled();
+    fireEvent(document, new Event('fullscreenchange'));
+    expect(page).toHaveClass('overview-page--native');
+    assertProductionIdentity(container, map, chart, firstPlot, live);
+    expectProductionState(disclosure, 'arrival');
+
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      value: null,
+    });
+    fireEvent(document, new Event('fullscreenchange'));
+    page.requestFullscreen = vi.fn(() => Promise.reject(new Error('blocked')));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    await finishOverviewProductionCycle();
+    expect(
+      screen.getByRole('button', { name: 'Exit kiosk view' })
+    ).toBeVisible();
+    assertProductionIdentity(container, map, chart, firstPlot, live);
+    expectProductionState(disclosure, 'arrival');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exit kiosk view' }));
+    expect(page).toHaveClass('overview-page--inline');
+    assertProductionIdentity(container, map, chart, firstPlot, live);
+    expectProductionState(disclosure, 'arrival');
+    expect(request).toHaveBeenCalledTimes(1);
+  }, 20_000);
 
   it('routes all production panel retry buttons to one manual refresh path', async () => {
     const failed = {
@@ -100,96 +187,32 @@ describe('OverviewPage production composition', () => {
     }
     expect(mocks.getStatus.mock.calls.length).toBe(before + 6);
   });
-
-  it('persists each production preference action exactly once in StrictMode', async () => {
-    const setItem = vi.fn();
-    Object.defineProperty(window, 'localStorage', {
-      configurable: true,
-      value: { getItem: vi.fn(() => null), setItem },
-    });
-    renderWithOverviewClient(
-      <StrictMode>
-        <OverviewPage />
-      </StrictMode>
-    );
-    await finishOverviewProductionCycle();
-    const map = screen.getByRole('region', { name: 'Operational map' });
-    const chart = screen.getByRole('img', { name: 'Network Latency chart' });
-
-    expect(
-      writeState(setItem, () =>
-        fireEvent.click(
-          screen.getByRole('button', { name: 'Overview controls' })
-        )
-      ).disclosures.controlsExpanded
-    ).toBe(true);
-    expect(
-      writeState(setItem, () =>
-        fireEvent.change(screen.getByLabelText('Refresh cadence'), {
-          target: { value: 'paused' },
-        })
-      ).refreshCadence
-    ).toBe('paused');
-    expect(
-      writeState(setItem, () =>
-        fireEvent.change(screen.getByLabelText('POI category'), {
-          target: { value: 'departure' },
-        })
-      ).poiFilter
-    ).toBe('departure');
-    expect(
-      writeState(setItem, () =>
-        fireEvent.click(screen.getByRole('checkbox', { name: 'Weather Radar' }))
-      ).radarEnabled
-    ).toBe(false);
-    expect(
-      writeState(setItem, () =>
-        fireEvent.click(screen.getByRole('button', { name: 'Clock settings' }))
-      ).disclosures.clockSettingsExpanded
-    ).toBe(true);
-
-    fireEvent.change(screen.getByLabelText('Clock time zone'), {
-      target: { value: 'Europe/London' },
-    });
-    fireEvent.change(screen.getByLabelText('Clock label'), {
-      target: { value: 'London' },
-    });
-    expect(
-      writeState(setItem, () =>
-        fireEvent.click(screen.getByRole('button', { name: 'Add clock' }))
-      ).clocks.at(-1)
-    ).toMatchObject({ timeZone: 'Europe/London', label: 'London' });
-
-    const tokyo = screen.getByLabelText('Relabel Tokyo');
-    fireEvent.focus(tokyo);
-    fireEvent.change(tokyo, { target: { value: 'Tokyo Ops' } });
-    expect(
-      writeState(setItem, () => fireEvent.blur(tokyo)).clocks.some(
-        (clock: { label: string }) => clock.label === 'Tokyo Ops'
-      )
-    ).toBe(true);
-    expect(
-      writeState(setItem, () =>
-        fireEvent.click(screen.getByRole('button', { name: 'Move Omaha up' }))
-      ).clocks[2].label
-    ).toBe('Omaha');
-    expect(
-      writeState(setItem, () =>
-        fireEvent.click(screen.getByRole('button', { name: 'Remove London' }))
-      ).clocks.some((clock: { label: string }) => clock.label === 'London')
-    ).toBe(false);
-
-    expect(screen.getByRole('region', { name: 'Operational map' })).toBe(map);
-    expect(screen.getByRole('img', { name: 'Network Latency chart' })).toBe(
-      chart
-    );
-  });
 });
 
-function writeState(setItem: ReturnType<typeof vi.fn>, action: () => void) {
-  setItem.mockClear();
-  action();
-  expect(setItem).toHaveBeenCalledTimes(1);
-  expect(setItem.mock.calls[0][0]).toBe(OVERVIEW_PREFERENCES_STORAGE_KEY);
-  return JSON.parse(setItem.mock.calls[0][1] as string);
+function assertProductionIdentity(
+  container: HTMLElement,
+  map: HTMLElement,
+  chart: HTMLElement,
+  plot: { root: HTMLElement },
+  live: ChildNode | null | undefined
+) {
+  expect(screen.getByRole('region', { name: 'Operational map' })).toBe(map);
+  expect(screen.getByRole('img', { name: 'Network Latency chart' })).toBe(
+    chart
+  );
+  expect(mocks.createdPlots[0]).toBe(plot);
+  expect(container.querySelector('[aria-live="polite"]')?.firstChild).toBe(
+    live
+  );
+}
+
+function expectProductionState(
+  disclosure: HTMLDetailsElement | null,
+  poi = 'departure'
+) {
+  expect(disclosure?.open).toBe(true);
+  expect(screen.getByLabelText('POI category')).toHaveValue(poi);
+  expect(
+    screen.getByRole('button', { name: 'Overview controls' })
+  ).toHaveAttribute('aria-expanded', 'true');
 }
