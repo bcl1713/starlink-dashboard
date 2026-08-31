@@ -65,7 +65,9 @@ export function OverviewLayoutProvider({
 }: {
   readonly children: ReactNode;
 }) {
-  const mode = useLocalOverviewLayoutMode(true);
+  const sharedMode = useContext(OverviewLayoutContext);
+  const localMode = useLocalOverviewLayoutMode(sharedMode === null);
+  const mode = sharedMode ?? localMode;
 
   return (
     <OverviewLayoutContext.Provider value={mode}>
