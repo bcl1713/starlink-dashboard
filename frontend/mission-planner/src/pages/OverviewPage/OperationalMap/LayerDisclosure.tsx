@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react';
+
 import type {
   OperationalLayerState,
   OperationalLayerVisibility,
@@ -21,10 +23,24 @@ export function LayerDisclosure({
   onRadarEnabledChange,
   retryRadar,
 }: LayerDisclosureProps) {
+  const disclosure = useRef<HTMLDetailsElement | null>(null);
   const stateById = new Map(states.map((state) => [state.id, state]));
   const radarFailed = stateById.get('weather-radar')?.phase === 'error';
+  useEffect(() => {
+    const openForMeasurement = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const button = event.target.closest('button');
+      if (button?.textContent?.trim() === 'Measure distance') {
+        disclosure.current?.setAttribute('open', '');
+      }
+    };
+
+    document.addEventListener('click', openForMeasurement);
+    return () => document.removeEventListener('click', openForMeasurement);
+  }, []);
+
   return (
-    <details className="operational-map__panel" open>
+    <details className="operational-map__panel" ref={disclosure}>
       <summary className="operational-map__layer-summary">
         Operational layers
       </summary>

@@ -163,7 +163,7 @@ function expectFreshMountLocalDefaults(
   expect(
     screen.queryByRole('region', { name: 'Feature details' })
   ).not.toBeInTheDocument();
-  expect(document.querySelector('details')?.open).toBe(true);
+  expect(document.querySelector('details')?.open).toBe(false);
   for (const layer of OPERATIONAL_LAYERS) {
     if (layer.id === 'weather-radar') continue;
     expect(
@@ -176,7 +176,10 @@ function expectFreshMountLocalDefaults(
   expect(screen.getAllByText('Measurement: no distance selected')).toHaveLength(
     2
   );
-  expect(measureLines.every((line) => !map.hasLayer(line))).toBe(true);
+  const measurementLine = measureLines[measureLines.length - 1];
+  expect(measurementLine).toBeInstanceOf(L.Polyline);
+  expect(measurementLine.getLatLngs()).toEqual([]);
+  expect(map.hasLayer(measurementLine)).toBe(false);
   expect(
     screen.getByRole('button', { name: 'Enable map interaction' })
   ).toBeInTheDocument();
@@ -199,7 +202,7 @@ async function dirtyMountLocalState(
   ).toBeInTheDocument();
 
   fireEvent.click(screen.getByText('Operational layers'));
-  expect(document.querySelector('details')?.open).toBe(false);
+  expect(document.querySelector('details')?.open).toBe(true);
   fireEvent.click(screen.getByLabelText('Planned Route — western segment'));
   expect(
     screen.getByLabelText('Planned Route — western segment')
@@ -212,6 +215,7 @@ async function dirtyMountLocalState(
     map.fire('click', { latlng: L.latLng(39, -103.998) });
   });
   await flush();
+  expect(measurementLine.getLatLngs()).toHaveLength(2);
   expect(map.hasLayer(measurementLine)).toBe(true);
   expect(
     screen.getByRole('button', { name: 'Measure distance' })
