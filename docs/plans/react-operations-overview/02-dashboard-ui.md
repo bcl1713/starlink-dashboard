@@ -145,8 +145,11 @@ the stable Leaflet tree, `focusCoordinates()` handle, eleven vector groups,
 radar `GridLayer`, single timestamp/history identity reconciliation path,
 controlled radar retry/preference callbacks, sole `LayerDisclosure` layer
 control, internal object-URL cleanup, same-origin radar CSP boundary, and
-responsive map interaction behavior. Any future `blob:` CSP allowance waits for
-later browser acceptance.
+responsive map interaction behavior. Nginx/browser CSP adds only `blob:` to
+`img-src` as needed for internal, revoked radar object URLs, leaves
+`connect-src` unchanged, adds no direct RainViewer browser origin or network
+access, and remains subject to later exact-head real-browser CSP/network
+acceptance.
 
 **Steps:**
 

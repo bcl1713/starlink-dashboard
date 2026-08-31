@@ -169,9 +169,11 @@ Activation-critical ownership clauses:
   position, and same-origin radar tiles.
 - Radar retry and preference state are controlled by approved callbacks/props.
   `LayerDisclosure` is the sole radar and layer-control surface.
-- Object URLs stay internal to radar tile management and must be revoked. CSP
-  remains same-origin for proxied radar; any future `blob:` allowance is a later
-  browser-acceptance gate, not part of Task 11 implementation.
+- Object URLs stay internal to radar tile management and must be revoked.
+  Nginx/browser CSP adds only `blob:` to `img-src` as needed for those object
+  URLs, leaves `connect-src` unchanged, adds no direct RainViewer browser origin
+  or network access, and remains subject to later exact-head real-browser
+  CSP/network acceptance.
 - Task 11 owns responsive map interaction behavior, including mobile interaction
   opt-in, keyboard operation, reduced motion, textual equivalents, and stable
   state across refreshes and remounts.

@@ -91,10 +91,9 @@ Git.
 
 1. Require `git status --porcelain` empty; set immutable
    `SHA=$(git rev-parse HEAD)`, `PROJECT=react-overview-${SHA:0:12}`, and
-   `EVIDENCE=../starlink-dashboard-react-overview-evidence/$SHA/task-14` from
-   the repository root. Create that mode-0700 directory. No evidence-producing
-   commit may follow this run; if HEAD changes, use a new SHA-qualified
-   directory and rerun.
+   `EVIDENCE=/home/brian/starlink-dashboard-react-overview-evidence/$SHA/task-14`.
+   Create that mode-0700 directory. No evidence-producing commit may follow this
+   run; if HEAD changes, use a new SHA-qualified directory and rerun.
 2. Create `$EVIDENCE/runtime.env` only from `.env.example` plus explicit
    non-secret simulation values; never read/reuse `.env` or credentials. Set
    unique test credentials and fixed candidate host ports `18000`, `19090`,
@@ -174,9 +173,12 @@ Git.
 - No public IP in GEP frontend contracts, logs, evidence, tooltips, or
   accessible text. Render display fields as React text; never use
   `dangerouslySetInnerHTML`.
-- CSP adds only exact ArcGIS HTTPS to `img-src`; radar is proxied. Preserve
-  `object-src 'none'`, `frame-ancestors 'none'`, `form-action 'self'`,
-  `base-uri 'self'`, fullscreen permissions, and current `connect-src`.
+- CSP keeps same-origin radar tiles and the exact ArcGIS HTTPS `img-src`
+  allowance. The Nginx/browser CSP implementation adds only `blob:` to `img-src`
+  as needed for internal, revoked radar object URLs; it leaves `connect-src`
+  unchanged and adds no direct RainViewer browser origin or network access.
+  Preserve `object-src 'none'`, `frame-ancestors 'none'`, `form-action 'self'`,
+  `base-uri 'self'`, and fullscreen permissions.
 - Verify security headers through Mission Planner Nginx on SPA/API/tile
   responses and no CSP console violation at every real-stack acceptance
   viewport.
