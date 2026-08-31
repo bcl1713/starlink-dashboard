@@ -96,42 +96,73 @@ export function useOverviewFullscreen(
   const [mode, setMode] = useState<OverviewFullscreenMode>('inline');
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   const modeRef = useRef(mode);
+  const mountedRef = useRef(false);
+  const attemptRef = useRef<{
+    readonly id: number;
+    readonly target: HTMLElement;
+  } | null>(null);
+  const generationRef = useRef(0);
+  const ownsNativeRef = useRef(false);
 
   useEffect(() => {
     modeRef.current = mode;
   }, [mode]);
 
   useEffect(() => {
-    const target = targetRef.current;
+    mountedRef.current = true;
     const root = ownerDocument.documentElement;
+    const enterKiosk = (target: HTMLElement | null) => {
+      if (!mountedRef.current) return;
+      root.classList.add('overview-kiosk-active');
+      ownsNativeRef.current = false;
+      setMode('kiosk');
+      setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
+      target?.focus();
+    };
     const onChange = () => {
-      if (ownerDocument.fullscreenElement === target && target) {
+      const target = targetRef.current;
+      const fullscreenElement = ownerDocument.fullscreenElement;
+      if (fullscreenElement === target && target) {
+        attemptRef.current = null;
+        ownsNativeRef.current = true;
+        root.classList.remove('overview-kiosk-active');
         setMode('native');
+        setFallbackMessage(null);
         target.focus();
         return;
       }
+      if (fullscreenElement) return;
+      if (!ownsNativeRef.current) return;
+      ownsNativeRef.current = false;
       root.classList.remove('overview-kiosk-active');
       setMode('inline');
       setFallbackMessage(null);
       if (target) restoreFocus(triggerRef.current, target);
     };
     const onError = () => {
-      root.classList.add('overview-kiosk-active');
-      setMode('kiosk');
-      setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
-      target?.focus();
+      const attempt = attemptRef.current;
+      if (!attempt) return;
+      attemptRef.current = null;
+      enterKiosk(attempt.target);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || modeRef.current !== 'kiosk') return;
+      const target = targetRef.current;
       root.classList.remove('overview-kiosk-active');
+      ownsNativeRef.current = false;
+      attemptRef.current = null;
       setMode('inline');
       setFallbackMessage(null);
       if (target) restoreFocus(triggerRef.current, target);
     };
     ownerDocument.addEventListener('fullscreenchange', onChange);
-    ownerDocument.addEventListener('fullscreenerror', onError, { once: true });
+    ownerDocument.addEventListener('fullscreenerror', onError);
     ownerDocument.addEventListener('keydown', onKeyDown);
     return () => {
+      mountedRef.current = false;
+      generationRef.current += 1;
+      attemptRef.current = null;
+      ownsNativeRef.current = false;
       ownerDocument.removeEventListener('fullscreenchange', onChange);
       ownerDocument.removeEventListener('fullscreenerror', onError);
       ownerDocument.removeEventListener('keydown', onKeyDown);
@@ -146,15 +177,23 @@ export function useOverviewFullscreen(
       const target = targetRef.current;
       if (!target?.requestFullscreen) {
         ownerDocument.documentElement.classList.add('overview-kiosk-active');
+        ownsNativeRef.current = false;
+        attemptRef.current = null;
         setMode('kiosk');
         setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
         target?.focus();
         return;
       }
+      const id = generationRef.current + 1;
+      generationRef.current = id;
+      attemptRef.current = { id, target };
       try {
         await target.requestFullscreen();
       } catch {
+        if (attemptRef.current?.id !== id || !mountedRef.current) return;
+        attemptRef.current = null;
         ownerDocument.documentElement.classList.add('overview-kiosk-active');
+        ownsNativeRef.current = false;
         setMode('kiosk');
         setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
         target.focus();
@@ -167,6 +206,8 @@ export function useOverviewFullscreen(
         return;
       }
       ownerDocument.documentElement.classList.remove('overview-kiosk-active');
+      attemptRef.current = null;
+      ownsNativeRef.current = false;
       setMode('inline');
       setFallbackMessage(null);
       if (target) restoreFocus(triggerRef.current, target);
@@ -179,29 +220,43 @@ export function OverviewGrid(props: OverviewGridProps) {
 
   return (
     <div
-      className={`overview-grid overview-grid--${mode}`}
+      className={`overview-primary-grid overview-primary-grid--${mode}`}
       data-layout-mode={mode}
       data-testid="overview-grid"
     >
-      <section className="overview-map-panel" aria-label="Current Position">
+      <section
+        className="overview-map-panel"
+        aria-label="Current Position"
+        aria-labelledby="current-position-heading"
+      >
+        <h2 id="current-position-heading" className="sr-only">
+          Current Position
+        </h2>
         <div className="overview-map-region">{props.map}</div>
       </section>
       <section
-        className="overview-summary-strip"
+        className="overview-summary-region"
         aria-label="Operational summaries"
+        aria-labelledby="operational-summaries-heading"
       >
+        <h2 id="operational-summaries-heading" className="sr-only">
+          Operational summaries
+        </h2>
         {props.groundEntryPoint}
         {props.obstruction}
         {props.packetLoss}
       </section>
-      <section className="overview-poi-region" aria-label="POI Quick Reference">
-        {props.poiQuickReference}
-      </section>
-      <section className="overview-latency-region" aria-label="Network Latency">
-        {props.latency}
-      </section>
-      <section className="overview-throughput-region" aria-label="Throughput">
-        {props.throughput}
+      <section
+        className="overview-right-rail"
+        aria-label="Operations right rail"
+      >
+        <section className="overview-poi-region">
+          {props.poiQuickReference}
+        </section>
+        <section className="overview-latency-region">{props.latency}</section>
+        <section className="overview-throughput-region">
+          {props.throughput}
+        </section>
       </section>
     </div>
   );

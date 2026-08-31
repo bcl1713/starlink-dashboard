@@ -4,6 +4,22 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { useOverviewFullscreen } from './OverviewGrid';
 
+type Deferred = {
+  readonly promise: Promise<void>;
+  readonly resolve: () => void;
+  readonly reject: (error?: unknown) => void;
+};
+
+function deferred(): Deferred {
+  let resolve = () => {};
+  let reject: (error?: unknown) => void = () => {};
+  const promise = new Promise<void>((ok, fail) => {
+    resolve = ok;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+}
+
 function setFullscreenElement(value: Element | null) {
   Object.defineProperty(document, 'fullscreenElement', {
     configurable: true,
@@ -40,16 +56,10 @@ function Harness(props: {
         <output aria-label="fallback message">
           {controller.fallbackMessage ?? ''}
         </output>
-        <button
-          type="button"
-          onClick={() => void controller.enterFromUserGesture()}
-        >
+        <button onClick={() => void controller.enterFromUserGesture()}>
           Enter
         </button>
-        <button
-          type="button"
-          onClick={() => void controller.exitFromUserGesture()}
-        >
+        <button onClick={() => void controller.exitFromUserGesture()}>
           Exit
         </button>
       </div>
@@ -57,42 +67,47 @@ function Harness(props: {
   );
 }
 
-describe('useOverviewFullscreen', () => {
-  it('enters native mode only after fullscreenchange targets the owned root', async () => {
-    let resolveRequest = () => {};
-    const request = vi.fn(
-      () => new Promise<void>((resolve) => (resolveRequest = resolve))
-    );
-    render(<Harness request={request} />);
+function root() {
+  return screen.getByText('Operations Overview')
+    .parentElement as HTMLDivElement;
+}
 
-    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
-    expect(request).toHaveBeenCalledTimes(1);
+describe('useOverviewFullscreen', () => {
+  it('does not call the fullscreen API on mount', () => {
+    const request = vi.fn(() => Promise.resolve());
+    render(<Harness request={request} />);
+    expect(request).not.toHaveBeenCalled();
     expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
       'inline'
     );
+  });
 
-    setFullscreenElement(screen.getByText('Operations Overview').parentElement);
+  it('enters native mode only when fullscreenchange targets the owned root', () => {
+    const request = vi.fn(() => new Promise<void>(() => {}));
+    render(<Harness request={request} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
+    setFullscreenElement(root());
     fireEvent(document, new Event('fullscreenchange'));
-    resolveRequest();
     expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
       'native'
     );
-    expect(screen.getByLabelText('Operator note')).toHaveValue('stable');
+    expect(root()).toHaveFocus();
   });
 
-  it('exits native ownership through document exit and restores trigger focus', () => {
+  it('exits native ownership and restores trigger focus', () => {
     const exitFullscreen = vi.fn(() => Promise.resolve());
     Object.defineProperty(document, 'exitFullscreen', {
       configurable: true,
       value: exitFullscreen,
     });
     render(<Harness request={() => Promise.resolve()} />);
-    setFullscreenElement(screen.getByText('Operations Overview').parentElement);
+    setFullscreenElement(root());
     fireEvent(document, new Event('fullscreenchange'));
-
     fireEvent.click(screen.getByRole('button', { name: 'Exit' }));
     expect(exitFullscreen).toHaveBeenCalledTimes(1);
-
     setFullscreenElement(null);
     fireEvent(document, new Event('fullscreenchange'));
     expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
@@ -101,47 +116,98 @@ describe('useOverviewFullscreen', () => {
     expect(screen.getByRole('button', { name: 'Saved trigger' })).toHaveFocus();
   });
 
-  it('falls back to kiosk on missing request support or rejection', async () => {
-    const first = render(<Harness />);
+  it('uses kiosk view when requestFullscreen is missing', () => {
+    render(<Harness />);
     fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
     expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
-    expect(screen.getByLabelText('fallback message')).toHaveTextContent(
-      'Fullscreen unavailable — using kiosk view.'
-    );
     expect(document.documentElement).toHaveClass('overview-kiosk-active');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Exit' }));
-    expect(document.documentElement).not.toHaveClass('overview-kiosk-active');
-    first.unmount();
-
-    render(<Harness request={() => Promise.reject(new Error('blocked'))} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
-    return waitFor(() => {
-      expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
-        'kiosk'
-      );
-    });
   });
 
-  it('handles fullscreenerror, kiosk Escape, missing trigger, and cleanup', () => {
-    const { unmount } = render(
-      <Harness
-        request={() => new Promise<void>(() => {})}
-        renderTrigger={false}
-      />
-    );
-
+  it('handles a rejected request exactly once', async () => {
+    const request = vi.fn(() => Promise.reject(new Error('blocked')));
+    render(<Harness request={request} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    await screen.findByText('kiosk');
+    expect(request).toHaveBeenCalledTimes(1);
     fireEvent(document, new Event('fullscreenerror'));
     expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
-    expect(document.documentElement).toHaveClass('overview-kiosk-active');
+  });
 
+  it('dedupes error plus rejection and lets the later attempt receive error', async () => {
+    const first = deferred();
+    const second = deferred();
+    const request = vi
+      .fn<() => Promise<void>>()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    render(<Harness request={request} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent(document, new Event('fullscreenerror'));
+    first.reject(new Error('first'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
+    fireEvent.click(screen.getByRole('button', { name: 'Exit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent(document, new Event('fullscreenerror'));
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
+  });
+
+  it('exits kiosk view with Escape', () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
       'inline'
     );
-    expect(screen.getByText('Operations Overview')).toHaveFocus();
-
-    unmount();
     expect(document.documentElement).not.toHaveClass('overview-kiosk-active');
+  });
+
+  it('exits native mode on owned Escape fullscreenchange', () => {
+    render(<Harness request={() => Promise.resolve()} />);
+    setFullscreenElement(root());
+    fireEvent(document, new Event('fullscreenchange'));
+    setFullscreenElement(null);
+    fireEvent(document, new Event('fullscreenchange'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
+  });
+
+  it('ignores inactive errors and non-owner fullscreen changes', () => {
+    render(<Harness request={() => new Promise<void>(() => {})} />);
+    fireEvent(document, new Event('fullscreenerror'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
+    setFullscreenElement(document.createElement('section'));
+    fireEvent(document, new Event('fullscreenchange'));
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
+  });
+
+  it('invalidates late settlements after unmount and overlapping attempts', async () => {
+    const first = deferred();
+    const second = deferred();
+    const request = vi
+      .fn<() => Promise<void>>()
+      .mockReturnValueOnce(first.promise)
+      .mockReturnValueOnce(second.promise);
+    const rendered = render(<Harness request={request} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
+    setFullscreenElement(root());
+    fireEvent(document, new Event('fullscreenchange'));
+    first.reject(new Error('old'));
+    second.resolve();
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'native'
+    );
+    expect(screen.getByLabelText('Operator note')).toHaveValue('stable');
+    rendered.unmount();
+    first.reject(new Error('late'));
+    await waitFor(() =>
+      expect(document.documentElement).not.toHaveClass('overview-kiosk-active')
+    );
   });
 });

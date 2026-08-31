@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useRef,
-  useState,
-  type Dispatch,
-  type SetStateAction,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
 import type { OverviewPOIFilter } from '../types/monitoring';
 import {
@@ -24,6 +18,7 @@ import { OverviewClocks } from './OverviewPage/OverviewClocks';
 import {
   OverviewGrid,
   useOverviewFullscreen,
+  useOverviewLayoutMode,
 } from './OverviewPage/OverviewGrid';
 import {
   OperationalMap,
@@ -35,45 +30,7 @@ import { PacketLossPanel } from './OverviewPage/components/PacketLossPanel';
 import { ObstructionGauge } from './OverviewPage/components/ObstructionGauge';
 import { GroundEntryPointPanel } from './OverviewPage/components/GroundEntryPointPanel';
 import { POIQuickReference } from './OverviewPage/components/POIQuickReference';
-import type { OverviewDataSnapshot } from './OverviewPage/overview-data-types';
-import { classifyLatency, formatCoordinates } from './OverviewPage/formatters';
-
-function updatePreferences(
-  setPreferences: Dispatch<SetStateAction<OverviewPreferences>>,
-  updater: (current: OverviewPreferences) => OverviewPreferences
-) {
-  setPreferences((current) => {
-    const next = updater(current);
-    saveOverviewPreferences(window.localStorage, next);
-    return next;
-  });
-}
-
-function prioritySummary(snapshot: OverviewDataSnapshot): string {
-  const telemetry = snapshot.telemetry;
-  const status = telemetry.data;
-  const telemetryText = telemetry.paused
-    ? `Paused - last updated ${telemetry.sourceTimestamp ?? 'unknown'}`
-    : telemetry.freshness === 'fresh'
-      ? 'Telemetry fresh'
-      : telemetry.freshness === 'stale'
-        ? 'Telemetry stale'
-        : 'Telemetry unavailable';
-  const routes = [snapshot.route.data?.west, snapshot.route.data?.east].filter(
-    (route) => route && route.total > 0
-  );
-  const routeText = routes[0]?.route_name
-    ? `Active route ${routes[0].route_name}`
-    : 'No active route';
-  const positionText = status
-    ? `Position ${formatCoordinates(
-        status.position.latitude,
-        status.position.longitude
-      )}`
-    : 'Position unavailable';
-  const latency = classifyLatency(status?.network.latency_ms ?? null);
-  return `${telemetryText}. ${routeText}. ${positionText}. Latency ${latency.label}.`;
-}
+import { prioritySummary } from './OverviewPage/priority-summary';
 
 export function OverviewPage() {
   const pageRef = useRef<HTMLDivElement | null>(null);
@@ -82,6 +39,7 @@ export function OverviewPage() {
   const [preferences, setPreferences] = useState(() =>
     loadOverviewPreferences(window.localStorage)
   );
+  const preferencesRef = useRef(preferences);
   const now = useOverviewClock();
   const { snapshot, controller } = useOverviewData({
     cadence: preferences.refreshCadence,
@@ -89,11 +47,20 @@ export function OverviewPage() {
     radarEnabled: preferences.radarEnabled,
   });
   const fullscreen = useOverviewFullscreen(pageRef, fullscreenButtonRef);
+  const layoutMode = useOverviewLayoutMode();
   const nowTimestamp = now.toISOString();
 
+  useEffect(() => {
+    preferencesRef.current = preferences;
+  }, [preferences]);
+
   const save = useCallback(
-    (updater: (current: OverviewPreferences) => OverviewPreferences) =>
-      updatePreferences(setPreferences, updater),
+    (updater: (current: OverviewPreferences) => OverviewPreferences) => {
+      const next = updater(preferencesRef.current);
+      preferencesRef.current = next;
+      saveOverviewPreferences(window.localStorage, next);
+      setPreferences(next);
+    },
     []
   );
   const setCadence = useCallback(
@@ -147,62 +114,6 @@ export function OverviewPage() {
             {prioritySummary(snapshot)}
           </p>
         </div>
-        <div className="overview-header__actions">
-          <OverviewControls
-            preferences={preferences}
-            manualRefreshPending={controller.isManualRefreshPending}
-            onRefreshCadenceChange={setCadence}
-            onManualRefresh={controller.manualRefresh}
-            onPOIFilterChange={setPoiFilter}
-            onControlsExpandedChange={(expanded) =>
-              setDisclosure('controlsExpanded', expanded)
-            }
-            onClockSettingsExpandedChange={(expanded) =>
-              setDisclosure('clockSettingsExpanded', expanded)
-            }
-            onAddClock={(input) =>
-              save((current) => addOverviewClock(current, input))
-            }
-            onRelabelClock={(id, label) =>
-              save((current) => relabelOverviewClock(current, id, label))
-            }
-            onMoveClock={(id, direction) =>
-              save((current) => moveOverviewClock(current, id, direction))
-            }
-            onRemoveClock={(id) =>
-              save((current) => removeOverviewClock(current, id))
-            }
-          />
-          <button
-            ref={fullscreenButtonRef}
-            type="button"
-            className="overview-fullscreen-button"
-            aria-describedby={
-              fullscreen.fallbackMessage
-                ? 'overview-fullscreen-message'
-                : undefined
-            }
-            onClick={() => {
-              void (fullscreen.mode === 'inline'
-                ? fullscreen.enterFromUserGesture()
-                : fullscreen.exitFromUserGesture());
-            }}
-          >
-            {fullscreen.mode === 'inline' ? (
-              <Maximize2 aria-hidden="true" />
-            ) : (
-              <Minimize2 aria-hidden="true" />
-            )}
-            <span>
-              {fullscreen.mode === 'inline'
-                ? 'Enter fullscreen'
-                : 'Exit fullscreen'}
-            </span>
-          </button>
-          {fullscreen.fallbackMessage ? (
-            <p id="overview-fullscreen-message">{fullscreen.fallbackMessage}</p>
-          ) : null}
-        </div>
       </header>
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {snapshot.announcement ?? ''}
@@ -215,12 +126,76 @@ export function OverviewPage() {
         <OverviewClocks
           clocks={preferences.clocks}
           now={now}
+          layoutMode={layoutMode}
           expanded={preferences.disclosures.additionalClocksExpanded}
           onExpandedChange={(expanded) =>
             setDisclosure('additionalClocksExpanded', expanded)
           }
         />
       </section>
+      <div className="overview-actions">
+        <OverviewControls
+          preferences={preferences}
+          manualRefreshPending={controller.isManualRefreshPending}
+          onRefreshCadenceChange={setCadence}
+          onManualRefresh={controller.manualRefresh}
+          onPOIFilterChange={setPoiFilter}
+          onControlsExpandedChange={(expanded) =>
+            setDisclosure('controlsExpanded', expanded)
+          }
+          onClockSettingsExpandedChange={(expanded) =>
+            setDisclosure('clockSettingsExpanded', expanded)
+          }
+          onAddClock={(input) =>
+            save((current) => addOverviewClock(current, input))
+          }
+          onRelabelClock={(id, label) =>
+            save((current) => relabelOverviewClock(current, id, label))
+          }
+          onMoveClock={(id, direction) =>
+            save((current) => moveOverviewClock(current, id, direction))
+          }
+          onRemoveClock={(id) =>
+            save((current) => removeOverviewClock(current, id))
+          }
+        />
+        <button
+          ref={fullscreenButtonRef}
+          type="button"
+          className="overview-fullscreen-button"
+          aria-describedby={
+            fullscreen.fallbackMessage
+              ? 'overview-fullscreen-message'
+              : undefined
+          }
+          onClick={() => {
+            void (fullscreen.mode === 'inline'
+              ? fullscreen.enterFromUserGesture()
+              : fullscreen.exitFromUserGesture());
+          }}
+        >
+          {fullscreen.mode === 'inline' ? (
+            <Maximize2 aria-hidden="true" />
+          ) : (
+            <Minimize2 aria-hidden="true" />
+          )}
+          <span>
+            {fullscreen.mode === 'inline'
+              ? 'Enter fullscreen'
+              : fullscreen.mode === 'kiosk'
+                ? 'Exit kiosk view'
+                : 'Exit fullscreen'}
+          </span>
+        </button>
+        {fullscreen.fallbackMessage ? (
+          <p
+            id="overview-fullscreen-message"
+            className="overview-fullscreen-note"
+          >
+            {fullscreen.fallbackMessage}
+          </p>
+        ) : null}
+      </div>
       <OverviewGrid
         map={
           <OperationalMap

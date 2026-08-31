@@ -6,55 +6,92 @@ import { describe, expect, it } from 'vitest';
 
 declare const process: { cwd(): string };
 
-const css = readFileSync(join(process.cwd(), 'src/index.css'), 'utf8');
+const root = process.cwd();
+const indexCss = readFileSync(join(root, 'src/index.css'), 'utf8');
+const overviewCss = readFileSync(
+  join(root, 'src/pages/OverviewPage/overview.css'),
+  'utf8'
+);
+
+function selectorBlock(css: string, selector: string): string {
+  const start = css.indexOf(`${selector} {`);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const bodyStart = css.indexOf('{', start) + 1;
+  const end = css.indexOf('}', bodyStart);
+  return css.slice(bodyStart, end);
+}
+
+function mediaBlock(query: string): string {
+  const start = overviewCss.indexOf(`@media ${query} {`);
+  expect(start).toBeGreaterThanOrEqual(0);
+  const bodyStart = overviewCss.indexOf('{', start);
+  let depth = 0;
+  for (let index = bodyStart; index < overviewCss.length; index += 1) {
+    if (overviewCss[index] === '{') depth += 1;
+    if (overviewCss[index] === '}') depth -= 1;
+    if (depth === 0 && index > start) return overviewCss.slice(start, index);
+  }
+  throw new Error(`Unclosed media block: ${query}`);
+}
+
+function declaration(block: string, name: string): string | null {
+  const match = new RegExp(`${name}:\\s*([^;]+);`).exec(block);
+  return match?.[1].trim() ?? null;
+}
 
 describe('overview responsive CSS contract', () => {
-  it('defines named overview classes and focus/reduced-motion rules', () => {
-    for (const selector of [
-      '.skip-link',
-      '.overview-page',
-      '.overview-grid',
-      '.overview-map-region',
-      '.overview-summary-strip',
-      '.overview-fullscreen-button',
-      '.overview-page--kiosk',
-      '.overview-kiosk-active',
-      ':focus-visible',
-      '@media (prefers-reduced-motion: reduce)',
+  it('keeps index.css below the cohesion line guard', () => {
+    expect(indexCss.split('\n').length).toBeLessThanOrEqual(300);
+  });
+
+  it('defines exact fullscreen, kiosk, focus, and reduced-motion rules', () => {
+    expect(selectorBlock(indexCss, ':focus-visible')).toContain(
+      'outline: 3px solid var(--ring);'
+    );
+    const kiosk = selectorBlock(overviewCss, '.overview-page--kiosk');
+    expect(declaration(kiosk, 'position')).toBe('fixed');
+    expect(declaration(kiosk, 'inset')).toBe('0');
+    expect(declaration(kiosk, 'height')).toBe('100dvh');
+    expect(declaration(kiosk, 'overflow-y')).toBe('auto');
+    expect(declaration(kiosk, 'overflow-x')).toBe('clip');
+    const native = selectorBlock(overviewCss, '.overview-page:fullscreen');
+    expect(declaration(native, 'width')).toBe('100vw');
+    expect(declaration(native, 'height')).toBe('100dvh');
+    const reduced = mediaBlock('(prefers-reduced-motion: reduce)');
+    expect(reduced).toContain('scroll-behavior: auto !important;');
+    expect(reduced).toContain('animation-duration: 0.01ms !important;');
+    expect(reduced).toContain('animation-iteration-count: 1 !important;');
+    expect(reduced).toContain('transition-duration: 0.01ms !important;');
+  });
+
+  it('places desktop and wide composition without an implicit third root row', () => {
+    for (const query of [
+      '(min-width: 1024px) and (max-width: 1279px)',
+      '(min-width: 1280px) and (max-width: 1535px)',
+      '(min-width: 1536px)',
     ]) {
-      expect(css).toContain(selector);
+      const media = mediaBlock(query);
+      const grid = selectorBlock(media, '.overview-primary-grid');
+      const rail = selectorBlock(media, '.overview-right-rail');
+      expect(declaration(grid, 'grid-template-columns')).toContain('minmax');
+      expect(declaration(grid, 'grid-template-rows')).toBe('auto auto');
+      expect(declaration(rail, 'grid-column')).toBe('2');
+      expect(declaration(rail, 'grid-row')).toBe('1 / 3');
     }
-    expect(css).not.toMatch(/body\s*{[^}]*overflow-x\s*:\s*hidden/s);
   });
 
-  it('keeps navigation and controls at the 44px touch target floor', () => {
-    expect(css).toMatch(/\.skip-link\s*{[^}]*min-height:\s*44px/s);
-    expect(css).toMatch(
-      /\.overview-fullscreen-button\s*{[^}]*min-height:\s*44px/s
-    );
-    expect(css).toMatch(
-      /\.overview-fullscreen-button\s*{[^}]*min-width:\s*44px/s
-    );
-  });
-
-  it('owns exact non-overlapping composed map heights', () => {
-    expect(css).toMatch(
-      /max-width:\s*320px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*280px/
-    );
-    expect(css).toMatch(
-      /min-width:\s*321px\)[\s\S]*max-width:\s*767px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*320px/
-    );
-    expect(css).toMatch(
-      /min-width:\s*768px\)[\s\S]*max-width:\s*1023px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*384px/
-    );
-    expect(css).toMatch(
-      /min-width:\s*1024px\)[\s\S]*max-width:\s*1279px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*320px/
-    );
-    expect(css).toMatch(
-      /min-width:\s*1280px\)[\s\S]*max-width:\s*1535px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*368px/
-    );
-    expect(css).toMatch(
-      /min-width:\s*1536px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*660px/
-    );
+  it('computes exact map heights at all accepted widths', () => {
+    const cases = [
+      ['(max-width: 320px)', '280px'],
+      ['(min-width: 321px) and (max-width: 767px)', '320px'],
+      ['(min-width: 768px) and (max-width: 1023px)', '384px'],
+      ['(min-width: 1024px) and (max-width: 1279px)', '320px'],
+      ['(min-width: 1280px) and (max-width: 1535px)', '368px'],
+      ['(min-width: 1536px)', '660px'],
+    ] as const;
+    for (const [query, height] of cases) {
+      const block = selectorBlock(mediaBlock(query), '.overview-map-region');
+      expect(declaration(block, 'height')).toBe(height);
+    }
   });
 });

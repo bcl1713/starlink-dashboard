@@ -32,7 +32,6 @@ vi.mock('./OverviewPage/OperationalMap', () => ({
     useImperativeHandle(ref, () => ({
       fitToAvailableLayers: vi.fn(),
       focusCoordinates: mocks.focusCoordinates,
-      getMap: () => null,
     }));
     return <div data-testid="operational-map">Map tree</div>;
   }),
@@ -144,7 +143,7 @@ describe('OverviewPage composition', () => {
     expect(screen.getByText(/Telemetry fresh/)).toBeVisible();
     expect(screen.getByText(/No active route/)).toBeVisible();
     expect(screen.getByText(/39.0000/)).toBeVisible();
-    expect(screen.getByText(/Latency Normal/)).toBeVisible();
+    expect(screen.getByText(/Latency normal below 100 ms/)).toBeVisible();
 
     const liveRegions = document.querySelectorAll(
       '[aria-live="polite"][aria-atomic="true"]'
@@ -200,5 +199,85 @@ describe('OverviewPage composition', () => {
     expect(
       screen.queryByRole('checkbox', { name: 'Weather radar' })
     ).toBeNull();
+  });
+
+  it('orders tablet content as summary, clocks, controls, then map', () => {
+    setup();
+    const summary = document.querySelector('.overview-priority-summary');
+    const clocks = document.querySelector('.overview-world-clocks');
+    const actions = document.querySelector('.overview-actions');
+    const map = document.querySelector('.overview-map-region');
+    const nodes = [summary, clocks, actions, map];
+    expect(nodes.every((node): node is Element => node !== null)).toBe(true);
+    expect(
+      nodes
+        .filter((node): node is Element => node !== null)
+        .map((node) => node.className)
+    ).toEqual([
+      'overview-priority-summary',
+      'overview-world-clocks',
+      'overview-actions',
+      'overview-map-region',
+    ]);
+  });
+
+  it('shows desktop clocks without mutating collapsed disclosure', () => {
+    setup();
+    for (const label of ['UTC (Zulu)', 'Washington DC', 'Tokyo', 'Omaha']) {
+      expect(screen.getByText(label)).toBeVisible();
+    }
+    expect(
+      screen.getByRole('button', { name: 'Additional clocks' })
+    ).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('uses exact fullscreen labels and fallback note semantics', () => {
+    setup();
+    const button = screen.getByRole('button', { name: 'Enter fullscreen' });
+    fireEvent.click(button);
+    expect(
+      screen.getByRole('button', { name: 'Exit kiosk view' })
+    ).toBeVisible();
+    const note = document.querySelector('.overview-fullscreen-note');
+    expect(note).toHaveTextContent(
+      'Fullscreen unavailable — using kiosk view.'
+    );
+    expect(button).toHaveAttribute('aria-describedby', note?.id);
+  });
+
+  it('describes retained telemetry failures, stale data, and latency thresholds', () => {
+    const snapshot = makeOverviewSnapshot();
+    setup({
+      ...snapshot,
+      telemetry: {
+        ...snapshot.telemetry,
+        phase: 'refreshing',
+        error: {
+          code: 'request-failed',
+          message: 'Source refresh failed.',
+        },
+        data: {
+          ...snapshot.telemetry.data!,
+          network: { ...snapshot.telemetry.data!.network, latency_ms: 200 },
+        },
+      },
+      route: {
+        ...snapshot.route,
+        data: {
+          ...snapshot.route.data!,
+          west: {
+            ...snapshot.route.data!.west,
+            total: 1,
+            route_name: '<script>alert(1)</script>',
+          },
+        },
+      },
+    });
+    expect(
+      screen.getByText(/retained data after refresh failed/i)
+    ).toBeVisible();
+    expect(screen.getByText(/Critical at 200 ms/)).toBeVisible();
+    expect(screen.getByText(/<script>alert\(1\)<\/script>/)).toBeVisible();
+    expect(document.querySelector('script')).toBeNull();
   });
 });

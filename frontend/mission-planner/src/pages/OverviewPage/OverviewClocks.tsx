@@ -1,11 +1,13 @@
 import { useId } from 'react';
 import type { OverviewClockPreference } from './preferences';
+import type { OverviewLayoutMode } from './OverviewGrid';
 import { formatOverviewClock } from './useOverviewClock';
 
 export interface OverviewClocksProps {
   clocks: readonly OverviewClockPreference[];
   now: Date;
   expanded: boolean;
+  layoutMode?: OverviewLayoutMode;
   onExpandedChange(expanded: boolean): void;
 }
 
@@ -88,10 +90,14 @@ export function OverviewClocks({
   clocks,
   now,
   expanded,
+  layoutMode = 'mobile',
   onExpandedChange,
 }: OverviewClocksProps) {
   const additionalId = useId();
   const { utc, additional } = visibleClocks(clocks);
+  const desktopAdditionalVisible =
+    layoutMode === 'desktop' || layoutMode === 'wide';
+  const additionalHidden = !expanded && !desktopAdditionalVisible;
 
   return (
     <div className="space-y-3">
@@ -107,7 +113,7 @@ export function OverviewClocks({
       </button>
       <div
         id={additionalId}
-        hidden={!expanded}
+        hidden={additionalHidden}
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
       >
         {additional.map((clock) => (

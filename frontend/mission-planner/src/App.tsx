@@ -40,7 +40,7 @@ export function AppNavigation() {
       <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           to="/overview"
-          className="flex items-center gap-2 font-semibold tracking-tight text-foreground"
+          className="flex min-h-11 min-w-11 items-center gap-2 font-semibold tracking-tight text-foreground"
           onClick={() => setIsOpen(false)}
         >
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -63,7 +63,7 @@ export function AppNavigation() {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                `inline-flex min-h-11 min-w-11 items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-accent text-primary'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -84,7 +84,7 @@ export function AppNavigation() {
                 to={to}
                 onClick={() => setIsOpen(false)}
                 className={({ isActive }) =>
-                  `flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium ${
+                  `flex min-h-11 min-w-11 items-center rounded-lg px-3 py-2 text-sm font-medium ${
                     isActive
                       ? 'bg-accent text-primary'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'

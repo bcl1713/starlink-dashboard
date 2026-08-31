@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
@@ -85,17 +85,115 @@ function grid() {
   return (
     <OverviewGrid
       map={<StatefulSentinel />}
-      groundEntryPoint={<p>Ground entry point sentinel</p>}
-      obstruction={<p>Obstruction sentinel</p>}
-      packetLoss={<p>Packet loss sentinel</p>}
-      poiQuickReference={<p>POI sentinel</p>}
-      latency={<p>Latency sentinel</p>}
-      throughput={<p>Throughput sentinel</p>}
+      groundEntryPoint={
+        <article>
+          <h3>Ground entry point</h3>
+          <p>Ground entry point sentinel</p>
+        </article>
+      }
+      obstruction={
+        <article>
+          <h3>Obstruction</h3>
+          <p>Obstruction sentinel</p>
+        </article>
+      }
+      packetLoss={
+        <article>
+          <h3>Packet loss</h3>
+          <p>Packet loss sentinel</p>
+        </article>
+      }
+      poiQuickReference={
+        <article>
+          <h2>POI Quick Reference</h2>
+          <p>POI sentinel</p>
+        </article>
+      }
+      latency={
+        <article>
+          <h2>Network Latency</h2>
+          <p>Latency sentinel</p>
+        </article>
+      }
+      throughput={
+        <article>
+          <h2>Throughput</h2>
+          <p>Throughput sentinel</p>
+        </article>
+      }
     />
   );
 }
 
 describe('OverviewGrid', () => {
+  it('contains every slot once in the semantic primary grid and right rail', () => {
+    installMatchMedia(1280);
+    render(grid());
+
+    const primaryGrid = document.querySelector(
+      '.overview-primary-grid'
+    ) as HTMLElement | null;
+    const summary = document.querySelector(
+      '.overview-summary-region'
+    ) as HTMLElement | null;
+    const rightRail = document.querySelector(
+      '.overview-right-rail'
+    ) as HTMLElement | null;
+
+    expect(primaryGrid).toContainElement(
+      document.querySelector('.overview-map-region') as HTMLElement | null
+    );
+    expect(primaryGrid).toContainElement(summary);
+    expect(rightRail).toContainElement(
+      document.querySelector('.overview-poi-region') as HTMLElement | null
+    );
+    expect(rightRail).toContainElement(
+      document.querySelector('.overview-latency-region') as HTMLElement | null
+    );
+    expect(rightRail).toContainElement(
+      document.querySelector(
+        '.overview-throughput-region'
+      ) as HTMLElement | null
+    );
+    for (const text of [
+      'Ground entry point sentinel',
+      'Obstruction sentinel',
+      'Packet loss sentinel',
+      'POI sentinel',
+      'Latency sentinel',
+      'Throughput sentinel',
+    ]) {
+      expect(screen.getAllByText(text)).toHaveLength(1);
+    }
+  });
+
+  it('renders the required heading hierarchy in document order', () => {
+    installMatchMedia(390);
+    render(grid());
+
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Current Position' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Operational summaries' })
+    ).toBeInTheDocument();
+
+    const headings = screen.getAllByRole('heading').map((heading) => ({
+      level: Number(heading.tagName.slice(1)),
+      name: heading.textContent,
+    }));
+    expect(headings).toEqual([
+      { level: 2, name: 'Current Position' },
+      { level: 2, name: 'Operational summaries' },
+      { level: 3, name: 'Ground entry point' },
+      { level: 3, name: 'Obstruction' },
+      { level: 3, name: 'Packet loss' },
+      { level: 2, name: 'POI Quick Reference' },
+      { level: 2, name: 'Network Latency' },
+      { level: 2, name: 'Throughput' },
+    ]);
+  });
+
   it('preserves semantic order while exposing the current layout mode', () => {
     installMatchMedia(390);
     render(grid());
@@ -108,9 +206,7 @@ describe('OverviewGrid', () => {
     expect(regions.map((region) => region.name)).toEqual([
       'Current Position',
       'Operational summaries',
-      'POI Quick Reference',
-      'Network Latency',
-      'Throughput',
+      'Operations right rail',
     ]);
     expect(regions[1].text).toContain('Ground entry point sentinel');
     expect(regions[1].text).toContain('Obstruction sentinel');
@@ -133,9 +229,7 @@ describe('OverviewGrid', () => {
     const input = screen.getByLabelText('Map sentinel');
     input.focus();
     input.setAttribute('data-owned-node', 'stable');
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    (input as HTMLInputElement).value = 'operator note';
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    fireEvent.change(input, { target: { value: 'operator note' } });
 
     for (const [width, mode] of [
       [768, 'tablet'],
@@ -161,5 +255,6 @@ describe('OverviewGrid', () => {
     }
 
     expect(media.listenerCount()).toBeGreaterThan(0);
+    expect(screen.getByLabelText('Map sentinel')).toHaveValue('operator note');
   });
 });

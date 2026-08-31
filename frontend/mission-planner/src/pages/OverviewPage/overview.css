@@ -1,0 +1,246 @@
+@layer components {
+  .overview-page {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .overview-header,
+  .overview-actions {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .overview-header__copy,
+  .overview-actions,
+  .overview-world-clocks,
+  .overview-primary-grid,
+  .overview-primary-grid > *,
+  .overview-summary-region > *,
+  .overview-right-rail > * {
+    min-width: 0;
+  }
+
+  .overview-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .overview-priority-summary {
+    max-width: 84ch;
+    font-size: 0.95rem;
+    color: var(--muted-foreground);
+  }
+
+  .overview-actions {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .overview-fullscreen-button {
+    display: inline-flex;
+    min-height: 44px;
+    min-width: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .overview-fullscreen-button svg {
+    height: 18px;
+    width: 18px;
+  }
+
+  .overview-fullscreen-note {
+    max-width: 42ch;
+    font-size: 0.875rem;
+    color: var(--muted-foreground);
+  }
+
+  .overview-world-clocks {
+    display: block;
+  }
+
+  .overview-world-clocks > h2 {
+    margin-bottom: 8px;
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .overview-primary-grid,
+  .overview-summary-region,
+  .overview-right-rail {
+    display: grid;
+    gap: 12px;
+  }
+
+  .overview-map-region {
+    min-width: 0;
+    overflow: clip;
+  }
+
+  .overview-map-region > * {
+    min-width: 0;
+  }
+
+  .overview-page--kiosk {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: clip;
+    background: var(--background);
+  }
+
+  .overview-page--native {
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: clip;
+    background: var(--background);
+  }
+
+  .overview-page:fullscreen {
+    width: 100vw;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: clip;
+    background: var(--background);
+  }
+
+  .overview-kiosk-active {
+    overflow-y: auto;
+    overflow-x: clip;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .overview-map-region {
+    height: 280px;
+  }
+}
+
+@media (min-width: 321px) and (max-width: 767px) {
+  .overview-map-region {
+    height: 320px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .overview-map-region {
+    height: 384px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .overview-actions {
+    flex-direction: row;
+  }
+
+  .overview-primary-grid {
+    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .overview-map-panel,
+  .overview-summary-region {
+    grid-column: 1;
+  }
+
+  .overview-right-rail {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-content: start;
+  }
+
+  .overview-map-region {
+    height: 320px;
+  }
+
+  .overview-summary-region {
+    grid-template-columns: 7fr 4fr 7fr;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1535px) {
+  .overview-actions {
+    flex-direction: row;
+  }
+
+  .overview-primary-grid {
+    grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .overview-map-panel,
+  .overview-summary-region {
+    grid-column: 1;
+  }
+
+  .overview-right-rail {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-content: start;
+  }
+
+  .overview-map-region {
+    height: 368px;
+  }
+
+  .overview-summary-region {
+    grid-template-columns: 7fr 4fr 7fr;
+  }
+}
+
+@media (min-width: 1536px) {
+  .overview-actions {
+    flex-direction: row;
+  }
+
+  .overview-primary-grid {
+    grid-template-columns: minmax(0, 3fr) minmax(300px, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .overview-map-panel {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .overview-summary-region {
+    grid-column: 1;
+    grid-row: 2;
+    grid-template-columns: 7fr 4fr 7fr;
+  }
+
+  .overview-right-rail {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-content: start;
+  }
+
+  .overview-map-region {
+    height: 660px;
+  }
+}
