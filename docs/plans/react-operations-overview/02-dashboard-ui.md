@@ -133,7 +133,12 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
 
 ### Task 11: Build the operational map with all layers
 
-**Files:** map/layer components, assets if required, and tests.
+**Ownership:** Build the operational map according to the
+[Task 11 responsibility map](00-exact-file-map.md#task-11-responsibility-map)
+and the [approved operational-map architecture
+handoff][task-11-operational-map-handoff]. Named paths are advisory ownership
+examples unless a public import, asset URL, or test contract explicitly requires
+one.
 
 **Steps:**
 
@@ -150,7 +155,12 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
 
 ### Task 12: Compose the responsive page, routing, and accessibility
 
-**Files:** overview page/grid, `App.tsx`, `index.css`, component tests.
+**Ownership:** Compose the page according to the
+[Task 12 responsibility map](00-exact-file-map.md#task-12-responsibility-map)
+and the [approved responsive-composition
+handoff][task-12-responsive-composition-handoff]. Named paths are advisory
+ownership examples unless the routing, exported shell, or CSS class contracts
+explicitly require one.
 
 **Steps:**
 
@@ -206,3 +216,8 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
   keyboard/touch disclosure exposes the full chart and accessible data table.
 - The complete layer list, radar control, filters, feature details, retry,
   refresh, and settings remain available. Rotation preserves all state.
+
+[task-11-operational-map-handoff]:
+  /home/brian/.hermes/profiles/oracle/artifacts/starlink-react-overview/codex-task-11-operational-map.txt
+[task-12-responsive-composition-handoff]:
+  /home/brian/.hermes/profiles/oracle/artifacts/starlink-react-overview/codex-task-12-responsive-composition.txt

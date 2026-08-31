@@ -148,17 +148,21 @@ before map work:
   The duplicate eastern/western PromQL targets in Grafana are implementation
   plumbing, not an API contract.
 
-## Exact file map
+## Plan Map
 
-The binding backend, frontend, browser, CI, and docs paths are in the
-[exact file map](00-exact-file-map.md). Do not substitute approximate paths.
+The backend, frontend, browser, CI, docs, and later ownership boundaries are in
+the [plan map](00-exact-file-map.md). Exact paths remain binding where already
+implemented or where an owning contract explicitly requires one. For later
+operational-map and responsive-composition work, use the responsibility maps
+there instead of treating historical path inventory as a global exact-file
+constraint.
 
 ## Test-first API tasks and commit boundaries
 
 ### Task 3: Add strict monitoring models and allow-listed Prometheus client
 
 **Files:** Backend monitoring models/client and their unit tests from the
-[exact file map](#exact-file-map).
+[plan map](#plan-map).
 
 **Steps:**
 

@@ -149,7 +149,7 @@ continuous across files.
 
 1. [Contract and API](react-operations-overview/01-contract-and-api.md) — strict
    monitoring contracts, Prometheus and weather boundaries, DTO validation, IDL
-   utilities, exact file map, and Tasks 3–6.
+   utilities, plan map, and Tasks 3–6.
 2. [Dashboard UI](react-operations-overview/02-dashboard-ui.md) — continuity,
    clocks, configurable refresh, radar preferences, responsive/mobile parity,
    charts, map, routing, and Tasks 7–12.
