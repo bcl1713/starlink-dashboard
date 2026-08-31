@@ -29,16 +29,32 @@ describe('overview responsive CSS contract', () => {
 
   it('keeps navigation and controls at the 44px touch target floor', () => {
     expect(css).toMatch(/\.skip-link\s*{[^}]*min-height:\s*44px/s);
-    expect(css).toMatch(/\.overview-fullscreen-button\s*{[^}]*min-height:\s*44px/s);
-    expect(css).toMatch(/\.overview-fullscreen-button\s*{[^}]*min-width:\s*44px/s);
+    expect(css).toMatch(
+      /\.overview-fullscreen-button\s*{[^}]*min-height:\s*44px/s
+    );
+    expect(css).toMatch(
+      /\.overview-fullscreen-button\s*{[^}]*min-width:\s*44px/s
+    );
   });
 
   it('owns exact non-overlapping composed map heights', () => {
-    expect(css).toMatch(/max-width:\s*320px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*280px/);
-    expect(css).toMatch(/min-width:\s*321px\)[\s\S]*max-width:\s*767px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*320px/);
-    expect(css).toMatch(/min-width:\s*768px\)[\s\S]*max-width:\s*1023px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*384px/);
-    expect(css).toMatch(/min-width:\s*1024px\)[\s\S]*max-width:\s*1279px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*320px/);
-    expect(css).toMatch(/min-width:\s*1280px\)[\s\S]*max-width:\s*1535px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*368px/);
-    expect(css).toMatch(/min-width:\s*1536px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*660px/);
+    expect(css).toMatch(
+      /max-width:\s*320px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*280px/
+    );
+    expect(css).toMatch(
+      /min-width:\s*321px\)[\s\S]*max-width:\s*767px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*320px/
+    );
+    expect(css).toMatch(
+      /min-width:\s*768px\)[\s\S]*max-width:\s*1023px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*384px/
+    );
+    expect(css).toMatch(
+      /min-width:\s*1024px\)[\s\S]*max-width:\s*1279px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*320px/
+    );
+    expect(css).toMatch(
+      /min-width:\s*1280px\)[\s\S]*max-width:\s*1535px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*368px/
+    );
+    expect(css).toMatch(
+      /min-width:\s*1536px\)[\s\S]*\.overview-map-region\s*{[^}]*height:\s*660px/
+    );
   });
 });

@@ -160,7 +160,9 @@ describe('OverviewPage composition', () => {
       'Network Latency',
       'Throughput',
     ]);
-    const latency = mocks.panelProps.find((item) => item.name === 'Network Latency');
+    const latency = mocks.panelProps.find(
+      (item) => item.name === 'Network Latency'
+    );
     expect(latency?.props.slot).toBe(mocks.snapshot?.history);
     expect(latency?.props.now).toBe('2026-08-31T05:00:00.000Z');
     expect(latency?.props.presentation).toBe('compact');
@@ -172,7 +174,9 @@ describe('OverviewPage composition', () => {
     const controls = screen.getByRole('button', { name: 'Overview controls' });
     fireEvent.click(controls);
     fireEvent.click(screen.getByRole('button', { name: 'Refresh overview' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Retry Network Latency' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Retry Network Latency' })
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Focus map' }));
 
     expect(mocks.manualRefresh).toHaveBeenCalledTimes(2);
@@ -193,6 +197,8 @@ describe('OverviewPage composition', () => {
         'UTC (Zulu)'
       )
     ).toBeVisible();
-    expect(screen.queryByRole('checkbox', { name: 'Weather radar' })).toBeNull();
+    expect(
+      screen.queryByRole('checkbox', { name: 'Weather radar' })
+    ).toBeNull();
   });
 });

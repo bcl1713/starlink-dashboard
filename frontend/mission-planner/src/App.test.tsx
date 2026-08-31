@@ -2,10 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  APP_NAVIGATION_ITEMS,
-  AppShell,
-} from './App';
+import { APP_NAVIGATION_ITEMS, AppShell } from './App';
 
 vi.mock('./pages/OverviewPage', () => ({
   OverviewPage: () => <h1>Operations Overview</h1>,
@@ -73,8 +70,9 @@ describe('App shell routing', () => {
   it('replaces the root entry with the overview route', async () => {
     renderShell(['/']);
 
-    expect(await screen.findByRole('heading', { name: 'Operations Overview' }))
-      .toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Operations Overview' })
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('location')).toHaveTextContent('/overview');
 
     fireEvent.click(screen.getByRole('link', { name: 'Missions' }));
@@ -99,7 +97,9 @@ describe('App shell routing', () => {
     for (const [path, heading] of routes) {
       const { unmount } = renderShell([path]);
       expect(screen.getByLabelText('location')).toHaveTextContent(path);
-      expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: heading })
+      ).toBeInTheDocument();
       unmount();
     }
   });

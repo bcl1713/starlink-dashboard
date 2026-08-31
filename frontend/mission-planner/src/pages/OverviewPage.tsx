@@ -59,10 +59,9 @@ function prioritySummary(snapshot: OverviewDataSnapshot): string {
       : telemetry.freshness === 'stale'
         ? 'Telemetry stale'
         : 'Telemetry unavailable';
-  const routes = [
-    snapshot.route.data?.west,
-    snapshot.route.data?.east,
-  ].filter((route) => route && route.total > 0);
+  const routes = [snapshot.route.data?.west, snapshot.route.data?.east].filter(
+    (route) => route && route.total > 0
+  );
   const routeText = routes[0]?.route_name
     ? `Active route ${routes[0].route_name}`
     : 'No active route';
@@ -103,11 +102,13 @@ export function OverviewPage() {
     [save]
   );
   const setPoiFilter = useCallback(
-    (poiFilter: OverviewPOIFilter) => save((current) => ({ ...current, poiFilter })),
+    (poiFilter: OverviewPOIFilter) =>
+      save((current) => ({ ...current, poiFilter })),
     [save]
   );
   const setRadarEnabled = useCallback(
-    (radarEnabled: boolean) => save((current) => ({ ...current, radarEnabled })),
+    (radarEnabled: boolean) =>
+      save((current) => ({ ...current, radarEnabled })),
     [save]
   );
   const setDisclosure = useCallback(
@@ -177,7 +178,9 @@ export function OverviewPage() {
             type="button"
             className="overview-fullscreen-button"
             aria-describedby={
-              fullscreen.fallbackMessage ? 'overview-fullscreen-message' : undefined
+              fullscreen.fallbackMessage
+                ? 'overview-fullscreen-message'
+                : undefined
             }
             onClick={() => {
               void (fullscreen.mode === 'inline'
@@ -191,7 +194,9 @@ export function OverviewPage() {
               <Minimize2 aria-hidden="true" />
             )}
             <span>
-              {fullscreen.mode === 'inline' ? 'Enter fullscreen' : 'Exit fullscreen'}
+              {fullscreen.mode === 'inline'
+                ? 'Enter fullscreen'
+                : 'Exit fullscreen'}
             </span>
           </button>
           {fullscreen.fallbackMessage ? (

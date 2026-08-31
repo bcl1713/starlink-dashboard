@@ -59,7 +59,10 @@ function installMatchMedia(width: number) {
       }
     },
     listenerCount() {
-      return records.reduce((total, record) => total + record.listeners.size, 0);
+      return records.reduce(
+        (total, record) => total + record.listeners.size,
+        0
+      );
     },
   };
 }

@@ -67,12 +67,16 @@ describe('useOverviewFullscreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
     expect(request).toHaveBeenCalledTimes(1);
-    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('inline');
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
 
     setFullscreenElement(screen.getByText('Operations Overview').parentElement);
     fireEvent(document, new Event('fullscreenchange'));
     resolveRequest();
-    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('native');
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'native'
+    );
     expect(screen.getByLabelText('Operator note')).toHaveValue('stable');
   });
 
@@ -91,7 +95,9 @@ describe('useOverviewFullscreen', () => {
 
     setFullscreenElement(null);
     fireEvent(document, new Event('fullscreenchange'));
-    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('inline');
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
     expect(screen.getByRole('button', { name: 'Saved trigger' })).toHaveFocus();
   });
 
@@ -111,13 +117,18 @@ describe('useOverviewFullscreen', () => {
     render(<Harness request={() => Promise.reject(new Error('blocked'))} />);
     fireEvent.click(screen.getByRole('button', { name: 'Enter' }));
     return waitFor(() => {
-      expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('kiosk');
+      expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+        'kiosk'
+      );
     });
   });
 
   it('handles fullscreenerror, kiosk Escape, missing trigger, and cleanup', () => {
     const { unmount } = render(
-      <Harness request={() => new Promise<void>(() => {})} renderTrigger={false} />
+      <Harness
+        request={() => new Promise<void>(() => {})}
+        renderTrigger={false}
+      />
     );
 
     fireEvent(document, new Event('fullscreenerror'));
@@ -125,7 +136,9 @@ describe('useOverviewFullscreen', () => {
     expect(document.documentElement).toHaveClass('overview-kiosk-active');
 
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent('inline');
+    expect(screen.getByLabelText('fullscreen mode')).toHaveTextContent(
+      'inline'
+    );
     expect(screen.getByText('Operations Overview')).toHaveFocus();
 
     unmount();
