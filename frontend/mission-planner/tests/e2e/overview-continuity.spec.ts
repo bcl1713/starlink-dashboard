@@ -1,11 +1,15 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 import {
   attachScreenshots,
   expectNoGrafana,
   openOverview,
-  writeArtifact,
 } from './support/overview-assertions';
+import {
+  assertContinuityEvidence,
+  captureCdpContinuity,
+  installElementIdentity,
+} from './support/overview-cdp-capture';
 import {
   installOverviewRouter,
   type OverviewRouter,
@@ -17,6 +21,8 @@ const continuityViewports = [
 ] as const;
 
 test.describe('Operations overview temporal continuity', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test.afterEach(async ({ page }) => {
     await page.close();
   });
@@ -32,22 +38,26 @@ test.describe('Operations overview temporal continuity', () => {
       });
       page.on('pageerror', (error) => errors.push(error.message));
       const router = await installOverviewRouter(page);
-      await openOverview(page);
+      await installElementIdentity(page);
+      await openOverview(page, router.scenario().nowIso);
       await settleInitialRequests(router);
+      await page.getByRole('button', { name: 'Overview controls' }).click();
+      await openLayerDisclosure(page);
+      await page.getByLabel('Weather Radar').focus();
 
       const before = await sampleState(page);
-      const frames = await captureCadence(page, testInfo, viewport.name);
-      await page.getByRole('button', { name: 'Overview controls' }).click();
-      await page.getByLabel('POI category').selectOption('waypoint');
-      await page.getByRole('button', { name: 'Refresh overview' }).click();
+      const evidence = await captureCdpContinuity(
+        page,
+        router,
+        testInfo,
+        viewport.name
+      );
       await expect.poll(() => router.cycles.length).toBeGreaterThan(12);
       const after = await sampleState(page);
 
-      expect(frames.length).toBeGreaterThanOrEqual(100);
-      expect(averageFps(frames)).toBeGreaterThanOrEqual(20);
-      expect(
-        Math.max(...frames.map((frame) => frame.gapMs))
-      ).toBeLessThanOrEqual(100);
+      assertContinuityEvidence(evidence);
+      expectDistinctCycleCompletions(router, 'scheduled', 5);
+      expectDistinctCycleCompletions(router, 'manual', 1);
       expect(after.boxes.every((box) => box.width > 0 && box.height > 0)).toBe(
         true
       );
@@ -76,11 +86,13 @@ test.describe('Operations overview temporal continuity', () => {
       page,
     }) => {
       const router = await installOverviewRouter(page, scenario);
-      await openOverview(page);
-      await settleInitialRequests(router);
+      await openOverview(page, router.scenario().nowIso);
+      await settleInitialRequests(router, true);
 
       const visibleText = await page.locator('main').innerText();
       expect(visibleText).not.toMatch(/stack|traceback|exception|axios/i);
+      await openLayerDisclosure(page);
+      await expectScenarioState(page, router);
       expect(
         router.records.filter((record) => record.event === 'failed')
       ).toEqual([]);
@@ -106,40 +118,17 @@ test.describe('Operations overview temporal continuity', () => {
   });
 });
 
-async function settleInitialRequests(router: OverviewRouter) {
-  await expect.poll(() => firstPartyCompleteCount(router)).toBeGreaterThan(6);
-}
-
-async function captureCadence(page: Page, testInfo: TestInfo, name: string) {
-  const frames = await page.evaluate(
-    () =>
-      new Promise<{ timestamp: number; gapMs: number; fps: number }[]>(
-        (resolve) => {
-          const started = performance.now();
-          const frames: { timestamp: number; gapMs: number; fps: number }[] =
-            [];
-          let previous = started;
-          const capture = (timestamp: number) => {
-            const gapMs = timestamp - previous;
-            frames.push({ timestamp, gapMs, fps: 1000 / Math.max(1, gapMs) });
-            previous = timestamp;
-            if (timestamp - started >= 5200) resolve(frames);
-            else requestAnimationFrame(capture);
-          };
-          requestAnimationFrame(capture);
-        }
-      )
-  );
-  await page.screenshot({ fullPage: false });
-  await testInfo.attach(`cadence-${name}.json`, {
-    body: JSON.stringify({ frames }, null, 2),
-    contentType: 'application/json',
-  });
-  await writeArtifact(
-    `cadence-${name}.json`,
-    JSON.stringify({ frames }, null, 2)
-  );
-  return frames;
+async function settleInitialRequests(
+  router: OverviewRouter,
+  includeErrors = false
+) {
+  await expect
+    .poll(() =>
+      includeErrors
+        ? firstPartyTerminalCount(router)
+        : firstPartyCompleteCount(router)
+    )
+    .toBeGreaterThan(3);
 }
 
 function firstPartyCompleteCount(router: OverviewRouter): number {
@@ -148,18 +137,81 @@ function firstPartyCompleteCount(router: OverviewRouter): number {
   ).length;
 }
 
-function averageFps(
-  frames: readonly { timestamp: number; gapMs: number; fps: number }[]
-): number {
-  const elapsed = frames.at(-1)?.timestamp ?? 0;
-  const started = frames.at(0)?.timestamp ?? 0;
-  return (frames.length * 1000) / Math.max(1, elapsed - started);
+function firstPartyTerminalCount(router: OverviewRouter): number {
+  return router.records.filter(
+    (record) =>
+      record.firstParty &&
+      ['complete', 'error', 'failed', 'blocked'].includes(record.event)
+  ).length;
 }
 
 async function openLayerDisclosure(page: Page) {
   await page.locator('details.operational-map__panel').evaluate((details) => {
     if (details instanceof HTMLDetailsElement) details.open = true;
   });
+}
+
+async function expectScenarioState(page: Page, router: OverviewRouter) {
+  const id = router.scenario().id;
+  if (id === 'overview-backend-failure') {
+    await expect(page.getByText('Unavailable').first()).toBeVisible();
+    expect(
+      router.records.some(
+        (record) =>
+          record.firstParty &&
+          record.event === 'error' &&
+          record.status !== null &&
+          record.status >= 500
+      )
+    ).toBe(true);
+    return;
+  }
+  if (id === 'overview-radar-failure') {
+    await expect(
+      page.getByRole('button', { name: 'Retry weather radar' })
+    ).toBeVisible();
+    expect(
+      router.records.some(
+        (record) => record.source === 'radar' && record.event === 'error'
+      )
+    ).toBe(true);
+    return;
+  }
+  if (id === 'overview-idl') {
+    await expect(
+      page.getByText(/Planned Route — western segment: visible.*1 features/i)
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Planned Route — eastern segment: visible.*1 features/i)
+    ).toBeVisible();
+    return;
+  }
+  if (id === 'overview-threshold-crossing') {
+    await expect(page.getByText(/Critical/i).first()).toBeVisible();
+    return;
+  }
+  await expect(
+    page.getByText(/Ready|Stale|Unavailable/i).first()
+  ).toBeVisible();
+}
+
+function expectDistinctCycleCompletions(
+  router: OverviewRouter,
+  kind: 'scheduled' | 'manual',
+  minimum: number
+) {
+  const cycles = new Set(
+    router.records
+      .filter(
+        (record) =>
+          record.firstParty &&
+          record.kind === kind &&
+          record.event === 'complete' &&
+          record.source === 'telemetry'
+      )
+      .map((record) => record.cycle)
+  );
+  expect(cycles.size).toBeGreaterThanOrEqual(minimum);
 }
 
 async function sampleState(page: Page) {

@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-import { OVERVIEW_CONTRACT } from './fixtures/overview';
 import {
   attachScreenshots,
   expectAxe,
@@ -12,6 +11,15 @@ import {
   viewports,
 } from './support/overview-assertions';
 import { installOverviewRouter } from './support/overview-router';
+
+const poiTuples = [
+  ['Departure & Arrival', 'departure,arrival', 'category=departure%2Carrival'],
+  ['All POIs', '', ''],
+  ['Departure Only', 'departure', 'category=departure'],
+  ['Arrival Only', 'arrival', 'category=arrival'],
+  ['Waypoints Only', 'waypoint', 'category=waypoint'],
+  ['Alternates Only', 'alternate', 'category=alternate'],
+] as const;
 
 test.describe('Operations overview deterministic browser acceptance', () => {
   test.beforeEach(async ({ context }) => {
@@ -81,27 +89,43 @@ test.describe('Operations overview deterministic browser acceptance', () => {
             .locator('option')
             .evaluateAll((options) =>
               options.map((option) =>
-                option instanceof HTMLOptionElement ? option.value : ''
+                option instanceof HTMLOptionElement
+                  ? [option.label, option.value]
+                  : ['', '']
               )
             )
         )
-        .toEqual(OVERVIEW_CONTRACT.poiOptions.map((option) => option.value));
-      for (const option of OVERVIEW_CONTRACT.poiOptions) {
+        .toEqual(poiTuples.map(([label, value]) => [label, value]));
+      for (const [, value, encoded] of poiTuples) {
         const marker = router.records.length;
-        await select.selectOption(option.value);
-        await expect(select).toHaveValue(option.value);
+        await select.selectOption(value);
+        await expect(select).toHaveValue(value);
+        router.markNextManualCycle();
+        await page.getByRole('button', { name: 'Refresh overview' }).click();
         await expect
           .poll(() =>
             router.records
               .slice(marker)
-              .some((record) =>
-                poiRecordMatches(record.url, option.query.category)
+              .some(
+                (record) =>
+                  record.event === 'complete' &&
+                  poiRecordMatches(record.url, encoded)
+              )
+          )
+          .toBe(true);
+        await expect
+          .poll(() =>
+            router.records
+              .slice(marker)
+              .some(
+                (record) =>
+                  record.kind === 'manual' && record.event === 'complete'
               )
           )
           .toBe(true);
         await page.reload();
         await openControls(page);
-        await expect(select).toHaveValue(option.value);
+        await expect(select).toHaveValue(value);
       }
     });
   }
@@ -110,8 +134,15 @@ test.describe('Operations overview deterministic browser acceptance', () => {
     page,
   }, testInfo) => {
     await page.addInitScript(() => {
+      let calls = 0;
+      Object.defineProperty(window, '__fullscreenCallCount', {
+        value: () => calls,
+      });
       HTMLElement.prototype.requestFullscreen = () =>
-        Promise.reject(new Error('fullscreen unavailable'));
+        new Promise((_resolve, reject) => {
+          calls += 1;
+          reject(new Error('fullscreen unavailable'));
+        });
     });
     await page.setViewportSize({ width: 1280, height: 800 });
     await installOverviewRouter(page);
@@ -121,9 +152,11 @@ test.describe('Operations overview deterministic browser acceptance', () => {
     await openLayerDisclosure(page);
     await page.getByLabel('Satellites').focus();
     await page.keyboard.press('Space');
+    await expectFullscreenCalls(page, 0);
 
     await attachScreenshots(page, testInfo, 'fullscreen-inline');
     await page.getByRole('button', { name: 'Enter fullscreen' }).click();
+    await expectFullscreenCalls(page, 1);
     await expect(page.getByText('Fullscreen unavailable')).toBeVisible();
     await expect(page.locator('.overview-page--kiosk')).toBeVisible();
     await attachScreenshots(page, testInfo, 'fullscreen-kiosk');
@@ -152,9 +185,24 @@ async function openControls(page: import('@playwright/test').Page) {
   }
 }
 
-function poiRecordMatches(url: string, category: string | undefined): boolean {
+async function expectFullscreenCalls(
+  page: import('@playwright/test').Page,
+  calls: number
+) {
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (
+          window as unknown as { __fullscreenCallCount: () => number }
+        ).__fullscreenCallCount()
+      )
+    )
+    .toBe(calls);
+}
+
+function poiRecordMatches(url: string, encoded: string): boolean {
   const parsed = new URL(url);
   if (parsed.pathname !== '/api/pois/etas') return false;
-  if (category === undefined) return !parsed.searchParams.has('category');
-  return parsed.searchParams.get('category') === category;
+  if (encoded === '') return parsed.search === '';
+  return parsed.search.slice(1) === encoded;
 }

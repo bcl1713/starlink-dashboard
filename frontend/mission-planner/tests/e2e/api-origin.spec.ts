@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 import {
   installOverviewRouter,
@@ -76,8 +78,43 @@ test.describe('Mission Planner API origin', () => {
     const forbidden = router.records.filter(isForbiddenGrafanaRequest);
     expect(forbidden).toEqual([]);
   });
+
+  test('production overview source and built chunks have no Grafana dependency', async () => {
+    const files = await overviewStaticFiles();
+    const offenders: string[] = [];
+    for (const file of files) {
+      const body = await readFile(file, 'utf8');
+      if (
+        forbiddenGrafana.test(body) ||
+        /from\s+['"][^'"]*grafana/i.test(body)
+      ) {
+        offenders.push(path.relative(process.cwd(), file));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
 });
 
 function isForbiddenGrafanaRequest(record: RecordedOverviewRequest): boolean {
   return forbiddenGrafana.test(record.url);
+}
+
+async function overviewStaticFiles(): Promise<string[]> {
+  const sourceRoot = path.join(process.cwd(), 'src/pages/OverviewPage');
+  const distRoot = path.join(process.cwd(), 'dist');
+  const sourceFiles = await collectFiles(sourceRoot, /\.(ts|tsx|css)$/);
+  const distFiles = await collectFiles(distRoot, /\.(js|css|html)$/);
+  return [...sourceFiles, ...distFiles];
+}
+
+async function collectFiles(root: string, pattern: RegExp): Promise<string[]> {
+  const entries = await readdir(root, { withFileTypes: true });
+  const files = await Promise.all(
+    entries.map(async (entry) => {
+      const file = path.join(root, entry.name);
+      if (entry.isDirectory()) return collectFiles(file, pattern);
+      return pattern.test(file) ? [file] : [];
+    })
+  );
+  return files.flat();
 }

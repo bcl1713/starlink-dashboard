@@ -12,17 +12,23 @@ import {
   routePayload,
   statusPayload,
 } from './overview-payloads';
+import { sourceFor } from './overview-router-sources';
 
 export type OverviewScenarioId = (typeof OVERVIEW_SCENARIOS)[number]['id'];
 
 export interface RecordedOverviewRequest {
   readonly id: string;
   readonly cycle: number;
-  readonly event: 'start' | 'complete' | 'failed' | 'blocked';
+  readonly event: 'start' | 'complete' | 'error' | 'failed' | 'blocked';
+  readonly kind: 'initial' | 'scheduled' | 'manual';
+  readonly source: string;
   readonly method: string;
   readonly url: string;
+  readonly status: number | null;
+  readonly outcome: 'pending' | 'complete' | 'error' | 'transport-failed';
   readonly firstParty: boolean;
-  readonly timestamp: number;
+  readonly startedAt: number;
+  readonly completedAt: number | null;
 }
 
 export interface OverviewRouter {
@@ -30,6 +36,7 @@ export interface OverviewRouter {
   readonly cycles: readonly string[];
   scenario(): OverviewScenario;
   setScenario(id: OverviewScenarioId): void;
+  markNextManualCycle(): void;
 }
 
 const radarPng = Uint8Array.from([
@@ -57,44 +64,88 @@ export async function installOverviewRouter(
 ): Promise<OverviewRouter> {
   let scenario = scenarioById(initial);
   let cycle = 0;
+  let requestSequence = 0;
+  let nextManualRemaining = 0;
   const records: RecordedOverviewRequest[] = [];
   const cycles: string[] = [];
 
-  const record = (
+  const startRecord = (
     request: Request,
-    event: RecordedOverviewRequest['event'],
+    kind: RecordedOverviewRequest['kind'],
     firstParty = false
-  ) => {
-    records.push({
-      id: request.headers()['x-correlation-id'] ?? `fixture-${records.length}`,
+  ): RecordedOverviewRequest => {
+    const record = {
+      id: `fixture-${++requestSequence}`,
       cycle,
-      event,
+      event: 'start' as const,
+      kind,
+      source: sourceFor(new URL(request.url())),
       method: request.method(),
       url: request.url(),
+      status: null,
+      outcome: 'pending' as const,
       firstParty,
-      timestamp: Date.now(),
-    });
+      startedAt: performance.now(),
+      completedAt: null,
+    };
+    records.push(record);
+    return record;
   };
+
+  const finishRecord = (
+    started: RecordedOverviewRequest,
+    event: RecordedOverviewRequest['event'],
+    status: number | null
+  ) =>
+    records.push({
+      ...started,
+      event,
+      status,
+      outcome:
+        event === 'complete'
+          ? 'complete'
+          : event === 'failed'
+            ? 'transport-failed'
+            : 'error',
+      completedAt: performance.now(),
+    });
 
   await page.context().route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     if (blockedPatterns.some((pattern) => pattern.test(request.url()))) {
-      record(request, 'blocked');
+      const started = startRecord(request, 'initial');
+      finishRecord(started, 'blocked', null);
       await route.abort('blockedbyclient');
       return;
     }
     if (url.hostname === 'server.arcgisonline.com') {
-      record(request, 'complete');
-      await fulfillPng(route, '1777294800');
+      const started = startRecord(request, 'initial');
+      const response = await fulfillPng(route, started.id, '1777294800');
+      finishRecord(
+        started,
+        response.status >= 400 ? 'error' : 'complete',
+        response.status
+      );
       return;
     }
     if (url.pathname.startsWith('/api/')) {
       cycle += url.pathname === '/api/status' ? 1 : 0;
+      const kind =
+        nextManualRemaining > 0
+          ? 'manual'
+          : cycle <= 1
+            ? 'initial'
+            : 'scheduled';
+      if (nextManualRemaining > 0) nextManualRemaining -= 1;
       cycles.push(`${cycle}:${url.pathname}:${url.search}`);
-      record(request, 'start', true);
-      await fulfillApi(route, scenario, url);
-      record(request, 'complete', true);
+      const started = startRecord(request, kind, true);
+      const response = await fulfillApi(route, scenario, url, started.id);
+      finishRecord(
+        started,
+        response.status >= 400 ? 'error' : 'complete',
+        response.status
+      );
       return;
     }
     await route.continue();
@@ -103,7 +154,12 @@ export async function installOverviewRouter(
   page.on('requestfailed', (request) => {
     const url = request.url();
     if (!blockedPatterns.some((pattern) => pattern.test(url))) {
-      record(request, 'failed', urlIncludesFirstPartyApi(url));
+      const started = startRecord(
+        request,
+        'initial',
+        urlIncludesFirstPartyApi(url)
+      );
+      finishRecord(started, 'failed', null);
     }
   });
 
@@ -118,72 +174,104 @@ export async function installOverviewRouter(
     setScenario: (id) => {
       scenario = scenarioById(id);
     },
+    markNextManualCycle: () => {
+      nextManualRemaining = 12;
+    },
   };
 }
 
-async function fulfillApi(route: Route, scenario: OverviewScenario, url: URL) {
+async function fulfillApi(
+  route: Route,
+  scenario: OverviewScenario,
+  url: URL,
+  id: string
+) {
+  if (scenario.id === 'overview-backend-failure') {
+    await route.fulfill(errorResponse(id, 503, 'overview_backend_unavailable'));
+    return { status: 503 };
+  }
+  if (
+    scenario.id === 'overview-radar-failure' &&
+    /^\/api\/weather\/radar\/rainviewer\/\d+\/\d+\/\d+\.png$/.test(url.pathname)
+  ) {
+    await route.fulfill(errorResponse(id, 502, 'radar_unavailable'));
+    return { status: 502 };
+  }
   if (url.pathname === '/api/status') {
-    await route.fulfill(jsonResponse(statusPayload(scenario)));
-    return;
+    await route.fulfill(jsonResponse(id, statusPayload(scenario)));
+    return { status: 200 };
   }
   if (url.pathname === '/api/monitoring/history') {
-    await route.fulfill(jsonResponse(historyPayload(scenario)));
-    return;
+    await route.fulfill(jsonResponse(id, historyPayload(scenario)));
+    return { status: 200 };
   }
   if (url.pathname === '/api/monitoring/ground-entry-point') {
-    await route.fulfill(jsonResponse(gepPayload(scenario)));
-    return;
+    await route.fulfill(jsonResponse(id, gepPayload(scenario)));
+    return { status: 200 };
   }
   if (url.pathname === '/api/pois/etas') {
     await route.fulfill(
-      jsonResponse(poiPayload(scenario, url.searchParams.get('category')))
+      jsonResponse(id, poiPayload(scenario, url.searchParams.get('category')))
     );
-    return;
+    return { status: 200 };
   }
   if (url.pathname === '/api/route/coordinates/west') {
-    await route.fulfill(jsonResponse(routePayload(scenario, 'west')));
-    return;
+    await route.fulfill(jsonResponse(id, routePayload(scenario, 'west')));
+    return { status: 200 };
   }
   if (url.pathname === '/api/route/coordinates/east') {
-    await route.fulfill(jsonResponse(routePayload(scenario, 'east')));
-    return;
+    await route.fulfill(jsonResponse(id, routePayload(scenario, 'east')));
+    return { status: 200 };
   }
   if (url.pathname === '/api/active-x-link') {
     const state =
       url.searchParams.get('state') === 'warning' ? 'warning' : 'normal';
-    await route.fulfill(jsonResponse(activeLinkPayload(scenario, state)));
-    return;
+    await route.fulfill(jsonResponse(id, activeLinkPayload(scenario, state)));
+    return { status: 200 };
   }
   if (
     /^\/api\/weather\/radar\/rainviewer\/\d+\/\d+\/\d+\.png$/.test(url.pathname)
   ) {
-    await fulfillPng(route, '1777294800');
-    return;
+    return fulfillPng(route, id, '1777294800');
   }
-  await route.fulfill({ status: 404, json: { detail: 'fixture_not_found' } });
+  await route.fulfill(errorResponse(id, 404, 'fixture_not_found'));
+  return { status: 404 };
 }
 
-function jsonResponse(json: unknown) {
+function jsonResponse(id: string, json: unknown) {
   return {
     headers: {
       'cache-control': 'no-store',
       'content-type': 'application/json',
-      'x-correlation-id': `fixture-${Date.now()}`,
+      'x-correlation-id': id,
     },
     json,
   };
 }
 
-async function fulfillPng(route: Route, frame: string) {
+function errorResponse(id: string, status: number, detail: string) {
+  return {
+    status,
+    headers: {
+      'cache-control': 'no-store',
+      'content-type': 'application/json',
+      'x-correlation-id': id,
+    },
+    json: { detail },
+  };
+}
+
+async function fulfillPng(route: Route, id: string, frame: string) {
   await route.fulfill({
     body: Buffer.from(radarPng),
     headers: {
       'cache-control': 'public, max-age=60',
       'content-type': 'image/png',
-      'x-correlation-id': `fixture-${Date.now()}`,
+      'x-correlation-id': id,
       'x-radar-frame-timestamp': frame,
     },
   });
+  return { status: 200 };
 }
 
 function scenarioById(id: OverviewScenarioId): OverviewScenario {

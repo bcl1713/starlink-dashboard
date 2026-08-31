@@ -46,20 +46,19 @@ describe('POI ETA overview service', () => {
   it('constructs exact category params, helpers, all omission, and signal identity', async () => {
     const signal = new AbortController().signal;
     const cases = [
-      [() => getPOIETAs(undefined, signal), { category: 'departure,arrival' }],
-      [() => getPOIETAs('', signal), undefined],
-      [() => getPOIETAs('departure', signal), { category: 'departure' }],
-      [() => getSatelliteETAs(signal), { category: 'satellite' }],
-      [() => getMissionEventETAs(signal), { category: 'mission-event' }],
+      [() => getPOIETAs(undefined, signal), '?category=departure%2Carrival'],
+      [() => getPOIETAs('', signal), ''],
+      [() => getPOIETAs('departure', signal), '?category=departure'],
+      [() => getSatelliteETAs(signal), '?category=satellite'],
+      [() => getMissionEventETAs(signal), '?category=mission-event'],
     ] as const;
 
-    for (const [call, params] of cases) {
-      respond(params ? poiPayload : { pois: [], total: 0, timestamp: aware });
+    for (const [call, query] of cases) {
+      respond(query ? poiPayload : { pois: [], total: 0, timestamp: aware });
       await call();
-      expect(getMock).toHaveBeenLastCalledWith(
-        '/api/pois/etas',
-        params ? { params, signal } : { signal }
-      );
+      expect(getMock).toHaveBeenLastCalledWith(`/api/pois/etas${query}`, {
+        signal,
+      });
     }
   });
 

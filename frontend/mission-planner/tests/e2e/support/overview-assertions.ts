@@ -5,6 +5,7 @@ import path from 'node:path';
 
 import { OVERVIEW_CONTRACT } from '../fixtures/overview';
 import type { OverviewRouter } from './overview-router';
+import { installFixedBrowserTime } from './overview-time';
 
 export const viewports = [
   { name: '1920x1080', width: 1920, height: 1080, mapHeight: 660 },
@@ -15,7 +16,10 @@ export const viewports = [
   { name: '320x568', width: 320, height: 568, mapHeight: 280 },
 ] as const;
 
-export async function openOverview(page: Page) {
+export async function openOverview(
+  page: Page,
+  nowIso = '2026-02-03T15:30:00Z'
+) {
   await page.addInitScript(() => {
     window.matchMedia = (query) => ({
       matches:
@@ -30,6 +34,7 @@ export async function openOverview(page: Page) {
       dispatchEvent: () => true,
     });
   });
+  await installFixedBrowserTime(page, nowIso);
   await page.goto('/overview');
   await expect(
     page.getByRole('heading', { name: 'Operations Overview' })
@@ -116,7 +121,8 @@ export async function expectViewportLayout(page: Page, mapHeight: number) {
   });
   expect(metrics.overflow).toBeLessThanOrEqual(1);
   expect(Math.round(metrics.mapHeight)).toBe(mapHeight);
-  expect(metrics.minTarget).toBeGreaterThanOrEqual(40);
+  expect(metrics.minTarget).toBeGreaterThanOrEqual(44);
+  expect(metrics.scrollable).toBe(true);
 }
 
 export async function attachScreenshots(

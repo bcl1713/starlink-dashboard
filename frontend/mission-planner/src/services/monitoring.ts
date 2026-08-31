@@ -96,9 +96,13 @@ export function getPOIETAs(
   filter: POIETAFilter = 'departure,arrival',
   signal?: AbortSignal
 ): Promise<POIETAResponse> {
-  const config: AxiosRequestConfig =
-    filter === '' ? { signal } : { params: { category: filter }, signal };
-  return request('/api/pois/etas', config, (data) => parsePOIETAs(data));
+  const url =
+    filter === ''
+      ? '/api/pois/etas'
+      : `/api/pois/etas?category=${encodeURIComponent(filter)}`;
+  return request(url as `/api/${string}`, { signal }, (data) =>
+    parsePOIETAs(data)
+  );
 }
 
 export function getSatelliteETAs(
