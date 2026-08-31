@@ -34,6 +34,19 @@ export interface RetentionOutcome {
   readonly retained: Readonly<Record<string, number>>;
 }
 
+export interface BrowserObserverConfig {
+  readonly chartSeriesCounts: readonly number[];
+  readonly featureCounts: readonly number[];
+  readonly panes: Readonly<Record<string, string>>;
+  readonly ownershipSelector: string;
+  readonly limits: {
+    readonly identityTransitions: number;
+    readonly lifecycleMutations: number;
+    readonly lifecycleSamples: number;
+    readonly mutationNodes: number;
+  };
+}
+
 export interface LifecycleLedger {
   readonly installedAt: number;
   readonly stoppedAt: number;

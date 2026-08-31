@@ -97,6 +97,15 @@ and the
 
 11. Commit: `test: add operations overview browser acceptance`.
 
+12. For a public Task 13 acceptance claim, retain only bounded/redacted
+    exact-head artifacts beneath
+    `/home/brian/starlink-dashboard-react-overview-evidence/<SHA>/task-13`. Each
+    capture records the full SHA, branch/ref, clean-worktree assertion,
+    producer/browser identity, and UTC capture interval. A SHA-256 manifest
+    inventories retained artifacts, sizes, command results, and the retention
+    budget; verify checksums and readable artifacts after writing. This is
+    acceptance evidence, not Task 14 real-stack or operator documentation.
+
 ### Task 14: Prove an exact-head isolated real stack
 
 **Files:** no feature files. A defect returns to its owning TDD task/commit,

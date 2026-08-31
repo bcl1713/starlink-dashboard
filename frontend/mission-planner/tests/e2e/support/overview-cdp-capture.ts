@@ -4,6 +4,7 @@ import type { Page, TestInfo } from '@playwright/test';
 import { writeOverviewArtifact } from './overview-artifacts';
 import { startCdpNetworkCapture } from './overview-cdp-network';
 import { EVIDENCE_LIMITS } from './overview-evidence-limits';
+import { captureEvidenceProvenance } from './overview-evidence-provenance';
 import { installLifecycleObserver } from './overview-lifecycle-observer';
 import type { OverviewRouter } from './overview-router';
 
@@ -95,6 +96,7 @@ export async function captureCdpContinuity(
     cycles: router.cycles,
   };
   const artifact = {
+    provenance: captureEvidenceProvenance(),
     captureMetadata: payload.captureMetadata,
     frames: payload.frames,
     eventLedger: {
