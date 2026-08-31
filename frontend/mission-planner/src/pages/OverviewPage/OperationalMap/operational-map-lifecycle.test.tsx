@@ -74,12 +74,8 @@ describe('OperationalMap production lifecycle ownership', () => {
     await flush();
 
     const first = collectOwnership(expectMap(map));
-    const activeRoute = first.features.get(
-      'route:west:route-west:0'
-    ) as L.Polyline;
-    const activeLink = first.features.get(
-      'active-link:normal:sat-a:0'
-    ) as L.Polyline;
+    const activeRoute = first.features.get('route:west:route-west:0');
+    const activeLink = first.features.get('active-link:normal:sat-a:0');
     const currentPosition = first.features.get('current-position') as L.Marker;
     expect(first.groups).toHaveLength(11);
     expect(first.radar).toBeInstanceOf(L.GridLayer);
@@ -95,8 +91,12 @@ describe('OperationalMap production lifecycle ownership', () => {
       screen.getByRole('button', { name: 'Enable map interaction' })
     );
     fireEvent.click(screen.getByRole('button', { name: 'Current position' }));
-    const pointA = L.latLng(39, -104);
-    const pointB = L.latLng(39, -103.998);
+    const pointA = L.latLng(39, -104),
+      pointB = L.latLng(39, -103.998);
+    const disclosure = document.querySelector('details');
+    expect(disclosure?.open).toBe(false);
+    fireEvent.click(screen.getByText('Operational layers'));
+    expect(disclosure?.open).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Measure distance' }));
     act(() => {
       expectMap(map).fire('click', { latlng: pointA });
@@ -112,8 +112,6 @@ describe('OperationalMap production lifecycle ownership', () => {
       screen.getByRole('button', { name: 'Measure distance' })
     ).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getAllByText(/0.1 nautical miles/)).not.toHaveLength(0);
-    const disclosure = document.querySelector('details');
-    expect(disclosure?.open).toBe(true);
     const center = expectMap(map).getCenter();
     const zoom = expectMap(map).getZoom();
     addLayer.mockClear();
@@ -170,6 +168,11 @@ describe('OperationalMap production lifecycle ownership', () => {
     expect(expectMap(map).hasLayer(measureLine)).toBe(true);
     expect(measureLine.getLatLngs()).toEqual([pointA, pointB]);
     expect(screen.getAllByText(/0.1 nautical miles/)).not.toHaveLength(0);
+    expect(disclosure?.open).toBe(true);
+    fireEvent.click(screen.getByText('Operational layers'));
+    expect(disclosure?.open).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Measure distance' }));
+    expect(disclosure?.open).toBe(false);
     expect(media.listeners).toHaveLength(1);
   });
 
