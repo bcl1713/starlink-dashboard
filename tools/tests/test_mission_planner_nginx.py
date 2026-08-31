@@ -60,6 +60,7 @@ def test_mission_planner_csp_has_exact_weather_proxy_boundaries() -> None:
     assert directives["img-src"] == {
         "'self'",
         "data:",
+        "blob:",
         "https://*.tile.openstreetmap.org",
         "https://server.arcgisonline.com",
     }
