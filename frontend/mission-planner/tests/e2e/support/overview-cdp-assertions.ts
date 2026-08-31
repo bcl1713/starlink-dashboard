@@ -1,5 +1,5 @@
 import type { captureCdpContinuity } from './overview-cdp-capture';
-import type { LifecycleSample } from './overview-lifecycle-observer';
+import type { LifecycleSample } from './overview-lifecycle-types';
 
 export function assertContinuityEvidence(
   evidence: Awaited<ReturnType<typeof captureCdpContinuity>>
@@ -44,6 +44,9 @@ export function assertContinuityEvidence(
     (sample) => sample.phase === 'baseline'
   );
   if (!baseline) throw new Error('Missing pre-request baseline sample');
+  if (!eventLedger.samples.some((sample) => sample.phase === 'mutation')) {
+    throw new Error('No mutation lifecycle samples were retained');
+  }
   for (const sample of eventLedger.samples) assertSample(sample, baseline);
   assertRequestCorrelation(evidence);
 
@@ -67,6 +70,7 @@ export function assertContinuityEvidence(
 
 function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
   for (const region of sample.regions) {
+    const before = baseline.regions.find((item) => item.key === region.key);
     if (
       !region.identity ||
       region.width <= 0 ||
@@ -75,6 +79,18 @@ function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
     ) {
       throw new Error(
         `Missing or empty ${region.key} during ${sample.phase} at ${sample.at}`
+      );
+    }
+    if (/^\d+:Loading$/i.test(region.signature)) {
+      throw new Error(`Observed empty ${region.key} placeholder`);
+    }
+    if (
+      before &&
+      !['root', 'map'].includes(region.key) &&
+      region.signature !== before.signature
+    ) {
+      throw new Error(
+        `Region last-good signature regressed for ${region.key} during ${sample.phase}: ${JSON.stringify({ before: before.signature, after: region.signature })}`
       );
     }
   }
@@ -90,6 +106,7 @@ function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
       !before ||
       !layer.controlId ||
       !layer.ownerId ||
+      !layer.objectId ||
       layer.label !== before.label
     ) {
       throw new Error(
@@ -99,7 +116,11 @@ function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
     if (layer.checked !== before.checked) {
       throw new Error(`Layer setting changed for ${layer.label}`);
     }
-    if (layer.renderedCount < before.renderedCount) {
+    if (
+      layer.objectId !== before.objectId ||
+      layer.renderedCount !== before.renderedCount ||
+      layer.signature !== before.signature
+    ) {
       throw new Error(`Rendered count regressed for ${layer.label}`);
     }
   });
@@ -109,11 +130,16 @@ function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
       !before ||
       !chart.canvasId ||
       !chart.seriesOwnerId ||
+      !chart.objectId ||
       chart.label !== before.label
     ) {
       throw new Error(`Chart ownership/order failed at ${index}`);
     }
-    if (!chart.signature || chart.seriesCount < before.seriesCount) {
+    if (
+      chart.objectId !== before.objectId ||
+      !chart.signature ||
+      chart.seriesCount !== before.seriesCount
+    ) {
       throw new Error(`Chart series/signature regressed for ${chart.label}`);
     }
   });

@@ -2,11 +2,9 @@ import { createHash } from 'node:crypto';
 import type { Page, TestInfo } from '@playwright/test';
 
 import type { OverviewRouter } from './overview-router';
-import { writeArtifact } from './overview-assertions';
-import {
-  installLifecycleObserver,
-  type LifecycleLedger,
-} from './overview-lifecycle-observer';
+import { writeOverviewArtifact } from './overview-artifacts';
+import { installLifecycleObserver } from './overview-lifecycle-observer';
+import type { LifecycleLedger } from './overview-lifecycle-types';
 
 export interface ScreenshotFrameEvidence {
   readonly index: number;
@@ -177,14 +175,14 @@ async function persistEvidence(
     body: json,
     contentType: 'application/json',
   });
-  await writeArtifact(`event-continuity-${name}.json`, json);
-  await writeArtifact(`event-ledger-${name}.json`, ledgerJson);
+  await writeOverviewArtifact(`event-continuity-${name}.json`, json);
+  await writeOverviewArtifact(`event-ledger-${name}.json`, ledgerJson);
   if (representative) {
     await testInfo.attach(`raw-cadence-${name}-representative`, {
       body: representative,
       contentType: 'image/png',
     });
-    await writeArtifact(
+    await writeOverviewArtifact(
       `raw-cadence-${name}-representative.png`,
       representative
     );

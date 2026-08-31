@@ -1,9 +1,9 @@
 import { expect, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
 
 import { OVERVIEW_CONTRACT } from '../fixtures/overview';
+import { writeOverviewArtifact } from './overview-artifacts';
+import { nominalLayerSummaryPattern } from './overview-nominal-layer-contract';
 import type { OverviewRouter } from './overview-router';
 import { installFixedBrowserTime } from './overview-time';
 
@@ -85,6 +85,9 @@ export async function expectCoreOverview(page: Page, router: OverviewRouter) {
     await expect(
       page.locator('.operational-map__layer-row').nth(index)
     ).toContainText(/Ready|Loading|last-good|Unavailable|error|stale/i);
+    await expect(
+      page.getByText(nominalLayerSummaryPattern(layer.concept, index))
+    ).toBeVisible();
   }
   const satellites = page.getByRole('checkbox', { name: 'Satellites' });
   await satellites.focus();
@@ -236,13 +239,13 @@ export async function attachScreenshots(
     body: initial,
     contentType: 'image/png',
   });
-  await writeArtifact(`${name}-initial.png`, initial);
+  await writeOverviewArtifact(`${name}-initial.png`, initial);
   const fullPage = await page.screenshot({ fullPage: true });
   await testInfo.attach(`${name}-full-page`, {
     body: fullPage,
     contentType: 'image/png',
   });
-  await writeArtifact(`${name}-full-page.png`, fullPage);
+  await writeOverviewArtifact(`${name}-full-page.png`, fullPage);
 }
 
 export async function attachResponsiveScreenshots(
@@ -255,20 +258,23 @@ export async function attachResponsiveScreenshots(
     body: initial,
     contentType: 'image/png',
   });
-  await writeArtifact(`${name}-initial.png`, initial);
+  await writeOverviewArtifact(`${name}-initial.png`, initial);
+  await page
+    .locator('summary', { hasText: 'Operational layers' })
+    .scrollIntoViewIfNeeded();
   await openLayerDisclosure(page);
   const opened = await page.screenshot({ fullPage: false });
   await testInfo.attach(`${name}-opened`, {
     body: opened,
     contentType: 'image/png',
   });
-  await writeArtifact(`${name}-opened.png`, opened);
+  await writeOverviewArtifact(`${name}-opened.png`, opened);
   const fullPage = await page.screenshot({ fullPage: true });
   await testInfo.attach(`${name}-full-page`, {
     body: fullPage,
     contentType: 'image/png',
   });
-  await writeArtifact(`${name}-full-page.png`, fullPage);
+  await writeOverviewArtifact(`${name}-full-page.png`, fullPage);
 }
 
 export async function expectAxe(page: Page, testInfo: TestInfo) {
@@ -286,11 +292,4 @@ export async function expectAxe(page: Page, testInfo: TestInfo) {
     contentType: 'text/plain',
   });
   expect(violations).toEqual([]);
-}
-
-export async function writeArtifact(name: string, body: Buffer | string) {
-  const dir = process.env.OVERVIEW_ARTIFACT_DIR;
-  if (!dir) return;
-  await mkdir(dir, { recursive: true });
-  await writeFile(path.join(dir, name), body);
 }

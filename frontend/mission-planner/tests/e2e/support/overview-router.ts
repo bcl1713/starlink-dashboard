@@ -1,9 +1,6 @@
 import type { Page, Request, Route } from '@playwright/test';
 
-import {
-  OVERVIEW_SCENARIOS,
-  type OverviewScenario,
-} from '../fixtures/overview';
+import type { OverviewScenario } from '../fixtures/overview';
 import {
   activeLinkPayload,
   gepPayload,
@@ -21,8 +18,12 @@ import {
   jsonResponse,
 } from './overview-router-responses';
 import { sourceFor } from './overview-router-sources';
+import {
+  overviewScenarioById as scenarioById,
+  type OverviewScenarioId,
+} from './overview-empty-scenario';
 
-export type OverviewScenarioId = (typeof OVERVIEW_SCENARIOS)[number]['id'];
+export type { OverviewScenarioId };
 
 export interface RecordedOverviewRequest {
   readonly id: string;
@@ -231,7 +232,8 @@ async function fulfillApi(
     return { status: 503 };
   }
   if (
-    scenario.id === 'overview-radar-failure' &&
+    (scenario.id === 'overview-radar-failure' ||
+      scenario.id === 'overview-empty') &&
     /^\/api\/weather\/radar\/rainviewer\/\d+\/\d+\/\d+\.png$/.test(url.pathname)
   ) {
     await route.fulfill(errorResponse(id, 502, 'radar_unavailable'));
@@ -280,12 +282,6 @@ async function fulfillApi(
   }
   await route.fulfill(errorResponse(id, 404, 'fixture_not_found'));
   return { status: 404 };
-}
-
-function scenarioById(id: OverviewScenarioId): OverviewScenario {
-  const scenario = OVERVIEW_SCENARIOS.find((item) => item.id === id);
-  if (!scenario) throw new Error(`Unknown overview scenario: ${id}`);
-  return scenario;
 }
 
 function urlIncludesFirstPartyApi(url: string): boolean {

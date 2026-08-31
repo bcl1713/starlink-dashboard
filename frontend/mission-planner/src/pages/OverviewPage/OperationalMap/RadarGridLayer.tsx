@@ -65,6 +65,9 @@ export function RadarGridLayer({
     }
     enabledEpoch.current += 1;
     ensureRadarPane(map);
+    (map.getPane('weather-radar') as
+      | (HTMLElement & { __overviewLeafletLayer?: L.GridLayer })
+      | undefined)!.__overviewLeafletLayer = layer;
     if (!map.hasLayer(layer)) layer.addTo(map);
     layer.scheduleRefresh();
   }, [enabled, layer, manager, map, radarRefreshToken]);

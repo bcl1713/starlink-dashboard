@@ -98,19 +98,20 @@ test.describe('Operations overview temporal continuity', () => {
   test('preserves controls across mobile rotation', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await installOverviewRouter(page);
+    await installElementIdentity(page);
     await openOverview(page);
     await page.getByRole('button', { name: 'Overview controls' }).click();
     await page.getByLabel('POI category').selectOption('alternate');
     await openLayerDisclosure(page);
     await page.getByLabel('Weather Radar').focus();
     await page.keyboard.press('Space');
+    await page.evaluate(() => window.scrollTo(0, 40));
+    const before = await rotationState(page);
 
     await page.setViewportSize({ width: 844, height: 390 });
-    await expect(page.getByLabel('POI category')).toHaveValue('alternate');
-    await expect(page.getByLabel('Weather Radar')).not.toBeChecked();
+    await expectRotationPreserved(page, before);
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(page.getByLabel('POI category')).toHaveValue('alternate');
-    await expect(page.getByLabel('Weather Radar')).not.toBeChecked();
+    await expectRotationPreserved(page, before);
   });
 });
 
@@ -233,6 +234,67 @@ async function sampleState(page: Page) {
         .querySelector('.leaflet-container')
         ?.getAttribute('class'),
       panelCount: document.querySelectorAll('section').length,
+    };
+  });
+}
+
+async function expectRotationPreserved(
+  page: Page,
+  before: Awaited<ReturnType<typeof rotationState>>
+) {
+  await expect
+    .poll(async () => ({
+      ...(await rotationState(page)),
+      viewport: before.viewport,
+    }))
+    .toEqual(before);
+  await expect
+    .poll(async () => {
+      const after = await rotationState(page);
+      return Math.max(
+        Math.abs(after.viewport!.latitude - before.viewport!.latitude),
+        Math.abs(after.viewport!.longitude - before.viewport!.longitude)
+      );
+    })
+    .toBeLessThan(0.1);
+}
+
+async function rotationState(page: Page) {
+  return page.evaluate(() => {
+    type MapProbe = {
+      getCenter(): { lat: number; lng: number };
+      getZoom(): number;
+    };
+    const container = document.querySelector('.leaflet-container') as
+      | (HTMLElement & { __overviewLeafletMap?: MapProbe })
+      | null;
+    const map = container?.__overviewLeafletMap;
+    const center = map?.getCenter();
+    const objectId = (
+      window as typeof window & {
+        __overviewObjectId?: (
+          value: object | null | undefined
+        ) => string | null;
+      }
+    ).__overviewObjectId;
+    return {
+      mapIdentity: objectId?.(map),
+      viewport:
+        center && map
+          ? { latitude: center.lat, longitude: center.lng, zoom: map.getZoom() }
+          : null,
+      layers: [
+        ...document.querySelectorAll<HTMLInputElement>(
+          '.operational-map__layer-row input'
+        ),
+      ].map((input) => [input.getAttribute('aria-label'), input.checked]),
+      disclosures: [...document.querySelectorAll('details')].map(
+        (details) => details.open
+      ),
+      filter:
+        document.querySelector<HTMLSelectElement>('[aria-label="POI category"]')
+          ?.value ?? '',
+      scroll: window.scrollY,
     };
   });
 }

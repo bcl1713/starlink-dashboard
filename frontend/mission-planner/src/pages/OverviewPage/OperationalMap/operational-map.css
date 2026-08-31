@@ -18,7 +18,9 @@
   display: grid;
   gap: 0.5rem;
   inset: 0.75rem;
+  max-height: calc(100% - 1.5rem);
   max-width: min(24rem, calc(100% - 1.5rem));
+  overflow: auto;
   pointer-events: none;
   position: absolute;
   z-index: 500;
@@ -60,6 +62,8 @@
 
 .operational-map__summary {
   max-height: 10rem;
+  min-block-size: 44px;
+  min-inline-size: 44px;
   overflow: auto;
 }
 

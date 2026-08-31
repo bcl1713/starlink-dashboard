@@ -46,6 +46,20 @@ function restoreFocus(
   (heading ?? fallback).focus();
 }
 
+function restoreInlineScroll(ownerDocument: Document, offset: number): void {
+  const view = ownerDocument.defaultView;
+  view?.scrollTo(0, offset);
+  view?.requestAnimationFrame(() => view.scrollTo(0, offset));
+}
+
+function preserveScroll(target: HTMLElement, offset: number): void {
+  target.focus({ preventScroll: true });
+  target.scrollTop = offset;
+  target.ownerDocument.defaultView?.requestAnimationFrame(() => {
+    target.scrollTop = offset;
+  });
+}
+
 const FULLSCREEN_FALLBACK_MESSAGE =
   'Fullscreen unavailable — using kiosk view.';
 
@@ -66,6 +80,7 @@ export function useOverviewFullscreen(
   } | null>(null);
   const generationRef = useRef(0);
   const ownsNativeRef = useRef(false);
+  const scrollOffsetRef = useRef(0);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -74,13 +89,23 @@ export function useOverviewFullscreen(
   useEffect(() => {
     mountedRef.current = true;
     const root = ownerDocument.documentElement;
+    const onScroll = () => {
+      if (
+        root.classList.contains('overview-kiosk-active') ||
+        ownerDocument.fullscreenElement
+      )
+        return;
+      const offset = ownerDocument.defaultView?.scrollY ?? 0;
+      scrollOffsetRef.current = offset;
+    };
+    onScroll();
     const enterKiosk = (target: HTMLElement | null) => {
       if (!mountedRef.current) return;
       root.classList.add('overview-kiosk-active');
       ownsNativeRef.current = false;
       setMode('kiosk');
       setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
-      target?.focus();
+      if (target) preserveScroll(target, scrollOffsetRef.current);
     };
     const onChange = () => {
       const target = targetRef.current;
@@ -92,16 +117,18 @@ export function useOverviewFullscreen(
         root.classList.remove('overview-kiosk-active');
         setMode('native');
         setFallbackMessage(null);
-        target.focus();
+        preserveScroll(target, scrollOffsetRef.current);
         return;
       }
       if (fullscreenElement) return;
       if (!ownsNativeRef.current) return;
+      const savedScroll = scrollOffsetRef.current;
       ownsNativeRef.current = false;
       root.classList.remove('overview-kiosk-active');
       setMode('inline');
       setFallbackMessage(null);
       if (target) restoreFocus(triggerRef.current, target);
+      restoreInlineScroll(ownerDocument, savedScroll);
     };
     const onError = () => {
       const attempt = attemptRef.current;
@@ -113,6 +140,7 @@ export function useOverviewFullscreen(
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || modeRef.current !== 'kiosk') return;
       const target = targetRef.current;
+      const savedScroll = scrollOffsetRef.current;
       root.classList.remove('overview-kiosk-active');
       ownsNativeRef.current = false;
       attemptRef.current = null;
@@ -120,10 +148,12 @@ export function useOverviewFullscreen(
       setMode('inline');
       setFallbackMessage(null);
       if (target) restoreFocus(triggerRef.current, target);
+      restoreInlineScroll(ownerDocument, savedScroll);
     };
     ownerDocument.addEventListener('fullscreenchange', onChange);
     ownerDocument.addEventListener('fullscreenerror', onError);
     ownerDocument.addEventListener('keydown', onKeyDown);
+    ownerDocument.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       mountedRef.current = false;
       generationRef.current += 1;
@@ -133,6 +163,7 @@ export function useOverviewFullscreen(
       ownerDocument.removeEventListener('fullscreenchange', onChange);
       ownerDocument.removeEventListener('fullscreenerror', onError);
       ownerDocument.removeEventListener('keydown', onKeyDown);
+      ownerDocument.removeEventListener('scroll', onScroll);
       root.classList.remove('overview-kiosk-active');
     };
   }, [ownerDocument, targetRef, triggerRef]);
@@ -150,7 +181,7 @@ export function useOverviewFullscreen(
         setEnterPending(false);
         setMode('kiosk');
         setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
-        target?.focus();
+        if (target) preserveScroll(target, scrollOffsetRef.current);
         return;
       }
       if (attemptRef.current) return attemptRef.current.promise;
@@ -164,7 +195,7 @@ export function useOverviewFullscreen(
         ownsNativeRef.current = false;
         setMode('kiosk');
         setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
-        target.focus();
+        preserveScroll(target, scrollOffsetRef.current);
         return;
       }
       const promise = request.catch(() => {
@@ -175,7 +206,7 @@ export function useOverviewFullscreen(
         ownsNativeRef.current = false;
         setMode('kiosk');
         setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
-        target.focus();
+        preserveScroll(target, scrollOffsetRef.current);
       });
       attemptRef.current = { id, target, promise };
       setEnterPending(true);
@@ -193,6 +224,7 @@ export function useOverviewFullscreen(
         }
         return;
       }
+      const savedScroll = scrollOffsetRef.current;
       ownerDocument.documentElement.classList.remove('overview-kiosk-active');
       attemptRef.current = null;
       setEnterPending(false);
@@ -200,6 +232,7 @@ export function useOverviewFullscreen(
       setMode('inline');
       setFallbackMessage(null);
       if (target) restoreFocus(triggerRef.current, target);
+      restoreInlineScroll(ownerDocument, savedScroll);
     },
   };
 }

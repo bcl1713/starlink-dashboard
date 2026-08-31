@@ -92,6 +92,12 @@ describe('OperationalMap', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps the scrollable map summary keyboard reachable', () => {
+    render(<OperationalMap {...mapProps()} />);
+    const summary = screen.getByLabelText('Map status and layer summary');
+    expect(summary).toHaveAttribute('tabindex', '0');
+  });
+
   it.each([
     [0, '0deg'],
     [90, '90deg'],

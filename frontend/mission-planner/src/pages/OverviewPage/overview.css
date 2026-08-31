@@ -93,6 +93,11 @@
     overflow: clip;
   }
 
+  .overview-map-panel {
+    position: relative;
+    z-index: 1;
+  }
+
   .overview-map-region > * {
     min-width: 0;
   }

@@ -1,4 +1,5 @@
 import type { OverviewScenario } from '../fixtures/overview';
+import { specialPoiPayload } from './overview-special-poi-payloads';
 
 const metricNames = [
   'latitude_degrees',
@@ -29,13 +30,16 @@ export function statusPayload(
   const metrics = scenario.telemetry.metrics;
   return {
     timestamp: scenario.telemetry.currentObservedAt ?? scenario.nowIso,
-    position: {
-      latitude: position?.latitude ?? 0,
-      longitude: position?.longitude ?? 0,
-      altitude: position?.altitudeMeters ?? 0,
-      speed: scenario.telemetry.positionHistory.at(-1)?.speedKnots ?? 0,
-      heading: scenario.telemetry.positionHistory.at(-1)?.headingDegrees ?? 0,
-    },
+    position: position
+      ? {
+          latitude: position.latitude,
+          longitude: position.longitude,
+          altitude: position.altitudeMeters,
+          speed: scenario.telemetry.positionHistory.at(-1)?.speedKnots ?? 0,
+          heading:
+            scenario.telemetry.positionHistory.at(-1)?.headingDegrees ?? 0,
+        }
+      : null,
     network: {
       latency_ms: latencyOverride?.currentMs ?? metrics.latency.currentMs ?? 0,
       throughput_down_mbps: metrics.throughput.current.downloadMbps ?? 0,
@@ -134,6 +138,8 @@ export function gepPayload(scenario: Scenario) {
 }
 
 export function poiPayload(scenario: Scenario, category: string | null) {
+  const special = specialPoiPayload(scenario, category);
+  if (special) return special;
   const items =
     category === null
       ? scenario.pois.items

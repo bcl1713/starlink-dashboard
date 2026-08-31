@@ -15,6 +15,9 @@ export interface MutationEntry {
   readonly activeRequestIds: readonly string[];
   readonly type: string;
   readonly target: string;
+  readonly attributeName: string | null;
+  readonly oldValue: string | null;
+  readonly newValue: string | null;
   readonly added: readonly string[];
   readonly removed: readonly string[];
   readonly criticalRemoval: boolean;
@@ -34,6 +37,7 @@ export interface LifecycleSample {
   readonly phase: string;
   readonly request: RecordedOverviewRequest | null;
   readonly activeRequestIds: readonly string[];
+  readonly activeRequests: readonly RecordedOverviewRequest[];
   readonly identities: Readonly<Record<string, string | null>>;
   readonly regions: readonly RegionSample[];
   readonly layers: readonly LayerSample[];
@@ -59,6 +63,7 @@ export interface LayerSample {
   readonly checked: boolean;
   readonly controlId: string | null;
   readonly ownerId: string | null;
+  readonly objectId: string | null;
   readonly renderedCount: number;
   readonly signature: string;
 }
@@ -67,6 +72,7 @@ export interface ChartSample {
   readonly label: string;
   readonly canvasId: string | null;
   readonly seriesOwnerId: string | null;
+  readonly objectId: string | null;
   readonly seriesCount: number;
   readonly signature: string;
 }

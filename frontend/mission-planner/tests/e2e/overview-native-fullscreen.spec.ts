@@ -33,6 +33,7 @@ test.describe('Operations overview native fullscreen browser contract', () => {
     await page.getByLabel('POI category').selectOption('alternate');
     await openLayerDisclosure(page);
     await page.getByLabel('Satellites').uncheck();
+    await page.evaluate(() => window.scrollTo(0, 24));
     const before = await fullscreenState(page);
 
     await expectFullscreenCalls(page, 0);
@@ -46,7 +47,20 @@ test.describe('Operations overview native fullscreen browser contract', () => {
         poiFilter: 'alternate',
         satelliteLayer: false,
         mapIdentity: before.mapIdentity,
+        mapObjectIdentity: before.mapObjectIdentity,
+        mapViewport: before.mapViewport,
+        radarLayer: before.radarLayer,
+        chartCount: before.chartCount,
+        chartOwnership: before.chartOwnership,
+        detailsOpen: before.detailsOpen,
+        layerChecks: before.layerChecks,
+        scrollOffset: before.scrollOffset,
       });
+    const entered = await fullscreenState(page);
+    expect(entered.overflowX).toBeLessThanOrEqual(1);
+    expect(entered.bodyOverflow).toBeLessThanOrEqual(1);
+    expect(entered.scrollOffset).toBeGreaterThanOrEqual(0);
+    await expect(page.locator('.overview-page')).toBeFocused();
     await attachScreenshots(page, testInfo, 'native-fullscreen');
 
     await page.getByRole('button', { name: 'Exit fullscreen' }).click();
@@ -58,7 +72,16 @@ test.describe('Operations overview native fullscreen browser contract', () => {
         poiFilter: 'alternate',
         satelliteLayer: false,
         mapIdentity: before.mapIdentity,
+        mapObjectIdentity: before.mapObjectIdentity,
+        mapViewport: before.mapViewport,
+        radarLayer: before.radarLayer,
+        chartCount: before.chartCount,
+        chartOwnership: before.chartOwnership,
+        detailsOpen: before.detailsOpen,
+        layerChecks: before.layerChecks,
+        scrollOffset: before.scrollOffset,
       });
+    expect((await fullscreenState(page)).overflowX).toBeLessThanOrEqual(1);
     await expect(
       page.getByRole('button', { name: 'Enter fullscreen' })
     ).toBeFocused();
@@ -89,10 +112,26 @@ async function expectFullscreenCalls(
 
 async function fullscreenState(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
+    type MapProbe = {
+      getCenter(): { lat: number; lng: number };
+      getZoom(): number;
+    };
     const map = document.querySelector('.leaflet-container') as
-      | (HTMLElement & { _leaflet_id?: number })
+      | (HTMLElement & {
+          _leaflet_id?: number;
+          __overviewLeafletMap?: MapProbe;
+        })
       | null;
     const root = document.querySelector('.overview-page');
+    const objectId = (
+      window as typeof window & {
+        __overviewObjectId?: (
+          value: object | null | undefined
+        ) => string | null;
+      }
+    ).__overviewObjectId;
+    const mapObject = map?.__overviewLeafletMap;
+    const center = mapObject?.getCenter();
     return {
       mode: root?.classList.contains('overview-page--native')
         ? 'native'
@@ -101,6 +140,15 @@ async function fullscreenState(page: import('@playwright/test').Page) {
           : 'inline',
       hasNativeElement: document.fullscreenElement === root,
       mapIdentity: map?._leaflet_id ?? null,
+      mapObjectIdentity: objectId?.(mapObject) ?? null,
+      mapViewport:
+        center && mapObject
+          ? {
+              latitude: center.lat,
+              longitude: center.lng,
+              zoom: mapObject.getZoom(),
+            }
+          : null,
       poiFilter:
         document.querySelector<HTMLSelectElement>(
           'select[aria-label="POI category"]'
@@ -109,10 +157,35 @@ async function fullscreenState(page: import('@playwright/test').Page) {
         document.querySelector<HTMLInputElement>(
           'input[aria-label="Satellites"]'
         )?.checked ?? null,
+      radarLayer:
+        document.querySelector<HTMLInputElement>(
+          'input[aria-label="Weather Radar"]'
+        )?.checked ?? null,
+      detailsOpen: [...document.querySelectorAll('details')].map(
+        (details) => details.open
+      ),
+      layerChecks: [
+        ...document.querySelectorAll<HTMLInputElement>(
+          '.operational-map__layer-row input'
+        ),
+      ].map((input) => [input.getAttribute('aria-label'), input.checked]),
       chartCount: document.querySelectorAll('canvas').length,
+      chartOwnership: [
+        ...document.querySelectorAll<HTMLElement>(
+          '[data-testid="time-series-chart-host"]'
+        ),
+      ].map((host) => ({
+        plot: objectId?.(
+          (host as HTMLElement & { __overviewUPlot?: object }).__overviewUPlot
+        ),
+        canvas: objectId?.(host.querySelector('canvas')),
+      })),
       overflowX:
         document.documentElement.scrollWidth -
         document.documentElement.clientWidth,
+      bodyOverflow: document.body.scrollWidth - document.body.clientWidth,
+      scrollOffset:
+        window.scrollY + (root instanceof HTMLElement ? root.scrollTop : 0),
     };
   });
 }

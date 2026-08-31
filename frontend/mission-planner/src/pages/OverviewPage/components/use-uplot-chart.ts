@@ -51,6 +51,9 @@ export function useUPlotChart(
             toUPlotData(latestRows.current, structural.seriesCount),
             host
           );
+          (
+            host as HTMLDivElement & { __overviewUPlot?: UPlotInstance }
+          ).__overviewUPlot = plotRef.current;
           lastRows.current = latestRows.current;
           lastSize.current = size;
           labelPlot(plotRef.current, props.accessibleName);
@@ -89,6 +92,8 @@ export function useUPlotChart(
       disconnectObserver(observerRef.current);
       observerRef.current = null;
       destroyPlot(plotRef.current);
+      delete (host as HTMLDivElement & { __overviewUPlot?: UPlotInstance })
+        .__overviewUPlot;
       plotRef.current = null;
       lastRows.current = null;
       lastSize.current = null;

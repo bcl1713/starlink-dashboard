@@ -73,6 +73,11 @@ function useStableMapBase(
   useEffect(() => {
     if (mapRef.current === map) return;
     mapRef.current = map;
+    (
+      map.getContainer() as HTMLElement & {
+        __overviewLeafletMap?: LeafletMap;
+      }
+    ).__overviewLeafletMap = map;
     map.createPane('operational-basemap').style.zIndex = String(BASEMAP_PANE);
     for (const layer of OPERATIONAL_LAYERS) {
       map.createPane(layer.id).style.zIndex = String(layer.pane);
@@ -95,12 +100,27 @@ function useStableMapBase(
     basemap.on('tileerror', markFailed);
     basemap.addTo(map);
     const scale = L.control.scale().addTo(map);
+    const preserveViewport = () => {
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      window.requestAnimationFrame(() => {
+        map.invalidateSize({ pan: false });
+        map.setView(center, zoom, { animate: false });
+      });
+    };
+    window.addEventListener('resize', preserveViewport);
     onMapReadyRef.current?.(map);
     return () => {
+      window.removeEventListener('resize', preserveViewport);
       basemap.off('tileload', markReady);
       basemap.off('tileerror', markFailed);
       basemap.remove();
       scale.remove();
+      delete (
+        map.getContainer() as HTMLElement & {
+          __overviewLeafletMap?: LeafletMap;
+        }
+      ).__overviewLeafletMap;
       if (mapRef.current === map) mapRef.current = null;
     };
   }, [map, mapRef, onBasemapStatusChange]);
