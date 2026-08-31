@@ -20,6 +20,8 @@ interface SnapshotOptions {
   readonly history?: readonly (readonly [string, number, number])[];
   readonly routePhase?: OverviewSourcePhase;
   readonly routeError?: boolean;
+  readonly radarPhase?: OverviewSourcePhase;
+  readonly radarError?: boolean;
 }
 
 const timestamp = '2026-08-29T12:00:00Z';
@@ -70,7 +72,12 @@ export function makeOverviewSnapshot(
       'ready',
       timestamp
     ),
-    radar: slot({ frameTimestamp: '1777294800' }, 'ready', '1777294800'),
+    radar: slot(
+      { frameTimestamp: '1777294800' },
+      options.radarPhase ?? 'ready',
+      '1777294800',
+      options.radarError
+    ),
     initialState: 'ready',
     manualResult: 'idle',
     globalTransportLastSuccessAt: 1,

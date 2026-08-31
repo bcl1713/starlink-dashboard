@@ -11,15 +11,7 @@
 .operational-map__canvas {
   width: 100%;
   height: 100%;
-  min-height: 320px;
-}
-
-.operational-map__panel {
-  background: rgb(15 23 42 / 92%);
-  color: #f8fafc;
-  border: 1px solid rgb(148 163 184 / 40%);
-  border-radius: 8px;
-  padding: 0.75rem;
+  min-height: 0;
 }
 
 .operational-map__overlay {
@@ -72,8 +64,10 @@
   rotate: var(--aircraft-heading, 0deg);
 }
 
-@media (min-width: 768px) {
-  .operational-map__canvas {
-    min-height: 384px;
-  }
+.operational-map__panel {
+  background: rgb(15 23 42 / 92%);
+  color: #f8fafc;
+  border: 1px solid rgb(148 163 184 / 40%);
+  border-radius: 8px;
+  padding: 0.75rem;
 }

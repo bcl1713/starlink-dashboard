@@ -1,8 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import L from 'leaflet';
 import { useMap } from 'react-leaflet';
 
 import { getRainViewerRadarTile } from '../../../services/monitoring';
 import type { OverviewDataController } from '../overview-data-types';
+import { createRadarLayer } from './radar-grid-layer-factory';
 import { createRadarTileManager } from './radar-tile-manager';
 
 interface RadarGridLayerProps {
@@ -17,6 +19,10 @@ export function RadarGridLayer({
   reportRadarResult,
 }: RadarGridLayerProps) {
   const map = useMap();
+  const token = useRef(radarRefreshToken);
+  useEffect(() => {
+    token.current = radarRefreshToken;
+  }, [radarRefreshToken]);
   const manager = useMemo(
     () =>
       createRadarTileManager({
@@ -25,30 +31,43 @@ export function RadarGridLayer({
       }),
     [reportRadarResult]
   );
+  const layer = useMemo(
+    // The GridLayer identity is stable; its tile callbacks read the latest token.
+    // eslint-disable-next-line react-hooks/refs
+    () => createRadarLayer(manager, () => token.current),
+    [manager]
+  );
 
   useEffect(() => () => manager.destroy(), [manager]);
 
   useEffect(() => {
     if (!enabled) {
+      if (map.hasLayer(layer)) map.removeLayer(layer);
       manager.destroy();
       return;
     }
-    const center = map.getCenter();
-    const zoom = Math.max(0, Math.min(7, Math.floor(map.getZoom())));
-    const scale = 2 ** zoom;
-    const x = Math.max(
-      0,
-      Math.min(scale - 1, Math.floor(((center.lng + 180) / 360) * scale))
-    );
-    const y = Math.max(
-      0,
-      Math.min(scale - 1, Math.floor(((90 - center.lat) / 180) * scale))
-    );
-    void manager.loadVisibleTiles({
-      token: radarRefreshToken,
-      tiles: [{ z: zoom, x, y }],
-    });
-  }, [enabled, manager, map, radarRefreshToken]);
+    ensureRadarPane(map);
+    if (!map.hasLayer(layer)) layer.addTo(map);
+    layer.refreshVisible();
+  }, [enabled, layer, manager, map, radarRefreshToken]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (enabled) layer.refreshVisible();
+    };
+    map.on('moveend zoomend', refresh);
+    return () => {
+      map.off('moveend zoomend', refresh);
+      if (map.hasLayer(layer)) map.removeLayer(layer);
+      manager.destroy();
+    };
+  }, [enabled, layer, manager, map]);
 
   return null;
+}
+
+function ensureRadarPane(map: L.Map): void {
+  if (map.getPane('weather-radar')) return;
+  const pane = map.createPane('weather-radar');
+  pane.style.zIndex = '200';
 }

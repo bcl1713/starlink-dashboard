@@ -25,12 +25,12 @@ describe('operational map layer contract', () => {
     ]);
     expect(OPERATIONAL_LAYERS.map((layer) => layer.label)).toEqual([
       'Weather Radar',
-      'Planned Route - western segment',
-      'Planned Route - eastern segment',
-      'Active X-band Link - normal',
-      'Active X-band Link - warning',
-      'Position History - western segments',
-      'Position History - eastern segments',
+      'Planned Route — western segment',
+      'Planned Route — eastern segment',
+      'Active X-band Link — normal',
+      'Active X-band Link — warning',
+      'Position History — western segments',
+      'Position History — eastern segments',
       'Flight route/POI markers',
       'Satellites',
       'Mission events',

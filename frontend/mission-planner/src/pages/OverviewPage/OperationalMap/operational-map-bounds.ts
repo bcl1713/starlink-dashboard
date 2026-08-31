@@ -18,10 +18,12 @@ export function buildFeatureBounds(
             longitude: feature.geometry.longitude,
           },
         ]
-      : feature.geometry.points.map((point) => ({
-          latitude: point.latitude,
-          longitude: point.longitude,
-        }))
+      : (feature.geometry.sourcePoints ?? feature.geometry.points).map(
+          (point) => ({
+            latitude: point.latitude,
+            longitude: point.longitude,
+          })
+        )
   );
   const valid = points.filter((point) =>
     finiteGeographic(point.latitude, point.longitude)

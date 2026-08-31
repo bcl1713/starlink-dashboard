@@ -66,6 +66,47 @@ describe('operational feature building', () => {
     expect(second.map((feature) => feature.id)).toEqual(['history:east:2']);
   });
 
+  it('assigns split ownership by largest timestamp overlap before display order', () => {
+    const registry = createHistoryIdRegistry();
+    const first = historyIds(registry, [
+      ['2026-08-29T12:00:00Z', 10, -10],
+      ['2026-08-29T12:00:01Z', 11, -11],
+      ['2026-08-29T12:00:03Z', 13, -13],
+      ['2026-08-29T12:00:04Z', 14, -14],
+      ['2026-08-29T12:00:05Z', 15, -15],
+    ]);
+    const split = historyIds(registry, [
+      ['2026-08-29T12:00:00Z', 10, -10],
+      ['2026-08-29T12:00:01Z', 11, -11],
+      ['2026-08-29T12:00:02Z', 12, 1],
+      ['2026-08-29T12:00:03Z', 13, -13],
+      ['2026-08-29T12:00:04Z', 14, -14],
+      ['2026-08-29T12:00:05Z', 15, -15],
+    ]);
+
+    expect(first).toEqual(['history:west:1']);
+    expect(split).toEqual(['history:west:2', 'history:west:1']);
+  });
+
+  it('assigns merge ownership by largest overlap and prior ID lexical tie', () => {
+    const registry = createHistoryIdRegistry();
+    historyIds(registry, [
+      ['2026-08-29T12:00:00Z', 10, -10],
+      ['2026-08-29T12:00:01Z', 11, -11],
+      ['2026-08-29T12:00:02Z', 12, 1],
+      ['2026-08-29T12:00:03Z', 13, -12],
+      ['2026-08-29T12:00:04Z', 14, -13],
+    ]);
+    const merged = historyIds(registry, [
+      ['2026-08-29T12:00:00Z', 10, -10],
+      ['2026-08-29T12:00:01Z', 11, -11],
+      ['2026-08-29T12:00:03Z', 13, -12],
+      ['2026-08-29T12:00:04Z', 14, -13],
+    ]);
+
+    expect(merged).toEqual(['history:west:1']);
+  });
+
   it('derives retained last-good source state from non-ready slots with data', () => {
     const output = buildOperationalFeatures(
       makeOverviewSnapshot({ routePhase: 'error', routeError: true }),
@@ -81,3 +122,12 @@ describe('operational feature building', () => {
     });
   });
 });
+
+function historyIds(
+  registry: ReturnType<typeof createHistoryIdRegistry>,
+  history: readonly (readonly [string, number, number])[]
+): string[] {
+  return buildOperationalFeatures(makeOverviewSnapshot({ history }), registry)
+    .features.filter((feature) => feature.kind === 'history-segment')
+    .map((feature) => feature.id);
+}

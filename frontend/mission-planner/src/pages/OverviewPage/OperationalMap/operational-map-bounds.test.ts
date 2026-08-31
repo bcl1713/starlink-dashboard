@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import type { OverviewGeometryPoint } from '../geometry';
 import { buildFeatureBounds } from './operational-map-bounds';
+import {
+  buildOperationalFeatures,
+  createHistoryIdRegistry,
+} from './build-operational-features';
 import type { OperationalFeature } from './operational-map-types';
+import { makeOverviewSnapshot } from './test-fixtures';
 
 describe('operational map bounds', () => {
   it('uses the minimal circular longitude interval across the date line', () => {
@@ -43,6 +48,27 @@ describe('operational map bounds', () => {
     expect(bounds).toEqual([
       [1, 2],
       [3, 4],
+    ]);
+  });
+
+  it('excludes synthetic IDL interpolation points from actual split route bounds', () => {
+    const { features } = buildOperationalFeatures(
+      makeOverviewSnapshot({
+        routeWest: [
+          { latitude: 10, longitude: 170 },
+          { latitude: 12, longitude: -170 },
+        ],
+      }),
+      createHistoryIdRegistry()
+    );
+
+    expect(
+      buildFeatureBounds(
+        features.filter((feature) => feature.layerId === 'planned-route-west')
+      )
+    ).toEqual([
+      [10, 170],
+      [12, 190],
     ]);
   });
 });

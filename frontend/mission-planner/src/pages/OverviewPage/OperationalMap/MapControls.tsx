@@ -2,6 +2,7 @@ import type { RefObject } from 'react';
 
 export function MapControls({
   activationButtonRef,
+  measureMode,
   measurementText,
   mobileActive,
   mobileLocked,
@@ -10,10 +11,13 @@ export function MapControls({
   onClearMeasure,
   onDisableMobile,
   onFit,
+  onToggleMeasure,
+  onUndoMeasure,
   onZoomIn,
   onZoomOut,
 }: {
   readonly activationButtonRef: RefObject<HTMLButtonElement | null>;
+  readonly measureMode: boolean;
   readonly measurementText: string;
   readonly mobileActive: boolean;
   readonly mobileLocked: boolean;
@@ -22,12 +26,15 @@ export function MapControls({
   readonly onClearMeasure: () => void;
   readonly onDisableMobile: () => void;
   readonly onFit: () => void;
+  readonly onToggleMeasure: () => void;
+  readonly onUndoMeasure: () => void;
   readonly onZoomIn: () => void;
   readonly onZoomOut: () => void;
 }) {
   return (
     <div className="operational-map__panel operational-map__controls">
       <button
+        aria-label="Zoom in"
         className="operational-map__button"
         onClick={onZoomIn}
         type="button"
@@ -35,6 +42,7 @@ export function MapControls({
         +
       </button>
       <button
+        aria-label="Zoom out"
         className="operational-map__button"
         onClick={onZoomOut}
         type="button"
@@ -46,10 +54,25 @@ export function MapControls({
       </button>
       <button
         className="operational-map__button"
+        aria-pressed={measureMode}
+        onClick={onToggleMeasure}
+        type="button"
+      >
+        Measure distance
+      </button>
+      <button
+        className="operational-map__button"
         onClick={onAddCenter}
         type="button"
       >
         Add map-center point
+      </button>
+      <button
+        className="operational-map__button"
+        onClick={onUndoMeasure}
+        type="button"
+      >
+        Undo point
       </button>
       <button
         className="operational-map__button"

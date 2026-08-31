@@ -20,14 +20,18 @@ import {
   createHistoryIdRegistry,
 } from './build-operational-features';
 import type {
-  OperationalFeature,
   OperationalMapHandle,
   OperationalMapProps,
 } from './operational-map-types';
 import { FeatureDetails } from './FeatureDetails';
+import { FeatureButtons } from './FeatureButtons';
 import { LayerDisclosure } from './LayerDisclosure';
 import { MapControls } from './MapControls';
 import { MapTextSummary } from './MapTextSummary';
+import {
+  buildMeasurementText,
+  prefersReducedMotion,
+} from './operational-map-helpers';
 import { StableMapComposition } from './StableMapComposition';
 
 export type { OperationalMapHandle } from './operational-map-types';
@@ -55,6 +59,7 @@ export const OperationalMap = forwardRef<
     null
   );
   const [measurePoints, setMeasurePoints] = useState<L.LatLng[]>([]);
+  const [measureMode, setMeasureMode] = useState(false);
   const [mobileLocked, setMobileLocked] = useState(false);
   const [mobileActive, setMobileActive] = useState(false);
   const activationButton = useRef<HTMLButtonElement | null>(null);
@@ -75,27 +80,31 @@ export const OperationalMap = forwardRef<
     selectedFeature === null &&
     dismissedMissingId !== selectedId;
 
-  const fit = useCallback(() => {
-    if (!map) return;
+  const fit = useCallback((): boolean => {
+    if (!map) return false;
     const bounds = buildFeatureBounds(
       features.filter((feature) => visibility[feature.layerId])
     );
-    if (!bounds) return;
+    if (!bounds) return false;
     try {
       map.fitBounds(bounds, {
         animate: !prefersReducedMotion(),
         maxZoom: 8,
         padding: [24, 24],
       });
+      return true;
     } catch {
       // Leaflet can reject malformed container state during test teardown.
+      return false;
     }
   }, [features, map, visibility]);
 
   useImperativeHandle(
     ref,
     () => ({
-      fitToAvailableLayers: fit,
+      fitToAvailableLayers() {
+        fit();
+      },
       focusCoordinates(options) {
         if (
           !map ||
@@ -120,9 +129,50 @@ export const OperationalMap = forwardRef<
 
   useEffect(() => {
     if (!map || performedInitialFit.current || features.length === 0) return;
-    performedInitialFit.current = true;
-    fit();
+    if (fit()) performedInitialFit.current = true;
   }, [features.length, fit, map]);
+
+  useEffect(() => {
+    if (!map || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      try {
+        map.invalidateSize({ pan: false });
+      } catch {
+        return;
+      }
+    });
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
+  }, [map]);
+
+  useEffect(() => {
+    if (!map) return;
+    const line = L.polyline(measurePoints, {
+      color: '#f8fafc',
+      dashArray: '4 4',
+      pane: 'current-position-layer',
+      weight: 2,
+    });
+    if (measurePoints.length > 1) line.addTo(map);
+    return () => {
+      line.remove();
+    };
+  }, [map, measurePoints]);
+
+  useEffect(() => {
+    if (!map) return;
+    const addPoint = (event: L.LeafletMouseEvent) => {
+      setMeasurePoints((points) => [...points, event.latlng]);
+    };
+    if (measureMode) {
+      map.dragging.disable();
+      map.on('click', addPoint);
+    }
+    return () => {
+      map.off('click', addPoint);
+      if (!mobileLocked || mobileActive) map.dragging.enable();
+    };
+  }, [map, measureMode, mobileActive, mobileLocked]);
 
   useEffect(() => {
     const query = window.matchMedia?.('(min-width: 768px)');
@@ -157,6 +207,7 @@ export const OperationalMap = forwardRef<
         className="operational-map__canvas"
         ref={setMap}
         scrollWheelZoom={false}
+        zoomControl={false}
         zoom={1}
       >
         <StableMapComposition
@@ -191,8 +242,13 @@ export const OperationalMap = forwardRef<
             setMobileActive(false);
           }}
           onFit={fit}
+          onToggleMeasure={() => setMeasureMode((enabled) => !enabled)}
+          onUndoMeasure={() =>
+            setMeasurePoints((points) => points.slice(0, -1))
+          }
           onZoomIn={() => map?.zoomIn()}
           onZoomOut={() => map?.zoomOut()}
+          measureMode={measureMode}
         />
         <LayerDisclosure
           radarEnabled={radarEnabled}
@@ -230,43 +286,3 @@ export const OperationalMap = forwardRef<
     </section>
   );
 });
-
-function FeatureButtons({
-  features,
-  onSelect,
-}: {
-  readonly features: readonly OperationalFeature[];
-  readonly onSelect: (id: string) => void;
-}) {
-  return (
-    <div className="operational-map__panel">
-      {features.map((feature) => (
-        <button
-          key={feature.id}
-          onClick={() => onSelect(feature.id)}
-          type="button"
-        >
-          {feature.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function buildMeasurementText(
-  map: LeafletMap | null,
-  points: readonly L.LatLng[]
-): string {
-  if (!map || points.length < 2) return 'Measurement: no distance selected';
-  let meters = 0;
-  for (let index = 1; index < points.length; index += 1) {
-    meters += map.distance(points[index - 1], points[index]);
-  }
-  return `Measurement: ${(meters / 1000).toFixed(1)} km`;
-}
-
-function prefersReducedMotion(): boolean {
-  return (
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
-  );
-}

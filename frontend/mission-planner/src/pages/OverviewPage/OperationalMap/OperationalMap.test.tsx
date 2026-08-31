@@ -61,7 +61,14 @@ describe('OperationalMap', () => {
     const retryRadar = vi.fn();
     render(
       <OperationalMap
-        {...mapProps({ onRadarEnabledChange, retryRadar })}
+        {...mapProps({
+          onRadarEnabledChange,
+          retryRadar,
+          snapshot: makeOverviewSnapshot({
+            radarPhase: 'error',
+            radarError: true,
+          }),
+        })}
         radarEnabled={false}
       />
     );

@@ -1,5 +1,6 @@
 import {
   adaptPositionHistory,
+  adaptActiveLinkSegment,
   adaptRouteCoordinates,
   splitActiveLinkSegments,
   splitAtInternationalDateLine,
@@ -14,63 +15,13 @@ import type {
   OperationalLayerState,
   VectorLayerId,
 } from './operational-map-types';
+import {
+  createHistoryIdRegistry,
+  type HistoryIdRegistry,
+  type HistoryRun,
+} from './history-id-registry';
 
-interface HistoryRun {
-  readonly hemisphere: 'west' | 'east';
-  readonly points: readonly OverviewGeometryPoint[];
-  readonly timestamps: readonly string[];
-}
-
-export interface HistoryIdRegistry {
-  readonly reconcile: (
-    runs: readonly HistoryRun[]
-  ) => readonly OperationalFeature[];
-}
-
-export function createHistoryIdRegistry(): HistoryIdRegistry {
-  let nextId = 1;
-  let previous: { id: string; timestamps: readonly string[] }[] = [];
-  return {
-    reconcile(runs) {
-      const used = new Set<string>();
-      const features = runs.map((run) => {
-        const candidates = previous
-          .map((prior) => ({
-            prior,
-            overlap: prior.timestamps.filter((stamp) =>
-              run.timestamps.includes(stamp)
-            ),
-          }))
-          .filter(
-            (candidate) =>
-              candidate.overlap.length > 0 && !used.has(candidate.prior.id)
-          )
-          .sort(
-            (left, right) =>
-              right.overlap.length - left.overlap.length ||
-              left.overlap[0].localeCompare(right.overlap[0]) ||
-              left.prior.id.localeCompare(right.prior.id)
-          );
-        const id =
-          candidates[0]?.prior.id ?? `history:${run.hemisphere}:${nextId++}`;
-        used.add(id);
-        return {
-          id,
-          layerId: `position-history-${run.hemisphere}` as VectorLayerId,
-          kind: 'history-segment',
-          label: `Position history ${run.hemisphere}`,
-          geometry: { type: 'line', points: run.points },
-          details: [{ label: 'Samples', value: String(run.points.length) }],
-        } satisfies OperationalFeature;
-      });
-      previous = runs.map((run, index) => ({
-        id: features[index].id,
-        timestamps: run.timestamps,
-      }));
-      return features;
-    },
-  };
-}
+export { createHistoryIdRegistry };
 
 export function buildOperationalFeatures(
   snapshot: OverviewDataSnapshot,
@@ -148,15 +99,16 @@ function routeFeatures(
     | NonNullable<OverviewDataSnapshot['route']['data']>['west']
     | undefined
 ) {
+  const sourcePoints = route ? adaptRouteCoordinates(route) : [];
   const routeId = route?.route_id ?? 'none';
-  return splitAtInternationalDateLine(route ? adaptRouteCoordinates(route) : [])
+  return splitAtInternationalDateLine(sourcePoints)
     .filter((points) => points.length > 1)
     .map((points, index) => ({
       id: `route:${direction}:${routeId}:${index}`,
       layerId: `planned-route-${direction}` as VectorLayerId,
       kind: 'route-segment',
       label: route?.route_name ?? `Planned route ${direction}`,
-      geometry: { type: 'line', points },
+      geometry: { type: 'line', points, sourcePoints },
       details: [{ label: 'Points', value: String(points.length) }],
     })) satisfies OperationalFeature[];
 }
@@ -176,7 +128,11 @@ function activeLinkFeatures(
           layerId: `active-x-band-${state}` as VectorLayerId,
           kind: 'active-link',
           label: `Active X-band ${state}`,
-          geometry: { type: 'line', points },
+          geometry: {
+            type: 'line',
+            points,
+            sourcePoints: adaptActiveLinkSegment(split.link),
+          },
           details: [{ label: 'Satellite', value: split.link.satellite_id }],
         })) satisfies OperationalFeature[]
   );

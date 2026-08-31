@@ -55,6 +55,7 @@ export interface OperationalFeature {
     | {
         readonly type: 'line';
         readonly points: readonly OverviewGeometryPoint[];
+        readonly sourcePoints?: readonly OverviewGeometryPoint[];
       };
   readonly details: readonly OperationalFeatureDetail[];
 }

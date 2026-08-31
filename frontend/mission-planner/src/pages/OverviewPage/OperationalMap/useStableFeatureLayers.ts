@@ -5,7 +5,10 @@ import L, {
   type Map as LeafletMap,
 } from 'leaflet';
 
-import { VECTOR_LAYER_IDS } from './operational-map-contract';
+import {
+  OPERATIONAL_LAYERS,
+  VECTOR_LAYER_IDS,
+} from './operational-map-contract';
 import type {
   OperationalFeature,
   OperationalLayerVisibility,
@@ -20,6 +23,10 @@ const colors: Record<string, string> = {
   'position-history-west': '#3b82f6',
   'position-history-east': '#3b82f6',
 };
+
+const contractById = new Map<string, (typeof OPERATIONAL_LAYERS)[number]>(
+  OPERATIONAL_LAYERS.map((layer) => [layer.id, layer])
+);
 
 export function useStableFeatureLayers({
   features,
@@ -89,6 +96,7 @@ function createLayer(
     feature.geometry.type === 'point'
       ? L.marker([feature.geometry.latitude, feature.geometry.longitude], {
           icon: iconFor(feature),
+          pane: feature.layerId,
         })
       : L.polyline(
           feature.geometry.points.map((point) => [
@@ -97,10 +105,14 @@ function createLayer(
           ]),
           {
             color: colors[feature.layerId] ?? '#f8fafc',
-            weight: 3,
-            opacity: 0.9,
+            dashArray: dashFor(feature),
+            opacity: contractById.get(feature.layerId)?.opacity ?? 0.9,
+            pane: feature.layerId,
+            weight: lineWidth(feature.layerId),
           }
         );
+  bindLabel(layer, feature);
+  applyHeading(layer, feature);
   layer.on('click', () => onSelect(feature.id));
   return layer;
 }
@@ -113,14 +125,19 @@ function updateLayer(layer: Layer, feature: OperationalFeature): void {
     layer.setLatLngs(
       feature.geometry.points.map((point) => [point.latitude, point.longitude])
     );
+    layer.setStyle({
+      color: colors[feature.layerId] ?? '#f8fafc',
+      dashArray: dashFor(feature),
+      opacity: contractById.get(feature.layerId)?.opacity ?? 0.9,
+      pane: feature.layerId,
+      weight: lineWidth(feature.layerId),
+    });
   }
-  const element = layer instanceof L.Marker ? layer.getElement() : null;
-  if (element && feature.id === 'current-position') {
-    element.style.setProperty(
-      '--aircraft-heading',
-      `${feature.details[0]?.value ?? 0}deg`
-    );
+  if (layer instanceof L.Marker && feature.geometry.type === 'point') {
+    layer.setIcon(iconFor(feature));
+    bindLabel(layer, feature);
   }
+  applyHeading(layer, feature);
 }
 
 function iconFor(feature: OperationalFeature) {
@@ -134,11 +151,58 @@ function iconFor(feature: OperationalFeature) {
           : feature.kind === 'ground-entry-point'
             ? '/assets/overview-map/gep-circle.svg'
             : '/assets/overview-map/poi-x.svg';
+  const size = markerSize(feature.layerId);
   return L.icon({
     iconUrl: url,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
     className:
       feature.id === 'current-position' ? 'operational-map__aircraft' : '',
   });
+}
+
+function bindLabel(layer: Layer, feature: OperationalFeature): void {
+  if (!(layer instanceof L.Marker)) return;
+  const label = document.createElement('span');
+  label.textContent =
+    feature.kind === 'ground-entry-point' ? 'GEP' : feature.label;
+  label.style.fontSize = '12px';
+  layer.bindTooltip(label, {
+    direction: 'bottom',
+    offset: [0, markerTextOffset(feature.layerId)],
+    opacity: 1,
+    permanent: true,
+  });
+}
+
+function lineWidth(layerId: string): number {
+  const contract = contractById.get(layerId);
+  return contract && 'width' in contract ? (contract.width ?? 3) : 3;
+}
+
+function markerSize(layerId: string): number {
+  const contract = contractById.get(layerId);
+  return contract && 'size' in contract ? (contract.size ?? 15) : 15;
+}
+
+function markerTextOffset(layerId: string): number {
+  const contract = contractById.get(layerId);
+  return contract && 'textOffsetPx' in contract
+    ? (contract.textOffsetPx ?? 25)
+    : 25;
+}
+
+function applyHeading(layer: Layer, feature: OperationalFeature): void {
+  const element = layer instanceof L.Marker ? layer.getElement() : null;
+  if (!element || feature.id !== 'current-position') return;
+  element.style.setProperty(
+    '--aircraft-heading',
+    `${feature.details[0]?.value ?? 0}deg`
+  );
+}
+
+function dashFor(feature: OperationalFeature): string | undefined {
+  return feature.kind === 'active-link' && feature.layerId.endsWith('warning')
+    ? '6 4'
+    : undefined;
 }

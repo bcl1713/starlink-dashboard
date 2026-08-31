@@ -45,7 +45,7 @@ export const OPERATIONAL_LAYERS = [
   },
   lineLayer(
     'planned-route-west',
-    'Planned Route - western segment',
+    'Planned Route — western segment',
     300,
     'dark-orange',
     2,
@@ -53,7 +53,7 @@ export const OPERATIONAL_LAYERS = [
   ),
   lineLayer(
     'planned-route-east',
-    'Planned Route - eastern segment',
+    'Planned Route — eastern segment',
     310,
     'dark-orange',
     2,
@@ -61,7 +61,7 @@ export const OPERATIONAL_LAYERS = [
   ),
   lineLayer(
     'active-x-band-normal',
-    'Active X-band Link - normal',
+    'Active X-band Link — normal',
     320,
     'green',
     4,
@@ -69,7 +69,7 @@ export const OPERATIONAL_LAYERS = [
   ),
   lineLayer(
     'active-x-band-warning',
-    'Active X-band Link - warning',
+    'Active X-band Link — warning',
     330,
     'yellow',
     4,
@@ -77,7 +77,7 @@ export const OPERATIONAL_LAYERS = [
   ),
   lineLayer(
     'position-history-west',
-    'Position History - western segments',
+    'Position History — western segments',
     340,
     'blue',
     3,
@@ -85,7 +85,7 @@ export const OPERATIONAL_LAYERS = [
   ),
   lineLayer(
     'position-history-east',
-    'Position History - eastern segments',
+    'Position History — eastern segments',
     350,
     'blue',
     3,

@@ -22,6 +22,7 @@ export function LayerDisclosure({
   retryRadar,
 }: LayerDisclosureProps) {
   const stateById = new Map(states.map((state) => [state.id, state]));
+  const radarFailed = stateById.get('weather-radar')?.phase === 'error';
   return (
     <details className="operational-map__panel" open>
       <summary>Operational layers</summary>
@@ -55,13 +56,15 @@ export function LayerDisclosure({
           );
         })}
       </div>
-      <button
-        className="operational-map__button"
-        onClick={retryRadar}
-        type="button"
-      >
-        Retry weather radar
-      </button>
+      {radarFailed ? (
+        <button
+          className="operational-map__button"
+          onClick={retryRadar}
+          type="button"
+        >
+          Retry weather radar
+        </button>
+      ) : null}
     </details>
   );
 }

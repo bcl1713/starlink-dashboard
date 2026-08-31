@@ -103,4 +103,30 @@ describe('radar tile manager', () => {
       error: expect.any(Error),
     });
   });
+
+  it('makes a fresh same-key request for a wrapped retry token', async () => {
+    const loadTile = vi.fn(({ x }) =>
+      Promise.resolve({
+        bytes: png.slice(0),
+        frameTimestamp: String(300 + x),
+      })
+    );
+    const manager = createRadarTileManager({
+      loadTile,
+      reportRadarResult: vi.fn(),
+      createObjectUrl: vi.fn(() => `blob:${loadTile.mock.calls.length}`),
+      revokeObjectUrl: vi.fn(),
+    });
+
+    await manager.loadVisibleTiles({
+      token: Number.MAX_SAFE_INTEGER,
+      tiles: [{ z: 1, x: 0, y: 0 }],
+    });
+    await manager.loadVisibleTiles({
+      token: 0,
+      tiles: [{ z: 1, x: 0, y: 0 }],
+    });
+
+    expect(loadTile).toHaveBeenCalledTimes(2);
+  });
 });
