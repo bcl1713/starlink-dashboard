@@ -135,10 +135,18 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
 
 **Ownership:** Build the operational map according to the
 [Task 11 responsibility map](00-exact-file-map.md#task-11-responsibility-map)
-and the [approved operational-map architecture
-handoff][task-11-operational-map-handoff]. Named paths are advisory ownership
-examples unless a public import, asset URL, or test contract explicitly requires
-one.
+and the
+[Task 11 binding contract](00-exact-file-map.md#task-11-binding-contract). Named
+paths are advisory ownership examples unless a public import, asset URL, or test
+contract explicitly requires one.
+
+**Activation-critical contract:** `OperationalMap` is the public shell and owns
+the stable Leaflet tree, `focusCoordinates()` handle, eleven vector groups,
+radar `GridLayer`, single timestamp/history identity reconciliation path,
+controlled radar retry/preference callbacks, sole `LayerDisclosure` layer
+control, internal object-URL cleanup, same-origin radar CSP boundary, and
+responsive map interaction behavior. Any future `blob:` CSP allowance waits for
+later browser acceptance.
 
 **Steps:**
 
@@ -157,10 +165,18 @@ one.
 
 **Ownership:** Compose the page according to the
 [Task 12 responsibility map](00-exact-file-map.md#task-12-responsibility-map)
-and the [approved responsive-composition
-handoff][task-12-responsive-composition-handoff]. Named paths are advisory
-ownership examples unless the routing, exported shell, or CSS class contracts
-explicitly require one.
+and the
+[Task 12 binding contract](00-exact-file-map.md#task-12-binding-contract). Named
+paths are advisory ownership examples unless the routing, exported shell, or CSS
+class contracts explicitly require one.
+
+**Activation-critical contract:** Task 12 owns one mounted Overview composition
+tree, responsive routing/layout/fullscreen behavior, `.overview-map-region`
+height at every accepted viewport, and the 100% fill contract for
+`OperationalMap`. It may focus map content only through `focusCoordinates()`,
+keeps `LayerDisclosure` as the sole radar/layer-control UI, owns controlled
+preference plumbing through page controls, preserves responsive interaction
+state, and leaves browser acceptance to Tasks 13-14.
 
 **Steps:**
 
@@ -216,8 +232,3 @@ explicitly require one.
   keyboard/touch disclosure exposes the full chart and accessible data table.
 - The complete layer list, radar control, filters, feature details, retry,
   refresh, and settings remain available. Rotation preserves all state.
-
-[task-11-operational-map-handoff]:
-  /home/brian/.hermes/profiles/oracle/artifacts/starlink-react-overview/codex-task-11-operational-map.txt
-[task-12-responsive-composition-handoff]:
-  /home/brian/.hermes/profiles/oracle/artifacts/starlink-react-overview/codex-task-12-responsive-composition.txt

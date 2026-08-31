@@ -25,15 +25,12 @@ Planning artifacts may keep task and phase headings. Production source and test
 identifiers introduced by this work must use domain names, not implementation
 phase labels.
 
-Approved external handoffs refine the Task 11 and Task 12 contracts:
+Repository-local contracts refine the Task 11 and Task 12 implementation work:
 
-- [Task 11 operational-map architecture handoff][task-11-handoff]
-- [Task 12 responsive-composition handoff][task-12-handoff]
-
-[task-11-handoff]:
-  /home/brian/.hermes/profiles/oracle/artifacts/starlink-react-overview/codex-task-11-operational-map.txt
-[task-12-handoff]:
-  /home/brian/.hermes/profiles/oracle/artifacts/starlink-react-overview/codex-task-12-responsive-composition.txt
+- [Task 11 responsibility map](#task-11-responsibility-map)
+- [Task 11 binding contract](#task-11-binding-contract)
+- [Task 12 responsibility map](#task-12-responsibility-map)
+- [Task 12 binding contract](#task-12-binding-contract)
 
 ## Historical Executed Inventory
 
@@ -153,9 +150,31 @@ summary, local map CSS, and local marker assets under
 asset URL, or test contract explicitly makes one binding.
 
 Task 11 must honor the approved props, CSP, history-ID, radar, map-interaction,
-and ref ownership contracts in the [Task 11 operational-map architecture
-handoff][task-11-handoff] without copying the handoff wholesale into repository
-docs.
+and ref ownership contracts in the
+[Task 11 binding contract](#task-11-binding-contract) without expanding product
+scope.
+
+### Task 11 Binding Contract
+
+Activation-critical ownership clauses:
+
+- `OperationalMap` is the public shell. It owns the stable Leaflet composition
+  and exposes only the approved handle, including `focusCoordinates()` for Task
+  12 and `getMap()` for diagnostics.
+- Task 11 owns a single timestamp/history identity reconciliation path for map
+  features, including IDL split/merge behavior and rolling-window updates.
+- Task 11 owns the eleven vector groups plus the radar `GridLayer`: planned
+  route west/east, active link normal/warning, position history west/east,
+  flight-route markers, satellites, mission events, ground entry point, current
+  position, and same-origin radar tiles.
+- Radar retry and preference state are controlled by approved callbacks/props.
+  `LayerDisclosure` is the sole radar and layer-control surface.
+- Object URLs stay internal to radar tile management and must be revoked. CSP
+  remains same-origin for proxied radar; any future `blob:` allowance is a later
+  browser-acceptance gate, not part of Task 11 implementation.
+- Task 11 owns responsive map interaction behavior, including mobile interaction
+  opt-in, keyboard operation, reduced motion, textual equivalents, and stable
+  state across refreshes and remounts.
 
 ## Task 12 Responsibility Map
 
@@ -199,6 +218,28 @@ the routing, exported shell boundaries, or CSS class contracts in the approved
 handoff explicitly require them.
 
 Task 12 must honor the approved props, height, fullscreen, accessibility,
-radar-control, map-ref, and responsive-composition contracts in the [Task 12
-responsive-composition handoff][task-12-handoff] without expanding product
+radar-control, map-ref, and responsive-composition contracts in the
+[Task 12 binding contract](#task-12-binding-contract) without expanding product
 scope.
+
+### Task 12 Binding Contract
+
+Activation-critical ownership clauses:
+
+- Task 12 owns one mounted Overview composition tree across desktop, mobile,
+  rotation, refresh, and fullscreen states. It must not switch between separate
+  desktop and mobile component trees.
+- Task 12 owns `.overview-map-region` height at every accepted viewport and
+  fullscreen/kiosk state. `OperationalMap` must fill that region at 100% height
+  and width.
+- Task 12 may focus map content only through the Task 11 `focusCoordinates()`
+  handle. It must not import Leaflet or call map viewport methods directly.
+- `OverviewControls` owns refresh cadence, manual refresh, POI filter, clock
+  settings, and controlled radar preference plumbing. `LayerDisclosure` remains
+  the sole radar and layer-control UI.
+- Task 12 owns responsive page interaction behavior: scroll containment,
+  touch/page-scroll coexistence, fullscreen focus restoration, navigation order,
+  live-region discipline, and state preservation.
+- Browser acceptance remains later Task 13-14 work and must prove the mounted
+  tree, map height, real Leaflet behavior, same-origin radar, CSP behavior,
+  responsive interaction, and rendered assets on the exact tested head.

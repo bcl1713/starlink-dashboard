@@ -91,9 +91,10 @@ Git.
 
 1. Require `git status --porcelain` empty; set immutable
    `SHA=$(git rev-parse HEAD)`, `PROJECT=react-overview-${SHA:0:12}`, and
-   `EVIDENCE=/home/brian/starlink-dashboard-react-overview-evidence/$SHA/task-14`.
-   Create that mode-0700 directory. No evidence-producing commit may follow this
-   run; if HEAD changes, use a new SHA-qualified directory and rerun.
+   `EVIDENCE=../starlink-dashboard-react-overview-evidence/$SHA/task-14` from
+   the repository root. Create that mode-0700 directory. No evidence-producing
+   commit may follow this run; if HEAD changes, use a new SHA-qualified
+   directory and rerun.
 2. Create `$EVIDENCE/runtime.env` only from `.env.example` plus explicit
    non-secret simulation values; never read/reuse `.env` or credentials. Set
    unique test credentials and fixed candidate host ports `18000`, `19090`,
