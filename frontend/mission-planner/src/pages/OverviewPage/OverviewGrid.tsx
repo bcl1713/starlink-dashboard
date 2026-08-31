@@ -184,7 +184,13 @@ export function useOverviewFullscreen(
     exitFromUserGesture: async () => {
       const target = targetRef.current;
       if (ownerDocument.fullscreenElement === target) {
-        await ownerDocument.exitFullscreen?.();
+        const exitFullscreen = ownerDocument.exitFullscreen;
+        if (!exitFullscreen) return;
+        try {
+          await exitFullscreen.call(ownerDocument);
+        } catch {
+          return;
+        }
         return;
       }
       ownerDocument.documentElement.classList.remove('overview-kiosk-active');

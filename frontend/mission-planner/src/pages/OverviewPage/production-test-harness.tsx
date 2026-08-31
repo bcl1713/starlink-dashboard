@@ -22,6 +22,21 @@ const LAYOUT_QUERIES = [
 
 type LayoutQuery = (typeof LAYOUT_QUERIES)[number];
 type LayoutListener = (event: MediaQueryListEvent) => void;
+type LayoutQueryApi = 'modern' | 'legacy';
+type ListenerMethod = (type: string, listener: LayoutListener) => void;
+type TrackedLayoutMediaQuery = {
+  readonly media: string;
+  readonly matches: boolean;
+} & (
+  | {
+      addEventListener: ListenerMethod;
+      removeEventListener: ListenerMethod;
+    }
+  | {
+      addListener: (listener: LayoutListener) => void;
+      removeListener: (listener: LayoutListener) => void;
+    }
+);
 
 const overviewProductionMocks = vi.hoisted(() => {
   const createdPlots: Array<{ root: HTMLElement }> = [];
@@ -135,22 +150,22 @@ export function installOverviewProductionBrowser() {
   });
 }
 
-export function overviewLayoutCounts(expected: {
+export const overviewLayoutCounts = (expected: {
   readonly add: number;
   readonly remove: number;
   readonly active: number;
-}) {
-  return Object.fromEntries(
-    LAYOUT_QUERIES.map((query) => [query, { ...expected }])
-  );
-}
+}) =>
+  Object.fromEntries(LAYOUT_QUERIES.map((query) => [query, { ...expected }]));
 
-export function installTrackedOverviewLayoutMedia(width: number) {
+export function installTrackedOverviewLayoutMedia(
+  width: number,
+  apiByQuery: Partial<Record<LayoutQuery, LayoutQueryApi>> = {}
+) {
   const records = new Map<
     LayoutQuery,
     {
       listeners: Set<LayoutListener>;
-      list: MediaQueryList;
+      list: TrackedLayoutMediaQuery;
       add: number;
       remove: number;
     }
@@ -170,31 +185,48 @@ export function installTrackedOverviewLayoutMedia(width: number) {
         onchange: null,
         addEventListener: vi.fn(),
         removeEventListener: vi.fn(),
-      } as unknown as MediaQueryList;
+        dispatchEvent: () => true,
+      };
     }
     const layoutQuery = query as LayoutQuery;
+    const api = apiByQuery[layoutQuery] ?? 'modern';
     const record = records.get(layoutQuery) ?? {
       listeners: new Set<LayoutListener>(),
       add: 0,
       remove: 0,
-      list: {
-        media: query,
-        matches: matches(query),
-        onchange: null,
-        addEventListener: (_type: string, listener: LayoutListener) => {
-          record.add += 1;
-          record.listeners.add(listener);
-        },
-        removeEventListener: (_type: string, listener: LayoutListener) => {
-          record.remove += 1;
-          record.listeners.delete(listener);
-        },
-        addListener: (listener: LayoutListener) =>
-          record.listeners.add(listener),
-        removeListener: (listener: LayoutListener) =>
-          record.listeners.delete(listener),
-        dispatchEvent: () => true,
-      } as MediaQueryList,
+      list:
+        api === 'modern'
+          ? {
+              media: query,
+              matches: matches(query),
+              onchange: null,
+              addEventListener: (_type: string, listener: LayoutListener) => {
+                record.add += 1;
+                record.listeners.add(listener);
+              },
+              removeEventListener: (
+                _type: string,
+                listener: LayoutListener
+              ) => {
+                record.remove += 1;
+                record.listeners.delete(listener);
+              },
+              dispatchEvent: () => true,
+            }
+          : {
+              media: query,
+              matches: matches(query),
+              onchange: null,
+              addListener: (listener: LayoutListener) => {
+                record.add += 1;
+                record.listeners.add(listener);
+              },
+              removeListener: (listener: LayoutListener) => {
+                record.remove += 1;
+                record.listeners.delete(listener);
+              },
+              dispatchEvent: () => true,
+            },
     };
     Object.defineProperty(record.list, 'matches', {
       configurable: true,

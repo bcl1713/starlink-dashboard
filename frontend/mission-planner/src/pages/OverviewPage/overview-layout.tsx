@@ -9,6 +9,22 @@ import {
 
 export type OverviewLayoutMode = 'mobile' | 'tablet' | 'desktop' | 'wide';
 
+type LayoutMediaListener = (event: MediaQueryListEvent) => void;
+type ModernMediaQueryList = {
+  readonly addEventListener: (
+    type: 'change',
+    listener: LayoutMediaListener
+  ) => void;
+  readonly removeEventListener: (
+    type: 'change',
+    listener: LayoutMediaListener
+  ) => void;
+};
+type LegacyMediaQueryList = MediaQueryList & {
+  readonly addListener: (listener: LayoutMediaListener) => void;
+  readonly removeListener: (listener: LayoutMediaListener) => void;
+};
+
 function layoutMode(width: number): OverviewLayoutMode {
   if (width >= 1536) return 'wide';
   if (width >= 1024) return 'desktop';
@@ -22,6 +38,33 @@ function currentLayoutMode(): OverviewLayoutMode {
 }
 
 const OverviewLayoutContext = createContext<OverviewLayoutMode | null>(null);
+
+function subscribeLayoutQuery(
+  query: MediaQueryList,
+  listener: LayoutMediaListener
+): () => void {
+  const modernQuery = query as Partial<ModernMediaQueryList>;
+  if (
+    typeof modernQuery.addEventListener === 'function' &&
+    typeof modernQuery.removeEventListener === 'function'
+  ) {
+    const add = modernQuery.addEventListener;
+    const remove = modernQuery.removeEventListener;
+    add('change', listener);
+    return () => remove('change', listener);
+  }
+  const legacyQuery = query as Partial<LegacyMediaQueryList>;
+  if (
+    typeof legacyQuery.addListener === 'function' &&
+    typeof legacyQuery.removeListener === 'function'
+  ) {
+    const add = legacyQuery.addListener;
+    const remove = legacyQuery.removeListener;
+    add(listener);
+    return () => remove(listener);
+  }
+  return () => {};
+}
 
 function useLocalOverviewLayoutMode(enabled: boolean): OverviewLayoutMode {
   const [mode, setMode] = useState(currentLayoutMode);
@@ -47,13 +90,9 @@ function useLocalOverviewLayoutMode(enabled: boolean): OverviewLayoutMode {
     };
 
     update();
-    for (const query of queries) {
-      query.addEventListener('change', update);
-    }
+    const cleanup = queries.map((query) => subscribeLayoutQuery(query, update));
     return () => {
-      for (const query of queries) {
-        query.removeEventListener('change', update);
-      }
+      cleanup.forEach((unsubscribe) => unsubscribe());
     };
   }, [enabled]);
 
