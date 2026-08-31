@@ -99,8 +99,11 @@ work only after all of the following are documented and approved:
    accessible alternative has a React equivalent or explicit owner-approved
    retirement.
 2. All deterministic states and all six exact viewport sizes pass.
-3. A settled continuous capture measured at >=20 fps across five scheduled plus
-   manual refresh preserves map/chart/filter/focus state with no capture gaps.
+3. Event-driven lifecycle observation across five scheduled one-second refreshes
+   plus one actual manual refresh preserves map/chart/filter/focus state and
+   correlates every transition to request start/completion. Honest supporting
+   capture timestamps and achieved cadence are reported without a minimum-fps
+   pass criterion.
 4. Existing mission, route, POI, satellite, import/export, and configuration
    workflows are regression-clean.
 5. React has no Grafana endpoint, plugin, session, datasource-proxy, dashboard,

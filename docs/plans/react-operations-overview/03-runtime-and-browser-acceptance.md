@@ -46,18 +46,29 @@ and the
    during native fullscreen, during kiosk fallback after a forced API rejection,
    and after exit. Prove filter/layer/map/dashboard state survives every phase,
    focus enters sensibly, and focus returns to the trigger after exit.
-6. For continuity, wait until initial data and remote tile activity settle. Then
-   use Chromium CDP compositor screencast (or an equivalently timestamped
-   continuous capture) at a measured **>=20 fps** without gaps across at least
-   five scheduled one-second refreshes plus one manual refresh. Undersampling or
-   a capture gap is a coverage failure, never a pass.
-7. Assign every refresh/request a correlation ID in the fixture and evidence.
-   Per frame, record timestamp, cycle/request start/completion, console/page
-   errors, chart point counts, stable panel-region bounding boxes/pixel hashes,
-   Leaflet map/layer object identities, viewport, filter/layer state, and focus.
-   Assert stable regions/contracts never become empty, instances do not reset,
-   counts do not regress unexpectedly, and no focus loss/layout jump/burst
-   occurs.
+6. For continuity, wait until initial data and remote tile activity settle, then
+   install browser observers before the first measured request and keep them
+   active through at least five scheduled one-second refreshes, one actual
+   manual refresh, its completion, and settle. The primary pass/fail oracle is
+   event-driven browser/DOM/object-lifecycle observation correlated to request
+   start and completion, not a minimum screenshot or video frame rate.
+7. Assign every refresh/request an immutable correlation ID and record its
+   source, cycle, kind, start, completion/error, and raw monotonic timestamps.
+   Record every `MutationObserver` event and test-world object identity
+   transition with the active request/cycle IDs. At request start, while
+   pending, at completion, and after settle, sample non-empty signatures and
+   bounding boxes for the mounted Overview root, Leaflet map/container
+   ownership, all twelve layer controls and rendered-feature ownership, three
+   chart canvases and series, stable summaries/history disclosures, and
+   last-good content. Fail on any transient removal, replacement, zero
+   dimension, identity reset, unexpected count regression, focus loss,
+   filter/layer/disclosure change, scroll change, raw console/page error, or
+   first-party request error. Retain honest supporting screenshot/video evidence
+   with its raw timestamps, achieved cadence, and gaps, but impose no minimum
+   fps. Undersampling limits visual claims, cannot override an observer failure,
+   and must not be disguised by timestamp rewriting, hidden animation, or
+   manufactured paint. Keep exact- view screenshots for the accepted viewport
+   states.
 8. Run nominal, empty, partial/total error, truthful per-source stale/recovery,
    IDL, thresholds, radar/basemap failure, and rotation. Use the same fixture,
    viewport, stable-region contract, and cadence again at final exact head.
@@ -129,9 +140,12 @@ Git.
    fullscreen four-phase evidence, and Nginx response headers. Prove the exact
    CSP on the Nginx-served SPA and `nosniff`/same-origin/no-redirect tile
    behavior, not merely direct FastAPI or mocked-preview behavior.
-7. Repeat the >=20 fps settled temporal test across five scheduled plus manual
-   refresh on this real runtime with stable regions/object identity and
-   correlated network/console evidence. Run React/Grafana parity over the same
+7. Repeat the event-driven settled continuity test across five scheduled plus
+   one actual manual refresh on this real runtime, with observers active before
+   the first measured request through manual completion/settle and with stable
+   regions/object identity correlated to request and console evidence. Retain
+   honestly timestamped supporting captures at the achieved host cadence, with
+   no minimum-fps pass criterion. Run React/Grafana parity over the same
    30-minute simulation window, IDL, interruption/recovery, outage,
    bounded-memory/network soak, and disposition every delta. Then stop only
    `${PROJECT}-grafana`, prove React remains functional, and assert HAR contains

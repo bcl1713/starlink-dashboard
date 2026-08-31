@@ -13,7 +13,18 @@ type Scenario = OverviewScenario;
 type Coordinate = NonNullable<Scenario['telemetry']['currentPosition']>;
 type Poi = Scenario['pois']['items'][number];
 
-export function statusPayload(scenario: Scenario) {
+export interface LatencyPayloadOverride {
+  readonly currentMs: number;
+  readonly history: readonly {
+    readonly observedAt: string;
+    readonly value: number;
+  }[];
+}
+
+export function statusPayload(
+  scenario: Scenario,
+  latencyOverride?: LatencyPayloadOverride
+) {
   const position = scenario.telemetry.currentPosition;
   const metrics = scenario.telemetry.metrics;
   return {
@@ -26,7 +37,7 @@ export function statusPayload(scenario: Scenario) {
       heading: scenario.telemetry.positionHistory.at(-1)?.headingDegrees ?? 0,
     },
     network: {
-      latency_ms: metrics.latency.currentMs ?? 0,
+      latency_ms: latencyOverride?.currentMs ?? metrics.latency.currentMs ?? 0,
       throughput_down_mbps: metrics.throughput.current.downloadMbps ?? 0,
       throughput_up_mbps: metrics.throughput.current.uploadMbps ?? 0,
       packet_loss_percent: metrics.packetLoss.currentPercent ?? 0,
@@ -42,9 +53,13 @@ export function statusPayload(scenario: Scenario) {
   };
 }
 
-export function historyPayload(scenario: Scenario) {
+export function historyPayload(
+  scenario: Scenario,
+  latencyOverride?: LatencyPayloadOverride
+) {
   const points = scenario.telemetry.positionHistory;
-  const latency = scenario.telemetry.metrics.latency.history;
+  const latency =
+    latencyOverride?.history ?? scenario.telemetry.metrics.latency.history;
   const down = scenario.telemetry.metrics.throughput.current.downloadMbps;
   const up = scenario.telemetry.metrics.throughput.current.uploadMbps;
   const packetLoss = scenario.telemetry.metrics.packetLoss.history;

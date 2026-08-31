@@ -165,11 +165,13 @@ exact-head real-browser CSP/network acceptance.
    aircraft heading transform, feature details, fit-to-layers only on first
    valid load or explicit action, scale/measure/zoom controls, textual
    equivalent, and independent layer failure.
-2. Test that five data rerenders plus manual refresh preserve the Leaflet map
-   instance, viewport, selected feature, expanded disclosure, and layer
-   instances within the continuously mounted tree; no `fitBounds` occurs in
-   background refresh. Repeated mount/unmount tests prove cleanup and fresh
-   defaults, not state persistence across remounts.
+2. Test that event-driven lifecycle observation across five scheduled one-second
+   refreshes plus one actual manual refresh preserves the Leaflet map instance,
+   viewport, selected feature, expanded disclosure, and layer instances within
+   the continuously mounted tree. Observers start before the first measured
+   request and remain active through manual completion and settle; no
+   `fitBounds` occurs in background refresh. Repeated mount/unmount tests prove
+   cleanup and fresh defaults, not state persistence across remounts.
 3. Run focused tests; expected RED, implement, then expect PASS.
 4. Commit: `feat(frontend): add full-parity operational map`.
 

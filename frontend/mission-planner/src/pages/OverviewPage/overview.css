@@ -71,6 +71,10 @@
     display: block;
   }
 
+  .overview-clocks__toggle {
+    display: inline-flex;
+  }
+
   .overview-world-clocks > h2 {
     margin-bottom: 8px;
     font-size: 1rem;
@@ -181,6 +185,10 @@
   .overview-summary-region {
     grid-template-columns: 7fr 4fr 7fr;
   }
+
+  .overview-clocks__toggle {
+    display: none;
+  }
 }
 
 @media (min-width: 1280px) and (max-width: 1535px) {
@@ -210,6 +218,10 @@
 
   .overview-summary-region {
     grid-template-columns: 7fr 4fr 7fr;
+  }
+
+  .overview-clocks__toggle {
+    display: none;
   }
 }
 
@@ -242,5 +254,9 @@
 
   .overview-map-region {
     height: 660px;
+  }
+
+  .overview-clocks__toggle {
+    display: none;
   }
 }

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import {
   attachScreenshots,
+  attachResponsiveScreenshots,
   expectAxe,
   expectCoreOverview,
   expectNoGrafana,
@@ -24,10 +25,6 @@ const poiTuples = [
 test.describe('Operations overview deterministic browser acceptance', () => {
   test.beforeEach(async ({ context }) => {
     await context.clearCookies();
-  });
-
-  test.afterEach(async ({ page }) => {
-    await page.close();
   });
 
   test('renders the production overview contract without external Grafana traffic', async ({
@@ -58,9 +55,13 @@ test.describe('Operations overview deterministic browser acceptance', () => {
       await openOverview(page);
 
       await expectViewportLayout(page, viewport.mapHeight);
-      await expectCoreOverview(page, router);
       await expectAxe(page, testInfo);
-      await attachScreenshots(page, testInfo, `overview-${viewport.name}`);
+      await attachResponsiveScreenshots(
+        page,
+        testInfo,
+        `overview-${viewport.name}`
+      );
+      await expectCoreOverview(page, router);
 
       const mobile = viewport.width < 768;
       await expect(
@@ -100,6 +101,7 @@ test.describe('Operations overview deterministic browser acceptance', () => {
         const marker = router.records.length;
         await select.selectOption(value);
         await expect(select).toHaveValue(value);
+        const beforeRefresh = await mapState(page);
         router.markNextManualCycle();
         await page.getByRole('button', { name: 'Refresh overview' }).click();
         await expect
@@ -123,12 +125,62 @@ test.describe('Operations overview deterministic browser acceptance', () => {
               )
           )
           .toBe(true);
+        expect(await mapState(page)).toEqual(beforeRefresh);
         await page.reload();
         await openControls(page);
         await expect(select).toHaveValue(value);
+        expect((await mapState(page)).filterValue).toBe(value);
       }
     });
   }
+
+  test('supports required keyboard path and reduced motion contract', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await installOverviewRouter(page);
+    await openOverview(page);
+    await page.keyboard.press('Tab');
+    await expect(
+      page.getByRole('link', { name: 'Skip to main content' })
+    ).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('main')).toBeFocused();
+    await page.getByRole('button', { name: 'Toggle navigation' }).focus();
+    await page.keyboard.press('Enter');
+    await page.getByRole('link', { name: 'Overview' }).focus();
+    await expect(page.getByRole('link', { name: 'Overview' })).toBeFocused();
+    await page.getByRole('button', { name: 'Overview controls' }).focus();
+    await expect(
+      page.getByRole('button', { name: 'Overview controls' })
+    ).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.getByLabel('POI category')).toBeVisible();
+    await page.getByRole('button', { name: 'Additional clocks' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByLabel(/^Tokyo:/)).toBeVisible();
+    await page.locator('summary', { hasText: 'Operational layers' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.getByLabel('Weather Radar')).toBeVisible();
+    await page.getByLabel('Weather Radar').focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByLabel('Weather Radar')).not.toBeChecked();
+    const summary = page.getByLabel('Map status and layer summary');
+    await summary.focus();
+    await page.keyboard.press('Space');
+    await expect(summary).toBeFocused();
+    const reduced = await page.evaluate(() => {
+      const style = getComputedStyle(document.body);
+      return {
+        media: matchMedia('(prefers-reduced-motion: reduce)').matches,
+        scrollBehavior: style.scrollBehavior,
+        transitionDuration: style.transitionDuration,
+        animationDuration: style.animationDuration,
+      };
+    });
+    expect(reduced.media).toBe(true);
+    expect(reduced.scrollBehavior).toBe('auto');
+  });
 
   test('preserves overview state through deterministic kiosk fullscreen', async ({
     page,
@@ -205,4 +257,20 @@ function poiRecordMatches(url: string, encoded: string): boolean {
   if (parsed.pathname !== '/api/pois/etas') return false;
   if (encoded === '') return parsed.search === '';
   return parsed.search.slice(1) === encoded;
+}
+
+async function mapState(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    const map = document.querySelector('.leaflet-container') as
+      | (HTMLElement & { _leaflet_id?: number })
+      | null;
+    return {
+      mapIdentity: map?._leaflet_id ?? null,
+      center: map?.getAttribute('style') ?? '',
+      filterValue:
+        document.querySelector<HTMLSelectElement>(
+          'select[aria-label="POI category"]'
+        )?.value ?? '',
+    };
+  });
 }

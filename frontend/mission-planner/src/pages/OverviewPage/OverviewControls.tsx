@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, useLayoutEffect, useRef } from 'react';
 import {
   OVERVIEW_POI_FILTER_OPTIONS,
   type OverviewPOIFilter,
@@ -48,8 +48,19 @@ export function OverviewControls({
   onRemoveClock,
 }: OverviewControlsProps) {
   const controlsId = useId();
+  const manualButtonRef = useRef<HTMLButtonElement>(null);
+  const retainManualFocusRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (manualRefreshPending && retainManualFocusRef.current) {
+      manualButtonRef.current?.focus();
+    }
+    if (!manualRefreshPending) retainManualFocusRef.current = false;
+  }, [manualRefreshPending]);
 
   const manualRefresh = () => {
+    if (manualRefreshPending) return;
+    retainManualFocusRef.current = true;
     try {
       void Promise.resolve(onManualRefresh()).catch(() => {});
     } catch {
@@ -113,9 +124,10 @@ export function OverviewControls({
             </select>
           </label>
           <button
+            ref={manualButtonRef}
             type="button"
-            className="min-h-11 min-w-11 rounded-md border px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-            disabled={manualRefreshPending}
+            className="min-h-11 min-w-11 rounded-md border px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-disabled:opacity-50"
+            aria-disabled={manualRefreshPending}
             onClick={manualRefresh}
           >
             Refresh overview

@@ -27,6 +27,7 @@ export function MapTextSummary({
   return (
     <section
       className="operational-map__panel operational-map__summary"
+      aria-label="Map status and layer summary"
       tabIndex={0}
     >
       <h3>Operational map textual equivalent</h3>

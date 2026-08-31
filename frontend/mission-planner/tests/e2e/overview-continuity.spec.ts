@@ -6,10 +6,10 @@ import {
   openOverview,
 } from './support/overview-assertions';
 import {
-  assertContinuityEvidence,
   captureCdpContinuity,
   installElementIdentity,
 } from './support/overview-cdp-capture';
+import { assertContinuityEvidence } from './support/overview-cdp-assertions';
 import {
   installOverviewRouter,
   type OverviewRouter,
@@ -22,10 +22,6 @@ const continuityViewports = [
 
 test.describe('Operations overview temporal continuity', () => {
   test.describe.configure({ mode: 'serial' });
-
-  test.afterEach(async ({ page }) => {
-    await page.close();
-  });
 
   for (const viewport of continuityViewports) {
     test(`keeps stable regions alive across scheduled and manual refreshes at ${viewport.name}`, async ({
@@ -43,7 +39,7 @@ test.describe('Operations overview temporal continuity', () => {
       await settleInitialRequests(router);
       await page.getByRole('button', { name: 'Overview controls' }).click();
       await openLayerDisclosure(page);
-      await page.getByLabel('Weather Radar').focus();
+      await page.getByRole('button', { name: 'Refresh overview' }).focus();
 
       const before = await sampleState(page);
       const evidence = await captureCdpContinuity(
@@ -178,12 +174,18 @@ async function expectScenarioState(page: Page, router: OverviewRouter) {
     return;
   }
   if (id === 'overview-idl') {
-    await expect(
-      page.getByText(/Planned Route — western segment: visible.*1 features/i)
-    ).toBeVisible();
-    await expect(
-      page.getByText(/Planned Route — eastern segment: visible.*1 features/i)
-    ).toBeVisible();
+    for (const layer of [
+      'Planned Route — western segment',
+      'Planned Route — eastern segment',
+      'Active X-band Link — normal',
+      'Active X-band Link — warning',
+      'Position History — western segments',
+      'Position History — eastern segments',
+    ]) {
+      await expect(
+        page.getByText(new RegExp(`${layer}: visible.*1 features`, 'i'))
+      ).toBeVisible();
+    }
     return;
   }
   if (id === 'overview-threshold-crossing') {

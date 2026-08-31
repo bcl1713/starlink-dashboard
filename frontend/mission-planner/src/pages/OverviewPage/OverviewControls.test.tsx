@@ -97,13 +97,14 @@ describe('OverviewControls', () => {
     expect(props.onManualRefresh).toHaveBeenCalledTimes(1);
   });
 
-  it('uses controlled disclosure and disabled manual refresh state', () => {
+  it('uses controlled disclosure and unavailable manual refresh state', () => {
     const { rerender, props } = renderControls(undefined, {
       manualRefreshPending: true,
     });
     const manual = screen.getByRole('button', { name: 'Refresh overview' });
 
-    expect(manual).toBeDisabled();
+    expect(manual).toHaveAttribute('aria-disabled', 'true');
+    expect(manual).not.toBeDisabled();
     fireEvent.click(manual);
     expect(props.onManualRefresh).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Overview controls' }));
@@ -126,6 +127,22 @@ describe('OverviewControls', () => {
     expect(
       screen.getByRole('button', { name: 'Clock settings' })
     ).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('retains refresh focus while duplicate activation is unavailable', () => {
+    const { rerender, props } = renderControls();
+    const manual = screen.getByRole('button', { name: 'Refresh overview' });
+    manual.focus();
+    fireEvent.click(manual);
+    manual.blur();
+
+    rerender(<OverviewControls {...props} manualRefreshPending />);
+
+    expect(manual).toHaveFocus();
+    expect(manual).toHaveAttribute('aria-disabled', 'true');
+    expect(manual).not.toBeDisabled();
+    fireEvent.click(manual);
+    expect(props.onManualRefresh).toHaveBeenCalledTimes(1);
   });
 
   it('consumes rejecting manual refresh clicks while controlled state recovers', async () => {

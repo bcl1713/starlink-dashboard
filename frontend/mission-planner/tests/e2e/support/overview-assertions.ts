@@ -21,18 +21,22 @@ export async function openOverview(
   nowIso = '2026-02-03T15:30:00Z'
 ) {
   await page.addInitScript(() => {
-    window.matchMedia = (query) => ({
-      matches:
-        query.includes('prefers-reduced-motion') ||
-        (query.includes('min-width: 768px') && window.innerWidth >= 768),
-      media: query,
-      onchange: null,
-      addEventListener: () => undefined,
-      removeEventListener: () => undefined,
-      addListener: () => undefined,
-      removeListener: () => undefined,
-      dispatchEvent: () => true,
-    });
+    const nativeMatchMedia = window.matchMedia.bind(window);
+    window.matchMedia = (query) => {
+      if (!query.includes('prefers-reduced-motion')) {
+        return nativeMatchMedia(query);
+      }
+      return {
+        matches: true,
+        media: query,
+        onchange: null,
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+        addListener: () => undefined,
+        removeListener: () => undefined,
+        dispatchEvent: () => true,
+      };
+    };
   });
   await installFixedBrowserTime(page, nowIso);
   await page.goto('/overview');
@@ -46,32 +50,108 @@ export async function openOverview(
 
 export async function expectCoreOverview(page: Page, router: OverviewRouter) {
   await expect(page.locator('main')).toHaveCount(1);
-  await expect(page.getByText(/latency/i).first()).toBeVisible();
-  await expect(page.getByText(/throughput/i).first()).toBeVisible();
-  await expect(page.getByText(/packet loss/i).first()).toBeVisible();
+  await expect(page.locator('.overview-page')).toHaveCount(1);
   await expect(
-    page.getByRole('heading', { name: 'Ground Entry Point' })
-  ).toBeVisible();
-  await expect(page.getByText(/obstruction/i).first()).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: 'POI Quick Reference (Top 5)' })
-  ).toBeVisible();
+    page.getByRole('heading', { name: 'Operations Overview' })
+  ).toHaveCount(1);
+  for (const panel of OVERVIEW_CONTRACT.panels) {
+    await expectPanelConcept(page, panel.concept);
+  }
   await expect(page.locator('.overview-priority-summary')).toBeVisible();
+  await expectClockContract(page);
 
   await openLayerDisclosure(page);
-  for (const layer of OVERVIEW_CONTRACT.mapLayers) {
-    await expect(
-      page.getByRole('checkbox', { name: layer.concept, exact: true })
-    ).toHaveCount(1);
-  }
+  await expect(page.getByRole('button', { name: 'Weather Radar' })).toHaveCount(
+    0
+  );
   await expect(
-    page.getByRole('checkbox', { name: 'Weather Radar', exact: true })
+    page.getByRole('checkbox', { name: 'Weather Radar' })
   ).toHaveCount(1);
-  expect(OVERVIEW_CONTRACT.panels).toHaveLength(11);
-  expect(OVERVIEW_CONTRACT.mapLayers).toHaveLength(12);
+  const labels = await page
+    .locator('.operational-map__layer-row input')
+    .evaluateAll((inputs) =>
+      inputs.map((input) => input.getAttribute('aria-label') ?? '')
+    );
+  expect(labels).toEqual(
+    OVERVIEW_CONTRACT.mapLayers.map((layer) => layer.concept)
+  );
+  for (const [index, layer] of OVERVIEW_CONTRACT.mapLayers.entries()) {
+    const checkbox = page.getByRole('checkbox', {
+      name: layer.concept,
+      exact: true,
+    });
+    await expect(checkbox).toHaveCount(1);
+    await expect(checkbox).toBeChecked({ checked: layer.enabledByDefault });
+    await expect(
+      page.locator('.operational-map__layer-row').nth(index)
+    ).toContainText(/Ready|Loading|last-good|Unavailable|error|stale/i);
+  }
+  const satellites = page.getByRole('checkbox', { name: 'Satellites' });
+  await satellites.focus();
+  await page.keyboard.press('Space');
+  await expect(
+    page.getByRole('checkbox', { name: 'Satellites' })
+  ).not.toBeChecked();
+  await page.keyboard.press('Space');
   expect(router.records.filter((record) => record.event === 'failed')).toEqual(
     []
   );
+}
+
+async function expectPanelConcept(page: Page, concept: string) {
+  if (concept.includes('clock')) {
+    const clock = page.getByLabel(
+      new RegExp(`^${escapeRegExp(concept.replace(' clock', ''))}:`)
+    );
+    if (
+      concept.startsWith('UTC') ||
+      (page.viewportSize()?.width ?? 1280) >= 1024
+    ) {
+      await expect(clock).toBeVisible();
+    } else {
+      await expect(clock).toHaveCount(1);
+    }
+    return;
+  }
+  if (concept.includes('map')) {
+    await expect(page.locator('.overview-map-region')).toBeVisible();
+    return;
+  }
+  const name = concept.replace(
+    ' (top five applicable future POIs)',
+    ' (Top 5)'
+  );
+  await expect(page.getByRole('heading', { name })).toBeVisible();
+}
+
+async function expectClockContract(page: Page) {
+  const clockLabels = await page
+    .locator('.overview-world-clocks time')
+    .evaluateAll((times) =>
+      times.flatMap((time) => {
+        const box = time.getBoundingClientRect();
+        return box.width > 0 && box.height > 0
+          ? [time.getAttribute('aria-label') ?? '']
+          : [];
+      })
+    );
+  expect(clockLabels[0]).toMatch(/^UTC \(Zulu\):/);
+  const width = page.viewportSize()?.width ?? 1280;
+  if (width >= 1024) {
+    expect(clockLabels).toHaveLength(4);
+    await expect(
+      page.getByRole('button', { name: 'Additional clocks' })
+    ).toBeHidden();
+  } else {
+    expect(clockLabels).toHaveLength(1);
+    await expect(
+      page.getByRole('button', { name: 'Additional clocks' })
+    ).toBeVisible();
+  }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function openLayerDisclosure(page: Page) {
@@ -109,6 +189,7 @@ export async function expectViewportLayout(page: Page, mapHeight: number) {
     });
     return {
       overflow: root.scrollWidth - root.clientWidth,
+      bodyOverflow: document.body.scrollWidth - document.body.clientWidth,
       mapHeight: map?.getBoundingClientRect().height ?? 0,
       minTarget: Math.min(
         ...visibleButtons.map((button) => {
@@ -117,12 +198,32 @@ export async function expectViewportLayout(page: Page, mapHeight: number) {
         })
       ),
       scrollable: root.scrollHeight > root.clientHeight,
+      headings: [...document.querySelectorAll('h1,h2,h3')]
+        .map((heading) => heading.textContent?.trim() ?? '')
+        .filter(Boolean)
+        .slice(0, 8),
+      tableContained: [...document.querySelectorAll('table')].every((table) => {
+        const parentBox = table.parentElement?.getBoundingClientRect();
+        const regionBox = table
+          .closest('.overview-poi-region')
+          ?.getBoundingClientRect();
+        return (
+          !parentBox || !regionBox || parentBox.width <= regionBox.width + 1
+        );
+      }),
     };
   });
   expect(metrics.overflow).toBeLessThanOrEqual(1);
+  expect(metrics.bodyOverflow).toBeLessThanOrEqual(1);
   expect(Math.round(metrics.mapHeight)).toBe(mapHeight);
   expect(metrics.minTarget).toBeGreaterThanOrEqual(44);
   expect(metrics.scrollable).toBe(true);
+  expect(metrics.tableContained).toBe(true);
+  expect(metrics.headings[0]).toBe('Operations Overview');
+  await page.mouse.wheel(0, 300);
+  await expect
+    .poll(() => page.evaluate(() => window.scrollY))
+    .toBeGreaterThan(0);
 }
 
 export async function attachScreenshots(
@@ -136,6 +237,32 @@ export async function attachScreenshots(
     contentType: 'image/png',
   });
   await writeArtifact(`${name}-initial.png`, initial);
+  const fullPage = await page.screenshot({ fullPage: true });
+  await testInfo.attach(`${name}-full-page`, {
+    body: fullPage,
+    contentType: 'image/png',
+  });
+  await writeArtifact(`${name}-full-page.png`, fullPage);
+}
+
+export async function attachResponsiveScreenshots(
+  page: Page,
+  testInfo: TestInfo,
+  name: string
+) {
+  const initial = await page.screenshot({ fullPage: false });
+  await testInfo.attach(`${name}-initial`, {
+    body: initial,
+    contentType: 'image/png',
+  });
+  await writeArtifact(`${name}-initial.png`, initial);
+  await openLayerDisclosure(page);
+  const opened = await page.screenshot({ fullPage: false });
+  await testInfo.attach(`${name}-opened`, {
+    body: opened,
+    contentType: 'image/png',
+  });
+  await writeArtifact(`${name}-opened.png`, opened);
   const fullPage = await page.screenshot({ fullPage: true });
   await testInfo.attach(`${name}-full-page`, {
     body: fullPage,

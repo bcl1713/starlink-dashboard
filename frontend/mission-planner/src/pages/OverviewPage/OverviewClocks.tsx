@@ -104,7 +104,7 @@ export function OverviewClocks({
       <ClockCard clock={utc} now={now} />
       <button
         type="button"
-        className="min-h-11 min-w-11 rounded-md border px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="overview-clocks__toggle min-h-11 min-w-11 rounded-md border px-3 py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-expanded={expanded}
         aria-controls={additionalId}
         onClick={() => onExpandedChange(!expanded)}

@@ -157,9 +157,9 @@ function historyRuns(snapshot: OverviewDataSnapshot): readonly HistoryRun[] {
           const sourcePoint = point.timestamp
             ? realByTimestamp.get(point.timestamp)
             : undefined;
-          return sourcePoint ? [sourcePoint] : [];
+          return sourcePoint ?? point;
         });
-        if (real.length < 2) {
+        if (current.length < 2) {
           current = [];
           return;
         }

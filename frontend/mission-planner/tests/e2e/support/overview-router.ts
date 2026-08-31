@@ -8,10 +8,18 @@ import {
   activeLinkPayload,
   gepPayload,
   historyPayload,
+  type LatencyPayloadOverride,
   poiPayload,
   routePayload,
   statusPayload,
 } from './overview-payloads';
+import {
+  errorResponse,
+  fulfillBasemap,
+  fulfillPng,
+  fulfillSourceError,
+  jsonResponse,
+} from './overview-router-responses';
 import { sourceFor } from './overview-router-sources';
 
 export type OverviewScenarioId = (typeof OVERVIEW_SCENARIOS)[number]['id'];
@@ -36,17 +44,14 @@ export interface OverviewRouter {
   readonly cycles: readonly string[];
   scenario(): OverviewScenario;
   setScenario(id: OverviewScenarioId): void;
+  failSourceOnce(source: string, status: number, detail: string): void;
+  failNextBasemap(): void;
+  setLatency(payload: LatencyPayloadOverride | null): void;
   markNextManualCycle(): void;
+  setLifecycleReporter(
+    reporter: ((record: RecordedOverviewRequest) => void) | null
+  ): void;
 }
-
-const radarPng = Uint8Array.from([
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
-  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
-  0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x44,
-  0x41, 0x54, 0x78, 0x9c, 0x63, 0xf8, 0xcf, 0xc0, 0xf0, 0x1f, 0x00, 0x05, 0x00,
-  0x01, 0xff, 0x89, 0x99, 0x3d, 0x1d, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e,
-  0x44, 0xae, 0x42, 0x60, 0x82,
-]);
 
 const blockedPatterns = [
   /\/api\/datasources\/proxy/i,
@@ -66,8 +71,13 @@ export async function installOverviewRouter(
   let cycle = 0;
   let requestSequence = 0;
   let nextManualRemaining = 0;
+  let basemapFailures = 0;
+  let latencyOverride: LatencyPayloadOverride | null = null;
+  const sourceFailures = new Map<string, { status: number; detail: string }>();
   const records: RecordedOverviewRequest[] = [];
   const cycles: string[] = [];
+  let lifecycleReporter: ((record: RecordedOverviewRequest) => void) | null =
+    null;
 
   const startRecord = (
     request: Request,
@@ -89,6 +99,7 @@ export async function installOverviewRouter(
       completedAt: null,
     };
     records.push(record);
+    lifecycleReporter?.(record);
     return record;
   };
 
@@ -96,8 +107,8 @@ export async function installOverviewRouter(
     started: RecordedOverviewRequest,
     event: RecordedOverviewRequest['event'],
     status: number | null
-  ) =>
-    records.push({
+  ) => {
+    const record: RecordedOverviewRequest = {
       ...started,
       event,
       status,
@@ -108,7 +119,10 @@ export async function installOverviewRouter(
             ? 'transport-failed'
             : 'error',
       completedAt: performance.now(),
-    });
+    };
+    records.push(record);
+    lifecycleReporter?.(record);
+  };
 
   await page.context().route('**/*', async (route) => {
     const request = route.request();
@@ -121,7 +135,11 @@ export async function installOverviewRouter(
     }
     if (url.hostname === 'server.arcgisonline.com') {
       const started = startRecord(request, 'initial');
-      const response = await fulfillPng(route, started.id, '1777294800');
+      const response =
+        basemapFailures > 0
+          ? await fulfillSourceError(route, started.id, 503, 'basemap_error')
+          : await fulfillBasemap(route, started.id);
+      if (basemapFailures > 0) basemapFailures -= 1;
       finishRecord(
         started,
         response.status >= 400 ? 'error' : 'complete',
@@ -140,7 +158,16 @@ export async function installOverviewRouter(
       if (nextManualRemaining > 0) nextManualRemaining -= 1;
       cycles.push(`${cycle}:${url.pathname}:${url.search}`);
       const started = startRecord(request, kind, true);
-      const response = await fulfillApi(route, scenario, url, started.id);
+      const sourceFailure = sourceFailures.get(started.source);
+      const response = sourceFailure
+        ? await fulfillSourceError(
+            route,
+            started.id,
+            sourceFailure.status,
+            sourceFailure.detail
+          )
+        : await fulfillApi(route, scenario, url, started.id, latencyOverride);
+      if (sourceFailure) sourceFailures.delete(started.source);
       finishRecord(
         started,
         response.status >= 400 ? 'error' : 'complete',
@@ -174,8 +201,20 @@ export async function installOverviewRouter(
     setScenario: (id) => {
       scenario = scenarioById(id);
     },
+    failSourceOnce: (source, status, detail) => {
+      sourceFailures.set(source, { status, detail });
+    },
+    failNextBasemap: () => {
+      basemapFailures += 1;
+    },
+    setLatency: (payload) => {
+      latencyOverride = payload;
+    },
     markNextManualCycle: () => {
       nextManualRemaining = 12;
+    },
+    setLifecycleReporter: (reporter) => {
+      lifecycleReporter = reporter;
     },
   };
 }
@@ -184,7 +223,8 @@ async function fulfillApi(
   route: Route,
   scenario: OverviewScenario,
   url: URL,
-  id: string
+  id: string,
+  latencyOverride: LatencyPayloadOverride | null
 ) {
   if (scenario.id === 'overview-backend-failure') {
     await route.fulfill(errorResponse(id, 503, 'overview_backend_unavailable'));
@@ -198,11 +238,15 @@ async function fulfillApi(
     return { status: 502 };
   }
   if (url.pathname === '/api/status') {
-    await route.fulfill(jsonResponse(id, statusPayload(scenario)));
+    await route.fulfill(
+      jsonResponse(id, statusPayload(scenario, latencyOverride ?? undefined))
+    );
     return { status: 200 };
   }
   if (url.pathname === '/api/monitoring/history') {
-    await route.fulfill(jsonResponse(id, historyPayload(scenario)));
+    await route.fulfill(
+      jsonResponse(id, historyPayload(scenario, latencyOverride ?? undefined))
+    );
     return { status: 200 };
   }
   if (url.pathname === '/api/monitoring/ground-entry-point') {
@@ -236,42 +280,6 @@ async function fulfillApi(
   }
   await route.fulfill(errorResponse(id, 404, 'fixture_not_found'));
   return { status: 404 };
-}
-
-function jsonResponse(id: string, json: unknown) {
-  return {
-    headers: {
-      'cache-control': 'no-store',
-      'content-type': 'application/json',
-      'x-correlation-id': id,
-    },
-    json,
-  };
-}
-
-function errorResponse(id: string, status: number, detail: string) {
-  return {
-    status,
-    headers: {
-      'cache-control': 'no-store',
-      'content-type': 'application/json',
-      'x-correlation-id': id,
-    },
-    json: { detail },
-  };
-}
-
-async function fulfillPng(route: Route, id: string, frame: string) {
-  await route.fulfill({
-    body: Buffer.from(radarPng),
-    headers: {
-      'cache-control': 'public, max-age=60',
-      'content-type': 'image/png',
-      'x-correlation-id': id,
-      'x-radar-frame-timestamp': frame,
-    },
-  });
-  return { status: 200 };
 }
 
 function scenarioById(id: OverviewScenarioId): OverviewScenario {

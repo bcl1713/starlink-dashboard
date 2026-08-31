@@ -127,7 +127,7 @@ describe('operational feature building', () => {
     expect(merged).toEqual(['history:west:2']);
   });
 
-  it('does not render a history line for one real sample plus IDL boundary', () => {
+  it('renders browser-projected IDL history boundary segments', () => {
     const registry = createHistoryIdRegistry();
     const features = buildOperationalFeatures(
       makeOverviewSnapshot({
@@ -140,14 +140,21 @@ describe('operational feature building', () => {
       registry
     ).features.filter((feature) => feature.kind === 'history-segment');
 
-    expect(features).toHaveLength(1);
-    expect(features[0]?.layerId).toBe('position-history-west');
-    expect(features[0]?.geometry.type === 'line').toBe(true);
+    expect(features).toHaveLength(2);
+    expect(features.map((feature) => feature.layerId)).toEqual([
+      'position-history-east',
+      'position-history-west',
+    ]);
     expect(
-      features[0]?.geometry.type === 'line'
-        ? features[0].geometry.sourcePoints?.map((point) => point.longitude)
-        : []
-    ).toEqual([-179, -178]);
+      features.map((feature) =>
+        feature.geometry.type === 'line'
+          ? feature.geometry.sourcePoints?.map((point) => point.longitude)
+          : []
+      )
+    ).toEqual([
+      [179, 180],
+      [-180, -179, -178],
+    ]);
   });
 
   it('renders only repeated IDL crossing runs with two real samples', () => {
@@ -166,6 +173,7 @@ describe('operational feature building', () => {
     ).features.filter((feature) => feature.kind === 'history-segment');
 
     expect(features.map((feature) => feature.layerId)).toEqual([
+      'position-history-east',
       'position-history-west',
       'position-history-east',
     ]);
@@ -176,8 +184,9 @@ describe('operational feature building', () => {
           : []
       )
     ).toEqual([
-      [-179, -178],
-      [178, 177],
+      [179, 180],
+      [-180, -179, -178, -180],
+      [180, 178, 177],
     ]);
   });
 
