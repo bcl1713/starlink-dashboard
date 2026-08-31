@@ -119,8 +119,10 @@ Responsibilities:
 
 - Leaflet lifecycle and identity: create the map, basemap, panes, controls,
   radar layer, and vector layer groups once; mutate existing instances during
-  refresh; preserve viewport, selected feature, disclosure, measurement, and
-  mobile interaction state.
+  refresh; preserve viewport, selected feature, disclosure, measurement,
+  non-radar layer visibility, and mobile interaction state across refresh,
+  rotation, responsive changes, fullscreen, and other rerenders within the
+  continuously mounted Overview/Leaflet tree.
 - Vector projection and reconciliation: use the Task 7 IDL utilities, split
   route-like geometries without cross-segment lines, validate finite
   coordinates, and keep stable history feature IDs through split, merge, and
@@ -167,8 +169,14 @@ Activation-critical ownership clauses:
   route west/east, active link normal/warning, position history west/east,
   flight-route markers, satellites, mission events, ground entry point, current
   position, and same-origin radar tiles.
-- Radar retry and preference state are controlled by approved callbacks/props.
-  `LayerDisclosure` is the sole radar and layer-control surface.
+- Radar retry and preference state are controlled by `OverviewPage`.
+  `OverviewPage` owns and persists the radar preference and passes
+  `radarEnabled`, `radarRefreshToken`, `retryRadar`, `reportRadarResult`, and
+  `onRadarEnabledChange` to `OperationalMap`. `onRadarEnabledChange` persists
+  the radar preference, `retryRadar` triggers explicit retry, and
+  `reportRadarResult` uses the visible-generation token captured when that radar
+  attempt began. `LayerDisclosure` inside the map is the sole radar toggle/retry
+  and layer-control surface.
 - Object URLs stay internal to radar tile management and must be revoked.
   Nginx/browser CSP adds only `blob:` to `img-src` as needed for those object
   URLs, leaves `connect-src` unchanged, adds no direct RainViewer browser origin
@@ -176,7 +184,11 @@ Activation-critical ownership clauses:
   CSP/network acceptance.
 - Task 11 owns responsive map interaction behavior, including mobile interaction
   opt-in, keyboard operation, reduced motion, textual equivalents, and stable
-  state across refreshes and remounts.
+  state across refresh, rotation, responsive changes, fullscreen, and other
+  rerenders within the continuously mounted Overview/Leaflet tree. Repeated
+  mount/unmount tests prove cleanup and fresh defaults, not state persistence
+  across remounts; non-radar layer visibility has no Task 11 preference-schema
+  migration.
 
 ## Task 12 Responsibility Map
 
@@ -198,9 +210,11 @@ Responsibilities:
   fullscreen/kiosk state. `OperationalMap` fills that region without imposing
   composed viewport clamps or page overflow rules.
 - Controls and disclosure ownership: `OverviewControls` owns refresh cadence,
-  manual refresh, POI filter, and clock settings. `LayerDisclosure` remains the
-  only radar and layer-control owner. Chart panels keep their own history-table
-  disclosures mounted.
+  manual refresh, POI filter, and clock settings, but no radar UI.
+  `OverviewPage` owns the controlled radar preference plumbing into
+  `OperationalMap`. `LayerDisclosure` remains the only radar toggle/retry and
+  layer-control owner. Chart panels keep their own history-table disclosures
+  mounted.
 - Accessibility: preserve one `main`, skip link, logical headings, visible
   focus, reduced motion, one polite live region sourced only from
   `snapshot.announcement`, and no one-second live spam.
@@ -236,12 +250,20 @@ Activation-critical ownership clauses:
   and width.
 - Task 12 may focus map content only through the Task 11 `focusCoordinates()`
   handle. It must not import Leaflet or call map viewport methods directly.
-- `OverviewControls` owns refresh cadence, manual refresh, POI filter, clock
-  settings, and controlled radar preference plumbing. `LayerDisclosure` remains
-  the sole radar and layer-control UI.
+- `OverviewControls` owns refresh cadence, manual refresh, POI filter, and clock
+  settings. It owns no radar UI; Task 12 must explicitly remove its existing
+  weather-radar checkbox during composition and must not add a duplicate.
+  `OverviewPage` owns and persists the controlled radar preference, passing
+  `radarEnabled`, `radarRefreshToken`, `retryRadar`, `reportRadarResult`, and
+  `onRadarEnabledChange` to `OperationalMap`. `onRadarEnabledChange` persists
+  the radar preference, `retryRadar` triggers explicit retry, and
+  `reportRadarResult` uses the captured generation token. `LayerDisclosure`
+  inside the map remains the sole radar toggle/retry and layer-control UI.
 - Task 12 owns responsive page interaction behavior: scroll containment,
   touch/page-scroll coexistence, fullscreen focus restoration, navigation order,
-  live-region discipline, and state preservation.
+  live-region discipline, and state preservation within the continuously mounted
+  Overview tree across refresh, rotation, responsive changes, fullscreen, and
+  other rerenders.
 - Browser acceptance remains later Task 13-14 work and must prove the mounted
   tree, map height, real Leaflet behavior, same-origin radar, CSP behavior,
   responsive interaction, and rendered assets on the exact tested head.

@@ -143,13 +143,20 @@ contract explicitly requires one.
 **Activation-critical contract:** `OperationalMap` is the public shell and owns
 the stable Leaflet tree, `focusCoordinates()` handle, eleven vector groups,
 radar `GridLayer`, single timestamp/history identity reconciliation path,
-controlled radar retry/preference callbacks, sole `LayerDisclosure` layer
-control, internal object-URL cleanup, same-origin radar CSP boundary, and
-responsive map interaction behavior. Nginx/browser CSP adds only `blob:` to
-`img-src` as needed for internal, revoked radar object URLs, leaves
-`connect-src` unchanged, adds no direct RainViewer browser origin or network
-access, and remains subject to later exact-head real-browser CSP/network
-acceptance.
+controlled radar retry/preference callbacks from `OverviewPage`, sole
+`LayerDisclosure` radar toggle/retry and layer control, internal object-URL
+cleanup, same-origin radar CSP boundary, and responsive map interaction behavior
+within the continuously mounted Overview/Leaflet tree. `OverviewPage` owns and
+persists the radar preference and passes `radarEnabled`, `radarRefreshToken`,
+`retryRadar`, `reportRadarResult`, and `onRadarEnabledChange` to
+`OperationalMap`. `onRadarEnabledChange` persists the radar preference,
+`retryRadar` triggers explicit retry, and `reportRadarResult` uses the
+visible-generation token captured when the radar attempt began. Non-radar layer
+visibility remains Task 11 mount-local state, with no Task 11 preference-schema
+migration. Nginx/browser CSP adds only `blob:` to `img-src` as needed for
+internal, revoked radar object URLs, leaves `connect-src` unchanged, adds no
+direct RainViewer browser origin or network access, and remains subject to later
+exact-head real-browser CSP/network acceptance.
 
 **Steps:**
 
@@ -160,7 +167,9 @@ acceptance.
    equivalent, and independent layer failure.
 2. Test that five data rerenders plus manual refresh preserve the Leaflet map
    instance, viewport, selected feature, expanded disclosure, and layer
-   instances; no `fitBounds` occurs in background refresh.
+   instances within the continuously mounted tree; no `fitBounds` occurs in
+   background refresh. Repeated mount/unmount tests prove cleanup and fresh
+   defaults, not state persistence across remounts.
 3. Run focused tests; expected RED, implement, then expect PASS.
 4. Commit: `feat(frontend): add full-parity operational map`.
 
@@ -177,9 +186,13 @@ class contracts explicitly require one.
 tree, responsive routing/layout/fullscreen behavior, `.overview-map-region`
 height at every accepted viewport, and the 100% fill contract for
 `OperationalMap`. It may focus map content only through `focusCoordinates()`,
-keeps `LayerDisclosure` as the sole radar/layer-control UI, owns controlled
-preference plumbing through page controls, preserves responsive interaction
-state, and leaves browser acceptance to Tasks 13-14.
+keeps `LayerDisclosure` inside the map as the sole radar toggle/retry and
+layer-control UI, owns controlled radar preference plumbing in `OverviewPage`,
+and preserves responsive interaction state across refresh, rotation, responsive
+changes, fullscreen, and other rerenders within the continuously mounted tree.
+Task 12 must explicitly remove the existing weather-radar checkbox from
+`OverviewControls` during composition and must not add a duplicate. It leaves
+browser acceptance to Tasks 13-14.
 
 **Steps:**
 
