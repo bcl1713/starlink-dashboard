@@ -18,9 +18,14 @@ export interface RadarLayer extends L.GridLayer {
   scheduleRefresh(): void;
 }
 
+interface RadarLayerState {
+  readonly token: () => number;
+  readonly enabledEpoch: () => number;
+}
+
 export function createRadarLayer(
   manager: ReturnType<typeof createRadarTileManager>,
-  currentToken: () => number
+  state: RadarLayerState
 ): RadarLayer {
   const radar = OPERATIONAL_LAYERS[0];
   const RadarLayerClass = L.GridLayer.extend({
@@ -35,10 +40,13 @@ export function createRadarLayer(
       return image;
     },
     refreshVisible() {
-      void manager.loadVisibleTiles({
-        token: currentToken(),
-        tiles: [...this.visibleTiles.values()],
-      });
+      const tiles = [...this.visibleTiles.values()];
+      const visibleKey = tiles.map(tileKey).sort().join(',');
+      const token = state.token();
+      const key = `${token}:${state.enabledEpoch()}:${visibleKey}`;
+      if (this.lastRefreshKey === key) return;
+      this.lastRefreshKey = key;
+      void manager.loadVisibleTiles({ token, tiles });
     },
     scheduleRefresh() {
       if (this.refreshScheduled) return;
@@ -64,6 +72,8 @@ export function createRadarLayer(
   layer.visibleTiles = new Map<string, RadarTileCoord>();
   (layer as RadarLayer & { refreshScheduled: boolean }).refreshScheduled =
     false;
+  (layer as RadarLayer & { lastRefreshKey: string | null }).lastRefreshKey =
+    null;
   layer.on('tileunload', (event: L.TileEvent) => {
     const coords = event.coords;
     if (!coords) return;

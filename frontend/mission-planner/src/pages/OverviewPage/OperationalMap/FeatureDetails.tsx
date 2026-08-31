@@ -13,7 +13,11 @@ export function FeatureDetails({
     return (
       <section className="operational-map__panel" aria-label="Feature details">
         <p>Selected feature is no longer available</p>
-        <button onClick={onDismissMissing} type="button">
+        <button
+          className="operational-map__details-dismiss"
+          onClick={onDismissMissing}
+          type="button"
+        >
           Dismiss
         </button>
       </section>

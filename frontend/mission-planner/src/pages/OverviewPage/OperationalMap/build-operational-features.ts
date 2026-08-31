@@ -152,13 +152,17 @@ function historyRuns(snapshot: OverviewDataSnapshot): readonly HistoryRun[] {
     let current: OverviewGeometryPoint[] = [];
     let hemisphere: 'west' | 'east' | null = null;
     const flush = () => {
-      if (current.length > 1 && hemisphere) {
+      if (hemisphere) {
         const real = current.flatMap((point) => {
           const sourcePoint = point.timestamp
             ? realByTimestamp.get(point.timestamp)
             : undefined;
           return sourcePoint ? [sourcePoint] : [];
         });
+        if (real.length < 2) {
+          current = [];
+          return;
+        }
         runs.push({
           hemisphere,
           points: current,

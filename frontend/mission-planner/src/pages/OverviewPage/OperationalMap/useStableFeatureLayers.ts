@@ -28,6 +28,8 @@ const contractById = new Map<string, (typeof OPERATIONAL_LAYERS)[number]>(
   OPERATIONAL_LAYERS.map((layer) => [layer.id, layer])
 );
 
+type FeatureLayer = Layer & { operationalFeature?: OperationalFeature };
+
 export function useStableFeatureLayers({
   features,
   map,
@@ -67,7 +69,9 @@ export function useStableFeatureLayers({
       else {
         const created = createLayer(feature, onSelect);
         registry.current.set(feature.id, created);
-        created.on('add', () => applyHeading(created, feature));
+        created.on('add', () =>
+          applyHeading(created, (created as FeatureLayer).operationalFeature)
+        );
         group.addLayer(created);
         applyHeading(created, feature);
       }
@@ -114,11 +118,13 @@ function createLayer(
           }
         );
   bindLabel(layer, feature);
+  (layer as FeatureLayer).operationalFeature = feature;
   layer.on('click', () => onSelect(feature.id));
   return layer;
 }
 
 function updateLayer(layer: Layer, feature: OperationalFeature): void {
+  (layer as FeatureLayer).operationalFeature = feature;
   if (layer instanceof L.Marker && feature.geometry.type === 'point') {
     layer.setLatLng([feature.geometry.latitude, feature.geometry.longitude]);
   }
@@ -193,8 +199,12 @@ function markerTextOffset(layerId: string): number {
     : 25;
 }
 
-function applyHeading(layer: Layer, feature: OperationalFeature): void {
+function applyHeading(
+  layer: Layer,
+  feature: OperationalFeature | undefined
+): void {
   const element = layer instanceof L.Marker ? layer.getElement() : null;
+  if (!feature) return;
   if (!element || feature.id !== 'current-position') return;
   element.style.setProperty(
     '--aircraft-heading',

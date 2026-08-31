@@ -1,8 +1,15 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createRadarTileManager } from './radar-tile-manager';
 
 const png = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]).buffer;
+
+beforeEach(() => {
+  Object.defineProperty(HTMLImageElement.prototype, 'decode', {
+    configurable: true,
+    value: vi.fn(() => Promise.resolve()),
+  });
+});
 
 describe('radar tile manager', () => {
   it('ignores stale same-key completions after a newer generation is bound', async () => {
@@ -31,8 +38,10 @@ describe('radar tile manager', () => {
     const first = manager.loadVisibleTiles({ token: 1, tiles: [coord] });
     const second = manager.loadVisibleTiles({ token: 2, tiles: [coord] });
     resolvers[1]?.({ bytes: png.slice(0), frameTimestamp: '222' });
-    await second;
+    await waitForSrc(image, 'blob:1');
+    expect(report).not.toHaveBeenCalled();
     image.dispatchEvent(new Event('load'));
+    await second;
 
     expect(image.src).toContain('blob:1');
     expect(report).toHaveBeenCalledExactlyOnceWith(2, {
@@ -75,6 +84,8 @@ describe('radar tile manager', () => {
 
   it('captures the visible generation token and reports the oldest frame once', async () => {
     const report = vi.fn();
+    const image0 = document.createElement('img');
+    const image1 = document.createElement('img');
     const manager = createRadarTileManager({
       loadTile: vi.fn(({ x }) =>
         Promise.resolve({
@@ -86,14 +97,24 @@ describe('radar tile manager', () => {
       createObjectUrl: vi.fn(() => 'blob:tile'),
       revokeObjectUrl: vi.fn(),
     });
+    manager.registerTile({ z: 1, x: 0, y: 0 }, image0, vi.fn());
+    manager.registerTile({ z: 1, x: 1, y: 0 }, image1, vi.fn());
 
-    await manager.loadVisibleTiles({
+    const pending = manager.loadVisibleTiles({
       token: Number.MAX_SAFE_INTEGER,
       tiles: [
         { z: 1, x: 0, y: 0 },
         { z: 1, x: 1, y: 0 },
       ],
     });
+    await waitForSrc(image0, 'blob:tile');
+    await waitForSrc(image1, 'blob:tile');
+    expect(report).not.toHaveBeenCalled();
+    image0.dispatchEvent(new Event('load'));
+    await flush();
+    expect(report).not.toHaveBeenCalled();
+    image1.dispatchEvent(new Event('load'));
+    await pending;
 
     expect(report).toHaveBeenCalledExactlyOnceWith(Number.MAX_SAFE_INTEGER, {
       ok: true,
@@ -104,6 +125,7 @@ describe('radar tile manager', () => {
   it('coalesces duplicate tiles, cancels obsolete generations, and revokes URLs', async () => {
     const revokeObjectUrl = vi.fn();
     const report = vi.fn();
+    const nextImage = document.createElement('img');
     const gates: ((value: {
       bytes: ArrayBuffer;
       frameTimestamp: string;
@@ -121,7 +143,6 @@ describe('radar tile manager', () => {
       createObjectUrl: vi.fn(() => `blob:${gates.length}`),
       revokeObjectUrl,
     });
-
     const first = manager.loadVisibleTiles({
       token: 1,
       tiles: [
@@ -130,12 +151,15 @@ describe('radar tile manager', () => {
       ],
     });
     expect(manager.stats()).toMatchObject({ inFlight: 1, tracked: 1 });
+    manager.registerTile({ z: 1, x: 1, y: 0 }, nextImage, vi.fn());
     const second = manager.loadVisibleTiles({
       token: 2,
       tiles: [{ z: 1, x: 1, y: 0 }],
     });
     gates[0]({ bytes: png.slice(0), frameTimestamp: '201' });
     gates[1]({ bytes: png.slice(0), frameTimestamp: '202' });
+    await waitForSrc(nextImage, 'blob:2');
+    nextImage.dispatchEvent(new Event('load'));
     await Promise.all([first, second]);
 
     expect(report).toHaveBeenCalledExactlyOnceWith(2, {
@@ -185,16 +209,40 @@ describe('radar tile manager', () => {
       createObjectUrl: vi.fn(() => `blob:${loadTile.mock.calls.length}`),
       revokeObjectUrl: vi.fn(),
     });
+    const image = document.createElement('img');
+    manager.registerTile({ z: 1, x: 0, y: 0 }, image, vi.fn());
 
-    await manager.loadVisibleTiles({
+    const first = manager.loadVisibleTiles({
       token: Number.MAX_SAFE_INTEGER,
       tiles: [{ z: 1, x: 0, y: 0 }],
     });
-    await manager.loadVisibleTiles({
+    await waitForSrc(image, 'blob:1');
+    image.dispatchEvent(new Event('load'));
+    await first;
+    const second = manager.loadVisibleTiles({
       token: 0,
       tiles: [{ z: 1, x: 0, y: 0 }],
     });
+    await waitForSrc(image, 'blob:2');
+    image.dispatchEvent(new Event('load'));
+    await second;
 
     expect(loadTile).toHaveBeenCalledTimes(2);
   });
 });
+
+async function flush(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+async function waitForSrc(
+  image: HTMLImageElement,
+  expected: string
+): Promise<void> {
+  for (let count = 0; count < 10; count += 1) {
+    await flush();
+    if (image.src.includes(expected)) return;
+  }
+  expect(image.src).toContain(expected);
+}

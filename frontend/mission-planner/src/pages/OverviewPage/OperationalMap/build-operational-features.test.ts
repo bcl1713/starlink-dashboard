@@ -127,7 +127,7 @@ describe('operational feature building', () => {
     expect(merged).toEqual(['history:west:2']);
   });
 
-  it('keeps history source metadata to ordered real samples across IDL', () => {
+  it('does not render a history line for one real sample plus IDL boundary', () => {
     const registry = createHistoryIdRegistry();
     const features = buildOperationalFeatures(
       makeOverviewSnapshot({
@@ -139,23 +139,46 @@ describe('operational feature building', () => {
       }),
       registry
     ).features.filter((feature) => feature.kind === 'history-segment');
-    const sourcePoints = features.flatMap((feature) =>
-      feature.geometry.type === 'line'
-        ? (feature.geometry.sourcePoints ?? [])
-        : []
-    );
 
-    expect(sourcePoints.map((point) => point.timestamp)).toEqual([
-      '2026-08-29T12:00:00Z',
-      '2026-08-29T12:00:10Z',
-      '2026-08-29T12:00:20Z',
-    ]);
-    expect(sourcePoints.map((point) => point.longitude)).toEqual([
-      179, -179, -178,
+    expect(features).toHaveLength(1);
+    expect(features[0]?.layerId).toBe('position-history-west');
+    expect(features[0]?.geometry.type === 'line').toBe(true);
+    expect(
+      features[0]?.geometry.type === 'line'
+        ? features[0].geometry.sourcePoints?.map((point) => point.longitude)
+        : []
+    ).toEqual([-179, -178]);
+  });
+
+  it('renders only repeated IDL crossing runs with two real samples', () => {
+    const registry = createHistoryIdRegistry();
+    const features = buildOperationalFeatures(
+      makeOverviewSnapshot({
+        history: [
+          ['2026-08-29T12:00:00Z', 10, 179],
+          ['2026-08-29T12:00:10Z', 11, -179],
+          ['2026-08-29T12:00:20Z', 12, -178],
+          ['2026-08-29T12:00:30Z', 13, 178],
+          ['2026-08-29T12:00:40Z', 14, 177],
+        ],
+      }),
+      registry
+    ).features.filter((feature) => feature.kind === 'history-segment');
+
+    expect(features.map((feature) => feature.layerId)).toEqual([
+      'position-history-west',
+      'position-history-east',
     ]);
     expect(
-      sourcePoints.some((point) => Math.abs(point.longitude) === 180)
-    ).toBe(false);
+      features.map((feature) =>
+        feature.geometry.type === 'line'
+          ? feature.geometry.sourcePoints?.map((point) => point.longitude)
+          : []
+      )
+    ).toEqual([
+      [-179, -178],
+      [178, 177],
+    ]);
   });
 
   it('derives retained last-good source state from non-ready slots with data', () => {

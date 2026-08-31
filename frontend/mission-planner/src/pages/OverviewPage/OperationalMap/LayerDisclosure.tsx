@@ -25,7 +25,9 @@ export function LayerDisclosure({
   const radarFailed = stateById.get('weather-radar')?.phase === 'error';
   return (
     <details className="operational-map__panel" open>
-      <summary>Operational layers</summary>
+      <summary className="operational-map__layer-summary">
+        Operational layers
+      </summary>
       <div className="operational-map__layers">
         {OPERATIONAL_LAYERS.map((layer) => {
           const checked =

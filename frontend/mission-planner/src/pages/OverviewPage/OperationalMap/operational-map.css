@@ -29,7 +29,10 @@
 }
 
 .operational-map__button,
-.operational-map__toggle {
+.operational-map__toggle,
+.operational-map__feature-button,
+.operational-map__details-dismiss,
+.operational-map__layer-summary {
   align-items: center;
   min-height: 44px;
   min-width: 44px;

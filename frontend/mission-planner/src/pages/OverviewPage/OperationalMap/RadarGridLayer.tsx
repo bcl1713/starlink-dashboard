@@ -20,6 +20,7 @@ export function RadarGridLayer({
 }: RadarGridLayerProps) {
   const map = useMap();
   const token = useRef(radarRefreshToken);
+  const enabledEpoch = useRef(0);
   useEffect(() => {
     token.current = radarRefreshToken;
   }, [radarRefreshToken]);
@@ -31,12 +32,16 @@ export function RadarGridLayer({
       }),
     [reportRadarResult]
   );
+  /* eslint-disable react-hooks/refs */
   const layer = useMemo(
-    // The GridLayer identity is stable; its tile callbacks read the latest token.
-    // eslint-disable-next-line react-hooks/refs
-    () => createRadarLayer(manager, () => token.current),
+    () =>
+      createRadarLayer(manager, {
+        token: () => token.current,
+        enabledEpoch: () => enabledEpoch.current,
+      }),
     [manager]
   );
+  /* eslint-enable react-hooks/refs */
 
   useEffect(() => () => manager.destroy(), [manager]);
 
@@ -44,16 +49,18 @@ export function RadarGridLayer({
     if (!enabled) {
       if (map.hasLayer(layer)) map.removeLayer(layer);
       manager.destroy();
+      enabledEpoch.current += 1;
       return;
     }
+    enabledEpoch.current += 1;
     ensureRadarPane(map);
     if (!map.hasLayer(layer)) layer.addTo(map);
-    layer.refreshVisible();
+    layer.scheduleRefresh();
   }, [enabled, layer, manager, map, radarRefreshToken]);
 
   useEffect(() => {
     const refresh = () => {
-      if (enabled) layer.refreshVisible();
+      if (enabled) layer.scheduleRefresh();
     };
     map.on('moveend zoomend', refresh);
     return () => {

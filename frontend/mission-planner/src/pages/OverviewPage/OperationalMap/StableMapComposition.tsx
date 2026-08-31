@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import L, { type Map as LeafletMap } from 'leaflet';
 import { useMap } from 'react-leaflet';
 
@@ -66,8 +66,12 @@ function useStableMapBase(
   onMapReady: ((map: LeafletMap) => void) | undefined,
   onBasemapStatusChange: (status: BasemapStatus) => void
 ) {
+  const onMapReadyRef = useRef(onMapReady);
   useEffect(() => {
-    if (mapRef.current) return;
+    onMapReadyRef.current = onMapReady;
+  }, [onMapReady]);
+  useEffect(() => {
+    if (mapRef.current === map) return;
     mapRef.current = map;
     map.createPane('operational-basemap').style.zIndex = String(BASEMAP_PANE);
     for (const layer of OPERATIONAL_LAYERS) {
@@ -90,14 +94,16 @@ function useStableMapBase(
     basemap.on('tileload', markReady);
     basemap.on('tileerror', markFailed);
     basemap.addTo(map);
-    L.control.scale().addTo(map);
-    onMapReady?.(map);
+    const scale = L.control.scale().addTo(map);
+    onMapReadyRef.current?.(map);
     return () => {
       basemap.off('tileload', markReady);
       basemap.off('tileerror', markFailed);
       basemap.remove();
+      scale.remove();
+      if (mapRef.current === map) mapRef.current = null;
     };
-  }, [map, mapRef, onBasemapStatusChange, onMapReady]);
+  }, [map, mapRef, onBasemapStatusChange]);
 }
 
 function useMapInteraction(

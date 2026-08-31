@@ -124,6 +124,7 @@ describe('OperationalMap', () => {
     await act(async () => undefined);
     const basemap = findBasemap(map);
 
+    expect(screen.getByText(/Basemap: loading/)).toBeInTheDocument();
     act(() => {
       basemap.fire('tileerror', { error: new Error('<img src=x>') });
     });

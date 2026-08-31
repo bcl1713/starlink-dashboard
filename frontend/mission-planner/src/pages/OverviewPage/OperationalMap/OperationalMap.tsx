@@ -64,8 +64,8 @@ export const OperationalMap = forwardRef<
   const [mobileLocked, setMobileLocked] = useState(false);
   const [mobileActive, setMobileActive] = useState(false);
   const [basemapStatus, setBasemapStatus] = useState<BasemapStatus>({
-    phase: 'ready',
-    message: 'Basemap tiles loaded.',
+    phase: 'loading',
+    message: 'Basemap tiles loading.',
   });
   const activationButton = useRef<HTMLButtonElement | null>(null);
   const performedInitialFit = useRef(false);

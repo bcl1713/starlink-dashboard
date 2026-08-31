@@ -14,7 +14,10 @@ describe('RadarGridLayer', () => {
       destroy: vi.fn(),
       stats: vi.fn(),
     };
-    const layer = createRadarLayer(manager, () => 0);
+    const layer = createRadarLayer(manager, {
+      token: () => 0,
+      enabledEpoch: () => 0,
+    });
     const done = vi.fn();
 
     const tile = (
@@ -54,7 +57,10 @@ describe('RadarGridLayer', () => {
       destroy: vi.fn(),
       stats: vi.fn(),
     };
-    const layer = createRadarLayer(manager, () => 11);
+    const layer = createRadarLayer(manager, {
+      token: () => 11,
+      enabledEpoch: () => 0,
+    });
     const api = layer as unknown as {
       createTile(coords: Coords, done: Done): HTMLElement;
     };

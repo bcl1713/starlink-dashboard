@@ -71,7 +71,7 @@ export interface OperationalLayerState {
 }
 
 export interface BasemapStatus {
-  readonly phase: 'ready' | 'unavailable';
+  readonly phase: 'loading' | 'ready' | 'unavailable';
   readonly message: string;
 }
 

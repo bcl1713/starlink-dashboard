@@ -11,6 +11,7 @@ export function FeatureButtons({
     <div className="operational-map__panel">
       {features.map((feature) => (
         <button
+          className="operational-map__feature-button"
           key={feature.id}
           onClick={() => onSelect(feature.id)}
           type="button"

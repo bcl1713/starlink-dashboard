@@ -28,4 +28,7 @@ export interface RecordState {
   done: ((error?: Error | null, tile?: HTMLElement) => void) | null;
   settled: boolean;
   cleanupImage: (() => void) | null;
+  visibleLoad: Promise<void> | null;
+  resolveVisibleLoad: (() => void) | null;
+  rejectVisibleLoad: ((error: Error) => void) | null;
 }
