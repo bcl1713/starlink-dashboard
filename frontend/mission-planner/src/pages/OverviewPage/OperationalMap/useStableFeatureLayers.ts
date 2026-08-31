@@ -52,7 +52,6 @@ export function useStableFeatureLayers({
 
   useEffect(() => {
     if (!map || !groups.current) return;
-    exposeLayerGroups(map, groups.current);
     for (const [id, group] of groups.current) {
       if (visibility[id] && !map.hasLayer(group)) group.addTo(map);
       if (!visibility[id] && map.hasLayer(group)) group.removeFrom(map);
@@ -93,19 +92,6 @@ export function useStableFeatureLayers({
     },
     []
   );
-}
-
-function exposeLayerGroups(
-  map: LeafletMap,
-  groups: Map<VectorLayerId, LayerGroup>
-): void {
-  const panes = map.getPanes() as Record<string, HTMLElement | undefined>;
-  for (const [id, group] of groups) {
-    const pane = panes[id] as
-      | (HTMLElement & { __overviewLeafletLayer?: LayerGroup })
-      | undefined;
-    if (pane) pane.__overviewLeafletLayer = group;
-  }
 }
 
 function createLayer(

@@ -19,6 +19,7 @@ test.describe('Operations overview continuity sabotage detection', () => {
     ['path-replacement', /Rendered count regressed/i],
     ['tile-replacement', /Rendered count regressed/i],
     ['chart-replacement', /critical removals|Chart ownership/i],
+    ['busy', /render-observable attribute aria-busy=true/i],
     ['zero-size', /Missing or empty summary/i],
     ['loading', /last-good signature regressed/i],
     ['layer-drop', /Rendered count regressed/i],
@@ -92,6 +93,7 @@ type Sabotage =
   | 'path-replacement'
   | 'tile-replacement'
   | 'chart-replacement'
+  | 'busy'
   | 'zero-size'
   | 'loading'
   | 'layer-drop'
@@ -145,6 +147,17 @@ async function runSabotage(page: Page, kind: Sabotage) {
     }
     if (probe === 'chart-replacement') {
       return replaceTemporarily(document.querySelector('canvas'));
+    }
+    if (probe === 'busy') {
+      const target = document.querySelector('.overview-map-region');
+      target?.setAttribute('aria-busy', 'true');
+      await mutationTurn();
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve())
+      );
+      target?.setAttribute('aria-busy', 'false');
+      await mutationTurn();
+      return;
     }
     if (probe === 'zero-size') {
       const old = summary?.getAttribute('style') ?? null;

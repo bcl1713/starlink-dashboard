@@ -60,14 +60,19 @@ and the
    bounding boxes for the mounted Overview root, Leaflet map/container
    ownership, all twelve layer controls and rendered-feature ownership, three
    chart canvases and series, stable summaries/history disclosures, and
-   last-good content. Fail on any transient removal, replacement, zero
-   dimension, identity reset, unexpected count regression, focus loss,
-   filter/layer/disclosure change, scroll change, raw console/page error, or
-   first-party request error. Retain honest supporting screenshot/video evidence
-   with its raw timestamps, achieved cadence, and gaps, but impose no minimum
-   fps. Undersampling limits visual claims, cannot override an observer failure,
-   and must not be disguised by timestamp rewriting, hidden animation, or
-   manufactured paint. Keep exact- view screenshots for the accepted viewport
+   last-good content. Fail on any render-observable transient removal,
+   replacement, zero dimension, loading/state change, identity reset, unexpected
+   count regression, focus loss, filter/layer/disclosure change, scroll change,
+   raw console/page error, or first-party request error. A lifecycle sabotage
+   must hold its invalid state through at least a microtask plus animation-frame
+   opportunity or an actual asynchronous request boundary; a same-task
+   set-and-restore with no rendering opportunity is not a visual continuity
+   event, and MutationObserver callback-time values must not be misrepresented
+   as successive same-task new values. Retain honest supporting screenshot/video
+   evidence with its raw timestamps, achieved cadence, and gaps, but impose no
+   minimum fps. Undersampling limits visual claims, cannot override an observer
+   failure, and must not be disguised by timestamp rewriting, hidden animation,
+   or manufactured paint. Keep exact- view screenshots for the accepted viewport
    states.
 8. Run nominal, empty, partial/total error, truthful per-source stale/recovery,
    IDL, thresholds, radar/basemap failure, and rotation. Use the same fixture,

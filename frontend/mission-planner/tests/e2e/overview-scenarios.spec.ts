@@ -1,6 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { openOverview } from './support/overview-assertions';
+import { installElementIdentity } from './support/overview-cdp-capture';
+import { observeRetainedTransition } from './support/overview-observed-refresh';
+import { expectScenarioOracle } from './support/overview-scenario-assertions';
 import {
   installOverviewRouter,
   type OverviewRouter,
@@ -11,6 +14,7 @@ test.describe('Operations overview production state transitions', () => {
     page,
   }) => {
     const router = await installOverviewRouter(page);
+    await installElementIdentity(page);
     await openOverview(page, router.scenario().nowIso);
     await settleInitialRequests(router);
     await openLayerDisclosure(page);
@@ -18,7 +22,7 @@ test.describe('Operations overview production state transitions', () => {
 
     router.failSourceOnce('groundEntryPoint', 503, 'localized_gep_error');
     const gepMarker = router.records.length;
-    await manualRefresh(page, router);
+    await observedManualRefresh(page, router);
     await expect(
       page.getByText(/Showing retained last-good data/i).first()
     ).toBeVisible();
@@ -58,23 +62,39 @@ test.describe('Operations overview production state transitions', () => {
     await page.reload();
     await openLayerDisclosure(page);
     expect(hasRecord(router, 'basemap', 'complete')).toBe(true);
+    await expect(page.getByText(/Basemap tiles loaded/i)).toBeVisible();
+    await expect(
+      page.locator('.leaflet-operational-basemap-pane img').first()
+    ).toBeVisible();
   });
 
   test('renders per-source stale state and fresh recovery', async ({
     page,
   }) => {
-    const router = await installOverviewRouter(page, 'overview-stale');
+    const router = await installOverviewRouter(page);
+    await installElementIdentity(page);
     await openOverview(page, router.scenario().nowIso);
     await settleInitialRequests(router);
     await openLayerDisclosure(page);
-    await expect(page.locator('main')).toContainText(/stale/i);
-    await expectScenarioOracle(page, router);
 
+    await page.clock.setFixedTime('2026-02-03T15:36:00Z');
     router.setScenario('overview-recovery');
-    await manualRefresh(page, router);
+    router.setSourceScenario('telemetry', 'overview-stale');
+    router.setSourceScenario('history', 'overview-stale');
+    await observedManualRefresh(page, router);
     await expect(
-      page.getByText(/Network metrics recovered|Ready/i).first()
-    ).toBeVisible();
+      page.getByRole('region', { name: 'Network Latency' })
+    ).toContainText(/stale/i);
+    await expect(
+      page.getByRole('region', { name: 'Ground Entry Point' })
+    ).toContainText(/Ready/i);
+
+    router.setSourceScenario('telemetry', null);
+    router.setSourceScenario('history', null);
+    await observedManualRefresh(page, router);
+    await expect(
+      page.getByRole('region', { name: 'Network Latency' })
+    ).toContainText(/Ready/i);
     await expectScenarioOracle(page, router);
   });
 
@@ -118,13 +138,14 @@ test.describe('Operations overview production state transitions', () => {
     page,
   }) => {
     const router = await installOverviewRouter(page);
+    await installElementIdentity(page);
     await openOverview(page, router.scenario().nowIso);
     await settleInitialRequests(router);
     await expect(page.getByText('Seattle, WA').first()).toBeVisible();
 
     router.setScenario('overview-backend-failure');
     const failureMarker = router.records.length;
-    await manualRefresh(page, router, true);
+    await observedManualRefresh(page, router, true);
     await expect(page.getByText('Seattle, WA').first()).toBeVisible();
     await expect(page.locator('main')).toContainText(/last-good|Unavailable/i);
     expect(
@@ -140,7 +161,7 @@ test.describe('Operations overview production state transitions', () => {
     ).toBe(true);
 
     router.setScenario('overview-nominal');
-    await manualRefresh(page, router);
+    await observedManualRefresh(page, router);
     await expect(page.getByText('Seattle, WA').first()).toBeVisible();
     await expect(page.getByText(/Ready/i).first()).toBeVisible();
   });
@@ -217,6 +238,18 @@ async function openControls(page: Page) {
   }
 }
 
+async function observedManualRefresh(
+  page: Page,
+  router: OverviewRouter,
+  allowFailure = false
+) {
+  await openControls(page);
+  await page.getByRole('button', { name: 'Refresh overview' }).focus();
+  await observeRetainedTransition(page, router, () =>
+    manualRefresh(page, router, allowFailure)
+  );
+}
+
 async function manualRefresh(
   page: Page,
   router: OverviewRouter,
@@ -255,42 +288,5 @@ function hasRecord(
 ): boolean {
   return router.records.some(
     (record) => record.source === source && record.event === event
-  );
-}
-
-async function expectScenarioOracle(page: Page, router: OverviewRouter) {
-  const expected = router.scenario().expected;
-  const main = page.locator('main');
-  for (const id of expected.topFivePoiIds) {
-    const poi = router.scenario().pois.items.find((item) => item.id === id);
-    if (poi) await expect(main).toContainText(poi.name);
-  }
-  for (const layer of expected.layerStates) {
-    await expect(
-      page.getByText(new RegExp(`${escapeRegExp(layerLabel(layer.id))}:`))
-    ).toHaveCount(1);
-  }
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function layerLabel(id: string): string {
-  return (
-    {
-      'weather-radar': 'Weather Radar',
-      'planned-route-west': 'Planned Route — western segment',
-      'planned-route-east': 'Planned Route — eastern segment',
-      'active-x-band-normal': 'Active X-band Link — normal',
-      'active-x-band-warning': 'Active X-band Link — warning',
-      'position-history-west': 'Position History — western segments',
-      'position-history-east': 'Position History — eastern segments',
-      'flight-route-markers': 'Flight route/POI markers',
-      satellites: 'Satellites',
-      'mission-events': 'Mission events',
-      'ground-entry-point-layer': 'Ground entry point',
-      'current-position-layer': 'Current position',
-    }[id] ?? id
   );
 }

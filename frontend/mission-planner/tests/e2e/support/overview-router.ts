@@ -5,11 +5,11 @@ import {
   activeLinkPayload,
   gepPayload,
   historyPayload,
-  type LatencyPayloadOverride,
   poiPayload,
   routePayload,
   statusPayload,
 } from './overview-payloads';
+import type { LatencyPayloadOverride } from './overview-payloads';
 import {
   errorResponse,
   fulfillBasemap,
@@ -22,37 +22,13 @@ import {
   overviewScenarioById as scenarioById,
   type OverviewScenarioId,
 } from './overview-empty-scenario';
+import type {
+  OverviewRouter,
+  RecordedOverviewRequest,
+} from './overview-router-types';
 
 export type { OverviewScenarioId };
-
-export interface RecordedOverviewRequest {
-  readonly id: string;
-  readonly cycle: number;
-  readonly event: 'start' | 'complete' | 'error' | 'failed' | 'blocked';
-  readonly kind: 'initial' | 'scheduled' | 'manual';
-  readonly source: string;
-  readonly method: string;
-  readonly url: string;
-  readonly status: number | null;
-  readonly outcome: 'pending' | 'complete' | 'error' | 'transport-failed';
-  readonly firstParty: boolean;
-  readonly startedAt: number;
-  readonly completedAt: number | null;
-}
-
-export interface OverviewRouter {
-  readonly records: readonly RecordedOverviewRequest[];
-  readonly cycles: readonly string[];
-  scenario(): OverviewScenario;
-  setScenario(id: OverviewScenarioId): void;
-  failSourceOnce(source: string, status: number, detail: string): void;
-  failNextBasemap(): void;
-  setLatency(payload: LatencyPayloadOverride | null): void;
-  markNextManualCycle(): void;
-  setLifecycleReporter(
-    reporter: ((record: RecordedOverviewRequest) => void) | null
-  ): void;
-}
+export type { OverviewRouter, RecordedOverviewRequest };
 
 const blockedPatterns = [
   /\/api\/datasources\/proxy/i,
@@ -75,6 +51,7 @@ export async function installOverviewRouter(
   let basemapFailures = 0;
   let latencyOverride: LatencyPayloadOverride | null = null;
   const sourceFailures = new Map<string, { status: number; detail: string }>();
+  const sourceScenarios = new Map<string, OverviewScenario>();
   const records: RecordedOverviewRequest[] = [];
   const cycles: string[] = [];
   let lifecycleReporter: ((record: RecordedOverviewRequest) => void) | null =
@@ -167,7 +144,13 @@ export async function installOverviewRouter(
             sourceFailure.status,
             sourceFailure.detail
           )
-        : await fulfillApi(route, scenario, url, started.id, latencyOverride);
+        : await fulfillApi(
+            route,
+            sourceScenarios.get(started.source) ?? scenario,
+            url,
+            started.id,
+            latencyOverride
+          );
       if (sourceFailure) sourceFailures.delete(started.source);
       finishRecord(
         started,
@@ -201,6 +184,10 @@ export async function installOverviewRouter(
     scenario: () => scenario,
     setScenario: (id) => {
       scenario = scenarioById(id);
+    },
+    setSourceScenario: (source, id) => {
+      if (id === null) sourceScenarios.delete(source);
+      else sourceScenarios.set(source, scenarioById(id));
     },
     failSourceOnce: (source, status, detail) => {
       sourceFailures.set(source, { status, detail });

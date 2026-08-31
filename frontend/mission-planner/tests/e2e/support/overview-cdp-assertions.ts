@@ -32,6 +32,18 @@ export function assertContinuityEvidence(
   if (criticalRemovals.length) {
     throw new Error(`Observed ${criticalRemovals.length} critical removals`);
   }
+  const invalidAttributes = eventLedger.mutations.filter(
+    (mutation) =>
+      (mutation.attributeName === 'aria-busy' &&
+        mutation.newValue === 'true') ||
+      (mutation.attributeName === 'aria-hidden' && mutation.newValue === 'true')
+  );
+  if (invalidAttributes.length) {
+    const mutation = invalidAttributes[0]!;
+    throw new Error(
+      `Observed render-observable attribute ${mutation.attributeName}=${mutation.newValue} on ${mutation.target}`
+    );
+  }
   if (eventLedger.identityTransitions.length) {
     throw new Error(
       `Object identity changed: ${JSON.stringify(
@@ -47,7 +59,8 @@ export function assertContinuityEvidence(
   if (!eventLedger.samples.some((sample) => sample.phase === 'mutation')) {
     throw new Error('No mutation lifecycle samples were retained');
   }
-  for (const sample of eventLedger.samples) assertSample(sample, baseline);
+  for (const sample of eventLedger.samples)
+    assertLastGoodSample(sample, baseline);
   assertRequestCorrelation(evidence);
 
   const observedIds = new Set(
@@ -68,7 +81,10 @@ export function assertContinuityEvidence(
   }
 }
 
-function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
+export function assertLastGoodSample(
+  sample: LifecycleSample,
+  baseline: LifecycleSample
+) {
   for (const region of sample.regions) {
     const before = baseline.regions.find((item) => item.key === region.key);
     if (
@@ -118,7 +134,8 @@ function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
     }
     if (
       layer.objectId !== before.objectId ||
-      layer.renderedCount !== before.renderedCount ||
+      layer.renderedCount !== layer.expectedCount ||
+      layer.expectedCount !== before.expectedCount ||
       layer.signature !== before.signature
     ) {
       throw new Error(`Rendered count regressed for ${layer.label}`);
@@ -137,8 +154,10 @@ function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
     }
     if (
       chart.objectId !== before.objectId ||
-      !chart.signature ||
-      chart.seriesCount !== before.seriesCount
+      !/^\d+x\d+:[1-9]\d*:[\da-f]+$/.test(chart.signature) ||
+      chart.seriesCount <= 0 ||
+      chart.seriesCount !== before.seriesCount ||
+      chart.signature !== before.signature
     ) {
       throw new Error(`Chart series/signature regressed for ${chart.label}`);
     }
@@ -155,6 +174,34 @@ function assertSample(sample: LifecycleSample, baseline: LifecycleSample) {
       `Operator state changed during ${sample.phase} at ${sample.at}`
     );
   }
+}
+
+export function assertRetainedRenderSample(
+  sample: LifecycleSample,
+  baseline: LifecycleSample
+) {
+  for (const region of sample.regions) {
+    if (!region.identity || region.width <= 0 || region.height <= 0) {
+      throw new Error(`Missing retained ${region.key} during ${sample.phase}`);
+    }
+  }
+  sample.layers.forEach((layer, index) => {
+    const before = baseline.layers[index];
+    if (!before || layer.objectId !== before.objectId) {
+      throw new Error(`Retained layer changed for ${layer.label}`);
+    }
+  });
+  sample.charts.forEach((chart, index) => {
+    const before = baseline.charts[index];
+    if (
+      !before ||
+      chart.objectId !== before.objectId ||
+      chart.seriesCount <= 0 ||
+      chart.seriesCount !== before.seriesCount
+    ) {
+      throw new Error(`Retained chart changed for ${chart.label}`);
+    }
+  });
 }
 
 function assertRequestCorrelation(

@@ -35,6 +35,14 @@ test.describe('Operations overview native fullscreen browser contract', () => {
     await page.getByLabel('Satellites').uncheck();
     await page.evaluate(() => window.scrollTo(0, 24));
     const before = await fullscreenState(page);
+    expect(before.refreshCadence).toBeTruthy();
+    expect(before.chartContent.every((chart) => chart.nonzeroPixels > 0)).toBe(
+      true
+    );
+    expect(before.chartContent.map((chart) => chart.seriesCount)).toEqual([
+      1, 1, 2,
+    ]);
+    expectOverflowContained(before);
 
     await expectFullscreenCalls(page, 0);
     await page.getByRole('button', { name: 'Enter fullscreen' }).click();
@@ -47,18 +55,19 @@ test.describe('Operations overview native fullscreen browser contract', () => {
         poiFilter: 'alternate',
         satelliteLayer: false,
         mapIdentity: before.mapIdentity,
-        mapObjectIdentity: before.mapObjectIdentity,
+        mapOwnerIdentity: before.mapOwnerIdentity,
         mapViewport: before.mapViewport,
         radarLayer: before.radarLayer,
         chartCount: before.chartCount,
         chartOwnership: before.chartOwnership,
+        chartContent: before.chartContent,
+        refreshCadence: before.refreshCadence,
         detailsOpen: before.detailsOpen,
         layerChecks: before.layerChecks,
         scrollOffset: before.scrollOffset,
       });
     const entered = await fullscreenState(page);
-    expect(entered.overflowX).toBeLessThanOrEqual(1);
-    expect(entered.bodyOverflow).toBeLessThanOrEqual(1);
+    expectOverflowContained(entered);
     expect(entered.scrollOffset).toBeGreaterThanOrEqual(0);
     await expect(page.locator('.overview-page')).toBeFocused();
     await attachScreenshots(page, testInfo, 'native-fullscreen');
@@ -72,16 +81,18 @@ test.describe('Operations overview native fullscreen browser contract', () => {
         poiFilter: 'alternate',
         satelliteLayer: false,
         mapIdentity: before.mapIdentity,
-        mapObjectIdentity: before.mapObjectIdentity,
+        mapOwnerIdentity: before.mapOwnerIdentity,
         mapViewport: before.mapViewport,
         radarLayer: before.radarLayer,
         chartCount: before.chartCount,
         chartOwnership: before.chartOwnership,
+        chartContent: before.chartContent,
+        refreshCadence: before.refreshCadence,
         detailsOpen: before.detailsOpen,
         layerChecks: before.layerChecks,
         scrollOffset: before.scrollOffset,
       });
-    expect((await fullscreenState(page)).overflowX).toBeLessThanOrEqual(1);
+    expectOverflowContained(await fullscreenState(page));
     await expect(
       page.getByRole('button', { name: 'Enter fullscreen' })
     ).toBeFocused();
@@ -112,15 +123,8 @@ async function expectFullscreenCalls(
 
 async function fullscreenState(page: import('@playwright/test').Page) {
   return page.evaluate(() => {
-    type MapProbe = {
-      getCenter(): { lat: number; lng: number };
-      getZoom(): number;
-    };
     const map = document.querySelector('.leaflet-container') as
-      | (HTMLElement & {
-          _leaflet_id?: number;
-          __overviewLeafletMap?: MapProbe;
-        })
+      | (HTMLElement & { _leaflet_id?: number })
       | null;
     const root = document.querySelector('.overview-page');
     const objectId = (
@@ -130,8 +134,6 @@ async function fullscreenState(page: import('@playwright/test').Page) {
         ) => string | null;
       }
     ).__overviewObjectId;
-    const mapObject = map?.__overviewLeafletMap;
-    const center = mapObject?.getCenter();
     return {
       mode: root?.classList.contains('overview-page--native')
         ? 'native'
@@ -140,15 +142,17 @@ async function fullscreenState(page: import('@playwright/test').Page) {
           : 'inline',
       hasNativeElement: document.fullscreenElement === root,
       mapIdentity: map?._leaflet_id ?? null,
-      mapObjectIdentity: objectId?.(mapObject) ?? null,
-      mapViewport:
-        center && mapObject
-          ? {
-              latitude: center.lat,
-              longitude: center.lng,
-              zoom: mapObject.getZoom(),
-            }
-          : null,
+      mapOwnerIdentity: objectId?.(map) ?? null,
+      mapViewport: map
+        ? {
+            paneTransform:
+              map.querySelector<HTMLElement>('.leaflet-map-pane')?.style
+                .transform ?? '',
+            zoomClass: [...map.classList]
+              .filter((name) => name.includes('zoom'))
+              .sort(),
+          }
+        : null,
       poiFilter:
         document.querySelector<HTMLSelectElement>(
           'select[aria-label="POI category"]'
@@ -175,17 +179,45 @@ async function fullscreenState(page: import('@playwright/test').Page) {
           '[data-testid="time-series-chart-host"]'
         ),
       ].map((host) => ({
-        plot: objectId?.(
-          (host as HTMLElement & { __overviewUPlot?: object }).__overviewUPlot
-        ),
+        host: objectId?.(host),
         canvas: objectId?.(host.querySelector('canvas')),
       })),
+      chartContent: [
+        ...document.querySelectorAll<HTMLCanvasElement>('canvas'),
+      ].map((canvas, index) => {
+        const data = canvas.toDataURL();
+        let hash = 2166136261;
+        for (let offset = 0; offset < data.length; offset += 1) {
+          hash = Math.imul(hash ^ data.charCodeAt(offset), 16777619) >>> 0;
+        }
+        return {
+          signature: `${canvas.width}x${canvas.height}:${hash.toString(16)}`,
+          nonzeroPixels: data.length,
+          seriesCount: [1, 1, 2][index] ?? 0,
+        };
+      }),
+      refreshCadence:
+        document.querySelector<HTMLSelectElement>(
+          'select[aria-label="Refresh cadence"]'
+        )?.value ?? '',
       overflowX:
         document.documentElement.scrollWidth -
         document.documentElement.clientWidth,
       bodyOverflow: document.body.scrollWidth - document.body.clientWidth,
+      rootOverflow:
+        root instanceof HTMLElement ? root.scrollWidth - root.clientWidth : 0,
       scrollOffset:
         window.scrollY + (root instanceof HTMLElement ? root.scrollTop : 0),
     };
   });
+}
+
+function expectOverflowContained(state: {
+  overflowX: number;
+  bodyOverflow: number;
+  rootOverflow: number;
+}) {
+  expect(state.overflowX).toBeLessThanOrEqual(1);
+  expect(state.bodyOverflow).toBeLessThanOrEqual(1);
+  expect(state.rootOverflow).toBeLessThanOrEqual(1);
 }

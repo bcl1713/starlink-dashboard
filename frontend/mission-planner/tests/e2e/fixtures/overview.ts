@@ -1423,7 +1423,7 @@ export const OVERVIEW_SCENARIOS = [
       observedAt: null,
       coordinate: null,
     },
-    radar: radar('2026-02-03T15:32:59Z'),
+    radar: radar(null, 'unavailable', 'radar unavailable'),
     satellites: sourceResponse(null, []),
     activeLinks: [
       {
@@ -1481,14 +1481,14 @@ export const OVERVIEW_SCENARIOS = [
         pois: null,
         route: null,
         groundEntryPoint: null,
-        radar: '2026-02-03T15:32:59Z',
+        radar: null,
       }),
       layersFor({
         radar: {
           id: 'weather-radar',
-          state: 'ok',
-          availability: 'available',
-          value: 'frame 2026-02-03T15:32:59Z',
+          state: 'unavailable',
+          availability: 'local-failure',
+          value: 'radar unavailable',
         },
         routeWest: {
           id: 'planned-route-west',
@@ -1560,7 +1560,9 @@ export const OVERVIEW_SCENARIOS = [
       inactiveRoute(
         'route-transpacific-001',
         'Seattle to Tokyo Operational Route'
-      )
+      ),
+      'unavailable',
+      'unavailable'
     ),
   },
   {

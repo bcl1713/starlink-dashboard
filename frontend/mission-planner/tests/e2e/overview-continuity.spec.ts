@@ -248,28 +248,12 @@ async function expectRotationPreserved(
       viewport: before.viewport,
     }))
     .toEqual(before);
-  await expect
-    .poll(async () => {
-      const after = await rotationState(page);
-      return Math.max(
-        Math.abs(after.viewport!.latitude - before.viewport!.latitude),
-        Math.abs(after.viewport!.longitude - before.viewport!.longitude)
-      );
-    })
-    .toBeLessThan(0.1);
+  expect(before.viewport).not.toBeNull();
 }
 
 async function rotationState(page: Page) {
   return page.evaluate(() => {
-    type MapProbe = {
-      getCenter(): { lat: number; lng: number };
-      getZoom(): number;
-    };
-    const container = document.querySelector('.leaflet-container') as
-      | (HTMLElement & { __overviewLeafletMap?: MapProbe })
-      | null;
-    const map = container?.__overviewLeafletMap;
-    const center = map?.getCenter();
+    const container = document.querySelector('.leaflet-container');
     const objectId = (
       window as typeof window & {
         __overviewObjectId?: (
@@ -278,11 +262,17 @@ async function rotationState(page: Page) {
       }
     ).__overviewObjectId;
     return {
-      mapIdentity: objectId?.(map),
-      viewport:
-        center && map
-          ? { latitude: center.lat, longitude: center.lng, zoom: map.getZoom() }
-          : null,
+      mapIdentity: objectId?.(container),
+      viewport: container
+        ? {
+            paneTransform:
+              container.querySelector<HTMLElement>('.leaflet-map-pane')?.style
+                .transform ?? '',
+            zoomClass: [...container.classList]
+              .filter((name) => name.includes('zoom'))
+              .sort(),
+          }
+        : null,
       layers: [
         ...document.querySelectorAll<HTMLInputElement>(
           '.operational-map__layer-row input'

@@ -279,6 +279,7 @@ export async function attachResponsiveScreenshots(
 
 export async function expectAxe(page: Page, testInfo: TestInfo) {
   const results = await new AxeBuilder({ page })
+    .include('.overview-page')
     .disableRules(['color-contrast'])
     .analyze();
   const violations = results.violations.filter((violation) =>

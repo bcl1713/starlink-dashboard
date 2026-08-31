@@ -19,6 +19,7 @@ test.describe('Operations overview interaction acceptance', () => {
       await expectLayerReach(page);
       await expectMapSummaryKeyboardScroll(page);
       await expectTableKeyboardScroll(page);
+      await expectPriorityOrder(page);
       await expectMapWheelBehavior(page, viewport.width < 768);
     });
   }
@@ -88,8 +89,8 @@ async function expectLayerReach(page: Page) {
   const disclosure = page.locator('summary', {
     hasText: 'Operational layers',
   });
-  await disclosure.scrollIntoViewIfNeeded();
-  await disclosure.click();
+  await tabTo(page, disclosure);
+  await page.keyboard.press('Enter');
   await expect(
     page.getByRole('checkbox', { name: 'Current position' })
   ).toBeVisible();
@@ -97,8 +98,7 @@ async function expectLayerReach(page: Page) {
 
 async function expectMapSummaryKeyboardScroll(page: Page) {
   const summary = page.getByLabel('Map status and layer summary');
-  await summary.scrollIntoViewIfNeeded();
-  await summary.focus();
+  await tabTo(page, summary);
   const maximum = await summary.evaluate(
     (element) => element.scrollHeight - element.clientHeight
   );
@@ -113,22 +113,68 @@ async function expectMapSummaryKeyboardScroll(page: Page) {
 
 async function expectTableKeyboardScroll(page: Page) {
   const table = page.getByLabel('POI quick reference table scroll area');
-  await table.scrollIntoViewIfNeeded();
-  await table.focus();
-  const before = await table.evaluate((element) => element.scrollLeft);
-  await page.keyboard.press('End');
+  await tabTo(page, table);
+  const dimensions = await table.evaluate((element) => ({
+    maxX: element.scrollWidth - element.clientWidth,
+    maxY: element.scrollHeight - element.clientHeight,
+  }));
+  if (Math.max(dimensions.maxX, dimensions.maxY) === 0) {
+    expect(dimensions).toEqual({ maxX: 0, maxY: 0 });
+    return;
+  }
+  await page.keyboard.press('Home');
+  const before = await table.evaluate((element) =>
+    Math.max(element.scrollLeft, element.scrollTop)
+  );
+  await page.keyboard.press(dimensions.maxX > 0 ? 'ArrowRight' : 'ArrowDown');
   await expect
-    .poll(() => table.evaluate((element) => element.scrollLeft))
-    .toBeGreaterThanOrEqual(before);
+    .poll(() =>
+      table.evaluate((element) =>
+        Math.max(element.scrollLeft, element.scrollTop)
+      )
+    )
+    .toBeGreaterThan(before);
+}
+
+async function expectPriorityOrder(page: Page) {
+  const order = await page.evaluate(() => {
+    const selectors = [
+      '.overview-map-region',
+      '.overview-summary-region',
+      '.overview-right-rail',
+    ];
+    const nodes = selectors.map((selector) => document.querySelector(selector));
+    return nodes.every(
+      (node, index) =>
+        node &&
+        (index === 0 ||
+          Boolean(
+            ((nodes[index - 1]?.compareDocumentPosition(node) ?? 0) &
+              Node.DOCUMENT_POSITION_FOLLOWING) !==
+              0
+          ))
+    );
+  });
+  expect(order).toBe(true);
+  await expect(
+    page.locator('.overview-right-rail .overview-poi-region')
+  ).toHaveCount(1);
 }
 
 async function expectMapWheelBehavior(page: Page, mobile: boolean) {
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.locator('.overview-map-region').scrollIntoViewIfNeeded();
+  const maximumScroll = await page.evaluate(
+    () => document.documentElement.scrollHeight - window.innerHeight
+  );
   await page.mouse.wheel(0, 240);
-  await expect
-    .poll(() => page.evaluate(() => window.scrollY))
-    .toBeGreaterThan(0);
+  if (maximumScroll > 0) {
+    await expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeGreaterThan(0);
+  } else {
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  }
   if (!mobile) return;
   await page.getByRole('button', { name: 'Enable map interaction' }).click();
   await expect(

@@ -1,28 +1,24 @@
 import type { Page } from '@playwright/test';
-
 import type { RecordedOverviewRequest } from './overview-router';
+import { collectBrowserErrors } from './overview-browser-errors';
 import {
   LIFECYCLE_LAYER_PANES,
   LIFECYCLE_OWNERSHIP_SELECTOR,
 } from './overview-lifecycle-contract';
+import {
+  NOMINAL_CHART_SERIES_COUNTS,
+  NOMINAL_FEATURE_COUNTS,
+} from './overview-nominal-layer-contract';
 import type {
   LedgerWindow,
   LifecycleSample,
   MutationEntry,
   IdentityTransition,
-  RegionSample,
 } from './overview-lifecycle-types';
-
 export async function installLifecycleObserver(page: Page) {
-  const consoleErrors: string[] = [];
-  const pageErrors: string[] = [];
-  page.on('console', (message) => {
-    if (message.type() === 'error') consoleErrors.push(message.text());
-  });
-  page.on('pageerror', (error) => pageErrors.push(error.message));
-
+  const { consoleErrors, pageErrors } = collectBrowserErrors(page);
   await page.evaluate(
-    ({ panes, ownershipSelector }) => {
+    ({ chartSeriesCounts, featureCounts, panes, ownershipSelector }) => {
       const criticalSelector = [
         '.overview-page',
         '.leaflet-container',
@@ -60,22 +56,21 @@ export async function installLifecycleObserver(page: Page) {
         node instanceof Element &&
         (node.matches(criticalSelector) ||
           node.querySelector(criticalSelector));
-      const mapObject = (element: Element | null) =>
-        objectId(
-          (element as (Element & { __overviewLeafletMap?: object }) | null)
-            ?.__overviewLeafletMap
-        );
-      const layerObject = (element: Element | null) =>
-        objectId(
-          (element as (Element & { __overviewLeafletLayer?: object }) | null)
-            ?.__overviewLeafletLayer
-        );
-      const chartObject = (element: Element | null) =>
-        objectId(
-          (element as (Element & { __overviewUPlot?: object }) | null)
-            ?.__overviewUPlot
-        );
-      const region = (key: string, selector: string): RegionSample => {
+      const canvasSignature = (canvas: HTMLCanvasElement) => {
+        const sample = new OffscreenCanvas(32, 16);
+        const context = sample.getContext('2d');
+        if (!context) return 'unreadable';
+        context.drawImage(canvas, 0, 0, 32, 16);
+        const bytes = context.getImageData(0, 0, 32, 16).data;
+        let hash = 2166136261;
+        let nonzero = 0;
+        for (const byte of bytes) {
+          if (byte !== 0) nonzero += 1;
+          hash = Math.imul(hash ^ byte, 16777619) >>> 0;
+        }
+        return `${canvas.width}x${canvas.height}:${nonzero}:${hash.toString(16)}`;
+      };
+      const region = (key: string, selector: string) => {
         const element = document.querySelector(selector);
         const box = element?.getBoundingClientRect();
         const text = (element?.textContent ?? '')
@@ -99,7 +94,7 @@ export async function installLifecycleObserver(page: Page) {
         const map = document.querySelector('.leaflet-container');
         const layers = [
           ...document.querySelectorAll('.operational-map__layer-row'),
-        ].map((row) => {
+        ].map((row, index) => {
           const input = row.querySelector('input');
           const label = input?.getAttribute('aria-label') ?? '';
           const paneName = panes[label] ?? null;
@@ -115,7 +110,8 @@ export async function installLifecycleObserver(page: Page) {
             checked: input instanceof HTMLInputElement ? input.checked : false,
             controlId: objectId(input),
             ownerId: objectId(owner),
-            objectId: layerObject(owner),
+            objectId: objectId(owner),
+            expectedCount: featureCounts[index] ?? -1,
             renderedCount: rendered.length,
             signature: ownedNodes
               .map((node) => `${objectId(node)}:${describe(node)}`)
@@ -123,7 +119,7 @@ export async function installLifecycleObserver(page: Page) {
           };
         });
         const charts = [...document.querySelectorAll('canvas')].map(
-          (canvas) => {
+          (canvas, index) => {
             const section = canvas.closest('section,article');
             const owner = canvas.closest('.uplot') ?? canvas.parentElement;
             return {
@@ -131,20 +127,21 @@ export async function installLifecycleObserver(page: Page) {
                 section?.querySelector('h2,h3')?.textContent?.trim() ?? 'chart',
               canvasId: objectId(canvas),
               seriesOwnerId: objectId(owner),
-              objectId: chartObject(
+              objectId: objectId(
                 canvas.closest('[data-testid="time-series-chart-host"]')
               ),
-              seriesCount: owner?.querySelectorAll('.u-series').length ?? 0,
-              signature: (section?.textContent ?? '')
-                .replace(/\s+/g, ' ')
-                .trim(),
+              seriesCount: chartSeriesCounts[index] ?? 0,
+              signature: canvasSignature(canvas),
             };
           }
         );
         const identities: Record<string, string | null> = {
           overviewRoot: objectId(root),
           leafletContainer: objectId(map),
-          leafletMap: mapObject(map),
+          leafletMap: (map as (Element & { _leaflet_id?: number }) | null)
+            ?._leaflet_id
+            ? `leaflet:${(map as Element & { _leaflet_id: number })._leaflet_id}`
+            : null,
           leafletOwner: objectId(map?.parentElement),
         };
         layers.forEach((layer, index) => {
@@ -209,7 +206,7 @@ export async function installLifecycleObserver(page: Page) {
           disclosures: [...document.querySelectorAll('details')].map(
             (details) => (details.open ? 'open' : 'closed')
           ),
-        } satisfies LifecycleSample;
+        };
         samples.push(sample);
       };
 
@@ -264,7 +261,9 @@ export async function installLifecycleObserver(page: Page) {
           }
         },
         stop() {
-          observer.takeRecords().forEach(recordMutation);
+          const pending = observer.takeRecords();
+          pending.forEach(recordMutation);
+          if (pending.length) collect('stop-mutation', null);
           collect('final-settle', null);
           observer.disconnect();
           return {
@@ -280,6 +279,8 @@ export async function installLifecycleObserver(page: Page) {
       };
     },
     {
+      chartSeriesCounts: NOMINAL_CHART_SERIES_COUNTS,
+      featureCounts: NOMINAL_FEATURE_COUNTS,
       panes: LIFECYCLE_LAYER_PANES,
       ownershipSelector: LIFECYCLE_OWNERSHIP_SELECTOR,
     }

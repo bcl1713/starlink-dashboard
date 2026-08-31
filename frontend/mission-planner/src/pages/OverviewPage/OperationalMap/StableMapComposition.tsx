@@ -73,11 +73,6 @@ function useStableMapBase(
   useEffect(() => {
     if (mapRef.current === map) return;
     mapRef.current = map;
-    (
-      map.getContainer() as HTMLElement & {
-        __overviewLeafletMap?: LeafletMap;
-      }
-    ).__overviewLeafletMap = map;
     map.createPane('operational-basemap').style.zIndex = String(BASEMAP_PANE);
     for (const layer of OPERATIONAL_LAYERS) {
       map.createPane(layer.id).style.zIndex = String(layer.pane);
@@ -116,11 +111,6 @@ function useStableMapBase(
       basemap.off('tileerror', markFailed);
       basemap.remove();
       scale.remove();
-      delete (
-        map.getContainer() as HTMLElement & {
-          __overviewLeafletMap?: LeafletMap;
-        }
-      ).__overviewLeafletMap;
       if (mapRef.current === map) mapRef.current = null;
     };
   }, [map, mapRef, onBasemapStatusChange]);

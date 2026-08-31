@@ -64,6 +64,7 @@ export interface LayerSample {
   readonly controlId: string | null;
   readonly ownerId: string | null;
   readonly objectId: string | null;
+  readonly expectedCount: number;
   readonly renderedCount: number;
   readonly signature: string;
 }

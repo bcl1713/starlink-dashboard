@@ -331,7 +331,7 @@ const EXPECTED_LAYER_STATE_MAPS = {
     'current-position-layer': 'stale',
   },
   'overview-backend-failure': {
-    'weather-radar': 'ok',
+    'weather-radar': 'unavailable',
     'planned-route-west': 'unavailable',
     'planned-route-east': 'unavailable',
     'active-x-band-normal': 'unavailable',
@@ -1544,7 +1544,7 @@ describe('operations overview parity contract', () => {
     const digest = createHash('sha256').update(canonical).digest('hex');
 
     expect(digest).toBe(
-      'afb878e9890474c8988a1fb95d1ab302b9951028a1f649907e8ae2591b94fe44'
+      '58a10237f8fc614597ab9c6bdaaacaa8d96fdd0d72da26a9188fa54c1f8ff4b2'
     );
     expect(canonical).toMatch(/2026-02-03T15:30:00Z/);
     expect(canonical).not.toMatch(/localhost|127\.0\.0\.1/);
