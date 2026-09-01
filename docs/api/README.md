@@ -44,9 +44,8 @@ This API documentation is organized by functional area:
 **[View All Endpoints →](./endpoints/README.md)**
 
 - **[Core Endpoints](./endpoints/core.md)** - Health, status, metrics
-- **[React Operations Overview](../operations-overview.md#monitoring-and-api-boundary)**
-  - Supported monitoring history, cached ground-entry-point, and same-origin
-    radar-tile contracts
+- **[Monitoring endpoints](./monitoring.md)** - Supported history and cached
+  ground-entry-point contracts, examples, safe errors, and same-origin boundary
 - **[Configuration](./endpoints/configuration.md)** - System configuration
 - **[POI Management](./endpoints/poi.md)** - Points of Interest
 - **[Routes](./endpoints/routes.md)** - Route management

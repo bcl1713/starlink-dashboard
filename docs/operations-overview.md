@@ -5,7 +5,7 @@ Use this guide for operating the overview, understanding its data and status,
 and moving safely between it and Grafana during the transition.
 
 **Related:** [Quick Start](./setup/quick-start.md) |
-[Monitoring API](./api/README.md) |
+[Monitoring API reference](./api/monitoring.md) |
 [Grafana transition](#grafana-transition-and-retirement) |
 [Troubleshooting](#troubleshooting-and-escalation)
 

@@ -2,6 +2,23 @@
 
 Configuration, security, and troubleshooting guide for Grafana dashboards.
 
+## React overview and Grafana dual-run
+
+`/overview` is the canonical React operator view for day-to-day operations.
+Grafana remains deployed and supported at <http://localhost:3000> as the
+dual-run fallback for existing dashboards and functions not explicitly verified
+as equivalent in React. Use the overview first for its operational map,
+telemetry, monitoring history, clocks, and controls; use Grafana for its
+existing dashboard-specific workflows or as the immediate fallback when the
+overview is interrupted. There is no Grafana retirement date in this change.
+
+For a React monitoring, radar, or CSP issue, preserve the safe HTTP status and
+timestamp, then follow the
+[operations overview troubleshooting](./operations-overview.md#troubleshooting-and-escalation).
+For Grafana-specific datasource or dashboard diagnosis, retain the procedures
+below. During rollback, keep Grafana and Prometheus volumes intact and direct
+operators to Grafana while the overview change is reverted.
+
 ## Configuration
 
 ### Environment Variables
@@ -134,8 +151,8 @@ curl -G http://localhost:9090/api/v1/query \
 dashboard-configuration investigation, not as a reason to alter simulation
 telemetry. Work through the following checks:
 
-1. In Fullscreen Overview, inspect the **Current Position** panel and its
-   marker layer. It must use the joined current frame for latitude, longitude,
+1. In Fullscreen Overview, inspect the **Current Position** panel and its marker
+   layer. It must use the joined current frame for latitude, longitude,
    altitude, and heading, rather than a raw latitude-only frame.
 2. Confirm Grafana provisioning loaded
    `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`, then

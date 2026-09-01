@@ -1,5 +1,17 @@
 # Monitoring & Alert Response
 
+## Current operator view and dual-run fallback
+
+Use `/overview` on the Mission Planner origin as the canonical React operator
+view for routine operations. Grafana remains deployed and supported as a
+dual-run fallback for existing mission dashboards and dashboard-specific views
+not explicitly verified in React; it has no approved retirement date. For an
+overview monitoring, radar, or CSP issue, follow the
+[operations overview troubleshooting runbook](../../operations-overview.md#troubleshooting-and-escalation)
+and preserve safe error/timestamp evidence. Do not expose Prometheus in browser
+configuration. During an overview interruption, use Grafana rather than
+removing, reconfiguring, or retiring it.
+
 ## Grafana Monitoring Setup
 
 ### 1. Access Grafana Dashboard
@@ -160,7 +172,9 @@ for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation pl
 ```
 
 1. **Ongoing Monitoring (during window):**
-   - Assign one operator to watch Grafana
+   - Assign one operator to watch `/overview`; use Grafana as the supported
+     fallback for the existing mission dashboard if overview operation is
+     interrupted.
    - If Ku also degraded unexpectedly: Emergency escalation (call Flight Lead
      immediately)
    - Ku should stay GREEN (always available) in timeline
@@ -173,7 +187,7 @@ for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation pl
 
 **Every 15 minutes (or per SOP interval):**
 
-1. **Check Grafana dashboard:**
+1. **Check `/overview` first; use Grafana fallback if needed:**
    - Current status: X-Band, Ka, Ku (should match timeline prediction)
    - Next degradation window (if < 30 min, send crew reminder)
    - Alert panel: Any red alerts firing?
@@ -202,7 +216,8 @@ for [duration]. Aircraft will be on Ku only. Confirm readiness and mitigation pl
    - Is it X-Band transition? Check transition duration (should be ±15 min).
    - Is it Ka gap? Check if route actually in coverage.
 1. **If deviation > 10 min:**
-   - Take screenshot of Grafana
+   - Capture the overview or Grafana fallback state, source timestamp, and safe
+     error code as applicable
    - Check system logs: `docker compose logs starlink-location | tail -50`
    - Contact mission planner with screenshot + crew observations
    - Continue monitoring (do not abort)

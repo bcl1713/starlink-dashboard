@@ -1,5 +1,17 @@
 # Grafana Troubleshooting
 
+## Dual-run use and fallback
+
+`/overview` is the canonical React operator view. Grafana remains a supported
+dual-run fallback at <http://localhost:3000> for existing dashboards and
+dashboard-specific workflows that React has not explicitly replaced. Use this
+page for Grafana datasource, provisioning, or dashboard faults; use the
+[operations overview](../../operations-overview.md#troubleshooting-and-escalation)
+for overview monitoring, radar, and CSP troubleshooting. If the overview is
+interrupted, navigate to Grafana rather than changing browser CSP or exposing a
+Prometheus endpoint. No Grafana retirement date is approved; retain this
+fallback and its existing procedures during rollback.
+
 ## Grafana Issues
 
 ### Symptom: Can't access Grafana

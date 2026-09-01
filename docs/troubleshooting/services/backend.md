@@ -84,6 +84,27 @@ sleep 10
 curl http://localhost:8000/health
 ```
 
+### Issue: React overview monitoring API is unavailable, throttled, or stale
+
+`/overview` is the canonical React operator view, while Grafana remains the
+supported dual-run fallback for existing dashboard workflows. First preserve the
+overview panel state and source timestamp, then make a bounded same-origin
+backend request:
+
+```bash
+curl 'http://localhost:8000/api/monitoring/history?range_seconds=60&step_seconds=1'
+curl http://localhost:8000/api/monitoring/ground-entry-point
+```
+
+For history, `429`, `502`, `503`, and `504` are safe service signals. Record the
+response code and `Retry-After` when present; do not add Prometheus to browser
+configuration or CSP, and do not expose upstream details. For an overview radar
+or CSP fault, see the
+[operations overview troubleshooting](../../operations-overview.md#troubleshooting-and-escalation).
+Use [Grafana troubleshooting](./grafana.md) for Grafana-specific diagnosis or as
+the immediate operational fallback; do not retire or remove it as part of this
+response.
+
 ### Issue: POI file locked or inaccessible
 
 ```bash

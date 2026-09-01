@@ -40,6 +40,12 @@ curl http://localhost:9090/-/healthy
 
 Grafana visualizes Prometheus metrics with interactive dashboards.
 
+`/overview` is the canonical React operator view for day-to-day monitoring.
+Grafana remains deployed and supported as the dual-run fallback for existing
+dashboards and functions not explicitly verified in React. Use the overview for
+current operations; use Grafana for dashboard-specific workflows or immediate
+fallback. There is no approved Grafana retirement date.
+
 ### Grafana Configuration
 
 **Directory:** `grafana/provisioning/`
@@ -61,6 +67,12 @@ curl http://localhost:3000/api/health
 # Reset admin password
 docker compose exec grafana grafana-cli admin reset-admin-password newpassword
 ```
+
+For overview monitoring, radar, or CSP troubleshooting, use the
+[operations overview runbook](../../docs/operations-overview.md#troubleshooting-and-escalation).
+Do not expose the Prometheus service endpoint in browser configuration; the
+browser accesses monitoring through same-origin backend API routes. During a
+rollback, keep Grafana and Prometheus available.
 
 ---
 

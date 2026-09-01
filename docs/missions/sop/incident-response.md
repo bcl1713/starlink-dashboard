@@ -22,7 +22,14 @@ predicted.
    - Any error messages at aircraft?
    - Aircraft position (lat/lon) if available
 
-1. **Check Grafana & logs:**
+1. **Check `/overview`, Grafana fallback, and logs:**
+
+   `/overview` is the canonical React operator view. Grafana remains the
+   supported dual-run fallback for existing dashboard-specific views, with no
+   approved retirement date. For overview monitoring, radar, or CSP failures,
+   preserve the safe status/timestamp and follow the
+   [operations overview runbook](../../operations-overview.md#troubleshooting-and-escalation);
+   do not expose Prometheus in browser configuration.
 
    ```bash
    # Check Prometheus for anomalies
@@ -130,7 +137,7 @@ transmitter hardware failure).
 
 **During Flight:**
 
-1. Monitor Grafana every 15 min
+1. Monitor `/overview` every 15 min; use Grafana as the supported fallback
 1. Match dashboard to timeline predictions
 1. Alert crew 15 min before any degradation
 1. Log status snapshots every 30 min
@@ -149,6 +156,7 @@ transmitter hardware failure).
 | Resource           | URL                                                        |
 | ------------------ | ---------------------------------------------------------- |
 | Mission Planner    | `<http://<dashboard>/ui/mission-planner`>                  |
+| React Overview     | `<http://<dashboard>/overview>` (canonical operator view)  |
 | Grafana Dashboard  | `<http://<dashboard>:3000/d/starlink/fullscreen-overview`> |
 | Prometheus Metrics | `<http://<dashboard>:9090`>                                |
 | API Documentation  | `<http://<dashboard>:8000/docs`>                           |

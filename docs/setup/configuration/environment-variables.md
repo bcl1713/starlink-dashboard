@@ -8,20 +8,21 @@
 
 All configuration is done via the `.env` file in the project root.
 
-| Variable                 | Default               | Description            | Mode |
-| ------------------------ | --------------------- | ---------------------- | ---- |
-| `STARLINK_MODE`          | `simulation`          | `simulation` or `live` | Both |
-| `STARLINK_DISH_HOST`     | `192.168.100.1`       | Dish IP address        | Live |
-| `STARLINK_DISH_PORT`     | `9200`                | Dish gRPC port         | Live |
-| `PROMETHEUS_RETENTION`   | `1y`                  | Data retention period  | Both |
-| `GRAFANA_ADMIN_PASSWORD` | `admin`               | Grafana password       | Both |
-| `STARLINK_LOCATION_PORT` | `8000`                | Backend port           | Both |
-| `PROMETHEUS_PORT`        | `9090`                | Prometheus port        | Both |
-| `GRAFANA_PORT`           | `3000`                | Grafana port           | Both |
-| `TIMEZONE_TAKEOFF`       | `America/Los_Angeles` | Takeoff timezone       | Both |
-| `TIMEZONE_LANDING`       | `Europe/London`       | Landing timezone       | Both |
-| `LOG_LEVEL`              | `INFO`                | Backend log level      | Both |
-| `JSON_LOGS`              | `true`                | JSON log format        | Both |
+| Variable                 | Default                  | Description                                  | Mode |
+| ------------------------ | ------------------------ | -------------------------------------------- | ---- |
+| `STARLINK_MODE`          | `simulation`             | `simulation` or `live`                       | Both |
+| `STARLINK_DISH_HOST`     | `192.168.100.1`          | Dish IP address                              | Live |
+| `STARLINK_DISH_PORT`     | `9200`                   | Dish gRPC port                               | Live |
+| `PROMETHEUS_URL`         | `http://prometheus:9090` | Backend-internal Prometheus service endpoint | Both |
+| `PROMETHEUS_RETENTION`   | `1y`                     | Data retention period                        | Both |
+| `GRAFANA_ADMIN_PASSWORD` | `admin`                  | Grafana password                             | Both |
+| `STARLINK_LOCATION_PORT` | `8000`                   | Backend port                                 | Both |
+| `PROMETHEUS_PORT`        | `9090`                   | Prometheus port                              | Both |
+| `GRAFANA_PORT`           | `3000`                   | Grafana port                                 | Both |
+| `TIMEZONE_TAKEOFF`       | `America/Los_Angeles`    | Takeoff timezone                             | Both |
+| `TIMEZONE_LANDING`       | `Europe/London`          | Landing timezone                             | Both |
+| `LOG_LEVEL`              | `INFO`                   | Backend log level                            | Both |
+| `JSON_LOGS`              | `true`                   | JSON log format                              | Both |
 
 ---
 
@@ -77,6 +78,19 @@ gRPC port for Starlink terminal communication (live mode only).
 ```bash
 STARLINK_DISH_PORT=9200
 ```
+
+### PROMETHEUS_URL
+
+Backend-internal endpoint used by the backend to query the operator-owned
+Prometheus service.
+
+**Default:** `http://prometheus:9090`
+
+This is a non-secret service endpoint, but operators own its value and should
+set it for their deployment topology. It is not browser configuration: do not
+inject, expose, or copy it into frontend environment variables, browser
+configuration, or client-side support captures. Browser monitoring access stays
+same-origin through the backend API.
 
 ---
 

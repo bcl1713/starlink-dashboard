@@ -10,8 +10,8 @@ Please see: **[Monitoring Documentation](./docs/README.md)**
 
 - **[Monitoring Index](./docs/README.md)** - Complete documentation
 - **[Services Overview](./docs/services-overview.md)** - Prometheus and Grafana
-- **[Performance Tuning](./docs/performance-tuning.md)** - Optimization tips
-- **[Troubleshooting](./docs/troubleshooting.md)** - Common display issues
+- **[React Operations Overview](../docs/operations-overview.md)** - Canonical
+  operator view, API boundary, fallback, and rollback guidance
 
 ---
 
@@ -34,8 +34,19 @@ monitoring/
 
 ### Service Access
 
+- **React Operations Overview:** `<http://localhost:5173/overview>` in local
+  frontend development (or the deployed Mission Planner origin plus `/overview`)
+  — canonical day-to-day operator view
 - **Prometheus:** <http://localhost:9090>
-- **Grafana:** <http://localhost:3000> (default: admin/admin)
+- **Grafana:** <http://localhost:3000> (default: admin/admin) — supported
+  dual-run fallback for existing dashboards and unverified React equivalents
+
+Use `/overview` for current operations, telemetry, history, clocks, and map
+controls. Keep Grafana procedures available for dashboard-specific work or an
+immediate overview fallback. If overview monitoring, radar, or CSP fails, use
+the linked operations runbook; do not expose Prometheus to the browser. There is
+no approved Grafana retirement date, and rollback keeps Grafana and Prometheus
+available.
 
 ### Verify Services
 
