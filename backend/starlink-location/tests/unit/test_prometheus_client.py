@@ -1095,6 +1095,46 @@ async def test_timeout_cancels_siblings_and_restores_capacity() -> None:
 
 
 @pytest.mark.asyncio
+async def test_total_history_deadline_bounds_trickling_valid_streams_and_cleans_up() -> (
+    None
+):
+    cancelled: set[str] = set()
+
+    class TrickleStream(httpx.AsyncByteStream):
+        async def __aiter__(self) -> AsyncIterator[bytes]:
+            try:
+                for _ in range(20):
+                    await asyncio.sleep(0.01)
+                    yield b" "
+            except asyncio.CancelledError:
+                cancelled.add("stream")
+                raise
+
+        async def aclose(self) -> None:
+            return None
+
+    async def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, stream=TrickleStream())
+
+    client = make_client(
+        handler,
+        timeout_seconds=1,
+        total_history_timeout_seconds=0.04,
+    )
+    started = asyncio.get_running_loop().time()
+    with pytest.raises(MonitoringPrometheusError) as exc:
+        await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    elapsed = asyncio.get_running_loop().time() - started
+
+    assert exc.value.code == "upstream_timeout"
+    assert elapsed < 0.2
+    assert cancelled == {"stream"}
+    assert client._flights == {}
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+    assert not _internal_pending_tasks()
+
+
+@pytest.mark.asyncio
 async def test_queue_full_cleans_flight_and_internal_tasks() -> None:
     release = asyncio.Event()
     all_slots_busy = asyncio.Event()

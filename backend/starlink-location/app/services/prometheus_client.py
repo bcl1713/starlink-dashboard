@@ -127,6 +127,7 @@ class MonitoringPrometheusClient:
         base_url: str | None = None,
         byte_limit: int = 256_000,
         timeout_seconds: float = 5.0,
+        total_history_timeout_seconds: float = 5.0,
         admission_timeout_seconds: float = 0.25,
         rate_limit_count: int = 12,
         rate_limit_window_seconds: int = 60,
@@ -138,6 +139,13 @@ class MonitoringPrometheusClient:
         )
         self._byte_limit = byte_limit
         self._timeout = httpx.Timeout(timeout_seconds)
+        if not isinstance(total_history_timeout_seconds, int | float) or (
+            isinstance(total_history_timeout_seconds, bool)
+            or total_history_timeout_seconds <= 0
+            or not math.isfinite(total_history_timeout_seconds)
+        ):
+            raise ValueError("invalid total monitoring history timeout")
+        self._total_history_timeout_seconds = float(total_history_timeout_seconds)
         self._admission_timeout_seconds = admission_timeout_seconds
         self._rate_limit_count = rate_limit_count
         self._rate_limit_window_seconds = rate_limit_window_seconds
@@ -225,7 +233,9 @@ class MonitoringPrometheusClient:
                 self._flights.pop(key, None)
                 flight = None
             if flight is None:
-                task = asyncio.create_task(self._fetch_history(request, end))
+                task = asyncio.create_task(
+                    self._fetch_history(request, end, time.monotonic())
+                )
                 flight = _Flight(task=task)
                 self._flights[key] = flight
                 task.add_done_callback(
@@ -270,31 +280,39 @@ class MonitoringPrometheusClient:
         self,
         request: MonitoringHistoryRequest,
         end: datetime,
+        created_at: float | None = None,
     ) -> MonitoringHistoryResponse:
-        start = end - timedelta(seconds=request.range_seconds)
-        max_points = len(PROMETHEUS_EXPRESSIONS) * (
-            request.range_seconds // request.step_seconds + 1
-        )
-        point_budget = _PointBudget(max_points)
-        tasks = [
-            asyncio.create_task(
-                self._fetch_series(
-                    metric, expr, start, end, request.step_seconds, point_budget
+        deadline = (
+            created_at or time.monotonic()
+        ) + self._total_history_timeout_seconds
+        try:
+            async with asyncio.timeout(max(0, deadline - time.monotonic())):
+                start = end - timedelta(seconds=request.range_seconds)
+                max_points = len(PROMETHEUS_EXPRESSIONS) * (
+                    request.range_seconds // request.step_seconds + 1
                 )
-            )
-            for metric, expr in PROMETHEUS_EXPRESSIONS
-        ]
-        series = await self._await_all_series_or_cancel(tasks)
-        if sum(len(item.samples) for item in series) > max_points:
-            raise MonitoringPrometheusError("too_many_points")
-        return MonitoringHistoryResponse(
-            generated_at=end,
-            window_start=start,
-            window_end=end,
-            range_seconds=request.range_seconds,
-            step_seconds=request.step_seconds,
-            series=series,
-        )
+                point_budget = _PointBudget(max_points)
+                tasks = [
+                    asyncio.create_task(
+                        self._fetch_series(
+                            metric, expr, start, end, request.step_seconds, point_budget
+                        )
+                    )
+                    for metric, expr in PROMETHEUS_EXPRESSIONS
+                ]
+                series = await self._await_all_series_or_cancel(tasks)
+                if sum(len(item.samples) for item in series) > max_points:
+                    raise MonitoringPrometheusError("too_many_points")
+                return MonitoringHistoryResponse(
+                    generated_at=end,
+                    window_start=start,
+                    window_end=end,
+                    range_seconds=request.range_seconds,
+                    step_seconds=request.step_seconds,
+                    series=series,
+                )
+        except TimeoutError as exc:
+            raise MonitoringPrometheusError("upstream_timeout") from exc
 
     async def _fetch_series(
         self,

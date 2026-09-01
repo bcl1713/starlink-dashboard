@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -257,6 +258,42 @@ def test_history_maps_safe_errors_without_leaking_details(
         assert response.headers[key] == value
     assert "prometheus" not in response.text
     assert "secret" not in response.text
+
+
+@pytest.mark.asyncio
+async def test_history_total_deadline_returns_structured_json_504() -> None:
+    class TrickleStream(httpx.AsyncByteStream):
+        async def __aiter__(self) -> AsyncIterator[bytes]:
+            for _ in range(20):
+                await asyncio.sleep(0.01)
+                yield b" "
+
+        async def aclose(self) -> None:
+            return None
+
+    async def upstream_handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, stream=TrickleStream())
+
+    prometheus = MonitoringPrometheusClient(
+        base_url="http://prometheus:9090",
+        timeout_seconds=1,
+        total_history_timeout_seconds=0.04,
+        transport=httpx.MockTransport(upstream_handler),
+        clock=lambda: UTC_NOW,
+    )
+    app.dependency_overrides[monitoring.get_monitoring_client] = lambda: prometheus
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as route_client:
+            response = await route_client.get("/api/monitoring/history")
+        assert response.status_code == 504
+        assert response.headers["content-type"].startswith("application/json")
+        assert response.json() == {"detail": {"code": "monitoring_upstream_timeout"}}
+    finally:
+        app.dependency_overrides.clear()
+        await prometheus.aclose()
 
 
 @pytest.mark.asyncio

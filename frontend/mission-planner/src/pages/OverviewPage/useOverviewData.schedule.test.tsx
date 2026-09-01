@@ -13,6 +13,7 @@ import {
   createCallCountingServices,
   deferred,
   flushOverviewEffects,
+  historyPayload,
   statusPayload,
 } from './overview-test-harness';
 
@@ -86,7 +87,7 @@ describe('useOverviewData scheduling and anchors', () => {
   });
 
   it.each([
-    [1, { selected: 30, active: 60, route: 12, gep: 1, history: 3 }],
+    [1, { selected: 30, active: 60, route: 12, gep: 1, history: 6 }],
     [10, { selected: 3, active: 6, route: 6, gep: 1, history: 3 }],
     [30, { selected: 1, active: 2, route: 2, gep: 1, history: 1 }],
   ] as const)(
@@ -123,6 +124,40 @@ describe('useOverviewData scheduling and anchors', () => {
     }
   );
 
+  it('keeps fast slots on the 5s cadence while one history flight is deferred', async () => {
+    let now = 1_777_294_800_000;
+    const history = deferred<typeof historyPayload>();
+    const { svc } = createCallCountingServices({
+      getMonitoringHistory: vi.fn(() => history.promise),
+    });
+    const { result } = renderHook(() =>
+      useOverviewData({
+        cadence: 5,
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => now,
+      })
+    );
+    await act(flushOverviewEffects);
+    expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
+    expect(result.current.snapshot.history.pending).toBe(true);
+    vi.clearAllMocks();
+
+    for (let second = 1; second <= 10; second += 1) {
+      now += 1_000;
+      await act(async () => vi.advanceTimersByTime(1_000));
+      await act(flushOverviewEffects);
+    }
+
+    expect(svc.getStatus).toHaveBeenCalledTimes(2);
+    expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+    expect(result.current.snapshot.history.pending).toBe(true);
+    history.resolve(cloneFixture(historyPayload));
+    await act(flushOverviewEffects);
+    expect(result.current.snapshot.history.pending).toBe(false);
+  });
+
   it('honors first-five due counts and coalesces cadence reset to a full new period', async () => {
     let now = 1_777_294_800_000;
     const { svc } = createCallCountingServices();
@@ -151,7 +186,7 @@ describe('useOverviewData scheduling and anchors', () => {
     expect(svc.getActiveXLink).toHaveBeenCalledTimes(10);
     expect(svc.getRouteCoordinates).toHaveBeenCalledTimes(2);
     expect(svc.getGroundEntryPoint).not.toHaveBeenCalled();
-    expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+    expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
 
     rerender({ cadence: 10 as const });
     await act(flushOverviewEffects);

@@ -20,7 +20,7 @@ and [Phase 1 contracts](01-contract-and-api.md) remain binding.
   completion/failure without moving focus.
 - Fetch 30-minute history once on entry and on manual refresh. Poll current
   telemetry at the selected interval, append/de-duplicate by server timestamp,
-  prune points older than 30 minutes, and reconcile history every 10 seconds. Do
+  prune points older than 30 minutes, and reconcile history every 5 seconds. Do
   not download a full 30-minute range every second.
 - Poll POIs and active link at selected cadence, route geometry every 5 seconds,
   GEP every 30 seconds, and radar according to the provider frame/cache policy.

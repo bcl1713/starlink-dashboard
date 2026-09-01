@@ -70,6 +70,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
   );
   const anchors = useRef(new Map<OverviewHttpSlot, number>());
   const pendingTelemetry = useRef<OverviewStatus[]>([]);
+  const historyInFlight = useRef(false);
   const seen = useRef({ cadence: false, filter: false });
   const latest = useRef({ cadence, poiFilter, radarEnabled, now, visibility });
   latest.current = { cadence, poiFilter, radarEnabled, now, visibility };
@@ -118,7 +119,8 @@ export function useOverviewData(options: UseOverviewDataOptions) {
             outcomes,
             current.history.data,
             pendingTelemetry.current,
-            nowMs
+            nowMs,
+            historyInFlight.current
           );
           pendingTelemetry.current = pending;
           return commitSlots(
@@ -135,6 +137,42 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     [setCurrentSnapshot]
   );
 
+  const startHistory = useCallback(
+    (
+      nowMs: number,
+      generation: number,
+      poiFilter: UseOverviewDataOptions['poiFilter'],
+      afterFastSlots: Promise<unknown>
+    ) => {
+      if (historyInFlight.current) return false;
+      historyInFlight.current = true;
+      anchors.current.set('history', nowMs);
+      setCurrentSnapshot(generation, (state) =>
+        startSlots(state, ['history'], latest.current.cadence === 'paused')
+      );
+      void (async () => {
+        try {
+          const outcome = await raceOverviewLifecycle(
+            registry.start('history', poiFilter),
+            lifecycle
+          );
+          await afterFastSlots;
+          if (!lifecycle.invalidated) {
+            await commitBatch(
+              [{ slot: 'history', outcome }],
+              nowMs,
+              generation
+            );
+          }
+        } finally {
+          historyInFlight.current = false;
+        }
+      })();
+      return true;
+    },
+    [commitBatch, lifecycle, registry, setCurrentSnapshot]
+  );
+
   const runCycle = useCallback(
     async (reason: OverviewCycleReason) => {
       const anchorMap = anchors.current;
@@ -148,6 +186,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
 
       try {
         if (nowMs === null || selected.length === 0) return;
+        const fastSlots = selected.filter((slot) => slot !== 'history');
         if (reason === 'manual') {
           startManualRadarRefresh();
           setCurrentSnapshot(generation, (state) =>
@@ -155,12 +194,11 @@ export function useOverviewData(options: UseOverviewDataOptions) {
           );
         }
         setCurrentSnapshot(generation, (state) =>
-          startSlots(state, selected, current.cadence === 'paused')
+          startSlots(state, fastSlots, current.cadence === 'paused')
         );
-        for (const slot of selected) anchorMap.set(slot, nowMs);
-
-        const outcomes = await Promise.all(
-          selected.map(async (slot) => ({
+        for (const slot of fastSlots) anchorMap.set(slot, nowMs);
+        const outcomesPromise = Promise.all(
+          fastSlots.map(async (slot) => ({
             slot,
             outcome: await raceOverviewLifecycle(
               registry.start(slot, current.poiFilter),
@@ -168,6 +206,10 @@ export function useOverviewData(options: UseOverviewDataOptions) {
             ),
           }))
         );
+        if (selected.includes('history')) {
+          startHistory(nowMs, generation, current.poiFilter, outcomesPromise);
+        }
+        const outcomes = await outcomesPromise;
         if (lifecycle.invalidated) return;
 
         const manualResult =
@@ -184,6 +226,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       lifecycle,
       registry,
       setCurrentSnapshot,
+      startHistory,
       startManualRadarRefresh,
     ]
   );

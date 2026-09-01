@@ -73,7 +73,8 @@ export function buildSlotCommits(
   }[],
   historyData: MonitoringHistory | undefined,
   pendingTelemetry: readonly OverviewStatus[],
-  nowMs: number
+  nowMs: number,
+  historyPending = false
 ): { commits: SlotCommit[]; pending: OverviewStatus[] } {
   const commits: SlotCommit[] = [];
   const accepted: OverviewStatus[] = [];
@@ -110,7 +111,10 @@ export function buildSlotCommits(
     historyOutcome?.ok === true
       ? ['history', { ok: true, data: history }]
       : historyOutcome === undefined
-        ? ['history', { ok: false, error: null, data: history }]
+        ? [
+            'history',
+            { ok: false, error: null, data: history, pending: historyPending },
+          ]
         : ['history', { ...historyOutcome, data: history }];
   return {
     commits: [...commits.filter(([slot]) => slot !== 'history'), historyCommit],

@@ -133,6 +133,7 @@ export type OverviewSlotOutcome =
       error: OverviewSourceError | null;
       data?: OverviewSlotData;
       manualFailure?: boolean;
+      pending?: boolean;
     };
 export interface OverviewDataController extends OverviewRefreshController {
   readonly radarRefreshToken: number;

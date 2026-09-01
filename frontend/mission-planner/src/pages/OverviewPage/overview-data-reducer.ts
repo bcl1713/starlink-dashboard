@@ -68,7 +68,7 @@ export function commitSlots(
       writable[slot] = phaseSlot({
         ...(previous as AnySlot),
         data: outcome.data ?? previous.data,
-        pending: false,
+        pending: outcome.pending ?? false,
         paused,
         freshness,
         sourceTimestamp: timestamp,

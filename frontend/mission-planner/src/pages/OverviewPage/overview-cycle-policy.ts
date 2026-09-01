@@ -23,7 +23,7 @@ const PERIODS = {
   activeLink: 1,
   route: 5,
   groundEntryPoint: 30,
-  history: 10,
+  history: 5,
 } as const satisfies Record<OverviewHttpSlot, number>;
 
 export function beginOverviewCyclePlan(

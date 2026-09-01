@@ -31,6 +31,9 @@ export function batchAnnouncement(
         : null;
   if (initial) return dedupe(snapshot.announcement, initial);
 
+  const staleSourceRemains = Object.values(after).some(
+    (slot) => slot.freshness === 'stale'
+  );
   for (const kind of ['error', 'stale', 'recovery'] as const) {
     for (const source of SOURCE_ORDER) {
       const previous = before[source];
@@ -43,6 +46,7 @@ export function batchAnnouncement(
               next.freshness === 'stale'
             ? `${SOURCE_LABELS[source]} data is stale.`
             : kind === 'recovery' &&
+                !staleSourceRemains &&
                 (previous.error || previous.freshness === 'stale') &&
                 !next.error &&
                 next.freshness !== 'stale'

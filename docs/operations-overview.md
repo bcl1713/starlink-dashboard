@@ -57,6 +57,9 @@ Select **Overview controls** to reveal the controls. They reflow into the
 responsive layout rather than disappearing on narrow screens.
 
 - Choose a refresh cadence of 1, 2, 5, 10, or 30 seconds, or **Paused**.
+- History follows the selected cadence but is never requested more often than
+  every 5 seconds (12 requests per minute). A pending history request is shared;
+  it does not delay current status or other overview sources.
 - Select a POI category, then use **Refresh overview** for an immediate refresh.
   The button remains the focus target while its request is pending.
 - Add, label, move, or remove world clocks in the clock settings. UTC (Zulu)
