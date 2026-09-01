@@ -46,9 +46,11 @@ function nextDelay(
       due !== null &&
       due !== undefined &&
       Number.isFinite(due) &&
-      Number.isFinite(scheduledCurrent) &&
-      due > scheduledCurrent
+      Number.isFinite(scheduledCurrent)
     ) {
+      // An idle overdue slot returns to the global cadence. A coalesced active
+      // tick is dispatched directly at settlement, not replayed by this timer.
+      if (due <= scheduledCurrent) return cadenceDelay;
       // Keep the global cadence alive; the single timer wakes at whichever
       // deadline is sooner, including the history slot between global ticks.
       return Math.min(cadenceDelay, due - scheduledCurrent);
@@ -72,6 +74,8 @@ export function useOverviewRefresh(
   const latestRef = useRef({ onRefresh, now, nextScheduledAt, scheduledNow });
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
+  const pendingScheduledRef = useRef(false);
+  const settleActiveRef = useRef<() => void>(() => {});
   const queuedManualRef = useRef<{
     promise: Promise<void>;
     resolve: () => void;
@@ -108,9 +112,9 @@ export function useOverviewRefresh(
     runRefresh('manual')
       .then(queued.resolve, queued.reject)
       .finally(() => {
-        activeRef.current = false;
         manualActiveRef.current = null;
         rerender();
+        settleActiveRef.current();
       })
       .catch(() => {});
   }, [rerender, runRefresh]);
@@ -143,11 +147,18 @@ export function useOverviewRefresh(
     mountedRef.current = true;
     let timeout: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
-    const schedule = () => {
+    const clearTimer = () => {
+      if (timeout !== null) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+    };
+    const schedule = (skipOverdueHistory = false) => {
+      clearTimer();
       const delay = nextDelay(
         cadence,
         latestRef.current.now,
-        latestRef.current.nextScheduledAt,
+        skipOverdueHistory ? undefined : latestRef.current.nextScheduledAt,
         latestRef.current.scheduledNow
       );
       if (delay === null || cancelled) {
@@ -155,26 +166,49 @@ export function useOverviewRefresh(
       }
       timeout = setTimeout(() => {
         timeout = null;
-        if (!cancelled) {
-          schedule();
-        }
-        if (cancelled || activeRef.current) {
+        if (cancelled) return;
+        if (activeRef.current) {
+          // Additional ticks collapse into one intent. Keep one ordinary timer
+          // armed while the cycle is busy without spinning on an overdue slot.
+          pendingScheduledRef.current = true;
+          schedule(true);
           return;
         }
-        activeRef.current = true;
-        runRefresh('scheduled')
-          .catch(() => {})
-          .finally(() => {
-            activeRef.current = false;
-            runManualQueue();
-          });
+        runScheduled();
       }, delay);
     };
+    const runScheduled = () => {
+      if (cancelled || !mountedRef.current || activeRef.current) return;
+      activeRef.current = true;
+      // Keep the ordinary cadence armed during the whole cycle. A passed
+      // history deadline is coalesced by that active timer.
+      schedule(true);
+      runRefresh('scheduled')
+        .catch(() => {})
+        .finally(() => settleActiveRef.current());
+    };
+    const settleActive = () => {
+      activeRef.current = false;
+      if (cancelled || !mountedRef.current) return;
+      if (pendingScheduledRef.current) {
+        pendingScheduledRef.current = false;
+        clearTimer();
+        runScheduled();
+        return;
+      }
+      if (queuedManualRef.current) {
+        runManualQueue();
+        return;
+      }
+      schedule();
+    };
+    settleActiveRef.current = settleActive;
     schedule();
     return () => {
       cancelled = true;
-      if (timeout !== null) {
-        clearTimeout(timeout);
+      clearTimer();
+      if (settleActiveRef.current === settleActive) {
+        settleActiveRef.current = () => {};
       }
     };
   }, [cadence, nextScheduledAt, now, runManualQueue, runRefresh]);

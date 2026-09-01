@@ -401,6 +401,113 @@ describe('useOverviewData scheduling and anchors', () => {
     }
   );
 
+  it('recovers one overdue history deadline when fast slots keep a scheduled cycle active', async () => {
+    vi.setSystemTime(0);
+    let now = 0;
+    const fastSlots = deferred<typeof statusPayload>();
+    const historyStarts: number[] = [];
+    const { svc } = createCallCountingServices({
+      getStatus: vi
+        .fn()
+        .mockResolvedValueOnce(cloneFixture(statusPayload))
+        .mockImplementationOnce(() => fastSlots.promise)
+        .mockResolvedValue(cloneFixture(statusPayload)),
+      getMonitoringHistory: vi.fn(() => {
+        historyStarts.push(now);
+        return Promise.resolve(cloneFixture(historyPayload));
+      }),
+    });
+    const { unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 5,
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => now,
+        historyScheduleNow: () => now,
+      })
+    );
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0]);
+
+    now = 4_999;
+    await act(async () => vi.advanceTimersByTime(4_999));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0]);
+
+    now = 5_000;
+    await act(async () => vi.advanceTimersByTime(1));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0, 5_000]);
+
+    now = 10_000;
+    await act(async () => vi.advanceTimersByTime(5_000));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0, 5_000]);
+
+    fastSlots.resolve(cloneFixture(statusPayload));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0, 5_000, 10_000]);
+    expect(historyStarts[2]! - 10_000).toBeLessThanOrEqual(50);
+    unmount();
+  });
+
+  it('retains the next history deadline when cadence reset is pending during active work', async () => {
+    vi.setSystemTime(0);
+    let now = 0;
+    const fastSlots = deferred<typeof statusPayload>();
+    const historyStarts: number[] = [];
+    const { svc } = createCallCountingServices({
+      getStatus: vi
+        .fn()
+        .mockResolvedValueOnce(cloneFixture(statusPayload))
+        .mockImplementationOnce(() => fastSlots.promise)
+        .mockResolvedValue(cloneFixture(statusPayload)),
+      getMonitoringHistory: vi.fn(() => {
+        historyStarts.push(now);
+        return Promise.resolve(cloneFixture(historyPayload));
+      }),
+    });
+    const { rerender, unmount } = renderHook(
+      ({ cadence }) =>
+        useOverviewData({
+          cadence,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: () => now,
+          historyScheduleNow: () => now,
+        }),
+      { initialProps: { cadence: 1 as OverviewRefreshCadence } }
+    );
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0]);
+
+    now = 1_000;
+    await act(async () => vi.advanceTimersByTime(1_000));
+    await act(flushOverviewEffects);
+    rerender({ cadence: 5 });
+    await act(flushOverviewEffects);
+
+    now = 5_000;
+    await act(async () => vi.advanceTimersByTime(4_000));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0]);
+    fastSlots.resolve(cloneFixture(statusPayload));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0]);
+
+    now = 9_999;
+    await act(async () => vi.advanceTimersByTime(4_999));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0]);
+    now = 10_000;
+    await act(async () => vi.advanceTimersByTime(1));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0, 10_000]);
+    unmount();
+  });
+
   it('keeps fast slots on the 5s cadence while one history flight is deferred', async () => {
     let now = 1_777_294_800_000;
     const history = deferred<typeof historyPayload>();

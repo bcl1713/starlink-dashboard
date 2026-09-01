@@ -178,35 +178,33 @@ describe('useOverviewRefresh', () => {
     expect(result.current.isManualRefreshPending).toBe(false);
   });
 
-  it('drops scheduled ticks while active and queues one manual after scheduled rejection', async () => {
+  it('coalesces active scheduled ticks into one deferred scheduled refresh', async () => {
     let now = 0;
     const gate = deferred();
     const calls: OverviewRefreshReason[] = [];
     const onRefresh = vi.fn((reason: OverviewRefreshReason) => {
       calls.push(reason);
-      if (reason === 'scheduled') {
-        return gate.promise;
-      }
-      return Promise.resolve();
+      return calls.length === 1 ? gate.promise : Promise.resolve();
     });
-    const { result } = renderHook(() =>
+    renderHook(() =>
       useOverviewRefresh({ cadence: 1, now: () => now, onRefresh })
     );
 
     now = 1000;
     await act(async () => vi.advanceTimersByTime(1000));
-    expect(vi.getTimerCount()).toBe(1);
+    expect(calls).toEqual(['scheduled']);
     now = 5000;
     await act(async () => vi.advanceTimersByTime(4000));
-    expect(onRefresh).toHaveBeenCalledTimes(1);
+    expect(calls).toEqual(['scheduled']);
     expect(vi.getTimerCount()).toBe(1);
-    const queued = result.current.manualRefresh();
-    gate.reject(new Error('scheduled failed'));
-    await act(async () => expect(queued).resolves.toBeUndefined());
-    expect(calls).toEqual(['scheduled', 'manual']);
+
+    gate.resolve();
+    await act(async () => gate.promise);
+    expect(calls).toEqual(['scheduled', 'scheduled']);
+    expect(vi.getTimerCount()).toBe(1);
   });
 
-  it('keeps one timer through slow scheduled ticks and resumes next boundary after settlement', async () => {
+  it('coalesces slow scheduled ticks once before resuming later boundaries', async () => {
     let now = 0;
     const gate = deferred();
     const calls: OverviewRefreshReason[] = [];
@@ -235,7 +233,7 @@ describe('useOverviewRefresh', () => {
     await act(async () => gate.promise);
     now = 6000;
     await act(async () => vi.advanceTimersByTime(1000));
-    expect(calls).toEqual(['scheduled', 'scheduled']);
+    expect(calls).toEqual(['scheduled', 'scheduled', 'scheduled']);
     expect(vi.getTimerCount()).toBe(1);
   });
 
@@ -405,7 +403,7 @@ describe('useOverviewRefresh', () => {
     );
   });
 
-  it('replaces cadence timers while scheduled work is unresolved', async () => {
+  it('coalesces a tick after replacing cadence timers during scheduled work', async () => {
     let now = 0;
     const gate = deferred();
     const calls: OverviewRefreshReason[] = [];
@@ -435,7 +433,7 @@ describe('useOverviewRefresh', () => {
     await act(async () => gate.promise);
     now = 10000;
     await act(async () => vi.advanceTimersByTime(5000));
-    expect(calls).toEqual(['scheduled', 'scheduled']);
+    expect(calls).toEqual(['scheduled', 'scheduled', 'scheduled']);
   });
 
   it('rejects queued manual work on unmount and keeps combined timers bounded', async () => {
