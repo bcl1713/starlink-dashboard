@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from prometheus_client import generate_latest
+from typing_extensions import Self
+
 from app.core.metrics import REGISTRY
 from app.services import ground_entry_point as gep
 from app.services.ground_entry_point import (
@@ -13,8 +16,6 @@ from app.services.ground_entry_point import (
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
-from prometheus_client import generate_latest
-from typing_extensions import Self
 
 
 def setup_function() -> None:
@@ -380,7 +381,11 @@ def test_resolver_suppresses_dns_polling_until_interval_elapses() -> None:
 
     assert first is not None
     assert second is first
-    assert third is first
+    assert third is not None
+    assert third is not first
+    assert third.observed_at is not None
+    assert first.observed_at is not None
+    assert third.observed_at >= first.observed_at
     assert resolve_calls == [10.0, 11.0]
 
 
@@ -420,7 +425,11 @@ def test_resolver_geolocates_only_when_public_ip_changes() -> None:
     third = resolver.refresh()
 
     assert first is not None
-    assert second is first
+    assert second is not None
+    assert second is not first
+    assert second.observed_at is not None
+    assert first.observed_at is not None
+    assert second.observed_at >= first.observed_at
     assert third is not None
     assert third.ip == "198.51.100.24"
     assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
@@ -462,6 +471,78 @@ def test_resolver_reuses_cached_geolocation_when_prior_ip_returns() -> None:
     assert first.ip == third.ip
     assert third.city == "Omaha"
     assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
+
+
+def test_same_ip_successful_revalidation_advances_observed_at_without_regeolocating() -> (
+    None
+):
+    observed_times = iter(
+        [
+            datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc),
+            datetime(2026, 8, 29, 12, 1, tzinfo=timezone.utc),
+        ]
+    )
+    geolocate_calls: list[str] = []
+    resolver = GroundEntryPointResolver(
+        ip_resolver=lambda: "203.0.113.10",
+        geolocator=lambda ip: (
+            geolocate_calls.append(ip)
+            or GroundEntryPoint(
+                ip=ip,
+                city="Omaha",
+                country="US",
+                latitude=41.2565,
+                longitude=-95.9345,
+            )
+        ),
+        poll_interval_seconds=0.0,
+        clock=lambda: next(observed_times),
+    )
+
+    first = resolver.refresh()
+    second = resolver.refresh()
+
+    assert first is not None
+    assert second is not None
+    assert second.city == first.city
+    assert second.latitude == first.latitude
+    assert second.observed_at == datetime(2026, 8, 29, 12, 1, tzinfo=timezone.utc)
+    assert geolocate_calls == ["203.0.113.10"]
+
+
+def test_failed_same_ip_revalidation_retains_prior_observation_without_freshening() -> (
+    None
+):
+    observed = datetime(2026, 8, 29, 12, 0, tzinfo=timezone.utc)
+    calls = 0
+
+    def resolve_ip() -> str:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            return "203.0.113.10"
+        raise TimeoutError("resolver unavailable")
+
+    resolver = GroundEntryPointResolver(
+        ip_resolver=resolve_ip,
+        geolocator=lambda ip: GroundEntryPoint(
+            ip=ip,
+            city="Omaha",
+            country="US",
+            latitude=41.2565,
+            longitude=-95.9345,
+        ),
+        poll_interval_seconds=0.0,
+        clock=lambda: observed,
+    )
+
+    first = resolver.refresh()
+    second = resolver.refresh()
+
+    assert first is not None
+    assert second is first
+    assert second is not None
+    assert second.observed_at == observed
 
 
 def test_configured_ground_entry_point_success_gets_current_observation(

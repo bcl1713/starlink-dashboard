@@ -21,12 +21,25 @@ export function assertHistoryCadenceEvidence(
       `Expected one captured page context, received ${contexts.map((context) => context.contextId).join(', ')}`
     );
   }
+  const history = evidence.cdpNetworkLedger
+    .filter((record) => record.url === '/api/monitoring/history')
+    .sort((left, right) => left.requestTimestamp - right.requestTimestamp);
+  for (let index = 1; index < history.length; index += 1) {
+    const previous = history[index - 1]!;
+    const current = history[index]!;
+    if (
+      previous.terminalTimestamp === null ||
+      previous.terminalTimestamp > current.requestTimestamp
+    ) {
+      throw new Error(`Overlapping history requests: ${previous.cdpRequestId}`);
+    }
+  }
   assertSettledSuccessfulHistoryStartDeltas(
-    contexts[0]!.starts.map((requestTimestamp) => ({
-      url: '/api/monitoring/history',
-      requestTimestamp,
-      terminalOutcome: 'finished' as const,
-      status: 200,
+    evidence.cdpNetworkLedger.map((record) => ({
+      url: record.url,
+      requestTimestamp: record.requestTimestamp,
+      terminalOutcome: record.terminalOutcome,
+      status: record.status,
     })),
     contract
   );

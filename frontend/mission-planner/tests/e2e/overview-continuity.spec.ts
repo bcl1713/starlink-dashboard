@@ -9,7 +9,11 @@ import {
   captureCdpContinuity,
   installElementIdentity,
 } from './support/overview-cdp-capture';
-import { assertContinuityEvidence } from './support/overview-cdp-assertions';
+import {
+  assertContinuityEvidence,
+  assertHistoryCadenceEvidence,
+} from './support/overview-cdp-assertions';
+import { startCdpNetworkCapture } from './support/overview-cdp-network';
 import {
   installOverviewRouter,
   type OverviewRouter,
@@ -24,6 +28,41 @@ test.describe('Operations overview temporal continuity', () => {
   test.describe.configure({ mode: 'serial' });
 
   for (const viewport of continuityViewports) {
+    test(`records six scheduled history starts after bootstrap at ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      // Arm browser CDP before navigation so the first history request is the
+      // retained bootstrap, never an inferred fixture event.
+      const cdp = await startCdpNetworkCapture(page, async () => {});
+      try {
+        const router = await installOverviewRouter(page);
+        await openOverview(page, router.scenario().nowIso);
+        await expect
+          .poll(() => settledHistoryRecords(cdp.records()).length, {
+            timeout: 40_000,
+          })
+          .toBe(7);
+        await cdp.stop();
+        const records = cdp.records();
+        const history = settledHistoryRecords(records);
+        expect(history).toHaveLength(7);
+        assertHistoryCadenceEvidence(
+          { cdpNetworkLedger: records } as Awaited<
+            ReturnType<typeof captureCdpContinuity>
+          >,
+          { intervalSeconds: 5, maxLateJitterSeconds: 0.05 }
+        );
+        expect(
+          router.records.some(
+            (record) => record.kind === 'manual' && record.source === 'history'
+          )
+        ).toBe(false);
+      } finally {
+        await cdp.stop();
+      }
+    });
+
     test(`keeps stable regions alive across scheduled and manual refreshes at ${viewport.name}`, async ({
       page,
     }, testInfo) => {
@@ -114,6 +153,17 @@ test.describe('Operations overview temporal continuity', () => {
     await expectRotationPreserved(page, before);
   });
 });
+
+function settledHistoryRecords(
+  records: Awaited<ReturnType<typeof captureCdpContinuity>>['cdpNetworkLedger']
+) {
+  return records.filter(
+    (record) =>
+      record.url === '/api/monitoring/history' &&
+      record.terminalOutcome === 'finished' &&
+      record.status === 200
+  );
+}
 
 async function settleInitialRequests(
   router: OverviewRouter,

@@ -98,7 +98,10 @@ export interface UseOverviewDataOptions {
   readonly poiFilter: OverviewPOIFilter;
   readonly radarEnabled: boolean;
   readonly services?: OverviewDataServices;
+  /** Wall-clock milliseconds used only for payload freshness and UI state. */
   readonly now?: () => number;
+  /** Monotonic milliseconds used only to schedule history network starts. */
+  readonly historyScheduleNow?: () => number;
   readonly visibility?: OverviewVisibility;
 }
 export type OverviewInitialState =

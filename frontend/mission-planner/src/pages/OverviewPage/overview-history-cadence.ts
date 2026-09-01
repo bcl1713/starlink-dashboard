@@ -97,8 +97,18 @@ export function historyStartsByContext(
 function settledSuccessfulHistoryStarts(
   records: readonly HistoryStartObservation[]
 ): number[] {
-  return records
-    .filter(isSettledSuccessfulHistoryStart)
+  const historyRecords = records.filter(
+    (record) => record.url === '/api/monitoring/history'
+  );
+  const invalid = historyRecords.find(
+    (record) => !isSettledSuccessfulHistoryStart(record)
+  );
+  if (invalid) {
+    throw new Error(
+      `History request did not settle successfully: ${invalid.terminalOutcome}/${invalid.status}`
+    );
+  }
+  return historyRecords
     .map((record) => record.requestTimestamp)
     .sort((left, right) => left - right);
 }

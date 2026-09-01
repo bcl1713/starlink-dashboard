@@ -33,7 +33,13 @@ describe('assertSettledSuccessfulHistoryStartDeltas', () => {
         [historyStart(5), { ...historyStart(10), terminalOutcome: 'pending' }],
         { intervalSeconds: 5, maxLateJitterSeconds: 0.05 }
       )
-    ).toThrow('Fewer than two');
+    ).toThrow('History request did not settle successfully');
+    expect(() =>
+      assertSettledSuccessfulHistoryStartDeltas(
+        [historyStart(5), { ...historyStart(10), status: 429 }],
+        { intervalSeconds: 5, maxLateJitterSeconds: 0.05 }
+      )
+    ).toThrow('History request did not settle successfully');
   });
 
   it('keeps page contexts separate and excludes each context bootstrap', () => {

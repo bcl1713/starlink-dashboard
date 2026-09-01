@@ -49,6 +49,51 @@ describe('useOverviewData scheduling and anchors', () => {
     expect(dueSlots('scheduled', 5, anchors, 15_038)).toContain('history');
   });
 
+  it('schedules from a rounded post-dispatch monotonic history anchor without an early browser start', async () => {
+    vi.setSystemTime(0);
+    let synchronousSetupMs = 0;
+    const historyStarts: number[] = [];
+    const { svc } = createCallCountingServices({
+      getMonitoringHistory: vi.fn(() => {
+        historyStarts.push(Date.now());
+        // Model synchronous fast/setup work between transport dispatch and the
+        // scheduler's anchor capture, as observed in the browser trace.
+        synchronousSetupMs = 2.809;
+        queueMicrotask(() => {
+          synchronousSetupMs = 0;
+        });
+        return Promise.resolve(cloneFixture(historyPayload));
+      }),
+    });
+    const { unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 1,
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: Date.now,
+        historyScheduleNow: () => Date.now() + synchronousSetupMs,
+      })
+    );
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0]);
+    expect(vi.getTimerCount()).toBe(1);
+
+    // The transport started at 0, but its scheduling anchor must be captured
+    // immediately afterwards and rounded upward from 2.809ms to 3ms. The next
+    // real start therefore cannot be earlier than 5003ms after dispatch.
+    await act(async () => vi.advanceTimersByTime(5_000));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([0]);
+    await act(async () => vi.advanceTimersByTime(3));
+    await act(flushOverviewEffects);
+
+    expect(historyStarts).toEqual([0, 5_003]);
+    expect(historyStarts[1]! - historyStarts[0]!).toBeGreaterThanOrEqual(5_003);
+    expect(vi.getTimerCount()).toBe(1);
+    unmount();
+  });
+
   it('starts selected five-second history on its exact slot with one timer and shifts late work forward', async () => {
     let now = 5_019;
     const historyStarts: number[] = [];

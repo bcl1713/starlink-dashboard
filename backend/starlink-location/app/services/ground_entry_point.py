@@ -13,6 +13,7 @@ from ipaddress import AddressValueError, IPv4Address
 
 import dns.resolver
 import httpx
+
 from app.core.metrics.prometheus_metrics import (
     starlink_ground_entry_point_info,
     starlink_ground_entry_point_latitude_degrees,
@@ -129,7 +130,14 @@ class GroundEntryPointResolver:
             return self._current_entry
 
         if ip == self._current_ip and self._current_entry is not None:
-            return self._current_entry
+            # A successful same-IP revalidation is fresh evidence even though
+            # geolocation fields remain cached; resolution failures returned
+            # above deliberately retain the prior observation unchanged.
+            observed = self._with_observed_at(
+                self._current_entry, preserve_existing=False
+            )
+            self._current_entry = observed
+            return observed
 
         cached_entry = self._entry_cache.get(ip)
         if cached_entry is not None:

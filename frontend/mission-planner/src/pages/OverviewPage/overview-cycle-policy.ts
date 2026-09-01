@@ -30,7 +30,8 @@ export function beginOverviewCyclePlan(
   lifecycle: OverviewLifecycle,
   reason: OverviewCycleReason,
   current: Pick<UseOverviewDataOptions, 'cadence' | 'now' | 'visibility'>,
-  anchors: Map<OverviewHttpSlot, number>
+  anchors: Map<OverviewHttpSlot, number>,
+  historyScheduleNow: number | null = nowMsOrNull(current.now ?? Date.now)
 ): {
   generation: number;
   nowMs: number | null;
@@ -57,7 +58,13 @@ export function beginOverviewCyclePlan(
   return {
     generation,
     nowMs,
-    selected: dueSlots(reason, current.cadence, anchors, nowMs),
+    selected: dueSlots(
+      reason,
+      current.cadence,
+      anchors,
+      nowMs,
+      historyScheduleNow
+    ),
   };
 }
 
@@ -75,15 +82,30 @@ export function dueSlots(
   reason: OverviewCycleReason,
   cadence: UseOverviewDataOptions['cadence'],
   anchors: Map<OverviewHttpSlot, number>,
-  nowMs: number
+  nowMs: number,
+  historyScheduleNow: number | null = nowMs
 ): OverviewHttpSlot[] {
   if (reason === 'manual' || reason === 'bootstrap') return [...HTTP_SLOTS];
   if (cadence === 'paused') return [];
   return HTTP_SLOTS.filter((slot) => {
     const previous = anchors.get(slot);
     const period = Math.max(cadence, PERIODS[slot]) * 1000;
-    return previous === undefined || Math.max(0, nowMs - previous) >= period;
+    const slotNow = slot === 'history' ? historyScheduleNow : nowMs;
+    return (
+      previous === undefined ||
+      slotNow === null ||
+      Math.max(0, slotNow - previous) >= period
+    );
   });
+}
+
+function nowMsOrNull(now: () => number): number | null {
+  try {
+    const value = now();
+    return Number.isFinite(value) ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 export const cadenceSeconds = (cadence: UseOverviewDataOptions['cadence']) =>

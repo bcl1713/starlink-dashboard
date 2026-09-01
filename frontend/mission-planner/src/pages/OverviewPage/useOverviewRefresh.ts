@@ -6,6 +6,8 @@ export interface UseOverviewRefreshOptions {
   cadence: OverviewRefreshCadence;
   onRefresh(reason: OverviewRefreshReason): Promise<void>;
   now?: () => number;
+  /** Monotonic clock paired with `nextScheduledAt`, never UI freshness. */
+  scheduledNow?: () => number;
   /** Absolute slot-relative deadline; must be finite and later than now. */
   nextScheduledAt?: () => number | null;
 }
@@ -19,7 +21,8 @@ const UNMOUNTED_ERROR = 'Overview refresh unmounted';
 function nextDelay(
   cadence: OverviewRefreshCadence,
   now: () => number,
-  nextScheduledAt?: () => number | null
+  nextScheduledAt?: () => number | null,
+  scheduledNow: () => number = now
 ): number | null {
   if (cadence === 'paused') {
     return null;
@@ -38,15 +41,17 @@ function nextDelay(
   const cadenceDelay = remainder === 0 ? interval : interval - remainder;
   try {
     const due = nextScheduledAt?.();
+    const scheduledCurrent = scheduledNow();
     if (
       due !== null &&
       due !== undefined &&
       Number.isFinite(due) &&
-      due > current
+      Number.isFinite(scheduledCurrent) &&
+      due > scheduledCurrent
     ) {
       // Keep the global cadence alive; the single timer wakes at whichever
       // deadline is sooner, including the history slot between global ticks.
-      return Math.min(cadenceDelay, due - current);
+      return Math.min(cadenceDelay, due - scheduledCurrent);
     }
   } catch {
     // A supplemental slot must never disable the cadence timer.
@@ -57,8 +62,14 @@ function nextDelay(
 export function useOverviewRefresh(
   options: UseOverviewRefreshOptions
 ): OverviewRefreshController {
-  const { cadence, onRefresh, now = Date.now, nextScheduledAt } = options;
-  const latestRef = useRef({ onRefresh, now, nextScheduledAt });
+  const {
+    cadence,
+    onRefresh,
+    now = Date.now,
+    nextScheduledAt,
+    scheduledNow = now,
+  } = options;
+  const latestRef = useRef({ onRefresh, now, nextScheduledAt, scheduledNow });
   const mountedRef = useRef(true);
   const activeRef = useRef(false);
   const queuedManualRef = useRef<{
@@ -70,8 +81,8 @@ export function useOverviewRefresh(
   const [isManualRefreshPending, setManualRefreshPending] = useState(false);
 
   useEffect(() => {
-    latestRef.current = { onRefresh, now, nextScheduledAt };
-  }, [nextScheduledAt, onRefresh, now]);
+    latestRef.current = { onRefresh, now, nextScheduledAt, scheduledNow };
+  }, [nextScheduledAt, onRefresh, now, scheduledNow]);
 
   const runRefresh = useCallback((reason: OverviewRefreshReason) => {
     return Promise.resolve().then(() => latestRef.current.onRefresh(reason));
@@ -136,7 +147,8 @@ export function useOverviewRefresh(
       const delay = nextDelay(
         cadence,
         latestRef.current.now,
-        latestRef.current.nextScheduledAt
+        latestRef.current.nextScheduledAt,
+        latestRef.current.scheduledNow
       );
       if (delay === null || cancelled) {
         return;

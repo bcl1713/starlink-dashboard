@@ -57,6 +57,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     radarEnabled,
     services: providedServices,
     now = Date.now,
+    historyScheduleNow = defaultHistoryScheduleNow,
     visibility = DEFAULT_VISIBILITY,
   } = options;
   const [snapshot, setSnapshot] = useState(emptyOverviewSnapshot);
@@ -76,8 +77,22 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     number | null
   >(null);
   const seen = useRef({ cadence: false, filter: false });
-  const latest = useRef({ cadence, poiFilter, radarEnabled, now, visibility });
-  latest.current = { cadence, poiFilter, radarEnabled, now, visibility };
+  const latest = useRef({
+    cadence,
+    poiFilter,
+    radarEnabled,
+    now,
+    historyScheduleNow,
+    visibility,
+  });
+  latest.current = {
+    cadence,
+    poiFilter,
+    radarEnabled,
+    now,
+    historyScheduleNow,
+    visibility,
+  };
 
   const setCurrentSnapshot = useCallback(
     (generation: number, update: (snapshot: DataSnapshot) => DataSnapshot) =>
@@ -146,23 +161,28 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       nowMs: number,
       generation: number,
       poiFilter: UseOverviewDataOptions['poiFilter'],
-      afterFastSlots: Promise<unknown>
+      afterFastSlots: Promise<unknown>,
+      scheduleNow: () => number
     ) => {
       if (historyInFlight.current) return false;
       const attempt = ++historyAttempt.current;
       historyInFlight.current = true;
-      anchors.current.set('history', nowMs);
-      setHistoryScheduleAnchor(nowMs);
       setCurrentSnapshot(generation, (state) =>
         startSlots(state, ['history'], latest.current.cadence === 'paused')
       );
       void (async () => {
         let outcome: OverviewSlotOutcome;
         try {
-          outcome = await raceOverviewLifecycle(
-            registry.start('history', poiFilter),
-            lifecycle
-          );
+          // `registry.start` synchronously dispatches the browser request. Its
+          // independent monotonic anchor is captured immediately afterwards and
+          // rounded upward so the following transport cannot start early.
+          const request = registry.start('history', poiFilter);
+          const anchor = roundedMonotonicNow(scheduleNow);
+          if (anchor !== null) {
+            anchors.current.set('history', anchor);
+            setHistoryScheduleAnchor(anchor);
+          }
+          outcome = await raceOverviewLifecycle(request, lifecycle);
         } finally {
           // Transport ownership ends here.  Waiting for the concurrent fast
           // slots must not consume the next history attempt's single-flight.
@@ -185,7 +205,8 @@ export function useOverviewData(options: UseOverviewDataOptions) {
         lifecycle,
         reason,
         latest.current,
-        anchorMap
+        anchorMap,
+        monotonicNow(latest.current.historyScheduleNow)
       );
       const current = latest.current;
 
@@ -212,7 +233,13 @@ export function useOverviewData(options: UseOverviewDataOptions) {
           }))
         );
         if (selected.includes('history')) {
-          startHistory(nowMs, generation, current.poiFilter, outcomesPromise);
+          startHistory(
+            nowMs,
+            generation,
+            current.poiFilter,
+            outcomesPromise,
+            current.historyScheduleNow
+          );
         }
         const outcomes = await outcomesPromise;
         if (lifecycle.invalidated) return;
@@ -248,6 +275,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     cadence,
     now,
     nextScheduledAt: historyNextScheduledAt,
+    scheduledNow: historyScheduleNow,
     onRefresh: runCycle,
   });
 
@@ -326,4 +354,22 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       reportRadarResult,
     },
   };
+}
+
+function defaultHistoryScheduleNow(): number {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
+function monotonicNow(now: () => number): number | null {
+  try {
+    const value = now();
+    return Number.isFinite(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function roundedMonotonicNow(now: () => number): number | null {
+  const value = monotonicNow(now);
+  return value === null ? null : Math.ceil(value);
 }
