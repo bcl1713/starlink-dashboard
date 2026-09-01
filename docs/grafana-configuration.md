@@ -45,7 +45,8 @@ Prometheus datasource configuration:
 
 - **URL:** `<http://prometheus:9090`>
 - **Scrape Interval:** 10 seconds
-- **Retention:** 15 days (configurable via `PROMETHEUS_RETENTION`)
+- **Retention:** Configured by `PROMETHEUS_RETENTION`; `.env.example` sets
+  `PROMETHEUS_RETENTION=1y`.
 - **Auto-configured:** Via provisioning
 
 ---
@@ -71,12 +72,15 @@ docker compose restart grafana
 
 ### Data Retention
 
-- Prometheus retains metrics for 15 days by default
-- Adjust `PROMETHEUS_RETENTION` in `.env` for different retention:
+- The shipped `.env.example` sets `PROMETHEUS_RETENTION=1y` as the configured
+  default for metrics retention.
+- Docker Compose passes the configured value to Prometheus; it does not supply a
+  hardcoded retention default.
+- Operators may select a different retention in `.env`, for example:
 
   ```bash
-  PROMETHEUS_RETENTION=30d  # 30 days
-  PROMETHEUS_RETENTION=365d # 1 year
+  PROMETHEUS_RETENTION=15d # Optional 15-day operator setting
+  PROMETHEUS_RETENTION=30d # Optional 30-day operator setting
   ```
 
 ---

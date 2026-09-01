@@ -243,7 +243,10 @@ The API is designed for internal network use. For production deployments:
 
 ## Rate Limiting
 
-**Current Version:** No rate limiting (v0.2.0)
+No global API rate-limit policy is documented for the legacy v0.2.0 endpoints.
+This does not apply to `GET /api/monitoring/history`, which is rate-limited and
+returns `429 Too Many Requests` with `Retry-After`; follow the monitoring API
+reference before retrying that endpoint.
 
 For production deployments, consider implementing rate limiting at:
 

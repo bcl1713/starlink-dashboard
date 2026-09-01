@@ -31,6 +31,10 @@ predicted.
    [operations overview runbook](../../operations-overview.md#troubleshooting-and-escalation);
    do not expose Prometheus in browser configuration.
 
+   During dual-run, Grafana and Prometheus remain retained and supported. To
+   fall back or roll back the React overview, navigate operators to Grafana; do
+   not remove or reconfigure Grafana or Prometheus to perform that rollback.
+
    ```bash
    # Check Prometheus for anomalies
    curl '<http://localhost:9090/api/v1/query?query=mission_status'>

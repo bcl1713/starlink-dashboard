@@ -102,8 +102,10 @@ configuration or CSP, and do not expose upstream details. For an overview radar
 or CSP fault, see the
 [operations overview troubleshooting](../../operations-overview.md#troubleshooting-and-escalation).
 Use [Grafana troubleshooting](./grafana.md) for Grafana-specific diagnosis or as
-the immediate operational fallback; do not retire or remove it as part of this
-response.
+the immediate operational fallback. During dual-run, Grafana and Prometheus
+remain retained and supported. To fall back or roll back the React overview,
+navigate operators to Grafana; do not remove or reconfigure Grafana or
+Prometheus to perform that rollback.
 
 ### Issue: POI file locked or inaccessible
 

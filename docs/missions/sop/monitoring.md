@@ -9,8 +9,10 @@ not explicitly verified in React; it has no approved retirement date. For an
 overview monitoring, radar, or CSP issue, follow the
 [operations overview troubleshooting runbook](../../operations-overview.md#troubleshooting-and-escalation)
 and preserve safe error/timestamp evidence. Do not expose Prometheus in browser
-configuration. During an overview interruption, use Grafana rather than
-removing, reconfiguring, or retiring it.
+configuration. During dual-run, Grafana and Prometheus remain retained and
+supported. To fall back or roll back the React overview, navigate operators to
+Grafana; do not remove or reconfigure Grafana or Prometheus to perform that
+rollback.
 
 ## Grafana Monitoring Setup
 

@@ -7,6 +7,10 @@ Complete reference for Grafana dashboards in the Starlink monitoring system.
 > default landing path at `/overview`; this document remains the reference for
 > existing Grafana dashboards. Grafana retirement is not approved by this PR.
 
+During dual-run, Grafana and Prometheus remain retained and supported. To fall
+back or roll back the React overview, navigate operators to Grafana; do not
+remove or reconfigure Grafana or Prometheus to perform that rollback.
+
 ## Accessing Grafana
 
 ### Default Access
@@ -191,7 +195,8 @@ To adjust auto-refresh:
 All dashboards query Prometheus at `<http://prometheus:9090`:>
 
 - **Scrape Interval:** 10 seconds (optimized for Starlink metrics)
-- **Retention:** 15 days (configurable via `PROMETHEUS_RETENTION`)
+- **Retention:** `.env.example` sets `PROMETHEUS_RETENTION=1y` as the configured
+  default; operators may select a different value such as `15d`.
 - **Datasource:** Auto-configured via provisioning
 
 To verify datasource connection:
