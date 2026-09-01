@@ -9,7 +9,6 @@ from collections.abc import Iterable
 import httpcore
 import httpx
 import pytest
-
 from app.services import rainviewer_transport
 from app.services.rainviewer_transport import (
     DnsPythonAddressResolver,
