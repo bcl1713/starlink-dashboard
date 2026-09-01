@@ -29,6 +29,10 @@ class POI(BaseModel):
     mission_id: str | None = Field(
         default=None, description="Associated mission ID if mission-scoped"
     )
+    generated_provenance: str | None = Field(
+        default=None,
+        description="Internal provenance for system-generated POIs",
+    )
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         description="When POI was created",

@@ -9,11 +9,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
-from fastapi.testclient import TestClient
-
 import app.services.poi_manager as poi_manager_module
 import app.services.route_manager as route_manager_module
+import pytest
 from app.core.config import ConfigManager
 from app.models.config import (
     NetworkConfig,
@@ -30,6 +28,7 @@ from app.models.telemetry import (
     TelemetryData,
 )
 from app.simulation.coordinator import SimulationCoordinator
+from fastapi.testclient import TestClient
 from main import app
 
 os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
@@ -230,9 +229,8 @@ def reset_prometheus_registry():
     """
     # Before each test, reset all gauge metrics to prevent pollution from NaN values
     try:
-        from prometheus_client.core import Gauge
-
         from app.core import metrics
+        from prometheus_client.core import Gauge
 
         # Reset the custom position collector data
         metrics._current_position["latitude"] = 0.0

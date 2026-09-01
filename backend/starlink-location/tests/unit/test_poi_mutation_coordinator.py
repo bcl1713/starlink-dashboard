@@ -4,7 +4,6 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
-
 from app.models.poi import POICreate
 from app.services.poi_manager import POIManager
 

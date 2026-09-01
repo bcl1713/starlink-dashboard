@@ -12,6 +12,8 @@ from app.mission.timeline_builder.coverage import (
 from app.mission.timeline_builder.pois import (
     collect_ka_pois,
     collect_x_aar_pois,
+    sync_ka_pois,
+    sync_x_aar_pois,
 )
 from app.models.poi import POICreate
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteWaypoint
@@ -165,9 +167,53 @@ def test_replace_timeline_event_pois_is_atomic_and_scope_exact(tmp_path):
         key=lambda item: (item[0] or "", item[1] or "", item[2]),
     )
     assert [poi.id for poi in first] == ["route-1-mission-1-x-band-swap"]
+    assert first[0].generated_provenance == "timeline-event/all"
     assert second == []
     assert names == [
         (None, None, "User"),
+        ("route-1", "mission-1", "CommKa\nExit"),
         ("route-1", "mission-1", "Planner Note"),
         ("route-2", "mission-1", "CommKa\nExit"),
+    ]
+
+
+def test_legacy_ka_then_x_sync_preserves_both_generated_families(tmp_path):
+    """Compatibility wrappers must not replace each other's generated events."""
+    manager = POIManager(pois_file=tmp_path / "pois.json")
+    mission = MissionLeg(
+        id="leg-1",
+        name="Leg 1",
+        route_id="route-1",
+        transports=TransportConfig(
+            initial_x_satellite_id="X-1",
+            x_transitions=[
+                XTransition(
+                    id="x-1",
+                    latitude=0.0,
+                    longitude=5.0,
+                    target_satellite_id="X-2",
+                    target_beam_id=None,
+                    is_same_satellite_transition=False,
+                )
+            ],
+        ),
+    )
+    coverage = CoverageAnalysisResult(
+        gaps=[
+            KaCoverageGap(
+                start=_sample(1.0),
+                end=None,
+                lost_satellite="AOR",
+                regained_satellite=None,
+            )
+        ],
+        swaps=[],
+    )
+
+    sync_ka_pois(mission, _route(), manager, coverage, parent_mission_id="mission-1")
+    sync_x_aar_pois(mission, _route(), manager, parent_mission_id="mission-1")
+
+    assert sorted(poi.name for poi in manager.list_pois()) == [
+        "CommKa\nExit",
+        "X-Band\nSwap",
     ]

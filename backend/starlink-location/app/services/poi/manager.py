@@ -18,13 +18,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from filelock import FileLock
-
 from app.models.poi import POI, POICreate, POIUpdate
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 
 COALESCE_INTERVAL_SECONDS = 0.1
+TIMELINE_EVENT_PROVENANCE_PREFIX = "timeline-event/"
+TIMELINE_EVENT_ALL_PROVENANCE = f"{TIMELINE_EVENT_PROVENANCE_PREFIX}all"
 MUTATION_ERRORS = (
     RuntimeError,
     ValueError,
@@ -431,6 +432,7 @@ class POIManager:
         pois: dict[str, POI],
         active_route=None,
         poi_id: str | None = None,
+        generated_provenance: str | None = None,
     ) -> POI:
         slug_source = poi_create.name.lower()
         slug_source = re.sub(r"\s+", "-", slug_source.strip())
@@ -464,6 +466,7 @@ class POIManager:
             description=poi_create.description,
             route_id=poi_create.route_id,
             mission_id=poi_create.mission_id,
+            generated_provenance=generated_provenance,
             created_at=now,
             updated_at=now,
         )
@@ -935,6 +938,7 @@ class POIManager:
                     scoped_payload,
                     pois,
                     active_route=route,
+                    generated_provenance=TIMELINE_EVENT_ALL_PROVENANCE,
                     poi_id=self._timeline_event_id(
                         route_id,
                         mission_id,
@@ -947,12 +951,52 @@ class POIManager:
 
         return self._run_mutation("replace_timeline_event_pois", apply)
 
+    def replace_timeline_event_poi_family(
+        self,
+        route_id: str,
+        mission_id: str,
+        generated_pois: Sequence[POICreate],
+        route,
+        family: str,
+    ) -> list[POI]:
+        """Replace one legacy timeline event family without touching others."""
+        if not route_id or not mission_id:
+            return []
+        provenance = f"{TIMELINE_EVENT_PROVENANCE_PREFIX}{family}"
+
+        def apply(pois: dict[str, POI]) -> list[POI]:
+            for poi_id, poi in list(pois.items()):
+                if (
+                    poi.route_id == route_id
+                    and poi.mission_id == mission_id
+                    and poi.generated_provenance == provenance
+                ):
+                    del pois[poi_id]
+
+            created: list[POI] = []
+            for payload in generated_pois:
+                scoped_payload = payload.model_copy(
+                    update={"route_id": route_id, "mission_id": mission_id}
+                )
+                poi = self._build_poi(
+                    scoped_payload,
+                    pois,
+                    active_route=route,
+                    generated_provenance=provenance,
+                    poi_id=self._timeline_event_id(
+                        route_id, mission_id, scoped_payload.name
+                    ),
+                )
+                pois[poi.id] = poi
+                created.append(poi.model_copy(deep=True))
+            return created
+
+        return self._run_mutation("replace_timeline_event_poi_family", apply)
+
     def _is_generated_timeline_event_poi(self, poi: POI) -> bool:
-        if poi.category != "mission-event":
-            return False
         return bool(
-            poi.name.startswith(("CommKa", "Ka Coverage", "Ka Transition", "Ka Swap"))
-            or poi.name.startswith(("X-Band", "AAR"))
+            poi.generated_provenance
+            and poi.generated_provenance.startswith(TIMELINE_EVENT_PROVENANCE_PREFIX)
         )
 
     def _timeline_event_id(self, route_id: str, mission_id: str, name: str) -> str:

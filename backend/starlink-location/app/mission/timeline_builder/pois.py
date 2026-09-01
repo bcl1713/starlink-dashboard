@@ -165,11 +165,12 @@ def sync_ka_pois(
     """Synchronize Ka POIs for compatibility with older callers."""
     effective_mission_id = parent_mission_id or mission.id
     payloads = collect_ka_pois(mission, route, coverage, parent_mission_id)
-    poi_manager.replace_timeline_event_pois(
+    poi_manager.replace_timeline_event_poi_family(
         route_id=mission.route_id or "",
         mission_id=effective_mission_id,
         generated_pois=payloads,
         route=route,
+        family="ka",
     )
 
 
@@ -182,11 +183,12 @@ def sync_x_aar_pois(
     """Synchronize X/AAR POIs for compatibility with older callers."""
     effective_mission_id = parent_mission_id or mission.id
     payloads = collect_x_aar_pois(mission, route, parent_mission_id)
-    poi_manager.replace_timeline_event_pois(
+    poi_manager.replace_timeline_event_poi_family(
         route_id=mission.route_id or "",
         mission_id=effective_mission_id,
         generated_pois=payloads,
         route=route,
+        family="x-aar",
     )
 
 

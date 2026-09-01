@@ -20,7 +20,6 @@ from pathlib import Path
 from uuid import uuid4
 
 import psutil
-
 from app.mission.models import (
     MissionLeg,
     TransportConfig,
