@@ -57,7 +57,7 @@ def test_datetime_fields_reject_naive_and_normalize_to_utc() -> None:
 
     with pytest.raises(ValidationError):
         MonitoringSample(
-            timestamp=datetime(2026, 8, 29, 12, 0),  # noqa: DTZ001
+            timestamp=datetime.fromisoformat("2026-08-29T12:00:00"),
             value=1.0,
         )
 

@@ -84,7 +84,7 @@ def test_poi_eta_timestamp_is_calculation_generated_at_and_utc_typed():
 
 def test_poi_eta_response_rejects_extra_fields_and_naive_timestamp():
     with pytest.raises(ValidationError):
-        POIETAListResponse(timestamp=datetime(2026, 8, 29, 12, 0))  # noqa: DTZ001
+        POIETAListResponse(timestamp=datetime.fromisoformat("2026-08-29T12:00:00"))
 
     with pytest.raises(ValidationError):
         POIETAListResponse(

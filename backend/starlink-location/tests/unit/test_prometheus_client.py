@@ -9,6 +9,7 @@ import inspect
 import json
 import threading
 from collections.abc import AsyncIterator, Awaitable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import Any
 
@@ -374,13 +375,12 @@ async def test_aggregate_point_budget_rejects_before_constructing_excess(
     constructed = 0
     original_model = prometheus_client.MonitoringSample
 
-    class CountingSample(original_model):  # type: ignore[misc, valid-type]
-        def __init__(self, **data: Any) -> None:
-            nonlocal constructed
-            constructed += 1
-            super().__init__(**data)
+    def counting_sample(**data: Any) -> object:
+        nonlocal constructed
+        constructed += 1
+        return original_model(**data)
 
-    monkeypatch.setattr(prometheus_client, "MonitoringSample", CountingSample)
+    monkeypatch.setattr(prometheus_client, "MonitoringSample", counting_sample)
 
     async def handler(request: httpx.Request) -> httpx.Response:
         expr = request.url.params["query"]
@@ -709,28 +709,18 @@ def test_process_wide_upstream_limit_across_threads_and_event_loops() -> None:
             client_id=client_id,
         )
 
-    errors: list[BaseException] = []
-
-    def run_thread(client_id: str, range_seconds: int) -> None:
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [
+            executor.submit(asyncio.run, run_client("thread-a", 60)),
+            executor.submit(asyncio.run, run_client("thread-b", 70)),
+        ]
         try:
-            asyncio.run(run_client(client_id, range_seconds))
-        except Exception as exc:  # noqa: BLE001 - thread must relay assertion errors.
-            errors.append(exc)
+            assert all_slots_busy.wait(timeout=1)
+        finally:
+            release.set()
+        for future in futures:
+            future.result(timeout=2)
 
-    first = threading.Thread(target=run_thread, args=("thread-a", 60))
-    second = threading.Thread(target=run_thread, args=("thread-b", 70))
-    first.start()
-    second.start()
-
-    assert all_slots_busy.wait(timeout=1)
-
-    release.set()
-    first.join(timeout=2)
-    second.join(timeout=2)
-
-    assert errors == []
-    assert not first.is_alive()
-    assert not second.is_alive()
     assert max_active <= 4
     assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
 
@@ -795,38 +785,27 @@ def test_process_wide_queue_full_across_event_loops() -> None:
         client = make_client(handler)
         await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
 
-    error: list[BaseException] = []
-
-    def run_blocker() -> None:
-        try:
-            asyncio.run(block_slots())
-        except Exception as exc:  # noqa: BLE001 - thread must relay assertion errors.
-            error.append(exc)
-
-    blocker_thread = threading.Thread(target=run_blocker)
-    blocker_thread.start()
-    assert all_slots_busy.wait(timeout=1)
-
     async def queued_request() -> None:
         client = make_client(handler, admission_timeout_seconds=0.001)
+        with pytest.raises(MonitoringUnavailableError):
+            await asyncio.wait_for(
+                client.get_history(
+                    range_seconds=70,
+                    step_seconds=10,
+                    client_id="b",
+                ),
+                timeout=0.2,
+            )
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        blocker = executor.submit(asyncio.run, block_slots())
         try:
-            with pytest.raises(MonitoringUnavailableError):
-                await asyncio.wait_for(
-                    client.get_history(
-                        range_seconds=70,
-                        step_seconds=10,
-                        client_id="b",
-                    ),
-                    timeout=0.2,
-                )
+            assert all_slots_busy.wait(timeout=1)
+            asyncio.run(queued_request())
         finally:
             release.set()
+        blocker.result(timeout=2)
 
-    asyncio.run(queued_request())
-    blocker_thread.join(timeout=2)
-
-    assert error == []
-    assert not blocker_thread.is_alive()
     assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
 
 

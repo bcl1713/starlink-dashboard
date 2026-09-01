@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import sys
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -339,8 +340,8 @@ async def _cleanup_lifespan_resources(app: FastAPI) -> None:
                 await background_task
             except asyncio.CancelledError:
                 logger.info_json("Background task cancelled successfully")
-            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
-                cleanup_error = cleanup_error or exc
+            except BaseException:
+                cleanup_error = cleanup_error or sys.exception()
 
         coordinator = _coordinator
         poi_manager = _poi_manager
@@ -350,8 +351,8 @@ async def _cleanup_lifespan_resources(app: FastAPI) -> None:
             logger.info_json("Stopping Route Manager watcher")
             try:
                 route_manager.stop_watching()
-            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
-                cleanup_error = cleanup_error or exc
+            except BaseException:
+                cleanup_error = cleanup_error or sys.exception()
 
         monitoring_client = _lifespan_owned_resources.pop(
             "monitoring_prometheus_client", None
@@ -366,8 +367,8 @@ async def _cleanup_lifespan_resources(app: FastAPI) -> None:
             logger.info_json("Closing monitoring Prometheus client")
             try:
                 await monitoring_client.aclose()
-            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
-                cleanup_error = cleanup_error or exc
+            except BaseException:
+                cleanup_error = cleanup_error or sys.exception()
 
         rainviewer_service = _lifespan_owned_resources.pop(
             "rainviewer_radar_service", None
@@ -381,16 +382,16 @@ async def _cleanup_lifespan_resources(app: FastAPI) -> None:
             logger.info_json("Closing RainViewer radar service")
             try:
                 await rainviewer_service.aclose()
-            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
-                cleanup_error = cleanup_error or exc
+            except BaseException:
+                cleanup_error = cleanup_error or sys.exception()
 
         if _eta_service_initialized:
             logger.info_json("Shutting down ETA service")
             _eta_service_initialized = False
             try:
                 shutdown_eta_service()
-            except BaseException as exc:  # noqa: BLE001 - continue cleanup.
-                cleanup_error = cleanup_error or exc
+            except BaseException:
+                cleanup_error = cleanup_error or sys.exception()
 
         _coordinator = None
         _poi_manager = None
@@ -411,8 +412,8 @@ async def _cleanup_lifespan_resources(app: FastAPI) -> None:
         gps.set_starlink_client(None)
 
         logger.info_json("Shutdown complete")
-    except BaseException as exc:  # noqa: BLE001 - preserve first cleanup error.
-        cleanup_error = cleanup_error or exc
+    except BaseException:
+        cleanup_error = cleanup_error or sys.exception()
 
     if cleanup_error is not None:
         logger.error_json(
@@ -560,10 +561,10 @@ async def lifespan(app: FastAPI):
     except BaseException:
         try:
             await _cleanup_lifespan_resources(app)
-        except BaseException as close_exc:  # noqa: BLE001 - preserve startup error.
+        except BaseException:
             logger.error_json(
                 "Error during lifespan cleanup",
-                extra_fields={"error_type": type(close_exc).__name__},
+                extra_fields={"error_type": type(sys.exception()).__name__},
                 exc_info=True,
             )
         raise

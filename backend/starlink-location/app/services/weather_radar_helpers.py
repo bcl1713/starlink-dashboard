@@ -23,6 +23,7 @@ RAINVIEWER_OPTIONS = "1_1"
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 FRAME_PATH_RE = re.compile(r"^/v2/radar/(0|[1-9][0-9]*)$")
 TIMEOUT_ERRORS = (httpx.TimeoutException, httpcore.TimeoutException)
+CONSUMPTION_ERRORS = (OSError, RuntimeError, httpx.HTTPError)
 
 CancelCheck = Callable[[], Awaitable[bool]]
 
@@ -190,20 +191,24 @@ async def close_response(response: httpx.Response) -> None:
 
 
 def _raise_consumption_error(
-    exc: BaseException, spool: SpooledTemporaryFile[bytes] | None = None
+    exc: Exception,
 ) -> NoReturn:
-    if spool is not None:
-        with suppress(BaseException):
-            spool.close()
     if isinstance(exc, TIMEOUT_ERRORS):
         raise RainViewerRadarTimeoutError() from exc
-    if isinstance(exc, asyncio.CancelledError):
-        raise exc
     if isinstance(exc, (InvalidRadarTileError, RainViewerRadarServiceError)):
         raise exc
-    if isinstance(exc, Exception):
-        raise RainViewerRadarServiceError() from exc
-    raise exc
+    raise RainViewerRadarServiceError() from exc
+
+
+def _new_tile_spool(body_limit_bytes: int) -> SpooledTemporaryFile[bytes]:
+    """Create the spool whose ownership transfers to the returned radar tile."""
+    return SpooledTemporaryFile(max_size=body_limit_bytes)
+
+
+def _close_failed_tile_spool(spool: SpooledTemporaryFile[bytes]) -> None:
+    """Release a failed tile's owned spool without replacing its primary error."""
+    with suppress(OSError, RuntimeError):
+        spool.close()
 
 
 async def _consume_tile_body(
@@ -221,10 +226,9 @@ async def _consume_tile_body(
     if content_type.strip().lower() != "image/png":
         raise RainViewerRadarServiceError()
 
-    spool: SpooledTemporaryFile[bytes] = SpooledTemporaryFile(  # noqa: SIM115
-        max_size=body_limit_bytes
-    )
+    spool = _new_tile_spool(body_limit_bytes)
     size = 0
+    completed = False
     try:
         try:
             iterator = response.aiter_raw().__aiter__()
@@ -252,9 +256,15 @@ async def _consume_tile_body(
         if spool.read(len(PNG_SIGNATURE)) != PNG_SIGNATURE:
             raise InvalidRadarTileError()
         spool.seek(0)
+        completed = True
         return RadarTile(spool=spool, size_bytes=size, frame_timestamp=frame_timestamp)
-    except BaseException as exc:  # noqa: BLE001
-        _raise_consumption_error(exc, spool)
+    except asyncio.CancelledError:
+        raise
+    except CONSUMPTION_ERRORS as exc:
+        _raise_consumption_error(exc)
+    finally:
+        if not completed:
+            _close_failed_tile_spool(spool)
 
 
 async def _consume_limited_raw(response: httpx.Response, limit: int) -> bytes:
@@ -271,7 +281,9 @@ async def _consume_limited_raw(response: httpx.Response, limit: int) -> bytes:
         if len(content) > limit:
             raise RainViewerRadarServiceError()
         return content
-    except BaseException as exc:  # noqa: BLE001
+    except asyncio.CancelledError:
+        raise
+    except CONSUMPTION_ERRORS as exc:
         _raise_consumption_error(exc)
     return b"".join(chunks)
 
