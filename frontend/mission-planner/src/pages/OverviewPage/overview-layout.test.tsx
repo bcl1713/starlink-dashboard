@@ -2,10 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { StrictMode, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import {
-  OverviewLayoutProvider,
-  useOverviewLayoutMode,
-} from './overview-layout';
+import { useOverviewLayoutMode } from './overview-layout';
+import { OverviewLayoutProvider } from './overview-layout-provider';
 
 type Listener = (event: MediaQueryListEvent) => void;
 

@@ -245,7 +245,7 @@ async function expectFullscreenCalls(
     .poll(() =>
       page.evaluate(() =>
         (
-          window as unknown as { __fullscreenCallCount: () => number }
+          window as Window & { __fullscreenCallCount: () => number }
         ).__fullscreenCallCount()
       )
     )

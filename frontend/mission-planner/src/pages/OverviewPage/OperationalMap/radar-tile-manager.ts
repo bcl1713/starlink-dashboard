@@ -79,7 +79,7 @@ export function createRadarTileManager(options: RadarTileManagerOptions) {
   function registerTile(
     coord: RadarTileCoord,
     image: HTMLImageElement,
-    done: (error?: Error | null, tile?: HTMLElement) => void
+    done: (error?: Error, tile?: HTMLElement) => void
   ): void {
     const key = tileKey(coord);
     const record = records.get(key);

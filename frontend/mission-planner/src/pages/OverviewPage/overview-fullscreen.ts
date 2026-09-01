@@ -1,0 +1,214 @@
+import { useEffect, useRef, useState, type RefObject } from 'react';
+
+export type OverviewFullscreenMode = 'inline' | 'native' | 'kiosk';
+
+export interface OverviewFullscreenController {
+  readonly mode: OverviewFullscreenMode;
+  readonly fallbackMessage: string | null;
+  readonly enterPending: boolean;
+  readonly enterFromUserGesture: () => Promise<void>;
+  readonly exitFromUserGesture: () => Promise<void>;
+}
+
+function restoreFocus(
+  trigger: HTMLButtonElement | null,
+  fallback: HTMLElement
+): void {
+  if (trigger?.isConnected) {
+    trigger.focus();
+    return;
+  }
+  const heading = fallback.querySelector<HTMLElement>('#overview-title');
+  (heading ?? fallback).focus();
+}
+
+function restoreInlineScroll(ownerDocument: Document, offset: number): void {
+  const view = ownerDocument.defaultView;
+  view?.scrollTo(0, offset);
+  view?.requestAnimationFrame(() => view.scrollTo(0, offset));
+}
+
+function preserveScroll(target: HTMLElement, offset: number): void {
+  target.focus({ preventScroll: true });
+  target.scrollTop = offset;
+  target.ownerDocument.defaultView?.requestAnimationFrame(() => {
+    target.scrollTop = offset;
+  });
+}
+
+const FULLSCREEN_FALLBACK_MESSAGE =
+  'Fullscreen unavailable — using kiosk view.';
+
+export function useOverviewFullscreen(
+  targetRef: RefObject<HTMLElement | null>,
+  triggerRef: RefObject<HTMLButtonElement | null>,
+  ownerDocument: Document = document
+): OverviewFullscreenController {
+  const [mode, setMode] = useState<OverviewFullscreenMode>('inline');
+  const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
+  const [enterPending, setEnterPending] = useState(false);
+  const modeRef = useRef(mode);
+  const mountedRef = useRef(false);
+  const attemptRef = useRef<{
+    readonly id: number;
+    readonly target: HTMLElement;
+    readonly promise: Promise<void>;
+  } | null>(null);
+  const generationRef = useRef(0);
+  const ownsNativeRef = useRef(false);
+  const scrollOffsetRef = useRef(0);
+
+  useEffect(() => {
+    modeRef.current = mode;
+  }, [mode]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    const root = ownerDocument.documentElement;
+    const onScroll = () => {
+      if (
+        root.classList.contains('overview-kiosk-active') ||
+        ownerDocument.fullscreenElement
+      )
+        return;
+      const offset = ownerDocument.defaultView?.scrollY ?? 0;
+      scrollOffsetRef.current = offset;
+    };
+    onScroll();
+    const enterKiosk = (target: HTMLElement | null) => {
+      if (!mountedRef.current) return;
+      root.classList.add('overview-kiosk-active');
+      ownsNativeRef.current = false;
+      setMode('kiosk');
+      setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
+      if (target) preserveScroll(target, scrollOffsetRef.current);
+    };
+    const onChange = () => {
+      const target = targetRef.current;
+      const fullscreenElement = ownerDocument.fullscreenElement;
+      if (fullscreenElement === target && target) {
+        attemptRef.current = null;
+        setEnterPending(false);
+        ownsNativeRef.current = true;
+        root.classList.remove('overview-kiosk-active');
+        setMode('native');
+        setFallbackMessage(null);
+        preserveScroll(target, scrollOffsetRef.current);
+        return;
+      }
+      if (fullscreenElement) return;
+      if (!ownsNativeRef.current) return;
+      const savedScroll = scrollOffsetRef.current;
+      ownsNativeRef.current = false;
+      root.classList.remove('overview-kiosk-active');
+      setMode('inline');
+      setFallbackMessage(null);
+      if (target) restoreFocus(triggerRef.current, target);
+      restoreInlineScroll(ownerDocument, savedScroll);
+    };
+    const onError = () => {
+      const attempt = attemptRef.current;
+      if (!attempt) return;
+      attemptRef.current = null;
+      setEnterPending(false);
+      enterKiosk(attempt.target);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || modeRef.current !== 'kiosk') return;
+      const target = targetRef.current;
+      const savedScroll = scrollOffsetRef.current;
+      root.classList.remove('overview-kiosk-active');
+      ownsNativeRef.current = false;
+      attemptRef.current = null;
+      setEnterPending(false);
+      setMode('inline');
+      setFallbackMessage(null);
+      if (target) restoreFocus(triggerRef.current, target);
+      restoreInlineScroll(ownerDocument, savedScroll);
+    };
+    ownerDocument.addEventListener('fullscreenchange', onChange);
+    ownerDocument.addEventListener('fullscreenerror', onError);
+    ownerDocument.addEventListener('keydown', onKeyDown);
+    ownerDocument.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      mountedRef.current = false;
+      generationRef.current += 1;
+      attemptRef.current = null;
+      setEnterPending(false);
+      ownsNativeRef.current = false;
+      ownerDocument.removeEventListener('fullscreenchange', onChange);
+      ownerDocument.removeEventListener('fullscreenerror', onError);
+      ownerDocument.removeEventListener('keydown', onKeyDown);
+      ownerDocument.removeEventListener('scroll', onScroll);
+      root.classList.remove('overview-kiosk-active');
+    };
+  }, [ownerDocument, targetRef, triggerRef]);
+
+  return {
+    mode,
+    fallbackMessage,
+    enterPending,
+    enterFromUserGesture: async () => {
+      const target = targetRef.current;
+      if (!target?.requestFullscreen) {
+        ownerDocument.documentElement.classList.add('overview-kiosk-active');
+        ownsNativeRef.current = false;
+        attemptRef.current = null;
+        setEnterPending(false);
+        setMode('kiosk');
+        setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
+        if (target) preserveScroll(target, scrollOffsetRef.current);
+        return;
+      }
+      if (attemptRef.current) return attemptRef.current.promise;
+      const id = generationRef.current + 1;
+      generationRef.current = id;
+      let request: Promise<void>;
+      try {
+        request = target.requestFullscreen();
+      } catch {
+        ownerDocument.documentElement.classList.add('overview-kiosk-active');
+        ownsNativeRef.current = false;
+        setMode('kiosk');
+        setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
+        preserveScroll(target, scrollOffsetRef.current);
+        return;
+      }
+      const promise = request.catch(() => {
+        if (attemptRef.current?.id !== id || !mountedRef.current) return;
+        attemptRef.current = null;
+        setEnterPending(false);
+        ownerDocument.documentElement.classList.add('overview-kiosk-active');
+        ownsNativeRef.current = false;
+        setMode('kiosk');
+        setFallbackMessage(FULLSCREEN_FALLBACK_MESSAGE);
+        preserveScroll(target, scrollOffsetRef.current);
+      });
+      attemptRef.current = { id, target, promise };
+      setEnterPending(true);
+      await promise;
+    },
+    exitFromUserGesture: async () => {
+      const target = targetRef.current;
+      if (ownerDocument.fullscreenElement === target) {
+        const exitFullscreen = ownerDocument.exitFullscreen;
+        if (!exitFullscreen) return;
+        try {
+          await exitFullscreen.call(ownerDocument);
+        } catch {
+          return;
+        }
+        return;
+      }
+      const savedScroll = scrollOffsetRef.current;
+      ownerDocument.documentElement.classList.remove('overview-kiosk-active');
+      attemptRef.current = null;
+      setEnterPending(false);
+      ownsNativeRef.current = false;
+      setMode('inline');
+      setFallbackMessage(null);
+      if (target) restoreFocus(triggerRef.current, target);
+      restoreInlineScroll(ownerDocument, savedScroll);
+    },
+  };
+}

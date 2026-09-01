@@ -131,11 +131,11 @@ describe('overview preferences persistence', () => {
     }
     expect(
       loadOverviewPreferences({
-        get getItem() {
+        get getItem(): OverviewStorage['getItem'] {
           throw new Error('lookup');
         },
         setItem() {},
-      } as unknown as OverviewStorage)
+      })
     ).toEqual(defaults);
     expect(
       loadOverviewPreferences({ getItem: () => 42 as never, setItem() {} })
@@ -191,10 +191,10 @@ describe('overview preferences persistence', () => {
       saveOverviewPreferences(
         {
           getItem: () => null,
-          get setItem() {
+          get setItem(): OverviewStorage['setItem'] {
             throw new Error('set lookup');
           },
-        } as unknown as OverviewStorage,
+        },
         defaults
       )
     ).toEqual({ ok: false, reason: 'storage-failure' });

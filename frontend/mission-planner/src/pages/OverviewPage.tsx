@@ -15,12 +15,10 @@ import { useOverviewClock } from './OverviewPage/useOverviewClock';
 import { useOverviewData } from './OverviewPage/useOverviewData';
 import { OverviewControls } from './OverviewPage/OverviewControls';
 import { OverviewClocks } from './OverviewPage/OverviewClocks';
-import {
-  OverviewGrid,
-  OverviewLayoutProvider,
-  useOverviewFullscreen,
-  useOverviewLayoutMode,
-} from './OverviewPage/OverviewGrid';
+import { OverviewGrid } from './OverviewPage/OverviewGrid';
+import { useOverviewFullscreen } from './OverviewPage/overview-fullscreen';
+import { useOverviewLayoutMode } from './OverviewPage/overview-layout';
+import { OverviewLayoutProvider } from './OverviewPage/overview-layout-provider';
 import {
   OperationalMap,
   type OperationalMapHandle,

@@ -9,10 +9,8 @@ import { StrictMode, useState } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { OverviewGrid } from './OverviewGrid';
-import {
-  OverviewLayoutProvider,
-  useOverviewLayoutMode,
-} from './overview-layout';
+import { useOverviewLayoutMode } from './overview-layout';
+import { OverviewLayoutProvider } from './overview-layout-provider';
 
 const LAYOUT_QUERIES = [
   '(min-width: 1536px)',

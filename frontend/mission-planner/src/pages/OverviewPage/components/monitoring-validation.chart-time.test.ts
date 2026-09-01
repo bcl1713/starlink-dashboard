@@ -54,9 +54,10 @@ describe('awareTimestampToChartEpochSeconds', () => {
   });
 
   it('is total for hostile JavaScript callers and large accepted fractions', () => {
-    expect(
-      awareTimestampToChartEpochSeconds(null as unknown as string)
-    ).toBeNull();
+    const hostileCaller = (value: unknown) =>
+      awareTimestampToChartEpochSeconds(value as string);
+
+    expect(hostileCaller(null)).toBeNull();
     expect(
       awareTimestampToChartEpochSeconds(
         `2026-08-29T12:00:00.${'1'.repeat(100_000)}Z`

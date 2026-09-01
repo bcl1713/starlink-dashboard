@@ -5,6 +5,10 @@ import { expect, vi } from 'vitest';
 import { OperationalMap } from './OperationalMap';
 import { makeOverviewSnapshot } from './test-fixtures';
 
+type LeafletEventedWithEvents = L.Evented & {
+  readonly _events?: Record<string, unknown[]>;
+};
+
 interface Ownership {
   readonly map: L.Map;
   readonly groups: readonly L.LayerGroup[];
@@ -128,7 +132,7 @@ export function createRadarTile(
   done: () => void
 ): HTMLImageElement {
   return (
-    radar as unknown as {
+    radar as L.GridLayer & {
       createTile(coords: L.Coords, done: () => void): HTMLElement;
     }
   ).createTile(coords, done) as HTMLImageElement;
@@ -153,9 +157,10 @@ export function trackObjectUrls() {
 }
 
 export function leafletEventCount(map: L.Map): number {
-  return Object.values(
-    (map as unknown as { _events?: Record<string, unknown[]> })._events ?? {}
-  ).reduce((total, listeners) => total + listeners.length, 0);
+  return Object.values((map as LeafletEventedWithEvents)._events ?? {}).reduce(
+    (total, listeners) => total + listeners.length,
+    0
+  );
 }
 
 export function layerCount(map: L.Map): number {
@@ -167,7 +172,7 @@ export function layerCount(map: L.Map): number {
 export function layerEventCount(layer: L.Evented | null): number {
   if (!layer) return 0;
   return Object.values(
-    (layer as unknown as { _events?: Record<string, unknown[]> })._events ?? {}
+    (layer as LeafletEventedWithEvents)._events ?? {}
   ).reduce((total, listeners) => total + listeners.length, 0);
 }
 
@@ -176,9 +181,7 @@ export function layerEventTypeCount(
   type: string
 ): number {
   if (!layer) return 0;
-  const listeners = (
-    layer as unknown as { _events?: Record<string, unknown[]> }
-  )._events?.[type];
+  const listeners = (layer as LeafletEventedWithEvents)._events?.[type];
   return listeners?.length ?? 0;
 }
 

@@ -10,7 +10,8 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import './test/app-route-service-mocks';
-import { APP_NAVIGATION_ITEMS, AppShell } from './App';
+import { APP_NAVIGATION_ITEMS } from './app-navigation-items';
+import { AppShell } from './AppShell';
 
 function LocationProbe() {
   const location = useLocation();

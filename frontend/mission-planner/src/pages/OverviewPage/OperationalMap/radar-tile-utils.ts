@@ -7,14 +7,14 @@ export function isAbortError(error: unknown): boolean {
     : error instanceof Error && error.name === 'AbortError';
 }
 
-export function once(
-  done: (error?: Error | null, tile?: HTMLElement) => void
-): (error?: Error | null, tile?: HTMLElement) => void {
+export function once<Args extends unknown[]>(
+  done: (...args: Args) => void
+): (...args: Args) => void {
   let called = false;
-  return (error, tile) => {
+  return (...args: Args) => {
     if (called) return;
     called = true;
-    done(error, tile);
+    done(...args);
   };
 }
 

@@ -4,6 +4,10 @@ import { vi } from 'vitest';
 import { OperationalMap } from './OperationalMap';
 import { makeOverviewSnapshot } from './test-fixtures';
 
+type LeafletEventedWithEvents = L.Evented & {
+  readonly _events?: Record<string, unknown[]>;
+};
+
 export function mapProps(
   overrides: Partial<React.ComponentProps<typeof OperationalMap>> = {}
 ) {
@@ -45,12 +49,16 @@ export function installMatchMedia({
   let wideQuery: MediaQueryList | null = null;
   const add = vi.fn(
     (_type: string, listener: EventListenerOrEventListenerObject) => {
-      if (typeof listener === 'function') listeners.add(listener as never);
+      if (typeof listener === 'function') {
+        listeners.add(listener as (event: MediaQueryListEvent) => void);
+      }
     }
   );
   const remove = vi.fn(
     (_type: string, listener: EventListenerOrEventListenerObject) => {
-      if (typeof listener === 'function') listeners.delete(listener as never);
+      if (typeof listener === 'function') {
+        listeners.delete(listener as (event: MediaQueryListEvent) => void);
+      }
     }
   );
   vi.stubGlobal('matchMedia', (query: string) => {
@@ -63,7 +71,7 @@ export function installMatchMedia({
       addListener: vi.fn(),
       removeListener: vi.fn(),
       dispatchEvent: vi.fn(),
-    } as unknown as MediaQueryList;
+    } as MediaQueryList;
     if (query.includes('min-width')) wideQuery = mql;
     return mql;
   });
@@ -94,7 +102,7 @@ export function pointerLikeEvent(): Event {
 export function layerEventCount(layer: L.Evented | undefined): number {
   if (!layer) return 0;
   return Object.values(
-    (layer as unknown as { _events?: Record<string, unknown[]> })._events ?? {}
+    (layer as LeafletEventedWithEvents)._events ?? {}
   ).reduce((total, listeners) => total + listeners.length, 0);
 }
 
@@ -103,8 +111,6 @@ export function layerEventTypeCount(
   type: string
 ): number {
   if (!layer) return 0;
-  const listeners = (
-    layer as unknown as { _events?: Record<string, unknown[]> }
-  )._events?.[type];
+  const listeners = (layer as LeafletEventedWithEvents)._events?.[type];
   return listeners?.length ?? 0;
 }

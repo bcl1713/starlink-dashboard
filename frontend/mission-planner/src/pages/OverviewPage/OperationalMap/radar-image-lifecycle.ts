@@ -19,7 +19,7 @@ export function bindRadarImage(
     current.resolveVisibleLoad?.();
     clearVisibleLoad(current);
     if (old) revoke(old);
-    current.done?.(null, image);
+    current.done?.(undefined, image);
   };
   const onError = () => {
     const current = findRecord(record.key, record.requestId);

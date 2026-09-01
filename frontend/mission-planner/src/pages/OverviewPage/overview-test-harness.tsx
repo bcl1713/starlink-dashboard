@@ -51,10 +51,14 @@ export function cloneFixture<T>(value: T): T {
   return structuredClone(value);
 }
 
+function cloneAs<T>(value: unknown): T {
+  return structuredClone(value) as T;
+}
+
 export function createOverviewServices(
   overrides: Partial<OverviewDataServices> = {}
 ): OverviewDataServices {
-  return {
+  const services: OverviewDataServices = {
     getStatus: vi.fn(() => Promise.resolve(cloneFixture(statusPayload))),
     getMonitoringHistory: vi.fn(() =>
       Promise.resolve(cloneFixture(historyPayload))
@@ -62,17 +66,24 @@ export function createOverviewServices(
     getGroundEntryPoint: vi.fn(() =>
       Promise.resolve(cloneFixture(availableGep))
     ),
-    getPOIETAs: vi.fn(() => Promise.resolve(cloneFixture(poiPayload))),
-    getSatelliteETAs: vi.fn(() => Promise.resolve(cloneFixture(poiPayload))),
-    getMissionEventETAs: vi.fn(() => Promise.resolve(cloneFixture(poiPayload))),
+    getPOIETAs: vi.fn(() =>
+      Promise.resolve(cloneAs<POIETAResponse>(poiPayload))
+    ),
+    getSatelliteETAs: vi.fn(() =>
+      Promise.resolve(cloneAs<POIETAResponse>(poiPayload))
+    ),
+    getMissionEventETAs: vi.fn(() =>
+      Promise.resolve(cloneAs<POIETAResponse>(poiPayload))
+    ),
     getRouteCoordinates: vi.fn(() =>
       Promise.resolve(cloneFixture(routePayload))
     ),
     getActiveXLink: vi.fn(() =>
-      Promise.resolve(cloneFixture(activeXLinkPayload))
+      Promise.resolve(cloneAs<ActiveXLink>(activeXLinkPayload))
     ),
     ...overrides,
-  } as unknown as OverviewDataServices;
+  };
+  return services;
 }
 
 export function createCallCountingServices(
@@ -84,13 +95,22 @@ export function createCallCountingServices(
       calls.push(name);
       return Promise.resolve(cloneFixture(value));
     });
-  const svc = {
+  const svc: OverviewDataServices = {
     getStatus: record('status', statusPayload),
     getMonitoringHistory: record('history', historyPayload),
     getGroundEntryPoint: record('gep', availableGep),
-    getPOIETAs: record('pois', poiPayload),
-    getSatelliteETAs: record('satellites', poiPayload),
-    getMissionEventETAs: record('missionEvents', poiPayload),
+    getPOIETAs: vi.fn(() => {
+      calls.push('pois');
+      return Promise.resolve(cloneAs<POIETAResponse>(poiPayload));
+    }),
+    getSatelliteETAs: vi.fn(() => {
+      calls.push('satellites');
+      return Promise.resolve(cloneAs<POIETAResponse>(poiPayload));
+    }),
+    getMissionEventETAs: vi.fn(() => {
+      calls.push('missionEvents');
+      return Promise.resolve(cloneAs<POIETAResponse>(poiPayload));
+    }),
     getRouteCoordinates: vi.fn((direction: 'west' | 'east') => {
       calls.push(direction);
       return Promise.resolve(cloneFixture(routePayload));
@@ -98,12 +118,12 @@ export function createCallCountingServices(
     getActiveXLink: vi.fn((state: 'normal' | 'warning') => {
       calls.push(state);
       return Promise.resolve({
-        ...cloneFixture(activeXLinkPayload),
+        ...cloneAs<ActiveXLink>(activeXLinkPayload),
         state,
-      } as ActiveXLink);
+      });
     }),
     ...overrides,
-  } as unknown as OverviewDataServices;
+  };
   return { calls, svc };
 }
 

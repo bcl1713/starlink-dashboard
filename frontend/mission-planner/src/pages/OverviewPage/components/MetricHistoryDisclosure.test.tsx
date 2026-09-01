@@ -179,6 +179,7 @@ describe('MetricHistoryDisclosure', () => {
   it.each(['absent', 'constructor', 'observe', 'measurement'] as const)(
     'keeps the scroller usable when ResizeObserver %s is hostile',
     (hostility) => {
+      let resizeCallback: ResizeObserverCallback | null = null;
       if (hostility === 'absent') {
         vi.stubGlobal('ResizeObserver', undefined);
       } else if (hostility === 'constructor') {
@@ -198,7 +199,7 @@ describe('MetricHistoryDisclosure', () => {
           });
           disconnect = vi.fn();
           constructor(callback: ResizeObserverCallback) {
-            MockResizeObserver.callback = callback;
+            resizeCallback = callback;
           }
         }
         vi.stubGlobal('ResizeObserver', MockResizeObserver);
@@ -227,10 +228,7 @@ describe('MetricHistoryDisclosure', () => {
             configurable: true,
             value: 1,
           });
-          const observer = ResizeObserver as unknown as {
-            callback: ResizeObserverCallback | null;
-          };
-          act(() => observer.callback?.([], {} as ResizeObserver));
+          act(() => resizeCallback?.([], {} as ResizeObserver));
         }
 
         expect(screen.getByRole('table')).toBeVisible();

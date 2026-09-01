@@ -70,11 +70,8 @@ describe('radar visible target load lifecycle', () => {
     expect(image.src).toContain('blob:1');
     expect(revokeObjectUrl).toHaveBeenCalledWith('blob:2');
     expect(revokeObjectUrl).not.toHaveBeenCalledWith('blob:1');
-    expect(done).toHaveBeenCalledExactlyOnceWith(null, image);
-    expect(failureDone).toHaveBeenCalledExactlyOnceWith(
-      expect.any(Error),
-      undefined
-    );
+    expect(done).toHaveBeenCalledExactlyOnceWith(undefined, image);
+    expect(failureDone).toHaveBeenCalledExactlyOnceWith(expect.any(Error));
     expect(report).toHaveBeenLastCalledWith(2, {
       ok: false,
       error: expect.any(Error),

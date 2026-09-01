@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { useOverviewFullscreen } from './OverviewGrid';
+import { useOverviewFullscreen } from './overview-fullscreen';
 
 type Deferred = {
   readonly promise: Promise<void>;

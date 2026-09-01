@@ -1,18 +1,10 @@
-// @ts-expect-error Vitest runs this CSS contract in Node.
-import { readFileSync } from 'node:fs';
-// @ts-expect-error Vitest runs this CSS contract in Node.
-import { join } from 'node:path';
 import postcss, { type AtRule, type Rule } from 'postcss';
 import { describe, expect, it } from 'vitest';
 
-declare const process: { cwd(): string };
+import { readSourceFile } from '../../test/read-source-file';
 
-const root = process.cwd();
-const indexCss = readFileSync(join(root, 'src/index.css'), 'utf8');
-const overviewCss = readFileSync(
-  join(root, 'src/pages/OverviewPage/overview.css'),
-  'utf8'
-);
+const indexCss = readSourceFile('src/index.css');
+const overviewCss = readSourceFile('src/pages/OverviewPage/overview.css');
 const sourceCss = `${indexCss}\n${overviewCss}`;
 
 interface DeclarationRecord {

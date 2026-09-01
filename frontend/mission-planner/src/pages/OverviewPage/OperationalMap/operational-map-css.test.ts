@@ -1,15 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import { readSourceFile } from '../../../test/read-source-file';
+
 describe('operational map CSS', () => {
   it('lets the composed map region own height without local clamps', async () => {
-    // @ts-expect-error Vitest runs this local file read in Node.
-    const { readFileSync } = await import('node:fs');
-    const cwd = (
-      globalThis as unknown as { process: { cwd(): string } }
-    ).process.cwd();
-    const css = readFileSync(
-      `${cwd}/src/pages/OverviewPage/OperationalMap/operational-map.css`,
-      'utf8'
+    const css = readSourceFile(
+      'src/pages/OverviewPage/OperationalMap/operational-map.css'
     );
 
     expect(css).not.toContain('min-height: 320px');
@@ -19,14 +15,8 @@ describe('operational map CSS', () => {
   });
 
   it('assigns explicit 44px targets to feature, dismiss, and summary controls', async () => {
-    // @ts-expect-error Vitest runs this local file read in Node.
-    const { readFileSync } = await import('node:fs');
-    const cwd = (
-      globalThis as unknown as { process: { cwd(): string } }
-    ).process.cwd();
-    const css = readFileSync(
-      `${cwd}/src/pages/OverviewPage/OperationalMap/operational-map.css`,
-      'utf8'
+    const css = readSourceFile(
+      'src/pages/OverviewPage/OperationalMap/operational-map.css'
     );
 
     for (const className of [

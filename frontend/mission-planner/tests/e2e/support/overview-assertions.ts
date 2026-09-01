@@ -280,7 +280,6 @@ export async function attachResponsiveScreenshots(
 export async function expectAxe(page: Page, testInfo: TestInfo) {
   const results = await new AxeBuilder({ page })
     .include('.overview-page')
-    .disableRules(['color-contrast'])
     .analyze();
   const violations = results.violations.filter((violation) =>
     ['serious', 'critical'].includes(violation.impact ?? '')
@@ -288,7 +287,7 @@ export async function expectAxe(page: Page, testInfo: TestInfo) {
   await testInfo.attach('accessibility-coverage-gap', {
     body: [
       'Automated axe checks ran with serious/critical gating.',
-      'Manual screen-reader smoke and true rendered contrast remain coverage gaps.',
+      'Manual screen-reader smoke remains a coverage gap.',
     ].join('\n'),
     contentType: 'text/plain',
   });

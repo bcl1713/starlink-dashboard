@@ -1,11 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 export type OverviewLayoutMode = 'mobile' | 'tablet' | 'desktop' | 'wide';
 
@@ -37,7 +30,9 @@ function currentLayoutMode(): OverviewLayoutMode {
   return layoutMode(window.innerWidth);
 }
 
-const OverviewLayoutContext = createContext<OverviewLayoutMode | null>(null);
+export const OverviewLayoutContext = createContext<OverviewLayoutMode | null>(
+  null
+);
 
 function subscribeLayoutQuery(
   query: MediaQueryList,
@@ -97,22 +92,6 @@ function useLocalOverviewLayoutMode(enabled: boolean): OverviewLayoutMode {
   }, [enabled]);
 
   return mode;
-}
-
-export function OverviewLayoutProvider({
-  children,
-}: {
-  readonly children: ReactNode;
-}) {
-  const sharedMode = useContext(OverviewLayoutContext);
-  const localMode = useLocalOverviewLayoutMode(sharedMode === null);
-  const mode = sharedMode ?? localMode;
-
-  return (
-    <OverviewLayoutContext.Provider value={mode}>
-      {children}
-    </OverviewLayoutContext.Provider>
-  );
 }
 
 export function useOverviewLayoutMode(): OverviewLayoutMode {

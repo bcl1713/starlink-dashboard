@@ -10,7 +10,7 @@ import {
 } from './radar-tile-manager';
 import { tileKey } from './radar-tile-utils';
 
-type Done = (error?: Error | null, tile?: HTMLElement) => void;
+type Done = (error?: Error, tile?: HTMLElement) => void;
 
 export interface RadarLayer extends L.GridLayer {
   visibleTiles: Map<string, RadarTileCoord>;
@@ -28,8 +28,12 @@ export function createRadarLayer(
   state: RadarLayerState
 ): RadarLayer {
   const radar = OPERATIONAL_LAYERS[0];
-  const RadarLayerClass = L.GridLayer.extend({
-    createTile(coords: L.Coords, done: Done) {
+  class RadarLayerClass extends L.GridLayer implements RadarLayer {
+    visibleTiles = new Map<string, RadarTileCoord>();
+    private refreshScheduled = false;
+    private lastRefreshKey: string | null = null;
+
+    createTile(coords: L.Coords, done: Done): HTMLElement {
       const coord = { z: coords.z, x: coords.x, y: coords.y };
       const key = tileKey(coord);
       const image = document.createElement('img');
@@ -38,8 +42,9 @@ export function createRadarLayer(
       manager.registerTile(coord, image, done);
       this.scheduleRefresh();
       return image;
-    },
-    refreshVisible() {
+    }
+
+    refreshVisible(): void {
       const tiles = [...this.visibleTiles.values()];
       const visibleKey = tiles.map(tileKey).sort().join(',');
       const token = state.token();
@@ -47,20 +52,18 @@ export function createRadarLayer(
       if (this.lastRefreshKey === key) return;
       this.lastRefreshKey = key;
       void manager.loadVisibleTiles({ token, tiles });
-    },
-    scheduleRefresh() {
+    }
+
+    scheduleRefresh(): void {
       if (this.refreshScheduled) return;
       this.refreshScheduled = true;
       queueMicrotask(() => {
         this.refreshScheduled = false;
         this.refreshVisible();
       });
-    },
-  });
-  const LayerCtor = RadarLayerClass as unknown as new (
-    options: L.GridLayerOptions
-  ) => RadarLayer;
-  const layer = new LayerCtor({
+    }
+  }
+  const layer = new RadarLayerClass({
     attribution: RADAR_ATTRIBUTION,
     keepBuffer: 0,
     maxZoom: radar.maxZoom,
@@ -69,11 +72,6 @@ export function createRadarLayer(
     pane: 'weather-radar',
     updateWhenIdle: true,
   });
-  layer.visibleTiles = new Map<string, RadarTileCoord>();
-  (layer as RadarLayer & { refreshScheduled: boolean }).refreshScheduled =
-    false;
-  (layer as RadarLayer & { lastRefreshKey: string | null }).lastRefreshKey =
-    null;
   layer.on('tileunload', (event: L.TileEvent) => {
     const coords = event.coords;
     if (!coords) return;

@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import L from 'leaflet';
 import { useMap } from 'react-leaflet';
 
-import { getRainViewerRadarTile } from '../../../services/monitoring';
 import type { OverviewDataController } from '../overview-data-types';
-import { createRadarLayer } from './radar-grid-layer-factory';
+import { createRadarGridLayerController } from './radar-grid-layer-controller';
 import { radarGridLayerTestInternals } from './radar-grid-layer-test-internals';
-import { createRadarTileManager } from './radar-tile-manager';
 
 interface RadarGridLayerProps {
   readonly enabled: boolean;
@@ -20,29 +18,19 @@ export function RadarGridLayer({
   reportRadarResult,
 }: RadarGridLayerProps) {
   const map = useMap();
-  const token = useRef(radarRefreshToken);
-  const enabledEpoch = useRef(0);
-  useEffect(() => {
-    token.current = radarRefreshToken;
-  }, [radarRefreshToken]);
-  const manager = useMemo(
+  const controller = useMemo(
     () =>
-      createRadarTileManager({
-        loadTile: getRainViewerRadarTile,
+      createRadarGridLayerController({
+        radarRefreshToken: 0,
         reportRadarResult,
       }),
     [reportRadarResult]
   );
-  /* eslint-disable react-hooks/refs */
-  const layer = useMemo(
-    () =>
-      createRadarLayer(manager, {
-        token: () => token.current,
-        enabledEpoch: () => enabledEpoch.current,
-      }),
-    [manager]
-  );
-  /* eslint-enable react-hooks/refs */
+  const { layer, manager } = controller;
+
+  useEffect(() => {
+    controller.setToken(radarRefreshToken);
+  }, [controller, radarRefreshToken]);
 
   useEffect(() => {
     if (!radarGridLayerTestInternals.enabled) return;
@@ -60,14 +48,14 @@ export function RadarGridLayer({
     if (!enabled) {
       if (map.hasLayer(layer)) map.removeLayer(layer);
       manager.destroy();
-      enabledEpoch.current += 1;
+      controller.incrementEnabledEpoch();
       return;
     }
-    enabledEpoch.current += 1;
+    controller.incrementEnabledEpoch();
     ensureRadarPane(map);
     if (!map.hasLayer(layer)) layer.addTo(map);
     layer.scheduleRefresh();
-  }, [enabled, layer, manager, map, radarRefreshToken]);
+  }, [controller, enabled, layer, manager, map, radarRefreshToken]);
 
   useEffect(() => {
     const refresh = () => {

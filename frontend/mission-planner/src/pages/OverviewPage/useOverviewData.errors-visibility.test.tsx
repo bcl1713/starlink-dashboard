@@ -185,16 +185,18 @@ describe('useOverviewData errors', () => {
   it('starts active link and route siblings for hostile thenables and sync throws', async () => {
     const activeStates: string[] = [];
     const routeDirections: string[] = [];
-    const hostileThenable = {
-      get then() {
+    const hostileThenable = Promise.resolve(activeXLinkPayload);
+    Object.defineProperty(hostileThenable, 'then', {
+      configurable: true,
+      get() {
         throw new Error('hostile thenable');
       },
-    };
+    });
     const svc = createOverviewServices({
       getActiveXLink: vi.fn((state: 'normal' | 'warning') => {
         activeStates.push(state);
         return state === 'normal'
-          ? (hostileThenable as unknown as Promise<ActiveXLink>)
+          ? (hostileThenable as Promise<ActiveXLink>)
           : Promise.resolve({
               ...cloneFixture(activeXLinkPayload),
               state,

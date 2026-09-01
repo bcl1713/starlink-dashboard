@@ -143,7 +143,9 @@ async function stop(session: CDPSession, reports: readonly Promise<void>[]) {
     );
     if (rejected) throw rejected.reason;
   } finally {
-    (session as unknown as { removeAllListeners(): void }).removeAllListeners();
+    (
+      session as CDPSession & { removeAllListeners(): void }
+    ).removeAllListeners();
     await session.detach();
   }
 }

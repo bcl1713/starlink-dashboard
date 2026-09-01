@@ -268,7 +268,7 @@ function installMicrotaskTracker() {
 
 function layerEventTypeCount(layer: L.Evented, type: string): number {
   const listeners = (
-    layer as unknown as { _events?: Record<string, unknown[]> }
+    layer as L.Evented & { readonly _events?: Record<string, unknown[]> }
   )._events?.[type];
   return listeners?.length ?? 0;
 }

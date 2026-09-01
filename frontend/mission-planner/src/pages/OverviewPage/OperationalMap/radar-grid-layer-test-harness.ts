@@ -83,7 +83,7 @@ export function createAttachedHarness(options: { deferred?: boolean } = {}) {
     },
     create(coord: RadarTileCoord, done: () => void) {
       return (
-        layer as unknown as {
+        layer as typeof layer & {
           createTile(coords: L.Coords, done: () => void): HTMLElement;
         }
       ).createTile(coord as L.Coords, done) as HTMLImageElement;

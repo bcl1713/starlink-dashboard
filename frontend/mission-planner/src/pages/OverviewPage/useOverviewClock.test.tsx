@@ -157,7 +157,7 @@ describe('useOverviewClock', () => {
       },
       () => new Date(Number.NaN),
       () => new Date(Number.POSITIVE_INFINITY),
-      () => null as unknown as Date,
+      () => null as never,
     ];
 
     for (const now of invalidDates) {

@@ -83,7 +83,7 @@ test.describe('Operations overview CDP network capture', () => {
   test('settles integrated observer cleanup after rejection before a clean capture', async ({
     page,
   }, testInfo) => {
-    const listenerCount = page as unknown as {
+    const listenerCount = page as typeof page & {
       listenerCount(event: string): number;
     };
     const consoleListeners = listenerCount.listenerCount('console');

@@ -1,14 +1,6 @@
-// @ts-expect-error -- test source reads require Node APIs outside app types.
-import { createHash } from 'node:crypto';
-// @ts-expect-error -- test source reads require Node APIs outside app types.
-import { readFileSync } from 'node:fs';
-// @ts-expect-error -- test source reads require Node APIs outside app types.
-import { resolve } from 'node:path';
-// @ts-expect-error -- test source reads require Node APIs outside app types.
-import { fileURLToPath } from 'node:url';
-
 import { describe, expect, it } from 'vitest';
 
+import { readSourceFile, sha256Json } from '../../test/read-source-file';
 import {
   OVERVIEW_CONTRACT,
   OVERVIEW_SCENARIOS,
@@ -16,14 +8,7 @@ import {
   buildPoiQuery,
 } from '../../../tests/e2e/fixtures/overview';
 
-const fixtureSourceUrl = new URL(
-  '../../../tests/e2e/fixtures/overview.ts',
-  import.meta.url
-);
-const FIXTURE_SOURCE_PATH =
-  fixtureSourceUrl.protocol === 'file:'
-    ? fileURLToPath(fixtureSourceUrl)
-    : resolve('tests/e2e/fixtures/overview.ts');
+const FIXTURE_SOURCE_PATH = 'tests/e2e/fixtures/overview.ts';
 
 const EXPECTED_SCENARIOS = [
   'nominal',
@@ -1524,7 +1509,7 @@ describe('operations overview parity contract', () => {
   });
 
   it('keeps fixture data literal, deterministic, and serializable', () => {
-    const source = readFileSync(FIXTURE_SOURCE_PATH, 'utf8');
+    const source = readSourceFile(FIXTURE_SOURCE_PATH);
     const forbiddenTokens = [
       'Date.now',
       'new Date',
@@ -1541,7 +1526,7 @@ describe('operations overview parity contract', () => {
     }
 
     const canonical = JSON.stringify({ OVERVIEW_CONTRACT, OVERVIEW_SCENARIOS });
-    const digest = createHash('sha256').update(canonical).digest('hex');
+    const digest = sha256Json({ OVERVIEW_CONTRACT, OVERVIEW_SCENARIOS });
 
     expect(digest).toBe(
       '58a10237f8fc614597ab9c6bdaaacaa8d96fdd0d72da26a9188fa54c1f8ff4b2'

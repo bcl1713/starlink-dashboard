@@ -25,7 +25,7 @@ export interface RecordState {
   objectUrl: string | null;
   candidateUrl: string | null;
   image: HTMLImageElement | null;
-  done: ((error?: Error | null, tile?: HTMLElement) => void) | null;
+  done: ((error?: Error, tile?: HTMLElement) => void) | null;
   settled: boolean;
   cleanupImage: (() => void) | null;
   visibleLoad: Promise<void> | null;

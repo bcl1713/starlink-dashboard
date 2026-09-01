@@ -15,6 +15,18 @@ import {
 } from './operational-map-event-test-harness';
 import { radarGridLayerTestInternals } from './radar-grid-layer-test-internals';
 
+function requireMap(map: L.Map | null): L.Map {
+  if (!map) throw new Error('Expected map instance.');
+  return map;
+}
+
+function eventCallCount(
+  calls: readonly (readonly unknown[])[],
+  type: string
+): number {
+  return calls.filter(([eventType]) => eventType === type).length;
+}
+
 const radarService = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../services/monitoring', () => ({
@@ -205,8 +217,7 @@ describe('OperationalMap production event lifecycle', () => {
       </StrictMode>
     );
     await flush();
-    expect(map).toBeTruthy();
-    const activeMap = map as unknown as L.Map;
+    const activeMap = requireMap(map);
     const container = activeMap.getContainer();
     const radar = [...radarGridLayerTestInternals.layers][0];
     const mapEvents = layerEventCount(activeMap);
@@ -263,18 +274,10 @@ describe('OperationalMap production event lifecycle', () => {
     expect(media.listeners).toHaveLength(0);
     expect(resize.created).toBe(resize.disconnected);
     expect(resize.live).toBe(0);
-    const mapOnCalls = mapOn.mock.calls as unknown as readonly (readonly [
-      string,
-      ...unknown[],
-    ])[];
-    const mapOffCalls = mapOff.mock.calls as unknown as readonly (readonly [
-      string,
-      ...unknown[],
-    ])[];
-    expect(
-      mapOnCalls.filter(([type]) => type === 'moveend zoomend')
-    ).toHaveLength(
-      mapOffCalls.filter(([type]) => type === 'moveend zoomend').length
+    const mapOnCalls = mapOn.mock.calls;
+    const mapOffCalls = mapOff.mock.calls;
+    expect(eventCallCount(mapOnCalls, 'moveend zoomend')).toBe(
+      eventCallCount(mapOffCalls, 'moveend zoomend')
     );
     expect(radarGridLayerTestInternals.layers).toHaveLength(0);
   });

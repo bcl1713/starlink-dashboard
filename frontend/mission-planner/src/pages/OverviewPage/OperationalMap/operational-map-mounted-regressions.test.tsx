@@ -16,6 +16,13 @@ vi.mock('../../../services/monitoring', () => ({
   ),
 }));
 
+function eventCallCount(
+  calls: readonly (readonly unknown[])[],
+  type: string
+): number {
+  return calls.filter(([eventType]) => eventType === type).length;
+}
+
 describe('OperationalMap mounted regressions', () => {
   it('replays StrictMode setup with one basemap and scale through callback changes', async () => {
     let map: L.Map | null = null;
@@ -48,13 +55,13 @@ describe('OperationalMap mounted regressions', () => {
     expect(document.querySelectorAll('.leaflet-control-scale')).toHaveLength(1);
     unmount();
 
-    const onCalls = tileOn.mock.calls as unknown as string[][];
-    const offCalls = tileOff.mock.calls as unknown as string[][];
-    expect(offCalls.filter((call) => call[0] === 'tileload')).toHaveLength(
-      onCalls.filter((call) => call[0] === 'tileload').length
+    const onCalls = tileOn.mock.calls;
+    const offCalls = tileOff.mock.calls;
+    expect(eventCallCount(offCalls, 'tileload')).toBe(
+      eventCallCount(onCalls, 'tileload')
     );
-    expect(offCalls.filter((call) => call[0] === 'tileerror')).toHaveLength(
-      onCalls.filter((call) => call[0] === 'tileerror').length
+    expect(eventCallCount(offCalls, 'tileerror')).toBe(
+      eventCallCount(onCalls, 'tileerror')
     );
   });
 
