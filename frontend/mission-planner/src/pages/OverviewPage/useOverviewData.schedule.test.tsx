@@ -479,6 +479,60 @@ describe('useOverviewData scheduling and anchors', () => {
     expect(svc.getRouteCoordinates).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps history on its monotonic cadence deadline after a divergent-clock cadence change', async () => {
+    vi.setSystemTime(1_700_000_000_000);
+    let historyScheduleNow = 2_000;
+    const { svc } = createCallCountingServices();
+    const { rerender, result, unmount } = renderHook(
+      ({ cadence }) =>
+        useOverviewData({
+          cadence,
+          poiFilter: '',
+          radarEnabled: true,
+          services: svc,
+          now: Date.now,
+          historyScheduleNow: () => historyScheduleNow,
+        }),
+      { initialProps: { cadence: 1 as OverviewRefreshCadence } }
+    );
+    await act(flushOverviewEffects);
+    expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
+    vi.clearAllMocks();
+
+    // A real control change resets ordinary HTTP anchors from wall time, but
+    // history must retain a monotonic anchor and wait for its new deadline.
+    rerender({ cadence: 5 as const });
+    await act(flushOverviewEffects);
+    historyScheduleNow = 6_999;
+    await act(async () => vi.advanceTimersByTime(4_999));
+    await act(flushOverviewEffects);
+    expect(svc.getStatus).not.toHaveBeenCalled();
+    expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+
+    historyScheduleNow = 7_000;
+    await act(async () => vi.advanceTimersByTime(1));
+    await act(flushOverviewEffects);
+    expect(svc.getStatus).toHaveBeenCalledTimes(1);
+    expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
+
+    // An unavailable monotonic clock during a later cadence change cannot
+    // replace the history anchor with Date.now() or make history immediately due.
+    vi.clearAllMocks();
+    historyScheduleNow = Number.NaN;
+    rerender({ cadence: 10 as const });
+    await act(flushOverviewEffects);
+    await act(async () => result.current.controller.manualRefresh());
+    expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+
+    historyScheduleNow = 16_999;
+    await act(async () => result.current.controller.manualRefresh());
+    expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+    historyScheduleNow = 17_000;
+    await act(async () => result.current.controller.manualRefresh());
+    expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
   it('does not advance anchors while hidden or while reset time is invalid', async () => {
     let now = Number.NaN;
     let hidden = false;

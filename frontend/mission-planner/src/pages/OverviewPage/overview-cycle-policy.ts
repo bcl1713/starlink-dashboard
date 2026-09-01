@@ -36,6 +36,7 @@ export function beginOverviewCyclePlan(
   generation: number;
   nowMs: number | null;
   selected: readonly OverviewHttpSlot[];
+  historyAnchorResetTo: number | null;
 } {
   const generation = beginOverviewCycle(lifecycle);
   const blocked =
@@ -46,14 +47,25 @@ export function beginOverviewCyclePlan(
     !isOverviewLifecycleCurrent(lifecycle, generation) ||
     blocked
   ) {
-    return { generation, nowMs: null, selected: [] };
+    return {
+      generation,
+      nowMs: null,
+      selected: [],
+      historyAnchorResetTo: null,
+    };
   }
   const nowMs = safeNow(current.now ?? Date.now);
-  if (nowMs === null) return { generation, nowMs, selected: [] };
+  if (nowMs === null) {
+    return { generation, nowMs, selected: [], historyAnchorResetTo: null };
+  }
+  let historyAnchorResetTo: number | null = null;
   if (isOverviewCycleResetReady(lifecycle, generation)) {
-    resetOverviewAnchors(anchors, nowMs);
+    resetOverviewAnchors(anchors, nowMs, historyScheduleNow);
+    historyAnchorResetTo = historyScheduleNow;
     clearOverviewResetPending(lifecycle, generation);
-    if (reason !== 'manual') return { generation, nowMs, selected: [] };
+    if (reason !== 'manual') {
+      return { generation, nowMs, selected: [], historyAnchorResetTo };
+    }
   }
   return {
     generation,
@@ -65,6 +77,7 @@ export function beginOverviewCyclePlan(
       nowMs,
       historyScheduleNow
     ),
+    historyAnchorResetTo,
   };
 }
 
@@ -119,18 +132,23 @@ export const cadenceSeconds = (cadence: UseOverviewDataOptions['cadence']) =>
 
 export function resetOverviewAnchors(
   anchors: Map<OverviewHttpSlot, number>,
-  nowMs: number
+  nowMs: number,
+  historyScheduleNow: number | null = null
 ): void {
-  HTTP_SLOTS.forEach((slot) => anchors.set(slot, nowMs));
+  HTTP_SLOTS.filter((slot) => slot !== 'history').forEach((slot) =>
+    anchors.set(slot, nowMs)
+  );
+  if (historyScheduleNow !== null) anchors.set('history', historyScheduleNow);
 }
 
 export function resetAnchorsAt(
   anchors: Map<OverviewHttpSlot, number>,
-  now: () => number
+  now: () => number,
+  historyScheduleNow: () => number
 ): boolean {
   const nowMs = safeNow(now);
   if (nowMs === null) return false;
-  resetOverviewAnchors(anchors, nowMs);
+  resetOverviewAnchors(anchors, nowMs, nowMsOrNull(historyScheduleNow));
   return true;
 }
 

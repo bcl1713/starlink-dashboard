@@ -198,16 +198,33 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     [commitBatch, lifecycle, registry, setCurrentSnapshot]
   );
 
+  const resetScheduleAnchors = useCallback(() => {
+    const historyAnchor = monotonicNow(latest.current.historyScheduleNow);
+    const reset = resetAnchorsAt(
+      anchors.current,
+      latest.current.now,
+      () => historyAnchor ?? Number.NaN
+    );
+    if (reset && historyAnchor !== null) {
+      setHistoryScheduleAnchor(historyAnchor);
+    }
+    return reset;
+  }, []);
+
   const runCycle = useCallback(
     async (reason: OverviewCycleReason) => {
       const anchorMap = anchors.current;
-      const { generation, nowMs, selected } = beginOverviewCyclePlan(
-        lifecycle,
-        reason,
-        latest.current,
-        anchorMap,
-        monotonicNow(latest.current.historyScheduleNow)
-      );
+      const { generation, nowMs, selected, historyAnchorResetTo } =
+        beginOverviewCyclePlan(
+          lifecycle,
+          reason,
+          latest.current,
+          anchorMap,
+          monotonicNow(latest.current.historyScheduleNow)
+        );
+      if (historyAnchorResetTo !== null) {
+        setHistoryScheduleAnchor(historyAnchorResetTo);
+      }
       const current = latest.current;
 
       try {
@@ -248,9 +265,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
           reason === 'manual' ? manualResultFromOutcomes(outcomes) : undefined;
         await commitBatch(outcomes, nowMs, generation, manualResult);
       } finally {
-        finishOverviewCyclePlan(lifecycle, generation, () =>
-          resetAnchorsAt(anchors.current, latest.current.now)
-        );
+        finishOverviewCyclePlan(lifecycle, generation, resetScheduleAnchors);
       }
     },
     [
@@ -260,6 +275,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       setCurrentSnapshot,
       startHistory,
       startManualRadarRefresh,
+      resetScheduleAnchors,
     ]
   );
 
@@ -310,8 +326,10 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       return;
     }
     markOverviewResetPending(lifecycle);
-    resetOverviewAnchorsWhenIdle(lifecycle, lifecycle.generation, () =>
-      resetAnchorsAt(anchors.current, latest.current.now)
+    resetOverviewAnchorsWhenIdle(
+      lifecycle,
+      lifecycle.generation,
+      resetScheduleAnchors
     );
 
     const nowMs = safeNow(latest.current.now);
@@ -321,7 +339,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
         ? projectPaused(state, paused)
         : projectFreshness(state, nowMs, cadenceSeconds(cadence), false)
     );
-  }, [cadence, lifecycle]);
+  }, [cadence, lifecycle, resetScheduleAnchors]);
 
   useEffect(() => {
     if (!seen.current.filter) {
@@ -357,7 +375,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
 }
 
 function defaultHistoryScheduleNow(): number {
-  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+  return typeof performance !== 'undefined' ? performance.now() : Number.NaN;
 }
 
 function monotonicNow(now: () => number): number | null {
