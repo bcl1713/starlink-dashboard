@@ -46,6 +46,7 @@ describe('useOverviewData continuity', () => {
 
     async function renderOrder(order: 'telemetry-first' | 'history-first') {
       let nowMs = 1_788_026_405_000;
+      let historyScheduleNow = 0;
       const statusGate = deferred<typeof statusPayload>();
       const historyGate = deferred<typeof historyPayload>();
       const svc = createOverviewServices({
@@ -73,6 +74,7 @@ describe('useOverviewData continuity', () => {
           radarEnabled: true,
           services: svc,
           now: () => nowMs,
+          historyScheduleNow: () => historyScheduleNow,
         })
       );
       await act(flushOverviewEffects);
@@ -98,6 +100,10 @@ describe('useOverviewData continuity', () => {
         ...rendered,
         advanceToNextCycle() {
           nowMs = 1_788_028_205_000;
+          historyScheduleNow = 5_000;
+        },
+        advanceHistorySchedule() {
+          historyScheduleNow = 10_000;
         },
       };
     }
@@ -146,6 +152,7 @@ describe('useOverviewData continuity', () => {
           )
         ).toBe(true);
       }
+      rendered.advanceHistorySchedule();
       await act(async () => rendered.result.current.controller.manualRefresh());
       const final = rendered.result.current.snapshot.history.data;
       expect(final).toMatchObject({

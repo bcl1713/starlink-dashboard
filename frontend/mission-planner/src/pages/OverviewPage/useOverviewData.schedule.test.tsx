@@ -94,6 +94,80 @@ describe('useOverviewData scheduling and anchors', () => {
     unmount();
   });
 
+  it.each([
+    [
+      'throws',
+      () => {
+        throw new Error('monotonic clock unavailable');
+      },
+    ],
+    ['returns NaN', () => Number.NaN],
+    ['returns Infinity', () => Number.POSITIVE_INFINITY],
+  ] as const)(
+    'fails closed for an anchored history slot when its scheduler clock %s',
+    async (_failure, invalidScheduleNow) => {
+      for (const cadence of [1, 5] as const) {
+        let scheduleNow = 0;
+        let scheduleClock = () => scheduleNow;
+        let listener = () => {};
+        const { svc } = createCallCountingServices();
+        const visibility = {
+          isHidden: () => false,
+          subscribe: vi.fn((callback: () => void) => {
+            listener = callback;
+            return vi.fn();
+          }),
+        };
+        const { result, unmount } = renderHook(() =>
+          useOverviewData({
+            cadence,
+            poiFilter: '',
+            radarEnabled: true,
+            services: svc,
+            visibility,
+            now: Date.now,
+            historyScheduleNow: () => scheduleClock(),
+          })
+        );
+        await act(flushOverviewEffects);
+        expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
+        vi.clearAllMocks();
+
+        // These requests happen after bootstrap has dispatched and captured its
+        // history anchor. An unusable scheduler clock must omit only history;
+        // visibility, manual, and ordinary fast-slot work still run.
+        scheduleClock = invalidScheduleNow;
+        await act(async () => listener());
+        await act(flushOverviewEffects);
+        await act(async () => result.current.controller.manualRefresh());
+        await act(async () => vi.advanceTimersByTime(cadence * 1_000));
+        await act(flushOverviewEffects);
+        expect(svc.getStatus).toHaveBeenCalledTimes(2);
+        expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+
+        // Recovery remains fail-closed until the original monotonic deadline.
+        scheduleClock = () => scheduleNow;
+        scheduleNow = 4_999;
+        await act(async () => listener());
+        await act(flushOverviewEffects);
+        expect(svc.getMonitoringHistory).not.toHaveBeenCalled();
+
+        scheduleNow = 5_000;
+        await act(async () => listener());
+        await act(flushOverviewEffects);
+        expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
+        unmount();
+      }
+    }
+  );
+
+  it('starts history without a scheduler clock when bootstrap has no anchor', () => {
+    const anchors = new Map<OverviewHttpSlot, number>();
+
+    expect(dueSlots('bootstrap', 1, anchors, 0, null)).toContain('history');
+    expect(dueSlots('bootstrap', 5, anchors, 0, null)).toContain('history');
+  });
+
   it('starts selected five-second history on its exact slot with one timer and shifts late work forward', async () => {
     let now = 5_019;
     const historyStarts: number[] = [];
@@ -181,6 +255,7 @@ describe('useOverviewData scheduling and anchors', () => {
 
   it('rejects an older same-millisecond history commit after its fast slots settle late', async () => {
     const now = 5_019;
+    let historyScheduleNow = 0;
     const firstFastSlots = deferred<typeof statusPayload>();
     const older = {
       ...cloneFixture(historyPayload),
@@ -207,13 +282,15 @@ describe('useOverviewData scheduling and anchors', () => {
         radarEnabled: true,
         services: svc,
         now: () => now,
+        historyScheduleNow: () => historyScheduleNow,
       })
     );
     await act(flushOverviewEffects);
     expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
 
     // The first transport has settled, but its delayed fast slots still hold
-    // its commit. A manual cycle at the exact same millisecond starts attempt 2.
+    // its commit. A due manual cycle starts attempt 2 at the same UI time.
+    historyScheduleNow = 5_000;
     let manual!: Promise<void>;
     await act(() => {
       manual = result.current.controller.manualRefresh();

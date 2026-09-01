@@ -60,8 +60,10 @@ describe('useOverviewData lifecycle and service replacement', () => {
     );
     await act(flushOverviewEffects);
 
-    expect(calls).toHaveLength(10);
-    expect(announcements).toEqual(['ready:Overview ready.']);
+    // StrictMode replays bootstrap after the first history dispatch has anchored.
+    // The replay keeps fast bootstrap work, but must not restart history early.
+    expect(calls).toHaveLength(9);
+    expect(announcements).toEqual([]);
     expect(vi.getTimerCount()).toBeLessThanOrEqual(1);
     unmount();
     expect(vi.getTimerCount()).toBe(0);

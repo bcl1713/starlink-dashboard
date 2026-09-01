@@ -269,6 +269,7 @@ describe('useOverviewData history reconciliation', () => {
 
   it('preserves a real history failure while appending local telemetry', async () => {
     const telemetryTime = '2026-08-29T18:00:05Z';
+    let historyScheduleNow = 0;
     const svc = createOverviewServices({
       getStatus: vi
         .fn()
@@ -289,10 +290,12 @@ describe('useOverviewData history reconciliation', () => {
         radarEnabled: true,
         services: svc,
         now: () => 1_788_026_405_000,
+        historyScheduleNow: () => historyScheduleNow,
       })
     );
     await act(flushOverviewEffects);
     const successAt = result.current.snapshot.history.transportLastSuccessAt;
+    historyScheduleNow = 5_000;
     await act(async () => result.current.controller.manualRefresh());
     expect(result.current.snapshot.history.error).toEqual({
       code: 'request-failed',

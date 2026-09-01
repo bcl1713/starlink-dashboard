@@ -85,17 +85,23 @@ export function dueSlots(
   nowMs: number,
   historyScheduleNow: number | null = nowMs
 ): OverviewHttpSlot[] {
-  if (reason === 'manual' || reason === 'bootstrap') return [...HTTP_SLOTS];
-  if (cadence === 'paused') return [];
+  if (cadence === 'paused' && reason !== 'manual' && reason !== 'bootstrap') {
+    return [];
+  }
+  const cadenceSeconds = cadence === 'paused' ? 0 : cadence;
   return HTTP_SLOTS.filter((slot) => {
     const previous = anchors.get(slot);
-    const period = Math.max(cadence, PERIODS[slot]) * 1000;
-    const slotNow = slot === 'history' ? historyScheduleNow : nowMs;
-    return (
-      previous === undefined ||
-      slotNow === null ||
-      Math.max(0, slotNow - previous) >= period
-    );
+    if (slot === 'history') {
+      // Once history has a monotonic anchor, no reason may bypass that
+      // deadline. A failed clock is deliberately not treated as due.
+      if (previous === undefined) return true;
+      if (historyScheduleNow === null) return false;
+      const period = Math.max(cadenceSeconds, PERIODS.history) * 1000;
+      return Math.max(0, historyScheduleNow - previous) >= period;
+    }
+    if (reason === 'manual' || reason === 'bootstrap') return true;
+    const period = Math.max(cadenceSeconds, PERIODS[slot]) * 1000;
+    return previous === undefined || Math.max(0, nowMs - previous) >= period;
   });
 }
 
