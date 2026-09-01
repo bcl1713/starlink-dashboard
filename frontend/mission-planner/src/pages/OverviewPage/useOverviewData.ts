@@ -151,21 +151,23 @@ export function useOverviewData(options: UseOverviewDataOptions) {
         startSlots(state, ['history'], latest.current.cadence === 'paused')
       );
       void (async () => {
+        let outcome: OverviewSlotOutcome;
         try {
-          const outcome = await raceOverviewLifecycle(
+          outcome = await raceOverviewLifecycle(
             registry.start('history', poiFilter),
             lifecycle
           );
-          await afterFastSlots;
-          if (!lifecycle.invalidated) {
-            await commitBatch(
-              [{ slot: 'history', outcome }],
-              nowMs,
-              generation
-            );
-          }
         } finally {
+          // Transport ownership ends here.  Waiting for the concurrent fast
+          // slots must not consume the next history attempt's single-flight.
           historyInFlight.current = false;
+        }
+        await afterFastSlots;
+        if (
+          !lifecycle.invalidated &&
+          anchors.current.get('history') === nowMs
+        ) {
+          await commitBatch([{ slot: 'history', outcome }], nowMs, generation);
         }
       })();
       return true;

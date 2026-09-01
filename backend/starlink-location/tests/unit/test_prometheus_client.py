@@ -108,6 +108,42 @@ async def test_fixed_query_map_order_and_exact_path_params() -> None:
     assert {params["step"] for _, params in seen} == {"10"}
 
 
+@pytest.mark.asyncio
+async def test_single_history_flight_limits_series_workers_to_global_capacity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = make_client(successful_handler)
+    active = 0
+    peak_active = 0
+    release = asyncio.Event()
+    started = asyncio.Event()
+
+    async def slow_series(*_args: Any) -> Any:
+        nonlocal active, peak_active
+        active += 1
+        peak_active = max(peak_active, active)
+        if active == 4:
+            started.set()
+        try:
+            await release.wait()
+        finally:
+            active -= 1
+        return None
+
+    monkeypatch.setattr(client, "_fetch_series", slow_series)
+    request = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    await asyncio.wait_for(started.wait(), timeout=1)
+    await asyncio.sleep(0)
+
+    assert peak_active == 4
+    request.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await request
+    release.set()
+
+
 def test_public_signature_does_not_accept_untrusted_upstream_controls() -> None:
     params = set(inspect.signature(MonitoringPrometheusClient.get_history).parameters)
 
@@ -1273,8 +1309,9 @@ async def test_queue_full_cleans_flight_and_internal_tasks() -> None:
     )
     await asyncio.wait_for(all_slots_busy.wait(), timeout=1)
 
-    with pytest.raises(MonitoringUnavailableError):
+    with pytest.raises(MonitoringPrometheusError) as exc:
         await task
+    assert exc.value.code == "upstream_timeout"
 
     release.set()
     assert client._flights == {}
@@ -1392,7 +1429,7 @@ async def test_completed_flight_error_never_caches_during_delayed_cleanup(
     cleanup_release.set()
     await asyncio.sleep(0)
 
-    assert calls == 12
+    assert calls == 8
 
 
 @pytest.mark.asyncio

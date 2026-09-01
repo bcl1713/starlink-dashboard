@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { OverviewPOIFilter } from '../../types/monitoring';
 import type { OverviewRefreshCadence } from './preferences';
+import { dueSlots } from './overview-cycle-policy';
+import type { OverviewHttpSlot } from './overview-sources';
 import { useOverviewData } from './useOverviewData';
 import { useOverviewRefresh } from './useOverviewRefresh';
 import { getOverviewRefreshObserver } from './overview-refresh-observer.mock';
@@ -28,6 +30,14 @@ describe('useOverviewData scheduling and anchors', () => {
     overviewRefreshObserver.reset();
     vi.clearAllTimers();
     vi.useRealTimers();
+  });
+
+  it('keeps selected five-second history on its slot-relative phase', () => {
+    const anchors = new Map<OverviewHttpSlot, number>([['history', 5_019]]);
+
+    expect(dueSlots('scheduled', 5, anchors, 10_001)).toContain('history');
+    anchors.set('history', 10_001);
+    expect(dueSlots('scheduled', 5, anchors, 15_038)).toContain('history');
   });
 
   it('bootstraps exactly ten HTTP calls with shared grouped signals and no radar HTTP', async () => {

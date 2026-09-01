@@ -309,15 +309,9 @@ class MonitoringPrometheusClient:
             request.range_seconds // request.step_seconds + 1
         )
         point_budget = _PointBudget(max_points)
-        tasks = [
-            asyncio.create_task(
-                self._fetch_series(
-                    metric, expr, start, end, request.step_seconds, point_budget
-                )
-            )
-            for metric, expr in PROMETHEUS_EXPRESSIONS
-        ]
-        series = await self._await_all_series_or_cancel(tasks)
+        series = await self._fetch_series_with_workers(
+            start, end, request.step_seconds, point_budget
+        )
         if sum(len(item.samples) for item in series) > max_points:
             raise MonitoringPrometheusError("too_many_points")
         return MonitoringHistoryResponse(
@@ -328,6 +322,47 @@ class MonitoringPrometheusClient:
             step_seconds=request.step_seconds,
             series=series,
         )
+
+    async def _fetch_series_with_workers(
+        self,
+        start: datetime,
+        end: datetime,
+        step_seconds: int,
+        point_budget: _PointBudget,
+    ) -> list[MonitoringSeries]:
+        """Consume this flight's fixed metric list FIFO without owning slots.
+
+        Workers only bound local task creation.  Each actual upstream admission
+        remains exclusively inside ``_fetch_series`` so the process-wide gate
+        continues to govern all flights and event loops.
+        """
+        queue: asyncio.Queue[tuple[int, MonitoringMetric, str] | None] = asyncio.Queue()
+        for index, (metric, expr) in enumerate(PROMETHEUS_EXPRESSIONS):
+            queue.put_nowait((index, metric, expr))
+        worker_count = min(4, len(PROMETHEUS_EXPRESSIONS))
+        for _ in range(worker_count):
+            queue.put_nowait(None)
+
+        results: list[MonitoringSeries | None] = [None] * len(PROMETHEUS_EXPRESSIONS)
+
+        async def worker() -> None:
+            while True:
+                item = await queue.get()
+                try:
+                    if item is None:
+                        return
+                    index, metric, expr = item
+                    results[index] = await self._fetch_series(
+                        metric, expr, start, end, step_seconds, point_budget
+                    )
+                finally:
+                    queue.task_done()
+
+        workers = [asyncio.create_task(worker()) for _ in range(worker_count)]
+        await self._await_all_series_or_cancel(workers)
+        if any(series is None for series in results):
+            raise RuntimeError("monitoring history worker exited before completion")
+        return [series for series in results if series is not None]
 
     async def _fetch_series(
         self,
@@ -357,8 +392,8 @@ class MonitoringPrometheusClient:
 
     async def _await_all_series_or_cancel(
         self,
-        tasks: list[asyncio.Task[MonitoringSeries]],
-    ) -> list[MonitoringSeries]:
+        tasks: list[asyncio.Task[T]],
+    ) -> list[T]:
         pending = set(tasks)
         try:
             while pending:

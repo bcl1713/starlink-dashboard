@@ -26,6 +26,11 @@ const PERIODS = {
   history: 5,
 } as const satisfies Record<OverviewHttpSlot, number>;
 
+// The one global timer can arrive just before a history slot-relative boundary.
+// Admit only this bounded scheduler jitter so a 5s history cadence does not
+// silently become 10s; anchors still advance on every actual attempt.
+const HISTORY_PHASE_JITTER_MS = 50;
+
 export function beginOverviewCyclePlan(
   lifecycle: OverviewLifecycle,
   reason: OverviewCycleReason,
@@ -72,7 +77,10 @@ export function dueSlots(
   return HTTP_SLOTS.filter((slot) => {
     const previous = anchors.get(slot);
     const period = Math.max(cadence, PERIODS[slot]) * 1000;
-    return previous === undefined || Math.max(0, nowMs - previous) >= period;
+    const jitter = slot === 'history' ? HISTORY_PHASE_JITTER_MS : 0;
+    return (
+      previous === undefined || Math.max(0, nowMs - previous) >= period - jitter
+    );
   });
 }
 

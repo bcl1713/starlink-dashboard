@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import socket
+import time
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -358,6 +359,74 @@ async def test_history_over_uvicorn_returns_json_before_connected_client_times_o
 
 
 @pytest.mark.asyncio
+async def test_history_over_uvicorn_default_deadline_returns_json_504_for_trickling_flight() -> (
+    None
+):
+    """A real TCP client must see the application deadline, not a proxy timeout."""
+    loop_errors: list[dict[str, Any]] = []
+    loop = asyncio.get_running_loop()
+    previous_handler = loop.get_exception_handler()
+    loop.set_exception_handler(lambda _loop, context: loop_errors.append(context))
+    queries: list[str] = []
+
+    class TrickleStream(httpx.AsyncByteStream):
+        async def __aiter__(self) -> AsyncIterator[bytes]:
+            while True:
+                await asyncio.sleep(0.1)
+                yield b" "
+
+        async def aclose(self) -> None:
+            return None
+
+    async def upstream_handler(request: httpx.Request) -> httpx.Response:
+        queries.append(request.url.params["query"])
+        return httpx.Response(200, stream=TrickleStream())
+
+    prometheus = MonitoringPrometheusClient(
+        base_url="http://prometheus:9090",
+        transport=httpx.MockTransport(upstream_handler),
+        clock=lambda: UTC_NOW,
+    )
+    app.dependency_overrides[monitoring.get_monitoring_client] = lambda: prometheus
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+    server = uvicorn.Server(
+        uvicorn.Config(
+            app, host="127.0.0.1", port=port, lifespan="off", log_level="error"
+        )
+    )
+    server_task = asyncio.create_task(server.serve())
+    started = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=8) as route_client:
+            for _ in range(100):
+                if server.started:
+                    break
+                await asyncio.sleep(0.01)
+            assert server.started
+            response = await route_client.get(
+                f"http://127.0.0.1:{port}/api/monitoring/history"
+            )
+        elapsed = time.monotonic() - started
+        assert response.status_code == 504
+        assert response.headers["content-type"].startswith("application/json")
+        assert response.json() == {"detail": {"code": "monitoring_upstream_timeout"}}
+        assert 4.5 <= elapsed < 7
+        assert len(queries) == 4
+        await asyncio.sleep(0)
+        assert _monitoring_internal_pending_tasks() == []
+        assert loop_errors == []
+    finally:
+        server.should_exit = True
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(server_task, timeout=1)
+        app.dependency_overrides.clear()
+        await prometheus.aclose()
+        loop.set_exception_handler(previous_handler)
+
+
+@pytest.mark.asyncio
 async def test_history_stalled_cleanup_still_returns_structured_json_504_promptly(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -501,6 +570,11 @@ async def test_history_route_coalesces_real_prometheus_client_upstream_requests(
             first = asyncio.create_task(route_client.get("/api/monitoring/history"))
             await asyncio.wait_for(first_upstream_request.wait(), timeout=1)
             second = asyncio.create_task(route_client.get("/api/monitoring/history"))
+            for _ in range(100):
+                if any(flight.waiters == 2 for flight in prometheus._flights.values()):
+                    break
+                await asyncio.sleep(0)
+            assert any(flight.waiters == 2 for flight in prometheus._flights.values())
             release_upstream.set()
             first_response, second_response = await asyncio.gather(first, second)
 
