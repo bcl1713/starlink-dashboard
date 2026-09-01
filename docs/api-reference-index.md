@@ -74,6 +74,22 @@ Route history and GeoJSON export for map visualization.
 
 ---
 
+### Monitoring
+
+Server-owned monitoring history and cached ground-entry-point state for the
+Operations Overview.
+
+**Document:** [Monitoring API Reference](./api/monitoring.md)
+
+**Key Endpoints:**
+
+- `GET /api/monitoring/history` - Allow-listed monitoring history; rate limited
+  with safe `429` handling and `Retry-After` guidance in the reference.
+- `GET /api/monitoring/ground-entry-point` - Cached ground-entry-point state
+  without browser-side discovery.
+
+---
+
 ### ETA Route Timing
 
 Advanced route-based ETA calculations with timing profiles.
