@@ -26,40 +26,19 @@ X_AAR_POI_PREFIXES = (
 )
 
 
-def sync_ka_pois(
+def collect_ka_pois(
     mission: MissionLeg,
     route: ParsedRoute,
-    poi_manager: POIManager,
     coverage: CoverageAnalysisResult,
     parent_mission_id: str | None = None,
-) -> None:
-    """Synchronize Ka coverage POIs (gaps and swaps) for a mission leg."""
+) -> list[POICreate]:
+    """Collect Ka coverage POI payloads for a mission leg."""
     effective_mission_id = parent_mission_id or mission.id
-
-    # Delete Ka POIs for THIS specific leg only (route_id + mission_id combination)
-    deleted = 0
-    if mission.route_id:
-        deleted = poi_manager.delete_leg_pois(
-            route_id=mission.route_id,
-            mission_id=effective_mission_id,
-            categories=None,
-            prefixes=KA_POI_NAME_PREFIXES,
-        )
-
-    if deleted:
-        logger.info(
-            "Deleted %d existing Ka POIs for leg (route=%s, mission=%s)",
-            deleted,
-            mission.route_id,
-            effective_mission_id,
-        )
-
-    def create_poi(payload: POICreate):
-        poi_manager.create_poi(payload, active_route=route)
+    payloads: list[POICreate] = []
 
     for gap in coverage.gaps:
         if gap.start:
-            create_poi(
+            payloads.append(
                 POICreate(
                     name=_format_commka_exit_entry("Exit", gap.lost_satellite),
                     latitude=gap.start.latitude,
@@ -72,7 +51,7 @@ def sync_ka_pois(
                 )
             )
         if gap.end:
-            create_poi(
+            payloads.append(
                 POICreate(
                     name=_format_commka_exit_entry("Enter", gap.regained_satellite),
                     latitude=gap.end.latitude,
@@ -87,7 +66,7 @@ def sync_ka_pois(
 
     for swap in coverage.swaps:
         midpoint = swap.midpoint
-        create_poi(
+        payloads.append(
             POICreate(
                 name=_format_commka_transition_label(
                     swap.from_satellite, swap.to_satellite
@@ -101,41 +80,21 @@ def sync_ka_pois(
                 mission_id=effective_mission_id,
             )
         )
+    return payloads
 
 
-def sync_x_aar_pois(
+def collect_x_aar_pois(
     mission: MissionLeg,
     route: ParsedRoute,
-    poi_manager: POIManager,
     parent_mission_id: str | None = None,
-) -> None:
-    """Synchronize X-band and AAR POIs for a mission leg."""
+) -> list[POICreate]:
+    """Collect X-band and AAR POI payloads for a mission leg."""
     effective_mission_id = parent_mission_id or mission.id
-
-    # Delete X/AAR POIs for THIS specific leg only (route_id + mission_id combination)
-    deleted = 0
-    if mission.route_id:
-        deleted = poi_manager.delete_leg_pois(
-            route_id=mission.route_id,
-            mission_id=effective_mission_id,
-            categories=None,  # No category filter for X/AAR POIs
-            prefixes=X_AAR_POI_PREFIXES,
-        )
-
-    if deleted:
-        logger.info(
-            "Deleted %d existing X/AAR POIs for leg (route=%s, mission=%s)",
-            deleted,
-            mission.route_id,
-            effective_mission_id,
-        )
+    payloads: list[POICreate] = []
 
     transports = mission.transports
     if not transports:
-        return
-
-    def create(payload: POICreate):
-        poi_manager.create_poi(payload, active_route=route)
+        return payloads
 
     current_satellite = transports.initial_x_satellite_id
     for transition in transports.x_transitions or []:
@@ -146,7 +105,7 @@ def sync_x_aar_pois(
             transition.target_satellite_id,
             transition.is_same_satellite_transition,
         )
-        create(
+        payloads.append(
             POICreate(
                 name=label,
                 latitude=transition.latitude,
@@ -167,7 +126,7 @@ def sync_x_aar_pois(
     for window in transports.aar_windows or []:
         start_coords = find_waypoint_coordinates(route, window.start_waypoint_name)
         if start_coords:
-            create(
+            payloads.append(
                 POICreate(
                     name="AAR\nStart",
                     latitude=start_coords[0],
@@ -181,7 +140,7 @@ def sync_x_aar_pois(
             )
         end_coords = find_waypoint_coordinates(route, window.end_waypoint_name)
         if end_coords:
-            create(
+            payloads.append(
                 POICreate(
                     name="AAR\nEnd",
                     latitude=end_coords[0],
@@ -193,6 +152,42 @@ def sync_x_aar_pois(
                     mission_id=effective_mission_id,
                 )
             )
+    return payloads
+
+
+def sync_ka_pois(
+    mission: MissionLeg,
+    route: ParsedRoute,
+    poi_manager: POIManager,
+    coverage: CoverageAnalysisResult,
+    parent_mission_id: str | None = None,
+) -> None:
+    """Synchronize Ka POIs for compatibility with older callers."""
+    effective_mission_id = parent_mission_id or mission.id
+    payloads = collect_ka_pois(mission, route, coverage, parent_mission_id)
+    poi_manager.replace_timeline_event_pois(
+        route_id=mission.route_id or "",
+        mission_id=effective_mission_id,
+        generated_pois=payloads,
+        route=route,
+    )
+
+
+def sync_x_aar_pois(
+    mission: MissionLeg,
+    route: ParsedRoute,
+    poi_manager: POIManager,
+    parent_mission_id: str | None = None,
+) -> None:
+    """Synchronize X/AAR POIs for compatibility with older callers."""
+    effective_mission_id = parent_mission_id or mission.id
+    payloads = collect_x_aar_pois(mission, route, parent_mission_id)
+    poi_manager.replace_timeline_event_pois(
+        route_id=mission.route_id or "",
+        mission_id=effective_mission_id,
+        generated_pois=payloads,
+        route=route,
+    )
 
 
 def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:

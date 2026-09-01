@@ -1,63 +1,19 @@
 """Shared test fixtures and configuration."""
 
+# FR-004: File exceeds 300 lines (407 lines) because backend tests share broad
+# app, storage, metrics, mission, telemetry, and async isolation fixtures.
+
 import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
 
-os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
-
-# Ensure /data directories exist for RouteManager and Missions
-Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)
-Path("/tmp/test_data/sim_routes").mkdir(parents=True, exist_ok=True)
-Path("data/missions").mkdir(parents=True, exist_ok=True)
-TEST_MISSIONS_DIR = Path("/tmp/test_data/missions")
-TEST_MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
-
-# Monkey-patch RouteManager and POIManager before any imports
-import app.services.route_manager as route_manager_module
-
-original_route_init = route_manager_module.RouteManager.__init__
-
-
-def patched_route_init(self, routes_dir="/tmp/test_data/routes"):
-    self.routes_dir = Path(routes_dir)
-    self.routes_dir.mkdir(parents=True, exist_ok=True)
-    self._routes = {}
-    self._active_route_id = None
-    self._observer = None
-    self._errors = {}
-
-
-route_manager_module.RouteManager.__init__ = patched_route_init
-
-import json
+import pytest
+from fastapi.testclient import TestClient
 
 import app.services.poi_manager as poi_manager_module
-
-original_poi_init = poi_manager_module.POIManager.__init__
-
-
-def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
-    self.pois_file = Path(pois_file)
-    self.pois_file.parent.mkdir(parents=True, exist_ok=True)
-    self.lock_file = str(self.pois_file) + ".lock"
-    self._pois = {}
-    self._logger = poi_manager_module.logger
-
-    # Ensure file exists with initial structure
-    if not self.pois_file.exists():
-        with open(self.pois_file, "w") as f:
-            json.dump({"pois": {}, "routes": {}}, f, indent=2)
-
-    # Call the original _load_pois to properly load from the file
-    self._load_pois()
-
-
-poi_manager_module.POIManager.__init__ = patched_poi_init
-
-import pytest
+import app.services.route_manager as route_manager_module
 from app.core.config import ConfigManager
 from app.models.config import (
     NetworkConfig,
@@ -74,8 +30,40 @@ from app.models.telemetry import (
     TelemetryData,
 )
 from app.simulation.coordinator import SimulationCoordinator
-from fastapi.testclient import TestClient
 from main import app
+
+os.environ.setdefault("STARLINK_DISABLE_BACKGROUND_TASKS", "1")
+
+# Ensure /data directories exist for RouteManager and Missions
+Path("/tmp/test_data/routes").mkdir(parents=True, exist_ok=True)
+Path("/tmp/test_data/sim_routes").mkdir(parents=True, exist_ok=True)
+Path("data/missions").mkdir(parents=True, exist_ok=True)
+TEST_MISSIONS_DIR = Path("/tmp/test_data/missions")
+TEST_MISSIONS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Monkey-patch RouteManager before tests create route managers.
+original_route_init = route_manager_module.RouteManager.__init__
+
+
+def patched_route_init(self, routes_dir="/tmp/test_data/routes"):
+    self.routes_dir = Path(routes_dir)
+    self.routes_dir.mkdir(parents=True, exist_ok=True)
+    self._routes = {}
+    self._active_route_id = None
+    self._observer = None
+    self._errors = {}
+
+
+route_manager_module.RouteManager.__init__ = patched_route_init
+
+original_poi_init = poi_manager_module.POIManager.__init__
+
+
+def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
+    original_poi_init(self, pois_file=pois_file)
+
+
+poi_manager_module.POIManager.__init__ = patched_poi_init
 
 
 @pytest.fixture
@@ -242,8 +230,9 @@ def reset_prometheus_registry():
     """
     # Before each test, reset all gauge metrics to prevent pollution from NaN values
     try:
-        from app.core import metrics
         from prometheus_client.core import Gauge
+
+        from app.core import metrics
 
         # Reset the custom position collector data
         metrics._current_position["latitude"] = 0.0

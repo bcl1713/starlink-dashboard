@@ -1,10 +1,16 @@
 """Unit tests for POI manager functionality."""
 
+# FR-004: File exceeds 300 lines (502 lines) because it preserves legacy POI
+# manager CRUD coverage while adding durable coordination regression contracts.
+
 import json
 import tempfile
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
+
 from app.models.poi import POICreate, POIUpdate
 from app.services.poi_manager import POIManager
 
@@ -231,6 +237,81 @@ class TestPOIManager:
         assert len(remaining) == 1
         assert remaining[0].name == "X-Band-7"
         assert remaining[0].mission_id is None and remaining[0].route_id is None
+
+    def test_reads_return_deep_copies(self, poi_manager):
+        """Callers must not be able to mutate cached POIs through reads."""
+        created = poi_manager.create_poi(
+            POICreate(name="Mutable", latitude=1.0, longitude=1.0)
+        )
+
+        fetched = poi_manager.get_poi(created.id)
+        assert fetched is not None
+        fetched.name = "Changed outside manager"
+        listed = poi_manager.list_pois()
+        listed[0].latitude = 9.0
+
+        fresh = poi_manager.get_poi(created.id)
+        assert fresh is not None
+        assert fresh.name == "Mutable"
+        assert fresh.latitude == 1.0
+
+    def test_failed_durable_create_does_not_update_cache(
+        self, poi_manager, monkeypatch
+    ):
+        """A mutator must not report success or change cache before durable commit."""
+        original_replace = Path.replace
+
+        def fail_replace(self, target):
+            if (
+                self.name.startswith(".pois.json-")
+                and Path(target) == poi_manager.pois_file
+            ):
+                raise OSError("simulated replace failure")
+            return original_replace(self, target)
+
+        monkeypatch.setattr(Path, "replace", fail_replace)
+
+        with pytest.raises(OSError, match="simulated replace failure"):
+            poi_manager.create_poi(
+                POICreate(name="Not Durable", latitude=1.0, longitude=1.0)
+            )
+
+        assert poi_manager.list_pois() == []
+        assert json.loads(poi_manager.pois_file.read_text()) == {
+            "pois": {},
+            "routes": {},
+        }
+
+    def test_corrupt_json_fails_closed_for_reads_and_mutations(self, temp_pois_file):
+        """Corrupt storage must not be silently overwritten by a mutator."""
+        temp_pois_file.write_text("{not-json")
+        manager = POIManager(pois_file=temp_pois_file)
+
+        assert manager.list_pois() == []
+        with pytest.raises(ValueError, match="corrupt"):
+            manager.create_poi(POICreate(name="Blocked", latitude=1.0, longitude=1.0))
+        assert temp_pois_file.read_text() == "{not-json"
+
+    def test_concurrent_creates_are_fifo_and_durable(self, temp_pois_file):
+        """Queued synchronous operations should commit as one coherent sequence."""
+        manager = POIManager(pois_file=temp_pois_file)
+        barrier = threading.Barrier(10)
+
+        def create(index: int) -> str:
+            barrier.wait(timeout=5)
+            poi = manager.create_poi(
+                POICreate(name=f"POI {index:02d}", latitude=index, longitude=index)
+            )
+            return poi.id
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            ids = list(executor.map(create, range(10)))
+
+        assert len(ids) == 10
+        persisted = POIManager(pois_file=temp_pois_file).list_pois()
+        assert sorted(poi.name for poi in persisted) == [
+            f"POI {index:02d}" for index in range(10)
+        ]
 
     def test_delete_mission_pois_by_category(self, poi_manager):
         """Ensure mission category deletions only remove targeted POIs."""

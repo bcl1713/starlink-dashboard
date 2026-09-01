@@ -1,7 +1,12 @@
 """Tests for mission timeline segment assembly."""
 
+# FR-004: The shared segment and timing fixtures make this contract suite cohesive
+# despite its size; the sampler concurrency regression belongs with them.
+
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
+from app.mission import timeline_service
 from app.mission.call_availability import normalize_call_availability_timeline
 from app.mission.models import (
     AARWindow,
@@ -256,6 +261,34 @@ def test_call_availability_aar_advisory_carves_hole_without_degrading():
     assert timeline.segments[1].reasons == [
         "Safety-of-flight advised — AAR window; AAR Start"
     ]
+
+
+def test_default_coverage_sampler_constructor_is_synchronized(monkeypatch, tmp_path):
+    """Concurrent lazy sampler lookups should construct the sampler once."""
+    coverage_path = tmp_path / "data" / "sat_coverage" / "commka.geojson"
+    coverage_path.parent.mkdir(parents=True)
+    coverage_path.write_text('{"type": "FeatureCollection", "features": []}')
+    constructed = 0
+
+    class FakeSampler:
+        def __init__(self, path):
+            nonlocal constructed
+            constructed += 1
+            self.path = path
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(timeline_service, "_COVERAGE_SAMPLER", None)
+    monkeypatch.setattr(timeline_service, "CoverageSampler", FakeSampler)
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        samplers = list(
+            executor.map(
+                lambda _: timeline_service._get_default_coverage_sampler(), range(10)
+            )
+        )
+
+    assert constructed == 1
+    assert len({id(sampler) for sampler in samplers}) == 1
 
 
 def test_call_availability_priority_aar_advisory_not_outage():

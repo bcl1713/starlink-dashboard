@@ -1,8 +1,13 @@
 """Mission timeline computation utilities."""
 
+# FR-004: File exceeds 300 lines (305 lines) because timeline generation
+# coordinates route projection, transport rules, POI replacement, sampler
+# initialization, statistics, and compatibility exports. Deferred to v0.4.0.
+
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from pathlib import Path
 
@@ -34,7 +39,7 @@ from app.mission.timeline_builder.events import (
     apply_manual_outages,
     apply_x_azimuth_events,
 )
-from app.mission.timeline_builder.pois import sync_ka_pois, sync_x_aar_pois
+from app.mission.timeline_builder.pois import collect_ka_pois, collect_x_aar_pois
 from app.mission.timeline_builder.stats import (
     TimelineSummary,
     annotate_aar_markers,
@@ -60,6 +65,7 @@ except IndexError:
     REPO_ROOT = Path.cwd()
 
 _COVERAGE_SAMPLER: CoverageSampler | None = None
+_COVERAGE_SAMPLER_LOCK = threading.Lock()
 
 
 def build_mission_timeline(
@@ -186,10 +192,18 @@ def build_mission_timeline(
         mission_end,
     )
 
-    if poi_manager and (coverage_result.gaps or coverage_result.swaps):
-        sync_ka_pois(mission, route, poi_manager, coverage_result, parent_mission_id)
     if poi_manager:
-        sync_x_aar_pois(mission, route, poi_manager, parent_mission_id)
+        effective_mission_id = parent_mission_id or mission.id
+        generated_pois = [
+            *collect_ka_pois(mission, route, coverage_result, parent_mission_id),
+            *collect_x_aar_pois(mission, route, parent_mission_id),
+        ]
+        poi_manager.replace_timeline_event_pois(
+            route_id=mission.route_id,
+            mission_id=effective_mission_id,
+            generated_pois=generated_pois,
+            route=route,
+        )
 
     apply_manual_outages(rule_engine, mission.transports.ka_outages, Transport.KA)
     apply_manual_outages(rule_engine, mission.transports.ku_overrides, Transport.KU)
@@ -258,27 +272,29 @@ def _get_default_coverage_sampler() -> CoverageSampler | None:
     if _COVERAGE_SAMPLER is not None:
         return _COVERAGE_SAMPLER
 
-    coverage_path = Path("data/sat_coverage/commka.geojson")
-    if not coverage_path.exists():
-        kmz_candidates = [
-            Path("data/sat_coverage/CommKa.kmz"),
-            APP_DIR / "satellites" / "assets" / "CommKa.kmz",
-        ]
-        for kmz_path in kmz_candidates:
-            if kmz_path.exists():
-                coverage_path.parent.mkdir(parents=True, exist_ok=True)
-                load_commka_coverage(kmz_path, coverage_path.parent)
-                break
+    with _COVERAGE_SAMPLER_LOCK:
+        if _COVERAGE_SAMPLER is not None:
+            return _COVERAGE_SAMPLER
 
-    if coverage_path.exists():
-        _COVERAGE_SAMPLER = CoverageSampler(coverage_path)
-    else:
-        _COVERAGE_SAMPLER = None
+        coverage_path = Path("data/sat_coverage/commka.geojson")
+        if not coverage_path.exists():
+            kmz_candidates = [
+                Path("data/sat_coverage/CommKa.kmz"),
+                APP_DIR / "satellites" / "assets" / "CommKa.kmz",
+            ]
+            for kmz_path in kmz_candidates:
+                if kmz_path.exists():
+                    coverage_path.parent.mkdir(parents=True, exist_ok=True)
+                    load_commka_coverage(kmz_path, coverage_path.parent)
+                    break
 
+        if coverage_path.exists():
+            _COVERAGE_SAMPLER = CoverageSampler(coverage_path)
+        else:
+            _COVERAGE_SAMPLER = None
     return _COVERAGE_SAMPLER
 
 
-# Re-export key types for backward compatibility
 __all__ = [
     "RouteTemporalProjector",
     "TimelineComputationError",

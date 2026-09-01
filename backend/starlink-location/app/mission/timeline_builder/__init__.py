@@ -37,6 +37,8 @@ from app.mission.timeline_builder.events import (
     apply_x_azimuth_events,
 )
 from app.mission.timeline_builder.pois import (
+    collect_ka_pois,
+    collect_x_aar_pois,
     sync_ka_pois,
     sync_x_aar_pois,
 )
@@ -59,30 +61,26 @@ from app.mission.timeline_builder.utils import (
 )
 
 __all__ = [
-    # Utils
     "DEFAULT_CRUISE_ALTITUDE_M",
     "TIMELINE_SAMPLE_INTERVAL_SECONDS",
     "CoverageAnalysisResult",
     "KaCoverageGap",
     "KaCoverageSwap",
-    # AAR
     "ResolvedAARWindow",
     "RouteProjection",
-    # Coverage
     "RouteSample",
     "RouteTemporalProjector",
-    # Calculator
     "TimelineComputationError",
-    # Stats
     "TimelineSummary",
     "analyze_ka_coverage",
     "annotate_aar_markers",
-    # Events
     "apply_ka_events",
     "apply_manual_outages",
     "apply_x_azimuth_events",
     "apply_x_transitions",
     "attach_statistics",
+    "collect_ka_pois",
+    "collect_x_aar_pois",
     "derive_mission_window",
     "ensure_datetime",
     "find_waypoint_coordinates",
@@ -96,7 +94,6 @@ __all__ = [
     "route_takeoff_delta",
     "route_with_adjusted_departure",
     "summarize_timeline",
-    # POIs
     "sync_ka_pois",
     "sync_x_aar_pois",
     "timestamp_for_waypoint",
