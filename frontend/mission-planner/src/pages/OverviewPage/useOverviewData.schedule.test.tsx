@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { OverviewPOIFilter } from '../../types/monitoring';
 import type { OverviewRefreshCadence } from './preferences';
-import { dueSlots } from './overview-cycle-policy';
+import { dueSlots, nextHistoryDueAt } from './overview-cycle-policy';
 import type { OverviewHttpSlot } from './overview-sources';
 import { useOverviewData } from './useOverviewData';
 import { useOverviewRefresh } from './useOverviewRefresh';
@@ -32,12 +32,117 @@ describe('useOverviewData scheduling and anchors', () => {
     vi.useRealTimers();
   });
 
-  it('keeps selected five-second history on its slot-relative phase', () => {
-    const anchors = new Map<OverviewHttpSlot, number>([['history', 5_019]]);
+  it('uses an exact history slot relative to its last start, not an early allowance', () => {
+    const anchors = new Map<OverviewHttpSlot, number>([['history', 0]]);
 
-    expect(dueSlots('scheduled', 5, anchors, 10_001)).toContain('history');
-    anchors.set('history', 10_001);
+    expect(dueSlots('scheduled', 5, anchors, 4_949)).not.toContain('history');
+    expect(dueSlots('scheduled', 5, anchors, 4_950)).not.toContain('history');
+    expect(dueSlots('scheduled', 5, anchors, 4_951)).not.toContain('history');
+    expect(dueSlots('scheduled', 5, anchors, 5_000)).toContain('history');
+    expect(nextHistoryDueAt(5, anchors)).toBe(5_000);
+
+    anchors.set('history', 5_019);
+    expect(dueSlots('scheduled', 5, anchors, 10_001)).not.toContain('history');
+    expect(nextHistoryDueAt(5, anchors)).toBe(10_019);
+    anchors.set('history', 10_019);
+    expect(nextHistoryDueAt(5, anchors)).toBe(15_019);
     expect(dueSlots('scheduled', 5, anchors, 15_038)).toContain('history');
+  });
+
+  it('starts selected five-second history on its exact slot with one timer and shifts late work forward', async () => {
+    let now = 5_019;
+    const historyStarts: number[] = [];
+    const { svc } = createCallCountingServices({
+      getMonitoringHistory: vi.fn(() => {
+        historyStarts.push(now);
+        return Promise.resolve(cloneFixture(historyPayload));
+      }),
+    });
+    const { unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 5,
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => now,
+      })
+    );
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([5_019]);
+    expect(vi.getTimerCount()).toBe(1);
+
+    now = 10_001;
+    await act(async () => vi.advanceTimersByTime(4_982));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([5_019]);
+    expect(vi.getTimerCount()).toBe(1);
+
+    now = 10_019;
+    await act(async () => vi.advanceTimersByTime(18));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([5_019, 10_019]);
+    expect(vi.getTimerCount()).toBe(1);
+
+    // The timer is late by 19ms.  The contract is no early/overlapping catch-up:
+    // start once at the observed time and make that start the next slot anchor.
+    now = 15_038;
+    await act(async () => vi.advanceTimersByTime(5_019));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([5_019, 10_019, 15_038]);
+    expect(vi.getTimerCount()).toBe(1);
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('rejects an older same-millisecond history commit after its fast slots settle late', async () => {
+    const now = 5_019;
+    const firstFastSlots = deferred<typeof statusPayload>();
+    const older = {
+      ...cloneFixture(historyPayload),
+      generated_at: '2026-08-29T18:00:01Z',
+    };
+    const newer = {
+      ...cloneFixture(historyPayload),
+      generated_at: '2026-08-29T18:00:02Z',
+    };
+    const { svc } = createCallCountingServices({
+      getStatus: vi
+        .fn()
+        .mockImplementationOnce(() => firstFastSlots.promise)
+        .mockResolvedValue(cloneFixture(statusPayload)),
+      getMonitoringHistory: vi
+        .fn()
+        .mockResolvedValueOnce(older)
+        .mockResolvedValueOnce(newer),
+    });
+    const { result, unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 5,
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => now,
+      })
+    );
+    await act(flushOverviewEffects);
+    expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(1);
+
+    // The first transport has settled, but its delayed fast slots still hold
+    // its commit. A manual cycle at the exact same millisecond starts attempt 2.
+    let manual!: Promise<void>;
+    await act(() => {
+      manual = result.current.controller.manualRefresh();
+    });
+    expect(svc.getMonitoringHistory).toHaveBeenCalledTimes(2);
+
+    // The shared fast request releases both cycles together.  Attempt 1 must
+    // still be barred solely by its older token, despite sharing `now`.
+    firstFastSlots.resolve(cloneFixture(statusPayload));
+    await act(async () => manual);
+    expect(result.current.snapshot.history.data?.generated_at).toBe(
+      newer.generated_at
+    );
+    unmount();
   });
 
   it('bootstraps exactly ten HTTP calls with shared grouped signals and no radar HTTP', async () => {

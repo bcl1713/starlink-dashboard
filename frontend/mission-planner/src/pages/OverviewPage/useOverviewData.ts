@@ -71,6 +71,10 @@ export function useOverviewData(options: UseOverviewDataOptions) {
   const anchors = useRef(new Map<OverviewHttpSlot, number>());
   const pendingTelemetry = useRef<OverviewStatus[]>([]);
   const historyInFlight = useRef(false);
+  const historyAttempt = useRef(0);
+  const [historyScheduleAnchor, setHistoryScheduleAnchor] = useState<
+    number | null
+  >(null);
   const seen = useRef({ cadence: false, filter: false });
   const latest = useRef({ cadence, poiFilter, radarEnabled, now, visibility });
   latest.current = { cadence, poiFilter, radarEnabled, now, visibility };
@@ -145,8 +149,10 @@ export function useOverviewData(options: UseOverviewDataOptions) {
       afterFastSlots: Promise<unknown>
     ) => {
       if (historyInFlight.current) return false;
+      const attempt = ++historyAttempt.current;
       historyInFlight.current = true;
       anchors.current.set('history', nowMs);
+      setHistoryScheduleAnchor(nowMs);
       setCurrentSnapshot(generation, (state) =>
         startSlots(state, ['history'], latest.current.cadence === 'paused')
       );
@@ -163,10 +169,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
           historyInFlight.current = false;
         }
         await afterFastSlots;
-        if (
-          !lifecycle.invalidated &&
-          anchors.current.get('history') === nowMs
-        ) {
+        if (!lifecycle.invalidated && historyAttempt.current === attempt) {
           await commitBatch([{ slot: 'history', outcome }], nowMs, generation);
         }
       })();
@@ -233,9 +236,18 @@ export function useOverviewData(options: UseOverviewDataOptions) {
     ]
   );
 
+  const historyNextScheduledAt = useCallback(
+    () =>
+      cadence === 5 && historyScheduleAnchor !== null
+        ? historyScheduleAnchor + 5_000
+        : null,
+    [cadence, historyScheduleAnchor]
+  );
+
   const refreshController = useOverviewRefresh({
     cadence,
     now,
+    nextScheduledAt: historyNextScheduledAt,
     onRefresh: runCycle,
   });
 

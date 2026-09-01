@@ -536,11 +536,12 @@ async def test_history_route_preserves_client_single_flight_coalescing() -> None
 
 
 @pytest.mark.asyncio
-async def test_history_route_coalesces_real_prometheus_client_upstream_requests() -> (
-    None
-):
+async def test_history_route_coalesces_real_prometheus_client_upstream_requests(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     upstream_seen: list[str] = []
     first_upstream_request = asyncio.Event()
+    second_waiter_registered = asyncio.Event()
     release_upstream = asyncio.Event()
     loop_errors: list[dict[str, Any]] = []
     loop = asyncio.get_running_loop()
@@ -559,6 +560,15 @@ async def test_history_route_coalesces_real_prometheus_client_upstream_requests(
         transport=httpx.MockTransport(upstream_handler),
         clock=lambda: UTC_NOW,
     )
+    original_join = prometheus._join_or_start_flight
+
+    async def observed_join(*args: Any, **kwargs: Any) -> Any:
+        flight = await original_join(*args, **kwargs)
+        if flight.waiters == 2:
+            second_waiter_registered.set()
+        return flight
+
+    monkeypatch.setattr(prometheus, "_join_or_start_flight", observed_join)
     app.dependency_overrides[monitoring.get_monitoring_client] = lambda: prometheus
 
     try:
@@ -570,11 +580,7 @@ async def test_history_route_coalesces_real_prometheus_client_upstream_requests(
             first = asyncio.create_task(route_client.get("/api/monitoring/history"))
             await asyncio.wait_for(first_upstream_request.wait(), timeout=1)
             second = asyncio.create_task(route_client.get("/api/monitoring/history"))
-            for _ in range(100):
-                if any(flight.waiters == 2 for flight in prometheus._flights.values()):
-                    break
-                await asyncio.sleep(0)
-            assert any(flight.waiters == 2 for flight in prometheus._flights.values())
+            await asyncio.wait_for(second_waiter_registered.wait(), timeout=1)
             release_upstream.set()
             first_response, second_response = await asyncio.gather(first, second)
 

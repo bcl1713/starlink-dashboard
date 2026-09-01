@@ -1,5 +1,24 @@
+import {
+  assertSettledSuccessfulHistoryStartDeltas,
+  type HistoryCadenceContract,
+} from '../../../src/pages/OverviewPage/overview-history-cadence';
 import type { captureCdpContinuity } from './overview-cdp-capture';
 import type { LifecycleSample } from './overview-lifecycle-types';
+
+/**
+ * Browser-runtime callers pass CDP records only after their terminal state is
+ * settled.  The source contract rejects early starts and late starts outside
+ * its explicit measurement budget; it is deliberately not a request count.
+ */
+export function assertHistoryCadenceEvidence(
+  evidence: Awaited<ReturnType<typeof captureCdpContinuity>>,
+  contract: HistoryCadenceContract
+) {
+  assertSettledSuccessfulHistoryStartDeltas(
+    evidence.cdpNetworkLedger,
+    contract
+  );
+}
 
 export function assertContinuityEvidence(
   evidence: Awaited<ReturnType<typeof captureCdpContinuity>>
