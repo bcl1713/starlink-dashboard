@@ -1,8 +1,9 @@
 # Starlink Dashboard
 
 A Docker-based monitoring system for Starlink terminals with real-time metrics
-visualization through Prometheus and Grafana. Supports both live monitoring of
-physical Starlink hardware and simulation mode for offline development.
+visualization through a React operations overview, Prometheus, and Grafana.
+Supports both live monitoring of physical Starlink hardware and simulation mode
+for offline development.
 
 **Status:** Phase 0 Complete (Foundation) + ETA Route Timing Feature Complete
 **Version:** 0.2.0 **Last Updated:** 2026-02-28
@@ -14,6 +15,8 @@ physical Starlink hardware and simulation mode for offline development.
 **For Users:**
 
 - [Quick Start](./docs/setup/quick-start.md) - Get up and running in 3 minutes
+- [Operations Overview](./docs/operations-overview.md) - Default operations UI,
+  controls, API boundary, and Grafana transition
 - [Setup Guide](./docs/setup/README.md) - Detailed installation instructions
 - [Features Overview](./docs/features/overview.md) - Complete feature list
 - [Troubleshooting](./docs/troubleshooting/quick-diagnostics.md) - Common issues
@@ -52,7 +55,7 @@ docker compose up -d
 
 # 4. Verify and access
 curl http://localhost:8000/health        # Backend health
-open http://localhost:3000                # Grafana (admin/admin)
+open http://localhost:5173/overview       # React Operations Overview
 ```
 
 **Detailed setup:** See [Quick Start Guide](./docs/setup/quick-start.md)
@@ -63,13 +66,14 @@ open http://localhost:3000                # Grafana (admin/admin)
 
 Once services are running:
 
-| Service          | URL                             | Purpose                  |
-| ---------------- | ------------------------------- | ------------------------ |
-| **Grafana**      | <http://localhost:3000>         | Dashboards (admin/admin) |
-| **Prometheus**   | <http://localhost:9090>         | Metrics database         |
-| **Backend API**  | <http://localhost:8000/docs>    | Interactive API docs     |
-| **Health Check** | <http://localhost:8000/health>  | Service status           |
-| **Metrics**      | <http://localhost:8000/metrics> | Raw Prometheus metrics   |
+| Service          | URL                              | Purpose                                    |
+| ---------------- | -------------------------------- | ------------------------------------------ |
+| **Operations**   | <http://localhost:5173/overview> | Default React operations UI                |
+| **Grafana**      | <http://localhost:3000>          | Dual-run fallback dashboards (admin/admin) |
+| **Prometheus**   | <http://localhost:9090>          | Metrics database                           |
+| **Backend API**  | <http://localhost:8000/docs>     | Interactive API docs                       |
+| **Health Check** | <http://localhost:8000/health>   | Service status                             |
+| **Metrics**      | <http://localhost:8000/metrics>  | Raw Prometheus metrics                     |
 
 ---
 
@@ -80,6 +84,8 @@ Comprehensive documentation is organized by topic:
 ### For Getting Started
 
 - [Quick Start](./docs/setup/quick-start.md) - 3-minute setup
+- [Operations Overview](./docs/operations-overview.md) - Default access and
+  operator guidance
 - [Setup Guide](./docs/setup/installation.md) - Installation and configuration
 
 ### For Using the System
@@ -113,8 +119,7 @@ Comprehensive documentation is organized by topic:
 
 **Development Questions:**
 
-- See [Contributing Guide](./CONTRIBUTING.md)
-**Specific Issues:**
+- See [Contributing Guide](./CONTRIBUTING.md) **Specific Issues:**
 
 - See [Troubleshooting Guide](./docs/troubleshooting/quick-diagnostics.md)
 - Run diagnostic commands in [Quick Start](./docs/setup/quick-start.md)
@@ -146,5 +151,6 @@ Part of the Starlink Dashboard project.
 ---
 
 **Quick Links:** [Quick Start](./docs/setup/quick-start.md) |
+[Operations Overview](./docs/operations-overview.md) |
 [Features](./docs/features/overview.md) |
 [API Docs](./docs/api-reference-index.md) | [Contributing](./CONTRIBUTING.md)

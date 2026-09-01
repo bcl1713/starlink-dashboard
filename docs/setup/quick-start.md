@@ -27,7 +27,7 @@ docker compose up -d
 
 # 4. Verify and access
 curl http://localhost:8000/health        # Backend health
-open http://localhost:3000                # Grafana (admin/admin)
+open http://localhost:5173/overview       # React Operations Overview
 ```
 
 **Detailed setup:** See [Installation Guide](./installation.md)
@@ -38,13 +38,28 @@ open http://localhost:3000                # Grafana (admin/admin)
 
 Once services are running:
 
-| Service          | URL                             | Purpose                  |
-| ---------------- | ------------------------------- | ------------------------ |
-| **Grafana**      | <http://localhost:3000>         | Dashboards (admin/admin) |
-| **Prometheus**   | <http://localhost:9090>         | Metrics database         |
-| **Backend API**  | <http://localhost:8000/docs>    | Interactive API docs     |
-| **Health Check** | <http://localhost:8000/health>  | Service status           |
-| **Metrics**      | <http://localhost:8000/metrics> | Raw Prometheus metrics   |
+| Service          | URL                              | Purpose                                    |
+| ---------------- | -------------------------------- | ------------------------------------------ |
+| **Operations**   | <http://localhost:5173/overview> | Default React operations UI                |
+| **Grafana**      | <http://localhost:3000>          | Dual-run fallback dashboards (admin/admin) |
+| **Prometheus**   | <http://localhost:9090>          | Metrics database                           |
+| **Backend API**  | <http://localhost:8000/docs>     | Interactive API docs                       |
+| **Health Check** | <http://localhost:8000/health>   | Service status                             |
+| **Metrics**      | <http://localhost:8000/metrics>  | Raw Prometheus metrics                     |
+
+---
+
+## Operations Overview
+
+The Mission Planner landing route redirects from `/` to `/overview`. Use the
+Overview controls for refresh cadence, manual refresh, POI filtering, clocks,
+and radar. Panel states and source timestamps are operational signals: a stale,
+unavailable, or failed panel is not current telemetry. Grafana remains deployed
+as the fallback during dual-run; it has not been approved for retirement.
+
+See the [React Operations Overview guide](../operations-overview.md) for status
+meanings, fullscreen/kiosk behavior, accessibility, monitoring APIs, privacy/CSP
+boundaries, troubleshooting, and the transition gate.
 
 ---
 
@@ -68,7 +83,7 @@ PROMETHEUS_RETENTION=1y           # 1 year of data
 - Useful for UI development and testing
 
 **See:**
-[Configuration Guide - Simulation Mode](./configuration.md#simulation-mode)
+[Configuration Guide - Simulation Mode](./configuration/simulation-mode.md)
 
 ---
 
@@ -89,7 +104,7 @@ STARLINK_DISH_PORT=9200           # Standard gRPC port
 - Network access to terminal's gRPC port
 - Proper Docker networking configuration
 
-**See:** [Configuration Guide - Live Mode](./configuration.md#live-mode)
+**See:** [Configuration Guide - Live Mode](./configuration/live-mode.md)
 
 ---
 

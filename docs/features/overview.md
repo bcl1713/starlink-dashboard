@@ -12,7 +12,11 @@ Starlink Dashboard system.
 ### 1. [Monitoring & Dashboards](./monitoring.md)
 
 Core real-time position tracking, network performance metrics, historical data
-retention, and Grafana dashboard details.
+retention, the default React Operations Overview, and Grafana transition.
+
+Use the [React Operations Overview guide](../operations-overview.md) for the
+default `/overview` route, operator controls and states, monitoring boundary,
+troubleshooting, and dual-run/retirement status.
 
 ### 2. [Navigation & Timing](./navigation.md)
 
@@ -21,9 +25,9 @@ with real-time ETA, and flight phase detection.
 
 ### 3. [Mission Communication Planning](./mission-planning.md)
 
-Pre-flight predictive planning tools, real-time timeline preview,
-satellite geometry analysis, multi-format briefing exports, and mission
-timeline visualization.
+Pre-flight predictive planning tools, real-time timeline preview, satellite
+geometry analysis, multi-format briefing exports, and mission timeline
+visualization.
 
 ### 4. [System Configuration & Simulation](./system.md)
 

@@ -2,6 +2,11 @@
 
 Complete reference for Grafana dashboards in the Starlink monitoring system.
 
+> **Transition status:** Grafana remains deployed as the dual-run operational
+> fallback. The React [Operations Overview](./operations-overview.md) is the
+> default landing path at `/overview`; this document remains the reference for
+> existing Grafana dashboards. Grafana retirement is not approved by this PR.
+
 ## Accessing Grafana
 
 ### Default Access
