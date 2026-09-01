@@ -5,6 +5,7 @@ from __future__ import annotations
 import ipaddress
 import socket
 import ssl
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Protocol
@@ -107,13 +108,26 @@ class PinnedNetworkBackend(httpcore.AsyncNetworkBackend):
             raise RainViewerPinningError("rainviewer_port_rejected")
 
         addresses = validate_global_addresses(await self._resolver.resolve(host))
-        return await self._network_backend.connect_tcp(
-            addresses[0],
-            port,
-            timeout=timeout,
-            local_address=local_address,
-            socket_options=socket_options,
-        )
+        deadline = time.monotonic() + timeout if timeout is not None else None
+        last_error: httpcore.ConnectError | httpcore.ConnectTimeout | None = None
+        for address in addresses:
+            attempt_timeout = timeout
+            if deadline is not None:
+                attempt_timeout = deadline - time.monotonic()
+                if attempt_timeout <= 0:
+                    raise httpcore.ConnectTimeout() from last_error
+            try:
+                return await self._network_backend.connect_tcp(
+                    address,
+                    port,
+                    timeout=attempt_timeout,
+                    local_address=local_address,
+                    socket_options=socket_options,
+                )
+            except (httpcore.ConnectError, httpcore.ConnectTimeout) as exc:
+                last_error = exc
+        assert last_error is not None
+        raise last_error
 
     async def connect_unix_socket(
         self,
