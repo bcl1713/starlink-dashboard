@@ -38,7 +38,6 @@ def get_monitoring_client(request: Request) -> MonitoringPrometheusClient:
     summary="Get allow-listed monitoring history",
 )
 async def get_monitoring_history(
-    request: Request,
     response: Response,
     prometheus: Annotated[
         MonitoringPrometheusClient,
@@ -60,7 +59,6 @@ async def get_monitoring_history(
             range_seconds=range_seconds,
             step_seconds=step_seconds,
             client_id="monitoring-history",
-            cancel_callback=request.is_disconnected,
         )
     except asyncio.CancelledError:
         raise

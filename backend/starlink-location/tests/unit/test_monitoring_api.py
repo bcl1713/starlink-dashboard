@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import socket
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
 import pytest
+import uvicorn
 from app.api import monitoring
 from app.models.monitoring import (
     GroundEntryPointResponse,
@@ -134,7 +137,6 @@ def test_history_defaults_success_headers_body_and_safe_upstream_controls(
             "range_seconds": 1800,
             "step_seconds": 1,
             "client_id": "monitoring-history",
-            "cancel_callback": fake.calls[0]["cancel_callback"],
         }
     ]
 
@@ -297,6 +299,65 @@ async def test_history_total_deadline_returns_structured_json_504() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "range_seconds,step_seconds",
+    [(1800, 1), (60, 1), (3600, 60)],
+)
+async def test_history_over_uvicorn_returns_json_before_connected_client_times_out(
+    range_seconds: int,
+    step_seconds: int,
+) -> None:
+    """Exercise the real ASGI receive lifecycle instead of TestClient's shortcut."""
+    upstream_queries: list[str] = []
+
+    async def upstream_handler(request: httpx.Request) -> httpx.Response:
+        expression = request.url.params["query"]
+        upstream_queries.append(expression)
+        return httpx.Response(200, json=_prometheus_matrix_response(expression))
+
+    prometheus = MonitoringPrometheusClient(
+        base_url="http://prometheus:9090",
+        transport=httpx.MockTransport(upstream_handler),
+        clock=lambda: UTC_NOW,
+    )
+    app.dependency_overrides[monitoring.get_monitoring_client] = lambda: prometheus
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.bind(("127.0.0.1", 0))
+        port = listener.getsockname()[1]
+    server = uvicorn.Server(
+        uvicorn.Config(
+            app, host="127.0.0.1", port=port, lifespan="off", log_level="error"
+        )
+    )
+    server_task = asyncio.create_task(server.serve())
+    try:
+        async with httpx.AsyncClient(timeout=0.25) as route_client:
+            for _ in range(100):
+                if server.started:
+                    break
+                await asyncio.sleep(0.01)
+            assert server.started
+            response = await route_client.get(
+                f"http://127.0.0.1:{port}/api/monitoring/history",
+                params={
+                    "range_seconds": range_seconds,
+                    "step_seconds": step_seconds,
+                },
+            )
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("application/json")
+        assert response.json()["range_seconds"] == range_seconds
+        assert response.json()["step_seconds"] == step_seconds
+        assert len(upstream_queries) == 6
+    finally:
+        server.should_exit = True
+        with contextlib.suppress(asyncio.CancelledError):
+            await asyncio.wait_for(server_task, timeout=1)
+        app.dependency_overrides.clear()
+        await prometheus.aclose()
+
+
+@pytest.mark.asyncio
 async def test_history_stalled_cleanup_still_returns_structured_json_504_promptly(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -362,21 +423,14 @@ async def test_history_non_deadline_timeout_error_is_not_a_504() -> None:
 
 
 @pytest.mark.asyncio
-async def test_history_uses_request_disconnect_as_live_cancellation() -> None:
-    class DisconnectedRequest:
-        app = app
-
-        async def is_disconnected(self) -> bool:
-            return True
-
+async def test_history_route_propagates_external_cancellation() -> None:
     class CancelAwareClient:
         async def get_history(self, **kwargs: Any) -> MonitoringHistoryResponse:
-            assert await kwargs["cancel_callback"]() is True
+            assert "cancel_callback" not in kwargs
             raise asyncio.CancelledError
 
     with pytest.raises(asyncio.CancelledError):
         await monitoring.get_monitoring_history(
-            request=DisconnectedRequest(),
             response=Response(),
             range_seconds=1800,
             step_seconds=1,
@@ -389,7 +443,6 @@ async def test_history_route_preserves_client_single_flight_coalescing() -> None
     fake = FakeMonitoringClient()
     first = asyncio.create_task(
         monitoring.get_monitoring_history(
-            request=type("Request", (), {"is_disconnected": lambda self: False})(),
             response=Response(),
             range_seconds=1800,
             step_seconds=1,
@@ -398,7 +451,6 @@ async def test_history_route_preserves_client_single_flight_coalescing() -> None
     )
     second = asyncio.create_task(
         monitoring.get_monitoring_history(
-            request=type("Request", (), {"is_disconnected": lambda self: False})(),
             response=Response(),
             range_seconds=1800,
             step_seconds=1,
