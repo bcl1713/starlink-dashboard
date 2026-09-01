@@ -43,7 +43,13 @@ class DnsPythonAddressResolver:
             answer = await self._resolver.resolve_name(host, family=socket.AF_UNSPEC)
         except Exception as exc:
             raise RainViewerPinningError("rainviewer_dns_unavailable") from exc
-        return tuple(address.address for address in answer.addresses())
+        try:
+            answers = tuple(answer.addresses())
+        except Exception as exc:
+            raise RainViewerPinningError("rainviewer_dns_rejected") from exc
+        if any(type(address) is not str for address in answers):
+            raise RainViewerPinningError("rainviewer_dns_rejected")
+        return answers
 
 
 def validate_global_addresses(

@@ -9,6 +9,7 @@ import httpcore
 import httpx
 import pytest
 from app.services.rainviewer_transport import (
+    DnsPythonAddressResolver,
     PinnedAsyncHTTPTransport,
     PinnedNetworkBackend,
     RainViewerPinningError,
@@ -26,6 +27,22 @@ class FakeResolver:
         if len(self.hosts) <= len(self.answers):
             return self.answers[len(self.hosts) - 1]
         return self.answers[-1]
+
+
+class RawDNSAnswer:
+    def __init__(self, addresses: tuple[object, ...]) -> None:
+        self._addresses = addresses
+
+    def addresses(self) -> tuple[object, ...]:
+        return self._addresses
+
+
+class RawStringDNSResolver:
+    def __init__(self, addresses: tuple[object, ...]) -> None:
+        self._answer = RawDNSAnswer(addresses)
+
+    async def resolve_name(self, host: str, family: int) -> RawDNSAnswer:
+        return self._answer
 
 
 class RecordingStream:
@@ -109,12 +126,17 @@ class FailingBackend(httpcore.AsyncNetworkBackend):
     [
         (),
         ("8.8.8.8", "10.0.0.1"),
+        ("10.0.0.1",),
         ("100.64.0.1",),
         ("127.0.0.1",),
         ("169.254.1.1",),
+        ("192.168.1.1",),
         ("224.0.0.1",),
         ("0.0.0.0",),
         ("2001:db8::1",),
+        ("::1",),
+        ("fe80::1",),
+        ("not-an-ip-address",),
     ],
 )
 def test_validate_global_addresses_rejects_any_unsafe_answer(addresses) -> None:
@@ -127,6 +149,31 @@ def test_validate_global_addresses_accepts_only_global_answers() -> None:
         "8.8.8.8",
         "2001:4860:4860::8888",
     )
+
+
+@pytest.mark.asyncio
+async def test_dns_python_raw_string_answers_pin_through_transport() -> None:
+    resolver = DnsPythonAddressResolver()
+    object.__setattr__(
+        resolver,
+        "_resolver",
+        RawStringDNSResolver(("2001:4860:4860::8888", "8.8.8.8")),
+    )
+    backend = RecordingBackend()
+    pinned = PinnedNetworkBackend(resolver=resolver, network_backend=backend)
+
+    await pinned.connect_tcp("api.rainviewer.com", 443)
+
+    assert backend.tcp_calls == [("2001:4860:4860::8888", 443)]
+
+
+@pytest.mark.asyncio
+async def test_dns_python_rejects_malformed_answer_shape() -> None:
+    resolver = DnsPythonAddressResolver()
+    object.__setattr__(resolver, "_resolver", RawStringDNSResolver((object(),)))
+
+    with pytest.raises(RainViewerPinningError, match="rainviewer_dns_rejected"):
+        await resolver.resolve("api.rainviewer.com")
 
 
 @pytest.mark.asyncio
