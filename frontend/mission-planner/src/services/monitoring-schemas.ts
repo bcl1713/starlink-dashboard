@@ -18,19 +18,36 @@ import {
 const issue = (ctx: z.RefinementCtx, message: string) =>
   ctx.addIssue({ code: 'custom', message });
 
-// prettier-ignore
 const statusSchema = z.strictObject({
   timestamp: awareTimestamp,
-  position: z.strictObject({ latitude, longitude, altitude: finite, speed: nonNegative, heading: azimuth }),
-  network: z.strictObject({ latency_ms: nonNegative, throughput_down_mbps: nonNegative, throughput_up_mbps: nonNegative, packet_loss_percent: percent }),
+  position: z.strictObject({
+    latitude,
+    longitude,
+    altitude: finite,
+    speed: nonNegative,
+    heading: azimuth,
+  }),
+  network: z.strictObject({
+    latency_ms: nonNegative,
+    throughput_down_mbps: nonNegative,
+    throughput_up_mbps: nonNegative,
+    packet_loss_percent: percent,
+  }),
   obstruction: z.strictObject({ obstruction_percent: percent }),
-  environmental: z.strictObject({ signal_quality_percent: percent, uptime_seconds: nonNegative, temperature_celsius: finite.nullable() }),
+  environmental: z.strictObject({
+    signal_quality_percent: percent,
+    uptime_seconds: nonNegative,
+    temperature_celsius: finite.nullable(),
+  }),
 });
 
-// prettier-ignore
 const historySeriesNames = [
-  'latitude_degrees', 'longitude_degrees', 'latency_ms',
-  'throughput_down_mbps', 'throughput_up_mbps', 'packet_loss_percent',
+  'latitude_degrees',
+  'longitude_degrees',
+  'latency_ms',
+  'throughput_down_mbps',
+  'throughput_up_mbps',
+  'packet_loss_percent',
 ] as const;
 
 const historySampleSchema = z.strictObject({
@@ -92,18 +109,28 @@ const groundEntryPointSchema = z
     }
   });
 
-// prettier-ignore
 const nullableGepFields = [
-  'observed_at', 'display', 'city', 'region', 'country', 'latitude', 'longitude',
+  'observed_at',
+  'display',
+  'city',
+  'region',
+  'country',
+  'latitude',
+  'longitude',
 ] as const;
-// prettier-ignore
 const requiredGepFields = [
-  'observed_at', 'display', 'city', 'region', 'country',
+  'observed_at',
+  'display',
+  'city',
+  'region',
+  'country',
 ] as const;
 
-// prettier-ignore
 const routeCoordinateSchema = z.strictObject({
-  latitude, longitude, altitude_meters: finite.nullable(), sequence: finite,
+  latitude,
+  longitude,
+  altitude_meters: finite.nullable(),
+  sequence: finite,
 });
 
 const routeCoordinatesSchema = z
@@ -121,9 +148,11 @@ const routeCoordinatesSchema = z
     }
   });
 
-// prettier-ignore
 const routeAwareStatuses = [
-  'ahead_on_route', 'already_passed', 'not_on_route', 'pre_departure',
+  'ahead_on_route',
+  'already_passed',
+  'not_on_route',
+  'pre_departure',
 ] as const;
 
 const poiEtaSchema = z
@@ -183,21 +212,29 @@ const xLinkCore = {
   in_forbidden_window: z.boolean(),
 };
 
-// prettier-ignore
 const xLinkCoordinateSchema = z.strictObject({
-  ...xLinkCore, point: z.enum(['aircraft', 'satellite']), sequence: z.number().int().min(0), latitude, longitude, observed_at: awareTimestamp.nullable(),
+  ...xLinkCore,
+  point: z.enum(['aircraft', 'satellite']),
+  sequence: z.number().int().min(0),
+  latitude,
+  longitude,
+  observed_at: awareTimestamp.nullable(),
 });
 
-// prettier-ignore
 const xLinkSegmentSchema = z.strictObject({
-  ...xLinkCore, coordinates: z.array(xLinkCoordinateSchema),
+  ...xLinkCore,
+  coordinates: z.array(xLinkCoordinateSchema),
 });
 
-// prettier-ignore
 const xLinkHandoffSchema = z.strictObject({
-  phase: z.enum(['outside', 'in_handoff_zone', 'committed']), transition_id: z.string().nullable(), transition_satellite_id: z.string().nullable(),
-  radius_meters: nonNegative, distance_to_transition_meters: nonNegative.nullable(), in_handoff_zone: z.boolean(),
-  route_progress_percent: percent.nullable(), transition_progress_percent: percent.nullable(),
+  phase: z.enum(['outside', 'in_handoff_zone', 'committed']),
+  transition_id: z.string().nullable(),
+  transition_satellite_id: z.string().nullable(),
+  radius_meters: nonNegative,
+  distance_to_transition_meters: nonNegative.nullable(),
+  in_handoff_zone: z.boolean(),
+  route_progress_percent: percent.nullable(),
+  transition_progress_percent: percent.nullable(),
 });
 
 const activeXLinkSchema = z
@@ -231,13 +268,18 @@ function parseOverviewData<T>(
   return parsed.data;
 }
 
-// prettier-ignore
-export const parseStatus = (data: unknown) => parseOverviewData(statusSchema, data, 'status'),
-  parseMonitoringHistory = (data: unknown) => parseOverviewData(monitoringHistorySchema, data, 'monitoring-history'),
-  parseGroundEntryPoint = (data: unknown) => parseOverviewData(groundEntryPointSchema, data, 'ground-entry-point'),
-  parseRouteCoordinates = (data: unknown) => parseOverviewData(routeCoordinatesSchema, data, 'route-coordinates'),
-  parsePOIETAs = (data: unknown) => parseOverviewData(poiEtaResponseSchema, data, 'poi-etas'),
-  parseActiveXLink = (data: unknown) => parseOverviewData(activeXLinkSchema, data, 'active-x-link');
+export const parseStatus = (data: unknown) =>
+    parseOverviewData(statusSchema, data, 'status'),
+  parseMonitoringHistory = (data: unknown) =>
+    parseOverviewData(monitoringHistorySchema, data, 'monitoring-history'),
+  parseGroundEntryPoint = (data: unknown) =>
+    parseOverviewData(groundEntryPointSchema, data, 'ground-entry-point'),
+  parseRouteCoordinates = (data: unknown) =>
+    parseOverviewData(routeCoordinatesSchema, data, 'route-coordinates'),
+  parsePOIETAs = (data: unknown) =>
+    parseOverviewData(poiEtaResponseSchema, data, 'poi-etas'),
+  parseActiveXLink = (data: unknown) =>
+    parseOverviewData(activeXLinkSchema, data, 'active-x-link');
 
 export function parseRainViewerRadarTile(
   data: unknown,
@@ -264,10 +306,14 @@ export function parseRainViewerRadarTile(
 
 export function validateRadarXYZ(z: number, x: number, y: number): void {
   const max = 2 ** z;
-  // prettier-ignore
   if (
-    ![z, x, y].every(Number.isInteger) || z < 0 || z > 7 ||
-    x < 0 || y < 0 || x >= max || y >= max
+    ![z, x, y].every(Number.isInteger) ||
+    z < 0 ||
+    z > 7 ||
+    x < 0 ||
+    y < 0 ||
+    x >= max ||
+    y >= max
   ) {
     throw new OverviewDataValidationError('rainviewer-radar-tile');
   }
@@ -275,13 +321,16 @@ export function validateRadarXYZ(z: number, x: number, y: number): void {
 
 function matchesPngSignature(data: ArrayBuffer): boolean {
   const bytes = new Uint8Array(data, 0, 8);
-  // prettier-ignore
-  return [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every((byte, index) => bytes[index] === byte);
+  return [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a].every(
+    (byte, index) => bytes[index] === byte
+  );
 }
 
-// prettier-ignore
 function normalizedContentType(headers: unknown): string | undefined {
-  return readHeader(headers, 'content-type')?.split(';')[0]?.trim().toLowerCase();
+  return readHeader(headers, 'content-type')
+    ?.split(';')[0]
+    ?.trim()
+    .toLowerCase();
 }
 
 function readHeader(headers: unknown, name: string): string | undefined {

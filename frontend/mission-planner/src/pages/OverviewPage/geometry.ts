@@ -2,17 +2,23 @@ import { awareTimestampSchema } from '../../services/monitoring-validation';
 import type { ActiveXLink, RouteCoordinates } from '../../types/monitoring';
 import type { PositionHistoryPoint } from './history';
 
-// prettier-ignore
-export interface OverviewGeometryPoint { readonly latitude: number; readonly longitude: number; readonly altitudeMeters: number | null; readonly timestamp: string | null }
+export interface OverviewGeometryPoint {
+  readonly latitude: number;
+  readonly longitude: number;
+  readonly altitudeMeters: number | null;
+  readonly timestamp: string | null;
+}
 
 export type GeometryInputPoint = OverviewGeometryPoint | null;
 type ParsedInstant = Readonly<{ seconds: bigint; fraction: string }>;
 
-// prettier-ignore
-export interface SplitActiveLinkSegment { readonly link: ActiveXLink['links'][number]; readonly segments: readonly (readonly OverviewGeometryPoint[])[] }
+export interface SplitActiveLinkSegment {
+  readonly link: ActiveXLink['links'][number];
+  readonly segments: readonly (readonly OverviewGeometryPoint[])[];
+}
 
-// prettier-ignore
-const timestampPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
+const timestampPattern =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
 const unixEpochDay = daysFromCivil('1970', '01', '01');
 
 export function normalizeLongitude(longitude: number): number {
@@ -142,8 +148,14 @@ function normalizePoint(
   };
 }
 
-// prettier-ignore
-function buildCrossing(start: OverviewGeometryPoint, end: OverviewGeometryPoint): { readonly fraction: number; readonly departure: OverviewGeometryPoint; readonly opposite: OverviewGeometryPoint } | null {
+function buildCrossing(
+  start: OverviewGeometryPoint,
+  end: OverviewGeometryPoint
+): {
+  readonly fraction: number;
+  readonly departure: OverviewGeometryPoint;
+  readonly opposite: OverviewGeometryPoint;
+} | null {
   const delta = end.longitude - start.longitude;
   if (Math.abs(delta) <= 180) return null;
   const adjustedEnd = delta > 180 ? end.longitude - 360 : end.longitude + 360;
@@ -286,14 +298,21 @@ function floorDiv(dividend: bigint, divisor: bigint): bigint {
   return remainder < 0n ? quotient - 1n : quotient;
 }
 
-// prettier-ignore
-function parseOffsetSeconds(offset: string): bigint { const sign = offset[0] === '-' ? -1 : 1; return BigInt(sign * (Number(offset.slice(1, 3)) * 3600 + Number(offset.slice(4, 6)) * 60)); }
+function parseOffsetSeconds(offset: string): bigint {
+  const sign = offset[0] === '-' ? -1 : 1;
+  return BigInt(
+    sign * (Number(offset.slice(1, 3)) * 3600 + Number(offset.slice(4, 6)) * 60)
+  );
+}
 
-// prettier-ignore
-function positiveZero(value: number): number { return Object.is(value, -0) ? 0 : value; }
+function positiveZero(value: number): number {
+  return Object.is(value, -0) ? 0 : value;
+}
 
-// prettier-ignore
-function finiteValueOrNull(value: number | null | undefined): number | null { return isFiniteNumber(value) ? positiveZero(value) : null; }
+function finiteValueOrNull(value: number | null | undefined): number | null {
+  return isFiniteNumber(value) ? positiveZero(value) : null;
+}
 
-// prettier-ignore
-function isFiniteNumber(value: number | null | undefined): value is number { return typeof value === 'number' && Number.isFinite(value); }
+function isFiniteNumber(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}

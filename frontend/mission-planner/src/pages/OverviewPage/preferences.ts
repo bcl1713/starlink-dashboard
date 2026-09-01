@@ -36,19 +36,24 @@ export type SaveOverviewPreferencesResult =
       readonly reason: 'storage-unavailable' | 'storage-failure';
     };
 
-// prettier-ignore
 export const OVERVIEW_REFRESH_OPTIONS = [
-  { label: '1s', value: 1 }, { label: '2s', value: 2 },
-  { label: '5s', value: 5 }, { label: '10s', value: 10 },
-  { label: '30s', value: 30 }, { label: 'Paused', value: 'paused' },
+  { label: '1s', value: 1 },
+  { label: '2s', value: 2 },
+  { label: '5s', value: 5 },
+  { label: '10s', value: 10 },
+  { label: '30s', value: 30 },
+  { label: 'Paused', value: 'paused' },
 ] as const;
 
 const MAX_CLOCKS = 8;
 const UTC_CLOCK = { id: 'utc', timeZone: 'UTC', label: 'UTC (Zulu)' } as const;
-// prettier-ignore
 const DEFAULT_CLOCKS = [
   UTC_CLOCK,
-  { id: 'tz:America/New_York', timeZone: 'America/New_York', label: 'Washington DC' },
+  {
+    id: 'tz:America/New_York',
+    timeZone: 'America/New_York',
+    label: 'Washington DC',
+  },
   { id: 'tz:Asia/Tokyo', timeZone: 'Asia/Tokyo', label: 'Tokyo' },
   { id: 'tz:America/Chicago', timeZone: 'America/Chicago', label: 'Omaha' },
 ] as const;
@@ -71,9 +76,25 @@ function copyClock(clock: OverviewClockPreference): OverviewClockPreference {
   return { id: clock.id, timeZone: clock.timeZone, label: clock.label };
 }
 
-// prettier-ignore
-function preference(clocks: readonly OverviewClockPreference[], refreshCadence: OverviewRefreshCadence, radarEnabled: boolean, poiFilter: OverviewPOIFilter, disclosures: OverviewDisclosurePreferences): OverviewPreferences {
-  return freezeDeep({ version: 1 as const, clocks: clocks.map(copyClock), refreshCadence, radarEnabled, poiFilter, disclosures: { controlsExpanded: disclosures.controlsExpanded, additionalClocksExpanded: disclosures.additionalClocksExpanded, clockSettingsExpanded: disclosures.clockSettingsExpanded } });
+function preference(
+  clocks: readonly OverviewClockPreference[],
+  refreshCadence: OverviewRefreshCadence,
+  radarEnabled: boolean,
+  poiFilter: OverviewPOIFilter,
+  disclosures: OverviewDisclosurePreferences
+): OverviewPreferences {
+  return freezeDeep({
+    version: 1 as const,
+    clocks: clocks.map(copyClock),
+    refreshCadence,
+    radarEnabled,
+    poiFilter,
+    disclosures: {
+      controlsExpanded: disclosures.controlsExpanded,
+      additionalClocksExpanded: disclosures.additionalClocksExpanded,
+      clockSettingsExpanded: disclosures.clockSettingsExpanded,
+    },
+  });
 }
 
 export function createDefaultOverviewPreferences(): OverviewPreferences {
@@ -114,11 +135,19 @@ function readDisclosures(value: unknown): OverviewDisclosurePreferences {
   };
 }
 
-// prettier-ignore
-export function validateOverviewClockInput(input: { readonly timeZone: string; readonly label: string }): OverviewClockPreference | null {
+export function validateOverviewClockInput(input: {
+  readonly timeZone: string;
+  readonly label: string;
+}): OverviewClockPreference | null {
   const label = input.label.trim();
   const zone = input.timeZone.trim();
-  if (label.length < 1 || label.length > 64 || zone.length < 1 || zone.length > 100) return null;
+  if (
+    label.length < 1 ||
+    label.length > 64 ||
+    zone.length < 1 ||
+    zone.length > 100
+  )
+    return null;
   try {
     const formatter = new Intl.DateTimeFormat('en-US', { timeZone: zone });
     const resolvedOptions = formatter.resolvedOptions;
@@ -126,8 +155,14 @@ export function validateOverviewClockInput(input: { readonly timeZone: string; r
     const canonical = resolvedOptions.call(formatter).timeZone;
     if (typeof canonical !== 'string' || canonical.length < 1) return null;
     const timeZone = canonical === 'Etc/UTC' ? 'UTC' : canonical;
-    return { id: timeZone === 'UTC' ? 'utc' : `tz:${timeZone}`, timeZone, label };
-  } catch { return null; }
+    return {
+      id: timeZone === 'UTC' ? 'utc' : `tz:${timeZone}`,
+      timeZone,
+      label,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function normalizeClocks(value: unknown): readonly OverviewClockPreference[] {

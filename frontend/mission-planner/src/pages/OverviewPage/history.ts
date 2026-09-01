@@ -1,31 +1,53 @@
 import { awareTimestampSchema } from '../../services/monitoring-validation';
 import type { MonitoringHistory } from '../../types/monitoring';
 
-// prettier-ignore
-export type PositionHistoryPoint = Readonly<{ timestamp: string; latitude: number; longitude: number; altitudeMeters: null }>;
+export type PositionHistoryPoint = Readonly<{
+  timestamp: string;
+  latitude: number;
+  longitude: number;
+  altitudeMeters: null;
+}>;
 
-// prettier-ignore
-export const HISTORY_WINDOW_SECONDS = 1800, HISTORY_MAX_SAMPLES = 1801;
+export const HISTORY_WINDOW_SECONDS = 1800,
+  HISTORY_MAX_SAMPLES = 1801;
 
 export type TimestampedSample<T> = Readonly<{ timestamp: string; value: T }>;
 
 export type NumericHistorySample = TimestampedSample<number | null>;
 
-// prettier-ignore
-export interface MetricSummary { readonly available: boolean; readonly current: number | null; readonly min: number | null; readonly mean: number | null; readonly max: number | null; readonly count: number }
+export interface MetricSummary {
+  readonly available: boolean;
+  readonly current: number | null;
+  readonly min: number | null;
+  readonly mean: number | null;
+  readonly max: number | null;
+  readonly count: number;
+}
 
 type ParsedInstant = Readonly<{ seconds: bigint; fraction: string }>;
-// prettier-ignore
-type PositionSample = TimestampedSample<number> & Readonly<{ instant: ParsedInstant }>;
-// prettier-ignore
-type Stored<T> = Readonly<{ sample: TimestampedSample<T>; instant: ParsedInstant }>;
-// prettier-ignore
-type ThroughputRow = { instant: ParsedInstant; timestamp?: string; download?: number | null; upload?: number | null };
+type PositionSample = TimestampedSample<number> &
+  Readonly<{ instant: ParsedInstant }>;
+type Stored<T> = Readonly<{
+  sample: TimestampedSample<T>;
+  instant: ParsedInstant;
+}>;
+type ThroughputRow = {
+  instant: ParsedInstant;
+  timestamp?: string;
+  download?: number | null;
+  upload?: number | null;
+};
 
-// prettier-ignore
-const UNAVAILABLE_SUMMARY: MetricSummary = { available: false, current: null, min: null, mean: null, max: null, count: 0 };
-// prettier-ignore
-const timestampPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
+const UNAVAILABLE_SUMMARY: MetricSummary = {
+  available: false,
+  current: null,
+  min: null,
+  mean: null,
+  max: null,
+  count: 0,
+};
+const timestampPattern =
+  /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.([0-9]+))?)?(Z|[+-]\d{2}:\d{2})$/;
 
 export function alignPositionHistory(
   history: MonitoringHistory
@@ -122,12 +144,19 @@ export function summarizePacketLoss(
 ): MetricSummary {
   if (!Number.isFinite(windowSeconds) || windowSeconds < 0)
     throw new RangeError('Invalid windowSeconds');
-  // prettier-ignore
-  return summarize(samples, now, windowSeconds, (value) => value >= 0 && value <= 100);
+  return summarize(
+    samples,
+    now,
+    windowSeconds,
+    (value) => value >= 0 && value <= 100
+  );
 }
 
-// prettier-ignore
-export type ThroughputRenderPoint = Readonly<{ timestamp: string; downloadMbps: number | null; uploadMbps: number | null }>;
+export type ThroughputRenderPoint = Readonly<{
+  timestamp: string;
+  downloadMbps: number | null;
+  uploadMbps: number | null;
+}>;
 
 export function buildThroughputRenderSeries(
   download: readonly NumericHistorySample[],
@@ -213,8 +242,11 @@ function applyThroughput(
   }
 }
 
-// prettier-ignore
-function validateNow(now: string): ParsedInstant { const instant = parseInstant(now); if (instant === null) throw new RangeError('Invalid now timestamp'); return instant; }
+function validateNow(now: string): ParsedInstant {
+  const instant = parseInstant(now);
+  if (instant === null) throw new RangeError('Invalid now timestamp');
+  return instant;
+}
 
 function shiftSeconds(instant: ParsedInstant, seconds: number): ParsedInstant {
   const decimal = parseNonnegativeNumberDecimal(seconds);
@@ -233,8 +265,10 @@ function shiftSeconds(instant: ParsedInstant, seconds: number): ParsedInstant {
   };
 }
 
-// prettier-ignore
-function parseNonnegativeNumberDecimal(value: number): { units: bigint; scale: number } {
+function parseNonnegativeNumberDecimal(value: number): {
+  units: bigint;
+  scale: number;
+} {
   const match = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(String(value));
   if (!match) throw new RangeError('Invalid windowSeconds');
   const digits = `${match[1]}${match[2] ?? ''}`.replace(/^0+(?=\d)/, '');
@@ -264,8 +298,15 @@ function parseInstant(value: string): ParsedInstant | null {
   };
 }
 
-// prettier-ignore
-function compareInstants(left: ParsedInstant, right: ParsedInstant): number { if (left.seconds !== right.seconds) return left.seconds < right.seconds ? -1 : 1; const width = Math.max(left.fraction.length, right.fraction.length); const leftFraction = left.fraction.padEnd(width, '0'); const rightFraction = right.fraction.padEnd(width, '0'); if (leftFraction === rightFraction) return 0; return leftFraction < rightFraction ? -1 : 1; }
+function compareInstants(left: ParsedInstant, right: ParsedInstant): number {
+  if (left.seconds !== right.seconds)
+    return left.seconds < right.seconds ? -1 : 1;
+  const width = Math.max(left.fraction.length, right.fraction.length);
+  const leftFraction = left.fraction.padEnd(width, '0');
+  const rightFraction = right.fraction.padEnd(width, '0');
+  if (leftFraction === rightFraction) return 0;
+  return leftFraction < rightFraction ? -1 : 1;
+}
 
 function instantKey(instant: ParsedInstant): string {
   return `${instant.seconds}:${instant.fraction}`;
@@ -290,11 +331,14 @@ function floorDiv(dividend: bigint, divisor: bigint): bigint {
   return dividend % divisor < 0n ? quotient - 1n : quotient;
 }
 
-// prettier-ignore
-function parseOffsetSeconds(offset: string): number { return Number(offset.slice(1, 3)) * 3600 + Number(offset.slice(4, 6)) * 60; }
+function parseOffsetSeconds(offset: string): number {
+  return Number(offset.slice(1, 3)) * 3600 + Number(offset.slice(4, 6)) * 60;
+}
 
-// prettier-ignore
-function positiveZero(value: number): number { return Object.is(value, -0) ? 0 : value; }
+function positiveZero(value: number): number {
+  return Object.is(value, -0) ? 0 : value;
+}
 
-// prettier-ignore
-function isFiniteNumber(value: number | null | undefined): value is number { return typeof value === 'number' && Number.isFinite(value); }
+function isFiniteNumber(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
