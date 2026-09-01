@@ -17,7 +17,7 @@ from collections import OrderedDict, deque
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import ClassVar, TypeVar
+from typing import Any, ClassVar, TypeVar
 
 import httpx
 from app.models.monitoring import (
@@ -285,34 +285,49 @@ class MonitoringPrometheusClient:
         deadline = (
             created_at or time.monotonic()
         ) + self._total_history_timeout_seconds
+        aggregate = asyncio.create_task(self._fetch_all_series(request, end))
         try:
-            async with asyncio.timeout(max(0, deadline - time.monotonic())):
-                start = end - timedelta(seconds=request.range_seconds)
-                max_points = len(PROMETHEUS_EXPRESSIONS) * (
-                    request.range_seconds // request.step_seconds + 1
+            done, _pending = await asyncio.wait(
+                [aggregate],
+                timeout=max(0, deadline - time.monotonic()),
+            )
+            if aggregate in done:
+                return aggregate.result()
+            self._cancel_and_detach(aggregate)
+            raise MonitoringPrometheusError("upstream_timeout")
+        except BaseException:
+            self._cancel_and_detach(aggregate)
+            raise
+
+    async def _fetch_all_series(
+        self,
+        request: MonitoringHistoryRequest,
+        end: datetime,
+    ) -> MonitoringHistoryResponse:
+        start = end - timedelta(seconds=request.range_seconds)
+        max_points = len(PROMETHEUS_EXPRESSIONS) * (
+            request.range_seconds // request.step_seconds + 1
+        )
+        point_budget = _PointBudget(max_points)
+        tasks = [
+            asyncio.create_task(
+                self._fetch_series(
+                    metric, expr, start, end, request.step_seconds, point_budget
                 )
-                point_budget = _PointBudget(max_points)
-                tasks = [
-                    asyncio.create_task(
-                        self._fetch_series(
-                            metric, expr, start, end, request.step_seconds, point_budget
-                        )
-                    )
-                    for metric, expr in PROMETHEUS_EXPRESSIONS
-                ]
-                series = await self._await_all_series_or_cancel(tasks)
-                if sum(len(item.samples) for item in series) > max_points:
-                    raise MonitoringPrometheusError("too_many_points")
-                return MonitoringHistoryResponse(
-                    generated_at=end,
-                    window_start=start,
-                    window_end=end,
-                    range_seconds=request.range_seconds,
-                    step_seconds=request.step_seconds,
-                    series=series,
-                )
-        except TimeoutError as exc:
-            raise MonitoringPrometheusError("upstream_timeout") from exc
+            )
+            for metric, expr in PROMETHEUS_EXPRESSIONS
+        ]
+        series = await self._await_all_series_or_cancel(tasks)
+        if sum(len(item.samples) for item in series) > max_points:
+            raise MonitoringPrometheusError("too_many_points")
+        return MonitoringHistoryResponse(
+            generated_at=end,
+            window_start=start,
+            window_end=end,
+            range_seconds=request.range_seconds,
+            step_seconds=request.step_seconds,
+            series=series,
+        )
 
     async def _fetch_series(
         self,
@@ -649,6 +664,19 @@ class MonitoringPrometheusClient:
         while True:
             await self._check_cancel_callback(cancel_callback)
             await asyncio.sleep(self._cancel_poll_seconds)
+
+    def _cancel_and_detach(self, task: asyncio.Task[Any]) -> None:
+        if not task.done():
+            task.cancel()
+        task.add_done_callback(self._retrieve_detached_task_exception)
+
+    def _retrieve_detached_task_exception(self, task: asyncio.Future[Any]) -> None:
+        if task.cancelled():
+            return
+        try:
+            task.exception()
+        except asyncio.CancelledError:
+            return
 
     def _retrieve_task_exception(
         self,

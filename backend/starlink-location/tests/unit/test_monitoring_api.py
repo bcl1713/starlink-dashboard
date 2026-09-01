@@ -297,6 +297,71 @@ async def test_history_total_deadline_returns_structured_json_504() -> None:
 
 
 @pytest.mark.asyncio
+async def test_history_stalled_cleanup_still_returns_structured_json_504_promptly(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    prometheus = MonitoringPrometheusClient(
+        base_url="http://prometheus:9090",
+        total_history_timeout_seconds=0.04,
+        transport=httpx.MockTransport(
+            lambda _request: httpx.Response(200, content=b"unused")
+        ),
+        clock=lambda: UTC_NOW,
+    )
+
+    async def cancellation_resistant_series(*_args: Any) -> Any:
+        await prometheus._acquire_upstream_slot()
+        started.set()
+        try:
+            await release.wait()
+        except asyncio.CancelledError:
+            await release.wait()
+            raise
+        finally:
+            prometheus._upstream_gate.release()
+
+    monkeypatch.setattr(prometheus, "_fetch_series", cancellation_resistant_series)
+    app.dependency_overrides[monitoring.get_monitoring_client] = lambda: prometheus
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as route_client:
+            request = asyncio.create_task(route_client.get("/api/monitoring/history"))
+            await asyncio.wait_for(started.wait(), timeout=1)
+            response = await asyncio.wait_for(request, timeout=0.2)
+        assert response.status_code == 504
+        assert response.headers["content-type"].startswith("application/json")
+        assert response.json() == {"detail": {"code": "monitoring_upstream_timeout"}}
+    finally:
+        release.set()
+        app.dependency_overrides.clear()
+        await asyncio.sleep(0)
+        await prometheus.aclose()
+
+
+@pytest.mark.asyncio
+async def test_history_non_deadline_timeout_error_is_not_a_504() -> None:
+    class FailingClient:
+        async def get_history(self, **_kwargs: Any) -> MonitoringHistoryResponse:
+            raise TimeoutError("not a monitoring deadline")
+
+    app.dependency_overrides[monitoring.get_monitoring_client] = FailingClient
+    try:
+        transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
+        async with httpx.AsyncClient(
+            transport=transport, base_url="http://testserver"
+        ) as route_client:
+            response = await route_client.get("/api/monitoring/history")
+        assert response.status_code != 504
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
 async def test_history_uses_request_disconnect_as_live_cancellation() -> None:
     class DisconnectedRequest:
         app = app

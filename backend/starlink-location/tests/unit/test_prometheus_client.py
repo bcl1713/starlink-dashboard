@@ -1135,6 +1135,118 @@ async def test_total_history_deadline_bounds_trickling_valid_streams_and_cleans_
 
 
 @pytest.mark.asyncio
+async def test_total_deadline_returns_before_cancellation_resistant_series_cleanup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    started = asyncio.Event()
+    release = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    async def cancellation_resistant_series(*_args: Any) -> Any:
+        await client._acquire_upstream_slot()
+        started.set()
+        try:
+            await release.wait()
+        except asyncio.CancelledError:
+            cancelled.set()
+            await release.wait()
+            raise
+        finally:
+            client._upstream_gate.release()
+
+    client = make_client(
+        successful_handler,
+        total_history_timeout_seconds=0.04,
+    )
+    monkeypatch.setattr(client, "_fetch_series", cancellation_resistant_series)
+    started_at = asyncio.get_running_loop().time()
+    task = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    await asyncio.wait_for(started.wait(), timeout=1)
+
+    with pytest.raises(MonitoringPrometheusError) as exc:
+        await asyncio.wait_for(task, timeout=0.2)
+    elapsed = asyncio.get_running_loop().time() - started_at
+
+    assert exc.value.code == "upstream_timeout"
+    assert elapsed < 0.2
+    await asyncio.wait_for(cancelled.wait(), timeout=1)
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() > 0
+    assert client._flights == {}
+
+    release.set()
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    assert client._flights == {}
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+    assert not _internal_pending_tasks()
+
+
+@pytest.mark.asyncio
+async def test_non_deadline_timeout_error_propagates_unchanged(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def immediate_timeout(*_args: Any) -> Any:
+        raise TimeoutError("not a deadline")
+
+    client = make_client(successful_handler)
+    monkeypatch.setattr(client, "_fetch_series", immediate_timeout)
+
+    with pytest.raises(TimeoutError, match="not a deadline"):
+        await client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+
+
+@pytest.mark.asyncio
+async def test_same_key_waiters_share_a_prompt_deadline_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    started = asyncio.Event()
+    release = asyncio.Event()
+    client = make_client(successful_handler, total_history_timeout_seconds=0.04)
+
+    async def cancellation_resistant_series(*_args: Any) -> Any:
+        await client._acquire_upstream_slot()
+        started.set()
+        try:
+            await release.wait()
+        except asyncio.CancelledError:
+            await release.wait()
+            raise
+        finally:
+            client._upstream_gate.release()
+
+    monkeypatch.setattr(client, "_fetch_series", cancellation_resistant_series)
+    first = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="a")
+    )
+    await asyncio.wait_for(started.wait(), timeout=1)
+    second = asyncio.create_task(
+        client.get_history(range_seconds=60, step_seconds=10, client_id="b")
+    )
+    await asyncio.wait_for(_wait_for_flight_waiters(client, 2), timeout=1)
+
+    results = await asyncio.wait_for(
+        asyncio.gather(first, second, return_exceptions=True), timeout=0.2
+    )
+    assert [
+        result.code
+        for result in results
+        if isinstance(result, MonitoringPrometheusError)
+    ] == [
+        "upstream_timeout",
+        "upstream_timeout",
+    ]
+    assert client._flights == {}
+
+    release.set()
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    assert MonitoringPrometheusClient._inspect_upstream_slots_in_use_for_tests() == 0
+    assert not _internal_pending_tasks()
+
+
+@pytest.mark.asyncio
 async def test_queue_full_cleans_flight_and_internal_tasks() -> None:
     release = asyncio.Event()
     all_slots_busy = asyncio.Event()
