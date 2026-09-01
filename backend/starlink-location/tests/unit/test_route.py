@@ -51,6 +51,27 @@ class TestCalculateDestination:
         assert lat == pytest.approx(40.0)
         assert lon == pytest.approx(-74.0)
 
+    def test_calculate_destination_wraps_eastbound_dateline_crossing(self):
+        """Test destinations crossing east over the dateline use canonical longitude."""
+        lat, lon = calculate_destination(0.0, 179.9, 90.0, 50.0)
+
+        assert lat == pytest.approx(0.0, abs=0.01)
+        assert -180.0 <= lon <= 180.0
+        assert lon == pytest.approx(-179.6503, abs=0.01)
+
+    @pytest.mark.parametrize(
+        ("start_lon", "expected_lon"),
+        [(180.0, -180.0), (-180.0, -180.0)],
+    )
+    def test_calculate_destination_maps_antimeridian_to_negative_180(
+        self, start_lon, expected_lon
+    ):
+        """Test the canonical interval maps both antimeridian representations to -180."""
+        lat, lon = calculate_destination(0.0, start_lon, 0.0, 0.0)
+
+        assert lat == pytest.approx(0.0)
+        assert lon == expected_lon
+
 
 class TestCircularRoute:
     """Test circular route generation."""

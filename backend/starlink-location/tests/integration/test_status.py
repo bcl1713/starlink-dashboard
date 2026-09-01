@@ -3,6 +3,8 @@
 import asyncio
 
 import pytest
+from app.api import status as status_api
+from app.simulation.coordinator import SimulationCoordinator
 
 
 @pytest.mark.asyncio
@@ -51,6 +53,29 @@ async def test_status_position_data(test_client):
     assert position["altitude"] > 0
     assert position["speed"] >= 0
     assert 0 <= position["heading"] <= 360
+
+
+@pytest.mark.asyncio
+async def test_status_position_crossing_dateline_uses_contract_longitude(
+    test_client, default_config, monkeypatch
+):
+    """Test simulated dateline positions remain parseable by the status contract."""
+    route = default_config.route.model_copy(
+        update={"latitude_start": 0.0, "longitude_start": 179.9, "radius_km": 50.0}
+    )
+    coordinator = SimulationCoordinator(
+        default_config.model_copy(update={"route": route})
+    )
+    coordinator.position_sim.progress = 0.25
+    coordinator._last_valid_telemetry = coordinator.update()
+    monkeypatch.setattr(status_api, "_coordinator", coordinator)
+
+    response = test_client.get("/api/status")
+
+    assert response.status_code == 200
+    position = response.json()["position"]
+    assert -180.0 <= position["longitude"] <= 180.0
+    assert position["longitude"] == pytest.approx(-179.6503, abs=0.01)
 
 
 @pytest.mark.asyncio

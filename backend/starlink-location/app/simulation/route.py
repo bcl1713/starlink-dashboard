@@ -99,7 +99,9 @@ def calculate_destination(
         - math.sin(lat1_rad) * math.sin(lat2_rad),
     )
 
-    return (radians_to_degrees(lat2_rad), radians_to_degrees(lon2_rad))
+    # Canonical output uses [-180, 180): both antimeridian representations map to -180.
+    longitude = (radians_to_degrees(lon2_rad) + 180.0) % 360.0 - 180.0
+    return (radians_to_degrees(lat2_rad), longitude)
 
 
 class CircularRoute:
