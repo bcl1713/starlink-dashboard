@@ -74,13 +74,13 @@ describe('useOverviewRefresh', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('schedules an earlier slot-relative deadline without adding a second timer', async () => {
+  it('keeps the global cadence while also waking at an earlier slot-relative deadline', async () => {
     let now = 5_019;
     let historyDue = 10_019;
     const calls: OverviewRefreshReason[] = [];
     const onRefresh = vi.fn(async (reason: OverviewRefreshReason) => {
       calls.push(reason);
-      historyDue += 5_000;
+      if (now >= historyDue) historyDue += 5_000;
     });
     renderHook(() =>
       useOverviewRefresh({
@@ -94,10 +94,10 @@ describe('useOverviewRefresh', () => {
     expect(vi.getTimerCount()).toBe(1);
     now = 10_018;
     await act(async () => vi.advanceTimersByTime(4_999));
-    expect(calls).toEqual([]);
+    expect(calls).toEqual(['scheduled']);
     now = 10_019;
     await act(async () => vi.advanceTimersByTime(1));
-    expect(calls).toEqual(['scheduled']);
+    expect(calls).toEqual(['scheduled', 'scheduled']);
     expect(vi.getTimerCount()).toBe(1);
   });
 

@@ -1,5 +1,6 @@
 import {
   assertSettledSuccessfulHistoryStartDeltas,
+  historyStartsByContext,
   type HistoryCadenceContract,
 } from '../../../src/pages/OverviewPage/overview-history-cadence';
 import type { captureCdpContinuity } from './overview-cdp-capture';
@@ -14,8 +15,19 @@ export function assertHistoryCadenceEvidence(
   evidence: Awaited<ReturnType<typeof captureCdpContinuity>>,
   contract: HistoryCadenceContract
 ) {
+  const contexts = historyStartsByContext(evidence.cdpNetworkLedger);
+  if (contexts.length !== 1) {
+    throw new Error(
+      `Expected one captured page context, received ${contexts.map((context) => context.contextId).join(', ')}`
+    );
+  }
   assertSettledSuccessfulHistoryStartDeltas(
-    evidence.cdpNetworkLedger,
+    contexts[0]!.starts.map((requestTimestamp) => ({
+      url: '/api/monitoring/history',
+      requestTimestamp,
+      terminalOutcome: 'finished' as const,
+      status: 200,
+    })),
     contract
   );
 }

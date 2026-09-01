@@ -44,7 +44,9 @@ function nextDelay(
       Number.isFinite(due) &&
       due > current
     ) {
-      return due - current;
+      // Keep the global cadence alive; the single timer wakes at whichever
+      // deadline is sooner, including the history slot between global ticks.
+      return Math.min(cadenceDelay, due - current);
     }
   } catch {
     // A supplemental slot must never disable the cadence timer.

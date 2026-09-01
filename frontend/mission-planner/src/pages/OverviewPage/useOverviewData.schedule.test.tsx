@@ -94,6 +94,46 @@ describe('useOverviewData scheduling and anchors', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('uses the supplemental history deadline at cadence one without an early or extra start', async () => {
+    let now = 5_019;
+    const historyStarts: number[] = [];
+    const { svc } = createCallCountingServices({
+      getMonitoringHistory: vi.fn(() => {
+        historyStarts.push(now);
+        return Promise.resolve(cloneFixture(historyPayload));
+      }),
+    });
+    const { unmount } = renderHook(() =>
+      useOverviewData({
+        cadence: 1,
+        poiFilter: '',
+        radarEnabled: true,
+        services: svc,
+        now: () => now,
+      })
+    );
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([5_019]);
+    expect(vi.getTimerCount()).toBe(1);
+
+    // The ordinary global tick is late in this simulated clock, but it is
+    // still before the history slot and cannot start history early.
+    now = 10_001;
+    await act(async () => vi.advanceTimersByTime(4_982));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([5_019]);
+    expect(vi.getTimerCount()).toBe(1);
+
+    // The one timer must use the slot-relative supplemental deadline instead
+    // of waiting for a subsequent global cadence tick.
+    now = 10_019;
+    await act(async () => vi.advanceTimersByTime(18));
+    await act(flushOverviewEffects);
+    expect(historyStarts).toEqual([5_019, 10_019]);
+    expect(vi.getTimerCount()).toBe(1);
+    unmount();
+  });
+
   it('rejects an older same-millisecond history commit after its fast slots settle late', async () => {
     const now = 5_019;
     const firstFastSlots = deferred<typeof statusPayload>();

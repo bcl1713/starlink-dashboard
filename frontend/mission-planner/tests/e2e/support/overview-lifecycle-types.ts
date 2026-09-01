@@ -12,6 +12,9 @@ export interface CdpNetworkEvent {
   readonly method: string | null;
   readonly status: number | null;
   readonly failureText: string | null;
+  readonly frameId: string | null;
+  readonly loaderId: string | null;
+  readonly contextId: string | null;
 }
 
 export interface CdpNetworkRecord {
@@ -26,6 +29,10 @@ export interface CdpNetworkRecord {
   readonly terminalOutcome: 'finished' | 'failed' | 'pending';
   readonly status: number | null;
   readonly failureText: string | null;
+  readonly frameId: string;
+  readonly loaderId: string;
+  /** Target-owned navigation context, not a globally sorted page surrogate. */
+  readonly contextId: string;
 }
 
 export interface RetentionOutcome {

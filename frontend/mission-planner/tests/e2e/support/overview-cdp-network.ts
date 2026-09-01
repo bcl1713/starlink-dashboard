@@ -13,6 +13,8 @@ import type {
 interface CdpRequestEvent {
   readonly requestId: string;
   readonly timestamp: number;
+  readonly frameId?: string;
+  readonly loaderId?: string;
   readonly type?: string;
   readonly request: { readonly url: string; readonly method: string };
 }
@@ -75,6 +77,9 @@ export async function startCdpNetworkCapture(
       terminalOutcome: 'pending',
       status: null,
       failureText: null,
+      frameId: value.frameId ?? 'unknown-frame',
+      loaderId: value.loaderId ?? 'unknown-loader',
+      contextId: `${value.frameId ?? 'unknown-frame'}:${value.loaderId ?? 'unknown-loader'}`,
     };
     records.set(value.requestId, record);
     event({ ...record, name: record.event, timestamp: value.timestamp });

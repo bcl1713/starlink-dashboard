@@ -238,7 +238,7 @@ export function useOverviewData(options: UseOverviewDataOptions) {
 
   const historyNextScheduledAt = useCallback(
     () =>
-      cadence === 5 && historyScheduleAnchor !== null
+      cadence !== 'paused' && historyScheduleAnchor !== null
         ? historyScheduleAnchor + 5_000
         : null,
     [cadence, historyScheduleAnchor]
