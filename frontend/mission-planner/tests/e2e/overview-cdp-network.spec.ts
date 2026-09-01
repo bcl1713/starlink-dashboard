@@ -1,6 +1,12 @@
 import { expect, test } from '@playwright/test';
 
+import { openOverview } from './support/overview-assertions';
+import {
+  captureCdpContinuity,
+  installElementIdentity,
+} from './support/overview-cdp-capture';
 import { startCdpNetworkCapture } from './support/overview-cdp-network';
+import { installOverviewRouter } from './support/overview-router';
 
 test.describe('Operations overview CDP network capture', () => {
   test('records browser terminal success and failure events', async ({
@@ -72,5 +78,47 @@ test.describe('Operations overview CDP network capture', () => {
 
     const verification = await page.context().newCDPSession(page);
     await verification.detach();
+  });
+
+  test('settles integrated observer cleanup after rejection before a clean capture', async ({
+    page,
+  }, testInfo) => {
+    const listenerCount = page as unknown as {
+      listenerCount(event: string): number;
+    };
+    const consoleListeners = listenerCount.listenerCount('console');
+    const pageErrorListeners = listenerCount.listenerCount('pageerror');
+    const router = await installOverviewRouter(page);
+    await installElementIdentity(page);
+    await openOverview(page);
+
+    await expect(
+      captureCdpContinuity(page, router, testInfo, 'rejected', {
+        observeCdp: (observe) => async (record) => {
+          await observe(record);
+          throw new Error('integrated observer rejected');
+        },
+      })
+    ).rejects.toThrow('integrated observer rejected');
+
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          Boolean(
+            (window as typeof window & { __overviewLifecycle?: unknown })
+              .__overviewLifecycle
+          )
+        )
+      )
+      .toBe(false);
+    expect(listenerCount.listenerCount('console')).toBe(consoleListeners);
+    expect(listenerCount.listenerCount('pageerror')).toBe(pageErrorListeners);
+    const verification = await page.context().newCDPSession(page);
+    await verification.detach();
+
+    const clean = await captureCdpContinuity(page, router, testInfo, 'clean');
+    expect(clean.eventLedger.consoleErrors).toEqual([]);
+    expect(clean.eventLedger.pageErrors).toEqual([]);
+    expect(clean.cdpRetention.status).toBe('complete');
   });
 });

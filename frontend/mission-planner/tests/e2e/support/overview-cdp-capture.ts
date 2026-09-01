@@ -6,6 +6,7 @@ import { startCdpNetworkCapture } from './overview-cdp-network';
 import { EVIDENCE_LIMITS } from './overview-evidence-limits';
 import { captureEvidenceProvenance } from './overview-evidence-provenance';
 import { installLifecycleObserver } from './overview-lifecycle-observer';
+import type { CdpNetworkRecord } from './overview-lifecycle-types';
 import type { OverviewRouter } from './overview-router';
 
 export interface ScreenshotFrameEvidence {
@@ -18,6 +19,12 @@ export interface ScreenshotFrameEvidence {
     readonly source: 'page-screenshot';
     readonly viewport: { width: number; height: number } | null;
   };
+}
+
+export interface CaptureCdpContinuityOptions {
+  readonly observeCdp?: (
+    observer: (record: CdpNetworkRecord) => Promise<void>
+  ) => (record: CdpNetworkRecord) => Promise<void>;
 }
 
 export async function installElementIdentity(page: Page) {
@@ -41,16 +48,20 @@ export async function captureCdpContinuity(
   page: Page,
   router: OverviewRouter,
   testInfo: TestInfo,
-  name: string
+  name: string,
+  options: CaptureCdpContinuityOptions = {}
 ) {
   const observer = await installLifecycleObserver(page);
-  const cdp = await startCdpNetworkCapture(page, observer.observeCdp);
+  const observeCdp =
+    options.observeCdp?.(observer.observeCdp) ?? observer.observeCdp;
+  const cdp = await startCdpNetworkCapture(page, observeCdp);
   const frames: ScreenshotFrameEvidence[] = [];
   const started = performance.now();
   let previousStart: number | null = null;
   let representative: Buffer | null = null;
   let manualTriggered = false;
   let completedAt: number | null = null;
+  let primaryFailure: unknown;
   try {
     while (performance.now() - started < 12_000) {
       if (!manualTriggered && scheduledTelemetryCycles(router).size >= 3) {
@@ -73,9 +84,16 @@ export async function captureCdpContinuity(
       if (completedAt !== null && performance.now() - completedAt >= 250) break;
       await page.waitForTimeout(180);
     }
-  } finally {
-    await cdp.stop();
+  } catch (error) {
+    primaryFailure = error;
   }
+  const cdpResult = await Promise.allSettled([cdp.stop()]);
+  const observerResult = await Promise.allSettled([observer.stop()]);
+  const rejected = [...cdpResult, ...observerResult].find(
+    (result): result is PromiseRejectedResult => result.status === 'rejected'
+  );
+  if (primaryFailure) throw primaryFailure;
+  if (rejected) throw rejected.reason;
   await page.waitForTimeout(75);
   const eventLedger = await observer.stop();
   const payload = {
@@ -95,40 +113,7 @@ export async function captureCdpContinuity(
     fixtureRequestLedger: router.records,
     cycles: router.cycles,
   };
-  const artifact = {
-    provenance: captureEvidenceProvenance(),
-    captureMetadata: payload.captureMetadata,
-    frames: payload.frames,
-    eventLedger: {
-      installedAt: eventLedger.installedAt,
-      stoppedAt: eventLedger.stoppedAt,
-      mutations: eventLedger.mutations,
-      identityTransitions: eventLedger.identityTransitions,
-      retention: eventLedger.retention,
-      sampleCount: eventLedger.samples.length,
-      sampleIndex: eventLedger.samples.map((sample) => ({
-        at: sample.at,
-        phase: sample.phase,
-        cdpRequestId: sample.request?.cdpRequestId ?? null,
-      })),
-    },
-    cdpNetworkLedger: payload.cdpNetworkLedger,
-    cdpNetworkEvents: payload.cdpNetworkEvents,
-    cdpRetention: payload.cdpRetention,
-    fixtureRequestLedger: payload.fixtureRequestLedger.map((record) => ({
-      id: record.id,
-      cycle: record.cycle,
-      event: record.event,
-      kind: record.kind,
-      source: record.source,
-      method: record.method,
-      url: new URL(record.url).pathname,
-      status: record.status,
-      outcome: record.outcome,
-      firstParty: record.firstParty,
-    })),
-    cycles: payload.cycles,
-  };
+  const artifact = redactContinuityArtifact(payload);
   await persistEvidence(testInfo, name, artifact, representative);
   return payload;
 }
@@ -179,20 +164,80 @@ async function persistEvidence(
   representative: Buffer | null
 ) {
   const json = JSON.stringify(payload, null, 2);
-  await testInfo.attach(`event-continuity-${name}.json`, {
-    body: json,
-    contentType: 'application/json',
-  });
   await writeOverviewArtifact(`event-continuity-${name}.json`, json);
   if (representative) {
-    await testInfo.attach(`raw-capture-${name}-representative`, {
-      body: representative,
-      contentType: 'image/png',
-    });
     await writeOverviewArtifact(
       `raw-capture-${name}-representative.png`,
       representative,
       EVIDENCE_LIMITS.screenshotBytes
     );
   }
+}
+
+export function redactContinuityArtifact(payload: {
+  readonly captureMetadata: unknown;
+  readonly frames: unknown;
+  readonly eventLedger: {
+    readonly installedAt: number;
+    readonly stoppedAt: number;
+    readonly mutations: unknown;
+    readonly identityTransitions: unknown;
+    readonly retention: unknown;
+    readonly samples: readonly {
+      readonly at: number;
+      readonly phase: string;
+      readonly request: { readonly cdpRequestId: string } | null;
+    }[];
+  };
+  readonly cdpNetworkLedger: unknown;
+  readonly cdpNetworkEvents: unknown;
+  readonly cdpRetention: unknown;
+  readonly fixtureRequestLedger: readonly {
+    readonly id: string;
+    readonly cycle: number;
+    readonly event: string;
+    readonly kind: string;
+    readonly source: string;
+    readonly method: string;
+    readonly url: string;
+    readonly status: number | null;
+    readonly outcome: string;
+    readonly firstParty: boolean;
+  }[];
+  readonly cycles: unknown;
+}) {
+  return {
+    provenance: captureEvidenceProvenance(),
+    captureMetadata: payload.captureMetadata,
+    frames: payload.frames,
+    eventLedger: {
+      installedAt: payload.eventLedger.installedAt,
+      stoppedAt: payload.eventLedger.stoppedAt,
+      mutations: payload.eventLedger.mutations,
+      identityTransitions: payload.eventLedger.identityTransitions,
+      retention: payload.eventLedger.retention,
+      sampleCount: payload.eventLedger.samples.length,
+      sampleIndex: payload.eventLedger.samples.map((sample) => ({
+        at: sample.at,
+        phase: sample.phase,
+        cdpRequestId: sample.request?.cdpRequestId ?? null,
+      })),
+    },
+    cdpNetworkLedger: payload.cdpNetworkLedger,
+    cdpNetworkEvents: payload.cdpNetworkEvents,
+    cdpRetention: payload.cdpRetention,
+    fixtureRequestLedger: payload.fixtureRequestLedger.map((record) => ({
+      id: record.id,
+      cycle: record.cycle,
+      event: record.event,
+      kind: record.kind,
+      source: record.source,
+      method: record.method,
+      url: new URL(record.url).pathname,
+      status: record.status,
+      outcome: record.outcome,
+      firstParty: record.firstParty,
+    })),
+    cycles: payload.cycles,
+  };
 }

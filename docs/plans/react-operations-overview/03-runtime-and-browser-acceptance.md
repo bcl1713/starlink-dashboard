@@ -99,12 +99,17 @@ and the
 
 12. For a public Task 13 acceptance claim, retain only bounded/redacted
     exact-head artifacts beneath
-    `/home/brian/starlink-dashboard-react-overview-evidence/<SHA>/task-13`. Each
-    capture records the full SHA, branch/ref, clean-worktree assertion,
-    producer/browser identity, and UTC capture interval. A SHA-256 manifest
-    inventories retained artifacts, sizes, command results, and the retention
-    budget; verify checksums and readable artifacts after writing. This is
-    acceptance evidence, not Task 14 real-stack or operator documentation.
+    `/home/brian/starlink-dashboard-react-overview-evidence/<SHA>/task-13`. The
+    writer creates and verifies each evidence directory at mode `0700` and each
+    artifact (including the manifest) at mode `0600`, rejecting insecure
+    pre-existing targets. No raw payload may use Playwright's attachment
+    channel: retained JSON is the same redacted, pre-attach byte-checked
+    artifact that is durably written. Each capture records the full SHA,
+    branch/ref, clean-worktree assertion, producer/browser identity, and UTC
+    capture interval. The writer maintains and validates a SHA-256 manifest
+    inventory of retained artifact sizes and checksums after every write; verify
+    that inventory and readable artifacts after the capture. This is acceptance
+    evidence, not Task 14 real-stack or operator documentation.
 
 ### Task 14: Prove an exact-head isolated real stack
 

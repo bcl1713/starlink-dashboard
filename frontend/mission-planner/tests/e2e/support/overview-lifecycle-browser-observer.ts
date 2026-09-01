@@ -13,10 +13,9 @@ export function installBrowserLifecycleObserver({
   ownershipSelector,
   limits,
 }: BrowserObserverConfig): void {
-  const criticalSelector =
+  const critical =
     '.overview-page,.leaflet-container,.operational-map__layer-row,.leaflet-pane,.leaflet-planned-route-west-pane path,.leaflet-weather-radar-pane img,canvas,.overview-summary-region,.overview-right-rail,.overview-poi-region,details';
-  const criticalOwnerSelector =
-    '.leaflet-planned-route-west-pane,.leaflet-weather-radar-pane';
+  const owners = '.leaflet-planned-route-west-pane,.leaflet-weather-radar-pane';
   const mutations: MutationEntry[] = [];
   const identityTransitions: IdentityTransition[] = [];
   const samples: LifecycleSample[] = [];
@@ -26,9 +25,8 @@ export function installBrowserLifecycleObserver({
   const active = new Map<string, CdpNetworkRecord>();
   let previous: Readonly<Record<string, string | null>> | null = null;
   let mutationSampledSinceRequest = false;
-  const timestamp = (): number =>
-    Number(document.timeline.currentTime ?? performance.now());
-  const installedAt = timestamp();
+  const now = () => Number(document.timeline.currentTime ?? performance.now());
+  const installedAt = now();
   const objectId = (window as LedgerWindow).__overviewObjectId;
   if (!objectId) throw new Error('Object identity registry was not installed');
   const describe = (node: Node) => {
@@ -37,8 +35,7 @@ export function installBrowserLifecycleObserver({
   };
   const relevant = (node: Node) =>
     node instanceof Element &&
-    (node.matches(criticalSelector) ||
-      Boolean(node.querySelector(criticalSelector)));
+    (node.matches(critical) || Boolean(node.querySelector(critical)));
   const canvasSignature = (canvas: HTMLCanvasElement) => {
     const ready = canvas.width > 0 && canvas.height > 0;
     return `${canvas.width}x${canvas.height}:${ready ? 1 : 0}:stable`;
@@ -122,7 +119,7 @@ export function installBrowserLifecycleObserver({
       identities[`chartSeries:${index}:${chart.label}`] = chart.seriesOwnerId;
       identities[`chartObject:${index}:${chart.label}`] = chart.objectId;
     });
-    const now = timestamp();
+    const at = now();
     if (previous) {
       for (const [key, before] of Object.entries(previous)) {
         const after = identities[key] ?? null;
@@ -130,7 +127,7 @@ export function installBrowserLifecycleObserver({
           retain(
             identityTransitions,
             {
-              at: now,
+              at,
               phase,
               key,
               before,
@@ -148,7 +145,7 @@ export function installBrowserLifecycleObserver({
     retain(
       samples,
       {
-        at: now,
+        at,
         phase,
         request,
         activeRequestIds: [...active.keys()],
@@ -190,7 +187,7 @@ export function installBrowserLifecycleObserver({
     const removed = [...record.removedNodes];
     const criticalRemoval =
       removed.some(relevant) ||
-      (Boolean(target?.closest(criticalOwnerSelector)) &&
+      (Boolean(target?.closest(owners)) &&
         removed.some((node) => node instanceof Element));
     const observedAttribute =
       record.type === 'attributes' &&
@@ -199,7 +196,7 @@ export function installBrowserLifecycleObserver({
     retain(
       mutations,
       {
-        at: timestamp(),
+        at: now(),
         activeRequestIds: [...active.keys()],
         type: record.type,
         target: describe(record.target),
@@ -272,28 +269,32 @@ export function installBrowserLifecycleObserver({
         active.delete(record.cdpRequestId);
     },
     stop() {
-      const pending = observer.takeRecords();
-      if (shouldSampleMutations(pending)) collect('stop-mutation', null);
-      collect('final-settle', null);
-      observer.disconnect();
-      return {
-        installedAt,
-        stoppedAt: timestamp(),
-        mutations,
-        identityTransitions,
-        samples,
-        consoleErrors: [],
-        pageErrors: [],
-        retention: {
-          status: overflowed.size ? 'overflow' : 'complete',
-          overflowed: [...overflowed].sort(),
-          retained: {
-            lifecycleMutations: mutations.length,
-            lifecycleSamples: samples.length,
-            identityTransitions: identityTransitions.length,
+      try {
+        const pending = observer.takeRecords();
+        if (shouldSampleMutations(pending)) collect('stop-mutation', null);
+        collect('final-settle', null);
+        return {
+          installedAt,
+          stoppedAt: now(),
+          mutations,
+          identityTransitions,
+          samples,
+          consoleErrors: [],
+          pageErrors: [],
+          retention: {
+            status: overflowed.size ? 'overflow' : 'complete',
+            overflowed: [...overflowed].sort(),
+            retained: {
+              lifecycleMutations: mutations.length,
+              lifecycleSamples: samples.length,
+              identityTransitions: identityTransitions.length,
+            },
           },
-        },
-      };
+        };
+      } finally {
+        observer.disconnect();
+        delete (window as LedgerWindow).__overviewLifecycle;
+      }
     },
   };
 }

@@ -1,11 +1,20 @@
-import type { Page } from '@playwright/test';
+import type { ConsoleMessage, Page } from '@playwright/test';
 
 export function collectBrowserErrors(page: Page) {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
-  page.on('console', (message) => {
+  const onConsole = (message: ConsoleMessage) => {
     if (message.type() === 'error') consoleErrors.push(message.text());
-  });
-  page.on('pageerror', (error) => pageErrors.push(error.message));
-  return { consoleErrors, pageErrors };
+  };
+  const onPageError = (error: Error) => pageErrors.push(error.message);
+  page.on('console', onConsole);
+  page.on('pageerror', onPageError);
+  return {
+    consoleErrors,
+    pageErrors,
+    dispose: () => {
+      page.off('console', onConsole);
+      page.off('pageerror', onPageError);
+    },
+  };
 }

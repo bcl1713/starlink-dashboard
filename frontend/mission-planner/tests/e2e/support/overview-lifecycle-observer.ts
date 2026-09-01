@@ -14,10 +14,11 @@ import {
 import type {
   CdpNetworkRecord,
   LedgerWindow,
+  LifecycleLedger,
 } from './overview-lifecycle-types';
 
 export async function installLifecycleObserver(page: Page) {
-  const { consoleErrors, pageErrors } = collectBrowserErrors(page);
+  const { consoleErrors, pageErrors, dispose } = collectBrowserErrors(page);
   await page.evaluate(installBrowserLifecycleObserver, {
     chartSeriesCounts: NOMINAL_CHART_SERIES_COUNTS,
     featureCounts: NOMINAL_FEATURE_COUNTS,
@@ -26,6 +27,11 @@ export async function installLifecycleObserver(page: Page) {
     limits: EVIDENCE_LIMITS,
   });
 
+  let stopped:
+    | Promise<
+        LifecycleLedger & { consoleErrors: string[]; pageErrors: string[] }
+      >
+    | undefined;
   return {
     observeCdp: (record: CdpNetworkRecord) =>
       page.evaluate((value) => {
@@ -33,11 +39,13 @@ export async function installLifecycleObserver(page: Page) {
         if (!lifecycle) throw new Error('Lifecycle observer was not installed');
         lifecycle.cdp(value);
       }, record),
-    stop: async () => {
-      const ledger = await page.evaluate(() =>
-        (window as LedgerWindow).__overviewLifecycle!.stop()
-      );
-      return { ...ledger, consoleErrors, pageErrors };
-    },
+    stop: () =>
+      (stopped ??= page
+        .evaluate(() => (window as LedgerWindow).__overviewLifecycle?.stop())
+        .then((ledger) => {
+          if (!ledger) throw new Error('Lifecycle observer was not installed');
+          return { ...ledger, consoleErrors, pageErrors };
+        })
+        .finally(dispose)),
   };
 }
