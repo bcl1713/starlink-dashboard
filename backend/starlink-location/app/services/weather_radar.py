@@ -1,7 +1,5 @@
 """RainViewer weather radar tile proxy service."""
 
-# Ruff 0.16.5 classifies these imports differently from repo and backend roots.
-# ruff: noqa: I001, RUF100
 from __future__ import annotations
 
 import asyncio
@@ -13,7 +11,6 @@ from typing import Any
 
 import httpcore
 import httpx
-
 from app.services.rainviewer_transport import (
     PinnedAsyncHTTPTransport,
     RainViewerPinningError,
@@ -31,8 +28,8 @@ from app.services.weather_radar_helpers import (
     close_response,
     consume_metadata_response,
     consume_tile_response,
-    resolve_redirect,
     raise_if_disconnected,
+    resolve_redirect,
     tile_url,
     validate_frame_path,
     validate_url,

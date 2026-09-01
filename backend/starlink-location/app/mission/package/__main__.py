@@ -30,6 +30,11 @@ from app.services.route_manager import RouteManager
 logger = logging.getLogger(__name__)
 
 
+def _package_poi_payload(poi) -> dict:
+    """Serialize a user-authored POI without internal generation state."""
+    return poi.model_dump(mode="json", exclude={"generated_provenance"})
+
+
 def _display_status(status_value: str) -> str:
     """Return user-facing timeline status text."""
     normalized = status_value.strip().lower()
@@ -436,12 +441,16 @@ def _add_pois_to_zip(
             # Get POIs associated with this leg's route and mission
             leg_pois = []
 
-            # Get all POIs for the mission once to optimize
+            # Get all POIs for the mission once to optimize. Timeline events are
+            # derived from the imported route and mission configuration, so only
+            # user-authored POIs belong in the portable package.
             all_mission_pois = poi_manager.list_pois(mission_id=mission.id)
 
             # Filter for POIs that are either mission-scoped (no route_id) or specific to this leg's route
             for poi in all_mission_pois:
-                if poi.route_id is None or poi.route_id == leg.route_id:
+                if poi.generated_provenance is None and (
+                    poi.route_id is None or poi.route_id == leg.route_id
+                ):
                     leg_pois.append(poi)
 
             # Track POI IDs
@@ -453,7 +462,7 @@ def _add_pois_to_zip(
                     "leg_id": leg.id,
                     "mission_id": mission.id,
                     "route_id": leg.route_id,
-                    "pois": [poi.model_dump(mode="json") for poi in leg_pois],
+                    "pois": [_package_poi_payload(poi) for poi in leg_pois],
                     "count": len(leg_pois),
                 }
                 poi_path = f"pois/{leg.id}-pois.json"
@@ -478,12 +487,16 @@ def _add_pois_to_zip(
     # Export satellite POIs (category="satellite") separately
     try:
         all_pois = poi_manager.list_pois()
-        satellite_pois = [poi for poi in all_pois if poi.category == "satellite"]
+        satellite_pois = [
+            poi
+            for poi in all_pois
+            if poi.category == "satellite" and poi.generated_provenance is None
+        ]
 
         if satellite_pois:
             satellite_data = {
                 "type": "satellite_pois",
-                "pois": [poi.model_dump(mode="json") for poi in satellite_pois],
+                "pois": [_package_poi_payload(poi) for poi in satellite_pois],
                 "count": len(satellite_pois),
             }
             satellite_path = "pois/satellites.json"

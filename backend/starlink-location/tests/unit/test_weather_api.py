@@ -1,7 +1,5 @@
 """Tests for weather radar API routes."""
 
-# Ruff 0.16.5 classifies these imports differently from repo and backend roots.
-# ruff: noqa: I001, RUF100
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -10,7 +8,6 @@ from tempfile import SpooledTemporaryFile
 import httpcore
 import httpx
 import pytest
-
 from app.api.weather import get_rainviewer_radar_service
 from app.services.rainviewer_transport import (
     PinnedAsyncHTTPTransport,
@@ -26,8 +23,12 @@ from app.services.weather_radar import (
 from main import app
 
 
+class _TileSpool(SpooledTemporaryFile[bytes]):
+    """Test spool whose ownership transfers to the returned RadarTile."""
+
+
 def _tile(body: bytes = b"\x89PNG\r\n\x1a\npayload") -> RadarTile:
-    spool = SpooledTemporaryFile(max_size=1024)  # noqa: SIM115
+    spool = _TileSpool(max_size=1024)
     spool.write(body)
     spool.seek(0)
     return RadarTile(spool=spool, size_bytes=len(body), frame_timestamp=12345)

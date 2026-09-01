@@ -5,9 +5,12 @@ import io
 import json
 import zipfile
 from datetime import datetime, timezone
+from unittest.mock import MagicMock
 
 from app.mission.models import Mission, MissionLeg, TransportConfig
+from app.mission.package import export_mission_package
 from app.mission.routes_v2 import (
+    _import_leg_pois,
     _synchronize_imported_endpoint_pois,
     import_mission,
 )
@@ -203,3 +206,123 @@ def test_package_import_restores_endpoint_pois_and_reimport_is_idempotent(
     assert {poi.category for poi in endpoints} == {"departure", "arrival"}
     assert {poi.name for poi in poi_manager.list_pois()} >= {"User POI"}
     assert json.loads((tmp_path / "pois.json").read_text())["pois"]
+
+
+def test_package_round_trip_excludes_generated_timeline_pois_and_keeps_user_pois(
+    tmp_path, monkeypatch
+):
+    """Package POI data remains user-authored while import rebuilds generated events."""
+    mission = _mission()
+    source = POIManager(pois_file=tmp_path / "source-points.json")
+    source.replace_timeline_event_pois(
+        route_id="imported-route",
+        mission_id=mission.id,
+        generated_pois=[
+            POICreate(
+                name="CommKa\nExit",
+                latitude=10.0,
+                longitude=20.0,
+                category="mission-event",
+                route_id="imported-route",
+                mission_id=mission.id,
+            )
+        ],
+        route=_route(),
+    )
+    user_poi = source.create_poi(
+        POICreate(
+            name="CommKa\nExit",
+            latitude=11.0,
+            longitude=21.0,
+            category="mission-event",
+            route_id="imported-route",
+            mission_id=mission.id,
+        )
+    )
+
+    monkeypatch.setattr(
+        "app.mission.package.__main__.load_mission_v2", lambda _: mission
+    )
+    monkeypatch.setattr(
+        "app.mission.package.__main__._add_route_kmls_to_zip", lambda *args: None
+    )
+    monkeypatch.setattr(
+        "app.mission.package.__main__._add_per_leg_exports_to_zip", lambda *args: None
+    )
+    monkeypatch.setattr(
+        "app.mission.package.__main__._add_combined_mission_exports_to_zip",
+        lambda *args: None,
+    )
+
+    package = export_mission_package(mission.id, MagicMock(), source)
+    try:
+        with zipfile.ZipFile(package) as archive:
+            poi_data = json.loads(archive.read("pois/imported-leg-pois.json"))
+            assert poi_data["count"] == 1
+            assert poi_data["pois"][0]["id"] == user_poi.id
+            assert "generated_provenance" not in poi_data["pois"][0]
+
+            restored = POIManager(pois_file=tmp_path / "restored-points.json")
+            imported, warnings = _import_leg_pois(
+                archive,
+                restored,
+                ["pois/imported-leg-pois.json"],
+                "pois/satellites.json",
+                tmp_path / "extract",
+            )
+    finally:
+        package.close()
+
+    assert imported == 1
+    assert warnings == []
+    assert (
+        restored.replace_timeline_event_pois("imported-route", mission.id, [], _route())
+        == []
+    )
+    assert [(poi.name, poi.generated_provenance) for poi in restored.list_pois()] == [
+        (user_poi.name, None)
+    ]
+
+
+def test_package_import_accepts_legacy_pois_without_generated_provenance(tmp_path):
+    """Older public package POI records stay importable without internal metadata."""
+    package = io.BytesIO()
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr(
+            "pois/legacy-leg-pois.json",
+            json.dumps(
+                {
+                    "pois": [
+                        {
+                            "id": "legacy-poi",
+                            "name": "Legacy POI",
+                            "latitude": 1.0,
+                            "longitude": 2.0,
+                            "icon": "marker",
+                            "category": "landmark",
+                            "active": True,
+                            "description": None,
+                            "route_id": "legacy-route",
+                            "mission_id": "legacy-mission",
+                            "created_at": "2026-01-01T00:00:00Z",
+                            "updated_at": "2026-01-01T00:00:00Z",
+                        }
+                    ]
+                }
+            ),
+        )
+
+    package.seek(0)
+    with zipfile.ZipFile(package) as archive:
+        manager = POIManager(pois_file=tmp_path / "legacy-points.json")
+        imported, warnings = _import_leg_pois(
+            archive,
+            manager,
+            ["pois/legacy-leg-pois.json"],
+            "pois/satellites.json",
+            tmp_path / "extract",
+        )
+
+    assert imported == 1
+    assert warnings == []
+    assert manager.list_pois()[0].generated_provenance is None

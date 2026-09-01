@@ -7,7 +7,7 @@
 ## Purpose
 
 Use a mission-package ZIP to restore a mission and its legs, route KML files,
-and packaged POIs. The Mission Planner imports the package through:
+and user-authored packaged POIs. The Mission Planner imports the package through:
 
 ```text
 POST /api/v2/missions/import
@@ -16,6 +16,12 @@ POST /api/v2/missions/import
 The uploaded ZIP is limited to 100 MiB. See the [mission-package upload
 limit](../setup/configuration/mission-package-upload-limits.md) for proxy and
 application-limit details.
+
+Generated timeline-event POIs are not package data. They are rebuilt from the
+imported route and mission settings after import, so the archive neither exposes
+internal generation provenance nor preserves stale derived events. User-created
+POIs, including ones with the same name/category as a generated event, remain
+portable.
 
 ## Endpoint POIs Restored During Import
 
