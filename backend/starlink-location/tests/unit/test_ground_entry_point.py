@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from prometheus_client import generate_latest
-from typing_extensions import Self
-
 from app.core.metrics import REGISTRY
 from app.services import ground_entry_point as gep
 from app.services.ground_entry_point import (
@@ -16,6 +13,8 @@ from app.services.ground_entry_point import (
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
+from prometheus_client import generate_latest
+from typing_extensions import Self
 
 
 def setup_function() -> None:

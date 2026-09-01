@@ -13,7 +13,6 @@ from ipaddress import AddressValueError, IPv4Address
 
 import dns.resolver
 import httpx
-
 from app.core.metrics.prometheus_metrics import (
     starlink_ground_entry_point_info,
     starlink_ground_entry_point_latitude_degrees,
