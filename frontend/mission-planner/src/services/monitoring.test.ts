@@ -180,15 +180,26 @@ describe('monitoring service contracts', () => {
       latitude: 41,
       longitude: -96,
     };
+    const response = { pois: [poi], total: 1, timestamp: instant };
+    expect(parseApplicablePois(response)).toEqual([poi]);
     expect(() =>
-      parseApplicablePois({ pois: [{ ...poi, extra: true }] })
+      parseApplicablePois({ ...response, pois: [{ ...poi, extra: true }] })
     ).toThrow();
     expect(() =>
-      parseApplicablePois({ pois: [{ ...poi, name: 'x'.repeat(201) }] })
+      parseApplicablePois({
+        ...response,
+        pois: [{ ...poi, name: 'x'.repeat(201) }],
+      })
     ).toThrow();
     expect(() =>
-      parseApplicablePois({ pois: Array.from({ length: 101 }, () => poi) })
+      parseApplicablePois({
+        ...response,
+        pois: Array.from({ length: 101 }, () => poi),
+        total: 101,
+      })
     ).toThrow();
+    expect(() => parseApplicablePois({ ...response, total: 2 })).toThrow();
+    expect(() => parseApplicablePois({ ...response, extra: true })).toThrow();
   });
 
   it('requires a coherent window and exact canonical history series', () => {

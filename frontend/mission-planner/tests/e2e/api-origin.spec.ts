@@ -116,7 +116,7 @@ test.describe('Mission Planner API origin', () => {
           },
         });
       } else if (path === '/api/pois/etas') {
-        await route.fulfill({ json: { pois: [] } });
+        await route.fulfill({ json: { pois: [], total: 0, timestamp: now } });
       } else {
         await route.abort('blockedbyclient');
       }

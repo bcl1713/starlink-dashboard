@@ -136,9 +136,16 @@ const poiSchema = coordinate.extend({
   distance_meters: finite.nonnegative(),
   active: z.boolean().optional(),
 });
-const poiResponseSchema = z.strictObject({
-  pois: z.array(poiSchema).max(MAX_POIS),
-});
+const poiResponseSchema = z
+  .strictObject({
+    pois: z.array(poiSchema).max(MAX_POIS),
+    total: z.number().int().nonnegative().max(MAX_POIS),
+    timestamp: instant,
+  })
+  .refine((value) => value.total === value.pois.length, {
+    message: 'POI total does not match collection length',
+    path: ['total'],
+  });
 
 export type StatusData = z.infer<typeof statusSchema>;
 export type MonitoringHistory = z.infer<typeof historySchema>;
