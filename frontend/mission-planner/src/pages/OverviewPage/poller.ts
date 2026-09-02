@@ -33,7 +33,7 @@ export class CompletionPoller {
     if (this.visible === visible) return;
     this.visible = visible;
     this.clearTimer();
-    if (visible && this.running) void this.run();
+    if (visible && this.running) void this.run().catch(() => {});
   }
 
   manual(): Promise<void> {
@@ -46,7 +46,7 @@ export class CompletionPoller {
     if (!this.running || !this.visible || this.cadence === 'paused') return;
     this.timer = setTimeout(() => {
       this.timer = undefined;
-      void this.run();
+      void this.run().catch(() => {});
     }, this.cadence * 1000);
   }
 

@@ -1,6 +1,6 @@
 """Typed cache-only JSON status endpoint."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Literal, Protocol
 
 from fastapi import APIRouter, HTTPException
@@ -19,7 +19,9 @@ router = APIRouter()
 
 
 class TelemetryCoordinator(Protocol):
-    def get_current_telemetry(self) -> Any: ...
+    mode: str
+
+    def get_current_telemetry_snapshot(self) -> tuple[Any, datetime]: ...
 
 
 _coordinator: TelemetryCoordinator | None = None
@@ -37,13 +39,16 @@ async def status() -> StatusResponse:
     if _coordinator is None:
         raise HTTPException(status_code=503, detail={"code": "status_unavailable"})
     try:
-        telemetry: Any = _coordinator.get_current_telemetry()
+        telemetry, received_at = _coordinator.get_current_telemetry_snapshot()
         observed_at = utc(telemetry.timestamp)
+        received_at = utc(received_at)
+        if received_at < observed_at:
+            raise ValueError("receipt precedes observation")
         return StatusResponse(
             source=_source_name(_coordinator),
             timestamp=observed_at,
             observed_at=observed_at,
-            received_at=datetime.now(timezone.utc),
+            received_at=received_at,
             position=StatusPosition(
                 latitude=telemetry.position.latitude,
                 longitude=_normalize_longitude(telemetry.position.longitude),
@@ -68,7 +73,13 @@ async def status() -> StatusResponse:
         )
     except HTTPException:
         raise
-    except (AttributeError, TypeError, ValueError, ValidationError) as exc:
+    except (
+        AttributeError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        ValidationError,
+    ) as exc:
         raise HTTPException(
             status_code=503, detail={"code": "status_unavailable"}
         ) from exc
@@ -82,4 +93,4 @@ def _normalize_longitude(longitude: float) -> float:
 def _source_name(
     coordinator: TelemetryCoordinator,
 ) -> Literal["simulation", "live"]:
-    return "live" if type(coordinator).__name__ == "LiveCoordinator" else "simulation"
+    return "live" if coordinator.mode == "live" else "simulation"

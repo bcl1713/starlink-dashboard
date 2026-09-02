@@ -5,9 +5,13 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
-from app.api import monitoring, status
-from app.services.monitoring_history import HistoryClient
 from fastapi.testclient import TestClient
+
+from app.api import monitoring, status
+from app.live.coordinator import LiveCoordinator as ProductionLiveCoordinator
+from app.models.config import SimulationConfig
+from app.services.monitoring_history import HistoryClient
+from app.simulation.coordinator import SimulationCoordinator
 from main import app
 
 NOW = datetime(2026, 9, 2, 12, 0, tzinfo=timezone.utc)
@@ -57,11 +61,14 @@ def telemetry(**overrides: float) -> SimpleNamespace:
 
 
 class LiveCoordinator:
+    mode = "live"
+
     def __init__(self, sample: SimpleNamespace) -> None:
         self.sample = sample
+        self.received_at = NOW
 
-    def get_current_telemetry(self) -> SimpleNamespace:
-        return self.sample
+    def get_current_telemetry_snapshot(self) -> tuple[SimpleNamespace, datetime]:
+        return self.sample, self.received_at
 
 
 def test_status_is_typed_truthful_finite_and_cache_only(
@@ -78,6 +85,67 @@ def test_status_is_typed_truthful_finite_and_cache_only(
     assert body["observed_at"] == "2026-09-02T12:00:00Z"
     assert body["received_at"].endswith("Z")
     assert "ip" not in response.text.lower()
+
+
+def test_status_reuses_truthful_receipt_for_repeated_cache_reads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    coordinator = LiveCoordinator(telemetry())
+    with TestClient(app) as client:
+        monkeypatch.setattr(status, "_coordinator", coordinator)
+        first = client.get("/api/status")
+        second = client.get("/api/status")
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["received_at"] == "2026-09-02T12:00:00Z"
+    assert second.json()["received_at"] == first.json()["received_at"]
+
+
+def test_real_live_empty_cache_returns_safe_stable_503(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    coordinator = ProductionLiveCoordinator.__new__(ProductionLiveCoordinator)
+    coordinator._last_valid_telemetry = None
+    coordinator._last_received_at = None
+    with TestClient(app) as client:
+        monkeypatch.setattr(status, "_coordinator", coordinator)
+        first = client.get("/api/status")
+        second = client.get("/api/status")
+
+    assert first.status_code == 503
+    assert second.status_code == 503
+    assert first.json() == {"detail": {"code": "status_unavailable"}}
+    assert second.json() == first.json()
+
+
+def test_real_live_update_records_receipt_when_observation_enters_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    coordinator = ProductionLiveCoordinator.__new__(ProductionLiveCoordinator)
+    coordinator._last_valid_telemetry = None
+    coordinator._last_received_at = None
+    coordinator._connection_status = False
+    sample = telemetry()
+    monkeypatch.setattr(coordinator, "_collect_telemetry", lambda: sample)
+
+    assert coordinator.update() is sample
+    cached, received_at = coordinator.get_current_telemetry_snapshot()
+    assert cached is sample
+    assert received_at >= sample.timestamp
+
+
+def test_real_simulation_snapshot_receipt_is_stable_until_update() -> None:
+    coordinator = SimulationCoordinator(SimulationConfig())
+    first_sample, first_receipt = coordinator.get_current_telemetry_snapshot()
+    cached_sample, cached_receipt = coordinator.get_current_telemetry_snapshot()
+
+    assert cached_sample is first_sample
+    assert cached_receipt == first_receipt
+    coordinator.update()
+    updated_sample, updated_receipt = coordinator.get_current_telemetry_snapshot()
+    assert updated_sample is not first_sample
+    assert updated_receipt >= first_receipt
 
 
 def test_status_normalizes_idl_longitude(
@@ -123,7 +191,7 @@ async def test_history_uses_only_fixed_queries_and_bounds_points() -> None:
                 "status": "success",
                 "data": {
                     "resultType": "matrix",
-                    "result": [{"values": [[1756814399, "2.5"]]}],
+                    "result": [{"values": [[1788350399, "2.5"]]}],
                 },
             },
         )
@@ -146,7 +214,10 @@ def test_history_route_rejects_arbitrary_upstream_parameters() -> None:
                         200,
                         json={
                             "status": "success",
-                            "data": {"resultType": "matrix", "result": []},
+                            "data": {
+                                "resultType": "matrix",
+                                "result": [{"values": []}],
+                            },
                         },
                     )
                 ),

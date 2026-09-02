@@ -2,6 +2,7 @@
 
 import logging
 import time
+from datetime import datetime, timezone
 
 import starlink_grpc
 from grpc import RpcError
@@ -54,6 +55,7 @@ class LiveCoordinator:
 
         # Last known good state for graceful degradation
         self._last_valid_telemetry: TelemetryData | None = None
+        self._last_received_at: datetime | None = None
         self._connection_status: bool = False
 
         logger.info(
@@ -66,7 +68,7 @@ class LiveCoordinator:
         # Try to get initial telemetry to verify connection
         try:
             if self.client.connect():
-                self._last_valid_telemetry = self._collect_telemetry()
+                self._accept_telemetry(self._collect_telemetry())
                 self._connection_status = True
                 logger.info("Initial telemetry collected from Starlink dish")
             else:
@@ -94,7 +96,7 @@ class LiveCoordinator:
         """
         try:
             telemetry = self._collect_telemetry()
-            self._last_valid_telemetry = telemetry
+            self._accept_telemetry(telemetry)
             self._connection_status = True
             return telemetry
         except (starlink_grpc.GrpcError, RpcError) as e:
@@ -159,6 +161,17 @@ class LiveCoordinator:
 
         return telemetry
 
+    def _accept_telemetry(self, telemetry: TelemetryData) -> None:
+        """Record one observation and its cache receipt as a single update."""
+        self._last_valid_telemetry = telemetry
+        self._last_received_at = datetime.now(timezone.utc)
+
+    def get_current_telemetry_snapshot(self) -> tuple[TelemetryData, datetime]:
+        """Return the cached observation with its stable receipt instant."""
+        if self._last_valid_telemetry is None or self._last_received_at is None:
+            raise RuntimeError("No telemetry available. Call update() first.")
+        return self._last_valid_telemetry, self._last_received_at
+
     def get_current_telemetry(self) -> TelemetryData:
         """
         Get last collected telemetry without updating.
@@ -183,6 +196,7 @@ class LiveCoordinator:
         self.heading_tracker.reset()
         self.speed_tracker.reset()
         self._last_valid_telemetry = None
+        self._last_received_at = None
 
         logger.info("LiveCoordinator reset to initial state")
 

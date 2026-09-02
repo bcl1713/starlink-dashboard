@@ -48,7 +48,11 @@ export function OverviewPage() {
         latency={data.summaries.latency}
         packetLoss={data.summaries.packetLoss}
         gep={data.gep}
+        gepState={data.gepState}
+        refreshGep={data.refreshGep}
         pois={data.pois}
+        poiState={data.poiState}
+        refreshPois={data.refreshPois}
         cadence={data.cadence}
         now={data.now}
       />

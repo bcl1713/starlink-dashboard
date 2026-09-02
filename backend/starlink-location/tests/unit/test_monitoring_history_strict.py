@@ -1,0 +1,127 @@
+"""Adversarial bounds for the fixed-query monitoring history adapter."""
+
+import json
+from datetime import datetime, timezone
+from typing import Any
+
+import httpx
+import pytest
+
+from app.services import monitoring_history
+from app.services.monitoring_history import HistoryClient, HistoryUnavailable
+
+NOW = datetime(2026, 9, 2, 12, 0, tzinfo=timezone.utc)
+START = int(NOW.timestamp()) - 60
+END = int(NOW.timestamp())
+
+
+def payload(values: list[Any], *, series_count: int = 1) -> dict[str, Any]:
+    return {
+        "status": "success",
+        "data": {
+            "resultType": "matrix",
+            "result": [{"values": values} for _ in range(series_count)],
+        },
+    }
+
+
+def transport_for(body: dict[str, Any] | bytes) -> httpx.MockTransport:
+    async def handler(_: httpx.Request) -> httpx.Response:
+        if isinstance(body, bytes):
+            return httpx.Response(200, content=body)
+        return httpx.Response(200, json=body)
+
+    return httpx.MockTransport(handler)
+
+
+async def rejected(body: dict[str, Any] | bytes) -> None:
+    client = HistoryClient(transport=transport_for(body), clock=lambda: NOW)
+    with pytest.raises(HistoryUnavailable, match="monitoring history unavailable"):
+        await client.fetch(range_seconds=60, step_seconds=1)
+
+
+@pytest.mark.asyncio
+async def test_rejects_result_count_other_than_exactly_one() -> None:
+    await rejected(payload([[START, "1"]], series_count=2))
+    await rejected(payload([], series_count=0))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "values",
+    [
+        [[START, "1"], [START + 1]],
+        [[START, "1"], {"timestamp": START + 1, "value": "2"}],
+        [[START, "1"], [START + 1, "nan"]],
+        [[START, "1"], [START + 1, "inf"]],
+    ],
+)
+async def test_rejects_malformed_and_nonfinite_samples(values: list[Any]) -> None:
+    await rejected(payload(values))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "values",
+    [
+        [[START + 1, "1"], [START, "2"]],
+        [[START, "1"], [START, "2"]],
+        [[START - 1, "1"]],
+        [[END + 1, "1"]],
+    ],
+)
+async def test_rejects_nonascending_duplicate_and_out_of_window_samples(
+    values: list[Any],
+) -> None:
+    await rejected(payload(values))
+
+
+@pytest.mark.asyncio
+async def test_rejects_per_series_limit_before_json_decode(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    values = [[START + (index / 100), "1"] for index in range(1802)]
+    body = json.dumps(payload(values)).encode()
+    decoded = False
+
+    def forbidden_decode(_: object) -> object:
+        nonlocal decoded
+        decoded = True
+        raise AssertionError("oversized point graph was decoded")
+
+    monkeypatch.setattr(monitoring_history.json, "loads", forbidden_decode)
+    await rejected(body)
+    assert decoded is False
+
+
+@pytest.mark.asyncio
+async def test_rejects_aggregate_point_limit_across_serial_queries() -> None:
+    calls = 0
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        values = [[START + (index / 100), "1"] for index in range(1800)]
+        return httpx.Response(200, json=payload(values))
+
+    client = HistoryClient(transport=httpx.MockTransport(handler), clock=lambda: NOW)
+    with pytest.raises(HistoryUnavailable):
+        await client.fetch(range_seconds=60, step_seconds=1)
+    assert calls < 6
+
+
+@pytest.mark.asyncio
+async def test_rejects_aggregate_response_byte_limit_across_serial_queries() -> None:
+    calls = 0
+    padding = " " * 900_000
+    body = json.dumps(payload([[START, "1"]])).encode() + padding.encode()
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, content=body)
+
+    client = HistoryClient(transport=httpx.MockTransport(handler), clock=lambda: NOW)
+    with pytest.raises(HistoryUnavailable):
+        await client.fetch(range_seconds=60, step_seconds=1)
+    assert calls < 6

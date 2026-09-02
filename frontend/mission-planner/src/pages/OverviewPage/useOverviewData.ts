@@ -4,8 +4,6 @@ import {
   fetchGroundEntryPoint,
   fetchHistory,
   fetchStatus,
-  type ApplicablePoi,
-  type GroundEntryPoint,
   type MonitoringHistory,
   type StatusData,
 } from '../../services/monitoring';
@@ -16,6 +14,7 @@ import {
   type NumericSample,
 } from './history';
 import { CompletionPoller, type Cadence } from './poller';
+import { useOverlayLane } from './useOverlayLane';
 
 type Metric = MonitoringHistory['series'][number]['metric'];
 type Store = Record<Metric, NumericSample[]>;
@@ -36,12 +35,31 @@ export function useOverviewData() {
   const [statusError, setStatusError] = useState<string | null>(null);
   const [lastSuccess, setLastSuccess] = useState<Date | null>(null);
   const [history, setHistory] = useState<Store>(emptyStore);
-  const [gep, setGep] = useState<GroundEntryPoint | null>(null);
-  const [pois, setPois] = useState<ApplicablePoi[]>([]);
   const [now, setNow] = useState(() => new Date());
   const controllers = useRef(new Set<AbortController>());
   const historyPending = useRef(false);
   const hiddenAt = useRef<number | null>(null);
+  const offlineAt = useRef<number | null>(null);
+  const lastStatusAt = useRef(performance.now());
+  const repairedGapAt = useRef<number | null>(null);
+  const mounted = useRef(false);
+
+  const gepLane = useOverlayLane(
+    fetchGroundEntryPoint,
+    null,
+    30,
+    'Ground entry point unavailable',
+    90,
+    now
+  );
+  const poiLane = useOverlayLane(
+    fetchApplicablePois,
+    [],
+    10,
+    'Points of interest unavailable',
+    30,
+    now
+  );
 
   const withController = useCallback(
     async <T>(work: (signal: AbortSignal) => Promise<T>) => {
@@ -57,54 +75,22 @@ export function useOverviewData() {
   );
 
   const refreshStatus = useCallback(async () => {
-    setStatusLoading(true);
+    if (mounted.current) setStatusLoading(true);
     try {
       const sample = await withController(fetchStatus);
+      if (!mounted.current) return;
       const received = new Date();
+      lastStatusAt.current = performance.now();
       setStatus(sample);
       setLastSuccess(received);
       setStatusError(null);
-      setHistory((current) => {
-        const timestamp = sample.observed_at;
-        const instant = received.getTime();
-        return {
-          ...current,
-          latitude_degrees: appendSample(
-            current.latitude_degrees,
-            { timestamp, value: sample.position.latitude },
-            instant
-          ),
-          longitude_degrees: appendSample(
-            current.longitude_degrees,
-            { timestamp, value: sample.position.longitude },
-            instant
-          ),
-          latency_ms: appendSample(
-            current.latency_ms,
-            { timestamp, value: sample.network.latency_ms },
-            instant
-          ),
-          throughput_down_mbps: appendSample(
-            current.throughput_down_mbps,
-            { timestamp, value: sample.network.throughput_down_mbps },
-            instant
-          ),
-          throughput_up_mbps: appendSample(
-            current.throughput_up_mbps,
-            { timestamp, value: sample.network.throughput_up_mbps },
-            instant
-          ),
-          packet_loss_percent: appendSample(
-            current.packet_loss_percent,
-            { timestamp, value: sample.network.packet_loss_percent },
-            instant
-          ),
-        };
-      });
+      setHistory((current) =>
+        appendLiveStatus(current, sample, received.getTime())
+      );
     } catch {
-      setStatusError('Live status unavailable');
+      if (mounted.current) setStatusError('Live status unavailable');
     } finally {
-      setStatusLoading(false);
+      if (mounted.current) setStatusLoading(false);
     }
   }, [withController]);
 
@@ -113,6 +99,7 @@ export function useOverviewData() {
     historyPending.current = true;
     try {
       const backfill = await withController(fetchHistory);
+      if (!mounted.current) return;
       const instant = Date.parse(backfill.generated_at);
       setHistory((current) => {
         const next = { ...current };
@@ -144,6 +131,7 @@ export function useOverviewData() {
   useEffect(() => pollerRef.current?.setCadence(cadence), [cadence]);
 
   useEffect(() => {
+    mounted.current = true;
     const poller = pollerRef.current;
     const ownedControllers = controllers.current;
     if (!poller) return;
@@ -151,27 +139,36 @@ export function useOverviewData() {
     poller.start();
     void poller.manual();
     void reconcileHistory();
-    void withController(fetchGroundEntryPoint)
-      .then(setGep)
-      .catch(() => {});
-    void withController(fetchApplicablePois)
-      .then(setPois)
-      .catch(() => {});
 
+    const repairDetectedGap = (startedAt: number | null) => {
+      if (
+        startedAt !== null &&
+        performance.now() - startedAt > 5000 &&
+        repairedGapAt.current !== startedAt
+      ) {
+        repairedGapAt.current = startedAt;
+        void reconcileHistory();
+      }
+    };
     const onVisibility = () => {
       const visible = document.visibilityState === 'visible';
       poller.setVisible(visible);
-      if (!visible) {
-        hiddenAt.current = performance.now();
-      } else if (
-        hiddenAt.current !== null &&
-        performance.now() - hiddenAt.current > 5000
-      ) {
-        void reconcileHistory();
+      if (!visible) hiddenAt.current = performance.now();
+      else {
+        repairDetectedGap(hiddenAt.current);
         hiddenAt.current = null;
       }
     };
+    const onOffline = () => {
+      offlineAt.current = performance.now();
+    };
+    const onOnline = () => {
+      repairDetectedGap(offlineAt.current ?? lastStatusAt.current);
+      offlineAt.current = null;
+    };
     document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
     let clockTimer: ReturnType<typeof setTimeout>;
     const updateClock = () => {
       setNow(new Date());
@@ -179,13 +176,16 @@ export function useOverviewData() {
     };
     clockTimer = setTimeout(updateClock, 1000);
     return () => {
+      mounted.current = false;
       poller.stop();
       clearTimeout(clockTimer);
       document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
       for (const controller of ownedControllers) controller.abort();
       ownedControllers.clear();
     };
-  }, [reconcileHistory, withController]);
+  }, [reconcileHistory]);
 
   const summaries = useMemo(
     () => ({
@@ -193,7 +193,7 @@ export function useOverviewData() {
       packetLoss: summarizeWindow(
         history.packet_loss_percent,
         now.getTime(),
-        1800
+        300
       ),
     }),
     [history, now]
@@ -219,11 +219,55 @@ export function useOverviewData() {
     status,
     statusMessage,
     history,
-    gep,
-    pois,
+    gep: gepLane.data,
+    gepState: gepLane.state,
+    pois: poiLane.data,
+    poiState: poiLane.state,
     now,
     summaries,
     refreshStatus: () => pollerRef.current?.manual() ?? Promise.resolve(),
     reconcileHistory,
+    refreshGep: gepLane.refresh,
+    refreshPois: poiLane.refresh,
+  };
+}
+
+function appendLiveStatus(
+  current: Store,
+  sample: StatusData,
+  instant: number
+): Store {
+  const timestamp = sample.observed_at;
+  return {
+    latitude_degrees: appendSample(
+      current.latitude_degrees,
+      { timestamp, value: sample.position.latitude },
+      instant
+    ),
+    longitude_degrees: appendSample(
+      current.longitude_degrees,
+      { timestamp, value: sample.position.longitude },
+      instant
+    ),
+    latency_ms: appendSample(
+      current.latency_ms,
+      { timestamp, value: sample.network.latency_ms },
+      instant
+    ),
+    throughput_down_mbps: appendSample(
+      current.throughput_down_mbps,
+      { timestamp, value: sample.network.throughput_down_mbps },
+      instant
+    ),
+    throughput_up_mbps: appendSample(
+      current.throughput_up_mbps,
+      { timestamp, value: sample.network.throughput_up_mbps },
+      instant
+    ),
+    packet_loss_percent: appendSample(
+      current.packet_loss_percent,
+      { timestamp, value: sample.network.packet_loss_percent },
+      instant
+    ),
   };
 }

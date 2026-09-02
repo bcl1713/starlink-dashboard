@@ -1,6 +1,16 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { CurrentPositionMap } from './CurrentPositionMap';
 import { OverviewInventory } from './OverviewInventory';
+
+const sourceState = {
+  loading: false,
+  stale: false,
+  error: null,
+  lastSuccess: new Date('2026-09-02T12:00:00Z'),
+  recovering: false,
+  recoveredAt: null,
+};
 
 const status = {
   source: 'simulation' as const,
@@ -28,10 +38,14 @@ describe('OverviewInventory', () => {
       <OverviewInventory
         status={status}
         statusMessage="Updated 12:00:01"
-        latency={{ current: 20, min: 10, average: 15, max: 20 }}
-        packetLoss={{ current: 1, min: 0, average: 0.5, max: 1 }}
+        latency={{ current: 999, min: 10, average: 504.5, max: 999 }}
+        packetLoss={{ current: 99, min: 0, average: 49.5, max: 99 }}
         gep={null}
+        gepState={sourceState}
+        refreshGep={async () => {}}
         pois={[]}
+        poiState={sourceState}
+        refreshPois={async () => {}}
         cadence={1}
         now={new Date('2026-09-02T12:00:00Z')}
       />
@@ -41,6 +55,12 @@ describe('OverviewInventory', () => {
     expect(html).toContain('Current position map');
     expect(html).toContain('Top applicable POIs');
     expect(html).toContain('5-minute min / avg / max');
+    expect(html).toContain('20.0 ms');
+    expect(html).toContain('999.0 ms');
+    expect(html).toContain('1.0%');
+    expect(html).toContain('99.0%');
+    expect(html).toContain('<svg');
+    expect(html).toContain('Current position: 0.0000, -180.0000');
     expect(html).toContain('Download');
     expect(html).toContain('Upload');
     expect(html).toContain('Ground entry point');
@@ -48,5 +68,18 @@ describe('OverviewInventory', () => {
     expect(html).toContain('Packet loss');
     expect(html).toContain('Selected interval');
     expect(html).not.toContain('Grafana');
+  });
+
+  it('normalizes IDL coordinates and rejects nonfinite map input', () => {
+    const normalized = renderToStaticMarkup(
+      <CurrentPositionMap latitude={10} longitude={540} />
+    );
+    const rejected = renderToStaticMarkup(
+      <CurrentPositionMap latitude={Number.POSITIVE_INFINITY} longitude={0} />
+    );
+
+    expect(normalized).toContain('Current position: 10.0000, -180.0000');
+    expect(rejected).toContain('Position unavailable');
+    expect(rejected).not.toContain('<svg');
   });
 });

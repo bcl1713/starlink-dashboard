@@ -4,10 +4,12 @@ import asyncio
 import json
 import math
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
+
 from app.models.dashboard import (
     METRIC_ORDER,
     HistoryResponse,
@@ -15,10 +17,13 @@ from app.models.dashboard import (
     HistorySeries,
     MetricName,
 )
+from app.services.monitoring_history_parser import count_values_items
 
 _PROMETHEUS_URL = "http://prometheus:9090/api/v1/query_range"
 _MAX_BODY_BYTES = 2_000_000
+_MAX_AGGREGATE_BYTES = 4_000_000
 _MAX_POINTS = 1801
+_MAX_AGGREGATE_POINTS = 7200
 _QUERIES: dict[MetricName, str] = {
     "latitude_degrees": "starlink_dish_latitude_degrees",
     "longitude_degrees": "starlink_dish_longitude_degrees",
@@ -31,6 +36,12 @@ _QUERIES: dict[MetricName, str] = {
 
 class HistoryUnavailable(RuntimeError):
     """A safe history failure suitable for route-level translation."""
+
+
+@dataclass
+class _Budget:
+    bytes: int = 0
+    points: int = 0
 
 
 class HistoryClient:
@@ -59,14 +70,12 @@ class HistoryClient:
             "end": end.timestamp(),
             "step": step_seconds,
         }
-        timeout = httpx.Timeout(self._timeout)
         try:
             async with httpx.AsyncClient(
-                transport=self._transport, timeout=timeout
+                transport=self._transport, timeout=httpx.Timeout(self._timeout)
             ) as client:
                 series = await asyncio.wait_for(
-                    self._fetch_all(client, params),
-                    timeout=self._timeout,
+                    self._fetch_all(client, params), timeout=self._timeout
                 )
         except asyncio.CancelledError:
             raise
@@ -87,8 +96,11 @@ class HistoryClient:
         params: dict[str, float | int],
     ) -> list[HistorySeries]:
         series: list[HistorySeries] = []
+        budget = _Budget()
         for metric, expression in _QUERIES.items():
-            series.append(await self._fetch_series(client, metric, expression, params))
+            series.append(
+                await self._fetch_series(client, metric, expression, params, budget)
+            )
         return series
 
     async def _fetch_series(
@@ -97,6 +109,7 @@ class HistoryClient:
         metric: MetricName,
         expression: str,
         shared_params: dict[str, float | int],
+        budget: _Budget,
     ) -> HistorySeries:
         body = bytearray()
         async with client.stream(
@@ -106,39 +119,64 @@ class HistoryClient:
         ) as response:
             response.raise_for_status()
             async for chunk in response.aiter_bytes():
-                body.extend(chunk)
-                if len(body) > _MAX_BODY_BYTES:
+                next_series_bytes = len(body) + len(chunk)
+                next_total_bytes = budget.bytes + len(chunk)
+                if (
+                    next_series_bytes > _MAX_BODY_BYTES
+                    or next_total_bytes > _MAX_AGGREGATE_BYTES
+                ):
                     raise ValueError("history response too large")
+                body.extend(chunk)
+                budget.bytes = next_total_bytes
+        remaining = _MAX_AGGREGATE_POINTS - budget.points
+        point_count = count_values_items(bytes(body), min(_MAX_POINTS, remaining))
+        budget.points += point_count
         payload = json.loads(body)
         values = _matrix_values(payload)
-        samples: list[HistorySample] = []
-        for raw_timestamp, raw_value in values[-_MAX_POINTS:]:
-            timestamp = float(raw_timestamp)
-            value = float(raw_value)
-            if not math.isfinite(timestamp) or not math.isfinite(value):
-                continue
-            samples.append(
-                HistorySample(
-                    timestamp=datetime.fromtimestamp(timestamp, timezone.utc),
-                    value=value,
-                )
-            )
+        if len(values) != point_count:
+            raise ValueError("history point count mismatch")
+        samples = _validated_samples(values, shared_params)
         return HistorySeries(metric=metric, samples=samples)
 
 
-def _matrix_values(payload: Any) -> list[list[Any]]:
+def _validated_samples(
+    values: list[Any], params: dict[str, float | int]
+) -> list[HistorySample]:
+    samples: list[HistorySample] = []
+    previous: float | None = None
+    start = float(params["start"])
+    end = float(params["end"])
+    for item in values:
+        if not isinstance(item, list) or len(item) != 2:
+            raise TypeError("invalid history sample")
+        timestamp = float(item[0])
+        value = float(item[1])
+        if not math.isfinite(timestamp) or not math.isfinite(value):
+            raise ValueError("nonfinite history sample")
+        if timestamp < start or timestamp > end:
+            raise ValueError("history sample outside requested window")
+        if previous is not None and timestamp <= previous:
+            raise ValueError("history samples must be strictly ascending")
+        previous = timestamp
+        samples.append(
+            HistorySample(
+                timestamp=datetime.fromtimestamp(timestamp, timezone.utc), value=value
+            )
+        )
+    return samples
+
+
+def _matrix_values(payload: Any) -> list[Any]:
     if not isinstance(payload, dict) or payload.get("status") != "success":
         raise ValueError("invalid history response")
     data = payload.get("data")
     if not isinstance(data, dict) or data.get("resultType") != "matrix":
         raise ValueError("invalid history result")
     result = data.get("result")
-    if not isinstance(result, list):
-        raise TypeError("invalid history result")
-    if not result:
-        return []
+    if not isinstance(result, list) or len(result) != 1:
+        raise ValueError("history result must contain exactly one series")
     first = result[0]
     values = first.get("values") if isinstance(first, dict) else None
     if not isinstance(values, list):
         raise TypeError("invalid history samples")
-    return [item for item in values if isinstance(item, list) and len(item) == 2]
+    return values

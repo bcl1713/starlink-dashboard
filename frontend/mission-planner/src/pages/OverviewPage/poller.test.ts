@@ -65,6 +65,72 @@ describe('CompletionPoller', () => {
     poller.stop();
   });
 
+  it.each([2, 10, 30] as const)(
+    'uses the production %s-second cadence without an early start',
+    async (cadence) => {
+      vi.useFakeTimers();
+      const run = vi.fn(async () => {});
+      const poller = new CompletionPoller(run, cadence);
+      poller.start();
+
+      await vi.advanceTimersByTimeAsync(cadence * 1000 - 1);
+      expect(run).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(run).toHaveBeenCalledTimes(1);
+      poller.stop();
+    }
+  );
+
+  it('pins the five-second no-before-4.5s and by-5.5s oracle', async () => {
+    vi.useFakeTimers();
+    const run = vi.fn(async () => {});
+    const poller = new CompletionPoller(run, 5);
+    poller.start();
+
+    await vi.advanceTimersByTimeAsync(4500);
+    expect(run).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(run).toHaveBeenCalledTimes(1);
+    poller.stop();
+  });
+
+  it('recovers its production schedule after a rejected request', async () => {
+    vi.useFakeTimers();
+    const run = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValueOnce(new Error('failed'))
+      .mockResolvedValue(undefined);
+    const poller = new CompletionPoller(run, 1);
+    poller.start();
+
+    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(run).toHaveBeenCalledTimes(2);
+    poller.stop();
+  });
+
+  it('does not overlap when hidden and shown during an active request', async () => {
+    vi.useFakeTimers();
+    let release: (() => void) | undefined;
+    const run = vi.fn(
+      () => new Promise<void>((resolve) => (release = resolve))
+    );
+    const poller = new CompletionPoller(run, 1);
+    poller.start();
+    await vi.advanceTimersByTimeAsync(1000);
+
+    poller.setVisible(false);
+    poller.setVisible(true);
+    poller.setVisible(true);
+    await flush();
+    expect(run).toHaveBeenCalledTimes(1);
+    release?.();
+    await flush();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(run).toHaveBeenCalledTimes(2);
+    poller.stop();
+  });
+
   it('paused manual refresh runs exactly once without overlap', async () => {
     vi.useFakeTimers();
     const run = vi.fn(async () => {});
@@ -73,7 +139,18 @@ describe('CompletionPoller', () => {
 
     await Promise.all([poller.manual(), poller.manual()]);
     await vi.advanceTimersByTimeAsync(5000);
+    expect(run).toHaveBeenCalledTimes(1);
+    poller.stop();
+  });
 
+  it('stops without a replay after a large monotonic clock jump', async () => {
+    vi.useFakeTimers();
+    const run = vi.fn(async () => {});
+    const poller = new CompletionPoller(run, 1);
+    poller.start();
+
+    vi.setSystemTime(new Date(Date.now() + 60 * 60 * 1000));
+    await vi.runOnlyPendingTimersAsync();
     expect(run).toHaveBeenCalledTimes(1);
     poller.stop();
   });
