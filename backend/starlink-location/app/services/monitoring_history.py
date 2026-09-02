@@ -7,7 +7,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
-
 from app.models.dashboard import (
     METRIC_ORDER,
     HistoryResponse,

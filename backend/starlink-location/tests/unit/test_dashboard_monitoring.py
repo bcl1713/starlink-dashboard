@@ -5,10 +5,9 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
-
 from app.api import monitoring, status
 from app.services.monitoring_history import HistoryClient
+from fastapi.testclient import TestClient
 from main import app
 
 NOW = datetime(2026, 9, 2, 12, 0, tzinfo=timezone.utc)
