@@ -80,6 +80,21 @@ def test_status_is_typed_truthful_finite_and_cache_only(
     assert "ip" not in response.text.lower()
 
 
+def test_status_normalizes_idl_longitude(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with TestClient(app) as client:
+        monkeypatch.setattr(
+            status,
+            "_coordinator",
+            LiveCoordinator(telemetry(longitude=181.25)),
+        )
+        response = client.get("/api/status")
+
+    assert response.status_code == 200
+    assert response.json()["position"]["longitude"] == pytest.approx(-178.75)
+
+
 def test_status_rejects_nonfinite_data_without_leaking_exception(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

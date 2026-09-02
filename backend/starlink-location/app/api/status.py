@@ -46,7 +46,7 @@ async def status() -> StatusResponse:
             received_at=datetime.now(timezone.utc),
             position=StatusPosition(
                 latitude=telemetry.position.latitude,
-                longitude=telemetry.position.longitude,
+                longitude=_normalize_longitude(telemetry.position.longitude),
                 altitude=telemetry.position.altitude,
                 speed=telemetry.position.speed,
                 heading=telemetry.position.heading,
@@ -72,6 +72,11 @@ async def status() -> StatusResponse:
         raise HTTPException(
             status_code=503, detail={"code": "status_unavailable"}
         ) from exc
+
+
+def _normalize_longitude(longitude: float) -> float:
+    """Represent equivalent finite longitudes in the public IDL-safe range."""
+    return (longitude + 180.0) % 360.0 - 180.0
 
 
 def _source_name(
