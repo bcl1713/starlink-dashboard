@@ -4,29 +4,16 @@ import {
   fetchGroundEntryPoint,
   fetchHistory,
   fetchStatus,
-  type MonitoringHistory,
   type StatusData,
 } from '../../services/monitoring';
+import { mergeHistory, summarizeWindow } from './history';
 import {
-  appendSample,
-  mergeHistory,
-  summarizeWindow,
-  type NumericSample,
-} from './history';
+  appendLiveStatus,
+  createOverviewHistoryStore,
+  type OverviewHistoryStore,
+} from './overviewHistoryStore';
 import { CompletionPoller, type Cadence } from './poller';
 import { useOverlayLane } from './useOverlayLane';
-
-type Metric = MonitoringHistory['series'][number]['metric'];
-type Store = Record<Metric, NumericSample[]>;
-
-const emptyStore = (): Store => ({
-  latitude_degrees: [],
-  longitude_degrees: [],
-  latency_ms: [],
-  throughput_down_mbps: [],
-  throughput_up_mbps: [],
-  packet_loss_percent: [],
-});
 
 export function useOverviewData() {
   const [cadence, setCadence] = useState<Cadence>(1);
@@ -34,7 +21,9 @@ export function useOverviewData() {
   const [statusLoading, setStatusLoading] = useState(true);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [lastSuccess, setLastSuccess] = useState<Date | null>(null);
-  const [history, setHistory] = useState<Store>(emptyStore);
+  const [history, setHistory] = useState<OverviewHistoryStore>(
+    createOverviewHistoryStore
+  );
   const [now, setNow] = useState(() => new Date());
   const controllers = useRef(new Set<AbortController>());
   const historyPending = useRef(false);
@@ -261,45 +250,5 @@ export function useOverviewData() {
     reconcileHistory,
     refreshGep: gepLane.refresh,
     refreshPois: poiLane.refresh,
-  };
-}
-
-function appendLiveStatus(
-  current: Store,
-  sample: StatusData,
-  instant: number
-): Store {
-  const timestamp = sample.observed_at;
-  return {
-    latitude_degrees: appendSample(
-      current.latitude_degrees,
-      { timestamp, value: sample.position.latitude },
-      instant
-    ),
-    longitude_degrees: appendSample(
-      current.longitude_degrees,
-      { timestamp, value: sample.position.longitude },
-      instant
-    ),
-    latency_ms: appendSample(
-      current.latency_ms,
-      { timestamp, value: sample.network.latency_ms },
-      instant
-    ),
-    throughput_down_mbps: appendSample(
-      current.throughput_down_mbps,
-      { timestamp, value: sample.network.throughput_down_mbps },
-      instant
-    ),
-    throughput_up_mbps: appendSample(
-      current.throughput_up_mbps,
-      { timestamp, value: sample.network.throughput_up_mbps },
-      instant
-    ),
-    packet_loss_percent: appendSample(
-      current.packet_loss_percent,
-      { timestamp, value: sample.network.packet_loss_percent },
-      instant
-    ),
   };
 }
