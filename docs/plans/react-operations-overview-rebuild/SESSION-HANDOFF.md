@@ -172,16 +172,6 @@ remote_ref_sha() {
 git cat-file -e "$BASELINE^{commit}"
 git cat-file -e "$CANDIDATE^{commit}"
 git merge-base --is-ancestor "$BASELINE" "$CANDIDATE"
-git fetch --no-tags origin "$FEATURE"
-test "$(git rev-parse FETCH_HEAD)" = "$HISTORICAL"
-test "$(remote_ref_sha "$FEATURE")" = "$HISTORICAL"
-git push origin "$HISTORICAL:$ARCHIVE"
-test "$(remote_ref_sha "$ARCHIVE")" = "$HISTORICAL"
-git push --force-with-lease="$FEATURE:$HISTORICAL" \
-  origin "$CANDIDATE:$FEATURE"
-test "$(remote_ref_sha "$FEATURE")" = "$CANDIDATE"
-git fetch --no-tags origin "$FEATURE"
-test "$(git rev-parse FETCH_HEAD)" = "$CANDIDATE"
 printf '%s\n' \
   docs/plans/2026-09-02-react-operations-overview-rebuild.md \
   docs/plans/react-operations-overview-rebuild/00-product-contract.md \
@@ -193,15 +183,32 @@ printf '%s\n' \
   docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md \
   >"$PUBLICATION_TMP/expected"
 sort -o "$PUBLICATION_TMP/expected" "$PUBLICATION_TMP/expected"
+git diff --name-only --no-renames "$BASELINE"..."$CANDIDATE" \
+  >"$PUBLICATION_TMP/candidate-actual"
+sort -o "$PUBLICATION_TMP/candidate-actual" \
+  "$PUBLICATION_TMP/candidate-actual"
+diff -u "$PUBLICATION_TMP/expected" "$PUBLICATION_TMP/candidate-actual"
+git fetch --no-tags origin "$FEATURE"
+test "$(git rev-parse FETCH_HEAD)" = "$HISTORICAL"
+test "$(remote_ref_sha "$FEATURE")" = "$HISTORICAL"
+git push origin "$HISTORICAL:$ARCHIVE"
+test "$(remote_ref_sha "$ARCHIVE")" = "$HISTORICAL"
+git push --force-with-lease="$FEATURE:$HISTORICAL" \
+  origin "$CANDIDATE:$FEATURE"
+test "$(remote_ref_sha "$FEATURE")" = "$CANDIDATE"
+git fetch --no-tags origin "$FEATURE"
+test "$(git rev-parse FETCH_HEAD)" = "$CANDIDATE"
 git diff --name-only --no-renames "$BASELINE"...FETCH_HEAD \
-  >"$PUBLICATION_TMP/actual"
-sort -o "$PUBLICATION_TMP/actual" "$PUBLICATION_TMP/actual"
-diff -u "$PUBLICATION_TMP/expected" "$PUBLICATION_TMP/actual"
+  >"$PUBLICATION_TMP/published-actual"
+sort -o "$PUBLICATION_TMP/published-actual" \
+  "$PUBLICATION_TMP/published-actual"
+diff -u "$PUBLICATION_TMP/expected" "$PUBLICATION_TMP/published-actual"
 ```
 
-Archive creation and remote readback must finish before the guarded reset.
-Candidate SHA readback and the exact eight-path remote diff must finish after
-it. An unguarded `--force` push is forbidden.
+Candidate validation and historical remote preconditions must finish before any
+push. Archive creation and readback must finish before the guarded reset;
+candidate SHA readback and the independent exact eight-path remote diff must
+finish after it. An unguarded `--force` push is forbidden.
 
 Oracle chooses and executes remote commands. The Phase 0 writer must not push,
 create refs, force-update, comment, or otherwise edit GitHub.
