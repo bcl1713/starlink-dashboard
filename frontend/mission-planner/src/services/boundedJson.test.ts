@@ -36,6 +36,30 @@ afterEach(() => {
 });
 
 describe('bounded monitoring JSON transport', () => {
+  it('does no request or body-reader work for a pre-aborted caller', async () => {
+    vi.useFakeTimers();
+    const getReader = vi.fn();
+    const response = {
+      ok: true,
+      headers: new Headers(),
+      body: { getReader },
+    } as unknown as Response;
+    const fetchMock = vi.fn().mockResolvedValue(response);
+    vi.stubGlobal('fetch', fetchMock);
+    const controller = new AbortController();
+    controller.abort();
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await expect(getJson('/api/status', controller.signal)).rejects.toThrow(
+        'Monitoring request unavailable'
+      );
+    }
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(getReader).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('aborts a request at the four-second bound', async () => {
     vi.useFakeTimers();
     let requestSignal: AbortSignal | undefined;

@@ -2,9 +2,11 @@ import { z } from 'zod';
 import { getJson } from './boundedJson';
 import { type ApplicablePoi, parseApplicablePois } from './monitoringPois';
 import {
+  compareInstants,
   coordinate,
   finite,
   instant,
+  instantsDifferBySeconds,
   text,
 } from './monitoringSchemaPrimitives';
 
@@ -42,15 +44,14 @@ const statusSchema = z
     }),
   })
   .superRefine((value, context) => {
-    const observed = Date.parse(value.observed_at);
-    if (Date.parse(value.timestamp) !== observed) {
+    if (compareInstants(value.timestamp, value.observed_at) !== 0) {
       context.addIssue({
         code: 'custom',
         message: 'legacy timestamp differs from observation',
         path: ['timestamp'],
       });
     }
-    if (Date.parse(value.received_at) < observed) {
+    if (compareInstants(value.received_at, value.observed_at) < 0) {
       context.addIssue({
         code: 'custom',
         message: 'receipt precedes observation',
@@ -90,20 +91,24 @@ const historySchema = z
       .length(metricOrder.length),
   })
   .superRefine((value, context) => {
-    const start = Date.parse(value.window_start);
-    const end = Date.parse(value.window_end);
-    if (start > end) {
+    if (compareInstants(value.window_start, value.window_end) > 0) {
       context.addIssue({ code: 'custom', message: 'invalid history window' });
       return;
     }
-    if (end - start !== value.range_seconds * 1000) {
+    if (
+      !instantsDifferBySeconds(
+        value.window_start,
+        value.window_end,
+        value.range_seconds
+      )
+    ) {
       context.addIssue({
         code: 'custom',
         message: 'history range disagrees with window',
         path: ['range_seconds'],
       });
     }
-    if (Date.parse(value.generated_at) < end) {
+    if (compareInstants(value.generated_at, value.window_end) < 0) {
       context.addIssue({
         code: 'custom',
         message: 'history generation precedes window end',
@@ -118,17 +123,21 @@ const historySchema = z
           path: ['series', seriesIndex, 'metric'],
         });
       }
-      let previous = Number.NEGATIVE_INFINITY;
+      let previous: string | undefined;
       series.samples.forEach((sample, sampleIndex) => {
-        const timestamp = Date.parse(sample.timestamp);
-        if (timestamp < start || timestamp > end || timestamp <= previous) {
+        if (
+          compareInstants(sample.timestamp, value.window_start) < 0 ||
+          compareInstants(sample.timestamp, value.window_end) > 0 ||
+          (previous !== undefined &&
+            compareInstants(sample.timestamp, previous) <= 0)
+        ) {
           context.addIssue({
             code: 'custom',
             message: 'invalid history sample timestamp',
             path: ['series', seriesIndex, 'samples', sampleIndex, 'timestamp'],
           });
         }
-        previous = timestamp;
+        previous = sample.timestamp;
         if (
           sample.value !== null &&
           !validMetricValue(series.metric, sample.value)
@@ -158,7 +167,7 @@ const gepSchema = z
   .refine(
     (value) =>
       value.observed_at === null ||
-      Date.parse(value.observed_at) <= Date.parse(value.generated_at),
+      compareInstants(value.observed_at, value.generated_at) <= 0,
     {
       message: 'GEP observation follows generation',
       path: ['observed_at'],

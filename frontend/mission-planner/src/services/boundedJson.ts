@@ -4,6 +4,7 @@ export async function getJson(
   url: string,
   signal?: AbortSignal
 ): Promise<unknown> {
+  if (signal?.aborted) throw new Error('Monitoring request unavailable');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 4000);
   const relay = () => controller.abort();
