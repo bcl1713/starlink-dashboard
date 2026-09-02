@@ -35,9 +35,21 @@ to Grafana, port 3000, datasource-proxy paths, plugins, or dashboard assets.
 
 - Fetch same-origin `GET /api/status` independently.
 - Supported cadence choices are exactly `1`, `2`, `5`, `10`, and `30` seconds,
-  plus `paused`; default is a product decision resolved in Phase 1 tests.
-- Schedule from completion, not dispatch, so a lane never overlaps itself or
-  bursts to catch up after delay, tab suspension, resume, or cadence change.
+  plus `paused`. One second is unconditionally the default and fastest cadence;
+  Phase 1 implements and tests that decision and does not reopen it.
+- Use one recursive monotonic timer, scheduled only after the prior bounded
+  browser request settles. There is no interval timer, overlap, replay, or
+  catch-up burst after delay, tab suspension, resume, or cadence change.
+- Each browser request has a bounded timeout. A hidden page pauses polling;
+  becoming visible triggers exactly one immediate request, then resumes the
+  selected completion-anchored cadence without overlap or replay.
+- A cadence change made while a request is in flight takes effect promptly after
+  that request settles. At `1s`, starts are 0.8–1.3 seconds apart and there are
+  at least four successful responses in five seconds. At `5s`, no request starts
+  before 4.5 seconds and one starts by 5.5 seconds. Changing `5s` to `1s` starts
+  the next request within 1.3 seconds after settlement. While paused, one manual
+  refresh produces exactly one request. In a real ten-second `1s` run, require
+  at least eight successes and a median start interval of 0.8–1.3 seconds.
 - Manual refresh affects only the requested lane and never starts an overlapping
   request.
 - Source observation time, receipt time, loading, stale, and error states remain
@@ -48,34 +60,52 @@ to Grafana, port 3000, datasource-proxy paths, plugins, or dashboard assets.
 - Append accepted live status samples to bounded in-browser ring buffers.
 - Bounds apply by sample count and/or explicit time horizon; no unbounded array,
   timer, listener, cache, or retained response body is permitted.
-- History rendering is local by default. There is no mandatory exact five-second
-  history request. Any server history endpoint requires a separately reviewed,
-  allow-listed and bounded need.
+- Call same-origin `GET /api/monitoring/history` once at bootstrap; call it
+  again on resume/reconnect only when a gap is detected, and expose explicit
+  manual reconciliation. An optional 30–60 second reconciliation cadence may be
+  added only when runtime evidence justifies it; there is no mandatory periodic
+  history request.
+- History responses seed or repair only the bounded 30-minute ring buffers and
+  never replace current values. Phase 1 deliberately decides and tests whether
+  constant identity becomes a deployment-wide backfill guard or is removed.
+- Server queries remain fixed and allow-listed, with explicit point-count and
+  response-body bounds, bounded timeout/cancellation, finite-value validation,
+  and safe errors. Browser input cannot supply PromQL or an upstream target.
 - Slow chart rendering or history work cannot block live cards or overlays.
 
 ### Overlay lane
 
-- Route, POI, active-link, satellite, mission-event, GEP, and weather data
+- Data needed for the required position map, top-five applicable POIs, and GEP
   refresh independently according to source semantics.
 - A slow/failing overlay cannot delay live status, local history, or unrelated
   overlays. Preserve last-good geometry and show source-specific state.
 - There is no global `Promise.all` transaction across data sources.
+- Route, recent track, active-link, satellites, mission events, weather radar,
+  and ancillary map/layer controls are optional salvage only. They are never a
+  Phase 1 or Phase 2 completion dependency.
 
 ## Display and interaction contract
 
-The page exposes, when data supports them:
+At exact native 1920x1080 fullscreen, one screen must show all of this
+simultaneously, without scrolling or opening a disclosure:
 
-- explicit UTC clock plus configured operational clocks;
-- current position, heading/speed, latency, throughput, packet loss,
-  obstruction, freshness, and connection state;
-- bounded latency, throughput, and packet-loss histories;
-- position, planned route, recent track, active link, POIs, satellites, mission
-  events, GEP label/marker, weather radar, layer controls, fit, zoom, scale,
-  attribution, and accessible textual summaries;
-- cadence selector with exact values `1/2/5/10/30/paused`, manual refresh, and
-  keyboard/touch-operable controls;
-- clear loading, empty, stale, partial failure, total failure, recovery, and
-  paused states without replacing last-good content with a blank dashboard.
+1. Exactly four clocks.
+2. A current-position map.
+3. The top five applicable POIs.
+4. Current latency plus five-minute minimum, average, and maximum.
+5. Current download and upload.
+6. GEP.
+7. Obstruction.
+8. Current, average, and maximum packet loss.
+9. The selected refresh interval.
+10. The last successful update, or a concise failure when no success is
+    available.
+
+The cadence control exposes exactly `1/2/5/10/30/paused`, with `1s` selected by
+default, plus keyboard/touch-operable manual refresh. Loading, empty, stale,
+partial failure, total failure, recovery, and paused states retain last-good
+content. Route, track, active-link, satellites, events, radar, and ancillary
+controls may be salvaged, but are optional and cannot block Phase 1 or 2.
 
 Use IDL-safe route/history geometry and finite-coordinate validation. Density
 may adapt outside fullscreen, but data and accessible alternatives do not
@@ -86,15 +116,19 @@ silently disappear.
 Phase 2's binding visual target is native browser fullscreen at exactly
 `1920x1080`. In that state:
 
+- `document.fullscreenElement` equals the overview root;
+- every exact inventory region above has a non-zero bounding box wholly within
+  the viewport, and all inventory is simultaneously visible without scroll or
+  disclosure;
 - the entire overview bounding box is within the viewport;
 - `scrollWidth <= clientWidth` and `scrollHeight <= clientHeight` for the root
   and document; there is no vertical or horizontal document scroll;
-- header, controls, live cards, dominant map, rail, and charts have non-zero,
-  non-overlapping bounding boxes inside the viewport;
 - content is not merely hidden, clipped, scaled illegibly, or made inaccessible
   to satisfy no-scroll assertions;
 - entering/exiting fullscreen preserves state and returns focus sensibly;
-- a clear fallback is shown when the fullscreen API rejects.
+- a clear fallback is shown when the fullscreen API rejects; and
+- acceptance retains exactly one viewport screenshot, never a full-page
+  screenshot, alongside dimensions and bounding boxes.
 
 Other widths receive smoke/accessibility coverage, not the retired six-viewport
 release gate.
@@ -127,10 +161,12 @@ plus full repository checks declared by its phase.
 ### Browser/runtime checks
 
 At an immutable clean head, independent Phase 3 acceptance uses real Chromium
-through built Nginx against the real simulation stack. It records at least ten
-seconds of browser-originated `/api/status` request start/completion evidence.
-The selected cadence must be within documented tolerance, with no overlap,
-catch-up burst, or coupling to an intentionally slow independent lane.
+through built Nginx against the real simulation stack. It retains only bounded
+raw results: ten seconds of browser `/api/status` request start/completion/
+failure timings, console/page/first-party request errors, dimensions and
+bounding boxes, exactly one viewport screenshot, and ordinary concise logs when
+useful. No task-owned evidence repository, manifest, checksum, or certification
+is created.
 
 At native 1920x1080 fullscreen, record bounding boxes, document/root dimensions,
 state/focus behavior, request failures, and console/page errors. Prove Grafana

@@ -17,15 +17,22 @@ semantics. Oracle owns remote publication.
 ## Product and scope contract
 
 Follow [the product contract](00-product-contract.md). At 1920x1080 native
-fullscreen, clocks/header, cadence controls, current cards, dominant map, right
-rail, histories, freshness/failure state, and accessible alternatives must fit
-inside the viewport with non-zero, non-overlapping bounding boxes.
+fullscreen, exactly four clocks; current-position map; top-five applicable POIs;
+latency current plus five-minute minimum/average/maximum; current download and
+upload; GEP; obstruction; packet-loss current/average/maximum; selected refresh
+interval; and last successful update or concise failure must all be visible at
+once without scroll or disclosure. Each region has a non-zero bounding box
+wholly within the viewport.
 
 No root/document horizontal or vertical scroll is allowed. Passing by hiding
 required content, clipping controls, unreadable global scaling, or disabling
 keyboard access is forbidden. Fullscreen entry/exit preserves selected cadence,
 layer/filter state, last-good data, and focus; API rejection has a visible
 fallback.
+
+`document.fullscreenElement` must equal the overview root. Route, recent track,
+active-link, satellites, mission events, weather radar, and ancillary controls
+are optional salvage and never Phase 1 or Phase 2 completion dependencies.
 
 **In:** layout, component boundaries needed for layout, fullscreen
 control/state, focused visual/accessibility tests, and minimal style tokens.
@@ -57,20 +64,23 @@ or browser RED, reaches minimum GREEN without hiding required content, then is
 refactored before rerunning dimensions, accessibility, and state checks.
 
 1. **Measure current candidate.** Pin exact clean input; capture 1920x1080
-   normal and native-fullscreen dimensions, overflow, required regions, focus
-   order, console errors, and a screenshot. Record gaps, not aesthetic guesses.
+   normal and native-fullscreen dimensions, overflow, every exact inventory
+   region, focus order, and console errors. Retain exactly one viewport
+   screenshot, never a full-page screenshot. Record gaps, not aesthetic guesses.
 2. **Fullscreen state.** RED component/browser tests cover supported entry,
    change/exit events, rejected API fallback, unmount cleanup, focus movement
    and return, and retained product state. Implement minimally.
-3. **Grid skeleton.** RED bounding-box tests require all named regions within
-   1920x1080, no overlap, and root/document dimensions within the viewport.
+3. **Grid skeleton.** RED tests require the overview root to be the fullscreen
+   element, all exact inventory regions simultaneously visible with non-zero
+   boxes wholly within 1920x1080, and root/document dimensions within viewport.
    Implement explicit rows/columns and bounded `minmax(0, ...)` ownership.
 4. **Map and rail.** RED tests assert dominant map/controls remain usable,
    Leaflet invalidates size after transitions, rail content is accessible, and
    no map/control box crosses or overlaps its allocated area.
-5. **Charts and cards.** RED tests assert three histories and current/freshness
-   values remain visible/readable with bounded chart containers and no canvas or
-   label overflow.
+5. **Metrics and freshness.** RED tests assert latency current plus five-minute
+   min/average/max, download/upload, obstruction, packet-loss
+   current/average/max, selected interval, and last success/concise failure stay
+   visible and readable without disclosure or label overflow.
 6. **Density and text.** RED tests cover long safe labels,
    unavailable/stale/error messages, browser zoom smoke, keyboard order, visible
    focus, contrast, reduced motion, and no inaccessible clipping.
@@ -93,7 +103,7 @@ Minimum focused check after each change:
 
 ```bash
 cd frontend/mission-planner
-npx vitest run <changed-layout-test-paths>
+npx vitest run src/pages/OverviewPage
 npx playwright test tests/e2e/overview.spec.ts --grep "1920x1080|fullscreen"
 ```
 
@@ -113,8 +123,9 @@ git diff --check
 
 Use inspected script names if different and record substitutions. Browser tests
 must request a 1920x1080 viewport and exercise the real Fullscreen API where the
-runner permits it; a mocked unit test alone is insufficient. Record all named
-bounding boxes and document/root `client*`/`scroll*` dimensions.
+runner permits it; a mocked unit test alone is insufficient. Assert
+`document.fullscreenElement` is the overview root and record every exact
+inventory bounding box and document/root `client*`/`scroll*` dimension.
 
 ## Independent gates
 

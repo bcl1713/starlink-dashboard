@@ -9,18 +9,19 @@ Repository `bcl1713/starlink-dashboard`; durable PR
 `e649ce169cd5adcbdd83d6264290b30d5221599e` belongs at expected archive
 `archive/pr-143-pre-simplification-e649ce1`.
 
-Input is Oracle's exact Phase 3 accepted SHA and evidence manifest recorded in
-`SESSION-HANDOFF.md`. Produce truthful operator/user/architecture/rollout docs,
-receive independent documentation review, and hand Oracle an exact candidate for
-integration to `dev`. Only Brian may authorize release to `main`.
+Input is Oracle's exact Phase 3 accepted SHA and bounded raw result disposition
+recorded in `SESSION-HANDOFF.md`. Produce truthful operator/user/architecture/
+rollout docs, receive independent documentation review, and hand Oracle an exact
+candidate for integration to `dev`. Only Brian may authorize release to `main`.
 
 ## Product and scope contract
 
 Follow [the product contract](00-product-contract.md). Documentation must
 explain what exists, not the retired 2026-08-29 design:
 
-- React overview purpose, route, live values, bounded local history, overlays,
-  freshness/error behavior, and exact `1/2/5/10/30/paused` cadence controls;
+- React overview purpose, route, exact one-screen inventory, 30-minute history,
+  backfill triggers, freshness/error behavior, and exact `1/2/5/10/30/paused`
+  controls with `1s` unconditionally default and fastest;
 - independent lanes, no overlap/catch-up burst, and manual refresh behavior;
 - native 1920x1080 fullscreen entry/exit/fallback and no-scroll target;
 - same-origin/security/CSP boundaries and no GEP public IP;
@@ -59,7 +60,7 @@ acceptance list and run link/claim checks to expose stale or missing coverage.
 Each docs increment makes those focused checks GREEN. A product defect is not a
 documentation RED; route it to its owning implementation phase.
 
-1. **Pin inputs.** Verify clean exact Phase 3 SHA, read its manifest/handoff,
+1. **Pin inputs.** Verify clean exact Phase 3 SHA, read its raw-results handoff,
    and inventory all current references to Grafana, monitoring entry points,
    operations overview, refresh cadence, fullscreen, and rollback.
 2. **Write doc acceptance list.** Before prose, create a finite checklist
@@ -80,8 +81,9 @@ documentation RED; route it to its owning implementation phase.
    remove claims that Grafana is being retired or that old global/history/
    viewport/evidence gates remain binding. Do not erase historical Git facts.
 7. **Examples and screenshots.** Run every command shown or label environment-
-   specific placeholders. Use only Phase 3 exact-head screenshots/evidence with
-   source and accessibility text; do not invent outputs or future SHAs.
+   specific placeholders. Use only Phase 3's single exact-head viewport
+   screenshot and bounded raw results with source/accessibility text; do not
+   invent outputs or future SHAs.
 8. **Focused docs checks.** Format/lint changed Markdown and run the
    repository's link/naming checks plus a programmatic relative-link/anchor
    validator.
@@ -100,15 +102,66 @@ Focused checks are Prettier, markdownlint, naming, and relative-link/anchor
 validation on changed Markdown. The repository docs tests, byte-identity check,
 diff checks, and current CI/pre-commit check-only set form the full gate.
 
-Use repository versions or bounded `npx` without changing package files:
+Export `PHASE3_SHA` to the exact observed handoff SHA, then run from repository
+root. These are check-only and do not change package files:
 
 ```bash
-npx prettier --check <changed-markdown-paths>
-markdownlint-cli2 <changed-markdown-paths>
+: "${PHASE3_SHA:?export PHASE3_SHA to the accepted exact SHA}"
+mapfile -t DOCS < <(git diff --name-only "$PHASE3_SHA"...HEAD -- '*.md')
+test "${#DOCS[@]}" -gt 0
+npx --yes prettier@3.6.2 --check "${DOCS[@]}"
+npx --yes markdownlint-cli2@0.19.1 "${DOCS[@]}"
 python3 tools/check_filename_convention.py
-python3 <relative-link-and-anchor-validator> <changed-markdown-paths>
-git diff --check <phase-3-sha>...HEAD
-git diff --name-only <phase-3-sha>...HEAD
+git diff --check "$PHASE3_SHA"...HEAD
+git diff --name-only "$PHASE3_SHA"...HEAD
+wc -l "${DOCS[@]}"
+python3 - "${DOCS[@]}" <<'PY'
+import re
+import sys
+import urllib.parse
+from collections import Counter
+from pathlib import Path
+
+docs = [Path(value) for value in sys.argv[1:]]
+errors = []
+
+def anchors(path: Path) -> set[str]:
+    counts: Counter[str] = Counter()
+    result: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = re.match(r"^#{1,6}\s+(.+?)\s*#*\s*$", line)
+        if not match:
+            continue
+        text = re.sub(r"<[^>]+>", "", match.group(1).strip().lower())
+        base = re.sub(r"[ ]+", "-", re.sub(r"[^\w\- ]", "", text))
+        number = counts[base]
+        counts[base] += 1
+        result.add(base if number == 0 else f"{base}-{number}")
+    return result
+
+for source in docs:
+    for raw in re.findall(
+        r"(?<!!)\[[^]]*\]\(([^)]+)\)",
+        source.read_text(encoding="utf-8"),
+    ):
+        destination = raw.strip().split(maxsplit=1)[0].strip("<>")
+        parsed = urllib.parse.urlsplit(destination)
+        if parsed.scheme or parsed.netloc or destination.startswith("/"):
+            continue
+        target = source if not parsed.path else source.parent / urllib.parse.unquote(parsed.path)
+        target = target.resolve()
+        if target.is_dir():
+            target = target / "README.md"
+        if not target.is_file():
+            errors.append(f"{source}: missing target {destination}")
+        elif parsed.fragment and urllib.parse.unquote(parsed.fragment).lower() not in anchors(target):
+            errors.append(f"{source}: missing anchor {destination}")
+
+print(f"checked_files={len(docs)} errors={len(errors)}")
+if errors:
+    print(*errors, sep="\n")
+    raise SystemExit(1)
+PY
 ```
 
 Run any repository docs/link tests found during inspection. Then run the minimal
@@ -135,9 +188,9 @@ acceptance rather than being concealed in prose.
 ## Public handoff, integration, and completion
 
 Oracle's PR handoff includes PR/base/feature, Phase 3 input and Phase 4 output
-SHAs, changed docs, documentation impact, commands/results, exact
-runtime-evidence link, review dispositions, unresolved questions, rollback
-summary, cleanup, and `next_step`.
+SHAs, changed docs, documentation impact, commands/results, bounded raw Phase 3
+result summary, review dispositions, unresolved questions, rollback summary,
+cleanup, and `next_step`.
 
 Oracle may integrate only after exact-head checks and both doc reviews pass.
 After integration, verify the `dev` commit contains the accepted feature and

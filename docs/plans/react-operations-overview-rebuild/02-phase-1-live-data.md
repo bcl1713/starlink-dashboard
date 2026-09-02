@@ -18,14 +18,29 @@ local-history, and overlay lanes from that head. Oracle owns remote publication.
 Follow [the full contract](00-product-contract.md). In this phase specifically:
 
 - `/api/status` is the live hot path and remains same-origin.
-- Cadence options are exactly `1/2/5/10/30/paused`.
-- Each lane schedules after completion: no overlap, catch-up burst, or global
-  transaction; a slow overlay/history lane cannot delay status.
+- Cadence options are exactly `1/2/5/10/30/paused`; `1s` is unconditionally the
+  default and fastest. Phase 1 implements and tests this decision; it does not
+  decide it.
+- One recursive monotonic timer schedules promptly after request settlement,
+  with a bounded browser timeout: no overlap, replay, catch-up burst, or global
+  transaction. Hidden pauses and visible resume makes exactly one immediate
+  request. A slow overlay/history lane cannot delay status.
 - Accepted status samples feed bounded local ring buffers. Retain last-good
   content and distinguish observation, receipt, stale, loading, and error.
+- Call `/api/monitoring/history` once at bootstrap, on resume/reconnect after a
+  detected gap, and on explicit manual reconciliation. It only seeds/repairs
+  30-minute buffers, never current values. Optional 30–60 second reconciliation
+  requires runtime justification.
 - Browser input never contains arbitrary PromQL or upstream URL. History and
   upstream bodies are bounded; CSP remains restrictive; no GEP public IP.
 - Grafana is a fallback only. React makes no Grafana request.
+
+Phase 1 supplies data and components for the binding one-screen inventory:
+exactly four clocks; current-position map; top-five applicable POIs; current
+latency plus five-minute min/average/max; current download/upload; GEP;
+obstruction; packet-loss current/average/max; selected refresh interval; and
+last successful update or concise failure. Route, track, active-link,
+satellites, events, radar, and ancillary controls are optional salvage only.
 
 **Out:** pixel-perfect/fullscreen composition, real-stack acceptance, Grafana
 retirement, broad backend refactoring, and operator rollout docs.
@@ -57,23 +72,36 @@ minimum GREEN implementation, and a behavior-preserving REFACTOR before broader
 checks. Timer tests use deterministic clocks and explicit pending requests.
 
 1. **Inspect and freeze contracts.** Record exact input SHA/clean tree; inspect
-   current status DTO, router, frontend harness, CSP/Nginx, overlays, and tests.
-   Resolve the default cadence and explicit ring bounds in tests/handoff.
+   current status DTO, history DTO/query, router, frontend harness, CSP/Nginx,
+   overlays, and tests. Pin the `1s` default/fastest cadence and 30-minute ring
+   bounds in tests/handoff.
 2. **Status hot path.** RED tests pin finite typed fields, truthful source time,
    safe errors, no GEP IP, and bounded work. Make `/api/status` avoid new
    network, Prometheus, overlay, or disk waits; preserve compatibility where
    intentional.
-3. **Scheduler primitive.** RED fake-timer tests cover all cadence values,
-   completion-anchored scheduling, pause/resume/change, cancellation/unmount,
-   manual refresh, slow request, failure/recovery, no overlap, and no burst.
+3. **Scheduler primitive.** RED fake-timer tests cover exactly one recursive
+   monotonic timer, bounded request timeout, all cadence values, prompt
+   post-settlement scheduling, hidden pause, exactly one immediate visible
+   resume, cancellation/unmount, manual refresh, slow requests, recovery, no
+   overlap/replay, and no burst. Pin the timing oracle: `1s` start intervals
+   0.8–1.3s and at least four successes/5s; `5s` no start before 4.5s and one by
+   5.5s; `5s`→`1s` next start within 1.3s after settlement; paused manual
+   refresh exactly one request.
 4. **Live lane.** RED service/hook/component tests cover origin-relative status,
    external DTO validation, last-good state, source freshness, and controls.
-5. **Bounded local history.** RED property/boundary tests prove insertion,
-   chronological order, invalid-sample rejection, time/count eviction, and fixed
-   memory behavior. Render accessible latency/throughput/loss summaries/charts.
-6. **Independent overlays.** RED tests intentionally hold one overlay pending
-   while status and unrelated lanes advance. Add route/track/POI/link/satellite/
-   mission-event/GEP/weather adapters only as required for the overview.
+5. **Bounded history/backfill.** RED property/boundary tests prove insertion,
+   chronological order, invalid rejection, 30-minute eviction, fixed memory,
+   bootstrap once, gap-detected resume/reconnect, explicit manual
+   reconciliation, and that backfill never changes current values. Retain fixed
+   allow-listed queries, point/body bounds, timeout/cancellation, finite
+   validation, and safe errors. Deliberately decide/test whether constant
+   identity is a deployment-wide backfill guard or remove it; add 30–60s
+   reconciliation only with runtime proof.
+6. **Required map/POI/GEP data.** RED tests intentionally hold one source
+   pending while status and unrelated lanes advance. Implement only what the
+   exact one-screen inventory needs.
+   Route/track/active-link/satellites/events/radar and ancillary controls are
+   optional salvage, never Phase 1 or 2 dependencies.
 7. **Integration states.** RED tests cover loading, empty, stale, partial/total
    failure, recovery, IDL, cadence persistence if adopted, same-origin requests,
    CSP, no Grafana request, and no GEP IP in DOM/logged errors.
@@ -142,6 +170,8 @@ unrelated resources.
 
 Completion requires reviewed immutable code with the live/status path advancing
 at selected cadence without overlap/burst while an independent lane is slow,
-bounded local history, green checks, and clean tree. Stop. Phase 2 starts in a
-new session from Oracle's published Phase 1 SHA and outputs a reviewed exact
-1920x1080 fullscreen candidate.
+bounded 30-minute history with the contracted backfill triggers, all scheduler
+timing oracles green, and a clean tree. The real ten-second `1s` oracle requires
+at least eight successes and a median interval of 0.8–1.3s. Stop. Phase 2 starts
+in a new session from Oracle's published Phase 1 SHA and outputs a reviewed
+exact 1920x1080 fullscreen candidate.

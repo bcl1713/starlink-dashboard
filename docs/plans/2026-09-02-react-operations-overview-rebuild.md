@@ -66,7 +66,19 @@ the active phase file, then advisory path notes.
 
 The binding behavior is in the
 [product contract](react-operations-overview-rebuild/00-product-contract.md). In
-particular, retire these old core gates:
+particular, `1/2/5/10/30/paused` are the exact choices, and `1s` is
+unconditionally the default and fastest; Phase 1 implements/tests rather than
+decides this. The exact native-fullscreen 1920x1080 one-screen inventory is
+exactly four clocks, current-position map, top-five applicable POIs, latency
+current plus five-minute min/average/max, current download/upload, GEP,
+obstruction, packet-loss current/average/max, selected interval, and last
+successful update or concise failure. Route/track/active-link/satellites/events/
+radar and ancillary controls are optional salvage, never Phase 1/2 dependencies.
+
+History bootstrap calls `/api/monitoring/history` once; detected gaps on resume/
+reconnect and explicit manual reconciliation trigger repairs. Optional 30–60s
+reconciliation needs runtime evidence. Backfill only seeds/repairs bounded
+30-minute buffers and never current values. Retire these old core gates:
 
 - one global `Promise.all` refresh transaction;
 - an exact five-second history request cadence;
@@ -78,6 +90,11 @@ particular, retire these old core gates:
 They may be useful diagnostics, but they cannot block this roadmap unless Brian
 explicitly reinstates one. Grafana remains available as fallback, and React must
 make no request to it.
+
+Phase 3 is non-writing. It retains only bounded raw ten-second browser request
+timings/results, console/page/first-party errors, dimensions/bounding boxes,
+exactly one viewport screenshot, and concise logs when useful—never a task-owned
+evidence repository, manifest, checksum, or certification.
 
 ## Phase sequence and hard boundaries
 

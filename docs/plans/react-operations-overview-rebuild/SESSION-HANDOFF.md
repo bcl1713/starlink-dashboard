@@ -24,6 +24,10 @@ The old implementation is historical, never the incremental base. Selective
 salvage requires deliberate review from the archive; never wholesale cherry-pick
 it.
 
+The refresh choices are unconditionally `1/2/5/10/30/paused`; `1s` is the
+default and fastest. Phase 1 implements and tests this contract and does not
+decide it.
+
 ## Copy-pasteable phase handoff template
 
 ```text
@@ -54,15 +58,16 @@ GREEN FOCUSED CHECKS:
 - command / exit status / useful test count
 FULL CHECKS:
 - command / exit status / useful test count
-RUNTIME OR BROWSER EVIDENCE:
-- exact SHA / environment / result / retained path or not applicable
+BOUNDED RUNTIME OR BROWSER RESULTS:
+- exact SHA / environment / raw result summary or not applicable
 
 PRODUCT CONTRACT RESULT:
 - live/status lane:
-- history bound:
+- scheduler numeric oracles:
+- history/backfill triggers and 30-minute bound:
 - overlay independence:
 - cadence and no overlap/burst:
-- 1920x1080 fullscreen:
+- exact one-screen inventory and 1920x1080 fullscreen:
 - same-origin/CSP/no arbitrary upstream:
 - no GEP IP:
 - Grafana fallback/no React request:
@@ -116,13 +121,19 @@ START GATE:
 
 OBJECTIVE:
 Build independently scheduled /api/status, bounded local history, and overlay
-lanes with exact 1/2/5/10/30/paused controls, no overlap or catch-up burst, and
-no global Promise.all transaction.
+lanes with exact 1/2/5/10/30/paused controls, `1s` default/fastest, one recursive
+monotonic timer, bounded browser timeout, the binding numeric timing oracles, no
+overlap/replay/catch-up burst, and no global Promise.all transaction. Bootstrap
+history once; reconcile on detected resume/reconnect gaps and explicit manual
+request; seed/repair only 30-minute buffers, never current values.
 
 FIRST ACTIONS:
 - Inspect the published status DTO/hot path, frontend test harness, App routing,
-  API client, Nginx/CSP, overlay endpoints, and current scripts.
-- Resolve and test the default cadence and explicit ring-buffer bounds.
+  API client, history query/DTO, Nginx/CSP, required map/POI/GEP sources, and
+  current scripts.
+- Implement and test the fixed `1s` default and 30-minute ring-buffer bounds.
+- Decide/test only whether constant identity is a deployment-wide backfill guard
+  or is removed; do not reopen product cadence or inventory decisions.
 - Write the narrow failing status/scheduler tests before implementation.
 
 REQUIRED OUTPUT:
@@ -135,15 +146,42 @@ handoff, and explicit stop for a fresh Phase 2 session.
 
 ### Phase 0 reset publication
 
-1. Independently inspect the local Phase 0 commit and rerun docs checks.
-2. Create/publish `archive/pr-143-pre-simplification-e649ce1` at exactly
-   `e649ce169cd5adcbdd83d6264290b30d5221599e`; verify the remote ref.
-3. Publish the reviewed Phase 0 commit to existing
-   `feature/react-operations-overview`, using the necessary guarded reset
-   mechanism because the durable PR currently points at historical work.
-4. Read back the remote feature SHA and compare it to the local candidate.
-5. Verify the remote baseline diff contains exactly the eight roadmap paths.
-6. Post the exact public PR handoff and start Phase 1 only in a new session.
+Oracle substitutes only the reviewed local candidate SHA. The historical SHA is
+the lease value, not a floating observation:
+
+```bash
+HISTORICAL=e649ce169cd5adcbdd83d6264290b30d5221599e
+: "${CANDIDATE:?export CANDIDATE to the reviewed local Phase 0 SHA}"
+FEATURE=refs/heads/feature/react-operations-overview
+ARCHIVE=refs/heads/archive/pr-143-pre-simplification-e649ce1
+
+git fetch origin
+test "$(git ls-remote origin "$FEATURE" | cut -f1)" = "$HISTORICAL"
+git push origin "$HISTORICAL:$ARCHIVE"
+test "$(git ls-remote origin "$ARCHIVE" | cut -f1)" = "$HISTORICAL"
+git push --force-with-lease="$FEATURE:$HISTORICAL" \
+  origin "$CANDIDATE:$FEATURE"
+test "$(git ls-remote origin "$FEATURE" | cut -f1)" = "$CANDIDATE"
+REMOTE_CANDIDATE=$(mktemp)
+git fetch origin "$FEATURE"
+git diff --name-only 07593c69040ad447000bf526d6453ec5c6faacfa...\
+"$(git rev-parse FETCH_HEAD)" | sort >"$REMOTE_CANDIDATE"
+diff -u <(printf '%s\n' \
+  docs/plans/2026-09-02-react-operations-overview-rebuild.md \
+  docs/plans/react-operations-overview-rebuild/00-product-contract.md \
+  docs/plans/react-operations-overview-rebuild/01-phase-0-contract-reset.md \
+  docs/plans/react-operations-overview-rebuild/02-phase-1-live-data.md \
+  docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md \
+  docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md \
+  docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md \
+  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md | sort) \
+  "$REMOTE_CANDIDATE"
+rm -f "$REMOTE_CANDIDATE"
+```
+
+Archive creation and remote readback must finish before the guarded reset.
+Candidate SHA readback and the exact eight-path remote diff must finish after
+it. An unguarded `--force` push is forbidden.
 
 Oracle chooses and executes remote commands. The Phase 0 writer must not push,
 create refs, force-update, comment, or otherwise edit GitHub.
