@@ -16,10 +16,12 @@ import { RouteManagerPage } from './pages/RouteManagerPage';
 import { POIManagerPage } from './pages/POIManagerPage';
 import { DataExportPage } from './pages/DataExportPage';
 import { ConfigurationPage } from './pages/ConfigurationPage';
+import { OverviewPage } from './pages/OverviewPage';
 
 const queryClient = new QueryClient();
 
 const navigationItems = [
+  { to: '/overview', label: 'Overview' },
   { to: '/missions', label: 'Missions' },
   { to: '/satellites', label: 'Satellites' },
   { to: '/pois', label: 'POIs' },
@@ -103,6 +105,7 @@ function App() {
       <BrowserRouter>
         <AppNavigation />
         <Routes>
+          <Route path="/overview" element={<OverviewPage />} />
           <Route path="/missions" element={<MissionsPage />} />
           <Route path="/missions/:missionId" element={<MissionDetailPage />} />
           <Route

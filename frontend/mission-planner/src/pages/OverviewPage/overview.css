@@ -1,0 +1,139 @@
+.overview-page {
+  min-height: calc(100vh - 4rem);
+  padding: 2rem;
+  background: #071019;
+  color: #e8f1f7;
+}
+
+.overview-header,
+.overview-controls,
+.overview-clocks {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.overview-header {
+  justify-content: space-between;
+  margin: 0 auto 1.5rem;
+  max-width: 1440px;
+}
+
+.overview-kicker {
+  color: #68d5ca;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.overview-controls {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.overview-controls label {
+  display: grid;
+  gap: 0.25rem;
+  color: #a7bac7;
+  font-size: 0.75rem;
+}
+
+.overview-controls select,
+.overview-controls button {
+  min-height: 2.75rem;
+  border: 1px solid #294456;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #0d1d29;
+  color: inherit;
+}
+
+.overview-inventory {
+  margin: auto;
+  max-width: 1440px;
+}
+
+.overview-clocks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.overview-clocks .overview-card {
+  display: flex;
+  justify-content: space-between;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.overview-card {
+  border: 1px solid #1e394a;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  background: #0b1822;
+  box-shadow: 0 1rem 2rem rgb(0 0 0 / 18%);
+}
+
+.overview-card h2 {
+  margin-bottom: 0.75rem;
+  color: #a7bac7;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.overview-value {
+  color: #77e2d7;
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-map {
+  min-height: 12rem;
+  background-image:
+    linear-gradient(#183241 1px, transparent 1px),
+    linear-gradient(90deg, #183241 1px, transparent 1px);
+  background-size: 2rem 2rem;
+}
+
+.overview-map [role='img'] {
+  display: grid;
+  min-height: 7rem;
+  place-items: center;
+  color: #77e2d7;
+  font-size: 1.25rem;
+}
+
+.overview-card ol {
+  display: grid;
+  gap: 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.overview-card li span {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 800px) {
+  .overview-page {
+    padding: 1rem;
+  }
+
+  .overview-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .overview-controls {
+    justify-content: flex-start;
+  }
+
+  .overview-clocks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
