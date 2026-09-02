@@ -20,6 +20,7 @@ from app.api import (
     gps,
     health,
     metrics,
+    monitoring,
     pois,
     routes,
     status,
@@ -524,6 +525,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # Register API routers
 app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
+app.include_router(monitoring.router)
 app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(config.router, tags=["Configuration"])
