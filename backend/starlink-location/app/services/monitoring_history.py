@@ -1,6 +1,7 @@
 """Bounded Prometheus history adapter with server-owned queries."""
 
 import asyncio
+import json
 import math
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
@@ -64,12 +65,7 @@ class HistoryClient:
                 transport=self._transport, timeout=timeout
             ) as client:
                 series = await asyncio.wait_for(
-                    asyncio.gather(
-                        *(
-                            self._fetch_series(client, metric, expression, params)
-                            for metric, expression in _QUERIES.items()
-                        )
-                    ),
+                    self._fetch_all(client, params),
                     timeout=self._timeout,
                 )
         except asyncio.CancelledError:
@@ -85,6 +81,16 @@ class HistoryClient:
             series=series,
         )
 
+    async def _fetch_all(
+        self,
+        client: httpx.AsyncClient,
+        params: dict[str, float | int],
+    ) -> list[HistorySeries]:
+        series: list[HistorySeries] = []
+        for metric, expression in _QUERIES.items():
+            series.append(await self._fetch_series(client, metric, expression, params))
+        return series
+
     async def _fetch_series(
         self,
         client: httpx.AsyncClient,
@@ -92,14 +98,18 @@ class HistoryClient:
         expression: str,
         shared_params: dict[str, float | int],
     ) -> HistorySeries:
-        response = await client.get(
+        body = bytearray()
+        async with client.stream(
+            "GET",
             _PROMETHEUS_URL,
             params={"query": expression, **shared_params},
-        )
-        response.raise_for_status()
-        if len(response.content) > _MAX_BODY_BYTES:
-            raise ValueError("history response too large")
-        payload = response.json()
+        ) as response:
+            response.raise_for_status()
+            async for chunk in response.aiter_bytes():
+                body.extend(chunk)
+                if len(body) > _MAX_BODY_BYTES:
+                    raise ValueError("history response too large")
+        payload = json.loads(body)
         values = _matrix_values(payload)
         samples: list[HistorySample] = []
         for raw_timestamp, raw_value in values[-_MAX_POINTS:]:
