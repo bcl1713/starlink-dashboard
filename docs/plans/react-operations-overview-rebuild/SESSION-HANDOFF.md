@@ -150,23 +150,38 @@ Oracle substitutes only the reviewed local candidate SHA. The historical SHA is
 the lease value, not a floating observation:
 
 ```bash
+set -euo pipefail
 HISTORICAL=e649ce169cd5adcbdd83d6264290b30d5221599e
 : "${CANDIDATE:?export CANDIDATE to the reviewed local Phase 0 SHA}"
 FEATURE=refs/heads/feature/react-operations-overview
 ARCHIVE=refs/heads/archive/pr-143-pre-simplification-e649ce1
+BASELINE=07593c69040ad447000bf526d6453ec5c6faacfa
+PUBLICATION_TMP=$(mktemp -d)
+trap 'rm -rf "$PUBLICATION_TMP"' EXIT
 
-git fetch origin
-test "$(git ls-remote origin "$FEATURE" | cut -f1)" = "$HISTORICAL"
+remote_ref_sha() {
+  local ref=$1 output sha name
+  output=$(git ls-remote --exit-code --refs origin "$ref")
+  test "$(printf '%s\n' "$output" | wc -l)" -eq 1
+  read -r sha name <<<"$output"
+  test "$name" = "$ref"
+  printf '%s\n' "$sha"
+}
+
+git cat-file -e "$BASELINE^{commit}"
+git cat-file -e "$CANDIDATE^{commit}"
+git merge-base --is-ancestor "$BASELINE" "$CANDIDATE"
+git fetch --no-tags origin "$FEATURE"
+test "$(git rev-parse FETCH_HEAD)" = "$HISTORICAL"
+test "$(remote_ref_sha "$FEATURE")" = "$HISTORICAL"
 git push origin "$HISTORICAL:$ARCHIVE"
-test "$(git ls-remote origin "$ARCHIVE" | cut -f1)" = "$HISTORICAL"
+test "$(remote_ref_sha "$ARCHIVE")" = "$HISTORICAL"
 git push --force-with-lease="$FEATURE:$HISTORICAL" \
   origin "$CANDIDATE:$FEATURE"
-test "$(git ls-remote origin "$FEATURE" | cut -f1)" = "$CANDIDATE"
-REMOTE_CANDIDATE=$(mktemp)
-git fetch origin "$FEATURE"
-git diff --name-only 07593c69040ad447000bf526d6453ec5c6faacfa...\
-"$(git rev-parse FETCH_HEAD)" | sort >"$REMOTE_CANDIDATE"
-diff -u <(printf '%s\n' \
+test "$(remote_ref_sha "$FEATURE")" = "$CANDIDATE"
+git fetch --no-tags origin "$FEATURE"
+test "$(git rev-parse FETCH_HEAD)" = "$CANDIDATE"
+printf '%s\n' \
   docs/plans/2026-09-02-react-operations-overview-rebuild.md \
   docs/plans/react-operations-overview-rebuild/00-product-contract.md \
   docs/plans/react-operations-overview-rebuild/01-phase-0-contract-reset.md \
@@ -174,9 +189,13 @@ diff -u <(printf '%s\n' \
   docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md \
   docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md \
   docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md \
-  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md | sort) \
-  "$REMOTE_CANDIDATE"
-rm -f "$REMOTE_CANDIDATE"
+  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md \
+  >"$PUBLICATION_TMP/expected"
+sort -o "$PUBLICATION_TMP/expected" "$PUBLICATION_TMP/expected"
+git diff --name-only --no-renames "$BASELINE"...FETCH_HEAD \
+  >"$PUBLICATION_TMP/actual"
+sort -o "$PUBLICATION_TMP/actual" "$PUBLICATION_TMP/actual"
+diff -u "$PUBLICATION_TMP/expected" "$PUBLICATION_TMP/actual"
 ```
 
 Archive creation and remote readback must finish before the guarded reset.

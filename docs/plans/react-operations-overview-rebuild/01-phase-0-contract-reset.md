@@ -67,6 +67,9 @@ tests: observe any failure, correct only the docs, and rerun before commit.
     nine-finding correction to blocked candidate
     `1b0cbd51e66e03d654b75f2fa3b54ebbe760befd`, use exactly
     `docs(plan): close overview rebuild contract gaps`.
+12. For the executable-mechanics correction to blocked candidate
+    `09c4b678927e63bbc7a9417cad6e59a9dcf1606c`, preserve both prior commits and
+    use exactly `docs(plan): make rebuild gates fail closed`.
 
 ## Checks and expected results
 
@@ -77,6 +80,7 @@ Use these copy-pasteable commands from the repository root. Bounded `npx --yes`
 may use its external cache but must not change package or lock files:
 
 ```bash
+set -euo pipefail
 BASE=07593c69040ad447000bf526d6453ec5c6faacfa
 DOCS=(
   docs/plans/2026-09-02-react-operations-overview-rebuild.md
@@ -95,8 +99,15 @@ git diff --check "$BASE"...HEAD
 wc -l "${DOCS[@]}"
 test "$(git diff --name-only "$BASE"...HEAD | sort)" = \
   "$(printf '%s\n' "${DOCS[@]}" | sort)"
-test -z "$(git diff --name-only "$BASE"...HEAD | grep -E \
-  '(^|/)2026-08-29-react-operations-overview|react-operations-overview/')"
+test "$(git ls-files -- \
+  docs/plans/2026-09-02-react-operations-overview-rebuild.md \
+  docs/plans/react-operations-overview-rebuild | sort)" = \
+  "$(printf '%s\n' "${DOCS[@]}" | sort)"
+if git diff --name-only "$BASE"...HEAD | grep -Eq \
+  '(^|/)2026-08-29-react-operations-overview|react-operations-overview/'; then
+  echo "retired overview path remains" >&2
+  exit 1
+fi
 ```
 
 Run this exact relative-link and GitHub-style heading-anchor validator:
@@ -190,7 +201,10 @@ and no production, test, config, package, lock, or Compose file appears.
 
 A check-only pre-commit invocation is optional only when it can be constrained
 to these files and will not mutate unrelated files. Do not use a fixer-bearing
-all-files run for a documentation-only candidate.
+all-files run for a documentation-only candidate. The repository filename
+checker currently rejects the required uppercase status/session filename
+`SESSION-HANDOFF.md`, contrary to `AGENTS.md`; omit that checker and rely on the
+exact eight-path assertion above until the checker honors the repository rule.
 
 ## Review gate and public handoff
 

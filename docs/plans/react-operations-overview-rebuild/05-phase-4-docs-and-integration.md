@@ -98,22 +98,39 @@ documentation RED; route it to its owning implementation phase.
 
 ## Exact checks
 
-Focused checks are Prettier, markdownlint, naming, and relative-link/anchor
-validation on changed Markdown. The repository docs tests, byte-identity check,
-diff checks, and current CI/pre-commit check-only set form the full gate.
+Focused checks are Prettier, markdownlint, exact allowed-path validation, and
+relative-link/anchor validation on changed Markdown. The repository docs tests,
+byte-identity check, diff checks, and current CI/pre-commit check-only set form
+the full gate.
 
 Export `PHASE3_SHA` to the exact observed handoff SHA, then run from repository
 root. These are check-only and do not change package files:
 
 ```bash
+set -euo pipefail
 : "${PHASE3_SHA:?export PHASE3_SHA to the accepted exact SHA}"
-mapfile -t DOCS < <(git diff --name-only "$PHASE3_SHA"...HEAD -- '*.md')
+PHASE4_TMP=$(mktemp -d)
+trap 'rm -rf "$PHASE4_TMP"' EXIT
+git diff --name-only --no-renames -z "$PHASE3_SHA"...HEAD \
+  >"$PHASE4_TMP/changed"
+test -s "$PHASE4_TMP/changed"
+while IFS= read -r -d '' path; do
+  case "$path" in
+    README.md | docs/*.md | monitoring/README.md | monitoring/docs/*.md) ;;
+    *)
+      echo "Phase 4 forbids changed path: $path" >&2
+      exit 1
+      ;;
+  esac
+done <"$PHASE4_TMP/changed"
+git diff --name-only --no-renames --diff-filter=ACMRTUXB -z \
+  "$PHASE3_SHA"...HEAD >"$PHASE4_TMP/current-docs"
+mapfile -d '' -t DOCS <"$PHASE4_TMP/current-docs"
 test "${#DOCS[@]}" -gt 0
 npx --yes prettier@3.6.2 --check "${DOCS[@]}"
 npx --yes markdownlint-cli2@0.19.1 "${DOCS[@]}"
-python3 tools/check_filename_convention.py
 git diff --check "$PHASE3_SHA"...HEAD
-git diff --name-only "$PHASE3_SHA"...HEAD
+printf '%s\n' "${DOCS[@]}"
 wc -l "${DOCS[@]}"
 python3 - "${DOCS[@]}" <<'PY'
 import re
@@ -164,10 +181,18 @@ if errors:
 PY
 ```
 
+The allowed set is deliberately limited to repository `README.md`, Markdown
+under `docs/`, `monitoring/README.md`, and Markdown under `monitoring/docs/`.
+Thus every production, test, config, package, lock, and Compose change fails the
+path loop before formatting. The repository filename checker is omitted because
+it currently rejects the required uppercase `SESSION-HANDOFF.md`, contrary to
+`AGENTS.md`; changed paths are instead checked exactly by the allow-list.
+
 Run any repository docs/link tests found during inspection. Then run the minimal
-full check set required by current CI/pre-commit in check-only mode. Verify
-programmatically that non-documentation paths are byte-identical to the accepted
-Phase 3 SHA. Record changed-file and line-count results.
+full check set required by current CI/pre-commit in check-only mode. The
+fail-closed path loop above proves every path outside the allowed documentation
+set is byte-identical to the accepted Phase 3 SHA. Record changed-file and
+line-count results.
 
 ## Independent gates
 

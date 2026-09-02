@@ -102,6 +102,7 @@ accessibility assertions.
 Minimum focused check after each change:
 
 ```bash
+set -euo pipefail
 cd frontend/mission-planner
 npx vitest run src/pages/OverviewPage
 npx playwright test tests/e2e/overview.spec.ts --grep "1920x1080|fullscreen"
@@ -110,6 +111,7 @@ npx playwright test tests/e2e/overview.spec.ts --grep "1920x1080|fullscreen"
 Minimum phase-wide checks:
 
 ```bash
+set -euo pipefail
 cd frontend/mission-planner
 npm run lint
 npm run build

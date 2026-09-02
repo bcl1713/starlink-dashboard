@@ -120,12 +120,13 @@ Minimum focused checks are changed backend status tests and changed frontend
 scheduler/service/component tests. Minimum phase-wide checks are:
 
 ```bash
+set -euo pipefail
 cd backend/starlink-location
 python -m pytest tests/integration/test_status.py -q
 python -m pytest -q
 python -m ruff check app tests
 
-cd frontend/mission-planner
+cd ../../frontend/mission-planner
 npm run lint
 npm run build
 npx vitest run

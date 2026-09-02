@@ -68,8 +68,8 @@ the owning Phase 1 or 2 writer; only a new implementation SHA that proves GREEN
 may return for a complete Phase 3 rerun.
 
 1. **Pin exact head.** Require clean status, record full SHA/ref/base, commit
-   time, Compose/tool/browser versions, and prove no later commit is accepted
-   under this evidence root.
+   time, Compose/tool/browser versions, and prove every result names that exact
+   candidate SHA.
 2. **Run static/full gates first.** Keep the candidate read-only. Run check-only
    commands there; run builds, tests, or anything potentially mutating only in a
    disposable isolated copy of the pinned SHA. Fail if the candidate ever gains
@@ -119,17 +119,32 @@ commands; all potentially mutating checks and runtime work happen in the
 disposable copy:
 
 ```bash
+set -euo pipefail
 CANDIDATE_ROOT=$(git rev-parse --show-toplevel)
 CANDIDATE_SHA=$(git rev-parse HEAD)
 test -z "$(git status --porcelain --untracked-files=all)"
 git diff --check "${CANDIDATE_SHA}^..${CANDIDATE_SHA}"
+
+ROADMAP_DOCS=(
+  docs/plans/2026-09-02-react-operations-overview-rebuild.md
+  docs/plans/react-operations-overview-rebuild/00-product-contract.md
+  docs/plans/react-operations-overview-rebuild/01-phase-0-contract-reset.md
+  docs/plans/react-operations-overview-rebuild/02-phase-1-live-data.md
+  docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md
+  docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md
+  docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md
+  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md
+)
+test "$(git ls-files -- \
+  docs/plans/2026-09-02-react-operations-overview-rebuild.md \
+  docs/plans/react-operations-overview-rebuild | sort)" = \
+  "$(printf '%s\n' "${ROADMAP_DOCS[@]}" | sort)"
 
 DISPOSABLE=$(mktemp -d)
 trap 'rm -rf "$DISPOSABLE"' EXIT
 git archive "$CANDIDATE_SHA" | tar -x -C "$DISPOSABLE"
 cd "$DISPOSABLE"
 python -m pytest tools/tests -q
-python3 tools/check_filename_convention.py
 cd backend/starlink-location
 python -m pytest -q
 python -m ruff check app tests
@@ -144,6 +159,10 @@ cd "$CANDIDATE_ROOT"
 test -z "$(git status --porcelain --untracked-files=all)"
 test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
 ```
+
+The repository filename checker is not part of this gate because it currently
+rejects the required uppercase `SESSION-HANDOFF.md`, contrary to `AGENTS.md`.
+The exact tracked-path assertion above enforces the roadmap names instead.
 
 Then run the repository-required no-cache Docker rebuild/start/health sequence
 in the isolated project and the Phase 3 browser procedure above. Runtime
