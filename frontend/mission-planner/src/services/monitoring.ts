@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { getJson } from './boundedJson';
+
+export { getJson, MAX_JSON_RESPONSE_BYTES } from './boundedJson';
 
 const MAX_HISTORY_POINTS_PER_SERIES = 1801;
 const MAX_HISTORY_POINTS_TOTAL = 7200;
@@ -38,13 +41,23 @@ const statusSchema = z
       temperature_celsius: finite.nullable(),
     }),
   })
-  .refine(
-    (value) => Date.parse(value.received_at) >= Date.parse(value.observed_at),
-    {
-      message: 'receipt precedes observation',
-      path: ['received_at'],
+  .superRefine((value, context) => {
+    const observed = Date.parse(value.observed_at);
+    if (Date.parse(value.timestamp) !== observed) {
+      context.addIssue({
+        code: 'custom',
+        message: 'legacy timestamp differs from observation',
+        path: ['timestamp'],
+      });
     }
-  );
+    if (Date.parse(value.received_at) < observed) {
+      context.addIssue({
+        code: 'custom',
+        message: 'receipt precedes observation',
+        path: ['received_at'],
+      });
+    }
+  });
 
 export const metricOrder = [
   'latitude_degrees',
@@ -83,6 +96,20 @@ const historySchema = z
       context.addIssue({ code: 'custom', message: 'invalid history window' });
       return;
     }
+    if (end - start !== value.range_seconds * 1000) {
+      context.addIssue({
+        code: 'custom',
+        message: 'history range disagrees with window',
+        path: ['range_seconds'],
+      });
+    }
+    if (Date.parse(value.generated_at) < end) {
+      context.addIssue({
+        code: 'custom',
+        message: 'history generation precedes window end',
+        path: ['generated_at'],
+      });
+    }
     value.series.forEach((series, seriesIndex) => {
       if (series.metric !== metricOrder[seriesIndex]) {
         context.addIssue({
@@ -116,29 +143,68 @@ const historySchema = z
     });
   });
 
-const gepSchema = z.strictObject({
-  available: z.boolean(),
-  observed_at: instant.nullable(),
-  generated_at: instant,
-  display: text.nullable(),
-  city: text.nullable(),
-  region: text.nullable(),
-  country: text.nullable(),
-  latitude: finite.min(-90).max(90).nullable(),
-  longitude: finite.min(-180).max(180).nullable(),
-});
+const gepSchema = z
+  .strictObject({
+    available: z.boolean(),
+    observed_at: instant.nullable(),
+    generated_at: instant,
+    display: text.nullable(),
+    city: text.nullable(),
+    region: text.nullable(),
+    country: text.nullable(),
+    latitude: finite.min(-90).max(90).nullable(),
+    longitude: finite.min(-180).max(180).nullable(),
+  })
+  .refine(
+    (value) =>
+      value.observed_at === null ||
+      Date.parse(value.observed_at) <= Date.parse(value.generated_at),
+    {
+      message: 'GEP observation follows generation',
+      path: ['observed_at'],
+    }
+  );
 
+const etaSeconds = finite.refine((value) => value === -1 || value >= 0, {
+  message: 'ETA must be -1 or nonnegative',
+});
+const poiResponseItemSchema = coordinate.extend({
+  poi_id: text.min(1),
+  name: text.min(1),
+  category: text.nullable(),
+  icon: text.min(1),
+  active: z.boolean(),
+  eta_seconds: etaSeconds,
+  eta_type: z.enum(['anticipated', 'estimated']),
+  is_pre_departure: z.boolean(),
+  flight_phase: z
+    .enum(['pre_departure', 'in_flight', 'post_arrival'])
+    .nullable(),
+  distance_meters: finite.nonnegative(),
+  bearing_degrees: finite.min(0).max(360).nullable(),
+  course_status: z
+    .enum(['on_course', 'slightly_off', 'off_track', 'behind'])
+    .nullable(),
+  is_on_active_route: z.boolean(),
+  projected_latitude: finite.min(-90).max(90).nullable(),
+  projected_longitude: finite.min(-180).max(180).nullable(),
+  projected_waypoint_index: z.number().int().nonnegative().nullable(),
+  projected_route_progress: finite.min(0).max(100).nullable(),
+  route_aware_status: z
+    .enum(['ahead_on_route', 'already_passed', 'not_on_route', 'pre_departure'])
+    .nullable(),
+});
 const poiSchema = coordinate.extend({
   poi_id: text.min(1),
   name: text.min(1),
-  category: text.nullable().optional(),
-  eta_seconds: finite.nonnegative(),
+  category: text.nullable(),
+  eta_seconds: etaSeconds,
   distance_meters: finite.nonnegative(),
-  active: z.boolean().optional(),
+  active: z.boolean(),
 });
 const poiResponseSchema = z
   .strictObject({
-    pois: z.array(poiSchema).max(MAX_POIS),
+    pois: z.array(poiResponseItemSchema).max(MAX_POIS),
     total: z.number().int().nonnegative().max(MAX_POIS),
     timestamp: instant,
   })
@@ -167,7 +233,18 @@ export const parseGroundEntryPoint = (value: unknown): GroundEntryPoint =>
   gepSchema.parse(value);
 export const parseApplicablePois = (value: unknown): ApplicablePoi[] => {
   assertBoundedPois(value);
-  return poiResponseSchema.parse(value).pois;
+  return poiResponseSchema.parse(value).pois.map((poi) =>
+    poiSchema.parse({
+      poi_id: poi.poi_id,
+      name: poi.name,
+      category: poi.category,
+      eta_seconds: poi.eta_seconds,
+      distance_meters: poi.distance_meters,
+      active: poi.active,
+      latitude: poi.latitude,
+      longitude: poi.longitude,
+    })
+  );
 };
 
 function assertBoundedHistory(value: unknown): void {
@@ -204,27 +281,6 @@ function validMetricValue(metric: Metric, value: number): boolean {
   if (metric === 'longitude_degrees') return value >= -180 && value <= 180;
   if (metric === 'packet_loss_percent') return value >= 0 && value <= 100;
   return value >= 0;
-}
-
-export async function getJson(
-  url: string,
-  signal?: AbortSignal
-): Promise<unknown> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4000);
-  const relay = () => controller.abort();
-  signal?.addEventListener('abort', relay, { once: true });
-  try {
-    const response = await fetch(url, {
-      headers: { Accept: 'application/json' },
-      signal: controller.signal,
-    });
-    if (!response.ok) throw new Error(`Request failed (${response.status})`);
-    return await response.json();
-  } finally {
-    clearTimeout(timeout);
-    signal?.removeEventListener('abort', relay);
-  }
 }
 
 export async function fetchStatus(signal?: AbortSignal): Promise<StatusData> {

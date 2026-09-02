@@ -109,15 +109,16 @@ describe('CompletionPoller', () => {
     poller.stop();
   });
 
-  it('does not overlap when hidden and shown during an active request', async () => {
+  it('coalesces active visible resume into one immediate post-settlement run', async () => {
     vi.useFakeTimers();
     let release: (() => void) | undefined;
     const run = vi.fn(
       () => new Promise<void>((resolve) => (release = resolve))
     );
-    const poller = new CompletionPoller(run, 1);
+    const poller = new CompletionPoller(run, 30);
     poller.start();
-    await vi.advanceTimersByTimeAsync(1000);
+    void poller.manual();
+    await flush();
 
     poller.setVisible(false);
     poller.setVisible(true);
@@ -126,10 +127,37 @@ describe('CompletionPoller', () => {
     expect(run).toHaveBeenCalledTimes(1);
     release?.();
     await flush();
-    await vi.advanceTimersByTimeAsync(1000);
+    expect(run).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(29_999);
     expect(run).toHaveBeenCalledTimes(2);
     poller.stop();
   });
+
+  it.each(['stop', 'hide', 'pause'] as const)(
+    'clears active visible intent on %s before settlement',
+    async (action) => {
+      vi.useFakeTimers();
+      let release: (() => void) | undefined;
+      const run = vi.fn(
+        () => new Promise<void>((resolve) => (release = resolve))
+      );
+      const poller = new CompletionPoller(run, 30);
+      poller.start();
+      void poller.manual();
+      await flush();
+      poller.setVisible(false);
+      poller.setVisible(true);
+
+      if (action === 'stop') poller.stop();
+      if (action === 'hide') poller.setVisible(false);
+      if (action === 'pause') poller.setCadence('paused');
+      release?.();
+      await flush();
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(run).toHaveBeenCalledTimes(1);
+      poller.stop();
+    }
+  );
 
   it('paused manual refresh runs exactly once without overlap', async () => {
     vi.useFakeTimers();

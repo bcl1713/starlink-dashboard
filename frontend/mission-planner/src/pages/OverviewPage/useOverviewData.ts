@@ -38,10 +38,11 @@ export function useOverviewData() {
   const [now, setNow] = useState(() => new Date());
   const controllers = useRef(new Set<AbortController>());
   const historyPending = useRef(false);
-  const hiddenAt = useRef<number | null>(null);
-  const offlineAt = useRef<number | null>(null);
+  const historyRepairQueued = useRef(false);
+  const hidden = useRef(false);
+  const offline = useRef(false);
+  const gap = useRef<{ startedAt: number; handled: boolean } | null>(null);
   const lastStatusAt = useRef(performance.now());
-  const repairedGapAt = useRef<number | null>(null);
   const mounted = useRef(false);
 
   const gepLane = useOverlayLane(
@@ -94,32 +95,45 @@ export function useOverviewData() {
     }
   }, [withController]);
 
-  const reconcileHistory = useCallback(async () => {
-    if (historyPending.current) return;
-    historyPending.current = true;
-    try {
-      const backfill = await withController(fetchHistory);
-      if (!mounted.current) return;
-      const instant = Date.parse(backfill.generated_at);
-      setHistory((current) => {
-        const next = { ...current };
-        for (const series of backfill.series) {
-          next[series.metric] = mergeHistory(
-            current[series.metric],
-            series.samples.flatMap((sample) =>
-              sample.value === null ? [] : [{ ...sample, value: sample.value }]
-            ),
-            instant
-          );
-        }
-        return next;
-      });
-    } catch {
-      // A failed repair leaves accepted browser history untouched.
-    } finally {
-      historyPending.current = false;
-    }
-  }, [withController]);
+  const reconcileHistory = useCallback(
+    async (queueIfPending = false) => {
+      if (historyPending.current) {
+        if (queueIfPending) historyRepairQueued.current = true;
+        return;
+      }
+      historyPending.current = true;
+      try {
+        do {
+          historyRepairQueued.current = false;
+          try {
+            const backfill = await withController(fetchHistory);
+            if (!mounted.current) return;
+            const instant = Date.parse(backfill.generated_at);
+            setHistory((current) => {
+              const next = { ...current };
+              for (const series of backfill.series) {
+                next[series.metric] = mergeHistory(
+                  current[series.metric],
+                  series.samples.flatMap((sample) =>
+                    sample.value === null
+                      ? []
+                      : [{ ...sample, value: sample.value }]
+                  ),
+                  instant
+                );
+              }
+              return next;
+            });
+          } catch {
+            // A failed repair leaves accepted browser history untouched.
+          }
+        } while (mounted.current && historyRepairQueued.current);
+      } finally {
+        historyPending.current = false;
+      }
+    },
+    [withController]
+  );
 
   const requestRef = useRef(refreshStatus);
   requestRef.current = refreshStatus;
@@ -135,36 +149,54 @@ export function useOverviewData() {
     const poller = pollerRef.current;
     const ownedControllers = controllers.current;
     if (!poller) return;
-    poller.setVisible(document.visibilityState === 'visible');
+    const initiallyHidden = document.visibilityState !== 'visible';
+    hidden.current = initiallyHidden;
+    offline.current = navigator.onLine === false;
+    if (initiallyHidden || offline.current) {
+      gap.current = { startedAt: performance.now(), handled: false };
+    }
+    poller.setVisible(!initiallyHidden);
     poller.start();
     void poller.manual();
     void reconcileHistory();
 
-    const repairDetectedGap = (startedAt: number | null) => {
+    const beginGap = (startedAt = performance.now()) => {
+      if (gap.current === null || (!hidden.current && !offline.current)) {
+        gap.current = { startedAt, handled: false };
+      }
+    };
+    const recoverGap = () => {
+      const current = gap.current;
       if (
-        startedAt !== null &&
-        performance.now() - startedAt > 5000 &&
-        repairedGapAt.current !== startedAt
+        current !== null &&
+        !current.handled &&
+        performance.now() - current.startedAt > 5000
       ) {
-        repairedGapAt.current = startedAt;
-        void reconcileHistory();
+        current.handled = true;
+        void reconcileHistory(true);
+      } else if (!hidden.current && !offline.current && current !== null) {
+        current.handled = true;
       }
     };
     const onVisibility = () => {
       const visible = document.visibilityState === 'visible';
       poller.setVisible(visible);
-      if (!visible) hiddenAt.current = performance.now();
-      else {
-        repairDetectedGap(hiddenAt.current);
-        hiddenAt.current = null;
+      if (!visible) {
+        if (!hidden.current) beginGap();
+        hidden.current = true;
+      } else {
+        hidden.current = false;
+        recoverGap();
       }
     };
     const onOffline = () => {
-      offlineAt.current = performance.now();
+      if (!offline.current) beginGap();
+      offline.current = true;
     };
     const onOnline = () => {
-      repairDetectedGap(offlineAt.current ?? lastStatusAt.current);
-      offlineAt.current = null;
+      offline.current = false;
+      if (gap.current === null) beginGap(lastStatusAt.current);
+      recoverGap();
     };
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('offline', onOffline);

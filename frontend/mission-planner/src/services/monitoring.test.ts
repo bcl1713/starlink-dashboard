@@ -1,9 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   groundEntryPointUrl,
-  getJson,
   historyUrl,
-  parseApplicablePois,
   parseGroundEntryPoint,
   parseHistory,
   parseStatus,
@@ -13,6 +11,7 @@ import {
 
 const instant = '2026-09-02T12:00:00Z';
 const later = '2026-09-02T12:00:01Z';
+const historyStart = '2026-09-02T11:59:01Z';
 const status = () => ({
   source: 'live',
   timestamp: instant,
@@ -50,7 +49,7 @@ const metrics = [
 
 const history = () => ({
   generated_at: later,
-  window_start: instant,
+  window_start: historyStart,
   window_end: later,
   range_seconds: 60,
   step_seconds: 1,
@@ -72,11 +71,6 @@ const gep = () => ({
   longitude: -96,
 });
 
-afterEach(() => {
-  vi.useRealTimers();
-  vi.unstubAllGlobals();
-});
-
 describe('monitoring service contracts', () => {
   it('uses only origin-relative monitoring URLs', () => {
     expect([statusUrl, historyUrl, groundEntryPointUrl, poiUrl]).toEqual([
@@ -86,30 +80,6 @@ describe('monitoring service contracts', () => {
       '/api/pois/etas',
     ]);
     expect(parseStatus(status()).position.longitude).toBe(180);
-  });
-
-  it('aborts a production JSON request at the four-second bound', async () => {
-    vi.useFakeTimers();
-    let requestSignal: AbortSignal | undefined;
-    vi.stubGlobal(
-      'fetch',
-      vi.fn((_url: string | URL | Request, init?: RequestInit) => {
-        requestSignal = init?.signal ?? undefined;
-        return new Promise<Response>((_resolve, reject) => {
-          requestSignal?.addEventListener('abort', () =>
-            reject(new Error('aborted'))
-          );
-        });
-      })
-    );
-
-    const request = getJson('/api/status');
-    const rejection = expect(request).rejects.toThrow('aborted');
-    await vi.advanceTimersByTimeAsync(3999);
-    expect(requestSignal?.aborted).toBe(false);
-    await vi.advanceTimersByTimeAsync(1);
-    expect(requestSignal?.aborted).toBe(true);
-    await rejection;
   });
 
   it('rejects unknown fields at every status nesting level', () => {
@@ -156,6 +126,61 @@ describe('monitoring service contracts', () => {
     ).toThrow();
   });
 
+  it('requires status timestamps to be coherent instants', () => {
+    expect(() =>
+      parseStatus({
+        ...status(),
+        timestamp: '2026-09-02T11:00:00Z',
+      })
+    ).toThrow();
+    expect(
+      parseStatus({
+        ...status(),
+        timestamp: '2026-09-02T13:00:00+01:00',
+      }).observed_at
+    ).toBe(instant);
+    expect(() =>
+      parseStatus({
+        ...status(),
+        received_at: '2026-09-02T11:59:59.999Z',
+      })
+    ).toThrow();
+  });
+
+  it('requires exact history range and generation coherence', () => {
+    expect(() => parseHistory({ ...history(), range_seconds: 61 })).toThrow();
+    expect(() =>
+      parseHistory({ ...history(), generated_at: instant })
+    ).toThrow();
+    expect(
+      parseHistory({
+        ...history(),
+        window_start: '2026-09-02T12:59:01+01:00',
+        window_end: '2026-09-02T13:00:01+01:00',
+        generated_at: '2026-09-02T13:00:01+01:00',
+      }).range_seconds
+    ).toBe(60);
+  });
+
+  it('requires non-null GEP observations not to follow generation', () => {
+    expect(() =>
+      parseGroundEntryPoint({
+        ...gep(),
+        observed_at: '2026-09-02T12:00:02Z',
+      })
+    ).toThrow();
+    expect(
+      parseGroundEntryPoint({
+        ...gep(),
+        observed_at: '2026-09-02T13:00:01+01:00',
+      }).observed_at
+    ).toBe('2026-09-02T13:00:01+01:00');
+    expect(
+      parseGroundEntryPoint({ ...gep(), available: false, observed_at: null })
+        .observed_at
+    ).toBeNull();
+  });
+
   it('rejects unknown fields and IPs in GEP DTOs', () => {
     expect(() =>
       parseGroundEntryPoint({ ...gep(), ip: '203.0.113.8' })
@@ -167,39 +192,6 @@ describe('monitoring service contracts', () => {
     expect(() =>
       parseGroundEntryPoint({ ...gep(), display: 'x'.repeat(201) })
     ).toThrow();
-  });
-
-  it('bounds and strictly validates the external POI collection', () => {
-    const poi = {
-      poi_id: 'poi-1',
-      name: 'Airport',
-      category: null,
-      eta_seconds: 60,
-      distance_meters: 1000,
-      active: true,
-      latitude: 41,
-      longitude: -96,
-    };
-    const response = { pois: [poi], total: 1, timestamp: instant };
-    expect(parseApplicablePois(response)).toEqual([poi]);
-    expect(() =>
-      parseApplicablePois({ ...response, pois: [{ ...poi, extra: true }] })
-    ).toThrow();
-    expect(() =>
-      parseApplicablePois({
-        ...response,
-        pois: [{ ...poi, name: 'x'.repeat(201) }],
-      })
-    ).toThrow();
-    expect(() =>
-      parseApplicablePois({
-        ...response,
-        pois: Array.from({ length: 101 }, () => poi),
-        total: 101,
-      })
-    ).toThrow();
-    expect(() => parseApplicablePois({ ...response, total: 2 })).toThrow();
-    expect(() => parseApplicablePois({ ...response, extra: true })).toThrow();
   });
 
   it('requires a coherent window and exact canonical history series', () => {
@@ -230,7 +222,7 @@ describe('monitoring service contracts', () => {
         { timestamp: instant, value: 0 },
         { timestamp: instant, value: 1 },
       ],
-      [{ timestamp: '2026-09-02T11:59:59Z', value: 0 }],
+      [{ timestamp: '2026-09-02T11:59:00Z', value: 0 }],
     ];
     for (const samples of invalidSamples) {
       const series = history().series.map((item, index) =>

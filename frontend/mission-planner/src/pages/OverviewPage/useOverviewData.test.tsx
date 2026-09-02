@@ -86,6 +86,22 @@ const gep = {
   longitude: -96,
 };
 
+function setVisibility(state: DocumentVisibilityState): void {
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    value: state,
+  });
+  document.dispatchEvent(new Event('visibilitychange'));
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
 function defaults() {
   vi.mocked(fetchStatus).mockResolvedValue(status());
   vi.mocked(fetchHistory).mockResolvedValue(history());
@@ -96,6 +112,10 @@ function defaults() {
 afterEach(() => {
   vi.useRealTimers();
   vi.clearAllMocks();
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    value: 'visible',
+  });
 });
 
 describe('useOverviewData lane ownership', () => {
@@ -184,21 +204,106 @@ describe('useOverviewData lane ownership', () => {
     expect(fetchStatus).toHaveBeenCalledTimes(1);
   });
 
-  it('repairs one detected reconnect gap despite duplicate online notifications', async () => {
+  it('repairs a long gap that begins before mounting hidden', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    defaults();
+    setVisibility('hidden');
+    const { unmount } = renderHook(() => useOverviewData());
+    await act(async () => Promise.resolve());
+
+    await act(async () => vi.advanceTimersByTimeAsync(6000));
+    setVisibility('visible');
+    await act(async () => Promise.resolve());
+
+    expect(fetchHistory).toHaveBeenCalledTimes(2);
+    unmount();
+  });
+
+  it.each(['online-first', 'visible-first'] as const)(
+    'coalesces differing hidden/offline starts when %s recovers first',
+    async (recoveryOrder) => {
+      vi.useFakeTimers();
+      vi.setSystemTime(now);
+      defaults();
+      const { unmount } = renderHook(() => useOverviewData());
+      await act(async () => Promise.resolve());
+      expect(fetchHistory).toHaveBeenCalledTimes(1);
+
+      if (recoveryOrder === 'online-first') {
+        setVisibility('hidden');
+        await act(async () => vi.advanceTimersByTimeAsync(1000));
+        window.dispatchEvent(new Event('offline'));
+        await act(async () => vi.advanceTimersByTimeAsync(5001));
+        window.dispatchEvent(new Event('online'));
+        window.dispatchEvent(new Event('online'));
+        await act(async () => Promise.resolve());
+        setVisibility('visible');
+        setVisibility('visible');
+      } else {
+        window.dispatchEvent(new Event('offline'));
+        await act(async () => vi.advanceTimersByTimeAsync(1000));
+        setVisibility('hidden');
+        await act(async () => vi.advanceTimersByTimeAsync(5001));
+        setVisibility('visible');
+        setVisibility('visible');
+        await act(async () => Promise.resolve());
+        window.dispatchEvent(new Event('online'));
+        window.dispatchEvent(new Event('online'));
+      }
+      await act(async () => Promise.resolve());
+
+      expect(fetchHistory).toHaveBeenCalledTimes(2);
+      unmount();
+    }
+  );
+
+  it('queues one coalesced gap repair behind pending history', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    const bootstrap = deferred<ReturnType<typeof history>>();
+    defaults();
+    vi.mocked(fetchHistory)
+      .mockReturnValueOnce(bootstrap.promise)
+      .mockResolvedValueOnce(history());
+    const { unmount } = renderHook(() => useOverviewData());
+    await act(async () => Promise.resolve());
+
+    setVisibility('hidden');
+    window.dispatchEvent(new Event('offline'));
+    await act(async () => vi.advanceTimersByTimeAsync(6000));
+    window.dispatchEvent(new Event('online'));
+    setVisibility('visible');
+    expect(fetchHistory).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      bootstrap.resolve(history());
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(fetchHistory).toHaveBeenCalledTimes(2);
+    window.dispatchEvent(new Event('online'));
+    setVisibility('visible');
+    await act(async () => Promise.resolve());
+    expect(fetchHistory).toHaveBeenCalledTimes(2);
+    unmount();
+  });
+
+  it('does not repair a short coalesced gap', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
     defaults();
     const { unmount } = renderHook(() => useOverviewData());
     await act(async () => Promise.resolve());
-    expect(fetchHistory).toHaveBeenCalledTimes(1);
 
     window.dispatchEvent(new Event('offline'));
-    await act(async () => vi.advanceTimersByTimeAsync(6000));
+    setVisibility('hidden');
+    await act(async () => vi.advanceTimersByTimeAsync(4999));
     window.dispatchEvent(new Event('online'));
-    window.dispatchEvent(new Event('online'));
+    setVisibility('visible');
     await act(async () => Promise.resolve());
 
-    expect(fetchHistory).toHaveBeenCalledTimes(2);
+    expect(fetchHistory).toHaveBeenCalledTimes(1);
     unmount();
   });
 });

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import poiEtaListResponse from '../../src/services/fixtures/poi-eta-list-response.json' with { type: 'json' };
 
 test.describe('Mission Planner API origin', () => {
   test('loads an empty mission collection through the same-origin API proxy', async ({
@@ -116,7 +117,7 @@ test.describe('Mission Planner API origin', () => {
           },
         });
       } else if (path === '/api/pois/etas') {
-        await route.fulfill({ json: { pois: [], total: 0, timestamp: now } });
+        await route.fulfill({ json: poiEtaListResponse });
       } else {
         await route.abort('blockedbyclient');
       }
@@ -127,6 +128,7 @@ test.describe('Mission Planner API origin', () => {
       page.getByRole('heading', { name: 'Connectivity overview' })
     ).toBeVisible();
     await expect(page.getByText('20.0 ms', { exact: true })).toBeVisible();
+    await expect(page.getByText('Airport', { exact: true })).toBeVisible();
     await expect
       .poll(() => new Set(apiRequests.map((url) => new URL(url).pathname)).size)
       .toBe(4);

@@ -6,6 +6,7 @@ export class CompletionPoller {
   private cadence: Cadence;
   private running = false;
   private visible = true;
+  private immediateAfterSettlement = false;
   private readonly request: () => Promise<void>;
 
   constructor(request: () => Promise<void>, cadence: Cadence = 1) {
@@ -21,11 +22,13 @@ export class CompletionPoller {
 
   stop(): void {
     this.running = false;
+    this.immediateAfterSettlement = false;
     this.clearTimer();
   }
 
   setCadence(cadence: Cadence): void {
     this.cadence = cadence;
+    if (cadence === 'paused') this.immediateAfterSettlement = false;
     if (!this.active) this.schedule();
   }
 
@@ -33,7 +36,12 @@ export class CompletionPoller {
     if (this.visible === visible) return;
     this.visible = visible;
     this.clearTimer();
-    if (visible && this.running) void this.run().catch(() => {});
+    if (!visible) {
+      this.immediateAfterSettlement = false;
+    } else if (this.running && this.cadence !== 'paused') {
+      if (this.active) this.immediateAfterSettlement = true;
+      else void this.run().catch(() => {});
+    }
   }
 
   manual(): Promise<void> {
@@ -58,7 +66,18 @@ export class CompletionPoller {
       .then(this.request)
       .finally(() => {
         if (this.active === operation) this.active = undefined;
-        this.schedule();
+        if (
+          this.immediateAfterSettlement &&
+          this.running &&
+          this.visible &&
+          this.cadence !== 'paused'
+        ) {
+          this.immediateAfterSettlement = false;
+          void this.run().catch(() => {});
+        } else {
+          this.immediateAfterSettlement = false;
+          this.schedule();
+        }
       });
     this.active = operation;
     return operation;
