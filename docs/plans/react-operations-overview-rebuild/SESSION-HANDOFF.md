@@ -161,10 +161,11 @@ trap 'rm -rf "$PUBLICATION_TMP"' EXIT
 
 remote_ref_sha() {
   local ref=$1 output sha name
-  output=$(git ls-remote --exit-code --refs origin "$ref")
-  test "$(printf '%s\n' "$output" | wc -l)" -eq 1
-  read -r sha name <<<"$output"
-  test "$name" = "$ref"
+  output=$(git ls-remote --exit-code --refs origin "$ref") || return 1
+  test -n "$output" || return 1
+  test "$(printf '%s\n' "$output" | wc -l)" -eq 1 || return 1
+  read -r sha name <<<"$output" || return 1
+  test "$name" = "$ref" || return 1
   printf '%s\n' "$sha"
 }
 

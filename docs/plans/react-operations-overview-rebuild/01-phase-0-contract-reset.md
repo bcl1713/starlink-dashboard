@@ -113,6 +113,21 @@ fi
 Run this exact relative-link and GitHub-style heading-anchor validator:
 
 ```bash
+set -euo pipefail
+DOCS=(
+  docs/plans/2026-09-02-react-operations-overview-rebuild.md
+  docs/plans/react-operations-overview-rebuild/00-product-contract.md
+  docs/plans/react-operations-overview-rebuild/01-phase-0-contract-reset.md
+  docs/plans/react-operations-overview-rebuild/02-phase-1-live-data.md
+  docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md
+  docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md
+  docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md
+  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md
+)
+test "${#DOCS[@]}" -eq 8
+for doc in "${DOCS[@]}"; do
+  test -f "$doc"
+done
 python3 - "${DOCS[@]}" <<'PY'
 import re
 import sys
@@ -120,6 +135,8 @@ import urllib.parse
 from collections import Counter
 from pathlib import Path
 
+if len(sys.argv) != 9:
+    raise SystemExit(f"expected 8 files, received {len(sys.argv) - 1}")
 docs = [Path(value) for value in sys.argv[1:]]
 errors = []
 
