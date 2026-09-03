@@ -3,6 +3,7 @@ import {
   fetchApplicablePois,
   fetchGroundEntryPoint,
   fetchHistory,
+  fetchMapOverlays,
   fetchStatus,
   metricOrder,
 } from '../../services/monitoring';
@@ -91,6 +92,13 @@ export function defaults() {
   vi.mocked(fetchHistory).mockResolvedValue(history());
   vi.mocked(fetchGroundEntryPoint).mockResolvedValue(gep);
   vi.mocked(fetchApplicablePois).mockResolvedValue([poi]);
+  vi.mocked(fetchMapOverlays).mockResolvedValue({
+    route: { west: [], east: [] },
+    activeLinks: {
+      normal: { west: [], east: [] },
+      warning: { west: [], east: [] },
+    },
+  });
 }
 
 export function resetOverviewMocks(): void {

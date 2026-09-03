@@ -27,6 +27,7 @@ vi.mock('../../services/monitoring', async (loadOriginal) => {
     fetchApplicablePois: vi.fn(),
     fetchGroundEntryPoint: vi.fn(),
     fetchHistory: vi.fn(),
+    fetchMapOverlays: vi.fn(),
     fetchStatus: vi.fn(),
   };
 });

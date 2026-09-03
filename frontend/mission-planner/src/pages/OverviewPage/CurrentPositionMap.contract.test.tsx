@@ -1,0 +1,99 @@
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('leaflet', () => ({
+  divIcon: (options: object) => options,
+}));
+
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children, ...props }: React.PropsWithChildren<object>) => (
+    <div data-map-container="true" {...props}>
+      {children}
+    </div>
+  ),
+  TileLayer: (props: object) => <div data-tile-layer="true" {...props} />,
+  Polyline: (props: object) => <div data-polyline="true" {...props} />,
+  Marker: ({ children, ...props }: React.PropsWithChildren<object>) => (
+    <div data-marker="true" {...props}>
+      {children}
+    </div>
+  ),
+  Tooltip: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
+  ZoomControl: () => <div data-zoom-control="true" />,
+  ScaleControl: () => <div data-scale-control="true" />,
+  useMapEvents: () => null,
+}));
+
+import { CurrentPositionMap } from './CurrentPositionMap';
+
+describe('CurrentPositionMap Grafana-card contract', () => {
+  it('renders the configured tile layers, operational overlays, and controls', () => {
+    const html = renderToStaticMarkup(
+      <CurrentPositionMap
+        latitude={10}
+        longitude={179}
+        heading={135}
+        route={{ west: [[10, -179]], east: [[10, 179]] }}
+        activeLinks={{
+          normal: { west: [[10, -179]], east: [[15, 179]] },
+          warning: { west: [], east: [[10, 170]] },
+        }}
+        history={{ west: [[9, -179]], east: [[10, 179]] }}
+        markers={{
+          flightRoute: [
+            { id: 'route', name: 'Waypoint', latitude: 10, longitude: 179 },
+          ],
+          satellites: [
+            { id: 'sat', name: 'SAT-1', latitude: 11, longitude: 178 },
+          ],
+          missionEvents: [
+            { id: 'event', name: 'Event', latitude: 12, longitude: 177 },
+          ],
+        }}
+        groundEntryPoint={{ display: 'GEP', latitude: 13, longitude: 176 }}
+        radar={{ state: 'available', refresh: () => {} }}
+      />
+    );
+
+    expect(html).toContain(
+      'server.arcgisonline.com/ArcGIS/rest/services/World_Imagery'
+    );
+    expect(html).toContain('Weather Radar (RainViewer)');
+    expect(html).toContain('data-zoom-control="true"');
+    expect(html).toContain('data-scale-control="true"');
+    expect(html).toContain('Planned Route');
+    expect(html).toContain('Active X-band Link - Normal');
+    expect(html).toContain('Active X-band Link - Warning');
+    expect(html).toContain('Position History');
+    expect(html).toContain('Waypoint');
+    expect(html).toContain('SAT-1');
+    expect(html).toContain('Event');
+    expect(html).toContain('GEP');
+    expect(html).toContain('Heading 135°');
+    expect(html).toContain('Measure distance');
+    expect(html).not.toContain('<svg');
+  });
+
+  it('keeps radar failure bounded and offers a retry without losing map identity', () => {
+    const html = renderToStaticMarkup(
+      <CurrentPositionMap
+        latitude={10}
+        longitude={20}
+        heading={0}
+        route={{ west: [], east: [] }}
+        activeLinks={{
+          normal: { west: [], east: [] },
+          warning: { west: [], east: [] },
+        }}
+        history={{ west: [], east: [] }}
+        markers={{ flightRoute: [], satellites: [], missionEvents: [] }}
+        groundEntryPoint={null}
+        radar={{ state: 'unavailable', refresh: () => {} }}
+      />
+    );
+
+    expect(html).toContain('Radar unavailable');
+    expect(html).toContain('Retry radar');
+    expect(html).toContain('Tiles © Esri');
+  });
+});

@@ -68,9 +68,11 @@ PRODUCT CONTRACT RESULT:
 - overlay independence:
 - cadence and no overlap/burst:
 - exact one-screen inventory and 1920x1080 fullscreen:
+- Current Position map parity (tiles/layers/IDL/controls/attribution):
 - same-origin/CSP/no arbitrary upstream:
 - no GEP IP:
 - Grafana fallback/no React request:
+- docs impact (Phase 4 only after renewed independent acceptance):
 
 SPECIFICATION REVIEW:
 - reviewer/session:

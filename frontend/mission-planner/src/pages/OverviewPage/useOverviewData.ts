@@ -3,6 +3,7 @@ import {
   fetchApplicablePois,
   fetchGroundEntryPoint,
   fetchHistory,
+  fetchMapOverlays,
   fetchStatus,
   type StatusData,
 } from '../../services/monitoring';
@@ -48,6 +49,20 @@ export function useOverviewData() {
     10,
     'Points of interest unavailable',
     30,
+    now
+  );
+  const mapLane = useOverlayLane(
+    fetchMapOverlays,
+    {
+      route: { west: [], east: [] },
+      activeLinks: {
+        normal: { west: [], east: [] },
+        warning: { west: [], east: [] },
+      },
+    },
+    5,
+    'Map overlays unavailable',
+    15,
     now
   );
 
@@ -245,11 +260,14 @@ export function useOverviewData() {
     gepState: gepLane.state,
     pois: poiLane.data,
     poiState: poiLane.state,
+    mapOverlays: mapLane.data,
+    mapState: mapLane.state,
     now,
     summaries,
     refreshStatus: () => pollerRef.current?.manual() ?? Promise.resolve(),
     reconcileHistory,
     refreshGep: gepLane.refresh,
     refreshPois: poiLane.refresh,
+    refreshMap: mapLane.refresh,
   };
 }

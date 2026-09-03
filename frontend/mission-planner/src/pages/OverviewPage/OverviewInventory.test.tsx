@@ -1,5 +1,20 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { vi } from 'vitest';
+
+vi.mock('leaflet', () => ({ divIcon: (options: object) => options }));
+vi.mock('react-leaflet', () => ({
+  MapContainer: ({ children, ...props }: React.PropsWithChildren<object>) => (
+    <div {...props}>{children}</div>
+  ),
+  TileLayer: (props: object) => <div {...props} />,
+  Polyline: (props: object) => <div {...props} />,
+  Marker: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
+  Tooltip: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
+  ZoomControl: () => <div />,
+  ScaleControl: () => <div />,
+  useMapEvents: () => null,
+}));
 import { CurrentPositionMap } from './CurrentPositionMap';
 import { OverviewInventory } from './OverviewInventory';
 
@@ -46,6 +61,21 @@ describe('OverviewInventory', () => {
         pois={[]}
         poiState={sourceState}
         refreshPois={async () => {}}
+        mapOverlays={{
+          route: { west: [], east: [] },
+          activeLinks: {
+            normal: { west: [], east: [] },
+            warning: { west: [], east: [] },
+          },
+        }}
+        history={{
+          latitude_degrees: [],
+          longitude_degrees: [],
+          latency_ms: [],
+          throughput_down_mbps: [],
+          throughput_up_mbps: [],
+          packet_loss_percent: [],
+        }}
         cadence={1}
         now={new Date('2026-09-02T12:00:00Z')}
       />
@@ -59,7 +89,7 @@ describe('OverviewInventory', () => {
     expect(html).toContain('999.0 ms');
     expect(html).toContain('1.0%');
     expect(html).toContain('99.0%');
-    expect(html).toContain('<svg');
+    expect(html).toContain('operations-tile-map');
     expect(html).toContain('Current position: 0.0000, -180.0000');
     expect(html).toContain('Download');
     expect(html).toContain('Upload');
@@ -80,6 +110,6 @@ describe('OverviewInventory', () => {
 
     expect(normalized).toContain('Current position: 10.0000, -180.0000');
     expect(rejected).toContain('Position unavailable');
-    expect(rejected).not.toContain('<svg');
+    expect(rejected).not.toContain('operations-tile-map');
   });
 });

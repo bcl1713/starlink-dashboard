@@ -25,9 +25,10 @@ local history, operational overlays, controls, and freshness/failure states. The
 overview must remain useful when one source is slow or unavailable and must fit
 a native fullscreen 1920x1080 display without document scrolling.
 
-Grafana remains running and documented as a fallback. It is not a React data
-source, parity oracle, or removal target in these phases. React sends no request
-to Grafana, port 3000, datasource-proxy paths, plugins, or dashboard assets.
+Grafana remains running and documented as a fallback. Its supported Fullscreen
+Overview Current Position geomap card is the visual/layer parity authority; it
+is not a React runtime data source or removal target. React sends no request to
+Grafana, port 3000, datasource-proxy paths, plugins, or dashboard assets.
 
 ## Data-lane contract
 
@@ -80,9 +81,10 @@ to Grafana, port 3000, datasource-proxy paths, plugins, or dashboard assets.
 - A slow/failing overlay cannot delay live status, local history, or unrelated
   overlays. Preserve last-good geometry and show source-specific state.
 - There is no global `Promise.all` transaction across data sources.
-- Route, recent track, active-link, satellites, mission events, weather radar,
-  and ancillary map/layer controls are optional salvage only. They are never a
-  Phase 1 or Phase 2 completion dependency.
+- The Current Position map preserves the Grafana card's ArcGIS imagery,
+  RainViewer radar, IDL-safe route/history/active-link layers, markers, layer
+  visibility controls, zoom/scale/measurement controls, and attribution. Radar
+  failures are bounded, retryable, and retain last-good map content.
 
 ## Display and interaction contract
 
@@ -107,9 +109,10 @@ partial failure, total failure, recovery, and paused states retain last-good
 content. Route, track, active-link, satellites, events, radar, and ancillary
 controls may be salvaged, but are optional and cannot block Phase 1 or 2.
 
-Use IDL-safe route/history geometry and finite-coordinate validation. Density
-may adapt outside fullscreen, but data and accessible alternatives do not
-silently disappear.
+Use IDL-safe route/history/active-link geometry and finite-coordinate
+validation. Density may adapt outside fullscreen, but data and accessible
+alternatives do not silently disappear. A GEP marker may show its safe display
+label and coordinates but never its public IP.
 
 ## Fullscreen contract
 

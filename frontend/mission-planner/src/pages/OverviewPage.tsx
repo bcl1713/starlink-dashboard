@@ -77,6 +77,8 @@ export function OverviewPage() {
         pois={data.pois}
         poiState={data.poiState}
         refreshPois={data.refreshPois}
+        mapOverlays={data.mapOverlays}
+        history={data.history}
         cadence={data.cadence}
         now={data.now}
       />

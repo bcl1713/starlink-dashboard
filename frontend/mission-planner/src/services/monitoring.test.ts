@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   groundEntryPointUrl,
   historyUrl,
+  mapOverlayUrls,
   parseGroundEntryPoint,
   parseHistory,
+  parseMapOverlays,
   parseStatus,
   poiUrl,
   statusUrl,
@@ -89,13 +91,81 @@ const gep = () => ({
 
 describe('monitoring service contracts', () => {
   it('uses only origin-relative monitoring URLs', () => {
-    expect([statusUrl, historyUrl, groundEntryPointUrl, poiUrl]).toEqual([
+    expect([
+      statusUrl,
+      historyUrl,
+      groundEntryPointUrl,
+      poiUrl,
+      ...mapOverlayUrls,
+    ]).toEqual([
       '/api/status',
       '/api/monitoring/history',
       '/api/monitoring/ground-entry-point',
       '/api/pois/etas',
+      '/api/route/coordinates/west',
+      '/api/route/coordinates/east',
+      '/api/active-x-link?state=normal',
+      '/api/active-x-link?state=warning',
     ]);
     expect(parseStatus(status()).position.longitude).toBe(180);
+  });
+
+  it('keeps route and active-link map data bounded, validated, and IDL split', () => {
+    const overlays = parseMapOverlays([
+      {
+        coordinates: [
+          { latitude: 10, longitude: -180, altitude: 0, sequence: 0 },
+        ],
+        total: 1,
+        route_id: 'route',
+        route_name: 'Route',
+      },
+      {
+        coordinates: [
+          { latitude: 10, longitude: 180, altitude: 0, sequence: 1 },
+        ],
+        total: 1,
+        route_id: 'route',
+        route_name: 'Route',
+      },
+      {
+        coordinates: [
+          { latitude: 10, longitude: 179 },
+          { latitude: 11, longitude: -179 },
+        ],
+        links: [],
+        total: 2,
+      },
+      { coordinates: [], links: [], total: 0 },
+    ]);
+
+    expect(overlays.route.west).toEqual([[10, -180]]);
+    expect(overlays.route.east).toEqual([[10, 180]]);
+    expect(overlays.activeLinks.normal).toEqual({
+      east: [
+        [10, 179],
+        [10.5, 180],
+      ],
+      west: [
+        [10.5, -180],
+        [11, -179],
+      ],
+    });
+    expect(overlays.activeLinks.warning).toEqual({ east: [], west: [] });
+    expect(() =>
+      parseMapOverlays([
+        {
+          coordinates: Array.from({ length: 1001 }, () => ({
+            latitude: 0,
+            longitude: 0,
+          })),
+          total: 1001,
+        },
+        { coordinates: [], total: 0 },
+        { coordinates: [], links: [], total: 0 },
+        { coordinates: [], links: [], total: 0 },
+      ])
+    ).toThrow('Map response exceeds coordinate budget');
   });
 
   it('rejects unknown fields at every status nesting level', () => {

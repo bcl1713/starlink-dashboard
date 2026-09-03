@@ -30,6 +30,14 @@ function data() {
     gepState: sourceState,
     pois: [],
     poiState: sourceState,
+    mapOverlays: {
+      route: { west: [], east: [] },
+      activeLinks: {
+        normal: { west: [], east: [] },
+        warning: { west: [], east: [] },
+      },
+    },
+    mapState: sourceState,
     now: new Date('2026-09-02T12:00:00Z'),
     summaries: {
       latency: { current: null, min: null, average: null, max: null },
@@ -39,6 +47,7 @@ function data() {
     reconcileHistory: vi.fn().mockResolvedValue(undefined),
     refreshGep: vi.fn().mockResolvedValue(undefined),
     refreshPois: vi.fn().mockResolvedValue(undefined),
+    refreshMap: vi.fn().mockResolvedValue(undefined),
   };
 }
 

@@ -30,16 +30,22 @@ keyboard access is forbidden. Fullscreen entry/exit preserves selected cadence,
 layer/filter state, last-good data, and focus; API rejection has a visible
 fallback.
 
-`document.fullscreenElement` must equal the overview root. Route, recent track,
-active-link, satellites, mission events, weather radar, and ancillary controls
-are optional salvage and never Phase 1 or Phase 2 completion dependencies.
+`document.fullscreenElement` must equal the overview root. The Current Position
+map is a real geographic Leaflet tile map, not a decorative coordinate graphic.
+Its binding parity source is the supported Current Position geomap card in
+`monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`: ArcGIS
+World Imagery, RainViewer radar, IDL-safe planned route/history/active-link
+geometry, flight-route/satellite/event/GEP/current-position markers, visible
+zoom/scale/measurement/attribution controls, and accessible layer visibility
+controls. React does not request Grafana or disclose a GEP IP.
 
 **In:** layout, component boundaries needed for layout, fullscreen
 control/state, focused visual/accessibility tests, and minimal style tokens.
 
-**Out:** changes to polling/API contracts, the retired six-viewport gate,
-real-stack publication acceptance, Grafana parity/retirement, and operator docs.
-Other widths receive bounded smoke/accessibility checks only.
+**Out:** the retired six-viewport gate, Grafana retirement, and operator docs.
+Operator-facing equivalence claims route to a separate docs Phase 4 step only
+after independent acceptance of this corrected candidate. Other widths receive
+bounded smoke/accessibility checks only.
 
 ## Advisory paths after inspection
 

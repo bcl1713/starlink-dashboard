@@ -69,6 +69,7 @@ type Metric = (typeof metricOrder)[number];
 const MAX_HISTORY_POINTS_PER_SERIES = 1801;
 const MAX_HISTORY_POINTS_TOTAL =
   metricOrder.length * MAX_HISTORY_POINTS_PER_SERIES;
+const MAX_MAP_COORDINATES = 1000;
 
 const sampleSchema = z.strictObject({
   timestamp: instant,
@@ -178,10 +179,40 @@ export type StatusData = z.infer<typeof statusSchema>;
 export type MonitoringHistory = z.infer<typeof historySchema>;
 export type GroundEntryPoint = z.infer<typeof gepSchema>;
 
+type MapPoint = [number, number];
+type MapSegments = { west: MapPoint[]; east: MapPoint[] };
+export interface MapOverlays {
+  route: MapSegments;
+  activeLinks: { normal: MapSegments; warning: MapSegments };
+}
+
+const mapResponseSchema = z
+  .object({
+    coordinates: z
+      .array(
+        z.object({
+          latitude: finite.min(-90).max(90),
+          longitude: finite.min(-180).max(180),
+        })
+      )
+      .max(MAX_MAP_COORDINATES),
+    total: z.number().int().nonnegative().max(MAX_MAP_COORDINATES),
+  })
+  .refine((value) => value.total === value.coordinates.length, {
+    message: 'map total does not match collection length',
+    path: ['total'],
+  });
+
 export const statusUrl = '/api/status';
 export const historyUrl = '/api/monitoring/history';
 export const groundEntryPointUrl = '/api/monitoring/ground-entry-point';
 export const poiUrl = '/api/pois/etas';
+export const mapOverlayUrls = [
+  '/api/route/coordinates/west',
+  '/api/route/coordinates/east',
+  '/api/active-x-link?state=normal',
+  '/api/active-x-link?state=warning',
+] as const;
 
 export const parseStatus = (value: unknown): StatusData =>
   statusSchema.parse(value);
@@ -191,6 +222,25 @@ export const parseHistory = (value: unknown): MonitoringHistory => {
 };
 export const parseGroundEntryPoint = (value: unknown): GroundEntryPoint =>
   gepSchema.parse(value);
+export const parseMapOverlays = (value: unknown): MapOverlays => {
+  if (!Array.isArray(value) || value.length !== mapOverlayUrls.length) {
+    throw new Error('invalid map response collection');
+  }
+  value.forEach(assertBoundedMapCoordinates);
+  const [routeWest, routeEast, activeNormal, activeWarning] = value.map(
+    (item) => mapResponseSchema.parse(item)
+  );
+  return {
+    route: {
+      west: asMapPoints(routeWest.coordinates),
+      east: asMapPoints(routeEast.coordinates),
+    },
+    activeLinks: {
+      normal: splitAtInternationalDateLine(activeNormal.coordinates),
+      warning: splitAtInternationalDateLine(activeWarning.coordinates),
+    },
+  };
+};
 
 function assertBoundedHistory(value: unknown): void {
   if (!isRecord(value) || !Array.isArray(value.series)) return;
@@ -205,6 +255,46 @@ function assertBoundedHistory(value: unknown): void {
       throw new Error('History response exceeds aggregate point budget');
     }
   }
+}
+
+function assertBoundedMapCoordinates(value: unknown): void {
+  if (
+    isRecord(value) &&
+    Array.isArray(value.coordinates) &&
+    value.coordinates.length > MAX_MAP_COORDINATES
+  ) {
+    throw new Error('Map response exceeds coordinate budget');
+  }
+}
+
+function asMapPoints(
+  coordinates: { latitude: number; longitude: number }[]
+): MapPoint[] {
+  return coordinates.map(({ latitude, longitude }) => [latitude, longitude]);
+}
+
+function splitAtInternationalDateLine(
+  coordinates: { latitude: number; longitude: number }[]
+): MapSegments {
+  const west: MapPoint[] = [];
+  const east: MapPoint[] = [];
+  coordinates.forEach((coordinate, index) => {
+    const point: MapPoint = [coordinate.latitude, coordinate.longitude];
+    const target = coordinate.longitude < 0 ? west : east;
+    target.push(point);
+    const next = coordinates[index + 1];
+    if (!next || Math.abs(next.longitude - coordinate.longitude) <= 180) return;
+    const delta = 360 - Math.abs(next.longitude - coordinate.longitude);
+    const fraction = (180 - Math.abs(coordinate.longitude)) / delta;
+    const latitude =
+      coordinate.latitude + (next.latitude - coordinate.latitude) * fraction;
+    target.push([latitude, coordinate.longitude < 0 ? -180 : 180]);
+    (coordinate.longitude < 0 ? east : west).push([
+      latitude,
+      coordinate.longitude < 0 ? 180 : -180,
+    ]);
+  });
+  return { west, east };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -241,4 +331,12 @@ export async function fetchApplicablePois(
     .filter((poi) => poi.active !== false)
     .sort((left, right) => left.eta_seconds - right.eta_seconds)
     .slice(0, 5);
+}
+
+export async function fetchMapOverlays(
+  signal?: AbortSignal
+): Promise<MapOverlays> {
+  return parseMapOverlays(
+    await Promise.all(mapOverlayUrls.map((url) => getJson(url, signal)))
+  );
 }

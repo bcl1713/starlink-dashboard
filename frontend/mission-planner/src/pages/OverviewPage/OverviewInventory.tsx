@@ -1,9 +1,11 @@
 import type {
   ApplicablePoi,
   GroundEntryPoint,
+  MapOverlays,
   StatusData,
 } from '../../services/monitoring';
 import type { Summary } from './history';
+import type { OverviewHistoryStore } from './overviewHistoryStore';
 import { CurrentPositionMap } from './CurrentPositionMap';
 import type { Cadence } from './poller';
 import type { SourceState } from './useOverlayLane';
@@ -19,6 +21,8 @@ interface Props {
   pois: ApplicablePoi[];
   poiState: SourceState;
   refreshPois: () => Promise<void>;
+  mapOverlays: MapOverlays;
+  history: OverviewHistoryStore;
   cadence: Cadence;
   now: Date;
 }
@@ -49,6 +53,20 @@ const sourceMessage = (state: SourceState) => {
   return 'No successful update';
 };
 
+const splitHistory = (history: OverviewHistoryStore) => {
+  const west: [number, number][] = [];
+  const east: [number, number][] = [];
+  const longitudes = new Map(
+    history.longitude_degrees.map((sample) => [sample.timestamp, sample.value])
+  );
+  for (const latitude of history.latitude_degrees) {
+    const longitude = longitudes.get(latitude.timestamp);
+    if (longitude === undefined) continue;
+    (longitude < 0 ? west : east).push([latitude.value, longitude]);
+  }
+  return { west, east };
+};
+
 export function OverviewInventory({
   status,
   statusMessage,
@@ -60,6 +78,8 @@ export function OverviewInventory({
   pois,
   poiState,
   refreshPois,
+  mapOverlays,
+  history,
   cadence,
   now,
 }: Props) {
@@ -86,8 +106,54 @@ export function OverviewInventory({
         <article className="overview-card overview-map">
           <h2>Current position map</h2>
           <CurrentPositionMap
+            activeLinks={mapOverlays.activeLinks}
+            groundEntryPoint={
+              gep?.available &&
+              gep.display !== null &&
+              gep.latitude !== null &&
+              gep.longitude !== null
+                ? {
+                    display: gep.display,
+                    latitude: gep.latitude,
+                    longitude: gep.longitude,
+                  }
+                : null
+            }
+            heading={status?.position.heading}
+            history={splitHistory(history)}
             latitude={status?.position.latitude}
             longitude={status?.position.longitude}
+            route={mapOverlays.route}
+            markers={{
+              flightRoute: pois
+                .filter(
+                  (poi) =>
+                    poi.category !== 'satellite' &&
+                    poi.category !== 'mission-event'
+                )
+                .map((poi) => ({
+                  id: poi.poi_id,
+                  name: poi.name,
+                  latitude: poi.latitude,
+                  longitude: poi.longitude,
+                })),
+              satellites: pois
+                .filter((poi) => poi.category === 'satellite')
+                .map((poi) => ({
+                  id: poi.poi_id,
+                  name: poi.name,
+                  latitude: poi.latitude,
+                  longitude: poi.longitude,
+                })),
+              missionEvents: pois
+                .filter((poi) => poi.category === 'mission-event')
+                .map((poi) => ({
+                  id: poi.poi_id,
+                  name: poi.name,
+                  latitude: poi.latitude,
+                  longitude: poi.longitude,
+                })),
+            }}
           />
           <small>
             {status ? `Source: ${status.source}` : 'No live sample'}
