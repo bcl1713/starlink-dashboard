@@ -64,12 +64,6 @@ describe('OverviewInventory', () => {
         pois={[]}
         poiState={sourceState}
         refreshPois={async () => {}}
-        radar={{
-          available: true,
-          tileUrl: '/api/weather/radar/rainviewer/{z}/{x}/{y}.png?frame=123',
-        }}
-        radarState={sourceState}
-        refreshRadar={async () => {}}
         mapOverlays={{
           route: { west: [], east: [] },
           activeLinks: {
@@ -111,18 +105,10 @@ describe('OverviewInventory', () => {
 
   it('normalizes IDL coordinates and rejects nonfinite map input', () => {
     const normalized = renderToStaticMarkup(
-      <CurrentPositionMap
-        latitude={10}
-        longitude={540}
-        radar={{ state: 'unavailable', tileUrl: null, refresh: async () => {} }}
-      />
+      <CurrentPositionMap latitude={10} longitude={540} />
     );
     const rejected = renderToStaticMarkup(
-      <CurrentPositionMap
-        latitude={Number.POSITIVE_INFINITY}
-        longitude={0}
-        radar={{ state: 'unavailable', tileUrl: null, refresh: async () => {} }}
-      />
+      <CurrentPositionMap latitude={Number.POSITIVE_INFINITY} longitude={0} />
     );
 
     expect(normalized).toContain('Current position: 10.0000, -180.0000');

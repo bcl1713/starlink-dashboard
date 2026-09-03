@@ -2,7 +2,6 @@ import type {
   ApplicablePoi,
   GroundEntryPoint,
   MapOverlays,
-  RadarMetadata,
   StatusData,
 } from '../../services/monitoring';
 import type { Summary } from './history';
@@ -22,9 +21,7 @@ interface Props {
   pois: ApplicablePoi[];
   poiState: SourceState;
   refreshPois: () => Promise<void>;
-  radar: RadarMetadata | null;
-  radarState: SourceState;
-  refreshRadar: () => Promise<void>;
+
   mapOverlays: MapOverlays;
   history: OverviewHistoryStore;
   cadence: Cadence;
@@ -82,9 +79,7 @@ export function OverviewInventory({
   pois,
   poiState,
   refreshPois,
-  radar,
-  radarState,
-  refreshRadar,
+
   mapOverlays,
   history,
   cadence,
@@ -160,14 +155,6 @@ export function OverviewInventory({
                   latitude: poi.latitude,
                   longitude: poi.longitude,
                 })),
-            }}
-            radar={{
-              state:
-                radarState.error !== null || radar === null
-                  ? 'unavailable'
-                  : 'available',
-              tileUrl: radar?.tileUrl ?? null,
-              refresh: refreshRadar,
             }}
           />
           <small>

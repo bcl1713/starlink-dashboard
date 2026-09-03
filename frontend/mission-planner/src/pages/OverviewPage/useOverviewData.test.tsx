@@ -6,7 +6,6 @@ import {
   fetchApplicablePois,
   fetchGroundEntryPoint,
   fetchHistory,
-  fetchRadarMetadata,
   fetchStatus,
 } from '../../services/monitoring';
 import { useOverviewData } from './useOverviewData';
@@ -20,6 +19,10 @@ import {
   status,
 } from './useOverviewData.testSupport';
 
+const { fetchRadarMetadata } = vi.hoisted(() => ({
+  fetchRadarMetadata: vi.fn(),
+}));
+
 vi.mock('../../services/monitoring', async (loadOriginal) => {
   const original =
     await loadOriginal<typeof import('../../services/monitoring')>();
@@ -29,7 +32,7 @@ vi.mock('../../services/monitoring', async (loadOriginal) => {
     fetchGroundEntryPoint: vi.fn(),
     fetchHistory: vi.fn(),
     fetchMapOverlays: vi.fn(),
-    fetchRadarMetadata: vi.fn(),
+    fetchRadarMetadata,
     fetchStatus: vi.fn(),
   };
 });
@@ -98,31 +101,15 @@ describe('useOverviewData lane ownership', () => {
     unmount();
   });
 
-  it('owns radar availability, retry recovery, and cancellation separately from status', async () => {
+  it('starts core overview refreshes without requesting deferred radar metadata', async () => {
     vi.setSystemTime(now);
     defaults();
-    let rejectRadar: ((reason?: unknown) => void) | undefined;
-    vi.mocked(fetchRadarMetadata)
-      .mockImplementationOnce(
-        () => new Promise((_resolve, reject) => (rejectRadar = reject))
-      )
-      .mockResolvedValueOnce({
-        available: true,
-        tileUrl: '/api/weather/radar/rainviewer/{z}/{x}/{y}.png?frame=123',
-      });
     const { result, unmount } = renderHook(() => useOverviewData());
 
     await waitFor(() => expect(result.current.status).not.toBeNull());
-    expect(result.current.radarState.loading).toBe(true);
+    await waitFor(() => expect(result.current.pois).toHaveLength(1));
     expect(result.current.statusMessage).toContain('Updated');
-    await act(async () => rejectRadar?.(new Error('timeout')));
-    await waitFor(() =>
-      expect(result.current.radarState.error).toBe('Weather radar unavailable')
-    );
-
-    await act(async () => result.current.refreshRadar());
-    expect(result.current.radar?.tileUrl).toContain('frame=123');
-    expect(result.current.radarState.recoveredAt).not.toBeNull();
+    expect(fetchRadarMetadata).not.toHaveBeenCalled();
     unmount();
   });
 

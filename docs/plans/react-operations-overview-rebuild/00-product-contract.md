@@ -81,10 +81,13 @@ Grafana, port 3000, datasource-proxy paths, plugins, or dashboard assets.
 - A slow/failing overlay cannot delay live status, local history, or unrelated
   overlays. Preserve last-good geometry and show source-specific state.
 - There is no global `Promise.all` transaction across data sources.
-- The Current Position map preserves the Grafana card's ArcGIS imagery,
-  RainViewer radar, IDL-safe route/history/active-link layers, markers, layer
-  visibility controls, zoom/scale/measurement controls, and attribution. Radar
-  failures are bounded, retryable, and retain last-good map content.
+- The Current Position map preserves ArcGIS imagery, IDL-safe
+  route/history/active-link layers, markers, layer visibility controls,
+  zoom/scale/measurement controls, and attribution. Weather/radar is
+  intentionally deferred by Brian to
+  [issue #144](https://github.com/bcl1713/starlink-dashboard/issues/144); no
+  weather provider, radar request, control, or loading state is part of this
+  candidate.
 
 ## Display and interaction contract
 
@@ -112,7 +115,8 @@ controls may be salvaged, but are optional and cannot block Phase 1 or 2.
 Use IDL-safe route/history/active-link geometry and finite-coordinate
 validation. Density may adapt outside fullscreen, but data and accessible
 alternatives do not silently disappear. A GEP marker may show its safe display
-label and coordinates but never its public IP.
+label and coordinates but never its public IP. Weather/radar remains deferred
+to issue #144 rather than an optional candidate control.
 
 ## Fullscreen contract
 
@@ -139,8 +143,8 @@ release gate.
 ## Security and privacy boundaries
 
 - Browser requests are origin-relative `/api/...`; no arbitrary PromQL, caller
-  upstream URL/host/header, direct Prometheus, RainViewer, Grafana, or internal
-  Docker hostname.
+  upstream URL/host/header, direct Prometheus, Grafana, weather provider, or
+  internal Docker hostname.
 - Server-side upstream integrations use exact allow-lists, HTTPS where
   applicable, safe DNS/redirect handling, timeouts, cancellation, bounded
   response bytes/points, finite-value validation, and safe errors.

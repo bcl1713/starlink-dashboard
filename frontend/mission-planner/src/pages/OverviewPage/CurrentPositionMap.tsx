@@ -21,12 +21,6 @@ export interface MapMarker {
 }
 
 type LineSegments = { west: LatLngExpression[]; east: LatLngExpression[] };
-type RadarState = {
-  state: 'available' | 'unavailable';
-  tileUrl: string | null;
-  refresh: () => Promise<void>;
-};
-
 interface Props {
   latitude: number | null | undefined;
   longitude: number | null | undefined;
@@ -44,7 +38,6 @@ interface Props {
     latitude: number;
     longitude: number;
   } | null;
-  radar: RadarState;
 }
 
 const ARCGIS_IMAGERY =
@@ -125,10 +118,8 @@ export function CurrentPositionMap({
   history = { west: [], east: [] },
   markers = { flightRoute: [], satellites: [], missionEvents: [] },
   groundEntryPoint = null,
-  radar,
 }: Props) {
   const [visible, setVisible] = useState({
-    radar: true,
     route: true,
     activeNormal: true,
     activeWarning: true,
@@ -148,7 +139,6 @@ export function CurrentPositionMap({
   const center: LatLngExpression = [position.latitude, position.longitude];
   const alternative = `Current position: ${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)}`;
   const controls = [
-    ['radar', 'Weather Radar (RainViewer)'],
     ['route', 'Planned Route'],
     ['activeNormal', 'Active X-band Link - Normal'],
     ['activeWarning', 'Active X-band Link - Warning'],
@@ -194,15 +184,7 @@ export function CurrentPositionMap({
         <ZoomControl position="topright" />
         <ScaleControl imperial={false} />
         <TileLayer attribution="Tiles © Esri" url={ARCGIS_IMAGERY} />
-        {visible.radar && radar.tileUrl !== null && (
-          <TileLayer
-            attribution="Weather radar © RainViewer / MeteoLab Inc."
-            maxZoom={7}
-            minZoom={0}
-            opacity={0.7}
-            url={radar.tileUrl}
-          />
-        )}
+
         {visible.route && (
           <>
             <Polyline color="#d97706" positions={route.west} weight={2} />
@@ -273,19 +255,7 @@ export function CurrentPositionMap({
         </Marker>
         <MapMeasurement active={measuring} />
       </MapContainer>
-      <figcaption>
-        {alternative}
-        {radar.state === 'unavailable' && (
-          <span className="radar-status" role="status">
-            {radar.tileUrl === null
-              ? 'Radar unavailable'
-              : 'Radar unavailable; showing last good'}{' '}
-            <button onClick={radar.refresh} type="button">
-              Retry radar
-            </button>
-          </span>
-        )}
-      </figcaption>
+      <figcaption>{alternative}</figcaption>
     </figure>
   );
 }

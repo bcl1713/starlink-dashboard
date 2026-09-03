@@ -146,9 +146,10 @@ telemetry. Work through the following checks:
 4. Pan or zoom the map and refresh the page to distinguish a tile-load problem
    from a marker-layer problem.
 
-**Weather layer scope:** Weather Radar (RainViewer) is a separate,
-deployment-safe layer. It was not changed as part of the ArcGIS basemap and
-Current Position marker update.
+**Weather layer scope:** Weather radar is intentionally deferred from the
+Current Position map to [issue #144](https://github.com/bcl1713/starlink-dashboard/issues/144).
+The supported Grafana map remains ArcGIS imagery plus the non-weather
+operational layers documented above.
 
 ### High Latency or Slow Responsiveness
 

@@ -4,7 +4,6 @@ import {
   fetchGroundEntryPoint,
   fetchHistory,
   fetchMapOverlays,
-  fetchRadarMetadata,
   fetchStatus,
   metricOrder,
 } from '../../services/monitoring';
@@ -99,10 +98,6 @@ export function defaults() {
       normal: { west: [], east: [] },
       warning: { west: [], east: [] },
     },
-  });
-  vi.mocked(fetchRadarMetadata).mockResolvedValue({
-    available: true,
-    tileUrl: '/api/weather/radar/rainviewer/{z}/{x}/{y}.png?frame=123',
   });
 }
 

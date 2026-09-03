@@ -6,6 +6,13 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
 from app.api import (
     active_x_link,
     config,
@@ -20,7 +27,6 @@ from app.api import (
     routes,
     status,
     ui,
-    weather,
 )
 from app.core.config import ConfigManager
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
@@ -41,17 +47,7 @@ from app.services.ground_entry_point import (
 )
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
-from app.services.weather_radar_owner import (
-    OwnedRainViewerRadarService,
-    RadarRequestOwner,
-)
 from app.simulation.coordinator import SimulationCoordinator
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -459,16 +455,10 @@ async def _background_update_loop(poi_manager=None):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
-    owner = RadarRequestOwner()
-    service = OwnedRainViewerRadarService(owner)
-    app.state.rainviewer_transport_owner = owner
-    app.state.rainviewer_radar_service = service
-    weather.rainviewer_radar_service = service
     await startup_event()
     try:
         yield
     finally:
-        await owner.aclose()
         await shutdown_event()
 
 
@@ -551,7 +541,7 @@ app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])
 app.include_router(gps.router, tags=["GPS"])
-app.include_router(weather.router, tags=["Weather"])
+
 app.include_router(ui.router, tags=["UI"])
 
 

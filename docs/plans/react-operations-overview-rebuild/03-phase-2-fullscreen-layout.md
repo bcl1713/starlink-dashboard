@@ -34,10 +34,13 @@ fallback.
 map is a real geographic Leaflet tile map, not a decorative coordinate graphic.
 Its binding parity source is the supported Current Position geomap card in
 `monitoring/grafana/provisioning/dashboards/fullscreen-overview.json`: ArcGIS
-World Imagery, RainViewer radar, IDL-safe planned route/history/active-link
-geometry, flight-route/satellite/event/GEP/current-position markers, visible
+World Imagery, IDL-safe planned route/history/active-link geometry,
+flight-route/satellite/event/GEP/current-position markers, visible
 zoom/scale/measurement/attribution controls, and accessible layer visibility
-controls. React does not request Grafana or disclose a GEP IP.
+controls. Weather/radar is intentionally deferred by Brian to
+[#144](https://github.com/bcl1713/starlink-dashboard/issues/144); it is not a
+React or Grafana candidate layer. React does not request Grafana or disclose a
+GEP IP.
 
 **In:** layout, component boundaries needed for layout, fullscreen
 control/state, focused visual/accessibility tests, and minimal style tokens.

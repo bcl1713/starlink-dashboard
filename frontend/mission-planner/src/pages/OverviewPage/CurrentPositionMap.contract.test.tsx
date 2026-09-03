@@ -54,18 +54,14 @@ describe('CurrentPositionMap Grafana-card contract', () => {
           ],
         }}
         groundEntryPoint={{ display: 'GEP', latitude: 13, longitude: 176 }}
-        radar={{
-          state: 'available',
-          tileUrl: '/api/weather/radar/rainviewer/{z}/{x}/{y}.png?frame=123',
-          refresh: async () => {},
-        }}
       />
     );
 
     expect(html).toContain(
       'server.arcgisonline.com/ArcGIS/rest/services/World_Imagery'
     );
-    expect(html).toContain('Weather Radar (RainViewer)');
+    expect(html).not.toContain('Weather Radar');
+    expect(html).not.toContain('rainviewer');
     expect(html).toContain('data-zoom-control="true"');
     expect(html).toContain('data-scale-control="true"');
     expect(html).toContain('Planned Route');
@@ -81,7 +77,7 @@ describe('CurrentPositionMap Grafana-card contract', () => {
     expect(html).not.toContain('<svg');
   });
 
-  it('keeps radar failure bounded and offers a retry without losing map identity', () => {
+  it('keeps core map identity without weather controls or loading state', () => {
     const html = renderToStaticMarkup(
       <CurrentPositionMap
         latitude={10}
@@ -95,12 +91,11 @@ describe('CurrentPositionMap Grafana-card contract', () => {
         history={{ west: [], east: [] }}
         markers={{ flightRoute: [], satellites: [], missionEvents: [] }}
         groundEntryPoint={null}
-        radar={{ state: 'unavailable', tileUrl: null, refresh: async () => {} }}
       />
     );
 
-    expect(html).toContain('Radar unavailable');
-    expect(html).toContain('Retry radar');
+    expect(html).not.toContain('Radar unavailable');
+    expect(html).not.toContain('Retry radar');
     expect(html).toContain('server.arcgisonline.com/ArcGIS/rest/services');
   });
 });

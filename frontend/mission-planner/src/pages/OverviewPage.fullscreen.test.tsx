@@ -30,8 +30,7 @@ function data() {
     gepState: sourceState,
     pois: [],
     poiState: sourceState,
-    radar: null,
-    radarState: sourceState,
+
     mapOverlays: {
       route: { west: [], east: [] },
       activeLinks: {
@@ -50,7 +49,6 @@ function data() {
     refreshGep: vi.fn().mockResolvedValue(undefined),
     refreshPois: vi.fn().mockResolvedValue(undefined),
     refreshMap: vi.fn().mockResolvedValue(undefined),
-    refreshRadar: vi.fn().mockResolvedValue(undefined),
   };
 }
 
