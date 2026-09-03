@@ -9,7 +9,11 @@ const metrics = [
   'throughput_up_mbps',
   'packet_loss_percent',
 ];
-const now = '2026-09-03T09:00:00Z';
+const generatedAt = Date.now();
+const now = new Date(generatedAt).toISOString();
+const windowStart = new Date(generatedAt - 1_800_000).toISOString();
+const firstSample = new Date(generatedAt - 2000).toISOString();
+const secondSample = new Date(generatedAt - 1000).toISOString();
 
 export async function installOverviewRoutes(page: Page) {
   let statusRequests = 0;
@@ -50,7 +54,7 @@ export async function installOverviewRoutes(page: Page) {
       await route.fulfill({
         json: {
           generated_at: now,
-          window_start: '2026-09-03T08:30:00Z',
+          window_start: windowStart,
           window_end: now,
           range_seconds: 1800,
           step_seconds: 1,
@@ -59,13 +63,13 @@ export async function installOverviewRoutes(page: Page) {
             samples:
               metric === 'latency_ms'
                 ? [
-                    { timestamp: '2026-09-03T08:59:58Z', value: 21 },
-                    { timestamp: '2026-09-03T08:59:59Z', value: 33 },
+                    { timestamp: firstSample, value: 21 },
+                    { timestamp: secondSample, value: 33 },
                   ]
                 : metric === 'packet_loss_percent'
                   ? [
-                      { timestamp: '2026-09-03T08:59:58Z', value: 0.2 },
-                      { timestamp: '2026-09-03T08:59:59Z', value: 0.8 },
+                      { timestamp: firstSample, value: 0.2 },
+                      { timestamp: secondSample, value: 0.8 },
                     ]
                   : [],
           })),

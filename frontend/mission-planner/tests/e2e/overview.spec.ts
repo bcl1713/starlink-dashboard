@@ -28,6 +28,12 @@ test.describe('Operations overview display', () => {
       page.getByText('Waypoint 5 with safe operational label')
     ).toBeVisible();
     await expect(page.getByText('27.0 ms', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('21.0 / 27.0 / 33.0 ms', { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText('Average 0.5% · Max 0.8%', { exact: true })
+    ).toBeVisible();
     const mapBeforeEntry = await page
       .locator('.current-position-map')
       .elementHandle();
