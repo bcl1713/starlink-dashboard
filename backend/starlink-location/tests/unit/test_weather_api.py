@@ -65,3 +65,46 @@ def test_rainviewer_metadata_endpoint_sanitizes_invalid_metadata(
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Weather radar unavailable"}
+
+
+def test_rainviewer_metadata_endpoint_sanitizes_malformed_frame_members(
+    client, monkeypatch
+) -> None:
+    malformed_metadata = {
+        "host": "https://tilecache.rainviewer.com",
+        "radar": {"past": ["not-a-frame"], "nowcast": []},
+    }
+    monkeypatch.setattr(
+        weather.rainviewer_radar_service,
+        "_metadata_fetcher",
+        lambda: malformed_metadata,
+    )
+    monkeypatch.setattr(weather.rainviewer_radar_service, "_cached_metadata", None)
+
+    response = client.get("/api/weather/radar/rainviewer/metadata")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Weather radar unavailable"}
+
+
+def test_rainviewer_metadata_endpoint_sanitizes_mixed_frame_members(
+    client, monkeypatch
+) -> None:
+    malformed_metadata = {
+        "host": "https://tilecache.rainviewer.com",
+        "radar": {
+            "past": [{"time": 1, "path": "/v2/radar/valid"}, None],
+            "nowcast": [],
+        },
+    }
+    monkeypatch.setattr(
+        weather.rainviewer_radar_service,
+        "_metadata_fetcher",
+        lambda: malformed_metadata,
+    )
+    monkeypatch.setattr(weather.rainviewer_radar_service, "_cached_metadata", None)
+
+    response = client.get("/api/weather/radar/rainviewer/metadata")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Weather radar unavailable"}
