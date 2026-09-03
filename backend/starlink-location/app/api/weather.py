@@ -1,6 +1,8 @@
 """Same-origin weather radar API routes."""
 
-from fastapi import APIRouter, HTTPException
+import inspect
+
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response
 
 from app.services.weather_radar import RainViewerRadarService
@@ -14,10 +16,13 @@ def unavailable() -> HTTPException:
 
 
 @router.get("/radar/rainviewer/metadata")
-def rainviewer_radar_metadata() -> dict[str, bool | str]:
+async def rainviewer_radar_metadata(request: Request) -> dict[str, bool | str]:
     """Publish only the fixed origin-relative tile template to the browser."""
+    service = request.app.state.rainviewer_radar_service
     try:
-        frame = rainviewer_radar_service.frame_token()
+        frame = service.frame_token()
+        if inspect.isawaitable(frame):
+            frame = await frame
     except (RuntimeError, TypeError, ValueError):
         raise unavailable() from None
     return {
@@ -27,10 +32,13 @@ def rainviewer_radar_metadata() -> dict[str, bool | str]:
 
 
 @router.get("/radar/rainviewer/{z}/{x}/{y}.png")
-def rainviewer_radar_tile(z: int, x: int, y: int) -> Response:
+async def rainviewer_radar_tile(request: Request, z: int, x: int, y: int) -> Response:
     """Proxy a bounded PNG tile; never redirect browsers to RainViewer."""
+    service = request.app.state.rainviewer_radar_service
     try:
-        image = rainviewer_radar_service.tile_bytes(z=z, x=x, y=y)
+        image = service.tile_bytes(z=z, x=x, y=y)
+        if inspect.isawaitable(image):
+            image = await image
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid radar tile") from exc
     except (RuntimeError, TypeError):

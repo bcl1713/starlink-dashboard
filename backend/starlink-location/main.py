@@ -40,6 +40,10 @@ from app.live.coordinator import LiveCoordinator
 from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from app.services.weather_radar_owner import (
+    OwnedRainViewerRadarService,
+    RadarRequestOwner,
+)
 from app.services.ground_entry_point import (
     maybe_refresh_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
@@ -454,9 +458,17 @@ async def _background_update_loop(poi_manager=None):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
+    owner = RadarRequestOwner()
+    service = OwnedRainViewerRadarService(owner)
+    app.state.rainviewer_transport_owner = owner
+    app.state.rainviewer_radar_service = service
+    weather.rainviewer_radar_service = service
     await startup_event()
-    yield
-    await shutdown_event()
+    try:
+        yield
+    finally:
+        await owner.aclose()
+        await shutdown_event()
 
 
 # Create FastAPI application

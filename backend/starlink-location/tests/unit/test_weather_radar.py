@@ -13,6 +13,7 @@ from app.services.weather_radar import (
     RainViewerUnavailable,
     _public_ips,
 )
+from app.services.weather_radar_owner import RadarRequestOwner
 
 RAINVIEWER_METADATA = {
     "host": "https://tilecache.rainviewer.com",
@@ -261,3 +262,37 @@ def test_pinned_transport_rejects_short_content_length_body() -> None:
             max_bytes=16,
             expected_type="image/png",
         )
+
+
+@pytest.mark.asyncio
+async def test_radar_request_owner_cancels_and_reaps_an_inflight_exchange() -> None:
+    import asyncio
+
+    started = asyncio.Event()
+    cancelled = asyncio.Event()
+
+    async def exchange(*_args: object, **_kwargs: object) -> bytes:
+        started.set()
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+        return b""
+
+    owner = RadarRequestOwner(exchange=exchange)
+    request = asyncio.create_task(
+        owner.fetch(
+            "https://api.rainviewer.com/public/weather-maps.json",
+            32,
+            "application/json",
+        )
+    )
+    await started.wait()
+
+    await owner.aclose()
+
+    with pytest.raises(asyncio.CancelledError):
+        await request
+    assert cancelled.is_set()
+    assert owner.inflight_count == 0

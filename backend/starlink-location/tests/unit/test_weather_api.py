@@ -1,5 +1,7 @@
 """Tests for same-origin weather radar API routes."""
 
+import json
+
 from app.api import weather
 
 
@@ -74,10 +76,12 @@ def test_rainviewer_metadata_endpoint_sanitizes_malformed_frame_members(
         "host": "https://tilecache.rainviewer.com",
         "radar": {"past": ["not-a-frame"], "nowcast": []},
     }
+
+    async def fetch_metadata(*_args: object, **_kwargs: object) -> bytes:
+        return json.dumps(malformed_metadata).encode()
+
     monkeypatch.setattr(
-        weather.rainviewer_radar_service,
-        "_metadata_fetcher",
-        lambda: malformed_metadata,
+        weather.rainviewer_radar_service._owner, "fetch", fetch_metadata
     )
     monkeypatch.setattr(weather.rainviewer_radar_service, "_cached_metadata", None)
 
@@ -97,10 +101,12 @@ def test_rainviewer_metadata_endpoint_sanitizes_mixed_frame_members(
             "nowcast": [],
         },
     }
+
+    async def fetch_metadata(*_args: object, **_kwargs: object) -> bytes:
+        return json.dumps(malformed_metadata).encode()
+
     monkeypatch.setattr(
-        weather.rainviewer_radar_service,
-        "_metadata_fetcher",
-        lambda: malformed_metadata,
+        weather.rainviewer_radar_service._owner, "fetch", fetch_metadata
     )
     monkeypatch.setattr(weather.rainviewer_radar_service, "_cached_metadata", None)
 
