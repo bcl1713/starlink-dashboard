@@ -50,40 +50,44 @@ def _fetch_https(url: str, max_bytes: int, expected_type: str) -> bytes:
     assert host is not None
     ip = _public_ip(host)
     context = ssl.create_default_context()
-    with socket.create_connection((ip, 443), REQUEST_TIMEOUT_SECONDS) as raw_socket:
-        with context.wrap_socket(raw_socket, server_hostname=host) as tls_socket:
-            request_path = parsed.path or "/"
-            if parsed.query:
-                request_path = f"{request_path}?{parsed.query}"
-            tls_socket.sendall(
-                (
-                    f"GET {request_path} HTTP/1.1\r\nHost: {host}\r\n"
-                    "Accept: image/png, application/json\r\n"
-                    "User-Agent: starlink-dashboard/0.2 weather-radar\r\n"
-                    "Connection: close\r\n\r\n"
-                ).encode("ascii")
-            )
-            response = http.client.HTTPResponse(tls_socket)
-            response.begin()
-            content_type = response.getheader("Content-Type", "").split(";", 1)[0]
-            content_length = response.getheader("Content-Length")
-            if (
-                response.status != 200
-                or content_type != expected_type
-                or (content_length is not None and int(content_length) > max_bytes)
-            ):
-                raise RuntimeError("RainViewer source unavailable")
-            body = response.read(max_bytes + 1)
-            if len(body) > max_bytes:
-                raise RuntimeError("RainViewer source unavailable")
-            return body
+    with (
+        socket.create_connection((ip, 443), REQUEST_TIMEOUT_SECONDS) as raw_socket,
+        context.wrap_socket(raw_socket, server_hostname=host) as tls_socket,
+    ):
+        request_path = parsed.path or "/"
+        if parsed.query:
+            request_path = f"{request_path}?{parsed.query}"
+        tls_socket.sendall(
+            (
+                f"GET {request_path} HTTP/1.1\r\nHost: {host}\r\n"
+                "Accept: image/png, application/json\r\n"
+                "User-Agent: starlink-dashboard/0.2 weather-radar\r\n"
+                "Connection: close\r\n\r\n"
+            ).encode("ascii")
+        )
+        response = http.client.HTTPResponse(tls_socket)
+        response.begin()
+        content_type = response.getheader("Content-Type", "").split(";", 1)[0]
+        content_length = response.getheader("Content-Length")
+        if (
+            response.status != 200
+            or content_type != expected_type
+            or (content_length is not None and int(content_length) > max_bytes)
+        ):
+            raise RuntimeError("RainViewer source unavailable")
+        body = response.read(max_bytes + 1)
+        if len(body) > max_bytes:
+            raise RuntimeError("RainViewer source unavailable")
+        return body
 
 
 def fetch_rainviewer_metadata() -> dict[str, Any]:
     """Fetch bounded metadata through an allow-listed, DNS-pinned TLS socket."""
     try:
         return json.loads(
-            _fetch_https(RAINVIEWER_METADATA_URL, MAX_METADATA_BYTES, "application/json")
+            _fetch_https(
+                RAINVIEWER_METADATA_URL, MAX_METADATA_BYTES, "application/json"
+            )
         )
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         raise RuntimeError("RainViewer metadata unavailable") from exc
@@ -141,7 +145,7 @@ class RainViewerRadarService:
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             raise RuntimeError("RainViewer metadata unavailable") from exc
         if not isinstance(metadata, dict):
-            raise RuntimeError("RainViewer metadata unavailable")
+            raise TypeError("RainViewer metadata must be an object")
         self._cached_metadata = metadata
         self._cached_at_monotonic = now
         return metadata
@@ -157,11 +161,11 @@ class RainViewerRadarService:
     def _latest_frame(metadata: dict[str, Any]) -> dict[str, Any]:
         radar = metadata.get("radar")
         if not isinstance(radar, dict):
-            raise RuntimeError("RainViewer metadata unavailable")
+            raise TypeError("RainViewer radar metadata must be an object")
         frames = radar.get("nowcast") or radar.get("past") or []
         if not isinstance(frames, list) or not frames:
             raise RuntimeError("RainViewer metadata unavailable")
         latest = max(frames, key=lambda frame: frame.get("time", 0))
         if not isinstance(latest, dict):
-            raise RuntimeError("RainViewer metadata unavailable")
+            raise TypeError("RainViewer radar frame must be an object")
         return latest

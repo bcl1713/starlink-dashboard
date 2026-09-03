@@ -49,3 +49,19 @@ def test_rainviewer_endpoints_sanitize_source_failure(client, monkeypatch) -> No
 
     assert response.status_code == 503
     assert response.json() == {"detail": "Weather radar unavailable"}
+
+
+def test_rainviewer_metadata_endpoint_sanitizes_invalid_metadata(
+    client, monkeypatch
+) -> None:
+    def invalid_metadata() -> str:
+        raise TypeError("upstream metadata was not an object")
+
+    monkeypatch.setattr(
+        weather.rainviewer_radar_service, "frame_token", invalid_metadata
+    )
+
+    response = client.get("/api/weather/radar/rainviewer/metadata")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Weather radar unavailable"}

@@ -18,7 +18,7 @@ def rainviewer_radar_metadata() -> dict[str, bool | str]:
     """Publish only the fixed origin-relative tile template to the browser."""
     try:
         frame = rainviewer_radar_service.frame_token()
-    except (RuntimeError, ValueError):
+    except (RuntimeError, TypeError, ValueError):
         raise unavailable() from None
     return {
         "available": True,
@@ -33,7 +33,7 @@ def rainviewer_radar_tile(z: int, x: int, y: int) -> Response:
         image = rainviewer_radar_service.tile_bytes(z=z, x=x, y=y)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid radar tile") from exc
-    except RuntimeError:
+    except (RuntimeError, TypeError):
         raise unavailable() from None
     return Response(
         content=image,
