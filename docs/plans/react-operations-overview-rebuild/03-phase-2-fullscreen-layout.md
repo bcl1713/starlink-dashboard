@@ -10,7 +10,7 @@ Repository `bcl1713/starlink-dashboard`; PR
 `archive/pr-143-pre-simplification-e649ce1`.
 
 Input is Oracle's published, independently reviewed Phase 1 SHA from
-`SESSION-HANDOFF.md`. Implement the overview's native browser fullscreen at
+`session-handoff.md`. Implement the overview's native browser fullscreen at
 exactly 1920x1080 with no document scroll, without changing Phase 1 data
 semantics. Oracle owns remote publication.
 

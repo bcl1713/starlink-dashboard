@@ -10,7 +10,7 @@ Repository `bcl1713/starlink-dashboard`; PR
 `archive/pr-143-pre-simplification-e649ce1`.
 
 Input is the exact Oracle-published Phase 0 docs-only SHA recorded in
-`SESSION-HANDOFF.md`; never invent it. Build independently scheduled live-stat,
+`session-handoff.md`; never invent it. Build independently scheduled live-stat,
 local-history, and overlay lanes from that head. Oracle owns remote publication.
 
 ## Product contract

@@ -180,7 +180,7 @@ printf '%s\n' \
   docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md \
   docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md \
   docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md \
-  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md \
+  docs/plans/react-operations-overview-rebuild/session-handoff.md \
   >"$PUBLICATION_TMP/expected"
 sort -o "$PUBLICATION_TMP/expected" "$PUBLICATION_TMP/expected"
 git diff --name-only --no-renames "$BASELINE"..."$CANDIDATE" \

@@ -37,7 +37,7 @@ There are no advisory code paths in this docs-only phase. These paths are exact:
 - `docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md`
 - `docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md`
 - `docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md`
-- `docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md`
+- `docs/plans/react-operations-overview-rebuild/session-handoff.md`
 
 ## Bounded task order
 
@@ -90,11 +90,12 @@ DOCS=(
   docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md
   docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md
   docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md
-  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md
+  docs/plans/react-operations-overview-rebuild/session-handoff.md
 )
 npx --yes prettier@3.6.2 --write "${DOCS[@]}"
 npx --yes prettier@3.6.2 --check "${DOCS[@]}"
 npx --yes markdownlint-cli2@0.19.1 "${DOCS[@]}"
+python tools/check_filename_convention.py
 git diff --check "$BASE"...HEAD
 wc -l "${DOCS[@]}"
 test "$(git diff --name-only "$BASE"...HEAD | sort)" = \
@@ -122,7 +123,7 @@ DOCS=(
   docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md
   docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md
   docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md
-  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md
+  docs/plans/react-operations-overview-rebuild/session-handoff.md
 )
 test "${#DOCS[@]}" -eq 8
 for doc in "${DOCS[@]}"; do
@@ -202,7 +203,7 @@ required = [
     "03-phase-2-fullscreen-layout.md",
     "04-phase-3-runtime-acceptance.md",
     "05-phase-4-docs-and-integration.md",
-    "SESSION-HANDOFF.md",
+    "session-handoff.md",
 ]
 missing = [marker for marker in required if marker not in roadmap]
 print(f"roadmap_markers={len(required)} missing={len(missing)}")
@@ -218,10 +219,8 @@ and no production, test, config, package, lock, or Compose file appears.
 
 A check-only pre-commit invocation is optional only when it can be constrained
 to these files and will not mutate unrelated files. Do not use a fixer-bearing
-all-files run for a documentation-only candidate. The repository filename
-checker currently rejects the required uppercase status/session filename
-`SESSION-HANDOFF.md`, contrary to `AGENTS.md`; omit that checker and rely on the
-exact eight-path assertion above until the checker honors the repository rule.
+all-files run for a documentation-only candidate. Run the repository filename
+checker and require it to pass alongside the exact eight-path assertion above.
 
 ## Review gate and public handoff
 

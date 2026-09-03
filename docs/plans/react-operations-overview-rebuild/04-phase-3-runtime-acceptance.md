@@ -9,7 +9,7 @@ Repository `bcl1713/starlink-dashboard`; PR
 `e649ce169cd5adcbdd83d6264290b30d5221599e` belongs at
 `archive/pr-143-pre-simplification-e649ce1`.
 
-Input is Oracle's published and reviewed Phase 2 SHA from `SESSION-HANDOFF.md`.
+Input is Oracle's published and reviewed Phase 2 SHA from `session-handoff.md`.
 An independent, non-writing session reviews that exact clean head and proves it
 through built Nginx against the real simulation stack in Chromium. Oracle owns
 publication; acceptance does not push or alter GitHub.
@@ -133,12 +133,13 @@ ROADMAP_DOCS=(
   docs/plans/react-operations-overview-rebuild/03-phase-2-fullscreen-layout.md
   docs/plans/react-operations-overview-rebuild/04-phase-3-runtime-acceptance.md
   docs/plans/react-operations-overview-rebuild/05-phase-4-docs-and-integration.md
-  docs/plans/react-operations-overview-rebuild/SESSION-HANDOFF.md
+  docs/plans/react-operations-overview-rebuild/session-handoff.md
 )
 test "$(git ls-files -- \
   docs/plans/2026-09-02-react-operations-overview-rebuild.md \
   docs/plans/react-operations-overview-rebuild | sort)" = \
   "$(printf '%s\n' "${ROADMAP_DOCS[@]}" | sort)"
+python tools/check_filename_convention.py
 
 DISPOSABLE=$(mktemp -d)
 trap 'rm -rf "$DISPOSABLE"' EXIT
@@ -160,9 +161,8 @@ test -z "$(git status --porcelain --untracked-files=all)"
 test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
 ```
 
-The repository filename checker is not part of this gate because it currently
-rejects the required uppercase `SESSION-HANDOFF.md`, contrary to `AGENTS.md`.
-The exact tracked-path assertion above enforces the roadmap names instead.
+The repository filename checker runs and must pass. The exact tracked-path
+assertion above separately enforces the roadmap names.
 
 Then run the repository-required no-cache Docker rebuild/start/health sequence
 in the isolated project and the Phase 3 browser procedure above. Runtime

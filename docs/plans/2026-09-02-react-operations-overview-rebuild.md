@@ -1,7 +1,7 @@
 # React Operations Overview Rebuild Roadmap
 
 > **For a new session:** Read this file, the linked product contract, the
-> current phase file, and `SESSION-HANDOFF.md` before acting. Use direct/manual
+> current phase file, and `session-handoff.md` before acting. Use direct/manual
 > orchestration; do not create Kanban work.
 
 **Goal:** Rebuild PR #143 from current `dev` as a responsive, independently
@@ -139,7 +139,7 @@ each material gate, report RED/GREEN evidence, deviations from advisory paths,
 and any blocker. Do not report `done` from an uncommitted or dirty tree.
 
 Use
-[the handoff template](react-operations-overview-rebuild/SESSION-HANDOFF.md). A
+[the handoff template](react-operations-overview-rebuild/session-handoff.md). A
 handoff output is complete only when it records:
 
 - exact input and output SHAs without invented future values;

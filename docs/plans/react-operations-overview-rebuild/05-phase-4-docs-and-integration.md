@@ -10,7 +10,7 @@ Repository `bcl1713/starlink-dashboard`; durable PR
 `archive/pr-143-pre-simplification-e649ce1`.
 
 Input is Oracle's exact Phase 3 accepted SHA and bounded raw result disposition
-recorded in `SESSION-HANDOFF.md`. Produce truthful operator/user/architecture/
+recorded in `session-handoff.md`. Produce truthful operator/user/architecture/
 rollout docs, receive independent documentation review, and hand Oracle an exact
 candidate for integration to `dev`. Only Brian may authorize release to `main`.
 
@@ -46,7 +46,7 @@ Likely, not binding:
 - `docs/index.md` or relevant documentation navigation
 - `docs/setup/`, `docs/user-guide/`, `docs/troubleshooting/`
 - `monitoring/README.md` and `monitoring/docs/`
-- this roadmap and `SESSION-HANDOFF.md`
+- this roadmap and `session-handoff.md`
 
 Inspect current docs, links, screenshots, and release policy first. Modify only
 cohesive sources; do not create duplicate guides merely to avoid editing stale
@@ -129,6 +129,7 @@ mapfile -d '' -t DOCS <"$PHASE4_TMP/current-docs"
 test "${#DOCS[@]}" -gt 0
 npx --yes prettier@3.6.2 --check "${DOCS[@]}"
 npx --yes markdownlint-cli2@0.19.1 "${DOCS[@]}"
+python tools/check_filename_convention.py
 git diff --check "$PHASE3_SHA"...HEAD
 printf '%s\n' "${DOCS[@]}"
 wc -l "${DOCS[@]}"
@@ -184,9 +185,8 @@ PY
 The allowed set is deliberately limited to repository `README.md`, Markdown
 under `docs/`, `monitoring/README.md`, and Markdown under `monitoring/docs/`.
 Thus every production, test, config, package, lock, and Compose change fails the
-path loop before formatting. The repository filename checker is omitted because
-it currently rejects the required uppercase `SESSION-HANDOFF.md`, contrary to
-`AGENTS.md`; changed paths are instead checked exactly by the allow-list.
+path loop before formatting. The repository filename checker runs and must pass;
+changed paths are separately checked exactly by the allow-list.
 
 Run any repository docs/link tests found during inspection. Then run the minimal
 full check set required by current CI/pre-commit in check-only mode. The
