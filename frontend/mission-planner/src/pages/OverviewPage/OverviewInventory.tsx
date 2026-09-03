@@ -94,7 +94,7 @@ export function OverviewInventory({
           </small>
         </article>
 
-        <article className="overview-card">
+        <article className="overview-card overview-pois">
           <h2>Top applicable POIs</h2>
           {pois.length === 0 ? (
             <p>No applicable POIs</p>

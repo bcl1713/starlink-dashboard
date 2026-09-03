@@ -153,6 +153,96 @@
   overflow-wrap: anywhere;
 }
 
+.overview-fullscreen-fallback {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1000;
+  max-width: 30rem;
+  border: 1px solid #b87522;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #281b0c;
+  color: #ffdca8;
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen) {
+  --overview-fullscreen-gap: 0.75rem;
+  --overview-fullscreen-padding: 1.25rem;
+  display: grid;
+  width: 100vw;
+  height: 100vh;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--overview-fullscreen-gap);
+  overflow: hidden;
+  padding: var(--overview-fullscreen-padding);
+  background: #071019;
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen) .overview-header {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen) .overview-inventory {
+  display: grid;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--overview-fullscreen-gap);
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen) .overview-clocks {
+  min-width: 0;
+  margin: 0;
+  gap: var(--overview-fullscreen-gap);
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen) .overview-grid {
+  min-width: 0;
+  min-height: 0;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  grid-auto-flow: row;
+  gap: var(--overview-fullscreen-gap);
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen) .overview-card {
+  min-width: 0;
+  min-height: 0;
+  padding: 0.75rem;
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen) .overview-map {
+  display: grid;
+  grid-column: 1 / 4;
+  grid-row: 1 / 5;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen) .overview-pois {
+  grid-row: span 2;
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen)
+  .current-position-map {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.overview-page:is(:fullscreen, .overview-page--fullscreen)
+  .current-position-map
+  svg {
+  height: 100%;
+  max-height: none;
+}
+
 @media (max-width: 800px) {
   .overview-page {
     padding: 1rem;
