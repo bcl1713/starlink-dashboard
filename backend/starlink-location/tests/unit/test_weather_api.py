@@ -8,16 +8,19 @@ from app.api import weather
 def test_rainviewer_radar_tile_endpoint_proxies_png_on_same_origin(
     client, monkeypatch
 ) -> None:
+    png_signature = b"\x89PNG\r\n\x1a\nfixture"
+
+    async def tile_bytes(*_args: object, **_kwargs: object) -> bytes:
+        return png_signature
+
     monkeypatch.setattr(
-        weather.rainviewer_radar_service,
-        "tile_bytes",
-        lambda z, x, y: b"png-bytes",
+        client.app.state.rainviewer_radar_service, "tile_bytes", tile_bytes
     )
 
     response = client.get("/api/weather/radar/rainviewer/3/4/5.png")
 
     assert response.status_code == 200
-    assert response.content == b"png-bytes"
+    assert response.content == png_signature
     assert response.headers["content-type"] == "image/png"
     assert response.headers["cache-control"] == "no-store"
     assert "location" not in response.headers
