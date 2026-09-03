@@ -35,11 +35,16 @@ afterEach(() => {
 });
 
 describe('useOverviewFullscreen', () => {
-  it('uses fullscreenchange as authority and restores entry focus on exit', async () => {
+  it('consumes native success, restores focus on Escape, and accepts a fresh entry', async () => {
     const state = installFullscreenState();
+    const firstPlatform = deferred();
+    const secondPlatform = deferred();
     const root = document.createElement('main');
     root.tabIndex = -1;
-    root.requestFullscreen = vi.fn().mockResolvedValue(undefined);
+    root.requestFullscreen = vi
+      .fn()
+      .mockImplementationOnce(() => firstPlatform.promise)
+      .mockImplementationOnce(() => secondPlatform.promise);
     const enterButton = document.createElement('button');
     document.body.append(enterButton, root);
     enterButton.focus();
@@ -47,55 +52,112 @@ describe('useOverviewFullscreen', () => {
     rootRef.current = root;
     const { result } = renderHook(() => useOverviewFullscreen(rootRef));
 
-    await act(() => result.current.enter());
+    const first = result.current.enter();
     expect(root.requestFullscreen).toHaveBeenCalledOnce();
     expect(result.current.isFullscreen).toBe(false);
 
     act(() => state.set(root));
+    await expect(first).resolves.toBeUndefined();
     expect(result.current.isFullscreen).toBe(true);
     expect(document.activeElement).toBe(root);
+
+    await act(async () => firstPlatform.reject(new Error('late rejection')));
+    expect(result.current.error).toBeNull();
 
     act(() => state.set(null));
     expect(result.current.isFullscreen).toBe(false);
     expect(document.activeElement).toBe(enterButton);
+
+    let second!: Promise<void>;
+    act(() => {
+      second = result.current.enter();
+    });
+    expect(root.requestFullscreen).toHaveBeenCalledTimes(2);
+    act(() => state.set(root));
+    await expect(second).resolves.toBeUndefined();
+    secondPlatform.resolve();
   });
 
-  it('coalesces pending entry attempts and exposes a rejected-entry fallback', async () => {
+  it('consumes one active error outcome and neutralizes its late rejection', async () => {
     installFullscreenState();
-    const pending = deferred();
+    const firstPlatform = deferred();
+    const secondPlatform = deferred();
     const root = document.createElement('main');
-    root.requestFullscreen = vi.fn(() => pending.promise);
-    document.body.append(root);
+    const enterButton = document.createElement('button');
+    root.requestFullscreen = vi
+      .fn()
+      .mockImplementationOnce(() => firstPlatform.promise)
+      .mockImplementationOnce(() => secondPlatform.promise);
+    document.body.append(enterButton, root);
+    enterButton.focus();
     const rootRef = createRef<HTMLElement>();
     rootRef.current = root;
     const { result } = renderHook(() => useOverviewFullscreen(rootRef));
 
-    let first!: Promise<void>;
-    let second!: Promise<void>;
-    act(() => {
-      first = result.current.enter();
-      second = result.current.enter();
-      document.dispatchEvent(new Event('fullscreenerror'));
-    });
-    expect(first).toBe(second);
-    expect(root.requestFullscreen).toHaveBeenCalledOnce();
+    act(() => document.dispatchEvent(new Event('fullscreenerror')));
     expect(result.current.error).toBeNull();
 
-    await act(async () => pending.reject(new Error('permission denied')));
+    let first!: Promise<void>;
+    let duplicate!: Promise<void>;
+    act(() => {
+      first = result.current.enter();
+      duplicate = result.current.enter();
+    });
+    expect(first).toBe(duplicate);
+    expect(root.requestFullscreen).toHaveBeenCalledOnce();
+
+    act(() => document.dispatchEvent(new Event('fullscreenerror')));
     await expect(first).resolves.toBeUndefined();
     expect(result.current.error).toBe(
       'Fullscreen was unavailable. Use the browser fullscreen control instead.'
     );
+    expect(document.activeElement).toBe(enterButton);
+
+    await act(async () => firstPlatform.reject(new Error('late rejection')));
+    expect(result.current.error).toBe(
+      'Fullscreen was unavailable. Use the browser fullscreen control instead.'
+    );
+
+    act(() => document.dispatchEvent(new Event('fullscreenerror')));
+    expect(root.requestFullscreen).toHaveBeenCalledOnce();
+
+    let later!: Promise<void>;
+    act(() => {
+      later = result.current.enter();
+      document.dispatchEvent(new Event('fullscreenerror'));
+    });
+    await expect(later).resolves.toBeUndefined();
+    expect(root.requestFullscreen).toHaveBeenCalledTimes(2);
+    secondPlatform.reject(new Error('later late rejection'));
   });
 
-  it('consumes exit rejection and does not claim another element fullscreen', async () => {
+  it('consumes a direct platform rejection and keeps entry focus usable', async () => {
+    installFullscreenState();
+    const root = document.createElement('main');
+    const enterButton = document.createElement('button');
+    root.requestFullscreen = vi.fn().mockRejectedValue(new Error('denied'));
+    document.body.append(enterButton, root);
+    enterButton.focus();
+    const rootRef = createRef<HTMLElement>();
+    rootRef.current = root;
+    const { result } = renderHook(() => useOverviewFullscreen(rootRef));
+
+    await act(() => result.current.enter());
+    expect(result.current.error).toBe(
+      'Fullscreen was unavailable. Use the browser fullscreen control instead.'
+    );
+    expect(document.activeElement).toBe(enterButton);
+  });
+
+  it('keeps other-element state unowned and permits exit retry after rejection', async () => {
     const state = installFullscreenState();
     const root = document.createElement('main');
     const other = document.createElement('aside');
     document.body.append(root, other);
     const exitFullscreen = vi
       .fn()
-      .mockRejectedValue(new Error('exit was refused'));
+      .mockRejectedValueOnce(new Error('exit was refused'))
+      .mockResolvedValueOnce(undefined);
     Object.defineProperty(document, 'exitFullscreen', {
       configurable: true,
       value: exitFullscreen,
@@ -113,6 +175,27 @@ describe('useOverviewFullscreen', () => {
     await act(() => result.current.exit());
     expect(exitFullscreen).toHaveBeenCalledOnce();
     expect(result.current.isFullscreen).toBe(true);
+
+    await act(() => result.current.exit());
+    expect(exitFullscreen).toHaveBeenCalledTimes(2);
+    expect(result.current.isFullscreen).toBe(true);
+    act(() => state.set(null));
+    expect(result.current.isFullscreen).toBe(false);
+  });
+
+  it('does not request on mount and reports an unsupported API immediately', async () => {
+    installFullscreenState();
+    const root = document.createElement('main');
+    document.body.append(root);
+    const rootRef = createRef<HTMLElement>();
+    rootRef.current = root;
+    const { result } = renderHook(() => useOverviewFullscreen(rootRef));
+
+    expect(root.requestFullscreen).toBeUndefined();
+    await act(() => result.current.enter());
+    expect(result.current.error).toBe(
+      'Fullscreen was unavailable. Use the browser fullscreen control instead.'
+    );
   });
 
   it('removes listeners and neutralizes late request settlement on unmount', async () => {
@@ -129,10 +212,12 @@ describe('useOverviewFullscreen', () => {
       useOverviewFullscreen(rootRef)
     );
 
+    let entry!: Promise<void>;
     act(() => {
-      void result.current.enter();
+      entry = result.current.enter();
     });
     unmount();
+    await expect(entry).resolves.toBeUndefined();
     await act(async () => pending.reject(new Error('late rejection')));
 
     expect(add).toHaveBeenCalledWith('fullscreenchange', expect.any(Function));

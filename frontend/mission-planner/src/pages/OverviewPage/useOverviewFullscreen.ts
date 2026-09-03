@@ -11,15 +11,36 @@ export interface OverviewFullscreenState {
   exit: () => Promise<void>;
 }
 
+interface EntryAttempt {
+  promise: Promise<void>;
+  settle: () => void;
+}
+
 export function useOverviewFullscreen(
   rootRef: RefObject<HTMLElement | null>
 ): OverviewFullscreenState {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mounted = useRef(false);
-  const pendingEntry = useRef<Promise<void> | null>(null);
+  const activeEntry = useRef<EntryAttempt | null>(null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const owned = useRef(false);
+
+  const consumeEntry = useCallback(
+    (attempt: EntryAttempt, failed: boolean) => {
+      if (activeEntry.current !== attempt) return;
+      activeEntry.current = null;
+      if (
+        failed &&
+        mounted.current &&
+        document.fullscreenElement !== rootRef.current
+      ) {
+        setError(fullscreenFallback);
+      }
+      attempt.settle();
+    },
+    [rootRef]
+  );
 
   useEffect(() => {
     mounted.current = true;
@@ -29,6 +50,8 @@ export function useOverviewFullscreen(
       owned.current = nextOwned;
       setIsFullscreen(nextOwned);
       if (nextOwned) {
+        const attempt = activeEntry.current;
+        if (attempt) consumeEntry(attempt, false);
         setError(null);
         rootRef.current?.focus();
       } else if (wasOwned) {
@@ -37,23 +60,25 @@ export function useOverviewFullscreen(
       }
     };
     const onError = () => {
-      // The event cannot be correlated to a particular pending request. The
-      // request promise is the only authority for entry failure.
+      const attempt = activeEntry.current;
+      if (attempt) consumeEntry(attempt, true);
     };
     document.addEventListener('fullscreenchange', onChange);
     document.addEventListener('fullscreenerror', onError);
     return () => {
       mounted.current = false;
       owned.current = false;
-      pendingEntry.current = null;
+      const attempt = activeEntry.current;
+      activeEntry.current = null;
+      attempt?.settle();
       returnFocus.current = null;
       document.removeEventListener('fullscreenchange', onChange);
       document.removeEventListener('fullscreenerror', onError);
     };
-  }, [rootRef]);
+  }, [consumeEntry, rootRef]);
 
   const enter = useCallback(() => {
-    if (pendingEntry.current) return pendingEntry.current;
+    if (activeEntry.current) return activeEntry.current.promise;
     const root = rootRef.current;
     if (!root?.requestFullscreen) {
       setError(fullscreenFallback);
@@ -62,19 +87,22 @@ export function useOverviewFullscreen(
     const active = document.activeElement;
     returnFocus.current = active instanceof HTMLElement ? active : null;
     setError(null);
-    const attempt = root
-      .requestFullscreen()
-      .catch(() => {
-        if (mounted.current && document.fullscreenElement !== root) {
-          setError(fullscreenFallback);
-        }
-      })
-      .finally(() => {
-        if (pendingEntry.current === attempt) pendingEntry.current = null;
-      });
-    pendingEntry.current = attempt;
-    return attempt;
-  }, [rootRef]);
+    let settle!: () => void;
+    const promise = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
+    const attempt = { promise, settle };
+    activeEntry.current = attempt;
+    try {
+      void root.requestFullscreen().then(
+        () => consumeEntry(attempt, false),
+        () => consumeEntry(attempt, true)
+      );
+    } catch {
+      consumeEntry(attempt, true);
+    }
+    return promise;
+  }, [consumeEntry, rootRef]);
 
   const exit = useCallback(async () => {
     if (document.fullscreenElement !== rootRef.current) return;
