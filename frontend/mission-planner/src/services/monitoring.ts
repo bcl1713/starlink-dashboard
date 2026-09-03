@@ -14,9 +14,6 @@ export { getJson, MAX_JSON_RESPONSE_BYTES } from './boundedJson';
 export { parseApplicablePois } from './monitoringPois';
 export type { ApplicablePoi } from './monitoringPois';
 
-const MAX_HISTORY_POINTS_PER_SERIES = 1801;
-const MAX_HISTORY_POINTS_TOTAL = 7200;
-
 const statusSchema = z
   .strictObject({
     source: z.enum(['simulation', 'live']),
@@ -69,6 +66,9 @@ export const metricOrder = [
   'packet_loss_percent',
 ] as const;
 type Metric = (typeof metricOrder)[number];
+const MAX_HISTORY_POINTS_PER_SERIES = 1801;
+const MAX_HISTORY_POINTS_TOTAL =
+  metricOrder.length * MAX_HISTORY_POINTS_PER_SERIES;
 
 const sampleSchema = z.strictObject({
   timestamp: instant,

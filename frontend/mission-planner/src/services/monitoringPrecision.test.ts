@@ -81,7 +81,7 @@ describe('monitoring instant precision', () => {
     expect(
       parseStatus({
         ...status(),
-        timestamp: '2026-09-02T13:00:00.0000010+01:00',
+        timestamp: '2026-09-02T13:00:00.000001+01:00',
       }).observed_at
     ).toBe(observed);
   });

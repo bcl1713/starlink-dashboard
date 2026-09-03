@@ -155,6 +155,7 @@ export function useOverviewData() {
       }
     };
     const recoverGap = () => {
+      if (hidden.current || offline.current) return;
       const current = gap.current;
       if (
         current !== null &&
@@ -163,7 +164,7 @@ export function useOverviewData() {
       ) {
         current.handled = true;
         void reconcileHistory(true);
-      } else if (!hidden.current && !offline.current && current !== null) {
+      } else if (current !== null) {
         current.handled = true;
       }
     };

@@ -1,9 +1,15 @@
 import { z } from 'zod';
 
 const MAX_EXTERNAL_TEXT = 200;
+const MAX_INSTANT_LENGTH = 32;
+const instantParts =
+  /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,6}))?(Z|[+-]\d{2}:\d{2})$/;
 
 export const finite = z.number().finite();
-export const instant = z.string().datetime({ offset: true });
+export const instant = z
+  .string()
+  .max(MAX_INSTANT_LENGTH)
+  .pipe(z.string().regex(instantParts).datetime({ offset: true }));
 export const text = z.string().max(MAX_EXTERNAL_TEXT);
 export const coordinate = z.strictObject({
   latitude: finite.min(-90).max(90),
@@ -16,10 +22,8 @@ type ExactInstant = {
   precision: number;
 };
 
-const instantParts =
-  /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})$/;
-
 function parseExactInstant(value: string): ExactInstant {
+  if (value.length > MAX_INSTANT_LENGTH) throw new Error('invalid instant');
   const match = instantParts.exec(value);
   if (!match) throw new Error('invalid instant');
   const wholeSecond = Date.parse(`${match[1]}${match[3]}`);

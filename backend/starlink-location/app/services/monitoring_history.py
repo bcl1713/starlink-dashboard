@@ -23,7 +23,7 @@ _PROMETHEUS_URL = "http://prometheus:9090/api/v1/query_range"
 _MAX_BODY_BYTES = 2_000_000
 _MAX_AGGREGATE_BYTES = 4_000_000
 _MAX_POINTS = 1801
-_MAX_AGGREGATE_POINTS = 7200
+_MAX_AGGREGATE_POINTS = len(METRIC_ORDER) * _MAX_POINTS
 _QUERIES: dict[MetricName, str] = {
     "latitude_degrees": "starlink_dish_latitude_degrees",
     "longitude_degrees": "starlink_dish_longitude_degrees",

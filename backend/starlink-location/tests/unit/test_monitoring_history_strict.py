@@ -15,6 +15,10 @@ START = int(NOW.timestamp()) - 60
 END = int(NOW.timestamp())
 
 
+def inclusive_values(start: int, count: int) -> list[list[int | str]]:
+    return [[start + index, "1"] for index in range(count)]
+
+
 def payload(values: list[Any], *, series_count: int = 1) -> dict[str, Any]:
     return {
         "status": "success",
@@ -95,8 +99,30 @@ async def test_rejects_per_series_limit_before_json_decode(
 
 
 @pytest.mark.asyncio
-async def test_rejects_aggregate_point_limit_across_serial_queries() -> None:
+async def test_accepts_maximum_default_history_for_all_fixed_queries() -> None:
     calls = 0
+    default_start = int(NOW.timestamp()) - 1800
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, json=payload(inclusive_values(default_start, 1801)))
+
+    client = HistoryClient(transport=httpx.MockTransport(handler), clock=lambda: NOW)
+
+    result = await client.fetch(range_seconds=1800, step_seconds=1)
+
+    assert calls == 6
+    assert len(result.series) == 6
+    assert all(len(series.samples) == 1801 for series in result.series)
+
+
+@pytest.mark.asyncio
+async def test_enforces_configured_aggregate_limit_before_all_queries(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = 0
+    monkeypatch.setattr(monitoring_history, "_MAX_AGGREGATE_POINTS", 7200)
 
     async def handler(_: httpx.Request) -> httpx.Response:
         nonlocal calls

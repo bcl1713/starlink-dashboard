@@ -59,6 +59,22 @@ const history = () => ({
   })),
 });
 
+const maximumDefaultHistory = () => {
+  const windowStart = '2026-09-02T11:30:00Z';
+  const samples = Array.from({ length: 1801 }, (_, index) => ({
+    timestamp: new Date(Date.parse(windowStart) + index * 1000).toISOString(),
+    value: 0,
+  }));
+  return {
+    generated_at: instant,
+    window_start: windowStart,
+    window_end: instant,
+    range_seconds: 1800,
+    step_seconds: 1,
+    series: metrics.map((metric) => ({ metric, samples })),
+  };
+};
+
 const gep = () => ({
   available: true,
   observed_at: instant,
@@ -232,7 +248,7 @@ describe('monitoring service contracts', () => {
     }
   });
 
-  it('enforces metric ranges plus per-series and aggregate point budgets', () => {
+  it('enforces metric ranges and rejects the first over-limit cardinality', () => {
     const invalidRanges = [-91, -181, -1, -1, -1, 101];
     invalidRanges.forEach((value, index) => {
       const series = history().series.map((item, itemIndex) =>
@@ -254,21 +270,15 @@ describe('monitoring service contracts', () => {
           index === 0 ? { ...item, samples: many } : item
         ),
       })
-    ).toThrow();
+    ).toThrow('History response exceeds point budget');
+  });
 
-    const aggregate = Array.from({ length: 1201 }, (_, index) => ({
-      timestamp: new Date(Date.parse(instant) + index / 2).toISOString(),
-      value: 0,
-    }));
-    expect(() =>
-      parseHistory({
-        ...history(),
-        window_end: '2026-09-02T12:10:01Z',
-        series: history().series.map((item) => ({
-          ...item,
-          samples: aggregate,
-        })),
-      })
-    ).toThrow();
+  it('accepts the maximum default six-series history response', () => {
+    const parsed = parseHistory(maximumDefaultHistory());
+
+    expect(parsed.series).toHaveLength(6);
+    expect(
+      parsed.series.every((series) => series.samples.length === 1801)
+    ).toBe(true);
   });
 });

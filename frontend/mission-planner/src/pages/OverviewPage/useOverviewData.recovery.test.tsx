@@ -62,6 +62,7 @@ describe('useOverviewData gap recovery', () => {
         window.dispatchEvent(new Event('online'));
         window.dispatchEvent(new Event('online'));
         await act(async () => Promise.resolve());
+        expect(fetchHistory).toHaveBeenCalledTimes(1);
         setVisibility('visible');
         setVisibility('visible');
       } else {
@@ -72,6 +73,7 @@ describe('useOverviewData gap recovery', () => {
         setVisibility('visible');
         setVisibility('visible');
         await act(async () => Promise.resolve());
+        expect(fetchHistory).toHaveBeenCalledTimes(1);
         window.dispatchEvent(new Event('online'));
         window.dispatchEvent(new Event('online'));
       }
@@ -129,5 +131,32 @@ describe('useOverviewData gap recovery', () => {
 
     expect(fetchHistory).toHaveBeenCalledTimes(1);
     unmount();
+  });
+
+  it('repairs a later gap generation once and removes recovery listeners', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    defaults();
+    const { unmount } = renderHook(() => useOverviewData());
+    await act(async () => Promise.resolve());
+
+    window.dispatchEvent(new Event('offline'));
+    await act(async () => vi.advanceTimersByTimeAsync(6000));
+    window.dispatchEvent(new Event('online'));
+    await act(async () => Promise.resolve());
+    expect(fetchHistory).toHaveBeenCalledTimes(2);
+
+    setVisibility('hidden');
+    await act(async () => vi.advanceTimersByTimeAsync(6000));
+    setVisibility('visible');
+    setVisibility('visible');
+    await act(async () => Promise.resolve());
+    expect(fetchHistory).toHaveBeenCalledTimes(3);
+
+    unmount();
+    window.dispatchEvent(new Event('offline'));
+    window.dispatchEvent(new Event('online'));
+    await act(async () => vi.advanceTimersByTimeAsync(6000));
+    expect(fetchHistory).toHaveBeenCalledTimes(3);
   });
 });
