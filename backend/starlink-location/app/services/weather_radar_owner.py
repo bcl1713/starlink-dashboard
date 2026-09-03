@@ -13,7 +13,6 @@ from typing import Any
 from urllib.parse import urlparse
 
 import dns.asyncresolver
-
 from app.services.weather_radar import (
     MAX_METADATA_BYTES,
     MAX_TILE_BYTES,

@@ -4,7 +4,6 @@ import asyncio
 from collections.abc import Awaitable
 
 import pytest
-
 from app.services.weather_radar import (
     MAX_TILE_BYTES,
     RAINVIEWER_TILE_HOST,

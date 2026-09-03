@@ -6,11 +6,6 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-
 from app.api import (
     active_x_link,
     config,
@@ -27,30 +22,36 @@ from app.api import (
     ui,
     weather,
 )
+from app.core.config import ConfigManager
+from app.core.eta_service import initialize_eta_service, shutdown_eta_service
+from app.core.limiter import limiter
+from app.core.logging import get_logger, setup_logging
+from app.core.metrics import set_service_info
+from app.live.coordinator import LiveCoordinator
 from app.mission import (
     routes as mission_routes,
+)
+from app.mission import (
     routes_v2 as mission_routes_v2,
 )
 from app.satellites import routes as satellite_routes
-from app.core.config import ConfigManager
-from app.core.eta_service import initialize_eta_service, shutdown_eta_service
-from app.core.logging import setup_logging, get_logger
-from app.core.metrics import set_service_info
-from app.live.coordinator import LiveCoordinator
-from app.simulation.coordinator import SimulationCoordinator
+from app.services.ground_entry_point import (
+    maybe_refresh_ground_entry_point_metrics,
+    refresh_ground_entry_point_metrics,
+)
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.services.weather_radar_owner import (
     OwnedRainViewerRadarService,
     RadarRequestOwner,
 )
-from app.services.ground_entry_point import (
-    maybe_refresh_ground_entry_point_metrics,
-    refresh_ground_entry_point_metrics,
-)
-from slowapi.errors import RateLimitExceeded
+from app.simulation.coordinator import SimulationCoordinator
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
-from app.core.limiter import limiter
+from slowapi.errors import RateLimitExceeded
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -362,10 +363,10 @@ async def _background_update_loop(poi_manager=None):
                     if telemetry is not None:
                         # Track metric collection duration
                         from app.core.metrics import (
-                            update_metrics_from_telemetry,
-                            starlink_metrics_scrape_duration_seconds,
-                            starlink_metrics_last_update_timestamp_seconds,
                             starlink_metrics_generation_errors_total,
+                            starlink_metrics_last_update_timestamp_seconds,
+                            starlink_metrics_scrape_duration_seconds,
+                            update_metrics_from_telemetry,
                         )
 
                         scrape_start = time.time()
