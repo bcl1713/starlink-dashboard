@@ -9,7 +9,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
-
 from app.models.dashboard import (
     METRIC_ORDER,
     HistoryResponse,
@@ -79,7 +78,13 @@ class HistoryClient:
                 )
         except asyncio.CancelledError:
             raise
-        except (httpx.HTTPError, asyncio.TimeoutError, ValueError, TypeError) as exc:
+        except (
+            httpx.HTTPError,
+            asyncio.TimeoutError,
+            RecursionError,
+            ValueError,
+            TypeError,
+        ) as exc:
             raise HistoryUnavailable("monitoring history unavailable") from exc
         return HistoryResponse(
             generated_at=end,

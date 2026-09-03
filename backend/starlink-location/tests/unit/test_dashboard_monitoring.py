@@ -5,13 +5,12 @@ from types import SimpleNamespace
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
-
 from app.api import monitoring, status
 from app.live.coordinator import LiveCoordinator as ProductionLiveCoordinator
 from app.models.config import SimulationConfig
 from app.services.monitoring_history import HistoryClient
 from app.simulation.coordinator import SimulationCoordinator
+from fastapi.testclient import TestClient
 from main import app
 
 NOW = datetime(2026, 9, 2, 12, 0, tzinfo=timezone.utc)
@@ -236,6 +235,34 @@ def test_history_route_rejects_arbitrary_upstream_parameters() -> None:
     assert response.status_code == 200
     assert response.headers["cache-control"] == "no-store"
     assert "evil" not in response.text
+
+
+def test_history_route_safely_translates_deeply_nested_upstream_json() -> None:
+    upstream_response: httpx.Response | None = None
+    prefix = '{"status":"success","data":{"resultType":"matrix","result":[{"values":['
+    nested = "[" * 1200 + '"upstream-sensitive-detail"' + "]" * 1200
+    body = (prefix + nested + "]}]}}").encode()
+
+    async def handler(_: httpx.Request) -> httpx.Response:
+        nonlocal upstream_response
+        upstream_response = httpx.Response(200, content=body)
+        return upstream_response
+
+    history_client = HistoryClient(
+        transport=httpx.MockTransport(handler), clock=lambda: NOW
+    )
+    app.dependency_overrides[monitoring.get_history_client] = lambda: history_client
+    try:
+        with TestClient(app) as client:
+            response = client.get("/api/monitoring/history?range_seconds=60")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": {"code": "monitoring_history_unavailable"}}
+    assert "upstream-sensitive-detail" not in response.text
+    assert upstream_response is not None
+    assert upstream_response.is_closed
 
 
 def test_ground_entry_point_never_exposes_public_ip(

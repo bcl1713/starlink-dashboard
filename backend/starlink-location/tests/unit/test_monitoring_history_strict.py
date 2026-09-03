@@ -1,12 +1,12 @@
 """Adversarial bounds for the fixed-query monitoring history adapter."""
 
+import asyncio
 import json
 from datetime import datetime, timezone
 from typing import Any
 
 import httpx
 import pytest
-
 from app.services import monitoring_history
 from app.services.monitoring_history import HistoryClient, HistoryUnavailable
 
@@ -38,8 +38,85 @@ def transport_for(body: dict[str, Any] | bytes) -> httpx.MockTransport:
     return httpx.MockTransport(handler)
 
 
+def deeply_nested_values_body(depth: int = 1200) -> bytes:
+    prefix = '{"status":"success","data":{"resultType":"matrix","result":[{"values":['
+    nested = "[" * depth + '"upstream-sensitive-detail"' + "]" * depth
+    return (prefix + nested + "]}]}}").encode()
+
+
+class TrackingTransport(httpx.AsyncBaseTransport):
+    def __init__(self, body: bytes) -> None:
+        self.body = body
+        self.closed = False
+        self.response: httpx.Response | None = None
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        del request
+        self.response = httpx.Response(200, content=self.body)
+        return self.response
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
 async def rejected(body: dict[str, Any] | bytes) -> None:
     client = HistoryClient(transport=transport_for(body), clock=lambda: NOW)
+    with pytest.raises(HistoryUnavailable, match="monitoring history unavailable"):
+        await client.fetch(range_seconds=60, step_seconds=1)
+
+
+@pytest.mark.asyncio
+async def test_deeply_nested_json_is_safely_rejected_and_response_is_closed() -> None:
+    transport = TrackingTransport(deeply_nested_values_body())
+    client = HistoryClient(transport=transport, clock=lambda: NOW)
+
+    with pytest.raises(HistoryUnavailable) as caught:
+        await client.fetch(range_seconds=60, step_seconds=1)
+
+    assert str(caught.value) == "monitoring history unavailable"
+    assert isinstance(caught.value.__cause__, RecursionError)
+    assert "upstream-sensitive-detail" not in str(caught.value)
+    assert transport.response is not None
+    assert transport.response.is_closed
+    assert transport.closed
+
+
+@pytest.mark.asyncio
+async def test_fetch_preserves_cancellation_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cancellation = asyncio.CancelledError()
+
+    async def cancelled(*_: object) -> None:
+        raise cancellation
+
+    monkeypatch.setattr(HistoryClient, "_fetch_all", cancelled)
+    client = HistoryClient(clock=lambda: NOW)
+
+    with pytest.raises(asyncio.CancelledError) as caught:
+        await client.fetch(range_seconds=60, step_seconds=1)
+
+    assert caught.value is cancellation
+
+
+@pytest.mark.asyncio
+async def test_malformed_json_and_body_overage_remain_safe_failures() -> None:
+    await rejected(b"{")
+    await rejected(b"x" * 2_000_001)
+
+
+@pytest.mark.asyncio
+async def test_timeout_remains_a_safe_failure() -> None:
+    async def handler(_: httpx.Request) -> httpx.Response:
+        await asyncio.sleep(1)
+        return httpx.Response(200, json=payload([]))
+
+    client = HistoryClient(
+        transport=httpx.MockTransport(handler),
+        clock=lambda: NOW,
+        timeout_seconds=0.001,
+    )
+
     with pytest.raises(HistoryUnavailable, match="monitoring history unavailable"):
         await client.fetch(range_seconds=60, step_seconds=1)
 
