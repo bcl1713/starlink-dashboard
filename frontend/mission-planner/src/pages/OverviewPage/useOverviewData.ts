@@ -4,6 +4,7 @@ import {
   fetchGroundEntryPoint,
   fetchHistory,
   fetchMapOverlays,
+  fetchRadarMetadata,
   fetchStatus,
   type StatusData,
 } from '../../services/monitoring';
@@ -63,6 +64,14 @@ export function useOverviewData() {
     5,
     'Map overlays unavailable',
     15,
+    now
+  );
+  const radarLane = useOverlayLane(
+    fetchRadarMetadata,
+    null,
+    30,
+    'Weather radar unavailable',
+    180,
     now
   );
 
@@ -262,6 +271,8 @@ export function useOverviewData() {
     poiState: poiLane.state,
     mapOverlays: mapLane.data,
     mapState: mapLane.state,
+    radar: radarLane.data,
+    radarState: radarLane.state,
     now,
     summaries,
     refreshStatus: () => pollerRef.current?.manual() ?? Promise.resolve(),
@@ -269,5 +280,6 @@ export function useOverviewData() {
     refreshGep: gepLane.refresh,
     refreshPois: poiLane.refresh,
     refreshMap: mapLane.refresh,
+    refreshRadar: radarLane.refresh,
   };
 }

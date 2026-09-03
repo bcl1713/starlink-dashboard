@@ -6,17 +6,20 @@ vi.mock('leaflet', () => ({
 }));
 
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children, ...props }: React.PropsWithChildren<object>) => (
-    <div data-map-container="true" {...props}>
+  MapContainer: ({
+    children,
+    className,
+  }: React.PropsWithChildren<{ className?: string }>) => (
+    <div className={className} data-map-container="true">
       {children}
     </div>
   ),
-  TileLayer: (props: object) => <div data-tile-layer="true" {...props} />,
-  Polyline: (props: object) => <div data-polyline="true" {...props} />,
-  Marker: ({ children, ...props }: React.PropsWithChildren<object>) => (
-    <div data-marker="true" {...props}>
-      {children}
-    </div>
+  TileLayer: ({ url }: { url: string }) => (
+    <div data-tile-layer="true" data-url={url} />
+  ),
+  Polyline: () => <div data-polyline="true" />,
+  Marker: ({ children }: React.PropsWithChildren) => (
+    <div data-marker="true">{children}</div>
   ),
   Tooltip: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
   ZoomControl: () => <div data-zoom-control="true" />,
@@ -51,7 +54,11 @@ describe('CurrentPositionMap Grafana-card contract', () => {
           ],
         }}
         groundEntryPoint={{ display: 'GEP', latitude: 13, longitude: 176 }}
-        radar={{ state: 'available', refresh: () => {} }}
+        radar={{
+          state: 'available',
+          tileUrl: '/api/weather/radar/rainviewer/{z}/{x}/{y}.png?frame=123',
+          refresh: async () => {},
+        }}
       />
     );
 
@@ -88,12 +95,12 @@ describe('CurrentPositionMap Grafana-card contract', () => {
         history={{ west: [], east: [] }}
         markers={{ flightRoute: [], satellites: [], missionEvents: [] }}
         groundEntryPoint={null}
-        radar={{ state: 'unavailable', refresh: () => {} }}
+        radar={{ state: 'unavailable', tileUrl: null, refresh: async () => {} }}
       />
     );
 
     expect(html).toContain('Radar unavailable');
     expect(html).toContain('Retry radar');
-    expect(html).toContain('Tiles © Esri');
+    expect(html).toContain('server.arcgisonline.com/ArcGIS/rest/services');
   });
 });

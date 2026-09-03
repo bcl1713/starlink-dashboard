@@ -21,7 +21,11 @@ export interface MapMarker {
 }
 
 type LineSegments = { west: LatLngExpression[]; east: LatLngExpression[] };
-type RadarState = { state: 'available' | 'unavailable'; refresh: () => void };
+type RadarState = {
+  state: 'available' | 'unavailable';
+  tileUrl: string | null;
+  refresh: () => Promise<void>;
+};
 
 interface Props {
   latitude: number | null | undefined;
@@ -40,13 +44,11 @@ interface Props {
     latitude: number;
     longitude: number;
   } | null;
-  radar?: RadarState;
+  radar: RadarState;
 }
 
 const ARCGIS_IMAGERY =
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
-const RAINVIEWER_RADAR =
-  'https://tilecache.rainviewer.com/v2/radar/nowcast/{z}/{x}/{y}/2/1_1.png';
 
 function safeCoordinates(latitude: number, longitude: number) {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
@@ -123,7 +125,7 @@ export function CurrentPositionMap({
   history = { west: [], east: [] },
   markers = { flightRoute: [], satellites: [], missionEvents: [] },
   groundEntryPoint = null,
-  radar = { state: 'available', refresh: () => {} },
+  radar,
 }: Props) {
   const [visible, setVisible] = useState({
     radar: true,
@@ -192,13 +194,13 @@ export function CurrentPositionMap({
         <ZoomControl position="topright" />
         <ScaleControl imperial={false} />
         <TileLayer attribution="Tiles © Esri" url={ARCGIS_IMAGERY} />
-        {visible.radar && radar.state === 'available' && (
+        {visible.radar && radar.tileUrl !== null && (
           <TileLayer
             attribution="Weather radar © RainViewer / MeteoLab Inc."
             maxZoom={7}
             minZoom={0}
             opacity={0.7}
-            url={RAINVIEWER_RADAR}
+            url={radar.tileUrl}
           />
         )}
         {visible.route && (
@@ -275,7 +277,9 @@ export function CurrentPositionMap({
         {alternative}
         {radar.state === 'unavailable' && (
           <span className="radar-status" role="status">
-            Radar unavailable{' '}
+            {radar.tileUrl === null
+              ? 'Radar unavailable'
+              : 'Radar unavailable; showing last good'}{' '}
             <button onClick={radar.refresh} type="button">
               Retry radar
             </button>

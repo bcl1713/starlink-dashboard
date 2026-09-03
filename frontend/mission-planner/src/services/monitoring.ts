@@ -175,9 +175,23 @@ const gepSchema = z
     }
   );
 
+const radarMetadataSchema = z.strictObject({
+  available: z.literal(true),
+  tile_url: z
+    .string()
+    .regex(
+      /^\/api\/weather\/radar\/rainviewer\/\{z\}\/\{x\}\/\{y\}\.png(?:\?frame=\d+)?$/,
+      'invalid radar tile URL'
+    ),
+});
+
 export type StatusData = z.infer<typeof statusSchema>;
 export type MonitoringHistory = z.infer<typeof historySchema>;
 export type GroundEntryPoint = z.infer<typeof gepSchema>;
+export interface RadarMetadata {
+  available: true;
+  tileUrl: string;
+}
 
 type MapPoint = [number, number];
 type MapSegments = { west: MapPoint[]; east: MapPoint[] };
@@ -207,6 +221,7 @@ export const statusUrl = '/api/status';
 export const historyUrl = '/api/monitoring/history';
 export const groundEntryPointUrl = '/api/monitoring/ground-entry-point';
 export const poiUrl = '/api/pois/etas';
+export const radarMetadataUrl = '/api/weather/radar/rainviewer/metadata';
 export const mapOverlayUrls = [
   '/api/route/coordinates/west',
   '/api/route/coordinates/east',
@@ -222,6 +237,10 @@ export const parseHistory = (value: unknown): MonitoringHistory => {
 };
 export const parseGroundEntryPoint = (value: unknown): GroundEntryPoint =>
   gepSchema.parse(value);
+export const parseRadarMetadata = (value: unknown): RadarMetadata => {
+  const metadata = radarMetadataSchema.parse(value);
+  return { available: metadata.available, tileUrl: metadata.tile_url };
+};
 export const parseMapOverlays = (value: unknown): MapOverlays => {
   if (!Array.isArray(value) || value.length !== mapOverlayUrls.length) {
     throw new Error('invalid map response collection');
@@ -331,6 +350,12 @@ export async function fetchApplicablePois(
     .filter((poi) => poi.active !== false)
     .sort((left, right) => left.eta_seconds - right.eta_seconds)
     .slice(0, 5);
+}
+
+export async function fetchRadarMetadata(
+  signal?: AbortSignal
+): Promise<RadarMetadata> {
+  return parseRadarMetadata(await getJson(radarMetadataUrl, signal));
 }
 
 export async function fetchMapOverlays(

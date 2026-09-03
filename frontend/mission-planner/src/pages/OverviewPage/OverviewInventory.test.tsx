@@ -4,11 +4,14 @@ import { vi } from 'vitest';
 
 vi.mock('leaflet', () => ({ divIcon: (options: object) => options }));
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children, ...props }: React.PropsWithChildren<object>) => (
-    <div {...props}>{children}</div>
+  MapContainer: ({
+    children,
+    className,
+  }: React.PropsWithChildren<{ className?: string }>) => (
+    <div className={className}>{children}</div>
   ),
-  TileLayer: (props: object) => <div {...props} />,
-  Polyline: (props: object) => <div {...props} />,
+  TileLayer: ({ url }: { url: string }) => <div data-url={url} />,
+  Polyline: () => <div />,
   Marker: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
   Tooltip: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
   ZoomControl: () => <div />,
@@ -61,6 +64,12 @@ describe('OverviewInventory', () => {
         pois={[]}
         poiState={sourceState}
         refreshPois={async () => {}}
+        radar={{
+          available: true,
+          tileUrl: '/api/weather/radar/rainviewer/{z}/{x}/{y}.png?frame=123',
+        }}
+        radarState={sourceState}
+        refreshRadar={async () => {}}
         mapOverlays={{
           route: { west: [], east: [] },
           activeLinks: {
@@ -102,10 +111,18 @@ describe('OverviewInventory', () => {
 
   it('normalizes IDL coordinates and rejects nonfinite map input', () => {
     const normalized = renderToStaticMarkup(
-      <CurrentPositionMap latitude={10} longitude={540} />
+      <CurrentPositionMap
+        latitude={10}
+        longitude={540}
+        radar={{ state: 'unavailable', tileUrl: null, refresh: async () => {} }}
+      />
     );
     const rejected = renderToStaticMarkup(
-      <CurrentPositionMap latitude={Number.POSITIVE_INFINITY} longitude={0} />
+      <CurrentPositionMap
+        latitude={Number.POSITIVE_INFINITY}
+        longitude={0}
+        radar={{ state: 'unavailable', tileUrl: null, refresh: async () => {} }}
+      />
     );
 
     expect(normalized).toContain('Current position: 10.0000, -180.0000');
