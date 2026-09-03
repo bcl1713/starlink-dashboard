@@ -81,15 +81,17 @@ class PinnedHttpsTransport:
             raise RainViewerUnavailable("RainViewer source unavailable")
         host = parsed.hostname
         assert host is not None
-        candidates = self._resolve_public_ips(host)
         deadline = self._monotonic() + REQUEST_TIMEOUT_SECONDS
+        candidates = self._resolve_public_ips(host)
+        self._remaining(deadline)
         request_path = parsed.path or "/"
         if parsed.query:
             request_path = f"{request_path}?{parsed.query}"
 
         for ip in candidates:
-            remaining = deadline - self._monotonic()
-            if remaining <= 0:
+            try:
+                remaining = self._remaining(deadline)
+            except RainViewerUnavailable:
                 break
             try:
                 return self._fetch_candidate(
@@ -128,6 +130,31 @@ class PinnedHttpsTransport:
             raise RainViewerUnavailable("RainViewer source unavailable")
         return candidates
 
+    def _remaining(self, deadline: float) -> float:
+        remaining = deadline - self._monotonic()
+        if remaining <= 0:
+            raise RainViewerUnavailable("RainViewer source unavailable")
+        return remaining
+
+    def _read_body(
+        self,
+        response: http.client.HTTPResponse,
+        tls_socket: socket.socket,
+        max_bytes: int,
+        deadline: float,
+    ) -> bytes:
+        chunks: list[bytes] = []
+        remaining_bytes = max_bytes + 1
+        while remaining_bytes:
+            tls_socket.settimeout(self._remaining(deadline))
+            chunk = response.read(min(64 * 1024, remaining_bytes))
+            self._remaining(deadline)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining_bytes -= len(chunk)
+        return b"".join(chunks)
+
     def _fetch_candidate(
         self,
         ip: str,
@@ -142,7 +169,7 @@ class PinnedHttpsTransport:
         with self._connector((ip, 443), remaining) as raw_socket:
             raw_socket.settimeout(remaining)
             with context.wrap_socket(raw_socket, server_hostname=host) as tls_socket:
-                tls_socket.settimeout(max(0.001, deadline - self._monotonic()))
+                tls_socket.settimeout(self._remaining(deadline))
                 tls_socket.sendall(
                     (
                         f"GET {request_path} HTTP/1.1\r\nHost: {host}\r\n"
@@ -153,6 +180,7 @@ class PinnedHttpsTransport:
                 )
                 response = http.client.HTTPResponse(tls_socket)
                 try:
+                    tls_socket.settimeout(self._remaining(deadline))
                     response.begin()
                     content_type = response.getheader("Content-Type", "").split(";", 1)[
                         0
@@ -170,12 +198,9 @@ class PinnedHttpsTransport:
                             raise RainViewerUnavailable("RainViewer source unavailable")
                     if response.status != 200 or content_type != expected_type:
                         raise RainViewerUnavailable("RainViewer source unavailable")
-                    tls_socket.settimeout(max(0.001, deadline - self._monotonic()))
-                    body = response.read(max_bytes + 1)
-                    if (
-                        len(body) > max_bytes
-                        or (declared_size is not None and len(body) != declared_size)
-                        or self._monotonic() > deadline
+                    body = self._read_body(response, tls_socket, max_bytes, deadline)
+                    if len(body) > max_bytes or (
+                        declared_size is not None and len(body) != declared_size
                     ):
                         raise RainViewerUnavailable("RainViewer source unavailable")
                     return body

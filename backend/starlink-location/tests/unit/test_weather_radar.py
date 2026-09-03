@@ -6,6 +6,7 @@ from unittest.mock import Mock
 from urllib.error import URLError
 
 import pytest
+
 from app.services.weather_radar import (
     PinnedHttpsTransport,
     RainViewerRadarService,
@@ -164,6 +165,36 @@ def test_pinned_transport_falls_back_to_later_public_address_with_original_sni()
     assert socket.closed == 2
 
 
+def test_pinned_transport_starts_aggregate_deadline_before_dns_resolution() -> None:
+    now = 0.0
+    connector = Mock(
+        side_effect=AssertionError("connection must not start after DNS expiry")
+    )
+
+    def monotonic() -> float:
+        return now
+
+    def resolver(*_args: object, **_kwargs: object) -> list[tuple[object, ...]]:
+        nonlocal now
+        now = 6.0
+        return [(2, 1, 6, "", ("8.8.8.8", 443))]
+
+    transport = PinnedHttpsTransport(
+        resolver=resolver,
+        connector=connector,
+        monotonic=monotonic,
+    )
+
+    with pytest.raises(RainViewerUnavailable, match="source unavailable"):
+        transport.fetch(
+            "https://tilecache.rainviewer.com/v2/radar/latest/512/0/0/0/2/1_1.png",
+            max_bytes=16,
+            expected_type="image/png",
+        )
+
+    connector.assert_not_called()
+
+
 def test_pinned_transport_sanitizes_all_address_failures() -> None:
     attempts: list[tuple[str, int]] = []
 
@@ -187,6 +218,31 @@ def test_pinned_transport_sanitizes_all_address_failures() -> None:
         )
 
     assert attempts == [("8.8.8.8", 443), ("2001:4860:4860::8888", 443)]
+
+
+def test_pinned_transport_rechecks_timeout_for_each_body_chunk() -> None:
+    body = b"x" * (64 * 1024 + 1)
+    socket = _FakeSocket(
+        b"HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: "
+        + str(len(body)).encode()
+        + b"\r\n\r\n"
+        + body
+    )
+    transport = PinnedHttpsTransport(
+        resolver=lambda *_args, **_kwargs: [(2, 1, 6, "", ("8.8.8.8", 443))],
+        connector=lambda *_args: socket,
+        context_factory=_FakeContext,
+    )
+
+    assert (
+        transport.fetch(
+            "https://tilecache.rainviewer.com/v2/radar/latest/512/0/0/0/2/1_1.png",
+            max_bytes=len(body),
+            expected_type="image/png",
+        )
+        == body
+    )
+    assert len(socket.timeouts) >= 6
 
 
 def test_pinned_transport_rejects_short_content_length_body() -> None:
