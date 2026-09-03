@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
 import { act, renderHook } from '@testing-library/react';
-import { createRef } from 'react';
+import { createRef, StrictMode } from 'react';
+import type { PropsWithChildren } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useOverviewFullscreen } from './useOverviewFullscreen';
 
@@ -22,6 +23,12 @@ function installFullscreenState() {
     get: () => fullscreenElement,
   });
   return {
+    assign(element: Element | null) {
+      fullscreenElement = element;
+    },
+    dispatchChange() {
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
     set(element: Element | null) {
       fullscreenElement = element;
       document.dispatchEvent(new Event('fullscreenchange'));
@@ -35,6 +42,34 @@ afterEach(() => {
 });
 
 describe('useOverviewFullscreen', () => {
+  it('retains one owned entry after platform success until fullscreenchange', async () => {
+    const state = installFullscreenState();
+    const platform = deferred();
+    const root = document.createElement('main');
+    root.requestFullscreen = vi.fn(() => platform.promise);
+    document.body.append(root);
+    const rootRef = createRef<HTMLElement>();
+    rootRef.current = root;
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <StrictMode>{children}</StrictMode>
+    );
+    const { result } = renderHook(() => useOverviewFullscreen(rootRef), {
+      wrapper,
+    });
+
+    const first = result.current.enter();
+    state.assign(root);
+    await act(async () => platform.resolve());
+    await expect(first).resolves.toBeUndefined();
+
+    const duplicate = result.current.enter();
+    expect(duplicate).toBe(first);
+    expect(root.requestFullscreen).toHaveBeenCalledOnce();
+
+    act(() => state.dispatchChange());
+    expect(result.current.isFullscreen).toBe(true);
+  });
+
   it('consumes native success, restores focus on Escape, and accepts a fresh entry', async () => {
     const state = installFullscreenState();
     const firstPlatform = deferred();

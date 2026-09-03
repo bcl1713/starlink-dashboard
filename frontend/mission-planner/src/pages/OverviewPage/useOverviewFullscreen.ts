@@ -26,6 +26,10 @@ export function useOverviewFullscreen(
   const returnFocus = useRef<HTMLElement | null>(null);
   const owned = useRef(false);
 
+  const settleCaller = useCallback((attempt: EntryAttempt) => {
+    if (activeEntry.current === attempt) attempt.settle();
+  }, []);
+
   const consumeEntry = useCallback(
     (attempt: EntryAttempt, failed: boolean) => {
       if (activeEntry.current !== attempt) return;
@@ -95,14 +99,14 @@ export function useOverviewFullscreen(
     activeEntry.current = attempt;
     try {
       void root.requestFullscreen().then(
-        () => consumeEntry(attempt, false),
+        () => settleCaller(attempt),
         () => consumeEntry(attempt, true)
       );
     } catch {
       consumeEntry(attempt, true);
     }
     return promise;
-  }, [consumeEntry, rootRef]);
+  }, [consumeEntry, rootRef, settleCaller]);
 
   const exit = useCallback(async () => {
     if (document.fullscreenElement !== rootRef.current) return;

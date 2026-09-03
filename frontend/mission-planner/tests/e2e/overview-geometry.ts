@@ -8,6 +8,29 @@ interface Box {
   height: number;
 }
 
+interface OverviewGeometryOptions {
+  poiNames?: readonly string[];
+  selectedInterval?: string | RegExp;
+  freshness?: RegExp;
+}
+
+export const overviewInventoryNames = [
+  'clock-utc',
+  'clock-local',
+  'clock-takeoff',
+  'clock-landing',
+  'current-position-map',
+  'top-applicable-pois',
+  'latency',
+  'download',
+  'upload',
+  'ground-entry-point',
+  'obstruction',
+  'packet-loss',
+  'selected-interval',
+  'last-update',
+] as const;
+
 const overlaps = (left: Box, right: Box) =>
   !(
     left.x + left.width <= right.x ||
@@ -53,8 +76,13 @@ export async function enterOverviewFullscreen(page: Page) {
 
 export async function measureOverviewGeometry(
   page: Page,
-  poiNames: readonly string[]
+  options: OverviewGeometryOptions = {}
 ) {
+  const {
+    poiNames = [],
+    selectedInterval = /Selected interval:/,
+    freshness = /Updated|stale|failure|No successful/,
+  } = options;
   const root = page.getByTestId('overview-root');
   const inventory = [
     ...Array.from({ length: 4 }, (_, index) =>
@@ -68,10 +96,10 @@ export async function measureOverviewGeometry(
     root.getByRole('heading', { name: 'Ground entry point' }).locator('..'),
     root.getByRole('heading', { name: 'Obstruction' }).locator('..'),
     root.getByRole('heading', { name: 'Packet loss' }).locator('..'),
-    root.getByText(/Selected interval:/, { exact: false }),
-    root
-      .getByText(/Updated|stale|failure|No successful/, { exact: false })
-      .last(),
+    root.getByText(selectedInterval, {
+      exact: typeof selectedInterval === 'string',
+    }),
+    root.getByText(freshness, { exact: false }).last(),
   ];
   const inventoryBoxes = [];
   for (const region of inventory) {

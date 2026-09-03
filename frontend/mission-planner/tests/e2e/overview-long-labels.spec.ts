@@ -20,7 +20,7 @@ test('1920x1080 fullscreen fits five accepted 200-character POI names', async ({
   }
 
   await enterOverviewFullscreen(page);
-  const geometry = await measureOverviewGeometry(page, poiNames);
+  const geometry = await measureOverviewGeometry(page, { poiNames });
   process.stdout.write(
     `OVERVIEW_LONG_LABEL_GEOMETRY ${JSON.stringify(geometry)}\n`
   );
