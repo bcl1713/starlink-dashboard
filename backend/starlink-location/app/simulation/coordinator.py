@@ -50,13 +50,14 @@ class SimulationCoordinator:
 
         # Last known good state for graceful degradation
         self._last_valid_telemetry: TelemetryData | None = None
+        self._last_received_at: datetime | None = None
 
         # Route Manager for KML route integration (Phase 5 feature)
         self.route_manager = None
         self._previous_active_route_id = None  # Track route changes
 
         # Get initial telemetry
-        self._last_valid_telemetry = self._generate_telemetry()
+        self._accept_telemetry(self._generate_telemetry())
 
     def update(self) -> TelemetryData:
         """
@@ -72,7 +73,7 @@ class SimulationCoordinator:
             self._update_route_following()
 
             telemetry = self._generate_telemetry()
-            self._last_valid_telemetry = telemetry
+            self._accept_telemetry(telemetry)
             return telemetry
         except (
             RuntimeError,
@@ -232,6 +233,17 @@ class SimulationCoordinator:
             environmental=environmental_data,
         )
 
+    def _accept_telemetry(self, telemetry: TelemetryData) -> None:
+        """Record one generated observation and its cache receipt instant."""
+        self._last_valid_telemetry = telemetry
+        self._last_received_at = datetime.now(timezone.utc)
+
+    def get_current_telemetry_snapshot(self) -> tuple[TelemetryData, datetime]:
+        """Return the cached observation with its stable receipt instant."""
+        if self._last_valid_telemetry is None or self._last_received_at is None:
+            raise RuntimeError("No telemetry available. Call update() first.")
+        return self._last_valid_telemetry, self._last_received_at
+
     def get_current_telemetry(self) -> TelemetryData:
         """
         Get last generated telemetry without updating.
@@ -250,7 +262,7 @@ class SimulationCoordinator:
         self.network_sim.reset()
         self.obstruction_sim.reset()
         self.speed_tracker.reset()
-        self._last_valid_telemetry = self._generate_telemetry()
+        self._accept_telemetry(self._generate_telemetry())
 
     def set_position_progress(self, progress: float) -> None:
         """
@@ -307,7 +319,7 @@ class SimulationCoordinator:
 
         # Reset start time
         self.start_time = time.time()
-        self._last_valid_telemetry = self._generate_telemetry()
+        self._accept_telemetry(self._generate_telemetry())
 
     def set_route_manager(self, manager) -> None:
         """

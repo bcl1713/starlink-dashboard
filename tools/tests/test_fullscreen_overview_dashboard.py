@@ -21,11 +21,7 @@ CORE_MAP_LAYERS = {
 }
 NORMALIZED_LONGITUDE_EXPR = "(((starlink_dish_longitude_degrees + 180) % 360) - 180)"
 DASHBOARD_RANGE_END = "${__to:date:seconds}"
-RADAR_LAYER_NAME = "Weather Radar (RainViewer)"
-RAINVIEWER_RADAR_TILE_URL = (
-    "/api/datasources/proxy/uid/infinity/api/weather/radar/rainviewer/{z}/{x}/{y}.png"
-    "?refresh=${__to:date:YYYYMMDDHHmm}"
-)
+
 ARCGIS_WORLD_IMAGERY_TILE_URL = (
     "https://server.arcgisonline.com/ArcGIS/rest/services/"
     "World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -178,35 +174,11 @@ def test_fullscreen_overview_current_position_uses_joined_marker_frame() -> None
     }
 
 
-def test_fullscreen_overview_has_optional_rainviewer_radar_below_operational_layers() -> (
-    None
-):
-    layers = _current_position_layers()
-    layers_by_name = {layer["name"]: layer for layer in layers}
-    radar_layer = layers_by_name[RADAR_LAYER_NAME]
+def test_fullscreen_overview_defers_weather_radar_without_weakening_core_layers() -> None:
+    serialized_layers = json.dumps(_current_position_layers()).lower()
 
-    assert radar_layer["type"] == "xyz"
-    assert radar_layer["config"] == {
-        "attribution": "Weather radar © Rain Viewer / MeteoLab Inc.",
-        "maxZoom": 7,
-        "minZoom": 0,
-        "url": RAINVIEWER_RADAR_TILE_URL,
-    }
-    assert radar_layer["opacity"] == 0.7
-    assert layers.index(radar_layer) < min(
-        layers.index(layers_by_name[layer_name]) for layer_name in CORE_MAP_LAYERS
-    )
-
-
-def test_fullscreen_overview_rainviewer_cache_buster_does_not_use_refresh_variable() -> (
-    None
-):
-    dashboard = _fullscreen_overview_dashboard()
-    radar_layer = _layers_by_name()[RADAR_LAYER_NAME]
-    variable_names = {variable["name"] for variable in dashboard["templating"]["list"]}
-
-    assert radar_layer["config"]["url"].endswith("?refresh=${__to:date:YYYYMMDDHHmm}")
-    assert "radar_refresh" not in variable_names
+    assert "radar" not in serialized_layers
+    assert "rainviewer" not in serialized_layers
 
 
 def test_fullscreen_overview_has_no_hcx_comm_overlay_layer() -> None:
