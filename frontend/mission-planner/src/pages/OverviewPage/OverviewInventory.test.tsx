@@ -16,7 +16,10 @@ vi.mock('react-leaflet', () => ({
   Tooltip: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
   ZoomControl: () => <div />,
   ScaleControl: () => <div />,
-  useMapEvents: () => null,
+  useMap: () => ({
+    getContainer: () => document.createElement('div'),
+    invalidateSize: () => undefined,
+  }),
 }));
 import { CurrentPositionMap } from './CurrentPositionMap';
 import { OverviewInventory } from './OverviewInventory';

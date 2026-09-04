@@ -87,7 +87,7 @@
   display: grid;
   min-height: 0;
   margin: 0;
-  grid-template-rows: minmax(12rem, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 .operations-tile-map {
   min-height: 12rem;

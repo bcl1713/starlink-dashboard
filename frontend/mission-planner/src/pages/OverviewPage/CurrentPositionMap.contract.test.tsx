@@ -17,13 +17,19 @@ vi.mock('react-leaflet', () => ({
   TileLayer: ({ url }: { url: string }) => (
     <div data-tile-layer="true" data-url={url} />
   ),
-  Polyline: () => <div data-polyline="true" />,
+  Polyline: ({ color }: { color: string }) => (
+    <div data-polyline="true" data-color={color} />
+  ),
   Marker: ({ children }: React.PropsWithChildren) => (
     <div data-marker="true">{children}</div>
   ),
   Tooltip: ({ children }: React.PropsWithChildren) => <span>{children}</span>,
   ZoomControl: () => <div data-zoom-control="true" />,
   ScaleControl: () => <div data-scale-control="true" />,
+  useMap: () => ({
+    getContainer: () => document.createElement('div'),
+    invalidateSize: () => undefined,
+  }),
   useMapEvents: () => null,
 }));
 
@@ -65,15 +71,19 @@ describe('CurrentPositionMap Grafana-card contract', () => {
     expect(html).toContain('data-zoom-control="true"');
     expect(html).toContain('data-scale-control="true"');
     expect(html).toContain('Planned Route');
-    expect(html).toContain('Active X-band Link - Normal');
-    expect(html).toContain('Active X-band Link - Warning');
+    expect(html).toContain('Active X-band Link');
+    expect(html).toContain('Active X-band Link status: Warning');
+    expect(html).toContain('data-color="#facc15"');
+    expect(html).not.toContain('Active X-band Link - Normal');
+    expect(html).not.toContain('Active X-band Link - Warning');
+    expect(html).not.toContain('Measure distance');
     expect(html).toContain('Position History');
     expect(html).toContain('Waypoint');
     expect(html).toContain('SAT-1');
     expect(html).toContain('Event');
     expect(html).toContain('GEP');
     expect(html).toContain('Heading 135°');
-    expect(html).toContain('Measure distance');
+    expect(html).not.toContain('Measure distance');
     expect(html).not.toContain('<svg');
   });
 
@@ -97,5 +107,7 @@ describe('CurrentPositionMap Grafana-card contract', () => {
     expect(html).not.toContain('Radar unavailable');
     expect(html).not.toContain('Retry radar');
     expect(html).toContain('server.arcgisonline.com/ArcGIS/rest/services');
+    expect(html).toContain('Active X-band Link status: Normal');
+    expect(html).toContain('data-color="#22c55e"');
   });
 });

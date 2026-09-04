@@ -7,10 +7,10 @@ import {
   ScaleControl,
   TileLayer,
   Tooltip,
-  useMapEvents,
+  useMap,
   ZoomControl,
 } from 'react-leaflet';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import 'leaflet/dist/leaflet.css';
 
 export interface MapMarker {
@@ -81,29 +81,22 @@ function MapMarkers({
   ));
 }
 
-function MapMeasurement({ active }: { active: boolean }) {
-  const [start, setStart] = useState<LatLngExpression | null>(null);
-  const [distance, setDistance] = useState<number | null>(null);
-  useMapEvents({
-    click(event) {
-      if (!active) return;
-      if (!start) {
-        setStart(event.latlng);
-        setDistance(null);
-        return;
-      }
-      setDistance(event.latlng.distanceTo(start));
-      setStart(null);
-    },
-  });
-  if (!active) return null;
-  return (
-    <p className="map-measurement" role="status">
-      {distance === null
-        ? 'Select two points to measure'
-        : `Distance ${Math.round(distance)} m`}
-    </p>
-  );
+function MapSizeInvalidator() {
+  const map = useMap();
+
+  useEffect(() => {
+    const invalidate = () => map.invalidateSize({ pan: false });
+    const frame = requestAnimationFrame(invalidate);
+    const observer = new ResizeObserver(invalidate);
+    observer.observe(map.getContainer());
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [map]);
+
+  return null;
 }
 
 export function CurrentPositionMap({
@@ -121,12 +114,10 @@ export function CurrentPositionMap({
 }: Props) {
   const [visible, setVisible] = useState({
     route: true,
-    activeNormal: true,
-    activeWarning: true,
+    activeLink: true,
     history: true,
     markers: true,
   });
-  const [measuring, setMeasuring] = useState(false);
   const position =
     latitude === null ||
     latitude === undefined ||
@@ -138,10 +129,14 @@ export function CurrentPositionMap({
 
   const center: LatLngExpression = [position.latitude, position.longitude];
   const alternative = `Current position: ${position.latitude.toFixed(4)}, ${position.longitude.toFixed(4)}`;
+  const hasWarningLink =
+    activeLinks.warning.west.length > 0 || activeLinks.warning.east.length > 0;
+  const activeLink = hasWarningLink
+    ? { color: '#facc15', segments: activeLinks.warning, state: 'Warning' }
+    : { color: '#22c55e', segments: activeLinks.normal, state: 'Normal' };
   const controls = [
     ['route', 'Planned Route'],
-    ['activeNormal', 'Active X-band Link - Normal'],
-    ['activeWarning', 'Active X-band Link - Warning'],
+    ['activeLink', 'Active X-band Link'],
     ['history', 'Position History'],
     ['markers', 'Flight route markers, satellites, and mission events'],
   ] as const;
@@ -153,6 +148,9 @@ export function CurrentPositionMap({
         {controls.map(([key, label]) => (
           <label key={key}>
             <input
+              aria-describedby={
+                key === 'activeLink' ? 'active-link-status' : undefined
+              }
               checked={visible[key]}
               onChange={() =>
                 setVisible((current) => ({ ...current, [key]: !current[key] }))
@@ -162,13 +160,9 @@ export function CurrentPositionMap({
             {label}
           </label>
         ))}
-        <button
-          aria-pressed={measuring}
-          onClick={() => setMeasuring((current) => !current)}
-          type="button"
-        >
-          Measure distance
-        </button>
+        <p id="active-link-status" role="status">
+          Active X-band Link status: {activeLink.state}
+        </p>
       </fieldset>
       <MapContainer
         aria-label={alternative}
@@ -181,6 +175,7 @@ export function CurrentPositionMap({
         zoom={4}
         zoomControl={false}
       >
+        <MapSizeInvalidator />
         <ZoomControl position="topright" />
         <ScaleControl imperial={false} />
         <TileLayer attribution="Tiles © Esri" url={ARCGIS_IMAGERY} />
@@ -191,30 +186,16 @@ export function CurrentPositionMap({
             <Polyline color="#d97706" positions={route.east} weight={2} />
           </>
         )}
-        {visible.activeNormal && (
+        {visible.activeLink && (
           <>
             <Polyline
-              color="#22c55e"
-              positions={activeLinks.normal.west}
+              color={activeLink.color}
+              positions={activeLink.segments.west}
               weight={4}
             />
             <Polyline
-              color="#22c55e"
-              positions={activeLinks.normal.east}
-              weight={4}
-            />
-          </>
-        )}
-        {visible.activeWarning && (
-          <>
-            <Polyline
-              color="#facc15"
-              positions={activeLinks.warning.west}
-              weight={4}
-            />
-            <Polyline
-              color="#facc15"
-              positions={activeLinks.warning.east}
+              color={activeLink.color}
+              positions={activeLink.segments.east}
               weight={4}
             />
           </>
@@ -253,7 +234,6 @@ export function CurrentPositionMap({
         <Marker icon={pointIcon('aircraft', heading)} position={center}>
           <Tooltip>Current Position — Heading {heading}°</Tooltip>
         </Marker>
-        <MapMeasurement active={measuring} />
       </MapContainer>
       <figcaption>{alternative}</figcaption>
     </figure>
