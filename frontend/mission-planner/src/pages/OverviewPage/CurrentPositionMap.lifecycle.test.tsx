@@ -20,7 +20,9 @@ vi.mock('leaflet', () => ({
 }));
 
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
+  MapContainer: ({ children }: React.PropsWithChildren) => (
+    <div>{children}</div>
+  ),
   Marker: ({ children }: React.PropsWithChildren) => <div>{children}</div>,
   Polyline: () => null,
   ScaleControl: () => null,
