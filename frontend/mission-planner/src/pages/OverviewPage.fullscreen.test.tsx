@@ -62,6 +62,35 @@ beforeEach(() => {
 });
 
 describe('OverviewPage fullscreen control', () => {
+  it('contains document scroll while the mounted overview root is fullscreen', async () => {
+    render(<OverviewPage />);
+    const root = screen.getByTestId('overview-root');
+    root.requestFullscreen = vi.fn().mockResolvedValue(undefined);
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    });
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      value: root,
+    });
+    act(() => document.dispatchEvent(new Event('fullscreenchange')));
+
+    expect(
+      document.documentElement.classList.contains('overview-fullscreen-active')
+    ).toBe(true);
+    expect(root.classList.contains('overview-page--fullscreen')).toBe(true);
+
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      value: null,
+    });
+    act(() => document.dispatchEvent(new Event('fullscreenchange')));
+    expect(
+      document.documentElement.classList.contains('overview-fullscreen-active')
+    ).toBe(false);
+  });
+
   it('targets the mounted overview root and keeps its selected cadence mounted', async () => {
     render(<OverviewPage />);
     const root = screen.getByTestId('overview-root');

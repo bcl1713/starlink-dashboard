@@ -13,10 +13,15 @@ test.describe('Operations overview display', () => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     const statusCount = await installOverviewRoutes(page);
     const consoleErrors: string[] = [];
+    const requestedPaths: string[] = [];
+    page.on('request', (request) => {
+      requestedPaths.push(new URL(request.url()).pathname);
+    });
     page.on('console', (message) => {
       if (message.type() === 'error') consoleErrors.push(message.text());
     });
     await page.goto('/overview');
+    expect(requestedPaths).not.toContain('/vite.svg');
     await expect(
       page.getByText('Waypoint 5 with safe operational label')
     ).toBeVisible();

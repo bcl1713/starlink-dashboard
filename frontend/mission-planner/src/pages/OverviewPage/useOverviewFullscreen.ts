@@ -81,6 +81,16 @@ export function useOverviewFullscreen(
     };
   }, [consumeEntry, rootRef]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      'overview-fullscreen-active',
+      isFullscreen
+    );
+    return () => {
+      document.documentElement.classList.remove('overview-fullscreen-active');
+    };
+  }, [isFullscreen]);
+
   const enter = useCallback(() => {
     if (activeEntry.current) return activeEntry.current.promise;
     const root = rootRef.current;

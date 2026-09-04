@@ -155,6 +155,29 @@
   background: #281b0c;
   color: #ffdca8;
 }
+html.overview-fullscreen-active,
+html.overview-fullscreen-active body {
+  overflow: hidden;
+}
+
+.operations-map-layers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem 0.75rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.5rem;
+}
+.operations-map-layers label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-width: 0;
+}
+.operations-map-layers button {
+  min-width: 0;
+}
+
 .overview-page:is(:fullscreen, .overview-page--fullscreen) {
   --overview-fullscreen-gap: 0.75rem;
   --overview-fullscreen-padding: 1.25rem;
@@ -190,6 +213,8 @@
   gap: var(--overview-fullscreen-gap);
 }
 .overview-page:is(:fullscreen, .overview-page--fullscreen) .overview-grid {
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   grid-template-columns: repeat(6, minmax(0, 1fr));
