@@ -1,12 +1,37 @@
-import { Canvas } from '@react-three/fiber';
+import { Suspense, useEffect, useMemo } from 'react';
+import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
+import * as THREE from 'three';
 import './OverviewPage.css';
 
 function Globe() {
+  const sourceTexture = useLoader(THREE.TextureLoader, '/earth-night.jpg');
+
+  const colorMap = useMemo(() => {
+    const texture = sourceTexture.clone();
+
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.needsUpdate = true;
+    return texture;
+  }, [sourceTexture]);
+
+  useEffect(() => {
+    return () => {
+      colorMap.dispose();
+    };
+  }, [colorMap]);
+
   return (
     <mesh>
       <sphereGeometry args={[2, 64, 64]} />
-      <meshStandardMaterial color="#31506e" roughness={0.65} metalness={0.15} />
+      <meshStandardMaterial
+        map={colorMap}
+        emissive="#ffffff"
+        emissiveMap={colorMap}
+        emissiveIntensity={0.75}
+        roughness={0.8}
+        metalness={0.05}
+      />
     </mesh>
   );
 }
@@ -18,7 +43,9 @@ export function OverviewPage() {
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.35} />
         <directionalLight position={[5, 3, 5]} intensity={1.4} />
-        <Globe />
+        <Suspense fallback={null}>
+          <Globe />
+        </Suspense>
         <OrbitControls
           enablePan={false}
           enableDamping
