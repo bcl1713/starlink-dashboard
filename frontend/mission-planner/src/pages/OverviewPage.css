@@ -1,0 +1,11 @@
+.overview-page {
+  height: calc(100vh - 4rem);
+  min-height: 32rem;
+  background: #030307;
+}
+
+.overview-page canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
