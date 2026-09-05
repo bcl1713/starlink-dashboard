@@ -4,6 +4,37 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 
+const atmosphereVertexShader = `
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+
+    vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition = -modelViewPosition.xyz;
+
+    gl_Position = projectionMatrix * modelViewPosition;
+  }
+`;
+
+const atmosphereFragmentShader = `
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+
+  void main() {
+    float viewAngle = max(
+      dot(normalize(vNormal), normalize(vViewPosition)),
+      0.0
+    );
+
+    float rim = pow(1.0 - viewAngle, 3.0);
+    vec3 atmosphereColor = vec3(0.16, 0.55, 1.0);
+
+    gl_FragColor = vec4(atmosphereColor * rim, rim * 0.22);
+  }
+`;
+
 function Globe() {
   const sourceTexture = useLoader(THREE.TextureLoader, '/earth-night.jpg');
 
@@ -36,6 +67,21 @@ function Globe() {
   );
 }
 
+function Atmosphere() {
+  return (
+    <mesh scale={1.025}>
+      <sphereGeometry args={[2, 64, 64]} />
+      <shaderMaterial
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        vertexShader={atmosphereVertexShader}
+        fragmentShader={atmosphereFragmentShader}
+      />
+    </mesh>
+  );
+}
+
 export function OverviewPage() {
   return (
     <main className="overview-page">
@@ -45,6 +91,7 @@ export function OverviewPage() {
         <directionalLight position={[5, 3, 5]} intensity={1.4} />
         <Suspense fallback={null}>
           <Globe />
+          <Atmosphere />
         </Suspense>
         <OrbitControls
           enablePan={false}
