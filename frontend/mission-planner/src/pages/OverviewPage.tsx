@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 
@@ -89,6 +89,33 @@ export function OverviewPage() {
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.35} />
         <directionalLight position={[5, 3, 5]} intensity={1.4} />
+        <Stars
+          radius={50}
+          depth={0}
+          count={1500}
+          factor={3}
+          saturation={0}
+          fade
+          speed={1.1}
+        />
+        <Stars
+          radius={50}
+          depth={0}
+          count={1500}
+          factor={3}
+          saturation={0}
+          fade
+          speed={0.75}
+        />
+        <Stars
+          radius={50}
+          depth={0}
+          count={1500}
+          factor={3}
+          saturation={0}
+          fade
+          speed={0.1}
+        />
         <Suspense fallback={null}>
           <Globe />
           <Atmosphere />
