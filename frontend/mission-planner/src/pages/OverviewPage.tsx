@@ -3,11 +3,17 @@ import { Canvas, useLoader } from '@react-three/fiber';
 import { Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
-import { greatCirclePoints } from './globe-route';
+import { greatCirclePoints, type GlobeCoordinate } from './globe-route';
+import { globePosition } from './globe-coordinates';
+
+const demoRouteEndpoints = {
+  origin: { latitude: 41.8781, longitude: -87.6298 },
+  destination: { latitude: 51.5072, longitude: -0.1276 },
+} as const;
 
 const chicagoToLondonRoute = greatCirclePoints(
-  { latitude: 41.8781, longitude: -87.6298 },
-  { latitude: 51.5072, longitude: -0.1276 },
+  demoRouteEndpoints.origin,
+  demoRouteEndpoints.destination,
   2.02,
   64
 );
@@ -53,6 +59,22 @@ function DemoRoute() {
       opacity={0.85}
       depthWrite={false}
     />
+  );
+}
+
+interface RouteEndpointProps {
+  coordinate: GlobeCoordinate;
+  color: string;
+}
+
+function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
+  return (
+    <mesh
+      position={globePosition(coordinate.latitude, coordinate.longitude, 2.0)}
+    >
+      <sphereGeometry args={[0.035, 24, 24]} />
+      <meshBasicMaterial color={color} />
+    </mesh>
   );
 }
 
@@ -141,6 +163,14 @@ export function OverviewPage() {
           <Globe />
           <Atmosphere />
           <DemoRoute />
+          <RouteEndpoint
+            coordinate={demoRouteEndpoints.origin}
+            color="#ffb000"
+          />
+          <RouteEndpoint
+            coordinate={demoRouteEndpoints.destination}
+            color="#62d9ff"
+          />
         </Suspense>
         <OrbitControls
           enablePan={false}
