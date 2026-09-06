@@ -6,7 +6,7 @@ import './OverviewPage.css';
 import { type GlobeCoordinate } from './globe-route';
 import { globePosition } from './globe-coordinates';
 import { activeRouteId } from './active-globe-route';
-import { projectRoutePoints } from './globe-route-projection';
+import { projectRouteArc } from './globe-route-projection';
 import { useRoute, useRoutes } from '../hooks/api/useRoutes';
 import { sunLightPosition } from './solar-position';
 import { millisecondsUntilNextMinute } from './solar-clock';
@@ -139,7 +139,11 @@ export function OverviewPage() {
     error: routeError,
   } = useRoute(routeId ?? '');
 
-  const routePoints = projectRoutePoints(activeRoute?.points ?? [], 2.002);
+  const routePoints = useMemo(
+    () => projectRouteArc(activeRoute?.points ?? [], 2.02, 8),
+    [activeRoute?.points]
+  );
+
   const origin = activeRoute?.points?.at(0);
   const destination = activeRoute?.points?.at(-1);
 

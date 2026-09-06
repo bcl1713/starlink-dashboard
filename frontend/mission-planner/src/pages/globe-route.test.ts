@@ -34,4 +34,47 @@ describe('greatCirclePoints', () => {
       expect(Math.hypot(x, y, z)).toBeCloseTo(2.02, 10);
     }
   });
+  it('returns stable repeated points for coincident coordinates', () => {
+    const route = greatCirclePoints(
+      { latitude: 0, longitude: 0 },
+      { latitude: 0, longitude: 0 },
+      2.02,
+      4
+    );
+
+    expect(route).toHaveLength(5);
+
+    for (const point of route) {
+      expect(Number.isFinite(point[0])).toBe(true);
+      expect(Number.isFinite(point[1])).toBe(true);
+      expect(Number.isFinite(point[2])).toBe(true);
+      expect(Math.hypot(...point)).toBeCloseTo(2.02, 10);
+    }
+  });
+  it('keeps an exact antipodal route finite and on the globe surface', () => {
+    const route = greatCirclePoints(
+      { latitude: 0, longitude: 0 },
+      { latitude: 0, longitude: 180 },
+      2.02,
+      4
+    );
+
+    expect(route).toHaveLength(5);
+    expect(route[0][0]).toBeCloseTo(2.02, 10);
+    expect(route[0][1]).toBeCloseTo(0, 10);
+    expect(route[0][2]).toBeCloseTo(0, 10);
+
+    const endpoint = route.at(-1)!;
+
+    expect(endpoint[0]).toBeCloseTo(-2.02, 10);
+    expect(endpoint[1]).toBeCloseTo(0, 10);
+    expect(endpoint[2]).toBeCloseTo(0, 10);
+
+    for (const point of route) {
+      expect(Number.isFinite(point[0])).toBe(true);
+      expect(Number.isFinite(point[1])).toBe(true);
+      expect(Number.isFinite(point[2])).toBe(true);
+      expect(Math.hypot(...point)).toBeCloseTo(2.02, 10);
+    }
+  });
 });
