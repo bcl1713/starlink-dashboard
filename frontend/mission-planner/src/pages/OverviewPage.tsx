@@ -111,10 +111,9 @@ export function OverviewPage() {
       timeoutId = setTimeout(updateSolarTime, millisecondsUntilNextMinute(now));
     };
 
-    timeoutId = setTimeout(
-      updateSolarTime,
-      millisecondsUntilNextMinute(solarTime)
-    );
+    const now = new Date();
+
+    timeoutId = setTimeout(updateSolarTime, millisecondsUntilNextMinute(now));
 
     return () => {
       clearTimeout(timeoutId);
