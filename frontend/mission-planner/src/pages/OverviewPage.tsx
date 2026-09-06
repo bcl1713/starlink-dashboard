@@ -1,8 +1,16 @@
 import { Suspense, useEffect, useMemo } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
+import { greatCirclePoints } from './globe-route';
+
+const chicagoToLondonRoute = greatCirclePoints(
+  { latitude: 41.8781, longitude: -87.6298 },
+  { latitude: 51.5072, longitude: -0.1276 },
+  2.02,
+  64
+);
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -34,6 +42,19 @@ const atmosphereFragmentShader = `
     gl_FragColor = vec4(atmosphereColor * rim, rim * 0.22);
   }
 `;
+
+function DemoRoute() {
+  return (
+    <Line
+      points={chicagoToLondonRoute}
+      color="#ffb000"
+      lineWidth={2}
+      transparent
+      opacity={0.85}
+      depthWrite={false}
+    />
+  );
+}
 
 function Globe() {
   const sourceTexture = useLoader(THREE.TextureLoader, '/earth-night.jpg');
@@ -119,6 +140,7 @@ export function OverviewPage() {
         <Suspense fallback={null}>
           <Globe />
           <Atmosphere />
+          <DemoRoute />
         </Suspense>
         <OrbitControls
           enablePan={false}
