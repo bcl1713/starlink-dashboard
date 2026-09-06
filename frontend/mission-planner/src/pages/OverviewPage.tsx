@@ -128,6 +128,32 @@ function Atmosphere() {
 export function OverviewPage() {
   return (
     <main className="overview-page">
+      <aside className="globe-legend" aria-label="Route legend">
+        <p className="globe-legend__title">Demo route</p>
+        <ul className="globe-legend__items">
+          <li>
+            <span
+              className="globe-legend__marker globe-legend__marker--origin"
+              aria-hidden="true"
+            />
+            <span>Origin</span>
+            <strong>Chicago</strong>
+          </li>
+          <li>
+            <span
+              className="globe-legend__marker globe-legend__marker--destination"
+              aria-hidden="true"
+            />
+            <span>Destination</span>
+            <strong>London</strong>
+          </li>
+          <li>
+            <span className="globe-legend__route" aria-hidden="true" />
+            <span>Path</span>
+            <strong>Great-circle route</strong>
+          </li>
+        </ul>
+      </aside>
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.35} />
