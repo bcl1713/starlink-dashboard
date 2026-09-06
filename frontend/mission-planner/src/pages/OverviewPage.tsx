@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,6 +8,8 @@ import { globePosition } from './globe-coordinates';
 import { activeRouteId } from './active-globe-route';
 import { projectRoutePoints } from './globe-route-projection';
 import { useRoute, useRoutes } from '../hooks/api/useRoutes';
+import { sunLightPosition } from './solar-position';
+import { millisecondsUntilNextMinute } from './solar-clock';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -57,7 +59,7 @@ function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
 }
 
 function Globe() {
-  const sourceTexture = useLoader(THREE.TextureLoader, '/earth-night.jpg');
+  const sourceTexture = useLoader(THREE.TextureLoader, '/earth-day.jpg');
 
   const colorMap = useMemo(() => {
     const texture = sourceTexture.clone();
@@ -76,14 +78,7 @@ function Globe() {
   return (
     <mesh>
       <sphereGeometry args={[2, 64, 64]} />
-      <meshStandardMaterial
-        map={colorMap}
-        emissive="#ffffff"
-        emissiveMap={colorMap}
-        emissiveIntensity={0.75}
-        roughness={0.8}
-        metalness={0.05}
-      />
+      <meshStandardMaterial map={colorMap} roughness={0.8} metalness={0.05} />
     </mesh>
   );
 }
@@ -104,6 +99,33 @@ function Atmosphere() {
 }
 
 export function OverviewPage() {
+  const [solarTime, setSolarTime] = useState(() => new Date());
+
+  useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const updateSolarTime = () => {
+      const now = new Date();
+
+      setSolarTime(now);
+      timeoutId = setTimeout(updateSolarTime, millisecondsUntilNextMinute(now));
+    };
+
+    timeoutId = setTimeout(
+      updateSolarTime,
+      millisecondsUntilNextMinute(solarTime)
+    );
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  const sunPosition = useMemo(
+    () => sunLightPosition(solarTime, 10),
+    [solarTime]
+  );
+
   const {
     data: routes = [],
     isLoading: isLoadingRoutes,
@@ -176,8 +198,8 @@ export function OverviewPage() {
       )}
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <color attach="background" args={['#030307']} />
-        <ambientLight intensity={0.35} />
-        <directionalLight position={[5, 3, 5]} intensity={1.4} />
+        <ambientLight intensity={0.02} />
+        <directionalLight position={sunPosition} intensity={5} />
         <Stars
           radius={50}
           depth={0}
