@@ -76,3 +76,9 @@
   border-radius: 999px;
   background: #ffb000;
 }
+
+.globe-legend__message {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.5;
+}

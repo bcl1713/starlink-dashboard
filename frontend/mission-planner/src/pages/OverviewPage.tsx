@@ -3,20 +3,11 @@ import { Canvas, useLoader } from '@react-three/fiber';
 import { Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
-import { greatCirclePoints, type GlobeCoordinate } from './globe-route';
+import { type GlobeCoordinate } from './globe-route';
 import { globePosition } from './globe-coordinates';
-
-const demoRouteEndpoints = {
-  origin: { latitude: 41.8781, longitude: -87.6298 },
-  destination: { latitude: 51.5072, longitude: -0.1276 },
-} as const;
-
-const chicagoToLondonRoute = greatCirclePoints(
-  demoRouteEndpoints.origin,
-  demoRouteEndpoints.destination,
-  2.02,
-  64
-);
+import { activeRouteId } from './active-globe-route';
+import { projectRoutePoints } from './globe-route-projection';
+import { useRoute, useRoutes } from '../hooks/api/useRoutes';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -49,19 +40,6 @@ const atmosphereFragmentShader = `
   }
 `;
 
-function DemoRoute() {
-  return (
-    <Line
-      points={chicagoToLondonRoute}
-      color="#ffb000"
-      lineWidth={2}
-      transparent
-      opacity={0.85}
-      depthWrite={false}
-    />
-  );
-}
-
 interface RouteEndpointProps {
   coordinate: GlobeCoordinate;
   color: string;
@@ -72,7 +50,7 @@ function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
     <mesh
       position={globePosition(coordinate.latitude, coordinate.longitude, 2.0)}
     >
-      <sphereGeometry args={[0.035, 24, 24]} />
+      <sphereGeometry args={[0.015, 24, 24]} />
       <meshBasicMaterial color={color} />
     </mesh>
   );
@@ -126,34 +104,76 @@ function Atmosphere() {
 }
 
 export function OverviewPage() {
+  const {
+    data: routes = [],
+    isLoading: isLoadingRoutes,
+    error: routesError,
+  } = useRoutes();
+
+  const routeId = activeRouteId(routes);
+
+  const {
+    data: activeRoute,
+    isLoading: isLoadingRoute,
+    error: routeError,
+  } = useRoute(routeId ?? '');
+
+  const routePoints = projectRoutePoints(activeRoute?.points ?? [], 2.002);
+  const origin = activeRoute?.points?.at(0);
+  const destination = activeRoute?.points?.at(-1);
+
+  const isLoading = isLoadingRoutes || (routeId !== null && isLoadingRoute);
+  const hasRenderableRoute = routePoints.length >= 2;
+  const routeStatus =
+    routesError || routeError
+      ? 'Unable to load the active route.'
+      : isLoading
+        ? 'Loading active route...'
+        : routeId === null
+          ? 'No active route.'
+          : !hasRenderableRoute
+            ? 'The active route has no renderable points.'
+            : null;
+
   return (
     <main className="overview-page">
-      <aside className="globe-legend" aria-label="Route legend">
-        <p className="globe-legend__title">Demo route</p>
-        <ul className="globe-legend__items">
-          <li>
-            <span
-              className="globe-legend__marker globe-legend__marker--origin"
-              aria-hidden="true"
-            />
-            <span>Origin</span>
-            <strong>Chicago</strong>
-          </li>
-          <li>
-            <span
-              className="globe-legend__marker globe-legend__marker--destination"
-              aria-hidden="true"
-            />
-            <span>Destination</span>
-            <strong>London</strong>
-          </li>
-          <li>
-            <span className="globe-legend__route" aria-hidden="true" />
-            <span>Path</span>
-            <strong>Great-circle route</strong>
-          </li>
-        </ul>
-      </aside>
+      {routeStatus ? (
+        <aside
+          className="globe-legend"
+          aria-label="Route status"
+          role={routesError || routeError ? 'alert' : 'status'}
+        >
+          <p className="globe-legend__title">Route status</p>
+          <p className="globe-legend__message">{routeStatus}</p>
+        </aside>
+      ) : (
+        <aside className="globe-legend" aria-label="Active route legend">
+          <p className="globe-legend__title">Active route</p>
+          <ul className="globe-legend__items">
+            <li>
+              <span
+                className="globe-legend__marker globe-legend__marker--origin"
+                aria-hidden="true"
+              />
+              <span>Origin</span>
+              <strong>First route point</strong>
+            </li>
+            <li>
+              <span
+                className="globe-legend__marker globe-legend__marker--destination"
+                aria-hidden="true"
+              />
+              <span>Destination</span>
+              <strong>Last route point</strong>
+            </li>
+            <li>
+              <span className="globe-legend__route" aria-hidden="true" />
+              <span>Path</span>
+              <strong>{activeRoute?.name}</strong>
+            </li>
+          </ul>
+        </aside>
+      )}
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.35} />
@@ -188,15 +208,20 @@ export function OverviewPage() {
         <Suspense fallback={null}>
           <Globe />
           <Atmosphere />
-          <DemoRoute />
-          <RouteEndpoint
-            coordinate={demoRouteEndpoints.origin}
-            color="#ffb000"
-          />
-          <RouteEndpoint
-            coordinate={demoRouteEndpoints.destination}
-            color="#62d9ff"
-          />
+          {hasRenderableRoute && (
+            <Line
+              points={routePoints}
+              color="#ffb000"
+              linewidth={2}
+              transparent
+              opacity={0.85}
+              depthWrite={false}
+            />
+          )}
+          {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
+          {destination && (
+            <RouteEndpoint coordinate={destination} color="#62d9ff" />
+          )}
         </Suspense>
         <OrbitControls
           enablePan={false}
