@@ -103,22 +103,29 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AppNavigation />
-        <Routes>
-          <Route path="/overview" element={<OverviewPage />} />
-          <Route path="/missions" element={<MissionsPage />} />
-          <Route path="/missions/:missionId" element={<MissionDetailPage />} />
-          <Route
-            path="/missions/:missionId/legs/:legId"
-            element={<LegDetailPage />}
-          />
-          <Route path="/satellites" element={<SatelliteManagerPage />} />
-          <Route path="/pois" element={<POIManagerPage />} />
-          <Route path="/routes" element={<RouteManagerPage />} />
-          <Route path="/export" element={<DataExportPage />} />
-          <Route path="/configuration" element={<ConfigurationPage />} />
-          <Route path="/" element={<Navigate to="/missions" replace />} />
-        </Routes>
+        <div className="app-shell">
+          <AppNavigation />
+          <div className="app-route-content">
+            <Routes>
+              <Route path="/overview" element={<OverviewPage />} />
+              <Route path="/missions" element={<MissionsPage />} />
+              <Route
+                path="/missions/:missionId"
+                element={<MissionDetailPage />}
+              />
+              <Route
+                path="/missions/:missionId/legs/:legId"
+                element={<LegDetailPage />}
+              />
+              <Route path="/satellites" element={<SatelliteManagerPage />} />
+              <Route path="/pois" element={<POIManagerPage />} />
+              <Route path="/routes" element={<RouteManagerPage />} />
+              <Route path="/export" element={<DataExportPage />} />
+              <Route path="/configuration" element={<ConfigurationPage />} />
+              <Route path="/" element={<Navigate to="/missions" replace />} />
+            </Routes>
+          </div>
+        </div>
       </BrowserRouter>
     </QueryClientProvider>
   );

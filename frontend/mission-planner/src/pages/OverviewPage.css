@@ -1,6 +1,6 @@
 .overview-page {
-  height: calc(100vh - 4rem);
-  min-height: 32rem;
+  height: 100%;
+  overflow: hidden;
   background: #030307;
   position: relative;
 }
