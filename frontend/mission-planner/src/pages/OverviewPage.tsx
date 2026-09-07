@@ -13,6 +13,7 @@ import { useStatus } from '@/hooks/api/useStatus';
 import { projectAircraftPosition } from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
 import { isStatusStale } from './status-freshness';
+import { useCurrentTime } from '@/hooks/useCurrentTime';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -160,6 +161,7 @@ export function OverviewPage() {
             ? 'The active route has no renderable points.'
             : null;
 
+  const currentTime = useCurrentTime(1_000);
   const {
     data: status,
     isLoading: isLoadingStatus,
@@ -174,7 +176,7 @@ export function OverviewPage() {
       ? 'Loading telemetry…'
       : !status
         ? 'Telemetry unavailable'
-        : isStatusStale(status.timestamp, Date.now())
+        : isStatusStale(status.timestamp, currentTime)
           ? 'Telemetry stale'
           : !aircraftPosition
             ? 'Position unavailable'
