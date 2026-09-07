@@ -141,7 +141,7 @@ export function OverviewPage() {
   } = useRoute(routeId ?? '');
 
   const routePoints = useMemo(
-    () => projectRouteArc(activeRoute?.points ?? [], 2.02, 8),
+    () => projectRouteArc(activeRoute?.points ?? [], 2.002, 8),
     [activeRoute?.points]
   );
 
