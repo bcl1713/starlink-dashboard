@@ -15,7 +15,19 @@ describe('status-projection', () => {
       longitude: -0.1278,
     });
   });
+
   it('returns null when status has no position', () => {
     expect(projectAircraftPosition({})).toBeNull();
+  });
+
+  it('returns null when latitude is outside the geographic range', () => {
+    expect(
+      projectAircraftPosition({
+        position: {
+          latitude: 91,
+          longitude: -0.1278,
+        },
+      })
+    ).toBeNull();
   });
 });
