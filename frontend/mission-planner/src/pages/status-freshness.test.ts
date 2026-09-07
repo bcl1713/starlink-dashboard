@@ -1,0 +1,10 @@
+import { describe, expect, it } from 'vitest';
+import { isStatusStale } from './status-freshness';
+
+describe('status-freshness', () => {
+  it('treats a recent status sample as fresh', () => {
+    const now = Date.parse('2026-09-07T12:00:05.000Z');
+
+    expect(isStatusStale('2026-09-07T12:00:01.000Z', now)).toBe(false);
+  });
+});
