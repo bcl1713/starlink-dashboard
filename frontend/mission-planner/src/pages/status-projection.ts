@@ -1,11 +1,8 @@
-interface StatusWithPosition {
-  position?: {
-    latitude: number;
-    longitude: number;
-  };
-}
+import type { StatusResponse } from '@/services/status';
 
-export function projectAircraftPosition(status: StatusWithPosition) {
+export function projectAircraftPosition(
+  status: Pick<StatusResponse, 'position'>
+) {
   if (!status.position) {
     return null;
   }
