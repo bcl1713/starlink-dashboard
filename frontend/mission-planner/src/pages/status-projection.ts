@@ -12,6 +12,11 @@ export function projectAircraftPosition(status: StatusWithPosition) {
   if (status.position.latitude > 90 || status.position.latitude < -90) {
     return null;
   }
+
+  if (status.position.longitude > 180 || status.position.longitude < -180) {
+    return null;
+  }
+
   return {
     latitude: status.position.latitude,
     longitude: status.position.longitude,

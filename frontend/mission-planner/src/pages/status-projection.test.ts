@@ -30,4 +30,15 @@ describe('status-projection', () => {
       })
     ).toBeNull();
   });
+
+  it('returns null when longitude is outside the geographic range', () => {
+    expect(
+      projectAircraftPosition({
+        position: {
+          latitude: 51.5074,
+          longitude: 181,
+        },
+      })
+    ).toBeNull();
+  });
 });
