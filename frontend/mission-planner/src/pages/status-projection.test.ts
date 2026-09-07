@@ -41,4 +41,15 @@ describe('status-projection', () => {
       })
     ).toBeNull();
   });
+
+  it('returns null when latitude is not finite', () => {
+    expect(
+      projectAircraftPosition({
+        position: {
+          latitude: Number.NaN,
+          longitude: -0.1278,
+        },
+      })
+    ).toBeNull();
+  });
 });

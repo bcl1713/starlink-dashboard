@@ -9,6 +9,11 @@ export function projectAircraftPosition(status: StatusWithPosition) {
   if (!status.position) {
     return null;
   }
+
+  if (!Number.isFinite(status.position.latitude)) {
+    return null;
+  }
+
   if (status.position.latitude > 90 || status.position.latitude < -90) {
     return null;
   }
