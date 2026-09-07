@@ -7,4 +7,9 @@ describe('status-freshness', () => {
 
     expect(isStatusStale('2026-09-07T12:00:01.000Z', now)).toBe(false);
   });
+  it('treats an unparseable timestamp as stale', () => {
+    const now = Date.parse('2026-09-07T12:00:05.000Z');
+
+    expect(isStatusStale('not-a-timestamp', now)).toBe(true);
+  });
 });
