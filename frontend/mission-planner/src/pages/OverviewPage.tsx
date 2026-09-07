@@ -10,6 +10,8 @@ import { projectRouteArc } from './globe-route-projection';
 import { useRoute, useRoutes } from '../hooks/api/useRoutes';
 import { sunLightPosition } from './solar-position';
 import { millisecondsUntilNextMinute } from './solar-clock';
+import { useStatus } from '@/hooks/api/useStatus';
+import { projectAircraftPosition } from './status-projection';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -54,6 +56,17 @@ function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
     >
       <sphereGeometry args={[0.015, 24, 24]} />
       <meshBasicMaterial color={color} />
+    </mesh>
+  );
+}
+
+function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
+  return (
+    <mesh
+      position={globePosition(coordinate.latitude, coordinate.longitude, 2.04)}
+    >
+      <sphereGeometry args={[0.03, 24, 24]} />
+      <meshBasicMaterial color="#7dff9f" />
     </mesh>
   );
 }
@@ -160,6 +173,9 @@ export function OverviewPage() {
             ? 'The active route has no renderable points.'
             : null;
 
+  const { data: status } = useStatus();
+  const aircraftPosition = projectAircraftPosition(status ?? {});
+
   return (
     <main className="overview-page">
       {routeStatus ? (
@@ -247,6 +263,7 @@ export function OverviewPage() {
           {destination && (
             <RouteEndpoint coordinate={destination} color="#62d9ff" />
           )}
+          {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
         </Suspense>
         <OrbitControls
           enablePan={false}
