@@ -98,4 +98,43 @@ test.describe('Globe overview', () => {
     expect(routeRequests[0]).toMatch(/\/api\/routes$/);
     expect(routeRequests[1]).toMatch(/\/api\/routes\/active-anti-meridian$/);
   });
+
+  test('refreshes status without overlapping requests', async ({ page }) => {
+    let statusRequestCount = 0;
+    let inFlightRequests = 0;
+    let maximumInFlightRequests = 0;
+
+    await page.route('**/api/status', async (route) => {
+      statusRequestCount += 1;
+      inFlightRequests += 1;
+      maximumInFlightRequests = Math.max(
+        maximumInFlightRequests,
+        inFlightRequests
+      );
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 1_500));
+
+        await route.fulfill({
+          json: {
+            timestamp: new Date().toISOString(),
+            position: {
+              latitude: 0,
+              longitude: 179,
+            },
+          },
+        });
+      } finally {
+        inFlightRequests -= 1;
+      }
+    });
+
+    await page.goto('/overview');
+
+    await expect
+      .poll(() => statusRequestCount, { timeout: 5_000 })
+      .toBeGreaterThanOrEqual(2);
+
+    expect(maximumInFlightRequests).toBe(1);
+  });
 });

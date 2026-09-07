@@ -5,5 +5,6 @@ export function useStatus() {
   return useQuery({
     queryKey: ['status'],
     queryFn: statusApi.get,
+    refetchInterval: 1_000,
   });
 }
