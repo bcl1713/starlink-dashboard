@@ -12,6 +12,7 @@ import { millisecondsUntilNextMinute } from './solar-clock';
 import { useStatus } from '@/hooks/api/useStatus';
 import { projectAircraftPosition } from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
+import { isStatusStale } from './status-freshness';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -159,8 +160,25 @@ export function OverviewPage() {
             ? 'The active route has no renderable points.'
             : null;
 
-  const { data: status } = useStatus();
+  const {
+    data: status,
+    isLoading: isLoadingStatus,
+    error: statusError,
+  } = useStatus();
+
   const aircraftPosition = projectAircraftPosition(status ?? {});
+
+  const telemetryState = statusError
+    ? 'Telemetry error'
+    : isLoadingStatus
+      ? 'Loading telemetry…'
+      : !status
+        ? 'Telemetry unavailable'
+        : isStatusStale(status.timestamp, Date.now())
+          ? 'Telemetry stale'
+          : !aircraftPosition
+            ? 'Position unavailable'
+            : 'Live telemetry';
 
   return (
     <main className="overview-page">
@@ -199,7 +217,7 @@ export function OverviewPage() {
                 aria-hidden="true"
               />
               <span>Current aircraft position</span>
-              <strong>Status telemetry</strong>
+              <strong>{telemetryState}</strong>
             </li>
             <li>
               <span className="globe-legend__route" aria-hidden="true" />
