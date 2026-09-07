@@ -63,10 +63,17 @@
 
 .globe-legend__marker--origin {
   background: #ffb000;
+  box-shadow: 0 0 6px rgba(144, 183, 255, 0.9);
 }
 
 .globe-legend__marker--destination {
-  background: #62d9ff;
+  background: #00ff00;
+  box-shadow: 0 0 6px rgba(144, 183, 255, 0.9);
+}
+
+.globe-legend__marker--aircraft {
+  background: #72b7ff;
+  box-shadow: 0 0 6px rgba(144, 183, 255, 0.9);
 }
 
 .globe-legend__route {

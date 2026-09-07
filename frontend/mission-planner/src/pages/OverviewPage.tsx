@@ -194,6 +194,14 @@ export function OverviewPage() {
               <strong>Last route point</strong>
             </li>
             <li>
+              <span
+                className="globe-legend__marker globe-legend__marker--aircraft"
+                aria-hidden="true"
+              />
+              <span>Current aircraft position</span>
+              <strong>Status telemetry</strong>
+            </li>
+            <li>
               <span className="globe-legend__route" aria-hidden="true" />
               <span>Path</span>
               <strong>{activeRoute?.name}</strong>
@@ -247,7 +255,7 @@ export function OverviewPage() {
           )}
           {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
           {destination && (
-            <RouteEndpoint coordinate={destination} color="#62d9ff" />
+            <RouteEndpoint coordinate={destination} color="#00ff00" />
           )}
           {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
         </Suspense>
