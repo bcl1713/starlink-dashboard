@@ -4,7 +4,6 @@ import { Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import { type GlobeCoordinate } from './globe-route';
-import { globePosition } from './globe-coordinates';
 import { activeRouteId } from './active-globe-route';
 import { projectRouteArc } from './globe-route-projection';
 import { useRoute, useRoutes } from '../hooks/api/useRoutes';
