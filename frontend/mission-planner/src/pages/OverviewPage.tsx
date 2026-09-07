@@ -12,6 +12,7 @@ import { sunLightPosition } from './solar-position';
 import { millisecondsUntilNextMinute } from './solar-clock';
 import { useStatus } from '@/hooks/api/useStatus';
 import { projectAircraftPosition } from './status-projection';
+import { StarMarker } from './OverviewStarMarker';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -43,67 +44,6 @@ const atmosphereFragmentShader = `
     gl_FragColor = vec4(atmosphereColor * rim, rim * 0.22);
   }
 `;
-
-interface StarMarkerProps {
-  coordinate: GlobeCoordinate;
-  color: string;
-  size: number;
-}
-
-function createStarTexture(color: string) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 64;
-  canvas.height = 64;
-
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    throw new Error('Unable to create star marker texture.');
-  }
-
-  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
-  gradient.addColorStop(0, '#ffffff');
-  gradient.addColorStop(0.12, '#ffffff');
-  gradient.addColorStop(0.14, color);
-  gradient.addColorStop(0.45, `${color}00`);
-
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 64, 64);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.generateMipmaps = false;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-
-  return texture;
-}
-function StarMarker({ coordinate, color, size }: StarMarkerProps) {
-  const texture = useMemo(() => createStarTexture(color), [color]);
-
-  useEffect(() => {
-    return () => {
-      texture.dispose();
-    };
-  }, [texture]);
-
-  return (
-    <sprite
-      position={globePosition(coordinate.latitude, coordinate.longitude, 2.02)}
-      scale={[size, size, 1]}
-      renderOrder={1}
-    >
-      <spriteMaterial
-        map={texture}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        toneMapped={false}
-      />
-    </sprite>
-  );
-}
 
 interface RouteEndpointProps {
   coordinate: GlobeCoordinate;
