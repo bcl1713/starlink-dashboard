@@ -23,6 +23,7 @@ test.describe('Globe overview', () => {
       window.Date = FixedDate;
     `);
     const routeRequests: string[] = [];
+    const statusRequests: string[] = [];
 
     await page.route('**/api/routes', async (route) => {
       routeRequests.push(route.request().url());
@@ -56,6 +57,19 @@ test.describe('Globe overview', () => {
         },
       });
     });
+    await page.route('**/api/status', async (route) => {
+      statusRequests.push(route.request().url());
+
+      await route.fulfill({
+        json: {
+          timestamp: '2026-06-21T12:00:00.000Z',
+          position: {
+            latitude: 0,
+            longitude: 179,
+          },
+        },
+      });
+    });
 
     const earthTexture = page.waitForResponse(
       (response) =>
@@ -64,6 +78,14 @@ test.describe('Globe overview', () => {
     );
 
     await page.goto('/overview');
+
+    await expect(
+      page.getByText('Live telemetry', { exact: true })
+    ).toBeVisible();
+
+    await expect.poll(() => statusRequests).toHaveLength(1);
+
+    expect(statusRequests[0]).toMatch(/\/api\/status$/);
 
     await expect(page.getByLabel('Active route legend')).toBeVisible();
     await expect(
