@@ -52,11 +52,11 @@ interface RouteEndpointProps {
 }
 
 function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
-  return <StarMarker coordinate={coordinate} color={color} size={0.05} />;
+  return <StarMarker coordinate={coordinate} color={color} size={0.1} />;
 }
 
 function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
-  return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.065} />;
+  return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />;
 }
 
 function Globe() {
@@ -218,7 +218,7 @@ export function OverviewPage() {
                 className="globe-legend__marker globe-legend__marker--aircraft"
                 aria-hidden="true"
               />
-              <span>Current aircraft position</span>
+              <span>Aircraft position</span>
               <strong>{telemetryState}</strong>
             </li>
             <li>
@@ -231,7 +231,7 @@ export function OverviewPage() {
       )}
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <color attach="background" args={['#030307']} />
-        <ambientLight intensity={0.02} />
+        <ambientLight intensity={0.5} />
         <directionalLight position={sunPosition} intensity={5} />
         <Stars
           radius={50}

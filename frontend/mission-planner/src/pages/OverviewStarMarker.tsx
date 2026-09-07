@@ -50,7 +50,7 @@ export function StarMarker({ coordinate, color, size }: StarMarkerProps) {
 
   return (
     <sprite
-      position={globePosition(coordinate.latitude, coordinate.longitude, 2.002)}
+      position={globePosition(coordinate.latitude, coordinate.longitude, 2.02)}
       scale={[size, size, 1]}
       renderOrder={1}
     >
