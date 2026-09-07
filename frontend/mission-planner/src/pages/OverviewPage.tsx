@@ -44,31 +44,78 @@ const atmosphereFragmentShader = `
   }
 `;
 
+interface StarMarkerProps {
+  coordinate: GlobeCoordinate;
+  color: string;
+  size: number;
+}
+
+function createStarTexture(color: string) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+
+  const context = canvas.getContext('2d');
+
+  if (!context) {
+    throw new Error('Unable to create star marker texture.');
+  }
+
+  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, '#ffffff');
+  gradient.addColorStop(0.12, '#ffffff');
+  gradient.addColorStop(0.14, color);
+  gradient.addColorStop(0.45, `${color}00`);
+
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 64, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.generateMipmaps = false;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+
+  return texture;
+}
+function StarMarker({ coordinate, color, size }: StarMarkerProps) {
+  const texture = useMemo(() => createStarTexture(color), [color]);
+
+  useEffect(() => {
+    return () => {
+      texture.dispose();
+    };
+  }, [texture]);
+
+  return (
+    <sprite
+      position={globePosition(coordinate.latitude, coordinate.longitude, 2.02)}
+      scale={[size, size, 1]}
+      renderOrder={1}
+    >
+      <spriteMaterial
+        map={texture}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
+      />
+    </sprite>
+  );
+}
+
 interface RouteEndpointProps {
   coordinate: GlobeCoordinate;
   color: string;
 }
 
 function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
-  return (
-    <mesh
-      position={globePosition(coordinate.latitude, coordinate.longitude, 2.0)}
-    >
-      <sphereGeometry args={[0.015, 24, 24]} />
-      <meshBasicMaterial color={color} />
-    </mesh>
-  );
+  return <StarMarker coordinate={coordinate} color={color} size={0.05} />;
 }
 
 function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
-  return (
-    <mesh
-      position={globePosition(coordinate.latitude, coordinate.longitude, 2.04)}
-    >
-      <sphereGeometry args={[0.03, 24, 24]} />
-      <meshBasicMaterial color="#7dff9f" />
-    </mesh>
-  );
+  return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.065} />;
 }
 
 function Globe() {
