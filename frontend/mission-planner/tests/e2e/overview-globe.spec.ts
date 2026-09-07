@@ -137,4 +137,46 @@ test.describe('Globe overview', () => {
 
     expect(maximumInFlightRequests).toBe(1);
   });
+  test('marks a previously fresh status sample as stale when refresh hangs', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+    let statusRequestCount = 0;
+
+    await page.clock.install({
+      time: new Date(observedAt),
+    });
+
+    await page.route('**/api/status', async (route) => {
+      statusRequestCount += 1;
+
+      if (statusRequestCount === 1) {
+        await route.fulfill({
+          json: {
+            timestamp: observedAt,
+            position: {
+              latitude: 0,
+              longitude: 179,
+            },
+          },
+        });
+
+        return;
+      }
+
+      await new Promise(() => {});
+    });
+
+    await page.goto('/overview');
+
+    await expect(
+      page.getByText('Live telemetry', { exact: true })
+    ).toBeVisible();
+
+    await page.clock.fastForward(5_000);
+
+    await expect(
+      page.getByText('Telemetry stale', { exact: true })
+    ).toBeVisible();
+  });
 });
