@@ -172,3 +172,15 @@
     color: var(--status-critical);
   }
 }
+
+.app-shell {
+  display: flex;
+  height: 100dvh;
+  flex-direction: column;
+}
+
+.app-route-content {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+}

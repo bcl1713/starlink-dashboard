@@ -20,7 +20,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run preview -- --port ${port}`,
+    command: `npm run build && npm run preview -- --port ${port}`,
     url: `http://localhost:${port}`,
     reuseExistingServer: false, // Always start a new server for local runs
   },
