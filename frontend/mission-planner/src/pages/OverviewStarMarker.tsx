@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import type { GlobeCoordinate } from './globe-route';
 import { globePosition } from './globe-coordinates';
+import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 
 interface StarMarkerProps {
   coordinate: GlobeCoordinate;
@@ -50,7 +51,11 @@ export function StarMarker({ coordinate, color, size }: StarMarkerProps) {
 
   return (
     <sprite
-      position={globePosition(coordinate.latitude, coordinate.longitude, 2.02)}
+      position={globePosition(
+        coordinate.latitude,
+        coordinate.longitude,
+        ROUTE_OVERLAY_RADIUS
+      )}
       scale={[size, size, 1]}
       renderOrder={1}
     >

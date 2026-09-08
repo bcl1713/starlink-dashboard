@@ -15,6 +15,7 @@ import { StarMarker } from './OverviewStarMarker';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { OverviewMetricsPanel } from './OverviewMetricsPanel';
+import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -142,7 +143,7 @@ export function OverviewPage() {
   } = useRoute(routeId ?? '');
 
   const routePoints = useMemo(
-    () => projectRouteArc(activeRoute?.points ?? [], 2.002, 8),
+    () => projectRouteArc(activeRoute?.points ?? [], ROUTE_OVERLAY_RADIUS, 8),
     [activeRoute?.points]
   );
 
