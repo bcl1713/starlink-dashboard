@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
-import { Canvas, useLoader } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
@@ -60,31 +60,6 @@ function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
 
 function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
   return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />;
-}
-
-function Globe() {
-  const sourceTexture = useLoader(THREE.TextureLoader, '/earth-day-hi.jpg');
-
-  const colorMap = useMemo(() => {
-    const texture = sourceTexture.clone();
-
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.needsUpdate = true;
-    return texture;
-  }, [sourceTexture]);
-
-  useEffect(() => {
-    return () => {
-      colorMap.dispose();
-    };
-  }, [colorMap]);
-
-  return (
-    <mesh>
-      <sphereGeometry args={[2, 64, 64]} />
-      <meshStandardMaterial map={colorMap} roughness={0.8} metalness={0.05} />
-    </mesh>
-  );
 }
 
 function Atmosphere() {
