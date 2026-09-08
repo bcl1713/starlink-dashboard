@@ -62,7 +62,7 @@ function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
 }
 
 function Globe() {
-  const sourceTexture = useLoader(THREE.TextureLoader, '/earth-day.jpg');
+  const sourceTexture = useLoader(THREE.TextureLoader, '/earth-day-hi.jpg');
 
   const colorMap = useMemo(() => {
     const texture = sourceTexture.clone();
