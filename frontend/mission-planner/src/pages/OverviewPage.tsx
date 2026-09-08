@@ -16,6 +16,7 @@ import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
+import { NightCityLights } from './NightCityLights';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -265,6 +266,7 @@ export function OverviewPage() {
         />
         <Suspense fallback={null}>
           <Globe />
+          <NightCityLights sunPosition={sunPosition} />
           <Atmosphere />
           {hasRenderableRoute && (
             <Line
