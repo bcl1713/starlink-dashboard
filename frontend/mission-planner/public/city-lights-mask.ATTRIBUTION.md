@@ -1,4 +1,4 @@
-# Major settlement city-light mask probe attribution
+# Settlement city-light mask attribution
 
 Derived from the GeoNames cities15000 data extract.
 
@@ -10,7 +10,7 @@ Licence:
 
 Derived file: `city-lights-mask.png`
 
-The candidate retains populated places with a reported population of at least
+The mask retains populated places with a reported population of at least
 50,000, plus national capitals. Locations are projected into an 8192×4096
 equirectangular grayscale mask. Population controls point brightness and size.
 A small precomputed local blur provides restrained falloff without browser-time
