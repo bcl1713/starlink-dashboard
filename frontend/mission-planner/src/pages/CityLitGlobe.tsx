@@ -13,33 +13,33 @@ const CITY_LIGHT_COLOR = 'vec3(0.92, 0.96, 1.0)';
 type CompiledShader = Parameters<THREE.Material['onBeforeCompile']>[0];
 
 export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
-  const [sourceDayMap, sourceNightMap] = useLoader(
-    THREE.TextureLoader,
-    ['/earth-day-hi.jpg', '/earth-night-hi.jpg']
-  );
+  const [sourceDayMap, sourceCityLightMask] = useLoader(THREE.TextureLoader, [
+    '/earth-day-hi.jpg',
+    '/city-lights-mask.png',
+  ]);
 
-  const [dayMap, nightMap] = useMemo(() => {
-    const clone = (sourceTexture: THREE.Texture) => {
-      const texture = sourceTexture.clone();
+  const [dayMap, cityLightMask] = useMemo(() => {
+    const dayTexture = sourceDayMap.clone();
 
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.needsUpdate = true;
-      return texture;
-    };
+    dayTexture.colorSpace = THREE.SRGBColorSpace;
+    dayTexture.needsUpdate = true;
 
-    return [clone(sourceDayMap), clone(sourceNightMap)];
-  }, [sourceDayMap, sourceNightMap]);
+    const maskTexture = sourceCityLightMask.clone();
+
+    maskTexture.colorSpace = THREE.NoColorSpace;
+    maskTexture.needsUpdate = true;
+
+    return [dayTexture, maskTexture];
+  }, [sourceDayMap, sourceCityLightMask]);
 
   useEffect(() => {
     return () => {
       dayMap.dispose();
-      nightMap.dispose();
+      cityLightMask.dispose();
     };
-  }, [dayMap, nightMap]);
+  }, [dayMap, cityLightMask]);
 
-  const sunDirection = useRef(
-    new THREE.Vector3(...sunPosition).normalize()
-  );
+  const sunDirection = useRef(new THREE.Vector3(...sunPosition).normalize());
 
   useEffect(() => {
     sunDirection.current.set(...sunPosition).normalize();
@@ -47,7 +47,7 @@ export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
 
   const onBeforeCompile = useCallback(
     (shader: CompiledShader) => {
-      shader.uniforms.cityNightMap = { value: nightMap };
+      shader.uniforms.cityLightMask = { value: cityLightMask };
       shader.uniforms.citySunDirection = {
         value: sunDirection.current,
       };
@@ -68,7 +68,7 @@ export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
 
       shader.fragmentShader =
         `
-          uniform sampler2D cityNightMap;
+          uniform sampler2D cityLightMask;
           uniform vec3 citySunDirection;
 
           varying vec3 vCityWorldNormal;
@@ -78,16 +78,10 @@ export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
           `
             #include <emissivemap_fragment>
 
-            vec3 cityRgb = texture2D(cityNightMap, vMapUv).rgb;
-            float cityLuminance = dot(
-              cityRgb,
-              vec3(0.2126, 0.7152, 0.0722)
-            );
-            float cityStrength = smoothstep(
-              0.18,
-              0.55,
-              cityLuminance
-            );
+            float cityStrength = texture2D(
+              cityLightMask,
+              vMapUv
+            ).r;
             float sunFacing = dot(
               normalize(vCityWorldNormal),
               normalize(citySunDirection)
@@ -106,7 +100,7 @@ export function CityLitGlobe({ sunPosition }: CityLitGlobeProps) {
           `
         );
     },
-    [nightMap]
+    [cityLightMask]
   );
 
   return (
