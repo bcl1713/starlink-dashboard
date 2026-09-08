@@ -4,12 +4,17 @@ import { Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import { type GlobeCoordinate } from './globe-route';
-import { globePosition } from './globe-coordinates';
 import { activeRouteId } from './active-globe-route';
 import { projectRouteArc } from './globe-route-projection';
 import { useRoute, useRoutes } from '../hooks/api/useRoutes';
 import { sunLightPosition } from './solar-position';
 import { millisecondsUntilNextMinute } from './solar-clock';
+import { useStatus } from '@/hooks/api/useStatus';
+import { projectAircraftPosition } from './status-projection';
+import { StarMarker } from './OverviewStarMarker';
+import { isStatusStale } from './status-freshness';
+import { useCurrentTime } from '@/hooks/useCurrentTime';
+import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -48,14 +53,11 @@ interface RouteEndpointProps {
 }
 
 function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
-  return (
-    <mesh
-      position={globePosition(coordinate.latitude, coordinate.longitude, 2.0)}
-    >
-      <sphereGeometry args={[0.015, 24, 24]} />
-      <meshBasicMaterial color={color} />
-    </mesh>
-  );
+  return <StarMarker coordinate={coordinate} color={color} size={0.1} />;
+}
+
+function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
+  return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />;
 }
 
 function Globe() {
@@ -140,7 +142,7 @@ export function OverviewPage() {
   } = useRoute(routeId ?? '');
 
   const routePoints = useMemo(
-    () => projectRouteArc(activeRoute?.points ?? [], 2.02, 8),
+    () => projectRouteArc(activeRoute?.points ?? [], 2.002, 8),
     [activeRoute?.points]
   );
 
@@ -159,6 +161,27 @@ export function OverviewPage() {
           : !hasRenderableRoute
             ? 'The active route has no renderable points.'
             : null;
+
+  const currentTime = useCurrentTime(1_000);
+  const {
+    data: status,
+    isLoading: isLoadingStatus,
+    error: statusError,
+  } = useStatus();
+
+  const aircraftPosition = projectAircraftPosition(status ?? {});
+
+  const telemetryState = statusError
+    ? 'Telemetry error'
+    : isLoadingStatus
+      ? 'Loading telemetry…'
+      : !status
+        ? 'Telemetry unavailable'
+        : isStatusStale(status.timestamp, currentTime)
+          ? 'Telemetry stale'
+          : !aircraftPosition
+            ? 'Position unavailable'
+            : 'Live telemetry';
 
   return (
     <main className="overview-page">
@@ -192,6 +215,14 @@ export function OverviewPage() {
               <strong>Last route point</strong>
             </li>
             <li>
+              <span
+                className="globe-legend__marker globe-legend__marker--aircraft"
+                aria-hidden="true"
+              />
+              <span>Aircraft position</span>
+              <strong>{telemetryState}</strong>
+            </li>
+            <li>
               <span className="globe-legend__route" aria-hidden="true" />
               <span>Path</span>
               <strong>{activeRoute?.name}</strong>
@@ -199,9 +230,10 @@ export function OverviewPage() {
           </ul>
         </aside>
       )}
+      <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <color attach="background" args={['#030307']} />
-        <ambientLight intensity={0.02} />
+        <ambientLight intensity={0.5} />
         <directionalLight position={sunPosition} intensity={5} />
         <Stars
           radius={50}
@@ -245,8 +277,9 @@ export function OverviewPage() {
           )}
           {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
           {destination && (
-            <RouteEndpoint coordinate={destination} color="#62d9ff" />
+            <RouteEndpoint coordinate={destination} color="#00ff00" />
           )}
+          {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
         </Suspense>
         <OrbitControls
           enablePan={false}
