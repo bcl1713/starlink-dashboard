@@ -65,8 +65,8 @@ test.describe('Globe overview', () => {
         json: {
           timestamp: '2026-06-21T12:00:00.000Z',
           position: {
-            latitude: 0,
-            longitude: 179,
+            latitude: 12,
+            longitude: 160,
           },
           network: {
             latency_ms: 42.5,
