@@ -83,7 +83,7 @@ test.describe('Globe overview', () => {
 
     const earthTexture = page.waitForResponse(
       (response) =>
-        new URL(response.url()).pathname === '/earth-day.jpg' &&
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
         response.status() === 200
     );
 
