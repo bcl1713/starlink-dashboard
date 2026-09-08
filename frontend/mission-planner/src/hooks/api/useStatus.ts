@@ -6,5 +6,6 @@ export function useStatus() {
     queryKey: ['status'],
     queryFn: statusApi.get,
     refetchInterval: 1_000,
+    refetchIntervalInBackground: true,
   });
 }

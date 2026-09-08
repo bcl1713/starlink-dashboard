@@ -14,6 +14,7 @@ import { projectAircraftPosition } from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
+import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -229,6 +230,7 @@ export function OverviewPage() {
           </ul>
         </aside>
       )}
+      <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.5} />
