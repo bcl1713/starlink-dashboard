@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Line, OrbitControls, Stars } from '@react-three/drei';
+import { Html, Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import { type GlobeCoordinate } from './globe-route';
@@ -10,13 +10,17 @@ import { useRoute, useRoutes } from '../hooks/api/useRoutes';
 import { sunLightPosition } from './solar-position';
 import { millisecondsUntilNextMinute } from './solar-clock';
 import { useStatus } from '@/hooks/api/useStatus';
-import { projectAircraftPosition } from './status-projection';
+import {
+  projectAircraftPosition,
+  projectGroundEntryPoint,
+} from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
+import { globePosition } from './globe-coordinates';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -60,6 +64,27 @@ function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
 
 function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
   return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />;
+}
+
+function GroundEntryPointMarker({
+  coordinate,
+}: {
+  coordinate: GlobeCoordinate;
+}) {
+  return (
+    <>
+      <StarMarker coordinate={coordinate} color="#c084fc" size={0.13} />
+      <Html
+        position={globePosition(
+          coordinate.latitude,
+          coordinate.longitude,
+          ROUTE_OVERLAY_RADIUS
+        )}
+      >
+        <span className="globe-marker-label">GEP</span>
+      </Html>
+    </>
+  );
 }
 
 function Atmosphere() {
@@ -147,6 +172,7 @@ export function OverviewPage() {
   } = useStatus();
 
   const aircraftPosition = projectAircraftPosition(status ?? {});
+  const groundEntryPoint = projectGroundEntryPoint(status ?? {});
 
   const telemetryState = statusError
     ? 'Telemetry error'
@@ -204,6 +230,16 @@ export function OverviewPage() {
               <span>Path</span>
               <strong>{activeRoute?.name}</strong>
             </li>
+            <li>
+              <span
+                className="globe-legend__marker globe-legend__marker--ground-entry"
+                aria-hidden="true"
+              />
+              <span>Ground entry point</span>
+              <strong>
+                {groundEntryPoint ? 'Current/last-known' : 'GEP unavailable'}
+              </strong>
+            </li>
           </ul>
         </aside>
       )}
@@ -255,6 +291,9 @@ export function OverviewPage() {
           {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
           {destination && (
             <RouteEndpoint coordinate={destination} color="#00ff00" />
+          )}
+          {groundEntryPoint && (
+            <GroundEntryPointMarker coordinate={groundEntryPoint} />
           )}
           {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
         </Suspense>

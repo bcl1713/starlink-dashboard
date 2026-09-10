@@ -77,6 +77,10 @@ test.describe('Globe overview', () => {
           environmental: {
             signal_quality_percent: 85,
           },
+          ground_entry_point: {
+            latitude: 41.2565,
+            longitude: -95.9345,
+          },
         },
       });
     });
@@ -107,6 +111,7 @@ test.describe('Globe overview', () => {
     expect(statusRequests[0]).toMatch(/\/api\/status$/);
 
     await expect(page.getByLabel('Active route legend')).toBeVisible();
+    await expect(page.getByText('GEP', { exact: true })).toBeVisible();
     await expect(
       page.getByText('Anti-meridian validation route', { exact: true })
     ).toBeVisible();
@@ -209,6 +214,9 @@ test.describe('Globe overview', () => {
 
     await expect(
       metricsPanel.getByText('Telemetry stale', { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText('GEP unavailable', { exact: true })
     ).toBeVisible();
   });
 });

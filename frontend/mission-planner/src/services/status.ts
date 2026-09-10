@@ -18,6 +18,10 @@ export interface StatusResponse {
   environmental?: {
     signal_quality_percent?: number;
   };
+  ground_entry_point?: {
+    latitude: number;
+    longitude: number;
+  } | null;
 }
 
 export const statusApi = {

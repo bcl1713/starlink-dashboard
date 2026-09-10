@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { projectAircraftPosition } from './status-projection.ts';
+import {
+  projectAircraftPosition,
+  projectGroundEntryPoint,
+} from './status-projection.ts';
 
 describe('status-projection', () => {
   it('projects valid status latitude and longitude as an aircraft position', () => {
@@ -59,6 +62,34 @@ describe('status-projection', () => {
         position: {
           latitude: 51.5074,
           longitude: Number.NaN,
+        },
+      })
+    ).toBeNull();
+  });
+  it('projects a valid current ground entry point', () => {
+    expect(
+      projectGroundEntryPoint({
+        ground_entry_point: {
+          latitude: 41.2565,
+          longitude: -95.9345,
+        },
+      })
+    ).toEqual({
+      latitude: 41.2565,
+      longitude: -95.9345,
+    });
+  });
+
+  it('returns null when no ground entry point is available', () => {
+    expect(projectGroundEntryPoint({})).toBeNull();
+  });
+
+  it('returns null when ground entry point coordinates are invalid', () => {
+    expect(
+      projectGroundEntryPoint({
+        ground_entry_point: {
+          latitude: 91,
+          longitude: -95.9345,
         },
       })
     ).toBeNull();

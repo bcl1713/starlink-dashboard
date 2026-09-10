@@ -3,6 +3,52 @@
 import asyncio
 
 import pytest
+from app.api import status as status_api
+from app.services.ground_entry_point import GroundEntryPoint
+
+
+@pytest.mark.asyncio
+async def test_status_exposes_current_cached_ground_entry_point(
+    test_client, monkeypatch
+):
+    monkeypatch.setattr(
+        status_api,
+        "get_cached_ground_entry_point",
+        lambda: GroundEntryPoint(
+            ip="203.0.113.10",
+            city="Omaha",
+            region="NE",
+            country="US",
+            latitude=41.2565,
+            longitude=-95.9345,
+        ),
+        raising=False,
+    )
+
+    response = test_client.get("/api/status")
+
+    assert response.status_code == 200
+    assert response.json()["ground_entry_point"] == {
+        "latitude": 41.2565,
+        "longitude": -95.9345,
+    }
+
+
+@pytest.mark.asyncio
+async def test_status_marks_unavailable_ground_entry_point_as_null(
+    test_client, monkeypatch
+):
+    monkeypatch.setattr(
+        status_api,
+        "get_cached_ground_entry_point",
+        lambda: None,
+        raising=False,
+    )
+
+    response = test_client.get("/api/status")
+
+    assert response.status_code == 200
+    assert response.json()["ground_entry_point"] is None
 
 
 @pytest.mark.asyncio
