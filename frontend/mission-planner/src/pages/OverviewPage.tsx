@@ -1,4 +1,11 @@
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Html, Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
@@ -21,8 +28,6 @@ import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
-
-const GEP_LABEL_RADIUS = 2.08;
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -70,18 +75,20 @@ function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
 
 function GroundEntryPointMarker({
   coordinate,
+  globeOccluder,
 }: {
   coordinate: GlobeCoordinate;
+  globeOccluder: RefObject<THREE.Group>;
 }) {
   return (
     <>
       <StarMarker coordinate={coordinate} color="#c084fc" size={0.13} />
       <Html
-        occlude="raycast"
+        occlude={[globeOccluder]}
         position={globePosition(
           coordinate.latitude,
           coordinate.longitude,
-          2.08
+          ROUTE_OVERLAY_RADIUS
         )}
       >
         <span className="globe-marker-label">GEP</span>
@@ -131,6 +138,8 @@ export function OverviewPage() {
     () => sunLightPosition(solarTime, 10),
     [solarTime]
   );
+
+  const globeOccluder = useRef<THREE.Group>(new THREE.Group());
 
   const {
     data: routes = [],
@@ -279,7 +288,9 @@ export function OverviewPage() {
           speed={0.1}
         />
         <Suspense fallback={null}>
-          <CityLitGlobe sunPosition={sunPosition} />
+          <group ref={globeOccluder}>
+            <CityLitGlobe sunPosition={sunPosition} />
+          </group>
           <Atmosphere />
           {hasRenderableRoute && (
             <Line
@@ -296,7 +307,10 @@ export function OverviewPage() {
             <RouteEndpoint coordinate={destination} color="#00ff00" />
           )}
           {groundEntryPoint && (
-            <GroundEntryPointMarker coordinate={groundEntryPoint} />
+            <GroundEntryPointMarker
+              coordinate={groundEntryPoint}
+              globeOccluder={globeOccluder}
+            />
           )}
           {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
         </Suspense>
