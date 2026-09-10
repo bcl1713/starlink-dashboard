@@ -32,6 +32,7 @@ from app.mission import (
 )
 from app.satellites import routes as satellite_routes
 from app.core.config import ConfigManager
+from app.models.config import SimulationConfig
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
 from app.core.logging import setup_logging, get_logger
 from app.core.metrics import set_service_info
@@ -40,7 +41,9 @@ from app.simulation.coordinator import SimulationCoordinator
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.services.ground_entry_point import (
+    get_cached_ground_entry_point,
     maybe_refresh_ground_entry_point_metrics,
+    publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
 from slowapi.errors import RateLimitExceeded
@@ -67,6 +70,13 @@ _simulation_config = None
 _route_manager: RouteManager | None = None
 
 
+def should_automatically_refresh_ground_entry_point(
+    config: SimulationConfig | None,
+) -> bool:
+    """Return whether this mode may perform external GEP discovery."""
+    return config is not None and config.mode == "live"
+
+
 async def startup_event():
     """Initialize application on startup."""
     global _coordinator, _background_task, _simulation_config, _route_manager
@@ -90,23 +100,25 @@ async def startup_event():
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
 
-        try:
-            entry_point = refresh_ground_entry_point_metrics()
-            if entry_point is not None:
-                logger.info_json(
-                    "Ground entry point discovered",
-                    extra_fields={
-                        "city": entry_point.city,
-                        "country": entry_point.country,
-                    },
+        if should_automatically_refresh_ground_entry_point(_simulation_config):
+            try:
+                entry_point = refresh_ground_entry_point_metrics()
+                if entry_point is not None:
+                    logger.info_json(
+                        "Ground entry point discovered",
+                        extra_fields={
+                            "city": entry_point.city,
+                            "country": entry_point.country,
+                        },
+                    )
+            except Exception as e:  # pragma: no cover - defensive startup guard
+                logger.warning_json(
+                    "Failed to publish ground entry point metrics",
+                    extra_fields={"error": str(e)},
+                    exc_info=True,
                 )
-        except Exception as e:  # pragma: no cover - defensive startup guard
-            logger.warning_json(
-                "Failed to publish ground entry point metrics",
-                extra_fields={"error": str(e)},
-                exc_info=True,
-            )
-
+        else:
+            publish_ground_entry_point_metrics(get_cached_ground_entry_point())
         if _simulation_config.mode == "live":
             # Initialize LiveCoordinator for real terminal data
             logger.info_json("Initializing LiveCoordinator for live mode")
@@ -344,9 +356,10 @@ async def _background_update_loop(poi_manager=None):
 
         while True:
             try:
-                maybe_refresh_ground_entry_point_metrics(
-                    refresh_interval_seconds=ground_entry_refresh_interval_seconds
-                )
+                if should_automatically_refresh_ground_entry_point(_simulation_config):
+                    maybe_refresh_ground_entry_point_metrics(
+                        refresh_interval_seconds=ground_entry_refresh_interval_seconds
+                    )
 
                 if _coordinator:
                     telemetry = _coordinator.update()
