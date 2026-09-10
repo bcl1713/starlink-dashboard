@@ -157,7 +157,7 @@
 
 .globe-marker-label {
   display: block;
-  transform: translate(-50%, -170%);
+  transform: translate(-50%, 100%);
   color: #f8fafc;
   font-size: 0.75rem;
   font-weight: 700;

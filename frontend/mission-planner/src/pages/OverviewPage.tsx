@@ -22,6 +22,8 @@ import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 
+const GEP_LABEL_RADIUS = 2.08;
+
 const atmosphereVertexShader = `
   varying vec3 vNormal;
   varying vec3 vViewPosition;
@@ -75,10 +77,11 @@ function GroundEntryPointMarker({
     <>
       <StarMarker coordinate={coordinate} color="#c084fc" size={0.13} />
       <Html
+        occlude="raycast"
         position={globePosition(
           coordinate.latitude,
           coordinate.longitude,
-          ROUTE_OVERLAY_RADIUS
+          2.08
         )}
       >
         <span className="globe-marker-label">GEP</span>

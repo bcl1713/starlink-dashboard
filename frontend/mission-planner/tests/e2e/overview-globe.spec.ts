@@ -124,6 +124,7 @@ test.describe('Globe overview', () => {
   });
 
   test('refreshes status without overlapping requests', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-06-21T12:00:00.000Z') });
     let statusRequestCount = 0;
     let inFlightRequests = 0;
     let maximumInFlightRequests = 0;
@@ -131,6 +132,15 @@ test.describe('Globe overview', () => {
 
     const slowRefresh = new Promise<void>((resolve) => {
       releaseSlowRefresh = resolve;
+    });
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
     });
 
     await page.route('**/api/status', async (route) => {
@@ -163,11 +173,11 @@ test.describe('Globe overview', () => {
     await page.goto('/overview');
     await page.bringToFront();
 
-    await expect
-      .poll(() => statusRequestCount, { timeout: 5_000 })
-      .toBeGreaterThanOrEqual(2);
+    await expect.poll(() => statusRequestCount).toBe(1);
 
-    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await page.clock.fastForward(1_000);
+
+    await expect.poll(() => statusRequestCount).toBeGreaterThanOrEqual(2);
 
     expect(maximumInFlightRequests).toBe(1);
 
