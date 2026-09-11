@@ -271,12 +271,9 @@ live terminal, aircraft, or satellite telemetry.
 **Backend default:** unset (no GEP). The repository `.env.example` provides
 sample simulation coordinates; replace or remove both values together as needed.
 
-**Default:** `none`
-
 **Example:**
 
 ```bash
-# Simulation GEP Coordinates
 STARLINK_GROUND_ENTRY_LATITUDE="41.2565"
 STARLINK_GROUND_ENTRY_LONGITUDE="-95.9345"
 ```
