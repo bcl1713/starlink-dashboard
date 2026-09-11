@@ -21,6 +21,15 @@ def setup_function() -> None:
     gep._last_ground_entry_point_refresh_monotonic = None
 
 
+def test_environment_ground_entry_point_rejects_non_geographic_coordinates(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", "91")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", "-95.9345")
+
+    assert gep._entry_point_from_environment() is None
+
+
 def test_extract_cloudflare_trace_ipv4_reads_valid_ip_line() -> None:
     trace_body = """fl=123f45
 h=1.1.1.1

@@ -305,7 +305,9 @@ def get_cached_ground_entry_point() -> GroundEntryPoint | None:
 
 def clear_ground_entry_point_metrics() -> None:
     """Clear plain gauges and remove any previously published labelled series."""
-    global _last_ground_entry_point_location_labels, _last_ground_entry_point_info_labels
+    global \
+        _last_ground_entry_point_location_labels, \
+        _last_ground_entry_point_info_labels
 
     starlink_ground_entry_point_latitude_degrees.set(math.nan)
     starlink_ground_entry_point_longitude_degrees.set(math.nan)
@@ -331,7 +333,9 @@ def clear_ground_entry_point_metrics() -> None:
 
 def publish_ground_entry_point_metrics(entry_point: GroundEntryPoint | None) -> None:
     """Publish ground entry point metrics for Grafana and Prometheus exports."""
-    global _last_ground_entry_point_location_labels, _last_ground_entry_point_info_labels
+    global \
+        _last_ground_entry_point_location_labels, \
+        _last_ground_entry_point_info_labels
 
     clear_ground_entry_point_metrics()
     if entry_point is None:
@@ -433,6 +437,14 @@ def _entry_point_from_environment() -> GroundEntryPoint | None:
     try:
         latitude = float(lat_raw)
         longitude = float(lon_raw)
+        if math.isnan(latitude) or math.isinf(latitude):
+            return None
+        if math.isnan(longitude) or math.isinf(longitude):
+            return None
+        if latitude > 90 or latitude < -90:
+            return None
+        if longitude > 180 or longitude < -180:
+            return None
     except ValueError:
         logger.warning("Invalid STARLINK_GROUND_ENTRY latitude/longitude override")
         return None
