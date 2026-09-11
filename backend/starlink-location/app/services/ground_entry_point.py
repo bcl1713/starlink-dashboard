@@ -259,6 +259,30 @@ def geolocate_public_ip(
         latitude_raw, longitude_raw = loc.split(",", maxsplit=1)
         latitude = float(latitude_raw)
         longitude = float(longitude_raw)
+        if (
+            math.isinf(latitude)
+            or math.isnan(latitude)
+            or latitude < -90
+            or latitude > 90
+        ):
+            logger.warning(
+                "Ground entry point latitude "
+                + str(latitude)
+                + " is not a valid coordinate"
+            )
+            return None
+        if (
+            math.isinf(longitude)
+            or math.isnan(longitude)
+            or longitude < -90
+            or longitude > 90
+        ):
+            logger.warning(
+                "Ground entry point longitude "
+                + str(longitude)
+                + " is not a valid coordinate"
+            )
+            return None
     except (TypeError, ValueError):
         logger.warning("Ground entry point geolocation missing loc field")
         return None
@@ -305,7 +329,9 @@ def get_cached_ground_entry_point() -> GroundEntryPoint | None:
 
 def clear_ground_entry_point_metrics() -> None:
     """Clear plain gauges and remove any previously published labelled series."""
-    global _last_ground_entry_point_location_labels, _last_ground_entry_point_info_labels
+    global \
+        _last_ground_entry_point_location_labels, \
+        _last_ground_entry_point_info_labels
 
     starlink_ground_entry_point_latitude_degrees.set(math.nan)
     starlink_ground_entry_point_longitude_degrees.set(math.nan)
@@ -331,7 +357,9 @@ def clear_ground_entry_point_metrics() -> None:
 
 def publish_ground_entry_point_metrics(entry_point: GroundEntryPoint | None) -> None:
     """Publish ground entry point metrics for Grafana and Prometheus exports."""
-    global _last_ground_entry_point_location_labels, _last_ground_entry_point_info_labels
+    global \
+        _last_ground_entry_point_location_labels, \
+        _last_ground_entry_point_info_labels
 
     clear_ground_entry_point_metrics()
     if entry_point is None:
