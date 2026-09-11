@@ -1,7 +1,7 @@
 import asyncio
 
-import pytest
 import main
+import pytest
 
 """Tests for automatic ground-entry discovery by operating mode."""
 
@@ -32,7 +32,6 @@ class SingleUpdateCoordinator:
 
     def update(self):
         self.update_calls += 1
-        return None
 
 
 @pytest.mark.asyncio
