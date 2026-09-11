@@ -54,47 +54,7 @@ development PRs against or merge them into `main`.
 
 ---
 
-## Testing
-
-### Backend Tests (Python)
-
-```bash
-cd backend/starlink-location
-
-# Run all tests
-pytest
-
-# Run tests with coverage
-pytest --cov=app tests/
-
-# Run specific test file
-pytest tests/test_routes.py
-
-# Run specific test
-pytest tests/test_routes.py::test_get_routes
-```
-
-### Test Requirements
-
-- New features should include corresponding tests
-- Tests must pass before merge
-- Maintain >80% code coverage for refactored code
-
-### Frontend Tests (TypeScript/React)
-
-```bash
-cd frontend/mission-planner
-
-# Run one focused unit-test selection
-npm run test:unit -- src/pages/status-projection.test.ts
-
-# Run the unit-test suite
-npm run test:unit
-```
-
----
-
-## Three-Tier Development Test Loop
+## Testing and Three-Tier Development Loop
 
 Use the smallest tier that can answer the current development question. Faster
 feedback supplements rather than replaces production-path and rendered-browser
@@ -102,25 +62,31 @@ acceptance.
 
 ### 1. Fast Focused Feedback
 
-Run the backend command from `backend/starlink-location`:
+From `backend/starlink-location`, run the tracked backend command:
 
 ```bash
 ./scripts/test-config.sh
 ```
 
-This uses the tracked Python 3.11 selection and uv to run the focused
+It uses the tracked Python 3.11 selection and uv to run the focused
 configuration test selection without Docker. It proves that focused backend
 contract only; it does not prove container behavior, proxy behavior, or browser
 rendering.
 
-Run a focused frontend test from `frontend/mission-planner``:
+From `frontend/mission-planner`, run a focused frontend test:
 
 ```bash
 npm run test:unit -- src/pages/status-projection.test.ts
 ```
 
-This proves the selected Vitest contract only. It does not prove Vite proxy
-behavior, Nginx behavior, or rendered-browser behavior.
+Run the unit-test suite from the same directory with:
+
+```bash
+npm run test:unit
+```
+
+These commands prove selected Vitest contracts only. They do not prove Vite
+proxy behavior, Nginx behavior, or rendered-browser behavior.
 
 ### 2. Development Integration and Hot Reload
 
@@ -133,7 +99,36 @@ docker compose -p starlink-dashboard-dev \
   up -d --build --no-deps starlink-location
 ```
 
-### 3. Production-Path Controls and Final acceptance
+From `frontend/mission-planner`, run Vite against that backend:
+
+```bash
+STARLINK_DEV_BACKEND_ORIGIN=http://127.0.0.1:18000 \
+  npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
+```
+
+The development override bind-mounts backend source at `/app` and runs Uvicorn
+with `--reload`. Vite proxies `/api` requests to the isolated backend. Verify
+the real proxy path from any directory:
+
+```bash
+curl --fail --show-error http://127.0.0.1:5174/api/status
+```
+
+This tier proves exploratory integration, source reload, and Vite proxy
+behavior. It does not prove the production image, Nginx path, CI, or
+rendered-browser acceptance.
+
+After the task-owned control, stop Vite and, from repository root, remove only
+the development project:
+
+```bash
+docker compose -p starlink-dashboard-dev \
+  -f docker-compose.yml \
+  -f docker-compose.dev.yml \
+  down
+```
+
+### 3. Production-Path Controls and Final Acceptance
 
 For an ordinary backend-only source change with unchanged dependency manifests
 and Dockerfiles, run this cached narrow rebuild from repository root:
@@ -143,10 +138,14 @@ docker compose up -d --build --no-deps starlink-location
 ```
 
 This is a convenience control, not final acceptance. It does not replace
-isolated exact-SHA production-image verification, and final or release-grade
-verification. Before PR approval, retain the production Dockerfiles and Nginx
-path, run fresh isolated exact-SHA Docker/browser acceptance, and require the
-applicable rendered browser evidence.
+isolated exact-SHA production-image verification, the Nginx proxy path, required
+CI, or rendered-browser evidence.
+
+Reserve `--no-cache` for dependency-manifest, base-image, or Dockerfile changes,
+explicit cache-integrity investigation, and final or release-grade verification.
+Before PR approval, preserve the production Dockerfiles and Nginx path, run
+fresh isolated exact-SHA Docker/browser acceptance, and require the applicable
+rendered browser evidence.
 
 ## Pull Request Guidelines
 
