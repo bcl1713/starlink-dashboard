@@ -273,6 +273,7 @@ def geolocate_public_ip(
         longitude = float(longitude_raw)
         if not _has_valid_geographic_coordinates(latitude, longitude):
             logger.warning("Ground entry point has invalid coordinates")
+            return None
     except (TypeError, ValueError):
         logger.warning("Ground entry point geolocation missing loc field")
         return None
