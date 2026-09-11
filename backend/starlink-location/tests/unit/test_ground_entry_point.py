@@ -227,6 +227,72 @@ def test_geolocate_public_ip_parses_ipinfo_region(monkeypatch) -> None:
     assert entry_point.label == "Omaha, Nebraska"
 
 
+def test_invalid_latitude_returns_none(monkeypatch) -> None:
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {
+                "ip": "203.0.113.10",
+                "city": "Omaha",
+                "region": "Nebraska",
+                "country": "US",
+                "loc": "91,-95.9345",
+            }
+
+    class FakeClient:
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *args) -> None:
+            return None
+
+        def get(self, url: str) -> FakeResponse:
+            assert url == "https://ipinfo.io/203.0.113.10/json"
+            return FakeResponse()
+
+    monkeypatch.setattr(gep.httpx, "Client", FakeClient)
+
+    assert gep.geolocate_public_ip("203.0.113.10") is None
+
+
+def test_invalid_longitude_returns_none(monkeypatch) -> None:
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {
+                "ip": "203.0.113.10",
+                "city": "Omaha",
+                "region": "Nebraska",
+                "country": "US",
+                "loc": "41.2565,181",
+            }
+
+    class FakeClient:
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *args) -> None:
+            return None
+
+        def get(self, url: str) -> FakeResponse:
+            assert url == "https://ipinfo.io/203.0.113.10/json"
+            return FakeResponse()
+
+    monkeypatch.setattr(gep.httpx, "Client", FakeClient)
+
+    assert gep.geolocate_public_ip("203.0.113.10") is None
+
+
 def test_refresh_ground_entry_point_metrics_replaces_labels(monkeypatch) -> None:
     entries = iter(
         [

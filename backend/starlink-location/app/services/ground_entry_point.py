@@ -320,9 +320,7 @@ def get_cached_ground_entry_point() -> GroundEntryPoint | None:
 
 def clear_ground_entry_point_metrics() -> None:
     """Clear plain gauges and remove any previously published labelled series."""
-    global \
-        _last_ground_entry_point_location_labels, \
-        _last_ground_entry_point_info_labels
+    global _last_ground_entry_point_location_labels, _last_ground_entry_point_info_labels
 
     starlink_ground_entry_point_latitude_degrees.set(math.nan)
     starlink_ground_entry_point_longitude_degrees.set(math.nan)
@@ -348,9 +346,7 @@ def clear_ground_entry_point_metrics() -> None:
 
 def publish_ground_entry_point_metrics(entry_point: GroundEntryPoint | None) -> None:
     """Publish ground entry point metrics for Grafana and Prometheus exports."""
-    global \
-        _last_ground_entry_point_location_labels, \
-        _last_ground_entry_point_info_labels
+    global _last_ground_entry_point_location_labels, _last_ground_entry_point_info_labels
 
     clear_ground_entry_point_metrics()
     if entry_point is None:
