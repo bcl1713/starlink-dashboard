@@ -8,20 +8,22 @@
 
 All configuration is done via the `.env` file in the project root.
 
-| Variable                 | Default               | Description            | Mode |
-| ------------------------ | --------------------- | ---------------------- | ---- |
-| `STARLINK_MODE`          | `simulation`          | `simulation` or `live` | Both |
-| `STARLINK_DISH_HOST`     | `192.168.100.1`       | Dish IP address        | Live |
-| `STARLINK_DISH_PORT`     | `9200`                | Dish gRPC port         | Live |
-| `PROMETHEUS_RETENTION`   | `1y`                  | Data retention period  | Both |
-| `GRAFANA_ADMIN_PASSWORD` | `admin`               | Grafana password       | Both |
-| `STARLINK_LOCATION_PORT` | `8000`                | Backend port           | Both |
-| `PROMETHEUS_PORT`        | `9090`                | Prometheus port        | Both |
-| `GRAFANA_PORT`           | `3000`                | Grafana port           | Both |
-| `TIMEZONE_TAKEOFF`       | `America/Los_Angeles` | Takeoff timezone       | Both |
-| `TIMEZONE_LANDING`       | `Europe/London`       | Landing timezone       | Both |
-| `LOG_LEVEL`              | `INFO`                | Backend log level      | Both |
-| `JSON_LOGS`              | `true`                | JSON log format        | Both |
+| Variable                        | Default               | Description              | Mode       |
+| ------------------------------- | --------------------- | ------------------------ | ---------- |
+| `STARLINK_MODE`                 | `simulation`          | `simulation` or `live`   | Both       |
+| `STARLINK_DISH_HOST`            | `192.168.100.1`       | Dish IP address          | Live       |
+| `STARLINK_DISH_PORT`            | `9200`                | Dish gRPC port           | Live       |
+| `PROMETHEUS_RETENTION`          | `1y`                  | Data retention period    | Both       |
+| `GRAFANA_ADMIN_PASSWORD`        | `admin`               | Grafana password         | Both       |
+| `STARLINK_LOCATION_PORT`        | `8000`                | Backend port             | Both       |
+| `PROMETHEUS_PORT`               | `9090`                | Prometheus port          | Both       |
+| `GRAFANA_PORT`                  | `3000`                | Grafana port             | Both       |
+| `TIMEZONE_TAKEOFF`              | `America/Los_Angeles` | Takeoff timezone         | Both       |
+| `TIMEZONE_LANDING`              | `Europe/London`       | Landing timezone         | Both       |
+| `LOG_LEVEL`                     | `INFO`                | Backend log level        | Both       |
+| `JSON_LOGS`                     | `true`                | JSON log format          | Both       |
+| STARLINK_GROUND_ENTRY_LATITUDE  | none                  | Simulation GEP Latitude  | Simulation |
+| STARLINK_GROUND_ENTRY_LONGITUDE | none                  | Simulation GEP Longitude | Simulation |
 
 ---
 
@@ -253,6 +255,21 @@ JSON_LOGS=true
 
 # Human-readable (development)
 JSON_LOGS=false
+```
+
+### STARLINK_GROUND_ENTRY_LATITUDE and STARLINK_GROUND_ENTRY_LONGITUDE
+
+Provide a fixed local GEP only for simulation/offline use. Must be provided
+together. Simulation will not perform public-IP/GEP discovery.
+
+**Default:** `none`
+
+**Example:**
+
+```bash
+# Simulation GEP Coordinates
+STARLINK_GROUND_ENTRY_LATITUDE="41.2565"
+STARLINK_GROUND_ENTRY_LONGITUDE="-95.9345"
 ```
 
 ---
