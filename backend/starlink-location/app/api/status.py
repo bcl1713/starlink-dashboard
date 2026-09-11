@@ -2,6 +2,8 @@
 
 from fastapi import APIRouter, HTTPException
 
+from app.services.ground_entry_point import get_cached_ground_entry_point
+
 router = APIRouter()
 
 # Global status state
@@ -55,6 +57,7 @@ async def status():
 
     try:
         telemetry = _coordinator.get_current_telemetry()
+        ground_entry_point = get_cached_ground_entry_point()
 
         return {
             "timestamp": telemetry.timestamp.isoformat(),
@@ -79,6 +82,14 @@ async def status():
                 "uptime_seconds": telemetry.environmental.uptime_seconds,
                 "temperature_celsius": telemetry.environmental.temperature_celsius,
             },
+            "ground_entry_point": (
+                {
+                    "latitude": ground_entry_point.latitude,
+                    "longitude": ground_entry_point.longitude,
+                }
+                if ground_entry_point is not None
+                else None
+            ),
         }
     except (
         RuntimeError,

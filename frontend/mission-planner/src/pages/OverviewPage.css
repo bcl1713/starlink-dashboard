@@ -149,3 +149,19 @@
   font-size: 0.875rem;
   font-weight: 600;
 }
+
+.globe-legend__marker--ground-entry {
+  background: #c084fc;
+  box-shadow: 0 0 6px rgb(192 132 252 / 90%);
+}
+
+.globe-marker-label {
+  display: block;
+  transform: translate(-50%, 100%);
+  color: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgb(3 3 7 / 95%);
+}

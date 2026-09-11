@@ -1,6 +1,13 @@
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Line, OrbitControls, Stars } from '@react-three/drei';
+import { Html, Line, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import { type GlobeCoordinate } from './globe-route';
@@ -10,13 +17,17 @@ import { useRoute, useRoutes } from '../hooks/api/useRoutes';
 import { sunLightPosition } from './solar-position';
 import { millisecondsUntilNextMinute } from './solar-clock';
 import { useStatus } from '@/hooks/api/useStatus';
-import { projectAircraftPosition } from './status-projection';
+import {
+  projectAircraftPosition,
+  projectGroundEntryPoint,
+} from './status-projection';
 import { StarMarker } from './OverviewStarMarker';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
+import { globePosition } from './globe-coordinates';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -62,6 +73,30 @@ function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
   return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />;
 }
 
+function GroundEntryPointMarker({
+  coordinate,
+  globeOccluder,
+}: {
+  coordinate: GlobeCoordinate;
+  globeOccluder: RefObject<THREE.Group>;
+}) {
+  return (
+    <>
+      <StarMarker coordinate={coordinate} color="#c084fc" size={0.13} />
+      <Html
+        occlude={[globeOccluder]}
+        position={globePosition(
+          coordinate.latitude,
+          coordinate.longitude,
+          ROUTE_OVERLAY_RADIUS
+        )}
+      >
+        <span className="globe-marker-label">GEP</span>
+      </Html>
+    </>
+  );
+}
+
 function Atmosphere() {
   return (
     <mesh scale={1.025}>
@@ -103,6 +138,8 @@ export function OverviewPage() {
     () => sunLightPosition(solarTime, 10),
     [solarTime]
   );
+
+  const globeOccluder = useRef<THREE.Group>(new THREE.Group());
 
   const {
     data: routes = [],
@@ -147,6 +184,7 @@ export function OverviewPage() {
   } = useStatus();
 
   const aircraftPosition = projectAircraftPosition(status ?? {});
+  const groundEntryPoint = projectGroundEntryPoint(status ?? {});
 
   const telemetryState = statusError
     ? 'Telemetry error'
@@ -162,51 +200,64 @@ export function OverviewPage() {
 
   return (
     <main className="overview-page">
-      {routeStatus ? (
-        <aside
-          className="globe-legend"
-          aria-label="Route status"
-          role={routesError || routeError ? 'alert' : 'status'}
-        >
-          <p className="globe-legend__title">Route status</p>
-          <p className="globe-legend__message">{routeStatus}</p>
-        </aside>
-      ) : (
-        <aside className="globe-legend" aria-label="Active route legend">
-          <p className="globe-legend__title">Active route</p>
-          <ul className="globe-legend__items">
+      <aside
+        className="globe-legend"
+        aria-label="Globe legend"
+        role={routesError || routeError ? 'alert' : undefined}
+      >
+        <p className="globe-legend__title">Globe</p>
+        <ul className="globe-legend__items">
+          {routeStatus ? (
             <li>
-              <span
-                className="globe-legend__marker globe-legend__marker--origin"
-                aria-hidden="true"
-              />
-              <span>Origin</span>
-              <strong>First route point</strong>
+              <span aria-hidden="true" />
+              <span>Route</span>
+              <strong>{routeStatus}</strong>
             </li>
-            <li>
-              <span
-                className="globe-legend__marker globe-legend__marker--destination"
-                aria-hidden="true"
-              />
-              <span>Destination</span>
-              <strong>Last route point</strong>
-            </li>
-            <li>
-              <span
-                className="globe-legend__marker globe-legend__marker--aircraft"
-                aria-hidden="true"
-              />
-              <span>Aircraft position</span>
-              <strong>{telemetryState}</strong>
-            </li>
-            <li>
-              <span className="globe-legend__route" aria-hidden="true" />
-              <span>Path</span>
-              <strong>{activeRoute?.name}</strong>
-            </li>
-          </ul>
-        </aside>
-      )}
+          ) : (
+            <>
+              <li>
+                <span
+                  className="globe-legend__marker globe-legend__marker--origin"
+                  aria-hidden="true"
+                />
+                <span>Origin</span>
+                <strong>First route point</strong>
+              </li>
+              <li>
+                <span
+                  className="globe-legend__marker globe-legend__marker--destination"
+                  aria-hidden="true"
+                />
+                <span>Destination</span>
+                <strong>Last route point</strong>
+              </li>
+              <li>
+                <span className="globe-legend__route" aria-hidden="true" />
+                <span>Path</span>
+                <strong>{activeRoute?.name}</strong>
+              </li>
+            </>
+          )}
+          <li>
+            <span
+              className="globe-legend__marker globe-legend__marker--aircraft"
+              aria-hidden="true"
+            />
+            <span>Aircraft position</span>
+            <strong>{telemetryState}</strong>
+          </li>
+          <li>
+            <span
+              className="globe-legend__marker globe-legend__marker--ground-entry"
+              aria-hidden="true"
+            />
+            <span>Ground entry point</span>
+            <strong>
+              {groundEntryPoint ? 'Current/last-known' : 'GEP unavailable'}
+            </strong>
+          </li>
+        </ul>
+      </aside>
       <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <color attach="background" args={['#030307']} />
@@ -240,7 +291,9 @@ export function OverviewPage() {
           speed={0.1}
         />
         <Suspense fallback={null}>
-          <CityLitGlobe sunPosition={sunPosition} />
+          <group ref={globeOccluder}>
+            <CityLitGlobe sunPosition={sunPosition} />
+          </group>
           <Atmosphere />
           {hasRenderableRoute && (
             <Line
@@ -255,6 +308,12 @@ export function OverviewPage() {
           {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
           {destination && (
             <RouteEndpoint coordinate={destination} color="#00ff00" />
+          )}
+          {groundEntryPoint && (
+            <GroundEntryPointMarker
+              coordinate={groundEntryPoint}
+              globeOccluder={globeOccluder}
+            />
           )}
           {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
         </Suspense>

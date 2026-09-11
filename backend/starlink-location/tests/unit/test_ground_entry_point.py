@@ -21,6 +21,23 @@ def setup_function() -> None:
     gep._last_ground_entry_point_refresh_monotonic = None
 
 
+def test_environment_ground_entry_point_rejects_invalid_coordinates(
+    monkeypatch,
+) -> None:
+    invalid_coordinates = [
+        ("91", "-95.9345"),  # latitude range
+        ("41.2565", "181"),  # longitude range
+        ("nan", "-95.9345"),  # non-finite latitude
+        ("41.2565", "inf"),  # non-finite longitude
+    ]
+
+    for latitude, longitude in invalid_coordinates:
+        monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", latitude)
+        monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", longitude)
+
+        assert gep._entry_point_from_environment() is None
+
+
 def test_extract_cloudflare_trace_ipv4_reads_valid_ip_line() -> None:
     trace_body = """fl=123f45
 h=1.1.1.1
@@ -208,6 +225,72 @@ def test_geolocate_public_ip_parses_ipinfo_region(monkeypatch) -> None:
     assert entry_point is not None
     assert entry_point.region == "Nebraska"
     assert entry_point.label == "Omaha, Nebraska"
+
+
+def test_invalid_latitude_returns_none(monkeypatch) -> None:
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {
+                "ip": "203.0.113.10",
+                "city": "Omaha",
+                "region": "Nebraska",
+                "country": "US",
+                "loc": "91,-95.9345",
+            }
+
+    class FakeClient:
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *args) -> None:
+            return None
+
+        def get(self, url: str) -> FakeResponse:
+            assert url == "https://ipinfo.io/203.0.113.10/json"
+            return FakeResponse()
+
+    monkeypatch.setattr(gep.httpx, "Client", FakeClient)
+
+    assert gep.geolocate_public_ip("203.0.113.10") is None
+
+
+def test_invalid_longitude_returns_none(monkeypatch) -> None:
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict[str, str]:
+            return {
+                "ip": "203.0.113.10",
+                "city": "Omaha",
+                "region": "Nebraska",
+                "country": "US",
+                "loc": "41.2565,181",
+            }
+
+    class FakeClient:
+        def __init__(self, **kwargs) -> None:
+            self.kwargs = kwargs
+
+        def __enter__(self) -> Self:
+            return self
+
+        def __exit__(self, *args) -> None:
+            return None
+
+        def get(self, url: str) -> FakeResponse:
+            assert url == "https://ipinfo.io/203.0.113.10/json"
+            return FakeResponse()
+
+    monkeypatch.setattr(gep.httpx, "Client", FakeClient)
+
+    assert gep.geolocate_public_ip("203.0.113.10") is None
 
 
 def test_refresh_ground_entry_point_metrics_replaces_labels(monkeypatch) -> None:
@@ -458,3 +541,39 @@ def test_resolver_reuses_cached_geolocation_when_prior_ip_returns() -> None:
     assert second is not None
     assert third is first
     assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
+
+
+def test_resolver_ignores_environment_override_by_default(monkeypatch) -> None:
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", "41.2565")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", "-95.9345")
+
+    resolver = gep.GroundEntryPointResolver()
+
+    assert resolver.current() is None
+    configured = resolver.current(include_environment_override=True)
+
+    assert configured is not None
+    assert configured.latitude == 41.2565
+    assert configured.longitude == -95.9345
+
+
+def test_resolver_refresh_ignores_environment_override_by_default(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", "41.2565")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", "-95.9345")
+
+    discovered = GroundEntryPoint(
+        ip="203.0.113.10",
+        city="Omaha",
+        region="Nebraska",
+        country="US",
+        latitude=41.2565,
+        longitude=-95.9345,
+    )
+    resolver = gep.GroundEntryPointResolver(
+        ip_resolver=lambda: "203.0.113.10",
+        geolocator=lambda _: discovered,
+    )
+
+    assert resolver.refresh() is discovered

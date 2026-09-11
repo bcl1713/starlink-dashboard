@@ -77,6 +77,10 @@ test.describe('Globe overview', () => {
           environmental: {
             signal_quality_percent: 85,
           },
+          ground_entry_point: {
+            latitude: 41.2565,
+            longitude: -95.9345,
+          },
         },
       });
     });
@@ -88,6 +92,7 @@ test.describe('Globe overview', () => {
     );
 
     await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
 
     const metricsPanel = page.getByLabel('Current network metrics');
 
@@ -106,19 +111,20 @@ test.describe('Globe overview', () => {
 
     expect(statusRequests[0]).toMatch(/\/api\/status$/);
 
-    await expect(page.getByLabel('Active route legend')).toBeVisible();
+    await expect(page.getByLabel('Globe legend')).toBeVisible();
+    await expect(page.getByText('GEP', { exact: true })).toBeVisible();
     await expect(
       page.getByText('Anti-meridian validation route', { exact: true })
     ).toBeVisible();
     await expect(page.locator('canvas')).toBeVisible();
     await expect.poll(() => routeRequests).toHaveLength(2);
-    await expect(earthTexture).resolves.toBeTruthy();
 
     expect(routeRequests[0]).toMatch(/\/api\/routes$/);
     expect(routeRequests[1]).toMatch(/\/api\/routes\/active-anti-meridian$/);
   });
 
   test('refreshes status without overlapping requests', async ({ page }) => {
+    await page.clock.install({ time: new Date('2026-06-21T12:00:00.000Z') });
     let statusRequestCount = 0;
     let inFlightRequests = 0;
     let maximumInFlightRequests = 0;
@@ -126,6 +132,35 @@ test.describe('Globe overview', () => {
 
     const slowRefresh = new Promise<void>((resolve) => {
       releaseSlowRefresh = resolve;
+    });
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [
+            {
+              id: 'stale-status-route',
+              name: 'Stale status validation route',
+              point_count: 2,
+              is_active: true,
+            },
+          ],
+          total: 1,
+        },
+      });
+    });
+
+    await page.route('**/api/routes/stale-status-route', async (route) => {
+      await route.fulfill({
+        json: {
+          id: 'stale-status-route',
+          name: 'Stale status validation route',
+          points: [
+            { latitude: 0, longitude: 179 },
+            { latitude: 0, longitude: -179 },
+          ],
+        },
+      });
     });
 
     await page.route('**/api/status', async (route) => {
@@ -158,11 +193,11 @@ test.describe('Globe overview', () => {
     await page.goto('/overview');
     await page.bringToFront();
 
-    await expect
-      .poll(() => statusRequestCount, { timeout: 5_000 })
-      .toBeGreaterThanOrEqual(2);
+    await expect.poll(() => statusRequestCount).toBe(1);
 
-    await new Promise((resolve) => setTimeout(resolve, 1_500));
+    await page.clock.fastForward(1_000);
+
+    await expect.poll(() => statusRequestCount).toBeGreaterThanOrEqual(2);
 
     expect(maximumInFlightRequests).toBe(1);
 
@@ -178,6 +213,35 @@ test.describe('Globe overview', () => {
       time: new Date(observedAt),
     });
 
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [
+            {
+              id: 'stale-status-route',
+              name: 'Stale status validation route',
+              point_count: 2,
+              is_active: true,
+            },
+          ],
+          total: 1,
+        },
+      });
+    });
+
+    await page.route('**/api/routes/stale-status-route', async (route) => {
+      await route.fulfill({
+        json: {
+          id: 'stale-status-route',
+          name: 'Stale status validation route',
+          points: [
+            { latitude: 0, longitude: 179 },
+            { latitude: 0, longitude: -179 },
+          ],
+        },
+      });
+    });
+
     await page.route('**/api/status', async (route) => {
       statusRequestCount += 1;
 
@@ -189,6 +253,7 @@ test.describe('Globe overview', () => {
               latitude: 0,
               longitude: 179,
             },
+            ground_entry_point: null,
           },
         });
 
@@ -210,5 +275,81 @@ test.describe('Globe overview', () => {
     await expect(
       metricsPanel.getByText('Telemetry stale', { exact: true })
     ).toBeVisible();
+    await expect(page.getByLabel('Globe legend')).toBeVisible();
+    await expect(
+      page.getByText('GEP unavailable', { exact: true })
+    ).toBeVisible();
+  });
+  test('keeps aircraft and GEP context visible without an active route', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.addInitScript(`
+      const RealDate = Date;
+      const fixedTime = '${observedAt}';
+
+      class FixedDate extends RealDate {
+        constructor(...args) {
+          super(args.length === 0 ? fixedTime : args[0]);
+        }
+
+        static now() {
+          return new RealDate(fixedTime).getTime();
+        }
+      }
+
+      window.Date = FixedDate;
+    `);
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: {
+            latitude: 41.2565,
+            longitude: -95.9345,
+          },
+        },
+      });
+    });
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      page.getByText('No active route.', { exact: true })
+    ).toBeVisible();
+    await expect(globeLegend).toBeVisible();
+    await expect(
+      globeLegend.getByText('Aircraft position', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Live telemetry', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Current/last-known', { exact: true })
+    ).toBeVisible();
+    await expect(page.getByText('GEP', { exact: true })).toBeVisible();
   });
 });
