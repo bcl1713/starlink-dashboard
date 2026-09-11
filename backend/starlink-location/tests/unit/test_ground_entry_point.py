@@ -541,3 +541,39 @@ def test_resolver_reuses_cached_geolocation_when_prior_ip_returns() -> None:
     assert second is not None
     assert third is first
     assert geolocate_calls == ["203.0.113.10", "198.51.100.24"]
+
+
+def test_resolver_ignores_environment_override_by_default(monkeypatch) -> None:
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", "41.2565")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", "-95.9345")
+
+    resolver = gep.GroundEntryPointResolver()
+
+    assert resolver.current() is None
+    configured = resolver.current(include_environment_override=True)
+
+    assert configured is not None
+    assert configured.latitude == 41.2565
+    assert configured.longitude == -95.9345
+
+
+def test_resolver_refresh_ignores_environment_override_by_default(
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LATITUDE", "41.2565")
+    monkeypatch.setenv("STARLINK_GROUND_ENTRY_LONGITUDE", "-95.9345")
+
+    discovered = GroundEntryPoint(
+        ip="203.0.113.10",
+        city="Omaha",
+        region="Nebraska",
+        country="US",
+        latitude=41.2565,
+        longitude=-95.9345,
+    )
+    resolver = gep.GroundEntryPointResolver(
+        ip_resolver=lambda: "203.0.113.10",
+        geolocator=lambda _: discovered,
+    )
+
+    assert resolver.refresh() is discovered

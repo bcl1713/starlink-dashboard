@@ -118,7 +118,9 @@ async def startup_event():
                     exc_info=True,
                 )
         else:
-            publish_ground_entry_point_metrics(get_cached_ground_entry_point())
+            publish_ground_entry_point_metrics(
+                get_cached_ground_entry_point(include_environment_override=True)
+            )
         if _simulation_config.mode == "live":
             # Initialize LiveCoordinator for real terminal data
             logger.info_json("Initializing LiveCoordinator for live mode")
