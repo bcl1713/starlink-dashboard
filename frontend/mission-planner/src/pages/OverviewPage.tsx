@@ -200,61 +200,64 @@ export function OverviewPage() {
 
   return (
     <main className="overview-page">
-      {routeStatus ? (
-        <aside
-          className="globe-legend"
-          aria-label="Route status"
-          role={routesError || routeError ? 'alert' : 'status'}
-        >
-          <p className="globe-legend__title">Route status</p>
-          <p className="globe-legend__message">{routeStatus}</p>
-        </aside>
-      ) : (
-        <aside className="globe-legend" aria-label="Active route legend">
-          <p className="globe-legend__title">Active route</p>
-          <ul className="globe-legend__items">
+      <aside
+        className="globe-legend"
+        aria-label="Globe legend"
+        role={routesError || routeError ? 'alert' : undefined}
+      >
+        <p className="globe-legend__title">Globe</p>
+        <ul className="globe-legend__items">
+          {routeStatus ? (
             <li>
-              <span
-                className="globe-legend__marker globe-legend__marker--origin"
-                aria-hidden="true"
-              />
-              <span>Origin</span>
-              <strong>First route point</strong>
+              <span aria-hidden="true" />
+              <span>Route</span>
+              <strong>{routeStatus}</strong>
             </li>
-            <li>
-              <span
-                className="globe-legend__marker globe-legend__marker--destination"
-                aria-hidden="true"
-              />
-              <span>Destination</span>
-              <strong>Last route point</strong>
-            </li>
-            <li>
-              <span
-                className="globe-legend__marker globe-legend__marker--aircraft"
-                aria-hidden="true"
-              />
-              <span>Aircraft position</span>
-              <strong>{telemetryState}</strong>
-            </li>
-            <li>
-              <span className="globe-legend__route" aria-hidden="true" />
-              <span>Path</span>
-              <strong>{activeRoute?.name}</strong>
-            </li>
-            <li>
-              <span
-                className="globe-legend__marker globe-legend__marker--ground-entry"
-                aria-hidden="true"
-              />
-              <span>Ground entry point</span>
-              <strong>
-                {groundEntryPoint ? 'Current/last-known' : 'GEP unavailable'}
-              </strong>
-            </li>
-          </ul>
-        </aside>
-      )}
+          ) : (
+            <>
+              <li>
+                <span
+                  className="globe-legend__marker globe-legend__marker--origin"
+                  aria-hidden="true"
+                />
+                <span>Origin</span>
+                <strong>First route point</strong>
+              </li>
+              <li>
+                <span
+                  className="globe-legend__marker globe-legend__marker--destination"
+                  aria-hidden="true"
+                />
+                <span>Destination</span>
+                <strong>Last route point</strong>
+              </li>
+              <li>
+                <span className="globe-legend__route" aria-hidden="true" />
+                <span>Path</span>
+                <strong>{activeRoute?.name}</strong>
+              </li>
+            </>
+          )}
+          <li>
+            <span
+              className="globe-legend__marker globe-legend__marker--aircraft"
+              aria-hidden="true"
+            />
+            <span>Aircraft position</span>
+            <strong>{telemetryState}</strong>
+          </li>
+          <li>
+            <span
+              className="globe-legend__marker globe-legend__marker--ground-entry"
+              aria-hidden="true"
+            />
+            <span>Ground entry point</span>
+            <strong>
+              {groundEntryPoint ? 'Current/last-known' : 'GEP unavailable'}
+            </strong>
+          </li>
+        </ul>
+      </aside>
       <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
       <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
         <color attach="background" args={['#030307']} />
