@@ -31,6 +31,18 @@ _last_ground_entry_point_info_labels: tuple[str, str, str, str, str] | None = No
 _last_ground_entry_point_refresh_monotonic: float | None = None
 
 
+def _has_valid_geographic_coordinates(
+    latitude: float,
+    longitude: float,
+) -> bool:
+    return (
+        math.isfinite(latitude)
+        and math.isfinite(longitude)
+        and -90 <= latitude <= 90
+        and -180 <= longitude <= 180
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class GroundEntryPoint:
     """Public internet egress location used as a ground entry point proxy."""
@@ -259,30 +271,8 @@ def geolocate_public_ip(
         latitude_raw, longitude_raw = loc.split(",", maxsplit=1)
         latitude = float(latitude_raw)
         longitude = float(longitude_raw)
-        if (
-            math.isinf(latitude)
-            or math.isnan(latitude)
-            or latitude < -90
-            or latitude > 90
-        ):
-            logger.warning(
-                "Ground entry point latitude "
-                + str(latitude)
-                + " is not a valid coordinate"
-            )
-            return None
-        if (
-            math.isinf(longitude)
-            or math.isnan(longitude)
-            or longitude < -90
-            or longitude > 90
-        ):
-            logger.warning(
-                "Ground entry point longitude "
-                + str(longitude)
-                + " is not a valid coordinate"
-            )
-            return None
+        if not _has_valid_geographic_coordinates(latitude, longitude):
+            logger.warning("Ground entry point has invalid coordinates")
     except (TypeError, ValueError):
         logger.warning("Ground entry point geolocation missing loc field")
         return None
@@ -461,13 +451,8 @@ def _entry_point_from_environment() -> GroundEntryPoint | None:
     try:
         latitude = float(lat_raw)
         longitude = float(lon_raw)
-        if math.isnan(latitude) or math.isinf(latitude):
-            return None
-        if math.isnan(longitude) or math.isinf(longitude):
-            return None
-        if latitude > 90 or latitude < -90:
-            return None
-        if longitude > 180 or longitude < -180:
+        if not _has_valid_geographic_coordinates(latitude, longitude):
+            logger.warning("Ground entry point has invalid coordinates")
             return None
     except ValueError:
         logger.warning("Invalid STARLINK_GROUND_ENTRY latitude/longitude override")
