@@ -44,9 +44,13 @@ git push origin feat/your-feature-name
 Create a pull request from your feature branch. CI/CD will automatically run
 linting checks.
 
-### 5. Merge to Main
+### 5. Integrate Through `dev`
 
-Once CI passes and code is reviewed, merge the PR to main/develop.
+Open pull requests from feature branches to `dev`. Reviewer-passed PRs may merge
+to `dev` only after the required exact-head checks and acceptance evidence pass.
+
+`main` is a separate Brian-reviewed release gate. Do not open ordinary
+development PRs against or merge them into `main`.
 
 ---
 
@@ -81,14 +85,68 @@ pytest tests/test_routes.py::test_get_routes
 ```bash
 cd frontend/mission-planner
 
-# Run tests
-npm test
+# Run one focused unit-test selection
+npm run test:unit -- src/pages/status-projection.test.ts
 
-# Run tests with coverage
-npm test -- --coverage
+# Run the unit-test suite
+npm run test:unit
 ```
 
 ---
+
+## Three-Tier Development Test Loop
+
+Use the smallest tier that can answer the current development question. Faster
+feedback supplements rather than replaces production-path and rendered-browser
+acceptance.
+
+### 1. Fast Focused Feedback
+
+Run the backend command from `backend/starlink-location`:
+
+```bash
+./scripts/test-config.sh
+```
+
+This uses the tracked Python 3.11 selection and uv to run the focused
+configuration test selection without Docker. It proves that focused backend
+contract only; it does not prove container behavior, proxy behavior, or browser
+rendering.
+
+Run a focused frontend test from `frontend/mission-planner``:
+
+```bash
+npm run test:unit -- src/pages/status-projection.test.ts
+```
+
+This proves the selected Vitest contract only. It does not prove Vite proxy
+behavior, Nginx behavior, or rendered-browser behavior.
+
+### 2. Development Integration and Hot Reload
+
+From repository root, start only the isolated development backend:
+
+```bash
+docker compose -p starlink-dashboard-dev \
+  -f docker-compose.yml \
+  -f docker-compose.dev.yml \
+  up -d --build --no-deps starlink-location
+```
+
+### 3. Production-Path Controls and Final acceptance
+
+For an ordinary backend-only source change with unchanged dependency manifests
+and Dockerfiles, run this cached narrow rebuild from repository root:
+
+```bash
+docker compose up -d --build --no-deps starlink-location
+```
+
+This is a convenience control, not final acceptance. It does not replace
+isolated exact-SHA production-image verification, and final or release-grade
+verification. Before PR approval, retain the production Dockerfiles and Nginx
+path, run fresh isolated exact-SHA Docker/browser acceptance, and require the
+applicable rendered browser evidence.
 
 ## Pull Request Guidelines
 
