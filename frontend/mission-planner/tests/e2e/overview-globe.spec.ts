@@ -445,4 +445,58 @@ test.describe('Globe overview', () => {
       globeLegend.getByText('X-Atlantic', { exact: true })
     ).toHaveCount(0);
   });
+  test('hides invalid configured satellite records', async ({ page }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-invalid',
+            transport: 'X',
+            longitude: 181,
+            slot: 'Invalid slot',
+            color: '#FF6B7B',
+          },
+        ],
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      globeLegend.getByText('X-invalid', { exact: true })
+    ).toHaveCount(0);
+  });
 });
