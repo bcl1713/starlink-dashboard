@@ -4,6 +4,14 @@ test.describe('Globe overview', () => {
   test.describe.configure({ mode: 'serial' });
   test.use({ viewport: { width: 1920, height: 1080 } });
 
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [],
+      });
+    });
+  });
+
   test('renders an active anti-meridian route from same-origin API data', async ({
     page,
   }) => {
