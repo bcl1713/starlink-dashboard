@@ -284,6 +284,7 @@ test.describe('Globe overview', () => {
     page,
   }) => {
     const observedAt = '2026-06-21T12:00:00.000Z';
+    const satelliteRequests: string[] = [];
 
     await page.addInitScript(`
       const RealDate = Date;
@@ -326,6 +327,23 @@ test.describe('Globe overview', () => {
         },
       });
     });
+
+    await page.route('**/api/satellites', async (route) => {
+      satelliteRequests.push(route.request().url());
+
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-Atlantic',
+            transport: 'X',
+            longitude: -60,
+            slot: 'Atlantic',
+            color: '#FF6B6B',
+          },
+        ],
+      });
+    });
+
     const earthTexture = page.waitForResponse(
       (response) =>
         new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
@@ -341,6 +359,14 @@ test.describe('Globe overview', () => {
       page.getByText('No active route.', { exact: true })
     ).toBeVisible();
     await expect(globeLegend).toBeVisible();
+    await expect.poll(() => satelliteRequests).toHaveLength(1);
+    expect(satelliteRequests[0]).toMatch(/\/api\/satellites$/);
+    await expect(
+      globeLegend.getByText('Configured X-band satellites', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('1 configured satellite', { exact: true })
+    ).toBeVisible();
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
     ).toBeVisible();
