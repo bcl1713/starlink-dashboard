@@ -44,51 +44,110 @@ git push origin feat/your-feature-name
 Create a pull request from your feature branch. CI/CD will automatically run
 linting checks.
 
-### 5. Merge to Main
+### 5. Integrate Through `dev`
 
-Once CI passes and code is reviewed, merge the PR to main/develop.
+Open pull requests from feature branches to `dev`. Reviewer-passed PRs may merge
+to `dev` only after the required exact-head checks and acceptance evidence pass.
 
----
-
-## Testing
-
-### Backend Tests (Python)
-
-```bash
-cd backend/starlink-location
-
-# Run all tests
-pytest
-
-# Run tests with coverage
-pytest --cov=app tests/
-
-# Run specific test file
-pytest tests/test_routes.py
-
-# Run specific test
-pytest tests/test_routes.py::test_get_routes
-```
-
-### Test Requirements
-
-- New features should include corresponding tests
-- Tests must pass before merge
-- Maintain >80% code coverage for refactored code
-
-### Frontend Tests (TypeScript/React)
-
-```bash
-cd frontend/mission-planner
-
-# Run tests
-npm test
-
-# Run tests with coverage
-npm test -- --coverage
-```
+`main` is a separate Brian-reviewed release gate. Do not open ordinary
+development PRs against or merge them into `main`.
 
 ---
+
+## Testing and Three-Tier Development Loop
+
+Use the smallest tier that can answer the current development question. Faster
+feedback supplements rather than replaces production-path and rendered-browser
+acceptance.
+
+### 1. Fast Focused Feedback
+
+From `backend/starlink-location`, run the tracked backend command:
+
+```bash
+./scripts/test-config.sh
+```
+
+It uses the tracked Python 3.11 selection and uv to run the focused
+configuration test selection without Docker. It proves that focused backend
+contract only; it does not prove container behavior, proxy behavior, or browser
+rendering.
+
+From `frontend/mission-planner`, run a focused frontend test:
+
+```bash
+npm run test:unit -- src/pages/status-projection.test.ts
+```
+
+Run the unit-test suite from the same directory with:
+
+```bash
+npm run test:unit
+```
+
+These commands prove selected Vitest contracts only. They do not prove Vite
+proxy behavior, Nginx behavior, or rendered-browser behavior.
+
+### 2. Development Integration and Hot Reload
+
+From repository root, start only the isolated development backend:
+
+```bash
+docker compose -p starlink-dashboard-dev \
+  -f docker-compose.yml \
+  -f docker-compose.dev.yml \
+  up -d --build --no-deps starlink-location
+```
+
+From `frontend/mission-planner`, run Vite against that backend:
+
+```bash
+STARLINK_DEV_BACKEND_ORIGIN=http://127.0.0.1:18000 \
+  npm run dev -- --host 127.0.0.1 --port 5174 --strictPort
+```
+
+The development override bind-mounts backend source at `/app` and runs Uvicorn
+with `--reload`. Vite proxies `/api` requests to the isolated backend. Verify
+the real proxy path from any directory:
+
+```bash
+curl --fail --show-error http://127.0.0.1:5174/api/status
+```
+
+This tier proves exploratory integration, reload configuration, and Vite proxy
+behavior. It does not prove the production image, Nginx path, CI, or
+rendered-browser acceptance.
+
+After the task-owned control, stop Vite and, from repository root, remove only
+the development project:
+
+```bash
+docker compose -p starlink-dashboard-dev \
+  -f docker-compose.yml \
+  -f docker-compose.dev.yml \
+  down
+```
+
+### 3. Production-Path Controls and Final Acceptance
+
+For an ordinary backend-only source change with unchanged dependency manifests
+and Dockerfiles, run this cached narrow rebuild from repository root:
+
+```bash
+docker compose up -d --build --no-deps starlink-location
+```
+
+This is a convenience control, not final acceptance. It does not replace
+isolated exact-SHA production-image verification, the Nginx proxy path, required
+CI, or rendered-browser evidence.
+
+Use `--no-cache` when dependency manifests or Dockerfile instructions change,
+for explicit cache-integrity investigation, and when final or release-grade
+verification requires rebuilding Dockerfile layers. `--no-cache` does not
+refresh a locally cached base-image tag; when base-image freshness matters, also
+pull the referenced base image. Before PR approval, preserve the production
+Dockerfiles and Nginx path, run fresh isolated exact-SHA Docker/browser
+acceptance, and require the applicable rendered browser evidence.
 
 ## Pull Request Guidelines
 

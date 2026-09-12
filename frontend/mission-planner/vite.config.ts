@@ -3,12 +3,15 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const backendProxyTarget =
+  process.env.STARLINK_DEV_BACKEND_ORIGIN ?? 'http://localhost:8000';
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8000',
+      '/api': backendProxyTarget,
     },
   },
   resolve: {
