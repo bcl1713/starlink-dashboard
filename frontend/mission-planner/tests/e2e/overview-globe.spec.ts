@@ -340,6 +340,13 @@ test.describe('Globe overview', () => {
             slot: 'Atlantic',
             color: '#FF6B6B',
           },
+          {
+            satellite_id: 'X-Pacific',
+            transport: 'X',
+            longitude: 150,
+            slot: 'Pacific',
+            color: '#FF6B6B',
+          },
         ],
       });
     });
@@ -365,7 +372,7 @@ test.describe('Globe overview', () => {
       globeLegend.getByText('Configured X-band satellites', { exact: true })
     ).toBeVisible();
     await expect(
-      globeLegend.getByText('1 configured satellite', { exact: true })
+      globeLegend.getByText('2 configured satellites', { exact: true })
     ).toBeVisible();
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
