@@ -30,7 +30,7 @@ describe('projectConfiguredXBandSatellites', () => {
     expect(
       projectConfiguredXBandSatellites([
         {
-          satelliate_id: 'Ka-1',
+          satellite_id: 'Ka-1',
           transport: 'Ka',
           longitude: 10,
           slot: null,
