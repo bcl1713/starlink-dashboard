@@ -114,7 +114,7 @@ the real proxy path from any directory:
 curl --fail --show-error http://127.0.0.1:5174/api/status
 ```
 
-This tier proves exploratory integration, source reload, and Vite proxy
+This tier proves exploratory integration, reload configuration, and Vite proxy
 behavior. It does not prove the production image, Nginx path, CI, or
 rendered-browser acceptance.
 
