@@ -99,6 +99,32 @@ function GroundEntryPointMarker({
   );
 }
 
+function ConfiguredXBandSatelliteMarker({
+  satelliteId,
+  coordinate,
+  globeOccluder,
+}: {
+  satelliteId: string;
+  coordinate: GlobeCoordinate;
+  globeOccluder: RefObject<THREE.Group>;
+}) {
+  return (
+    <>
+      <StarMarker coordinate={coordinate} color="#FF6B6B" size={0.13} />
+      <Html
+        occlude={[globeOccluder]}
+        position={globePosition(
+          coordinate.latitude,
+          coordinate.longitude,
+          ROUTE_OVERLAY_RADIUS
+        )}
+      >
+        <span className="globe-marker-label">{satelliteId}</span>
+      </Html>
+    </>
+  );
+}
+
 function Atmosphere() {
   return (
     <mesh scale={1.025}>
@@ -341,6 +367,14 @@ export function OverviewPage() {
               globeOccluder={globeOccluder}
             />
           )}
+          {configuredXBandSatellites.map((satellite) => (
+            <ConfiguredXBandSatelliteMarker
+              key={`${satellite.satelliteId}-${satellite.longitude}`}
+              satelliteId={satellite.satelliteId}
+              coordinate={satellite}
+              globeOccluder={globeOccluder}
+            />
+          ))}
           {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
         </Suspense>
         <OrbitControls
