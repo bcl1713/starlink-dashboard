@@ -374,6 +374,7 @@ test.describe('Globe overview', () => {
     await expect(
       globeLegend.getByText('2 configured satellites', { exact: true })
     ).toBeVisible();
+    await expect(page.getByText('X-Atlantic', { exact: true })).toBeVisible();
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
     ).toBeVisible();
