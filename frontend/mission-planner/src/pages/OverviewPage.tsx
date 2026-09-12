@@ -202,7 +202,7 @@ export function OverviewPage() {
         ? 'No valid configured satellites'
         : configuredXBandSatellites.length === 1
           ? '1 configured satellite'
-          : '${configuredXBandSatellites.length} configured satellites';
+          : configuredXBandSatellites.length + ' configured satellites';
 
   const aircraftPosition = projectAircraftPosition(status ?? {});
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
