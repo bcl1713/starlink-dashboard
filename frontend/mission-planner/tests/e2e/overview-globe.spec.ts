@@ -386,4 +386,57 @@ test.describe('Globe overview', () => {
     ).toBeVisible();
     await expect(page.getByText('GEP', { exact: true })).toBeVisible();
   });
+
+  test('reports unavailable satellite configuration without a marker', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitudue: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        status: 603,
+        contentType: 'application/json',
+        json: {
+          detail: 'Satellite configuration unavailable',
+        },
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      globeLegend.getByText('X-Atlantic', { exact: true })
+    ).toHaveCount(0);
+  });
 });
