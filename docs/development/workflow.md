@@ -141,11 +141,11 @@ This is a convenience control, not final acceptance. It does not replace
 isolated exact-SHA production-image verification, the Nginx proxy path, required
 CI, or rendered-browser evidence.
 
-Use --no-cache when dependency manifests or Dockerfile instructions change, for
-explicit cache-integrity investigation, and when final or release-grade
-verification requires rebuilding Dockerfile layers. --no-cache does not refresh
-a locally cached base-image tag; when base-image freshness matters, also pull
-the referenced base image. Before PR approval, preserve the production
+Use `--no-cache` when dependency manifests or Dockerfile instructions change,
+for explicit cache-integrity investigation, and when final or release-grade
+verification requires rebuilding Dockerfile layers. `--no-cache` does not
+refresh a locally cached base-image tag; when base-image freshness matters, also
+pull the referenced base image. Before PR approval, preserve the production
 Dockerfiles and Nginx path, run fresh isolated exact-SHA Docker/browser
 acceptance, and require the applicable rendered browser evidence.
 
