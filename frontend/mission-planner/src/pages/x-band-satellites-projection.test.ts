@@ -26,6 +26,18 @@ describe('projectConfiguredXBandSatellites', () => {
     expect(projectConfiguredXBandSatellites(undefined)).toEqual([]);
   });
 
+  it('excludes an X-band record with a whitespace-only satellite ID', () => {
+    expect(
+      projectConfiguredXBandSatellites([
+        {
+          satellite_id: '   ',
+          transport: 'X',
+          longitude: -60,
+        },
+      ])
+    ).toEqual([]);
+  });
+
   it('excludes non-X-band and invalid configured records', () => {
     expect(
       projectConfiguredXBandSatellites([

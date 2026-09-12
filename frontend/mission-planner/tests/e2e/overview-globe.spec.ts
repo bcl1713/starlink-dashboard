@@ -507,4 +507,66 @@ test.describe('Globe overview', () => {
       globeLegend.getByText('X-invalid', { exact: true })
     ).toHaveCount(0);
   });
+
+  test('reports a whitespace-only configured satellite ID as invalid without a marker', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: '   ',
+            transport: 'X',
+            longitude: -60,
+          },
+        ],
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    const satelliteLegendEntry = globeLegend.locator('li').filter({
+      hasText: 'Configured X-band satellites',
+    });
+
+    await expect(satelliteLegendEntry).toHaveText(
+      'Configured X-band satellitesNo valid configured satellites'
+    );
+    await expect(
+      page.locator('.globe-marker-label', { hasText: /\S/ })
+    ).toHaveCount(0);
+  });
 });
