@@ -28,6 +28,8 @@ import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
+import { useSatellites } from '@/hooks/api/useSatellites';
+import { projectConfiguredXBandSatellites } from './x-band-satellites-projection';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -183,6 +185,25 @@ export function OverviewPage() {
     error: statusError,
   } = useStatus();
 
+  const {
+    data: satellites,
+    isLoading: isLoadingSatellites,
+    error: satellitesError,
+  } = useSatellites();
+
+  const configuredXBandSatellites =
+    projectConfiguredXBandSatellites(satellites);
+
+  const configuredXBandSatelliteState = satellitesError
+    ? 'Satellite configuration unavailable'
+    : isLoadingSatellites
+      ? 'Loading satellite configuration...'
+      : configuredXBandSatellites.length === 0
+        ? 'No valid configured satellites'
+        : configuredXBandSatellites.length === 1
+          ? '1 configured satellite'
+          : '${configuredXBandSatellites.length} configured satellites';
+
   const aircraftPosition = projectAircraftPosition(status ?? {});
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
 
@@ -255,6 +276,11 @@ export function OverviewPage() {
             <strong>
               {groundEntryPoint ? 'Current/last-known' : 'GEP unavailable'}
             </strong>
+          </li>
+          <li>
+            <span aria-hidden="true" />
+            <span>Configured X-band satellites</span>
+            <strong>{configuredXBandSatelliteState}</strong>
           </li>
         </ul>
       </aside>
