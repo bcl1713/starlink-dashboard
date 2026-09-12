@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { 'projectConfiguredXBandSatellites' } from './x-band-satellite-projection';
+import { describe, expect, it } from 'vitest';
+import { projectConfiguredXBandSatellites } from './x-band-satellites-projection';
 
 describe('projectConfiguredXBandSatellites', () => {
   it('projects valid configured X-band records at the equator', () => {
@@ -10,16 +10,16 @@ describe('projectConfiguredXBandSatellites', () => {
           transport: 'X',
           longitude: -60,
           slot: 'Atlantic',
-          color: '#FF6B6B'
+          color: '#FF6B6B',
         },
       ])
     ).toEqual([
-        {
-          satelliteId: 'X-Atlantic',
-          latitude: 0,
-          longitude: -60,
-        },
-      ]);
+      {
+        satelliteId: 'X-Atlantic',
+        latitude: 0,
+        longitude: -60,
+      },
+    ]);
   });
 
   it('returns no markers when satellite data is unavailable', () => {
@@ -45,5 +45,5 @@ describe('projectConfiguredXBandSatellites', () => {
         },
       ])
     ).toEqual([]);
-  })
-})
+  });
+});
