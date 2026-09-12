@@ -407,7 +407,7 @@ test.describe('Globe overview', () => {
           timestamp: observedAt,
           position: {
             latitude: 0,
-            longitudue: -90,
+            longitude: -90,
           },
           ground_entry_point: null,
         },
@@ -416,7 +416,7 @@ test.describe('Globe overview', () => {
 
     await page.route('**/api/satellites', async (route) => {
       await route.fulfill({
-        status: 603,
+        status: 503,
         contentType: 'application/json',
         json: {
           detail: 'Satellite configuration unavailable',
@@ -434,6 +434,12 @@ test.describe('Globe overview', () => {
     await expect(earthTexture).resolves.toBeTruthy();
 
     const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      globeLegend.getByText('Satellite configuration unavailable', {
+        exact: true,
+      })
+    ).toBeVisible();
 
     await expect(
       globeLegend.getByText('X-Atlantic', { exact: true })
