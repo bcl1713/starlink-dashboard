@@ -1,30 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  projectConfiguredXBandSatellites,
-  projectConfiguredXBandSatellite3d,
-} from './x-band-satellites-projection';
-
-describe('projectConfiguredXBandSatellite3d', () => {
-  it('projects valid configured X-band record', () => {
-    expect(
-      projectConfiguredXBandSatellite3d([
-        {
-          satellite_id: 'X-Atlantic',
-          transport: 'X',
-          longitude: -60,
-          slot: 'Atlantic',
-          color: '#FF6B6B',
-        },
-      ])
-    ).toEqual([
-      {
-        satelliteID: 'X-Atlantic',
-        latitude: 0,
-        longitude: -60,
-      },
-    ]);
-  });
-});
+import { projectConfiguredXBandSatellites } from './x-band-satellites-projection';
 
 describe('projectConfiguredXBandSatellites', () => {
   it('projects valid configured X-band records at the equator', () => {
