@@ -102,4 +102,29 @@ describe('projectAircraftScenePosition', () => {
     expect(lookAngles.azimuthDegrees).toBeCloseTo(180, 6);
     expect(lookAngles.elevationDegrees).toBeCloseTo(55.02158, 5);
   });
+  it('returns no link when selected satellite configuration is unavailable or invalid', () => {
+    const status = {
+      position: {
+        latitude: 12,
+        longitude: -60,
+        altitude: 35_000,
+      },
+    };
+    expect(
+      projectConfiguredXBandActiveLink(status, undefined, 'X-Atlantic')
+    ).toBeNull();
+    expect(
+      projectConfiguredXBandActiveLink(
+        status,
+        [
+          {
+            satellite_id: 'X-Atlantic',
+            transport: 'X',
+            longitude: 181,
+          },
+        ],
+        'X-Atlantic'
+      )
+    ).toBeNull();
+  });
 });
