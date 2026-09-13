@@ -35,6 +35,9 @@ export function projectAircraftScenePosition(
   ) {
     return null;
   }
+
+  // /api/status reports aircraft altitude in feet MSL. Convert that telemetry
+  // datum into the illustrative Earth-radius-2 scene used for link analysis.
   const altitudeMeters = altitude * 0.3048;
   const sceneRadius =
     SCENE_EARTH_RADIUS * (1 + altitudeMeters / WGS84_SEMI_MAJOR_AXIS_METERS);
