@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   projectConfiguredXBandSatellites,
   projectConfiguredXBandSatellite3d,
+  CONFIGURED_GEO_SCENE_RADIUS,
 } from './x-band-satellites-projection';
+import { globePosition } from './globe-coordinates';
 
 describe('projectConfiguredXBandSatellite3d', () => {
   it('projects valid configured X-band record', () => {
@@ -21,8 +23,10 @@ describe('projectConfiguredXBandSatellite3d', () => {
         satelliteID: 'X-Atlantic',
         latitude: 0,
         longitude: -60,
+        position: globePosition(0, -60, CONFIGURED_GEO_SCENE_RADIUS),
       },
     ]);
+    expect(CONFIGURED_GEO_SCENE_RADIUS).toBe(13.234);
   });
 });
 
