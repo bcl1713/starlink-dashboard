@@ -20,7 +20,7 @@ describe('projectConfiguredXBandSatellite3d', () => {
       ])
     ).toEqual([
       {
-        satelliteID: 'X-Atlantic',
+        satelliteId: 'X-Atlantic',
         latitude: 0,
         longitude: -60,
         position: globePosition(0, -60, CONFIGURED_GEO_SCENE_RADIUS),
