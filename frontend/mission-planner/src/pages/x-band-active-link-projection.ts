@@ -24,6 +24,18 @@ export interface ConfiguredXBandActiveLink {
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
+export function projectActiveConfiguredXBandSatelliteId(
+  activeLink: unknown
+): string | null {
+  if (
+    !isRecord(activeLink) ||
+    typeof activeLink.satellite_id !== 'string' ||
+    activeLink.satellite_id.trim().length === 0
+  ) {
+    return null;
+  }
+  return activeLink.satellite_id;
+}
 export function projectAircraftScenePosition(
   status: unknown
 ): AircraftScenePosition | null {
