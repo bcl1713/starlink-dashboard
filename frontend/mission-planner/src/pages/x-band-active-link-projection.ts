@@ -5,6 +5,10 @@ import {
 } from './x-band-satellites-projection';
 export const SCENE_EARTH_RADIUS = 2;
 export const WGS84_SEMI_MAJOR_AXIS_METERS = 6_378_137;
+export interface ConfiguredXBandLookAngles {
+  azimuthDegrees: number;
+  elevationDegrees: number;
+}
 export interface AircraftScenePosition {
   latitude: number;
   longitude: number;
@@ -76,4 +80,50 @@ export function projectConfiguredXBandActiveLink(
     satellite,
     points: [aircraft.position, satellite.position],
   };
+}
+
+function dot(
+  left: [number, number, number],
+  right: [number, number, number]
+): number {
+  return left[0] * right[0] + left[1] * right[1] + left[2] * right[2];
+}
+
+function subtract(
+  left: [number, number, number],
+  right: [number, number, number]
+): [number, number, number] {
+  return [left[0] - right[0], left[1] - right[1], left[2] - right[2]];
+}
+
+function magnitude(vector: [number, number, number]): number {
+  return Math.hypot(vector[0], vector[1], vector[2]);
+}
+
+export function calculateConfiguredXBandLookAngles(
+  link: ConfiguredXBandActiveLink
+): ConfiguredXBandLookAngles {
+  const latitudeRadians = (link.aircraft.latitude * Math.PI) / 180;
+  const longitudeRadians = (link.aircraft.longitude * Math.PI) / 180;
+  const lineOfSight = subtract(link.satellite.position, link.aircraft.position);
+  const lineOfSightMagnitude = magnitude(lineOfSight);
+  const up = globePosition(link.aircraft.latitude, link.aircraft.longitude, 1);
+  const east: [number, number, number] = [
+    -Math.sin(longitudeRadians),
+    0,
+    -Math.cos(longitudeRadians),
+  ];
+  const north: [number, number, number] = [
+    -Math.sin(latitudeRadians) * Math.cos(longitudeRadians),
+    Math.cos(latitudeRadians),
+    Math.sin(latitudeRadians) * Math.sin(longitudeRadians),
+  ];
+  const elevationDegrees =
+    (Math.asin(dot(lineOfSight, up) / lineOfSightMagnitude) * 180) / Math.PI;
+  const azimuthDegrees =
+    ((Math.atan2(dot(lineOfSight, east), dot(lineOfSight, north)) * 180) /
+      Math.PI +
+      360) %
+    360;
+  return { azimuthDegrees, elevationDegrees };
 }
