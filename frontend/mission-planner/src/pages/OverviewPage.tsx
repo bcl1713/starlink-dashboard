@@ -28,6 +28,8 @@ import { OverviewMetricsPanel } from './OverviewMetricsPanel';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
+import { useSatellites } from '@/hooks/api/useSatellites';
+import { projectConfiguredXBandSatellites } from './x-band-satellites-projection';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -92,6 +94,32 @@ function GroundEntryPointMarker({
         )}
       >
         <span className="globe-marker-label">GEP</span>
+      </Html>
+    </>
+  );
+}
+
+function ConfiguredXBandSatelliteMarker({
+  satelliteId,
+  coordinate,
+  globeOccluder,
+}: {
+  satelliteId: string;
+  coordinate: GlobeCoordinate;
+  globeOccluder: RefObject<THREE.Group>;
+}) {
+  return (
+    <>
+      <StarMarker coordinate={coordinate} color="#FF6B6B" size={0.13} />
+      <Html
+        occlude={[globeOccluder]}
+        position={globePosition(
+          coordinate.latitude,
+          coordinate.longitude,
+          ROUTE_OVERLAY_RADIUS
+        )}
+      >
+        <span className="globe-marker-label">{satelliteId}</span>
       </Html>
     </>
   );
@@ -183,6 +211,25 @@ export function OverviewPage() {
     error: statusError,
   } = useStatus();
 
+  const {
+    data: satellites,
+    isLoading: isLoadingSatellites,
+    error: satellitesError,
+  } = useSatellites();
+
+  const configuredXBandSatellites =
+    projectConfiguredXBandSatellites(satellites);
+
+  const configuredXBandSatelliteState = satellitesError
+    ? 'Satellite configuration unavailable'
+    : isLoadingSatellites
+      ? 'Loading satellite configuration...'
+      : configuredXBandSatellites.length === 0
+        ? 'No valid configured satellites'
+        : configuredXBandSatellites.length === 1
+          ? '1 configured satellite'
+          : configuredXBandSatellites.length + ' configured satellites';
+
   const aircraftPosition = projectAircraftPosition(status ?? {});
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
 
@@ -256,6 +303,11 @@ export function OverviewPage() {
               {groundEntryPoint ? 'Current/last-known' : 'GEP unavailable'}
             </strong>
           </li>
+          <li>
+            <span aria-hidden="true" />
+            <span>Configured X-band satellites</span>
+            <strong>{configuredXBandSatelliteState}</strong>
+          </li>
         </ul>
       </aside>
       <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
@@ -315,6 +367,14 @@ export function OverviewPage() {
               globeOccluder={globeOccluder}
             />
           )}
+          {configuredXBandSatellites.map((satellite) => (
+            <ConfiguredXBandSatelliteMarker
+              key={`${satellite.satelliteId}-${satellite.longitude}`}
+              satelliteId={satellite.satelliteId}
+              coordinate={satellite}
+              globeOccluder={globeOccluder}
+            />
+          ))}
           {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
         </Suspense>
         <OrbitControls

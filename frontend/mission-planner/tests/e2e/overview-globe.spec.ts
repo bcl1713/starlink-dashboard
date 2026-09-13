@@ -4,6 +4,14 @@ test.describe('Globe overview', () => {
   test.describe.configure({ mode: 'serial' });
   test.use({ viewport: { width: 1920, height: 1080 } });
 
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [],
+      });
+    });
+  });
+
   test('renders an active anti-meridian route from same-origin API data', async ({
     page,
   }) => {
@@ -284,6 +292,7 @@ test.describe('Globe overview', () => {
     page,
   }) => {
     const observedAt = '2026-06-21T12:00:00.000Z';
+    const satelliteRequests: string[] = [];
 
     await page.addInitScript(`
       const RealDate = Date;
@@ -326,6 +335,30 @@ test.describe('Globe overview', () => {
         },
       });
     });
+
+    await page.route('**/api/satellites', async (route) => {
+      satelliteRequests.push(route.request().url());
+
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-Atlantic',
+            transport: 'X',
+            longitude: -60,
+            slot: 'Atlantic',
+            color: '#FF6B6B',
+          },
+          {
+            satellite_id: 'X-Pacific',
+            transport: 'X',
+            longitude: 150,
+            slot: 'Pacific',
+            color: '#FF6B6B',
+          },
+        ],
+      });
+    });
+
     const earthTexture = page.waitForResponse(
       (response) =>
         new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
@@ -341,6 +374,15 @@ test.describe('Globe overview', () => {
       page.getByText('No active route.', { exact: true })
     ).toBeVisible();
     await expect(globeLegend).toBeVisible();
+    await expect.poll(() => satelliteRequests).toHaveLength(1);
+    expect(satelliteRequests[0]).toMatch(/\/api\/satellites$/);
+    await expect(
+      globeLegend.getByText('Configured X-band satellites', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('2 configured satellites', { exact: true })
+    ).toBeVisible();
+    await expect(page.getByText('X-Atlantic', { exact: true })).toBeVisible();
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
     ).toBeVisible();
@@ -351,5 +393,180 @@ test.describe('Globe overview', () => {
       globeLegend.getByText('Current/last-known', { exact: true })
     ).toBeVisible();
     await expect(page.getByText('GEP', { exact: true })).toBeVisible();
+  });
+
+  test('reports unavailable satellite configuration without a marker', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        json: {
+          detail: 'Satellite configuration unavailable',
+        },
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      globeLegend.getByText('Satellite configuration unavailable', {
+        exact: true,
+      })
+    ).toBeVisible();
+
+    await expect(
+      globeLegend.getByText('X-Atlantic', { exact: true })
+    ).toHaveCount(0);
+  });
+  test('hides invalid configured satellite records', async ({ page }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-invalid',
+            transport: 'X',
+            longitude: 181,
+            slot: 'Invalid slot',
+            color: '#FF6B7B',
+          },
+        ],
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    await expect(
+      globeLegend.getByText('X-invalid', { exact: true })
+    ).toHaveCount(0);
+  });
+
+  test('reports a whitespace-only configured satellite ID as invalid without a marker', async ({
+    page,
+  }) => {
+    const observedAt = '2026-06-21T12:00:00.000Z';
+
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: observedAt,
+          position: {
+            latitude: 0,
+            longitude: -90,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: '   ',
+            transport: 'X',
+            longitude: -60,
+          },
+        ],
+      });
+    });
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await expect(earthTexture).resolves.toBeTruthy();
+
+    const globeLegend = page.getByLabel('Globe legend');
+
+    const satelliteLegendEntry = globeLegend.locator('li').filter({
+      hasText: 'Configured X-band satellites',
+    });
+
+    await expect(satelliteLegendEntry).toHaveText(
+      'Configured X-band satellitesNo valid configured satellites'
+    );
+    await expect(
+      page.locator('.globe-marker-label', { hasText: /\S/ })
+    ).toHaveCount(0);
   });
 });

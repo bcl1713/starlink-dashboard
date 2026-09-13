@@ -5,5 +5,6 @@ export const useSatellites = () => {
   return useQuery({
     queryKey: ['satellites'],
     queryFn: satelliteService.getAll,
+    retry: false,
   });
 };
