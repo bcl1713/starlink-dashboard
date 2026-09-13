@@ -7,6 +7,7 @@ import {
   SCENE_EARTH_RADIUS,
   WGS84_SEMI_MAJOR_AXIS_METERS,
   projectConfiguredXBandActiveLink,
+  projectActiveConfiguredXBandSatelliteId,
 } from './x-band-active-link-projection';
 
 describe('projectAircraftScenePosition', () => {
@@ -125,6 +126,23 @@ describe('projectAircraftScenePosition', () => {
         ],
         'X-Atlantic'
       )
+    ).toBeNull();
+  });
+  it('accepts only a nonblank active configured satellite ID', () => {
+    expect(
+      projectActiveConfiguredXBandSatelliteId({
+        satellite_id: 'X-Atlantic',
+      })
+    ).toBe('X-Atlantic');
+    expect(
+      projectActiveConfiguredXBandSatelliteId({
+        satellite_id: '   ',
+      })
+    ).toBeNull();
+    expect(
+      projectActiveConfiguredXBandSatelliteId({
+        satellite_id: null,
+      })
     ).toBeNull();
   });
 });
