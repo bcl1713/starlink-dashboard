@@ -134,6 +134,7 @@ describe('projectAircraftScenePosition', () => {
         satellite_id: 'X-Atlantic',
       })
     ).toBe('X-Atlantic');
+    expect(projectActiveConfiguredXBandSatelliteId(undefined)).toBeNull();
     expect(
       projectActiveConfiguredXBandSatelliteId({
         satellite_id: '   ',
