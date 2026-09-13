@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { globePosition } from './globe-coordinates';
 import { projectConfiguredXBandSatellite3d } from './x-band-satellites-projection';
 import {
+  calculateConfiguredXBandLookAngles,
   projectAircraftScenePosition,
   SCENE_EARTH_RADIUS,
   WGS84_SEMI_MAJOR_AXIS_METERS,
@@ -75,5 +76,30 @@ describe('projectAircraftScenePosition', () => {
       satellite,
       points: [aircraft?.position, satellite?.position],
     });
+  });
+  it('calculates azimuth and elevation from the shared 3D link geometry', () => {
+    const link = projectConfiguredXBandActiveLink(
+      {
+        position: {
+          latitude: 30,
+          longitude: 0,
+          altitude: 35_000,
+        },
+      },
+      [
+        {
+          satellite_id: 'X-Prime',
+          transport: 'X',
+          longitude: 0,
+        },
+      ],
+      'X-Prime'
+    );
+    if (!link) {
+      throw new Error('Expected a valid configured X-band link.');
+    }
+    const lookAngles = calculateConfiguredXBandLookAngles(link);
+    expect(lookAngles.azimuthDegrees).toBeCloseTo(180, 6);
+    expect(lookAngles.elevationDegrees).toBeCloseTo(55.02158, 5);
   });
 });
