@@ -28,6 +28,21 @@ describe('projectConfiguredXBandSatellite3d', () => {
     ]);
     expect(CONFIGURED_GEO_SCENE_RADIUS).toBe(13.234);
   });
+
+  it('returns no 3D placement when satellite data is unavailable', () => {
+    expect(projectConfiguredXBandSatellite3d(undefined)).toEqual([]);
+  });
+  it('excludes invalid configured records from 3D placement', () => {
+    expect(
+      projectConfiguredXBandSatellite3d([
+        {
+          satellite_id: 'X-invalid',
+          transport: 'X',
+          longitude: 181,
+        },
+      ])
+    ).toEqual([]);
+  });
 });
 
 describe('projectConfiguredXBandSatellites', () => {
