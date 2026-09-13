@@ -27,4 +27,25 @@ describe('projectAircraftScenePosition', () => {
       position: globePosition(12, -60, sceneRadius),
     });
   });
+  it('returns null when aircraft altitude is unavailable', () => {
+    expect(
+      projectAircraftScenePosition({
+        position: {
+          latitude: 12,
+          longitude: -60,
+        },
+      })
+    ).toBeNull();
+  });
+  it('returns null when aircraft altitude is not finite', () => {
+    expect(
+      projectAircraftScenePosition({
+        position: {
+          latitude: 12,
+          longitude: -60,
+          altitude: Number.NaN,
+        },
+      })
+    ).toBeNull();
+  });
 });
