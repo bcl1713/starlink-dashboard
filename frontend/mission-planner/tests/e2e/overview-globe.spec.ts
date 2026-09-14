@@ -429,11 +429,13 @@ test.describe('Globe overview', () => {
     await expect(
       globeLegend.getByText('2 configured satellites', { exact: true })
     ).toBeVisible();
-    await expect(
-      globeLegend.getByText('No active configured X-band link', {
-        exact: true,
-      })
-    ).toBeVisible();
+    const activeConfiguredLinkRow = globeLegend.locator('li').filter({
+      hasText:
+        /^Active configured X-band link\s*No active configured X-band link$/,
+    });
+    await expect(activeConfiguredLinkRow.getByRole('strong')).toHaveText(
+      'No active configured X-band link'
+    );
     await expect(page.getByText('X-Atlantic', { exact: true })).toBeVisible();
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
