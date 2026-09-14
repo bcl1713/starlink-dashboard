@@ -25,7 +25,11 @@ import { StarMarker } from './OverviewStarMarker';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { OverviewMetricsPanel } from './OverviewMetricsPanel';
-import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
+import {
+  GEO_ANALYSIS_CAMERA_POSITION,
+  GEO_ANALYSIS_MAX_DISTANCE,
+  ROUTE_OVERLAY_RADIUS,
+} from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
@@ -333,7 +337,7 @@ export function OverviewPage() {
         </ul>
       </aside>
       <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
-      <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
+      <Canvas camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}>
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.5} />
         <directionalLight position={sunPosition} intensity={5} />
@@ -404,7 +408,7 @@ export function OverviewPage() {
           enableDamping
           dampingFactor={0.05}
           minDistance={3}
-          maxDistance={10}
+          maxDistance={GEO_ANALYSIS_MAX_DISTANCE}
         />
       </Canvas>
     </main>
