@@ -152,7 +152,7 @@ test.describe('Globe overview', () => {
       page.getByText('Anti-meridian validation route', { exact: true })
     ).toBeVisible();
     await expect(
-      page.getByText('Selected configure satellite X-Prime', { exact: true })
+      page.getByText('Selected configured satellite X-Prime', { exact: true })
     ).toBeVisible();
     await expect(
       page.getByText(/Configured GEO estimate: azimuth .* elevation .*/, {
