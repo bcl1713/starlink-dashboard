@@ -35,7 +35,11 @@ import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
 import { projectConfiguredXBandSatellite3d } from './x-band-satellites-projection';
 import { useActiveXLink } from '@/hooks/api/useActiveXLink';
-import { projectActiveConfiguredXBandSatelliteId } from './x-band-active-link-projection';
+import {
+  calculateConfiguredXBandLookAngles,
+  projectActiveConfiguredXBandSatelliteId,
+  projectConfiguredXBandActiveLink,
+} from './x-band-active-link-projection';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -223,6 +227,21 @@ export function OverviewPage() {
   } = useActiveXLink();
   const activeConfiguredXBandSatelliteId =
     projectActiveConfiguredXBandSatelliteId(activeXLink);
+  const activeConfiguredXBandLink = activeConfiguredXBandSatelliteId
+    ? projectConfiguredXBandActiveLink(
+        status,
+        satellites,
+        activeConfiguredXBandSatelliteId
+      )
+    : null;
+  const activeConfiguredXBandLookAngles = activeConfiguredXBandLink
+    ? calculateConfiguredXBandLookAngles(activeConfiguredXBandLink)
+    : null;
+  const activeConfiguredXBandGeometryState = activeConfiguredXBandLookAngles
+    ? `Configured GEO estimate: azimuth ${activeConfiguredXBandLookAngles.azimuthDegrees.toFixed(1)}°, elevation ${activeConfiguredXBandLookAngles.elevationDegrees.toFixed(1)}°`
+    : activeConfiguredXBandSatelliteId
+      ? 'Configured GEO geometry unavailable'
+      : 'No active configured X-band link';
   const activeConfiguredXBandLinkState = activeXLinkError
     ? 'Active X-band link unavailable'
     : isLoadingActiveXLink
@@ -326,6 +345,11 @@ export function OverviewPage() {
             <span aria-hidden="true" />
             <span>Active configured X-band link</span>
             <strong>{activeConfiguredXBandLinkState}</strong>
+          </li>
+          <li>
+            <span aria-hidden="true" />
+            <span>Configured GEO analysis</span>
+            <strong>{activeConfiguredXBandGeometryState}</strong>
           </li>
         </ul>
       </aside>
