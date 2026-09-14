@@ -410,6 +410,15 @@ export function OverviewPage() {
               globeOccluder={globeOccluder}
             />
           )}
+          {activeConfiguredXBandLink && (
+            <Line
+              points={activeConfiguredXBandLink.points}
+              color="#FF6868"
+              linewidth={2}
+              opacity={0.85}
+              depthWrite={false}
+            />
+          )}
           {configuredXBandSatellites.map((satellite) => (
             <ConfiguredXBandSatelliteMarker
               key={`${satellite.satelliteId}-${satellite.longitude}`}
