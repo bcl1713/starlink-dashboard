@@ -417,7 +417,7 @@ export function OverviewPage() {
               linewidth={2}
               transparent
               opacity={0.25}
-              depthWrite={true}
+              depthWrite={false}
             />
           )}
           {configuredXBandSatellites.map((satellite) => (
