@@ -621,4 +621,65 @@ test.describe('Globe overview', () => {
       page.locator('.globe-marker-label', { hasText: /\S/ })
     ).toHaveCount(0);
   });
+  test('reports unavailable configured GEO geometry when the selected satellite is invalid', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: '2026-06-21T12:00:00.000Z',
+          position: {
+            latitude: 12,
+            longitude: -60,
+            altitude: 35_000,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-Atlantic',
+            transport: 'X',
+            longitude: 181,
+          },
+        ],
+      });
+    });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: {
+          satellite_id: 'X-Atlantic',
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      globeLegend.getByText('Selected configured satellite X-Atlantic', {
+        exact: true,
+      })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Configured GEO geometry unavailable', {
+        exact: true,
+      })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('No valid configured satellites', {
+        exact: true,
+      })
+    ).toBeVisible();
+    await expect(page.getByText('X-Atlantic', { exact: true })).toHaveCount(0);
+  });
 });
