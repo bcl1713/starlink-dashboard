@@ -10,6 +10,13 @@ test.describe('Globe overview', () => {
         json: [],
       });
     });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: {
+          satellite_id: null,
+        },
+      });
+    });
   });
 
   test('renders an active anti-meridian route from same-origin API data', async ({

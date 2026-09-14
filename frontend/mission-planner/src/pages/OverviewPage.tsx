@@ -30,6 +30,8 @@ import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
 import { projectConfiguredXBandSatellites } from './x-band-satellites-projection';
+import { useActiveXLink } from '@/hooks/api/useActiveXLink';
+import { projectActiveConfiguredXBandSatelliteId } from './x-band-active-link-projection';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -217,6 +219,21 @@ export function OverviewPage() {
     error: satellitesError,
   } = useSatellites();
 
+  const {
+    data: activeXLink,
+    isLoading: isLoadingActiveXLink,
+    error: activeXLinkError,
+  } = useActiveXLink();
+  const activeConfiguredXBandSatelliteId =
+    projectActiveConfiguredXBandSatelliteId(activeXLink);
+  const activeConfiguredXBandLinkState = activeXLinkError
+    ? 'Active X-band link unavailable'
+    : isLoadingActiveXLink
+      ? 'Loading active X-band link...'
+      : activeConfiguredXBandSatelliteId
+        ? `Selected configured satellite ${activeConfiguredXBandSatelliteId}`
+        : 'No active configure X-band link';
+
   const configuredXBandSatellites =
     projectConfiguredXBandSatellites(satellites);
 
@@ -307,6 +324,11 @@ export function OverviewPage() {
             <span aria-hidden="true" />
             <span>Configured X-band satellites</span>
             <strong>{configuredXBandSatelliteState}</strong>
+          </li>
+          <li>
+            <span aria-hidden="true" />
+            <span>Active configured X-band link</span>
+            <strong>{activeConfiguredXBandLinkState}</strong>
           </li>
         </ul>
       </aside>
