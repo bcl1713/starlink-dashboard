@@ -33,7 +33,7 @@ import {
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
-import { projectConfiguredXBandSatellites } from './x-band-satellites-projection';
+import { projectConfiguredXBandSatellite3d } from './x-band-satellites-projection';
 import { useActiveXLink } from '@/hooks/api/useActiveXLink';
 import { projectActiveConfiguredXBandSatelliteId } from './x-band-active-link-projection';
 
@@ -107,24 +107,17 @@ function GroundEntryPointMarker({
 
 function ConfiguredXBandSatelliteMarker({
   satelliteId,
-  coordinate,
+  position,
   globeOccluder,
 }: {
   satelliteId: string;
-  coordinate: GlobeCoordinate;
+  position: [number, number, number];
   globeOccluder: RefObject<THREE.Group>;
 }) {
   return (
     <>
-      <StarMarker coordinate={coordinate} color="#FF6B6B" size={0.13} />
-      <Html
-        occlude={[globeOccluder]}
-        position={globePosition(
-          coordinate.latitude,
-          coordinate.longitude,
-          ROUTE_OVERLAY_RADIUS
-        )}
-      >
+      <StarMarker position={position} color="#FF6B6B" size={0.13} />
+      <Html occlude={[globeOccluder]} position={position}>
         <span className="globe-marker-label">{satelliteId}</span>
       </Html>
     </>
@@ -239,7 +232,7 @@ export function OverviewPage() {
         : 'No active configured X-band link';
 
   const configuredXBandSatellites =
-    projectConfiguredXBandSatellites(satellites);
+    projectConfiguredXBandSatellite3d(satellites);
 
   const configuredXBandSatelliteState = satellitesError
     ? 'Satellite configuration unavailable'
@@ -397,7 +390,7 @@ export function OverviewPage() {
             <ConfiguredXBandSatelliteMarker
               key={`${satellite.satelliteId}-${satellite.longitude}`}
               satelliteId={satellite.satelliteId}
-              coordinate={satellite}
+              position={satellite.position}
               globeOccluder={globeOccluder}
             />
           ))}
