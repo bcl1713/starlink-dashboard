@@ -25,11 +25,22 @@ import { StarMarker } from './OverviewStarMarker';
 import { isStatusStale } from './status-freshness';
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { OverviewMetricsPanel } from './OverviewMetricsPanel';
-import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
+import {
+  GEO_ANALYSIS_CAMERA_POSITION,
+  GEO_ANALYSIS_MAX_DISTANCE,
+  ROUTE_OVERLAY_RADIUS,
+} from './globe-render-radii';
 import { CityLitGlobe } from './CityLitGlobe';
 import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
-import { projectConfiguredXBandSatellites } from './x-band-satellites-projection';
+import { projectConfiguredXBandSatellite3d } from './x-band-satellites-projection';
+import { useActiveXLink } from '@/hooks/api/useActiveXLink';
+import {
+  calculateConfiguredXBandLookAngles,
+  projectActiveConfiguredXBandSatelliteId,
+  projectAircraftScenePosition,
+  projectConfiguredXBandActiveLink,
+} from './x-band-active-link-projection';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -71,8 +82,18 @@ function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
   return <StarMarker coordinate={coordinate} color={color} size={0.1} />;
 }
 
-function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
-  return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />;
+function AircraftMarker({
+  coordinate,
+  position,
+}: {
+  coordinate: GlobeCoordinate;
+  position: [number, number, number] | null;
+}) {
+  return position ? (
+    <StarMarker position={position} color="#72b7ff" size={0.15} />
+  ) : (
+    <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />
+  );
 }
 
 function GroundEntryPointMarker({
@@ -101,24 +122,17 @@ function GroundEntryPointMarker({
 
 function ConfiguredXBandSatelliteMarker({
   satelliteId,
-  coordinate,
+  position,
   globeOccluder,
 }: {
   satelliteId: string;
-  coordinate: GlobeCoordinate;
+  position: [number, number, number];
   globeOccluder: RefObject<THREE.Group>;
 }) {
   return (
     <>
-      <StarMarker coordinate={coordinate} color="#FF6B6B" size={0.13} />
-      <Html
-        occlude={[globeOccluder]}
-        position={globePosition(
-          coordinate.latitude,
-          coordinate.longitude,
-          ROUTE_OVERLAY_RADIUS
-        )}
-      >
+      <StarMarker position={position} color="#FF6B6B" size={0.13} />
+      <Html occlude={[globeOccluder]} position={position}>
         <span className="globe-marker-label">{satelliteId}</span>
       </Html>
     </>
@@ -217,8 +231,38 @@ export function OverviewPage() {
     error: satellitesError,
   } = useSatellites();
 
+  const {
+    data: activeXLink,
+    isLoading: isLoadingActiveXLink,
+    error: activeXLinkError,
+  } = useActiveXLink();
+  const activeConfiguredXBandSatelliteId =
+    projectActiveConfiguredXBandSatelliteId(activeXLink);
+  const activeConfiguredXBandLink = activeConfiguredXBandSatelliteId
+    ? projectConfiguredXBandActiveLink(
+        status,
+        satellites,
+        activeConfiguredXBandSatelliteId
+      )
+    : null;
+  const activeConfiguredXBandLookAngles = activeConfiguredXBandLink
+    ? calculateConfiguredXBandLookAngles(activeConfiguredXBandLink)
+    : null;
+  const activeConfiguredXBandGeometryState = activeConfiguredXBandLookAngles
+    ? `Configured GEO estimate: azimuth ${activeConfiguredXBandLookAngles.azimuthDegrees.toFixed(1)}°, elevation ${activeConfiguredXBandLookAngles.elevationDegrees.toFixed(1)}°`
+    : activeConfiguredXBandSatelliteId
+      ? 'Configured GEO geometry unavailable'
+      : 'No active configured X-band link';
+  const activeConfiguredXBandLinkState = activeXLinkError
+    ? 'Active X-band link unavailable'
+    : isLoadingActiveXLink
+      ? 'Loading active X-band link...'
+      : activeConfiguredXBandSatelliteId
+        ? `Selected configured satellite ${activeConfiguredXBandSatelliteId}`
+        : 'No active configured X-band link';
+
   const configuredXBandSatellites =
-    projectConfiguredXBandSatellites(satellites);
+    projectConfiguredXBandSatellite3d(satellites);
 
   const configuredXBandSatelliteState = satellitesError
     ? 'Satellite configuration unavailable'
@@ -231,6 +275,7 @@ export function OverviewPage() {
           : configuredXBandSatellites.length + ' configured satellites';
 
   const aircraftPosition = projectAircraftPosition(status ?? {});
+  const aircraftScenePosition = projectAircraftScenePosition(status);
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
 
   const telemetryState = statusError
@@ -308,10 +353,20 @@ export function OverviewPage() {
             <span>Configured X-band satellites</span>
             <strong>{configuredXBandSatelliteState}</strong>
           </li>
+          <li>
+            <span aria-hidden="true" />
+            <span>Active configured X-band link</span>
+            <strong>{activeConfiguredXBandLinkState}</strong>
+          </li>
+          <li>
+            <span aria-hidden="true" />
+            <span>Configured GEO analysis</span>
+            <strong>{activeConfiguredXBandGeometryState}</strong>
+          </li>
         </ul>
       </aside>
       <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
-      <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
+      <Canvas camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}>
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.5} />
         <directionalLight position={sunPosition} intensity={5} />
@@ -367,22 +422,37 @@ export function OverviewPage() {
               globeOccluder={globeOccluder}
             />
           )}
+          {activeConfiguredXBandLink && (
+            <Line
+              points={activeConfiguredXBandLink.points}
+              color="#FF6868"
+              linewidth={2}
+              transparent
+              opacity={0.25}
+              depthWrite={false}
+            />
+          )}
           {configuredXBandSatellites.map((satellite) => (
             <ConfiguredXBandSatelliteMarker
               key={`${satellite.satelliteId}-${satellite.longitude}`}
               satelliteId={satellite.satelliteId}
-              coordinate={satellite}
+              position={satellite.position}
               globeOccluder={globeOccluder}
             />
           ))}
-          {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
+          {aircraftPosition && (
+            <AircraftMarker
+              coordinate={aircraftPosition}
+              position={aircraftScenePosition?.position ?? null}
+            />
+          )}
         </Suspense>
         <OrbitControls
           enablePan={false}
           enableDamping
           dampingFactor={0.05}
           minDistance={3}
-          maxDistance={10}
+          maxDistance={GEO_ANALYSIS_MAX_DISTANCE}
         />
       </Canvas>
     </main>

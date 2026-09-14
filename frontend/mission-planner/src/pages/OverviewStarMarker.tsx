@@ -4,11 +4,19 @@ import type { GlobeCoordinate } from './globe-route';
 import { globePosition } from './globe-coordinates';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 
-interface StarMarkerProps {
-  coordinate: GlobeCoordinate;
-  color: string;
-  size: number;
-}
+type StarMarkerProps =
+  | {
+      coordinate: GlobeCoordinate;
+      position?: never;
+      color: string;
+      size: number;
+    }
+  | {
+      coordinate?: never;
+      position: [number, number, number];
+      color: string;
+      size: number;
+    };
 
 function createStarTexture(color: string) {
   const canvas = document.createElement('canvas');
@@ -40,7 +48,16 @@ function createStarTexture(color: string) {
   return texture;
 }
 
-export function StarMarker({ coordinate, color, size }: StarMarkerProps) {
+export function StarMarker(props: StarMarkerProps) {
+  const { color, size } = props;
+  const position =
+    'position' in props
+      ? props.position
+      : globePosition(
+          props.coordinate.latitude,
+          props.coordinate.longitude,
+          ROUTE_OVERLAY_RADIUS
+        );
   const texture = useMemo(() => createStarTexture(color), [color]);
 
   useEffect(() => {
@@ -50,15 +67,7 @@ export function StarMarker({ coordinate, color, size }: StarMarkerProps) {
   }, [texture]);
 
   return (
-    <sprite
-      position={globePosition(
-        coordinate.latitude,
-        coordinate.longitude,
-        ROUTE_OVERLAY_RADIUS
-      )}
-      scale={[size, size, 1]}
-      renderOrder={1}
-    >
+    <sprite position={position} scale={[size, size, 1]} renderOrder={1}>
       <spriteMaterial
         map={texture}
         transparent

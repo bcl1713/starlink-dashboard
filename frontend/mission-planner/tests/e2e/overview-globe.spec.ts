@@ -10,6 +10,13 @@ test.describe('Globe overview', () => {
         json: [],
       });
     });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: {
+          satellite_id: null,
+        },
+      });
+    });
   });
 
   test('renders an active anti-meridian route from same-origin API data', async ({
@@ -75,6 +82,7 @@ test.describe('Globe overview', () => {
           position: {
             latitude: 12,
             longitude: 160,
+            altitude: 35_000,
           },
           network: {
             latency_ms: 42.5,
@@ -98,6 +106,25 @@ test.describe('Globe overview', () => {
         new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
         response.status() === 200
     );
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-Prime',
+            transport: 'X',
+            longitude: 160,
+          },
+        ],
+      });
+    });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: {
+          satellite_id: 'X-Prime',
+        },
+      });
+    });
 
     await page.goto('/overview');
     await expect(earthTexture).resolves.toBeTruthy();
@@ -123,6 +150,14 @@ test.describe('Globe overview', () => {
     await expect(page.getByText('GEP', { exact: true })).toBeVisible();
     await expect(
       page.getByText('Anti-meridian validation route', { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText('Selected configured satellite X-Prime', { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Configured GEO estimate: azimuth .* elevation .*/, {
+        exact: false,
+      })
     ).toBeVisible();
     await expect(page.locator('canvas')).toBeVisible();
     await expect.poll(() => routeRequests).toHaveLength(2);
@@ -293,6 +328,7 @@ test.describe('Globe overview', () => {
   }) => {
     const observedAt = '2026-06-21T12:00:00.000Z';
     const satelliteRequests: string[] = [];
+    const activeXLinkRequests: string[] = [];
 
     await page.addInitScript(`
       const RealDate = Date;
@@ -359,6 +395,15 @@ test.describe('Globe overview', () => {
       });
     });
 
+    await page.route('**/api/active-x-link', async (route) => {
+      activeXLinkRequests.push(route.request().url());
+      await route.fulfill({
+        json: {
+          satellite_id: null,
+        },
+      });
+    });
+
     const earthTexture = page.waitForResponse(
       (response) =>
         new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
@@ -375,6 +420,8 @@ test.describe('Globe overview', () => {
     ).toBeVisible();
     await expect(globeLegend).toBeVisible();
     await expect.poll(() => satelliteRequests).toHaveLength(1);
+    await expect.poll(() => activeXLinkRequests).toHaveLength(1);
+    expect(activeXLinkRequests[0]).toMatch(/\/api\/active-x-link$/);
     expect(satelliteRequests[0]).toMatch(/\/api\/satellites$/);
     await expect(
       globeLegend.getByText('Configured X-band satellites', { exact: true })
@@ -382,6 +429,13 @@ test.describe('Globe overview', () => {
     await expect(
       globeLegend.getByText('2 configured satellites', { exact: true })
     ).toBeVisible();
+    const activeConfiguredLinkRow = globeLegend.locator('li').filter({
+      hasText:
+        /^Active configured X-band link\s*No active configured X-band link$/,
+    });
+    await expect(activeConfiguredLinkRow.getByRole('strong')).toHaveText(
+      'No active configured X-band link'
+    );
     await expect(page.getByText('X-Atlantic', { exact: true })).toBeVisible();
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
@@ -568,5 +622,66 @@ test.describe('Globe overview', () => {
     await expect(
       page.locator('.globe-marker-label', { hasText: /\S/ })
     ).toHaveCount(0);
+  });
+  test('reports unavailable configured GEO geometry when the selected satellite is invalid', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: '2026-06-21T12:00:00.000Z',
+          position: {
+            latitude: 12,
+            longitude: -60,
+            altitude: 35_000,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-Atlantic',
+            transport: 'X',
+            longitude: 181,
+          },
+        ],
+      });
+    });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: {
+          satellite_id: 'X-Atlantic',
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      globeLegend.getByText('Selected configured satellite X-Atlantic', {
+        exact: true,
+      })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Configured GEO geometry unavailable', {
+        exact: true,
+      })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('No valid configured satellites', {
+        exact: true,
+      })
+    ).toBeVisible();
+    await expect(page.getByText('X-Atlantic', { exact: true })).toHaveCount(0);
   });
 });

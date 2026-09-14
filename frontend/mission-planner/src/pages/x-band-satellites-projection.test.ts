@@ -1,5 +1,49 @@
 import { describe, expect, it } from 'vitest';
-import { projectConfiguredXBandSatellites } from './x-band-satellites-projection';
+import {
+  projectConfiguredXBandSatellites,
+  projectConfiguredXBandSatellite3d,
+  CONFIGURED_GEO_SCENE_RADIUS,
+} from './x-band-satellites-projection';
+import { globePosition } from './globe-coordinates';
+
+describe('projectConfiguredXBandSatellite3d', () => {
+  it('projects valid configured X-band record', () => {
+    expect(
+      projectConfiguredXBandSatellite3d([
+        {
+          satellite_id: 'X-Atlantic',
+          transport: 'X',
+          longitude: -60,
+          slot: 'Atlantic',
+          color: '#FF6B6B',
+        },
+      ])
+    ).toEqual([
+      {
+        satelliteId: 'X-Atlantic',
+        latitude: 0,
+        longitude: -60,
+        position: globePosition(0, -60, CONFIGURED_GEO_SCENE_RADIUS),
+      },
+    ]);
+    expect(CONFIGURED_GEO_SCENE_RADIUS).toBe(13.234);
+  });
+
+  it('returns no 3D placement when satellite data is unavailable', () => {
+    expect(projectConfiguredXBandSatellite3d(undefined)).toEqual([]);
+  });
+  it('excludes invalid configured records from 3D placement', () => {
+    expect(
+      projectConfiguredXBandSatellite3d([
+        {
+          satellite_id: 'X-invalid',
+          transport: 'X',
+          longitude: 181,
+        },
+      ])
+    ).toEqual([]);
+  });
+});
 
 describe('projectConfiguredXBandSatellites', () => {
   it('projects valid configured X-band records at the equator', () => {
