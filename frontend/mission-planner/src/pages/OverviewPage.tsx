@@ -415,8 +415,9 @@ export function OverviewPage() {
               points={activeConfiguredXBandLink.points}
               color="#FF6868"
               linewidth={2}
-              opacity={0.85}
-              depthWrite={false}
+              transparent
+              opacity={0.25}
+              depthWrite={true}
             />
           )}
           {configuredXBandSatellites.map((satellite) => (
