@@ -293,6 +293,7 @@ test.describe('Globe overview', () => {
   }) => {
     const observedAt = '2026-06-21T12:00:00.000Z';
     const satelliteRequests: string[] = [];
+    const activeXLinkRequests: string[] = [];
 
     await page.addInitScript(`
       const RealDate = Date;
@@ -359,6 +360,15 @@ test.describe('Globe overview', () => {
       });
     });
 
+    await page.route('**/api/active-x-link', async (route) => {
+      activeXLinkRequests.push(route.request().url());
+      await route.fulfill({
+        json: {
+          satellite_id: null,
+        },
+      });
+    });
+
     const earthTexture = page.waitForResponse(
       (response) =>
         new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
@@ -375,12 +385,19 @@ test.describe('Globe overview', () => {
     ).toBeVisible();
     await expect(globeLegend).toBeVisible();
     await expect.poll(() => satelliteRequests).toHaveLength(1);
+    await expect.poll(() => activeXLinkRequests).toHaveLength(1);
+    expect(activeXLinkRequests[0]).toMatch(/\/api\/active-x-link$/);
     expect(satelliteRequests[0]).toMatch(/\/api\/satellites$/);
     await expect(
       globeLegend.getByText('Configured X-band satellites', { exact: true })
     ).toBeVisible();
     await expect(
       globeLegend.getByText('2 configured satellites', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('No active configured X-band link', {
+        exact: true,
+      })
     ).toBeVisible();
     await expect(page.getByText('X-Atlantic', { exact: true })).toBeVisible();
     await expect(
