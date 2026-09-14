@@ -38,6 +38,7 @@ import { useActiveXLink } from '@/hooks/api/useActiveXLink';
 import {
   calculateConfiguredXBandLookAngles,
   projectActiveConfiguredXBandSatelliteId,
+  projectAircraftScenePosition,
   projectConfiguredXBandActiveLink,
 } from './x-band-active-link-projection';
 
@@ -81,8 +82,18 @@ function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
   return <StarMarker coordinate={coordinate} color={color} size={0.1} />;
 }
 
-function AircraftMarker({ coordinate }: { coordinate: GlobeCoordinate }) {
-  return <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />;
+function AircraftMarker({
+  coordinate,
+  position,
+}: {
+  coordinate: GlobeCoordinate;
+  position: [number, number, number] | null;
+}) {
+  return position ? (
+    <StarMarker position={position} color="#72b7ff" size={0.15} />
+  ) : (
+    <StarMarker coordinate={coordinate} color="#72b7ff" size={0.15} />
+  );
 }
 
 function GroundEntryPointMarker({
@@ -264,6 +275,7 @@ export function OverviewPage() {
           : configuredXBandSatellites.length + ' configured satellites';
 
   const aircraftPosition = projectAircraftPosition(status ?? {});
+  const aircraftScenePosition = projectAircraftScenePosition(status);
   const groundEntryPoint = projectGroundEntryPoint(status ?? {});
 
   const telemetryState = statusError
@@ -428,7 +440,12 @@ export function OverviewPage() {
               globeOccluder={globeOccluder}
             />
           ))}
-          {aircraftPosition && <AircraftMarker coordinate={aircraftPosition} />}
+          {aircraftPosition && (
+            <AircraftMarker
+              coordinate={aircraftPosition}
+              position={aircraftScenePosition?.position ?? null}
+            />
+          )}
         </Suspense>
         <OrbitControls
           enablePan={false}
