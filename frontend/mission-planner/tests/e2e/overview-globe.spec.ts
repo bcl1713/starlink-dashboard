@@ -82,6 +82,7 @@ test.describe('Globe overview', () => {
           position: {
             latitude: 12,
             longitude: 160,
+            altitude: 35_000,
           },
           network: {
             latency_ms: 42.5,
@@ -105,6 +106,25 @@ test.describe('Globe overview', () => {
         new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
         response.status() === 200
     );
+
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [
+          {
+            satellite_id: 'X-Prime',
+            transport: 'X',
+            longitude: 160,
+          },
+        ],
+      });
+    });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: {
+          satellite_id: 'X-Prime',
+        },
+      });
+    });
 
     await page.goto('/overview');
     await expect(earthTexture).resolves.toBeTruthy();
@@ -130,6 +150,14 @@ test.describe('Globe overview', () => {
     await expect(page.getByText('GEP', { exact: true })).toBeVisible();
     await expect(
       page.getByText('Anti-meridian validation route', { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText('Selected configure satellite X-Prime', { exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Configured GEO estimate: azimuth .* elevation .*/, {
+        exact: false,
+      })
     ).toBeVisible();
     await expect(page.locator('canvas')).toBeVisible();
     await expect.poll(() => routeRequests).toHaveLength(2);
