@@ -232,7 +232,7 @@ export function OverviewPage() {
       ? 'Loading active X-band link...'
       : activeConfiguredXBandSatelliteId
         ? `Selected configured satellite ${activeConfiguredXBandSatelliteId}`
-        : 'No active configure X-band link';
+        : 'No active configured X-band link';
 
   const configuredXBandSatellites =
     projectConfiguredXBandSatellites(satellites);
