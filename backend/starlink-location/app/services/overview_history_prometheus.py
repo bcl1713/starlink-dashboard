@@ -77,3 +77,13 @@ async def fetch_overview_history_from_prometheus(
     )
     response.raise_for_status()
     return response.json()
+
+
+def project_overview_history_matrix(payload: dict) -> dict[str, list[list[float]]]:
+    """Project Prometheus matrix data into numeric samples keyed by metric name."""
+    return {
+        series["metric"]["__name__"]: [
+            [float(timestamp), float(value)] for timestamp, value in series["values"]
+        ]
+        for series in payload["data"]["result"]
+    }

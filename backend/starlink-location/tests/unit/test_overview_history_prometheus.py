@@ -8,6 +8,7 @@ from app.services.overview_history_prometheus import (
     build_overview_history_promql,
     fetch_overview_history_from_prometheus,
     plan_overview_history_query,
+    project_overview_history_matrix,
 )
 
 
@@ -127,3 +128,41 @@ async def test_fetches_the_whole_overview_bundle_with_one_prometheus_range_reque
     assert dict(requests[0].url.params) == build_overview_history_prometheus_params(
         plan
     )
+
+
+def test_projects_prometheus_matrix_samples_by_metric_name():
+    payload = {
+        "status": "success",
+        "data": {
+            "resultType": "matrix",
+            "result": [
+                {
+                    "metric": {
+                        "__name__": "starlink_dish_latitude_degrees",
+                    },
+                    "values": [
+                        [1781999999.0, "41.2565"],
+                        [1782000000.0, "41.2566"],
+                    ],
+                },
+                {
+                    "metric": {
+                        "__name__": "starlink_network_latency_ms_current",
+                    },
+                    "values": [
+                        [1782000000.0, "25.4"],
+                    ],
+                },
+            ],
+        },
+    }
+
+    assert project_overview_history_matrix(payload) == {
+        "starlink_dish_latitude_degrees": [
+            [1781999999.0, 41.2565],
+            [1782000000.0, 41.2566],
+        ],
+        "starlink_network_latency_ms_current": [
+            [1782000000.0, 25.4],
+        ],
+    }
