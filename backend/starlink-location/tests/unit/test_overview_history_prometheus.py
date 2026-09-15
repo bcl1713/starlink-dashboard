@@ -166,3 +166,36 @@ def test_projects_prometheus_matrix_samples_by_metric_name():
             [1782000000.0, 25.4],
         ],
     }
+
+
+def test_ignores_unapproved_or_non_finite_prometheus_samples():
+    payload = {
+        "status": "success",
+        "data": {
+            "resultType": "matrix",
+            "result": [
+                {
+                    "metric": {
+                        "__name__": "starlink_dish_latitude_degrees",
+                    },
+                    "values": [
+                        [1781999999.0, "nan"],
+                        [1782000000.0, "41.2566"],
+                    ],
+                },
+                {
+                    "metric": {
+                        "__name__": "unrelated_internal_metric",
+                    },
+                    "values": [
+                        [1782000000.0, "123.4"],
+                    ],
+                },
+            ],
+        },
+    }
+    assert project_overview_history_matrix(payload) == {
+        "starlink_dish_latitude_degrees": [
+            [1782000000.0, 41.2566],
+        ],
+    }

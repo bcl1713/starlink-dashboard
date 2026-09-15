@@ -1,7 +1,7 @@
 """Prometheus query planning for bounded overview telemetry history."""
 
 from dataclasses import dataclass
-from math import ceil
+from math import ceil, isfinite
 
 import httpx
 
@@ -80,10 +80,18 @@ async def fetch_overview_history_from_prometheus(
 
 
 def project_overview_history_matrix(payload: dict) -> dict[str, list[list[float]]]:
-    """Project Prometheus matrix data into numeric samples keyed by metric name."""
-    return {
-        series["metric"]["__name__"]: [
-            [float(timestamp), float(value)] for timestamp, value in series["values"]
-        ]
-        for series in payload["data"]["result"]
-    }
+    """Project approved finite Prometheus samples keyed by metric name."""
+    projected: dict[str, list[list[float]]] = {}
+    for series in payload["data"]["result"]:
+        metric_name = series["metric"]["__name__"]
+        if metric_name not in OVERVIEW_HISTORY_METRICS:
+            continue
+        samples = []
+        for timestamp, value in series["values"]:
+            numeric_timestamp = float(timestamp)
+            numeric_value = float(value)
+            if isfinite(numeric_timestamp) and isfinite(numeric_value):
+                samples.append([numeric_timestamp, numeric_value])
+        if samples:
+            projected[metric_name] = samples
+    return projected
