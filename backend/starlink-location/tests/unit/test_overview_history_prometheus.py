@@ -1,6 +1,7 @@
 from app.services.overview_history_prometheus import (
     MAX_OVERVIEW_HISTORY_SAMPLES,
     OVERVIEW_HISTORY_METRICS,
+    build_overview_history_prometheus_params,
     build_overview_history_promql,
     plan_overview_history_query,
 )
@@ -69,3 +70,16 @@ def test_builds_one_name_matcher_for_the_entire_overview_metric_allowlist():
         "starlink_dish_obstruction_percent|"
         'starlink_signal_quality_percent"}'
     )
+
+
+def test_builds_range_query_parameters_from_the_shared_overview_plan():
+    plan = plan_overview_history_query(
+        end_timestamp_seconds=1_782_000_000,
+        window_seconds=1800,
+    )
+    assert build_overview_history_prometheus_params(plan) == {
+        "query": build_overview_history_promql(plan),
+        "start": "1781998200",
+        "end": "1782000000",
+        "step": "1",
+    }

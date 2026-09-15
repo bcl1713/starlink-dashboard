@@ -50,3 +50,15 @@ def build_overview_history_promql(plan: OverviewHistoryQueryPlan) -> str:
     """Build one PromQL name matcher for the planned overview metric bundle."""
     metric_names = "|".join(plan.metric_names)
     return f'{{__name__=~"{metric_names}"}}'
+
+
+def build_overview_history_prometheus_params(
+    plan: OverviewHistoryQueryPlan,
+) -> dict[str, str]:
+    """Build query_range parameters for one bounded overview telemetry request."""
+    return {
+        "query": build_overview_history_promql(plan),
+        "start": str(plan.start_timestamp_seconds),
+        "end": str(plan.end_timestamp_seconds),
+        "step": str(plan.step_seconds),
+    }
