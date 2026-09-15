@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from math import ceil
 
-MAX_OVERVIEW_HISTORY_SAMPLES = 1800
+MAX_OVERVIEW_HISTORY_SAMPLES = 1801
+MAX_OVERVIEW_HISTORY_INTERVALS = MAX_OVERVIEW_HISTORY_SAMPLES - 1
 OVERVIEW_HISTORY_METRICS = (
     "starlink_dish_latitude_degrees",
     "starlink_dish_longitude_degrees",
@@ -34,12 +35,12 @@ def plan_overview_history_query(
     end_timestamp_seconds: int,
     window_seconds: int,
 ) -> OverviewHistoryQueryPlan:
-    """Plan a query with no more than 1,800 requested samples per series."""
+    """Plan a query with no more than 1,801 requested samples per series."""
     if window_seconds <= 0:
         raise ValueError("History window must be positive")
     return OverviewHistoryQueryPlan(
         start_timestamp_seconds=end_timestamp_seconds - window_seconds,
         end_timestamp_seconds=end_timestamp_seconds,
-        step_seconds=max(1, ceil(window_seconds / MAX_OVERVIEW_HISTORY_SAMPLES)),
+        step_seconds=max(1, ceil(window_seconds / MAX_OVERVIEW_HISTORY_INTERVALS)),
         metric_names=OVERVIEW_HISTORY_METRICS,
     )
