@@ -4,6 +4,7 @@ import pytest
 from app.services.overview_history_prometheus import (
     MAX_OVERVIEW_HISTORY_SAMPLES,
     OVERVIEW_HISTORY_METRICS,
+    OverviewHistoryPrometheusResponseError,
     build_overview_history_prometheus_params,
     build_overview_history_promql,
     fetch_overview_history_from_prometheus,
@@ -200,3 +201,16 @@ def test_ignores_unapproved_or_non_finite_prometheus_samples():
             [1782000000.0, 41.2566],
         ],
     }
+
+
+def test_rejects_a_failed_prometheus_query_response():
+    payload = {
+        "status": "error",
+        "errorType": "timeout",
+        "error": "query timed out",
+    }
+    with pytest.raises(
+        OverviewHistoryPrometheusResponseError,
+        match="Prometheus history query failed: query timed out",
+    ):
+        project_overview_history_matrix(payload)

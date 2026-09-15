@@ -22,6 +22,10 @@ OVERVIEW_HISTORY_METRICS = (
 )
 
 
+class OverviewHistoryPrometheusResponseError(ValueError):
+    """Raised when Prometheus does not return a successful history matrix."""
+
+
 @dataclass(frozen=True)
 class OverviewHistoryQueryPlan:
     """A bounded Prometheus range-query window for overview telemetry."""
@@ -81,6 +85,11 @@ async def fetch_overview_history_from_prometheus(
 
 def project_overview_history_matrix(payload: dict) -> dict[str, list[list[float]]]:
     """Project approved finite Prometheus samples keyed by metric name."""
+    if payload.get("status") != "success":
+        error = str(payload.get("error", "unknown Prometheus error"))
+        raise OverviewHistoryPrometheusResponseError(
+            f"Prometheus history query failed: {error}"
+        )
     projected: dict[str, list[list[float]]] = {}
     for series in payload["data"]["result"]:
         metric_name = series["metric"]["__name__"]
