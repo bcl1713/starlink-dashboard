@@ -1,9 +1,12 @@
+import asyncio
+
 import httpx
 import pytest
 
 from app.services.overview_history_prometheus import (
     MAX_OVERVIEW_HISTORY_SAMPLES,
     OVERVIEW_HISTORY_METRICS,
+    OverviewHistoryBundleSingleFlight,
     OverviewHistoryPrometheusResponseError,
     build_overview_history_prometheus_params,
     build_overview_history_promql,
@@ -276,3 +279,48 @@ async def test_queries_and_projects_one_bounded_overview_history_bundle():
             ],
         },
     }
+
+
+@pytest.mark.asyncio
+async def test_shares_one_in_flight_bundle_query_for_identical_windows():
+    calls = 0
+    fetch_started = asyncio.Event()
+    release_fetch = asyncio.Event()
+
+    async def fetch_bundle(
+        *,
+        end_timestamp_seconds: int,
+        window_seconds: int,
+    ) -> dict:
+        nonlocal calls
+        calls += 1
+        fetch_started.set()
+        await release_fetch.wait()
+        return {
+            "end_timestamp_seconds": end_timestamp_seconds,
+            "window_seconds": window_seconds,
+        }
+
+    single_flight = OverviewHistoryBundleSingleFlight(fetch_bundle)
+    requests = asyncio.gather(
+        single_flight.get(
+            end_timestamp_seconds=1_782_000_000,
+            window_seconds=1800,
+        ),
+        single_flight.get(
+            end_timestamp_seconds=1_782_000_000,
+            window_seconds=1800,
+        ),
+    )
+    await fetch_started.wait()
+    assert calls == 1
+    release_fetch.set()
+    first, second = await requests
+    assert (
+        first
+        == second
+        == {
+            "end_timestamp_seconds": 1_782_000_000,
+            "window_seconds": 1800,
+        }
+    )

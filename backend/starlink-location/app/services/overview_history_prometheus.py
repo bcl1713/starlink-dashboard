@@ -1,5 +1,7 @@
 """Prometheus query planning for bounded overview telemetry history."""
 
+import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from math import ceil, isfinite
 
@@ -24,6 +26,48 @@ OVERVIEW_HISTORY_METRICS = (
 
 class OverviewHistoryPrometheusResponseError(ValueError):
     """Raised when Prometheus does not return a successful history matrix."""
+
+
+class OverviewHistoryBundleSingleFlight:
+    """Share one in-flight bundle query for each identical query window."""
+
+    def __init__(
+        self,
+        fetch_bundle: Callable[..., Awaitable[dict]],
+    ) -> None:
+        self._fetch_bundle = fetch_bundle
+        self._flights: dict[tuple[int, int], asyncio.Future[dict]] = {}
+
+    async def get(
+        self,
+        *,
+        end_timestamp_seconds: int,
+        window_seconds: int,
+    ) -> dict:
+        """Return the shared in-flight result for one bounded history window."""
+        key = (end_timestamp_seconds, window_seconds)
+        flight = self._flights.get(key)
+        if flight is None:
+            flight = asyncio.ensure_future(
+                self._fetch_bundle(
+                    end_timestamp_seconds=end_timestamp_seconds,
+                    window_seconds=window_seconds,
+                )
+            )
+            self._flights[key] = flight
+            flight.add_done_callback(
+                lambda completed: self._discard_completed_flight(key, completed)
+            )
+        return await asyncio.shield(flight)
+
+    def _discard_completed_flight(
+        self,
+        key: tuple[int, int],
+        completed: asyncio.Future[dict],
+    ) -> None:
+        """Remove only the completed flight that still owns its key."""
+        if self._flights.get(key) is completed:
+            del self._flights[key]
 
 
 @dataclass(frozen=True)
