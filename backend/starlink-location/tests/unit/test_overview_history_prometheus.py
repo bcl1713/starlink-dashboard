@@ -180,6 +180,7 @@ def test_ignores_unapproved_or_non_finite_prometheus_samples():
                     },
                     "values": [
                         [1781999999.0, "nan"],
+                        [1781999999.5, "not-a-number"],
                         [1782000000.0, "41.2566"],
                     ],
                 },

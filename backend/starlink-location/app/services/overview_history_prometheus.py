@@ -88,8 +88,11 @@ def project_overview_history_matrix(payload: dict) -> dict[str, list[list[float]
             continue
         samples = []
         for timestamp, value in series["values"]:
-            numeric_timestamp = float(timestamp)
-            numeric_value = float(value)
+            try:
+                numeric_timestamp = float(timestamp)
+                numeric_value = float(value)
+            except (TypeError, ValueError):
+                continue
             if isfinite(numeric_timestamp) and isfinite(numeric_value):
                 samples.append([numeric_timestamp, numeric_value])
         if samples:
