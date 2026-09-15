@@ -44,3 +44,9 @@ def plan_overview_history_query(
         step_seconds=max(1, ceil(window_seconds / MAX_OVERVIEW_HISTORY_INTERVALS)),
         metric_names=OVERVIEW_HISTORY_METRICS,
     )
+
+
+def build_overview_history_promql(plan: OverviewHistoryQueryPlan) -> str:
+    """Build one PromQL name matcher for the planned overview metric bundle."""
+    metric_names = "|".join(plan.metric_names)
+    return f'{{__name__=~"{metric_names}"}}'

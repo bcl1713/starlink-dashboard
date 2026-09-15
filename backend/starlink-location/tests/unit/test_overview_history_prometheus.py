@@ -1,6 +1,7 @@
 from app.services.overview_history_prometheus import (
     MAX_OVERVIEW_HISTORY_SAMPLES,
     OVERVIEW_HISTORY_METRICS,
+    build_overview_history_promql,
     plan_overview_history_query,
 )
 
@@ -47,3 +48,24 @@ def test_allows_the_inclusive_thirty_minute_range_to_return_eighteen_hundred_one
     ) + 1
     assert MAX_OVERVIEW_HISTORY_SAMPLES == 1801
     assert returned_samples == MAX_OVERVIEW_HISTORY_SAMPLES
+
+
+def test_builds_one_name_matcher_for_the_entire_overview_metric_allowlist():
+    plan = plan_overview_history_query(
+        end_timestamp_seconds=1_782_000_000,
+        window_seconds=1800,
+    )
+    assert build_overview_history_promql(plan) == (
+        '{__name__=~"'
+        "starlink_dish_latitude_degrees|"
+        "starlink_dish_longitude_degrees|"
+        "starlink_dish_altitude_feet|"
+        "starlink_dish_speed_knots|"
+        "starlink_dish_heading_degrees|"
+        "starlink_network_latency_ms_current|"
+        "starlink_network_throughput_down_mbps_current|"
+        "starlink_network_throughput_up_mbps_current|"
+        "starlink_network_packet_loss_percent|"
+        "starlink_dish_obstruction_percent|"
+        'starlink_signal_quality_percent"}'
+    )
