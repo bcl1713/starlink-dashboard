@@ -8,6 +8,7 @@ from app.services.overview_history_prometheus import (
     OVERVIEW_HISTORY_METRICS,
     OverviewHistoryBundleSingleFlight,
     OverviewHistoryPrometheusResponseError,
+    OverviewHistoryReader,
     build_overview_history_prometheus_params,
     build_overview_history_promql,
     fetch_overview_history_from_prometheus,
@@ -337,3 +338,64 @@ def test_resolves_the_prometheus_url_from_environment_or_docker_default(
         "http://prometheus-test:9090",
     )
     assert resolve_overview_history_prometheus_url() == "http://prometheus-test:9090"
+
+
+@pytest.mark.asyncio
+async def test_reader_uses_the_selected_window_and_current_time_for_one_bundle():
+    requests: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "status": "success",
+                "data": {
+                    "resultType": "matrix",
+                    "result": [
+                        {
+                            "metric": {
+                                "__name__": "starlink_dish_latitude_degrees",
+                            },
+                            "values": [
+                                [1782000000.0, "41.2566"],
+                            ],
+                        },
+                    ],
+                },
+            },
+        )
+
+    async with httpx.AsyncClient(
+        base_url="http://prometheus:9090",
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        reader = OverviewHistoryReader(
+            client,
+            get_window_seconds=lambda: 900,
+            time_source=lambda: 1_782_000_000.75,
+        )
+        bundle = await reader.read()
+    assert bundle == {
+        "window_seconds": 900,
+        "start_timestamp_seconds": 1_781_999_100,
+        "end_timestamp_seconds": 1_782_000_000,
+        "step_seconds": 1,
+        "series": {
+            "starlink_dish_latitude_degrees": [
+                [1782000000.0, 41.2566],
+            ],
+        },
+    }
+    assert len(requests) == 1
+    assert dict(requests[0].url.params) == {
+        "query": build_overview_history_promql(
+            plan_overview_history_query(
+                end_timestamp_seconds=1_782_000_000,
+                window_seconds=900,
+            )
+        ),
+        "start": "1781999100",
+        "end": "1782000000",
+        "step": "1",
+    }

@@ -80,6 +80,44 @@ class OverviewHistoryBundleSingleFlight:
             del self._flights[key]
 
 
+class OverviewHistoryReader:
+    """Read one shared bounded overview-history bundle from Prometheus."""
+
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        *,
+        get_window_seconds: Callable[[], int],
+        time_source: Callable[[], float],
+    ) -> None:
+        self._client = client
+        self._get_window_seconds = get_window_seconds
+        self._time_source = time_source
+        self._single_flight = OverviewHistoryBundleSingleFlight(
+            self._query_bundle,
+        )
+
+    async def read(self) -> dict:
+        """Read the selected history window ending at the current whole second."""
+        return await self._single_flight.get(
+            end_timestamp_seconds=int(self._time_source()),
+            window_seconds=self._get_window_seconds(),
+        )
+
+    async def _query_bundle(
+        self,
+        *,
+        end_timestamp_seconds: int,
+        window_seconds: int,
+    ) -> dict:
+        """Query one planned bundle through the lifecycle-managed client."""
+        return await query_overview_history_bundle(
+            self._client,
+            end_timestamp_seconds=end_timestamp_seconds,
+            window_seconds=window_seconds,
+        )
+
+
 @dataclass(frozen=True)
 class OverviewHistoryQueryPlan:
     """A bounded Prometheus range-query window for overview telemetry."""
