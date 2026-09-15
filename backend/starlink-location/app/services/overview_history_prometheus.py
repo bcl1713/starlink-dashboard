@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from math import ceil
 
+import httpx
+
 MAX_OVERVIEW_HISTORY_SAMPLES = 1801
 MAX_OVERVIEW_HISTORY_INTERVALS = MAX_OVERVIEW_HISTORY_SAMPLES - 1
 OVERVIEW_HISTORY_METRICS = (
@@ -62,3 +64,16 @@ def build_overview_history_prometheus_params(
         "end": str(plan.end_timestamp_seconds),
         "step": str(plan.step_seconds),
     }
+
+
+async def fetch_overview_history_from_prometheus(
+    client: httpx.AsyncClient,
+    plan: OverviewHistoryQueryPlan,
+) -> dict:
+    """Fetch the complete overview telemetry bundle in one range request."""
+    response = await client.get(
+        "/api/v1/query_range",
+        params=build_overview_history_prometheus_params(plan),
+    )
+    response.raise_for_status()
+    return response.json()
