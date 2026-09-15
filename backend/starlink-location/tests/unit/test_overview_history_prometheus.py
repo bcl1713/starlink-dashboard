@@ -214,3 +214,18 @@ def test_rejects_a_failed_prometheus_query_response():
         match="Prometheus history query failed: query timed out",
     ):
         project_overview_history_matrix(payload)
+
+
+def test_rejects_a_successful_non_matrix_prometheus_response():
+    payload = {
+        "status": "success",
+        "data": {
+            "resultType": "vector",
+            "result": [],
+        },
+    }
+    with pytest.raises(
+        OverviewHistoryPrometheusResponseError,
+        match="Prometheus history query did not return a matrix",
+    ):
+        project_overview_history_matrix(payload)

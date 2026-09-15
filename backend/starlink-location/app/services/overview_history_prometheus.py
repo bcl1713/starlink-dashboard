@@ -90,8 +90,17 @@ def project_overview_history_matrix(payload: dict) -> dict[str, list[list[float]
         raise OverviewHistoryPrometheusResponseError(
             f"Prometheus history query failed: {error}"
         )
+    data = payload.get("data")
+    if (
+        not isinstance(data, dict)
+        or data.get("resultType") != "matrix"
+        or not isinstance(data.get("result"), list)
+    ):
+        raise OverviewHistoryPrometheusResponseError(
+            "Prometheus history query did not return a matrix"
+        )
     projected: dict[str, list[list[float]]] = {}
-    for series in payload["data"]["result"]:
+    for series in data["result"]:
         metric_name = series["metric"]["__name__"]
         if metric_name not in OVERVIEW_HISTORY_METRICS:
             continue
