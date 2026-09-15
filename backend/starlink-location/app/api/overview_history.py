@@ -2,7 +2,12 @@
 
 from collections.abc import Awaitable, Callable
 
+import httpx
 from fastapi import APIRouter, HTTPException
+
+from app.services.overview_history_prometheus import (
+    OverviewHistoryPrometheusResponseError,
+)
 
 router = APIRouter()
 _overview_history_reader: Callable[[], Awaitable[dict]] | None = None
@@ -24,4 +29,10 @@ async def get_overview_history():
             status_code=503,
             detail="Overview history is not yet initialized",
         )
-    return await _overview_history_reader()
+    try:
+        return await _overview_history_reader()
+    except (httpx.HTTPError, OverviewHistoryPrometheusResponseError) as error:
+        raise HTTPException(
+            status_code=503,
+            detail="Overview history is temporarily unavailable",
+        ) from error
