@@ -14,6 +14,7 @@ from app.services.overview_history_prometheus import (
     plan_overview_history_query,
     project_overview_history_matrix,
     query_overview_history_bundle,
+    resolve_overview_history_prometheus_url,
 )
 
 
@@ -324,3 +325,15 @@ async def test_shares_one_in_flight_bundle_query_for_identical_windows():
             "window_seconds": 1800,
         }
     )
+
+
+def test_resolves_the_prometheus_url_from_environment_or_docker_default(
+    monkeypatch,
+):
+    monkeypatch.delenv("STARLINK_PROMETHEUS_URL", raising=False)
+    assert resolve_overview_history_prometheus_url() == "http://prometheus:9090"
+    monkeypatch.setenv(
+        "STARLINK_PROMETHEUS_URL",
+        "http://prometheus-test:9090",
+    )
+    assert resolve_overview_history_prometheus_url() == "http://prometheus-test:9090"

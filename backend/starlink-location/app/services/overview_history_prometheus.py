@@ -1,6 +1,7 @@
 """Prometheus query planning for bounded overview telemetry history."""
 
 import asyncio
+import os
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from math import ceil, isfinite
@@ -22,6 +23,15 @@ OVERVIEW_HISTORY_METRICS = (
     "starlink_dish_obstruction_percent",
     "starlink_signal_quality_percent",
 )
+DEFAULT_OVERVIEW_HISTORY_PROMETHEUS_URL = "http://prometheus:9090"
+
+
+def resolve_overview_history_prometheus_url() -> str:
+    """Resolve the Prometheus base URL for overview history queries."""
+    return os.getenv(
+        "STARLINK_PROMETHEUS_URL",
+        DEFAULT_OVERVIEW_HISTORY_PROMETHEUS_URL,
+    )
 
 
 class OverviewHistoryPrometheusResponseError(ValueError):
