@@ -10,6 +10,7 @@ from app.services.overview_history_prometheus import (
     fetch_overview_history_from_prometheus,
     plan_overview_history_query,
     project_overview_history_matrix,
+    query_overview_history_bundle,
 )
 
 
@@ -229,3 +230,49 @@ def test_rejects_a_successful_non_matrix_prometheus_response():
         match="Prometheus history query did not return a matrix",
     ):
         project_overview_history_matrix(payload)
+
+
+@pytest.mark.asyncio
+async def test_queries_and_projects_one_bounded_overview_history_bundle():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/v1/query_range"
+        return httpx.Response(
+            200,
+            json={
+                "status": "success",
+                "data": {
+                    "resultType": "matrix",
+                    "result": [
+                        {
+                            "metric": {
+                                "__name__": "starlink_dish_longitude_degrees",
+                            },
+                            "values": [
+                                [1782000000.0, "-95.9345"],
+                            ],
+                        },
+                    ],
+                },
+            },
+        )
+
+    async with httpx.AsyncClient(
+        base_url="http://prometheus:9090",
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        bundle = await query_overview_history_bundle(
+            client,
+            end_timestamp_seconds=1_782_000_000,
+            window_seconds=1800,
+        )
+    assert bundle == {
+        "window_seconds": 1800,
+        "start_timestamp_seconds": 1_781_998_200,
+        "end_timestamp_seconds": 1_782_000_000,
+        "step_seconds": 1,
+        "series": {
+            "starlink_dish_longitude_degrees": [
+                [1782000000.0, -95.9345],
+            ],
+        },
+    }

@@ -116,3 +116,24 @@ def project_overview_history_matrix(payload: dict) -> dict[str, list[list[float]
         if samples:
             projected[metric_name] = samples
     return projected
+
+
+async def query_overview_history_bundle(
+    client: httpx.AsyncClient,
+    *,
+    end_timestamp_seconds: int,
+    window_seconds: int,
+) -> dict:
+    """Query and project one bounded overview telemetry-history bundle."""
+    plan = plan_overview_history_query(
+        end_timestamp_seconds=end_timestamp_seconds,
+        window_seconds=window_seconds,
+    )
+    payload = await fetch_overview_history_from_prometheus(client, plan)
+    return {
+        "window_seconds": window_seconds,
+        "start_timestamp_seconds": plan.start_timestamp_seconds,
+        "end_timestamp_seconds": plan.end_timestamp_seconds,
+        "step_seconds": plan.step_seconds,
+        "series": project_overview_history_matrix(payload),
+    }
