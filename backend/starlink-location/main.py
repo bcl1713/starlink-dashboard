@@ -100,6 +100,9 @@ def initialize_overview_history_runtime() -> None:
         OVERVIEW_HISTORY_SETTINGS_PATH,
         default_window_seconds=resolve_overview_history_window_default(),
     )
+    overview_history.set_overview_history_settings_store(
+        _overview_history_settings_store
+    )
     _overview_history_client = httpx.AsyncClient(
         base_url=resolve_overview_history_prometheus_url(),
         timeout=OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS,
@@ -349,6 +352,7 @@ async def shutdown_event():
     try:
         logger.info_json("Shutting down Starlink Location Backend")
         overview_history.set_overview_history_reader(None)
+        overview_history.set_overview_history_settings_store(None)
         if _overview_history_client is not None:
             await _overview_history_client.aclose()
             _overview_history_client = None

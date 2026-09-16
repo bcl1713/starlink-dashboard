@@ -81,6 +81,11 @@ def test_lifespan_initializes_and_closes_the_history_runtime(
     )
     monkeypatch.setattr(main.time, "time", lambda: 1_782_000_000.0)
     with TestClient(main.app) as client:
+        settings_response = client.get("/api/overview-history/settings")
+        assert settings_response.status_code == 200
+        assert settings_response.json() == {
+            "window_seconds": 1800,
+        }
         response = client.get("/api/overview-history")
         assert response.status_code == 200
         assert response.json() == {
