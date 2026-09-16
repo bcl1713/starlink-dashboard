@@ -44,6 +44,8 @@ import {
 import { useOverviewHistory } from '@/hooks/api/useOverviewHistory';
 import { projectAircraftHistory } from './overview-history-projection';
 import { overviewHistoryState } from './overview-history-state';
+import { useOverviewHistorySettings } from '@/hooks/api/useOverviewHistorySettings';
+import { useUpdateOverviewHistorySettings } from '@/hooks/api/useUpdateOverviewHistorySettings';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -232,6 +234,17 @@ export function OverviewPage() {
     isLoading: isLoadingOverviewHistory,
     isError: isOverviewHistoryError,
   } = useOverviewHistory();
+  const {
+    data: overviewHistorySettings,
+    isError: isOverviewHistorySettingsError,
+  } = useOverviewHistorySettings();
+  const {
+    mutate: updateOverviewHistorySettings,
+    isPending: isUpdatingOverviewHistorySettings,
+  } = useUpdateOverviewHistorySettings();
+  const overviewHistoryWindowValue = overviewHistorySettings
+    ? String(overviewHistorySettings.window_seconds)
+    : '';
   const aircraftHistoryPoints = useMemo(
     () =>
       projectAircraftHistory(
@@ -365,6 +378,37 @@ export function OverviewPage() {
             />
             <span>Aircraft history</span>
             <strong>{aircraftHistoryStatus}</strong>
+          </li>
+          <li>
+            <span aria-hidden="true" />
+            <label htmlFor="aircraft-history-window">
+              Aircraft history window
+            </label>
+            <select
+              id="aircraft-history-window"
+              aria-label="Aircraft history window"
+              className="globe-legend__window"
+              value={overviewHistoryWindowValue}
+              disabled={
+                !overviewHistorySettings || isUpdatingOverviewHistorySettings
+              }
+              onChange={(event) => {
+                const windowSeconds = Number(event.target.value);
+                if (Number.isInteger(windowSeconds) && windowSeconds > 0) {
+                  updateOverviewHistorySettings(windowSeconds);
+                }
+              }}
+            >
+              {!overviewHistorySettings && (
+                <option value="" disabled>
+                  {isOverviewHistorySettingsError ? 'Unavailable' : 'Loading…'}
+                </option>
+              )}
+              <option value="300">5 minutes</option>
+              <option value="900">15 minutes</option>
+              <option value="1800">30 minutes</option>
+              <option value="3600">60 minutes</option>
+            </select>
           </li>
           <li>
             <span

@@ -88,6 +88,16 @@
   background: #22d3ee;
 }
 
+.globe-legend__window {
+  min-width: 7rem;
+  border: 1px solid rgb(148 163 184 / 45%);
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.375rem;
+  background: rgb(15 23 42 / 90%);
+  color: #f8fafc;
+  font: inherit;
+}
+
 .globe-legend__message {
   margin: 0;
   color: #cbd5e1;
