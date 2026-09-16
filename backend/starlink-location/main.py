@@ -132,6 +132,8 @@ async def startup_event():
             },
         )
 
+        initialize_overview_history_runtime()
+
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
 
@@ -341,11 +343,16 @@ async def startup_event():
 
 async def shutdown_event():
     """Cleanup on shutdown."""
-    global _background_task, _route_manager
+    global _background_task, _overview_history_client
+    global _overview_history_settings_store, _route_manager
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
-
+        overview_history.set_overview_history_reader(None)
+        if _overview_history_client is not None:
+            await _overview_history_client.aclose()
+            _overview_history_client = None
+        _overview_history_settings_store = None
         if _background_task:
             logger.info_json("Cancelling background update task")
             _background_task.cancel()
