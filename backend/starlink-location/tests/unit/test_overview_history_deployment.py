@@ -24,5 +24,9 @@ def test_operator_docs_explain_overview_history_configuration():
     assert "STARLINK_PROMETHEUS_URL=http://prometheus:9090" in environment_example
     assert "STARLINK_HISTORY_WINDOW_SECONDS=1800" in environment_example
     assert "persisted dashboard selection" in environment_example
-    assert "STARLINK_HISTORY_WINDOW_SECONDS" in portainer_runbook
-    assert "overview-history.json" in portainer_runbook
+    assert "`STARLINK_PROMETHEUS_URL`" in portainer_runbook
+    assert "`STARLINK_HISTORY_WINDOW_SECONDS`" in portainer_runbook
+    assert (
+        "`STARLINK_APP_DATA_PATH/settings/overview-history.json`" in portainer_runbook
+    )
+    assert "`PROMETHEUS_RETENTION`" in portainer_runbook
