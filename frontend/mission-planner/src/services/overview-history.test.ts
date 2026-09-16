@@ -7,6 +7,7 @@ import {
 vi.mock('./api-client', () => ({
   default: {
     get: vi.fn(),
+    put: vi.fn(),
   },
 }));
 describe('overviewHistoryApi', () => {
@@ -36,6 +37,23 @@ describe('overviewHistoryApi', () => {
     await expect(overviewHistorySettingsApi.get()).resolves.toEqual(settings);
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/overview-history/settings'
+    );
+  });
+  it('persists a selected overview history window', async () => {
+    const settings = {
+      window_seconds: 900,
+    };
+    vi.mocked(apiClient.put).mockResolvedValue({
+      data: settings,
+    } as never);
+    await expect(
+      overviewHistorySettingsApi.update(settings.window_seconds)
+    ).resolves.toEqual(settings);
+    expect(apiClient.put).toHaveBeenCalledWith(
+      '/api/overview-history/settings',
+      {
+        window_seconds: 900,
+      }
     );
   });
 });

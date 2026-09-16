@@ -28,4 +28,13 @@ export const overviewHistorySettingsApi = {
     );
     return response.data;
   },
+  async update(windowSeconds: number): Promise<OverviewHistorySettings> {
+    const response = await apiClient.put<OverviewHistorySettings>(
+      '/api/overview-history/settings',
+      {
+        window_seconds: windowSeconds,
+      }
+    );
+    return response.data;
+  },
 };
