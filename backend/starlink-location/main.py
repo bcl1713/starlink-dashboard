@@ -6,6 +6,7 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -49,6 +50,14 @@ from app.services.ground_entry_point import (
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
+from app.services.overview_history_prometheus import (
+    OverviewHistoryReader,
+    resolve_overview_history_prometheus_url,
+)
+from app.services.overview_history_settings import (
+    OverviewHistorySettingsStore,
+    resolve_overview_history_window_default,
+)
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 from app.simulation.coordinator import SimulationCoordinator
@@ -71,6 +80,10 @@ _coordinator: SimulationCoordinator | LiveCoordinator | None = None
 _background_task = None
 _simulation_config = None
 _route_manager: RouteManager | None = None
+OVERVIEW_HISTORY_SETTINGS_PATH = Path("data/settings/overview-history.json")
+OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS = 5.0
+_overview_history_client: httpx.AsyncClient | None = None
+_overview_history_settings_store: OverviewHistorySettingsStore | None = None
 
 
 def should_automatically_refresh_ground_entry_point(
@@ -78,6 +91,25 @@ def should_automatically_refresh_ground_entry_point(
 ) -> bool:
     """Return whether this mode may perform external GEP discovery."""
     return config is not None and config.mode == "live"
+
+
+def initialize_overview_history_runtime() -> None:
+    """Initialize the persistent settings and reader for overview history."""
+    global _overview_history_client, _overview_history_settings_store
+    _overview_history_settings_store = OverviewHistorySettingsStore(
+        OVERVIEW_HISTORY_SETTINGS_PATH,
+        default_window_seconds=resolve_overview_history_window_default(),
+    )
+    _overview_history_client = httpx.AsyncClient(
+        base_url=resolve_overview_history_prometheus_url(),
+        timeout=OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS,
+    )
+    reader = OverviewHistoryReader(
+        _overview_history_client,
+        get_window_seconds=_overview_history_settings_store.get_window_seconds,
+        time_source=time.time,
+    )
+    overview_history.set_overview_history_reader(reader.read)
 
 
 async def startup_event():
