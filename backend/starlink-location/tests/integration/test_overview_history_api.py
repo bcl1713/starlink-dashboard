@@ -5,6 +5,7 @@ from app.api import overview_history
 from app.services.overview_history_prometheus import (
     OverviewHistoryPrometheusResponseError,
 )
+from app.services.overview_history_settings import OverviewHistorySettingsStore
 
 
 def test_overview_history_returns_503_until_its_runtime_reader_is_initialized():
@@ -84,3 +85,34 @@ def test_overview_history_settings_returns_503_until_its_store_is_initialized():
     assert response.json() == {
         "detail": "Overview history settings are not yet initialized",
     }
+
+
+def test_overview_history_settings_put_persists_the_selected_window(tmp_path):
+    settings_path = tmp_path / "overview-history.json"
+    store = OverviewHistorySettingsStore(
+        settings_path,
+        default_window_seconds=1800,
+    )
+    overview_history.set_overview_history_settings_store(store)
+    try:
+        app = FastAPI()
+        app.include_router(overview_history.router)
+        response = TestClient(app).put(
+            "/api/overview-history/settings",
+            json={
+                "window_seconds": 900,
+            },
+        )
+    finally:
+        overview_history.set_overview_history_settings_store(None)
+    assert response.status_code == 200
+    assert response.json() == {
+        "window_seconds": 900,
+    }
+    assert (
+        OverviewHistorySettingsStore(
+            settings_path,
+            default_window_seconds=1800,
+        ).get_window_seconds()
+        == 900
+    )
