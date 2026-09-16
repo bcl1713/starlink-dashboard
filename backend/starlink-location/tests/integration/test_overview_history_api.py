@@ -73,3 +73,14 @@ def test_overview_history_returns_503_when_its_prometheus_reader_fails():
     assert response.json() == {
         "detail": "Overview history is temporarily unavailable",
     }
+
+
+def test_overview_history_settings_returns_503_until_its_store_is_initialized():
+    overview_history.set_overview_history_settings_store(None)
+    app = FastAPI()
+    app.include_router(overview_history.router)
+    response = TestClient(app).get("/api/overview-history/settings")
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "Overview history settings are not yet initialized",
+    }
