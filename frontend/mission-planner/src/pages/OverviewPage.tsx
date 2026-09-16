@@ -47,6 +47,8 @@ import { overviewHistoryState } from './overview-history-state';
 import { useOverviewHistorySettings } from '@/hooks/api/useOverviewHistorySettings';
 import { useUpdateOverviewHistorySettings } from '@/hooks/api/useUpdateOverviewHistorySettings';
 
+const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
+
 const atmosphereVertexShader = `
   varying vec3 vNormal;
   varying vec3 vViewPosition;
@@ -245,6 +247,9 @@ export function OverviewPage() {
   const overviewHistoryWindowValue = overviewHistorySettings
     ? String(overviewHistorySettings.window_seconds)
     : '';
+  const hasCustomOverviewHistoryWindow =
+    overviewHistorySettings !== undefined &&
+    !HISTORY_WINDOW_OPTIONS.includes(overviewHistorySettings.window_seconds);
   const aircraftHistoryPoints = useMemo(
     () =>
       projectAircraftHistory(
@@ -404,10 +409,16 @@ export function OverviewPage() {
                   {isOverviewHistorySettingsError ? 'Unavailable' : 'Loading…'}
                 </option>
               )}
-              <option value="300">5 minutes</option>
-              <option value="900">15 minutes</option>
-              <option value="1800">30 minutes</option>
-              <option value="3600">60 minutes</option>
+              {hasCustomOverviewHistoryWindow && (
+                <option value={overviewHistoryWindowValue}>
+                  {overviewHistoryWindowValue} seconds
+                </option>
+              )}
+              {HISTORY_WINDOW_OPTIONS.map((windowSeconds) => (
+                <option key={windowSeconds} value={windowSeconds}>
+                  {windowSeconds / 60} minutes
+                </option>
+              ))}
             </select>
           </li>
           <li>

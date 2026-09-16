@@ -863,4 +863,39 @@ test.describe('Globe overview', () => {
     await expect(historyWindow).toHaveValue('900');
     await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(2);
   });
+  test('retains a persisted custom aircraft history window', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: -179,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history/settings', async (route) => {
+      await route.fulfill({
+        json: {
+          window_seconds: 1200,
+        },
+      });
+    });
+    await page.goto('/overview');
+    await expect(page.getByLabel('Aircraft history window')).toHaveValue(
+      '1200'
+    );
+  });
 });
