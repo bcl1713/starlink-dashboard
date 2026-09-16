@@ -51,7 +51,7 @@ def test_lifespan_initializes_and_closes_the_history_runtime(
 
         async def get(self, path: str, params: dict) -> httpx.Response:
             assert path == "/api/v1/query_range"
-            assert params["start"] == "1781998200"
+            assert params["start"] == "1781999100"
             assert params["end"] == "1782000000"
             request = httpx.Request(
                 "GET",
@@ -86,11 +86,21 @@ def test_lifespan_initializes_and_closes_the_history_runtime(
         assert settings_response.json() == {
             "window_seconds": 1800,
         }
+        update_response = client.put(
+            "/api/overview-history/settings",
+            json={
+                "window_seconds": 900,
+            },
+        )
+        assert update_response.status_code == 200
+        assert update_response.json() == {
+            "window_seconds": 900,
+        }
         response = client.get("/api/overview-history")
         assert response.status_code == 200
         assert response.json() == {
-            "window_seconds": 1800,
-            "start_timestamp_seconds": 1_781_998_200,
+            "window_seconds": 900,
+            "start_timestamp_seconds": 1_781_999_100,
             "end_timestamp_seconds": 1_782_000_000,
             "step_seconds": 1,
             "series": {},
