@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import apiClient from './api-client';
-import { overviewHistoryApi } from './overview-history';
+import {
+  overviewHistoryApi,
+  overviewHistorySettingsApi,
+} from './overview-history';
 vi.mock('./api-client', () => ({
   default: {
     get: vi.fn(),
@@ -22,5 +25,17 @@ describe('overviewHistoryApi', () => {
     } as never);
     await expect(overviewHistoryApi.get()).resolves.toEqual(bundle);
     expect(apiClient.get).toHaveBeenCalledWith('/api/overview-history');
+  });
+  it('gets the persisted overview history window', async () => {
+    const settings = {
+      window_seconds: 1800,
+    };
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: settings,
+    } as never);
+    await expect(overviewHistorySettingsApi.get()).resolves.toEqual(settings);
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/overview-history/settings'
+    );
   });
 });
