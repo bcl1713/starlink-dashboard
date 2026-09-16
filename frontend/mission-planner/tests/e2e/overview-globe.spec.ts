@@ -751,4 +751,48 @@ test.describe('Globe overview', () => {
     await expect.poll(() => historyRequests).toHaveLength(1);
     expect(historyRequests[0]).toMatch(/\/api\/overview-history$/);
   });
+  test('reports unavailable aircraft history without replacing live telemetry', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: -179,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        json: {
+          detail: 'Overview history is temporarily unavailable',
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      globeLegend.getByText('Aircraft history', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Aircraft history unavailable', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Live telemetry', { exact: true })
+    ).toBeVisible();
+  });
 });
