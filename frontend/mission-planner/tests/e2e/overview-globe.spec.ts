@@ -17,6 +17,17 @@ test.describe('Globe overview', () => {
         },
       });
     });
+    await page.route('**/api/overview-history', async (route) => {
+      await route.fulfill({
+        json: {
+          window_seconds: 1800,
+          start_timestamp_seconds: 1_781_998_200,
+          end_timestamp_seconds: 1_782_000_000,
+          step_seconds: 1,
+          series: {},
+        },
+      });
+    });
   });
 
   test('renders an active anti-meridian route from same-origin API data', async ({
@@ -683,5 +694,61 @@ test.describe('Globe overview', () => {
       })
     ).toBeVisible();
     await expect(page.getByText('X-Atlantic', { exact: true })).toHaveCount(0);
+  });
+  test('requests and reports a shared aircraft-history trail', async ({
+    page,
+  }) => {
+    const historyRequests: string[] = [];
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: 175,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      historyRequests.push(route.request().url());
+      await route.fulfill({
+        json: {
+          window_seconds: 1800,
+          start_timestamp_seconds: 1_781_998_200,
+          end_timestamp_seconds: 1_782_000_000,
+          step_seconds: 1,
+          series: {
+            starlink_dish_latitude_degrees: [
+              [1_781_999_999, 10],
+              [1_782_000_000, 10],
+            ],
+            starlink_dish_longitude_degrees: [
+              [1_781_999_999, 175],
+              [1_782_000_000, -179],
+            ],
+          },
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      globeLegend.getByText('Aircraft history', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('2 trail points', { exact: true })
+    ).toBeVisible();
+    await expect.poll(() => historyRequests).toHaveLength(1);
+    expect(historyRequests[0]).toMatch(/\/api\/overview-history$/);
   });
 });

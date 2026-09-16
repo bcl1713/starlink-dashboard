@@ -41,6 +41,9 @@ import {
   projectAircraftScenePosition,
   projectConfiguredXBandActiveLink,
 } from './x-band-active-link-projection';
+import { useOverviewHistory } from '@/hooks/api/useOverviewHistory';
+import { projectAircraftHistory } from './overview-history-projection';
+import { overviewHistoryState } from './overview-history-state';
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -224,7 +227,24 @@ export function OverviewPage() {
     isLoading: isLoadingStatus,
     error: statusError,
   } = useStatus();
-
+  const {
+    data: overviewHistory,
+    isLoading: isLoadingOverviewHistory,
+    isError: isOverviewHistoryError,
+  } = useOverviewHistory();
+  const aircraftHistoryPoints = useMemo(
+    () =>
+      projectAircraftHistory(
+        overviewHistory?.series ?? {},
+        ROUTE_OVERLAY_RADIUS
+      ),
+    [overviewHistory?.series]
+  );
+  const aircraftHistoryStatus = overviewHistoryState({
+    isLoading: isLoadingOverviewHistory,
+    isError: isOverviewHistoryError,
+    pointCount: aircraftHistoryPoints.length,
+  });
   const {
     data: satellites,
     isLoading: isLoadingSatellites,
@@ -340,6 +360,14 @@ export function OverviewPage() {
           </li>
           <li>
             <span
+              className="globe-legend__route globe-legend__route--history"
+              aria-hidden="true"
+            />
+            <span>Aircraft history</span>
+            <strong>{aircraftHistoryStatus}</strong>
+          </li>
+          <li>
+            <span
               className="globe-legend__marker globe-legend__marker--ground-entry"
               aria-hidden="true"
             />
@@ -440,6 +468,16 @@ export function OverviewPage() {
               globeOccluder={globeOccluder}
             />
           ))}
+          {aircraftHistoryPoints.length >= 2 && (
+            <Line
+              points={aircraftHistoryPoints}
+              color="#22d3ee"
+              linewidth={2}
+              transparent
+              opacity={0.8}
+              depthWrite={false}
+            />
+          )}
           {aircraftPosition && (
             <AircraftMarker
               coordinate={aircraftPosition}

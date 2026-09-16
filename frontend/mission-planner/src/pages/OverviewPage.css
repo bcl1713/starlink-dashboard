@@ -84,6 +84,10 @@
   background: #ffb000;
 }
 
+.globe-legend__route--history {
+  background: #22d3ee;
+}
+
 .globe-legend__message {
   margin: 0;
   color: #cbd5e1;
