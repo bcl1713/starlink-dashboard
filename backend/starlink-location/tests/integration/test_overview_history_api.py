@@ -1,3 +1,4 @@
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -116,3 +117,34 @@ def test_overview_history_settings_put_persists_the_selected_window(tmp_path):
         ).get_window_seconds()
         == 900
     )
+
+
+@pytest.mark.parametrize(
+    "window_seconds",
+    [
+        0,
+        True,
+    ],
+)
+def test_overview_history_settings_put_rejects_invalid_windows(
+    tmp_path,
+    window_seconds,
+):
+    store = OverviewHistorySettingsStore(
+        tmp_path / "overview-history.json",
+        default_window_seconds=1800,
+    )
+    overview_history.set_overview_history_settings_store(store)
+    try:
+        app = FastAPI()
+        app.include_router(overview_history.router)
+        response = TestClient(app).put(
+            "/api/overview-history/settings",
+            json={
+                "window_seconds": window_seconds,
+            },
+        )
+    finally:
+        overview_history.set_overview_history_settings_store(None)
+    assert response.status_code == 422
+    assert store.get_window_seconds() == 1800
