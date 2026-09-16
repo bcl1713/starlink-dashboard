@@ -1,0 +1,26 @@
+import { describe, expect, it, vi } from 'vitest';
+import apiClient from './api-client';
+import { overviewHistoryApi } from './overview-history';
+vi.mock('./api-client', () => ({
+  default: {
+    get: vi.fn(),
+  },
+}));
+describe('overviewHistoryApi', () => {
+  it('gets the shared overview telemetry-history bundle', async () => {
+    const bundle = {
+      window_seconds: 1800,
+      start_timestamp_seconds: 1_781_998_200,
+      end_timestamp_seconds: 1_782_000_000,
+      step_seconds: 1,
+      series: {
+        starlink_dish_latitude_degrees: [[1_782_000_000, 41.2566]],
+      },
+    };
+    vi.mocked(apiClient.get).mockResolvedValue({
+      data: bundle,
+    } as never);
+    await expect(overviewHistoryApi.get()).resolves.toEqual(bundle);
+    expect(apiClient.get).toHaveBeenCalledWith('/api/overview-history');
+  });
+});
