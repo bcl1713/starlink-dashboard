@@ -1,32 +1,33 @@
-import { vi } from 'vitest';
+/** @vitest-environment jsdom */
+
+import { act, cleanup, render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const renderedFlow = vi.hoisted(() => ({
   frame: undefined as undefined | ((state: unknown, delta: number) => void),
   particles: [] as unknown[],
 }));
 
-vi.mock('react', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react')>();
+vi.mock('@react-three/drei', async () => {
+  const React = await import('react');
   return {
-    ...actual,
-    useEffect: (effect: () => void | (() => void)) => {
-      effect();
-    },
-    useMemo: <Value,>(create: () => Value) => create(),
-    useState: <Value,>(initial: Value | (() => Value)) => [
-      typeof initial === 'function' ? (initial as () => Value)() : initial,
-      vi.fn(),
-    ],
+    Line: () => React.createElement('div', { 'data-testid': 'flow-line' }),
   };
 });
 
-vi.mock('@react-three/drei', () => ({ Line: () => null }));
-
-vi.mock('@react-three/fiber', () => ({
-  useFrame: (frame: (state: unknown, delta: number) => void) => {
-    renderedFlow.frame = frame;
-  },
-}));
+vi.mock('@react-three/fiber', async () => {
+  const React = await import('react');
+  return {
+    useFrame: (frame: (state: unknown, delta: number) => void) => {
+      React.useEffect(() => {
+        renderedFlow.frame = frame;
+        return () => {
+          if (renderedFlow.frame === frame) renderedFlow.frame = undefined;
+        };
+      }, [frame]);
+    },
+  };
+});
 
 vi.mock('./overview-animated-flow-line-rendering', async (importOriginal) => {
   const actual =
@@ -43,34 +44,50 @@ vi.mock('./overview-animated-flow-line-rendering', async (importOriginal) => {
   };
 });
 
-import { describe, expect, it } from 'vitest';
 import { AnimatedFlowLine } from './AnimatedFlowLine';
 
+afterEach(() => {
+  cleanup();
+  renderedFlow.frame = undefined;
+  renderedFlow.particles = [];
+});
+
 describe('AnimatedFlowLine', () => {
-  it('renders reverse particles from a reverse-only mounted configuration', () => {
-    AnimatedFlowLine({
-      points: [
-        [0, 0, 0],
-        [1, 0, 0],
-      ],
-      reverse: {
-        enabled: true,
-        rate: 2,
-        speed: 1,
+  it('emits only reverse particles after a reverse-only configuration mounts', () => {
+    const { getAllByTestId } = render(
+      <AnimatedFlowLine
+        points={[
+          [0, 0, 0],
+          [1, 0, 0],
+        ]}
+        reverse={{
+          enabled: true,
+          rate: 2,
+          speed: 1,
+          color: '#c084fc',
+          size: 6,
+          brightness: 1,
+          maxParticles: 2,
+        }}
+        random={() => 0.5}
+      />
+    );
+
+    expect(getAllByTestId('flow-line')).toHaveLength(3);
+    expect(renderedFlow.frame).toBeTypeOf('function');
+
+    act(() => {
+      renderedFlow.frame?.({}, 0.5);
+    });
+
+    expect(renderedFlow.particles).toEqual([
+      expect.objectContaining({
+        direction: 'reverse',
         color: '#c084fc',
-        size: 6,
-        brightness: 1,
-        maxParticles: 2,
-      },
-      random: () => 0.5,
-    });
-
-    renderedFlow.frame?.({}, 0.5);
-
-    expect(renderedFlow.particles).toHaveLength(1);
-    expect(renderedFlow.particles[0]).toMatchObject({
-      direction: 'reverse',
-      color: '#c084fc',
-    });
+      }),
+    ]);
+    expect(renderedFlow.particles).not.toContainEqual(
+      expect.objectContaining({ direction: 'forward' })
+    );
   });
 });
