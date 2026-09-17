@@ -1,10 +1,10 @@
 import { Line } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   createAnimatedFlowResources,
   disposeAnimatedFlowResources,
-  FlowParticlePool,
+  FlowParticlePoolLifecycle,
   type FlowEmitterConfig,
   type FlowPoint,
   writeFlowParticles,
@@ -56,10 +56,10 @@ export function AnimatedFlowLine({
   random,
 }: AnimatedFlowLineProps) {
   const capacity = (forward?.maxParticles ?? 0) + (reverse?.maxParticles ?? 0);
-  const pool = useMemo(
-    () => new FlowParticlePool({ points, random }),
-    [points, random]
+  const [poolLifecycle] = useState(
+    () => new FlowParticlePoolLifecycle(points, random)
   );
+  const pool = poolLifecycle.update(points);
   const resources = useMemo(
     () => createAnimatedFlowResources(Math.max(1, capacity * 4)),
     [capacity]

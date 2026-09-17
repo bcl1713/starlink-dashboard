@@ -59,16 +59,18 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
     Math.max(0, (telemetry?.packet_loss_percent ?? 0) / 100)
   );
   const latency = Math.max(0, telemetry?.latency_ms ?? 0);
-  const speed = Math.max(0.08, 0.28 - Math.min(latency, 500) / 4_000);
-  const failure = packetLoss > 0 ? { probability: packetLoss } : undefined;
+  const latencyFactor = Math.min(latency, 500) / 500;
+  const speed = 0.2;
+  const failure =
+    packetLoss > 0 ? { probability: packetLoss, color: '#ff3b30' } : undefined;
   return {
     forward: {
       enabled: true,
       rate: throughputRate(downlink),
       speed,
       color: '#72b7ff',
-      size: 7,
-      brightness: 1.1,
+      size: 7 + latencyFactor * 2,
+      brightness: 1 + latencyFactor * 0.5,
       maxParticles: 12,
       failure,
     },
@@ -77,8 +79,8 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
       rate: throughputRate(uplink),
       speed,
       color: '#c084fc',
-      size: 6,
-      brightness: 0.9,
+      size: 6 + latencyFactor * 2,
+      brightness: 0.8 + latencyFactor * 0.5,
       maxParticles: 8,
       failure,
     },

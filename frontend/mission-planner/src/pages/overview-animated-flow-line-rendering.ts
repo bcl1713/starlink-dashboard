@@ -8,6 +8,7 @@ export interface FlowFailureConfig {
   probability: number;
   burstCount?: number;
   duration?: number;
+  color?: string;
 }
 
 export interface FlowEmitterConfig {
@@ -28,6 +29,7 @@ export interface FlowParticle {
   color: string;
   size: number;
   brightness: number;
+  failureColor: string;
   state: FlowParticleState;
   failureAt: number | null;
   burstCount: number;
@@ -209,6 +211,7 @@ export class FlowParticlePool {
         color: emitter.color,
         size: emitter.size,
         brightness: emitter.brightness,
+        failureColor: emitter.failure?.color ?? '#ff3b30',
         state: 'traveling',
         failureAt: failed ? failureProgress : null,
         burstCount: emitter.failure?.burstCount ?? 4,
@@ -220,6 +223,31 @@ export class FlowParticlePool {
       available -= 1;
     }
     return Math.min(remainder, 1);
+  }
+}
+
+export function flowPointSignature(points: readonly FlowPoint[]): string {
+  return points.map((point) => point.join(',')).join(';');
+}
+
+export class FlowParticlePoolLifecycle {
+  private signature: string;
+  private pool: FlowParticlePool;
+  private readonly random?: () => number;
+
+  constructor(points: readonly FlowPoint[], random?: () => number) {
+    this.random = random;
+    this.signature = flowPointSignature(points);
+    this.pool = new FlowParticlePool({ points, random });
+  }
+
+  update(points: readonly FlowPoint[]): FlowParticlePool {
+    const signature = flowPointSignature(points);
+    if (signature !== this.signature) {
+      this.signature = signature;
+      this.pool = new FlowParticlePool({ points, random: this.random });
+    }
+    return this.pool;
   }
 }
 
@@ -298,7 +326,9 @@ export function writeFlowParticles(
   for (const particle of particles) {
     const origin = interpolateFlowPath(points, particle.progress);
     if (!origin) continue;
-    const color = new THREE.Color(particle.color);
+    const color = new THREE.Color(
+      particle.state === 'burst' ? particle.failureColor : particle.color
+    );
     const count = particle.state === 'burst' ? particle.burstCount : 1;
     for (
       let burstIndex = 0;

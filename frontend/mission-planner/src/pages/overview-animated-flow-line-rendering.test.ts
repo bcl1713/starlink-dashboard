@@ -2,9 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
   FlowParticlePool,
+  FlowParticlePoolLifecycle,
   createAnimatedFlowResources,
   disposeAnimatedFlowResources,
   interpolateFlowPath,
+  writeFlowParticles,
 } from './overview-animated-flow-line-rendering';
 
 const points: [number, number, number][] = [
@@ -110,6 +112,64 @@ describe('AnimatedFlowLine rendering contract', () => {
       true
     );
     expect(pool.snapshot().length).toBeLessThanOrEqual(3);
+  });
+
+  it('snapshots a configured failure color at birth and writes it for terminal bursts', () => {
+    const pool = new FlowParticlePool({
+      points,
+      forward: {
+        ...forward,
+        rate: 1,
+        maxParticles: 1,
+        failure: {
+          probability: 1,
+          burstCount: 1,
+          duration: 1,
+          color: '#ff0000',
+        },
+      },
+      random: () => 0,
+    });
+    const resources = createAnimatedFlowResources(1);
+
+    pool.update(1);
+    pool.configure({
+      ...forward,
+      rate: 1,
+      maxParticles: 1,
+      failure: {
+        probability: 1,
+        burstCount: 1,
+        duration: 1,
+        color: '#00ff00',
+      },
+    });
+    pool.update(0.5);
+    const burst = pool.snapshot()[0];
+    writeFlowParticles(resources, points, [burst]);
+
+    expect(burst).toMatchObject({ state: 'burst', failureColor: '#ff0000' });
+    expect(
+      Array.from(
+        (resources.geometry.getAttribute('color') as THREE.BufferAttribute).array
+      ).slice(0, 3)
+    ).toEqual([1, 0, 0]);
+    disposeAnimatedFlowResources(resources);
+  });
+
+  it('preserves emitted particles through a mounted lifecycle update with equivalent fresh points', () => {
+    const lifecycle = new FlowParticlePoolLifecycle(points, () => 0.5);
+    const firstPool = lifecycle.update(points);
+
+    firstPool.configure(forward);
+    firstPool.update(0.5);
+    const emitted = firstPool.snapshot()[0];
+    const updatedPool = lifecycle.update(
+      points.map((point) => [...point]) as typeof points
+    );
+
+    expect(updatedPool).toBe(firstPool);
+    expect(updatedPool.snapshot()[0]).toBe(emitted);
   });
 
   it('reuses a released particle slot rather than growing a new object pool', () => {
