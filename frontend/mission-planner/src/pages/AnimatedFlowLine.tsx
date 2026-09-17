@@ -16,6 +16,7 @@ export interface FlowLineLayer {
   color: string;
   linewidth: number;
   opacity: number;
+  blending?: THREE.Blending;
 }
 
 export interface AnimatedFlowLineProps {
@@ -117,7 +118,7 @@ export function AnimatedFlowLine({
         linewidth={outer.linewidth}
         transparent
         opacity={outer.opacity}
-        blending={THREE.AdditiveBlending}
+        blending={outer.blending ?? THREE.AdditiveBlending}
         toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
@@ -129,7 +130,7 @@ export function AnimatedFlowLine({
         linewidth={glow.linewidth}
         transparent
         opacity={glow.opacity}
-        blending={THREE.AdditiveBlending}
+        blending={glow.blending ?? THREE.AdditiveBlending}
         toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
@@ -141,6 +142,7 @@ export function AnimatedFlowLine({
         linewidth={core.linewidth}
         transparent
         opacity={core.opacity}
+        blending={core.blending ?? THREE.NormalBlending}
         toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
