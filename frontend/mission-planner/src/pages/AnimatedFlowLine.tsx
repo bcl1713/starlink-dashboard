@@ -115,7 +115,7 @@ export function AnimatedFlowLine({
   }, [resources]);
 
   useFrame((state, delta) => {
-    if (path.points.length < 2) {
+    if (path.points.length < 2 || path.totalLength <= 0) {
       resources.geometry.setDrawRange(0, 0);
       return;
     }
@@ -124,7 +124,7 @@ export function AnimatedFlowLine({
     resources.material.uniforms.uPixelRatio.value = pixelRatio;
     resources.material.uniforms.uViewportHeightPixels.value =
       state.size.height * pixelRatio;
-    pool.update(delta);
+    pool.update(delta, path.totalLength);
     writeFlowParticles(resources, path, pool.snapshot());
   });
 
