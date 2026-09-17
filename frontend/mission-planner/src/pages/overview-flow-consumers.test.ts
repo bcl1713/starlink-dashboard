@@ -58,6 +58,8 @@ describe('overview flow-line consumers', () => {
     expect(highLatency.forward.brightness).toBeLessThan(
       lowLatency.forward.brightness
     );
+    expect(lowLatency.forward.size).toBeCloseTo(9.5);
+    expect(highLatency.forward.size).toBeCloseTo(4.8);
     expect(highLatency.forward.size).toBeLessThan(lowLatency.forward.size);
   });
 

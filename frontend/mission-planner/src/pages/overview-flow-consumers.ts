@@ -40,7 +40,7 @@ export function routeFlowEmitters(): {
       size: 15,
       brightness: 1.35,
       maxParticles: 1,
-      maxWorldSize: 0.03,
+      maxWorldSize: 0.05,
     },
     reverse: DISABLED,
   };
@@ -64,6 +64,11 @@ function pingToBrightness(ms: number): number {
   return lerp(3.4, 0.22, Math.pow(normalized, 0.55));
 }
 
+function pingToSize(ms: number): number {
+  const normalized = clamp((ms - 20) / 280, 0, 1);
+  return lerp(9.5, 4.8, Math.pow(normalized, 0.7));
+}
+
 export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
   forward: FlowEmitterConfig;
   reverse: FlowEmitterConfig;
@@ -79,6 +84,7 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
       ? Math.max(0, telemetry.latency_ms)
       : 100;
   const packetLoss = clamp((telemetry.packet_loss_percent ?? 0) / 100, 0, 1);
+  const size = pingToSize(latency);
   const brightness = pingToBrightness(latency);
   const failure =
     packetLoss > 0
@@ -99,10 +105,10 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
       rate: uplinkRate,
       speed: 0.5,
       color: '#fbbf24',
-      size: 15,
+      size,
       brightness,
       maxParticles: 100,
-      maxWorldSize: 0.04,
+      maxWorldSize: 0.07,
       failure,
     },
     // Reverse travels satellite -> aircraft and represents download.
@@ -111,10 +117,10 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
       rate: downlinkRate,
       speed: 0.5,
       color: '#67e8f9',
-      size: 15,
+      size,
       brightness,
       maxParticles: 100,
-      maxWorldSize: 0.04,
+      maxWorldSize: 0.07,
       failure,
     },
   };
