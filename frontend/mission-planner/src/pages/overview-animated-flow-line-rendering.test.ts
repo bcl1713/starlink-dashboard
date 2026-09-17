@@ -2,10 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
   FlowParticlePool,
-  FlowParticlePoolLifecycle,
   createAnimatedFlowResources,
   disposeAnimatedFlowResources,
   interpolateFlowPath,
+  prepareFlowPath,
   writeFlowParticles,
 } from './overview-animated-flow-line-rendering';
 
@@ -26,7 +26,11 @@ const forward = {
 } as const;
 
 describe('AnimatedFlowLine rendering contract', () => {
-  it('interpolates arbitrary multi-segment paths including endpoints', () => {
+  it('prepares and interpolates arbitrary multi-segment paths', () => {
+    const path = prepareFlowPath(points);
+
+    expect(path.totalLength).toBe(4);
+    expect(Array.from(path.cumulativeLengths)).toEqual([0, 2, 4]);
     expect(interpolateFlowPath(points, 0)).toEqual([0, 0, 0]);
     expect(interpolateFlowPath(points, 0.5)).toEqual([2, 0, 0]);
     expect(interpolateFlowPath(points, 1)).toEqual([2, 2, 0]);
@@ -34,7 +38,7 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(interpolateFlowPath([[1, 2, 3]], 0.5)).toEqual([1, 2, 3]);
   });
 
-  it('uses one renderer-native Points resource with dynamic attributes', () => {
+  it('uses one screen-space renderer-native Points resource', () => {
     const resources = createAnimatedFlowResources(5);
 
     expect(resources.points).toBeInstanceOf(THREE.Points);
@@ -45,13 +49,10 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(
       (resources.geometry.getAttribute('color') as THREE.BufferAttribute).usage
     ).toBe(THREE.DynamicDrawUsage);
-    expect(
-      (resources.geometry.getAttribute('size') as THREE.BufferAttribute).usage
-    ).toBe(THREE.DynamicDrawUsage);
-    expect(
-      (resources.geometry.getAttribute('brightness') as THREE.BufferAttribute)
-        .usage
-    ).toBe(THREE.DynamicDrawUsage);
+    expect(resources.material.uniforms.uPixelRatio.value).toBe(1);
+    expect(resources.material.blending).toBe(THREE.AdditiveBlending);
+    expect(resources.material.toneMapped).toBe(false);
+    expect(resources.points.frustumCulled).toBe(false);
     expect(resources.points.children).toHaveLength(0);
     expect(resources.points.castShadow).toBe(false);
     expect(resources.points.receiveShadow).toBe(false);
@@ -61,7 +62,6 @@ describe('AnimatedFlowLine rendering contract', () => {
 
   it('orders forward and reverse particles independently within a bounded pool', () => {
     const pool = new FlowParticlePool({
-      points,
       forward,
       reverse: { ...forward, color: '#00ffff', maxParticles: 1 },
       random: () => 0.5,
@@ -81,7 +81,7 @@ describe('AnimatedFlowLine rendering contract', () => {
   });
 
   it('snapshots emitter properties at birth while applying updates to new particles', () => {
-    const pool = new FlowParticlePool({ points, forward, random: () => 0.5 });
+    const pool = new FlowParticlePool({ forward, random: () => 0.5 });
 
     pool.update(0.5);
     pool.configure({ ...forward, color: '#00ff00', speed: 2 });
@@ -91,91 +91,63 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(pool.snapshot()[1]).toMatchObject({ color: '#00ff00', speed: 2 });
   });
 
-  it('recycles deterministically and renders a bounded failure burst inside the path', () => {
+  it('keeps a failed particle in place as one expanding terminal flash', () => {
     const pool = new FlowParticlePool({
-      points,
       forward: {
         ...forward,
         rate: 1,
         maxParticles: 1,
-        failure: { probability: 1, burstCount: 3, duration: 0.5 },
-      },
-      random: () => 0,
-    });
-
-    pool.update(1);
-    pool.update(0.5);
-    expect(pool.snapshot().some((particle) => particle.state === 'burst')).toBe(
-      true
-    );
-    expect(pool.snapshot().every((particle) => particle.progress < 1)).toBe(
-      true
-    );
-    expect(pool.snapshot().length).toBeLessThanOrEqual(3);
-  });
-
-  it('snapshots a configured failure color at birth and writes it for terminal bursts', () => {
-    const pool = new FlowParticlePool({
-      points,
-      forward: {
-        ...forward,
-        rate: 1,
-        maxParticles: 1,
-        failure: {
-          probability: 1,
-          burstCount: 1,
-          duration: 1,
-          color: '#ff0000',
-        },
+        failure: { probability: 1, duration: 0.5, color: '#ff304f' },
       },
       random: () => 0,
     });
     const resources = createAnimatedFlowResources(1);
+    const path = prepareFlowPath(points);
 
     pool.update(1);
-    pool.configure({
-      ...forward,
-      rate: 1,
-      maxParticles: 1,
-      failure: {
-        probability: 1,
-        burstCount: 1,
-        duration: 1,
-        color: '#00ff00',
-      },
-    });
     pool.update(0.5);
     const burst = pool.snapshot()[0];
-    writeFlowParticles(resources, points, [burst]);
+    expect(burst).toMatchObject({ state: 'burst', failureColor: '#ff304f' });
 
-    expect(burst).toMatchObject({ state: 'burst', failureColor: '#ff0000' });
+    writeFlowParticles(resources, path, [burst]);
+    expect(resources.geometry.drawRange.count).toBe(1);
     expect(
-      Array.from(
-        (resources.geometry.getAttribute('color') as THREE.BufferAttribute)
-          .array
-      ).slice(0, 3)
-    ).toEqual([1, 0, 0]);
+      (resources.geometry.getAttribute('size') as THREE.BufferAttribute).getX(0)
+    ).toBeGreaterThan(forward.size);
+    expect(
+      (
+        resources.geometry.getAttribute('brightness') as THREE.BufferAttribute
+      ).getX(0)
+    ).toBeGreaterThan(forward.brightness);
+
     disposeAnimatedFlowResources(resources);
   });
 
-  it('preserves emitted particles through a mounted lifecycle update with equivalent fresh points', () => {
-    const lifecycle = new FlowParticlePoolLifecycle(points, () => 0.5);
-    const firstPool = lifecycle.update(points);
+  it('retains in-flight particles while the rendered path geometry moves', () => {
+    const pool = new FlowParticlePool({ forward, random: () => 0.5 });
+    const resources = createAnimatedFlowResources(2);
 
-    firstPool.configure(forward);
-    firstPool.update(0.5);
-    const emitted = firstPool.snapshot()[0];
-    const updatedPool = lifecycle.update(
-      points.map((point) => [...point]) as typeof points
-    );
+    pool.update(0.5);
+    const emitted = pool.snapshot()[0];
+    const movedPath = prepareFlowPath([
+      [10, 0, 0],
+      [12, 0, 0],
+      [12, 2, 0],
+    ]);
 
-    expect(updatedPool).toBe(firstPool);
-    expect(updatedPool.snapshot()[0]).toBe(emitted);
+    writeFlowParticles(resources, movedPath, pool.snapshot());
+
+    expect(pool.snapshot()[0]).toBe(emitted);
+    expect(
+      (resources.geometry.getAttribute('position') as THREE.BufferAttribute).getX(
+        0
+      )
+    ).toBeGreaterThanOrEqual(10);
+    disposeAnimatedFlowResources(resources);
   });
 
   it('reuses a released particle slot rather than growing a new object pool', () => {
     const pool = new FlowParticlePool({
-      points,
       forward: { ...forward, rate: 1, maxParticles: 1, speed: 2 },
       random: () => 0.5,
     });
