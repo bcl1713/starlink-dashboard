@@ -1,10 +1,12 @@
 import { Line } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
+import * as THREE from 'three';
 import {
   createAnimatedFlowResources,
   disposeAnimatedFlowResources,
-  FlowParticlePoolLifecycle,
+  FlowParticlePool,
+  prepareFlowPath,
   type FlowEmitterConfig,
   type FlowPoint,
   writeFlowParticles,
@@ -30,18 +32,18 @@ export interface AnimatedFlowLineProps {
 
 const DEFAULT_OUTER: FlowLineLayer = {
   color: '#ffb000',
-  linewidth: 3,
-  opacity: 0.1,
+  linewidth: 10,
+  opacity: 0.055,
 };
 const DEFAULT_GLOW: FlowLineLayer = {
   color: '#ffb000',
-  linewidth: 4,
-  opacity: 0.24,
+  linewidth: 5,
+  opacity: 0.12,
 };
 const DEFAULT_CORE: FlowLineLayer = {
-  color: '#ffb000',
-  linewidth: 1.5,
-  opacity: 0.9,
+  color: '#fff1c0',
+  linewidth: 1,
+  opacity: 0.7,
 };
 const DISABLED_EMITTER: FlowEmitterConfig = {
   enabled: false,
@@ -65,28 +67,35 @@ export function AnimatedFlowLine({
   random,
 }: AnimatedFlowLineProps) {
   const capacity = (forward?.maxParticles ?? 0) + (reverse?.maxParticles ?? 0);
-  const [poolLifecycle] = useState(
-    () => new FlowParticlePoolLifecycle(points, random)
-  );
-  const pool = poolLifecycle.update(points);
+  const pool = useMemo(() => new FlowParticlePool({ random }), [random]);
+  const path = useMemo(() => prepareFlowPath(points), [points]);
   const resources = useMemo(
-    () => createAnimatedFlowResources(Math.max(1, capacity * 4)),
+    () => createAnimatedFlowResources(Math.max(1, capacity)),
     [capacity]
   );
 
   useEffect(() => {
-    if (forward || reverse) {
-      pool.configure(forward ?? DISABLED_EMITTER, reverse ?? DISABLED_EMITTER);
-    }
+    pool.configure(forward ?? DISABLED_EMITTER, reverse ?? DISABLED_EMITTER);
   }, [forward, pool, reverse]);
+
+  useEffect(() => {
+    resources.material.depthTest = depthTest;
+    resources.material.depthWrite = depthWrite;
+  }, [depthTest, depthWrite, resources]);
 
   useEffect(() => {
     return () => disposeAnimatedFlowResources(resources);
   }, [resources]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
+    if (path.points.length < 2) {
+      resources.geometry.setDrawRange(0, 0);
+      return;
+    }
+
+    resources.material.uniforms.uPixelRatio.value = state.gl.getPixelRatio();
     pool.update(delta);
-    writeFlowParticles(resources, points, pool.snapshot());
+    writeFlowParticles(resources, path, pool.snapshot());
   });
 
   if (points.length < 2) return null;
@@ -99,6 +108,8 @@ export function AnimatedFlowLine({
         linewidth={outer.linewidth}
         transparent
         opacity={outer.opacity}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
       />
@@ -108,6 +119,8 @@ export function AnimatedFlowLine({
         linewidth={glow.linewidth}
         transparent
         opacity={glow.opacity}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
       />
@@ -117,6 +130,7 @@ export function AnimatedFlowLine({
         linewidth={core.linewidth}
         transparent
         opacity={core.opacity}
+        toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
       />
