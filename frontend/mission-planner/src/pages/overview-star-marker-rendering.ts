@@ -63,10 +63,12 @@ export function projectedCoreRadius({
 const haloVertexShader = `
   uniform float uSizePixels;
   uniform float uPixelRatio;
+  uniform float uDepthBias;
 
   void main() {
     vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * modelViewPosition;
+    gl_Position.z -= uDepthBias * gl_Position.w;
     gl_PointSize = uSizePixels * uPixelRatio;
   }
 `;
@@ -115,6 +117,7 @@ function createHaloMaterial({
       uFalloff: { value: falloff },
       uSizePixels: { value: sizePixels },
       uPixelRatio: { value: 1 },
+      uDepthBias: { value: 0.00001 },
     },
     vertexShader: haloVertexShader,
     fragmentShader: haloFragmentShader,
