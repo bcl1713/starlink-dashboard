@@ -35,16 +35,19 @@ const DEFAULT_OUTER: FlowLineLayer = {
   color: '#ffb000',
   linewidth: 10,
   opacity: 0.055,
+  blending: THREE.NormalBlending,
 };
 const DEFAULT_GLOW: FlowLineLayer = {
   color: '#ffb000',
   linewidth: 5,
   opacity: 0.12,
+  blending: THREE.NormalBlending,
 };
 const DEFAULT_CORE: FlowLineLayer = {
   color: '#fff1c0',
   linewidth: 1,
   opacity: 0.7,
+  blending: THREE.NormalBlending,
 };
 const DISABLED_EMITTER: FlowEmitterConfig = {
   enabled: false,
