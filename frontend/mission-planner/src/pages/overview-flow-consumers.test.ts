@@ -7,7 +7,11 @@ import {
 describe('overview flow-line consumers', () => {
   it('uses a fixed forward-only route direction without telemetry knowledge', () => {
     expect(routeFlowEmitters()).toMatchObject({
-      forward: { enabled: true, rate: expect.any(Number) },
+      forward: {
+        enabled: true,
+        rate: expect.any(Number),
+        maxWorldSize: 0.05,
+      },
       reverse: { enabled: false },
     });
   });
@@ -23,10 +27,12 @@ describe('overview flow-line consumers', () => {
     expect(emitters.forward).toMatchObject({
       enabled: true,
       color: '#fbbf24',
+      maxWorldSize: 0.07,
     });
     expect(emitters.reverse).toMatchObject({
       enabled: true,
       color: '#67e8f9',
+      maxWorldSize: 0.07,
     });
     expect(emitters.reverse.rate).toBeGreaterThan(emitters.forward.rate);
     expect(emitters.forward.failure?.probability).toBeCloseTo(0.1);
