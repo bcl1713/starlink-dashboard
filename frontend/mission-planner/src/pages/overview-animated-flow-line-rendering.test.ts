@@ -14,6 +14,7 @@ const points: [number, number, number][] = [
   [2, 0, 0],
   [2, 2, 0],
 ];
+const path = prepareFlowPath(points);
 
 const forward = {
   enabled: true,
@@ -28,8 +29,6 @@ const forward = {
 
 describe('AnimatedFlowLine rendering contract', () => {
   it('prepares and interpolates arbitrary multi-segment paths', () => {
-    const path = prepareFlowPath(points);
-
     expect(path.totalLength).toBe(4);
     expect(Array.from(path.cumulativeLengths)).toEqual([0, 2, 4]);
     expect(interpolateFlowPath(points, 0)).toEqual([0, 0, 0]);
@@ -39,20 +38,52 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(interpolateFlowPath([[1, 2, 3]], 0.5)).toEqual([1, 2, 3]);
   });
 
+  it('treats speed as scene units per second independent of path length', () => {
+    const shortPath = prepareFlowPath([
+      [0, 0, 0],
+      [2, 0, 0],
+    ]);
+    const longPath = prepareFlowPath([
+      [0, 0, 0],
+      [8, 0, 0],
+    ]);
+    const emitter = { ...forward, rate: 1, speed: 1, maxParticles: 1 };
+    const shortPool = new FlowParticlePool({ forward: emitter, random: () => 0.5 });
+    const longPool = new FlowParticlePool({ forward: emitter, random: () => 0.5 });
+
+    shortPool.update(1, shortPath.totalLength);
+    longPool.update(1, longPath.totalLength);
+    shortPool.update(1, shortPath.totalLength);
+    longPool.update(1, longPath.totalLength);
+
+    expect(shortPool.snapshot()[0].progress).toBeCloseTo(0.5);
+    expect(longPool.snapshot()[0].progress).toBeCloseTo(0.125);
+
+    const shortPosition = interpolateFlowPath(
+      shortPath.points,
+      shortPool.snapshot()[0].progress
+    );
+    const longPosition = interpolateFlowPath(
+      longPath.points,
+      longPool.snapshot()[0].progress
+    );
+    expect(shortPosition?.[0]).toBeCloseTo(1);
+    expect(longPosition?.[0]).toBeCloseTo(1);
+  });
+
   it('emits only at the whole-path start and traverses across segment boundaries', () => {
     const pool = new FlowParticlePool({
       forward: {
         ...forward,
         rate: 1,
-        speed: 0.25,
+        speed: 1,
         maxParticles: 4,
       },
       random: () => 0.5,
     });
     const resources = createAnimatedFlowResources(4);
-    const path = prepareFlowPath(points);
 
-    pool.update(1);
+    pool.update(1, path.totalLength);
     expect(pool.snapshot().map((particle) => particle.progress)).toEqual([0]);
     writeFlowParticles(resources, path, pool.snapshot());
     const positions = resources.geometry.getAttribute(
@@ -61,7 +92,7 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(positions.getX(0)).toBe(0);
     expect(positions.getY(0)).toBe(0);
 
-    pool.update(1);
+    pool.update(1, path.totalLength);
     expect(pool.snapshot().map((particle) => particle.progress)).toEqual([
       0.25,
       0,
@@ -110,7 +141,7 @@ describe('AnimatedFlowLine rendering contract', () => {
       random: () => 0.5,
     });
 
-    pool.update(0.5);
+    pool.update(0.5, path.totalLength);
     const particles = pool.snapshot();
 
     expect(particles).toHaveLength(2);
@@ -119,21 +150,21 @@ describe('AnimatedFlowLine rendering contract', () => {
       'reverse',
     ]);
     expect(particles[0].progress).toBeLessThan(particles[1].progress);
-    pool.update(10);
+    pool.update(10, path.totalLength);
     expect(pool.snapshot().length).toBeLessThanOrEqual(3);
   });
 
   it('snapshots emitter properties at birth while applying updates to new particles', () => {
     const pool = new FlowParticlePool({ forward, random: () => 0.5 });
 
-    pool.update(0.5);
+    pool.update(0.5, path.totalLength);
     pool.configure({
       ...forward,
       color: '#00ff00',
       speed: 2,
       maxWorldSize: 0.1,
     });
-    pool.update(0.5);
+    pool.update(0.5, path.totalLength);
 
     expect(pool.snapshot()[0]).toMatchObject({
       color: '#ffb000',
@@ -158,10 +189,9 @@ describe('AnimatedFlowLine rendering contract', () => {
       random: () => 0,
     });
     const resources = createAnimatedFlowResources(1);
-    const path = prepareFlowPath(points);
 
-    pool.update(1);
-    pool.update(0.5);
+    pool.update(1, path.totalLength);
+    pool.update(0.7, path.totalLength);
     const burst = pool.snapshot()[0];
     expect(burst).toMatchObject({ state: 'burst', failureColor: '#ff304f' });
 
@@ -188,7 +218,7 @@ describe('AnimatedFlowLine rendering contract', () => {
     const pool = new FlowParticlePool({ forward, random: () => 0.5 });
     const resources = createAnimatedFlowResources(2);
 
-    pool.update(0.5);
+    pool.update(0.5, path.totalLength);
     const emitted = pool.snapshot()[0];
     const movedPath = prepareFlowPath([
       [10, 0, 0],
@@ -213,9 +243,9 @@ describe('AnimatedFlowLine rendering contract', () => {
       random: () => 0.5,
     });
 
-    pool.update(1);
+    pool.update(1, path.totalLength);
     const first = pool.snapshot()[0];
-    pool.update(1);
+    pool.update(2.1, path.totalLength);
 
     expect(pool.snapshot()[0]).toBe(first);
   });
