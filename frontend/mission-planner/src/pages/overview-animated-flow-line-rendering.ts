@@ -15,6 +15,7 @@ export interface FlowFailureConfig {
 export interface FlowEmitterConfig {
   enabled: boolean;
   rate: number;
+  /** Linear travel speed in scene units per second. */
   speed: number;
   color: string;
   size: number;
@@ -32,6 +33,7 @@ export interface FlowEmitterConfig {
 export interface FlowParticle {
   direction: FlowDirection;
   progress: number;
+  /** Linear travel speed in scene units per second, snapshotted at emission. */
   speed: number;
   color: string;
   size: number;
@@ -167,8 +169,15 @@ export class FlowParticlePool {
     return this.particles;
   }
 
-  update(deltaSeconds: number): void {
-    if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
+  update(deltaSeconds: number, pathLength: number): void {
+    if (
+      !Number.isFinite(deltaSeconds) ||
+      deltaSeconds <= 0 ||
+      !Number.isFinite(pathLength) ||
+      pathLength <= 0
+    ) {
+      return;
+    }
 
     for (const particle of this.particles) {
       if (particle.state === 'burst') {
@@ -176,10 +185,9 @@ export class FlowParticlePool {
         continue;
       }
 
+      const progressDelta = (particle.speed * deltaSeconds) / pathLength;
       particle.progress +=
-        particle.direction === 'forward'
-          ? particle.speed * deltaSeconds
-          : -particle.speed * deltaSeconds;
+        particle.direction === 'forward' ? progressDelta : -progressDelta;
 
       if (
         particle.failureAt !== null &&
