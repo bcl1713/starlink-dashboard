@@ -1,12 +1,11 @@
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.api import overview_history
 from app.services.overview_history_prometheus import (
     OverviewHistoryPrometheusResponseError,
 )
 from app.services.overview_history_settings import OverviewHistorySettingsStore
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 
 def test_overview_history_returns_503_until_its_runtime_reader_is_initialized():
