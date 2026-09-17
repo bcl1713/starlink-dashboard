@@ -8,6 +8,7 @@ import {
   prepareFlowPath,
   setAnimatedFlowViewport,
   writeFlowParticles,
+  writePreparedFlowPathPosition,
 } from './overview-animated-flow-line-rendering';
 
 const points: [number, number, number][] = [
@@ -37,6 +38,32 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(interpolateFlowPath(points, 1)).toEqual([2, 2, 0]);
     expect(interpolateFlowPath([], 0.5)).toBeNull();
     expect(interpolateFlowPath([[1, 2, 3]], 0.5)).toEqual([1, 2, 3]);
+  });
+
+  it('writes prepared path positions into caller-owned scratch storage', () => {
+    const target = new THREE.Vector3();
+
+    expect(writePreparedFlowPathPosition(path, 0.75, target)).toBe(true);
+    expect(target.toArray()).toEqual([2, 1, 0]);
+    expect(writePreparedFlowPathPosition(path, 0.25, target)).toBe(true);
+    expect(target.toArray()).toEqual([1, 0, 0]);
+    expect(
+      writePreparedFlowPathPosition(prepareFlowPath([]), 0.5, target)
+    ).toBe(false);
+  });
+
+  it('tracks active particle directions without allocating filter arrays', () => {
+    const filter = vi.spyOn(Array.prototype, 'filter');
+    const pool = new FlowParticlePool({
+      forward: { ...forward, maxParticles: 1 },
+      random: () => 0.5,
+    });
+
+    pool.update(0.5, path.totalLength);
+    pool.update(0.5, path.totalLength);
+
+    expect(pool.snapshot()).toHaveLength(1);
+    expect(filter).not.toHaveBeenCalled();
   });
 
   it('treats speed as scene units per second independent of path length', () => {

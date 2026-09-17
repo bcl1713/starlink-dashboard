@@ -90,10 +90,10 @@ function createRibbonMaterial(
 
 function nearestPointDistance(
   camera: THREE.Camera,
-  points: readonly FlowPoint[]
+  points: readonly FlowPoint[],
+  scratch: THREE.Vector3
 ) {
   let nearest = Number.POSITIVE_INFINITY;
-  const scratch = new THREE.Vector3();
 
   for (const point of points) {
     scratch.set(point[0], point[1], point[2]);
@@ -146,6 +146,7 @@ export function GlobeRouteRibbon({
     () => createRibbonMaterial(core, depthTest),
     [core, depthTest]
   );
+  const distanceScratch = useMemo(() => new THREE.Vector3(), []);
 
   useEffect(() => {
     return () => {
@@ -158,7 +159,11 @@ export function GlobeRouteRibbon({
 
   useFrame((state) => {
     if (points.length < 2) return;
-    const distance = nearestPointDistance(state.camera, points);
+    const distance = nearestPointDistance(
+      state.camera,
+      points,
+      distanceScratch
+    );
     updateLayerWidth(
       outerMaterial,
       outer,

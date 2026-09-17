@@ -75,6 +75,7 @@ const EMPTY_EMITTER: FlowEmitterConfig = {
 };
 
 const scratchColor = new THREE.Color();
+const scratchPosition = new THREE.Vector3();
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
@@ -100,13 +101,17 @@ export function prepareFlowPath(
   return { points, cumulativeLengths, totalLength };
 }
 
-export function interpolatePreparedFlowPath(
+export function writePreparedFlowPathPosition(
   path: PreparedFlowPath,
-  progress: number
-): [number, number, number] | null {
+  progress: number,
+  target: THREE.Vector3
+): boolean {
   const { points, cumulativeLengths, totalLength } = path;
-  if (points.length === 0) return null;
-  if (points.length === 1 || totalLength === 0) return [...points[0]];
+  if (points.length === 0) return false;
+  if (points.length === 1 || totalLength === 0) {
+    target.set(points[0][0], points[0][1], points[0][2]);
+    return true;
+  }
 
   const targetDistance = clamp(progress, 0, 1) * totalLength;
   let endIndex = 1;
@@ -127,11 +132,21 @@ export function interpolatePreparedFlowPath(
   const start = points[startIndex];
   const end = points[endIndex];
 
-  return [
+  target.set(
     THREE.MathUtils.lerp(start[0], end[0], t),
     THREE.MathUtils.lerp(start[1], end[1], t),
-    THREE.MathUtils.lerp(start[2], end[2], t),
-  ];
+    THREE.MathUtils.lerp(start[2], end[2], t)
+  );
+  return true;
+}
+
+export function interpolatePreparedFlowPath(
+  path: PreparedFlowPath,
+  progress: number
+): [number, number, number] | null {
+  return writePreparedFlowPathPosition(path, progress, scratchPosition)
+    ? [scratchPosition.x, scratchPosition.y, scratchPosition.z]
+    : null;
 }
 
 export function interpolateFlowPath(
@@ -149,6 +164,8 @@ export class FlowParticlePool {
   private reverse: FlowEmitterConfig;
   private forwardRemainder = 0;
   private reverseRemainder = 0;
+  private forwardParticleCount = 0;
+  private reverseParticleCount = 0;
 
   constructor({
     forward = EMPTY_EMITTER,
@@ -212,6 +229,11 @@ export class FlowParticlePool {
       if (expiredBurst || completedTravel) {
         this.recycled.push(particle);
         this.particles.splice(index, 1);
+        if (particle.direction === 'forward') {
+          this.forwardParticleCount -= 1;
+        } else {
+          this.reverseParticleCount -= 1;
+        }
       }
     }
 
@@ -236,9 +258,10 @@ export class FlowParticlePool {
       return 0;
     }
 
-    const existing = this.particles.filter(
-      (particle) => particle.direction === direction
-    ).length;
+    const existing =
+      direction === 'forward'
+        ? this.forwardParticleCount
+        : this.reverseParticleCount;
     let available = Math.max(0, emitter.maxParticles - existing);
     let remainder = requested;
 
@@ -271,6 +294,11 @@ export class FlowParticlePool {
         burstAge: 0,
       });
       this.particles.push(particle);
+      if (direction === 'forward') {
+        this.forwardParticleCount += 1;
+      } else {
+        this.reverseParticleCount += 1;
+      }
       remainder -= 1;
       available -= 1;
     }
@@ -409,8 +437,11 @@ export function writeFlowParticles(
 
   for (const particle of particles) {
     if (index >= positions.count) break;
-    const origin = interpolatePreparedFlowPath(path, particle.progress);
-    if (!origin) continue;
+    if (
+      !writePreparedFlowPathPosition(path, particle.progress, scratchPosition)
+    ) {
+      continue;
+    }
 
     const burstLife =
       particle.state === 'burst'
@@ -426,7 +457,12 @@ export function writeFlowParticles(
     scratchColor.set(
       particle.state === 'burst' ? particle.failureColor : particle.color
     );
-    positions.setXYZ(index, origin[0], origin[1], origin[2]);
+    positions.setXYZ(
+      index,
+      scratchPosition.x,
+      scratchPosition.y,
+      scratchPosition.z
+    );
     colors.setXYZ(index, scratchColor.r, scratchColor.g, scratchColor.b);
     sizes.setX(index, particleSize);
     brightness.setX(index, particleBrightness);

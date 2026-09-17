@@ -183,6 +183,9 @@ test.describe('Globe overview', () => {
         .getByLabel('Globe legend')
         .getByLabel('Warning: active X-band link is in warning state')
     ).toHaveCount(0);
+    await expect(
+      page.getByRole('img', { name: 'Warning marker on active X-band link' })
+    ).toHaveCount(0);
     await expect(page.locator('canvas')).toBeVisible();
     await expect.poll(() => routeRequests).toHaveLength(2);
 
@@ -214,8 +217,8 @@ test.describe('Globe overview', () => {
           id: 'warning-link-route',
           name: 'Warning link validation route',
           points: [
-            { latitude: 12, longitude: 160 },
-            { latitude: 13, longitude: 161 },
+            { latitude: 12, longitude: -90 },
+            { latitude: 13, longitude: -89 },
           ],
         },
       });
@@ -224,7 +227,7 @@ test.describe('Globe overview', () => {
       await route.fulfill({
         json: {
           timestamp: '2026-06-21T12:00:00.000Z',
-          position: { latitude: 12, longitude: 160, altitude: 35_000 },
+          position: { latitude: 12, longitude: -90, altitude: 35_000 },
           network: {
             latency_ms: 42.5,
             throughput_down_mbps: 125.3,
@@ -237,9 +240,7 @@ test.describe('Globe overview', () => {
     });
     await page.route('**/api/satellites', async (route) => {
       await route.fulfill({
-        json: [
-          { satellite_id: 'X-Warning', transport: 'X', longitude: 160 },
-        ],
+        json: [{ satellite_id: 'X-Warning', transport: 'X', longitude: -90 }],
       });
     });
     await page.route('**/api/active-x-link', async (route) => {
@@ -257,6 +258,9 @@ test.describe('Globe overview', () => {
       page
         .getByLabel('Globe legend')
         .getByLabel('Warning: active X-band link is in warning state')
+    ).toBeVisible();
+    await expect(
+      page.getByRole('img', { name: 'Warning marker on active X-band link' })
     ).toBeVisible();
   });
 
