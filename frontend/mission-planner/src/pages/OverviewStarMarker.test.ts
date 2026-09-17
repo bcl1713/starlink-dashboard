@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
+  ROUTE_OVERLAY_ALTITUDE_FEET,
+  ROUTE_OVERLAY_RADIUS,
+} from './globe-render-radii';
+import {
   CORE_COLOR,
   DEFAULT_GLOW_SIZE_PIXELS,
   createStarMarkerHaloResources,
@@ -14,13 +18,17 @@ const viewportHeight = 1_080;
 const cameraFovDegrees = 45;
 
 describe('OverviewStarMarker rendering contract', () => {
-  it('resolves coordinate and explicit-position marker modes', () => {
+  it('resolves coordinate markers at the ten-foot route overlay radius', () => {
     const coordinatePosition = resolveStarMarkerPosition({
       coordinate: { latitude: 0, longitude: 90 },
     });
 
+    expect(ROUTE_OVERLAY_ALTITUDE_FEET).toBe(10);
+    expect(ROUTE_OVERLAY_RADIUS).toBeGreaterThan(2);
+    expect(ROUTE_OVERLAY_RADIUS).toBeLessThan(2.00001);
     expect(coordinatePosition[0]).toBeCloseTo(0);
-    expect(coordinatePosition.slice(1)).toEqual([0, -2.02]);
+    expect(coordinatePosition[1]).toBeCloseTo(0);
+    expect(coordinatePosition[2]).toBeCloseTo(-ROUTE_OVERLAY_RADIUS, 12);
     expect(
       resolveStarMarkerPosition({
         position: [4, 5, 6],
@@ -76,6 +84,7 @@ describe('OverviewStarMarker rendering contract', () => {
       expect(layer.material.transparent).toBe(true);
       expect(layer.material.blending).toBe(THREE.AdditiveBlending);
       expect(layer.material.toneMapped).toBe(false);
+      expect(layer.material.uniforms.uDepthBias.value).toBeGreaterThan(0);
     }
 
     expect(resources.layers[0].material.uniforms.uColor.value.getStyle()).toBe(
