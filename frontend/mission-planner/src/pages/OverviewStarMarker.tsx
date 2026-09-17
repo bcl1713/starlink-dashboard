@@ -1,80 +1,140 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import type { GlobeCoordinate } from './globe-route';
-import { globePosition } from './globe-coordinates';
-import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
+import {
+  CORE_COLOR,
+  createStarMarkerHaloResources,
+  disposeStarMarkerHaloResources,
+  projectedCoreRadius,
+  resolveStarMarkerPosition,
+  type StarMarkerPositionProps,
+} from './overview-star-marker-rendering';
 
-type StarMarkerProps =
-  | {
-      coordinate: GlobeCoordinate;
-      position?: never;
-      color: string;
-      size: number;
+const DEFAULT_CORE_RADIUS = 0.02;
+const DEFAULT_GLOW_INTENSITY = 0.85;
+const DEFAULT_MAX_CORE_PIXELS = 4;
+
+export type StarMarkerProps = StarMarkerPositionProps & {
+  color: string;
+  size: number;
+  coreColor?: string;
+  coreRadius?: number;
+  glowSizePixels?: number;
+  glowIntensity?: number;
+  lightColor?: string;
+  lightIntensity?: number;
+  lightDistance?: number;
+  lightDecay?: number;
+  maxCorePixels?: number;
+};
+
+function PhysicalCore({
+  color,
+  configuredRadius,
+  maxCorePixels,
+  position,
+}: {
+  color: string;
+  configuredRadius: number;
+  maxCorePixels: number;
+  position: [number, number, number];
+}) {
+  const mesh = useRef<THREE.Mesh>(null);
+  const camera = useThree((state) => state.camera);
+
+  useFrame((state) => {
+    if (!(camera instanceof THREE.PerspectiveCamera) || !mesh.current) {
+      return;
     }
-  | {
-      coordinate?: never;
-      position: [number, number, number];
-      color: string;
-      size: number;
-    };
 
-function createStarTexture(color: string) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 64;
-  canvas.height = 64;
+    const distance = camera.position.distanceTo(mesh.current.position);
+    const radius = projectedCoreRadius({
+      configuredRadius,
+      maxCorePixels,
+      distance,
+      cameraFovDegrees: camera.fov,
+      viewportHeight: state.size.height,
+    });
+    mesh.current.scale.setScalar(radius);
+  });
 
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    throw new Error('Unable to create star marker texture.');
-  }
-
-  const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
-  gradient.addColorStop(0, '#ffffff');
-  gradient.addColorStop(0.12, '#ffffff');
-  gradient.addColorStop(0.14, color);
-  gradient.addColorStop(0.45, `${color}00`);
-
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 64, 64);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.generateMipmaps = false;
-  texture.minFilter = THREE.LinearFilter;
-  texture.magFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-
-  return texture;
+  return (
+    <mesh
+      ref={mesh}
+      position={position}
+      scale={configuredRadius}
+      renderOrder={2}
+    >
+      <sphereGeometry args={[1, 12, 12]} />
+      <meshStandardMaterial
+        color={color}
+        emissive={color}
+        emissiveIntensity={2}
+        toneMapped={false}
+      />
+    </mesh>
+  );
 }
 
 export function StarMarker(props: StarMarkerProps) {
-  const { color, size } = props;
-  const position =
-    'position' in props
-      ? props.position
-      : globePosition(
-          props.coordinate.latitude,
-          props.coordinate.longitude,
-          ROUTE_OVERLAY_RADIUS
-        );
-  const texture = useMemo(() => createStarTexture(color), [color]);
+  const {
+    color,
+    size,
+    coreColor = CORE_COLOR,
+    coreRadius = Math.min(DEFAULT_CORE_RADIUS, size),
+    glowSizePixels = Math.max(1, size * 200),
+    glowIntensity = DEFAULT_GLOW_INTENSITY,
+    lightColor = color,
+    lightIntensity = 0,
+    lightDistance = 0,
+    lightDecay = 2,
+    maxCorePixels = DEFAULT_MAX_CORE_PIXELS,
+  } = props;
+  const position = resolveStarMarkerPosition(props);
+  const halo = useMemo(
+    () =>
+      createStarMarkerHaloResources({
+        color,
+        glowSizePixels,
+        glowIntensity,
+      }),
+    [color, glowIntensity, glowSizePixels]
+  );
 
   useEffect(() => {
     return () => {
-      texture.dispose();
+      disposeStarMarkerHaloResources(halo);
     };
-  }, [texture]);
+  }, [halo]);
+
+  useFrame((state) => {
+    halo.material.uniforms.uPixelRatio.value = state.gl.getPixelRatio();
+  });
 
   return (
-    <sprite position={position} scale={[size, size, 1]} renderOrder={1}>
-      <spriteMaterial
-        map={texture}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        toneMapped={false}
+    <>
+      <points
+        position={position}
+        geometry={halo.geometry}
+        material={halo.material}
+        renderOrder={1}
       />
-    </sprite>
+      <PhysicalCore
+        color={coreColor}
+        configuredRadius={coreRadius}
+        maxCorePixels={maxCorePixels}
+        position={position}
+      />
+      {lightIntensity > 0 && (
+        <pointLight
+          color={lightColor}
+          intensity={lightIntensity}
+          distance={lightDistance}
+          decay={lightDecay}
+          position={position}
+          castShadow={false}
+        />
+      )}
+    </>
   );
 }
