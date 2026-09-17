@@ -3,6 +3,10 @@ import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import {
+  GlobeRouteRibbon,
+  type GlobeRouteRibbonLayer,
+} from './GlobeRouteRibbon';
+import {
   createAnimatedFlowResources,
   disposeAnimatedFlowResources,
   FlowParticlePool,
@@ -17,6 +21,7 @@ export interface FlowLineLayer {
   linewidth: number;
   opacity: number;
   blending?: THREE.Blending;
+  maxWorldWidth?: number;
 }
 
 export interface AnimatedFlowLineProps {
@@ -34,21 +39,24 @@ export interface AnimatedFlowLineProps {
 
 const DEFAULT_OUTER: FlowLineLayer = {
   color: '#ffb000',
-  linewidth: 10,
-  opacity: 0.055,
-  blending: THREE.NormalBlending,
+  linewidth: 8,
+  opacity: 0.12,
+  blending: THREE.AdditiveBlending,
+  maxWorldWidth: 0.05,
 };
 const DEFAULT_GLOW: FlowLineLayer = {
   color: '#ffb000',
-  linewidth: 5,
-  opacity: 0.12,
-  blending: THREE.NormalBlending,
+  linewidth: 4,
+  opacity: 0.3,
+  blending: THREE.AdditiveBlending,
+  maxWorldWidth: 0.028,
 };
 const DEFAULT_CORE: FlowLineLayer = {
-  color: '#fff1c0',
-  linewidth: 1,
-  opacity: 0.7,
+  color: '#ffd86b',
+  linewidth: 1.25,
+  opacity: 0.95,
   blending: THREE.NormalBlending,
+  maxWorldWidth: 0.012,
 };
 const DISABLED_EMITTER: FlowEmitterConfig = {
   enabled: false,
@@ -59,6 +67,19 @@ const DISABLED_EMITTER: FlowEmitterConfig = {
   brightness: 0,
   maxParticles: 0,
 };
+
+function ribbonLayer(
+  layer: FlowLineLayer,
+  fallbackWorldWidth: number
+): GlobeRouteRibbonLayer {
+  return {
+    color: layer.color,
+    widthPixels: layer.linewidth,
+    maxWorldWidth: layer.maxWorldWidth ?? fallbackWorldWidth,
+    opacity: layer.opacity,
+    blending: layer.blending,
+  };
+}
 
 export function AnimatedFlowLine({
   points,
@@ -115,9 +136,20 @@ export function AnimatedFlowLine({
     polygonOffsetUnits: -2,
   };
 
+  const useContinuousRibbon = points.length > 2;
+
   return (
     <group>
-      {showLine && (
+      {showLine && useContinuousRibbon && (
+        <GlobeRouteRibbon
+          points={points}
+          outer={ribbonLayer(outer, 0.05)}
+          glow={ribbonLayer(glow, 0.028)}
+          core={ribbonLayer(core, 0.012)}
+          depthTest={depthTest}
+        />
+      )}
+      {showLine && !useContinuousRibbon && (
         <>
           <Line
             points={points}
