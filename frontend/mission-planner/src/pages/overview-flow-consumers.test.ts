@@ -47,9 +47,9 @@ describe('overview flow-line consumers', () => {
       lowLatency.forward.brightness
     );
     expect(highLatency.forward.size).toBeGreaterThan(lowLatency.forward.size);
-    expect(highLatency.forward.size - lowLatency.forward.size).toBeLessThanOrEqual(
-      3
-    );
+    expect(
+      highLatency.forward.size - lowLatency.forward.size
+    ).toBeLessThanOrEqual(3);
   });
 
   it('disables data-driven link emitters when telemetry is absent', () => {

@@ -151,7 +151,8 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(burst).toMatchObject({ state: 'burst', failureColor: '#ff0000' });
     expect(
       Array.from(
-        (resources.geometry.getAttribute('color') as THREE.BufferAttribute).array
+        (resources.geometry.getAttribute('color') as THREE.BufferAttribute)
+          .array
       ).slice(0, 3)
     ).toEqual([1, 0, 0]);
     disposeAnimatedFlowResources(resources);
