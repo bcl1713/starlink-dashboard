@@ -7,6 +7,7 @@ import {
   disposeStarMarkerHaloResources,
   projectedCoreRadius,
   resolveStarMarkerPosition,
+  setStarMarkerHaloPixelRatio,
 } from './overview-star-marker-rendering';
 
 const viewportHeight = 1_080;
@@ -30,63 +31,97 @@ describe('OverviewStarMarker rendering contract', () => {
   it('keeps the physical core at or below its configured radius', () => {
     expect(
       projectedCoreRadius({
-        configuredRadius: 0.02,
-        maxCorePixels: 4,
+        configuredRadius: 0.012,
+        maxCorePixels: 3,
         distance: 22,
         cameraFovDegrees,
         viewportHeight,
       })
-    ).toBe(0.02);
+    ).toBe(0.012);
   });
 
   it('shrinks a close physical core to the projection-aware pixel cap', () => {
     const radius = projectedCoreRadius({
-      configuredRadius: 0.02,
-      maxCorePixels: 4,
+      configuredRadius: 0.012,
+      maxCorePixels: 3,
       distance: 3,
       cameraFovDegrees,
       viewportHeight,
     });
 
-    expect(radius).toBeLessThan(0.02);
+    expect(radius).toBeLessThan(0.012);
     expect(radius).toBeCloseTo(
-      (4 / 2) * ((2 * 3 * Math.tan((45 * Math.PI) / 180 / 2)) / 1_080)
+      (3 / 2) * ((2 * 3 * Math.tan((45 * Math.PI) / 180 / 2)) / 1_080)
     );
   });
 
-  it('builds a fixed-pixel, globe-occluded halo material', () => {
-    const { geometry, material } = createStarMarkerHaloResources({
+  it('builds four fixed-pixel, globe-occluded halo layers', () => {
+    const resources = createStarMarkerHaloResources({
       color: '#c084fc',
       glowSizePixels: DEFAULT_GLOW_SIZE_PIXELS,
-      glowIntensity: 0.8,
+      glowIntensity: 1,
     });
 
-    expect(geometry.getAttribute('position').count).toBe(1);
-    expect(material.depthTest).toBe(true);
-    expect(material.depthWrite).toBe(false);
-    expect(material.transparent).toBe(true);
-    expect(material.blending).toBe(THREE.AdditiveBlending);
-    expect(material.uniforms.uGlowSizePixels.value).toBe(
-      DEFAULT_GLOW_SIZE_PIXELS
-    );
-    expect(material.uniforms.uColor.value.getStyle()).toBe('rgb(192,132,252)');
+    expect(resources.geometry.getAttribute('position').count).toBe(1);
+    expect(resources.layers).toHaveLength(4);
+    expect(
+      resources.layers.map(
+        (layer) => layer.material.uniforms.uSizePixels.value
+      )
+    ).toEqual([34, 18, 9, 3]);
 
-    disposeStarMarkerHaloResources({ geometry, material });
+    for (const layer of resources.layers) {
+      expect(layer.material.depthTest).toBe(true);
+      expect(layer.material.depthWrite).toBe(false);
+      expect(layer.material.transparent).toBe(true);
+      expect(layer.material.blending).toBe(THREE.AdditiveBlending);
+      expect(layer.material.toneMapped).toBe(false);
+    }
+
+    expect(resources.layers[0].material.uniforms.uColor.value.getStyle()).toBe(
+      'rgb(192,132,252)'
+    );
+    expect(resources.layers[3].material.uniforms.uColor.value.getStyle()).toBe(
+      'rgb(255,255,255)'
+    );
+
+    disposeStarMarkerHaloResources(resources);
   });
 
-  it('disposes renderer-native halo resources on cleanup', () => {
+  it('updates pixel ratio across every halo layer', () => {
     const resources = createStarMarkerHaloResources({
       color: '#ffb000',
-      glowSizePixels: 20,
+      glowSizePixels: 34,
+      glowIntensity: 1,
+    });
+
+    setStarMarkerHaloPixelRatio(resources, 2);
+
+    expect(
+      resources.layers.every(
+        (layer) => layer.material.uniforms.uPixelRatio.value === 2
+      )
+    ).toBe(true);
+    disposeStarMarkerHaloResources(resources);
+  });
+
+  it('disposes shared geometry and every halo material on cleanup', () => {
+    const resources = createStarMarkerHaloResources({
+      color: '#ffb000',
+      glowSizePixels: 34,
       glowIntensity: 1,
     });
     const disposeGeometry = vi.spyOn(resources.geometry, 'dispose');
-    const disposeMaterial = vi.spyOn(resources.material, 'dispose');
+    const disposeMaterials = resources.layers.map((layer) =>
+      vi.spyOn(layer.material, 'dispose')
+    );
 
     disposeStarMarkerHaloResources(resources);
 
     expect(disposeGeometry).toHaveBeenCalledOnce();
-    expect(disposeMaterial).toHaveBeenCalledOnce();
+    for (const disposeMaterial of disposeMaterials) {
+      expect(disposeMaterial).toHaveBeenCalledOnce();
+    }
   });
 
   it('uses a tiny white emissive core independent of marker color', () => {
