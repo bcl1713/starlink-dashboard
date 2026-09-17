@@ -11,6 +11,7 @@ import {
   disposeAnimatedFlowResources,
   FlowParticlePool,
   prepareFlowPath,
+  setAnimatedFlowViewport,
   type FlowEmitterConfig,
   type FlowPoint,
   writeFlowParticles,
@@ -97,8 +98,12 @@ export function AnimatedFlowLine({
   const pool = useMemo(() => new FlowParticlePool({ random }), [random]);
   const path = useMemo(() => prepareFlowPath(points), [points]);
   const resources = useMemo(
-    () => createAnimatedFlowResources(Math.max(1, capacity)),
-    [capacity]
+    () =>
+      createAnimatedFlowResources(Math.max(1, capacity), {
+        depthTest,
+        depthWrite,
+      }),
+    [capacity, depthTest, depthWrite]
   );
 
   useEffect(() => {
@@ -106,24 +111,21 @@ export function AnimatedFlowLine({
   }, [forward, pool, reverse]);
 
   useEffect(() => {
-    resources.material.depthTest = depthTest;
-    resources.material.depthWrite = depthWrite;
-  }, [depthTest, depthWrite, resources]);
-
-  useEffect(() => {
     return () => disposeAnimatedFlowResources(resources);
   }, [resources]);
 
   useFrame((state, delta) => {
     if (path.points.length < 2 || path.totalLength <= 0) {
-      resources.geometry.setDrawRange(0, 0);
+      writeFlowParticles(resources, path, []);
       return;
     }
 
     const pixelRatio = state.gl.getPixelRatio();
-    resources.material.uniforms.uPixelRatio.value = pixelRatio;
-    resources.material.uniforms.uViewportHeightPixels.value =
-      state.size.height * pixelRatio;
+    setAnimatedFlowViewport(
+      resources,
+      pixelRatio,
+      state.size.height * pixelRatio
+    );
     pool.update(delta, path.totalLength);
     writeFlowParticles(resources, path, pool.snapshot());
   });

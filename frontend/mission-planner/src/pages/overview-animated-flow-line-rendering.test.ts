@@ -6,6 +6,7 @@ import {
   disposeAnimatedFlowResources,
   interpolateFlowPath,
   prepareFlowPath,
+  setAnimatedFlowViewport,
   writeFlowParticles,
 } from './overview-animated-flow-line-rendering';
 
@@ -48,8 +49,14 @@ describe('AnimatedFlowLine rendering contract', () => {
       [8, 0, 0],
     ]);
     const emitter = { ...forward, rate: 1, speed: 1, maxParticles: 1 };
-    const shortPool = new FlowParticlePool({ forward: emitter, random: () => 0.5 });
-    const longPool = new FlowParticlePool({ forward: emitter, random: () => 0.5 });
+    const shortPool = new FlowParticlePool({
+      forward: emitter,
+      random: () => 0.5,
+    });
+    const longPool = new FlowParticlePool({
+      forward: emitter,
+      random: () => 0.5,
+    });
 
     shortPool.update(1, shortPath.totalLength);
     longPool.update(1, longPath.totalLength);
@@ -94,8 +101,7 @@ describe('AnimatedFlowLine rendering contract', () => {
 
     pool.update(1, path.totalLength);
     expect(pool.snapshot().map((particle) => particle.progress)).toEqual([
-      0.25,
-      0,
+      0.25, 0,
     ]);
     writeFlowParticles(resources, path, pool.snapshot());
     expect(positions.getX(0)).toBeCloseTo(1);
@@ -130,6 +136,22 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(resources.points.children).toHaveLength(0);
     expect(resources.points.castShadow).toBe(false);
     expect(resources.points.receiveShadow).toBe(false);
+
+    disposeAnimatedFlowResources(resources);
+  });
+
+  it('initializes depth ownership and updates viewport uniforms through renderer helpers', () => {
+    const resources = createAnimatedFlowResources(1, {
+      depthTest: false,
+      depthWrite: true,
+    });
+
+    setAnimatedFlowViewport(resources, 2, 1_080);
+
+    expect(resources.material.depthTest).toBe(false);
+    expect(resources.material.depthWrite).toBe(true);
+    expect(resources.material.uniforms.uPixelRatio.value).toBe(2);
+    expect(resources.material.uniforms.uViewportHeightPixels.value).toBe(1_080);
 
     disposeAnimatedFlowResources(resources);
   });
@@ -230,9 +252,9 @@ describe('AnimatedFlowLine rendering contract', () => {
 
     expect(pool.snapshot()[0]).toBe(emitted);
     expect(
-      (resources.geometry.getAttribute('position') as THREE.BufferAttribute).getX(
-        0
-      )
+      (
+        resources.geometry.getAttribute('position') as THREE.BufferAttribute
+      ).getX(0)
     ).toBeGreaterThanOrEqual(10);
     disposeAnimatedFlowResources(resources);
   });

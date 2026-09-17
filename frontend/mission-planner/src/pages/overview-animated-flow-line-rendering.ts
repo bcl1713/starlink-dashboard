@@ -245,13 +245,10 @@ export class FlowParticlePool {
     while (remainder >= 1 && available > 0) {
       const failure = emitter.failure;
       const failed =
-        failure !== undefined && this.random() < clamp(failure.probability, 0, 1);
+        failure !== undefined &&
+        this.random() < clamp(failure.probability, 0, 1);
       const minProgress = clamp(failure?.minProgress ?? 0.15, 0, 1);
-      const maxProgress = clamp(
-        failure?.maxProgress ?? 0.85,
-        minProgress,
-        1
-      );
+      const maxProgress = clamp(failure?.maxProgress ?? 0.85, minProgress, 1);
       const failureProgress = THREE.MathUtils.lerp(
         minProgress,
         maxProgress,
@@ -283,7 +280,14 @@ export class FlowParticlePool {
 }
 
 export function createAnimatedFlowResources(
-  capacity: number
+  capacity: number,
+  {
+    depthTest = true,
+    depthWrite = false,
+  }: {
+    depthTest?: boolean;
+    depthWrite?: boolean;
+  } = {}
 ): AnimatedFlowResources {
   const safeCapacity = Math.max(1, Math.floor(capacity));
   const geometry = new THREE.BufferGeometry();
@@ -312,7 +316,8 @@ export function createAnimatedFlowResources(
       uDepthBias: { value: 0.00001 },
     },
     transparent: true,
-    depthWrite: false,
+    depthTest,
+    depthWrite,
     vertexColors: true,
     blending: THREE.AdditiveBlending,
     toneMapped: false,
@@ -370,6 +375,16 @@ export function createAnimatedFlowResources(
   return { geometry, material, points };
 }
 
+export function setAnimatedFlowViewport(
+  resources: AnimatedFlowResources,
+  pixelRatio: number,
+  viewportHeightPixels: number
+): void {
+  resources.material.uniforms.uPixelRatio.value = pixelRatio;
+  resources.material.uniforms.uViewportHeightPixels.value =
+    viewportHeightPixels;
+}
+
 export function writeFlowParticles(
   resources: AnimatedFlowResources,
   path: PreparedFlowPath,
@@ -381,7 +396,9 @@ export function writeFlowParticles(
   const colors = resources.geometry.getAttribute(
     'color'
   ) as THREE.BufferAttribute;
-  const sizes = resources.geometry.getAttribute('size') as THREE.BufferAttribute;
+  const sizes = resources.geometry.getAttribute(
+    'size'
+  ) as THREE.BufferAttribute;
   const brightness = resources.geometry.getAttribute(
     'brightness'
   ) as THREE.BufferAttribute;
@@ -399,8 +416,7 @@ export function writeFlowParticles(
       particle.state === 'burst'
         ? clamp(particle.burstAge / particle.burstDuration, 0, 1)
         : 0;
-    const burstScale =
-      particle.state === 'burst' ? 2.4 + burstLife * 3.6 : 1;
+    const burstScale = particle.state === 'burst' ? 2.4 + burstLife * 3.6 : 1;
     const particleSize = particle.size * burstScale;
     const particleBrightness =
       particle.state === 'burst'

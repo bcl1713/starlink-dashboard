@@ -73,9 +73,7 @@ describe('OverviewStarMarker rendering contract', () => {
     expect(resources.geometry.getAttribute('position').count).toBe(1);
     expect(resources.layers).toHaveLength(4);
     expect(
-      resources.layers.map(
-        (layer) => layer.material.uniforms.uSizePixels.value
-      )
+      resources.layers.map((layer) => layer.material.uniforms.uSizePixels.value)
     ).toEqual([34, 18, 9, 3]);
 
     for (const layer of resources.layers) {
