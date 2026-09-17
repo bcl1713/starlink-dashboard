@@ -23,6 +23,7 @@ const forward = {
   size: 8,
   brightness: 1,
   maxParticles: 2,
+  maxWorldSize: 0.05,
 } as const;
 
 describe('AnimatedFlowLine rendering contract', () => {
@@ -38,7 +39,7 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(interpolateFlowPath([[1, 2, 3]], 0.5)).toEqual([1, 2, 3]);
   });
 
-  it('uses one screen-space renderer-native Points resource', () => {
+  it('uses one screen-space renderer-native Points resource with a world-size cap', () => {
     const resources = createAnimatedFlowResources(5);
 
     expect(resources.points).toBeInstanceOf(THREE.Points);
@@ -49,7 +50,13 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(
       (resources.geometry.getAttribute('color') as THREE.BufferAttribute).usage
     ).toBe(THREE.DynamicDrawUsage);
+    expect(
+      (resources.geometry.getAttribute('maxWorldSize') as THREE.BufferAttribute)
+        .usage
+    ).toBe(THREE.DynamicDrawUsage);
     expect(resources.material.uniforms.uPixelRatio.value).toBe(1);
+    expect(resources.material.uniforms.uViewportHeightPixels.value).toBe(1);
+    expect(resources.material.uniforms.uDepthBias.value).toBeGreaterThan(0);
     expect(resources.material.blending).toBe(THREE.AdditiveBlending);
     expect(resources.material.toneMapped).toBe(false);
     expect(resources.points.frustumCulled).toBe(false);
@@ -84,11 +91,24 @@ describe('AnimatedFlowLine rendering contract', () => {
     const pool = new FlowParticlePool({ forward, random: () => 0.5 });
 
     pool.update(0.5);
-    pool.configure({ ...forward, color: '#00ff00', speed: 2 });
+    pool.configure({
+      ...forward,
+      color: '#00ff00',
+      speed: 2,
+      maxWorldSize: 0.1,
+    });
     pool.update(0.5);
 
-    expect(pool.snapshot()[0]).toMatchObject({ color: '#ffb000', speed: 1 });
-    expect(pool.snapshot()[1]).toMatchObject({ color: '#00ff00', speed: 2 });
+    expect(pool.snapshot()[0]).toMatchObject({
+      color: '#ffb000',
+      speed: 1,
+      maxWorldSize: 0.05,
+    });
+    expect(pool.snapshot()[1]).toMatchObject({
+      color: '#00ff00',
+      speed: 2,
+      maxWorldSize: 0.1,
+    });
   });
 
   it('keeps a failed particle in place as one expanding terminal flash', () => {
@@ -114,6 +134,11 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(
       (resources.geometry.getAttribute('size') as THREE.BufferAttribute).getX(0)
     ).toBeGreaterThan(forward.size);
+    expect(
+      (
+        resources.geometry.getAttribute('maxWorldSize') as THREE.BufferAttribute
+      ).getX(0)
+    ).toBeGreaterThan(forward.maxWorldSize);
     expect(
       (
         resources.geometry.getAttribute('brightness') as THREE.BufferAttribute
