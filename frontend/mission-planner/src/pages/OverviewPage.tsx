@@ -496,7 +496,12 @@ export function OverviewPage() {
           </group>
           <Atmosphere />
           {hasRenderableRoute && (
-            <AnimatedFlowLine points={routePoints} depthWrite={false} />
+            <AnimatedFlowLine
+              points={routePoints}
+              forward={routeFlow.forward}
+              reverse={routeFlow.reverse}
+              depthWrite={false}
+            />
           )}
           {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
           {destination && (
@@ -511,9 +516,11 @@ export function OverviewPage() {
           {activeConfiguredXBandLink && (
             <AnimatedFlowLine
               points={activeConfiguredXBandLink.points}
-              outer={{ color: '#FF6868', linewidth: 8, opacity: 0.08 }}
-              glow={{ color: '#FF6868', linewidth: 4, opacity: 0.22 }}
-              core={{ color: '#FFb0b0', linewidth: 1.5, opacity: 0.8 }}
+              forward={activeLinkFlow.forward}
+              reverse={activeLinkFlow.reverse}
+              outer={{ color: '#7c8db8', linewidth: 10, opacity: 0.055 }}
+              glow={{ color: '#a7b4d2', linewidth: 5, opacity: 0.12 }}
+              core={{ color: '#e8efff', linewidth: 1, opacity: 0.68 }}
               depthWrite={false}
             />
           )}
