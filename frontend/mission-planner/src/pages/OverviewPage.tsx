@@ -217,6 +217,29 @@ function ConfiguredXBandSatelliteMarker({
   );
 }
 
+function XBandWarningMarker({
+  points,
+}: {
+  points: readonly [[number, number, number], [number, number, number]];
+}) {
+  const position: [number, number, number] = [
+    (points[0][0] + points[1][0]) / 2,
+    (points[0][1] + points[1][1]) / 2,
+    (points[0][2] + points[1][2]) / 2,
+  ];
+  return (
+    <Html center position={position}>
+      <span
+        aria-label="Warning marker on active X-band link"
+        className="x-band-warning-marker"
+        role="img"
+      >
+        !
+      </span>
+    </Html>
+  );
+}
+
 function Atmosphere() {
   return (
     <mesh scale={1.025}>
@@ -519,6 +542,18 @@ export function OverviewPage() {
             <span>Active configured X-band link</span>
             <strong>{activeConfiguredXBandLinkState}</strong>
           </li>
+          {activeXLink?.state === 'warning' && (
+            <li>
+              <span
+                aria-hidden="true"
+                className="globe-legend__marker globe-legend__marker--x-band-warning"
+              />
+              <span>Active X-band link</span>
+              <strong aria-label="Warning: active X-band link is in warning state">
+                Warning marker displayed
+              </strong>
+            </li>
+          )}
           <li>
             <span aria-hidden="true" />
             <span>Configured GEO analysis</span>
@@ -582,15 +617,20 @@ export function OverviewPage() {
             />
           )}
           {activeConfiguredXBandLink && (
-            <AnimatedFlowLine
-              points={activeConfiguredXBandLink.points}
-              forward={activeLinkFlow.forward}
-              reverse={activeLinkFlow.reverse}
-              outer={satcomLineStyle.outer}
-              glow={satcomLineStyle.glow}
-              core={satcomLineStyle.core}
-              depthWrite={false}
-            />
+            <>
+              <AnimatedFlowLine
+                points={activeConfiguredXBandLink.points}
+                forward={activeLinkFlow.forward}
+                reverse={activeLinkFlow.reverse}
+                outer={satcomLineStyle.outer}
+                glow={satcomLineStyle.glow}
+                core={satcomLineStyle.core}
+                depthWrite={false}
+              />
+              {activeXLink?.state === 'warning' && (
+                <XBandWarningMarker points={activeConfiguredXBandLink.points} />
+              )}
+            </>
           )}
           {configuredXBandSatellites.map((satellite) => (
             <ConfiguredXBandSatelliteMarker
