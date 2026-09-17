@@ -34,13 +34,13 @@ export function routeFlowEmitters(): {
     // apparent travel velocity stays consistent regardless of route length.
     forward: {
       enabled: true,
-      rate: 0.5,
-      speed: 0.035,
+      rate: 1,
+      speed: 0.1,
       color: '#ffb000',
-      size: 7,
+      size: 15,
       brightness: 1.35,
-      maxParticles: 4,
-      maxWorldSize: 0.06,
+      maxParticles: 1,
+      maxWorldSize: 0.03,
     },
     reverse: DISABLED,
   };
@@ -64,11 +64,6 @@ function pingToBrightness(ms: number): number {
   return lerp(3.4, 0.22, Math.pow(normalized, 0.55));
 }
 
-function pingToSize(ms: number): number {
-  const normalized = clamp((ms - 20) / 280, 0, 1);
-  return lerp(9.5, 4.8, Math.pow(normalized, 0.7));
-}
-
 export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
   forward: FlowEmitterConfig;
   reverse: FlowEmitterConfig;
@@ -77,26 +72,13 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
     return { forward: DISABLED, reverse: DISABLED };
   }
 
-  const downlinkRate = throughputToRate(
-    telemetry.throughput_down_mbps,
-    500,
-    3.2
-  );
-  const uplinkRate = throughputToRate(
-    telemetry.throughput_up_mbps,
-    100,
-    1.8
-  );
+  const downlinkRate = throughputToRate(telemetry.throughput_down_mbps, 500, 5);
+  const uplinkRate = throughputToRate(telemetry.throughput_up_mbps, 500, 5);
   const latency =
     telemetry.latency_ms !== undefined && Number.isFinite(telemetry.latency_ms)
       ? Math.max(0, telemetry.latency_ms)
       : 100;
-  const packetLoss = clamp(
-    (telemetry.packet_loss_percent ?? 0) / 100,
-    0,
-    1
-  );
-  const size = pingToSize(latency);
+  const packetLoss = clamp((telemetry.packet_loss_percent ?? 0) / 100, 0, 1);
   const brightness = pingToBrightness(latency);
   const failure =
     packetLoss > 0
@@ -115,24 +97,24 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
     forward: {
       enabled: uplinkRate > 0,
       rate: uplinkRate,
-      speed: 2.5,
+      speed: 0.5,
       color: '#fbbf24',
-      size,
+      size: 15,
       brightness,
-      maxParticles: 16,
-      maxWorldSize: 0.07,
+      maxParticles: 100,
+      maxWorldSize: 0.04,
       failure,
     },
     // Reverse travels satellite -> aircraft and represents download.
     reverse: {
       enabled: downlinkRate > 0,
       rate: downlinkRate,
-      speed: 2.5,
+      speed: 0.5,
       color: '#67e8f9',
-      size,
+      size: 15,
       brightness,
-      maxParticles: 24,
-      maxWorldSize: 0.07,
+      maxParticles: 100,
+      maxWorldSize: 0.04,
       failure,
     },
   };

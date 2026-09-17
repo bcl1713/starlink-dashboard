@@ -260,7 +260,7 @@ export function OverviewPage() {
     () =>
       projectAircraftHistory(
         overviewHistory?.series ?? {},
-        ROUTE_OVERLAY_RADIUS
+        ROUTE_OVERLAY_RADIUS + 0.00001
       ),
     [overviewHistory?.series]
   );
@@ -518,9 +518,9 @@ export function OverviewPage() {
               points={activeConfiguredXBandLink.points}
               forward={activeLinkFlow.forward}
               reverse={activeLinkFlow.reverse}
-              outer={{ color: '#7c8db8', linewidth: 10, opacity: 0.055 }}
-              glow={{ color: '#a7b4d2', linewidth: 5, opacity: 0.12 }}
-              core={{ color: '#e8efff', linewidth: 1, opacity: 0.68 }}
+              outer={{ color: '#ff2222', linewidth: 10, opacity: 0.355 }}
+              glow={{ color: '#ff0000', linewidth: 5, opacity: 0.52 }}
+              core={{ color: '#e8efff', linewidth: 2, opacity: 0.68 }}
               depthWrite={false}
             />
           )}
@@ -533,13 +533,12 @@ export function OverviewPage() {
             />
           ))}
           {aircraftHistoryPoints.length >= 2 && (
-            <Line
+            <AnimatedFlowLine
               points={aircraftHistoryPoints}
-              color="#22d3ee"
-              linewidth={2}
-              transparent
-              opacity={0.8}
               depthWrite={false}
+              outer={{ color: '#ffffff', linewidth: 10, opacity: 0.0355 }}
+              glow={{ color: '0ff0fc', linewidth: 5, opacity: 0.52 }}
+              core={{ color: '#e8efff', linewidth: 2, opacity: 0.68 }}
             />
           )}
           {aircraftPosition && (
