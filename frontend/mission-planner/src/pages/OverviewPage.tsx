@@ -46,6 +46,11 @@ import { projectAircraftHistory } from './overview-history-projection';
 import { overviewHistoryState } from './overview-history-state';
 import { useOverviewHistorySettings } from '@/hooks/api/useOverviewHistorySettings';
 import { useUpdateOverviewHistorySettings } from '@/hooks/api/useUpdateOverviewHistorySettings';
+import { AnimatedFlowLine } from './AnimatedFlowLine';
+import {
+  activeLinkFlowEmitters,
+  routeFlowEmitters,
+} from './overview-flow-consumers';
 
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
@@ -208,6 +213,7 @@ export function OverviewPage() {
     () => projectRouteArc(activeRoute?.points ?? [], ROUTE_OVERLAY_RADIUS, 8),
     [activeRoute?.points]
   );
+  const routeFlow = useMemo(() => routeFlowEmitters(), []);
 
   const origin = activeRoute?.points?.at(0);
   const destination = activeRoute?.points?.at(-1);
@@ -283,6 +289,10 @@ export function OverviewPage() {
         activeConfiguredXBandSatelliteId
       )
     : null;
+  const activeLinkFlow = useMemo(
+    () => activeLinkFlowEmitters(status?.network),
+    [status?.network]
+  );
   const activeConfiguredXBandLookAngles = activeConfiguredXBandLink
     ? calculateConfiguredXBandLookAngles(activeConfiguredXBandLink)
     : null;
@@ -486,12 +496,10 @@ export function OverviewPage() {
           </group>
           <Atmosphere />
           {hasRenderableRoute && (
-            <Line
+            <AnimatedFlowLine
               points={routePoints}
-              color="#ffb000"
-              linewidth={2}
-              transparent
-              opacity={0.85}
+              forward={routeFlow.forward}
+              reverse={routeFlow.reverse}
               depthWrite={false}
             />
           )}
@@ -506,12 +514,13 @@ export function OverviewPage() {
             />
           )}
           {activeConfiguredXBandLink && (
-            <Line
+            <AnimatedFlowLine
               points={activeConfiguredXBandLink.points}
-              color="#FF6868"
-              linewidth={2}
-              transparent
-              opacity={0.25}
+              outer={{ color: '#FF6868', linewidth: 8, opacity: 0.08 }}
+              glow={{ color: '#FF6868', linewidth: 4, opacity: 0.22 }}
+              core={{ color: '#FFb0b0', linewidth: 1.5, opacity: 0.8 }}
+              forward={activeLinkFlow.forward}
+              reverse={activeLinkFlow.reverse}
               depthWrite={false}
             />
           )}
