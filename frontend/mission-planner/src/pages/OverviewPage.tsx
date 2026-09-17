@@ -41,6 +41,13 @@ import {
   projectAircraftScenePosition,
   projectConfiguredXBandActiveLink,
 } from './x-band-active-link-projection';
+import { useOverviewHistory } from '@/hooks/api/useOverviewHistory';
+import { projectAircraftHistory } from './overview-history-projection';
+import { overviewHistoryState } from './overview-history-state';
+import { useOverviewHistorySettings } from '@/hooks/api/useOverviewHistorySettings';
+import { useUpdateOverviewHistorySettings } from '@/hooks/api/useUpdateOverviewHistorySettings';
+
+const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -224,7 +231,38 @@ export function OverviewPage() {
     isLoading: isLoadingStatus,
     error: statusError,
   } = useStatus();
-
+  const {
+    data: overviewHistory,
+    isLoading: isLoadingOverviewHistory,
+    isError: isOverviewHistoryError,
+  } = useOverviewHistory();
+  const {
+    data: overviewHistorySettings,
+    isError: isOverviewHistorySettingsError,
+  } = useOverviewHistorySettings();
+  const {
+    mutate: updateOverviewHistorySettings,
+    isPending: isUpdatingOverviewHistorySettings,
+  } = useUpdateOverviewHistorySettings();
+  const overviewHistoryWindowValue = overviewHistorySettings
+    ? String(overviewHistorySettings.window_seconds)
+    : '';
+  const hasCustomOverviewHistoryWindow =
+    overviewHistorySettings !== undefined &&
+    !HISTORY_WINDOW_OPTIONS.includes(overviewHistorySettings.window_seconds);
+  const aircraftHistoryPoints = useMemo(
+    () =>
+      projectAircraftHistory(
+        overviewHistory?.series ?? {},
+        ROUTE_OVERLAY_RADIUS
+      ),
+    [overviewHistory?.series]
+  );
+  const aircraftHistoryStatus = overviewHistoryState({
+    isLoading: isLoadingOverviewHistory,
+    isError: isOverviewHistoryError,
+    pointCount: aircraftHistoryPoints.length,
+  });
   const {
     data: satellites,
     isLoading: isLoadingSatellites,
@@ -340,6 +378,51 @@ export function OverviewPage() {
           </li>
           <li>
             <span
+              className="globe-legend__route globe-legend__route--history"
+              aria-hidden="true"
+            />
+            <span>Aircraft history</span>
+            <strong>{aircraftHistoryStatus}</strong>
+          </li>
+          <li>
+            <span aria-hidden="true" />
+            <label htmlFor="aircraft-history-window">
+              Aircraft history window
+            </label>
+            <select
+              id="aircraft-history-window"
+              aria-label="Aircraft history window"
+              className="globe-legend__window"
+              value={overviewHistoryWindowValue}
+              disabled={
+                !overviewHistorySettings || isUpdatingOverviewHistorySettings
+              }
+              onChange={(event) => {
+                const windowSeconds = Number(event.target.value);
+                if (Number.isInteger(windowSeconds) && windowSeconds > 0) {
+                  updateOverviewHistorySettings(windowSeconds);
+                }
+              }}
+            >
+              {!overviewHistorySettings && (
+                <option value="" disabled>
+                  {isOverviewHistorySettingsError ? 'Unavailable' : 'Loading…'}
+                </option>
+              )}
+              {hasCustomOverviewHistoryWindow && (
+                <option value={overviewHistoryWindowValue}>
+                  {overviewHistoryWindowValue} seconds
+                </option>
+              )}
+              {HISTORY_WINDOW_OPTIONS.map((windowSeconds) => (
+                <option key={windowSeconds} value={windowSeconds}>
+                  {windowSeconds / 60} minutes
+                </option>
+              ))}
+            </select>
+          </li>
+          <li>
+            <span
               className="globe-legend__marker globe-legend__marker--ground-entry"
               aria-hidden="true"
             />
@@ -440,6 +523,16 @@ export function OverviewPage() {
               globeOccluder={globeOccluder}
             />
           ))}
+          {aircraftHistoryPoints.length >= 2 && (
+            <Line
+              points={aircraftHistoryPoints}
+              color="#22d3ee"
+              linewidth={2}
+              transparent
+              opacity={0.8}
+              depthWrite={false}
+            />
+          )}
           {aircraftPosition && (
             <AircraftMarker
               coordinate={aircraftPosition}

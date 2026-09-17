@@ -17,6 +17,24 @@ test.describe('Globe overview', () => {
         },
       });
     });
+    await page.route('**/api/overview-history', async (route) => {
+      await route.fulfill({
+        json: {
+          window_seconds: 1800,
+          start_timestamp_seconds: 1_781_998_200,
+          end_timestamp_seconds: 1_782_000_000,
+          step_seconds: 1,
+          series: {},
+        },
+      });
+    });
+    await page.route('**/api/overview-history/settings', async (route) => {
+      await route.fulfill({
+        json: {
+          window_seconds: 1800,
+        },
+      });
+    });
   });
 
   test('renders an active anti-meridian route from same-origin API data', async ({
@@ -683,5 +701,201 @@ test.describe('Globe overview', () => {
       })
     ).toBeVisible();
     await expect(page.getByText('X-Atlantic', { exact: true })).toHaveCount(0);
+  });
+  test('requests and reports a shared aircraft-history trail', async ({
+    page,
+  }) => {
+    const historyRequests: string[] = [];
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: 175,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      historyRequests.push(route.request().url());
+      await route.fulfill({
+        json: {
+          window_seconds: 1800,
+          start_timestamp_seconds: 1_781_998_200,
+          end_timestamp_seconds: 1_782_000_000,
+          step_seconds: 1,
+          series: {
+            starlink_dish_latitude_degrees: [
+              [1_781_999_999, 10],
+              [1_782_000_000, 10],
+            ],
+            starlink_dish_longitude_degrees: [
+              [1_781_999_999, 175],
+              [1_782_000_000, -179],
+            ],
+          },
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      globeLegend.getByText('Aircraft history', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('2 trail points', { exact: true })
+    ).toBeVisible();
+    await expect.poll(() => historyRequests).toHaveLength(1);
+    expect(historyRequests[0]).toMatch(/\/api\/overview-history$/);
+  });
+  test('reports unavailable aircraft history without replacing live telemetry', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: -179,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        json: {
+          detail: 'Overview history is temporarily unavailable',
+        },
+      });
+    });
+    await page.goto('/overview');
+    const globeLegend = page.getByLabel('Globe legend');
+    await expect(
+      globeLegend.getByText('Aircraft history', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Aircraft history unavailable', { exact: true })
+    ).toBeVisible();
+    await expect(
+      globeLegend.getByText('Live telemetry', { exact: true })
+    ).toBeVisible();
+  });
+  test('updates the aircraft history window and refetches shared history', async ({
+    page,
+  }) => {
+    let selectedWindow = 1800;
+    const historyRequests: string[] = [];
+    const settingsUpdates: number[] = [];
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: -179,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history', async (route) => {
+      historyRequests.push(route.request().url());
+      await route.fulfill({
+        json: {
+          window_seconds: selectedWindow,
+          start_timestamp_seconds: 1_781_998_200,
+          end_timestamp_seconds: 1_782_000_000,
+          step_seconds: 1,
+          series: {},
+        },
+      });
+    });
+    await page.route('**/api/overview-history/settings', async (route) => {
+      const request = route.request();
+      if (request.method() === 'PUT') {
+        const update = request.postDataJSON() as {
+          window_seconds: number;
+        };
+        selectedWindow = update.window_seconds;
+        settingsUpdates.push(selectedWindow);
+      }
+      await route.fulfill({
+        json: {
+          window_seconds: selectedWindow,
+        },
+      });
+    });
+    await page.goto('/overview');
+    const historyWindow = page.getByLabel('Aircraft history window');
+    await expect(historyWindow).toHaveValue('1800');
+    await historyWindow.selectOption('900');
+    await expect.poll(() => settingsUpdates).toEqual([900]);
+    await expect(historyWindow).toHaveValue('900');
+    await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(2);
+  });
+  test('retains a persisted custom aircraft history window', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [],
+          total: 0,
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: new Date().toISOString(),
+          position: {
+            latitude: 10,
+            longitude: -179,
+          },
+          ground_entry_point: null,
+        },
+      });
+    });
+    await page.route('**/api/overview-history/settings', async (route) => {
+      await route.fulfill({
+        json: {
+          window_seconds: 1200,
+        },
+      });
+    });
+    await page.goto('/overview');
+    await expect(page.getByLabel('Aircraft history window')).toHaveValue(
+      '1200'
+    );
   });
 });

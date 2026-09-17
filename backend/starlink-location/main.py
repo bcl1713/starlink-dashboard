@@ -6,10 +6,13 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.api import (
     active_x_link,
@@ -20,35 +23,44 @@ from app.api import (
     gps,
     health,
     metrics,
+    overview_history,
     pois,
     routes,
     status,
     ui,
     weather,
 )
-from app.mission import (
-    routes as mission_routes,
-    routes_v2 as mission_routes_v2,
-)
-from app.satellites import routes as satellite_routes
 from app.core.config import ConfigManager
-from app.models.config import SimulationConfig
 from app.core.eta_service import initialize_eta_service, shutdown_eta_service
-from app.core.logging import setup_logging, get_logger
+from app.core.limiter import limiter
+from app.core.logging import get_logger, setup_logging
 from app.core.metrics import set_service_info
 from app.live.coordinator import LiveCoordinator
-from app.simulation.coordinator import SimulationCoordinator
-from app.services.poi_manager import POIManager
-from app.services.route_manager import RouteManager
+from app.mission import (
+    routes as mission_routes,
+)
+from app.mission import (
+    routes_v2 as mission_routes_v2,
+)
+from app.models.config import SimulationConfig
+from app.satellites import routes as satellite_routes
 from app.services.ground_entry_point import (
     get_cached_ground_entry_point,
     maybe_refresh_ground_entry_point_metrics,
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
-from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
-from app.core.limiter import limiter
+from app.services.overview_history_prometheus import (
+    OverviewHistoryReader,
+    resolve_overview_history_prometheus_url,
+)
+from app.services.overview_history_settings import (
+    OverviewHistorySettingsStore,
+    resolve_overview_history_window_default,
+)
+from app.services.poi_manager import POIManager
+from app.services.route_manager import RouteManager
+from app.simulation.coordinator import SimulationCoordinator
 
 # Configure structured logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -68,6 +80,10 @@ _coordinator: SimulationCoordinator | LiveCoordinator | None = None
 _background_task = None
 _simulation_config = None
 _route_manager: RouteManager | None = None
+OVERVIEW_HISTORY_SETTINGS_PATH = Path("data/settings/overview-history.json")
+OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS = 5.0
+_overview_history_client: httpx.AsyncClient | None = None
+_overview_history_settings_store: OverviewHistorySettingsStore | None = None
 
 
 def should_automatically_refresh_ground_entry_point(
@@ -75,6 +91,28 @@ def should_automatically_refresh_ground_entry_point(
 ) -> bool:
     """Return whether this mode may perform external GEP discovery."""
     return config is not None and config.mode == "live"
+
+
+def initialize_overview_history_runtime() -> None:
+    """Initialize the persistent settings and reader for overview history."""
+    global _overview_history_client, _overview_history_settings_store
+    _overview_history_settings_store = OverviewHistorySettingsStore(
+        OVERVIEW_HISTORY_SETTINGS_PATH,
+        default_window_seconds=resolve_overview_history_window_default(),
+    )
+    overview_history.set_overview_history_settings_store(
+        _overview_history_settings_store
+    )
+    _overview_history_client = httpx.AsyncClient(
+        base_url=resolve_overview_history_prometheus_url(),
+        timeout=OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS,
+    )
+    reader = OverviewHistoryReader(
+        _overview_history_client,
+        get_window_seconds=_overview_history_settings_store.get_window_seconds,
+        time_source=time.time,
+    )
+    overview_history.set_overview_history_reader(reader.read)
 
 
 async def startup_event():
@@ -96,6 +134,8 @@ async def startup_event():
                 "route_pattern": _simulation_config.route.pattern,
             },
         )
+
+        initialize_overview_history_runtime()
 
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
@@ -306,11 +346,17 @@ async def startup_event():
 
 async def shutdown_event():
     """Cleanup on shutdown."""
-    global _background_task, _route_manager
+    global _background_task, _overview_history_client
+    global _overview_history_settings_store, _route_manager
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
-
+        overview_history.set_overview_history_reader(None)
+        overview_history.set_overview_history_settings_store(None)
+        if _overview_history_client is not None:
+            await _overview_history_client.aclose()
+            _overview_history_client = None
+        _overview_history_settings_store = None
         if _background_task:
             logger.info_json("Cancelling background update task")
             _background_task.cancel()
@@ -372,10 +418,10 @@ async def _background_update_loop(poi_manager=None):
                     if telemetry is not None:
                         # Track metric collection duration
                         from app.core.metrics import (
-                            update_metrics_from_telemetry,
-                            starlink_metrics_scrape_duration_seconds,
-                            starlink_metrics_last_update_timestamp_seconds,
                             starlink_metrics_generation_errors_total,
+                            starlink_metrics_last_update_timestamp_seconds,
+                            starlink_metrics_scrape_duration_seconds,
+                            update_metrics_from_telemetry,
                         )
 
                         scrape_start = time.time()
@@ -541,6 +587,7 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
+app.include_router(overview_history.router, tags=["Overview History"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])

@@ -67,6 +67,14 @@ Other stack settings remain Portainer-managed. `GRAFANA_ADMIN_PASSWORD` is a
 secret and must not be copied into documentation, commits, tickets, or command
 history. For non-live work, retain `STARLINK_MODE=simulation`.
 
+`STARLINK_PROMETHEUS_URL` defaults to `http://prometheus:9090`, the stable
+Prometheus service alias in this profile. `STARLINK_HISTORY_WINDOW_SECONDS` is
+an optional bootstrap default for the Mission Planner overview query lookback.
+After an operator selects a window in the dashboard, the persisted dashboard
+selection takes precedence and is stored under
+`STARLINK_APP_DATA_PATH/settings/overview-history.json`. This display/query
+window is independent of Prometheus database retention (`PROMETHEUS_RETENTION`).
+
 ## Select an Immutable Release and Rollback Target
 
 Before an authorized non-live update:

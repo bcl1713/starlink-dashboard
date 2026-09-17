@@ -5,6 +5,11 @@ import math
 
 import pytest
 
+UNAVAILABLE_GROUND_ENTRY_POINT_METRICS = {
+    "starlink_ground_entry_point_latitude_degrees",
+    "starlink_ground_entry_point_longitude_degrees",
+}
+
 
 @pytest.mark.asyncio
 async def test_metrics_endpoint_returns_200(test_client):
@@ -117,26 +122,30 @@ async def test_metrics_format_is_valid(test_client):
 
 
 @pytest.mark.asyncio
-async def test_metrics_values_are_numeric(test_client):
-    """Test that metric values are numeric."""
+async def test_metrics_values_are_finite_except_unavailable_ground_entry_point_coordinates(
+    test_client,
+):
+    """Test that required metric values are finite."""
     await asyncio.sleep(0.2)
-
     response = test_client.get("/metrics")
-    text = response.text
-
-    lines = text.strip().split("\n")
-    metric_lines = [line for line in lines if not line.startswith("#")]
-
+    metric_lines = [
+        line
+        for line in response.text.strip().split("\n")
+        if line and not line.startswith("#")
+    ]
     for line in metric_lines:
-        if line and not any(x in line for x in ["TYPE", "HELP"]):
-            parts = line.split()
-            if len(parts) >= 2:
-                try:
-                    value = float(parts[-1])
-                    # Should not be NaN or Inf (though some Prometheus formats allow these)
-                    assert not math.isnan(value)
-                except (ValueError, IndexError):
-                    pass
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        try:
+            value = float(parts[-1])
+        except ValueError:
+            continue
+        metric_name = parts[0].split("{", 1)[0]
+        if metric_name in UNAVAILABLE_GROUND_ENTRY_POINT_METRICS:
+            assert not math.isinf(value)
+        else:
+            assert math.isfinite(value)
 
 
 @pytest.mark.asyncio
