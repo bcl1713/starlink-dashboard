@@ -39,6 +39,42 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(interpolateFlowPath([[1, 2, 3]], 0.5)).toEqual([1, 2, 3]);
   });
 
+  it('emits only at the whole-path start and traverses across segment boundaries', () => {
+    const pool = new FlowParticlePool({
+      forward: {
+        ...forward,
+        rate: 1,
+        speed: 0.25,
+        maxParticles: 4,
+      },
+      random: () => 0.5,
+    });
+    const resources = createAnimatedFlowResources(4);
+    const path = prepareFlowPath(points);
+
+    pool.update(1);
+    expect(pool.snapshot().map((particle) => particle.progress)).toEqual([0]);
+    writeFlowParticles(resources, path, pool.snapshot());
+    const positions = resources.geometry.getAttribute(
+      'position'
+    ) as THREE.BufferAttribute;
+    expect(positions.getX(0)).toBe(0);
+    expect(positions.getY(0)).toBe(0);
+
+    pool.update(1);
+    expect(pool.snapshot().map((particle) => particle.progress)).toEqual([
+      0.25,
+      0,
+    ]);
+    writeFlowParticles(resources, path, pool.snapshot());
+    expect(positions.getX(0)).toBeCloseTo(1);
+    expect(positions.getY(0)).toBeCloseTo(0);
+    expect(positions.getX(1)).toBe(0);
+    expect(positions.getY(1)).toBe(0);
+
+    disposeAnimatedFlowResources(resources);
+  });
+
   it('uses one screen-space renderer-native Points resource with a world-size cap', () => {
     const resources = createAnimatedFlowResources(5);
 
