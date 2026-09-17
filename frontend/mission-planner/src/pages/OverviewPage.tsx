@@ -7,7 +7,7 @@ import {
   type RefObject,
 } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Html, Line, OrbitControls, Stars } from '@react-three/drei';
+import { Html, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import { type GlobeCoordinate } from './globe-route';
@@ -53,6 +53,72 @@ import {
 } from './overview-flow-consumers';
 
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
+
+const AIRCRAFT_HISTORY_LINE = {
+  outer: {
+    color: '#00d9ff',
+    linewidth: 8,
+    opacity: 0.08,
+    blending: THREE.AdditiveBlending,
+    maxWorldWidth: 0.035,
+  },
+  glow: {
+    color: '#00f5ff',
+    linewidth: 4,
+    opacity: 0.32,
+    blending: THREE.AdditiveBlending,
+    maxWorldWidth: 0.02,
+  },
+  core: {
+    color: '#d9ffff',
+    linewidth: 1.15,
+    opacity: 0.95,
+    blending: THREE.NormalBlending,
+    maxWorldWidth: 0.008,
+  },
+};
+
+const SATCOM_NORMAL_LINE = {
+  outer: {
+    color: '#2563eb',
+    linewidth: 7,
+    opacity: 0.06,
+    blending: THREE.AdditiveBlending,
+  },
+  glow: {
+    color: '#60a5fa',
+    linewidth: 3.5,
+    opacity: 0.16,
+    blending: THREE.AdditiveBlending,
+  },
+  core: {
+    color: '#dbeafe',
+    linewidth: 1.1,
+    opacity: 0.55,
+    blending: THREE.NormalBlending,
+  },
+};
+
+const SATCOM_WARNING_LINE = {
+  outer: {
+    color: '#dc2626',
+    linewidth: 7,
+    opacity: 0.07,
+    blending: THREE.AdditiveBlending,
+  },
+  glow: {
+    color: '#f87171',
+    linewidth: 3.5,
+    opacity: 0.18,
+    blending: THREE.AdditiveBlending,
+  },
+  core: {
+    color: '#fee2e2',
+    linewidth: 1.1,
+    opacity: 0.58,
+    blending: THREE.NormalBlending,
+  },
+};
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -293,6 +359,8 @@ export function OverviewPage() {
     () => activeLinkFlowEmitters(status?.network),
     [status?.network]
   );
+  const satcomLineStyle =
+    activeXLink?.state === 'warning' ? SATCOM_WARNING_LINE : SATCOM_NORMAL_LINE;
   const activeConfiguredXBandLookAngles = activeConfiguredXBandLink
     ? calculateConfiguredXBandLookAngles(activeConfiguredXBandLink)
     : null;
@@ -518,9 +586,9 @@ export function OverviewPage() {
               points={activeConfiguredXBandLink.points}
               forward={activeLinkFlow.forward}
               reverse={activeLinkFlow.reverse}
-              outer={{ color: '#ff2222', linewidth: 10, opacity: 0.355 }}
-              glow={{ color: '#ff0000', linewidth: 5, opacity: 0.52 }}
-              core={{ color: '#e8efff', linewidth: 2, opacity: 0.68 }}
+              outer={satcomLineStyle.outer}
+              glow={satcomLineStyle.glow}
+              core={satcomLineStyle.core}
               depthWrite={false}
             />
           )}
@@ -536,9 +604,9 @@ export function OverviewPage() {
             <AnimatedFlowLine
               points={aircraftHistoryPoints}
               depthWrite={false}
-              outer={{ color: '#ffffff', linewidth: 10, opacity: 0.0355 }}
-              glow={{ color: '0ff0fc', linewidth: 5, opacity: 0.52 }}
-              core={{ color: '#e8efff', linewidth: 2, opacity: 0.68 }}
+              outer={AIRCRAFT_HISTORY_LINE.outer}
+              glow={AIRCRAFT_HISTORY_LINE.glow}
+              core={AIRCRAFT_HISTORY_LINE.core}
             />
           )}
           {aircraftPosition && (
