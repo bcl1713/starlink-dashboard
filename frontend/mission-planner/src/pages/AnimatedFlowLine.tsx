@@ -43,6 +43,15 @@ const DEFAULT_CORE: FlowLineLayer = {
   linewidth: 1.5,
   opacity: 0.9,
 };
+const DISABLED_EMITTER: FlowEmitterConfig = {
+  enabled: false,
+  rate: 0,
+  speed: 0,
+  color: '#ffffff',
+  size: 1,
+  brightness: 0,
+  maxParticles: 0,
+};
 
 export function AnimatedFlowLine({
   points,
@@ -66,7 +75,9 @@ export function AnimatedFlowLine({
   );
 
   useEffect(() => {
-    if (forward) pool.configure(forward, reverse);
+    if (forward || reverse) {
+      pool.configure(forward ?? DISABLED_EMITTER, reverse ?? DISABLED_EMITTER);
+    }
   }, [forward, pool, reverse]);
 
   useEffect(() => {
