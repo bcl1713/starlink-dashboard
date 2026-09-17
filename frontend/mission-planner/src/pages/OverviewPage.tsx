@@ -80,42 +80,42 @@ const AIRCRAFT_HISTORY_LINE = {
 
 const SATCOM_NORMAL_LINE = {
   outer: {
-    color: '#2563eb',
-    linewidth: 7,
-    opacity: 0.06,
+    color: '#1d4ed8',
+    linewidth: 9,
+    opacity: 0.12,
     blending: THREE.AdditiveBlending,
   },
   glow: {
-    color: '#60a5fa',
-    linewidth: 3.5,
-    opacity: 0.16,
+    color: '#3b82f6',
+    linewidth: 5,
+    opacity: 0.34,
     blending: THREE.AdditiveBlending,
   },
   core: {
-    color: '#dbeafe',
-    linewidth: 1.1,
-    opacity: 0.55,
+    color: '#3b82f6',
+    linewidth: 1.5,
+    opacity: 0.88,
     blending: THREE.NormalBlending,
   },
 };
 
 const SATCOM_WARNING_LINE = {
   outer: {
-    color: '#dc2626',
-    linewidth: 7,
-    opacity: 0.07,
+    color: '#b91c1c',
+    linewidth: 9,
+    opacity: 0.13,
     blending: THREE.AdditiveBlending,
   },
   glow: {
-    color: '#f87171',
-    linewidth: 3.5,
-    opacity: 0.18,
+    color: '#ef4444',
+    linewidth: 5,
+    opacity: 0.36,
     blending: THREE.AdditiveBlending,
   },
   core: {
-    color: '#fee2e2',
-    linewidth: 1.1,
-    opacity: 0.58,
+    color: '#ef4444',
+    linewidth: 1.5,
+    opacity: 0.9,
     blending: THREE.NormalBlending,
   },
 };
