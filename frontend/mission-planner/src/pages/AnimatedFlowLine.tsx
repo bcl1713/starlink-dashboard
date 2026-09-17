@@ -29,6 +29,7 @@ export interface AnimatedFlowLineProps {
   forward?: FlowEmitterConfig;
   reverse?: FlowEmitterConfig;
   random?: () => number;
+  showLine?: boolean;
 }
 
 const DEFAULT_OUTER: FlowLineLayer = {
@@ -69,6 +70,7 @@ export function AnimatedFlowLine({
   forward,
   reverse,
   random,
+  showLine = true,
 }: AnimatedFlowLineProps) {
   const capacity = (forward?.maxParticles ?? 0) + (reverse?.maxParticles ?? 0);
   const pool = useMemo(() => new FlowParticlePool({ random }), [random]);
@@ -115,42 +117,46 @@ export function AnimatedFlowLine({
 
   return (
     <group>
-      <Line
-        points={points}
-        color={outer.color}
-        linewidth={outer.linewidth}
-        transparent
-        opacity={outer.opacity}
-        blending={outer.blending ?? THREE.AdditiveBlending}
-        toneMapped={false}
-        depthTest={depthTest}
-        depthWrite={depthWrite}
-        {...depthOffsetProps}
-      />
-      <Line
-        points={points}
-        color={glow.color}
-        linewidth={glow.linewidth}
-        transparent
-        opacity={glow.opacity}
-        blending={glow.blending ?? THREE.AdditiveBlending}
-        toneMapped={false}
-        depthTest={depthTest}
-        depthWrite={depthWrite}
-        {...depthOffsetProps}
-      />
-      <Line
-        points={points}
-        color={core.color}
-        linewidth={core.linewidth}
-        transparent
-        opacity={core.opacity}
-        blending={core.blending ?? THREE.NormalBlending}
-        toneMapped={false}
-        depthTest={depthTest}
-        depthWrite={depthWrite}
-        {...depthOffsetProps}
-      />
+      {showLine && (
+        <>
+          <Line
+            points={points}
+            color={outer.color}
+            linewidth={outer.linewidth}
+            transparent
+            opacity={outer.opacity}
+            blending={outer.blending ?? THREE.AdditiveBlending}
+            toneMapped={false}
+            depthTest={depthTest}
+            depthWrite={depthWrite}
+            {...depthOffsetProps}
+          />
+          <Line
+            points={points}
+            color={glow.color}
+            linewidth={glow.linewidth}
+            transparent
+            opacity={glow.opacity}
+            blending={glow.blending ?? THREE.AdditiveBlending}
+            toneMapped={false}
+            depthTest={depthTest}
+            depthWrite={depthWrite}
+            {...depthOffsetProps}
+          />
+          <Line
+            points={points}
+            color={core.color}
+            linewidth={core.linewidth}
+            transparent
+            opacity={core.opacity}
+            blending={core.blending ?? THREE.NormalBlending}
+            toneMapped={false}
+            depthTest={depthTest}
+            depthWrite={depthWrite}
+            {...depthOffsetProps}
+          />
+        </>
+      )}
       <primitive object={resources.points} />
     </group>
   );
