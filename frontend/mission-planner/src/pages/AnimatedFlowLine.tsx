@@ -30,7 +30,7 @@ export interface AnimatedFlowLineProps {
 
 const DEFAULT_OUTER: FlowLineLayer = {
   color: '#ffb000',
-  linewidth: 7,
+  linewidth: 3,
   opacity: 0.1,
 };
 const DEFAULT_GLOW: FlowLineLayer = {

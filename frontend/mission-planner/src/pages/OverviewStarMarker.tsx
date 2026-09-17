@@ -12,7 +12,7 @@ import {
 
 const DEFAULT_CORE_RADIUS = 0.02;
 const DEFAULT_GLOW_INTENSITY = 0.85;
-const DEFAULT_MAX_CORE_PIXELS = 4;
+const DEFAULT_MAX_CORE_PIXELS = 2;
 
 export type StarMarkerProps = StarMarkerPositionProps & {
   color: string;
