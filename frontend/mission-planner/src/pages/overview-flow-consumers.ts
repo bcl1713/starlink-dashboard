@@ -30,12 +30,12 @@ export function routeFlowEmitters(): {
   reverse: FlowEmitterConfig;
 } {
   return {
-    // One emitter for the whole route. Particles are born only at progress 0
-    // and then traverse the complete multi-segment path.
+    // One emitter for the whole route. Speed is scene units per second, so the
+    // apparent travel velocity stays consistent regardless of route length.
     forward: {
       enabled: true,
       rate: 0.5,
-      speed: 0.14,
+      speed: 0.035,
       color: '#ffb000',
       size: 7,
       brightness: 1.35,
@@ -111,10 +111,11 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
 
   return {
     // Link points are aircraft -> satellite, so forward represents upload.
+    // 2.5 scene units/sec preserves roughly the prior GEO-link visual pace.
     forward: {
       enabled: uplinkRate > 0,
       rate: uplinkRate,
-      speed: 0.22,
+      speed: 2.5,
       color: '#fbbf24',
       size,
       brightness,
@@ -126,7 +127,7 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
     reverse: {
       enabled: downlinkRate > 0,
       rate: downlinkRate,
-      speed: 0.22,
+      speed: 2.5,
       color: '#67e8f9',
       size,
       brightness,
