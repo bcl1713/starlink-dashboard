@@ -30,15 +30,17 @@ export function routeFlowEmitters(): {
   reverse: FlowEmitterConfig;
 } {
   return {
+    // One emitter for the whole route. Particles are born only at progress 0
+    // and then traverse the complete multi-segment path.
     forward: {
       enabled: true,
-      rate: 0.8,
-      speed: 0.18,
+      rate: 0.35,
+      speed: 0.14,
       color: '#ffb000',
-      size: 6,
-      brightness: 1.2,
-      maxParticles: 8,
-      maxWorldSize: 0.05,
+      size: 4,
+      brightness: 1,
+      maxParticles: 3,
+      maxWorldSize: 0.03,
     },
     reverse: DISABLED,
   };
