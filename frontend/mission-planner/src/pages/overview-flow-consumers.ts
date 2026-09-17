@@ -34,13 +34,13 @@ export function routeFlowEmitters(): {
     // and then traverse the complete multi-segment path.
     forward: {
       enabled: true,
-      rate: 0.35,
+      rate: 0.5,
       speed: 0.14,
       color: '#ffb000',
-      size: 4,
-      brightness: 1,
-      maxParticles: 3,
-      maxWorldSize: 0.03,
+      size: 7,
+      brightness: 1.35,
+      maxParticles: 4,
+      maxWorldSize: 0.06,
     },
     reverse: DISABLED,
   };
