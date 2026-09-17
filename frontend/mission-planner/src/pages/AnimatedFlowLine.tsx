@@ -93,12 +93,21 @@ export function AnimatedFlowLine({
       return;
     }
 
-    resources.material.uniforms.uPixelRatio.value = state.gl.getPixelRatio();
+    const pixelRatio = state.gl.getPixelRatio();
+    resources.material.uniforms.uPixelRatio.value = pixelRatio;
+    resources.material.uniforms.uViewportHeightPixels.value =
+      state.size.height * pixelRatio;
     pool.update(delta);
     writeFlowParticles(resources, path, pool.snapshot());
   });
 
   if (points.length < 2) return null;
+
+  const depthOffsetProps = {
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -2,
+  };
 
   return (
     <group>
@@ -112,6 +121,7 @@ export function AnimatedFlowLine({
         toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
+        {...depthOffsetProps}
       />
       <Line
         points={points}
@@ -123,6 +133,7 @@ export function AnimatedFlowLine({
         toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
+        {...depthOffsetProps}
       />
       <Line
         points={points}
@@ -133,6 +144,7 @@ export function AnimatedFlowLine({
         toneMapped={false}
         depthTest={depthTest}
         depthWrite={depthWrite}
+        {...depthOffsetProps}
       />
       <primitive object={resources.points} />
     </group>
