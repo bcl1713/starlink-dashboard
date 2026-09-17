@@ -20,6 +20,12 @@ export interface FlowEmitterConfig {
   size: number;
   brightness: number;
   maxParticles: number;
+  /**
+   * Optional world-space diameter cap. Packets remain `size` CSS pixels up
+   * close, but shrink naturally with distance once this cap becomes smaller
+   * than the requested screen-space size.
+   */
+  maxWorldSize?: number;
   failure?: FlowFailureConfig;
 }
 
@@ -30,6 +36,7 @@ export interface FlowParticle {
   color: string;
   size: number;
   brightness: number;
+  maxWorldSize: number;
   failureColor: string;
   state: FlowParticleState;
   failureAt: number | null;
@@ -251,6 +258,7 @@ export class FlowParticlePool {
         color: emitter.color,
         size: emitter.size,
         brightness: emitter.brightness,
+        maxWorldSize: Math.max(0, emitter.maxWorldSize ?? 0),
         failureColor: failure?.color ?? '#ff304f',
         state: 'traveling',
         failureAt: failed ? failureProgress : null,
@@ -277,6 +285,7 @@ export function createAnimatedFlowResources(
     ['color', 3],
     ['size', 1],
     ['brightness', 1],
+    ['maxWorldSize', 1],
   ] as const) {
     geometry.setAttribute(
       name,
@@ -291,6 +300,8 @@ export function createAnimatedFlowResources(
   const material = new THREE.ShaderMaterial({
     uniforms: {
       uPixelRatio: { value: 1 },
+      uViewportHeightPixels: { value: 1 },
+      uDepthBias: { value: 0.00001 },
     },
     transparent: true,
     depthWrite: false,
@@ -299,8 +310,11 @@ export function createAnimatedFlowResources(
     toneMapped: false,
     vertexShader: `
       uniform float uPixelRatio;
+      uniform float uViewportHeightPixels;
+      uniform float uDepthBias;
       attribute float size;
       attribute float brightness;
+      attribute float maxWorldSize;
       varying vec3 vColor;
       varying float vBrightness;
 
@@ -308,8 +322,20 @@ export function createAnimatedFlowResources(
         vColor = color;
         vBrightness = brightness;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = size * uPixelRatio;
+        float requestedSize = size * uPixelRatio;
+        float renderedSize = requestedSize;
+
+        if (maxWorldSize > 0.0) {
+          float viewDistance = max(0.0001, -mvPosition.z);
+          float projectedWorldSize =
+            maxWorldSize * projectionMatrix[1][1] * uViewportHeightPixels *
+            0.5 / viewDistance;
+          renderedSize = min(requestedSize, projectedWorldSize);
+        }
+
+        gl_PointSize = max(1.0, renderedSize);
         gl_Position = projectionMatrix * mvPosition;
+        gl_Position.z -= uDepthBias * gl_Position.w;
       }
     `,
     fragmentShader: `
@@ -351,6 +377,9 @@ export function writeFlowParticles(
   const brightness = resources.geometry.getAttribute(
     'brightness'
   ) as THREE.BufferAttribute;
+  const maxWorldSizes = resources.geometry.getAttribute(
+    'maxWorldSize'
+  ) as THREE.BufferAttribute;
   let index = 0;
 
   for (const particle of particles) {
@@ -362,10 +391,9 @@ export function writeFlowParticles(
       particle.state === 'burst'
         ? clamp(particle.burstAge / particle.burstDuration, 0, 1)
         : 0;
-    const particleSize =
-      particle.state === 'burst'
-        ? particle.size * (2.4 + burstLife * 3.6)
-        : particle.size;
+    const burstScale =
+      particle.state === 'burst' ? 2.4 + burstLife * 3.6 : 1;
+    const particleSize = particle.size * burstScale;
     const particleBrightness =
       particle.state === 'burst'
         ? THREE.MathUtils.lerp(5.2, 0, burstLife)
@@ -378,6 +406,7 @@ export function writeFlowParticles(
     colors.setXYZ(index, scratchColor.r, scratchColor.g, scratchColor.b);
     sizes.setX(index, particleSize);
     brightness.setX(index, particleBrightness);
+    maxWorldSizes.setX(index, particle.maxWorldSize * burstScale);
     index += 1;
   }
 
@@ -385,6 +414,7 @@ export function writeFlowParticles(
   colors.needsUpdate = true;
   sizes.needsUpdate = true;
   brightness.needsUpdate = true;
+  maxWorldSizes.needsUpdate = true;
   resources.geometry.setDrawRange(0, index);
 }
 
