@@ -38,6 +38,7 @@ export function routeFlowEmitters(): {
       size: 6,
       brightness: 1.2,
       maxParticles: 8,
+      maxWorldSize: 0.05,
     },
     reverse: DISABLED,
   };
@@ -116,6 +117,7 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
       size,
       brightness,
       maxParticles: 16,
+      maxWorldSize: 0.07,
       failure,
     },
     // Reverse travels satellite -> aircraft and represents download.
@@ -127,6 +129,7 @@ export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
       size,
       brightness,
       maxParticles: 24,
+      maxWorldSize: 0.07,
       failure,
     },
   };
