@@ -61,3 +61,13 @@ def test_uses_representative_when_locality_is_unavailable_in_omaha():
         time_zone="America/Chicago",
         label="Omaha, NE",
     )
+
+
+def test_returns_none_when_timezone_is_unavailable():
+    result = resolve_clock_location(
+        0.0,
+        0.0,
+        time_zone_lookup=lambda latitude, longitude: None,
+        locality_lookup=lambda latitude, longitude: None,
+    )
+    assert result is None
