@@ -7,7 +7,7 @@ import {
   type RefObject,
 } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Html, Line, OrbitControls, Stars } from '@react-three/drei';
+import { Html, OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import './OverviewPage.css';
 import { type GlobeCoordinate } from './globe-route';
@@ -35,6 +35,7 @@ import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
 import { projectConfiguredXBandSatellite3d } from './x-band-satellites-projection';
 import { useActiveXLink } from '@/hooks/api/useActiveXLink';
+import { satcomLineStyle } from './satcom-link-style';
 import {
   calculateConfiguredXBandLookAngles,
   projectActiveConfiguredXBandSatelliteId,
@@ -53,6 +54,30 @@ import {
 } from './overview-flow-consumers';
 
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
+
+const AIRCRAFT_HISTORY_LINE = {
+  outer: {
+    color: '#00d9ff',
+    linewidth: 8,
+    opacity: 0.08,
+    blending: THREE.AdditiveBlending,
+    maxWorldWidth: 0.035,
+  },
+  glow: {
+    color: '#00f5ff',
+    linewidth: 4,
+    opacity: 0.32,
+    blending: THREE.AdditiveBlending,
+    maxWorldWidth: 0.02,
+  },
+  core: {
+    color: '#d9ffff',
+    linewidth: 1.15,
+    opacity: 0.95,
+    blending: THREE.NormalBlending,
+    maxWorldWidth: 0.008,
+  },
+};
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -260,7 +285,7 @@ export function OverviewPage() {
     () =>
       projectAircraftHistory(
         overviewHistory?.series ?? {},
-        ROUTE_OVERLAY_RADIUS
+        ROUTE_OVERLAY_RADIUS + 0.00001
       ),
     [overviewHistory?.series]
   );
@@ -293,6 +318,7 @@ export function OverviewPage() {
     () => activeLinkFlowEmitters(status?.network),
     [status?.network]
   );
+  const activeXBandLineStyle = satcomLineStyle(activeXLink?.state);
   const activeConfiguredXBandLookAngles = activeConfiguredXBandLink
     ? calculateConfiguredXBandLookAngles(activeConfiguredXBandLink)
     : null;
@@ -496,7 +522,12 @@ export function OverviewPage() {
           </group>
           <Atmosphere />
           {hasRenderableRoute && (
-            <AnimatedFlowLine points={routePoints} depthWrite={false} />
+            <AnimatedFlowLine
+              points={routePoints}
+              forward={routeFlow.forward}
+              reverse={routeFlow.reverse}
+              depthWrite={false}
+            />
           )}
           {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
           {destination && (
@@ -509,13 +540,17 @@ export function OverviewPage() {
             />
           )}
           {activeConfiguredXBandLink && (
-            <AnimatedFlowLine
-              points={activeConfiguredXBandLink.points}
-              outer={{ color: '#FF6868', linewidth: 8, opacity: 0.08 }}
-              glow={{ color: '#FF6868', linewidth: 4, opacity: 0.22 }}
-              core={{ color: '#FFb0b0', linewidth: 1.5, opacity: 0.8 }}
-              depthWrite={false}
-            />
+            <>
+              <AnimatedFlowLine
+                points={activeConfiguredXBandLink.points}
+                forward={activeLinkFlow.forward}
+                reverse={activeLinkFlow.reverse}
+                outer={activeXBandLineStyle.outer}
+                glow={activeXBandLineStyle.glow}
+                core={activeXBandLineStyle.core}
+                depthWrite={false}
+              />
+            </>
           )}
           {configuredXBandSatellites.map((satellite) => (
             <ConfiguredXBandSatelliteMarker
@@ -526,13 +561,12 @@ export function OverviewPage() {
             />
           ))}
           {aircraftHistoryPoints.length >= 2 && (
-            <Line
+            <AnimatedFlowLine
               points={aircraftHistoryPoints}
-              color="#22d3ee"
-              linewidth={2}
-              transparent
-              opacity={0.8}
               depthWrite={false}
+              outer={AIRCRAFT_HISTORY_LINE.outer}
+              glow={AIRCRAFT_HISTORY_LINE.glow}
+              core={AIRCRAFT_HISTORY_LINE.core}
             />
           )}
           {aircraftPosition && (

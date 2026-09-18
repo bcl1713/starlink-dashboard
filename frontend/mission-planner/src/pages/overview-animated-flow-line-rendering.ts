@@ -6,42 +6,56 @@ export type FlowParticleState = 'traveling' | 'burst';
 
 export interface FlowFailureConfig {
   probability: number;
-  burstCount?: number;
   duration?: number;
   color?: string;
+  minProgress?: number;
+  maxProgress?: number;
 }
 
 export interface FlowEmitterConfig {
   enabled: boolean;
   rate: number;
+  /** Linear travel speed in scene units per second. */
   speed: number;
   color: string;
   size: number;
   brightness: number;
   maxParticles: number;
+  /**
+   * Optional world-space diameter cap. Packets remain `size` CSS pixels up
+   * close, but shrink naturally with distance once this cap becomes smaller
+   * than the requested screen-space size.
+   */
+  maxWorldSize?: number;
   failure?: FlowFailureConfig;
 }
 
 export interface FlowParticle {
   direction: FlowDirection;
   progress: number;
+  /** Linear travel speed in scene units per second, snapshotted at emission. */
   speed: number;
   color: string;
   size: number;
   brightness: number;
+  maxWorldSize: number;
   failureColor: string;
   state: FlowParticleState;
   failureAt: number | null;
-  burstCount: number;
   burstDuration: number;
   burstAge: number;
 }
 
 export interface FlowParticlePoolOptions {
-  points: readonly FlowPoint[];
   forward?: FlowEmitterConfig;
   reverse?: FlowEmitterConfig;
   random?: () => number;
+}
+
+export interface PreparedFlowPath {
+  points: readonly FlowPoint[];
+  cumulativeLengths: Float32Array;
+  totalLength: number;
 }
 
 export interface AnimatedFlowResources {
@@ -60,54 +74,89 @@ const EMPTY_EMITTER: FlowEmitterConfig = {
   maxParticles: 0,
 };
 
+const scratchColor = new THREE.Color();
+const scratchPosition = new THREE.Vector3();
+
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
-function pathSegments(points: readonly FlowPoint[]) {
-  return points.slice(1).map((point, index) => {
-    const start = points[index];
-    const length = Math.hypot(
-      point[0] - start[0],
-      point[1] - start[1],
-      point[2] - start[2]
+export function prepareFlowPath(
+  points: readonly FlowPoint[]
+): PreparedFlowPath {
+  const cumulativeLengths = new Float32Array(points.length);
+  let totalLength = 0;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    totalLength += Math.hypot(
+      end[0] - start[0],
+      end[1] - start[1],
+      end[2] - start[2]
     );
-    return { start, end: point, length };
-  });
+    cumulativeLengths[index] = totalLength;
+  }
+
+  return { points, cumulativeLengths, totalLength };
+}
+
+export function writePreparedFlowPathPosition(
+  path: PreparedFlowPath,
+  progress: number,
+  target: THREE.Vector3
+): boolean {
+  const { points, cumulativeLengths, totalLength } = path;
+  if (points.length === 0) return false;
+  if (points.length === 1 || totalLength === 0) {
+    target.set(points[0][0], points[0][1], points[0][2]);
+    return true;
+  }
+
+  const targetDistance = clamp(progress, 0, 1) * totalLength;
+  let endIndex = 1;
+
+  while (
+    endIndex < cumulativeLengths.length - 1 &&
+    targetDistance > cumulativeLengths[endIndex]
+  ) {
+    endIndex += 1;
+  }
+
+  const startIndex = endIndex - 1;
+  const segmentStart = cumulativeLengths[startIndex];
+  const segmentEnd = cumulativeLengths[endIndex];
+  const segmentLength = segmentEnd - segmentStart;
+  const t =
+    segmentLength === 0 ? 0 : (targetDistance - segmentStart) / segmentLength;
+  const start = points[startIndex];
+  const end = points[endIndex];
+
+  target.set(
+    THREE.MathUtils.lerp(start[0], end[0], t),
+    THREE.MathUtils.lerp(start[1], end[1], t),
+    THREE.MathUtils.lerp(start[2], end[2], t)
+  );
+  return true;
+}
+
+export function interpolatePreparedFlowPath(
+  path: PreparedFlowPath,
+  progress: number
+): [number, number, number] | null {
+  return writePreparedFlowPathPosition(path, progress, scratchPosition)
+    ? [scratchPosition.x, scratchPosition.y, scratchPosition.z]
+    : null;
 }
 
 export function interpolateFlowPath(
   points: readonly FlowPoint[],
   progress: number
 ): [number, number, number] | null {
-  if (points.length === 0) return null;
-  if (points.length === 1) return [...points[0]];
-
-  const segments = pathSegments(points);
-  const totalLength = segments.reduce(
-    (total, segment) => total + segment.length,
-    0
-  );
-  if (totalLength === 0) return [...points[0]];
-
-  let distance = clamp(progress, 0, 1) * totalLength;
-  for (const segment of segments) {
-    if (distance <= segment.length || segment === segments.at(-1)) {
-      const t = segment.length === 0 ? 0 : distance / segment.length;
-      return [
-        THREE.MathUtils.lerp(segment.start[0], segment.end[0], t),
-        THREE.MathUtils.lerp(segment.start[1], segment.end[1], t),
-        THREE.MathUtils.lerp(segment.start[2], segment.end[2], t),
-      ];
-    }
-    distance -= segment.length;
-  }
-
-  return [...points.at(-1)!];
+  return interpolatePreparedFlowPath(prepareFlowPath(points), progress);
 }
 
 export class FlowParticlePool {
-  private readonly points: readonly FlowPoint[];
   private readonly random: () => number;
   private readonly particles: FlowParticle[] = [];
   private readonly recycled: FlowParticle[] = [];
@@ -115,14 +164,14 @@ export class FlowParticlePool {
   private reverse: FlowEmitterConfig;
   private forwardRemainder = 0;
   private reverseRemainder = 0;
+  private forwardParticleCount = 0;
+  private reverseParticleCount = 0;
 
   constructor({
-    points,
     forward = EMPTY_EMITTER,
     reverse = EMPTY_EMITTER,
     random = Math.random,
-  }: FlowParticlePoolOptions) {
-    this.points = points;
+  }: FlowParticlePoolOptions = {}) {
     this.forward = forward;
     this.reverse = reverse;
     this.random = random;
@@ -137,18 +186,26 @@ export class FlowParticlePool {
     return this.particles;
   }
 
-  update(deltaSeconds: number): void {
-    if (this.points.length < 2 || !Number.isFinite(deltaSeconds)) return;
+  update(deltaSeconds: number, pathLength: number): void {
+    if (
+      !Number.isFinite(deltaSeconds) ||
+      deltaSeconds <= 0 ||
+      !Number.isFinite(pathLength) ||
+      pathLength <= 0
+    ) {
+      return;
+    }
 
     for (const particle of this.particles) {
       if (particle.state === 'burst') {
         particle.burstAge += deltaSeconds;
         continue;
       }
+
+      const progressDelta = (particle.speed * deltaSeconds) / pathLength;
       particle.progress +=
-        particle.direction === 'forward'
-          ? particle.speed * deltaSeconds
-          : -particle.speed * deltaSeconds;
+        particle.direction === 'forward' ? progressDelta : -progressDelta;
+
       if (
         particle.failureAt !== null &&
         (particle.direction === 'forward'
@@ -162,14 +219,21 @@ export class FlowParticlePool {
 
     for (let index = this.particles.length - 1; index >= 0; index -= 1) {
       const particle = this.particles[index];
-      if (
-        (particle.state === 'burst' &&
-          particle.burstAge >= particle.burstDuration) ||
-        (particle.state === 'traveling' &&
-          (particle.progress < 0 || particle.progress > 1))
-      ) {
+      const expiredBurst =
+        particle.state === 'burst' &&
+        particle.burstAge >= particle.burstDuration;
+      const completedTravel =
+        particle.state === 'traveling' &&
+        (particle.progress < 0 || particle.progress > 1);
+
+      if (expiredBurst || completedTravel) {
         this.recycled.push(particle);
         this.particles.splice(index, 1);
+        if (particle.direction === 'forward') {
+          this.forwardParticleCount -= 1;
+        } else {
+          this.reverseParticleCount -= 1;
+        }
       }
     }
 
@@ -193,17 +257,28 @@ export class FlowParticlePool {
     if (!emitter.enabled || emitter.maxParticles <= 0 || emitter.rate <= 0) {
       return 0;
     }
-    const existing = this.particles.filter(
-      (particle) => particle.direction === direction
-    ).length;
+
+    const existing =
+      direction === 'forward'
+        ? this.forwardParticleCount
+        : this.reverseParticleCount;
     let available = Math.max(0, emitter.maxParticles - existing);
     let remainder = requested;
+
     while (remainder >= 1 && available > 0) {
+      const failure = emitter.failure;
       const failed =
-        emitter.failure !== undefined &&
-        this.random() < emitter.failure.probability;
-      const failureProgress = 0.25 + this.random() * 0.5;
+        failure !== undefined &&
+        this.random() < clamp(failure.probability, 0, 1);
+      const minProgress = clamp(failure?.minProgress ?? 0.15, 0, 1);
+      const maxProgress = clamp(failure?.maxProgress ?? 0.85, minProgress, 1);
+      const failureProgress = THREE.MathUtils.lerp(
+        minProgress,
+        maxProgress,
+        this.random()
+      );
       const particle = this.recycled.pop() ?? ({} as FlowParticle);
+
       Object.assign(particle, {
         direction,
         progress: direction === 'forward' ? 0 : 1,
@@ -211,56 +286,46 @@ export class FlowParticlePool {
         color: emitter.color,
         size: emitter.size,
         brightness: emitter.brightness,
-        failureColor: emitter.failure?.color ?? '#ff3b30',
+        maxWorldSize: Math.max(0, emitter.maxWorldSize ?? 0),
+        failureColor: failure?.color ?? '#ff304f',
         state: 'traveling',
         failureAt: failed ? failureProgress : null,
-        burstCount: emitter.failure?.burstCount ?? 4,
-        burstDuration: emitter.failure?.duration ?? 0.35,
+        burstDuration: failure?.duration ?? 0.42,
         burstAge: 0,
       });
       this.particles.push(particle);
+      if (direction === 'forward') {
+        this.forwardParticleCount += 1;
+      } else {
+        this.reverseParticleCount += 1;
+      }
       remainder -= 1;
       available -= 1;
     }
+
     return Math.min(remainder, 1);
   }
 }
 
-export function flowPointSignature(points: readonly FlowPoint[]): string {
-  return points.map((point) => point.join(',')).join(';');
-}
-
-export class FlowParticlePoolLifecycle {
-  private signature: string;
-  private pool: FlowParticlePool;
-  private readonly random?: () => number;
-
-  constructor(points: readonly FlowPoint[], random?: () => number) {
-    this.random = random;
-    this.signature = flowPointSignature(points);
-    this.pool = new FlowParticlePool({ points, random });
-  }
-
-  update(points: readonly FlowPoint[]): FlowParticlePool {
-    const signature = flowPointSignature(points);
-    if (signature !== this.signature) {
-      this.signature = signature;
-      this.pool = new FlowParticlePool({ points, random: this.random });
-    }
-    return this.pool;
-  }
-}
-
 export function createAnimatedFlowResources(
-  capacity: number
+  capacity: number,
+  {
+    depthTest = true,
+    depthWrite = false,
+  }: {
+    depthTest?: boolean;
+    depthWrite?: boolean;
+  } = {}
 ): AnimatedFlowResources {
   const safeCapacity = Math.max(1, Math.floor(capacity));
   const geometry = new THREE.BufferGeometry();
+
   for (const [name, itemSize] of [
     ['position', 3],
     ['color', 3],
     ['size', 1],
     ['brightness', 1],
+    ['maxWorldSize', 1],
   ] as const) {
     geometry.setAttribute(
       name,
@@ -270,44 +335,87 @@ export function createAnimatedFlowResources(
       ).setUsage(THREE.DynamicDrawUsage)
     );
   }
+
   geometry.setDrawRange(0, 0);
   const material = new THREE.ShaderMaterial({
+    uniforms: {
+      uPixelRatio: { value: 1 },
+      uViewportHeightPixels: { value: 1 },
+      uDepthBias: { value: 0.00001 },
+    },
     transparent: true,
-    depthWrite: false,
+    depthTest,
+    depthWrite,
     vertexColors: true,
     blending: THREE.AdditiveBlending,
+    toneMapped: false,
     vertexShader: `
+      uniform float uPixelRatio;
+      uniform float uViewportHeightPixels;
+      uniform float uDepthBias;
       attribute float size;
       attribute float brightness;
+      attribute float maxWorldSize;
       varying vec3 vColor;
       varying float vBrightness;
+
       void main() {
         vColor = color;
         vBrightness = brightness;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = size * (240.0 / max(0.1, -mvPosition.z));
+        float requestedSize = size * uPixelRatio;
+        float renderedSize = requestedSize;
+
+        if (maxWorldSize > 0.0) {
+          float viewDistance = max(0.0001, -mvPosition.z);
+          float projectedWorldSize =
+            maxWorldSize * projectionMatrix[1][1] * uViewportHeightPixels *
+            0.5 / viewDistance;
+          renderedSize = min(requestedSize, projectedWorldSize);
+        }
+
+        gl_PointSize = max(1.0, renderedSize);
         gl_Position = projectionMatrix * mvPosition;
+        gl_Position.z -= uDepthBias * gl_Position.w;
       }
     `,
     fragmentShader: `
       varying vec3 vColor;
       varying float vBrightness;
+
       void main() {
-        float distanceFromCenter = length(gl_PointCoord - 0.5) * 2.0;
-        float alpha = smoothstep(1.0, 0.0, distanceFromCenter);
-        gl_FragColor = vec4(vColor * vBrightness, alpha * vBrightness);
+        vec2 point = gl_PointCoord - vec2(0.5);
+        float distanceFromCenter = length(point);
+        if (distanceFromCenter > 0.5) discard;
+
+        float alpha = 1.0 - smoothstep(0.0, 0.5, distanceFromCenter);
+        alpha = pow(alpha, 1.5);
+        float hot = 1.0 - smoothstep(0.0, 0.18, distanceFromCenter);
+        vec3 color = mix(vColor, vec3(1.0), hot);
+        gl_FragColor = vec4(color * vBrightness, alpha);
       }
     `,
   });
   const points = new THREE.Points(geometry, material);
   points.castShadow = false;
   points.receiveShadow = false;
+  points.frustumCulled = false;
   return { geometry, material, points };
+}
+
+export function setAnimatedFlowViewport(
+  resources: AnimatedFlowResources,
+  pixelRatio: number,
+  viewportHeightPixels: number
+): void {
+  resources.material.uniforms.uPixelRatio.value = pixelRatio;
+  resources.material.uniforms.uViewportHeightPixels.value =
+    viewportHeightPixels;
 }
 
 export function writeFlowParticles(
   resources: AnimatedFlowResources,
-  points: readonly FlowPoint[],
+  path: PreparedFlowPath,
   particles: readonly FlowParticle[]
 ): void {
   const positions = resources.geometry.getAttribute(
@@ -322,38 +430,51 @@ export function writeFlowParticles(
   const brightness = resources.geometry.getAttribute(
     'brightness'
   ) as THREE.BufferAttribute;
+  const maxWorldSizes = resources.geometry.getAttribute(
+    'maxWorldSize'
+  ) as THREE.BufferAttribute;
   let index = 0;
+
   for (const particle of particles) {
-    const origin = interpolateFlowPath(points, particle.progress);
-    if (!origin) continue;
-    const color = new THREE.Color(
+    if (index >= positions.count) break;
+    if (
+      !writePreparedFlowPathPosition(path, particle.progress, scratchPosition)
+    ) {
+      continue;
+    }
+
+    const burstLife =
+      particle.state === 'burst'
+        ? clamp(particle.burstAge / particle.burstDuration, 0, 1)
+        : 0;
+    const burstScale = particle.state === 'burst' ? 2.4 + burstLife * 3.6 : 1;
+    const particleSize = particle.size * burstScale;
+    const particleBrightness =
+      particle.state === 'burst'
+        ? THREE.MathUtils.lerp(5.2, 0, burstLife)
+        : particle.brightness;
+
+    scratchColor.set(
       particle.state === 'burst' ? particle.failureColor : particle.color
     );
-    const count = particle.state === 'burst' ? particle.burstCount : 1;
-    for (
-      let burstIndex = 0;
-      burstIndex < count && index < positions.count;
-      burstIndex += 1
-    ) {
-      const burstScale =
-        particle.state === 'burst' ? particle.burstAge * 0.25 : 0;
-      const angle = (Math.PI * 2 * burstIndex) / count;
-      positions.setXYZ(
-        index,
-        origin[0] + Math.cos(angle) * burstScale,
-        origin[1] + Math.sin(angle) * burstScale,
-        origin[2]
-      );
-      colors.setXYZ(index, color.r, color.g, color.b);
-      sizes.setX(index, particle.size * (particle.state === 'burst' ? 1.5 : 1));
-      brightness.setX(index, particle.brightness);
-      index += 1;
-    }
+    positions.setXYZ(
+      index,
+      scratchPosition.x,
+      scratchPosition.y,
+      scratchPosition.z
+    );
+    colors.setXYZ(index, scratchColor.r, scratchColor.g, scratchColor.b);
+    sizes.setX(index, particleSize);
+    brightness.setX(index, particleBrightness);
+    maxWorldSizes.setX(index, particle.maxWorldSize * burstScale);
+    index += 1;
   }
+
   positions.needsUpdate = true;
   colors.needsUpdate = true;
   sizes.needsUpdate = true;
   brightness.needsUpdate = true;
+  maxWorldSizes.needsUpdate = true;
   resources.geometry.setDrawRange(0, index);
 }
 

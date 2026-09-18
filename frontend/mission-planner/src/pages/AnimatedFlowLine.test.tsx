@@ -3,8 +3,15 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+interface MockFrameState {
+  gl: { getPixelRatio: () => number };
+  size: { height: number };
+}
+
 const renderedFlow = vi.hoisted(() => ({
-  frame: undefined as undefined | ((state: unknown, delta: number) => void),
+  frame: undefined as
+    | undefined
+    | ((state: MockFrameState, delta: number) => void),
   particles: [] as unknown[],
 }));
 
@@ -18,7 +25,7 @@ vi.mock('@react-three/drei', async () => {
 vi.mock('@react-three/fiber', async () => {
   const React = await import('react');
   return {
-    useFrame: (frame: (state: unknown, delta: number) => void) => {
+    useFrame: (frame: (state: MockFrameState, delta: number) => void) => {
       React.useEffect(() => {
         renderedFlow.frame = frame;
         return () => {
@@ -37,7 +44,7 @@ vi.mock('./overview-animated-flow-line-rendering', async (importOriginal) => {
   return {
     ...actual,
     writeFlowParticles: vi.fn(
-      (_resources, _points, particles: readonly unknown[]) => {
+      (_resources, _path, particles: readonly unknown[]) => {
         renderedFlow.particles = [...particles];
       }
     ),
@@ -77,7 +84,10 @@ describe('AnimatedFlowLine', () => {
     expect(renderedFlow.frame).toBeTypeOf('function');
 
     act(() => {
-      renderedFlow.frame?.({}, 0.5);
+      renderedFlow.frame?.(
+        { gl: { getPixelRatio: () => 2 }, size: { height: 1080 } },
+        0.5
+      );
     });
 
     expect(renderedFlow.particles).toEqual([

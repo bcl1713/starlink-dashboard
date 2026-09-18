@@ -4,7 +4,7 @@ import { globePosition } from './globe-coordinates';
 import { ROUTE_OVERLAY_RADIUS } from './globe-render-radii';
 
 export const CORE_COLOR = '#ffffff';
-export const DEFAULT_GLOW_SIZE_PIXELS = 20;
+export const DEFAULT_GLOW_SIZE_PIXELS = 34;
 
 export type StarMarkerPositionProps =
   | {
@@ -61,32 +61,73 @@ export function projectedCoreRadius({
 }
 
 const haloVertexShader = `
-  uniform float uGlowSizePixels;
+  uniform float uSizePixels;
   uniform float uPixelRatio;
+  uniform float uDepthBias;
 
   void main() {
     vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
     gl_Position = projectionMatrix * modelViewPosition;
-    gl_PointSize = uGlowSizePixels * uPixelRatio;
+    gl_Position.z -= uDepthBias * gl_Position.w;
+    gl_PointSize = uSizePixels * uPixelRatio;
   }
 `;
 
 const haloFragmentShader = `
   uniform vec3 uColor;
-  uniform float uGlowIntensity;
+  uniform float uStrength;
+  uniform float uFalloff;
 
   void main() {
-    float distanceFromCenter = distance(gl_PointCoord, vec2(0.5));
-    float alpha = smoothstep(0.5, 0.0, distanceFromCenter);
-    alpha *= alpha * uGlowIntensity;
-    gl_FragColor = vec4(uColor * alpha, alpha);
+    vec2 point = gl_PointCoord - vec2(0.5);
+    float distanceFromCenter = length(point);
+    if (distanceFromCenter > 0.5) discard;
+
+    float alpha = 1.0 - smoothstep(0.0, 0.5, distanceFromCenter);
+    alpha = pow(alpha, uFalloff);
+    gl_FragColor = vec4(uColor * uStrength, alpha);
   }
 `;
 
+export type StarMarkerHaloLayer = {
+  material: THREE.ShaderMaterial;
+  renderOrder: number;
+};
+
 export type StarMarkerHaloResources = {
   geometry: THREE.BufferGeometry;
-  material: THREE.ShaderMaterial;
+  layers: readonly StarMarkerHaloLayer[];
 };
+
+function createHaloMaterial({
+  color,
+  sizePixels,
+  strength,
+  falloff,
+}: {
+  color: string;
+  sizePixels: number;
+  strength: number;
+  falloff: number;
+}) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uColor: { value: new THREE.Color(color) },
+      uStrength: { value: strength },
+      uFalloff: { value: falloff },
+      uSizePixels: { value: sizePixels },
+      uPixelRatio: { value: 1 },
+      uDepthBias: { value: 0.00001 },
+    },
+    vertexShader: haloVertexShader,
+    fragmentShader: haloFragmentShader,
+    transparent: true,
+    depthTest: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    toneMapped: false,
+  });
+}
 
 export function createStarMarkerHaloResources({
   color,
@@ -102,29 +143,65 @@ export function createStarMarkerHaloResources({
     'position',
     new THREE.Float32BufferAttribute([0, 0, 0], 3)
   );
-  const material = new THREE.ShaderMaterial({
-    uniforms: {
-      uColor: { value: new THREE.Color(color) },
-      uGlowIntensity: { value: glowIntensity },
-      uGlowSizePixels: { value: glowSizePixels },
-      uPixelRatio: { value: 1 },
-    },
-    vertexShader: haloVertexShader,
-    fragmentShader: haloFragmentShader,
-    transparent: true,
-    depthTest: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    toneMapped: false,
-  });
 
-  return { geometry, material };
+  const intensity = Math.max(0, glowIntensity);
+  const layers: StarMarkerHaloLayer[] = [
+    {
+      material: createHaloMaterial({
+        color,
+        sizePixels: glowSizePixels,
+        strength: 0.28 * intensity,
+        falloff: 2.6,
+      }),
+      renderOrder: 1,
+    },
+    {
+      material: createHaloMaterial({
+        color,
+        sizePixels: glowSizePixels * (18 / 34),
+        strength: 0.62 * intensity,
+        falloff: 2.2,
+      }),
+      renderOrder: 2,
+    },
+    {
+      material: createHaloMaterial({
+        color,
+        sizePixels: glowSizePixels * (9 / 34),
+        strength: 0.95 * intensity,
+        falloff: 1.9,
+      }),
+      renderOrder: 3,
+    },
+    {
+      material: createHaloMaterial({
+        color: CORE_COLOR,
+        sizePixels: 3,
+        strength: 2.3 * intensity,
+        falloff: 1.3,
+      }),
+      renderOrder: 4,
+    },
+  ];
+
+  return { geometry, layers };
+}
+
+export function setStarMarkerHaloPixelRatio(
+  resources: StarMarkerHaloResources,
+  pixelRatio: number
+) {
+  for (const layer of resources.layers) {
+    layer.material.uniforms.uPixelRatio.value = pixelRatio;
+  }
 }
 
 export function disposeStarMarkerHaloResources({
   geometry,
-  material,
+  layers,
 }: StarMarkerHaloResources) {
   geometry.dispose();
-  material.dispose();
+  for (const layer of layers) {
+    layer.material.dispose();
+  }
 }

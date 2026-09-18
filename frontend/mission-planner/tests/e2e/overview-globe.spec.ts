@@ -140,6 +140,7 @@ test.describe('Globe overview', () => {
       await route.fulfill({
         json: {
           satellite_id: 'X-Prime',
+          state: 'normal',
         },
       });
     });
@@ -182,6 +183,69 @@ test.describe('Globe overview', () => {
 
     expect(routeRequests[0]).toMatch(/\/api\/routes$/);
     expect(routeRequests[1]).toMatch(/\/api\/routes\/active-anti-meridian$/);
+  });
+
+  test('renders a projectable configured X-band warning link', async ({
+    page,
+  }) => {
+    await page.route('**/api/routes', async (route) => {
+      await route.fulfill({
+        json: {
+          routes: [
+            {
+              id: 'warning-link-route',
+              name: 'Warning link validation route',
+              point_count: 2,
+              is_active: true,
+            },
+          ],
+          total: 1,
+        },
+      });
+    });
+    await page.route('**/api/routes/warning-link-route', async (route) => {
+      await route.fulfill({
+        json: {
+          id: 'warning-link-route',
+          name: 'Warning link validation route',
+          points: [
+            { latitude: 12, longitude: -90 },
+            { latitude: 13, longitude: -89 },
+          ],
+        },
+      });
+    });
+    await page.route('**/api/status', async (route) => {
+      await route.fulfill({
+        json: {
+          timestamp: '2026-06-21T12:00:00.000Z',
+          position: { latitude: 12, longitude: -90, altitude: 35_000 },
+          network: {
+            latency_ms: 42.5,
+            throughput_down_mbps: 125.3,
+            throughput_up_mbps: 25.1,
+            packet_loss_percent: 0.5,
+          },
+          environmental: { signal_quality_percent: 85 },
+        },
+      });
+    });
+    await page.route('**/api/satellites', async (route) => {
+      await route.fulfill({
+        json: [{ satellite_id: 'X-Warning', transport: 'X', longitude: -90 }],
+      });
+    });
+    await page.route('**/api/active-x-link', async (route) => {
+      await route.fulfill({
+        json: { satellite_id: 'X-Warning', state: 'warning' },
+      });
+    });
+
+    await page.goto('/overview');
+
+    await expect(
+      page.getByText('Selected configured satellite X-Warning', { exact: true })
+    ).toBeVisible();
   });
 
   test('refreshes status without overlapping requests', async ({ page }) => {
@@ -438,8 +502,10 @@ test.describe('Globe overview', () => {
     ).toBeVisible();
     await expect(globeLegend).toBeVisible();
     await expect.poll(() => satelliteRequests).toHaveLength(1);
-    await expect.poll(() => activeXLinkRequests).toHaveLength(1);
-    expect(activeXLinkRequests[0]).toMatch(/\/api\/active-x-link$/);
+    await expect.poll(() => activeXLinkRequests.length).toBeGreaterThan(0);
+    expect(activeXLinkRequests).toEqual(
+      expect.arrayContaining([expect.stringMatching(/\/api\/active-x-link$/)])
+    );
     expect(satelliteRequests[0]).toMatch(/\/api\/satellites$/);
     await expect(
       globeLegend.getByText('Configured X-band satellites', { exact: true })

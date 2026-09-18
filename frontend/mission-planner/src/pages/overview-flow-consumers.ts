@@ -17,71 +17,110 @@ const DISABLED: FlowEmitterConfig = {
   maxParticles: 0,
 };
 
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function lerp(start: number, end: number, amount: number): number {
+  return start + (end - start) * amount;
+}
+
 export function routeFlowEmitters(): {
   forward: FlowEmitterConfig;
   reverse: FlowEmitterConfig;
 } {
   return {
+    // One emitter for the whole route. Speed is scene units per second, so the
+    // apparent travel velocity stays consistent regardless of route length.
     forward: {
       enabled: true,
-      rate: 1.5,
-      speed: 0.16,
+      rate: 1,
+      speed: 0.1,
       color: '#ffb000',
-      size: 6,
-      brightness: 1.1,
-      maxParticles: 8,
+      size: 15,
+      brightness: 1.35,
+      maxParticles: 1,
+      maxWorldSize: 0.05,
     },
     reverse: DISABLED,
   };
 }
 
-function throughputRate(mbps: number): number {
-  return Math.min(8, Math.max(0.25, Math.log2(mbps + 1) / 1.5));
+function throughputToRate(
+  mbps: number | undefined,
+  maxMbps: number,
+  maxRate: number
+): number {
+  if (mbps === undefined || !Number.isFinite(mbps) || mbps <= 0) {
+    return 0;
+  }
+
+  const normalized = clamp(Math.log1p(mbps) / Math.log1p(maxMbps), 0, 1);
+  return maxRate * normalized;
+}
+
+function pingToBrightness(ms: number): number {
+  const normalized = clamp((ms - 20) / 280, 0, 1);
+  return lerp(3.4, 0.22, Math.pow(normalized, 0.55));
+}
+
+function pingToSize(ms: number): number {
+  const normalized = clamp((ms - 20) / 280, 0, 1);
+  return lerp(9.5, 4.8, Math.pow(normalized, 0.7));
 }
 
 export function activeLinkFlowEmitters(telemetry: LinkTelemetry | undefined): {
   forward: FlowEmitterConfig;
   reverse: FlowEmitterConfig;
 } {
-  const downlink = telemetry?.throughput_down_mbps;
-  const uplink = telemetry?.throughput_up_mbps;
-  if (
-    !Number.isFinite(downlink) ||
-    !Number.isFinite(uplink) ||
-    downlink === undefined ||
-    uplink === undefined
-  ) {
+  if (!telemetry) {
     return { forward: DISABLED, reverse: DISABLED };
   }
 
-  const packetLoss = Math.min(
-    1,
-    Math.max(0, (telemetry?.packet_loss_percent ?? 0) / 100)
-  );
-  const latency = Math.max(0, telemetry?.latency_ms ?? 0);
-  const latencyFactor = Math.min(latency, 500) / 500;
-  const speed = 0.2;
+  const downlinkRate = throughputToRate(telemetry.throughput_down_mbps, 500, 5);
+  const uplinkRate = throughputToRate(telemetry.throughput_up_mbps, 500, 5);
+  const latency =
+    telemetry.latency_ms !== undefined && Number.isFinite(telemetry.latency_ms)
+      ? Math.max(0, telemetry.latency_ms)
+      : 100;
+  const packetLoss = clamp((telemetry.packet_loss_percent ?? 0) / 100, 0, 1);
+  const size = pingToSize(latency);
+  const brightness = pingToBrightness(latency);
   const failure =
-    packetLoss > 0 ? { probability: packetLoss, color: '#ff3b30' } : undefined;
+    packetLoss > 0
+      ? {
+          probability: packetLoss,
+          color: '#ff304f',
+          duration: 0.42,
+          minProgress: 0.15,
+          maxProgress: 0.85,
+        }
+      : undefined;
+
   return {
+    // Link points are aircraft -> satellite, so forward represents upload.
+    // 2.5 scene units/sec preserves roughly the prior GEO-link visual pace.
     forward: {
-      enabled: true,
-      rate: throughputRate(downlink),
-      speed,
-      color: '#72b7ff',
-      size: 7 + latencyFactor * 2,
-      brightness: 1 + latencyFactor * 0.5,
-      maxParticles: 12,
+      enabled: uplinkRate > 0,
+      rate: uplinkRate,
+      speed: 0.5,
+      color: '#fbbf24',
+      size,
+      brightness,
+      maxParticles: 100,
+      maxWorldSize: 0.07,
       failure,
     },
+    // Reverse travels satellite -> aircraft and represents download.
     reverse: {
-      enabled: true,
-      rate: throughputRate(uplink),
-      speed,
-      color: '#c084fc',
-      size: 6 + latencyFactor * 2,
-      brightness: 0.8 + latencyFactor * 0.5,
-      maxParticles: 8,
+      enabled: downlinkRate > 0,
+      rate: downlinkRate,
+      speed: 0.5,
+      color: '#67e8f9',
+      size,
+      brightness,
+      maxParticles: 100,
+      maxWorldSize: 0.07,
       failure,
     },
   };

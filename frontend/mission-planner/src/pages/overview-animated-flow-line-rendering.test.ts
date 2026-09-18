@@ -2,11 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import {
   FlowParticlePool,
-  FlowParticlePoolLifecycle,
   createAnimatedFlowResources,
   disposeAnimatedFlowResources,
   interpolateFlowPath,
+  prepareFlowPath,
+  setAnimatedFlowViewport,
   writeFlowParticles,
+  writePreparedFlowPathPosition,
 } from './overview-animated-flow-line-rendering';
 
 const points: [number, number, number][] = [
@@ -14,6 +16,7 @@ const points: [number, number, number][] = [
   [2, 0, 0],
   [2, 2, 0],
 ];
+const path = prepareFlowPath(points);
 
 const forward = {
   enabled: true,
@@ -23,10 +26,13 @@ const forward = {
   size: 8,
   brightness: 1,
   maxParticles: 2,
+  maxWorldSize: 0.05,
 } as const;
 
 describe('AnimatedFlowLine rendering contract', () => {
-  it('interpolates arbitrary multi-segment paths including endpoints', () => {
+  it('prepares and interpolates arbitrary multi-segment paths', () => {
+    expect(path.totalLength).toBe(4);
+    expect(Array.from(path.cumulativeLengths)).toEqual([0, 2, 4]);
     expect(interpolateFlowPath(points, 0)).toEqual([0, 0, 0]);
     expect(interpolateFlowPath(points, 0.5)).toEqual([2, 0, 0]);
     expect(interpolateFlowPath(points, 1)).toEqual([2, 2, 0]);
@@ -34,7 +40,106 @@ describe('AnimatedFlowLine rendering contract', () => {
     expect(interpolateFlowPath([[1, 2, 3]], 0.5)).toEqual([1, 2, 3]);
   });
 
-  it('uses one renderer-native Points resource with dynamic attributes', () => {
+  it('writes prepared path positions into caller-owned scratch storage', () => {
+    const target = new THREE.Vector3();
+
+    expect(writePreparedFlowPathPosition(path, 0.75, target)).toBe(true);
+    expect(target.toArray()).toEqual([2, 1, 0]);
+    expect(writePreparedFlowPathPosition(path, 0.25, target)).toBe(true);
+    expect(target.toArray()).toEqual([1, 0, 0]);
+    expect(
+      writePreparedFlowPathPosition(prepareFlowPath([]), 0.5, target)
+    ).toBe(false);
+  });
+
+  it('tracks active particle directions without allocating filter arrays', () => {
+    const filter = vi.spyOn(Array.prototype, 'filter');
+    const pool = new FlowParticlePool({
+      forward: { ...forward, maxParticles: 1 },
+      random: () => 0.5,
+    });
+
+    pool.update(0.5, path.totalLength);
+    pool.update(0.5, path.totalLength);
+
+    expect(pool.snapshot()).toHaveLength(1);
+    expect(filter).not.toHaveBeenCalled();
+  });
+
+  it('treats speed as scene units per second independent of path length', () => {
+    const shortPath = prepareFlowPath([
+      [0, 0, 0],
+      [2, 0, 0],
+    ]);
+    const longPath = prepareFlowPath([
+      [0, 0, 0],
+      [8, 0, 0],
+    ]);
+    const emitter = { ...forward, rate: 1, speed: 1, maxParticles: 1 };
+    const shortPool = new FlowParticlePool({
+      forward: emitter,
+      random: () => 0.5,
+    });
+    const longPool = new FlowParticlePool({
+      forward: emitter,
+      random: () => 0.5,
+    });
+
+    shortPool.update(1, shortPath.totalLength);
+    longPool.update(1, longPath.totalLength);
+    shortPool.update(1, shortPath.totalLength);
+    longPool.update(1, longPath.totalLength);
+
+    expect(shortPool.snapshot()[0].progress).toBeCloseTo(0.5);
+    expect(longPool.snapshot()[0].progress).toBeCloseTo(0.125);
+
+    const shortPosition = interpolateFlowPath(
+      shortPath.points,
+      shortPool.snapshot()[0].progress
+    );
+    const longPosition = interpolateFlowPath(
+      longPath.points,
+      longPool.snapshot()[0].progress
+    );
+    expect(shortPosition?.[0]).toBeCloseTo(1);
+    expect(longPosition?.[0]).toBeCloseTo(1);
+  });
+
+  it('emits only at the whole-path start and traverses across segment boundaries', () => {
+    const pool = new FlowParticlePool({
+      forward: {
+        ...forward,
+        rate: 1,
+        speed: 1,
+        maxParticles: 4,
+      },
+      random: () => 0.5,
+    });
+    const resources = createAnimatedFlowResources(4);
+
+    pool.update(1, path.totalLength);
+    expect(pool.snapshot().map((particle) => particle.progress)).toEqual([0]);
+    writeFlowParticles(resources, path, pool.snapshot());
+    const positions = resources.geometry.getAttribute(
+      'position'
+    ) as THREE.BufferAttribute;
+    expect(positions.getX(0)).toBe(0);
+    expect(positions.getY(0)).toBe(0);
+
+    pool.update(1, path.totalLength);
+    expect(pool.snapshot().map((particle) => particle.progress)).toEqual([
+      0.25, 0,
+    ]);
+    writeFlowParticles(resources, path, pool.snapshot());
+    expect(positions.getX(0)).toBeCloseTo(1);
+    expect(positions.getY(0)).toBeCloseTo(0);
+    expect(positions.getX(1)).toBe(0);
+    expect(positions.getY(1)).toBe(0);
+
+    disposeAnimatedFlowResources(resources);
+  });
+
+  it('uses one screen-space renderer-native Points resource with a world-size cap', () => {
     const resources = createAnimatedFlowResources(5);
 
     expect(resources.points).toBeInstanceOf(THREE.Points);
@@ -46,12 +151,15 @@ describe('AnimatedFlowLine rendering contract', () => {
       (resources.geometry.getAttribute('color') as THREE.BufferAttribute).usage
     ).toBe(THREE.DynamicDrawUsage);
     expect(
-      (resources.geometry.getAttribute('size') as THREE.BufferAttribute).usage
-    ).toBe(THREE.DynamicDrawUsage);
-    expect(
-      (resources.geometry.getAttribute('brightness') as THREE.BufferAttribute)
+      (resources.geometry.getAttribute('maxWorldSize') as THREE.BufferAttribute)
         .usage
     ).toBe(THREE.DynamicDrawUsage);
+    expect(resources.material.uniforms.uPixelRatio.value).toBe(1);
+    expect(resources.material.uniforms.uViewportHeightPixels.value).toBe(1);
+    expect(resources.material.uniforms.uDepthBias.value).toBeGreaterThan(0);
+    expect(resources.material.blending).toBe(THREE.AdditiveBlending);
+    expect(resources.material.toneMapped).toBe(false);
+    expect(resources.points.frustumCulled).toBe(false);
     expect(resources.points.children).toHaveLength(0);
     expect(resources.points.castShadow).toBe(false);
     expect(resources.points.receiveShadow).toBe(false);
@@ -59,15 +167,30 @@ describe('AnimatedFlowLine rendering contract', () => {
     disposeAnimatedFlowResources(resources);
   });
 
+  it('initializes depth ownership and updates viewport uniforms through renderer helpers', () => {
+    const resources = createAnimatedFlowResources(1, {
+      depthTest: false,
+      depthWrite: true,
+    });
+
+    setAnimatedFlowViewport(resources, 2, 1_080);
+
+    expect(resources.material.depthTest).toBe(false);
+    expect(resources.material.depthWrite).toBe(true);
+    expect(resources.material.uniforms.uPixelRatio.value).toBe(2);
+    expect(resources.material.uniforms.uViewportHeightPixels.value).toBe(1_080);
+
+    disposeAnimatedFlowResources(resources);
+  });
+
   it('orders forward and reverse particles independently within a bounded pool', () => {
     const pool = new FlowParticlePool({
-      points,
       forward,
       reverse: { ...forward, color: '#00ffff', maxParticles: 1 },
       random: () => 0.5,
     });
 
-    pool.update(0.5);
+    pool.update(0.5, path.totalLength);
     const particles = pool.snapshot();
 
     expect(particles).toHaveLength(2);
@@ -76,113 +199,102 @@ describe('AnimatedFlowLine rendering contract', () => {
       'reverse',
     ]);
     expect(particles[0].progress).toBeLessThan(particles[1].progress);
-    pool.update(10);
+    pool.update(10, path.totalLength);
     expect(pool.snapshot().length).toBeLessThanOrEqual(3);
   });
 
   it('snapshots emitter properties at birth while applying updates to new particles', () => {
-    const pool = new FlowParticlePool({ points, forward, random: () => 0.5 });
+    const pool = new FlowParticlePool({ forward, random: () => 0.5 });
 
-    pool.update(0.5);
-    pool.configure({ ...forward, color: '#00ff00', speed: 2 });
-    pool.update(0.5);
-
-    expect(pool.snapshot()[0]).toMatchObject({ color: '#ffb000', speed: 1 });
-    expect(pool.snapshot()[1]).toMatchObject({ color: '#00ff00', speed: 2 });
-  });
-
-  it('recycles deterministically and renders a bounded failure burst inside the path', () => {
-    const pool = new FlowParticlePool({
-      points,
-      forward: {
-        ...forward,
-        rate: 1,
-        maxParticles: 1,
-        failure: { probability: 1, burstCount: 3, duration: 0.5 },
-      },
-      random: () => 0,
+    pool.update(0.5, path.totalLength);
+    pool.configure({
+      ...forward,
+      color: '#00ff00',
+      speed: 2,
+      maxWorldSize: 0.1,
     });
+    pool.update(0.5, path.totalLength);
 
-    pool.update(1);
-    pool.update(0.5);
-    expect(pool.snapshot().some((particle) => particle.state === 'burst')).toBe(
-      true
-    );
-    expect(pool.snapshot().every((particle) => particle.progress < 1)).toBe(
-      true
-    );
-    expect(pool.snapshot().length).toBeLessThanOrEqual(3);
+    expect(pool.snapshot()[0]).toMatchObject({
+      color: '#ffb000',
+      speed: 1,
+      maxWorldSize: 0.05,
+    });
+    expect(pool.snapshot()[1]).toMatchObject({
+      color: '#00ff00',
+      speed: 2,
+      maxWorldSize: 0.1,
+    });
   });
 
-  it('snapshots a configured failure color at birth and writes it for terminal bursts', () => {
+  it('keeps a failed particle in place as one expanding terminal flash', () => {
     const pool = new FlowParticlePool({
-      points,
       forward: {
         ...forward,
         rate: 1,
         maxParticles: 1,
-        failure: {
-          probability: 1,
-          burstCount: 1,
-          duration: 1,
-          color: '#ff0000',
-        },
+        failure: { probability: 1, duration: 0.5, color: '#ff304f' },
       },
       random: () => 0,
     });
     const resources = createAnimatedFlowResources(1);
 
-    pool.update(1);
-    pool.configure({
-      ...forward,
-      rate: 1,
-      maxParticles: 1,
-      failure: {
-        probability: 1,
-        burstCount: 1,
-        duration: 1,
-        color: '#00ff00',
-      },
-    });
-    pool.update(0.5);
+    pool.update(1, path.totalLength);
+    pool.update(0.7, path.totalLength);
     const burst = pool.snapshot()[0];
-    writeFlowParticles(resources, points, [burst]);
+    expect(burst).toMatchObject({ state: 'burst', failureColor: '#ff304f' });
 
-    expect(burst).toMatchObject({ state: 'burst', failureColor: '#ff0000' });
+    writeFlowParticles(resources, path, [burst]);
+    expect(resources.geometry.drawRange.count).toBe(1);
     expect(
-      Array.from(
-        (resources.geometry.getAttribute('color') as THREE.BufferAttribute)
-          .array
-      ).slice(0, 3)
-    ).toEqual([1, 0, 0]);
+      (resources.geometry.getAttribute('size') as THREE.BufferAttribute).getX(0)
+    ).toBeGreaterThan(forward.size);
+    expect(
+      (
+        resources.geometry.getAttribute('maxWorldSize') as THREE.BufferAttribute
+      ).getX(0)
+    ).toBeGreaterThan(forward.maxWorldSize);
+    expect(
+      (
+        resources.geometry.getAttribute('brightness') as THREE.BufferAttribute
+      ).getX(0)
+    ).toBeGreaterThan(forward.brightness);
+
     disposeAnimatedFlowResources(resources);
   });
 
-  it('preserves emitted particles through a mounted lifecycle update with equivalent fresh points', () => {
-    const lifecycle = new FlowParticlePoolLifecycle(points, () => 0.5);
-    const firstPool = lifecycle.update(points);
+  it('retains in-flight particles while the rendered path geometry moves', () => {
+    const pool = new FlowParticlePool({ forward, random: () => 0.5 });
+    const resources = createAnimatedFlowResources(2);
 
-    firstPool.configure(forward);
-    firstPool.update(0.5);
-    const emitted = firstPool.snapshot()[0];
-    const updatedPool = lifecycle.update(
-      points.map((point) => [...point]) as typeof points
-    );
+    pool.update(0.5, path.totalLength);
+    const emitted = pool.snapshot()[0];
+    const movedPath = prepareFlowPath([
+      [10, 0, 0],
+      [12, 0, 0],
+      [12, 2, 0],
+    ]);
 
-    expect(updatedPool).toBe(firstPool);
-    expect(updatedPool.snapshot()[0]).toBe(emitted);
+    writeFlowParticles(resources, movedPath, pool.snapshot());
+
+    expect(pool.snapshot()[0]).toBe(emitted);
+    expect(
+      (
+        resources.geometry.getAttribute('position') as THREE.BufferAttribute
+      ).getX(0)
+    ).toBeGreaterThanOrEqual(10);
+    disposeAnimatedFlowResources(resources);
   });
 
   it('reuses a released particle slot rather than growing a new object pool', () => {
     const pool = new FlowParticlePool({
-      points,
       forward: { ...forward, rate: 1, maxParticles: 1, speed: 2 },
       random: () => 0.5,
     });
 
-    pool.update(1);
+    pool.update(1, path.totalLength);
     const first = pool.snapshot()[0];
-    pool.update(1);
+    pool.update(2.1, path.totalLength);
 
     expect(pool.snapshot()[0]).toBe(first);
   });
