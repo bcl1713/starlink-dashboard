@@ -79,7 +79,6 @@ const AIRCRAFT_HISTORY_LINE = {
   },
 };
 
-
 const atmosphereVertexShader = `
   varying vec3 vNormal;
   varying vec3 vViewPosition;
@@ -176,7 +175,6 @@ function ConfiguredXBandSatelliteMarker({
     </>
   );
 }
-
 
 function Atmosphere() {
   return (
