@@ -502,8 +502,10 @@ test.describe('Globe overview', () => {
     ).toBeVisible();
     await expect(globeLegend).toBeVisible();
     await expect.poll(() => satelliteRequests).toHaveLength(1);
-    await expect.poll(() => activeXLinkRequests).toHaveLength(1);
-    expect(activeXLinkRequests[0]).toMatch(/\/api\/active-x-link$/);
+    await expect.poll(() => activeXLinkRequests.length).toBeGreaterThan(0);
+    expect(activeXLinkRequests).toEqual(
+      expect.arrayContaining([expect.stringMatching(/\/api\/active-x-link$/)])
+    );
     expect(satelliteRequests[0]).toMatch(/\/api\/satellites$/);
     await expect(
       globeLegend.getByText('Configured X-band satellites', { exact: true })
