@@ -178,14 +178,6 @@ test.describe('Globe overview', () => {
         exact: false,
       })
     ).toBeVisible();
-    await expect(
-      page
-        .getByLabel('Globe legend')
-        .getByLabel('Warning: active X-band link is in warning state')
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole('img', { name: 'Warning marker on active X-band link' })
-    ).toHaveCount(0);
     await expect(page.locator('canvas')).toBeVisible();
     await expect.poll(() => routeRequests).toHaveLength(2);
 
@@ -193,7 +185,7 @@ test.describe('Globe overview', () => {
     expect(routeRequests[1]).toMatch(/\/api\/routes\/active-anti-meridian$/);
   });
 
-  test('renders a non-color warning marker on a projectable configured X-band link', async ({
+  test('renders a projectable configured X-band warning link', async ({
     page,
   }) => {
     await page.route('**/api/routes', async (route) => {
@@ -253,14 +245,6 @@ test.describe('Globe overview', () => {
 
     await expect(
       page.getByText('Selected configured satellite X-Warning', { exact: true })
-    ).toBeVisible();
-    await expect(
-      page
-        .getByLabel('Globe legend')
-        .getByLabel('Warning: active X-band link is in warning state')
-    ).toBeVisible();
-    await expect(
-      page.getByRole('img', { name: 'Warning marker on active X-band link' })
     ).toBeVisible();
   });
 

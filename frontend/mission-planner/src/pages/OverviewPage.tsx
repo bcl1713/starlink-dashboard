@@ -35,6 +35,7 @@ import { globePosition } from './globe-coordinates';
 import { useSatellites } from '@/hooks/api/useSatellites';
 import { projectConfiguredXBandSatellite3d } from './x-band-satellites-projection';
 import { useActiveXLink } from '@/hooks/api/useActiveXLink';
+import { satcomLineStyle } from './satcom-link-style';
 import {
   calculateConfiguredXBandLookAngles,
   projectActiveConfiguredXBandSatelliteId,
@@ -78,47 +79,6 @@ const AIRCRAFT_HISTORY_LINE = {
   },
 };
 
-const SATCOM_NORMAL_LINE = {
-  outer: {
-    color: '#1d4ed8',
-    linewidth: 9,
-    opacity: 0.12,
-    blending: THREE.AdditiveBlending,
-  },
-  glow: {
-    color: '#3b82f6',
-    linewidth: 5,
-    opacity: 0.34,
-    blending: THREE.AdditiveBlending,
-  },
-  core: {
-    color: '#3b82f6',
-    linewidth: 1.5,
-    opacity: 0.88,
-    blending: THREE.NormalBlending,
-  },
-};
-
-const SATCOM_WARNING_LINE = {
-  outer: {
-    color: '#b91c1c',
-    linewidth: 9,
-    opacity: 0.13,
-    blending: THREE.AdditiveBlending,
-  },
-  glow: {
-    color: '#ef4444',
-    linewidth: 5,
-    opacity: 0.36,
-    blending: THREE.AdditiveBlending,
-  },
-  core: {
-    color: '#ef4444',
-    linewidth: 1.5,
-    opacity: 0.9,
-    blending: THREE.NormalBlending,
-  },
-};
 
 const atmosphereVertexShader = `
   varying vec3 vNormal;
@@ -217,28 +177,6 @@ function ConfiguredXBandSatelliteMarker({
   );
 }
 
-function XBandWarningMarker({
-  points,
-}: {
-  points: readonly [[number, number, number], [number, number, number]];
-}) {
-  const position: [number, number, number] = [
-    (points[0][0] + points[1][0]) / 2,
-    (points[0][1] + points[1][1]) / 2,
-    (points[0][2] + points[1][2]) / 2,
-  ];
-  return (
-    <Html center position={position}>
-      <span
-        aria-label="Warning marker on active X-band link"
-        className="x-band-warning-marker"
-        role="img"
-      >
-        !
-      </span>
-    </Html>
-  );
-}
 
 function Atmosphere() {
   return (
@@ -382,8 +320,7 @@ export function OverviewPage() {
     () => activeLinkFlowEmitters(status?.network),
     [status?.network]
   );
-  const satcomLineStyle =
-    activeXLink?.state === 'warning' ? SATCOM_WARNING_LINE : SATCOM_NORMAL_LINE;
+  const activeXBandLineStyle = satcomLineStyle(activeXLink?.state);
   const activeConfiguredXBandLookAngles = activeConfiguredXBandLink
     ? calculateConfiguredXBandLookAngles(activeConfiguredXBandLink)
     : null;
@@ -542,18 +479,6 @@ export function OverviewPage() {
             <span>Active configured X-band link</span>
             <strong>{activeConfiguredXBandLinkState}</strong>
           </li>
-          {activeXLink?.state === 'warning' && (
-            <li>
-              <span
-                aria-hidden="true"
-                className="globe-legend__marker globe-legend__marker--x-band-warning"
-              />
-              <span>Active X-band link</span>
-              <strong aria-label="Warning: active X-band link is in warning state">
-                Warning marker displayed
-              </strong>
-            </li>
-          )}
           <li>
             <span aria-hidden="true" />
             <span>Configured GEO analysis</span>
@@ -622,14 +547,11 @@ export function OverviewPage() {
                 points={activeConfiguredXBandLink.points}
                 forward={activeLinkFlow.forward}
                 reverse={activeLinkFlow.reverse}
-                outer={satcomLineStyle.outer}
-                glow={satcomLineStyle.glow}
-                core={satcomLineStyle.core}
+                outer={activeXBandLineStyle.outer}
+                glow={activeXBandLineStyle.glow}
+                core={activeXBandLineStyle.core}
                 depthWrite={false}
               />
-              {activeXLink?.state === 'warning' && (
-                <XBandWarningMarker points={activeConfiguredXBandLink.points} />
-              )}
             </>
           )}
           {configuredXBandSatellites.map((satellite) => (

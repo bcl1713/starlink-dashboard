@@ -169,14 +169,6 @@
   box-shadow: 0 0 6px rgb(192 132 252 / 90%);
 }
 
-.globe-legend__marker--x-band-warning {
-  border: 1px solid #f8fafc;
-  background: repeating-linear-gradient(
-    135deg,
-    #ef4444 0 0.18rem,
-    #7f1d1d 0.18rem 0.36rem
-  );
-}
 
 .globe-marker-label {
   display: block;
@@ -187,24 +179,4 @@
   letter-spacing: 0.08em;
   pointer-events: none;
   text-shadow: 0 1px 4px rgb(3 3 7 / 95%);
-}
-
-.x-band-warning-marker {
-  display: grid;
-  width: 1.5rem;
-  height: 1.5rem;
-  place-items: center;
-  border: 2px solid #f8fafc;
-  border-radius: 999px;
-  background: repeating-linear-gradient(
-    135deg,
-    #ef4444 0 0.25rem,
-    #7f1d1d 0.25rem 0.5rem
-  );
-  color: #f8fafc;
-  font-size: 1rem;
-  font-weight: 900;
-  line-height: 1;
-  pointer-events: none;
-  text-shadow: 0 1px 2px rgb(3 3 7 / 95%);
 }
