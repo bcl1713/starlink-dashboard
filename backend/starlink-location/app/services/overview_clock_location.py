@@ -21,6 +21,10 @@ def resolve_clock_location(
     locality_lookup: Callable[[float, float], Mapping[str, str] | None],
 ) -> ClockLocation | None:
     """Resolve one endpoint with injected offline geographic lookups."""
+
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        return None
+
     time_zone = time_zone_lookup(latitude, longitude)
     if time_zone is None:
         return None

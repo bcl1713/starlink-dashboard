@@ -1,7 +1,12 @@
+import pytest
 from app.services.overview_clock_location import (
     ClockLocation,
     resolve_clock_location,
 )
+
+
+def unexpected_lookup(latitude: float, longitude: float):
+    raise AssertionError("lookup must not run for invalid coordinates")
 
 
 def test_resolves_omaha_endpoint_to_timezone_and_city_state_label():
@@ -69,5 +74,28 @@ def test_returns_none_when_timezone_is_unavailable():
         0.0,
         time_zone_lookup=lambda latitude, longitude: None,
         locality_lookup=lambda latitude, longitude: None,
+    )
+    assert result is None
+
+
+@pytest.mark.parametrize(
+    (
+        "latitude",
+        "longitude",
+    ),
+    [
+        (91.0, 0.0),
+        (float("nan"), 0.0),
+        (0.0, float("nan")),
+        (float("inf"), 0.0),
+        (0.0, float("-inf")),
+    ],
+)
+def test_lookup_must_not_run_for_invalid_coordinates(latitude, longitude):
+    result = resolve_clock_location(
+        latitude,
+        longitude,
+        time_zone_lookup=unexpected_lookup,
+        locality_lookup=unexpected_lookup,
     )
     assert result is None
