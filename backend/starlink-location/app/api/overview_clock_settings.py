@@ -26,7 +26,7 @@ _overview_clock_settings_store: OverviewClockSettingsStore | None = None
 def set_overview_clock_settings_store(
     store: OverviewClockSettingsStore | None,
 ) -> None:
-    """Set the initialized persistent overview-clock seettings store."""
+    """Set the initialized persistent overview-clock settings store."""
     global _overview_clock_settings_store
     _overview_clock_settings_store = store
 
@@ -54,7 +54,7 @@ async def get_overview_clock_settings():
 async def update_overview_clock_settings(
     settings: OverviewClockSettingsUpdate,
 ):
-    """Persist the complete editable operation-clock collection."""
+    """Persist the complete editable operational-clock collection."""
     if _overview_clock_settings_store is None:
         raise HTTPException(
             status_code=503,
