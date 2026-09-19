@@ -32,7 +32,7 @@ def resolve_clock_location(
     if locality is None:
         return ClockLocation(
             time_zone=time_zone,
-            label=TIME_ZONE_REPRESENTATIVE_LABELS[time_zone],
+            label=TIME_ZONE_REPRESENTATIVE_LABELS.get(time_zone, time_zone),
         )
     if locality["country_code"] == "US":
         label = f"{locality['city']}, {locality['admin1']}"

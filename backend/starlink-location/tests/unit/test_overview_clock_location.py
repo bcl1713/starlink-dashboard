@@ -100,3 +100,16 @@ def test_lookup_must_not_run_for_invalid_coordinates(latitude, longitude):
         locality_lookup=unexpected_lookup,
     )
     assert result is None
+
+
+def test_uses_the_iana_timezone_as_the_honest_unmapped_locality_fallback():
+    result = resolve_clock_location(
+        48.8566,
+        2.3522,
+        time_zone_lookup=lambda latitude, longitude: "Europe/Paris",
+        locality_lookup=lambda latitude, longitude: None,
+    )
+    assert result == ClockLocation(
+        time_zone="Europe/Paris",
+        label="Europe/Paris",
+    )
