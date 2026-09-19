@@ -52,7 +52,8 @@ import {
   activeLinkFlowEmitters,
   routeFlowEmitters,
 } from './overview-flow-consumers';
-
+import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
+import { OverviewClockPanel } from './OverviewClockPanel';
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
 const AIRCRAFT_HISTORY_LINE = {
@@ -257,6 +258,11 @@ export function OverviewPage() {
             : null;
 
   const currentTime = useCurrentTime(1_000);
+  const {
+    data: overviewClockSettings,
+    isError: isOverviewClockSettingsError,
+    isLoading: isLoadingOverviewClockSettings,
+  } = useOverviewClockSettings();
   const {
     data: status,
     isLoading: isLoadingStatus,
@@ -484,7 +490,15 @@ export function OverviewPage() {
           </li>
         </ul>
       </aside>
-      <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
+      <div className="overview-top-overlays">
+        <OverviewClockPanel
+          clocks={overviewClockSettings?.clocks}
+          currentTime={currentTime}
+          isError={isOverviewClockSettingsError}
+          isLoading={isLoadingOverviewClockSettings}
+        />
+        <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
+      </div>
       <Canvas camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}>
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.5} />

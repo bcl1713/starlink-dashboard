@@ -104,11 +104,7 @@
   line-height: 1.5;
 }
 .overview-metrics {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 1;
-  width: min(20rem, calc(100% - 2rem));
+  width: min(20rem, 100%);
   border: 1px solid rgb(148 163 184 / 35%);
   border-radius: 0.75rem;
   padding: 0.875rem 1rem;
@@ -169,7 +165,6 @@
   box-shadow: 0 0 6px rgb(192 132 252 / 90%);
 }
 
-
 .globe-marker-label {
   display: block;
   transform: translate(-50%, 100%);
@@ -179,4 +174,55 @@
   letter-spacing: 0.08em;
   pointer-events: none;
   text-shadow: 0 1px 4px rgb(3 3 7 / 95%);
+}
+.overview-top-overlays {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 1;
+  display: grid;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+.overview-clock-panel {
+  width: 100%;
+}
+.operational-clock-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.625rem;
+}
+.operational-clock {
+  min-width: 0;
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: rgb(3 3 7 / 82%);
+  color: #f8fafc;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+.operational-clock__label {
+  margin: 0;
+  overflow: hidden;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.operational-clock__time {
+  display: block;
+  margin-top: 0.375rem;
+  color: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: clamp(1.5rem, 2.25vw, 2.25rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: center;
 }

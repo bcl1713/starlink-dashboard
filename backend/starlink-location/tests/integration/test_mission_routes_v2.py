@@ -15,7 +15,96 @@ from app.mission.models import (
     TransportConfig,
 )
 from app.mission.timeline_service import TimelineSummary
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
+from app.services.overview_clock_location import ClockLocation
+from app.services.overview_clock_settings import OverviewClockSettingsStore
 from fastapi.testclient import TestClient
+from main import app
+
+
+class TestMissionV2ClockLifecycle:
+    def test_activating_a_leg_replaces_the_two_mission_clock_slots(
+        self,
+        client: TestClient,
+        test_mission_v2,
+        tmp_path,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        store = OverviewClockSettingsStore(
+            tmp_path / "overview-clock-settings.json",
+        )
+        app.state.overview_clock_settings_store = store
+        route_manager = app.state.route_manager
+        route_id = test_mission_v2.legs[0].route_id
+        original_route = route_manager.get_route(route_id)
+        route_manager.add_route(
+            route_id,
+            ParsedRoute(
+                metadata=RouteMetadata(
+                    name="Clock lifecycle route",
+                    file_path="/tmp/clock-lifecycle-route.kml",
+                    point_count=2,
+                ),
+                points=[
+                    RoutePoint(
+                        latitude=38.9072,
+                        longitude=-77.0369,
+                    ),
+                    RoutePoint(
+                        latitude=48.8566,
+                        longitude=2.3522,
+                    ),
+                ],
+            ),
+        )
+        original_clocks = [
+            ClockLocation(
+                label="Zulu Custom",
+                time_zone="UTC",
+            ),
+            ClockLocation(
+                label="Denver, CO",
+                time_zone="America/Denver",
+            ),
+            ClockLocation(
+                label="Manual Takeoff",
+                time_zone="America/Los_Angeles",
+            ),
+            ClockLocation(
+                label="Manual Landing",
+                time_zone="Europe/London",
+            ),
+        ]
+        store.set_clocks(original_clocks)
+        try:
+            create_response = client.post(
+                "/api/v2/missions",
+                json=test_mission_v2.model_dump(mode="json"),
+            )
+            assert create_response.status_code == 201
+            activate_response = client.post(
+                f"/api/v2/missions/{test_mission_v2.id}/legs/"
+                f"{test_mission_v2.legs[0].id}/activate",
+            )
+            assert activate_response.status_code == 200
+            assert store.get_clocks() == [
+                original_clocks[0],
+                original_clocks[1],
+                ClockLocation(
+                    label="Washington, DC",
+                    time_zone="America/New_York",
+                ),
+                ClockLocation(
+                    label="Paris, FR",
+                    time_zone="Europe/Paris",
+                ),
+            ]
+        finally:
+            app.state.overview_clock_settings_store = original_store
+            if original_route is None:
+                route_manager._routes.pop(route_id, None)
+            else:
+                route_manager.add_route(route_id, original_route)
 
 
 @pytest.fixture
@@ -67,10 +156,10 @@ class TestMissionV2CreateEndpoint:
         """Test that creating a mission triggers timeline generation for its legs."""
 
         # Mock build_mission_timeline and save_mission_timeline
-        with patch("app.mission.routes_v2.build_mission_timeline") as mock_build, patch(
-            "app.mission.routes_v2.save_mission_timeline"
-        ) as mock_save:
-
+        with (
+            patch("app.mission.routes_v2.build_mission_timeline") as mock_build,
+            patch("app.mission.routes_v2.save_mission_timeline") as mock_save,
+        ):
             # Setup mock return values
             now = datetime.now(timezone.utc)
             segment = TimelineSegment(
