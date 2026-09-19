@@ -1,7 +1,7 @@
-from fastapi import FastAPI
-from starlette.requests import Request
 from app.mission.dependencies import get_overview_clock_settings_store
 from app.services.overview_clock_settings import OverviewClockSettingsStore
+from fastapi import FastAPI
+from starlette.requests import Request
 
 
 def test_returns_the_clock_settings_store_from_application_state(tmp_path):
