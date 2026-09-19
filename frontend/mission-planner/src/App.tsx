@@ -17,6 +17,7 @@ import { POIManagerPage } from './pages/POIManagerPage';
 import { DataExportPage } from './pages/DataExportPage';
 import { ConfigurationPage } from './pages/ConfigurationPage';
 import { OverviewPage } from './pages/OverviewPage';
+import { useDocumentFullscreen } from './hooks/useDocumentFullscreen';
 
 const queryClient = new QueryClient();
 
@@ -100,11 +101,12 @@ function AppNavigation() {
 }
 
 function App() {
+  const isFullscreen = useDocumentFullscreen();
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <div className="app-shell">
-          <AppNavigation />
+          {!isFullscreen && <AppNavigation />}
           <div className="app-route-content">
             <Routes>
               <Route path="/overview" element={<OverviewPage />} />

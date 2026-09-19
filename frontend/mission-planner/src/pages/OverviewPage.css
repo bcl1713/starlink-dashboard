@@ -166,6 +166,7 @@
 }
 
 .globe-marker-label {
+  white-space: nowrap;
   display: block;
   transform: translate(-50%, 100%);
   color: #f8fafc;
@@ -225,4 +226,30 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   text-align: center;
+}
+.overview-fullscreen-control {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: rgb(3 3 7 / 82%);
+  color: #f8fafc;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+}
+.overview-fullscreen-control:hover {
+  background: rgb(15 23 42 / 90%);
+}
+.overview-fullscreen-control:focus-visible {
+  outline: 2px solid #72b7ff;
+  outline-offset: 2px;
 }

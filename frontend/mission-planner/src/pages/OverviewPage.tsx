@@ -54,6 +54,7 @@ import {
 } from './overview-flow-consumers';
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { OverviewClockPanel } from './OverviewClockPanel';
+import { OverviewFullscreenControl } from './OverviewFullscreenControl';
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
 const AIRCRAFT_HISTORY_LINE = {
@@ -151,6 +152,7 @@ function GroundEntryPointMarker({
           coordinate.longitude,
           ROUTE_OVERLAY_RADIUS
         )}
+        zIndexRange={[0, 0]}
       >
         <span className="globe-marker-label">GEP</span>
       </Html>
@@ -170,7 +172,7 @@ function ConfiguredXBandSatelliteMarker({
   return (
     <>
       <StarMarker position={position} color="#FF6B6B" size={0.13} />
-      <Html occlude={[globeOccluder]} position={position}>
+      <Html occlude={[globeOccluder]} position={position} zIndexRange={[0, 0]}>
         <span className="globe-marker-label">{satelliteId}</span>
       </Html>
     </>
@@ -372,6 +374,7 @@ export function OverviewPage() {
 
   return (
     <main className="overview-page">
+      <OverviewFullscreenControl />
       <aside
         className="globe-legend"
         aria-label="Globe legend"

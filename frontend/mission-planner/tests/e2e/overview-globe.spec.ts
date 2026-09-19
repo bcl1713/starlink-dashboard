@@ -49,6 +49,29 @@ test.describe('Globe overview', () => {
       });
     });
   });
+  test('hides primary navigation during native overview fullscreen', async ({
+    page,
+  }) => {
+    await page.goto('/overview');
+    await page
+      .getByRole('button', {
+        name: 'Enter fullscreen overview',
+      })
+      .click();
+    await expect(
+      page.getByRole('navigation', {
+        name: 'Primary navigation',
+      })
+    ).toHaveCount(0);
+  });
+  test('offers native fullscreen for the overview', async ({ page }) => {
+    await page.goto('/overview');
+    await expect(
+      page.getByRole('button', {
+        name: 'Enter fullscreen overview',
+      })
+    ).toBeVisible();
+  });
   test('renders four operational clocks from saved settings', async ({
     page,
   }) => {
@@ -556,6 +579,30 @@ test.describe('Globe overview', () => {
       'No active configured X-band link'
     );
     await expect(page.getByText('X-Atlantic', { exact: true })).toBeVisible();
+    const satelliteLabelWhiteSpace = await page
+      .getByText('X-Atlantic', { exact: true })
+      .evaluate((label) => getComputedStyle(label).whiteSpace);
+    expect(satelliteLabelWhiteSpace).toBe('nowrap');
+    const satelliteLabelZIndex = await page
+      .getByText('X-Atlantic', { exact: true })
+      .evaluate((label) => {
+        let element: HTMLElement | null = label.parentElement;
+        while (element) {
+          const zIndex = Number(getComputedStyle(element).zIndex);
+          if (Number.isFinite(zIndex)) {
+            return zIndex;
+          }
+          element = element.parentElement;
+        }
+        return null;
+      });
+    if (satelliteLabelZIndex === null) {
+      throw new Error('Satellite label has no positioned z-index ancestor');
+    }
+    const topOverlayZIndex = await page
+      .locator('.overview-top-overlays')
+      .evaluate((overlay) => Number(getComputedStyle(overlay).zIndex));
+    expect(satelliteLabelZIndex).toBeLessThan(topOverlayZIndex);
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
     ).toBeVisible();
