@@ -108,23 +108,3 @@ def test_lifespan_initializes_and_closes_the_history_runtime(
     assert created_clients[0].closed is True
     assert main._overview_history_client is None
     assert main._overview_history_settings_store is None
-
-
-def test_lifespan_exposes_and_cleans_up_clock_settings_store_on_app_state(
-    monkeypatch,
-    tmp_path,
-):
-    original_store = main._overview_clock_settings_store
-    monkeypatch.setattr(
-        main,
-        "OVERVIEW_CLOCK_SETTINGS_PATH",
-        tmp_path / "overview-clock-settings.json",
-    )
-    try:
-        with TestClient(main.app):
-            assert main.app.state.overview_clock_settings_store is (
-                main._overview_clock_settings_store
-            )
-        assert not hasattr(main.app.state, "overview_clock_settings_store")
-    finally:
-        main._overview_clock_settings_store = original_store
