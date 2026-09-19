@@ -128,6 +128,7 @@ def initialize_overview_clock_settings_runtime() -> None:
     overview_clock_settings.set_overview_clock_settings_store(
         _overview_clock_settings_store,
     )
+    app.state.overview_clock_settings_store = _overview_clock_settings_store
 
 
 async def startup_event():
@@ -373,6 +374,8 @@ async def shutdown_event():
         overview_history.set_overview_history_reader(None)
         overview_history.set_overview_history_settings_store(None)
         overview_clock_settings.set_overview_clock_settings_store(None)
+        if hasattr(app.state, "overview_clock_settings_store"):
+            del app.state.overview_clock_settings_store
         if _overview_history_client is not None:
             await _overview_history_client.aclose()
             _overview_history_client = None
