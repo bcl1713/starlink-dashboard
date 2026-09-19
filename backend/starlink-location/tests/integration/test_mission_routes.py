@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.mission.models import (
     MissionLeg,
     MissionLegTimeline,
@@ -17,8 +19,9 @@ from app.mission.models import (
 )
 from app.mission.storage import delete_mission, delete_mission_timeline, mission_exists
 from app.mission.timeline_service import TimelineSummary
-from app.models.route import ParsedRoute, RouteMetadata
-from fastapi.testclient import TestClient
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
+from app.services.overview_clock_location import ClockLocation
+from app.services.overview_clock_settings import OverviewClockSettingsStore
 from main import app
 
 
@@ -547,6 +550,73 @@ class TestMissionActivateEndpoint:
         get_response = client.get(f"/api/missions/{test_mission.id}")
         new_updated_at = get_response.json()["updated_at"]
         assert new_updated_at != created_updated_at
+
+    def test_activation_replaces_mission_clock_slots_from_route_endpoints(
+        self,
+        client: TestClient,
+        test_mission,
+        tmp_path,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        store = OverviewClockSettingsStore(
+            tmp_path / "overview-clock-settings.json",
+        )
+        app.state.overview_clock_settings_store = store
+        try:
+            original_clocks = [
+                ClockLocation(
+                    label="Zulu Custom",
+                    time_zone="UTC",
+                ),
+                ClockLocation(
+                    label="Denver, CO",
+                    time_zone="America/Denver",
+                ),
+                ClockLocation(
+                    label="Manual Takeoff",
+                    time_zone="America/Los_Angeles",
+                ),
+                ClockLocation(
+                    label="Manual Landing",
+                    time_zone="Europe/London",
+                ),
+            ]
+            store.set_clocks(original_clocks)
+            route = app.state.route_manager.get_route(test_mission.route_id)
+            assert route is not None
+            route.points = [
+                RoutePoint(
+                    latitude=38.9072,
+                    longitude=-77.0369,
+                ),
+                RoutePoint(
+                    latitude=48.8566,
+                    longitude=2.3522,
+                ),
+            ]
+            create_response = client.post(
+                "/api/missions",
+                json=test_mission.model_dump(mode="json"),
+            )
+            assert create_response.status_code == 201
+            activate_response = client.post(
+                f"/api/missions/{test_mission.id}/activate",
+            )
+            assert activate_response.status_code == 200
+            assert store.get_clocks() == [
+                original_clocks[0],
+                original_clocks[1],
+                ClockLocation(
+                    label="Washington, DC",
+                    time_zone="America/New_York",
+                ),
+                ClockLocation(
+                    label="Paris, FR",
+                    time_zone="Europe/Paris",
+                ),
+            ]
+        finally:
+            app.state.overview_clock_settings_store = original_store
 
 
 class TestMissionGetActiveEndpoint:
