@@ -23,6 +23,61 @@ from main import app
 
 
 class TestMissionV2ClockLifecycle:
+    def test_deactivating_legs_resets_only_the_mission_clock_slots(
+        self,
+        client: TestClient,
+        test_mission_v2,
+        tmp_path,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        store = OverviewClockSettingsStore(
+            tmp_path / "overview-clock-settings.json",
+        )
+        app.state.overview_clock_settings_store = store
+        original_clocks = [
+            ClockLocation(
+                label="Zulu Custom",
+                time_zone="UTC",
+            ),
+            ClockLocation(
+                label="Denver, CO",
+                time_zone="America/Denver",
+            ),
+            ClockLocation(
+                label="Washington, DC",
+                time_zone="America/New_York",
+            ),
+            ClockLocation(
+                label="Paris, FR",
+                time_zone="Europe/Paris",
+            ),
+        ]
+        store.set_clocks(original_clocks)
+        try:
+            create_response = client.post(
+                "/api/v2/missions",
+                json=test_mission_v2.model_dump(mode="json"),
+            )
+            assert create_response.status_code == 201
+            deactivate_response = client.post(
+                f"/api/v2/missions/{test_mission_v2.id}/legs/deactivate",
+            )
+            assert deactivate_response.status_code == 200
+            assert store.get_clocks() == [
+                original_clocks[0],
+                original_clocks[1],
+                ClockLocation(
+                    label="Omaha, NE",
+                    time_zone="America/Chicago",
+                ),
+                ClockLocation(
+                    label="Tokyo, JP",
+                    time_zone="Asia/Tokyo",
+                ),
+            ]
+        finally:
+            app.state.overview_clock_settings_store = original_store
+
     def test_activating_a_leg_replaces_the_two_mission_clock_slots(
         self,
         client: TestClient,

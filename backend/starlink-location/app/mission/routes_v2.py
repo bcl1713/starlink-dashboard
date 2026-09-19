@@ -54,6 +54,7 @@ from app.models.poi import POICreate
 from app.satellites.coverage import CoverageSampler
 from app.services.mission_clock_service import (
     apply_mission_activation_clock_settings,
+    apply_mission_deactivation_clock_settings,
 )
 from app.services.overview_clock_geography import OfflineClockGeography
 from app.services.overview_clock_location import resolve_clock_location
@@ -1594,6 +1595,10 @@ async def activate_leg(
 @router.post("/{mission_id}/legs/deactivate", response_model=dict)
 async def deactivate_all_legs(
     mission_id: str,
+    clock_settings_store: Annotated[
+        OverviewClockSettingsStore,
+        Depends(get_overview_clock_settings_store),
+    ],
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict:
     """Deactivate all legs in the mission.
@@ -1621,6 +1626,8 @@ async def deactivate_all_legs(
 
             # Save updated mission
             save_mission_v2(mission)
+
+            apply_mission_deactivation_clock_settings(clock_settings_store)
 
             # Deactivate all routes associated with this mission's legs
             if route_manager:
