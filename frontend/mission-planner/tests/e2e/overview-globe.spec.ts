@@ -35,6 +35,41 @@ test.describe('Globe overview', () => {
         },
       });
     });
+    await page.route('**/api/overview-clocks/settings', async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          clocks: [
+            { label: 'Zulu / UTC', time_zone: 'UTC' },
+            { label: 'Washington, DC', time_zone: 'America/New_York' },
+            { label: 'Omaha, NE', time_zone: 'America/Chicago' },
+            { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+          ],
+        }),
+      });
+    });
+  });
+  test('renders four operational clocks from saved settings', async ({
+    page,
+  }) => {
+    await page.goto('/overview');
+    await expect(
+      page.getByRole('region', { name: 'Operational clocks' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /zulu \/ utc operational clock/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', {
+        name: /washington, dc operational clock/i,
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /omaha, ne operational clock/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /tokyo, jp operational clock/i })
+    ).toBeVisible();
   });
 
   test('renders an active anti-meridian route from same-origin API data', async ({
