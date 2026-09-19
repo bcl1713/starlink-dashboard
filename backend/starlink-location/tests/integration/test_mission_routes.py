@@ -926,3 +926,60 @@ class TestMissionDeactivateEndpoint:
         # Verify no active mission exists
         active_response = client.get("/api/missions/active")
         assert active_response.status_code == 404
+
+    def test_deactivation_restores_default_mission_clock_slots(
+        self,
+        client: TestClient,
+        test_mission,
+        tmp_path,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        store = OverviewClockSettingsStore(
+            tmp_path / "overview-clock-settings.json",
+        )
+        app.state.overview_clock_settings_store = store
+        try:
+            clocks_before_deactivation = [
+                ClockLocation(
+                    label="Zulu Custom",
+                    time_zone="UTC",
+                ),
+                ClockLocation(
+                    label="Denver, CO",
+                    time_zone="America/Denver",
+                ),
+                ClockLocation(
+                    label="Washington, DC",
+                    time_zone="America/New_York",
+                ),
+                ClockLocation(
+                    label="Paris, FR",
+                    time_zone="Europe/Paris",
+                ),
+            ]
+            create_response = client.post(
+                "/api/missions",
+                json=test_mission.model_dump(mode="json"),
+            )
+            assert create_response.status_code == 201
+            activate_response = client.post(
+                f"/api/missions/{test_mission.id}/activate",
+            )
+            assert activate_response.status_code == 200
+            store.set_clocks(clocks_before_deactivation)
+            deactivate_response = client.post("/api/missions/active/deactivate")
+            assert deactivate_response.status_code == 200
+            assert store.get_clocks() == [
+                clocks_before_deactivation[0],
+                clocks_before_deactivation[1],
+                ClockLocation(
+                    label="Omaha, NE",
+                    time_zone="America/Chicago",
+                ),
+                ClockLocation(
+                    label="Tokyo, JP",
+                    time_zone="Asia/Tokyo",
+                ),
+            ]
+        finally:
+            app.state.overview_clock_settings_store = original_store

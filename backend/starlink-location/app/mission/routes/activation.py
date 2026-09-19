@@ -30,7 +30,10 @@ from app.mission.storage import (
 )
 from app.mission.timeline_service import TimelineComputationError
 from app.services.flight_state import get_flight_state_manager
-from app.services.mission_clock_service import apply_mission_activation_clock_settings
+from app.services.mission_clock_service import (
+    apply_mission_activation_clock_settings,
+    apply_mission_deactivation_clock_settings,
+)
 from app.services.overview_clock_geography import OfflineClockGeography
 from app.services.overview_clock_location import resolve_clock_location
 from app.services.overview_clock_settings import OverviewClockSettingsStore
@@ -320,6 +323,10 @@ async def activate_mission(
     },
 )
 async def deactivate_mission(
+    clock_settings_store: Annotated[
+        OverviewClockSettingsStore,
+        Depends(get_overview_clock_settings_store),
+    ],
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> MissionDeactivationResponse:
     """Deactivate the currently active mission.
@@ -385,6 +392,7 @@ async def deactivate_mission(
         mission.is_active = False
         mission.updated_at = datetime.now(timezone.utc)
         save_mission(mission)
+        apply_mission_deactivation_clock_settings(clock_settings_store)
 
         # Clear mission metrics
         clear_mission_metrics(mission.id)
