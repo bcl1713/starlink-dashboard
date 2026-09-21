@@ -45,32 +45,33 @@ def test_activation_resolves_route_endpoints_and_persists_mission_clock_slots(
         if (latitude, longitude) == (48.8566, 2.3522):
             return landing_clock
         raise AssertionError("only route endpoints may be resolved")
-        result = apply_mission_activation_clock_settings(
-            store,
-            route_points=[
-                RoutePoint(
-                    latitude=38.9072,
-                    longitude=-77.0369,
-                ),
-                RoutePoint(
-                    latitude=45.0,
-                    longitude=-30.0,
-                ),
-                RoutePoint(
-                    latitude=48.8566,
-                    longitude=2.3522,
-                ),
-            ],
-            resolve_location=resolve_location,
-        )
-        expected_clocks = [
-            original_clocks[0],
-            original_clocks[1],
-            takeoff_clock,
-            landing_clock,
-        ]
-        assert result == expected_clocks
-        assert store.get_clocks() == expected_clocks
+
+    result = apply_mission_activation_clock_settings(
+        store,
+        route_points=[
+            RoutePoint(
+                latitude=38.9072,
+                longitude=-77.0369,
+            ),
+            RoutePoint(
+                latitude=45.0,
+                longitude=-30.0,
+            ),
+            RoutePoint(
+                latitude=48.8566,
+                longitude=2.3522,
+            ),
+        ],
+        resolve_location=resolve_location,
+    )
+    expected_clocks = [
+        original_clocks[0],
+        original_clocks[1],
+        takeoff_clock,
+        landing_clock,
+    ]
+    assert result == expected_clocks
+    assert store.get_clocks() == expected_clocks
 
 
 def test_deactivation_restores_mission_clock_defaults_in_the_store(tmp_path):

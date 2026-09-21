@@ -46,6 +46,23 @@ describe('ConfigurationPage', () => {
     expect(screen.getByLabelText('Clock 1 label')).not.toBeNull();
   });
 
+  it('shows a save-specific alert when the loaded settings fail to update', () => {
+    mockLoadedClockSettings();
+    vi.mocked(useUpdateOverviewClockSettings).mockReturnValue({
+      isError: true,
+      isPending: false,
+      mutate: vi.fn(),
+    } as never);
+
+    render(<ConfigurationPage />);
+
+    expect(screen.getByLabelText('Clock 1 label')).not.toBeNull();
+    expect(screen.getByRole('alert')).not.toBeNull();
+    expect(
+      screen.getByText('Unable to save operational clocks. Please try again.')
+    ).not.toBeNull();
+  });
+
   it('forwards edited clock settings to the update mutation', () => {
     const mutate = vi.fn();
     mockLoadedClockSettings();
