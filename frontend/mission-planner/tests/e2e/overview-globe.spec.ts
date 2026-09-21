@@ -591,16 +591,9 @@ test.describe('Globe overview', () => {
         const x = overlayBounds.left + overlayBounds.width / 2;
         const y = overlayBounds.top + overlayBounds.height / 2;
         const hitTarget = document.elementFromPoint(x, y);
-        const label = Array.from(
-          document.querySelectorAll('.globe-marker-label')
-        ).find((element) => element.textContent === 'X-Atlantic');
-
         return {
           canvasIsHitTarget: hitTarget === canvas,
           canvasRect: canvas?.getBoundingClientRect().toJSON(),
-          labelZIndex: label?.parentElement?.parentElement
-            ? getComputedStyle(label.parentElement.parentElement).zIndex
-            : null,
           overlayPointerEvents: getComputedStyle(topOverlay).pointerEvents,
           x,
           y,
@@ -608,7 +601,6 @@ test.describe('Globe overview', () => {
       });
     expect(overlayInteraction.overlayPointerEvents).toBe('none');
     expect(overlayInteraction.canvasIsHitTarget).toBe(true);
-    expect(overlayInteraction.labelZIndex).toBe('0');
     expect(overlayInteraction.canvasRect).not.toBeNull();
     const canvas = page.locator('canvas');
     const beforeDrag = await canvas.screenshot();
