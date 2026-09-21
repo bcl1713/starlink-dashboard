@@ -55,6 +55,7 @@ from app.satellites.coverage import CoverageSampler
 from app.services.mission_clock_service import (
     apply_mission_activation_clock_settings,
     apply_mission_deactivation_clock_settings,
+    persist_mission_clock_settings_best_effort,
 )
 from app.services.overview_clock_geography import OfflineClockGeography
 from app.services.overview_clock_location import resolve_clock_location
@@ -1556,15 +1557,18 @@ async def activate_leg(
                 if route is not None:
                     route_points = route.points
             geography = OfflineClockGeography()
-            apply_mission_activation_clock_settings(
-                clock_settings_store,
-                route_points=route_points,
-                resolve_location=lambda latitude, longitude: resolve_clock_location(
-                    latitude,
-                    longitude,
-                    time_zone_lookup=geography.time_zone_at,
-                    locality_lookup=geography.locality_at,
+            persist_mission_clock_settings_best_effort(
+                lambda: apply_mission_activation_clock_settings(
+                    clock_settings_store,
+                    route_points=route_points,
+                    resolve_location=lambda latitude, longitude: resolve_clock_location(
+                        latitude,
+                        longitude,
+                        time_zone_lookup=geography.time_zone_at,
+                        locality_lookup=geography.locality_at,
+                    ),
                 ),
+                lifecycle_event="activating a mission leg",
             )
 
             logger.info(f"Activated leg {leg_id} in mission {mission_id}")
@@ -1627,7 +1631,10 @@ async def deactivate_all_legs(
             # Save updated mission
             save_mission_v2(mission)
 
-            apply_mission_deactivation_clock_settings(clock_settings_store)
+            persist_mission_clock_settings_best_effort(
+                lambda: apply_mission_deactivation_clock_settings(clock_settings_store),
+                lifecycle_event="deactivating mission legs",
+            )
 
             # Deactivate all routes associated with this mission's legs
             if route_manager:

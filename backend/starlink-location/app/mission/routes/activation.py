@@ -33,6 +33,7 @@ from app.services.flight_state import get_flight_state_manager
 from app.services.mission_clock_service import (
     apply_mission_activation_clock_settings,
     apply_mission_deactivation_clock_settings,
+    persist_mission_clock_settings_best_effort,
 )
 from app.services.overview_clock_geography import OfflineClockGeography
 from app.services.overview_clock_location import resolve_clock_location
@@ -237,15 +238,18 @@ async def activate_mission(
             if route is not None:
                 route_points = route.points
         geography = OfflineClockGeography()
-        apply_mission_activation_clock_settings(
-            clock_settings_store,
-            route_points=route_points,
-            resolve_location=lambda latitude, longitude: resolve_clock_location(
-                latitude,
-                longitude,
-                time_zone_lookup=geography.time_zone_at,
-                locality_lookup=geography.locality_at,
+        persist_mission_clock_settings_best_effort(
+            lambda: apply_mission_activation_clock_settings(
+                clock_settings_store,
+                route_points=route_points,
+                resolve_location=lambda latitude, longitude: resolve_clock_location(
+                    latitude,
+                    longitude,
+                    time_zone_lookup=geography.time_zone_at,
+                    locality_lookup=geography.locality_at,
+                ),
             ),
+            lifecycle_event="activating a mission",
         )
         # Update metrics for activated mission
         update_mission_active_metric(mission_id, mission.route_id)
@@ -392,7 +396,10 @@ async def deactivate_mission(
         mission.is_active = False
         mission.updated_at = datetime.now(timezone.utc)
         save_mission(mission)
-        apply_mission_deactivation_clock_settings(clock_settings_store)
+        persist_mission_clock_settings_best_effort(
+            lambda: apply_mission_deactivation_clock_settings(clock_settings_store),
+            lifecycle_event="deactivating a mission",
+        )
 
         # Clear mission metrics
         clear_mission_metrics(mission.id)

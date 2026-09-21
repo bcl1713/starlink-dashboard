@@ -583,26 +583,56 @@ test.describe('Globe overview', () => {
       .getByText('X-Atlantic', { exact: true })
       .evaluate((label) => getComputedStyle(label).whiteSpace);
     expect(satelliteLabelWhiteSpace).toBe('nowrap');
-    const satelliteLabelZIndex = await page
+    const satelliteLabelIsBelowTopOverlay = await page
       .getByText('X-Atlantic', { exact: true })
       .evaluate((label) => {
-        let element: HTMLElement | null = label.parentElement;
-        while (element) {
-          const zIndex = Number(getComputedStyle(element).zIndex);
-          if (Number.isFinite(zIndex)) {
-            return zIndex;
-          }
-          element = element.parentElement;
+        const labelContainer = label.parentElement;
+        const topOverlay = document.querySelector('.overview-top-overlays');
+
+        if (
+          !(labelContainer instanceof HTMLElement) ||
+          !(topOverlay instanceof HTMLElement)
+        ) {
+          return false;
         }
-        return null;
+
+        const positionedLabelContainer = labelContainer.parentElement;
+        if (!(positionedLabelContainer instanceof HTMLElement)) {
+          return false;
+        }
+
+        positionedLabelContainer.style.setProperty(
+          'position',
+          'fixed',
+          'important'
+        );
+        positionedLabelContainer.style.setProperty('top', '100px', 'important');
+        positionedLabelContainer.style.setProperty(
+          'left',
+          '100px',
+          'important'
+        );
+        positionedLabelContainer.style.setProperty(
+          'right',
+          'auto',
+          'important'
+        );
+        positionedLabelContainer.style.setProperty(
+          'transform',
+          'none',
+          'important'
+        );
+        topOverlay.style.pointerEvents = 'auto';
+
+        const labelBounds = label.getBoundingClientRect();
+        const topmostElement = document.elementFromPoint(
+          labelBounds.left + labelBounds.width / 2,
+          labelBounds.top + labelBounds.height / 2
+        );
+
+        return topmostElement !== null && topOverlay.contains(topmostElement);
       });
-    if (satelliteLabelZIndex === null) {
-      throw new Error('Satellite label has no positioned z-index ancestor');
-    }
-    const topOverlayZIndex = await page
-      .locator('.overview-top-overlays')
-      .evaluate((overlay) => Number(getComputedStyle(overlay).zIndex));
-    expect(satelliteLabelZIndex).toBeLessThan(topOverlayZIndex);
+    expect(satelliteLabelIsBelowTopOverlay).toBe(true);
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
     ).toBeVisible();

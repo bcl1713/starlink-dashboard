@@ -1,3 +1,6 @@
+from app.services.mission_clock_service import (
+    persist_mission_clock_settings_best_effort,
+)
 from app.services.mission_clock_settings import (
     apply_mission_activation_clock_overrides,
     apply_mission_deactivation_clock_resets,
@@ -76,6 +79,18 @@ def test_activation_uses_slot_defaults_when_endpoint_locations_are_unavailable()
         DEFAULT_OVERVIEW_CLOCKS[2],
         DEFAULT_OVERVIEW_CLOCKS[3],
     ]
+
+
+def test_clock_write_oserror_is_logged_and_does_not_escape(caplog):
+    def fail_clock_write():
+        raise OSError("read-only filesystem")
+
+    persist_mission_clock_settings_best_effort(
+        fail_clock_write,
+        lifecycle_event="activating a mission",
+    )
+
+    assert "Could not persist overview clock settings after activating a mission" in caplog.text
 
 
 def test_deactivation_preserves_first_two_clocks_and_resets_mission_slots():

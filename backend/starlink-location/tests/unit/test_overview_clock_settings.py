@@ -1,6 +1,11 @@
+import json
+
 import pytest
 from app.services.overview_clock_location import ClockLocation
-from app.services.overview_clock_settings import OverviewClockSettingsStore
+from app.services.overview_clock_settings import (
+    DEFAULT_OVERVIEW_CLOCKS,
+    OverviewClockSettingsStore,
+)
 
 
 def test_returns_the_four_default_operational_clocks(tmp_path):
@@ -36,6 +41,47 @@ def test_persists_operator_clock_edits_across_store_instances(tmp_path):
     store.set_clocks(clocks)
     reopened_store = OverviewClockSettingsStore(path)
     assert reopened_store.get_clocks() == clocks
+
+
+
+
+def test_returns_defaults_when_persisted_settings_are_partial_json(tmp_path):
+    path = tmp_path / "overview_clock_settings.json"
+    path.write_text('{"clocks": [')
+
+    assert OverviewClockSettingsStore(path).get_clocks() == list(DEFAULT_OVERVIEW_CLOCKS)
+
+
+def test_failed_replacement_preserves_existing_clocks_and_cleans_temp_file(
+    tmp_path,
+    monkeypatch,
+):
+    path = tmp_path / "overview_clock_settings.json"
+    store = OverviewClockSettingsStore(path)
+    existing_clocks = store.get_clocks()
+    store.set_clocks(existing_clocks)
+    persisted_collection = json.loads(path.read_text())
+    replacement_clocks = [
+        ClockLocation(label="Zulu / UTC", time_zone="UTC"),
+        ClockLocation(label="Houston, TX", time_zone="America/Chicago"),
+        ClockLocation(label="Omaha, NE", time_zone="America/Chicago"),
+        ClockLocation(label="Tokyo, JP", time_zone="Asia/Tokyo"),
+    ]
+
+    def fail_replacement(*_args):
+        raise OSError("disk replaced by gremlins")
+
+    monkeypatch.setattr(
+        "app.services.overview_clock_settings.os.replace",
+        fail_replacement,
+    )
+
+    with pytest.raises(OSError, match="disk replaced by gremlins"):
+        store.set_clocks(replacement_clocks)
+
+    assert json.loads(path.read_text()) == persisted_collection
+    assert OverviewClockSettingsStore(path).get_clocks() == existing_clocks
+    assert list(tmp_path.glob(f".{path.name}.*.tmp")) == []
 
 
 def test_rejects_saving_anything_other_than_four_clocks(tmp_path):

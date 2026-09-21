@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from uuid import uuid4
 
+import app.mission.routes_v2 as mission_routes_v2
 import pytest
 from app.mission.models import (
     Mission,
@@ -160,6 +161,36 @@ class TestMissionV2ClockLifecycle:
                 route_manager._routes.pop(route_id, None)
             else:
                 route_manager.add_route(route_id, original_route)
+
+    def test_deactivating_legs_persists_mission_when_clock_write_fails(
+        self,
+        client: TestClient,
+        test_mission_v2,
+        monkeypatch,
+        caplog,
+    ):
+        assert client.post(
+            "/api/v2/missions",
+            json=test_mission_v2.model_dump(mode="json"),
+        ).status_code == 201
+        assert client.post(
+            f"/api/v2/missions/{test_mission_v2.id}/legs/"
+            f"{test_mission_v2.legs[0].id}/activate",
+        ).status_code == 200
+        monkeypatch.setattr(
+            mission_routes_v2,
+            "apply_mission_deactivation_clock_settings",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("disk full")),
+        )
+
+        response = client.post(
+            f"/api/v2/missions/{test_mission_v2.id}/legs/deactivate",
+        )
+
+        assert response.status_code == 200
+        mission = client.get(f"/api/v2/missions/{test_mission_v2.id}").json()
+        assert mission["legs"][0]["is_active"] is False
+        assert "Could not persist overview clock settings after deactivating mission legs" in caplog.text
 
 
 @pytest.fixture

@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable, Sequence
 
 from app.models.route import RoutePoint
@@ -8,6 +9,23 @@ from app.services.mission_clock_settings import (
 )
 from app.services.overview_clock_location import ClockLocation
 from app.services.overview_clock_settings import OverviewClockSettingsStore
+
+logger = logging.getLogger(__name__)
+
+
+def persist_mission_clock_settings_best_effort(
+    persist_settings: Callable[[], object],
+    *,
+    lifecycle_event: str,
+) -> None:
+    """Attempt ancillary clock persistence without changing lifecycle results."""
+    try:
+        persist_settings()
+    except OSError:
+        logger.warning(
+            "Could not persist overview clock settings after %s",
+            lifecycle_event,
+        )
 
 
 def apply_mission_activation_clock_settings(

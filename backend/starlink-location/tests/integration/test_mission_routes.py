@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
+import app.mission.routes.activation as activation_routes
 import pytest
 from app.mission.models import (
     MissionLeg,
@@ -616,6 +617,29 @@ class TestMissionActivateEndpoint:
             ]
         finally:
             app.state.overview_clock_settings_store = original_store
+
+    def test_activation_persists_mission_when_clock_write_fails(
+        self,
+        client: TestClient,
+        test_mission,
+        monkeypatch,
+        caplog,
+    ):
+        monkeypatch.setattr(
+            activation_routes,
+            "apply_mission_activation_clock_settings",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("disk full")),
+        )
+        assert client.post(
+            "/api/missions",
+            json=test_mission.model_dump(mode="json"),
+        ).status_code == 201
+
+        response = client.post(f"/api/missions/{test_mission.id}/activate")
+
+        assert response.status_code == 200
+        assert client.get(f"/api/missions/{test_mission.id}").json()["is_active"] is True
+        assert "Could not persist overview clock settings after activating a mission" in caplog.text
 
 
 class TestMissionGetActiveEndpoint:
