@@ -1,8 +1,7 @@
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.api import overview_clock_settings
 from app.services.overview_clock_settings import OverviewClockSettingsStore
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 
 def test_clock_settings_returns_503_until_its_store_is_initialized():

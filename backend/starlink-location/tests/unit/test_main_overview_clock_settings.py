@@ -1,7 +1,6 @@
-from fastapi.testclient import TestClient
-
 import main
 from app.api import overview_clock_settings
+from fastapi.testclient import TestClient
 
 
 def test_initializes_the_persistent_overview_clock_settings_store(

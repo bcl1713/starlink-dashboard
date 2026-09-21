@@ -1,5 +1,4 @@
 import pytest
-
 from app.services.overview_clock_location import (
     ClockLocation,
     resolve_clock_location,
