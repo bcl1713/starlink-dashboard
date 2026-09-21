@@ -1,13 +1,14 @@
 import { expect, test } from '@playwright/test';
+import { requestUrlPattern, routeGlob } from './support/configured-origin';
 
 test.describe('Mission Planner API origin', () => {
   test('loads an empty mission collection through the same-origin API proxy', async ({
     page,
-  }) => {
+  }, testInfo) => {
     const missionRequests: string[] = [];
 
     await page.route(
-      'http://localhost:5173/api/v2/missions**',
+      routeGlob(testInfo.project.use.baseURL, '/api/v2/missions'),
       async (route) => {
         missionRequests.push(route.request().url());
         await route.fulfill({
@@ -25,17 +26,17 @@ test.describe('Mission Planner API origin', () => {
     await expect(page.getByText(/Error loading missions/)).not.toBeVisible();
     expect(missionRequests).toHaveLength(1);
     expect(missionRequests[0]).toMatch(
-      /^http:\/\/localhost:5173\/api\/v2\/missions\?/
+      requestUrlPattern(testInfo.project.use.baseURL, '/api/v2/missions')
     );
   });
 
   test('downloads data exports through the same-origin API proxy', async ({
     page,
-  }) => {
+  }, testInfo) => {
     const exportRequests: string[] = [];
 
     await page.route(
-      'http://localhost:5173/api/export/starlink-csv**',
+      routeGlob(testInfo.project.use.baseURL, '/api/export/starlink-csv'),
       async (route) => {
         exportRequests.push(route.request().url());
         await route.fulfill({
@@ -50,7 +51,10 @@ test.describe('Mission Planner API origin', () => {
 
     await expect.poll(() => exportRequests).toHaveLength(1);
     expect(exportRequests[0]).toMatch(
-      /^http:\/\/localhost:5173\/api\/export\/starlink-csv\?/
+      requestUrlPattern(
+        testInfo.project.use.baseURL,
+        '/api/export/starlink-csv'
+      )
     );
   });
 });

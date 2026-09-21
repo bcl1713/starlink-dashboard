@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
 
 const port = process.env.PLAYWRIGHT_PORT || '5173';
@@ -11,7 +12,7 @@ export default defineConfig({
   reporter: 'line',
   use: {
     baseURL: `http://localhost:${port}`,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
   },
   projects: [
     {
@@ -22,6 +23,7 @@ export default defineConfig({
   webServer: {
     command: `npm run build && npm run preview -- --port ${port}`,
     url: `http://localhost:${port}`,
+    timeout: 120_000,
     reuseExistingServer: false, // Always start a new server for local runs
   },
 });

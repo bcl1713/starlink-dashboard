@@ -56,6 +56,32 @@ src/
 - **Playwright** for E2E tests
 - **Testing Library** for component tests
 
+### E2E command ladder
+
+Run these commands from `frontend/mission-planner`. Playwright owns the
+production build through its configured `webServer.command`; do not run a
+standalone `npm run build` immediately before a Playwright command.
+
+```bash
+# Confirm the Chromium E2E inventory before browser execution.
+npx playwright test --list --project=chromium
+
+# Exercise the focused same-origin fixture control.
+npx playwright test tests/e2e/api-origin.spec.ts --project=chromium --reporter=line
+
+# Run the affected fixture-origin spec after a harness change.
+npx playwright test tests/e2e/api-origin.spec.ts --project=chromium --reporter=line
+
+# Run the final Chromium inventory once for the candidate commit.
+npx playwright test --project=chromium --reporter=line
+```
+
+The owned cold focused invocation measured 56.71 seconds end-to-end on the
+development host. The Playwright web-server startup budget is 120 seconds,
+providing headroom above that healthy measurement. E2E runs use no retries and
+retain Playwright traces for failures only (`trace: 'retain-on-failure'`), so a
+single failed attempt keeps bounded diagnostic evidence without retrying.
+
 ```bash
 npx playwright test
 ```
