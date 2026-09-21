@@ -15,7 +15,11 @@ from app.core.metrics import (
     update_mission_active_metric,
     update_mission_phase_metric,
 )
-from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.mission.dependencies import (
+    get_overview_clock_settings_store,
+    get_poi_manager,
+    get_route_manager,
+)
 from app.mission.models import MissionLeg, MissionLegTimeline, MissionPhase
 from app.mission.storage import (
     list_missions,
@@ -26,6 +30,14 @@ from app.mission.storage import (
 )
 from app.mission.timeline_service import TimelineComputationError
 from app.services.flight_state import get_flight_state_manager
+from app.services.mission_clock_service import (
+    apply_mission_activation_clock_settings,
+    apply_mission_deactivation_clock_settings,
+    persist_mission_clock_settings_best_effort,
+)
+from app.services.overview_clock_geography import OfflineClockGeography
+from app.services.overview_clock_location import resolve_clock_location
+from app.services.overview_clock_settings import OverviewClockSettingsStore
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
@@ -71,6 +83,10 @@ def get_active_mission_id() -> str | None:
 )
 async def activate_mission(
     mission_id: str,
+    clock_settings_store: Annotated[
+        OverviewClockSettingsStore,
+        Depends(get_overview_clock_settings_store),
+    ],
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> MissionActivationResponse:
@@ -216,7 +232,25 @@ async def activate_mission(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to compute mission timeline: {type(exc).__name__}: {exc!s}",
             ) from exc
-
+        route_points = []
+        if mission.route_id and route_manager is not None:
+            route = route_manager.get_route(mission.route_id)
+            if route is not None:
+                route_points = route.points
+        geography = OfflineClockGeography()
+        persist_mission_clock_settings_best_effort(
+            lambda: apply_mission_activation_clock_settings(
+                clock_settings_store,
+                route_points=route_points,
+                resolve_location=lambda latitude, longitude: resolve_clock_location(
+                    latitude,
+                    longitude,
+                    time_zone_lookup=geography.time_zone_at,
+                    locality_lookup=geography.locality_at,
+                ),
+            ),
+            lifecycle_event="activating a mission",
+        )
         # Update metrics for activated mission
         update_mission_active_metric(mission_id, mission.route_id)
         update_mission_phase_metric(mission_id, MissionPhase.PRE_DEPARTURE.value)
@@ -293,6 +327,10 @@ async def activate_mission(
     },
 )
 async def deactivate_mission(
+    clock_settings_store: Annotated[
+        OverviewClockSettingsStore,
+        Depends(get_overview_clock_settings_store),
+    ],
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> MissionDeactivationResponse:
     """Deactivate the currently active mission.
@@ -358,6 +396,10 @@ async def deactivate_mission(
         mission.is_active = False
         mission.updated_at = datetime.now(timezone.utc)
         save_mission(mission)
+        persist_mission_clock_settings_best_effort(
+            lambda: apply_mission_deactivation_clock_settings(clock_settings_store),
+            lifecycle_event="deactivating a mission",
+        )
 
         # Clear mission metrics
         clear_mission_metrics(mission.id)

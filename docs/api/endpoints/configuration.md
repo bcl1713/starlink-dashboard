@@ -104,6 +104,13 @@ Replace entire service configuration.
 
 ---
 
+## Overview Clock Settings
+
+See [Overview Clock Settings](./overview-clock-settings.md) for the persisted
+four-clock API and Mission V2 lifecycle behavior.
+
+---
+
 ## Configuration Structure
 
 ### Route Configuration

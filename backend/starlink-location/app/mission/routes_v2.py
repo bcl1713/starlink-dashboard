@@ -27,7 +27,11 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 
 from app.core.limiter import limiter
-from app.mission.dependencies import get_poi_manager, get_route_manager
+from app.mission.dependencies import (
+    get_overview_clock_settings_store,
+    get_poi_manager,
+    get_route_manager,
+)
 from app.mission.derived_route import build_derived_route_estimate
 from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConfig
 from app.mission.package import export_mission_package
@@ -48,6 +52,14 @@ from app.mission.timeline_service import build_mission_timeline
 from app.mission.validation import validate_adjusted_departure_time
 from app.models.poi import POICreate
 from app.satellites.coverage import CoverageSampler
+from app.services.mission_clock_service import (
+    apply_mission_activation_clock_settings,
+    apply_mission_deactivation_clock_settings,
+    persist_mission_clock_settings_best_effort,
+)
+from app.services.overview_clock_geography import OfflineClockGeography
+from app.services.overview_clock_location import resolve_clock_location
+from app.services.overview_clock_settings import OverviewClockSettingsStore
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
 
@@ -1436,6 +1448,10 @@ async def delete_leg(
 async def activate_leg(
     mission_id: str,
     leg_id: str,
+    clock_settings_store: Annotated[
+        OverviewClockSettingsStore,
+        Depends(get_overview_clock_settings_store),
+    ],
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict:
@@ -1535,6 +1551,26 @@ async def activate_leg(
                     # Don't fail activation if timeline generation fails
                     # Return success but note the timeline issue in logs
 
+            route_points = []
+            if active_leg and active_leg.route_id and route_manager is not None:
+                route = route_manager.get_route(active_leg.route_id)
+                if route is not None:
+                    route_points = route.points
+            geography = OfflineClockGeography()
+            persist_mission_clock_settings_best_effort(
+                lambda: apply_mission_activation_clock_settings(
+                    clock_settings_store,
+                    route_points=route_points,
+                    resolve_location=lambda latitude, longitude: resolve_clock_location(
+                        latitude,
+                        longitude,
+                        time_zone_lookup=geography.time_zone_at,
+                        locality_lookup=geography.locality_at,
+                    ),
+                ),
+                lifecycle_event="activating a mission leg",
+            )
+
             logger.info(f"Activated leg {leg_id} in mission {mission_id}")
 
             return {"status": "success", "active_leg_id": leg_id}
@@ -1563,6 +1599,10 @@ async def activate_leg(
 @router.post("/{mission_id}/legs/deactivate", response_model=dict)
 async def deactivate_all_legs(
     mission_id: str,
+    clock_settings_store: Annotated[
+        OverviewClockSettingsStore,
+        Depends(get_overview_clock_settings_store),
+    ],
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
 ) -> dict:
     """Deactivate all legs in the mission.
@@ -1590,6 +1630,11 @@ async def deactivate_all_legs(
 
             # Save updated mission
             save_mission_v2(mission)
+
+            persist_mission_clock_settings_best_effort(
+                lambda: apply_mission_deactivation_clock_settings(clock_settings_store),
+                lifecycle_event="deactivating mission legs",
+            )
 
             # Deactivate all routes associated with this mission's legs
             if route_manager:

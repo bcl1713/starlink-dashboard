@@ -23,6 +23,7 @@ from app.api import (
     gps,
     health,
     metrics,
+    overview_clock_settings,
     overview_history,
     pois,
     routes,
@@ -50,6 +51,7 @@ from app.services.ground_entry_point import (
     publish_ground_entry_point_metrics,
     refresh_ground_entry_point_metrics,
 )
+from app.services.overview_clock_settings import OverviewClockSettingsStore
 from app.services.overview_history_prometheus import (
     OverviewHistoryReader,
     resolve_overview_history_prometheus_url,
@@ -81,9 +83,11 @@ _background_task = None
 _simulation_config = None
 _route_manager: RouteManager | None = None
 OVERVIEW_HISTORY_SETTINGS_PATH = Path("data/settings/overview-history.json")
+OVERVIEW_CLOCK_SETTINGS_PATH = Path("data/settings/overview-clocks.json")
 OVERVIEW_HISTORY_PROMETHEUS_TIMEOUT_SECONDS = 5.0
 _overview_history_client: httpx.AsyncClient | None = None
 _overview_history_settings_store: OverviewHistorySettingsStore | None = None
+_overview_clock_settings_store: OverviewClockSettingsStore | None = None
 
 
 def should_automatically_refresh_ground_entry_point(
@@ -115,6 +119,18 @@ def initialize_overview_history_runtime() -> None:
     overview_history.set_overview_history_reader(reader.read)
 
 
+def initialize_overview_clock_settings_runtime() -> None:
+    """Initialize persistent operational-clock settings for the dashboard."""
+    global _overview_clock_settings_store
+    _overview_clock_settings_store = OverviewClockSettingsStore(
+        OVERVIEW_CLOCK_SETTINGS_PATH,
+    )
+    overview_clock_settings.set_overview_clock_settings_store(
+        _overview_clock_settings_store,
+    )
+    app.state.overview_clock_settings_store = _overview_clock_settings_store
+
+
 async def startup_event():
     """Initialize application on startup."""
     global _coordinator, _background_task, _simulation_config, _route_manager
@@ -136,6 +152,7 @@ async def startup_event():
         )
 
         initialize_overview_history_runtime()
+        initialize_overview_clock_settings_runtime()
 
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode
@@ -347,16 +364,23 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown."""
     global _background_task, _overview_history_client
-    global _overview_history_settings_store, _route_manager
+    global \
+        _overview_history_settings_store, \
+        _overview_clock_settings_store, \
+        _route_manager
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
         overview_history.set_overview_history_reader(None)
         overview_history.set_overview_history_settings_store(None)
+        overview_clock_settings.set_overview_clock_settings_store(None)
+        if hasattr(app.state, "overview_clock_settings_store"):
+            del app.state.overview_clock_settings_store
         if _overview_history_client is not None:
             await _overview_history_client.aclose()
             _overview_history_client = None
         _overview_history_settings_store = None
+        _overview_clock_settings_store = None
         if _background_task:
             logger.info_json("Cancelling background update task")
             _background_task.cancel()
@@ -587,6 +611,7 @@ app.include_router(health.router, tags=["Health"])
 app.include_router(metrics.router, tags=["Metrics"])
 app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
+app.include_router(overview_clock_settings.router, tags=["Overview Clocks"])
 app.include_router(overview_history.router, tags=["Overview History"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(flight_status.router, tags=["Flight Status"])

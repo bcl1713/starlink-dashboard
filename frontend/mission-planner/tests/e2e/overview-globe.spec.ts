@@ -35,6 +35,64 @@ test.describe('Globe overview', () => {
         },
       });
     });
+    await page.route('**/api/overview-clocks/settings', async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          clocks: [
+            { label: 'Zulu / UTC', time_zone: 'UTC' },
+            { label: 'Washington, DC', time_zone: 'America/New_York' },
+            { label: 'Omaha, NE', time_zone: 'America/Chicago' },
+            { label: 'Tokyo, JP', time_zone: 'Asia/Tokyo' },
+          ],
+        }),
+      });
+    });
+  });
+  test('hides primary navigation during native overview fullscreen', async ({
+    page,
+  }) => {
+    await page.goto('/overview');
+    await page
+      .getByRole('button', {
+        name: 'Enter fullscreen overview',
+      })
+      .click();
+    await expect(
+      page.getByRole('navigation', {
+        name: 'Primary navigation',
+      })
+    ).toHaveCount(0);
+  });
+  test('offers native fullscreen for the overview', async ({ page }) => {
+    await page.goto('/overview');
+    await expect(
+      page.getByRole('button', {
+        name: 'Enter fullscreen overview',
+      })
+    ).toBeVisible();
+  });
+  test('renders four operational clocks from saved settings', async ({
+    page,
+  }) => {
+    await page.goto('/overview');
+    await expect(
+      page.getByRole('region', { name: 'Operational clocks' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /zulu \/ utc operational clock/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', {
+        name: /washington, dc operational clock/i,
+      })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /omaha, ne operational clock/i })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('region', { name: /tokyo, jp operational clock/i })
+    ).toBeVisible();
   });
 
   test('renders an active anti-meridian route from same-origin API data', async ({
@@ -521,6 +579,44 @@ test.describe('Globe overview', () => {
       'No active configured X-band link'
     );
     await expect(page.getByText('X-Atlantic', { exact: true })).toBeVisible();
+    const satelliteLabelWhiteSpace = await page
+      .getByText('X-Atlantic', { exact: true })
+      .evaluate((label) => getComputedStyle(label).whiteSpace);
+    expect(satelliteLabelWhiteSpace).toBe('nowrap');
+    const overlayInteraction = await page
+      .locator('.overview-top-overlays')
+      .evaluate((topOverlay) => {
+        const canvas = document.querySelector('canvas');
+        const overlayBounds = topOverlay.getBoundingClientRect();
+        const x = overlayBounds.left + overlayBounds.width / 2;
+        const y = overlayBounds.top + overlayBounds.height / 2;
+        const hitTarget = document.elementFromPoint(x, y);
+        return {
+          canvasIsHitTarget: hitTarget === canvas,
+          canvasRect: canvas?.getBoundingClientRect().toJSON(),
+          overlayPointerEvents: getComputedStyle(topOverlay).pointerEvents,
+          x,
+          y,
+        };
+      });
+    expect(overlayInteraction.overlayPointerEvents).toBe('none');
+    expect(overlayInteraction.canvasIsHitTarget).toBe(true);
+    expect(overlayInteraction.canvasRect).not.toBeNull();
+    const canvas = page.locator('canvas');
+    const beforeDrag = await canvas.screenshot();
+    await page.mouse.move(overlayInteraction.x, overlayInteraction.y);
+    await page.mouse.down();
+    await page.mouse.move(
+      overlayInteraction.x + 180,
+      overlayInteraction.y + 40,
+      {
+        steps: 12,
+      }
+    );
+    await page.mouse.up();
+    await expect
+      .poll(async () => (await canvas.screenshot()).equals(beforeDrag))
+      .toBe(false);
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
     ).toBeVisible();

@@ -118,6 +118,9 @@ export function useActivateLeg() {
       queryClient.invalidateQueries({
         queryKey: ['missions', variables.missionId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['overview-clock-settings'],
+      });
     },
   });
 }
@@ -129,6 +132,9 @@ export function useDeactivateAllLegs(missionId: string) {
     mutationFn: () => missionsApi.deactivateAllLegs(missionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+      queryClient.invalidateQueries({
+        queryKey: ['overview-clock-settings'],
+      });
     },
   });
 }

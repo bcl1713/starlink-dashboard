@@ -3,6 +3,7 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
+import app.mission.routes.activation as activation_routes
 import pytest
 from app.mission.models import (
     MissionLeg,
@@ -17,7 +18,9 @@ from app.mission.models import (
 )
 from app.mission.storage import delete_mission, delete_mission_timeline, mission_exists
 from app.mission.timeline_service import TimelineSummary
-from app.models.route import ParsedRoute, RouteMetadata
+from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
+from app.services.overview_clock_location import ClockLocation
+from app.services.overview_clock_settings import OverviewClockSettingsStore
 from fastapi.testclient import TestClient
 from main import app
 
@@ -548,6 +551,140 @@ class TestMissionActivateEndpoint:
         new_updated_at = get_response.json()["updated_at"]
         assert new_updated_at != created_updated_at
 
+    def test_activation_replaces_mission_clock_slots_from_route_endpoints(
+        self,
+        client: TestClient,
+        test_mission,
+        tmp_path,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        store = OverviewClockSettingsStore(
+            tmp_path / "overview-clock-settings.json",
+        )
+        app.state.overview_clock_settings_store = store
+        try:
+            original_clocks = [
+                ClockLocation(
+                    label="Zulu Custom",
+                    time_zone="UTC",
+                ),
+                ClockLocation(
+                    label="Denver, CO",
+                    time_zone="America/Denver",
+                ),
+                ClockLocation(
+                    label="Manual Takeoff",
+                    time_zone="America/Los_Angeles",
+                ),
+                ClockLocation(
+                    label="Manual Landing",
+                    time_zone="Europe/London",
+                ),
+            ]
+            store.set_clocks(original_clocks)
+            route = app.state.route_manager.get_route(test_mission.route_id)
+            assert route is not None
+            route.points = [
+                RoutePoint(
+                    latitude=38.9072,
+                    longitude=-77.0369,
+                ),
+                RoutePoint(
+                    latitude=48.8566,
+                    longitude=2.3522,
+                ),
+            ]
+            create_response = client.post(
+                "/api/missions",
+                json=test_mission.model_dump(mode="json"),
+            )
+            assert create_response.status_code == 201
+            activate_response = client.post(
+                f"/api/missions/{test_mission.id}/activate",
+            )
+            assert activate_response.status_code == 200
+            assert store.get_clocks() == [
+                original_clocks[0],
+                original_clocks[1],
+                ClockLocation(
+                    label="Washington, DC",
+                    time_zone="America/New_York",
+                ),
+                ClockLocation(
+                    label="Paris, FR",
+                    time_zone="Europe/Paris",
+                ),
+            ]
+        finally:
+            app.state.overview_clock_settings_store = original_store
+
+    def test_activation_persists_mission_when_clock_write_fails(
+        self,
+        client: TestClient,
+        test_mission,
+        monkeypatch,
+        caplog,
+    ):
+        monkeypatch.setattr(
+            activation_routes,
+            "apply_mission_activation_clock_settings",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("disk full")),
+        )
+        assert (
+            client.post(
+                "/api/missions",
+                json=test_mission.model_dump(mode="json"),
+            ).status_code
+            == 201
+        )
+
+        response = client.post(f"/api/missions/{test_mission.id}/activate")
+
+        assert response.status_code == 200
+        assert (
+            client.get(f"/api/missions/{test_mission.id}").json()["is_active"] is True
+        )
+        assert (
+            "Could not persist overview clock settings after activating a mission"
+            in caplog.text
+        )
+
+    def test_activation_skips_corrupt_clock_settings_without_blocking_mission(
+        self,
+        client: TestClient,
+        test_mission,
+        tmp_path,
+        caplog,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        path = tmp_path / "overview-clock-settings.json"
+        corrupt_settings = b'{"clocks": ['
+        path.write_bytes(corrupt_settings)
+        app.state.overview_clock_settings_store = OverviewClockSettingsStore(path)
+        try:
+            assert (
+                client.post(
+                    "/api/missions",
+                    json=test_mission.model_dump(mode="json"),
+                ).status_code
+                == 201
+            )
+
+            response = client.post(f"/api/missions/{test_mission.id}/activate")
+
+            assert response.status_code == 200
+            assert (
+                client.get(f"/api/missions/{test_mission.id}").json()["is_active"]
+                is True
+            )
+            assert path.read_bytes() == corrupt_settings
+            assert (
+                "Skipped overview clock settings persistence after activating a mission "
+                "because stored settings are invalid" in caplog.text
+            )
+        finally:
+            app.state.overview_clock_settings_store = original_store
+
 
 class TestMissionGetActiveEndpoint:
     """Tests for GET /api/missions/active endpoint."""
@@ -856,3 +993,60 @@ class TestMissionDeactivateEndpoint:
         # Verify no active mission exists
         active_response = client.get("/api/missions/active")
         assert active_response.status_code == 404
+
+    def test_deactivation_restores_default_mission_clock_slots(
+        self,
+        client: TestClient,
+        test_mission,
+        tmp_path,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        store = OverviewClockSettingsStore(
+            tmp_path / "overview-clock-settings.json",
+        )
+        app.state.overview_clock_settings_store = store
+        try:
+            clocks_before_deactivation = [
+                ClockLocation(
+                    label="Zulu Custom",
+                    time_zone="UTC",
+                ),
+                ClockLocation(
+                    label="Denver, CO",
+                    time_zone="America/Denver",
+                ),
+                ClockLocation(
+                    label="Washington, DC",
+                    time_zone="America/New_York",
+                ),
+                ClockLocation(
+                    label="Paris, FR",
+                    time_zone="Europe/Paris",
+                ),
+            ]
+            create_response = client.post(
+                "/api/missions",
+                json=test_mission.model_dump(mode="json"),
+            )
+            assert create_response.status_code == 201
+            activate_response = client.post(
+                f"/api/missions/{test_mission.id}/activate",
+            )
+            assert activate_response.status_code == 200
+            store.set_clocks(clocks_before_deactivation)
+            deactivate_response = client.post("/api/missions/active/deactivate")
+            assert deactivate_response.status_code == 200
+            assert store.get_clocks() == [
+                clocks_before_deactivation[0],
+                clocks_before_deactivation[1],
+                ClockLocation(
+                    label="Omaha, NE",
+                    time_zone="America/Chicago",
+                ),
+                ClockLocation(
+                    label="Tokyo, JP",
+                    time_zone="Asia/Tokyo",
+                ),
+            ]
+        finally:
+            app.state.overview_clock_settings_store = original_store

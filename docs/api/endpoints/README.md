@@ -14,6 +14,8 @@ consumers, integrators, developers
 - **[Core Endpoints](./core.md)** - Health, status, and system endpoints
 - **[Configuration Endpoints](./configuration.md)** - System configuration and
   settings
+- **[Overview Clock Settings](./overview-clock-settings.md)** - Persistent
+  dashboard clocks and Mission V2 lifecycle behavior
 
 ### Feature Endpoints
 
