@@ -649,6 +649,42 @@ class TestMissionActivateEndpoint:
             in caplog.text
         )
 
+    def test_activation_skips_corrupt_clock_settings_without_blocking_mission(
+        self,
+        client: TestClient,
+        test_mission,
+        tmp_path,
+        caplog,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        path = tmp_path / "overview-clock-settings.json"
+        corrupt_settings = b'{"clocks": ['
+        path.write_bytes(corrupt_settings)
+        app.state.overview_clock_settings_store = OverviewClockSettingsStore(path)
+        try:
+            assert (
+                client.post(
+                    "/api/missions",
+                    json=test_mission.model_dump(mode="json"),
+                ).status_code
+                == 201
+            )
+
+            response = client.post(f"/api/missions/{test_mission.id}/activate")
+
+            assert response.status_code == 200
+            assert (
+                client.get(f"/api/missions/{test_mission.id}").json()["is_active"]
+                is True
+            )
+            assert path.read_bytes() == corrupt_settings
+            assert (
+                "Skipped overview clock settings persistence after activating a mission "
+                "because stored settings are invalid" in caplog.text
+            )
+        finally:
+            app.state.overview_clock_settings_store = original_store
+
 
 class TestMissionGetActiveEndpoint:
     """Tests for GET /api/missions/active endpoint."""

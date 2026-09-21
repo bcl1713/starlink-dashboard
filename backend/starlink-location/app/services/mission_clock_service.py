@@ -8,7 +8,10 @@ from app.services.mission_clock_settings import (
     apply_mission_deactivation_clock_resets,
 )
 from app.services.overview_clock_location import ClockLocation
-from app.services.overview_clock_settings import OverviewClockSettingsStore
+from app.services.overview_clock_settings import (
+    InvalidOverviewClockSettingsError,
+    OverviewClockSettingsStore,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +24,12 @@ def persist_mission_clock_settings_best_effort(
     """Attempt ancillary clock persistence without changing lifecycle results."""
     try:
         persist_settings()
+    except InvalidOverviewClockSettingsError:
+        logger.warning(
+            "Skipped overview clock settings persistence after %s because stored "
+            "settings are invalid",
+            lifecycle_event,
+        )
     except OSError:
         logger.warning(
             "Could not persist overview clock settings after %s",
@@ -44,7 +53,7 @@ def apply_mission_activation_clock_settings(
         takeoff_clock=takeoff_clock,
         landing_clock=landing_clock,
     )
-    store.set_clocks(updated_clocks)
+    store.set_lifecycle_clocks(updated_clocks)
     return updated_clocks
 
 
@@ -55,5 +64,5 @@ def apply_mission_deactivation_clock_settings(
     updated_clocks = apply_mission_deactivation_clock_resets(
         store.get_clocks(),
     )
-    store.set_clocks(updated_clocks)
+    store.set_lifecycle_clocks(updated_clocks)
     return updated_clocks

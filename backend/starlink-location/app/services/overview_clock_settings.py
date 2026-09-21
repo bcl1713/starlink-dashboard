@@ -27,6 +27,10 @@ DEFAULT_OVERVIEW_CLOCKS = (
 )
 
 
+class InvalidOverviewClockSettingsError(OSError):
+    """Lifecycle persistence cannot replace invalid persisted clock settings."""
+
+
 def _parse_clocks(payload: object) -> list[ClockLocation]:
     """Validate a persisted clock payload and return its four clock records."""
     if not isinstance(payload, Mapping):
@@ -60,14 +64,18 @@ class OverviewClockSettingsStore:
 
     def __init__(self, path: Path) -> None:
         self._path = path
+        self._persisted_settings_invalid = False
 
     def get_clocks(self) -> list[ClockLocation]:
         """Return the saved clocks, or the four operational defaults."""
         if not self._path.exists():
+            self._persisted_settings_invalid = False
             return list(DEFAULT_OVERVIEW_CLOCKS)
         try:
             with self._path.open() as handle:
-                return _parse_clocks(json.load(handle))
+                clocks = _parse_clocks(json.load(handle))
+                self._persisted_settings_invalid = False
+                return clocks
         except (
             AttributeError,
             json.JSONDecodeError,
@@ -77,7 +85,16 @@ class OverviewClockSettingsStore:
             ValueError,
             ZoneInfoNotFoundError,
         ):
+            self._persisted_settings_invalid = True
             return list(DEFAULT_OVERVIEW_CLOCKS)
+
+    def set_lifecycle_clocks(self, clocks: list[ClockLocation]) -> None:
+        """Persist lifecycle-derived clocks without replacing invalid settings."""
+        if self._persisted_settings_invalid:
+            raise InvalidOverviewClockSettingsError(
+                "Stored overview clock settings are invalid"
+            )
+        self.set_clocks(clocks)
 
     def set_clocks(self, clocks: list[ClockLocation]) -> None:
         """Persist the complete editable operational-clock collection."""
@@ -125,6 +142,7 @@ class OverviewClockSettingsStore:
                 handle.flush()
                 os.fsync(handle.fileno())
             os.replace(temporary_path, self._path)
+            self._persisted_settings_invalid = False
         except Exception:
             if temporary_path is not None:
                 temporary_path.unlink(missing_ok=True)

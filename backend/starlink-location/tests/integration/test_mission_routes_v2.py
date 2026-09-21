@@ -201,6 +201,54 @@ class TestMissionV2ClockLifecycle:
             in caplog.text
         )
 
+    def test_deactivating_legs_skips_corrupt_clock_settings_without_blocking_mission(
+        self,
+        client: TestClient,
+        test_mission_v2,
+        tmp_path,
+        caplog,
+    ):
+        original_store = app.state.overview_clock_settings_store
+        path = tmp_path / "overview-clock-settings.json"
+        store = OverviewClockSettingsStore(path)
+        app.state.overview_clock_settings_store = store
+        corrupt_settings = b'{"clocks": ['
+        try:
+            assert (
+                client.post(
+                    "/api/v2/missions",
+                    json=test_mission_v2.model_dump(mode="json"),
+                ).status_code
+                == 201
+            )
+            assert (
+                client.post(
+                    f"/api/v2/missions/{test_mission_v2.id}/legs/"
+                    f"{test_mission_v2.legs[0].id}/activate",
+                ).status_code
+                == 200
+            )
+            path.write_bytes(corrupt_settings)
+
+            response = client.post(
+                f"/api/v2/missions/{test_mission_v2.id}/legs/deactivate",
+            )
+
+            assert response.status_code == 200
+            assert (
+                client.get(f"/api/v2/missions/{test_mission_v2.id}").json()["legs"][0][
+                    "is_active"
+                ]
+                is False
+            )
+            assert path.read_bytes() == corrupt_settings
+            assert (
+                "Skipped overview clock settings persistence after deactivating "
+                "mission legs because stored settings are invalid" in caplog.text
+            )
+        finally:
+            app.state.overview_clock_settings_store = original_store
+
 
 @pytest.fixture
 def test_mission_v2():
