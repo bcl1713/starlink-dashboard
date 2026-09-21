@@ -52,6 +52,66 @@ def test_returns_defaults_when_persisted_settings_are_partial_json(tmp_path):
     )
 
 
+def test_returns_defaults_when_persisted_clock_label_is_not_a_string(tmp_path):
+    path = tmp_path / "overview_clock_settings.json"
+    path.write_text(
+        json.dumps(
+            {
+                "clocks": [
+                    {"label": 1, "time_zone": "UTC"},
+                    {"label": "Washington, DC", "time_zone": "America/New_York"},
+                    {"label": "Omaha, NE", "time_zone": "America/Chicago"},
+                    {"label": "Tokyo, JP", "time_zone": "Asia/Tokyo"},
+                ]
+            }
+        )
+    )
+
+    assert OverviewClockSettingsStore(path).get_clocks() == list(
+        DEFAULT_OVERVIEW_CLOCKS
+    )
+
+
+def test_returns_defaults_when_persisted_clock_timezone_is_not_a_string(tmp_path):
+    path = tmp_path / "overview_clock_settings.json"
+    path.write_text(
+        json.dumps(
+            {
+                "clocks": [
+                    {"label": "Zulu / UTC", "time_zone": ["UTC"]},
+                    {"label": "Washington, DC", "time_zone": "America/New_York"},
+                    {"label": "Omaha, NE", "time_zone": "America/Chicago"},
+                    {"label": "Tokyo, JP", "time_zone": "Asia/Tokyo"},
+                ]
+            }
+        )
+    )
+
+    assert OverviewClockSettingsStore(path).get_clocks() == list(
+        DEFAULT_OVERVIEW_CLOCKS
+    )
+
+
+def test_returns_defaults_when_persisted_clock_timezone_is_invalid(tmp_path):
+    path = tmp_path / "overview_clock_settings.json"
+    path.write_text(
+        json.dumps(
+            {
+                "clocks": [
+                    {"label": "Zulu / UTC", "time_zone": "Mars/Olympus"},
+                    {"label": "Washington, DC", "time_zone": "America/New_York"},
+                    {"label": "Omaha, NE", "time_zone": "America/Chicago"},
+                    {"label": "Tokyo, JP", "time_zone": "Asia/Tokyo"},
+                ]
+            }
+        )
+    )
+
+    assert OverviewClockSettingsStore(path).get_clocks() == list(
+        DEFAULT_OVERVIEW_CLOCKS
+    )
+
+
 def test_failed_replacement_preserves_existing_clocks_and_cleans_temp_file(
     tmp_path,
     monkeypatch,

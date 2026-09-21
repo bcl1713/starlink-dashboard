@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -26,6 +27,34 @@ DEFAULT_OVERVIEW_CLOCKS = (
 )
 
 
+def _parse_clocks(payload: object) -> list[ClockLocation]:
+    """Validate a persisted clock payload and return its four clock records."""
+    if not isinstance(payload, Mapping):
+        raise TypeError("Clock settings must be a mapping")
+    clock_records = payload.get("clocks")
+    if not isinstance(clock_records, list) or len(clock_records) != len(
+        DEFAULT_OVERVIEW_CLOCKS
+    ):
+        raise ValueError("Exactly four clocks are required")
+
+    clocks = []
+    for clock_record in clock_records:
+        if not isinstance(clock_record, Mapping):
+            raise TypeError("Clock settings entries must be mappings")
+        label = clock_record.get("label")
+        time_zone = clock_record.get("time_zone")
+        if not isinstance(label, str) or not label.strip():
+            raise ValueError("Clock labels must not be blank")
+        if not isinstance(time_zone, str):
+            raise TypeError("Clock time zones must be strings")
+        try:
+            ZoneInfo(time_zone)
+        except (TypeError, ValueError, ZoneInfoNotFoundError) as error:
+            raise ValueError("Invalid IANA timezone") from error
+        clocks.append(ClockLocation(label=label, time_zone=time_zone))
+    return clocks
+
+
 class OverviewClockSettingsStore:
     """Own persistent operational-clock preferenes."""
 
@@ -38,31 +67,36 @@ class OverviewClockSettingsStore:
             return list(DEFAULT_OVERVIEW_CLOCKS)
         try:
             with self._path.open() as handle:
-                payload = json.load(handle)
-            clocks = [
-                ClockLocation(
-                    label=clock["label"],
-                    time_zone=clock["time_zone"],
-                )
-                for clock in payload["clocks"]
-            ]
-        except (json.JSONDecodeError, KeyError, OSError, TypeError):
+                return _parse_clocks(json.load(handle))
+        except (
+            AttributeError,
+            json.JSONDecodeError,
+            KeyError,
+            OSError,
+            TypeError,
+            ValueError,
+            ZoneInfoNotFoundError,
+        ):
             return list(DEFAULT_OVERVIEW_CLOCKS)
-        if len(clocks) != len(DEFAULT_OVERVIEW_CLOCKS):
-            return list(DEFAULT_OVERVIEW_CLOCKS)
-        return clocks
 
     def set_clocks(self, clocks: list[ClockLocation]) -> None:
         """Persist the complete editable operational-clock collection."""
         if len(clocks) != len(DEFAULT_OVERVIEW_CLOCKS):
             raise ValueError("Exactly four clocks are required")
-        for clock in clocks:
-            if not clock.label.strip():
-                raise ValueError("Clock labels must not be blank")
-            try:
-                ZoneInfo(clock.time_zone)
-            except ZoneInfoNotFoundError as error:
-                raise ValueError("Invalid IANA timezone") from error
+        try:
+            clocks = _parse_clocks(
+                {
+                    "clocks": [
+                        {
+                            "label": clock.label,
+                            "time_zone": clock.time_zone,
+                        }
+                        for clock in clocks
+                    ]
+                }
+            )
+        except (AttributeError, TypeError) as error:
+            raise ValueError("Invalid clock settings") from error
         self._path.parent.mkdir(parents=True, exist_ok=True)
         temporary_path: Path | None = None
         try:
