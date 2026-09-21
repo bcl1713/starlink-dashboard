@@ -1,4 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
+import { routeGlob, routeUrl } from './support/configured-origin';
+
+function routePattern(pathname: string): string {
+  return routeUrl(test.info().project.use.baseURL, pathname);
+}
+
+function queryRoutePattern(pathname: string): string {
+  return routeGlob(test.info().project.use.baseURL, pathname);
+}
 
 const mission = {
   id: 'responsive-mission',
@@ -27,7 +36,7 @@ const mission = {
 
 async function mockLegDetailApis(page: Page) {
   await page.route(
-    'http://localhost:5173/api/v2/missions/responsive-mission',
+    routePattern('/api/v2/missions/responsive-mission'),
     async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({ json: mission });
@@ -38,7 +47,7 @@ async function mockLegDetailApis(page: Page) {
   );
 
   await page.route(
-    'http://localhost:5173/api/routes/responsive-route',
+    routePattern('/api/routes/responsive-route'),
     async (route) => {
       await route.fulfill({
         json: {
@@ -53,7 +62,9 @@ async function mockLegDetailApis(page: Page) {
   );
 
   await page.route(
-    'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg/timeline',
+    routePattern(
+      '/api/v2/missions/responsive-mission/legs/responsive-leg/timeline'
+    ),
     async (route) => {
       await route.fulfill({
         json: {
@@ -66,7 +77,9 @@ async function mockLegDetailApis(page: Page) {
   );
 
   await page.route(
-    'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview',
+    routePattern(
+      '/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview'
+    ),
     async (route) => {
       const request = route.request();
       const hasManualTrack =
@@ -103,11 +116,11 @@ async function mockLegDetailApis(page: Page) {
     }
   );
 
-  await page.route('http://localhost:5173/api/satellites', async (route) => {
+  await page.route(routePattern('/api/satellites'), async (route) => {
     await route.fulfill({ json: [] });
   });
 
-  await page.route('http://localhost:5173/api/pois**', async (route) => {
+  await page.route(queryRoutePattern('/api/pois'), async (route) => {
     await route.fulfill({ json: { pois: [], total: 0 } });
   });
 }
@@ -127,7 +140,7 @@ test.describe('Leg detail responsive layout', () => {
 
     await mockLegDetailApis(page);
     await page.route(
-      'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg',
+      routePattern('/api/v2/missions/responsive-mission/legs/responsive-leg'),
       async (route) => {
         if (route.request().method() !== 'PUT') {
           await route.continue();
@@ -140,7 +153,7 @@ test.describe('Leg detail responsive layout', () => {
       }
     );
     await page.route(
-      'http://localhost:5173/api/v2/missions/responsive-mission',
+      routePattern('/api/v2/missions/responsive-mission'),
       async (route) => {
         await route.fulfill({ json: persistedMission });
       }
@@ -210,13 +223,13 @@ test.describe('Leg detail responsive layout', () => {
 
     await mockLegDetailApis(page);
     await page.route(
-      'http://localhost:5173/api/v2/missions/responsive-mission',
+      routePattern('/api/v2/missions/responsive-mission'),
       async (route) => {
         await route.fulfill({ json: persistedMission });
       }
     );
     await page.route(
-      'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg',
+      routePattern('/api/v2/missions/responsive-mission/legs/responsive-leg'),
       async (route) => {
         if (route.request().method() !== 'PUT') {
           await route.continue();
@@ -399,13 +412,13 @@ test.describe('Leg detail responsive layout', () => {
 
     await mockLegDetailApis(page);
     await page.route(
-      'http://localhost:5173/api/v2/missions/responsive-mission',
+      routePattern('/api/v2/missions/responsive-mission'),
       async (route) => {
         await route.fulfill({ json: persistedMission });
       }
     );
     await page.route(
-      'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg',
+      routePattern('/api/v2/missions/responsive-mission/legs/responsive-leg'),
       async (route) => {
         if (route.request().method() !== 'PUT') {
           await route.continue();
@@ -419,7 +432,9 @@ test.describe('Leg detail responsive layout', () => {
       }
     );
     await page.route(
-      'http://localhost:5173/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview',
+      routePattern(
+        '/api/v2/missions/responsive-mission/legs/responsive-leg/timeline/preview'
+      ),
       async (route) => {
         if (route.request().method() === 'POST') {
           previewKaOutages = route.request().postDataJSON()

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { waitForGlobeVisualReady } from './support/globe-visual-ready';
 
 test.describe('Globe overview', () => {
   test.describe.configure({ mode: 'serial' });
@@ -98,6 +99,7 @@ test.describe('Globe overview', () => {
   test('renders an active anti-meridian route from same-origin API data', async ({
     page,
   }) => {
+    test.setTimeout(60_000);
     await page.addInitScript(`
       const RealDate = Date;
       const fixedTime = '2026-06-21T12:00:00.000Z';
@@ -204,7 +206,6 @@ test.describe('Globe overview', () => {
     });
 
     await page.goto('/overview');
-    await expect(earthTexture).resolves.toBeTruthy();
 
     const metricsPanel = page.getByLabel('Current network metrics');
 
@@ -224,6 +225,7 @@ test.describe('Globe overview', () => {
     expect(statusRequests[0]).toMatch(/\/api\/status$/);
 
     await expect(page.getByLabel('Globe legend')).toBeVisible();
+    const canvas = await waitForGlobeVisualReady(page, earthTexture);
     await expect(page.getByText('GEP', { exact: true })).toBeVisible();
     await expect(
       page.getByText('Anti-meridian validation route', { exact: true })
@@ -236,7 +238,12 @@ test.describe('Globe overview', () => {
         exact: false,
       })
     ).toBeVisible();
-    await expect(page.locator('canvas')).toBeVisible();
+    expect(await canvas.screenshot()).toMatchSnapshot(
+      'overview-globe-ready.png',
+      {
+        maxDiffPixelRatio: 0.02,
+      }
+    );
     await expect.poll(() => routeRequests).toHaveLength(2);
 
     expect(routeRequests[0]).toMatch(/\/api\/routes$/);
