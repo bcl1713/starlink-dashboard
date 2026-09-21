@@ -2,13 +2,12 @@
 
 import math
 
-from prometheus_client import generate_latest
-
 from app.core.metrics import (
     REGISTRY,
     set_service_info,
     update_metrics_from_telemetry,
 )
+from prometheus_client import generate_latest
 
 
 class TestMetricsFormatting:

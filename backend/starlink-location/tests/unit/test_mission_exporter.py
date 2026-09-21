@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-import pytest
-
 import app.mission.exporter as mission_exporter
 import app.mission.exporter.__main__ as mission_exporter_main
+import pytest
 from app.mission.exporter import (
     ExportGenerationError,
     TimelineExportFormat,

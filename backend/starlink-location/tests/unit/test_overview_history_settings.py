@@ -1,5 +1,4 @@
 import pytest
-
 from app.services.overview_history_settings import (
     OverviewHistorySettingsStore,
     resolve_overview_history_window_default,

@@ -6,10 +6,9 @@ from pathlib import Path
 
 import pytest
 import yaml
-from pydantic import ValidationError
-
 from app.core.config import ConfigManager, _convert_env_value
 from app.models.config import HeadingTrackerConfig, SimulationConfig
+from pydantic import ValidationError
 
 
 class TestEnvValueConversion:

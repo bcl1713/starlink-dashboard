@@ -5,7 +5,6 @@ import time
 from pathlib import Path
 
 import pytest
-
 from app.services.route_manager import RouteManager
 
 VALID_KML_CONTENT = """<?xml version="1.0" encoding="UTF-8"?>

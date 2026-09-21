@@ -5,7 +5,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
 from app.models.poi import POICreate, POIUpdate
 from app.services.poi_manager import POIManager
 

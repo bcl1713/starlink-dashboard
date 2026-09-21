@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.models.route import (
     ParsedRoute,
     RouteMetadata,

@@ -2,8 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-from pptx import Presentation
-
 from app.mission.exporter.__main__ import _cover_metadata_line
 from app.mission.exporter.pptx_builder import _get_footer_metadata
 from app.mission.exporter.pptx_styling import (
@@ -12,6 +10,7 @@ from app.mission.exporter.pptx_styling import (
     add_status_badge,
 )
 from app.mission.models import Mission, MissionLeg, TimelineStatus, TransportConfig
+from pptx import Presentation
 
 
 def test_degraded_status_uses_yellow_with_black_text_palette():

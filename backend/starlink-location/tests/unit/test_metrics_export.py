@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pytest
-
 from app.api import metrics_export
 from app.models.poi import POI
 from app.models.route import (

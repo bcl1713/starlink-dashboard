@@ -4,7 +4,6 @@ import random
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.models.config import PositionConfig, RouteConfig
 from app.models.route import (
     ParsedRoute,

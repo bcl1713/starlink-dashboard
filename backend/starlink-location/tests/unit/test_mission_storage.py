@@ -5,7 +5,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-
 from app.mission import storage
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.mission.storage import (

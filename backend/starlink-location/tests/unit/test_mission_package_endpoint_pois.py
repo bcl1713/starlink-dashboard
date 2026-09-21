@@ -6,9 +6,6 @@ import json
 import zipfile
 from datetime import datetime, timezone
 
-from fastapi import UploadFile
-from starlette.requests import Request
-
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.mission.routes_v2 import (
     _synchronize_imported_endpoint_pois,
@@ -18,6 +15,8 @@ from app.models.poi import POICreate
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.poi_manager import POIManager
 from app.services.route_manager import RouteManager
+from fastapi import UploadFile
+from starlette.requests import Request
 
 
 def _mission() -> Mission:

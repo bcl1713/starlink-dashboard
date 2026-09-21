@@ -5,8 +5,6 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.mission.models import (
     ManualAARTrack,
     ManualAARTrackPoint,
@@ -20,6 +18,7 @@ from app.mission.models import (
 )
 from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

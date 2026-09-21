@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.models.flight_status import ETAMode, FlightPhase
 from app.models.poi import POI
 from app.models.route import (

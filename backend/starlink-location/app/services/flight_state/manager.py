@@ -12,9 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-from typing_extensions import Self
-
 from app.models.flight_status import ETAMode, FlightPhase, FlightStatus
+from typing_extensions import Self
 
 if TYPE_CHECKING:  # pragma: no cover - imported only for type checking
     from app.models.route import ParsedRoute
