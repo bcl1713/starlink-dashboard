@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.mission.models import (
     MissionLeg,
     MissionLegTimeline,
@@ -17,7 +19,6 @@ from app.mission.models import (
 from app.mission.storage import delete_mission, list_missions, mission_exists
 from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata
-from fastapi.testclient import TestClient
 from main import app
 
 

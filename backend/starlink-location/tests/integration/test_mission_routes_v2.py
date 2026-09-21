@@ -6,6 +6,8 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.mission.models import (
     Mission,
     MissionLeg,
@@ -18,7 +20,6 @@ from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.overview_clock_location import ClockLocation
 from app.services.overview_clock_settings import OverviewClockSettingsStore
-from fastapi.testclient import TestClient
 from main import app
 
 
@@ -273,8 +274,9 @@ class TestMissionV2ListEndpoint:
 
     def test_list_missions_returns_total_header_and_requested_page(self, monkeypatch):
         """The additive total header lets clients paginate without breaking arrays."""
-        from app.mission.routes_v2 import list_missions
         from fastapi import Response
+
+        from app.mission.routes_v2 import list_missions
 
         missions = [
             Mission(id=f"mission-{index}", name=f"Mission {index}")

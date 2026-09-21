@@ -7,6 +7,7 @@ using mocked gRPC responses.
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from app.live.client import StarlinkClient
 from app.models.telemetry import (
     TelemetryData,

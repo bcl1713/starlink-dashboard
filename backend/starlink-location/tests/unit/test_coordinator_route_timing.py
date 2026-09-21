@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 
 import pytest
+
 from app.models.config import PositionConfig, RouteConfig, SimulationConfig
 from app.models.route import (
     ParsedRoute,

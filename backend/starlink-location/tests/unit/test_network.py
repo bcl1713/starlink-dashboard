@@ -1,6 +1,7 @@
 """Tests for network metrics simulator."""
 
 import pytest
+
 from app.simulation.network import NetworkSimulator
 
 
