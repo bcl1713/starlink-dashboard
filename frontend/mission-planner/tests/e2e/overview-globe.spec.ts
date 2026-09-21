@@ -583,56 +583,48 @@ test.describe('Globe overview', () => {
       .getByText('X-Atlantic', { exact: true })
       .evaluate((label) => getComputedStyle(label).whiteSpace);
     expect(satelliteLabelWhiteSpace).toBe('nowrap');
-    const satelliteLabelIsBelowTopOverlay = await page
-      .getByText('X-Atlantic', { exact: true })
-      .evaluate((label) => {
-        const labelContainer = label.parentElement;
-        const topOverlay = document.querySelector('.overview-top-overlays');
+    const overlayInteraction = await page
+      .locator('.overview-top-overlays')
+      .evaluate((topOverlay) => {
+        const canvas = document.querySelector('canvas');
+        const overlayBounds = topOverlay.getBoundingClientRect();
+        const x = overlayBounds.left + overlayBounds.width / 2;
+        const y = overlayBounds.top + overlayBounds.height / 2;
+        const hitTarget = document.elementFromPoint(x, y);
+        const label = Array.from(
+          document.querySelectorAll('.globe-marker-label')
+        ).find((element) => element.textContent === 'X-Atlantic');
 
-        if (
-          !(labelContainer instanceof HTMLElement) ||
-          !(topOverlay instanceof HTMLElement)
-        ) {
-          return false;
-        }
-
-        const positionedLabelContainer = labelContainer.parentElement;
-        if (!(positionedLabelContainer instanceof HTMLElement)) {
-          return false;
-        }
-
-        positionedLabelContainer.style.setProperty(
-          'position',
-          'fixed',
-          'important'
-        );
-        positionedLabelContainer.style.setProperty('top', '100px', 'important');
-        positionedLabelContainer.style.setProperty(
-          'left',
-          '100px',
-          'important'
-        );
-        positionedLabelContainer.style.setProperty(
-          'right',
-          'auto',
-          'important'
-        );
-        positionedLabelContainer.style.setProperty(
-          'transform',
-          'none',
-          'important'
-        );
-        topOverlay.style.pointerEvents = 'auto';
-
-        const labelBounds = label.getBoundingClientRect();
-        const topmostElement = document.elementFromPoint(
-          labelBounds.left + labelBounds.width / 2,
-          labelBounds.top + labelBounds.height / 2
-        );
-
-        return topmostElement !== null && topOverlay.contains(topmostElement);
+        return {
+          canvasIsHitTarget: hitTarget === canvas,
+          canvasRect: canvas?.getBoundingClientRect().toJSON(),
+          labelZIndex: label?.parentElement?.parentElement
+            ? getComputedStyle(label.parentElement.parentElement).zIndex
+            : null,
+          overlayPointerEvents: getComputedStyle(topOverlay).pointerEvents,
+          x,
+          y,
+        };
       });
-    expect(satelliteLabelIsBelowTopOverlay).toBe(true);
+    expect(overlayInteraction.overlayPointerEvents).toBe('none');
+    expect(overlayInteraction.canvasIsHitTarget).toBe(true);
+    expect(overlayInteraction.labelZIndex).toBe('0');
+    expect(overlayInteraction.canvasRect).not.toBeNull();
+    const canvas = page.locator('canvas');
+    const beforeDrag = await canvas.screenshot();
+    await page.mouse.move(overlayInteraction.x, overlayInteraction.y);
+    await page.mouse.down();
+    await page.mouse.move(
+      overlayInteraction.x + 180,
+      overlayInteraction.y + 40,
+      {
+        steps: 12,
+      }
+    );
+    await page.mouse.up();
+    await expect
+      .poll(async () => (await canvas.screenshot()).equals(beforeDrag))
+      .toBe(false);
     await expect(
       globeLegend.getByText('Aircraft position', { exact: true })
     ).toBeVisible();
