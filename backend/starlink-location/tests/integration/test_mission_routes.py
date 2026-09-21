@@ -630,16 +630,24 @@ class TestMissionActivateEndpoint:
             "apply_mission_activation_clock_settings",
             lambda *_args, **_kwargs: (_ for _ in ()).throw(OSError("disk full")),
         )
-        assert client.post(
-            "/api/missions",
-            json=test_mission.model_dump(mode="json"),
-        ).status_code == 201
+        assert (
+            client.post(
+                "/api/missions",
+                json=test_mission.model_dump(mode="json"),
+            ).status_code
+            == 201
+        )
 
         response = client.post(f"/api/missions/{test_mission.id}/activate")
 
         assert response.status_code == 200
-        assert client.get(f"/api/missions/{test_mission.id}").json()["is_active"] is True
-        assert "Could not persist overview clock settings after activating a mission" in caplog.text
+        assert (
+            client.get(f"/api/missions/{test_mission.id}").json()["is_active"] is True
+        )
+        assert (
+            "Could not persist overview clock settings after activating a mission"
+            in caplog.text
+        )
 
 
 class TestMissionGetActiveEndpoint:

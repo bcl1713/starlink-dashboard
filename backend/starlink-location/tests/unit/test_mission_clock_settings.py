@@ -90,7 +90,10 @@ def test_clock_write_oserror_is_logged_and_does_not_escape(caplog):
         lifecycle_event="activating a mission",
     )
 
-    assert "Could not persist overview clock settings after activating a mission" in caplog.text
+    assert (
+        "Could not persist overview clock settings after activating a mission"
+        in caplog.text
+    )
 
 
 def test_deactivation_preserves_first_two_clocks_and_resets_mission_slots():

@@ -43,13 +43,13 @@ def test_persists_operator_clock_edits_across_store_instances(tmp_path):
     assert reopened_store.get_clocks() == clocks
 
 
-
-
 def test_returns_defaults_when_persisted_settings_are_partial_json(tmp_path):
     path = tmp_path / "overview_clock_settings.json"
     path.write_text('{"clocks": [')
 
-    assert OverviewClockSettingsStore(path).get_clocks() == list(DEFAULT_OVERVIEW_CLOCKS)
+    assert OverviewClockSettingsStore(path).get_clocks() == list(
+        DEFAULT_OVERVIEW_CLOCKS
+    )
 
 
 def test_failed_replacement_preserves_existing_clocks_and_cleans_temp_file(

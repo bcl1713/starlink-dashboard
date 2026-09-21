@@ -169,14 +169,20 @@ class TestMissionV2ClockLifecycle:
         monkeypatch,
         caplog,
     ):
-        assert client.post(
-            "/api/v2/missions",
-            json=test_mission_v2.model_dump(mode="json"),
-        ).status_code == 201
-        assert client.post(
-            f"/api/v2/missions/{test_mission_v2.id}/legs/"
-            f"{test_mission_v2.legs[0].id}/activate",
-        ).status_code == 200
+        assert (
+            client.post(
+                "/api/v2/missions",
+                json=test_mission_v2.model_dump(mode="json"),
+            ).status_code
+            == 201
+        )
+        assert (
+            client.post(
+                f"/api/v2/missions/{test_mission_v2.id}/legs/"
+                f"{test_mission_v2.legs[0].id}/activate",
+            ).status_code
+            == 200
+        )
         monkeypatch.setattr(
             mission_routes_v2,
             "apply_mission_deactivation_clock_settings",
@@ -190,7 +196,10 @@ class TestMissionV2ClockLifecycle:
         assert response.status_code == 200
         mission = client.get(f"/api/v2/missions/{test_mission_v2.id}").json()
         assert mission["legs"][0]["is_active"] is False
-        assert "Could not persist overview clock settings after deactivating mission legs" in caplog.text
+        assert (
+            "Could not persist overview clock settings after deactivating mission legs"
+            in caplog.text
+        )
 
 
 @pytest.fixture
