@@ -1,7 +1,17 @@
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import type {
   OverviewClockSetting,
   OverviewClockSettings,
 } from '@/services/overview-clock-settings';
+import { Clock3 } from 'lucide-react';
 import { useState } from 'react';
 
 export interface OperationalClockSettingsFormProps {
@@ -37,37 +47,69 @@ export function OperationalClockSettingsForm({
         onSave({ clocks: editableClocks });
       }}
     >
-      {editableClocks.map((clock, index) => {
-        const clockNum = index + 1;
-        return (
-          <fieldset key={clockNum}>
-            <legend>Clock {clockNum}</legend>
-            <label htmlFor={`clock-${clockNum}-label`}>
-              Clock {clockNum} label
-            </label>
-            <input
-              id={`clock-${clockNum}-label`}
-              value={clock.label}
-              onChange={(event) => {
-                updateClock(index, 'label', event.target.value);
-              }}
-            />
-            <label htmlFor={`clock-${clockNum}-timezone`}>
-              Clock {clockNum} timezone
-            </label>
-            <input
-              id={`clock-${clockNum}-timezone`}
-              value={clock.time_zone}
-              onChange={(event) => {
-                updateClock(index, 'time_zone', event.target.value);
-              }}
-            />
-          </fieldset>
-        );
-      })}
-      <button type="submit" disabled={isSaving}>
-        Save operational clocks
-      </button>
+      <Card>
+        <CardHeader className="pb-3">
+          <h2 className="flex items-center gap-2 text-base font-semibold leading-6 tracking-tight">
+            <Clock3 className="size-4" aria-hidden="true" />
+            Operational clocks
+          </h2>
+          <CardDescription>
+            Set the labels and IANA time zones displayed on Overview.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {editableClocks.map((clock, index) => {
+            const clockNum = index + 1;
+            return (
+              <fieldset
+                className="space-y-4 rounded-lg border p-4"
+                key={clockNum}
+              >
+                <legend className="col-span-2">Clock {clockNum}</legend>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label
+                      className="text-sm font-medium"
+                      htmlFor={`clock-${clockNum}-label`}
+                    >
+                      Clock {clockNum} label
+                    </label>
+                    <Input
+                      className="space-y-2"
+                      id={`clock-${clockNum}-label`}
+                      value={clock.label}
+                      onChange={(event) => {
+                        updateClock(index, 'label', event.target.value);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      className="text-sm font-medium"
+                      htmlFor={`clock-${clockNum}-timezone`}
+                    >
+                      Clock {clockNum} timezone
+                    </label>
+                    <Input
+                      className="space-y-2"
+                      id={`clock-${clockNum}-timezone`}
+                      value={clock.time_zone}
+                      onChange={(event) => {
+                        updateClock(index, 'time_zone', event.target.value);
+                      }}
+                    />
+                  </div>
+                </div>
+              </fieldset>
+            );
+          })}
+        </CardContent>
+        <CardFooter className="justify-end">
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save operational clocks'}
+          </Button>
+        </CardFooter>
+      </Card>
     </form>
   );
 }

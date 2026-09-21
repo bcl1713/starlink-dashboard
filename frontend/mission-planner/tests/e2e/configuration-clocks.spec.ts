@@ -40,6 +40,11 @@ test.describe('Configuration Clocks', () => {
     await expect(
       page.getByRole('button', { name: 'Save operational clocks' })
     ).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Operational clocks',
+      })
+    ).toBeVisible();
   });
 
   test('saves edited clock settings', async ({ page }) => {

@@ -137,7 +137,7 @@ describe('OperationalClockSettingsForm', () => {
       />
     );
     const saveButton = screen.getByRole('button', {
-      name: 'Save operational clocks',
+      name: 'Saving...',
     }) as HTMLButtonElement;
     expect(saveButton.disabled).toBe(true);
   });
