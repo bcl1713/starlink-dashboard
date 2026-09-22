@@ -8,7 +8,6 @@ import pytest
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.mission.storage import (
     get_active_leg_lock,
-    get_mission_path,
     load_mission_v2,
     save_mission_v2,
 )
@@ -125,11 +124,12 @@ def test_resolver_returns_explicit_failure_without_context(
 
 
 def test_resolver_ignores_flat_v1_active_looking_artifact(route_manager) -> None:
+    from app.mission import storage
     from app.mission.active_context import resolve_active_mission_leg_context
 
     legacy_leg = _mission("legacy-mission", "legacy-leg", "route-a").legs[0]
     legacy_leg.is_active = True
-    with open(get_mission_path("legacy-mission"), "w") as handle:
+    with open(storage.MISSIONS_DIR / "legacy-mission.json", "w") as handle:
         json.dump(legacy_leg.model_dump(), handle, default=str)
     assert route_manager.activate_route("route-a") is True
 

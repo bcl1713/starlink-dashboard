@@ -39,9 +39,6 @@ from app.core.logging import get_logger, setup_logging
 from app.core.metrics import set_service_info
 from app.live.coordinator import LiveCoordinator
 from app.mission import (
-    routes as mission_routes,
-)
-from app.mission import (
     routes_v2 as mission_routes_v2,
 )
 from app.models.config import SimulationConfig
@@ -365,10 +362,7 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown."""
     global _background_task, _overview_history_client
-    global \
-        _overview_history_settings_store, \
-        _overview_clock_settings_store, \
-        _route_manager
+    global _overview_history_settings_store, _overview_clock_settings_store, _route_manager
 
     try:
         logger.info_json("Shutting down Starlink Location Backend")
@@ -620,7 +614,6 @@ app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])
 app.include_router(pois.router, tags=["POIs"])
 app.include_router(routes.router, tags=["Routes"])
-app.include_router(mission_routes.router, tags=["Missions"])
 app.include_router(mission_routes_v2.router, tags=["Missions V2"])
 app.include_router(satellite_routes.router, tags=["Satellites"])
 app.include_router(export.router, tags=["Export"])

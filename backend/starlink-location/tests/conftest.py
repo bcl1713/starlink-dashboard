@@ -171,21 +171,6 @@ def client(test_client):
 
 
 @pytest.fixture(autouse=True)
-def reset_mission_active_state():
-    """Reset global _active_mission_id before each test to prevent state leakage."""
-    # Import here to avoid circular imports
-    import app.mission.routes as mission_routes
-
-    # Reset before test starts
-    mission_routes._active_mission_id = None
-
-    yield
-
-    # Reset after test completes
-    mission_routes._active_mission_id = None
-
-
-@pytest.fixture(autouse=True)
 def ensure_eta_service_initialized():
     """Ensure ETA service is initialized before each test.
 
