@@ -42,6 +42,23 @@ describe('UpcomingPoisPanel', () => {
     expect(screen.getByText('ETA unavailable')).not.toBeNull();
   });
 
+  it('renders human-readable type and UTC timing provenance for dynamic arrivals', () => {
+    const anticipatedPoi = {
+      ...poi(1),
+      kind: 'ka_coverage_entry' as const,
+      eta_type: 'anticipated' as const,
+      estimated_arrival_time: '2026-09-22T12:01:00.000Z',
+    };
+
+    render(
+      <UpcomingPoisPanel state="available" pois={[anticipatedPoi]} currentTime={now} />
+    );
+
+    expect(screen.getByRole('columnheader', { name: 'Type' })).not.toBeNull();
+    expect(screen.getByText('Ka coverage entry')).not.toBeNull();
+    expect(screen.getByText('2026-09-22 12:01 UTC · anticipated')).not.toBeNull();
+  });
+
   it('has a headerless swatch column, no scrolling, and a five-row maximum', () => {
     render(
       <UpcomingPoisPanel

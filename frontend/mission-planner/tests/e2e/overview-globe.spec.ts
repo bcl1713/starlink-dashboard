@@ -1076,7 +1076,7 @@ test.describe('Globe overview', () => {
           expected_arrival_time: '2026-09-22T14:00:00.000Z',
           eta_seconds: 7_200,
           estimated_arrival_time: '2026-09-22T14:00:00.000Z',
-          eta_type: 'estimated' as const,
+          eta_type: 'anticipated' as const,
           upcoming: true,
           map_retained: true,
         },
@@ -1211,18 +1211,19 @@ test.describe('Globe overview', () => {
     await expect(panel).toBeVisible();
     await expect(panel.getByRole('row')).toHaveCount(6);
     await expect(panel.getByRole('columnheader', { name: /urgency/i })).toHaveCount(0);
+    await expect(panel.getByRole('columnheader', { name: 'Type' })).toBeVisible();
     await expect(panel).toHaveCSS('overflow-y', 'hidden');
     await expect(panel.getByText('AAR complete', { exact: true })).toHaveCount(0);
     await expect(page.getByText('KADW', { exact: true })).toBeVisible();
     await expect(panel.getByText('RKSO', { exact: true })).toBeVisible();
     await expect(page.getByText('AAR complete', { exact: true })).toBeVisible();
     await expect(panel.getByRole('row')).toHaveText([
-      /POI.*ETA/,
-      /AAR start.*10m/,
-      /Ka swap.*20m/,
-      /Ka entry.*35m/,
-      /X-band handoff.*45m/,
-      /RKSO.*2h 0m/,
+      /POI.*Type.*ETA/,
+      /AAR start.*AAR start.*2026-09-22 12:10 UTC · estimated/,
+      /Ka swap.*Ka transition.*2026-09-22 12:20 UTC · estimated/,
+      /Ka entry.*Ka coverage entry.*2026-09-22 12:35 UTC · estimated/,
+      /X-band handoff.*X-band transition.*2026-09-22 12:45 UTC · estimated/,
+      /RKSO.*Arrival.*2026-09-22 14:00 UTC · anticipated/,
     ]);
     const clusteredPoiIds = [
       'departure-kadw',

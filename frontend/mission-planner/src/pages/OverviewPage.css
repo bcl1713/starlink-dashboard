@@ -249,7 +249,7 @@
   bottom: 4.5rem;
   left: 1rem;
   z-index: 1;
-  width: min(28rem, calc(100% - 2rem));
+  width: min(36rem, calc(100% - 2rem));
   pointer-events: none;
 }
 
@@ -307,9 +307,14 @@
   width: 1.25rem;
 }
 
+.upcoming-pois th:nth-child(3),
+.upcoming-pois td:nth-child(3) {
+  width: 9rem;
+}
+
 .upcoming-pois th:last-child,
 .upcoming-pois td:last-child {
-  width: 4.5rem;
+  width: 15rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }

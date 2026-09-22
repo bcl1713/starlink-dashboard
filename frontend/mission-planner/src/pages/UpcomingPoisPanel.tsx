@@ -19,18 +19,28 @@ const STATE_MESSAGES: Record<Exclude<OverviewUpcomingPoisState, 'available'>, st
   unavailable: 'Upcoming POIs unavailable.',
 };
 
-function etaLabel(estimatedArrivalTime: string | null, currentTime: Date): string {
-  if (estimatedArrivalTime === null) return 'ETA unavailable';
+const KIND_LABELS: Record<OverviewUpcomingPoi['kind'], string> = {
+  departure: 'Departure',
+  arrival: 'Arrival',
+  aar_start: 'AAR start',
+  aar_end: 'AAR end',
+  x_band_transition: 'X-band transition',
+  ka_coverage_exit: 'Ka coverage exit',
+  ka_coverage_entry: 'Ka coverage entry',
+  ka_transition: 'Ka transition',
+};
 
-  const remainingMs = Date.parse(estimatedArrivalTime) - currentTime.valueOf();
-  if (!Number.isFinite(remainingMs)) return 'ETA unavailable';
-  if (remainingMs <= 0) return 'Due';
+function etaLabel(
+  estimatedArrivalTime: string | null,
+  etaType: OverviewUpcomingPoi['eta_type']
+): string {
+  if (estimatedArrivalTime === null || etaType === null) return 'ETA unavailable';
 
-  const totalMinutes = Math.ceil(remainingMs / 60_000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
+  const arrival = new Date(estimatedArrivalTime);
+  if (!Number.isFinite(arrival.valueOf())) return 'ETA unavailable';
 
-  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  const date = arrival.toISOString();
+  return `${date.slice(0, 10)} ${date.slice(11, 16)} UTC · ${etaType}`;
 }
 
 export function UpcomingPoisPanel({
@@ -62,6 +72,7 @@ export function UpcomingPoisPanel({
               <tr>
                 <th aria-hidden="true" />
                 <th scope="col">POI</th>
+                <th scope="col">Type</th>
                 <th scope="col">ETA</th>
               </tr>
             </thead>
@@ -80,7 +91,8 @@ export function UpcomingPoisPanel({
                     />
                   </td>
                   <td>{poi.name}</td>
-                  <td>{etaLabel(poi.estimated_arrival_time, currentTime)}</td>
+                  <td>{KIND_LABELS[poi.kind]}</td>
+                  <td>{etaLabel(poi.estimated_arrival_time, poi.eta_type)}</td>
                 </tr>
               ))}
             </tbody>

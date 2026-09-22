@@ -633,6 +633,7 @@ class POIManager:
         categories: set[str] | None = None,
         prefixes: Sequence[str] | None = None,
         kinds: set[MissionPoiKind] | None = None,
+        generated_source: GeneratedPoiSource | None = None,
     ) -> int:
         """Delete POIs for a specific leg (route_id + mission_id combination).
 
@@ -642,6 +643,7 @@ class POIManager:
             categories: Optional set of categories to filter by
             prefixes: Optional name prefixes to filter by
             kinds: Optional generated mission POI kinds to filter by
+            generated_source: Optional internal provenance marker to filter by
 
         Returns:
             Number of POIs deleted
@@ -662,6 +664,8 @@ class POIManager:
                     continue
                 if kinds and poi.kind not in kinds:
                     continue
+                if generated_source and poi.generated_source != generated_source:
+                    continue
                 to_remove.append(poi_id)
 
         for poi_id in to_remove:
@@ -670,13 +674,14 @@ class POIManager:
         if to_remove:
             self._save_pois()
             logger.info(
-                "Deleted %d POIs for leg (route=%s, mission=%s, categories=%s, prefixes=%s, kinds=%s)",
+                "Deleted %d POIs for leg (route=%s, mission=%s, categories=%s, prefixes=%s, kinds=%s, generated_source=%s)",
                 len(to_remove),
                 route_id,
                 mission_id,
                 categories,
                 prefixes,
                 kinds,
+                generated_source,
             )
         return len(to_remove)
 

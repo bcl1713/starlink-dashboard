@@ -47,6 +47,7 @@ def sync_mission_pois(
         route_id=mission.route_id,
         mission_id=effective_mission_id,
         kinds=MISSION_POI_KINDS,
+        generated_source="mission-timeline",
     )
 
     def create(

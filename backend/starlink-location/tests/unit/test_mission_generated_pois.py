@@ -192,7 +192,7 @@ def test_sync_mission_pois_keeps_x_transition_source_identity_after_sorting(tmp_
         assert poi.expected_arrival_time == source_timestamps[transition.id]
 
 
-def test_sync_mission_pois_replaces_only_generated_kinds(tmp_path):
+def test_sync_mission_pois_replaces_only_timeline_generated_typed_pois(tmp_path):
     mission = _mission()
     route = _route()
     poi_manager = POIManager(tmp_path / "pois.json")
@@ -203,6 +203,8 @@ def test_sync_mission_pois_replaces_only_generated_kinds(tmp_path):
             longitude=0,
             route_id=mission.route_id,
             mission_id=mission.id,
+            kind="aar_start",
+            expected_arrival_time=BASE + timedelta(hours=2),
         )
     )
     sync_kwargs = {
@@ -214,12 +216,32 @@ def test_sync_mission_pois_replaces_only_generated_kinds(tmp_path):
     }
 
     sync_mission_pois(mission, route, poi_manager, **sync_kwargs)
-    sync_mission_pois(mission, route, poi_manager, **sync_kwargs)
+    first_departure = next(
+        poi
+        for poi in poi_manager.list_pois(mission_id=mission.id)
+        if poi.generated_source == "mission-timeline" and poi.kind == "departure"
+    )
+    sync_mission_pois(
+        mission,
+        route,
+        poi_manager,
+        **{**sync_kwargs, "mission_start": BASE + timedelta(hours=1)},
+    )
 
-    generated = [poi for poi in poi_manager.list_pois(mission_id=mission.id) if poi.kind]
+    generated = [
+        poi
+        for poi in poi_manager.list_pois(mission_id=mission.id)
+        if poi.generated_source == "mission-timeline"
+    ]
     assert {poi.kind for poi in generated} == {"departure", "arrival"}
     assert len(generated) == 2
-    assert poi_manager.get_poi(manual.id) is not None
+    departure = next(poi for poi in generated if poi.kind == "departure")
+    assert departure is not first_departure
+    assert departure.expected_arrival_time == BASE + timedelta(hours=1)
+    surviving_manual = poi_manager.get_poi(manual.id)
+    assert surviving_manual is not None
+    assert surviving_manual.kind == "aar_start"
+    assert surviving_manual.generated_source is None
 
 
 def test_old_persisted_poi_without_generated_fields_loads(tmp_path):
