@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, Request
 from app.core.eta_service import get_eta_calculator
 from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.mission.routes import get_active_mission_id
-from app.mission.timeline_builder.pois import MISSION_EVENT_CATEGORY
 from app.models.overview_upcoming_pois import OverviewUpcomingPoisResponse
 from app.services.flight_state import get_flight_state_manager
 from app.services.poi_manager import POIManager
@@ -54,7 +53,7 @@ async def get_overview_upcoming_pois(
     generated_pois = [
         poi
         for poi in poi_manager.list_pois(mission_id=mission_id)
-        if poi.kind is not None and poi.category == MISSION_EVENT_CATEGORY
+        if poi.kind is not None and poi.generated_source == "mission-timeline"
     ]
     if not generated_pois:
         return OverviewUpcomingPoisResponse(

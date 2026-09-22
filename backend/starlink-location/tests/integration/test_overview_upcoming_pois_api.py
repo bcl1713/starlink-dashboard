@@ -70,6 +70,7 @@ def scheduled_poi() -> POI:
         name="X transition",
         kind="x_band_transition",
         category=MISSION_EVENT_CATEGORY,
+        generated_source="mission-timeline",
         latitude=40.0,
         longitude=-71.0,
         projected_route_progress=100,
@@ -195,22 +196,21 @@ def test_api_uses_active_route_telemetry_without_endpoint_defaults(
     del client.app.state.coordinator
 
 
-def test_api_excludes_same_mission_manual_typed_poi_and_keeps_generated_poi(
+def test_api_excludes_public_spoofed_mission_event_poi_and_keeps_timeline_generated_poi(
     client, monkeypatch
 ):
     import app.api.overview_upcoming_pois as overview_api
 
     active_route = route([(40.0, -73.0), (40.0, -71.0)])
-    generated_poi = scheduled_poi()
-    manual_poi = generated_poi.model_copy(
-        update={"id": "manual-x-transition", "category": "landmark"}
+    poi_manager = client.app.state.poi_manager
+    generated_poi = scheduled_poi().model_copy(
+        update={"mission_id": "mission-1", "generated_source": "mission-timeline"}
     )
+    poi_manager._pois[generated_poi.id] = generated_poi
     client.app.dependency_overrides[get_route_manager] = lambda: SimpleNamespace(
         get_active_route=lambda: active_route
     )
-    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
-        list_pois=lambda mission_id=None: [manual_poi, generated_poi]
-    )
+    client.app.dependency_overrides[get_poi_manager] = lambda: poi_manager
     monkeypatch.setattr(overview_api, "get_active_mission_id", lambda: "mission-1")
     monkeypatch.setattr(
         overview_api,
@@ -218,8 +218,21 @@ def test_api_excludes_same_mission_manual_typed_poi_and_keeps_generated_poi(
         lambda: SimpleNamespace(get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="pre_departure"))),
     )
 
+    spoof_response = client.post(
+        "/api/pois/",
+        json={
+            "name": "Spoofed mission event",
+            "latitude": 40.0,
+            "longitude": -71.0,
+            "mission_id": "mission-1",
+            "category": MISSION_EVENT_CATEGORY,
+            "kind": "x_band_transition",
+            "expected_arrival_time": (NOW + timedelta(minutes=10)).isoformat(),
+        },
+    )
     response = client.get("/api/overview/upcoming-pois")
 
+    assert spoof_response.status_code == 201, spoof_response.text
     assert response.status_code == 200, response.text
     assert [poi["poi_id"] for poi in response.json()["pois"]] == [generated_poi.id]
 
@@ -230,7 +243,9 @@ def test_api_returns_no_generated_pois_for_active_route_with_only_manual_typed_p
     import app.api.overview_upcoming_pois as overview_api
 
     active_route = route([(40.0, -73.0), (40.0, -71.0)])
-    manual_poi = scheduled_poi().model_copy(update={"category": "landmark"})
+    manual_poi = scheduled_poi().model_copy(
+        update={"category": "landmark", "generated_source": None}
+    )
     client.app.dependency_overrides[get_route_manager] = lambda: SimpleNamespace(
         get_active_route=lambda: active_route
     )

@@ -20,6 +20,7 @@ MissionPoiKind = Literal[
     "ka_coverage_entry",
     "ka_transition",
 ]
+GeneratedPoiSource = Literal["mission-timeline"]
 
 
 class POI(BaseModel):
@@ -44,6 +45,11 @@ class POI(BaseModel):
     )
     kind: MissionPoiKind | None = Field(
         default=None, description="Typed mission timeline event, when generated"
+    )
+    generated_source: GeneratedPoiSource | None = Field(
+        default=None,
+        exclude=True,
+        description="Internal provenance for server-generated mission POIs",
     )
     expected_arrival_time: datetime | None = Field(
         default=None, description="Scheduled timeline time for this POI"

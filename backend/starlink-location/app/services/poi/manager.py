@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.models.poi import MissionPoiKind, POI, POICreate, POIUpdate
+from app.models.poi import GeneratedPoiSource, MissionPoiKind, POI, POICreate, POIUpdate
 from filelock import FileLock
 
 logger = logging.getLogger(__name__)
@@ -159,6 +159,8 @@ class POIManager:
                 pois_section = {}
                 for poi_id, poi in self._pois.items():
                     poi_dict = poi.model_dump()
+                    if poi.generated_source is not None:
+                        poi_dict["generated_source"] = poi.generated_source
                     # Convert datetime to ISO format for JSON serialization
                     if isinstance(poi_dict.get("created_at"), datetime):
                         poi_dict["created_at"] = poi_dict["created_at"].isoformat()
@@ -307,7 +309,13 @@ class POIManager:
             self._save_pois()
         return len(removed_ids)
 
-    def create_poi(self, poi_create: POICreate, active_route=None) -> POI:
+    def create_poi(
+        self,
+        poi_create: POICreate,
+        active_route=None,
+        *,
+        generated_source: GeneratedPoiSource | None = None,
+    ) -> POI:
         """
         Create a new POI.
 
@@ -351,6 +359,7 @@ class POIManager:
             route_id=poi_create.route_id,
             mission_id=poi_create.mission_id,
             kind=poi_create.kind,
+            generated_source=generated_source,
             expected_arrival_time=poi_create.expected_arrival_time,
             created_at=now,
             updated_at=now,

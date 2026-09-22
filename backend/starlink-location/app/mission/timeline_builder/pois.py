@@ -73,6 +73,7 @@ def sync_mission_pois(
                 expected_arrival_time=expected_arrival_time,
             ),
             active_route=route,
+            generated_source="mission-timeline",
         )
 
     departure = _endpoint(route, "departure", route.points[0], "Departure")
