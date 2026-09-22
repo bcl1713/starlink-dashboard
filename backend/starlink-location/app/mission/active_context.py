@@ -80,20 +80,35 @@ def resolve_active_mission_leg_context(
 
     if len(active_legs) > 1:
         parent_mission_id, _, leg = active_legs[0]
-        return _unavailable(
+        conflicts = [
+            f"{parent_id}/{active_leg.id}" for parent_id, _, active_leg in active_legs
+        ]
+        bounded_conflicts = conflicts[:10]
+        logger.warning(
+            "Active mission context unavailable: parent_id=%s leg_id=%s "
+            "conflicting_active_legs=%s conflicting_active_leg_count=%s "
+            "state=%s",
+            parent_mission_id,
+            leg.id,
+            bounded_conflicts,
+            len(conflicts),
             "inconsistent_active_mission",
-            parent_mission_id=parent_mission_id,
-            leg_id=leg.id,
         )
+        return ActiveMissionLegResolution(state="inconsistent_active_mission")
 
     parent_mission_id, parent_mission, leg = active_legs[0]
-    route_id = leg.route_id.strip()
+    route_id = leg.route_id
     observed_route_id = route_manager.get_active_route_id()
-    route = route_manager.get_route(route_id) if route_id else None
+    route = (
+        route_manager.get_route(route_id)
+        if route_id and not route_id.isspace()
+        else None
+    )
     active_route = route_manager.get_active_route()
 
     if (
         not route_id
+        or route_id.isspace()
         or route is None
         or observed_route_id != route_id
         or active_route != route
@@ -102,7 +117,7 @@ def resolve_active_mission_leg_context(
             "route_unavailable",
             parent_mission_id=parent_mission_id,
             leg_id=leg.id,
-            expected_route_id=route_id or None,
+            expected_route_id=route_id if route_id else None,
             observed_route_id=observed_route_id,
         )
 

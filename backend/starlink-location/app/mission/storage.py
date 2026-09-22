@@ -45,7 +45,7 @@ def get_mission_lock(mission_id: str) -> FileLock:
 
 
 def get_active_leg_lock() -> FileLock:
-    """Get the repository-wide lock for active mission leg resolution."""
+    """Get the repository-wide lock for v2 active-leg reads and writes."""
     ensure_missions_directory()
     return FileLock(str(MISSIONS_DIR / ".active-leg.lock"))
 
@@ -170,6 +170,16 @@ def save_mission_v2(mission: Mission) -> dict:
     Returns:
         Dictionary with save metadata
     """
+    # This lock deliberately covers every v2 mission write because each write
+    # can add, remove, or change a persisted active leg.  Keep the unlocked
+    # implementation private so callers cannot accidentally take this lock
+    # twice while coordinating a broader v2 operation.
+    with get_active_leg_lock():
+        return _save_mission_v2_unlocked(mission)
+
+
+def _save_mission_v2_unlocked(mission: Mission) -> dict:
+    """Write a v2 mission while the active-leg repository lock is held."""
     mission_dir = get_mission_directory(mission.id)
     mission_dir.mkdir(parents=True, exist_ok=True)
 
@@ -188,6 +198,11 @@ def save_mission_v2(mission: Mission) -> dict:
         leg_file = get_mission_leg_file_path(mission.id, leg.id)
         with open(leg_file, "w") as f:
             json.dump(leg.model_dump(), f, indent=2, default=str)
+
+    persisted_leg_ids = {leg.id for leg in mission.legs}
+    for leg_file in _iter_mission_leg_files(legs_dir):
+        if leg_file.stem not in persisted_leg_ids:
+            leg_file.unlink()
 
     logger.info(f"Mission {mission.id} saved with {len(mission.legs)} legs")
 
