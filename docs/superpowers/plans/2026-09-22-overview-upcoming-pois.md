@@ -4,7 +4,7 @@
 
 **Goal:** Render retained mission-generated POIs on the `/overview` globe and a smooth, non-scrollable Top 5 upcoming-POI table driven by a truthful active-mission API.
 
-**Architecture:** Persist a typed `kind` and optional scheduled arrival timestamp on mission-generated POIs, then expose an active-mission projection from a new Overview router. The React client projects the same API records into table and marker sets; one pure urgency utility supplies the marker halo and table-swatch colours. The current standalone route endpoint stars are removed in favour of the generated departure/arrival POIs.
+**Architecture:** Persist a typed `kind` and optional scheduled arrival timestamp on mission-generated POIs, then expose an active-mission projection from a new Overview router. For every request it uses the established dual-mode ETA service: schedule-derived anticipated ETA before departure and telemetry-position/current-speed/active-route-aware estimated ETA in flight. The React client projects the same API records into table and marker sets; one pure urgency utility supplies the marker halo and table-swatch colours from the returned dynamic estimated arrival. The current standalone route endpoint stars are removed in favour of the generated departure/arrival POIs.
 
 **Tech Stack:** Python 3.12 / FastAPI / Pydantic / pytest; React 19 / TypeScript / TanStack Query / React Three Fiber / Vitest / Playwright; Markdown.
 
@@ -17,8 +17,9 @@
 - POI labels use identified imported departure/arrival waypoint names; use coordinate endpoint fallbacks only when no named semantic waypoint exists.
 - Do not infer generated type from names, do not invent coordinates, default speeds, or arrival times, and do not claim estimates are telemetry.
 - The table contains at most five rows and is never scrollable; its first visual swatch column has no header.
-- Departure/arrival remain on the map for the active mission; other timed operational POIs expire 60 minutes after their expected arrival; untimed operational POIs remain while the active mission/route context remains.
-- One frontend urgency projection controls both globe marker and table-swatch colours: green at >=60m, yellow-to-green over 30–60m, red-to-yellow over 0–30m, red when overdue, slate when timing is unavailable.
+- Departure/arrival remain on the map for the active mission; other timed operational POIs expire 60 minutes after their current calculated arrival (anticipated before departure, route-aware estimated in flight); untimed operational POIs remain while the active mission/route context remains.
+- In flight, derive every POI ETA on each endpoint request through the existing route-aware estimated calculator using current telemetry position, current speed, and active-route geometry; never subtract wall-clock time from `expected_arrival_time`. `estimated_arrival_time = calculated_at + eta_seconds`; it is a model estimate, not telemetry.
+- One frontend urgency projection controls both globe marker and table-swatch colours from `estimated_arrival_time`: green at >=60m, yellow-to-green over 30–60m, red-to-yellow over 0–30m, red when overdue, slate when timing is unavailable. Scheduled `expected_arrival_time` is provenance only in flight.
 - Use shared `StarMarker`, globe occlusion, and labels; no global bloom, additional marker renderer, Grafana changes, or fullscreen/navigation changes.
 - Browser acceptance is exact-head Playwright at 1920x1080; frontend tests run with `NODE_ENV=test` because the host exports `NODE_ENV=production`.
 - Documentation impact is in scope: update Overview user feature documentation and endpoint reference in the same PR.
@@ -28,6 +29,7 @@
 - An old persisted POI without `kind` or `expected_arrival_time` loads and is excluded from the Overview generated view rather than crashing or being misclassified.
 - A route has no named departure/arrival waypoint: endpoint fallback exists once, but named imported endpoint labels are never replaced by generic Origin/Destination labels.
 - A timed point is exactly at 30, 60, or 60-minutes-past arrival: colour and retention use inclusive, deterministic boundaries.
+- A mission departs 30 minutes after schedule or its active route changes for a weather diversion: in-flight POI ETA, table order, marker colour, and expiry use current telemetry position/speed and changed active-route geometry, not the original timetable.
 - More than five timed points and one untimed route-ahead point exist: the table remains five rows, with untimed entries only after all selected timed rows.
 - An API request fails or there is no active mission: POIs disappear truthfully while aircraft, GEP, satellite, route, history, and canvas interaction remain intact.
 
@@ -161,9 +163,9 @@ git commit -m "feat(pois): generate typed mission POIs"
 - Create: `backend/starlink-location/tests/integration/test_overview_upcoming_pois_api.py`
 
 **Interfaces:**
-- Produces `OverviewUpcomingPoi`, with `poi_id`, `name`, `kind`, `latitude`, `longitude`, `projected_route_progress`, `expected_arrival_time`, `eta_type`, `flight_phase`, `upcoming`, and `map_retained`.
+- Produces `OverviewUpcomingPoi`, with `poi_id`, `name`, `kind`, `latitude`, `longitude`, `projected_route_progress`, `expected_arrival_time` (scheduled provenance), `eta_seconds`, `estimated_arrival_time`, `eta_type`, `flight_phase`, `upcoming`, and `map_retained`.
 - Produces `OverviewUpcomingPoisResponse(state, calculated_at, pois)` where `state` is `available`, `no_active_route`, `no_generated_pois`, `no_upcoming_pois`, or `unavailable`.
-- Produces `project_overview_upcoming_pois(*, pois, flight_phase, current_progress, now) -> OverviewUpcomingPoisResponse`.
+- Produces `project_overview_upcoming_pois(*, pois, eta_results, flight_phase, current_progress, calculated_at) -> OverviewUpcomingPoisResponse`.
 - Exposes `GET /api/overview/upcoming-pois` from `overview_upcoming_pois.router`.
 
 - [ ] **Step 1: Write failing pure-projection and API contract tests**
@@ -191,6 +193,18 @@ def test_upcoming_order_places_untimed_route_order_after_timed_entries():
     assert [poi.name for poi in response.top_five] == ['C', 'A', 'B']
 
 
+def test_in_flight_eta_uses_live_estimate_not_scheduled_arrival():
+    response = project_overview_upcoming_pois(
+        pois=[timed('X transition', 30, scheduled_at=now + timedelta(minutes=5))],
+        eta_results={'X transition': estimated_eta(seconds=90 * 60)},
+        flight_phase='in_flight', current_progress=0, calculated_at=now,
+    )
+    poi = response.pois[0]
+    assert poi.eta_seconds == 90 * 60
+    assert poi.estimated_arrival_time == now + timedelta(minutes=90)
+    assert poi.upcoming is True
+
+
 def test_api_returns_no_active_route_without_fabricating_records(client):
     response = client.get('/api/overview/upcoming-pois')
     assert response.status_code == 200
@@ -213,15 +227,15 @@ Expected: FAIL because the projection module and route do not exist.
 RETAINED_AFTER_EXPECTED_ARRIVAL = timedelta(minutes=60)
 
 
-def is_map_retained(poi: POI, *, now: datetime, upcoming: bool) -> bool:
+def is_map_retained(poi: OverviewUpcomingPoi, *, now: datetime, upcoming: bool) -> bool:
     if poi.kind in {'departure', 'arrival'}:
         return True
-    if upcoming or poi.expected_arrival_time is None:
+    if upcoming or poi.estimated_arrival_time is None:
         return True
-    return now <= poi.expected_arrival_time + RETAINED_AFTER_EXPECTED_ARRIVAL
+    return now <= poi.estimated_arrival_time + RETAINED_AFTER_EXPECTED_ARRIVAL
 ```
 
-The router obtains the active mission ID through `app.mission.routes.get_active_mission_id`, the active route from `get_route_manager`, typed POIs from `get_poi_manager`, and phase/progress from the existing flight-state/route ETA source. It returns `no_active_route` when there is no active mission or route; it does not call generic `/api/pois/etas` or use its default coordinate/speed fallback. Invalid coordinates are excluded before response construction. The `calculated_at` timestamp is UTC and each timed entry carries `expected_arrival_time` plus `anticipated`/`estimated` mode.
+The router obtains the active mission ID through `app.mission.routes.get_active_mission_id`, the active route from `get_route_manager`, typed POIs from `get_poi_manager`, telemetry position/speed from the coordinator, and phase/progress from the existing flight-state/route ETA source. It calculates each generated POI through `ETACalculator._calculate_route_aware_eta_anticipated` before departure or `ETACalculator._calculate_route_aware_eta_estimated(latitude, longitude, poi, active_route, speed_knots)` in flight; only an uncalculable point remains without ETA. It must not call generic `/api/pois/etas` or use its coordinate/speed defaults. Invalid coordinates are excluded before response construction. The UTC `calculated_at` plus `eta_seconds` produces `estimated_arrival_time`. In flight it is this dynamic time—not `expected_arrival_time`—that drives upcoming, ordering, retention, and the API's displayed ETA. Add integration tests that (a) call the route-aware estimated path with the same scheduled POI but two current positions/speeds and assert changed ETAs, and (b) swap active-route geometry and assert the new route changes the ETA.
 
 Register only `app.include_router(overview_upcoming_pois.router, tags=['Overview POIs'])` in `main.py`.
 
@@ -229,7 +243,7 @@ Register only `app.include_router(overview_upcoming_pois.router, tags=['Overview
 
 Run: `cd backend/starlink-location && .venv/bin/pytest tests/unit/test_overview_upcoming_pois.py tests/integration/test_overview_upcoming_pois_api.py tests/integration/test_pois_quick_reference.py -q`
 
-Expected: PASS, including exact 60-minute retention, no-active-route response, no-generated-POI response, post-arrival empty table, and no fabricated timing.
+Expected: PASS, including exact 60-minute retention based on dynamic in-flight estimated arrival, no-active-route response, no-generated-POI response, post-arrival empty table, a late departure/current-speed ETA independent of scheduled arrival, reroute-sensitive ETA, and no fabricated timing.
 
 - [ ] **Step 5: Commit the API slice**
 
@@ -256,7 +270,7 @@ git commit -m "feat(overview): expose upcoming mission POIs"
 **Interfaces:**
 - Produces `overviewUpcomingPoisApi.get(): Promise<OverviewUpcomingPoisResponse>`.
 - Produces `useOverviewUpcomingPois()` with `refetchInterval: 5_000`, `refetchIntervalInBackground: true`, and `retry: false`.
-- Produces `urgencyColor(expectedArrivalTime: string | null, now: Date): string`.
+- Produces `urgencyColor(estimatedArrivalTime: string | null, now: Date): string`.
 - Produces `overviewPoiView(records, now): { markers: OverviewUpcomingPoi[]; topFive: OverviewUpcomingPoi[] }`.
 
 - [ ] **Step 1: Write failing service, hook, and projection tests**
@@ -305,14 +319,16 @@ export interface OverviewUpcomingPoi {
   kind: OverviewPoiKind;
   latitude: number;
   longitude: number;
-  expected_arrival_time: string | null;
+  expected_arrival_time: string | null; // scheduled provenance
+  eta_seconds: number | null;
+  estimated_arrival_time: string | null;
   eta_type: 'anticipated' | 'estimated' | null;
   upcoming: boolean;
   map_retained: boolean;
 }
 ```
 
-Use `apiClient.get('/api/overview/upcoming-pois')`. Derive urgency from the timestamp and the existing one-second `useCurrentTime` value; do not refetch every second. Keep the exact returned server order for timed and untimed table entries, then `slice(0, 5)`. Validate finite latitude/longitude before producing marker records.
+Use `apiClient.get('/api/overview/upcoming-pois')`. Derive urgency and displayed in-flight ETA from `estimated_arrival_time` and the existing one-second `useCurrentTime` value; do not refetch every second. Preserve `expected_arrival_time` only as scheduled provenance. Keep the exact returned server order for timed and untimed table entries, then `slice(0, 5)`. Validate finite latitude/longitude before producing marker records.
 
 - [ ] **Step 4: Run focused tests and verify GREEN**
 

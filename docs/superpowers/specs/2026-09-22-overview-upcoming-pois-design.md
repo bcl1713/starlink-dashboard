@@ -47,10 +47,20 @@ GET /api/overview/upcoming-pois
 
 The response describes the active mission's generated POIs. Every record
 contains its stable POI ID, label, `kind`, latitude, longitude, projected route
-progress, expected-arrival timestamp when known, ETA mode (`anticipated` or
-`estimated`), flight phase, and computed states for `upcoming` and
-map-retention. The response also carries a calculation timestamp so the client
-can update the countdown between endpoint refreshes.
+progress, and scheduled-arrival timestamp when known. It also carries the
+current ETA result: `eta_seconds`, `estimated_arrival_time`, ETA mode
+(`anticipated` or `estimated`), flight phase, and computed states for
+`upcoming` and map-retention. The response carries a calculation timestamp so
+the client can update the countdown between endpoint refreshes.
+
+Before departure, `anticipated` ETA may use the imported schedule. Once the
+existing flight-status transition marks the mission in flight, `estimated` ETA
+must be recalculated from the current telemetry position and speed against the
+active route using the existing route-aware ETA service. It must not be derived
+by subtracting the wall clock from a scheduled arrival. A changed active-route
+geometry (for example, a weather diversion) must therefore feed the same
+calculation. `estimated_arrival_time` is `calculated_at + eta_seconds`; it is a
+model estimate, not telemetry or a promised schedule.
 
 The top-level response explicitly distinguishes `available`, `no_active_route`,
 `no_generated_pois`, `no_upcoming_pois`, and `unavailable`. It must never use
@@ -67,9 +77,10 @@ The API owns the active mission and route-aware classification.
 - In flight: include only generated POIs ahead of current route progress.
 - Post-arrival: include none.
 
-The table displays at most five rows. Timed upcoming POIs are ordered by
-ascending expected arrival. Untimed upcoming POIs follow timed entries in route
-order and show `ETA unavailable` rather than an invented value.
+The table displays at most five rows. POIs with a current ETA are ordered by
+ascending `estimated_arrival_time`; untimed/uncalculable POIs follow in route
+order and show `ETA unavailable` rather than an invented value. In anticipated
+mode, the schedule-derived ETA remains explicitly labelled anticipated.
 
 ### Globe: retained operational context
 
@@ -77,7 +88,9 @@ The map does not share the table's immediate-disappearance rule.
 
 - Departure and arrival remain rendered for the entire active mission.
 - AAR, X-band, and Ka operational POIs render while upcoming and until 60
-  minutes after their expected arrival.
+  minutes after their current calculated arrival. Before departure that is the
+  anticipated schedule-derived arrival; in flight it is the route-aware
+  estimated arrival.
 - An untimed operational POI remains while its active route/mission context
   remains, because a truthful expiry cannot be calculated.
 - No active route or mission means no Overview POI marker; existing aircraft,
@@ -97,9 +110,9 @@ global bloom.
 Add an unscrollable `Upcoming POIs` overlay panel with a fixed maximum of five
 rows. Its visual columns are:
 
-|  | POI | Type | Expected arrival |
+|  | POI | Type | ETA |
 | --- | --- | --- | --- |
-| colour swatch only | imported/generated label | generated kind label | UTC ETA plus timing mode, or `ETA unavailable` |
+| colour swatch only | imported/generated label | generated kind label | UTC estimated or anticipated arrival plus timing mode, or `ETA unavailable` |
 
 The first column deliberately has no header and contains only a compact visual
 swatch. ETA conveys the textual operational information.
@@ -117,8 +130,8 @@ rest of the Overview.
 ## Timing Colour Projection
 
 Use one shared frontend urgency projection for globe marker colour and table
-swatch colour. It derives remaining time from the API expected-arrival timestamp
-and the local one-second Overview clock:
+swatch colour. It derives remaining time from the API's dynamic
+`estimated_arrival_time` and the local one-second Overview clock:
 
 - 60 minutes or more: green;
 - 30 to 60 minutes: linear interpolation from yellow to green;
@@ -127,7 +140,9 @@ and the local one-second Overview clock:
 - unavailable or invalid timing: neutral slate.
 
 The colour calculation is a UI cue only. The API's ETA/timing mode remains the
-source for actual displayed operational timing.
+source for actual displayed operational timing. `expected_arrival_time` is
+scheduled provenance and must not drive in-flight colour, ordering, expiry, or
+the displayed ETA.
 
 ## Failure Handling
 
@@ -143,6 +158,9 @@ overlapping polling requests.
    idempotent replacement on mission refresh, active route/mission scoping,
    pre-departure/in-flight/post-arrival table filtering, top-five ordering,
    untimed route-order fallback, and the 60-minute map-retention boundary.
+   They prove that a 30-minute-late in-flight departure and a changed active
+   route calculate their POI ETA from current position/speed and active-route
+   geometry rather than from a scheduled clock.
 2. Frontend unit tests cover every urgency-colour boundary, overdue and
    unavailable values, shared marker/swatch colour use, table limit/order/state,
    endpoint marker deduplication, retention projection, and the smooth-size CSS
