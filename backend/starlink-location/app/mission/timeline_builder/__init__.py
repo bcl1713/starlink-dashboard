@@ -36,10 +36,7 @@ from app.mission.timeline_builder.events import (
     apply_manual_outages,
     apply_x_azimuth_events,
 )
-from app.mission.timeline_builder.pois import (
-    sync_ka_pois,
-    sync_x_aar_pois,
-)
+from app.mission.timeline_builder.pois import sync_mission_pois
 from app.mission.timeline_builder.stats import (
     TimelineSummary,
     annotate_aar_markers,
@@ -97,7 +94,6 @@ __all__ = [
     "route_with_adjusted_departure",
     "summarize_timeline",
     # POIs
-    "sync_ka_pois",
-    "sync_x_aar_pois",
+    "sync_mission_pois",
     "timestamp_for_waypoint",
 ]

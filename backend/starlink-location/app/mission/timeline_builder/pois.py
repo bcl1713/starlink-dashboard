@@ -1,221 +1,216 @@
-"""POI synchronization for mission timeline events."""
+"""Typed mission POI synchronization for timeline events."""
 
 from __future__ import annotations
 
-import logging
+from collections.abc import Sequence
+from datetime import datetime
 
 from app.mission.models import MissionLeg
+from app.mission.timeline_builder.aar import ResolvedAARWindow
 from app.mission.timeline_builder.coverage import CoverageAnalysisResult
 from app.mission.timeline_builder.utils import find_waypoint_coordinates
-from app.models.route import ParsedRoute
+from app.models.poi import MissionPoiKind
+from app.models.route import ParsedRoute, RoutePoint, RouteWaypoint
 from app.services.poi_manager import POICreate, POIManager
 
-logger = logging.getLogger(__name__)
-
 MISSION_EVENT_CATEGORY = "mission-event"
-KA_POI_NAME_PREFIXES = (
-    "Ka Coverage Exit",
-    "Ka Coverage Entry",
-    "Ka Transition",
-    "Ka Swap",
-    "CommKa",
-)
-X_AAR_POI_PREFIXES = (
-    "X-Band",
-    "AAR",
-)
+MISSION_POI_KINDS: set[MissionPoiKind] = {
+    "departure",
+    "arrival",
+    "aar_start",
+    "aar_end",
+    "x_band_transition",
+    "ka_coverage_exit",
+    "ka_coverage_entry",
+    "ka_transition",
+}
 
 
-def sync_ka_pois(
+def sync_mission_pois(
     mission: MissionLeg,
     route: ParsedRoute,
     poi_manager: POIManager,
+    *,
+    mission_start: datetime,
+    mission_end: datetime,
+    aar_windows: Sequence[ResolvedAARWindow],
+    transition_schedule: Sequence[tuple[datetime, str]],
     coverage: CoverageAnalysisResult,
     parent_mission_id: str | None = None,
 ) -> None:
-    """Synchronize Ka coverage POIs (gaps and swaps) for a mission leg."""
+    """Replace generated mission POIs while preserving manually managed POIs."""
     effective_mission_id = parent_mission_id or mission.id
-
-    # Delete Ka POIs for THIS specific leg only (route_id + mission_id combination)
-    deleted = 0
-    if mission.route_id:
-        deleted = poi_manager.delete_leg_pois(
-            route_id=mission.route_id,
-            mission_id=effective_mission_id,
-            categories=None,
-            prefixes=KA_POI_NAME_PREFIXES,
-        )
-
-    if deleted:
-        logger.info(
-            "Deleted %d existing Ka POIs for leg (route=%s, mission=%s)",
-            deleted,
-            mission.route_id,
-            effective_mission_id,
-        )
-
-    def create_poi(payload: POICreate):
-        poi_manager.create_poi(payload, active_route=route)
-
-    for gap in coverage.gaps:
-        if gap.start:
-            create_poi(
-                POICreate(
-                    name=_format_commka_exit_entry("Exit", gap.lost_satellite),
-                    latitude=gap.start.latitude,
-                    longitude=gap.start.longitude,
-                    icon="satellite",
-                    category=MISSION_EVENT_CATEGORY,
-                    description=f"Loss at {gap.start.timestamp.isoformat()}",
-                    route_id=mission.route_id,
-                    mission_id=effective_mission_id,
-                )
-            )
-        if gap.end:
-            create_poi(
-                POICreate(
-                    name=_format_commka_exit_entry("Enter", gap.regained_satellite),
-                    latitude=gap.end.latitude,
-                    longitude=gap.end.longitude,
-                    icon="satellite",
-                    category=MISSION_EVENT_CATEGORY,
-                    description=f"Regain at {gap.end.timestamp.isoformat()}",
-                    route_id=mission.route_id,
-                    mission_id=effective_mission_id,
-                )
-            )
-
-    for swap in coverage.swaps:
-        midpoint = swap.midpoint
-        create_poi(
-            POICreate(
-                name=_format_commka_transition_label(
-                    swap.from_satellite, swap.to_satellite
-                ),
-                latitude=midpoint.latitude,
-                longitude=midpoint.longitude,
-                icon="satellite",
-                category=MISSION_EVENT_CATEGORY,
-                description=f"Recommended swap near {midpoint.timestamp.isoformat()}",
-                route_id=mission.route_id,
-                mission_id=effective_mission_id,
-            )
-        )
-
-
-def sync_x_aar_pois(
-    mission: MissionLeg,
-    route: ParsedRoute,
-    poi_manager: POIManager,
-    parent_mission_id: str | None = None,
-) -> None:
-    """Synchronize X-band and AAR POIs for a mission leg."""
-    effective_mission_id = parent_mission_id or mission.id
-
-    # Delete X/AAR POIs for THIS specific leg only (route_id + mission_id combination)
-    deleted = 0
-    if mission.route_id:
-        deleted = poi_manager.delete_leg_pois(
-            route_id=mission.route_id,
-            mission_id=effective_mission_id,
-            categories=None,  # No category filter for X/AAR POIs
-            prefixes=X_AAR_POI_PREFIXES,
-        )
-
-    if deleted:
-        logger.info(
-            "Deleted %d existing X/AAR POIs for leg (route=%s, mission=%s)",
-            deleted,
-            mission.route_id,
-            effective_mission_id,
-        )
-
-    transports = mission.transports
-    if not transports:
+    if not mission.route_id:
         return
 
-    def create(payload: POICreate):
-        poi_manager.create_poi(payload, active_route=route)
+    poi_manager.delete_leg_pois(
+        route_id=mission.route_id,
+        mission_id=effective_mission_id,
+        kinds=MISSION_POI_KINDS,
+    )
 
-    current_satellite = transports.initial_x_satellite_id
-    for transition in transports.x_transitions or []:
-        if transition.latitude is None or transition.longitude is None:
-            continue
-        label = _format_x_transition_label(
-            current_satellite,
-            transition.target_satellite_id,
-            transition.is_same_satellite_transition,
-        )
-        create(
+    def create(
+        *,
+        name: str,
+        latitude: float,
+        longitude: float,
+        icon: str,
+        kind: MissionPoiKind,
+        expected_arrival_time: datetime,
+        description: str | None = None,
+    ) -> None:
+        poi_manager.create_poi(
             POICreate(
-                name=label,
-                latitude=transition.latitude,
-                longitude=transition.longitude,
-                icon="satellite",
+                name=name,
+                latitude=latitude,
+                longitude=longitude,
+                icon=icon,
                 category=MISSION_EVENT_CATEGORY,
-                description=f"X transition target {transition.target_satellite_id or 'Unknown'}",
+                description=description,
                 route_id=mission.route_id,
                 mission_id=effective_mission_id,
-            )
+                kind=kind,
+                expected_arrival_time=expected_arrival_time,
+            ),
+            active_route=route,
         )
-        if (
-            not transition.is_same_satellite_transition
-            and transition.target_satellite_id
-        ):
-            current_satellite = transition.target_satellite_id
 
-    for window in transports.aar_windows or []:
-        start_coords = find_waypoint_coordinates(route, window.start_waypoint_name)
-        if start_coords:
-            create(
-                POICreate(
-                    name="AAR\nStart",
-                    latitude=start_coords[0],
-                    longitude=start_coords[1],
-                    icon="aar",
-                    category=MISSION_EVENT_CATEGORY,
-                    description=f"AAR window start ({window.start_waypoint_name})",
-                    route_id=mission.route_id,
-                    mission_id=effective_mission_id,
-                )
+    departure = _endpoint(route, "departure", route.points[0], "Departure")
+    arrival = _endpoint(route, "arrival", route.points[-1], "Arrival")
+    create(
+        name=departure.name or "Departure",
+        latitude=departure.latitude,
+        longitude=departure.longitude,
+        icon="airport",
+        kind="departure",
+        expected_arrival_time=mission_start,
+    )
+    create(
+        name=arrival.name or "Arrival",
+        latitude=arrival.latitude,
+        longitude=arrival.longitude,
+        icon="flag",
+        kind="arrival",
+        expected_arrival_time=mission_end,
+    )
+
+    _create_aar_pois(create, mission, route, aar_windows)
+    _create_x_transition_pois(create, mission, transition_schedule)
+    _create_ka_pois(create, coverage)
+
+
+def _endpoint(
+    route: ParsedRoute, role: str, fallback: RoutePoint, fallback_name: str
+) -> RouteWaypoint:
+    """Use a labelled endpoint waypoint when present, else the route endpoint."""
+    for waypoint in route.waypoints:
+        if waypoint.role == role:
+            if waypoint.name and waypoint.name.strip():
+                return waypoint
+            return RouteWaypoint(
+                name=fallback_name,
+                latitude=waypoint.latitude,
+                longitude=waypoint.longitude,
+                order=waypoint.order,
+                role=waypoint.role,
             )
-        end_coords = find_waypoint_coordinates(route, window.end_waypoint_name)
-        if end_coords:
+    return RouteWaypoint(
+        name=fallback_name,
+        latitude=fallback.latitude,
+        longitude=fallback.longitude,
+        order=fallback.sequence,
+        role=role,
+    )
+
+
+def _create_aar_pois(create, mission: MissionLeg, route: ParsedRoute, aar_windows) -> None:
+    source_windows = {
+        window.id or f"AAR-{index + 1}": window
+        for index, window in enumerate(mission.transports.aar_windows or [])
+    }
+    for resolved in aar_windows:
+        source = source_windows.get(resolved.name)
+        if source is None:
+            continue
+        start = find_waypoint_coordinates(route, source.start_waypoint_name)
+        if start:
             create(
-                POICreate(
-                    name="AAR\nEnd",
-                    latitude=end_coords[0],
-                    longitude=end_coords[1],
-                    icon="aar",
-                    category=MISSION_EVENT_CATEGORY,
-                    description=f"AAR window end ({window.end_waypoint_name})",
-                    route_id=mission.route_id,
-                    mission_id=effective_mission_id,
-                )
+                name="AAR\nStart",
+                latitude=start[0],
+                longitude=start[1],
+                icon="aar",
+                kind="aar_start",
+                expected_arrival_time=resolved.start_time,
+                description=f"AAR window start ({source.start_waypoint_name})",
+            )
+        end = find_waypoint_coordinates(route, source.end_waypoint_name)
+        if end:
+            create(
+                name="AAR\nEnd",
+                latitude=end[0],
+                longitude=end[1],
+                icon="aar",
+                kind="aar_end",
+                expected_arrival_time=resolved.end_time,
+                description=f"AAR window end ({source.end_waypoint_name})",
             )
 
 
-def _format_commka_exit_entry(kind: str, satellite: str | None) -> str:
-    """Format Ka coverage exit/entry POI name."""
-    # Simplified: no satellite name, just Exit or Entry
-    return f"CommKa\n{kind}"
+def _create_x_transition_pois(create, mission: MissionLeg, transition_schedule) -> None:
+    transitions = mission.transports.x_transitions or []
+    if not transitions:
+        return
+    # apply_x_transitions prepends the initial satellite to its schedule.  The
+    # remaining schedule entries correspond to the configured transitions.
+    scheduled_transitions = transition_schedule[-len(transitions) :]
+    for transition, (timestamp, _) in zip(transitions, scheduled_transitions):
+        create(
+            name="X-Band\nSwap",
+            latitude=transition.latitude,
+            longitude=transition.longitude,
+            icon="satellite",
+            kind="x_band_transition",
+            expected_arrival_time=timestamp,
+            description=f"X transition target {transition.target_satellite_id}",
+        )
 
 
-def _format_commka_transition_label(
-    from_satellite: str | None, to_satellite: str | None
-) -> str:
-    """Format Ka transition POI name."""
-    # Format: "Ka Transition AOR → POR" for display and frontend parsing
+def _create_ka_pois(create, coverage: CoverageAnalysisResult) -> None:
+    for gap in coverage.gaps:
+        if gap.start:
+            create(
+                name="CommKa\nExit",
+                latitude=gap.start.latitude,
+                longitude=gap.start.longitude,
+                icon="satellite",
+                kind="ka_coverage_exit",
+                expected_arrival_time=gap.start.timestamp,
+                description=f"Loss at {gap.start.timestamp.isoformat()}",
+            )
+        if gap.end:
+            create(
+                name="CommKa\nEnter",
+                latitude=gap.end.latitude,
+                longitude=gap.end.longitude,
+                icon="satellite",
+                kind="ka_coverage_entry",
+                expected_arrival_time=gap.end.timestamp,
+                description=f"Regain at {gap.end.timestamp.isoformat()}",
+            )
+    for swap in coverage.swaps:
+        midpoint = swap.midpoint
+        create(
+            name=_ka_transition_name(swap.from_satellite, swap.to_satellite),
+            latitude=midpoint.latitude,
+            longitude=midpoint.longitude,
+            icon="satellite",
+            kind="ka_transition",
+            expected_arrival_time=midpoint.timestamp,
+            description=f"Recommended swap near {midpoint.timestamp.isoformat()}",
+        )
+
+
+def _ka_transition_name(from_satellite: str | None, to_satellite: str | None) -> str:
     if from_satellite and to_satellite:
         return f"Ka Transition {from_satellite} → {to_satellite}"
     return "CommKa\nSwap"
-
-
-def _format_x_transition_label(
-    current_satellite: str | None,
-    target_satellite: str | None,
-    is_same_satellite: bool,
-) -> str:
-    """Format X-band transition POI name."""
-    # Simplified: all X-Band swaps show as "X-Band\nSwap"
-    return "X-Band\nSwap"

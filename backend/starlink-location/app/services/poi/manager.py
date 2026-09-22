@@ -13,7 +13,7 @@ from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 
-from app.models.poi import POI, POICreate, POIUpdate
+from app.models.poi import MissionPoiKind, POI, POICreate, POIUpdate
 from filelock import FileLock
 
 logger = logging.getLogger(__name__)
@@ -110,6 +110,15 @@ class POIManager:
                     if updated_at.tzinfo is None:
                         updated_at = updated_at.replace(tzinfo=timezone.utc)
                     poi_data["updated_at"] = updated_at
+                if isinstance(poi_data.get("expected_arrival_time"), str):
+                    expected_arrival_time = datetime.fromisoformat(
+                        poi_data["expected_arrival_time"]
+                    )
+                    if expected_arrival_time.tzinfo is None:
+                        expected_arrival_time = expected_arrival_time.replace(
+                            tzinfo=timezone.utc
+                        )
+                    poi_data["expected_arrival_time"] = expected_arrival_time
 
                 poi = POI(**poi_data)
                 self._pois[poi_id] = poi
@@ -155,6 +164,10 @@ class POIManager:
                         poi_dict["created_at"] = poi_dict["created_at"].isoformat()
                     if isinstance(poi_dict.get("updated_at"), datetime):
                         poi_dict["updated_at"] = poi_dict["updated_at"].isoformat()
+                    if isinstance(poi_dict.get("expected_arrival_time"), datetime):
+                        poi_dict["expected_arrival_time"] = poi_dict[
+                            "expected_arrival_time"
+                        ].isoformat()
                     pois_section[poi_id] = poi_dict
 
                 data["pois"] = pois_section
@@ -337,6 +350,8 @@ class POIManager:
             description=poi_create.description,
             route_id=poi_create.route_id,
             mission_id=poi_create.mission_id,
+            kind=poi_create.kind,
+            expected_arrival_time=poi_create.expected_arrival_time,
             created_at=now,
             updated_at=now,
         )
@@ -608,6 +623,7 @@ class POIManager:
         mission_id: str,
         categories: set[str] | None = None,
         prefixes: Sequence[str] | None = None,
+        kinds: set[MissionPoiKind] | None = None,
     ) -> int:
         """Delete POIs for a specific leg (route_id + mission_id combination).
 
@@ -616,6 +632,7 @@ class POIManager:
             mission_id: Mission ID for the leg
             categories: Optional set of categories to filter by
             prefixes: Optional name prefixes to filter by
+            kinds: Optional generated mission POI kinds to filter by
 
         Returns:
             Number of POIs deleted
@@ -634,6 +651,8 @@ class POIManager:
                     poi.name.startswith(prefix) for prefix in prefixes
                 ):
                     continue
+                if kinds and poi.kind not in kinds:
+                    continue
                 to_remove.append(poi_id)
 
         for poi_id in to_remove:
@@ -642,12 +661,13 @@ class POIManager:
         if to_remove:
             self._save_pois()
             logger.info(
-                "Deleted %d POIs for leg (route=%s, mission=%s, categories=%s, prefixes=%s)",
+                "Deleted %d POIs for leg (route=%s, mission=%s, categories=%s, prefixes=%s, kinds=%s)",
                 len(to_remove),
                 route_id,
                 mission_id,
                 categories,
                 prefixes,
+                kinds,
             )
         return len(to_remove)
 
