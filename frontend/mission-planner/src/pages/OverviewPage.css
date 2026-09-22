@@ -253,3 +253,92 @@
   outline: 2px solid #72b7ff;
   outline-offset: 2px;
 }
+
+.overview-bottom-overlays {
+  position: absolute;
+  bottom: 4.5rem;
+  left: 1rem;
+  z-index: 1;
+  width: min(28rem, calc(100% - 2rem));
+  pointer-events: none;
+}
+
+.upcoming-pois {
+  overflow-y: hidden;
+  border: 1px solid rgb(148 163 184 / 35%);
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: rgb(3 3 7 / 82%);
+  color: #f8fafc;
+  backdrop-filter: blur(8px);
+}
+
+.upcoming-pois__title {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.upcoming-pois__body {
+  overflow: hidden;
+  margin-top: 0.625rem;
+  transition: height 180ms ease, max-height 180ms ease, padding 180ms ease,
+    opacity 150ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.upcoming-pois table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.upcoming-pois th,
+.upcoming-pois td {
+  height: 2.5rem;
+  border-bottom: 1px solid rgb(148 163 184 / 18%);
+  padding: 0;
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.upcoming-pois th {
+  height: 1.5rem;
+  color: #94a3b8;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.upcoming-pois th:first-child,
+.upcoming-pois td:first-child {
+  width: 1.25rem;
+}
+
+.upcoming-pois th:last-child,
+.upcoming-pois td:last-child {
+  width: 4.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.upcoming-pois tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.upcoming-pois__swatch {
+  display: block;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 999px;
+  box-shadow: 0 0 0.5rem currentColor;
+}
+
+.upcoming-pois__state {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.8125rem;
+  line-height: 2.5rem;
+}

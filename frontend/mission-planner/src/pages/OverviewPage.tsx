@@ -55,6 +55,10 @@ import {
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { OverviewClockPanel } from './OverviewClockPanel';
 import { OverviewFullscreenControl } from './OverviewFullscreenControl';
+import { useOverviewUpcomingPois } from '@/hooks/api/useOverviewUpcomingPois';
+import { overviewPoiView, urgencyColor } from './overview-upcoming-pois';
+import { OverviewPoiMarker } from './OverviewPoiMarker';
+import { UpcomingPoisPanel } from './UpcomingPoisPanel';
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
 const AIRCRAFT_HISTORY_LINE = {
@@ -111,15 +115,6 @@ const atmosphereFragmentShader = `
     gl_FragColor = vec4(atmosphereColor * rim, rim * 0.22);
   }
 `;
-
-interface RouteEndpointProps {
-  coordinate: GlobeCoordinate;
-  color: string;
-}
-
-function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
-  return <StarMarker coordinate={coordinate} color={color} size={0.1} />;
-}
 
 function AircraftMarker({
   coordinate,
@@ -243,9 +238,6 @@ export function OverviewPage() {
   );
   const routeFlow = useMemo(() => routeFlowEmitters(), []);
 
-  const origin = activeRoute?.points?.at(0);
-  const destination = activeRoute?.points?.at(-1);
-
   const isLoading = isLoadingRoutes || (routeId !== null && isLoadingRoute);
   const hasRenderableRoute = routePoints.length >= 2;
   const routeStatus =
@@ -260,6 +252,12 @@ export function OverviewPage() {
             : null;
 
   const currentTime = useCurrentTime(1_000);
+  const { data: upcomingPoisResponse } = useOverviewUpcomingPois();
+  const upcomingPoiState = upcomingPoisResponse?.state ?? 'unavailable';
+  const upcomingPoiView = useMemo(
+    () => overviewPoiView(upcomingPoisResponse?.pois ?? [], new Date(currentTime)),
+    [currentTime, upcomingPoisResponse?.pois]
+  );
   const {
     data: overviewClockSettings,
     isError: isOverviewClockSettingsError,
@@ -502,6 +500,13 @@ export function OverviewPage() {
         />
         <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
       </div>
+      <div className="overview-bottom-overlays">
+        <UpcomingPoisPanel
+          state={upcomingPoiState}
+          pois={upcomingPoiView.topFive}
+          currentTime={new Date(currentTime)}
+        />
+      </div>
       <Canvas camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}>
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.5} />
@@ -546,10 +551,14 @@ export function OverviewPage() {
               depthWrite={false}
             />
           )}
-          {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
-          {destination && (
-            <RouteEndpoint coordinate={destination} color="#00ff00" />
-          )}
+          {upcomingPoiView.markers.map((poi) => (
+            <OverviewPoiMarker
+              key={poi.poi_id}
+              poi={poi}
+              color={urgencyColor(poi.estimated_arrival_time, new Date(currentTime))}
+              globeOccluder={globeOccluder}
+            />
+          ))}
           {groundEntryPoint && (
             <GroundEntryPointMarker
               coordinate={groundEntryPoint}
