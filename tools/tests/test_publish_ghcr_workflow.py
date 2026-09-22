@@ -51,6 +51,27 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
             errors,
         )
 
+    def test_rejects_stale_shorthand_publish_action_when_expected_pin_is_disabled(
+        self,
+    ) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "      - name: Check out source\n        uses: actions/checkout@v7",
+            "      - name: Check out source\n"
+            "        if: ${{ false }}\n"
+            "        uses: actions/checkout@v7\n\n"
+            "      - uses: actions/checkout@v4",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "publish actions must be actions/checkout@v7, "
+            "docker/login-action@v4, docker/setup-buildx-action@v4, "
+            "docker/metadata-action@v6, docker/build-push-action@v7",
+            errors,
+        )
+
     def test_rejects_publish_runner_when_ubuntu_latest_is_commented(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         mutated_workflow = workflow_text.replace(

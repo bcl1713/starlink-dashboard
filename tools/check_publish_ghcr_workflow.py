@@ -26,7 +26,7 @@ FIELD_PATTERN = re.compile(r"^\s+(?P<field>context|file):\s*(?P<value>\S+)\s*$")
 PUBLISH_JOB_PATTERN = re.compile(r"^  publish:\s*$")
 JOB_PATTERN = re.compile(r"^  [A-Za-z0-9_-]+:\s*$")
 RUNNER_PATTERN = re.compile(r"^\s+runs-on:\s*(?P<runner>\S+)\s*$")
-USES_PATTERN = re.compile(r"^\s+uses:\s*(?P<action>\S+)\s*$")
+USES_PATTERN = re.compile(r"^\s+(?:-\s+)?uses:\s*(?P<action>\S+)\s*$")
 EXPECTED_PUBLISH_ACTIONS = (
     "actions/checkout@v7",
     "docker/login-action@v4",
