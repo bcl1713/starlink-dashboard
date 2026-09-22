@@ -7,10 +7,11 @@
 import logging
 from pathlib import Path
 
-from app.models.route import ParsedRoute
-from app.services.kml_parser import KMLParseError, parse_kml_file
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+
+from app.models.route import ParsedRoute
+from app.services.kml_parser import KMLParseError, parse_kml_file
 
 logger = logging.getLogger(__name__)
 
@@ -252,6 +253,10 @@ class RouteManager:
             ParsedRoute or None if not found
         """
         return self._routes.get(route_id)
+
+    def get_active_route_id(self) -> str | None:
+        """Return the manager's active route ID without inspecting route metadata."""
+        return self._active_route_id
 
     def get_active_route(self) -> ParsedRoute | None:
         """

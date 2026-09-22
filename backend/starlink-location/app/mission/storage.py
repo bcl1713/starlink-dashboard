@@ -44,6 +44,12 @@ def get_mission_lock(mission_id: str) -> FileLock:
     return FileLock(str(lock_path))
 
 
+def get_active_leg_lock() -> FileLock:
+    """Get the repository-wide lock for active mission leg resolution."""
+    ensure_missions_directory()
+    return FileLock(str(MISSIONS_DIR / ".active-leg.lock"))
+
+
 def get_mission_path(mission_id: str) -> Path:
     """Get the file path for a mission by ID."""
     return MISSIONS_DIR / f"{mission_id}.json"
