@@ -1032,6 +1032,251 @@ test.describe('Globe overview', () => {
     await expect(historyWindow).toHaveValue('900');
     await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(2);
   });
+  test('renders retained stars and the five-row upcoming POI quick reference at 1920x1080', async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const now = '2026-09-22T12:00:00.000Z';
+    const activeMissionPois = {
+      state: 'available' as const,
+      calculated_at: now,
+      pois: [
+        {
+          poi_id: 'departure-kadw',
+          name: 'KADW',
+          kind: 'departure' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T10:00:00.000Z',
+          eta_seconds: -7_200,
+          estimated_arrival_time: '2026-09-22T10:00:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: false,
+          map_retained: true,
+        },
+        {
+          poi_id: 'aar-passed',
+          name: 'AAR complete',
+          kind: 'aar_end' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T11:30:00.000Z',
+          eta_seconds: -1_800,
+          estimated_arrival_time: '2026-09-22T11:30:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: false,
+          map_retained: true,
+        },
+        {
+          poi_id: 'arrival-rkso',
+          name: 'RKSO',
+          kind: 'arrival' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T14:00:00.000Z',
+          eta_seconds: 7_200,
+          estimated_arrival_time: '2026-09-22T14:00:00.000Z',
+          eta_type: 'anticipated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'x-band',
+          name: 'X-band handoff',
+          kind: 'x_band_transition' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T12:45:00.000Z',
+          eta_seconds: 2_700,
+          estimated_arrival_time: '2026-09-22T12:45:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka-entry',
+          name: 'Ka entry',
+          kind: 'ka_coverage_entry' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T12:35:00.000Z',
+          eta_seconds: 2_100,
+          estimated_arrival_time: '2026-09-22T12:35:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka-swap',
+          name: 'Ka swap',
+          kind: 'ka_transition' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T12:20:00.000Z',
+          eta_seconds: 1_200,
+          estimated_arrival_time: '2026-09-22T12:20:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'aar-start',
+          name: 'AAR start',
+          kind: 'aar_start' as const,
+          latitude: 0,
+          longitude: -90,
+          expected_arrival_time: '2026-09-22T12:10:00.000Z',
+          eta_seconds: 600,
+          estimated_arrival_time: '2026-09-22T12:10:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka-exit',
+          name: 'Ka exit',
+          kind: 'ka_coverage_exit' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T13:30:00.000Z',
+          eta_seconds: 5_400,
+          estimated_arrival_time: '2026-09-22T13:30:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+      ],
+    };
+
+    await page.addInitScript(`
+      const RealDate = Date;
+      const fixedTime = '${now}';
+
+      class FixedDate extends RealDate {
+        constructor(...args) {
+          super(args.length === 0 ? fixedTime : args[0]);
+        }
+
+        static now() {
+          return new RealDate(fixedTime).getTime();
+        }
+      }
+
+      window.Date = FixedDate;
+    `);
+    await page.route('**/api/overview/upcoming-pois', (route) =>
+      route.fulfill({
+        json: {
+          ...activeMissionPois,
+          pois: [
+            activeMissionPois.pois[6],
+            activeMissionPois.pois[5],
+            activeMissionPois.pois[4],
+            activeMissionPois.pois[3],
+            activeMissionPois.pois[2],
+            activeMissionPois.pois[0],
+            activeMissionPois.pois[1],
+            activeMissionPois.pois[7],
+          ],
+        },
+      })
+    );
+
+    const earthTexture = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/earth-day-hi.jpg' &&
+        response.status() === 200
+    );
+
+    await page.goto('/overview');
+    await waitForGlobeVisualReady(page, earthTexture);
+
+    expect(
+      await page.evaluate(() => ({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        visualWidth: window.visualViewport?.width,
+        visualHeight: window.visualViewport?.height,
+        devicePixelRatio: window.devicePixelRatio,
+      }))
+    ).toEqual({
+      width: 1920,
+      height: 1080,
+      visualWidth: 1920,
+      visualHeight: 1080,
+      devicePixelRatio: 1,
+    });
+
+    const panel = page.getByLabel('Upcoming POIs');
+    await expect(panel).toBeVisible();
+    await expect(panel.getByRole('row')).toHaveCount(6);
+    await expect(panel.getByRole('columnheader', { name: /urgency/i })).toHaveCount(0);
+    await expect(panel.getByRole('columnheader', { name: 'Type' })).toBeVisible();
+    await expect(panel).toHaveCSS('overflow-y', 'hidden');
+    await expect(panel.getByText('AAR complete', { exact: true })).toHaveCount(0);
+    await expect(page.getByText('KADW', { exact: true })).toBeVisible();
+    await expect(panel.getByText('RKSO', { exact: true })).toBeVisible();
+    await expect(page.getByText('AAR complete', { exact: true })).toBeVisible();
+    await expect(panel.getByRole('row')).toHaveText([
+      /POI.*Type.*ETA/,
+      /AAR start.*AAR start.*2026-09-22 12:10 UTC · estimated/,
+      /Ka swap.*Ka transition.*2026-09-22 12:20 UTC · estimated/,
+      /Ka entry.*Ka coverage entry.*2026-09-22 12:35 UTC · estimated/,
+      /X-band handoff.*X-band transition.*2026-09-22 12:45 UTC · estimated/,
+      /RKSO.*Arrival.*2026-09-22 14:00 UTC · anticipated/,
+    ]);
+    const clusteredPoiIds = [
+      'departure-kadw',
+      'aar-passed',
+      'arrival-rkso',
+      'x-band',
+      'ka-entry',
+      'ka-swap',
+      'aar-start',
+      'ka-exit',
+    ];
+    const fallback = page.locator('[data-poi-label-fallback="true"]');
+    if (await fallback.count()) {
+      await expect(fallback).toBeVisible();
+      await expect(fallback).toContainText(/POIs — see Upcoming POIs/);
+    } else {
+      const clusteredLabels = await Promise.all(
+        clusteredPoiIds.map(async (poiId) => {
+          const label = page.locator(`[data-poi-label="${poiId}"]`);
+          await expect(label).toBeVisible();
+          const box = await label.boundingBox();
+          expect(box).not.toBeNull();
+          return box!;
+        })
+      );
+      for (let index = 0; index < clusteredLabels.length; index += 1) {
+        for (let other = index + 1; other < clusteredLabels.length; other += 1) {
+          const first = clusteredLabels[index];
+          const second = clusteredLabels[other];
+          expect(
+            first.x + first.width <= second.x ||
+              second.x + second.width <= first.x ||
+              first.y + first.height <= second.y ||
+              second.y + second.height <= first.y
+          ).toBe(true);
+        }
+      }
+    }
+    await expect(panel.locator('.upcoming-pois__swatch')).toHaveCount(5);
+    await expect(panel.locator('.upcoming-pois__swatch').nth(0)).toHaveCSS(
+      'background-color',
+      'rgb(241, 115, 53)'
+    );
+    await expect(panel.locator('.upcoming-pois__swatch').nth(4)).toHaveCSS(
+      'background-color',
+      'rgb(34, 197, 94)'
+    );
+    await expect(page).toHaveScreenshot('overview-upcoming-pois-1920x1080.png', {
+      animations: 'disabled',
+      maxDiffPixelRatio: 0.02,
+    });
+  });
+
   test('retains a persisted custom aircraft history window', async ({
     page,
   }) => {

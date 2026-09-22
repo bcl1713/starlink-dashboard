@@ -25,6 +25,7 @@ from app.api import (
     metrics,
     overview_clock_settings,
     overview_history,
+    overview_upcoming_pois,
     pois,
     routes,
     status,
@@ -613,6 +614,7 @@ app.include_router(active_x_link.router, tags=["Active X Link"])
 app.include_router(status.router, tags=["Status"])
 app.include_router(overview_clock_settings.router, tags=["Overview Clocks"])
 app.include_router(overview_history.router, tags=["Overview History"])
+app.include_router(overview_upcoming_pois.router, tags=["Overview POIs"])
 app.include_router(config.router, tags=["Configuration"])
 app.include_router(flight_status.router, tags=["Flight Status"])
 app.include_router(geojson.router, tags=["GeoJSON"])

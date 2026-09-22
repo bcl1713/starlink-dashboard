@@ -34,7 +34,7 @@ from app.mission.timeline_builder.events import (
     apply_manual_outages,
     apply_x_azimuth_events,
 )
-from app.mission.timeline_builder.pois import sync_ka_pois, sync_x_aar_pois
+from app.mission.timeline_builder.pois import sync_mission_pois
 from app.mission.timeline_builder.stats import (
     TimelineSummary,
     annotate_aar_markers,
@@ -186,10 +186,18 @@ def build_mission_timeline(
         mission_end,
     )
 
-    if poi_manager and (coverage_result.gaps or coverage_result.swaps):
-        sync_ka_pois(mission, route, poi_manager, coverage_result, parent_mission_id)
     if poi_manager:
-        sync_x_aar_pois(mission, route, poi_manager, parent_mission_id)
+        sync_mission_pois(
+            mission,
+            route,
+            poi_manager,
+            mission_start=mission_start,
+            mission_end=mission_end,
+            aar_windows=aar_windows,
+            transition_schedule=transition_schedule,
+            coverage=coverage_result,
+            parent_mission_id=parent_mission_id,
+        )
 
     apply_manual_outages(rule_engine, mission.transports.ka_outages, Transport.KA)
     apply_manual_outages(rule_engine, mission.transports.ku_overrides, Transport.KU)

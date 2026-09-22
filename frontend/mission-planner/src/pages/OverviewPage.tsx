@@ -55,6 +55,14 @@ import {
 import { useOverviewClockSettings } from '@/hooks/api/useOverviewClockSettings';
 import { OverviewClockPanel } from './OverviewClockPanel';
 import { OverviewFullscreenControl } from './OverviewFullscreenControl';
+import { useOverviewUpcomingPois } from '@/hooks/api/useOverviewUpcomingPois';
+import { overviewPoiView, urgencyColor } from './overview-upcoming-pois';
+import { OverviewPoiMarker } from './OverviewPoiMarker';
+import {
+  layoutOverviewPoiLabels,
+  type PoiLabelLayout,
+} from './overview-poi-label-layout';
+import { UpcomingPoisPanel } from './UpcomingPoisPanel';
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
 const AIRCRAFT_HISTORY_LINE = {
@@ -111,15 +119,6 @@ const atmosphereFragmentShader = `
     gl_FragColor = vec4(atmosphereColor * rim, rim * 0.22);
   }
 `;
-
-interface RouteEndpointProps {
-  coordinate: GlobeCoordinate;
-  color: string;
-}
-
-function RouteEndpoint({ coordinate, color }: RouteEndpointProps) {
-  return <StarMarker coordinate={coordinate} color={color} size={0.1} />;
-}
 
 function AircraftMarker({
   coordinate,
@@ -243,9 +242,6 @@ export function OverviewPage() {
   );
   const routeFlow = useMemo(() => routeFlowEmitters(), []);
 
-  const origin = activeRoute?.points?.at(0);
-  const destination = activeRoute?.points?.at(-1);
-
   const isLoading = isLoadingRoutes || (routeId !== null && isLoadingRoute);
   const hasRenderableRoute = routePoints.length >= 2;
   const routeStatus =
@@ -260,6 +256,66 @@ export function OverviewPage() {
             : null;
 
   const currentTime = useCurrentTime(1_000);
+  const { data: upcomingPoisResponse } = useOverviewUpcomingPois();
+  const upcomingPoiState = upcomingPoisResponse?.state ?? 'unavailable';
+  const upcomingPoiView = useMemo(
+    () =>
+      overviewPoiView(upcomingPoisResponse?.pois ?? [], new Date(currentTime)),
+    [currentTime, upcomingPoisResponse?.pois]
+  );
+  const [upcomingPoiLabelLayout, setUpcomingPoiLabelLayout] =
+    useState<PoiLabelLayout>({
+      offsets: {},
+      fallback: null,
+    });
+  useEffect(() => {
+    let attempts = 0;
+    let frame = 0;
+    const measure = () => {
+      const labels = upcomingPoiView.markers.flatMap((poi) => {
+        const element = document.querySelector<HTMLElement>(
+          `[data-poi-label="${poi.poi_id}"]`
+        );
+        if (!element) return [];
+
+        const bounds = element.getBoundingClientRect();
+        if (bounds.width === 0 || bounds.height === 0) return [];
+        const [offsetX, offsetY] = (element.dataset.poiLabelOffset ?? '0,0')
+          .split(',')
+          .map(Number);
+        return [
+          {
+            id: poi.poi_id,
+            bounds: {
+              x: bounds.x - offsetX,
+              y: bounds.y - offsetY,
+              width: bounds.width,
+              height: bounds.height,
+            },
+          },
+        ];
+      });
+
+      if (labels.length < upcomingPoiView.markers.length && attempts < 20) {
+        attempts += 1;
+        frame = window.requestAnimationFrame(measure);
+        return;
+      }
+
+      const nextLayout = layoutOverviewPoiLabels(labels, {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+      setUpcomingPoiLabelLayout((currentLayout) =>
+        JSON.stringify(currentLayout) === JSON.stringify(nextLayout)
+          ? currentLayout
+          : nextLayout
+      );
+    };
+    frame = window.requestAnimationFrame(measure);
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [upcomingPoiLabelLayout, upcomingPoiView.markers]);
   const {
     data: overviewClockSettings,
     isError: isOverviewClockSettingsError,
@@ -391,20 +447,9 @@ export function OverviewPage() {
           ) : (
             <>
               <li>
-                <span
-                  className="globe-legend__marker globe-legend__marker--origin"
-                  aria-hidden="true"
-                />
-                <span>Origin</span>
-                <strong>First route point</strong>
-              </li>
-              <li>
-                <span
-                  className="globe-legend__marker globe-legend__marker--destination"
-                  aria-hidden="true"
-                />
-                <span>Destination</span>
-                <strong>Last route point</strong>
+                <span aria-hidden="true" />
+                <span>Generated POIs</span>
+                <strong>Colour indicates estimated arrival urgency</strong>
               </li>
               <li>
                 <span className="globe-legend__route" aria-hidden="true" />
@@ -502,6 +547,13 @@ export function OverviewPage() {
         />
         <OverviewMetricsPanel status={status} telemetryState={telemetryState} />
       </div>
+      <div className="overview-bottom-overlays">
+        <UpcomingPoisPanel
+          state={upcomingPoiState}
+          pois={upcomingPoiView.topFive}
+          currentTime={new Date(currentTime)}
+        />
+      </div>
       <Canvas camera={{ position: GEO_ANALYSIS_CAMERA_POSITION, fov: 45 }}>
         <color attach="background" args={['#030307']} />
         <ambientLight intensity={0.5} />
@@ -546,10 +598,27 @@ export function OverviewPage() {
               depthWrite={false}
             />
           )}
-          {origin && <RouteEndpoint coordinate={origin} color="#ffb000" />}
-          {destination && (
-            <RouteEndpoint coordinate={destination} color="#00ff00" />
-          )}
+          {upcomingPoiView.markers.map((poi) => (
+            <OverviewPoiMarker
+              key={poi.poi_id}
+              poi={poi}
+              color={urgencyColor(
+                poi.estimated_arrival_time,
+                new Date(currentTime)
+              )}
+              globeOccluder={globeOccluder}
+              labelOffset={upcomingPoiLabelLayout.offsets[poi.poi_id]}
+              hideLabel={Boolean(
+                upcomingPoiLabelLayout.fallback &&
+                  poi.poi_id !== upcomingPoiLabelLayout.fallback.anchorId
+              )}
+              fallbackLabel={
+                upcomingPoiLabelLayout.fallback?.anchorId === poi.poi_id
+                  ? `+${upcomingPoiLabelLayout.fallback.hiddenIds.length} POIs — see Upcoming POIs`
+                  : undefined
+              }
+            />
+          ))}
           {groundEntryPoint && (
             <GroundEntryPointMarker
               coordinate={groundEntryPoint}
