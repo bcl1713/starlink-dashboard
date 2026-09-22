@@ -35,19 +35,35 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertEqual(errors, [])
 
-    def test_uses_node_24_action_majors_on_ubuntu_latest(self) -> None:
+    def test_rejects_stale_publish_action_when_expected_pin_is_commented(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "uses: actions/checkout@v7",
+            "uses: actions/checkout@v4\n\n# uses: actions/checkout@v7",
+        )
 
-        self.assertIn("runs-on: ubuntu-latest", workflow_text)
-        for action_reference in (
-            "actions/checkout@v7",
-            "docker/login-action@v4",
-            "docker/setup-buildx-action@v4",
-            "docker/metadata-action@v6",
-            "docker/build-push-action@v7",
-        ):
-            with self.subTest(action_reference=action_reference):
-                self.assertIn(f"uses: {action_reference}", workflow_text)
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "publish actions must be actions/checkout@v7, "
+            "docker/login-action@v4, docker/setup-buildx-action@v4, "
+            "docker/metadata-action@v6, docker/build-push-action@v7",
+            errors,
+        )
+
+    def test_rejects_publish_runner_when_ubuntu_latest_is_commented(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        mutated_workflow = workflow_text.replace(
+            "runs-on: ubuntu-latest",
+            "runs-on: ubuntu-22.04\n\n# runs-on: ubuntu-latest",
+        )
+
+        errors = self.validate_workflow_text(mutated_workflow)
+
+        self.assertIn(
+            "publish runner must be ubuntu-latest, got ['ubuntu-22.04']",
+            errors,
+        )
 
     def test_rejects_duplicate_expected_publish_matrix_row(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")

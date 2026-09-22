@@ -23,6 +23,17 @@ EXPECTED_IMAGES = {
 }
 IMAGE_PATTERN = re.compile(r"^\s*-\s*image:\s*(?P<image>.+?)\s*$")
 FIELD_PATTERN = re.compile(r"^\s+(?P<field>context|file):\s*(?P<value>\S+)\s*$")
+PUBLISH_JOB_PATTERN = re.compile(r"^  publish:\s*$")
+JOB_PATTERN = re.compile(r"^  [A-Za-z0-9_-]+:\s*$")
+RUNNER_PATTERN = re.compile(r"^\s+runs-on:\s*(?P<runner>\S+)\s*$")
+USES_PATTERN = re.compile(r"^\s+uses:\s*(?P<action>\S+)\s*$")
+EXPECTED_PUBLISH_ACTIONS = (
+    "actions/checkout@v7",
+    "docker/login-action@v4",
+    "docker/setup-buildx-action@v4",
+    "docker/metadata-action@v6",
+    "docker/build-push-action@v7",
+)
 
 
 def workflow_entries(workflow_path: Path) -> list[dict[str, str]]:
@@ -44,6 +55,41 @@ def workflow_entries(workflow_path: Path) -> list[dict[str, str]]:
     return entries
 
 
+def publish_job_lines(workflow_text: str) -> list[str]:
+    """Return only lines belonging to the publish job."""
+    lines: list[str] = []
+    in_publish_job = False
+
+    for line in workflow_text.splitlines():
+        if PUBLISH_JOB_PATTERN.match(line):
+            in_publish_job = True
+            continue
+        if in_publish_job and JOB_PATTERN.match(line):
+            break
+        if in_publish_job:
+            lines.append(line)
+
+    return lines
+
+
+def publish_actions(workflow_text: str) -> list[str]:
+    """Return action references from steps in the publish job only."""
+    return [
+        match.group("action")
+        for line in publish_job_lines(workflow_text)
+        if (match := USES_PATTERN.match(line))
+    ]
+
+
+def publish_runners(workflow_text: str) -> list[str]:
+    """Return runner labels configured for the publish job only."""
+    return [
+        match.group("runner")
+        for line in publish_job_lines(workflow_text)
+        if (match := RUNNER_PATTERN.match(line))
+    ]
+
+
 def resolve_from_repo(repo_root: Path, value: str) -> Path:
     """Resolve a repository-relative workflow value without following outside it."""
     resolved = (repo_root / value).resolve()
@@ -62,6 +108,15 @@ def validate_publish_workflow(repo_root: Path, workflow_path: Path) -> list[str]
     image_counts = Counter(image_names)
     found_images = set(image_names)
     workflow_text = workflow_path.read_text(encoding="utf-8")
+
+    runners = publish_runners(workflow_text)
+    if runners != ["ubuntu-latest"]:
+        errors.append(f"publish runner must be ubuntu-latest, got {runners!r}")
+
+    if publish_actions(workflow_text) != list(EXPECTED_PUBLISH_ACTIONS):
+        errors.append(
+            "publish actions must be " + ", ".join(EXPECTED_PUBLISH_ACTIONS)
+        )
 
     if "matrix.file || 'Dockerfile'" in workflow_text:
         errors.append("build action must not fall back to an ambiguous Dockerfile")
