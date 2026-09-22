@@ -20,8 +20,9 @@ def test_telemetry_serializes_datetime_without_deprecated_json_encoder_warning()
     with warnings.catch_warnings(record=True) as captured:
         warnings.simplefilter("always")
         telemetry = importlib.reload(telemetry)
+        timestamp = datetime(2026, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
         sample = telemetry.TelemetryData(
-            timestamp=datetime(2026, 1, 2, 3, 4, 5, tzinfo=timezone.utc),
+            timestamp=timestamp,
             position=telemetry.PositionData(latitude=1.0, longitude=2.0, altitude=3.0),
             network=telemetry.NetworkData(
                 latency_ms=4.0,
@@ -33,6 +34,7 @@ def test_telemetry_serializes_datetime_without_deprecated_json_encoder_warning()
         )
         payload = json.loads(sample.model_dump_json())
 
+    assert sample.model_dump()["timestamp"] == timestamp
     assert payload["timestamp"] == "2026-01-02T03:04:05+00:00"
     assert not any("json_encoders" in str(warning.message) for warning in captured)
 

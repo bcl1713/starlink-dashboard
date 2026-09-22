@@ -62,7 +62,7 @@ class TelemetryData(BaseModel):
         description="Environmental and status information",
     )
 
-    @field_serializer("timestamp")
+    @field_serializer("timestamp", when_used="json")
     def serialize_timestamp(self, value: datetime) -> str:
         """Serialize timestamps as ISO 8601 strings."""
         return value.isoformat()
