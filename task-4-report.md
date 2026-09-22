@@ -33,3 +33,26 @@ The v1 import/runtime audit found no production v1 route or flat-storage consume
 ## Formatter note
 
 `ruff check app tests` exits nonzero on 53 pre-existing import-order violations outside this task's changed behavior. Changed retirement files pass targeted Ruff validation.
+
+## Correction: retained V2 storage regression coverage
+
+- Restored V2-only regression cases for persisted timestamp ordering, metadata leg stubs, invalid metadata JSON, overwrite behavior, stale-leg pruning, and timeline-file exclusion from both full and metadata loads.
+- The pruning regression additionally asserts that a scoped timeline is not mistaken for a leg JSON file or deleted while stale leg data is pruned.
+- No V1 runtime, route, flat-storage, migration, or fallback behavior was restored.
+
+### Correction TDD evidence
+
+RED observed:
+
+```text
+pytest tests/unit/test_mission_storage.py::test_v2_metadata_listing_orders_persisted_timestamps -q
+ERROR: not found ... (no match in any of [<Module test_mission_storage.py>])
+```
+
+GREEN/verification:
+
+```text
+11 passed: tests/unit/test_mission_storage.py
+979 passed, 22 skipped: complete backend test suite
+git diff --check: passed
+```

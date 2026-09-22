@@ -13,6 +13,7 @@ from app.mission.storage import (
     get_mission_file_path,
     get_mission_leg_file_path,
     list_mission_metadata_v2,
+    load_mission_metadata_v2,
     load_mission_timeline,
     load_mission_v2,
     save_mission_timeline,
@@ -115,3 +116,151 @@ def test_scoped_timeline_round_trip_and_deletion_do_not_touch_flat_artifact(
 
 def test_active_leg_lock_is_reused_for_the_scoped_repository(temp_missions_dir):
     assert get_active_leg_lock() is get_active_leg_lock()
+
+
+def test_v2_metadata_listing_orders_persisted_timestamps(temp_missions_dir):
+    def write_metadata(mission_id, **metadata):
+        mission_dir = temp_missions_dir / mission_id
+        mission_dir.mkdir()
+        (mission_dir / "mission.json").write_text(
+            json.dumps({"id": mission_id, "name": mission_id, **metadata})
+        )
+
+    write_metadata("newest", updated_at="2026-09-22T12:00:00Z")
+    write_metadata("created-only", created_at="2026-09-21T12:00:00Z")
+    write_metadata("invalid", updated_at="not-a-timestamp")
+    write_metadata("missing")
+
+    missions = list_mission_metadata_v2()
+
+    assert [mission.id for mission in missions] == [
+        "newest",
+        "created-only",
+        "invalid",
+        "missing",
+    ]
+
+
+def test_v2_metadata_load_returns_leg_stubs_and_handles_invalid_data(temp_missions_dir):
+    mission = Mission(
+        id="metadata",
+        name="Metadata mission",
+        legs=[
+            MissionLeg(
+                id="leg-b",
+                name="Leg B",
+                route_id="route-b",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+            MissionLeg(
+                id="leg-a",
+                name="Leg A",
+                route_id="route-a",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+        ],
+        metadata={"customer": "Test Corp"},
+    )
+    save_mission_v2(mission)
+
+    loaded = load_mission_metadata_v2("metadata")
+
+    assert loaded is not None
+    assert loaded.metadata == {"customer": "Test Corp"}
+    assert [leg.id for leg in loaded.legs] == ["leg-a", "leg-b"]
+    assert [leg.name for leg in loaded.legs] == ["leg-a", "leg-b"]
+
+    invalid_dir = temp_missions_dir / "invalid"
+    invalid_dir.mkdir()
+    (invalid_dir / "mission.json").write_text("{ not valid JSON")
+    assert load_mission_metadata_v2("invalid") is None
+    assert [mission.id for mission in list_mission_metadata_v2()] == ["metadata"]
+
+
+def test_v2_save_overwrites_metadata_and_prunes_stale_leg_files(temp_missions_dir):
+    initial = Mission(
+        id="overwrite",
+        name="Initial name",
+        legs=[
+            MissionLeg(
+                id="keep",
+                name="Keep",
+                route_id="route-keep",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+            MissionLeg(
+                id="stale",
+                name="Stale",
+                route_id="route-stale",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+        ],
+        metadata={"revision": 1},
+    )
+    save_mission_v2(initial)
+
+    save_mission_timeline(
+        "stale",
+        MissionLegTimeline(mission_leg_id="stale"),
+        parent_mission_id="overwrite",
+    )
+    updated = initial.model_copy(
+        update={
+            "name": "Updated name",
+            "legs": [
+                MissionLeg(
+                    id="keep",
+                    name="Keep",
+                    route_id="route-keep",
+                    transports=TransportConfig(initial_x_satellite_id="X-1"),
+                )
+            ],
+            "metadata": {"revision": 2},
+        }
+    )
+    save_mission_v2(updated)
+
+    loaded = load_mission_v2("overwrite")
+    assert loaded is not None
+    assert loaded.name == "Updated name"
+    assert loaded.metadata == {"revision": 2}
+    assert [leg.id for leg in loaded.legs] == ["keep"]
+    assert not get_mission_leg_file_path("overwrite", "stale").exists()
+    assert get_leg_timeline_path("stale", "overwrite").is_file()
+
+
+def test_v2_loads_exclude_scoped_timelines_from_full_and_metadata_legs(
+    temp_missions_dir,
+):
+    mission = Mission(
+        id="timeline-exclusion",
+        name="Timeline exclusion",
+        legs=[
+            MissionLeg(
+                id="leg-2",
+                name="Leg 2",
+                route_id="route-2",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+            MissionLeg(
+                id="leg-1",
+                name="Leg 1",
+                route_id="route-1",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            ),
+        ],
+    )
+    save_mission_v2(mission)
+    save_mission_timeline(
+        "leg-1",
+        MissionLegTimeline(mission_leg_id="leg-1"),
+        parent_mission_id="timeline-exclusion",
+    )
+
+    full = load_mission_v2("timeline-exclusion")
+    metadata = load_mission_metadata_v2("timeline-exclusion")
+
+    assert full is not None
+    assert metadata is not None
+    assert [leg.id for leg in full.legs] == ["leg-1", "leg-2"]
+    assert [leg.id for leg in metadata.legs] == ["leg-1", "leg-2"]
