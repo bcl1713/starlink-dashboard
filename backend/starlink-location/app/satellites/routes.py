@@ -12,7 +12,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.mission.dependencies import get_poi_manager
 from app.models.poi import POICreate, POIUpdate
@@ -31,10 +31,7 @@ class SatelliteResponse(BaseModel):
     slot: str | None = None
     color: str
 
-    class Config:
-        """Pydantic config."""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SatelliteCreate(BaseModel):

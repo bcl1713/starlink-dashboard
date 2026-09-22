@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, field_serializer
 
 
 class PositionData(BaseModel):
@@ -53,8 +53,6 @@ class EnvironmentalData(BaseModel):
 class TelemetryData(BaseModel):
     """Complete telemetry data from simulator."""
 
-    model_config = ConfigDict(json_encoders={datetime: lambda v: v.isoformat()})
-
     timestamp: datetime = Field(..., description="Timestamp of telemetry sample")
     position: PositionData = Field(..., description="Position information")
     network: NetworkData = Field(..., description="Network metrics")
@@ -63,3 +61,8 @@ class TelemetryData(BaseModel):
         default_factory=EnvironmentalData,
         description="Environmental and status information",
     )
+
+    @field_serializer("timestamp", when_used="json")
+    def serialize_timestamp(self, value: datetime) -> str:
+        """Serialize timestamps as ISO 8601 strings."""
+        return value.isoformat()
