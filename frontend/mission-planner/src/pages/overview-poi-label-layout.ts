@@ -74,7 +74,9 @@ export function layoutOverviewPoiLabels(
   labels: ProjectedPoiLabel[],
   viewport: Viewport
 ): PoiLabelLayout {
-  const ordered = [...labels].sort((left, right) => left.id.localeCompare(right.id));
+  const ordered = [...labels].sort((left, right) =>
+    left.id.localeCompare(right.id)
+  );
   if (ordered.length === 0) return { offsets: {}, fallback: null };
 
   const maxWidth = Math.max(...ordered.map((label) => label.bounds.width));
@@ -85,14 +87,24 @@ export function layoutOverviewPoiLabels(
 
   for (const label of ordered) {
     const offset = candidates.find(([x, y]) => {
-      const candidate = { ...label.bounds, x: label.bounds.x + x, y: label.bounds.y + y };
-      return fitsViewport(candidate, viewport) && !placed.some((other) => overlaps(candidate, other));
+      const candidate = {
+        ...label.bounds,
+        x: label.bounds.x + x,
+        y: label.bounds.y + y,
+      };
+      return (
+        fitsViewport(candidate, viewport) &&
+        !placed.some((other) => overlaps(candidate, other))
+      );
     });
 
     if (!offset) {
       return {
         offsets: {},
-        fallback: { anchorId: ordered[0].id, hiddenIds: ordered.map((label) => label.id) },
+        fallback: {
+          anchorId: ordered[0].id,
+          hiddenIds: ordered.map((label) => label.id),
+        },
       };
     }
 

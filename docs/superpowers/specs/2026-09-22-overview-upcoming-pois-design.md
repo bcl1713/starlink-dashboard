@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD060 -->
+
 # Overview Upcoming POIs Design
 
 **Issue:** #149

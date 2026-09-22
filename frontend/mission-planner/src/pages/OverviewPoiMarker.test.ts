@@ -58,7 +58,9 @@ describe('OverviewPoiMarker', () => {
       })
     );
 
-    expect(screen.getByText('KADW').style.transform).toBe('translate(24px, -18px)');
+    expect(screen.getByText('KADW').style.transform).toBe(
+      'translate(24px, -18px)'
+    );
   });
 
   it('renders one imported endpoint label through the shared star marker', () => {

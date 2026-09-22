@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 from app.models.poi import POI
 from app.services.overview_upcoming_pois import project_overview_upcoming_pois
 
-
 NOW = datetime(2026, 9, 22, 12, 0, tzinfo=timezone.utc)
 
 

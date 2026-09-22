@@ -102,13 +102,16 @@ def project_overview_upcoming_pois(
         else:
             upcoming = eta_seconds is None or eta_seconds >= 0
 
-        if poi.kind in {"departure", "arrival"}:
-            map_retained = True
-        elif upcoming or estimated_arrival_time is None:
+        if (
+            poi.kind in {"departure", "arrival"}
+            or upcoming
+            or estimated_arrival_time is None
+        ):
             map_retained = True
         else:
             map_retained = (
-                calculated_at <= estimated_arrival_time + RETAINED_AFTER_EXPECTED_ARRIVAL
+                calculated_at
+                <= estimated_arrival_time + RETAINED_AFTER_EXPECTED_ARRIVAL
             )
 
         projected.append(
@@ -134,13 +137,17 @@ def project_overview_upcoming_pois(
             not poi.upcoming,
             poi.eta_seconds is None,
             poi.eta_seconds if poi.eta_seconds is not None else float("inf"),
-            poi.projected_route_progress
-            if poi.projected_route_progress is not None
-            else float("inf"),
+            (
+                poi.projected_route_progress
+                if poi.projected_route_progress is not None
+                else float("inf")
+            ),
             poi.poi_id,
         )
     )
-    state = "available" if any(poi.upcoming for poi in projected) else "no_upcoming_pois"
+    state = (
+        "available" if any(poi.upcoming for poi in projected) else "no_upcoming_pois"
+    )
     return OverviewUpcomingPoisResponse(
         state=state,
         calculated_at=calculated_at,

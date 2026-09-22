@@ -16,7 +16,9 @@ function poi(index: number): OverviewUpcomingPoi {
     longitude: -95.9,
     expected_arrival_time: '2026-09-22T11:00:00.000Z',
     eta_seconds: index * 60,
-    estimated_arrival_time: new Date(now.valueOf() + index * 60_000).toISOString(),
+    estimated_arrival_time: new Date(
+      now.valueOf() + index * 60_000
+    ).toISOString(),
     eta_type: 'estimated',
     upcoming: true,
     map_retained: true,
@@ -36,7 +38,11 @@ describe('UpcomingPoisPanel', () => {
     };
 
     render(
-      <UpcomingPoisPanel state="available" pois={[unavailablePoi]} currentTime={now} />
+      <UpcomingPoisPanel
+        state="available"
+        pois={[unavailablePoi]}
+        currentTime={now}
+      />
     );
 
     expect(screen.getByText('ETA unavailable')).not.toBeNull();
@@ -51,12 +57,18 @@ describe('UpcomingPoisPanel', () => {
     };
 
     render(
-      <UpcomingPoisPanel state="available" pois={[anticipatedPoi]} currentTime={now} />
+      <UpcomingPoisPanel
+        state="available"
+        pois={[anticipatedPoi]}
+        currentTime={now}
+      />
     );
 
     expect(screen.getByRole('columnheader', { name: 'Type' })).not.toBeNull();
     expect(screen.getByText('Ka coverage entry')).not.toBeNull();
-    expect(screen.getByText('2026-09-22 12:01 UTC · anticipated')).not.toBeNull();
+    expect(
+      screen.getByText('2026-09-22 12:01 UTC · anticipated')
+    ).not.toBeNull();
   });
 
   it('has a headerless swatch column, no scrolling, and a five-row maximum', () => {
@@ -69,10 +81,10 @@ describe('UpcomingPoisPanel', () => {
     );
 
     expect(screen.getAllByRole('row')).toHaveLength(6);
-    expect(
-      screen.queryByRole('columnheader', { name: /urgency/i })
-    ).toBeNull();
-    expect(screen.getByLabelText('Upcoming POIs').style.overflowY).toBe('hidden');
+    expect(screen.queryByRole('columnheader', { name: /urgency/i })).toBeNull();
+    expect(screen.getByLabelText('Upcoming POIs').style.overflowY).toBe(
+      'hidden'
+    );
   });
 
   it('declares a height transition for changing table size', () => {
@@ -98,11 +110,17 @@ describe('UpcomingPoisPanel', () => {
       />
     );
 
-    expect(screen.getByTestId('upcoming-pois-body').style.height).toBe('6.5rem');
+    expect(screen.getByTestId('upcoming-pois-body').style.height).toBe(
+      '6.5rem'
+    );
 
-    rerender(<UpcomingPoisPanel state="no_upcoming_pois" pois={[]} currentTime={now} />);
+    rerender(
+      <UpcomingPoisPanel state="no_upcoming_pois" pois={[]} currentTime={now} />
+    );
 
-    expect(screen.getByTestId('upcoming-pois-body').style.height).toBe('2.5rem');
+    expect(screen.getByTestId('upcoming-pois-body').style.height).toBe(
+      '2.5rem'
+    );
   });
 
   it.each([

@@ -9,7 +9,11 @@ const URGENCY_STOPS = [
 ] as const;
 const UNAVAILABLE_URGENCY_COLOR = '#64748b';
 
-function interpolateHexColor(start: string, end: string, progress: number): string {
+function interpolateHexColor(
+  start: string,
+  end: string,
+  progress: number
+): string {
   const channels = [1, 3, 5].map((offset) => {
     const startChannel = Number.parseInt(start.slice(offset, offset + 2), 16);
     const endChannel = Number.parseInt(end.slice(offset, offset + 2), 16);
@@ -50,8 +54,7 @@ export function urgencyColor(
   const lower = URGENCY_STOPS[upperIndex - 1];
   const upper = URGENCY_STOPS[upperIndex];
   const progress =
-    (remainingMs - lower.remainingMs) /
-    (upper.remainingMs - lower.remainingMs);
+    (remainingMs - lower.remainingMs) / (upper.remainingMs - lower.remainingMs);
 
   return interpolateHexColor(lower.color, upper.color, progress);
 }

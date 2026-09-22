@@ -10,14 +10,13 @@ from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.mission.routes import get_active_mission_id
 from app.models.overview_upcoming_pois import OverviewUpcomingPoisResponse
 from app.services.flight_state import get_flight_state_manager
-from app.services.poi_manager import POIManager
-from app.services.route_eta_calculator import RouteETACalculator
-from app.services.route_manager import RouteManager
 from app.services.overview_upcoming_pois import (
     calculate_route_aware_eta_results,
     project_overview_upcoming_pois,
 )
-
+from app.services.poi_manager import POIManager
+from app.services.route_eta_calculator import RouteETACalculator
+from app.services.route_manager import RouteManager
 
 router = APIRouter(prefix="/api/overview", tags=["overview"])
 
@@ -26,10 +25,14 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _route_progress(active_route: object, latitude: float, longitude: float) -> float | None:
+def _route_progress(
+    active_route: object, latitude: float, longitude: float
+) -> float | None:
     try:
-        return RouteETACalculator(active_route).get_route_progress(latitude, longitude).get(
-            "progress_percent"
+        return (
+            RouteETACalculator(active_route)
+            .get_route_progress(latitude, longitude)
+            .get("progress_percent")
         )
     except (AttributeError, TypeError, ValueError, IndexError):
         return None

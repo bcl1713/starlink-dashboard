@@ -84,16 +84,26 @@ def test_public_poi_create_list_and_get_preserve_typed_schedule_metadata(test_cl
     assert create_response.status_code == 201, create_response.text
     created = create_response.json()
     assert created["kind"] == "x_band_transition"
-    assert datetime.fromisoformat(created["expected_arrival_time"]) == expected_arrival_time
+    assert (
+        datetime.fromisoformat(created["expected_arrival_time"])
+        == expected_arrival_time
+    )
 
     list_response = test_client.get("/api/pois", params={"active_only": "false"})
     assert list_response.status_code == 200, list_response.text
-    listed = next(poi for poi in list_response.json()["pois"] if poi["id"] == created["id"])
+    listed = next(
+        poi for poi in list_response.json()["pois"] if poi["id"] == created["id"]
+    )
     assert listed["kind"] == "x_band_transition"
-    assert datetime.fromisoformat(listed["expected_arrival_time"]) == expected_arrival_time
+    assert (
+        datetime.fromisoformat(listed["expected_arrival_time"]) == expected_arrival_time
+    )
 
     get_response = test_client.get(f"/api/pois/{created['id']}")
     assert get_response.status_code == 200, get_response.text
     fetched = get_response.json()
     assert fetched["kind"] == "x_band_transition"
-    assert datetime.fromisoformat(fetched["expected_arrival_time"]) == expected_arrival_time
+    assert (
+        datetime.fromisoformat(fetched["expected_arrival_time"])
+        == expected_arrival_time
+    )

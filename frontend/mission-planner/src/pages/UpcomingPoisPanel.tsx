@@ -12,7 +12,10 @@ interface UpcomingPoisPanelProps {
   currentTime: Date;
 }
 
-const STATE_MESSAGES: Record<Exclude<OverviewUpcomingPoisState, 'available'>, string> = {
+const STATE_MESSAGES: Record<
+  Exclude<OverviewUpcomingPoisState, 'available'>,
+  string
+> = {
   no_active_route: 'No active route.',
   no_generated_pois: 'No generated POIs.',
   no_upcoming_pois: 'No upcoming POIs.',
@@ -34,7 +37,8 @@ function etaLabel(
   estimatedArrivalTime: string | null,
   etaType: OverviewUpcomingPoi['eta_type']
 ): string {
-  if (estimatedArrivalTime === null || etaType === null) return 'ETA unavailable';
+  if (estimatedArrivalTime === null || etaType === null)
+    return 'ETA unavailable';
 
   const arrival = new Date(estimatedArrivalTime);
   if (!Number.isFinite(arrival.valueOf())) return 'ETA unavailable';
@@ -104,7 +108,10 @@ export function UpcomingPoisPanel({
           data-testid="upcoming-pois-body"
           style={{ height: bodyHeight }}
         >
-          <p className="upcoming-pois__state" role={state === 'unavailable' ? 'alert' : undefined}>
+          <p
+            className="upcoming-pois__state"
+            role={state === 'unavailable' ? 'alert' : undefined}
+          >
             {STATE_MESSAGES[state]}
           </p>
         </div>

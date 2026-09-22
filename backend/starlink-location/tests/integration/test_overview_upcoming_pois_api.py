@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
-
 from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.mission.timeline_builder.pois import MISSION_EVENT_CATEGORY
 from app.models.poi import POI
@@ -17,7 +16,6 @@ from app.models.route import (
 )
 from app.services.eta_calculator import ETACalculator
 from app.services.overview_upcoming_pois import calculate_route_aware_eta_results
-
 
 NOW = datetime(2026, 9, 22, 12, 0, tzinfo=timezone.utc)
 
@@ -158,9 +156,7 @@ def test_api_returns_no_active_route_without_fabricating_records(client):
     assert payload["calculated_at"].endswith("+00:00")
 
 
-def test_api_uses_active_route_telemetry_without_endpoint_defaults(
-    client, monkeypatch
-):
+def test_api_uses_active_route_telemetry_without_endpoint_defaults(client, monkeypatch):
     import app.api.overview_upcoming_pois as overview_api
 
     active_route = route([(40.0, -73.0), (40.0, -72.0), (40.0, -71.0)])
@@ -181,7 +177,9 @@ def test_api_uses_active_route_telemetry_without_endpoint_defaults(
     monkeypatch.setattr(
         overview_api,
         "get_flight_state_manager",
-        lambda: SimpleNamespace(get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))),
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
     )
 
     response = client.get("/api/overview/upcoming-pois")
@@ -191,7 +189,10 @@ def test_api_uses_active_route_telemetry_without_endpoint_defaults(
     assert payload["state"] == "available"
     assert payload["pois"][0]["eta_type"] == "estimated"
     assert payload["pois"][0]["eta_seconds"] > 0
-    assert payload["pois"][0]["expected_arrival_time"] != payload["pois"][0]["estimated_arrival_time"]
+    assert (
+        payload["pois"][0]["expected_arrival_time"]
+        != payload["pois"][0]["estimated_arrival_time"]
+    )
     client.app.dependency_overrides.clear()
     del client.app.state.coordinator
 
@@ -215,7 +216,11 @@ def test_api_excludes_public_spoofed_mission_event_poi_and_keeps_timeline_genera
     monkeypatch.setattr(
         overview_api,
         "get_flight_state_manager",
-        lambda: SimpleNamespace(get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="pre_departure"))),
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(
+                phase=SimpleNamespace(value="pre_departure")
+            )
+        ),
     )
 
     spoof_response = client.post(
@@ -275,7 +280,9 @@ def test_api_returns_unavailable_without_in_flight_telemetry(client, monkeypatch
     monkeypatch.setattr(
         overview_api,
         "get_flight_state_manager",
-        lambda: SimpleNamespace(get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))),
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
     )
     monkeypatch.delattr(client.app.state, "coordinator", raising=False)
 
@@ -312,7 +319,9 @@ def test_api_in_flight_eta_uses_fixed_telemetry_not_schedule_and_changes_for_det
     monkeypatch.setattr(
         overview_api,
         "get_flight_state_manager",
-        lambda: SimpleNamespace(get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))),
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(phase=SimpleNamespace(value="in_flight"))
+        ),
     )
 
     direct_response = client.get("/api/overview/upcoming-pois")

@@ -1,8 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const pageSource = readFileSync(new URL('./OverviewPage.tsx', import.meta.url), 'utf8');
-const styles = readFileSync(new URL('./OverviewPage.css', import.meta.url), 'utf8');
+const pageSource = readFileSync(
+  new URL('./OverviewPage.tsx', import.meta.url),
+  'utf8'
+);
+const styles = readFileSync(
+  new URL('./OverviewPage.css', import.meta.url),
+  'utf8'
+);
 
 describe('OverviewPage generated POI legend and overlay layout contracts', () => {
   it('describes generated POI urgency without obsolete fixed route endpoint entries', () => {

@@ -125,7 +125,9 @@ def _endpoint(
     )
 
 
-def _create_aar_pois(create, mission: MissionLeg, route: ParsedRoute, aar_windows) -> None:
+def _create_aar_pois(
+    create, mission: MissionLeg, route: ParsedRoute, aar_windows
+) -> None:
     source_windows = {
         window.id or f"AAR-{index + 1}": window
         for index, window in enumerate(mission.transports.aar_windows or [])

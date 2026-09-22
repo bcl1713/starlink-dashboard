@@ -5,14 +5,16 @@ from typing import cast
 
 from app.mission.models import AARWindow, MissionLeg, TransportConfig, XTransition
 from app.mission.timeline_builder.aar import ResolvedAARWindow, apply_x_transitions
-from app.mission.timeline_builder.calculator import RouteProjection, RouteTemporalProjector
+from app.mission.timeline_builder.calculator import (
+    RouteProjection,
+    RouteTemporalProjector,
+)
 from app.mission.timeline_builder.coverage import CoverageAnalysisResult
 from app.mission.timeline_builder.pois import sync_mission_pois
 from app.models.poi import POI, POICreate
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteWaypoint
-from app.services.poi_manager import POIManager
 from app.satellites.rules import RuleEngine
-
+from app.services.poi_manager import POIManager
 
 BASE = datetime(2025, 10, 27, 12, 0, tzinfo=timezone.utc)
 
@@ -118,7 +120,10 @@ def test_sync_mission_pois_keeps_imported_endpoint_labels_and_typed_schedule(tmp
     assert generated["arrival"].expected_arrival_time == mission_end
     assert generated["aar_start"].expected_arrival_time == aar_window.start_time
     assert generated["aar_end"].expected_arrival_time == aar_window.end_time
-    assert generated["x_band_transition"].expected_arrival_time == transition_schedule[0][0]
+    assert (
+        generated["x_band_transition"].expected_arrival_time
+        == transition_schedule[0][0]
+    )
 
 
 def test_sync_mission_pois_keeps_x_transition_source_identity_after_sorting(tmp_path):
@@ -183,7 +188,8 @@ def test_sync_mission_pois_keeps_x_transition_source_identity_after_sorting(tmp_
         poi = next(
             poi
             for poi in generated
-            if poi.description == f"X transition target {transition.target_satellite_id}"
+            if poi.description
+            == f"X transition target {transition.target_satellite_id}"
         )
         assert (poi.latitude, poi.longitude) == (
             transition.latitude,

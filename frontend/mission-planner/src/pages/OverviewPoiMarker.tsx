@@ -28,25 +28,29 @@ export function OverviewPoiMarker({
   return (
     <>
       <StarMarker coordinate={coordinate} color={color} size={0.1} />
-      {!hideLabel && <Html
-        occlude={[globeOccluder]}
-        position={globePosition(
-          poi.latitude,
-          poi.longitude,
-          ROUTE_OVERLAY_RADIUS
-        )}
-        zIndexRange={[0, 0]}
-      >
-        <span
-          className="globe-marker-label"
-          data-poi-label={poi.poi_id}
-          data-poi-label-offset={`${labelOffset[0]},${labelOffset[1]}`}
-          data-poi-label-fallback={fallbackLabel ? 'true' : undefined}
-          style={{ transform: `translate(${labelOffset[0]}px, ${labelOffset[1]}px)` }}
+      {!hideLabel && (
+        <Html
+          occlude={[globeOccluder]}
+          position={globePosition(
+            poi.latitude,
+            poi.longitude,
+            ROUTE_OVERLAY_RADIUS
+          )}
+          zIndexRange={[0, 0]}
         >
-          {fallbackLabel ?? poi.name}
-        </span>
-      </Html>}
+          <span
+            className="globe-marker-label"
+            data-poi-label={poi.poi_id}
+            data-poi-label-offset={`${labelOffset[0]},${labelOffset[1]}`}
+            data-poi-label-fallback={fallbackLabel ? 'true' : undefined}
+            style={{
+              transform: `translate(${labelOffset[0]}px, ${labelOffset[1]}px)`,
+            }}
+          >
+            {fallbackLabel ?? poi.name}
+          </span>
+        </Html>
+      )}
     </>
   );
 }

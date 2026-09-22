@@ -44,7 +44,9 @@ describe('urgencyColor', () => {
   });
 
   it('derives colour only from the dynamic estimated arrival time', () => {
-    const delayedEstimate = new Date(now.valueOf() + 60 * 60 * 1000).toISOString();
+    const delayedEstimate = new Date(
+      now.valueOf() + 60 * 60 * 1000
+    ).toISOString();
     expect(urgencyColor(delayedEstimate, now)).toBe('#22c55e');
   });
 });
@@ -85,16 +87,18 @@ describe('overviewPoiView', () => {
 
     const view = overviewPoiView(mixedRecords, now);
 
-    expect(view.markers.map(({ poi_id }) => poi_id)).toEqual([
-      'passed-x',
-      'invalid-latitude',
-      'first-upcoming',
-      'untimed-upcoming',
-      'third-upcoming',
-      'fourth-upcoming',
-      'fifth-upcoming',
-      'sixth-upcoming',
-    ].filter((poiId) => poiId !== 'invalid-latitude'));
+    expect(view.markers.map(({ poi_id }) => poi_id)).toEqual(
+      [
+        'passed-x',
+        'invalid-latitude',
+        'first-upcoming',
+        'untimed-upcoming',
+        'third-upcoming',
+        'fourth-upcoming',
+        'fifth-upcoming',
+        'sixth-upcoming',
+      ].filter((poiId) => poiId !== 'invalid-latitude')
+    );
     expect(view.topFive.map(({ poi_id }) => poi_id)).toEqual([
       'first-upcoming',
       'untimed-upcoming',

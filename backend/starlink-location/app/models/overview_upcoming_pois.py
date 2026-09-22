@@ -7,7 +7,6 @@ from pydantic import BaseModel, Field, field_serializer
 
 from app.models.poi import MissionPoiKind
 
-
 OverviewUpcomingPoisState = Literal[
     "available",
     "no_active_route",
@@ -60,9 +59,11 @@ class OverviewUpcomingPoisResponse(BaseModel):
             key=lambda poi: (
                 poi.eta_seconds is None,
                 poi.eta_seconds if poi.eta_seconds is not None else float("inf"),
-                poi.projected_route_progress
-                if poi.projected_route_progress is not None
-                else float("inf"),
+                (
+                    poi.projected_route_progress
+                    if poi.projected_route_progress is not None
+                    else float("inf")
+                ),
                 poi.name,
             ),
         )[:5]
