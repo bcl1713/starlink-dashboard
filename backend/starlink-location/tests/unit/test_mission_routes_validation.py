@@ -32,7 +32,7 @@ async def test_create_mission_invalid_route():
             poi_manager=mock_poi_manager,
         )
 
-    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "Route invalid-route-id not found" in exc_info.value.detail
 
 
@@ -75,5 +75,5 @@ async def test_update_mission_invalid_route():
                 poi_manager=mock_poi_manager,
             )
 
-        assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         assert "Route invalid-route-id not found" in exc_info.value.detail
