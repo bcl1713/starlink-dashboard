@@ -47,7 +47,7 @@ def get_mission_lock(mission_id: str) -> FileLock:
 def get_active_leg_lock() -> FileLock:
     """Get the repository-wide lock for v2 active-leg reads and writes."""
     ensure_missions_directory()
-    return FileLock(str(MISSIONS_DIR / ".active-leg.lock"))
+    return FileLock(str(MISSIONS_DIR / ".active-leg.lock"), is_singleton=True)
 
 
 def get_mission_path(mission_id: str) -> Path:

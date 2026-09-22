@@ -1,11 +1,17 @@
 """Unit tests for active v2 mission-leg context resolution."""
 
+import asyncio
 import json
 
 import pytest
 
 from app.mission.models import Mission, MissionLeg, TransportConfig
-from app.mission.storage import get_mission_path, save_mission_v2
+from app.mission.storage import (
+    get_active_leg_lock,
+    get_mission_path,
+    load_mission_v2,
+    save_mission_v2,
+)
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.route_manager import RouteManager
 
@@ -142,8 +148,9 @@ def test_resolver_and_v2_writer_share_active_leg_lock(
     lock_paths: list[str] = []
 
     class RecordingLock:
-        def __init__(self, path: str):
+        def __init__(self, path: str, is_singleton: bool = False):
             self.path = path
+            self.is_singleton = is_singleton
 
         def __enter__(self):
             lock_paths.append(self.path)
@@ -161,6 +168,58 @@ def test_resolver_and_v2_writer_share_active_leg_lock(
         str(storage.MISSIONS_DIR / ".active-leg.lock"),
         str(storage.MISSIONS_DIR / ".active-leg.lock"),
     ]
+
+
+def test_active_leg_lock_is_reentrant_when_save_runs_inside_coordination_scope() -> (
+    None
+):
+    mission = _mission("mission-reentrant", "leg-reentrant", "route-a")
+
+    with get_active_leg_lock():
+        save_mission_v2(mission)
+
+    loaded = load_mission_v2(mission.id)
+    assert loaded is not None
+    assert loaded.legs[0].id == "leg-reentrant"
+
+
+def test_delete_endpoint_holds_active_leg_lock_while_removing_v2_hierarchy(
+    monkeypatch,
+) -> None:
+    from app.mission import routes_v2
+
+    entered: list[str] = []
+
+    class RecordingLock:
+        def __init__(self, name: str):
+            self.name = name
+
+        def __enter__(self):
+            entered.append(self.name)
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return False
+
+    monkeypatch.setattr(
+        routes_v2, "get_mission_lock", lambda mission_id: RecordingLock("mission")
+    )
+    monkeypatch.setattr(
+        routes_v2, "get_active_leg_lock", lambda: RecordingLock("active")
+    )
+    monkeypatch.setattr(
+        routes_v2,
+        "load_mission_v2",
+        lambda mission_id: _mission(mission_id, "leg-a", "route-a"),
+    )
+
+    asyncio.run(
+        routes_v2.delete_mission_endpoint(
+            "delete-lock-boundary", route_manager=object(), poi_manager=None
+        )
+    )
+
+    assert entered == ["mission", "active"]
 
 
 def test_v2_writer_removes_deleted_active_leg_inside_shared_lock(route_manager) -> None:

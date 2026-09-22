@@ -37,6 +37,7 @@ from app.mission.models import Mission, MissionLeg, MissionUpdate, TransportConf
 from app.mission.package import export_mission_package
 from app.mission.storage import (
     delete_mission_timeline,
+    get_active_leg_lock,
     get_mission_lock,
     list_mission_metadata_v2,
     load_mission_timeline,
@@ -312,7 +313,7 @@ async def delete_mission_endpoint(
 
         logger.info(f"Deleting mission {mission_id}")
 
-        with get_mission_lock(mission_id):
+        with get_mission_lock(mission_id), get_active_leg_lock():
             # Check mission exists
             mission = load_mission_v2(mission_id)
             if not mission:
