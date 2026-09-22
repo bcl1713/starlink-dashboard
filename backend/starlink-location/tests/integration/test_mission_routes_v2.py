@@ -479,6 +479,40 @@ class TestMissionV2GlobalActivationLifecycle:
             == mission_a.legs[0].route_id
         )
 
+    def test_timeline_save_failure_restores_flags_and_route_and_returns_non_2xx(
+        self, client: TestClient, monkeypatch, two_parent_missions
+    ):
+        mission_a, mission_b = two_parent_missions
+        _add_activation_routes(client, two_parent_missions)
+        with patch(
+            "app.mission.routes_v2.build_mission_timeline",
+            side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+        ):
+            assert (
+                client.post(
+                    f"/api/v2/missions/{mission_a.id}/legs/{mission_a.legs[0].id}/activate"
+                ).status_code
+                == 200
+            )
+
+        def raise_timeline_save_error(*_args, **_kwargs):
+            raise RuntimeError("timeline save failed")
+
+        monkeypatch.setattr(
+            mission_routes_v2, "save_mission_timeline", raise_timeline_save_error
+        )
+        response = client.post(
+            f"/api/v2/missions/{mission_b.id}/legs/{mission_b.legs[0].id}/activate"
+        )
+
+        assert response.status_code >= 400
+        assert load_mission_v2(mission_a.id).legs[0].is_active is True
+        assert load_mission_v2(mission_b.id).legs[0].is_active is False
+        assert (
+            client.app.state.route_manager.get_active_route_id()
+            == mission_a.legs[0].route_id
+        )
+
     def test_deactivating_an_inactive_parent_preserves_active_route_and_clocks(
         self, client: TestClient, monkeypatch, two_parent_missions
     ):

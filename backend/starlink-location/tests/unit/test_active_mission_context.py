@@ -218,7 +218,7 @@ def test_active_leg_lock_is_reentrant_when_save_runs_inside_coordination_scope()
     assert loaded.legs[0].id == "leg-reentrant"
 
 
-def test_delete_endpoint_holds_active_leg_lock_while_removing_v2_hierarchy(
+def test_delete_endpoint_acquires_global_active_leg_lock_before_parent_lock(
     monkeypatch,
 ) -> None:
     from app.mission import routes_v2
@@ -254,7 +254,7 @@ def test_delete_endpoint_holds_active_leg_lock_while_removing_v2_hierarchy(
         )
     )
 
-    assert entered == ["mission", "active"]
+    assert entered == ["active", "mission"]
 
 
 def test_v2_writer_removes_deleted_active_leg_inside_shared_lock(route_manager) -> None:

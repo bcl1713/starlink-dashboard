@@ -110,10 +110,14 @@ def test_sync_mission_pois_keeps_imported_endpoint_labels_and_typed_schedule(tmp
         aar_windows=[aar_window],
         transition_schedule=transition_schedule,
         coverage=CoverageAnalysisResult(gaps=[], swaps=[]),
+        parent_mission_id="parent-mission",
     )
 
-    generated = {poi.kind: poi for poi in poi_manager.list_pois(mission_id=mission.id)}
+    generated = {
+        poi.kind: poi for poi in poi_manager.list_pois(mission_id="parent-mission")
+    }
     assert {poi.generated_source for poi in generated.values()} == {"mission-timeline"}
+    assert {poi.mission_id for poi in generated.values()} == {"parent-mission"}
     assert generated["departure"].name == "KADW"
     assert generated["departure"].expected_arrival_time == mission_start
     assert generated["arrival"].name == "RKSO"

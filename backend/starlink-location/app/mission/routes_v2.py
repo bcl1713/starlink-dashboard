@@ -313,7 +313,10 @@ async def delete_mission_endpoint(
 
         logger.info(f"Deleting mission {mission_id}")
 
-        with get_mission_lock(mission_id), get_active_leg_lock():
+        # Global active-leg coordination is always acquired before parent locks.
+        # Activation already uses this order, so deletion cannot form an AB/BA
+        # cycle while activation persists the same parent.
+        with get_active_leg_lock(), get_mission_lock(mission_id):
             # Check mission exists
             mission = load_mission_v2(mission_id)
             if not mission:
