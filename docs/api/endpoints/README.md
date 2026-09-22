@@ -16,6 +16,8 @@ consumers, integrators, developers
   settings
 - **[Overview Clock Settings](./overview-clock-settings.md)** - Persistent
   dashboard clocks and Mission V2 lifecycle behavior
+- **[Overview Upcoming POIs](./overview-upcoming-pois.md)** - Active-route
+  generated POI projection, timing provenance, retention, and Top 5 queue
 
 ### Feature Endpoints
 

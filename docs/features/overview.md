@@ -25,7 +25,22 @@ Pre-flight predictive planning tools, real-time timeline preview,
 satellite geometry analysis, multi-format briefing exports, and mission
 timeline visualization.
 
-### 4. [System Configuration & Simulation](./system.md)
+### 4. Overview Upcoming POIs
+
+The native Overview globe projects generated operational POIs for the active
+mission. Imported departure and arrival waypoint names are used as their labels;
+the compact **Upcoming POIs** panel is an unscrollable Top 5 queue, while the
+map retains operational context independently. In flight, ETA is a route-aware
+estimate from current telemetry position and speed against active-route
+geometry. Scheduled `expected_arrival_time` is provenance only;
+`estimated_arrival_time` drives the live urgency colour and ordering and is not
+telemetry. See the [Upcoming POIs endpoint](../api/endpoints/overview-upcoming-pois.md)
+for states, timing provenance, and retention details.
+
+This feature does not modify, retire, or replace Grafana; Grafana remains the
+supported fallback and parity comparator.
+
+### 5. [System Configuration & Simulation](./system.md)
 
 Environment configuration, REST API documentation, and simulation mode
 capabilities (realistic telemetry, route following).
