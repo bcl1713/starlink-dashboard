@@ -35,6 +35,20 @@ class PublishGhcrWorkflowContractTests(unittest.TestCase):
 
         self.assertEqual(errors, [])
 
+    def test_uses_node_24_action_majors_on_ubuntu_latest(self) -> None:
+        workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("runs-on: ubuntu-latest", workflow_text)
+        for action_reference in (
+            "actions/checkout@v7",
+            "docker/login-action@v4",
+            "docker/setup-buildx-action@v4",
+            "docker/metadata-action@v6",
+            "docker/build-push-action@v7",
+        ):
+            with self.subTest(action_reference=action_reference):
+                self.assertIn(f"uses: {action_reference}", workflow_text)
+
     def test_rejects_duplicate_expected_publish_matrix_row(self) -> None:
         workflow_text = WORKFLOW_PATH.read_text(encoding="utf-8")
         duplicate_entry = """          - image: ghcr.io/${{ github.repository }}/starlink-location
