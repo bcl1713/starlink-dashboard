@@ -20,10 +20,10 @@ const STATE_MESSAGES: Record<Exclude<OverviewUpcomingPoisState, 'available'>, st
 };
 
 function etaLabel(estimatedArrivalTime: string | null, currentTime: Date): string {
-  if (estimatedArrivalTime === null) return 'Unavailable';
+  if (estimatedArrivalTime === null) return 'ETA unavailable';
 
   const remainingMs = Date.parse(estimatedArrivalTime) - currentTime.valueOf();
-  if (!Number.isFinite(remainingMs)) return 'Unavailable';
+  if (!Number.isFinite(remainingMs)) return 'ETA unavailable';
   if (remainingMs <= 0) return 'Due';
 
   const totalMinutes = Math.ceil(remainingMs / 60_000);

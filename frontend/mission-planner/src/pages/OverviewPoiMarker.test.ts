@@ -48,6 +48,19 @@ const departurePoi: OverviewUpcomingPoi = {
 };
 
 describe('OverviewPoiMarker', () => {
+  it('applies a supplied deterministic offset to keep a clustered label readable', () => {
+    render(
+      React.createElement(OverviewPoiMarker, {
+        poi: departurePoi,
+        color: '#22c55e',
+        globeOccluder: { current: new THREE.Group() },
+        labelOffset: [24, -18],
+      })
+    );
+
+    expect(screen.getByText('KADW').style.transform).toBe('translate(24px, -18px)');
+  });
+
   it('renders one imported endpoint label through the shared star marker', () => {
     render(
       React.createElement(OverviewPoiMarker, {

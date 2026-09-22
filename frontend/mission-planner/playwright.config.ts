@@ -10,6 +10,9 @@ export default defineConfig({
   retries: 0,
   workers: undefined,
   reporter: 'line',
+  // Cold WebGL startup can exceed Playwright's 30s default before the first page
+  // is ready; keep one bounded suite-wide budget rather than retrying failures.
+  timeout: 60_000,
   use: {
     baseURL: `http://localhost:${port}`,
     trace: 'retain-on-failure',

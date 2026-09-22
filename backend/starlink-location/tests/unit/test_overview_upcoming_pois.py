@@ -47,11 +47,11 @@ def test_in_flight_projection_keeps_departure_and_arrival_on_map_but_not_table()
     )
 
     assert [poi.kind for poi in response.pois if poi.upcoming] == ["arrival"]
-    assert [poi.kind for poi in response.pois if poi.map_retained] == [
+    assert {poi.kind for poi in response.pois if poi.map_retained} == {
         "departure",
         "x_band_transition",
         "arrival",
-    ]
+    }
 
 
 def test_upcoming_order_places_untimed_route_order_after_timed_entries():
@@ -68,6 +68,42 @@ def test_upcoming_order_places_untimed_route_order_after_timed_entries():
     )
 
     assert [poi.name for poi in response.top_five] == ["C", "A", "B"]
+
+
+def test_projection_orders_dynamic_estimates_before_untimed_route_order():
+    response = project_overview_upcoming_pois(
+        pois=[
+            poi("Untimed first", "x_band_transition", 70),
+            poi("Two hours", "ka_coverage_exit", 60),
+            poi("Thirty five", "ka_coverage_entry", 50),
+            poi("Ten", "aar_start", 40),
+            poi("Forty five", "ka_transition", 30),
+            poi("Untimed second", "arrival", 80),
+            poi("Twenty", "x_band_transition", 20),
+        ],
+        eta_results={
+            "untimed-first": None,
+            "two-hours": 120 * 60,
+            "thirty-five": 35 * 60,
+            "ten": 10 * 60,
+            "forty-five": 45 * 60,
+            "untimed-second": None,
+            "twenty": 20 * 60,
+        },
+        flight_phase="in_flight",
+        current_progress=0,
+        calculated_at=NOW,
+    )
+
+    assert [poi.name for poi in response.pois if poi.upcoming] == [
+        "Ten",
+        "Twenty",
+        "Thirty five",
+        "Forty five",
+        "Two hours",
+        "Untimed first",
+        "Untimed second",
+    ]
 
 
 def test_in_flight_projection_uses_live_eta_not_scheduled_arrival():

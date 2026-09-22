@@ -10,10 +10,11 @@ function oneWebServer() {
 }
 
 describe('Playwright harness policy', () => {
-  it('uses an explicit startup budget and retains no-retry diagnostics', () => {
+  it('uses explicit startup and browser-test budgets with no-retry diagnostics', () => {
     expect(oneWebServer()).toMatchObject({
       timeout: expect.any(Number),
     });
+    expect(config.timeout).toBe(60_000);
     expect(config.use?.trace).toBe('retain-on-failure');
     expect(config.retries).toBe(0);
   });

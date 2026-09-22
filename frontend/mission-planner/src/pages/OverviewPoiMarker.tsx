@@ -10,12 +10,14 @@ interface OverviewPoiMarkerProps {
   poi: OverviewUpcomingPoi;
   color: string;
   globeOccluder: RefObject<THREE.Group>;
+  labelOffset?: readonly [number, number];
 }
 
 export function OverviewPoiMarker({
   poi,
   color,
   globeOccluder,
+  labelOffset = [0, 0],
 }: OverviewPoiMarkerProps) {
   const coordinate = { latitude: poi.latitude, longitude: poi.longitude };
 
@@ -31,7 +33,13 @@ export function OverviewPoiMarker({
         )}
         zIndexRange={[0, 0]}
       >
-        <span className="globe-marker-label">{poi.name}</span>
+        <span
+          className="globe-marker-label"
+          data-poi-label={poi.poi_id}
+          style={{ transform: `translate(${labelOffset[0]}px, ${labelOffset[1]}px)` }}
+        >
+          {poi.name}
+        </span>
       </Html>
     </>
   );

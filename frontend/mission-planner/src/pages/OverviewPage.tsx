@@ -58,6 +58,7 @@ import { OverviewFullscreenControl } from './OverviewFullscreenControl';
 import { useOverviewUpcomingPois } from '@/hooks/api/useOverviewUpcomingPois';
 import { overviewPoiView, urgencyColor } from './overview-upcoming-pois';
 import { OverviewPoiMarker } from './OverviewPoiMarker';
+import { overviewPoiLabelOffsets } from './overview-poi-label-layout';
 import { UpcomingPoisPanel } from './UpcomingPoisPanel';
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
@@ -257,6 +258,10 @@ export function OverviewPage() {
   const upcomingPoiView = useMemo(
     () => overviewPoiView(upcomingPoisResponse?.pois ?? [], new Date(currentTime)),
     [currentTime, upcomingPoisResponse?.pois]
+  );
+  const upcomingPoiLabelOffsets = useMemo(
+    () => overviewPoiLabelOffsets(upcomingPoiView.markers),
+    [upcomingPoiView.markers]
   );
   const {
     data: overviewClockSettings,
@@ -546,6 +551,7 @@ export function OverviewPage() {
               poi={poi}
               color={urgencyColor(poi.estimated_arrival_time, new Date(currentTime))}
               globeOccluder={globeOccluder}
+              labelOffset={upcomingPoiLabelOffsets[poi.poi_id]}
             />
           ))}
           {groundEntryPoint && (

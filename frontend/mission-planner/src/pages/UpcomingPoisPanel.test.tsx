@@ -28,6 +28,20 @@ afterEach(() => {
 });
 
 describe('UpcomingPoisPanel', () => {
+  it('labels a missing or invalid estimated ETA as ETA unavailable', () => {
+    const unavailablePoi = {
+      ...poi(1),
+      estimated_arrival_time: null,
+      eta_seconds: null,
+    };
+
+    render(
+      <UpcomingPoisPanel state="available" pois={[unavailablePoi]} currentTime={now} />
+    );
+
+    expect(screen.getByText('ETA unavailable')).not.toBeNull();
+  });
+
   it('has a headerless swatch column, no scrolling, and a five-row maximum', () => {
     render(
       <UpcomingPoisPanel
