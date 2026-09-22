@@ -11,6 +11,7 @@ This design allows mission plans to be portable across instances and systems.
 import hashlib
 import json
 import logging
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -23,6 +24,8 @@ logger = logging.getLogger(__name__)
 # Base directory for mission storage
 MISSIONS_DIR = Path("data/missions")
 TIMELINE_SUFFIX = ".timeline.json"
+_active_leg_locks: dict[str, FileLock] = {}
+_active_leg_locks_guard = threading.Lock()
 
 
 def ensure_missions_directory():
@@ -45,9 +48,20 @@ def get_mission_lock(mission_id: str) -> FileLock:
 
 
 def get_active_leg_lock() -> FileLock:
-    """Get the repository-wide lock for v2 active-leg reads and writes."""
+    """Get the canonical repository-wide v2 active-leg read/write lock.
+
+    FileLock 3.12.0 re-enters only when the same instance is acquired again in
+    a thread. Cache the lock by its canonical path rather than relying on the
+    newer ``is_singleton`` constructor option.
+    """
     ensure_missions_directory()
-    return FileLock(str(MISSIONS_DIR / ".active-leg.lock"), is_singleton=True)
+    lock_path = str(MISSIONS_DIR / ".active-leg.lock")
+    with _active_leg_locks_guard:
+        lock = _active_leg_locks.get(lock_path)
+        if lock is None:
+            lock = FileLock(lock_path)
+            _active_leg_locks[lock_path] = lock
+        return lock
 
 
 def get_mission_path(mission_id: str) -> Path:

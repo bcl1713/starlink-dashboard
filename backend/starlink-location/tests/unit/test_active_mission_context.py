@@ -159,6 +159,7 @@ def test_resolver_and_v2_writer_share_active_leg_lock(
         def __exit__(self, exc_type, exc_value, traceback):
             return False
 
+    monkeypatch.setattr(storage, "_active_leg_locks", {})
     monkeypatch.setattr(storage, "FileLock", RecordingLock)
 
     resolve_active_mission_leg_context(route_manager)
@@ -168,6 +169,40 @@ def test_resolver_and_v2_writer_share_active_leg_lock(
         str(storage.MISSIONS_DIR / ".active-leg.lock"),
         str(storage.MISSIONS_DIR / ".active-leg.lock"),
     ]
+
+
+def test_active_leg_lock_uses_a_canonical_minimum_version_compatible_instance(
+    monkeypatch,
+) -> None:
+    from app.mission import storage
+
+    constructed_paths: list[str] = []
+
+    class CompatibleFileLock:
+        def __init__(self, path: str):
+            self.path = path
+            self.depth = 0
+            constructed_paths.append(path)
+
+        def __enter__(self):
+            self.depth += 1
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            self.depth -= 1
+            return False
+
+    monkeypatch.setattr(storage, "_active_leg_locks", {}, raising=False)
+    monkeypatch.setattr(storage, "FileLock", CompatibleFileLock)
+
+    outer_lock = storage.get_active_leg_lock()
+    inner_lock = storage.get_active_leg_lock()
+
+    assert outer_lock is inner_lock
+    assert constructed_paths == [str(storage.MISSIONS_DIR / ".active-leg.lock")]
+    with outer_lock, inner_lock:
+        assert outer_lock.depth == 2
+    assert outer_lock.depth == 0
 
 
 def test_active_leg_lock_is_reentrant_when_save_runs_inside_coordination_scope() -> (
