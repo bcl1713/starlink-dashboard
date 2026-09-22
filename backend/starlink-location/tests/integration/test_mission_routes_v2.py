@@ -5,8 +5,10 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 from uuid import uuid4
 
-import app.mission.routes_v2 as mission_routes_v2
 import pytest
+from fastapi.testclient import TestClient
+
+import app.mission.routes_v2 as mission_routes_v2
 from app.mission.models import (
     Mission,
     MissionLeg,
@@ -15,11 +17,11 @@ from app.mission.models import (
     TimelineStatus,
     TransportConfig,
 )
+from app.mission.storage import load_mission_v2, save_mission_v2
 from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.overview_clock_location import ClockLocation
 from app.services.overview_clock_settings import OverviewClockSettingsStore
-from fastapi.testclient import TestClient
 from main import app
 
 
@@ -60,6 +62,18 @@ class TestMissionV2ClockLifecycle:
                 json=test_mission_v2.model_dump(mode="json"),
             )
             assert create_response.status_code == 201
+            _add_activation_route(client, test_mission_v2.legs[0])
+            with patch(
+                "app.mission.routes_v2.build_mission_timeline",
+                side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+            ):
+                assert (
+                    client.post(
+                        f"/api/v2/missions/{test_mission_v2.id}/legs/"
+                        f"{test_mission_v2.legs[0].id}/activate",
+                    ).status_code
+                    == 200
+                )
             deactivate_response = client.post(
                 f"/api/v2/missions/{test_mission_v2.id}/legs/deactivate",
             )
@@ -138,10 +152,14 @@ class TestMissionV2ClockLifecycle:
                 json=test_mission_v2.model_dump(mode="json"),
             )
             assert create_response.status_code == 201
-            activate_response = client.post(
-                f"/api/v2/missions/{test_mission_v2.id}/legs/"
-                f"{test_mission_v2.legs[0].id}/activate",
-            )
+            with patch(
+                "app.mission.routes_v2.build_mission_timeline",
+                side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+            ):
+                activate_response = client.post(
+                    f"/api/v2/missions/{test_mission_v2.id}/legs/"
+                    f"{test_mission_v2.legs[0].id}/activate",
+                )
             assert activate_response.status_code == 200
             assert store.get_clocks() == [
                 original_clocks[0],
@@ -176,13 +194,18 @@ class TestMissionV2ClockLifecycle:
             ).status_code
             == 201
         )
-        assert (
-            client.post(
-                f"/api/v2/missions/{test_mission_v2.id}/legs/"
-                f"{test_mission_v2.legs[0].id}/activate",
-            ).status_code
-            == 200
-        )
+        _add_activation_route(client, test_mission_v2.legs[0])
+        with patch(
+            "app.mission.routes_v2.build_mission_timeline",
+            side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+        ):
+            assert (
+                client.post(
+                    f"/api/v2/missions/{test_mission_v2.id}/legs/"
+                    f"{test_mission_v2.legs[0].id}/activate",
+                ).status_code
+                == 200
+            )
         monkeypatch.setattr(
             mission_routes_v2,
             "apply_mission_deactivation_clock_settings",
@@ -221,13 +244,18 @@ class TestMissionV2ClockLifecycle:
                 ).status_code
                 == 201
             )
-            assert (
-                client.post(
-                    f"/api/v2/missions/{test_mission_v2.id}/legs/"
-                    f"{test_mission_v2.legs[0].id}/activate",
-                ).status_code
-                == 200
-            )
+            _add_activation_route(client, test_mission_v2.legs[0])
+            with patch(
+                "app.mission.routes_v2.build_mission_timeline",
+                side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+            ):
+                assert (
+                    client.post(
+                        f"/api/v2/missions/{test_mission_v2.id}/legs/"
+                        f"{test_mission_v2.legs[0].id}/activate",
+                    ).status_code
+                    == 200
+                )
             path.write_bytes(corrupt_settings)
 
             response = client.post(
@@ -274,6 +302,214 @@ def test_mission_v2():
         description="A test mission v2",
         legs=[leg],
     )
+
+
+@pytest.fixture
+def two_parent_missions():
+    """Provide two stored parents whose legs use different routes."""
+    suffix = uuid4().hex[:8]
+    mission_a = Mission(
+        id=f"mission-a-{suffix}",
+        name="Mission A",
+        legs=[
+            MissionLeg(
+                id=f"leg-a-{suffix}",
+                name="Leg A",
+                route_id=f"route-a-{suffix}",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+        ],
+    )
+    mission_b = Mission(
+        id=f"mission-b-{suffix}",
+        name="Mission B",
+        legs=[
+            MissionLeg(
+                id=f"leg-b-{suffix}",
+                name="Leg B",
+                route_id=f"route-b-{suffix}",
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+        ],
+    )
+    save_mission_v2(mission_a)
+    save_mission_v2(mission_b)
+    return mission_a, mission_b
+
+
+def _activation_timeline(leg_id: str) -> tuple[MissionLegTimeline, TimelineSummary]:
+    now = datetime.now(timezone.utc)
+    timeline = MissionLegTimeline(
+        mission_leg_id=leg_id,
+        segments=[
+            TimelineSegment(
+                id=f"segment-{leg_id}",
+                start_time=now,
+                end_time=now + timedelta(minutes=1),
+                status=TimelineStatus.NOMINAL,
+            )
+        ],
+    )
+    return timeline, TimelineSummary(
+        mission_start=now,
+        mission_end=now + timedelta(minutes=1),
+        degraded_seconds=0,
+        critical_seconds=0,
+        next_conflict_seconds=-1,
+        transport_states={},
+        sample_count=1,
+        sample_interval_seconds=60,
+        generation_runtime_ms=1,
+    )
+
+
+def _add_activation_routes(
+    client: TestClient, missions: tuple[Mission, Mission]
+) -> None:
+    for mission in missions:
+        _add_activation_route(client, mission.legs[0])
+
+
+def _add_activation_route(client: TestClient, leg: MissionLeg) -> None:
+    route_manager = client.app.state.route_manager
+    route_manager.add_route(
+        leg.route_id,
+        ParsedRoute(
+            metadata=RouteMetadata(
+                name=leg.route_id,
+                file_path=f"/tmp/{leg.route_id}.kml",
+                point_count=2,
+            ),
+            points=[
+                RoutePoint(latitude=0.0, longitude=0.0),
+                RoutePoint(latitude=1.0, longitude=1.0),
+            ],
+        ),
+    )
+
+
+class TestMissionV2GlobalActivationLifecycle:
+    def test_activation_clears_active_leg_in_other_parent(
+        self, client: TestClient, two_parent_missions
+    ):
+        mission_a, mission_b = two_parent_missions
+        _add_activation_routes(client, two_parent_missions)
+
+        with patch(
+            "app.mission.routes_v2.build_mission_timeline",
+            side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+        ):
+            assert (
+                client.post(
+                    f"/api/v2/missions/{mission_a.id}/legs/{mission_a.legs[0].id}/activate"
+                ).status_code
+                == 200
+            )
+            response = client.post(
+                f"/api/v2/missions/{mission_b.id}/legs/{mission_b.legs[0].id}/activate"
+            )
+
+        assert response.status_code == 200
+        assert load_mission_v2(mission_a.id).legs[0].is_active is False
+        assert load_mission_v2(mission_b.id).legs[0].is_active is True
+        assert (
+            client.app.state.route_manager.get_active_route_id()
+            == mission_b.legs[0].route_id
+        )
+
+    def test_route_activation_failure_restores_flags_and_returns_non_2xx(
+        self, client: TestClient, monkeypatch, two_parent_missions
+    ):
+        mission_a, mission_b = two_parent_missions
+        _add_activation_routes(client, two_parent_missions)
+        with patch(
+            "app.mission.routes_v2.build_mission_timeline",
+            side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+        ):
+            assert (
+                client.post(
+                    f"/api/v2/missions/{mission_a.id}/legs/{mission_a.legs[0].id}/activate"
+                ).status_code
+                == 200
+            )
+            monkeypatch.setattr(
+                client.app.state.route_manager,
+                "activate_route",
+                lambda _route_id: False,
+            )
+            response = client.post(
+                f"/api/v2/missions/{mission_b.id}/legs/{mission_b.legs[0].id}/activate"
+            )
+
+        assert response.status_code >= 400
+        assert load_mission_v2(mission_a.id).legs[0].is_active is True
+        assert load_mission_v2(mission_b.id).legs[0].is_active is False
+
+    def test_timeline_failure_restores_flags_and_returns_non_2xx(
+        self, client: TestClient, monkeypatch, two_parent_missions
+    ):
+        mission_a, mission_b = two_parent_missions
+        _add_activation_routes(client, two_parent_missions)
+        with patch(
+            "app.mission.routes_v2.build_mission_timeline",
+            side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+        ):
+            assert (
+                client.post(
+                    f"/api/v2/missions/{mission_a.id}/legs/{mission_a.legs[0].id}/activate"
+                ).status_code
+                == 200
+            )
+
+        def raise_timeline_error(*_args, **_kwargs):
+            raise RuntimeError("timeline failed")
+
+        monkeypatch.setattr(
+            mission_routes_v2, "build_mission_timeline", raise_timeline_error
+        )
+        response = client.post(
+            f"/api/v2/missions/{mission_b.id}/legs/{mission_b.legs[0].id}/activate"
+        )
+
+        assert response.status_code >= 400
+        assert load_mission_v2(mission_a.id).legs[0].is_active is True
+        assert load_mission_v2(mission_b.id).legs[0].is_active is False
+        assert (
+            client.app.state.route_manager.get_active_route_id()
+            == mission_a.legs[0].route_id
+        )
+
+    def test_deactivating_an_inactive_parent_preserves_active_route_and_clocks(
+        self, client: TestClient, monkeypatch, two_parent_missions
+    ):
+        mission_a, mission_b = two_parent_missions
+        _add_activation_routes(client, two_parent_missions)
+        clock_updates = []
+        monkeypatch.setattr(
+            mission_routes_v2,
+            "apply_mission_deactivation_clock_settings",
+            lambda *_args, **_kwargs: clock_updates.append("deactivated"),
+        )
+        with patch(
+            "app.mission.routes_v2.build_mission_timeline",
+            side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+        ):
+            assert (
+                client.post(
+                    f"/api/v2/missions/{mission_b.id}/legs/{mission_b.legs[0].id}/activate"
+                ).status_code
+                == 200
+            )
+
+        response = client.post(f"/api/v2/missions/{mission_a.id}/legs/deactivate")
+
+        assert response.status_code == 200
+        assert (
+            client.app.state.route_manager.get_active_route_id()
+            == mission_b.legs[0].route_id
+        )
+        assert clock_updates == []
+        assert load_mission_v2(mission_b.id).legs[0].is_active is True
 
 
 @pytest.fixture(autouse=True)
@@ -361,8 +597,9 @@ class TestMissionV2ListEndpoint:
 
     def test_list_missions_returns_total_header_and_requested_page(self, monkeypatch):
         """The additive total header lets clients paginate without breaking arrays."""
-        from app.mission.routes_v2 import list_missions
         from fastapi import Response
+
+        from app.mission.routes_v2 import list_missions
 
         missions = [
             Mission(id=f"mission-{index}", name=f"Mission {index}")

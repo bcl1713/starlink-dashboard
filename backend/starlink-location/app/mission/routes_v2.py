@@ -1456,7 +1456,7 @@ async def activate_leg(
     route_manager: Annotated[RouteManager, Depends(get_route_manager)] = None,
     poi_manager: Annotated[POIManager, Depends(get_poi_manager)] = None,
 ) -> dict:
-    """Activate a specific leg (deactivates all others in the mission).
+    """Activate one leg globally, rolling back persistence on downstream failure.
 
     Args:
         mission_id: Mission ID
@@ -1466,91 +1466,129 @@ async def activate_leg(
         Success response with active leg ID
     """
     try:
-        with get_mission_lock(mission_id):
-            # Load mission
+        with get_active_leg_lock():
             mission = load_mission_v2(mission_id)
-
             if not mission:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Mission {mission_id} not found",
                 )
-
-            # Find the target leg
-            leg_found = False
-            active_leg = None
-            for leg in mission.legs:
-                if leg.id == leg_id:
-                    leg.is_active = True
-                    leg_found = True
-                    active_leg = leg
-                else:
-                    leg.is_active = False
-
-            if not leg_found:
+            active_leg = next((leg for leg in mission.legs if leg.id == leg_id), None)
+            if active_leg is None:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Leg {leg_id} not found in mission {mission_id}",
                 )
 
-            # Save updated mission
-            save_mission_v2(mission)
+            missions = {mission_id: mission}
+            for metadata in list_mission_metadata_v2():
+                if metadata.id != mission_id:
+                    stored_mission = load_mission_v2(metadata.id)
+                    if stored_mission is not None:
+                        missions[stored_mission.id] = stored_mission
 
-            # Activate the route in RouteManager so dashboard can display it
-            if active_leg and active_leg.route_id and route_manager:
-                try:
-                    logger.info(
-                        f"Activating route {active_leg.route_id} for leg {leg_id}"
-                    )
-                    route_manager.activate_route(active_leg.route_id)
-                    logger.info(f"Route {active_leg.route_id} activated successfully")
-                except (
-                    RuntimeError,
-                    ValueError,
-                    OSError,
-                    KeyError,
-                    TypeError,
-                    AttributeError,
-                    LookupError,
-                    ConnectionError,
-                    TimeoutError,
-                    ImportError,
-                    EOFError,
-                ):
-                    logger.exception(f"Failed to activate route {active_leg.route_id}")
-                    # Don't fail leg activation if route activation fails
+            snapshots = {
+                parent_id: [leg.is_active for leg in parent.legs]
+                for parent_id, parent in missions.items()
+            }
+            changed_missions = []
+            for parent_id, parent in missions.items():
+                original_flags = snapshots[parent_id]
+                for leg in parent.legs:
+                    leg.is_active = parent_id == mission_id and leg.id == leg_id
+                if [leg.is_active for leg in parent.legs] != original_flags:
+                    changed_missions.append(parent)
 
-            # Generate timeline for the activated leg
-            if active_leg and route_manager:
-                try:
-                    logger.info(f"Generating timeline for leg {leg_id}")
-                    timeline, _summary = build_mission_timeline(
-                        mission=active_leg,
-                        route_manager=route_manager,
-                        poi_manager=poi_manager,
-                        coverage_sampler=_coverage_sampler,
-                        parent_mission_id=mission_id,
+            previous_route_id = (
+                route_manager.get_active_route_id()
+                if route_manager is not None
+                else None
+            )
+            target_route_was_newly_selected = (
+                route_manager is not None and previous_route_id != active_leg.route_id
+            )
+            try:
+                for parent in sorted(changed_missions, key=lambda item: item.id):
+                    with get_mission_lock(parent.id):
+                        save_mission_v2(parent)
+
+                if route_manager is None or not active_leg.route_id:
+                    raise RuntimeError(
+                        "Target mission leg has no route manager or route"
                     )
-                    save_mission_timeline(
-                        leg_id, timeline, parent_mission_id=mission_id
-                    )
-                    logger.info(f"Timeline generated and saved for leg {leg_id}")
-                except (
-                    RuntimeError,
-                    ValueError,
-                    OSError,
-                    KeyError,
-                    TypeError,
-                    AttributeError,
-                    LookupError,
-                    ConnectionError,
-                    TimeoutError,
-                    ImportError,
-                    EOFError,
+                activation_result = route_manager.activate_route(active_leg.route_id)
+                if (
+                    not activation_result
+                    and route_manager.get_active_route_id() != active_leg.route_id
                 ):
-                    logger.exception(f"Failed to generate timeline for leg {leg_id}")
-                    # Don't fail activation if timeline generation fails
-                    # Return success but note the timeline issue in logs
+                    raise RuntimeError("Target route could not be activated")
+                timeline, _summary = build_mission_timeline(
+                    mission=active_leg,
+                    route_manager=route_manager,
+                    poi_manager=poi_manager,
+                    coverage_sampler=_coverage_sampler,
+                    parent_mission_id=mission_id,
+                )
+                save_mission_timeline(leg_id, timeline, parent_mission_id=mission_id)
+            except (
+                RuntimeError,
+                ValueError,
+                OSError,
+                KeyError,
+                TypeError,
+                AttributeError,
+                LookupError,
+                ConnectionError,
+                TimeoutError,
+                ImportError,
+                EOFError,
+            ):
+                logger.exception("Failed to activate mission leg; compensating")
+                for parent in sorted(changed_missions, key=lambda item: item.id):
+                    for leg, was_active in zip(parent.legs, snapshots[parent.id]):
+                        leg.is_active = was_active
+                    try:
+                        with get_mission_lock(parent.id):
+                            save_mission_v2(parent)
+                    except (
+                        RuntimeError,
+                        ValueError,
+                        OSError,
+                        KeyError,
+                        TypeError,
+                        AttributeError,
+                        LookupError,
+                        ConnectionError,
+                        TimeoutError,
+                        ImportError,
+                        EOFError,
+                    ):
+                        logger.exception("Failed to restore mission %s", parent.id)
+                if route_manager is not None and target_route_was_newly_selected:
+                    try:
+                        route_manager.deactivate_route(active_leg.route_id)
+                        if previous_route_id is not None:
+                            route_manager.activate_route(previous_route_id)
+                    except (
+                        RuntimeError,
+                        ValueError,
+                        OSError,
+                        KeyError,
+                        TypeError,
+                        AttributeError,
+                        LookupError,
+                        ConnectionError,
+                        TimeoutError,
+                        ImportError,
+                        EOFError,
+                    ):
+                        logger.exception(
+                            "Failed to restore active route after compensation"
+                        )
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to activate mission leg",
+                )
 
             route_points = []
             if active_leg and active_leg.route_id and route_manager is not None:
@@ -1615,38 +1653,51 @@ async def deactivate_all_legs(
         Success response
     """
     try:
-        with get_mission_lock(mission_id):
-            # Load mission
+        with get_active_leg_lock():
             mission = load_mission_v2(mission_id)
-
             if not mission:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Mission {mission_id} not found",
                 )
 
-            # Deactivate all legs
+            active_parent_ids = set()
+            for metadata in list_mission_metadata_v2():
+                parent = (
+                    mission
+                    if metadata.id == mission_id
+                    else load_mission_v2(metadata.id)
+                )
+                if parent is not None and any(leg.is_active for leg in parent.legs):
+                    active_parent_ids.add(parent.id)
+
+            if mission_id not in active_parent_ids or len(active_parent_ids) != 1:
+                logger.info(
+                    "Skipping deactivation side effects for non-owning mission %s",
+                    mission_id,
+                )
+                return {"status": "success", "message": "All legs deactivated"}
+
+            active_route_ids = [leg.route_id for leg in mission.legs if leg.is_active]
             for leg in mission.legs:
                 leg.is_active = False
-
-            # Save updated mission
-            save_mission_v2(mission)
+            with get_mission_lock(mission_id):
+                save_mission_v2(mission)
 
             persist_mission_clock_settings_best_effort(
                 lambda: apply_mission_deactivation_clock_settings(clock_settings_store),
                 lifecycle_event="deactivating mission legs",
             )
 
-            # Deactivate all routes associated with this mission's legs
             if route_manager:
                 try:
-                    for leg in mission.legs:
-                        if leg.route_id:
+                    for route_id in active_route_ids:
+                        if route_id:
                             logger.info(
-                                f"Deactivating route {leg.route_id} for leg {leg.id}"
+                                f"Deactivating active route {route_id} for mission {mission_id}"
                             )
-                            route_manager.deactivate_route(leg.route_id)
-                    logger.info(f"Deactivated all routes for mission {mission_id}")
+                            route_manager.deactivate_route(route_id)
+                    logger.info(f"Deactivated active route for mission {mission_id}")
                 except (
                     RuntimeError,
                     ValueError,
