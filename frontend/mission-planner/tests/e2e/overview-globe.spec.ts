@@ -1046,7 +1046,7 @@ test.describe('Globe overview', () => {
           name: 'KADW',
           kind: 'departure' as const,
           latitude: 0,
-          longitude: -130,
+          longitude: -50,
           expected_arrival_time: '2026-09-22T10:00:00.000Z',
           eta_seconds: -7_200,
           estimated_arrival_time: '2026-09-22T10:00:00.000Z',
@@ -1058,8 +1058,8 @@ test.describe('Globe overview', () => {
           poi_id: 'aar-passed',
           name: 'AAR complete',
           kind: 'aar_end' as const,
-          latitude: 45,
-          longitude: -90,
+          latitude: 0,
+          longitude: -50,
           expected_arrival_time: '2026-09-22T11:30:00.000Z',
           eta_seconds: -1_800,
           estimated_arrival_time: '2026-09-22T11:30:00.000Z',
@@ -1071,8 +1071,8 @@ test.describe('Globe overview', () => {
           poi_id: 'arrival-rkso',
           name: 'RKSO',
           kind: 'arrival' as const,
-          latitude: -45,
-          longitude: -90,
+          latitude: 0,
+          longitude: -50,
           expected_arrival_time: '2026-09-22T14:00:00.000Z',
           eta_seconds: 7_200,
           estimated_arrival_time: '2026-09-22T14:00:00.000Z',
@@ -1097,7 +1097,7 @@ test.describe('Globe overview', () => {
           poi_id: 'ka-entry',
           name: 'Ka entry',
           kind: 'ka_coverage_entry' as const,
-          latitude: 25,
+          latitude: 0,
           longitude: -50,
           expected_arrival_time: '2026-09-22T12:35:00.000Z',
           eta_seconds: 2_100,
@@ -1110,7 +1110,7 @@ test.describe('Globe overview', () => {
           poi_id: 'ka-swap',
           name: 'Ka swap',
           kind: 'ka_transition' as const,
-          latitude: -25,
+          latitude: 0,
           longitude: -50,
           expected_arrival_time: '2026-09-22T12:20:00.000Z',
           eta_seconds: 1_200,
@@ -1128,6 +1128,19 @@ test.describe('Globe overview', () => {
           expected_arrival_time: '2026-09-22T12:10:00.000Z',
           eta_seconds: 600,
           estimated_arrival_time: '2026-09-22T12:10:00.000Z',
+          eta_type: 'estimated' as const,
+          upcoming: true,
+          map_retained: true,
+        },
+        {
+          poi_id: 'ka-exit',
+          name: 'Ka exit',
+          kind: 'ka_coverage_exit' as const,
+          latitude: 0,
+          longitude: -50,
+          expected_arrival_time: '2026-09-22T13:30:00.000Z',
+          eta_seconds: 5_400,
+          estimated_arrival_time: '2026-09-22T13:30:00.000Z',
           eta_type: 'estimated' as const,
           upcoming: true,
           map_retained: true,
@@ -1163,6 +1176,7 @@ test.describe('Globe overview', () => {
             activeMissionPois.pois[2],
             activeMissionPois.pois[0],
             activeMissionPois.pois[1],
+            activeMissionPois.pois[7],
           ],
         },
       })
@@ -1210,25 +1224,41 @@ test.describe('Globe overview', () => {
       /X-band handoff.*45m/,
       /RKSO.*2h 0m/,
     ]);
-    const clusteredLabels = await Promise.all(
-      ['x-band', 'ka-entry', 'ka-swap', 'aar-start'].map(async (poiId) => {
-        const label = page.locator(`[data-poi-label="${poiId}"]`);
-        await expect(label).toBeVisible();
-        const box = await label.boundingBox();
-        expect(box).not.toBeNull();
-        return box!;
-      })
-    );
-    for (let index = 0; index < clusteredLabels.length; index += 1) {
-      for (let other = index + 1; other < clusteredLabels.length; other += 1) {
-        const first = clusteredLabels[index];
-        const second = clusteredLabels[other];
-        expect(
-          first.x + first.width <= second.x ||
-            second.x + second.width <= first.x ||
-            first.y + first.height <= second.y ||
-            second.y + second.height <= first.y
-        ).toBe(true);
+    const clusteredPoiIds = [
+      'departure-kadw',
+      'aar-passed',
+      'arrival-rkso',
+      'x-band',
+      'ka-entry',
+      'ka-swap',
+      'aar-start',
+      'ka-exit',
+    ];
+    const fallback = page.locator('[data-poi-label-fallback="true"]');
+    if (await fallback.count()) {
+      await expect(fallback).toBeVisible();
+      await expect(fallback).toContainText(/POIs — see Upcoming POIs/);
+    } else {
+      const clusteredLabels = await Promise.all(
+        clusteredPoiIds.map(async (poiId) => {
+          const label = page.locator(`[data-poi-label="${poiId}"]`);
+          await expect(label).toBeVisible();
+          const box = await label.boundingBox();
+          expect(box).not.toBeNull();
+          return box!;
+        })
+      );
+      for (let index = 0; index < clusteredLabels.length; index += 1) {
+        for (let other = index + 1; other < clusteredLabels.length; other += 1) {
+          const first = clusteredLabels[index];
+          const second = clusteredLabels[other];
+          expect(
+            first.x + first.width <= second.x ||
+              second.x + second.width <= first.x ||
+              first.y + first.height <= second.y ||
+              second.y + second.height <= first.y
+          ).toBe(true);
+        }
       }
     }
     await expect(panel.locator('.upcoming-pois__swatch')).toHaveCount(5);

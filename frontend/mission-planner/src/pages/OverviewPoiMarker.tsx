@@ -11,6 +11,8 @@ interface OverviewPoiMarkerProps {
   color: string;
   globeOccluder: RefObject<THREE.Group>;
   labelOffset?: readonly [number, number];
+  hideLabel?: boolean;
+  fallbackLabel?: string;
 }
 
 export function OverviewPoiMarker({
@@ -18,13 +20,15 @@ export function OverviewPoiMarker({
   color,
   globeOccluder,
   labelOffset = [0, 0],
+  hideLabel = false,
+  fallbackLabel,
 }: OverviewPoiMarkerProps) {
   const coordinate = { latitude: poi.latitude, longitude: poi.longitude };
 
   return (
     <>
       <StarMarker coordinate={coordinate} color={color} size={0.1} />
-      <Html
+      {!hideLabel && <Html
         occlude={[globeOccluder]}
         position={globePosition(
           poi.latitude,
@@ -36,11 +40,13 @@ export function OverviewPoiMarker({
         <span
           className="globe-marker-label"
           data-poi-label={poi.poi_id}
+          data-poi-label-offset={`${labelOffset[0]},${labelOffset[1]}`}
+          data-poi-label-fallback={fallbackLabel ? 'true' : undefined}
           style={{ transform: `translate(${labelOffset[0]}px, ${labelOffset[1]}px)` }}
         >
-          {poi.name}
+          {fallbackLabel ?? poi.name}
         </span>
-      </Html>
+      </Html>}
     </>
   );
 }

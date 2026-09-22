@@ -58,7 +58,10 @@ import { OverviewFullscreenControl } from './OverviewFullscreenControl';
 import { useOverviewUpcomingPois } from '@/hooks/api/useOverviewUpcomingPois';
 import { overviewPoiView, urgencyColor } from './overview-upcoming-pois';
 import { OverviewPoiMarker } from './OverviewPoiMarker';
-import { overviewPoiLabelOffsets } from './overview-poi-label-layout';
+import {
+  layoutOverviewPoiLabels,
+  type PoiLabelLayout,
+} from './overview-poi-label-layout';
 import { UpcomingPoisPanel } from './UpcomingPoisPanel';
 const HISTORY_WINDOW_OPTIONS = [300, 900, 1800, 3600];
 
@@ -259,10 +262,52 @@ export function OverviewPage() {
     () => overviewPoiView(upcomingPoisResponse?.pois ?? [], new Date(currentTime)),
     [currentTime, upcomingPoisResponse?.pois]
   );
-  const upcomingPoiLabelOffsets = useMemo(
-    () => overviewPoiLabelOffsets(upcomingPoiView.markers),
-    [upcomingPoiView.markers]
-  );
+  const [upcomingPoiLabelLayout, setUpcomingPoiLabelLayout] = useState<PoiLabelLayout>({
+    offsets: {},
+    fallback: null,
+  });
+  useEffect(() => {
+    let attempts = 0;
+    let frame = 0;
+    const measure = () => {
+      const labels = upcomingPoiView.markers.flatMap((poi) => {
+        const element = document.querySelector<HTMLElement>(`[data-poi-label="${poi.poi_id}"]`);
+        if (!element) return [];
+
+        const bounds = element.getBoundingClientRect();
+        if (bounds.width === 0 || bounds.height === 0) return [];
+        const [offsetX, offsetY] = (element.dataset.poiLabelOffset ?? '0,0')
+          .split(',')
+          .map(Number);
+        return [{
+          id: poi.poi_id,
+          bounds: {
+            x: bounds.x - offsetX,
+            y: bounds.y - offsetY,
+            width: bounds.width,
+            height: bounds.height,
+          },
+        }];
+      });
+
+      if (labels.length < upcomingPoiView.markers.length && attempts < 20) {
+        attempts += 1;
+        frame = window.requestAnimationFrame(measure);
+        return;
+      }
+
+      const nextLayout = layoutOverviewPoiLabels(labels, {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+      setUpcomingPoiLabelLayout((currentLayout) =>
+        JSON.stringify(currentLayout) === JSON.stringify(nextLayout) ? currentLayout : nextLayout
+      );
+    };
+    frame = window.requestAnimationFrame(measure);
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [upcomingPoiLabelLayout, upcomingPoiView.markers]);
   const {
     data: overviewClockSettings,
     isError: isOverviewClockSettingsError,
@@ -551,7 +596,16 @@ export function OverviewPage() {
               poi={poi}
               color={urgencyColor(poi.estimated_arrival_time, new Date(currentTime))}
               globeOccluder={globeOccluder}
-              labelOffset={upcomingPoiLabelOffsets[poi.poi_id]}
+              labelOffset={upcomingPoiLabelLayout.offsets[poi.poi_id]}
+              hideLabel={Boolean(
+                upcomingPoiLabelLayout.fallback &&
+                  poi.poi_id !== upcomingPoiLabelLayout.fallback.anchorId
+              )}
+              fallbackLabel={
+                upcomingPoiLabelLayout.fallback?.anchorId === poi.poi_id
+                  ? `+${upcomingPoiLabelLayout.fallback.hiddenIds.length} POIs — see Upcoming POIs`
+                  : undefined
+              }
             />
           ))}
           {groundEntryPoint && (
