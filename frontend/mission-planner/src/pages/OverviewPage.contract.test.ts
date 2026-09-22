@@ -28,4 +28,13 @@ describe('OverviewPage generated POI legend and overlay layout contracts', () =>
       /\.overview-bottom-overlays \{[\s\S]*?pointer-events: none;/
     );
   });
+
+  it('places the fullscreen control in reserved normal flow beside narrow POI states', () => {
+    expect(styles).toMatch(
+      /@media \(max-width: 44rem\) \{[\s\S]*?\.overview-fullscreen-control \{[\s\S]*?position: relative;[\s\S]*?bottom: auto;[\s\S]*?left: auto;[\s\S]*?margin: 1rem;/
+    );
+    expect(styles).toMatch(
+      /@media \(max-width: 44rem\) \{[\s\S]*?\.overview-bottom-overlays \{[\s\S]*?position: relative;/
+    );
+  });
 });

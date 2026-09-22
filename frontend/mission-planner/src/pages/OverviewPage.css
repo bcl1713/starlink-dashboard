@@ -351,6 +351,14 @@
     z-index: 0;
   }
 
+  .overview-fullscreen-control {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    z-index: 1;
+    margin: 1rem;
+  }
+
   .globe-legend,
   .overview-top-overlays,
   .overview-bottom-overlays {
