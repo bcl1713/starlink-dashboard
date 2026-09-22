@@ -3,9 +3,10 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from fastapi import HTTPException, status
+
 from app.mission.models import MissionLeg, TransportConfig
 from app.mission.routes import create_mission, update_mission
-from fastapi import HTTPException, status
 
 
 @pytest.mark.asyncio
@@ -32,7 +33,7 @@ async def test_create_mission_invalid_route():
             poi_manager=mock_poi_manager,
         )
 
-    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+    assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert "Route invalid-route-id not found" in exc_info.value.detail
 
 
@@ -75,5 +76,5 @@ async def test_update_mission_invalid_route():
                 poi_manager=mock_poi_manager,
             )
 
-        assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert exc_info.value.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
         assert "Route invalid-route-id not found" in exc_info.value.detail

@@ -70,7 +70,7 @@ async def create_mission(
         # Ensure route exists
         if route_manager and not route_manager.get_route(mission.route_id):
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Route {mission.route_id} not found",
             )
 
@@ -98,7 +98,7 @@ async def create_mission(
             "Mission creation failed with validation error",
         )
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(e),
         )
     except (
@@ -297,7 +297,7 @@ async def update_mission(
         # Ensure route exists
         if route_manager and not route_manager.get_route(mission_update.route_id):
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail=f"Route {mission_update.route_id} not found",
             )
 
@@ -331,7 +331,7 @@ async def update_mission(
             "Mission update failed with validation error",
         )
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(e),
         )
     except (

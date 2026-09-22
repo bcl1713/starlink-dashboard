@@ -58,15 +58,19 @@ When making changes:
 
 ## Warning provenance
 
-The backend test suite intentionally leaves one third-party-only deprecation warning
-visible rather than suppressing it. With FastAPI 0.141.1, Starlette 1.6.0, and
-AnyIO 4.15.1, Starlette 1.6.0's `testclient.py:53` uses the deprecated
-`anyio.abc.BlockingPortal` alias. This source is vendor code, so it is documented
-instead of being globally suppressed.
+The backend test suite leaves residual third-party warnings visible rather than
+suppressing them. A fresh dependency inventory identifies the following
+vendor-owned sources:
 
-`httpx2>=2.0.0` is required because Starlette 1.6.0 expects it for `TestClient`;
-it removes the separate FastAPI/Starlette TestClient deprecation warning without
-changing application test behavior.
+- Starlette 1.6.0 / AnyIO 4.15.1: `testclient.py:53` uses the deprecated
+  `anyio.abc.BlockingPortal` alias.
+- Cartopy 0.26.0: `feature_artist.py:142` warns that `facecolor` has no effect.
+- SlowAPI 0.1.10: `extension.py:737` uses the legacy 413 status constant.
+- reverse-geocoder 1.5: `rg_cities1000.csv` is left open, producing a
+  `ResourceWarning`.
+
+These warnings are vendor-owned and remain visible. Do not suppress them or
+upgrade dependencies solely to hide them.
 
 ---
 

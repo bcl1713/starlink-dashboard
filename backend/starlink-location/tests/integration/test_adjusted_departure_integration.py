@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
+from fastapi.testclient import TestClient
+
 from app.mission.models import (
     ManualAARTrack,
     ManualAARTrackPoint,
@@ -18,7 +20,6 @@ from app.mission.models import (
 )
 from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
-from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -110,7 +111,9 @@ class TestAddLegWithAdjustedDepartureTime:
 
         # Create leg with adjusted departure time
         leg_id = f"test-leg-{uuid4().hex[:8]}"
-        adjusted_time = "2025-10-27T17:25:00Z"  # 40 minutes later than original
+        adjusted_time = datetime(
+            2025, 10, 27, 17, 25, 0, tzinfo=timezone.utc
+        )  # 40 minutes later than original
 
         leg = MissionLeg(
             id=leg_id,
@@ -135,7 +138,7 @@ class TestAddLegWithAdjustedDepartureTime:
             data = response.json()
 
             assert data["id"] == leg_id
-            assert data["adjusted_departure_time"] == adjusted_time
+            assert data["adjusted_departure_time"] == "2025-10-27T17:25:00Z"
 
         # Cleanup
         client.delete(f"/api/v2/missions/{mission_id}")
@@ -233,7 +236,9 @@ class TestUpdateLegWithAdjustedDepartureTime:
             assert create_response.status_code == 201
 
             # Update leg to set adjusted departure time
-            adjusted_time = "2025-10-27T16:05:00Z"  # 40 minutes earlier
+            adjusted_time = datetime(
+                2025, 10, 27, 16, 5, 0, tzinfo=timezone.utc
+            )  # 40 minutes earlier
 
             updated_leg = leg.model_copy(
                 update={"adjusted_departure_time": adjusted_time}
@@ -265,7 +270,7 @@ class TestUpdateLegWithAdjustedDepartureTime:
             assert update_response.status_code == 200
             data = update_response.json()
 
-            assert data["leg"]["adjusted_departure_time"] == adjusted_time
+            assert data["leg"]["adjusted_departure_time"] == "2025-10-27T16:05:00Z"
             assert data["warnings"] is None or data["warnings"] == []
 
         # Cleanup
@@ -287,7 +292,9 @@ class TestUpdateLegWithAdjustedDepartureTime:
             name="Test Leg",
             route_id="test-route-001",
             transports=TransportConfig(initial_x_satellite_id="X-1"),
-            adjusted_departure_time="2025-10-27T17:25:00Z",
+            adjusted_departure_time=datetime(
+                2025, 10, 27, 17, 25, 0, tzinfo=timezone.utc
+            ),
         )
 
         mission = Mission(
@@ -363,7 +370,7 @@ class TestUpdateLegWithAdjustedDepartureTime:
 
             # Update leg with large offset (10 hours later)
             # Original: 2025-10-27T16:45:00Z, Adjusted: 2025-10-28T02:45:00Z
-            adjusted_time = "2025-10-28T02:45:00Z"
+            adjusted_time = datetime(2025, 10, 28, 2, 45, 0, tzinfo=timezone.utc)
 
             updated_leg = leg.model_copy(
                 update={"adjusted_departure_time": adjusted_time}
@@ -395,7 +402,7 @@ class TestUpdateLegWithAdjustedDepartureTime:
             assert update_response.status_code == 200
             data = update_response.json()
 
-            assert data["leg"]["adjusted_departure_time"] == adjusted_time
+            assert data["leg"]["adjusted_departure_time"] == "2025-10-28T02:45:00Z"
             assert (
                 data["warnings"] is not None
             ), f"Expected warnings but got None. Full response: {data}"
@@ -620,7 +627,9 @@ class TestRouteUpdateClearsAdjustedDepartureTime:
             name="Test Leg",
             route_id="test-route-001",
             transports=TransportConfig(initial_x_satellite_id="X-1"),
-            adjusted_departure_time="2025-10-27T17:25:00Z",
+            adjusted_departure_time=datetime(
+                2025, 10, 27, 17, 25, 0, tzinfo=timezone.utc
+            ),
         )
 
         mission = Mission(
