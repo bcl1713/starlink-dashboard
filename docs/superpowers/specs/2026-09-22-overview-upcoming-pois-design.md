@@ -1,4 +1,3 @@
-<!-- markdownlint-disable MD060 -->
 
 # Overview Upcoming POIs Design
 
@@ -16,6 +15,7 @@ retires it.
 
 The active mission produces and exposes these generated POI kinds:
 
+<!-- markdownlint-disable MD060 -->
 | Kind | Source |
 | --- | --- |
 | `departure` | Identified departure waypoint or route endpoint fallback |
@@ -24,6 +24,7 @@ The active mission produces and exposes these generated POI kinds:
 | `x_band_transition` | X-band transition schedule |
 | `ka_coverage_exit` / `ka_coverage_entry` | Ka coverage gaps |
 | `ka_transition` | Ka satellite swaps |
+<!-- markdownlint-enable MD060 -->
 
 The existing KML parser supplies the identified departure and arrival
 waypoints. Their imported waypoint names are the endpoint POI labels, normally
@@ -112,9 +113,11 @@ global bloom.
 Add an unscrollable `Upcoming POIs` overlay panel with a fixed maximum of five
 rows. Its visual columns are:
 
+<!-- markdownlint-disable MD060 -->
 |  | POI | Type | ETA |
 | --- | --- | --- | --- |
 | colour swatch only | imported/generated label | generated kind label | UTC estimated or anticipated arrival plus timing mode, or `ETA unavailable` |
+<!-- markdownlint-enable MD060 -->
 
 The first column deliberately has no header and contains only a compact visual
 swatch. ETA conveys the textual operational information.
