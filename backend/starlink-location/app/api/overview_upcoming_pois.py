@@ -6,8 +6,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request
 
 from app.core.eta_service import get_eta_calculator
+from app.mission.active_context import resolve_active_mission_leg_context
 from app.mission.dependencies import get_poi_manager, get_route_manager
-from app.mission.routes import get_active_mission_id
 from app.models.overview_upcoming_pois import OverviewUpcomingPoisResponse
 from app.services.flight_state import get_flight_state_manager
 from app.services.overview_upcoming_pois import (
@@ -46,12 +46,13 @@ async def get_overview_upcoming_pois(
 ) -> OverviewUpcomingPoisResponse:
     """Return active-mission POIs with schedule and estimate provenance preserved."""
     calculated_at = _utc_now()
-    mission_id = get_active_mission_id()
-    active_route = route_manager.get_active_route()
-    if mission_id is None or active_route is None:
+    resolution = resolve_active_mission_leg_context(route_manager)
+    if resolution.context is None:
         return OverviewUpcomingPoisResponse(
-            state="no_active_route", calculated_at=calculated_at, pois=[]
+            state=resolution.state, calculated_at=calculated_at, pois=[]
         )
+    mission_id = resolution.context.parent_mission_id
+    active_route = resolution.context.route
 
     generated_pois = [
         poi
