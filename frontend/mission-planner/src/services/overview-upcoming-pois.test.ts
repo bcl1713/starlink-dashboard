@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import apiClient from './api-client';
-import { overviewUpcomingPoisApi } from './overview-upcoming-pois';
+import {
+  overviewUpcomingPoisApi,
+  type OverviewUpcomingPoisResponse,
+} from './overview-upcoming-pois';
 
 vi.mock('./api-client', () => ({
   default: {
@@ -9,6 +12,20 @@ vi.mock('./api-client', () => ({
 }));
 
 describe('overviewUpcomingPoisApi', () => {
+  it('accepts every v2 overview mission-context state', () => {
+    const states: OverviewUpcomingPoisResponse['state'][] = [
+      'available',
+      'no_active_mission',
+      'route_unavailable',
+      'inconsistent_active_mission',
+      'no_generated_pois',
+      'no_upcoming_pois',
+      'unavailable',
+    ];
+
+    expect(states).toHaveLength(7);
+  });
+
   it('gets the typed dynamic overview POI response', async () => {
     const response = {
       state: 'available' as const,
