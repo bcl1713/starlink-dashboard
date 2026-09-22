@@ -347,6 +347,84 @@ def test_api_returns_no_generated_pois_for_active_route_with_only_manual_typed_p
     assert response.json()["pois"] == []
 
 
+def test_api_excludes_generated_pois_from_an_inactive_leg_of_the_same_parent(
+    client, monkeypatch
+):
+    """Overview may project only the active leg's generated timeline POIs."""
+    import app.api.overview_upcoming_pois as overview_api
+
+    active_route = route([(40.0, -73.0), (40.0, -71.0)])
+    inactive_route = route([(41.0, -74.0), (41.0, -72.0)])
+    save_mission_v2(
+        Mission(
+            id="mission-1",
+            name="mission-1",
+            legs=[
+                MissionLeg(
+                    id="leg-active",
+                    name="leg-active",
+                    route_id="route-active",
+                    is_active=True,
+                    transports=TransportConfig(initial_x_satellite_id="X-1"),
+                ),
+                MissionLeg(
+                    id="leg-inactive",
+                    name="leg-inactive",
+                    route_id="route-inactive",
+                    is_active=False,
+                    transports=TransportConfig(initial_x_satellite_id="X-1"),
+                ),
+            ],
+        )
+    )
+    route_manager = client.app.state.route_manager
+    route_manager.add_route("route-active", active_route)
+    route_manager.add_route("route-inactive", inactive_route)
+    assert route_manager.activate_route("route-active") is True
+    client.app.dependency_overrides[get_poi_manager] = lambda: SimpleNamespace(
+        list_pois=lambda mission_id=None: [
+            scheduled_poi().model_copy(
+                update={
+                    "id": "active-leg-poi",
+                    "mission_id": "mission-1",
+                    "route_id": "route-active",
+                }
+            ),
+            scheduled_poi().model_copy(
+                update={
+                    "id": "inactive-leg-poi",
+                    "mission_id": "mission-1",
+                    "route_id": "route-inactive",
+                }
+            ),
+            scheduled_poi().model_copy(
+                update={
+                    "id": "legacy-parent-poi",
+                    "mission_id": "mission-1",
+                    "route_id": None,
+                }
+            ),
+        ]
+    )
+    monkeypatch.setattr(
+        overview_api,
+        "get_flight_state_manager",
+        lambda: SimpleNamespace(
+            get_status=lambda: SimpleNamespace(
+                phase=SimpleNamespace(value="pre_departure")
+            )
+        ),
+    )
+
+    response = client.get("/api/overview/upcoming-pois")
+
+    assert response.status_code == 200, response.text
+    assert {poi["poi_id"] for poi in response.json()["pois"]} == {
+        "active-leg-poi",
+        "legacy-parent-poi",
+    }
+
+
 def test_api_returns_unavailable_without_in_flight_telemetry(client, monkeypatch):
     import app.api.overview_upcoming_pois as overview_api
 

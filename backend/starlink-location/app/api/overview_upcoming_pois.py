@@ -52,12 +52,15 @@ async def get_overview_upcoming_pois(
             state=resolution.state, calculated_at=calculated_at, pois=[]
         )
     mission_id = resolution.context.parent_mission_id
+    active_route_id = resolution.context.route_id
     active_route = resolution.context.route
 
     generated_pois = [
         poi
         for poi in poi_manager.list_pois(mission_id=mission_id)
-        if poi.kind is not None and poi.generated_source == "mission-timeline"
+        if poi.kind is not None
+        and poi.generated_source == "mission-timeline"
+        and (poi.route_id is None or poi.route_id == active_route_id)
     ]
     if not generated_pois:
         return OverviewUpcomingPoisResponse(
