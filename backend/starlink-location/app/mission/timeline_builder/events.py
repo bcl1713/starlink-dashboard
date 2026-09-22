@@ -105,7 +105,7 @@ def apply_x_azimuth_events(
     route: ParsedRoute,
     samples: Sequence[RouteSample],
     aar_windows: list[ResolvedAARWindow],
-    transition_schedule: list[tuple[datetime, str]],
+    transition_schedule: list[tuple[datetime, str, str | None]],
     poi_manager: POIManager | None,
     mission_start: datetime,
     mission_end: datetime,
@@ -119,7 +119,7 @@ def apply_x_azimuth_events(
 
     assignments = transition_schedule or []
     if not assignments:
-        assignments = [(mission_start, mission.transports.initial_x_satellite_id)]
+        assignments = [(mission_start, mission.transports.initial_x_satellite_id, None)]
     assignments = sorted(assignments, key=lambda item: item[0])
 
     schedule_idx = 0

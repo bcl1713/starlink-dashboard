@@ -34,7 +34,7 @@ def sync_mission_pois(
     mission_start: datetime,
     mission_end: datetime,
     aar_windows: Sequence[ResolvedAARWindow],
-    transition_schedule: Sequence[tuple[datetime, str]],
+    transition_schedule: Sequence[tuple[datetime, str, str | None]],
     coverage: CoverageAnalysisResult,
     parent_mission_id: str | None = None,
 ) -> None:
@@ -160,10 +160,15 @@ def _create_x_transition_pois(create, mission: MissionLeg, transition_schedule) 
     transitions = mission.transports.x_transitions or []
     if not transitions:
         return
-    # apply_x_transitions prepends the initial satellite to its schedule.  The
-    # remaining schedule entries correspond to the configured transitions.
-    scheduled_transitions = transition_schedule[-len(transitions) :]
-    for transition, (timestamp, _) in zip(transitions, scheduled_transitions):
+    transition_timestamps = {
+        transition_id: timestamp
+        for timestamp, _, transition_id in transition_schedule
+        if transition_id is not None
+    }
+    for transition in transitions:
+        timestamp = transition_timestamps.get(transition.id)
+        if timestamp is None:
+            continue
         create(
             name="X-Band\nSwap",
             latitude=transition.latitude,

@@ -138,12 +138,12 @@ def apply_x_transitions(
     mission: MissionLeg,
     projector: RouteTemporalProjector,
     aar_windows: list[ResolvedAARWindow],
-) -> list[tuple[datetime, str]]:
+) -> list[tuple[datetime, str, str | None]]:
     """Apply X-band transition events and return the transition schedule."""
-    schedule: list[tuple[datetime, str]] = []
+    schedule: list[tuple[datetime, str, str | None]] = []
     initial_sat = mission.transports.initial_x_satellite_id
     if initial_sat:
-        schedule.append((projector.start_time, initial_sat))
+        schedule.append((projector.start_time, initial_sat, None))
 
     if not mission.transports.x_transitions:
         return schedule
@@ -163,7 +163,7 @@ def apply_x_transitions(
                 transition.target_satellite_id,
                 is_aar_mode=False,
             )
-        schedule.append((timestamp, transition.target_satellite_id))
+        schedule.append((timestamp, transition.target_satellite_id, transition.id))
 
     return sorted(schedule, key=lambda item: item[0])
 
