@@ -389,20 +389,9 @@ export function OverviewPage() {
           ) : (
             <>
               <li>
-                <span
-                  className="globe-legend__marker globe-legend__marker--origin"
-                  aria-hidden="true"
-                />
-                <span>Origin</span>
-                <strong>First route point</strong>
-              </li>
-              <li>
-                <span
-                  className="globe-legend__marker globe-legend__marker--destination"
-                  aria-hidden="true"
-                />
-                <span>Destination</span>
-                <strong>Last route point</strong>
+                <span aria-hidden="true" />
+                <span>Generated POIs</span>
+                <strong>Colour indicates estimated arrival urgency</strong>
               </li>
               <li>
                 <span className="globe-legend__route" aria-hidden="true" />

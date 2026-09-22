@@ -61,16 +61,6 @@
   border-radius: 999px;
 }
 
-.globe-legend__marker--origin {
-  background: #ffb000;
-  box-shadow: 0 0 6px rgba(144, 183, 255, 0.9);
-}
-
-.globe-legend__marker--destination {
-  background: #00ff00;
-  box-shadow: 0 0 6px rgba(144, 183, 255, 0.9);
-}
-
 .globe-legend__marker--aircraft {
   background: #72b7ff;
   box-shadow: 0 0 6px rgba(144, 183, 255, 0.9);
@@ -341,4 +331,33 @@
   color: #cbd5e1;
   font-size: 0.8125rem;
   line-height: 2.5rem;
+}
+
+@media (max-width: 50rem) {
+  .overview-bottom-overlays {
+    right: 22rem;
+    width: auto;
+  }
+}
+
+@media (max-width: 44rem) {
+  .overview-page {
+    overflow-y: auto;
+  }
+
+  .overview-page canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .globe-legend,
+  .overview-top-overlays,
+  .overview-bottom-overlays {
+    position: relative;
+    inset: auto;
+    z-index: 1;
+    width: auto;
+    margin: 1rem;
+  }
 }
