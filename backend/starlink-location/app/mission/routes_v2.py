@@ -38,6 +38,7 @@ from app.mission.package import export_mission_package
 from app.mission.storage import (
     delete_mission_timeline,
     get_active_leg_lock,
+    get_mission_directory,
     get_mission_lock,
     list_mission_metadata_v2,
     load_mission_timeline,
@@ -336,6 +337,15 @@ async def delete_mission_endpoint(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Mission {mission_id} not found",
                 )
+            if any(leg.is_active for leg in mission.legs):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "ACTIVE_MISSION_DELETION_FORBIDDEN",
+                        "message": "Deactivate all legs before deleting this mission.",
+                        "action": "Deactivate all mission legs, then delete the mission.",
+                    },
+                )
 
             # Log cascade deletion info
             leg_count = len(mission.legs)
@@ -428,7 +438,7 @@ async def delete_mission_endpoint(
                         # Don't fail entire mission deletion if POI deletion fails
 
             # Delete entire mission directory
-            mission_dir = Path("data/missions") / mission_id
+            mission_dir = get_mission_directory(mission_id)
             if mission_dir.exists():
                 try:
                     shutil.rmtree(mission_dir)
@@ -1237,8 +1247,13 @@ async def update_leg(
                     "Timeline cannot be regenerated. Please upload a route KML first."
                 )
 
-            # Preserve lifecycle state; only the activation endpoint may change it.
-            updated_leg.is_active = mission.legs[leg_index].is_active
+            # Preserve active-leg lifecycle binding; only deactivation followed by
+            # route upload may replace an active route. Full PUT remains available
+            # for ordinary active-leg field updates.
+            stored_leg = mission.legs[leg_index]
+            updated_leg.is_active = stored_leg.is_active
+            if stored_leg.is_active:
+                updated_leg.route_id = stored_leg.route_id
 
             # Update leg
             mission.legs[leg_index] = updated_leg
@@ -1360,6 +1375,15 @@ async def delete_leg(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Leg {leg_id} not found in mission",
                 )
+            if leg.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "ACTIVE_LEG_DELETION_FORBIDDEN",
+                        "message": "Deactivate the leg before deleting it.",
+                        "action": "Deactivate the leg, then delete it.",
+                    },
+                )
 
             # Log cascade deletion info
             route_id = leg.route_id or "none"
@@ -1440,7 +1464,7 @@ async def delete_leg(
             save_mission_v2(mission)
 
             # 4. Delete leg file from disk
-            legs_dir = Path("data/missions") / mission_id / "legs"
+            legs_dir = get_mission_directory(mission_id) / "legs"
             leg_file = legs_dir / f"{leg_id}.json"
             if leg_file.exists():
                 try:

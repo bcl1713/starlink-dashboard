@@ -55,8 +55,10 @@ POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate
 ```
 
 `/api/missions` has been removed and now returns 404; it has no supported
-operator or API commands. Do not infer replacements for retired create,
-timeline, or export procedures where no Mission V2 operation is documented.
+operator or API commands. Active legs retain their route binding on full-leg
+`PUT`; use deactivate → route replacement → activate to change a route. To
+delete an active leg or a mission with active legs, deactivate first, then
+repeat the delete request.
 
 ### Legacy data boundary
 

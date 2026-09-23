@@ -328,18 +328,17 @@ def _clean_directory(directory: Path):
 
 
 @pytest.fixture(autouse=True)
-def isolate_mission_storage():
-    """Force mission storage to use a temp directory with full cleanup."""
+def isolate_mission_storage(tmp_path: Path):
+    """Use a per-test mission root so parallel workers never clear each other."""
     from app.mission import storage
 
     original_dir = storage.MISSIONS_DIR
-    storage.MISSIONS_DIR = TEST_MISSIONS_DIR
+    test_missions_dir = tmp_path / "missions"
+    storage.MISSIONS_DIR = test_missions_dir
     storage.ensure_missions_directory()
-    _clean_directory(TEST_MISSIONS_DIR)
 
     yield
 
-    _clean_directory(TEST_MISSIONS_DIR)
     storage.MISSIONS_DIR = original_dir
 
 

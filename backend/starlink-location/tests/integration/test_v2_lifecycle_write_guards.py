@@ -395,6 +395,184 @@ class TestV2LifecycleWriteGuards:
         synchronize_endpoints.assert_not_called()
         generate_timelines.assert_not_called()
 
+    def test_active_full_put_preserves_route_binding_and_lifecycle_snapshot(
+        self, client: TestClient
+    ):
+        mission = _mission("active-put")
+        assert (
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
+        _activate(client, mission)
+        route_manager = client.app.state.route_manager
+        routes_dir = Path(route_manager.routes_dir)
+        active_route_file = routes_dir / f"{mission.legs[0].route_id}.kml"
+        active_route_file.write_bytes(b"active route")
+        timeline, _ = _timeline(mission.legs[0].id)
+        save_mission_timeline(
+            mission.legs[0].id, timeline, parent_mission_id=mission.id
+        )
+        timeline_path = get_leg_timeline_path(mission.legs[0].id, mission.id)
+        incoming = mission.legs[0].model_copy(deep=True)
+        incoming.name = "permitted update"
+        incoming.route_id = "replacement-route"
+        incoming.is_active = False
+        replacement_route_leg = mission.legs[0].model_copy(
+            update={"id": "replacement-leg", "route_id": incoming.route_id}
+        )
+        _add_route(client, replacement_route_leg)
+        before_mission = load_mission_v2(mission.id).model_dump(mode="json")
+        before_route_files = {
+            path.name: path.read_bytes() for path in routes_dir.glob("*")
+        }
+        before_route_cache = deepcopy(route_manager._routes)
+        before_active_route = route_manager.get_active_route_id()
+        before_timeline = timeline_path.read_bytes()
+        before_resolver = _resolver_snapshot(client)
+        before_flight_state = (
+            get_flight_state_manager().get_status().model_dump(mode="json")
+        )
+
+        response = client.put(
+            f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}",
+            json=incoming.model_dump(mode="json"),
+        )
+
+        assert response.status_code == 200
+        assert response.json()["leg"]["name"] == "permitted update"
+        assert response.json()["leg"]["is_active"] is True
+        assert response.json()["leg"]["route_id"] == mission.legs[0].route_id
+        assert load_mission_v2(mission.id).model_dump(mode="json") == {
+            **before_mission,
+            "legs": [{**before_mission["legs"][0], "name": "permitted update"}],
+        }
+        assert {
+            path.name: path.read_bytes() for path in routes_dir.glob("*")
+        } == before_route_files
+        assert route_manager._routes == before_route_cache
+        assert route_manager.get_active_route_id() == before_active_route
+        assert timeline_path.read_bytes() == before_timeline
+        after_resolver = _resolver_snapshot(client)
+        assert after_resolver[0] == before_resolver[0]
+        assert after_resolver[1] == before_resolver[1]
+        assert after_resolver[4:] == before_resolver[4:]
+        assert (
+            get_flight_state_manager().get_status().model_dump(mode="json")
+            == before_flight_state
+        )
+
+    def test_inactive_full_put_allows_route_id_update(self, client: TestClient) -> None:
+        mission = _mission("inactive-put")
+        assert (
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
+        incoming = mission.legs[0].model_copy(deep=True)
+        incoming.route_id = "replacement-route"
+
+        response = client.put(
+            f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}",
+            json=incoming.model_dump(mode="json"),
+        )
+
+        assert response.status_code == 200
+        assert response.json()["leg"]["route_id"] == "replacement-route"
+        assert load_mission_v2(mission.id).legs[0].route_id == "replacement-route"
+
+    def test_active_leg_delete_is_actionable_strict_noop_and_inactive_control_succeeds(
+        self, client: TestClient
+    ) -> None:
+        mission = _mission("active-delete")
+        assert (
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
+        _activate(client, mission)
+        route_manager = client.app.state.route_manager
+        poi_manager = client.app.state.poi_manager
+        before_mission = load_mission_v2(mission.id).model_dump(mode="json")
+        before_cache = deepcopy(route_manager._routes)
+        before_active_route = route_manager.get_active_route_id()
+        before_resolver = _resolver_snapshot(client)
+        before_flight = get_flight_state_manager().get_status().model_dump(mode="json")
+        poi_manager.delete_leg_pois = MagicMock(wraps=poi_manager.delete_leg_pois)
+
+        response = client.delete(
+            f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}"
+        )
+
+        assert response.status_code == 409
+        assert response.json()["detail"] == {
+            "code": "ACTIVE_LEG_DELETION_FORBIDDEN",
+            "message": "Deactivate the leg before deleting it.",
+            "action": "Deactivate the leg, then delete it.",
+        }
+        assert load_mission_v2(mission.id).model_dump(mode="json") == before_mission
+        assert route_manager._routes == before_cache
+        assert route_manager.get_active_route_id() == before_active_route
+        assert _resolver_snapshot(client) == before_resolver
+        assert (
+            get_flight_state_manager().get_status().model_dump(mode="json")
+            == before_flight
+        )
+        poi_manager.delete_leg_pois.assert_not_called()
+        assert (
+            client.post(f"/api/v2/missions/{mission.id}/legs/deactivate").status_code
+            == 200
+        )
+        assert (
+            client.delete(
+                f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}"
+            ).status_code
+            == 204
+        )
+
+    def test_active_mission_delete_is_actionable_strict_noop_and_inactive_control_succeeds(
+        self, client: TestClient
+    ) -> None:
+        mission = _mission("active-parent-delete")
+        assert (
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
+        _activate(client, mission)
+        route_manager = client.app.state.route_manager
+        before_mission = load_mission_v2(mission.id).model_dump(mode="json")
+        before_cache = deepcopy(route_manager._routes)
+        before_active_route = route_manager.get_active_route_id()
+        before_resolver = _resolver_snapshot(client)
+        before_flight = get_flight_state_manager().get_status().model_dump(mode="json")
+
+        response = client.delete(f"/api/v2/missions/{mission.id}")
+
+        assert response.status_code == 409
+        assert response.json()["detail"] == {
+            "code": "ACTIVE_MISSION_DELETION_FORBIDDEN",
+            "message": "Deactivate all legs before deleting this mission.",
+            "action": "Deactivate all mission legs, then delete the mission.",
+        }
+        assert load_mission_v2(mission.id).model_dump(mode="json") == before_mission
+        assert route_manager._routes == before_cache
+        assert route_manager.get_active_route_id() == before_active_route
+        assert _resolver_snapshot(client) == before_resolver
+        assert (
+            get_flight_state_manager().get_status().model_dump(mode="json")
+            == before_flight
+        )
+        assert (
+            client.post(f"/api/v2/missions/{mission.id}/legs/deactivate").status_code
+            == 200
+        )
+        assert client.delete(f"/api/v2/missions/{mission.id}").status_code == 204
+
     def test_active_leg_route_upload_is_strict_noop_with_actionable_code(
         self, client: TestClient, tmp_path: Path
     ):
