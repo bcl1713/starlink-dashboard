@@ -50,6 +50,28 @@ def test_browser_card_binds_provenance_to_current_locked_project_identity() -> N
         assert token in card
 
 
+def test_browser_card_requires_task_root_bound_provenance_containment() -> None:
+    """Fails if a valid record can be read from outside its task-owned root."""
+    card = source()
+
+    for token in [
+        "taskRoot: resolve(value('task-root'))",
+        "trustedProvenancePath(config.taskRoot, config.provisioningProvenance)",
+        "provisioning.taskRoot !== config.taskRoot",
+        "provisioning provenance task root does not match current task root",
+    ]:
+        assert token in card
+
+
+def test_browser_card_checks_core_version_before_parsing_browsers_metadata() -> None:
+    """Fails if malformed metadata masks a substituted installed core package."""
+    card = source()
+
+    assert card.index("installedCore.version !== corePackage.version") < card.index(
+        "JSON.parse(metadataBytes.toString('utf8'))"
+    )
+
+
 def test_browser_card_polls_both_owned_children_and_records_listener_after_probe() -> (
     None
 ):

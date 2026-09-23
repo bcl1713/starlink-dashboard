@@ -59,11 +59,13 @@ async function json(path, label) {
 async function lockedBrowser(projectDir) {
   const packagePath = join(projectDir, 'package.json');
   const lockPath = join(projectDir, 'package-lock.json');
+  const playwrightPackagePath = join(projectDir, 'node_modules/playwright/package.json');
   const corePackagePath = join(projectDir, 'node_modules/playwright-core/package.json');
   const metadataPath = join(projectDir, 'node_modules/playwright-core/browsers.json');
-  const [manifest, lock, installedCore, lockBytes] = await Promise.all([
+  const [manifest, lock, installedPlaywright, installedCore, lockBytes] = await Promise.all([
     json(packagePath, 'package.json'),
     json(lockPath, 'package-lock.json'),
+    json(playwrightPackagePath, 'installed playwright package.json'),
     json(corePackagePath, 'installed playwright-core package.json'),
     readFile(lockPath),
   ]);
@@ -75,13 +77,14 @@ async function lockedBrowser(projectDir) {
   if (!declared || declared !== rootDeclared || !/^\d+\.\d+\.\d+$/.test(declared)) throw new Error('package and lockfile must pin the same exact @playwright/test version');
   if (!testPackage || !playwrightPackage || !corePackage) throw new Error('package-lock lacks the pinned Playwright package chain');
   if (testPackage.version !== declared || playwrightPackage.version !== declared || corePackage.version !== declared || testPackage.dependencies?.playwright !== declared || playwrightPackage.dependencies?.['playwright-core'] !== declared) throw new Error('package-lock Playwright package chain does not match the pinned version');
+  if (installedPlaywright.version !== playwrightPackage.version) throw new Error('installed playwright version does not match package-lock');
   if (installedCore.version !== corePackage.version) throw new Error('installed playwright-core version does not match package-lock');
   const [metadata, metadataBytes] = await Promise.all([json(metadataPath, 'playwright browser metadata'), readFile(metadataPath)]);
   const chromium = metadata.browsers?.find((browser) => browser.name === 'chromium');
   if (!chromium || !/^\d+$/.test(chromium.revision) || !/^\d+(?:\.\d+){3}$/.test(chromium.browserVersion ?? '')) throw new Error('locked Playwright browser metadata lacks a valid Chromium revision/version');
   return {
     lockfile: { path: lockPath, sha256: sha256(lockBytes) },
-    playwright: { version: declared, integrity: testPackage.integrity ?? null, coreIntegrity: corePackage.integrity ?? null, installedCoreVersion: installedCore.version },
+    playwright: { version: declared, integrity: testPackage.integrity ?? null, coreIntegrity: corePackage.integrity ?? null, installedVersion: installedPlaywright.version, installedCoreVersion: installedCore.version },
     chromium: { revision: chromium.revision, version: chromium.browserVersion, metadataPath, metadataSha256: sha256(metadataBytes) },
   };
 }
@@ -90,10 +93,20 @@ function installerCommand(projectDir) {
   return [process.execPath, join(projectDir, 'node_modules/playwright/cli.js'), 'install', 'chromium'];
 }
 
+async function trustedPlaywrightCli(projectDir) {
+  const cli = join(projectDir, 'node_modules/playwright/cli.js');
+  const info = await lstat(cli);
+  if (info.isSymbolicLink() || !info.isFile()) throw new Error('Playwright CLI must be a non-symlink regular file');
+  if (await realpath(cli) !== cli || !inside(projectDir, cli).startsWith(resolve(projectDir))) throw new Error('Playwright CLI must not resolve outside the project');
+  return cli;
+}
+
 async function install(projectDir, browserRoot) {
   const command = installerCommand(projectDir);
   const [file, ...args] = command;
-  await access(args[0], constants.R_OK);
+  const cli = await trustedPlaywrightCli(projectDir);
+  if (args[0] !== cli) throw new Error('Playwright CLI command does not match the trusted project entrypoint');
+  await access(cli, constants.R_OK);
   try {
     const result = await execFile(file, args, {
       cwd: projectDir,

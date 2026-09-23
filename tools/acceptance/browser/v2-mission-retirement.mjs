@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFile, spawn } from 'node:child_process';
@@ -54,6 +54,7 @@ async function inputs() {
     mode: value('mode'), chrome: resolve(value('chrome')), display: value('display'),
     cdpPort: Number(value('cdp-port')), profileDir: resolve(value('profile-dir')),
     evidenceDir: resolve(value('evidence-dir')), frontendOrigin: value('frontend-origin', false),
+    taskRoot: resolve(value('task-root')),
     provisioningProvenance: resolve(value('provisioning-provenance')),
   };
   if (!['neutral', 'journey'].includes(result.mode) || !Number.isInteger(result.cdpPort) || result.cdpPort < 1024 || result.cdpPort > 65535) throw new Error('invalid mode or CDP port');
@@ -61,18 +62,30 @@ async function inputs() {
   return result;
 }
 
+async function trustedProvenancePath(taskRoot, provenanceFile) {
+  const root = resolve(taskRoot);
+  const target = resolve(provenanceFile);
+  if (relative(root, target).startsWith('..')) throw new Error('provisioning provenance escapes current task root');
+  const rootInfo = await lstat(root);
+  if (!rootInfo.isDirectory() || rootInfo.isSymbolicLink()) throw new Error('task root must be a non-symlink directory');
+  const canonicalRoot = await realpath(root);
+  const canonicalParent = await realpath(dirname(target));
+  if (relative(canonicalRoot, canonicalParent).startsWith('..')) throw new Error('provisioning provenance resolves outside current task root');
+  const provenanceInfo = await lstat(target);
+  if (provenanceInfo.isSymbolicLink() || !provenanceInfo.isFile()) throw new Error('provisioning provenance must be a non-symlink regular file');
+  return target;
+}
+
 async function currentLockedBrowser() {
   const projectDir = resolve(ROOT, 'frontend/mission-planner');
   const lockPath = join(projectDir, 'package-lock.json');
   const metadataPath = join(projectDir, 'node_modules/playwright-core/browsers.json');
   const corePackagePath = join(projectDir, 'node_modules/playwright-core/package.json');
-  const [manifest, lock, installedCore, metadata, lockBytes, metadataBytes] = await Promise.all([
+  const [manifest, lock, installedCore, lockBytes] = await Promise.all([
     JSON.parse(await readFile(join(projectDir, 'package.json'), 'utf8')),
     JSON.parse(await readFile(lockPath, 'utf8')),
     JSON.parse(await readFile(corePackagePath, 'utf8')),
-    JSON.parse(await readFile(metadataPath, 'utf8')),
     readFile(lockPath),
-    readFile(metadataPath),
   ]);
   const declared = manifest.devDependencies?.['@playwright/test'];
   const testPackage = lock.packages?.['node_modules/@playwright/test'];
@@ -80,6 +93,8 @@ async function currentLockedBrowser() {
   const corePackage = lock.packages?.['node_modules/playwright-core'];
   if (!declared || lock.packages?.['']?.devDependencies?.['@playwright/test'] !== declared || !testPackage || !playwrightPackage || !corePackage || testPackage.version !== declared || playwrightPackage.version !== declared || corePackage.version !== declared || testPackage.dependencies?.playwright !== declared || playwrightPackage.dependencies?.['playwright-core'] !== declared) throw new Error('current package-lock Playwright chain is invalid');
   if (installedCore.version !== corePackage.version) throw new Error('installed playwright-core version does not match package-lock');
+  const metadataBytes = await readFile(metadataPath);
+  const metadata = JSON.parse(metadataBytes.toString('utf8'));
   const chromium = metadata.browsers?.find((browser) => browser.name === 'chromium');
   if (!chromium?.revision || !chromium.browserVersion) throw new Error('current Playwright browser metadata lacks Chromium identity');
   return { projectDir, lockPath, metadataPath, declared, installedCoreVersion: installedCore.version, chromium, lockBytes, metadataBytes };
@@ -88,12 +103,13 @@ async function currentLockedBrowser() {
 async function provisionedExecutable(config) {
   let provisioning;
   try {
-    provisioning = JSON.parse(await readFile(config.provisioningProvenance, 'utf8'));
+    provisioning = JSON.parse(await readFile(await trustedProvenancePath(config.taskRoot, config.provisioningProvenance), 'utf8'));
   } catch (error) {
     throw new Error(`cannot read provisioning provenance: ${error instanceof Error ? error.message : String(error)}`);
   }
   const { projectDir, lockPath, metadataPath, declared, installedCoreVersion, chromium, lockBytes, metadataBytes } = await currentLockedBrowser();
   if (provisioning.status !== 'passed') throw new Error('provisioning provenance is not passed');
+  if (provisioning.taskRoot !== config.taskRoot) throw new Error('provisioning provenance task root does not match current task root');
   if (provisioning.projectDir !== projectDir) throw new Error('provisioning provenance project does not match current project');
   if (provisioning.lockfile?.path !== lockPath || provisioning.lockfile?.sha256 !== sha256(lockBytes)) throw new Error('provisioning provenance lockfile does not match current package-lock');
   if (provisioning.chromium?.metadataPath !== metadataPath || provisioning.chromium?.metadataSha256 !== sha256(metadataBytes)) throw new Error('provisioning provenance metadata does not match current Playwright metadata');

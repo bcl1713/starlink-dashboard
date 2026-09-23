@@ -55,6 +55,11 @@ def make_project(tmp_path: Path) -> tuple[Path, Path, Path]:
     (project / "node_modules/playwright-core/package.json").write_text(
         json.dumps({"version": "1.63.0"}), encoding="utf-8"
     )
+    playwright_package = project / "node_modules/playwright/package.json"
+    playwright_package.parent.mkdir()
+    playwright_package.write_text(
+        json.dumps({"version": "1.63.0"}), encoding="utf-8"
+    )
     metadata.write_text(
         json.dumps(
             {
@@ -231,6 +236,52 @@ def test_invalid_input_preserves_prior_provenance_until_atomic_success_replaceme
     assert json.loads(provenance.read_text(encoding="utf-8"))["status"] == "passed"
 
 
+def test_verify_rejects_installed_playwright_version_mismatch_before_metadata(
+    tmp_path: Path,
+) -> None:
+    """Fails if a substituted installed Playwright package is trusted."""
+    project, browser_root, provenance = make_project(tmp_path)
+    executable(browser_root)
+    package_path = project / "node_modules/playwright/package.json"
+    package_path.write_text(json.dumps({"version": "1.63.1"}), encoding="utf-8")
+    (project / "node_modules/playwright-core/browsers.json").write_text(
+        "not-json", encoding="utf-8"
+    )
+
+    result = run_preflight(
+        "--mode", "verify", *preflight_args(project, browser_root, provenance)
+    )
+
+    assert result.returncode == 1
+    assert (
+        "installed playwright version does not match package-lock"
+        in json.loads(result.stdout)["error"]
+    )
+    assert not provenance.exists()
+
+
+def test_provision_rejects_symlinked_local_playwright_cli_before_invocation(
+    tmp_path: Path,
+) -> None:
+    """Fails if the installer entrypoint resolves outside locked node_modules."""
+    project, browser_root, provenance = make_project(tmp_path)
+    package_path = project / "node_modules/playwright/package.json"
+    package_path.write_text(json.dumps({"version": "1.63.0"}), encoding="utf-8")
+    substitute = tmp_path / "substitute-cli.js"
+    substitute.write_text("process.exit(99);\n", encoding="utf-8")
+    os.symlink(substitute, project / "node_modules/playwright/cli.js")
+
+    result = run_preflight(
+        "--mode", "provision", *preflight_args(project, browser_root, provenance)
+    )
+
+    assert result.returncode == 1
+    assert "Playwright CLI must be a non-symlink regular file" in json.loads(
+        result.stdout
+    )["error"]
+    assert not provenance.exists()
+
+
 def test_provenance_rejects_task_root_escape_and_symlinked_parent(
     tmp_path: Path,
 ) -> None:
@@ -284,6 +335,7 @@ def test_browser_card_rejects_each_stale_provenance_identity_field(
     chrome.chmod(0o755)
     base = {
         "status": "passed",
+        "taskRoot": str(tmp_path),
         "projectDir": str(MISSION_PLANNER),
         "lockfile": {
             "path": str(lock_path),
@@ -339,6 +391,8 @@ def test_browser_card_rejects_each_stale_provenance_identity_field(
                 str(tmp_path / f"profile-{index}"),
                 "--evidence-dir",
                 str(tmp_path / f"evidence-{index}"),
+                "--task-root",
+                str(tmp_path),
                 "--provisioning-provenance",
                 str(provenance),
             ],
