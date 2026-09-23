@@ -33,10 +33,18 @@ LEGACY_MISSION_PATH = re.compile(r"/api/missions(?:\b|/)")
 LEGACY_REMOVAL_NOTICE = re.compile(
     r"`/api/missions` has been removed and now returns 404(?:[.;])"
 )
-ACTIVATION_POST = re.compile(
-    r"POST\s+/api/v2/missions(?:/[A-Za-z0-9_{}-]+)*/activate\b"
-)
-SUPPORTED_ACTIVATION_POST = "POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate"
+ACTIVATION_PATH = r"/api/v2/missions(?:/[A-Za-z0-9_{}-]+)*/activate\b"
+LITERAL_ACTIVATION_POST = re.compile(rf"POST\s+({ACTIVATION_PATH})")
+CURL_ACTIVATION_POST = re.compile(rf"curl\s+-X\s+POST\s+\S*?({ACTIVATION_PATH})")
+SUPPORTED_ACTIVATION_PATH = "/api/v2/missions/{mission_id}/legs/{leg_id}/activate"
+
+
+def _documented_activation_paths(text):
+    return [
+        activation_path
+        for pattern in (LITERAL_ACTIVATION_POST, CURL_ACTIVATION_POST)
+        for activation_path in pattern.findall(text)
+    ]
 
 
 def _assert_legacy_mission_paths_are_removal_notices(text):
@@ -58,13 +66,13 @@ def test_overview_api_docs_enumerate_all_final_states():
 
 
 def test_mission_docs_publish_the_only_supported_activation_route():
-    activation_posts = [
-        activation_post
+    activation_paths = [
+        activation_path
         for path in MAINTAINED_MISSION_DOCS
-        for activation_post in ACTIVATION_POST.findall(path.read_text())
+        for activation_path in _documented_activation_paths(path.read_text())
     ]
-    assert activation_posts
-    assert set(activation_posts) == {SUPPORTED_ACTIVATION_POST}
+    assert activation_paths
+    assert set(activation_paths) == {SUPPORTED_ACTIVATION_PATH}
 
 
 @pytest.mark.parametrize(
@@ -98,6 +106,23 @@ def test_activation_contract_rejects_an_alternative_v2_activation_post(
     mission_readme.write_text(
         "POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate\n"
         "POST /api/v2/missions/{mission_id}/activate\n"
+    )
+    monkeypatch.setattr(sys.modules[__name__], "MAINTAINED_MISSION_DOCS", (mission_readme,))
+
+    with pytest.raises(AssertionError):
+        test_mission_docs_publish_the_only_supported_activation_route()
+
+
+def test_activation_contract_rejects_a_curl_shaped_alternative_v2_activation_route(
+    tmp_path, monkeypatch
+):
+    mission_readme = tmp_path / "docs/missions/README.md"
+    mission_readme.parent.mkdir(parents=True)
+    mission_readme.write_text(
+        "POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate\n"
+        "```bash\n"
+        "curl -X POST http://localhost:8000/api/v2/missions/{mission_id}/activate\n"
+        "```\n"
     )
     monkeypatch.setattr(sys.modules[__name__], "MAINTAINED_MISSION_DOCS", (mission_readme,))
 
