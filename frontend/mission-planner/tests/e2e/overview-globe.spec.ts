@@ -54,11 +54,30 @@ test.describe('Globe overview', () => {
     page,
   }) => {
     await page.goto('/overview');
-    await page
-      .getByRole('button', {
-        name: 'Enter fullscreen overview',
-      })
-      .click();
+    const fullscreenControl = page.getByRole('button', {
+      name: 'Enter fullscreen overview',
+    });
+
+    await expect(fullscreenControl).toBeVisible();
+    await expect(fullscreenControl).toBeEnabled();
+
+    const fullscreenChange = page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          document.addEventListener('fullscreenchange', () => resolve(), {
+            once: true,
+          });
+        })
+    );
+
+    await fullscreenControl.click();
+    await fullscreenChange;
+    expect(
+      await page.evaluate(
+        () => document.fullscreenElement === document.documentElement
+      )
+    ).toBe(true);
+
     await expect(
       page.getByRole('navigation', {
         name: 'Primary navigation',
