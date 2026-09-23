@@ -18,10 +18,17 @@ from app.mission.models import (
     TimelineStatus,
     TransportConfig,
 )
-from app.mission import storage
-from app.mission.storage import load_mission_v2
+from app.mission import routes_v2, storage
+from app.mission.active_context import resolve_active_mission_leg_context
+from app.mission.storage import (
+    get_leg_timeline_path,
+    load_mission_v2,
+    save_mission_timeline,
+)
 from app.mission.timeline_service import TimelineSummary
+from app.models.poi import POICreate
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
+from app.services.flight_state import get_flight_state_manager
 from fastapi.testclient import TestClient
 import pytest
 
@@ -142,6 +149,63 @@ def _package(mission: Mission) -> bytes:
     return payload.getvalue()
 
 
+def _resource_package(mission: Mission) -> bytes:
+    """Build an import package whose every resource path would mutate on success."""
+    payload = io.BytesIO()
+    leg = mission.legs[0]
+    with zipfile.ZipFile(payload, "w") as archive:
+        archive.writestr("mission.json", json.dumps(mission.model_dump(mode="json")))
+        archive.writestr(f"routes/{leg.route_id}.kml", KML)
+        archive.writestr(
+            "pois/satellites.json",
+            json.dumps(
+                {
+                    "pois": [
+                        {
+                            "id": "imported-satellite",
+                            "name": "Imported satellite",
+                            "latitude": 35.0,
+                            "longitude": -120.0,
+                            "category": "satellite",
+                        }
+                    ]
+                }
+            ),
+        )
+        archive.writestr(
+            f"pois/{leg.id}.json",
+            json.dumps(
+                {
+                    "pois": [
+                        {
+                            "id": "imported-leg-poi",
+                            "name": "Imported leg POI",
+                            "latitude": 36.0,
+                            "longitude": -121.0,
+                            "category": "landmark",
+                            "route_id": leg.route_id,
+                            "mission_id": mission.id,
+                        }
+                    ]
+                }
+            ),
+        )
+    return payload.getvalue()
+
+
+def _resolver_snapshot(client: TestClient) -> tuple[object, ...]:
+    resolution = resolve_active_mission_leg_context(client.app.state.route_manager)
+    context = resolution.context
+    return (
+        resolution.state,
+        context.parent_mission_id if context else None,
+        context.parent_mission.model_dump(mode="json") if context else None,
+        context.leg.model_dump(mode="json") if context else None,
+        context.route_id if context else None,
+        deepcopy(context.route) if context else None,
+    )
+
+
 class TestV2LifecycleWriteGuards:
     def test_create_normalizes_client_active_flags_without_disturbing_active_context(
         self, client: TestClient
@@ -220,7 +284,7 @@ class TestV2LifecycleWriteGuards:
         assert load_mission_v2(imported.id).legs[0].is_active is False
         assert _active_snapshot(client, active_parent) == before
 
-    def test_import_over_active_parent_is_conflict_before_any_mutation(
+    def test_resource_bearing_import_over_active_parent_is_conflict_before_any_mutation(
         self, client: TestClient
     ):
         active_parent = _mission("active")
@@ -231,23 +295,105 @@ class TestV2LifecycleWriteGuards:
             == 201
         )
         _activate(client, active_parent)
+        route_manager = client.app.state.route_manager
+        poi_manager = client.app.state.poi_manager
+        routes_dir = Path(route_manager.routes_dir)
+        active_route_file = routes_dir / f"{active_parent.legs[0].route_id}.kml"
+        active_route_file.write_bytes(b"original active route bytes")
+        timeline, _ = _timeline(active_parent.legs[0].id)
+        save_mission_timeline(
+            active_parent.legs[0].id,
+            timeline,
+            parent_mission_id=active_parent.id,
+        )
+        poi_manager.create_poi(
+            POICreate(name="Existing satellite", latitude=35.0, longitude=-120.0)
+        )
+        poi_manager.create_poi(
+            POICreate(
+                name="Existing leg POI",
+                latitude=36.0,
+                longitude=-121.0,
+                mission_id=active_parent.id,
+                route_id=active_parent.legs[0].route_id,
+            )
+        )
         before_mission = load_mission_v2(active_parent.id).model_dump(mode="json")
-        before_route = client.app.state.route_manager.get_active_route_id()
+        timeline_path = get_leg_timeline_path(
+            active_parent.legs[0].id, active_parent.id
+        )
+        before_timeline = timeline_path.read_bytes()
+        before_route_files = {
+            path.name: path.read_bytes() for path in routes_dir.glob("*")
+        }
+        before_route_cache = deepcopy(route_manager._routes)
+        before_active_route = route_manager.get_active_route_id()
+        before_poi_cache = deepcopy(poi_manager._pois)
+        before_poi_file = poi_manager.pois_file.read_bytes()
+        before_resolver = _resolver_snapshot(client)
+        before_flight_state = (
+            get_flight_state_manager().get_status().model_dump(mode="json")
+        )
         replacement = active_parent.model_copy(deep=True)
         replacement.name = "replacement should not persist"
         replacement.legs[0].is_active = True
 
-        response = client.post(
-            "/api/v2/missions/import",
-            files={"file": ("mission.zip", _package(replacement), "application/zip")},
-        )
+        with (
+            patch(
+                "app.mission.routes_v2._import_routes_from_zip",
+                wraps=routes_v2._import_routes_from_zip,
+            ) as import_routes,
+            patch(
+                "app.mission.routes_v2._import_satellite_pois",
+                wraps=routes_v2._import_satellite_pois,
+            ) as import_satellites,
+            patch(
+                "app.mission.routes_v2._import_leg_pois",
+                wraps=routes_v2._import_leg_pois,
+            ) as import_leg_pois,
+            patch(
+                "app.mission.routes_v2._synchronize_imported_endpoint_pois",
+                wraps=routes_v2._synchronize_imported_endpoint_pois,
+            ) as synchronize_endpoints,
+            patch(
+                "app.mission.routes_v2._generate_timelines_for_imported_legs",
+                wraps=routes_v2._generate_timelines_for_imported_legs,
+            ) as generate_timelines,
+        ):
+            response = client.post(
+                "/api/v2/missions/import",
+                files={
+                    "file": (
+                        "mission.zip",
+                        _resource_package(replacement),
+                        "application/zip",
+                    )
+                },
+            )
 
         assert response.status_code == 409
         assert response.json()["detail"]["code"] == "ACTIVE_MISSION_IMPORT_FORBIDDEN"
         assert (
             load_mission_v2(active_parent.id).model_dump(mode="json") == before_mission
         )
-        assert client.app.state.route_manager.get_active_route_id() == before_route
+        assert timeline_path.read_bytes() == before_timeline
+        assert {
+            path.name: path.read_bytes() for path in routes_dir.glob("*")
+        } == before_route_files
+        assert route_manager._routes == before_route_cache
+        assert route_manager.get_active_route_id() == before_active_route
+        assert poi_manager._pois == before_poi_cache
+        assert poi_manager.pois_file.read_bytes() == before_poi_file
+        assert _resolver_snapshot(client) == before_resolver
+        assert (
+            get_flight_state_manager().get_status().model_dump(mode="json")
+            == before_flight_state
+        )
+        import_routes.assert_not_called()
+        import_satellites.assert_not_called()
+        import_leg_pois.assert_not_called()
+        synchronize_endpoints.assert_not_called()
+        generate_timelines.assert_not_called()
 
     def test_active_leg_route_upload_is_strict_noop_with_actionable_code(
         self, client: TestClient, tmp_path: Path
