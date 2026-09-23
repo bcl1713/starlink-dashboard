@@ -2,7 +2,9 @@
 
 import io
 import json
+import multiprocessing
 import threading
+import traceback
 import zipfile
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -29,6 +31,8 @@ from app.mission.timeline_service import TimelineSummary
 from app.models.poi import POICreate
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.flight_state import get_flight_state_manager
+from app.services.overview_clock_location import ClockLocation
+from app.services.overview_clock_settings import OverviewClockSettingsStore
 from fastapi.testclient import TestClient
 import pytest
 
@@ -206,7 +210,174 @@ def _resolver_snapshot(client: TestClient) -> tuple[object, ...]:
     )
 
 
+def _seed_delete_noop_state(
+    client: TestClient, mission: Mission, tmp_path: Path, monkeypatch
+) -> dict[str, object]:
+    """Seed every destructive deletion target and return immutable snapshots."""
+    route_manager = client.app.state.route_manager
+    poi_manager = client.app.state.poi_manager
+    routes_dir = Path(route_manager.routes_dir)
+    route_file = routes_dir / f"{mission.legs[0].route_id}.kml"
+    route_file.write_bytes(b"route bytes that deletion must not remove")
+    _add_route(client, mission.legs[0], routes_dir)
+    timeline, _ = _timeline(mission.legs[0].id)
+    save_mission_timeline(mission.legs[0].id, timeline, parent_mission_id=mission.id)
+    timeline_path = get_leg_timeline_path(mission.legs[0].id, mission.id)
+    poi_manager.create_poi(
+        POICreate(
+            name="Deletion regression route POI",
+            latitude=35.0,
+            longitude=-120.0,
+            mission_id=mission.id,
+            route_id=mission.legs[0].route_id,
+        )
+    )
+    poi_manager.create_poi(
+        POICreate(
+            name="Deletion regression mission POI",
+            latitude=36.0,
+            longitude=-121.0,
+            mission_id=mission.id,
+        )
+    )
+    clock_store = OverviewClockSettingsStore(tmp_path / "clock-settings.json")
+    clock_store.set_clocks(
+        [
+            ClockLocation(label="Zulu custom", time_zone="UTC"),
+            ClockLocation(label="Denver", time_zone="America/Denver"),
+            ClockLocation(label="Paris", time_zone="Europe/Paris"),
+            ClockLocation(label="Tokyo", time_zone="Asia/Tokyo"),
+        ]
+    )
+    monkeypatch.setattr(client.app.state, "overview_clock_settings_store", clock_store)
+    return {
+        "mission": load_mission_v2(mission.id).model_dump(mode="json"),
+        "route_files": {path.name: path.read_bytes() for path in routes_dir.glob("*")},
+        "route_cache": deepcopy(route_manager._routes),
+        "active_route": route_manager.get_active_route_id(),
+        "timeline": timeline_path.read_bytes(),
+        "timeline_path": timeline_path,
+        "poi_cache": deepcopy(poi_manager._pois),
+        "poi_file": poi_manager.pois_file.read_bytes(),
+        "resolver": _resolver_snapshot(client),
+        "flight": get_flight_state_manager().get_status().model_dump(mode="json"),
+        "clock_file": clock_store._path.read_bytes(),
+    }
+
+
+def _assert_delete_noop_snapshot(
+    client: TestClient, mission: Mission, snapshot: dict[str, object]
+) -> None:
+    route_manager = client.app.state.route_manager
+    poi_manager = client.app.state.poi_manager
+    assert load_mission_v2(mission.id).model_dump(mode="json") == snapshot["mission"]
+    assert {
+        path.name: path.read_bytes()
+        for path in Path(route_manager.routes_dir).glob("*")
+    } == snapshot["route_files"]
+    assert route_manager._routes == snapshot["route_cache"]
+    assert route_manager.get_active_route_id() == snapshot["active_route"]
+    assert Path(snapshot["timeline_path"]).read_bytes() == snapshot["timeline"]
+    assert poi_manager._pois == snapshot["poi_cache"]
+    assert poi_manager.pois_file.read_bytes() == snapshot["poi_file"]
+    assert _resolver_snapshot(client) == snapshot["resolver"]
+    assert (
+        get_flight_state_manager().get_status().model_dump(mode="json")
+        == snapshot["flight"]
+    )
+    assert (
+        Path(client.app.state.overview_clock_settings_store._path).read_bytes()
+        == snapshot["clock_file"]
+    )
+
+
+def _run_isolated_lifecycle_worker(
+    root: str, label: str, ready, release, results
+) -> None:
+    """Run a real HTTP lifecycle in an OS process without invoking pytest."""
+    try:
+        from main import app
+
+        worker_root = Path(root) / label
+        storage.MISSIONS_DIR = worker_root / "missions"
+        storage.ensure_missions_directory()
+        route_manager = app.state.route_manager
+        route_manager.routes_dir = worker_root / "routes"
+        route_manager.routes_dir.mkdir(parents=True, exist_ok=True)
+        route_manager._routes = {}
+        route_manager._active_route_id = None
+        poi_manager = app.state.poi_manager
+        poi_manager.pois_file = worker_root / "pois" / "pois.json"
+        poi_manager.lock_file = str(poi_manager.pois_file) + ".lock"
+        poi_manager._pois = {}
+        poi_manager._load_pois()
+        mission = _mission(label)
+        with TestClient(app) as worker_client:
+            ready.put((label, str(storage.MISSIONS_DIR)))
+            assert release.wait(timeout=10), "worker release was not signaled"
+            assert (
+                worker_client.post(
+                    "/api/v2/missions", json=mission.model_dump(mode="json")
+                ).status_code
+                == 201
+            )
+            _add_route(worker_client, mission.legs[0], Path(route_manager.routes_dir))
+            with patch(
+                "app.mission.routes_v2.build_mission_timeline",
+                side_effect=lambda **kwargs: _timeline(kwargs["mission"].id),
+            ):
+                assert (
+                    worker_client.post(
+                        f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}/activate"
+                    ).status_code
+                    == 200
+                )
+            assert (
+                worker_client.post(
+                    f"/api/v2/missions/{mission.id}/legs/deactivate"
+                ).status_code
+                == 200
+            )
+        results.put((label, "ok", str(storage.get_mission_directory(mission.id))))
+    except BaseException:
+        results.put((label, "error", traceback.format_exc()))
+
+
 class TestV2LifecycleWriteGuards:
+    def test_two_process_lifecycles_keep_distinct_fixture_roots(
+        self, tmp_path: Path
+    ) -> None:
+        """Concurrent fixture workers cannot clear a sibling's lifecycle storage."""
+        context = multiprocessing.get_context("fork")
+        ready = context.Queue()
+        results = context.Queue()
+        release = context.Event()
+        workers = [
+            context.Process(
+                target=_run_isolated_lifecycle_worker,
+                args=(str(tmp_path), label, ready, release, results),
+            )
+            for label in ("worker-one", "worker-two")
+        ]
+        for worker in workers:
+            worker.start()
+        roots = [ready.get(timeout=15) for _ in workers]
+        assert {root for _, root in roots} == {
+            str(tmp_path / "worker-one" / "missions"),
+            str(tmp_path / "worker-two" / "missions"),
+        }
+        release.set()
+        for worker in workers:
+            worker.join(timeout=20)
+            assert worker.exitcode == 0
+        outcomes = [results.get(timeout=5) for _ in workers]
+        assert all(status == "ok" for _, status, _ in outcomes), outcomes
+        mission_dirs = {Path(path) for _, _, path in outcomes}
+        assert len(mission_dirs) == 2
+        assert all(
+            (mission_dir / "mission.json").exists() for mission_dir in mission_dirs
+        )
+
     def test_create_normalizes_client_active_flags_without_disturbing_active_context(
         self, client: TestClient
     ):
@@ -483,8 +654,8 @@ class TestV2LifecycleWriteGuards:
         assert response.json()["leg"]["route_id"] == "replacement-route"
         assert load_mission_v2(mission.id).legs[0].route_id == "replacement-route"
 
-    def test_active_leg_delete_is_actionable_strict_noop_and_inactive_control_succeeds(
-        self, client: TestClient
+    def test_active_leg_delete_is_actionable_strict_noop(
+        self, client: TestClient, tmp_path: Path, monkeypatch
     ) -> None:
         mission = _mission("active-delete")
         assert (
@@ -494,18 +665,27 @@ class TestV2LifecycleWriteGuards:
             == 201
         )
         _activate(client, mission)
-        route_manager = client.app.state.route_manager
+        snapshot = _seed_delete_noop_state(client, mission, tmp_path, monkeypatch)
         poi_manager = client.app.state.poi_manager
-        before_mission = load_mission_v2(mission.id).model_dump(mode="json")
-        before_cache = deepcopy(route_manager._routes)
-        before_active_route = route_manager.get_active_route_id()
-        before_resolver = _resolver_snapshot(client)
-        before_flight = get_flight_state_manager().get_status().model_dump(mode="json")
-        poi_manager.delete_leg_pois = MagicMock(wraps=poi_manager.delete_leg_pois)
 
-        response = client.delete(
-            f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}"
-        )
+        with (
+            patch.object(
+                poi_manager, "delete_route_pois", wraps=poi_manager.delete_route_pois
+            ) as delete_route_pois,
+            patch.object(
+                poi_manager, "delete_leg_pois", wraps=poi_manager.delete_leg_pois
+            ) as delete_leg_pois,
+            patch(
+                "app.mission.routes_v2.delete_mission_timeline",
+                wraps=routes_v2.delete_mission_timeline,
+            ) as delete_timeline,
+            patch(
+                "app.mission.routes_v2.save_mission_v2", wraps=routes_v2.save_mission_v2
+            ) as save_mission,
+        ):
+            response = client.delete(
+                f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}"
+            )
 
         assert response.status_code == 409
         assert response.json()["detail"] == {
@@ -513,28 +693,14 @@ class TestV2LifecycleWriteGuards:
             "message": "Deactivate the leg before deleting it.",
             "action": "Deactivate the leg, then delete it.",
         }
-        assert load_mission_v2(mission.id).model_dump(mode="json") == before_mission
-        assert route_manager._routes == before_cache
-        assert route_manager.get_active_route_id() == before_active_route
-        assert _resolver_snapshot(client) == before_resolver
-        assert (
-            get_flight_state_manager().get_status().model_dump(mode="json")
-            == before_flight
-        )
-        poi_manager.delete_leg_pois.assert_not_called()
-        assert (
-            client.post(f"/api/v2/missions/{mission.id}/legs/deactivate").status_code
-            == 200
-        )
-        assert (
-            client.delete(
-                f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}"
-            ).status_code
-            == 204
-        )
+        _assert_delete_noop_snapshot(client, mission, snapshot)
+        delete_route_pois.assert_not_called()
+        delete_leg_pois.assert_not_called()
+        delete_timeline.assert_not_called()
+        save_mission.assert_not_called()
 
-    def test_active_mission_delete_is_actionable_strict_noop_and_inactive_control_succeeds(
-        self, client: TestClient
+    def test_active_mission_delete_is_actionable_strict_noop(
+        self, client: TestClient, tmp_path: Path, monkeypatch
     ) -> None:
         mission = _mission("active-parent-delete")
         assert (
@@ -544,14 +710,20 @@ class TestV2LifecycleWriteGuards:
             == 201
         )
         _activate(client, mission)
-        route_manager = client.app.state.route_manager
-        before_mission = load_mission_v2(mission.id).model_dump(mode="json")
-        before_cache = deepcopy(route_manager._routes)
-        before_active_route = route_manager.get_active_route_id()
-        before_resolver = _resolver_snapshot(client)
-        before_flight = get_flight_state_manager().get_status().model_dump(mode="json")
+        snapshot = _seed_delete_noop_state(client, mission, tmp_path, monkeypatch)
+        poi_manager = client.app.state.poi_manager
 
-        response = client.delete(f"/api/v2/missions/{mission.id}")
+        with (
+            patch.object(
+                poi_manager, "delete_route_pois", wraps=poi_manager.delete_route_pois
+            ) as delete_route_pois,
+            patch.object(
+                poi_manager,
+                "delete_mission_pois",
+                wraps=poi_manager.delete_mission_pois,
+            ) as delete_mission_pois,
+        ):
+            response = client.delete(f"/api/v2/missions/{mission.id}")
 
         assert response.status_code == 409
         assert response.json()["detail"] == {
@@ -559,19 +731,57 @@ class TestV2LifecycleWriteGuards:
             "message": "Deactivate all legs before deleting this mission.",
             "action": "Deactivate all mission legs, then delete the mission.",
         }
-        assert load_mission_v2(mission.id).model_dump(mode="json") == before_mission
-        assert route_manager._routes == before_cache
-        assert route_manager.get_active_route_id() == before_active_route
-        assert _resolver_snapshot(client) == before_resolver
+        _assert_delete_noop_snapshot(client, mission, snapshot)
+        delete_route_pois.assert_not_called()
+        delete_mission_pois.assert_not_called()
+
+    def test_inactive_sibling_delete_succeeds_while_another_leg_is_active(
+        self, client: TestClient
+    ) -> None:
+        mission = _mission("active-sibling")
+        inactive_sibling = _mission("inactive-sibling").legs[0]
+        mission.legs.append(inactive_sibling)
         assert (
-            get_flight_state_manager().get_status().model_dump(mode="json")
-            == before_flight
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
         )
+        _activate(client, mission)
+
+        response = client.delete(
+            f"/api/v2/missions/{mission.id}/legs/{inactive_sibling.id}"
+        )
+
+        assert response.status_code == 204
+        stored = load_mission_v2(mission.id)
+        assert [leg.id for leg in stored.legs] == [mission.legs[0].id]
+        assert stored.legs[0].is_active is True
+
+    def test_delete_not_found_precedes_active_conflict_for_parent_and_leg(
+        self, client: TestClient
+    ) -> None:
+        mission = _mission("not-found-precedence")
         assert (
-            client.post(f"/api/v2/missions/{mission.id}/legs/deactivate").status_code
-            == 200
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
         )
-        assert client.delete(f"/api/v2/missions/{mission.id}").status_code == 204
+        _activate(client, mission)
+
+        missing_parent = client.delete(
+            "/api/v2/missions/no-such-mission/legs/no-such-leg"
+        )
+        missing_leg = client.delete(f"/api/v2/missions/{mission.id}/legs/no-such-leg")
+        missing_mission = client.delete("/api/v2/missions/no-such-mission")
+
+        assert missing_parent.status_code == 404
+        assert missing_parent.json()["detail"] == "Mission no-such-mission not found"
+        assert missing_leg.status_code == 404
+        assert missing_leg.json()["detail"] == "Leg no-such-leg not found in mission"
+        assert missing_mission.status_code == 404
+        assert missing_mission.json()["detail"] == "Mission no-such-mission not found"
 
     def test_active_leg_route_upload_is_strict_noop_with_actionable_code(
         self, client: TestClient, tmp_path: Path
