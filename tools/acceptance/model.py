@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 _SHA_PATTERN = re.compile(r"[0-9a-f]{40}")
+_GIT_REF_FORBIDDEN = frozenset(" ~^:?*[\\")
 
 
 class AcceptancePhase(StrEnum):
@@ -33,13 +34,7 @@ class AcceptanceInputs:
         if not isinstance(sha, str) or not _SHA_PATTERN.fullmatch(sha):
             raise ValueError("sha must be a 40-character lowercase hexadecimal value")
         ref = mapping.get("ref")
-        if (
-            not isinstance(ref, str)
-            or not ref
-            or ref != ref.strip()
-            or any(char.isspace() for char in ref)
-            or _SHA_PATTERN.fullmatch(ref)
-        ):
+        if not isinstance(ref, str) or not _is_git_refname(ref):
             raise ValueError("ref must be a named ref")
         evidence_root = mapping.get("evidence_root")
         if not isinstance(evidence_root, (str, Path)) or not str(evidence_root):
@@ -108,9 +103,20 @@ class RunManifest:
     ) -> RunManifest:
         primary_result.validate()
         cleanup_result.validate()
-        return replace(
+        updated = replace(
             self, primary_result=primary_result, cleanup_result=cleanup_result
         )
+        updated._validate_outcome_phases()
+        return updated
+
+    def _validate_outcome_phases(self) -> None:
+        manifest_phase = AcceptancePhase(self.phase)
+        for result in (self.primary_result, self.cleanup_result):
+            if result is None:
+                continue
+            result.validate()
+            if AcceptancePhase(result.phase) is not manifest_phase:
+                raise ValueError("result phase must match manifest phase")
 
     def to_dict(self) -> dict[str, Any]:
         inputs = AcceptanceInputs.from_mapping(
@@ -121,6 +127,7 @@ class RunManifest:
                 "phase": self.phase,
             }
         )
+        self._validate_outcome_phases()
         primary = self.primary_result.to_dict() if self.primary_result else None
         cleanup = self.cleanup_result.to_dict() if self.cleanup_result else None
         return {
@@ -144,3 +151,26 @@ def _classification(phase: AcceptancePhase) -> str:
         AcceptancePhase.RUNTIME_CACHED: "cached_diagnostic",
         AcceptancePhase.FULL: "final_exact_sha",
     }[phase]
+
+
+def _is_git_refname(ref: str) -> bool:
+    """Implement ``git check-ref-format --allow-onelevel`` refname rules."""
+    if (
+        not ref
+        or ref == "@"
+        or ref.startswith("/")
+        or ref.endswith(("/", "."))
+        or "//" in ref
+        or ".." in ref
+        or "@{" in ref
+        or _SHA_PATTERN.fullmatch(ref)
+        or any(
+            char in _GIT_REF_FORBIDDEN or ord(char) < 0x20 or ord(char) == 0x7F
+            for char in ref
+        )
+    ):
+        return False
+    return all(
+        not part.startswith(".") and not part.endswith(".lock")
+        for part in ref.split("/")
+    )

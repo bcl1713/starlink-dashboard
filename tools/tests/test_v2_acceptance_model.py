@@ -44,11 +44,57 @@ def test_inputs_reject_unknown_phase_without_normalizing_values() -> None:
         )
 
 
+@pytest.mark.parametrize(
+    "ref",
+    [
+        "refs/heads/feat..bad",
+        "refs/heads/feat.",
+        "refs/heads/feat@{bad",
+        "refs/heads/feat\x01bad",
+        "refs/heads/feat~bad",
+        "refs/heads/feat^bad",
+        "refs/heads/feat:bad",
+        "refs/heads/feat?bad",
+        "refs/heads/feat*bad",
+        "refs/heads/feat[bad",
+        "refs/heads/.hidden",
+        "refs/heads/feat.lock",
+    ],
+)
+def test_inputs_reject_git_invalid_refnames(ref: str) -> None:
+    with pytest.raises(ValueError, match="named ref"):
+        AcceptanceInputs.from_mapping(
+            {"sha": SHA, "ref": ref, "evidence_root": "/evidence"}
+        )
+
+
 def test_runtime_cached_cannot_be_final_result() -> None:
     result = PhaseResult("runtime-cached", "passed", final_acceptance=True)
 
     with pytest.raises(ValueError, match="non-final"):
         result.validate()
+
+
+def test_manifest_rejects_results_from_a_different_phase() -> None:
+    manifest = RunManifest(SHA, "feat/x", AcceptancePhase.RUNTIME_CACHED)
+
+    with pytest.raises(ValueError, match="manifest phase"):
+        manifest.with_outcomes(
+            PhaseResult("full", "passed", final_acceptance=True),
+            PhaseResult("runtime-cached", "passed"),
+        )
+
+
+def test_cached_manifest_cannot_serialize_a_full_final_result() -> None:
+    manifest = RunManifest(
+        SHA,
+        "feat/x",
+        AcceptancePhase.RUNTIME_CACHED,
+        primary_result=PhaseResult("full", "passed", final_acceptance=True),
+    )
+
+    with pytest.raises(ValueError, match="manifest phase"):
+        manifest.to_dict()
 
 
 def test_full_pass_can_be_final_and_manifest_preserves_outcomes() -> None:
