@@ -2,6 +2,7 @@
 
 import asyncio
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -17,7 +18,7 @@ from app.mission.models import (
     TimelineStatus,
     TransportConfig,
 )
-from app.mission.storage import load_mission_v2, save_mission_v2
+from app.mission.storage import load_mission_timeline, load_mission_v2, save_mission_v2
 from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.overview_clock_location import ClockLocation
@@ -26,6 +27,56 @@ from main import app
 
 
 class TestMissionV2ClockLifecycle:
+    def test_tracked_activation_asset_uploads_and_activates_with_persisted_window(
+        self, client: TestClient, test_mission_v2
+    ):
+        """The documented asset activates without bypassing timeline computation."""
+        asset = (
+            Path(__file__).parents[4]
+            / "docs/missions/acceptance-assets/v2-activation-route.kml"
+        )
+        assert (
+            client.post(
+                "/api/v2/missions", json=test_mission_v2.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
+
+        upload_response = client.put(
+            f"/api/v2/missions/{test_mission_v2.id}/legs/"
+            f"{test_mission_v2.legs[0].id}/route",
+            files={
+                "file": (
+                    asset.name,
+                    asset.read_bytes(),
+                    "application/vnd.google-earth.kml+xml",
+                )
+            },
+        )
+        assert upload_response.status_code == 200
+
+        response = client.post(
+            f"/api/v2/missions/{test_mission_v2.id}/legs/"
+            f"{test_mission_v2.legs[0].id}/activate"
+        )
+
+        assert response.status_code == 200
+        stored_mission = load_mission_v2(test_mission_v2.id)
+        assert stored_mission is not None
+        assert [leg.id for leg in stored_mission.legs if leg.is_active] == [
+            test_mission_v2.legs[0].id
+        ]
+        timeline = load_mission_timeline(
+            test_mission_v2.legs[0].id, parent_mission_id=test_mission_v2.id
+        )
+        assert timeline is not None
+        assert min(segment.start_time for segment in timeline.segments) == datetime(
+            2025, 1, 1, 12, 0, tzinfo=timezone.utc
+        )
+        assert max(segment.end_time for segment in timeline.segments) == datetime(
+            2025, 1, 1, 14, 0, tzinfo=timezone.utc
+        )
+
     def test_deactivating_legs_resets_only_the_mission_clock_slots(
         self,
         client: TestClient,

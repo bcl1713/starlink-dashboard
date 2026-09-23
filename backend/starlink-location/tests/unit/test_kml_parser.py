@@ -1,10 +1,12 @@
 """Unit tests for KML parser functionality."""
 
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 from app.models.route import ParsedRoute, RoutePoint
+from app.mission.timeline_builder import derive_mission_window
 from app.services.kml_parser import KMLParseError, parse_kml_file, validate_kml_file
 
 # Sample valid KML with a simple LineString
@@ -160,8 +162,8 @@ def kml_with_waypoints_file(temp_kml_dir):
 class TestKMLParser:
     """Test suite for KML parser."""
 
-    def test_parses_tracked_v2_activation_acceptance_asset(self):
-        """The sanitized operator acceptance input remains upload-parser valid."""
+    def test_parses_tracked_v2_activation_acceptance_asset_with_fixed_timing(self):
+        """The tracked activation input has endpoint timing for timeline computation."""
         acceptance_asset = (
             Path(__file__).parents[4]
             / "docs/missions/acceptance-assets/v2-activation-route.kml"
@@ -169,8 +171,29 @@ class TestKMLParser:
 
         result = parse_kml_file(acceptance_asset)
 
-        assert result.metadata.name == "V2 Acceptance Route"
+        assert result.metadata.name == "V2 Acceptance Route KAAA-KBBB"
         assert result.metadata.point_count == 3
+        assert [(waypoint.name, waypoint.expected_arrival_time) for waypoint in result.waypoints] == [
+            ("KAAA", datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)),
+            ("KBBB", datetime(2025, 1, 1, 14, 0, tzinfo=timezone.utc)),
+        ]
+        assert result.timing_profile is not None
+        assert result.timing_profile.departure_time == datetime(
+            2025, 1, 1, 12, 0, tzinfo=timezone.utc
+        )
+        assert result.timing_profile.arrival_time == datetime(
+            2025, 1, 1, 14, 0, tzinfo=timezone.utc
+        )
+        assert result.timing_profile.total_expected_duration_seconds == 7200
+        assert [point.expected_arrival_time for point in result.points] == [
+            datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc),
+            None,
+            datetime(2025, 1, 1, 14, 0, tzinfo=timezone.utc),
+        ]
+        assert derive_mission_window(result) == (
+            datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc),
+            datetime(2025, 1, 1, 14, 0, tzinfo=timezone.utc),
+        )
 
     def test_parse_valid_kml(self, valid_kml_file):
         """Test parsing a valid KML file."""

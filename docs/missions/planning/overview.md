@@ -70,6 +70,11 @@ introducing sample data into the running service:
    `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.
 5. Open **Overview** and confirm the active leg is represented there.
 
+The supplied asset includes fixed endpoint timing metadata because activation
+computes a timeline. Use Point placemark descriptions in the supported form:
+`Time Over Waypoint: YYYY-MM-DD HH:MM:SSZ`. KML can be parseable without that
+metadata, but a route without valid timeline timing is not activation-ready.
+
 The retired v1 mission endpoints are not a fallback for this flow and return
 404. Use the V2 UI and V2 API only.
 

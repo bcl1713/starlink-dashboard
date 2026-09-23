@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
   <Document>
-    <name>V2 Acceptance Route</name>
+    <name>V2 Acceptance Route KAAA-KBBB</name>
     <description>Sanitized deterministic route for manual V2 acceptance only.</description>
+    <Placemark>
+      <name>KAAA</name>
+      <description>Time Over Waypoint: 2025-01-01 12:00:00Z</description>
+      <Point>
+        <coordinates>-100.0000,35.0000,1000</coordinates>
+      </Point>
+    </Placemark>
     <Placemark>
       <name>Acceptance Route</name>
       <LineString>
@@ -12,6 +19,13 @@
           -99.9000,35.1000,1200
         </coordinates>
       </LineString>
+    </Placemark>
+    <Placemark>
+      <name>KBBB</name>
+      <description>Time Over Waypoint: 2025-01-01 14:00:00Z</description>
+      <Point>
+        <coordinates>-99.9000,35.1000,1200</coordinates>
+      </Point>
     </Placemark>
   </Document>
 </kml>
