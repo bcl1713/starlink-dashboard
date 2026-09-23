@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 MAINTAINED_MISSION_DOCS = (
     REPOSITORY_ROOT / "docs/api/endpoints/README.md",
@@ -60,7 +59,9 @@ def test_maintained_mission_docs_do_not_publish_legacy_api_examples():
 
 
 def test_overview_api_docs_enumerate_all_final_states():
-    text = (REPOSITORY_ROOT / "docs/api/endpoints/overview-upcoming-pois.md").read_text()
+    text = (
+        REPOSITORY_ROOT / "docs/api/endpoints/overview-upcoming-pois.md"
+    ).read_text()
     for state in OVERVIEW_STATES:
         assert f"`{state}`" in text
 
@@ -107,7 +108,9 @@ def test_activation_contract_rejects_an_alternative_v2_activation_post(
         "POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate\n"
         "POST /api/v2/missions/{mission_id}/activate\n"
     )
-    monkeypatch.setattr(sys.modules[__name__], "MAINTAINED_MISSION_DOCS", (mission_readme,))
+    monkeypatch.setattr(
+        sys.modules[__name__], "MAINTAINED_MISSION_DOCS", (mission_readme,)
+    )
 
     with pytest.raises(AssertionError):
         test_mission_docs_publish_the_only_supported_activation_route()
@@ -124,7 +127,9 @@ def test_activation_contract_rejects_a_curl_shaped_alternative_v2_activation_rou
         "curl -X POST http://localhost:8000/api/v2/missions/{mission_id}/activate\n"
         "```\n"
     )
-    monkeypatch.setattr(sys.modules[__name__], "MAINTAINED_MISSION_DOCS", (mission_readme,))
+    monkeypatch.setattr(
+        sys.modules[__name__], "MAINTAINED_MISSION_DOCS", (mission_readme,)
+    )
 
     with pytest.raises(AssertionError):
         test_mission_docs_publish_the_only_supported_activation_route()
