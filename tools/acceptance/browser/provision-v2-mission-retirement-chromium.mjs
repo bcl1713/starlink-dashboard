@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
 import { constants } from 'node:fs';
-import { access, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { access, lstat, mkdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { execFile as execFileCallback } from 'node:child_process';
-import { dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
 
 const execFile = promisify(execFileCallback);
@@ -11,13 +11,14 @@ const INSTALL_TIMEOUT_MS = 120_000;
 const VERSION_TIMEOUT_MS = 10_000;
 const MAX_COMMAND_OUTPUT_BYTES = 16 * 1024;
 const LINUX_EXECUTABLE_PARTS = ['chrome-linux64', 'chrome'];
+const FLAGS = new Set(['mode', 'project-dir', 'browser-root', 'task-root', 'provenance-file']);
 
 function parseArgs(argv) {
   const values = {};
   for (let index = 2; index < argv.length; index += 2) {
     const key = argv[index];
     const value = argv[index + 1];
-    if (!key?.startsWith('--') || value === undefined || value.startsWith('--')) throw new Error(`invalid argument: ${key}`);
+    if (!key?.startsWith('--') || value === undefined || value.startsWith('--') || !FLAGS.has(key.slice(2)) || values[key.slice(2)] !== undefined) throw new Error(`invalid argument: ${key}`);
     values[key.slice(2)] = value;
   }
   return values;
@@ -58,13 +59,13 @@ async function json(path, label) {
 async function lockedBrowser(projectDir) {
   const packagePath = join(projectDir, 'package.json');
   const lockPath = join(projectDir, 'package-lock.json');
+  const corePackagePath = join(projectDir, 'node_modules/playwright-core/package.json');
   const metadataPath = join(projectDir, 'node_modules/playwright-core/browsers.json');
-  const [manifest, lock, metadata, lockBytes, metadataBytes] = await Promise.all([
+  const [manifest, lock, installedCore, lockBytes] = await Promise.all([
     json(packagePath, 'package.json'),
     json(lockPath, 'package-lock.json'),
-    json(metadataPath, 'playwright browser metadata'),
+    json(corePackagePath, 'installed playwright-core package.json'),
     readFile(lockPath),
-    readFile(metadataPath),
   ]);
   const declared = manifest.devDependencies?.['@playwright/test'];
   const rootDeclared = lock.packages?.['']?.devDependencies?.['@playwright/test'];
@@ -74,29 +75,25 @@ async function lockedBrowser(projectDir) {
   if (!declared || declared !== rootDeclared || !/^\d+\.\d+\.\d+$/.test(declared)) throw new Error('package and lockfile must pin the same exact @playwright/test version');
   if (!testPackage || !playwrightPackage || !corePackage) throw new Error('package-lock lacks the pinned Playwright package chain');
   if (testPackage.version !== declared || playwrightPackage.version !== declared || corePackage.version !== declared || testPackage.dependencies?.playwright !== declared || playwrightPackage.dependencies?.['playwright-core'] !== declared) throw new Error('package-lock Playwright package chain does not match the pinned version');
+  if (installedCore.version !== corePackage.version) throw new Error('installed playwright-core version does not match package-lock');
+  const [metadata, metadataBytes] = await Promise.all([json(metadataPath, 'playwright browser metadata'), readFile(metadataPath)]);
   const chromium = metadata.browsers?.find((browser) => browser.name === 'chromium');
   if (!chromium || !/^\d+$/.test(chromium.revision) || !/^\d+(?:\.\d+){3}$/.test(chromium.browserVersion ?? '')) throw new Error('locked Playwright browser metadata lacks a valid Chromium revision/version');
   return {
     lockfile: { path: lockPath, sha256: sha256(lockBytes) },
-    playwright: { version: declared, integrity: testPackage.integrity ?? null, coreIntegrity: corePackage.integrity ?? null },
+    playwright: { version: declared, integrity: testPackage.integrity ?? null, coreIntegrity: corePackage.integrity ?? null, installedCoreVersion: installedCore.version },
     chromium: { revision: chromium.revision, version: chromium.browserVersion, metadataPath, metadataSha256: sha256(metadataBytes) },
   };
 }
 
-function installerCommand(flags, projectDir) {
-  if (!flags['installer-command-json']) return [process.execPath, join(projectDir, 'node_modules/playwright/cli.js'), 'install', 'chromium'];
-  let command;
-  try {
-    command = JSON.parse(flags['installer-command-json']);
-  } catch {
-    throw new Error('--installer-command-json must be a JSON command array');
-  }
-  if (!Array.isArray(command) || command.length === 0 || command.some((part) => typeof part !== 'string' || !part)) throw new Error('--installer-command-json must be a non-empty string array');
-  return command;
+function installerCommand(projectDir) {
+  return [process.execPath, join(projectDir, 'node_modules/playwright/cli.js'), 'install', 'chromium'];
 }
 
-async function install(command, projectDir, browserRoot) {
+async function install(projectDir, browserRoot) {
+  const command = installerCommand(projectDir);
   const [file, ...args] = command;
+  await access(args[0], constants.R_OK);
   try {
     const result = await execFile(file, args, {
       cwd: projectDir,
@@ -126,6 +123,47 @@ async function verifyExecutable(path, expectedVersion) {
   return { path, versionOutput: bounded(versionOutput), sha256: sha256(await readFile(path)), size: details.size };
 }
 
+async function provenanceDestination(taskRoot, provenanceFile) {
+  const root = resolve(taskRoot);
+  const target = inside(root, provenanceFile);
+  const rootInfo = await lstat(root);
+  if (!rootInfo.isDirectory() || rootInfo.isSymbolicLink()) throw new Error('task root must be a non-symlink directory');
+  const canonicalRoot = await realpath(root);
+  let cursor = canonicalRoot;
+  const parts = relative(root, target).split('/');
+  for (const part of parts.slice(0, -1)) {
+    cursor = join(cursor, part);
+    try {
+      const info = await lstat(cursor);
+      if (info.isSymbolicLink()) throw new Error(`provenance path contains a symlink: ${cursor}`);
+      if (!info.isDirectory()) throw new Error(`provenance path parent is not a directory: ${cursor}`);
+    } catch (error) {
+      if (error?.code !== 'ENOENT') throw error;
+      await mkdir(cursor, { mode: 0o700 });
+    }
+  }
+  try {
+    const targetInfo = await lstat(target);
+    if (targetInfo.isSymbolicLink()) throw new Error(`provenance file is a symlink: ${target}`);
+    if (!targetInfo.isFile()) throw new Error(`provenance target is not a regular file: ${target}`);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+  return target;
+}
+
+async function writeProvenanceAtomically(taskRoot, provenanceFile, result) {
+  const target = await provenanceDestination(taskRoot, provenanceFile);
+  const temporary = join(dirname(target), `.${basename(target)}.${process.pid}.${Date.now()}.tmp`);
+  await writeFile(temporary, `${JSON.stringify(result, null, 2)}\n`, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+  try {
+    await rename(temporary, target);
+  } catch (error) {
+    await rm(temporary, { force: true }).catch(() => {});
+    throw error;
+  }
+}
+
 async function main() {
   const flags = parseArgs(process.argv);
   const mode = required(flags, 'mode');
@@ -133,8 +171,8 @@ async function main() {
   if (process.platform !== 'linux') throw new Error(`unsupported provision platform: ${process.platform}`);
   const projectDir = resolve(required(flags, 'project-dir'));
   const browserRoot = resolve(required(flags, 'browser-root'));
+  const taskRoot = resolve(required(flags, 'task-root'));
   const provenanceFile = resolve(required(flags, 'provenance-file'));
-  await rm(provenanceFile, { force: true });
   const locked = await lockedBrowser(projectDir);
   const executablePath = inside(browserRoot, join(browserRoot, `chromium-${locked.chromium.revision}`, ...LINUX_EXECUTABLE_PARTS));
   let installer = null;
@@ -143,29 +181,20 @@ async function main() {
     try {
       executable = await verifyExecutable(executablePath, locked.chromium.version);
     } catch {
-      installer = await install(installerCommand(flags, projectDir), projectDir, browserRoot);
+      installer = await install(projectDir, browserRoot);
       executable = await verifyExecutable(executablePath, locked.chromium.version);
     }
   } else {
     executable = await verifyExecutable(executablePath, locked.chromium.version);
   }
-  const result = {
-    status: 'passed',
-    mode,
-    projectDir,
-    browserRoot,
-    ...locked,
-    executable,
-    installer,
-  };
-  await mkdir(dirname(provenanceFile), { recursive: true, mode: 0o700 });
-  await writeFile(provenanceFile, `${JSON.stringify(result, null, 2)}\n`, { mode: 0o600 });
+  const result = { status: 'passed', mode, projectDir, browserRoot, taskRoot, ...locked, executable, installer };
+  await writeProvenanceAtomically(taskRoot, provenanceFile, result);
   return result;
 }
 
 main().then(
   (result) => process.stdout.write(`${JSON.stringify(result)}\n`),
-  async (error) => {
+  (error) => {
     process.stdout.write(`${JSON.stringify({ status: 'failed', error: error instanceof Error ? error.message : String(error) })}\n`);
     process.exitCode = 1;
   },

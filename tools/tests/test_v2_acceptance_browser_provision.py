@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -7,14 +8,21 @@ PROVISION_SCRIPT = (
     Path(__file__).resolve().parents[1]
     / "acceptance/browser/provision-v2-mission-retirement-chromium.mjs"
 )
+CARD_SCRIPT = (
+    Path(__file__).resolve().parents[1] / "acceptance/browser/v2-mission-retirement.mjs"
+)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MISSION_PLANNER = PROJECT_ROOT / "frontend/mission-planner"
 
 
 def make_project(tmp_path: Path) -> tuple[Path, Path, Path]:
     project = tmp_path / "mission-planner"
     metadata = project / "node_modules/playwright-core/browsers.json"
     browser_root = tmp_path / "browsers"
-    provenance = tmp_path / "provenance.json"
+    task_root = tmp_path / "task-owned"
+    provenance = task_root / "provenance.json"
     metadata.parent.mkdir(parents=True)
+    task_root.mkdir()
     (project / "package.json").write_text(
         json.dumps({"devDependencies": {"@playwright/test": "1.63.0"}}),
         encoding="utf-8",
@@ -43,6 +51,9 @@ def make_project(tmp_path: Path) -> tuple[Path, Path, Path]:
             }
         ),
         encoding="utf-8",
+    )
+    (project / "node_modules/playwright-core/package.json").write_text(
+        json.dumps({"version": "1.63.0"}), encoding="utf-8"
     )
     metadata.write_text(
         json.dumps(
@@ -78,6 +89,19 @@ def run_preflight(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def preflight_args(project: Path, browser_root: Path, provenance: Path) -> list[str]:
+    return [
+        "--project-dir",
+        str(project),
+        "--browser-root",
+        str(browser_root),
+        "--task-root",
+        str(provenance.parent),
+        "--provenance-file",
+        str(provenance),
+    ]
+
+
 def test_verify_derives_locked_revision_and_records_exact_executable_provenance(
     tmp_path: Path,
 ) -> None:
@@ -86,14 +110,7 @@ def test_verify_derives_locked_revision_and_records_exact_executable_provenance(
     chrome = executable(browser_root)
 
     result = run_preflight(
-        "--mode",
-        "verify",
-        "--project-dir",
-        str(project),
-        "--browser-root",
-        str(browser_root),
-        "--provenance-file",
-        str(provenance),
+        "--mode", "verify", *preflight_args(project, browser_root, provenance)
     )
 
     assert result.returncode == 0, result.stderr
@@ -117,27 +134,13 @@ def test_provision_is_idempotent_when_the_locked_executable_already_verifies(
     """Fails if provision downloads despite a matching pinned browser."""
     project, browser_root, provenance = make_project(tmp_path)
     executable(browser_root)
-    installer = tmp_path / "must-not-run.sh"
-    installer.write_text("#!/bin/sh\nexit 99\n", encoding="utf-8")
-    installer.chmod(0o755)
 
     result = run_preflight(
-        "--mode",
-        "provision",
-        "--project-dir",
-        str(project),
-        "--browser-root",
-        str(browser_root),
-        "--provenance-file",
-        str(provenance),
-        "--installer-command-json",
-        json.dumps([str(installer)]),
+        "--mode", "provision", *preflight_args(project, browser_root, provenance)
     )
 
     assert result.returncode == 0, result.stderr
-    record = json.loads(result.stdout)
-    assert record["status"] == "passed"
-    assert record["installer"] is None
+    assert json.loads(result.stdout)["installer"] is None
 
 
 def test_verify_rejects_a_version_that_only_contains_the_expected_token(
@@ -149,54 +152,199 @@ def test_verify_rejects_a_version_that_only_contains_the_expected_token(
     chrome.write_text("#!/bin/sh\necho 'Google Chrome 1.2.3.40'\n", encoding="utf-8")
 
     result = run_preflight(
+        "--mode", "verify", *preflight_args(project, browser_root, provenance)
+    )
+
+    assert result.returncode == 1
+    assert "version mismatch" in json.loads(result.stdout)["error"]
+    assert not provenance.exists()
+
+
+def test_production_cli_rejects_arbitrary_installer_override(tmp_path: Path) -> None:
+    """Fails if callers can replace the pinned local Playwright installer."""
+    project, browser_root, provenance = make_project(tmp_path)
+    executable(browser_root)
+
+    result = run_preflight(
+        "--mode",
+        "verify",
+        *preflight_args(project, browser_root, provenance),
+        "--installer-command-json",
+        json.dumps(["/bin/false"]),
+    )
+
+    assert result.returncode == 1
+    assert "invalid argument" in json.loads(result.stdout)["error"]
+    assert not provenance.exists()
+
+
+def test_verify_rejects_installed_playwright_core_version_mismatch_before_metadata(
+    tmp_path: Path,
+) -> None:
+    """Fails if browsers metadata is trusted from a different installed core."""
+    project, browser_root, provenance = make_project(tmp_path)
+    executable(browser_root)
+    (project / "node_modules/playwright-core/package.json").write_text(
+        json.dumps({"version": "1.63.1"}), encoding="utf-8"
+    )
+    (project / "node_modules/playwright-core/browsers.json").write_text(
+        "not-json", encoding="utf-8"
+    )
+
+    result = run_preflight(
+        "--mode", "verify", *preflight_args(project, browser_root, provenance)
+    )
+
+    assert result.returncode == 1
+    assert (
+        "installed playwright-core version does not match package-lock"
+        in json.loads(result.stdout)["error"]
+    )
+    assert not provenance.exists()
+
+
+def test_invalid_input_preserves_prior_provenance_until_atomic_success_replacement(
+    tmp_path: Path,
+) -> None:
+    """Fails if validation deletes a prior record before a replacement is ready."""
+    project, browser_root, provenance = make_project(tmp_path)
+    executable(browser_root)
+    prior = '{"status":"passed","prior":true}\n'
+    provenance.write_text(prior, encoding="utf-8")
+    (project / "node_modules/playwright-core/package.json").write_text(
+        json.dumps({"version": "0.0.0"}), encoding="utf-8"
+    )
+
+    failed = run_preflight(
+        "--mode", "verify", *preflight_args(project, browser_root, provenance)
+    )
+    assert failed.returncode == 1
+    assert provenance.read_text(encoding="utf-8") == prior
+
+    (project / "node_modules/playwright-core/package.json").write_text(
+        json.dumps({"version": "1.63.0"}), encoding="utf-8"
+    )
+    passed = run_preflight(
+        "--mode", "verify", *preflight_args(project, browser_root, provenance)
+    )
+    assert passed.returncode == 0
+    assert json.loads(provenance.read_text(encoding="utf-8"))["status"] == "passed"
+
+
+def test_provenance_rejects_task_root_escape_and_symlinked_parent(
+    tmp_path: Path,
+) -> None:
+    """Fails if provenance can be written outside the explicitly task-owned root."""
+    project, browser_root, provenance = make_project(tmp_path)
+    executable(browser_root)
+    escaped = tmp_path / "outside.json"
+    escaped_result = run_preflight(
         "--mode",
         "verify",
         "--project-dir",
         str(project),
         "--browser-root",
         str(browser_root),
+        "--task-root",
+        str(provenance.parent),
         "--provenance-file",
-        str(provenance),
+        str(escaped),
     )
+    assert escaped_result.returncode == 1
+    assert (
+        "path escapes its required root" in json.loads(escaped_result.stdout)["error"]
+    )
+    assert not escaped.exists()
 
-    assert result.returncode == 1
-    record = json.loads(result.stdout)
-    assert record["status"] == "failed"
-    assert "version mismatch" in record["error"]
-    assert not provenance.exists()
+    external = tmp_path / "external"
+    external.mkdir()
+    linked_parent = provenance.parent / "linked"
+    os.symlink(external, linked_parent)
+    linked_provenance = linked_parent / "provenance.json"
+    linked_result = run_preflight(
+        "--mode", "verify", *preflight_args(project, browser_root, linked_provenance)
+    )
+    assert linked_result.returncode == 1
+    assert "symlink" in json.loads(linked_result.stdout)["error"]
+    assert not (external / "provenance.json").exists()
 
 
-def test_provision_uses_injected_installer_then_fails_closed_on_wrong_version(
+def test_browser_card_rejects_each_stale_provenance_identity_field(
     tmp_path: Path,
 ) -> None:
-    """Fails if install skips verification or fixture commands cannot exercise it."""
-    project, browser_root, provenance = make_project(tmp_path)
-    installer = tmp_path / "fixture-installer.sh"
-    installer.write_text(
-        "#!/bin/sh\n"
-        'mkdir -p "$PLAYWRIGHT_BROWSERS_PATH/chromium-999/chrome-linux64"\n'
-        "printf '%s\\n' '#!/bin/sh' \"echo 'Google Chrome 0.0.0.0'\" "
-        '> "$PLAYWRIGHT_BROWSERS_PATH/chromium-999/chrome-linux64/chrome"\n'
-        'chmod +x "$PLAYWRIGHT_BROWSERS_PATH/chromium-999/chrome-linux64/chrome"\n',
-        encoding="utf-8",
-    )
-    installer.chmod(0o755)
-
-    result = run_preflight(
-        "--mode",
-        "provision",
-        "--project-dir",
-        str(project),
-        "--browser-root",
-        str(browser_root),
-        "--provenance-file",
-        str(provenance),
-        "--installer-command-json",
-        json.dumps([str(installer)]),
-    )
-
-    assert result.returncode == 1
-    record = json.loads(result.stdout)
-    assert record["status"] == "failed"
-    assert "version mismatch" in record["error"]
-    assert not provenance.exists()
+    """Fails if a provenance record survives project/lock/metadata/version/hash drift."""
+    package = json.loads((MISSION_PLANNER / "package.json").read_text(encoding="utf-8"))
+    lock_path = MISSION_PLANNER / "package-lock.json"
+    metadata_path = MISSION_PLANNER / "node_modules/playwright-core/browsers.json"
+    core_path = MISSION_PLANNER / "node_modules/playwright-core/package.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    chromium = next(item for item in metadata["browsers"] if item["name"] == "chromium")
+    chrome = tmp_path / "fake-chrome"
+    chrome.write_text("not a browser", encoding="utf-8")
+    chrome.chmod(0o755)
+    base = {
+        "status": "passed",
+        "projectDir": str(MISSION_PLANNER),
+        "lockfile": {
+            "path": str(lock_path),
+            "sha256": hashlib.sha256(lock_path.read_bytes()).hexdigest(),
+        },
+        "playwright": {
+            "version": package["devDependencies"]["@playwright/test"],
+            "installedCoreVersion": json.loads(core_path.read_text(encoding="utf-8"))[
+                "version"
+            ],
+        },
+        "chromium": {
+            "revision": chromium["revision"],
+            "version": chromium["browserVersion"],
+            "metadataPath": str(metadata_path),
+            "metadataSha256": hashlib.sha256(metadata_path.read_bytes()).hexdigest(),
+        },
+        "executable": {
+            "path": str(chrome),
+            "sha256": hashlib.sha256(chrome.read_bytes()).hexdigest(),
+        },
+    }
+    cases = [
+        (("projectDir",), "other-project", "current project"),
+        (("lockfile", "sha256"), "0" * 64, "current package-lock"),
+        (("chromium", "metadataSha256"), "0" * 64, "current Playwright metadata"),
+        (("playwright", "version"), "0.0.0", "Playwright version"),
+        (("chromium", "revision"), "0", "Chromium identity"),
+        (("chromium", "version"), "0.0.0.0", "Chromium identity"),
+        (("executable", "sha256"), "0" * 64, "checksum mismatch"),
+    ]
+    for index, (path, value, error) in enumerate(cases):
+        record = json.loads(json.dumps(base))
+        target = record
+        for key in path[:-1]:
+            target = target[key]
+        target[path[-1]] = value
+        provenance = tmp_path / f"provenance-{index}.json"
+        provenance.write_text(json.dumps(record), encoding="utf-8")
+        result = subprocess.run(
+            [
+                "node",
+                str(CARD_SCRIPT),
+                "--mode",
+                "neutral",
+                "--chrome",
+                str(chrome),
+                "--display",
+                ":97",
+                "--cdp-port",
+                str(19970 + index),
+                "--profile-dir",
+                str(tmp_path / f"profile-{index}"),
+                "--evidence-dir",
+                str(tmp_path / f"evidence-{index}"),
+                "--provisioning-provenance",
+                str(provenance),
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 1
+        assert error in json.loads(result.stdout)["error"]

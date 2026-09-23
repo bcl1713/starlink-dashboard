@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { basename, dirname, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -13,6 +13,10 @@ const { chromium } = require('@playwright/test');
 const SIZE = { width: 1920, height: 1080, dpr: 1 };
 const MAX_ARTIFACT_BYTES = 16 * 1024 * 1024;
 const MAX_RECORD_TEXT_BYTES = 8 * 1024;
+
+function sha256(bytes) {
+  return createHash('sha256').update(bytes).digest('hex');
+}
 
 function redactUrl(value) {
   try {
@@ -57,6 +61,30 @@ async function inputs() {
   return result;
 }
 
+async function currentLockedBrowser() {
+  const projectDir = resolve(ROOT, 'frontend/mission-planner');
+  const lockPath = join(projectDir, 'package-lock.json');
+  const metadataPath = join(projectDir, 'node_modules/playwright-core/browsers.json');
+  const corePackagePath = join(projectDir, 'node_modules/playwright-core/package.json');
+  const [manifest, lock, installedCore, metadata, lockBytes, metadataBytes] = await Promise.all([
+    JSON.parse(await readFile(join(projectDir, 'package.json'), 'utf8')),
+    JSON.parse(await readFile(lockPath, 'utf8')),
+    JSON.parse(await readFile(corePackagePath, 'utf8')),
+    JSON.parse(await readFile(metadataPath, 'utf8')),
+    readFile(lockPath),
+    readFile(metadataPath),
+  ]);
+  const declared = manifest.devDependencies?.['@playwright/test'];
+  const testPackage = lock.packages?.['node_modules/@playwright/test'];
+  const playwrightPackage = lock.packages?.['node_modules/playwright'];
+  const corePackage = lock.packages?.['node_modules/playwright-core'];
+  if (!declared || lock.packages?.['']?.devDependencies?.['@playwright/test'] !== declared || !testPackage || !playwrightPackage || !corePackage || testPackage.version !== declared || playwrightPackage.version !== declared || corePackage.version !== declared || testPackage.dependencies?.playwright !== declared || playwrightPackage.dependencies?.['playwright-core'] !== declared) throw new Error('current package-lock Playwright chain is invalid');
+  if (installedCore.version !== corePackage.version) throw new Error('installed playwright-core version does not match package-lock');
+  const chromium = metadata.browsers?.find((browser) => browser.name === 'chromium');
+  if (!chromium?.revision || !chromium.browserVersion) throw new Error('current Playwright browser metadata lacks Chromium identity');
+  return { projectDir, lockPath, metadataPath, declared, installedCoreVersion: installedCore.version, chromium, lockBytes, metadataBytes };
+}
+
 async function provisionedExecutable(config) {
   let provisioning;
   try {
@@ -64,7 +92,13 @@ async function provisionedExecutable(config) {
   } catch (error) {
     throw new Error(`cannot read provisioning provenance: ${error instanceof Error ? error.message : String(error)}`);
   }
+  const { projectDir, lockPath, metadataPath, declared, installedCoreVersion, chromium, lockBytes, metadataBytes } = await currentLockedBrowser();
   if (provisioning.status !== 'passed') throw new Error('provisioning provenance is not passed');
+  if (provisioning.projectDir !== projectDir) throw new Error('provisioning provenance project does not match current project');
+  if (provisioning.lockfile?.path !== lockPath || provisioning.lockfile?.sha256 !== sha256(lockBytes)) throw new Error('provisioning provenance lockfile does not match current package-lock');
+  if (provisioning.chromium?.metadataPath !== metadataPath || provisioning.chromium?.metadataSha256 !== sha256(metadataBytes)) throw new Error('provisioning provenance metadata does not match current Playwright metadata');
+  if (provisioning.playwright?.version !== declared || provisioning.playwright?.installedCoreVersion !== installedCoreVersion) throw new Error('provisioning provenance Playwright version does not match current installation');
+  if (provisioning.chromium?.revision !== chromium.revision || provisioning.chromium?.version !== chromium.browserVersion) throw new Error('provisioning provenance Chromium identity does not match current metadata');
   if (provisioning.executable?.path !== config.chrome) throw new Error('provisioning provenance executable path does not match --chrome');
   if (!/^[a-f0-9]{64}$/.test(provisioning.executable?.sha256 ?? '')) throw new Error('provisioning provenance lacks an executable SHA-256');
   return provisioning;

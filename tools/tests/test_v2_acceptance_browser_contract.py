@@ -31,6 +31,25 @@ def test_browser_card_requires_matching_provisioned_executable_provenance() -> N
     assert "provisioned executable checksum mismatch" in card
 
 
+def test_browser_card_binds_provenance_to_current_locked_project_identity() -> None:
+    """Fails if a passing record from another lock, metadata, or revision is reused."""
+    card = source()
+
+    for token in [
+        "package-lock.json",
+        "node_modules/playwright-core/browsers.json",
+        "node_modules/playwright-core/package.json",
+        "provisioning.projectDir !== projectDir",
+        "provisioning.lockfile?.sha256 !== sha256(lockBytes)",
+        "provisioning.chromium?.metadataSha256 !== sha256(metadataBytes)",
+        "provisioning.playwright?.version !== declared",
+        "provisioning.chromium?.revision !== chromium.revision",
+        "provisioning.chromium?.version !== chromium.browserVersion",
+        "installed playwright-core version does not match package-lock",
+    ]:
+        assert token in card
+
+
 def test_browser_card_polls_both_owned_children_and_records_listener_after_probe() -> (
     None
 ):
