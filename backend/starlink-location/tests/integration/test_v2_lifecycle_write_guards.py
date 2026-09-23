@@ -2,6 +2,7 @@
 
 import io
 import json
+import threading
 import zipfile
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -17,15 +18,36 @@ from app.mission.models import (
     TimelineStatus,
     TransportConfig,
 )
+from app.mission import storage
 from app.mission.storage import load_mission_v2
 from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from fastapi.testclient import TestClient
+import pytest
 
 KML = b"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><LineString>
 <coordinates>-120.0,35.0,0 -121.0,36.0,0</coordinates>
 </LineString></Placemark></Document></kml>"""
+
+
+@pytest.fixture(autouse=True)
+def isolate_lifecycle_roots(client: TestClient, monkeypatch, tmp_path: Path):
+    """Keep lifecycle assertions away from shared test mission resources."""
+    monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path / "missions")
+    storage._active_leg_locks.clear()
+
+    route_manager = client.app.state.route_manager
+    route_manager.routes_dir = tmp_path / "routes"
+    route_manager.routes_dir.mkdir()
+    route_manager._routes = {}
+    route_manager._active_route_id = None
+
+    poi_manager = client.app.state.poi_manager
+    poi_manager.pois_file = tmp_path / "pois" / "pois.json"
+    poi_manager.lock_file = str(poi_manager.pois_file) + ".lock"
+    poi_manager._pois = {}
+    poi_manager._load_pois()
 
 
 def _timeline(leg_id: str) -> tuple[MissionLegTimeline, TimelineSummary]:
@@ -289,3 +311,135 @@ class TestV2LifecycleWriteGuards:
 
         assert response.status_code == 200
         assert response.json()["leg"]["route_id"].startswith("inactive-replacement")
+
+    def test_import_holds_active_coordination_through_route_side_effect(
+        self, client: TestClient, monkeypatch, tmp_path: Path
+    ):
+        """Activation cannot enter after import persists but before routes import."""
+        imported = _mission("serialized")
+        _add_route(client, imported.legs[0])
+        side_effect_entered = threading.Event()
+        release_import = threading.Event()
+        activation_attempted = threading.Event()
+        import_result: list[object] = []
+        activation_result: list[object] = []
+
+        def pause_route_import(*_args, **_kwargs):
+            side_effect_entered.set()
+            assert release_import.wait(timeout=2)
+            return 0, []
+
+        monkeypatch.setattr(
+            "app.mission.routes_v2._import_routes_from_zip", pause_route_import
+        )
+        monkeypatch.setattr(
+            "app.mission.routes_v2.build_mission_timeline",
+            lambda mission, **_: _timeline(mission.id),
+        )
+
+        def run_import():
+            import_result.append(
+                client.post(
+                    "/api/v2/missions/import",
+                    files={
+                        "file": (
+                            "mission.zip",
+                            _package(imported),
+                            "application/zip",
+                        )
+                    },
+                )
+            )
+
+        def run_activation():
+            activation_attempted.set()
+            activation_result.append(
+                client.post(
+                    f"/api/v2/missions/{imported.id}/legs/{imported.legs[0].id}/activate"
+                )
+            )
+
+        importer = threading.Thread(target=run_import)
+        importer.start()
+        assert side_effect_entered.wait(timeout=2)
+        activator = threading.Thread(target=run_activation)
+        activator.start()
+        assert activation_attempted.wait(timeout=2)
+        assert not activation_result
+        release_import.set()
+        importer.join(timeout=2)
+        activator.join(timeout=2)
+
+        assert not importer.is_alive()
+        assert not activator.is_alive()
+        assert import_result[0].status_code == 200
+        assert activation_result[0].status_code == 200
+
+    def test_ordinary_writers_take_active_lock_before_parent_lock(
+        self, client: TestClient, monkeypatch, tmp_path: Path
+    ):
+        """The four direct save writers share route-upload's lock ordering."""
+        mission = _mission("ordered")
+        assert (
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
+
+        entries: list[str] = []
+
+        class RecordedLock:
+            def __init__(self, name: str):
+                self.name = name
+
+            def __enter__(self):
+                entries.append(self.name)
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        monkeypatch.setattr(
+            "app.mission.routes_v2.get_active_leg_lock", lambda: RecordedLock("active")
+        )
+        monkeypatch.setattr(
+            "app.mission.routes_v2.get_mission_lock",
+            lambda _mission_id: RecordedLock("mission"),
+        )
+
+        updated = mission.model_copy(deep=True)
+        updated.legs[0].name = "updated"
+        cases = [
+            (
+                lambda: client.patch(
+                    f"/api/v2/missions/{mission.id}", json={"name": "renamed"}
+                ),
+                200,
+            ),
+            (
+                lambda: client.post(
+                    f"/api/v2/missions/{mission.id}/legs",
+                    json=_mission("added").legs[0].model_dump(mode="json"),
+                ),
+                201,
+            ),
+            (
+                lambda: client.put(
+                    f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}",
+                    json=updated.legs[0].model_dump(mode="json"),
+                ),
+                200,
+            ),
+            (
+                lambda: client.delete(
+                    f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}"
+                ),
+                204,
+            ),
+        ]
+        for request, expected_status in cases:
+            entries.clear()
+            response = request()
+            assert response.status_code == expected_status
+            assert entries[:2] == ["active", "mission"]

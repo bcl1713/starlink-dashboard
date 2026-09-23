@@ -251,7 +251,7 @@ async def update_mission(mission_id: str, updates: MissionUpdate) -> Mission:
 
         logger.info(f"Updating mission {mission_id}")
 
-        with get_mission_lock(mission_id):
+        with get_active_leg_lock(), get_mission_lock(mission_id):
             # Load existing mission
             mission = load_mission_v2(mission_id)
             if not mission:
@@ -924,8 +924,9 @@ async def import_mission(
 
             await asyncio.to_thread(zip_path.write_bytes, contents)
 
-            # Extract and validate
-            with zipfile.ZipFile(zip_path, "r") as zf:
+            # Extract and validate. Hold lifecycle coordination across every
+            # import side effect, not just the metadata save.
+            with get_active_leg_lock(), zipfile.ZipFile(zip_path, "r") as zf:
                 # Check for required files
                 if "mission.json" not in zf.namelist():
                     raise HTTPException(
@@ -941,7 +942,7 @@ async def import_mission(
 
                 # Re-importing an active parent would invalidate the active
                 # route transaction. Require the lifecycle command first.
-                with get_active_leg_lock(), get_mission_lock(mission.id):
+                with get_mission_lock(mission.id):
                     existing_mission = load_mission_v2(mission.id)
                     if existing_mission and any(
                         leg.is_active for leg in existing_mission.legs
@@ -1073,7 +1074,7 @@ async def add_leg_to_mission(
     """
     try:
         leg = leg.model_copy(update={"is_active": False})
-        with get_mission_lock(mission_id):
+        with get_active_leg_lock(), get_mission_lock(mission_id):
             # Load mission
             mission = load_mission_v2(mission_id)
             if not mission:
@@ -1173,7 +1174,7 @@ async def update_leg(
     try:
         warnings = []
 
-        with get_mission_lock(mission_id):
+        with get_active_leg_lock(), get_mission_lock(mission_id):
             # Load mission
             mission = load_mission_v2(mission_id)
             if not mission:
@@ -1343,7 +1344,7 @@ async def delete_leg(
     try:
         from pathlib import Path
 
-        with get_mission_lock(mission_id):
+        with get_active_leg_lock(), get_mission_lock(mission_id):
             # Load mission
             mission = load_mission_v2(mission_id)
             if not mission:
