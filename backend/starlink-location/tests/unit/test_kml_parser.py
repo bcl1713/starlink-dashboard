@@ -160,6 +160,18 @@ def kml_with_waypoints_file(temp_kml_dir):
 class TestKMLParser:
     """Test suite for KML parser."""
 
+    def test_parses_tracked_v2_activation_acceptance_asset(self):
+        """The sanitized operator acceptance input remains upload-parser valid."""
+        acceptance_asset = (
+            Path(__file__).parents[4]
+            / "docs/missions/acceptance-assets/v2-activation-route.kml"
+        )
+
+        result = parse_kml_file(acceptance_asset)
+
+        assert result.metadata.name == "V2 Acceptance Route"
+        assert result.metadata.point_count == 3
+
     def test_parse_valid_kml(self, valid_kml_file):
         """Test parsing a valid KML file."""
         result = parse_kml_file(valid_kml_file)

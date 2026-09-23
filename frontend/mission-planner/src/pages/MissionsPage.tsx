@@ -44,6 +44,7 @@ export function MissionsPage() {
       <CreateMissionDialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
+        onSuccess={(missionId) => navigate(`/missions/${missionId}`)}
       />
       <ExportDialog
         open={exportDialogOpen}

@@ -52,6 +52,27 @@ The planner runs in your web browser and outputs three briefing formats: CSV
 
 ## Step-by-Step Workflow
 
+### Deterministic V2 Activation Acceptance Journey
+
+Use this five-step path to verify the deployed V2 mission workflow without
+introducing sample data into the running service:
+
+1. From **Missions**, select **Create Mission**. A successful create opens the
+   new mission's detail page.
+2. On Mission Detail, select **Add Leg** and complete the leg details.
+3. On the leg detail page, deliberately select and upload
+   [`v2-activation-route.kml`](../acceptance-assets/v2-activation-route.kml).
+   This small, sanitized file is a deterministic acceptance/operator sample; it
+   is documentation-only and is not deployed in `/data` or selected
+   automatically.
+4. Return to Mission Detail and select **Activate** for the uploaded leg.
+   Activation is a POST-only V2 operation:
+   `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.
+5. Open **Overview** and confirm the active leg is represented there.
+
+The retired v1 mission endpoints are not a fallback for this flow and return
+404. Use the V2 UI and V2 API only.
+
 ### Step 1: Upload Your Route
 
 1. Click **Upload Route**

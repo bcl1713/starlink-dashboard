@@ -8,11 +8,13 @@ import { Label } from '../ui/label';
 interface CreateMissionDialogProps {
   open: boolean;
   onClose: () => void;
+  onSuccess: (missionId: string) => void;
 }
 
 export function CreateMissionDialog({
   open,
   onClose,
+  onSuccess,
 }: CreateMissionDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -25,16 +27,21 @@ export function CreateMissionDialog({
 
     const id = name.toLowerCase().replace(/\s+/g, '-');
 
-    await createMission.mutateAsync({
-      id,
-      name,
-      description: description || undefined,
-      legs: [],
-    });
+    try {
+      const mission = await createMission.mutateAsync({
+        id,
+        name,
+        description: description || undefined,
+        legs: [],
+      });
 
-    setName('');
-    setDescription('');
-    onClose();
+      setName('');
+      setDescription('');
+      onSuccess(mission.id);
+      onClose();
+    } catch {
+      // Keep the dialog open so the operator can correct the input and retry.
+    }
   };
 
   return (
