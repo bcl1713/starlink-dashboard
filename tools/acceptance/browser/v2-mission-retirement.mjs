@@ -11,6 +11,26 @@ const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '../../..');
 const require = createRequire(resolve(ROOT, 'frontend/mission-planner/package.json'));
 const { chromium } = require('@playwright/test');
 const SIZE = { width: 1920, height: 1080, dpr: 1 };
+const MAX_ARTIFACT_BYTES = 16 * 1024 * 1024;
+const MAX_RECORD_TEXT_BYTES = 8 * 1024;
+
+function redactUrl(value) {
+  try {
+    const url = new URL(value);
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return '[redacted-unparseable-url]';
+  }
+}
+
+function truncateText(value) {
+  const redacted = String(value).replace(/https?:\/\/[^\s'"<>]+/g, redactUrl);
+  const bytes = Buffer.from(redacted);
+  if (bytes.length <= MAX_RECORD_TEXT_BYTES) return redacted;
+  return `${bytes.subarray(0, MAX_RECORD_TEXT_BYTES - 32).toString('utf8')}…[truncated]`;
+}
 
 function parseArgs(argv) {
   const values = {};
@@ -30,10 +50,24 @@ async function inputs() {
     mode: value('mode'), chrome: resolve(value('chrome')), display: value('display'),
     cdpPort: Number(value('cdp-port')), profileDir: resolve(value('profile-dir')),
     evidenceDir: resolve(value('evidence-dir')), frontendOrigin: value('frontend-origin', false),
+    provisioningProvenance: resolve(value('provisioning-provenance')),
   };
   if (!['neutral', 'journey'].includes(result.mode) || !Number.isInteger(result.cdpPort) || result.cdpPort < 1024 || result.cdpPort > 65535) throw new Error('invalid mode or CDP port');
   if (result.mode === 'journey' && !result.frontendOrigin) throw new Error('journey requires --frontend-origin');
   return result;
+}
+
+async function provisionedExecutable(config) {
+  let provisioning;
+  try {
+    provisioning = JSON.parse(await readFile(config.provisioningProvenance, 'utf8'));
+  } catch (error) {
+    throw new Error(`cannot read provisioning provenance: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (provisioning.status !== 'passed') throw new Error('provisioning provenance is not passed');
+  if (provisioning.executable?.path !== config.chrome) throw new Error('provisioning provenance executable path does not match --chrome');
+  if (!/^[a-f0-9]{64}$/.test(provisioning.executable?.sha256 ?? '')) throw new Error('provisioning provenance lacks an executable SHA-256');
+  return provisioning;
 }
 
 function contained(root, target) {
@@ -44,8 +78,11 @@ function contained(root, target) {
 
 async function artifact(state, name, value) {
   const path = contained(state.config.evidenceDir, resolve(state.config.evidenceDir, name));
+  const contents = typeof value === 'string' || Buffer.isBuffer(value) ? value : `${JSON.stringify(value, null, 2)}\n`;
+  const bytes = Buffer.isBuffer(contents) ? contents : Buffer.from(contents);
+  if (bytes.length > MAX_ARTIFACT_BYTES) throw new Error(`artifact exceeds byte budget: ${name}`);
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-  await writeFile(path, typeof value === 'string' || Buffer.isBuffer(value) ? value : `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
+  await writeFile(path, bytes, { mode: 0o600 });
   return path;
 }
 
@@ -71,12 +108,14 @@ async function fetchVersion(port) {
   return response.json();
 }
 
-async function waitForCdp(state, chrome) {
+async function waitForCdp(state, chrome, xvfb) {
   const deadline = Date.now() + 120_000;
   while (Date.now() < deadline) {
     if (chrome.exitCode !== null) throw new Error(`Chrome exited before CDP readiness: ${chrome.exitCode}`);
+    if (xvfb.exitCode !== null) throw new Error(`Xvfb exited before CDP readiness: ${xvfb.exitCode}`);
     try {
       const version = await fetchVersion(state.config.cdpPort);
+      state.probes.firstListenerMs ??= Date.now() - state.startedAt;
       state.probes.firstJsonMs ??= Date.now() - state.startedAt;
       return version;
     } catch (error) {
@@ -107,19 +146,23 @@ async function assertExactViewport(page, state, artifactPrefix) {
   return { ...metrics, raster };
 }
 
-async function setExactWindow(page, state) {
+async function setExactWindow(page, state, artifactPrefix) {
   const session = await page.context().newCDPSession(page);
-  const target = await session.send('Browser.getWindowForTarget');
-  const resize = await session.send('Browser.setContentsSize', { windowId: target.windowId, width: 1920, height: 1080 });
-  const bounds = await session.send('Browser.getWindowBounds', { windowId: target.windowId });
-  await artifact(state, 'cdp-window.json', { getWindowForTarget: target, setContentsSize: resize, getWindowBounds: bounds });
-  return session;
+  try {
+    const target = await session.send('Browser.getWindowForTarget');
+    const resize = await session.send('Browser.setContentsSize', { windowId: target.windowId, width: 1920, height: 1080 });
+    const bounds = await session.send('Browser.getWindowBounds', { windowId: target.windowId });
+    await artifact(state, `${artifactPrefix}.json`, { getWindowForTarget: target, setContentsSize: resize, getWindowBounds: bounds });
+  } finally {
+    await session.detach().catch(() => {});
+  }
 }
 
 async function neutral(page, state) {
   const neutralPath = await artifact(state, 'neutral.html', '<!doctype html><title>Neutral browser card</title><main>Neutral browser card</main>');
   await page.goto(pathToFileURL(neutralPath).href, { waitUntil: 'load' });
   const pre = await assertExactViewport(page, state, 'neutral-pre');
+  await setExactWindow(page, state, 'neutral-post-window');
   const post = await assertExactViewport(page, state, 'neutral-post');
   return { pre, post };
 }
@@ -127,29 +170,37 @@ async function neutral(page, state) {
 async function journey(page, state) {
   const network = [];
   const consoleRecords = [];
-  page.on('console', (message) => consoleRecords.length < 50 && consoleRecords.push({ type: message.type(), text: message.text() }));
-  page.on('response', (response) => network.length < 100 && network.push({ url: response.url(), status: response.status(), method: response.request().method() }));
-  const title = `V2 acceptance ${Date.now()}`;
-  await page.goto(state.config.frontendOrigin, { waitUntil: 'networkidle' });
-  await assertExactViewport(page, state, 'journey-pre');
-  await page.getByRole('button', { name: 'Create New Mission' }).click();
-  await page.getByLabel('Mission Name').fill(title);
-  await page.getByRole('button', { name: 'Create Mission' }).click();
-  await page.getByRole('button', { name: 'Add Leg' }).click();
-  await page.getByRole('button', { name: 'Upload KML' }).click();
-  const kml = resolve(ROOT, 'docs/missions/acceptance-assets/v2-activation-route.kml');
-  await page.locator('input[type=file]').setInputFiles(kml);
-  await page.getByRole('button', { name: 'Add Leg', exact: true }).click();
-  const activation = page.waitForResponse((response) => response.url().includes('/activate') && response.status() === 200);
-  await page.getByRole('button', { name: 'Activate', exact: true }).click();
-  await activation;
-  await page.getByRole('link', { name: 'Overview' }).click();
-  await page.getByLabel('Globe legend').waitFor();
-  const contract = await page.locator('main').innerText();
-  if (!/Path|Route/.test(contract) || !/Upcoming POIs/.test(contract)) throw new Error('active V2 route/context/POIs not visible');
-  const post = await assertExactViewport(page, state, 'journey-post');
-  await artifact(state, 'journey-observations.json', { network, console: consoleRecords, contract });
-  return { post, networkCount: network.length };
+  const onConsole = (message) => consoleRecords.length < 50 && consoleRecords.push({ type: message.type(), text: truncateText(message.text()) });
+  const onResponse = (response) => network.length < 100 && network.push({ url: truncateText(redactUrl(response.url())), status: response.status(), method: response.request().method() });
+  page.on('console', onConsole);
+  page.on('response', onResponse);
+  try {
+    const title = `V2 acceptance ${Date.now()}`;
+    await page.goto(state.config.frontendOrigin, { waitUntil: 'networkidle' });
+    await assertExactViewport(page, state, 'journey-pre');
+    await page.getByRole('button', { name: 'Create New Mission' }).click();
+    await page.getByLabel('Mission Name').fill(title);
+    await page.getByRole('button', { name: 'Create Mission' }).click();
+    await page.getByRole('button', { name: 'Add Leg' }).click();
+    await page.getByRole('button', { name: 'Upload KML' }).click();
+    const kml = resolve(ROOT, 'docs/missions/acceptance-assets/v2-activation-route.kml');
+    await page.locator('input[type=file]').setInputFiles(kml);
+    await page.getByRole('button', { name: 'Add Leg', exact: true }).click();
+    const activation = page.waitForResponse((response) => response.url().includes('/activate') && response.status() === 200);
+    await page.getByRole('button', { name: 'Activate', exact: true }).click();
+    await activation;
+    await page.getByRole('link', { name: 'Overview' }).click();
+    await page.getByLabel('Globe legend').waitFor();
+    const contract = truncateText(await page.locator('main').innerText());
+    if (!/Path|Route/.test(contract) || !/Upcoming POIs/.test(contract)) throw new Error('active V2 route/context/POIs not visible');
+    await setExactWindow(page, state, 'journey-post-window');
+    const post = await assertExactViewport(page, state, 'journey-post');
+    await artifact(state, 'journey-observations.json', { network, console: consoleRecords, contract });
+    return { post, networkCount: network.length };
+  } finally {
+    page.off('console', onConsole);
+    page.off('response', onResponse);
+  }
 }
 
 async function terminate(child) {
@@ -164,24 +215,25 @@ async function main() {
   await mkdir(config.evidenceDir, { recursive: true, mode: 0o700 });
   const state = { config, startedAt: Date.now(), children: [], logs: {}, probes: { errors: {} }, result: { mode: config.mode, status: 'failed' } };
   for (const name of ['xvfb-stdout', 'xvfb-stderr', 'chrome-stdout', 'chrome-stderr']) state.logs[name] = (await import('node:fs')).createWriteStream(contained(config.evidenceDir, `${name}.log`), { mode: 0o600 });
-  let browser; let cdp;
+  let browser;
   try {
+    const provisioning = await provisionedExecutable(config);
     const chromeBytes = await readFile(config.chrome);
     const chromeInfo = { path: config.chrome, sha256: createHash('sha256').update(chromeBytes).digest('hex'), size: (await stat(config.chrome)).size };
+    if (provisioning.executable.sha256 !== chromeInfo.sha256) throw new Error('provisioned executable checksum mismatch');
     const xvfb = start(state, 'Xvfb', [config.display, '-screen', '0', '1920x1080x24', '-nolisten', 'tcp'], 'xvfb');
     await artifact(state, 'display.json', { display: config.display, geometry: '1920x1080x24', pid: xvfb.pid, pgid: xvfb.pid, processTree: await processTree(xvfb.pid) });
     const chrome = start(state, config.chrome, [`--remote-debugging-address=127.0.0.1`, `--remote-debugging-port=${config.cdpPort}`, `--user-data-dir=${config.profileDir}`, '--no-sandbox', '--no-first-run', '--no-default-browser-check', '--window-size=1920,1080'], 'chrome', { DISPLAY: config.display });
-    state.probes.firstListenerMs = Date.now() - state.startedAt;
-    const version = await waitForCdp(state, chrome);
-    await artifact(state, 'browser.json', { ...chromeInfo, pid: chrome.pid, pgid: chrome.pid, version, probes: state.probes, processTree: await processTree(chrome.pid) });
+    const version = await waitForCdp(state, chrome, xvfb);
+    await artifact(state, 'browser.json', { ...chromeInfo, provisioning: config.provisioningProvenance, pid: chrome.pid, pgid: chrome.pid, version, probes: state.probes, processTree: await processTree(chrome.pid) });
     browser = await chromium.connectOverCDP(`http://127.0.0.1:${config.cdpPort}`);
     const context = browser.contexts()[0]; const page = context.pages()[0] ?? await context.newPage();
-    cdp = await setExactWindow(page, state);
+    await setExactWindow(page, state, 'initial-window');
     state.result = { mode: config.mode, status: 'passed', evidence: config.evidenceDir, result: config.mode === 'neutral' ? await neutral(page, state) : await journey(page, state) };
   } catch (error) {
     state.result = { mode: config.mode, status: 'failed', error: error instanceof Error ? error.message : String(error), evidence: config.evidenceDir };
   } finally {
-    await cdp?.detach().catch(() => {}); await browser?.close().catch(() => {});
+    await browser?.close().catch(() => {});
     await Promise.all(state.children.reverse().map(terminate));
     await rm(config.profileDir, { recursive: true, force: true }).catch(() => {});
     for (const stream of Object.values(state.logs)) stream.end();
