@@ -173,7 +173,10 @@ class TestKMLParser:
 
         assert result.metadata.name == "V2 Acceptance Route KAAA-KBBB"
         assert result.metadata.point_count == 3
-        assert [(waypoint.name, waypoint.expected_arrival_time) for waypoint in result.waypoints] == [
+        assert [
+            (waypoint.name, waypoint.expected_arrival_time)
+            for waypoint in result.waypoints
+        ] == [
             ("KAAA", datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)),
             ("KBBB", datetime(2025, 1, 1, 14, 0, tzinfo=timezone.utc)),
         ]
