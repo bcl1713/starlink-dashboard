@@ -296,23 +296,47 @@ def _run_isolated_lifecycle_worker(
 ) -> None:
     """Run a real HTTP lifecycle in an OS process without invoking pytest."""
     try:
+        worker_root = Path(root) / label
+        # Spawn does not inherit pytest's parent-process constructor patches. Give
+        # the fresh app only this worker's disposable roots before importing main.
+        import app.services.poi_manager as poi_manager_module
+        import app.services.route_manager as route_manager_module
+
+        def worker_poi_init(self, pois_file=worker_root / "pois" / "pois.json"):
+            self.pois_file = Path(pois_file)
+            self.pois_file.parent.mkdir(parents=True, exist_ok=True)
+            self.lock_file = str(self.pois_file) + ".lock"
+            self._pois = {}
+            self._logger = poi_manager_module.logger
+            self._load_pois()
+
+        def worker_route_init(self, routes_dir=worker_root / "routes"):
+            self.routes_dir = Path(routes_dir)
+            self.routes_dir.mkdir(parents=True, exist_ok=True)
+            self._routes = {}
+            self._active_route_id = None
+            self._observer = None
+            self._errors = {}
+
+        poi_manager_module.POIManager.__init__ = worker_poi_init
+        route_manager_module.RouteManager.__init__ = worker_route_init
         from main import app
 
-        worker_root = Path(root) / label
-        storage.MISSIONS_DIR = worker_root / "missions"
-        storage.ensure_missions_directory()
-        route_manager = app.state.route_manager
-        route_manager.routes_dir = worker_root / "routes"
-        route_manager.routes_dir.mkdir(parents=True, exist_ok=True)
-        route_manager._routes = {}
-        route_manager._active_route_id = None
-        poi_manager = app.state.poi_manager
-        poi_manager.pois_file = worker_root / "pois" / "pois.json"
-        poi_manager.lock_file = str(poi_manager.pois_file) + ".lock"
-        poi_manager._pois = {}
-        poi_manager._load_pois()
         mission = _mission(label)
+        # Fresh spawned workers must enter lifespan before accessing app state.
         with TestClient(app) as worker_client:
+            storage.MISSIONS_DIR = worker_root / "missions"
+            storage.ensure_missions_directory()
+            route_manager = app.state.route_manager
+            route_manager.routes_dir = worker_root / "routes"
+            route_manager.routes_dir.mkdir(parents=True, exist_ok=True)
+            route_manager._routes = {}
+            route_manager._active_route_id = None
+            poi_manager = app.state.poi_manager
+            poi_manager.pois_file = worker_root / "pois" / "pois.json"
+            poi_manager.lock_file = str(poi_manager.pois_file) + ".lock"
+            poi_manager._pois = {}
+            poi_manager._load_pois()
             ready.put((label, str(storage.MISSIONS_DIR)))
             assert release.wait(timeout=10), "worker release was not signaled"
             assert (
@@ -348,7 +372,10 @@ class TestV2LifecycleWriteGuards:
         self, tmp_path: Path
     ) -> None:
         """Concurrent fixture workers cannot clear a sibling's lifecycle storage."""
-        context = multiprocessing.get_context("fork")
+        # `client` has already entered TestClient via the autouse fixture.  Spawn
+        # starts a fresh interpreter for each worker, unlike fork, which would copy
+        # that live lifespan/background-thread state and its inherited locks.
+        context = multiprocessing.get_context("spawn")
         ready = context.Queue()
         results = context.Queue()
         release = context.Event()
@@ -359,24 +386,43 @@ class TestV2LifecycleWriteGuards:
             )
             for label in ("worker-one", "worker-two")
         ]
-        for worker in workers:
-            worker.start()
-        roots = [ready.get(timeout=15) for _ in workers]
-        assert {root for _, root in roots} == {
-            str(tmp_path / "worker-one" / "missions"),
-            str(tmp_path / "worker-two" / "missions"),
-        }
-        release.set()
-        for worker in workers:
-            worker.join(timeout=20)
-            assert worker.exitcode == 0
-        outcomes = [results.get(timeout=5) for _ in workers]
-        assert all(status == "ok" for _, status, _ in outcomes), outcomes
-        mission_dirs = {Path(path) for _, _, path in outcomes}
-        assert len(mission_dirs) == 2
-        assert all(
-            (mission_dir / "mission.json").exists() for mission_dir in mission_dirs
-        )
+        started_workers = []
+        try:
+            for worker in workers:
+                worker.start()
+                started_workers.append(worker)
+            roots = [ready.get(timeout=15) for _ in workers]
+            assert {root for _, root in roots} == {
+                str(tmp_path / "worker-one" / "missions"),
+                str(tmp_path / "worker-two" / "missions"),
+            }
+            release.set()
+            outcomes = [results.get(timeout=20) for _ in workers]
+            assert all(status == "ok" for _, status, _ in outcomes), outcomes
+            mission_dirs = {Path(path) for _, _, path in outcomes}
+            assert len(mission_dirs) == 2
+            assert all(
+                (mission_dir / "mission.json").exists() for mission_dir in mission_dirs
+            )
+            for worker in workers:
+                worker.join(timeout=10)
+                assert worker.exitcode == 0
+        finally:
+            # A readiness/result timeout or a failed sibling must not leave a
+            # blocked worker behind.  Release first, then terminate and join.
+            release.set()
+            for worker in started_workers:
+                if worker.is_alive():
+                    worker.terminate()
+            for worker in started_workers:
+                worker.join(timeout=5)
+                if worker.is_alive():
+                    worker.kill()
+                    worker.join(timeout=5)
+                assert not worker.is_alive()
+                worker.close()
+            ready.close()
+            results.close()
 
     def test_create_normalizes_client_active_flags_without_disturbing_active_context(
         self, client: TestClient
