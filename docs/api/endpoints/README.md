@@ -25,6 +25,13 @@ consumers, integrators, developers
 operator or API commands under that retired path. The sole supported activation
 operation is `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.
 
+`is_active` is returned server-managed lifecycle state on all other V2 writes.
+Mission creation, adding a leg, and package import accept legacy omitted or
+explicit flag values but persist every incoming leg inactive. Re-importing an
+existing mission with an active leg returns 409; deactivate it first. An active
+leg's route cannot be replaced: deactivate, upload the route, then activate it
+again.
+
 ### Feature Endpoints
 
 - **[ETA Endpoints](./eta.md)** - Estimated time of arrival calculations

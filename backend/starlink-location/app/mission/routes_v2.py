@@ -84,6 +84,15 @@ def set_coverage_sampler(coverage_sampler: CoverageSampler) -> None:
     _coverage_sampler = coverage_sampler
 
 
+def _normalize_leg_lifecycle_state(mission: Mission) -> Mission:
+    """Return a mission whose non-lifecycle write legs are inactive."""
+    return mission.model_copy(
+        update={
+            "legs": [leg.model_copy(update={"is_active": False}) for leg in mission.legs]
+        }
+    )
+
+
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=Mission)
 async def create_mission(
     mission: Mission,
@@ -99,6 +108,7 @@ async def create_mission(
         Created mission with 201 status
     """
     try:
+        mission = _normalize_leg_lifecycle_state(mission)
         logger.info(f"Creating mission {mission.id}")
         save_mission_v2(mission)
         logger.info(f"Mission {mission.id} created successfully")
@@ -927,8 +937,23 @@ async def import_mission(
                 # Create Mission object
                 mission = Mission(**mission_data)
 
-                # Save mission
-                save_mission_v2(mission)
+                # Re-importing an active parent would invalidate the active
+                # route transaction. Require the lifecycle command first.
+                with get_active_leg_lock(), get_mission_lock(mission.id):
+                    existing_mission = load_mission_v2(mission.id)
+                    if existing_mission and any(
+                        leg.is_active for leg in existing_mission.legs
+                    ):
+                        raise HTTPException(
+                            status_code=status.HTTP_409_CONFLICT,
+                            detail={
+                                "code": "ACTIVE_MISSION_IMPORT_FORBIDDEN",
+                                "message": "Deactivate the mission leg before re-importing this mission.",
+                                "action": "Deactivate the leg, re-import the mission package, then activate the leg again.",
+                            },
+                        )
+                    mission = _normalize_leg_lifecycle_state(mission)
+                    save_mission_v2(mission)
                 logger.info(f"Mission {mission.id} imported successfully")
 
                 # Import route KML files from routes/ folder
@@ -1045,6 +1070,7 @@ async def add_leg_to_mission(
         Created leg with 201 status
     """
     try:
+        leg = leg.model_copy(update={"is_active": False})
         with get_mission_lock(mission_id):
             # Load mission
             mission = load_mission_v2(mission_id)
@@ -1849,7 +1875,9 @@ async def update_leg_route(
                 detail="File must have .kml extension",
             )
 
-        with get_mission_lock(mission_id):
+        # Keep the canonical active-leg lock ahead of the parent lock so an
+        # activation cannot race a route replacement boundary check.
+        with get_active_leg_lock(), get_mission_lock(mission_id):
             # Load mission and leg
             mission = load_mission_v2(mission_id)
             if not mission:
@@ -1871,6 +1899,16 @@ async def update_leg_route(
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Leg {leg_id} not found in mission {mission_id}",
+                )
+
+            if leg.is_active:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail={
+                        "code": "ACTIVE_LEG_ROUTE_REPLACEMENT_FORBIDDEN",
+                        "message": "Deactivate the leg before replacing its route.",
+                        "action": "Deactivate the leg, upload the replacement route, then activate the leg again.",
+                    },
                 )
 
             old_route_id = leg.route_id
