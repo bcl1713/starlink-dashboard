@@ -46,25 +46,24 @@ The Mission Planning feature enables:
 | **Visualization**  | Grafana dashboards, real-time maps             |
 | **Export**         | PDF, PowerPoint, Excel, CSV formats            |
 
-### Quick Start
+### Mission V2 activation
 
-```bash
-# Create a mission
-curl -X POST http://localhost:8000/api/missions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test Flight",
-    "departure_time": "2025-12-04T10:00:00Z",
-    "arrival_time": "2025-12-04T18:00:00Z"
-  }'
+Mission activation is performed only through:
 
-# Upload route
-curl -X POST http://localhost:8000/api/routes/upload \
-  -F "file=@flight-route.kml"
-
-# Activate mission
-curl -X POST http://localhost:8000/api/missions/{id}/activate
+```text
+POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate
 ```
+
+`/api/missions` has been removed and now returns 404; it has no supported
+operator or API commands. Do not infer replacements for retired create,
+timeline, or export procedures where no Mission V2 operation is documented.
+
+### Legacy data boundary
+
+Flat v1 mission artifacts are retained but inert. They have no automatic
+migration or cleanup, and they do not establish Mission V2 activation or
+Overview context. Preserve them as historical files until an explicitly
+approved retention action is defined.
 
 ---
 

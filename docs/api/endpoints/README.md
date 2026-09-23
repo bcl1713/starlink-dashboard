@@ -19,6 +19,12 @@ consumers, integrators, developers
 - **[Overview Upcoming POIs](./overview-upcoming-pois.md)** - Active-route
   generated POI projection, timing provenance, retention, and Top 5 queue
 
+### Mission V2 activation
+
+`/api/missions` has been removed and now returns 404. There are no supported
+operator or API commands under that retired path. The sole supported activation
+operation is `POST /api/v2/missions/{mission_id}/legs/{leg_id}/activate`.
+
 ### Feature Endpoints
 
 - **[ETA Endpoints](./eta.md)** - Estimated time of arrival calculations
