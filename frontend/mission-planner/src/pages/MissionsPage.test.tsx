@@ -79,6 +79,9 @@ describe('MissionsPage create mission navigation', () => {
 
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalledTimes(1);
+      expect(screen.getByRole('alert').textContent).toBe(
+        'Unable to create mission: create failed'
+      );
     });
     expect(screen.getByTestId('location').textContent).toBe('/missions');
     expect(screen.getByRole('dialog')).not.toBeNull();
