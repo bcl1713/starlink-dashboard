@@ -7,8 +7,16 @@ from the new app.services.route_eta module structure.
 DEPRECATED: Import from app.services.route_eta instead.
 """
 
-# Re-export everything from the new route_eta module
-from app.services.route_eta import *
+from app.services.route_eta.cache import (
+    cleanup_eta_cache,
+    clear_eta_cache,
+    get_eta_accuracy_stats,
+    get_eta_cache_stats,
+)
+from app.services.route_eta.calculator import (
+    RouteETACalculator,
+    project_point_to_line_segment,
+)
 
 __all__ = [
     "RouteETACalculator",

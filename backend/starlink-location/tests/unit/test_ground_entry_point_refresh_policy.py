@@ -1,9 +1,9 @@
+"""Tests for automatic ground-entry discovery by operating mode."""
+
 import asyncio
 
 import main
 import pytest
-
-"""Tests for automatic ground-entry discovery by operating mode."""
 
 from app.models.config import SimulationConfig
 
