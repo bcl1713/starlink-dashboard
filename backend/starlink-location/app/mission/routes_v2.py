@@ -1208,6 +1208,9 @@ async def update_leg(
                     "Timeline cannot be regenerated. Please upload a route KML first."
                 )
 
+            # Preserve lifecycle state; only the activation endpoint may change it.
+            updated_leg.is_active = mission.legs[leg_index].is_active
+
             # Update leg
             mission.legs[leg_index] = updated_leg
 

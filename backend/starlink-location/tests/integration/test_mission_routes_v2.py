@@ -417,6 +417,92 @@ class TestMissionV2GlobalActivationLifecycle:
             == mission_b.legs[0].route_id
         )
 
+    def test_updating_inactive_leg_cannot_activate_it(
+        self, client: TestClient, two_parent_missions
+    ):
+        mission_a, mission_b = two_parent_missions
+        _add_activation_routes(client, two_parent_missions)
+        with patch(
+            "app.mission.routes_v2.build_mission_timeline",
+            side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+        ):
+            assert (
+                client.post(
+                    f"/api/v2/missions/{mission_a.id}/legs/{mission_a.legs[0].id}/activate"
+                ).status_code
+                == 200
+            )
+
+        update_response = client.put(
+            f"/api/v2/missions/{mission_b.id}/legs/{mission_b.legs[0].id}",
+            json=mission_b.legs[0]
+            .model_copy(update={"is_active": True})
+            .model_dump(mode="json"),
+        )
+
+        assert update_response.status_code == 200
+        assert update_response.json()["leg"]["is_active"] is False
+        assert load_mission_v2(mission_a.id).legs[0].is_active is True
+        assert load_mission_v2(mission_b.id).legs[0].is_active is False
+        assert (
+            sum(
+                leg.is_active
+                for mission in (
+                    load_mission_v2(mission_a.id),
+                    load_mission_v2(mission_b.id),
+                )
+                for leg in mission.legs
+            )
+            == 1
+        )
+        assert (
+            client.app.state.route_manager.get_active_route_id()
+            == mission_a.legs[0].route_id
+        )
+
+    def test_updating_active_leg_cannot_deactivate_it(
+        self, client: TestClient, two_parent_missions
+    ):
+        mission_a, mission_b = two_parent_missions
+        _add_activation_routes(client, two_parent_missions)
+        with patch(
+            "app.mission.routes_v2.build_mission_timeline",
+            side_effect=lambda mission, **_kwargs: _activation_timeline(mission.id),
+        ):
+            assert (
+                client.post(
+                    f"/api/v2/missions/{mission_a.id}/legs/{mission_a.legs[0].id}/activate"
+                ).status_code
+                == 200
+            )
+
+        update_response = client.put(
+            f"/api/v2/missions/{mission_a.id}/legs/{mission_a.legs[0].id}",
+            json=mission_a.legs[0]
+            .model_copy(update={"is_active": False})
+            .model_dump(mode="json"),
+        )
+
+        assert update_response.status_code == 200
+        assert update_response.json()["leg"]["is_active"] is True
+        assert load_mission_v2(mission_a.id).legs[0].is_active is True
+        assert load_mission_v2(mission_b.id).legs[0].is_active is False
+        assert (
+            sum(
+                leg.is_active
+                for mission in (
+                    load_mission_v2(mission_a.id),
+                    load_mission_v2(mission_b.id),
+                )
+                for leg in mission.legs
+            )
+            == 1
+        )
+        assert (
+            client.app.state.route_manager.get_active_route_id()
+            == mission_a.legs[0].route_id
+        )
+
     def test_route_activation_failure_restores_flags_and_returns_non_2xx(
         self, client: TestClient, monkeypatch, two_parent_missions
     ):
