@@ -22,11 +22,10 @@ from app.mission.timeline_service import TimelineSummary
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from fastapi.testclient import TestClient
 
-
-KML = b'''<?xml version="1.0" encoding="UTF-8"?>
+KML = b"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><LineString>
 <coordinates>-120.0,35.0,0 -121.0,36.0,0</coordinates>
-</LineString></Placemark></Document></kml>'''
+</LineString></Placemark></Document></kml>"""
 
 
 def _timeline(leg_id: str) -> tuple[MissionLegTimeline, TimelineSummary]:
@@ -74,7 +73,9 @@ def _mission(prefix: str, *, active: bool = False) -> Mission:
     )
 
 
-def _add_route(client: TestClient, leg: MissionLeg, routes_dir: Path | None = None) -> None:
+def _add_route(
+    client: TestClient, leg: MissionLeg, routes_dir: Path | None = None
+) -> None:
     client.app.state.route_manager.add_route(
         leg.route_id,
         ParsedRoute(
@@ -83,22 +84,33 @@ def _add_route(client: TestClient, leg: MissionLeg, routes_dir: Path | None = No
                 file_path=str((routes_dir or Path("/tmp")) / f"{leg.route_id}.kml"),
                 point_count=2,
             ),
-            points=[RoutePoint(latitude=0.0, longitude=0.0), RoutePoint(latitude=1.0, longitude=1.0)],
+            points=[
+                RoutePoint(latitude=0.0, longitude=0.0),
+                RoutePoint(latitude=1.0, longitude=1.0),
+            ],
         ),
     )
 
 
 def _activate(client: TestClient, mission: Mission) -> None:
     _add_route(client, mission.legs[0])
-    with patch("app.mission.routes_v2.build_mission_timeline", side_effect=lambda mission, **_: _timeline(mission.id)):
-        response = client.post(f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}/activate")
+    with patch(
+        "app.mission.routes_v2.build_mission_timeline",
+        side_effect=lambda mission, **_: _timeline(mission.id),
+    ):
+        response = client.post(
+            f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}/activate"
+        )
     assert response.status_code == 200
 
 
 def _active_snapshot(client: TestClient, mission: Mission) -> tuple[bool, str | None]:
     stored = load_mission_v2(mission.id)
     assert stored is not None
-    return stored.legs[0].is_active, client.app.state.route_manager.get_active_route_id()
+    return (
+        stored.legs[0].is_active,
+        client.app.state.route_manager.get_active_route_id(),
+    )
 
 
 def _package(mission: Mission) -> bytes:
@@ -109,52 +121,93 @@ def _package(mission: Mission) -> bytes:
 
 
 class TestV2LifecycleWriteGuards:
-    def test_create_normalizes_client_active_flags_without_disturbing_active_context(self, client: TestClient):
+    def test_create_normalizes_client_active_flags_without_disturbing_active_context(
+        self, client: TestClient
+    ):
         active_parent = _mission("active")
-        assert client.post("/api/v2/missions", json=active_parent.model_dump(mode="json")).status_code == 201
+        assert (
+            client.post(
+                "/api/v2/missions", json=active_parent.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
         _activate(client, active_parent)
         before = _active_snapshot(client, active_parent)
         candidate = _mission("created", active=True)
 
-        response = client.post("/api/v2/missions", json=candidate.model_dump(mode="json"))
+        response = client.post(
+            "/api/v2/missions", json=candidate.model_dump(mode="json")
+        )
 
         assert response.status_code == 201
         assert response.json()["legs"][0]["is_active"] is False
         assert load_mission_v2(candidate.id).legs[0].is_active is False
         assert _active_snapshot(client, active_parent) == before
 
-    def test_add_leg_normalizes_client_active_flag_without_disturbing_active_context(self, client: TestClient):
+    def test_add_leg_normalizes_client_active_flag_without_disturbing_active_context(
+        self, client: TestClient
+    ):
         active_parent = _mission("active")
         inactive_parent = _mission("inactive")
-        assert client.post("/api/v2/missions", json=active_parent.model_dump(mode="json")).status_code == 201
-        assert client.post("/api/v2/missions", json=inactive_parent.model_dump(mode="json")).status_code == 201
+        assert (
+            client.post(
+                "/api/v2/missions", json=active_parent.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
+        assert (
+            client.post(
+                "/api/v2/missions", json=inactive_parent.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
         _activate(client, active_parent)
         before = _active_snapshot(client, active_parent)
         incoming = _mission("incoming", active=True).legs[0]
 
-        response = client.post(f"/api/v2/missions/{inactive_parent.id}/legs", json=incoming.model_dump(mode="json"))
+        response = client.post(
+            f"/api/v2/missions/{inactive_parent.id}/legs",
+            json=incoming.model_dump(mode="json"),
+        )
 
         assert response.status_code == 201
         assert response.json()["is_active"] is False
         assert load_mission_v2(inactive_parent.id).legs[-1].is_active is False
         assert _active_snapshot(client, active_parent) == before
 
-    def test_import_normalizes_client_active_flags_without_disturbing_external_active_context(self, client: TestClient):
+    def test_import_normalizes_client_active_flags_without_disturbing_external_active_context(
+        self, client: TestClient
+    ):
         active_parent = _mission("active")
-        assert client.post("/api/v2/missions", json=active_parent.model_dump(mode="json")).status_code == 201
+        assert (
+            client.post(
+                "/api/v2/missions", json=active_parent.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
         _activate(client, active_parent)
         before = _active_snapshot(client, active_parent)
         imported = _mission("imported", active=True)
 
-        response = client.post("/api/v2/missions/import", files={"file": ("mission.zip", _package(imported), "application/zip")})
+        response = client.post(
+            "/api/v2/missions/import",
+            files={"file": ("mission.zip", _package(imported), "application/zip")},
+        )
 
         assert response.status_code == 200
         assert load_mission_v2(imported.id).legs[0].is_active is False
         assert _active_snapshot(client, active_parent) == before
 
-    def test_import_over_active_parent_is_conflict_before_any_mutation(self, client: TestClient):
+    def test_import_over_active_parent_is_conflict_before_any_mutation(
+        self, client: TestClient
+    ):
         active_parent = _mission("active")
-        assert client.post("/api/v2/missions", json=active_parent.model_dump(mode="json")).status_code == 201
+        assert (
+            client.post(
+                "/api/v2/missions", json=active_parent.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
         _activate(client, active_parent)
         before_mission = load_mission_v2(active_parent.id).model_dump(mode="json")
         before_route = client.app.state.route_manager.get_active_route_id()
@@ -162,16 +215,28 @@ class TestV2LifecycleWriteGuards:
         replacement.name = "replacement should not persist"
         replacement.legs[0].is_active = True
 
-        response = client.post("/api/v2/missions/import", files={"file": ("mission.zip", _package(replacement), "application/zip")})
+        response = client.post(
+            "/api/v2/missions/import",
+            files={"file": ("mission.zip", _package(replacement), "application/zip")},
+        )
 
         assert response.status_code == 409
         assert response.json()["detail"]["code"] == "ACTIVE_MISSION_IMPORT_FORBIDDEN"
-        assert load_mission_v2(active_parent.id).model_dump(mode="json") == before_mission
+        assert (
+            load_mission_v2(active_parent.id).model_dump(mode="json") == before_mission
+        )
         assert client.app.state.route_manager.get_active_route_id() == before_route
 
-    def test_active_leg_route_upload_is_strict_noop_with_actionable_code(self, client: TestClient, tmp_path: Path):
+    def test_active_leg_route_upload_is_strict_noop_with_actionable_code(
+        self, client: TestClient, tmp_path: Path
+    ):
         mission = _mission("active")
-        assert client.post("/api/v2/missions", json=mission.model_dump(mode="json")).status_code == 201
+        assert (
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
         _activate(client, mission)
         route_manager = client.app.state.route_manager
         original_routes = deepcopy(route_manager._routes)
@@ -184,7 +249,9 @@ class TestV2LifecycleWriteGuards:
 
         response = client.put(
             f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}/route",
-            files={"file": ("replacement.kml", KML, "application/vnd.google-earth.kml+xml")},
+            files={
+                "file": ("replacement.kml", KML, "application/vnd.google-earth.kml+xml")
+            },
         )
 
         assert response.status_code == 409
@@ -199,12 +266,25 @@ class TestV2LifecycleWriteGuards:
         assert sorted(path.name for path in routes_dir.glob("*")) == files_before
         poi_manager.delete_route_pois.assert_not_called()
 
-    def test_inactive_leg_route_upload_retains_success_behavior(self, client: TestClient, tmp_path: Path):
+    def test_inactive_leg_route_upload_retains_success_behavior(
+        self, client: TestClient, tmp_path: Path
+    ):
         mission = _mission("inactive")
-        assert client.post("/api/v2/missions", json=mission.model_dump(mode="json")).status_code == 201
+        assert (
+            client.post(
+                "/api/v2/missions", json=mission.model_dump(mode="json")
+            ).status_code
+            == 201
+        )
         response = client.put(
             f"/api/v2/missions/{mission.id}/legs/{mission.legs[0].id}/route",
-            files={"file": ("inactive-replacement.kml", KML, "application/vnd.google-earth.kml+xml")},
+            files={
+                "file": (
+                    "inactive-replacement.kml",
+                    KML,
+                    "application/vnd.google-earth.kml+xml",
+                )
+            },
         )
 
         assert response.status_code == 200

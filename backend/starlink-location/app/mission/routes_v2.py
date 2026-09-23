@@ -88,7 +88,9 @@ def _normalize_leg_lifecycle_state(mission: Mission) -> Mission:
     """Return a mission whose non-lifecycle write legs are inactive."""
     return mission.model_copy(
         update={
-            "legs": [leg.model_copy(update={"is_active": False}) for leg in mission.legs]
+            "legs": [
+                leg.model_copy(update={"is_active": False}) for leg in mission.legs
+            ]
         }
     )
 
