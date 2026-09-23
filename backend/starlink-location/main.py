@@ -41,6 +41,7 @@ from app.live.coordinator import LiveCoordinator
 from app.mission import (
     routes_v2 as mission_routes_v2,
 )
+from app.mission.storage import reconcile_active_legs_on_startup
 from app.models.config import SimulationConfig
 from app.satellites import routes as satellite_routes
 from app.services.ground_entry_point import (
@@ -151,6 +152,12 @@ async def startup_event():
 
         initialize_overview_history_runtime()
         initialize_overview_clock_settings_runtime()
+
+        reconciliation = reconcile_active_legs_on_startup()
+        logger.info_json(
+            "Reconciled persisted Mission V2 active legs at startup",
+            extra_fields=reconciliation,
+        )
 
         # Initialize coordinator based on configured mode
         active_mode = _simulation_config.mode

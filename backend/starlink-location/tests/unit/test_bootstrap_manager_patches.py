@@ -49,3 +49,56 @@ with TestClient(bootstrap.app):
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_startup_reconciles_persisted_active_legs_before_route_manager_initializes():
+    """A restart clears durable lifecycle flags without restoring a route."""
+    backend_root = Path(__file__).resolve().parents[2]
+    probe = f"""
+import importlib.util
+import sys
+import tempfile
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+backend_root = Path({str(backend_root)!r})
+conftest_path = backend_root / "tests" / "conftest.py"
+spec = importlib.util.spec_from_file_location("bootstrap_reconciliation_probe", conftest_path)
+assert spec is not None
+assert spec.loader is not None
+bootstrap = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = bootstrap
+spec.loader.exec_module(bootstrap)
+
+from app.mission import storage
+from app.mission.models import Mission, MissionLeg, TransportConfig
+
+with tempfile.TemporaryDirectory() as directory:
+    storage.MISSIONS_DIR = Path(directory)
+    storage.save_mission_v2(Mission(
+        id="persisted-active",
+        name="Persisted active",
+        legs=[MissionLeg(
+            id="leg-1",
+            name="Leg 1",
+            route_id="route-1",
+            is_active=True,
+            transports=TransportConfig(initial_x_satellite_id="X-1"),
+        )],
+    ))
+    with TestClient(bootstrap.app) as client:
+        persisted = storage.load_mission_v2("persisted-active")
+        assert persisted is not None
+        assert not persisted.legs[0].is_active
+        assert client.app.state.route_manager.get_active_route() is None
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", probe],
+        cwd=backend_root,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr

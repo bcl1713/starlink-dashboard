@@ -12,7 +12,7 @@ function exactRoutePattern(pathname: string): string {
 test.describe('Mission Workflow', () => {
   test.beforeEach(async ({ page }) => {
     // Mock initial empty mission list
-    await page.route(routePattern('/api/v2/missions'), async (route) => {
+    await page.route(exactRoutePattern('/api/v2/missions'), async (route) => {
       const method = route.request().method();
       if (method === 'GET') {
         await route.fulfill({ json: [] });
@@ -44,23 +44,27 @@ test.describe('Mission Workflow', () => {
     ).toBeVisible();
 
     // 2. Mock Create Mission API
-    let createdMission: Record<string, unknown> | null = null;
-    await page.route(routePattern('/api/v2/missions'), async (route) => {
+    const createdMission = {
+      id: 'new-mission',
+      name: 'New Mission',
+      description: 'Test Description',
+      legs: [],
+    };
+    await page.route(exactRoutePattern('/api/v2/missions'), async (route) => {
       if (route.request().method() === 'POST') {
-        const data = route.request().postDataJSON();
-        createdMission = {
-          ...data,
-          id: 'new-mission',
-          legs: [],
-        };
         await route.fulfill({ json: createdMission });
       } else if (route.request().method() === 'GET') {
-        // Return the created mission if it exists, otherwise empty
-        await route.fulfill({ json: createdMission ? [createdMission] : [] });
+        await route.fulfill({ json: [] });
       } else {
         await route.continue();
       }
     });
+    await page.route(
+      exactRoutePattern('/api/v2/missions/new-mission'),
+      async (route) => {
+        await route.fulfill({ json: createdMission });
+      }
+    );
 
     // 3. Open Create Dialog
     await page.getByRole('button', { name: 'Create New Mission' }).click();
@@ -76,8 +80,9 @@ test.describe('Mission Workflow', () => {
     // 5. Submit
     await page.getByRole('button', { name: 'Create Mission' }).click();
 
-    // 6. Verify Dialog Closes and Mission Appears
+    // 6. Verify the existing detail navigation contract and loaded mission
     await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(page).toHaveURL(/\/missions\/new-mission$/);
     await expect(page.getByText('New Mission', { exact: true })).toBeVisible();
     await expect(page.getByText('Test Description')).toBeVisible();
   });

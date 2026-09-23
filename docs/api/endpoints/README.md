@@ -35,6 +35,10 @@ an active leg returns 409; deactivate it first. Deleting an active leg or a
 mission containing an active leg also returns 409: deactivate first, then
 repeat the deletion.
 
+On service restart, every persisted Mission V2 `is_active` flag is cleared. No
+route, flight context, timeline, or clock lifecycle state is restored. An
+operator must explicitly activate a leg after restart.
+
 ### Feature Endpoints
 
 - **[ETA Endpoints](./eta.md)** - Estimated time of arrival calculations

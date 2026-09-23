@@ -311,6 +311,51 @@ def list_mission_metadata_v2() -> list[Mission]:
     ]
 
 
+def reconcile_active_legs_on_startup() -> dict[str, int]:
+    """Clear persisted V2 active-leg flags before runtime managers initialize.
+
+    Startup deliberately does not restore route, flight, or clock state. The
+    repository-wide active-leg lock precedes every parent lock, matching V2
+    mutation ordering and making the persisted lifecycle state unambiguous
+    before readiness.
+    """
+    ensure_missions_directory()
+    changed_missions = 0
+    changed_legs = 0
+
+    with get_active_leg_lock():
+        mission_ids = sorted(
+            mission_dir.name
+            for mission_dir in MISSIONS_DIR.iterdir()
+            if mission_dir.is_dir() and (mission_dir / "mission.json").is_file()
+        )
+        for mission_id in mission_ids:
+            with get_mission_lock(mission_id):
+                mission = load_mission_v2(mission_id)
+                if mission is None:
+                    continue
+                active_legs = [leg for leg in mission.legs if leg.is_active]
+                if not active_legs:
+                    continue
+                reconciled = mission.model_copy(
+                    update={
+                        "legs": [
+                            (
+                                leg.model_copy(update={"is_active": False})
+                                if leg.is_active
+                                else leg
+                            )
+                            for leg in mission.legs
+                        ]
+                    }
+                )
+                _save_mission_v2_unlocked(reconciled)
+                changed_missions += 1
+                changed_legs += len(active_legs)
+
+    return {"missions": changed_missions, "legs": changed_legs}
+
+
 def save_mission_timeline(
     leg_id: str,
     timeline: MissionLegTimeline,

@@ -21,6 +21,19 @@ from app.mission.storage import (
 )
 
 
+class RecordingLock:
+    def __init__(self, name, events):
+        self.name = name
+        self.events = events
+
+    def __enter__(self):
+        self.events.append(f"enter:{self.name}")
+        return self
+
+    def __exit__(self, *_):
+        self.events.append(f"exit:{self.name}")
+
+
 @pytest.fixture
 def temp_missions_dir(monkeypatch, tmp_path):
     monkeypatch.setattr(storage, "MISSIONS_DIR", tmp_path)
@@ -116,6 +129,122 @@ def test_scoped_timeline_round_trip_and_deletion_do_not_touch_flat_artifact(
 
 def test_active_leg_lock_is_reused_for_the_scoped_repository(temp_missions_dir):
     assert get_active_leg_lock() is get_active_leg_lock()
+
+
+@pytest.mark.parametrize(
+    "missions",
+    (
+        [
+            Mission(
+                id="valid-active",
+                name="Valid active",
+                legs=[
+                    MissionLeg(
+                        id="leg-1",
+                        name="Leg 1",
+                        route_id="route-1",
+                        is_active=True,
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                ],
+            )
+        ],
+        [
+            Mission(
+                id="first-active",
+                name="First active",
+                legs=[
+                    MissionLeg(
+                        id="leg-1",
+                        name="Leg 1",
+                        route_id="route-1",
+                        is_active=True,
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                ],
+            ),
+            Mission(
+                id="second-active",
+                name="Second active",
+                legs=[
+                    MissionLeg(
+                        id="leg-2",
+                        name="Leg 2",
+                        route_id="route-2",
+                        is_active=True,
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                ],
+            ),
+        ],
+        [
+            Mission(
+                id="missing-route",
+                name="Missing route",
+                legs=[
+                    MissionLeg(
+                        id="leg-1",
+                        name="Leg 1",
+                        route_id="not-present-on-startup",
+                        is_active=True,
+                        transports=TransportConfig(initial_x_satellite_id="X-1"),
+                    )
+                ],
+            )
+        ],
+    ),
+)
+def test_startup_reconciler_clears_every_persisted_active_leg(
+    temp_missions_dir, missions
+):
+    for mission in missions:
+        save_mission_v2(mission)
+
+    result = storage.reconcile_active_legs_on_startup()
+
+    assert result == {"missions": len(missions), "legs": len(missions)}
+    assert all(
+        not leg.is_active
+        for mission in missions
+        for leg in load_mission_v2(mission.id).legs
+    )
+
+
+def test_startup_reconciler_uses_global_lock_before_each_changed_parent_lock(
+    temp_missions_dir, monkeypatch
+):
+    mission = Mission(
+        id="active-parent",
+        name="Active parent",
+        legs=[
+            MissionLeg(
+                id="leg-1",
+                name="Leg 1",
+                route_id="route-1",
+                is_active=True,
+                transports=TransportConfig(initial_x_satellite_id="X-1"),
+            )
+        ],
+    )
+    save_mission_v2(mission)
+    events = []
+    monkeypatch.setattr(
+        storage, "get_active_leg_lock", lambda: RecordingLock("active", events)
+    )
+    monkeypatch.setattr(
+        storage,
+        "get_mission_lock",
+        lambda mission_id: RecordingLock(f"mission:{mission_id}", events),
+    )
+
+    storage.reconcile_active_legs_on_startup()
+
+    assert events == [
+        "enter:active",
+        "enter:mission:active-parent",
+        "exit:mission:active-parent",
+        "exit:active",
+    ]
 
 
 def test_v2_metadata_listing_orders_persisted_timestamps(temp_missions_dir):

@@ -36,6 +36,9 @@ ACTIVATION_PATH = r"/api/v2/missions(?:/[A-Za-z0-9_{}-]+)*/activate\b"
 LITERAL_ACTIVATION_POST = re.compile(rf"POST\s+({ACTIVATION_PATH})")
 CURL_ACTIVATION_POST = re.compile(rf"curl\s+-X\s+POST\s+\S*?({ACTIVATION_PATH})")
 SUPPORTED_ACTIVATION_PATH = "/api/v2/missions/{mission_id}/legs/{leg_id}/activate"
+STARTUP_RECONCILIATION_NOTICE = (
+    "On service restart, every persisted Mission V2 `is_active` flag is cleared."
+)
 
 
 def _documented_activation_paths(text):
@@ -74,6 +77,20 @@ def test_mission_docs_publish_the_only_supported_activation_route():
     ]
     assert activation_paths
     assert set(activation_paths) == {SUPPORTED_ACTIVATION_PATH}
+
+
+def test_mission_docs_describe_restart_lifecycle_reconciliation():
+    text = (REPOSITORY_ROOT / "docs/api/endpoints/README.md").read_text()
+    normalized_text = " ".join(text.split())
+
+    assert STARTUP_RECONCILIATION_NOTICE in normalized_text
+    assert (
+        "No route, flight context, timeline, or clock lifecycle state is restored."
+        in normalized_text
+    )
+    assert (
+        "An operator must explicitly activate a leg after restart." in normalized_text
+    )
 
 
 @pytest.mark.parametrize(
