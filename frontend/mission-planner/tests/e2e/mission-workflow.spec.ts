@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { routeGlob, routeUrl } from './support/configured-origin';
+import {
+  requestUrlPattern,
+  routeGlob,
+  routeUrl,
+} from './support/configured-origin';
 
 function routePattern(pathname: string): string {
   return routeGlob(test.info().project.use.baseURL, pathname);
@@ -12,7 +16,7 @@ function exactRoutePattern(pathname: string): string {
 test.describe('Mission Workflow', () => {
   test.beforeEach(async ({ page }) => {
     // Mock initial empty mission list
-    await page.route(exactRoutePattern('/api/v2/missions'), async (route) => {
+    await page.route(requestUrlPattern(test.info().project.use.baseURL, '/api/v2/missions'), async (route) => {
       const method = route.request().method();
       if (method === 'GET') {
         await route.fulfill({ json: [] });
@@ -50,15 +54,18 @@ test.describe('Mission Workflow', () => {
       description: 'Test Description',
       legs: [],
     };
-    await page.route(exactRoutePattern('/api/v2/missions'), async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({ json: createdMission });
-      } else if (route.request().method() === 'GET') {
-        await route.fulfill({ json: [] });
-      } else {
-        await route.continue();
+    await page.route(
+      requestUrlPattern(test.info().project.use.baseURL, '/api/v2/missions'),
+      async (route) => {
+        if (route.request().method() === 'POST') {
+          await route.fulfill({ json: createdMission });
+        } else if (route.request().method() === 'GET') {
+          await route.fulfill({ json: [] });
+        } else {
+          await route.continue();
+        }
       }
-    });
+    );
     await page.route(
       exactRoutePattern('/api/v2/missions/new-mission'),
       async (route) => {
