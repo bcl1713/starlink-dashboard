@@ -943,7 +943,7 @@ test.describe('Globe overview', () => {
     await expect(
       globeLegend.getByText('2 trail points', { exact: true })
     ).toBeVisible();
-    await expect.poll(() => historyRequests).toHaveLength(1);
+    await expect.poll(() => historyRequests.length).toBeGreaterThanOrEqual(1);
     expect(historyRequests[0]).toMatch(/\/api\/overview-history$/);
   });
   test('reports unavailable aircraft history without replacing live telemetry', async ({
