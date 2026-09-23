@@ -56,10 +56,12 @@ def _inspect(tag: str) -> str:
 def test_override_replaces_root_fixed_ports_and_private_env_file(
     tmp_path: Path,
 ) -> None:
-    override = render_override(_inputs(tmp_path))
+    override = render_override(
+        _inputs(tmp_path), backend_port=18_000, frontend_port=15_173
+    )
 
     assert "!override" in override
-    assert "5173:80" not in override
+    assert '      - "5173:80"' not in override
     assert "container_name:" not in override
     assert "env_file:" not in override
     assert "STARLINK_MODE=simulation" in override
@@ -68,6 +70,18 @@ def test_override_replaces_root_fixed_ports_and_private_env_file(
         "  starlink-location:",
         "  mission-planner:",
     }
+
+
+def test_override_replaces_root_bindings_with_task_loopback_ports(
+    tmp_path: Path,
+) -> None:
+    override = render_override(
+        _inputs(tmp_path), backend_port=18_000, frontend_port=15_173
+    )
+
+    assert '      - "127.0.0.1:18000:8000"' in override
+    assert '      - "127.0.0.1:15173:80"' in override
+    assert "ports: !override []" not in override
 
 
 def test_build_argv_targets_only_backend_and_mission_planner(tmp_path: Path) -> None:
@@ -127,7 +141,59 @@ def test_genuine_build_failure_never_starts_stack(
 
     monkeypatch.setattr("acceptance.compose.subprocess.run", fake_run)
 
-    result = run_full_build(_inputs(tmp_path), _writer(tmp_path))
+    result = run_full_build(
+        _inputs(tmp_path),
+        _writer(tmp_path),
+        override_path=tmp_path / "task-override.yml",
+        backend_port=18_000,
+        frontend_port=15_173,
+    )
 
     assert result.status == "failed"
     assert all(" up " not in call for call in calls)
+
+
+def test_full_build_writes_task_override_and_avoids_private_root_env_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(argv: list[str], **_kwargs: object) -> SimpleNamespace:
+        calls.append(argv)
+        return SimpleNamespace(returncode=2, stdout="build failed\n")
+
+    monkeypatch.setattr("acceptance.compose.subprocess.run", fake_run)
+    override_path = tmp_path / "task-override.yml"
+
+    result = run_full_build(
+        _inputs(tmp_path),
+        _writer(tmp_path),
+        override_path=override_path,
+        backend_port=18_000,
+        frontend_port=15_173,
+    )
+
+    assert result.status == "failed"
+    assert calls == [
+        [
+            "docker",
+            "compose",
+            "--project-name",
+            "accept-" + SHA[:12],
+            "--file",
+            "docker-compose.yml",
+            "--file",
+            str(override_path),
+            "build",
+            "--no-cache",
+            "--progress=plain",
+            "starlink-location",
+            "mission-planner",
+        ]
+    ]
+    override = override_path.read_text(encoding="utf-8")
+    assert "services: !override" in override
+    assert "env_file:" not in override
+    assert ".env" not in override
+    assert "image: accept-backend:" + SHA[:12] in override
+    assert "image: accept-frontend:" + SHA[:12] in override

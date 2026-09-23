@@ -48,7 +48,9 @@ def image_tags(inputs: AcceptanceInputs) -> tuple[str, str]:
     return (f"accept-backend:{suffix}", f"accept-frontend:{suffix}")
 
 
-def render_override(inputs: AcceptanceInputs) -> str:
+def render_override(
+    inputs: AcceptanceInputs, *, backend_port: int, frontend_port: int
+) -> str:
     """Render a self-contained, non-secret two-service Compose override."""
     backend_tag, frontend_tag = image_tags(inputs)
     data_root = (inputs.evidence_root / inputs.sha / "compose-data").as_posix()
@@ -61,7 +63,8 @@ def render_override(inputs: AcceptanceInputs) -> str:
             "    environment:",
             "      - STARLINK_MODE=simulation",
             "      - SIMULATION_MODE=true",
-            "    ports: !override []",
+            "    ports: !override",
+            f'      - "127.0.0.1:{backend_port}:8000"',
             "    volumes: !override",
             f"      - {data_root}/missions:/app/data/missions",
             f"      - {data_root}/satellites:/app/data/satellites",
@@ -71,7 +74,8 @@ def render_override(inputs: AcceptanceInputs) -> str:
             "    build:",
             "      context: ./frontend/mission-planner",
             "      dockerfile: Dockerfile",
-            "    ports: !override []",
+            "    ports: !override",
+            f'      - "127.0.0.1:{frontend_port}:80"',
             "    depends_on:",
             "      starlink-location:",
             "        condition: service_started",
@@ -150,10 +154,23 @@ def reconcile_build(
     return BuildDisposition(False, False, "build did not produce every completed image")
 
 
-def run_full_build(inputs: AcceptanceInputs, writer: EvidenceWriter) -> PhaseResult:
+def run_full_build(
+    inputs: AcceptanceInputs,
+    writer: EvidenceWriter,
+    *,
+    override_path: Path,
+    backend_port: int,
+    frontend_port: int,
+    root_compose_path: Path = Path("docker-compose.yml"),
+) -> PhaseResult:
     """Build only the isolated services; never start a stack after a failure."""
+    override_path.parent.mkdir(parents=True, exist_ok=True)
+    override_path.write_text(
+        render_override(inputs, backend_port=backend_port, frontend_port=frontend_port),
+        encoding="utf-8",
+    )
     result = subprocess.run(
-        compose_build_argv(inputs, [Path("docker-compose.yml")]),
+        compose_build_argv(inputs, [root_compose_path, override_path]),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
