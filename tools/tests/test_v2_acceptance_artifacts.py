@@ -68,6 +68,20 @@ def test_writer_rejects_symlinked_artifact_parent_outside_evidence_root(
     assert not (outside / "escape.txt").exists()
 
 
+def test_writer_rejects_preexisting_symlinked_sha_parent_during_construction(
+    tmp_path: Path,
+) -> None:
+    outside = tmp_path.parent / f"{tmp_path.name}-outside"
+    outside.mkdir(mode=0o755)
+    (tmp_path / SHA).symlink_to(outside, target_is_directory=True)
+
+    with pytest.raises(ValueError, match="sha parent.*symlink"):
+        EvidenceWriter(tmp_path, SHA)
+
+    assert stat.S_IMODE(outside.stat().st_mode) == 0o755
+    assert list(outside.iterdir()) == []
+
+
 def test_writer_rejects_symlinked_sha_parent_outside_evidence_root(
     tmp_path: Path,
 ) -> None:

@@ -26,6 +26,7 @@ class EvidenceWriter:
         self.root = Path(root)
         self.sha = sha
         self.sha_root = self.root / sha
+        self._reject_sha_parent_symlink_escape()
         self._mkdir_private(self.sha_root)
         self.artifact_root = self.sha_root / uuid4().hex
         self._mkdir_private(self.artifact_root)
@@ -114,6 +115,12 @@ class EvidenceWriter:
     def _mkdir_private(path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)
         path.chmod(0o700)
+
+    def _reject_sha_parent_symlink_escape(self) -> None:
+        if self.sha_root.is_symlink() and not self.sha_root.resolve(
+            strict=False
+        ).is_relative_to(self.root.resolve(strict=False)):
+            raise ValueError("sha parent symlink resolves outside the evidence root")
 
     def _safe_artifact_path(
         self, relative: PurePosixPath, *, create_parents: bool = False
