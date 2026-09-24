@@ -9,22 +9,31 @@ services, static checks, public controls, deterministic assets, and a visible
 journey adapter.
 
 An administrator provisions the browser bundle before a branch run. The
-administrator records the bundle executable, version, byte size, and checksum in
-a platform profile. A branch run consumes that profile; it does not install,
-replace, or otherwise provision the bundle. The checked-in default profile is a
-deliberately unprovisioned template, so it correctly returns
-`environment_blocked` until an administrator supplies a coherent bundle.
+administrator creates an immutable bundle record with its absolute executable
+path, executable version, revision, byte size, checksum, bundle identifier,
+creation time, platform-owned browser-store path, and package/runtime provenance
+where applicable. The platform record and executable identity are verified before
+launch.
+
+A branch run consumes that verified record; it does not install, replace, or
+otherwise provision the bundle. Branch acceptance must not execute `npm`, `npx`,
+a Playwright installer, or an installer resolved through inherited `PATH`.
+The checked-in default profile is a deliberately unprovisioned template, so it
+correctly returns `environment_blocked` until an administrator supplies a
+coherent bundle.
 
 ## Health certification and fingerprint
 
 Run the `health` lane before any product lane. Health certification verifies the
 profile and bundle identity, performs the neutral display/card check, retains its
 bounded artifacts, and seals a health fingerprint. The fingerprint binds the
-profile checksum, health-card checksum, bundle identity, measured viewport
-metrics, retained-artifact checksums, outcome, and cleanup status.
+profile checksum, health-card checksum, bundle identity, Docker identity, Compose
+identity, measured viewport metrics, capture timestamp, retained-artifact
+checksums, outcome, and cleanup status.
 
 Before a product lane begins, it validates the current matching health
-fingerprint. A missing, stale, malformed, or unsealed fingerprint is
+fingerprint. Validation re-verifies the health card and evidence manifest before
+the product lane starts. A missing, stale, malformed, or unsealed fingerprint is
 `environment_blocked`; static checks, runtime controls, and the product journey
 must not start. Inspect the sealed fingerprint and its manifest from the durable
 evidence root before treating platform health as current.
@@ -61,10 +70,12 @@ contract checksum as one build-ledger key. Its state machine is:
    record.
 6. Start the scoped services from that record without another build.
 7. Exercise public controls and the product's visible journey.
-8. Stage, validate, checksum, verify, and publish evidence only if all final
-   predicates hold.
+8. Stage evidence privately and validate its bounded inventory.
 9. Clean task-owned resources and verify cleanup before computing the final
    claim.
+10. Re-verify staged evidence and checksums after cleanup.
+11. Seal and atomically publish final authority only if every final predicate,
+    including cleanup and post-cleanup verification, holds.
 
 A cached diagnostic can help classify a problem, but cached diagnostics cannot
 replace final fresh-image evidence. A new candidate SHA, profile checksum, or
@@ -73,17 +84,20 @@ contract checksum requires a new final build-ledger record.
 ## Evidence and publication
 
 Evidence belongs outside tracked repository content under a durable,
-SHA-qualified root. The runner writes only bounded, allowlisted artifacts and a
-manifest that identifies the candidate SHA and ref, lane, profile and contract
-checksums, health fingerprint, controls, journey observations, image identity,
-primary result, cleanup result, and the maximum evidence claim. The inventory
-records a byte size and SHA-256 checksum for every retained artifact.
+SHA-qualified root. Directories in that root are mode `0700`; retained files are
+mode `0600`. The runner writes only bounded, allowlisted artifacts and a manifest
+that identifies the candidate SHA and ref, lane, profile and contract checksums,
+health fingerprint, browser identity, journey-adapter checksum, capture start and
+end timestamps, controls, journey observations, image identity, primary result,
+cleanup result, and the maximum evidence claim. The inventory records a byte size
+and SHA-256 checksum for every retained artifact.
 
-Final evidence is staged privately, sealed, checksum-verified, and then
-published atomically. A discoverable final authority exists only after
-publication verification. If sealing, verification, publication, or later
-revocation fails, the runner records a non-final result and must not leave a
-discoverable final-pass authority.
+Final evidence is staged privately before cleanup, then re-verified and sealed
+only after cleanup succeeds. The runner atomically publishes final authority only
+after that seal and publication verification. A discoverable final authority
+exists only after this sequence. If cleanup, sealing, verification, publication,
+or later revocation fails, the runner records a non-final result and must not
+leave a discoverable final-pass authority.
 
 ## Cleanup ownership
 
@@ -97,3 +111,9 @@ created. The runner retains the primary failure, records any cleanup failure
 separately, verifies that owned resources are gone, and re-verifies evidence
 checksums after cleanup. A cleanup failure downgrades a would-be final result to
 `failed`; it does not overwrite the primary diagnostic.
+
+## Product contract references
+
+The platform owns operational authority; each product contract owns only its
+product semantics. The V2 product contract is
+[V2 Mission Retirement Acceptance Contract](../missions/v2-mission-retirement-acceptance.md).
