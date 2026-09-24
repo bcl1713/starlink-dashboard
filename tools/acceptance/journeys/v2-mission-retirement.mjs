@@ -228,17 +228,24 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
 
 async function main() {
   const values = parse(process.argv);
-  const browser = await chromium.connectOverCDP(values.session);
-  const context = browser.contexts()[0];
-  if (!context) throw new Error('platform-supplied browser session has no context');
-  const page = context.pages()[0] ?? await context.newPage();
-  const result = await runV2MissionRetirement({ page, origin: values.origin, kmlPath: values.kml });
-  process.stdout.write(`${JSON.stringify({ status: 'passed', ...result })}\n`);
+  let browser;
+  try {
+    browser = await chromium.connectOverCDP(values.session);
+    const context = browser.contexts()[0];
+    if (!context) throw new Error('platform-supplied browser session has no context');
+    const page = context.pages()[0] ?? await context.newPage();
+    const result = await runV2MissionRetirement({ page, origin: values.origin, kmlPath: values.kml });
+    process.stdout.write(`${JSON.stringify({ status: 'passed', ...result })}\n`);
+  } finally {
+    await browser?.close().catch(() => {});
+  }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
-    process.stderr.write(`${error instanceof Error ? error.stack : String(error)}\n`);
-    process.exitCode = 1;
+    process.stderr.write(
+      `${error instanceof Error ? error.stack : String(error)}\n`,
+      () => process.exit(1),
+    );
   });
 }

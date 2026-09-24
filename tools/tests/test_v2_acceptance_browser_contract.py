@@ -3,10 +3,18 @@ from pathlib import Path
 BROWSER_SCRIPT = (
     Path(__file__).resolve().parents[1] / "acceptance/browser/v2-mission-retirement.mjs"
 )
+ADAPTER_SCRIPT = (
+    Path(__file__).resolve().parents[1]
+    / "acceptance/journeys/v2-mission-retirement.mjs"
+)
 
 
 def source() -> str:
     return BROWSER_SCRIPT.read_text(encoding="utf-8")
+
+
+def adapter_source() -> str:
+    return ADAPTER_SCRIPT.read_text(encoding="utf-8")
 
 
 def test_browser_card_uses_required_cdp_window_protocol() -> None:
@@ -133,3 +141,13 @@ def test_browser_card_requires_pre_and_post_neutral_metrics_and_journey_assets()
     assert card.count("assertExactViewport") >= 2
     assert "Create New Mission" in card
     assert "v2-activation-route.kml" in card
+
+
+def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> None:
+    card = adapter_source()
+
+    assert "let browser;" in card
+    assert "finally {\n    await browser?.close().catch(() => {});" in card
+    assert "process.stderr.write" in card
+    assert "() => process.exit(1)," in card
+    assert card.index("process.stderr.write") < card.index("() => process.exit(1),")

@@ -468,7 +468,9 @@ def test_journey_launches_prehashed_real_esm_adapter_after_source_replacement(
     before = source.sha256
     adapter.write_text("this replacement must never execute\n", encoding="utf-8")
     try:
-        with pytest.raises(ValueError, match="product journey adapter failed") as error:
+        with pytest.raises(
+            ValueError, match="product journey adapter exited non-zero"
+        ) as error:
             runner._run_journey(inputs, contract, source)
     finally:
         source.close()
@@ -480,6 +482,113 @@ def test_journey_launches_prehashed_real_esm_adapter_after_source_replacement(
     )
     assert "ECONNREFUSED" in str(error.value)
     assert "Cannot find module" not in str(error.value)
+
+
+def test_adapter_nonzero_exit_retains_stderr_and_is_not_classified_as_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A disposed adapter attachment must preserve its original failure evidence."""
+    adapter = tmp_path / "adapter.mjs"
+    adapter.write_text(
+        """const handle = setInterval(() => {}, 1_000);
+const attachment = { dispose() { clearInterval(handle); } };
+try {
+  throw new Error('exact failure');
+} catch (error) {
+  process.stderr.write(`${error.stack.split('\\n')[0]}\\n`);
+} finally {
+  attachment.dispose();
+}
+process.exit(1);
+""",
+        encoding="utf-8",
+    )
+    source = runner._AdapterSource(adapter, "a" * 64, ROOT)
+    monkeypatch.setattr(runner, "_open_adapter_source", lambda *_: source)
+
+    def final_steps(
+        inputs: runner.RunnerInputs, profile: object, contract: object
+    ) -> object:
+        return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
+
+    result = run(
+        _argv(tmp_path, "final")
+        + [
+            "--browser-session",
+            "http://127.0.0.1:9",
+            "--deployed-origin",
+            "http://127.0.0.1:9",
+        ],
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=final_steps,
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    failure_root = tmp_path / "evidence" / "candidates" / SHA
+    assert "exact failure" in result.manifest["primary"]["detail"]
+    assert "timed out" not in result.manifest["primary"]["detail"]
+    assert "adapter exited non-zero" in result.manifest["primary"]["detail"]
+    assert (
+        failure_root / "adapter.stderr.log"
+    ).read_bytes() == b"Error: exact failure\n"
+
+
+def test_adapter_deadline_retains_bounded_partial_stderr(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    adapter = tmp_path / "adapter.mjs"
+    adapter.write_text(
+        """import { writeSync } from 'node:fs';
+writeSync(2, 'partial adapter stderr\\n');
+setInterval(() => {}, 1_000);
+""",
+        encoding="utf-8",
+    )
+    source = runner._AdapterSource(adapter, "a" * 64, ROOT)
+    monkeypatch.setattr(runner, "_open_adapter_source", lambda *_: source)
+    calls = 0
+
+    def deadline_clock() -> float:
+        nonlocal calls
+        calls += 1
+        return 0.0 if calls <= 3 else 181.0
+
+    monkeypatch.setattr(runner.time, "monotonic", deadline_clock)
+
+    def final_steps(
+        inputs: runner.RunnerInputs, profile: object, contract: object
+    ) -> object:
+        return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
+
+    result = run(
+        _argv(tmp_path, "final")
+        + [
+            "--browser-session",
+            "http://127.0.0.1:9",
+            "--deployed-origin",
+            "http://127.0.0.1:9",
+        ],
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=final_steps,
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    retained_stderr = (
+        tmp_path / "evidence" / "candidates" / SHA / "adapter.stderr.log"
+    ).read_bytes()
+    assert "adapter timed out" in result.manifest["primary"]["detail"]
+    assert retained_stderr == b"partial adapter stderr\n"
+    assert len(retained_stderr) <= runner._MAX_ADAPTER_STDERR_BYTES
 
 
 def test_adapter_rejects_extra_or_aggregate_oversize_artifacts() -> None:

@@ -92,6 +92,24 @@ class RunnerResult:
     manifest: dict[str, Any]
 
 
+@dataclass(frozen=True)
+class _AdapterProcessResult:
+    """Bounded child diagnostics returned even when the child misses its deadline."""
+
+    stdout: bytes
+    stderr: bytes
+    returncode: int
+    timed_out: bool
+
+
+class _AdapterProcessFailure(ValueError):
+    """A classified adapter failure whose bounded diagnostics remain evidence."""
+
+    def __init__(self, detail: str, result: _AdapterProcessResult) -> None:
+        super().__init__(detail)
+        self.result = result
+
+
 @dataclass
 class _AdapterSource:
     """A prehashed task-owned ESM adapter retained through the adapter launch."""
@@ -274,7 +292,7 @@ def _run_journey(
     asset = _REPOSITORY / contract.assets[0]
     if not asset.is_file():
         raise ValueError("declared journey asset is unavailable")
-    stdout, stderr, returncode = _bounded_adapter_process(
+    result = _bounded_adapter_process(
         [
             "node",
             adapter.executable_path,
@@ -289,13 +307,19 @@ def _run_journey(
         ],
         _REPOSITORY,
     )
-    if returncode:
-        raise ValueError(
-            "product journey adapter failed: "
-            f"{stderr.decode(errors='replace') or stdout.decode(errors='replace')}"
+    detail = result.stderr.decode(errors="replace") or result.stdout.decode(
+        errors="replace"
+    )
+    if result.timed_out:
+        raise _AdapterProcessFailure(
+            f"product journey adapter timed out: {detail}", result
+        )
+    if result.returncode:
+        raise _AdapterProcessFailure(
+            f"product journey adapter exited non-zero: {detail}", result
         )
     try:
-        payload = json.loads(stdout)
+        payload = json.loads(result.stdout)
     except json.JSONDecodeError as error:
         raise ValueError("product journey adapter emitted invalid JSON") from error
     return _decode_adapter_artifacts(payload)
@@ -303,7 +327,7 @@ def _run_journey(
 
 def _bounded_adapter_process(
     argv: list[str], cwd: Path, *, pass_fds: tuple[int, ...] = ()
-) -> tuple[bytes, bytes, int]:
+) -> _AdapterProcessResult:
     """Collect adapter IPC without allocating an unbounded stdout/stderr payload."""
     process = subprocess.Popen(
         argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, pass_fds=pass_fds
@@ -319,25 +343,38 @@ def _bounded_adapter_process(
         os.set_blocking(stream.fileno(), False)
         selector.register(stream, selectors.EVENT_READ)
     deadline = time.monotonic() + 180
+    timed_out = False
+
+    def collect(key: selectors.SelectorKey) -> None:
+        chunk = os.read(key.fd, 64 * 1024)
+        if not chunk:
+            selector.unregister(key.fileobj)
+            return
+        output = collected[key.fileobj]
+        if len(output) + len(chunk) > limits[key.fileobj]:
+            raise ValueError("product journey adapter output exceeds byte budget")
+        output.extend(chunk)
+
     try:
         while selector.get_map():
             if time.monotonic() >= deadline:
-                raise TimeoutError("product journey adapter timed out")
+                timed_out = True
+                process.kill()
+                break
             for key, _ in selector.select(max(0, deadline - time.monotonic())):
-                chunk = os.read(key.fd, 64 * 1024)
-                if not chunk:
-                    selector.unregister(key.fileobj)
-                    continue
-                output = collected[key.fileobj]
-                if len(output) + len(chunk) > limits[key.fileobj]:
-                    raise ValueError(
-                        "product journey adapter output exceeds byte budget"
-                    )
-                output.extend(chunk)
-        return (
-            bytes(collected[process.stdout]),
-            bytes(collected[process.stderr]),
-            process.wait(timeout=1),
+                collect(key)
+        if timed_out:
+            while selector.get_map():
+                ready = selector.select(1)
+                if not ready:
+                    break
+                for key, _ in ready:
+                    collect(key)
+        return _AdapterProcessResult(
+            stdout=bytes(collected[process.stdout]),
+            stderr=bytes(collected[process.stderr]),
+            returncode=process.wait(timeout=1),
+            timed_out=timed_out,
         )
     except BaseException:
         process.kill()
@@ -1025,6 +1062,13 @@ def run(
         ValueError,
         subprocess.SubprocessError,
     ) as error:
+        if isinstance(error, _AdapterProcessFailure):
+            artifacts.update(
+                {
+                    "adapter.stdout.log": error.result.stdout,
+                    "adapter.stderr.log": error.result.stderr,
+                }
+            )
         outcome, primary, final = _outcome_for(error), str(error), False
     finally:
         if inputs.lane is Lane.FINAL:
