@@ -100,6 +100,8 @@ class _AdapterProcessResult:
     stderr: bytes
     returncode: int
     timed_out: bool
+    stdout_truncated: bool
+    stderr_truncated: bool
 
 
 class _AdapterProcessFailure(ValueError):
@@ -310,6 +312,16 @@ def _run_journey(
     detail = result.stderr.decode(errors="replace") or result.stdout.decode(
         errors="replace"
     )
+    truncated = ", ".join(
+        name
+        for name, was_truncated in (
+            ("stdout", result.stdout_truncated),
+            ("stderr", result.stderr_truncated),
+        )
+        if was_truncated
+    )
+    if truncated:
+        detail += f"\n[platform retained initial bounded adapter {truncated}]"
     if result.timed_out:
         raise _AdapterProcessFailure(
             f"product journey adapter timed out: {detail}", result
@@ -338,6 +350,7 @@ def _bounded_adapter_process(
         process.stderr: _MAX_ADAPTER_STDERR_BYTES,
     }
     collected = {process.stdout: bytearray(), process.stderr: bytearray()}
+    truncated = {process.stdout: False, process.stderr: False}
     selector = selectors.DefaultSelector()
     for stream in limits:
         os.set_blocking(stream.fileno(), False)
@@ -351,9 +364,11 @@ def _bounded_adapter_process(
             selector.unregister(key.fileobj)
             return
         output = collected[key.fileobj]
-        if len(output) + len(chunk) > limits[key.fileobj]:
-            raise ValueError("product journey adapter output exceeds byte budget")
-        output.extend(chunk)
+        remaining = limits[key.fileobj] - len(output)
+        if remaining > 0:
+            output.extend(chunk[:remaining])
+        if len(chunk) > remaining:
+            truncated[key.fileobj] = True
 
     try:
         while selector.get_map():
@@ -375,6 +390,8 @@ def _bounded_adapter_process(
             stderr=bytes(collected[process.stderr]),
             returncode=process.wait(timeout=1),
             timed_out=timed_out,
+            stdout_truncated=truncated[process.stdout],
+            stderr_truncated=truncated[process.stderr],
         )
     except BaseException:
         process.kill()

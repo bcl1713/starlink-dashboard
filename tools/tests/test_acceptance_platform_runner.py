@@ -591,6 +591,116 @@ setInterval(() => {}, 1_000);
     assert len(retained_stderr) <= runner._MAX_ADAPTER_STDERR_BYTES
 
 
+def test_adapter_nonzero_overflow_retains_bounded_initial_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Overflow must not replace an adapter's classified original failure."""
+    monkeypatch.setattr(runner, "_MAX_ADAPTER_STDOUT_BYTES", 64)
+    monkeypatch.setattr(runner, "_MAX_ADAPTER_STDERR_BYTES", 64)
+    adapter = tmp_path / "adapter.mjs"
+    adapter.write_text(
+        """import { writeSync } from 'node:fs';
+writeSync(1, 'stdout begins: ' + 'x'.repeat(128));
+writeSync(2, 'Error: exact overflow failure\\n' + 'y'.repeat(128));
+process.exit(1);
+""",
+        encoding="utf-8",
+    )
+    source = runner._AdapterSource(adapter, "a" * 64, ROOT)
+
+    def final_steps(
+        inputs: runner.RunnerInputs, profile: object, contract: object
+    ) -> object:
+        return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
+
+    result = run(
+        _argv(tmp_path, "final")
+        + [
+            "--browser-session",
+            "http://127.0.0.1:9",
+            "--deployed-origin",
+            "http://127.0.0.1:9",
+        ],
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=final_steps,
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    failure_root = tmp_path / "evidence" / "candidates" / SHA
+    stdout = (failure_root / "adapter.stdout.log").read_bytes()
+    stderr = (failure_root / "adapter.stderr.log").read_bytes()
+    assert "adapter exited non-zero" in result.manifest["primary"]["detail"]
+    assert "exact overflow failure" in result.manifest["primary"]["detail"]
+    assert len(stdout) == runner._MAX_ADAPTER_STDOUT_BYTES
+    assert len(stderr) == runner._MAX_ADAPTER_STDERR_BYTES
+    assert stdout.startswith(b"stdout begins: ")
+    assert stderr.startswith(b"Error: exact overflow failure\n")
+
+
+def test_adapter_deadline_overflow_retains_bounded_initial_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Deadline cleanup keeps both stream prefixes through platform evidence."""
+    monkeypatch.setattr(runner, "_MAX_ADAPTER_STDOUT_BYTES", 64)
+    monkeypatch.setattr(runner, "_MAX_ADAPTER_STDERR_BYTES", 64)
+    adapter = tmp_path / "adapter.mjs"
+    adapter.write_text(
+        """import { writeSync } from 'node:fs';
+writeSync(1, 'stdout before deadline: ' + 'x'.repeat(128));
+writeSync(2, 'Error: deadline diagnostic\\n' + 'y'.repeat(128));
+setInterval(() => {}, 1_000);
+""",
+        encoding="utf-8",
+    )
+    source = runner._AdapterSource(adapter, "a" * 64, ROOT)
+    calls = 0
+
+    def deadline_clock() -> float:
+        nonlocal calls
+        calls += 1
+        return 0.0 if calls <= 4 else 181.0
+
+    monkeypatch.setattr(runner.time, "monotonic", deadline_clock)
+
+    def final_steps(
+        inputs: runner.RunnerInputs, profile: object, contract: object
+    ) -> object:
+        return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
+
+    result = run(
+        _argv(tmp_path, "final")
+        + [
+            "--browser-session",
+            "http://127.0.0.1:9",
+            "--deployed-origin",
+            "http://127.0.0.1:9",
+        ],
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=final_steps,
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    failure_root = tmp_path / "evidence" / "candidates" / SHA
+    stdout = (failure_root / "adapter.stdout.log").read_bytes()
+    stderr = (failure_root / "adapter.stderr.log").read_bytes()
+    assert "adapter timed out" in result.manifest["primary"]["detail"]
+    assert "deadline diagnostic" in result.manifest["primary"]["detail"]
+    assert len(stdout) == runner._MAX_ADAPTER_STDOUT_BYTES
+    assert len(stderr) == runner._MAX_ADAPTER_STDERR_BYTES
+    assert stdout.startswith(b"stdout before deadline: ")
+    assert stderr.startswith(b"Error: deadline diagnostic\n")
+
+
 def test_adapter_rejects_extra_or_aggregate_oversize_artifacts() -> None:
     payload = _adapter_payload()
     payload["artifacts"]["unexpected.bin"] = "eA=="  # type: ignore[index]

@@ -1,3 +1,5 @@
+import os
+import subprocess
 from pathlib import Path
 
 BROWSER_SCRIPT = (
@@ -151,3 +153,53 @@ def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> N
     assert "process.stderr.write" in card
     assert "() => process.exit(1)," in card
     assert card.index("process.stderr.write") < card.index("() => process.exit(1),")
+
+
+def test_production_adapter_closes_real_attachment_before_failure_exit(
+    tmp_path: Path,
+) -> None:
+    """The shipped executable must release a live CDP attachment before exiting."""
+    repository = tmp_path / "repository"
+    adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+    package = repository / "frontend/mission-planner/package.json"
+    playwright = repository / "frontend/mission-planner/node_modules/@playwright/test"
+    closed = tmp_path / "adapter-closed"
+    adapter.parent.mkdir(parents=True)
+    adapter.write_text(ADAPTER_SCRIPT.read_text(encoding="utf-8"), encoding="utf-8")
+    package.parent.mkdir(parents=True)
+    package.write_text('{"name":"production-adapter-lifecycle"}\n', encoding="utf-8")
+    playwright.mkdir(parents=True)
+    (playwright / "index.js").write_text(
+        """const { writeFileSync } = require('node:fs');
+const handle = setInterval(() => {}, 1_000);
+exports.chromium = { connectOverCDP: async () => ({
+  contexts: () => [],
+  close: async () => { writeFileSync(process.env.ADAPTER_CLOSED, 'closed'); clearInterval(handle); },
+}) };
+""",
+        encoding="utf-8",
+    )
+
+    completed = subprocess.run(
+        [
+            "node",
+            str(adapter),
+            "--repository-root",
+            str(repository),
+            "--session",
+            "http://127.0.0.1:9222",
+            "--origin",
+            "http://127.0.0.1:5173",
+            "--kml",
+            str(tmp_path / "fixture.kml"),
+        ],
+        capture_output=True,
+        check=False,
+        env={**os.environ, "ADAPTER_CLOSED": str(closed)},
+        text=True,
+        timeout=3,
+    )
+
+    assert completed.returncode == 1
+    assert "platform-supplied browser session has no context" in completed.stderr
+    assert closed.read_text(encoding="utf-8") == "closed"
