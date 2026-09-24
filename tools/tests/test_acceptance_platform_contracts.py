@@ -127,6 +127,11 @@ def test_v2_contract_has_only_product_authority() -> None:
     )
     assert len(contract.static_groups) == 2
     assert all(isinstance(group, StaticGroup) for group in contract.static_groups)
+    assert contract.static_groups[0].commands == (
+        "black --check app tests",
+        "ruff check app tests",
+        ".venv/bin/python -m pytest -q",
+    )
     assert len(contract.controls) == 5
     assert all(isinstance(control, RuntimeControl) for control in contract.controls)
     assert [
