@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import os
 import struct
 import zlib
 from pathlib import Path
@@ -349,6 +348,7 @@ def test_final_manifest_seals_adapter_checksum_and_capture_interval(
         ).read_text()
     )
     assert sealed["capture"] == capture
+    assert runner._candidate_is_discoverable(tmp_path / "evidence", SHA)
 
 
 def test_final_manifest_binds_adapter_digest_captured_before_final_steps(
@@ -358,6 +358,9 @@ def test_final_manifest_binds_adapter_digest_captured_before_final_steps(
     adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
     adapter.parent.mkdir(parents=True)
     adapter.write_text("before launch")
+    package = repository / "frontend/mission-planner/package.json"
+    package.parent.mkdir(parents=True)
+    package.write_text("{}\n", encoding="utf-8")
     before = hashlib.sha256(adapter.read_bytes()).hexdigest()
     monkeypatch.setattr(runner, "_REPOSITORY", repository)
 
@@ -381,48 +384,55 @@ def test_final_manifest_binds_adapter_digest_captured_before_final_steps(
     )
 
 
-def test_journey_launch_retains_prehashed_adapter_descriptor_after_path_mutation(
+def test_journey_launches_prehashed_real_esm_adapter_after_source_replacement(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repository = tmp_path / "repository"
-    adapter = repository / "adapter.mjs"
+    adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
     asset = repository / "asset.kml"
-    repository.mkdir()
-    adapter.write_text("before launch")
+    adapter.parent.mkdir(parents=True)
+    adapter.write_text(V2_ADAPTER.read_text(encoding="utf-8"), encoding="utf-8")
     asset.write_text("asset")
+    package = repository / "frontend/mission-planner/package.json"
+    package.parent.mkdir(parents=True)
+    package.write_text('{"name":"acceptance-adapter-test"}\n', encoding="utf-8")
+    (package.parent / "node_modules").symlink_to(
+        ROOT / "frontend/mission-planner/node_modules", target_is_directory=True
+    )
     contract = load_product_contract(CONTRACT)
     contract = contract.__class__(
         **{
             **contract.__dict__,
-            "journey_adapter": Path("adapter.mjs"),
+            "journey_adapter": Path(
+                "tools/acceptance/journeys/v2-mission-retirement.mjs"
+            ),
             "assets": (Path("asset.kml"),),
         }
     )
     monkeypatch.setattr(runner, "_REPOSITORY", repository)
-    source = runner._open_adapter_source(contract)
+    argv = _argv(tmp_path, "final") + [
+        "--browser-session",
+        "http://127.0.0.1:9",
+        "--deployed-origin",
+        "http://127.0.0.1:9",
+    ]
+    inputs = runner._parse(argv)
+    source = runner._open_adapter_source(inputs, contract)
     before = source.sha256
-
-    def mutate_after_launch(
-        argv: list[str], _cwd: Path, *, pass_fds: tuple[int, ...]
-    ) -> tuple[bytes, bytes, int]:
-        assert argv[1] == source.executable_path
-        assert pass_fds == (source.fd,)
-        replacement = adapter.with_suffix(".replacement")
-        replacement.write_text("after launch")
-        replacement.replace(adapter)
-        os.lseek(source.fd, 0, os.SEEK_SET)
-        assert hashlib.sha256(os.read(source.fd, 1024)).hexdigest() == before
-        return json.dumps(_adapter_payload()).encode(), b"", 0
-
-    monkeypatch.setattr(runner, "_bounded_adapter_process", mutate_after_launch)
+    adapter.write_text("this replacement must never execute\n", encoding="utf-8")
     try:
-        artifacts = runner._run_journey(
-            runner._parse(_argv(tmp_path, "final")), contract, source
-        )
+        with pytest.raises(ValueError, match="product journey adapter failed") as error:
+            runner._run_journey(inputs, contract, source)
     finally:
         source.close()
 
-    assert "adapter-observation.json" in artifacts
+    assert source.executable_path.endswith(".mjs")
+    assert source.executable_path != str(adapter)
+    assert (
+        hashlib.sha256(Path(source.executable_path).read_bytes()).hexdigest() == before
+    )
+    assert "ECONNREFUSED" in str(error.value)
+    assert "Cannot find module" not in str(error.value)
 
 
 def test_adapter_rejects_extra_or_aggregate_oversize_artifacts() -> None:
@@ -552,7 +562,7 @@ def test_finalization_stage_failure_never_publishes_final_candidate_authority(
     )
 
 
-def test_post_rename_fault_revokes_published_final_candidate_authority(
+def test_post_publication_fault_fails_closed_when_revoke_destination_is_poisoned(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     original_rename = runner.os.rename
@@ -563,6 +573,8 @@ def test_post_rename_fault_revokes_published_final_candidate_authority(
             raise OSError("post-rename fault")
 
     monkeypatch.setattr(runner.os, "rename", rename_then_fail)
+    revoked = tmp_path / "evidence" / "candidates" / ".revoked" / SHA
+    revoked.mkdir(parents=True)
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
@@ -579,12 +591,12 @@ def test_post_rename_fault_revokes_published_final_candidate_authority(
     failure = tmp_path / "evidence" / "failures" / SHA
     assert result.exit_code == 1
     assert result.manifest["final_acceptance"] is False
-    assert not candidate.exists()
+    assert candidate.exists()
+    assert not runner._candidate_is_discoverable(tmp_path / "evidence", SHA)
     verify_manifest(failure)
-    assert (
-        json.loads((failure / "runner-manifest.json").read_text())["final_acceptance"]
-        is False
-    )
+    retained = json.loads((failure / "runner-manifest.json").read_text())
+    assert retained["final_acceptance"] is False
+    assert retained["maximum_evidence_claim"] == "non_final"
 
 
 def test_default_unprovisioned_profile_blocks_before_static_product_work(

@@ -9,7 +9,15 @@ import { dirname, resolve } from 'node:path';
 import { createInflate } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+function option(argv, name) {
+  const index = argv.indexOf(`--${name}`);
+  return index >= 0 ? argv[index + 1] : undefined;
+}
+
+const repositoryRoot = option(process.argv, 'repository-root');
+const ROOT = repositoryRoot
+  ? resolve(repositoryRoot)
+  : resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const require = createRequire(resolve(ROOT, 'frontend/mission-planner/package.json'));
 const { chromium } = require('@playwright/test');
 const LIMIT = 50;

@@ -12,7 +12,6 @@ import shlex
 import stat
 import subprocess
 import sys
-import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -89,19 +88,18 @@ class RunnerResult:
 
 @dataclass
 class _AdapterSource:
-    """A no-follow adapter descriptor retained through the adapter launch."""
+    """A prehashed task-owned ESM adapter retained through the adapter launch."""
 
-    fd: int
+    path: Path
     sha256: str
+    repository_root: Path
 
     @property
     def executable_path(self) -> str:
-        return f"/proc/self/fd/{self.fd}"
+        return str(self.path)
 
     def close(self) -> None:
-        if self.fd >= 0:
-            os.close(self.fd)
-            self.fd = -1
+        """Keep the sealed task artifact available for provenance inspection."""
 
 
 @dataclass(frozen=True)
@@ -262,6 +260,8 @@ def _run_journey(
         [
             "node",
             adapter.executable_path,
+            "--repository-root",
+            str(adapter.repository_root),
             "--session",
             inputs.browser_session,
             "--origin",
@@ -270,7 +270,6 @@ def _run_journey(
             str(asset),
         ],
         _REPOSITORY,
-        pass_fds=(adapter.fd,),
     )
     if returncode:
         raise ValueError(
@@ -718,10 +717,12 @@ def _manifest(
     }
 
 
-def _open_adapter_source(contract: object | None) -> _AdapterSource:
-    """No-follow hash and retain the exact adapter bytes before launch."""
+def _open_adapter_source(
+    inputs: RunnerInputs, contract: object | None
+) -> _AdapterSource:
+    """Copy no-follow bytes to a task-owned ESM path before the browser launch."""
     adapter = getattr(contract, "journey_adapter", None)
-    if not isinstance(adapter, Path):
+    if not isinstance(adapter, Path) or adapter.suffix != ".mjs":
         raise TypeError("contract-selected journey adapter is invalid")
     try:
         source = _REPOSITORY / adapter
@@ -729,22 +730,40 @@ def _open_adapter_source(contract: object | None) -> _AdapterSource:
         try:
             if not stat.S_ISREG(os.fstat(source_fd).st_mode):
                 raise ValueError("contract-selected journey adapter is unavailable")
-            fd, temporary_path = tempfile.mkstemp(
-                prefix=".acceptance-adapter-", dir=_REPOSITORY
+            destination = (
+                inputs.task_root / ".acceptance-adapters" / inputs.sha / adapter.name
             )
-            os.unlink(temporary_path)
+            prepare_evidence_parent(destination.parent)
+            destination_fd = os.open(
+                destination,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                0o500,
+            )
             try:
                 digest = hashlib.sha256()
                 while chunk := os.read(source_fd, 1024 * 1024):
                     digest.update(chunk)
                     view = memoryview(chunk)
                     while view:
-                        view = view[os.write(fd, view) :]
-                os.lseek(fd, 0, os.SEEK_SET)
-                return _AdapterSource(fd, digest.hexdigest())
+                        view = view[os.write(destination_fd, view) :]
+                os.fsync(destination_fd)
+                os.fchmod(destination_fd, 0o500)
             except BaseException:
-                os.close(fd)
+                os.close(destination_fd)
+                destination.unlink(missing_ok=True)
                 raise
+            else:
+                os.close(destination_fd)
+                os.chmod(destination.parent, 0o500)
+                repository_root = _REPOSITORY.resolve(strict=True)
+                if not (
+                    repository_root.is_dir()
+                    and (
+                        repository_root / "frontend/mission-planner/package.json"
+                    ).is_file()
+                ):
+                    raise ValueError("repository root is unavailable")
+                return _AdapterSource(destination, digest.hexdigest(), repository_root)
         finally:
             os.close(source_fd)
     except OSError as error:
@@ -753,24 +772,27 @@ def _open_adapter_source(contract: object | None) -> _AdapterSource:
 
 def _adapter_checksum(contract: object | None) -> str | None:
     """Return the no-follow adapter digest for non-executing lanes and tests."""
-    try:
-        source = _open_adapter_source(contract)
-    except (TypeError, ValueError):
+    adapter = getattr(contract, "journey_adapter", None)
+    if not isinstance(adapter, Path):
         return None
     try:
-        return source.sha256
-    finally:
-        source.close()
+        return hashlib.sha256(read_nofollow(_REPOSITORY / adapter)).hexdigest()
+    except ValueError:
+        return None
 
 
 def _write_manifest(
     inputs: RunnerInputs, manifest: dict[str, Any], artifacts: Mapping[str, bytes]
 ) -> None:
-    """Seal in an unpublished SHA root, then atomically publish final authority."""
+    """Seal a root, then publish its separate discovery authority last."""
     root = inputs.evidence_root / "candidates" / inputs.sha
     staging = inputs.evidence_root / "candidates" / ".pending" / inputs.sha
+    discovery = inputs.evidence_root / "candidates" / ".discoverable" / inputs.sha
+    discovery_staging = (
+        inputs.evidence_root / "candidates" / ".discoverable" / ".pending" / inputs.sha
+    )
     prepare_evidence_parent(staging.parent)
-    if root.exists() or staging.exists():
+    if any(path.exists() for path in (root, staging, discovery, discovery_staging)):
         raise ValueError("candidate evidence root already exists")
     retained = dict(artifacts)
     retained["runner-manifest.json"] = (
@@ -795,6 +817,52 @@ def _write_manifest(
     verify_manifest(staging)
     prepare_evidence_parent(root.parent)
     os.rename(staging, root)
+    _write_candidate_discovery(inputs, retained["runner-manifest.json"])
+
+
+def _write_candidate_discovery(inputs: RunnerInputs, runner_manifest: bytes) -> None:
+    """Atomically make an already-sealed candidate discoverable to final readers."""
+    root = inputs.evidence_root / "candidates" / inputs.sha
+    discovery = inputs.evidence_root / "candidates" / ".discoverable" / inputs.sha
+    staging = (
+        inputs.evidence_root / "candidates" / ".discoverable" / ".pending" / inputs.sha
+    )
+    authority = json.dumps(
+        {
+            "sha": inputs.sha,
+            "runner_manifest_sha256": hashlib.sha256(runner_manifest).hexdigest(),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    prepare_evidence_parent(staging.parent)
+    write_artifacts(staging, {"candidate-authority.json": authority})
+    seal_fingerprint(staging, authority)
+    if read_fingerprint_authority(staging) != authority:
+        raise ValueError("candidate discovery authority is invalid")
+    verify_manifest(staging)
+    if not root.is_dir():
+        raise ValueError("candidate evidence root disappeared before discovery")
+    prepare_evidence_parent(discovery.parent)
+    os.rename(staging, discovery)
+
+
+def _candidate_is_discoverable(evidence_root: Path, sha: str) -> bool:
+    """Return true only for a root bound by the final discovery authority marker."""
+    root = evidence_root / "candidates" / sha
+    discovery = evidence_root / "candidates" / ".discoverable" / sha
+    try:
+        authority = json.loads(read_fingerprint_authority(discovery))
+        manifest = read_nofollow(root / "runner-manifest.json")
+        if authority != {
+            "sha": sha,
+            "runner_manifest_sha256": hashlib.sha256(manifest).hexdigest(),
+        }:
+            return False
+        verify_manifest(root)
+        return json.loads(manifest).get("final_acceptance") is True
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return False
 
 
 def _revoke_published_candidate(inputs: RunnerInputs) -> None:
@@ -885,7 +953,7 @@ def run(
                 outcome, primary = Outcome.PASSED, "static contract checks completed"
             else:
                 browser_card = dependencies.browser_card or _verify_browser_card
-                adapter_source = _open_adapter_source(contract)
+                adapter_source = _open_adapter_source(inputs, contract)
                 adapter_sha256 = adapter_source.sha256
                 if dependencies.final_steps is None:
                     artifacts = _final_steps(
