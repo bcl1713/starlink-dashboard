@@ -56,7 +56,7 @@ class HealthFingerprint:
     reason: str = ""
 
     @classmethod
-    def blocked(cls, reason: str, **values: Any) -> "HealthFingerprint":
+    def blocked(cls, reason: str, **values: Any) -> HealthFingerprint:
         return cls(outcome=Outcome.ENVIRONMENT_BLOCKED, reason=reason, **values)
 
     def to_dict(self) -> dict[str, Any]:
@@ -146,7 +146,13 @@ def run_platform_health(
         )
     except _Blocked as error:
         outcome, reason = Outcome.ENVIRONMENT_BLOCKED, str(error)
-    except Exception as error:
+    except (
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        subprocess.SubprocessError,
+    ) as error:
         outcome, reason = (
             Outcome.ENVIRONMENT_BLOCKED,
             f"platform health failed: {error}",
@@ -327,7 +333,7 @@ def _terminate(process: Any) -> None:
     process.terminate()
     try:
         process.wait(timeout=5)
-    except Exception:
+    except subprocess.TimeoutExpired:
         process.kill()
         process.wait(timeout=5)
 
@@ -344,7 +350,7 @@ def _terminate_browser_group(process: Any) -> None:
             return
         except ProcessLookupError:
             return
-        except Exception:
+        except (OSError, subprocess.TimeoutExpired):
             try:
                 os.killpg(pid, 9)
                 process.wait(timeout=5)
@@ -372,14 +378,20 @@ def _retain_logs(artifacts: dict[str, bytes], name: str, process: Any) -> None:
         value = getattr(process, stream, None)
         if value is None:
             continue
-        try:
-            content = value.read() if hasattr(value, "read") else value
-        except Exception:
+        content = _read_process_stream(value)
+        if content is None:
             continue
         if isinstance(content, str):
             content = content.encode()
         if isinstance(content, bytes):
             artifacts[f"{name}.{stream}.log"] = content
+
+
+def _read_process_stream(value: Any) -> Any | None:
+    try:
+        return value.read() if hasattr(value, "read") else value
+    except (OSError, ValueError):
+        return None
 
 
 def _sha256_file(path: Path) -> str:
