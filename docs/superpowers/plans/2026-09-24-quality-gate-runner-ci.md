@@ -215,8 +215,9 @@ Expected: FAIL because existing CI duplicates commands and masks failures.
 
 - [ ] **Step 3: Replace `lint.yml` with three thin caller jobs**
 
-- Static: checkout, Python 3.13, `uv`, Node 22.12.0, `npm ci` in frontend,
-  install `markdownlint-cli2` and Lychee, then `./tools/verify static`.
+- Static: checkout, Python 3.13, `uv`, Node 22.12.0, install
+  `backend/starlink-location/requirements-dev.txt`, run `npm ci` in frontend,
+  install Markdownlint and Lychee, then `./tools/verify static`.
 - Backend: checkout, Python 3.13, `uv`, install backend requirements, then
   `./tools/verify backend`.
 - Frontend: checkout, Node 22.12.0, `npm ci` in frontend, then
