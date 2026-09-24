@@ -234,17 +234,22 @@ def resolve_topology(
         if not isinstance(service, dict):
             raise TypeError("resolved service is invalid")
         selected[name] = _isolated_service(service, topology, name)
-    _copy_referenced_resources(config, final)
+    _allocate_task_resources(final, topology)
     _validate_final_config(final, topology, contract)
     encoded = json.dumps(final, sort_keys=True, indent=2) + "\n"
     topology.override_path.write_text(encoded, encoding="utf-8")
     os.chmod(topology.override_path, 0o600)
+    final_result = executor.run((*topology.argv, "config", "--format", "json"))
+    if final_result.returncode:
+        raise ValueError("final task compose config resolution failed")
+    _validate_final_config(_json_config(final_result.output), topology, contract)
     digest = _sha256(encoded.encode())
     _atomic_json(
         topology.validation_path,
         {
             "project": topology.project,
             "services": list(contract.services),
+            "contract_checksum": contract.checksum,
             "digest": digest,
         },
     )
@@ -290,6 +295,7 @@ def build_final(
     key.validate()
     if profile.checksum != key.profile_checksum:
         raise ValueError("profile checksum does not match build ledger key")
+    _validate_contract_checksum(contract, key)
     resolved = _validated_topology(topology, contract)
     try:
         claim = ledger.claim(key)
@@ -316,6 +322,7 @@ def start_no_build(
     executor: ComposeExecutor,
 ) -> CommandResult:
     """Start exactly once only from the sealed topology and matching usable build record."""
+    _validate_contract_checksum(contract, key)
     resolved = _validated_topology(topology, contract)
     record = ledger.read(key)
     if record.get("state") != "usable":
@@ -388,8 +395,20 @@ def _public_env_replacement(root: Path, env_file: Path) -> str:
 def _isolated_service(
     service: dict[str, object], topology: TaskTopology, name: str
 ) -> dict[str, object]:
-    result = dict(service)
-    result.pop("container_name", None)
+    """Render only product execution semantics; never inherit host authority."""
+    result = {
+        field: service[field]
+        for field in (
+            "build",
+            "command",
+            "entrypoint",
+            "environment",
+            "healthcheck",
+            "image",
+            "working_dir",
+        )
+        if field in service
+    }
     result["env_file"] = [str(topology.env_file)]
     result["ports"] = [
         {
@@ -400,27 +419,24 @@ def _isolated_service(
             "protocol": "tcp",
         }
     ]
+    result["networks"] = {"acceptance": {}}
+    result["volumes"] = _task_volumes(service.get("volumes"), name)
+    if "depends_on" in service:
+        result["depends_on"] = service["depends_on"]
     return result
 
 
-def _copy_referenced_resources(
-    config: dict[str, object], final: dict[str, object]
-) -> None:
+def _allocate_task_resources(final: dict[str, object], topology: TaskTopology) -> None:
     services = final["services"]
     assert isinstance(services, dict)
-    network_names: set[str] = set()
     volume_names: set[str] = set()
     for service in services.values():
         assert isinstance(service, dict)
-        network_names.update(_resource_sources(service.get("networks")))
         volume_names.update(_resource_sources(service.get("volumes")))
-    for field, names in (("networks", network_names), ("volumes", volume_names)):
-        available = config.get(field, {})
-        if not isinstance(available, dict):
-            raise TypeError("resolved resources are invalid")
-        chosen = {name: available[name] for name in names if name in available}
-        if chosen:
-            final[field] = chosen
+    final["networks"] = {"acceptance": {"name": f"{topology.project}-network"}}
+    final["volumes"] = {
+        name: {"name": f"{topology.project}-{name}"} for name in sorted(volume_names)
+    }
 
 
 def _resource_sources(value: object) -> set[str]:
@@ -459,6 +475,20 @@ def _validate_final_config(
             service.get("ports"), topology.ports[name], _container_port(name)
         )
         _validate_dependencies(service.get("depends_on"), contract.services)
+        if any(
+            field in service
+            for field in (
+                "configs",
+                "extra_hosts",
+                "network_mode",
+                "restart",
+                "secrets",
+            )
+        ):
+            raise ValueError(
+                "resolved topology retains host or unmanaged runtime authority"
+            )
+        _validate_task_mounts(service.get("volumes"))
     _validate_resources(config.get("networks"), topology.project)
     _validate_resources(config.get("volumes"), topology.project)
 
@@ -477,11 +507,58 @@ def _validated_topology(
         not isinstance(record, dict)
         or record.get("project") != topology.project
         or record.get("services") != list(contract.services)
+        or record.get("contract_checksum") != contract.checksum
     ):
         raise ValueError("topology is not validated")
     if record.get("digest") != digest:
         raise ValueError("validated topology is stale")
     return ResolvedTopology(topology.project, contract.services, digest)
+
+
+def _validate_contract_checksum(contract: ProductContract, key: BuildLedgerKey) -> None:
+    if not re.fullmatch(r"[0-9a-f]{64}", contract.checksum):
+        raise ValueError("contract checksum is not platform-derived")
+    if contract.checksum != key.contract_checksum:
+        raise ValueError("contract checksum does not match build ledger key")
+
+
+def _task_volumes(value: object, service: str) -> list[dict[str, object]]:
+    mounts = value if isinstance(value, list) else []
+    result: list[dict[str, object]] = []
+    for index, mount in enumerate(mounts):
+        if isinstance(mount, dict):
+            target = mount.get("target")
+            read_only = mount.get("read_only") is True
+        elif isinstance(mount, str) and ":" in mount:
+            parts = mount.split(":")
+            target = parts[1]
+            read_only = len(parts) > 2 and parts[2] == "ro"
+        else:
+            raise ValueError("resolved topology contains an invalid mount")
+        if not isinstance(target, str) or not target.startswith("/"):
+            raise ValueError("resolved topology contains an invalid mount")
+        result.append(
+            {
+                "type": "volume",
+                "source": f"{service}-data-{index}",
+                "target": target,
+                "read_only": read_only,
+            }
+        )
+    return result
+
+
+def _validate_task_mounts(value: object) -> None:
+    # Compose omits an empty mount list for services that need no persisted input.
+    if value is None:
+        return
+    if not isinstance(value, list):
+        raise TypeError("resolved topology has invalid task volumes")
+    for mount in value:
+        if not isinstance(mount, dict) or mount.get("type") != "volume":
+            raise ValueError("resolved topology retains a host bind mount")
+        if not isinstance(mount.get("source"), str) or not mount.get("source"):
+            raise ValueError("resolved topology has invalid task volumes")
 
 
 def _complete_buildkit_tag(output: str, tag: str) -> bool:
@@ -519,7 +596,10 @@ def _complete_buildkit_tag(output: str, tag: str) -> bool:
 
 
 def _validate_env_files(value: object, expected: Path) -> None:
-    files = value if isinstance(value, list) else ([value] if value else [])
+    # `docker compose config` resolves env_file into environment and omits its path.
+    if value is None:
+        return
+    files = value if isinstance(value, list) else [value]
     if not files or any(
         Path(str(item)) != expected or Path(str(item)).name in _PRIVATE_ENV_NAMES
         for item in files

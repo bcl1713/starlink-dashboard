@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import shlex
 from collections.abc import Mapping
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import Any
 
 import tomllib
 
+from .evidence import read_nofollow
 from .model import ProductContract, RuntimeControl, StaticGroup
 
 _TOP_LEVEL = frozenset(
@@ -52,7 +54,8 @@ _SHELL_WRAPPERS = frozenset({"sh", "bash", "dash", "zsh"})
 def load_product_contract(path: Path) -> ProductContract:
     """Load a TOML product contract without granting platform authority."""
     try:
-        raw = tomllib.loads(path.read_text(encoding="utf-8"))
+        source = read_nofollow(path)
+        raw = tomllib.loads(source.decode("utf-8"))
     except (OSError, tomllib.TOMLDecodeError) as error:
         raise ValueError(f"invalid product contract: {error}") from error
     unknown = set(raw) - _TOP_LEVEL
@@ -60,7 +63,7 @@ def load_product_contract(path: Path) -> ProductContract:
         names = ", ".join(sorted(unknown))
         raise ValueError(f"unknown top-level contract section(s): {names}")
     _reject_operational_keys(raw)
-    return _parse_product_contract(raw)
+    return _parse_product_contract(raw, hashlib.sha256(source).hexdigest())
 
 
 def _reject_operational_keys(value: object) -> None:
@@ -77,7 +80,9 @@ def _reject_operational_keys(value: object) -> None:
             _reject_operational_keys(item)
 
 
-def _parse_product_contract(raw: Mapping[str, Any]) -> ProductContract:
+def _parse_product_contract(
+    raw: Mapping[str, Any], checksum: str = ""
+) -> ProductContract:
     unknown = set(raw) - _TOP_LEVEL
     if unknown:
         names = ", ".join(sorted(unknown))
@@ -105,6 +110,7 @@ def _parse_product_contract(raw: Mapping[str, Any]) -> ProductContract:
         controls=controls,
         journey_adapter=_repository_path(raw.get("journey_adapter"), "journey_adapter"),
         assets=assets,
+        checksum=checksum,
     )
 
 

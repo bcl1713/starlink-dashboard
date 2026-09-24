@@ -138,3 +138,19 @@ def test_v2_contract_has_only_product_authority() -> None:
         ("/api/missions/test", 404),
         ("/api/v2/missions", 200),
     ]
+
+
+def test_contract_checksum_is_derived_from_descriptor_safe_source_bytes(
+    tmp_path: Path,
+) -> None:
+    path = _write_contract(tmp_path)
+    contract = load_product_contract(path)
+
+    assert (
+        contract.checksum == __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+    )
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("/health", "/ready"), encoding="utf-8"
+    )
+
+    assert load_product_contract(path).checksum != contract.checksum

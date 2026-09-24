@@ -33,6 +33,7 @@ CONTRACT = ProductContract(
     controls=(RuntimeControl("health", "/health", 200),),
     journey_adapter=Path("tools/acceptance/journey.py"),
     assets=(Path("fixtures/example.json"),),
+    checksum="c" * 64,
 )
 KEY = BuildLedgerKey(SHA, "b" * 64, "c" * 64)
 
@@ -114,26 +115,20 @@ def test_resolve_rejects_external_resources_and_replaces_inherited_ports(
     tmp_path: Path,
 ) -> None:
     topology = _topology(tmp_path)
-    external = _resolved_config(topology)
-    external["networks"] = {
-        "starlink-net": {"external": True, "name": "acceptance-abc-starlink-net"}
+    root_with_external_resources = _resolved_config(topology)
+    root_with_external_resources["networks"] = {
+        "starlink-net": {"external": True, "name": "foreign-network"}
     }
-    with pytest.raises(ValueError, match="external"):
-        resolve_topology(topology, CONTRACT, _executor(config=external))
-
-    external_volume = _resolved_config(topology)
-    external_volume["volumes"] = {
-        "route_data": {"external": True, "name": "acceptance-abc-route_data"}
+    root_with_external_resources["volumes"] = {
+        "route_data": {"external": True, "name": "foreign-volume"}
     }
-    with pytest.raises(ValueError, match="external"):
-        resolve_topology(topology, CONTRACT, _executor(config=external_volume))
-
-    foreign_resource = _resolved_config(topology)
-    foreign_resource["networks"] = {
-        "starlink-net": {"name": "another-project-starlink-net"}
-    }
-    with pytest.raises(ValueError, match="namespace"):
-        resolve_topology(topology, CONTRACT, _executor(config=foreign_resource))
+    resolve_topology(topology, CONTRACT, _executor(config=root_with_external_resources))
+    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    assert rendered["networks"] == {"acceptance": {"name": "acceptance-abc-network"}}
+    assert all(
+        value["name"].startswith("acceptance-abc-")
+        for value in rendered["volumes"].values()
+    )
 
     wrong_port = _resolved_config(topology)
     wrong_port["services"]["starlink-location"]["ports"] = [
@@ -150,6 +145,30 @@ def test_resolve_rejects_external_resources_and_replaces_inherited_ports(
             "target": 8000,
         }
     ]
+
+
+def test_resolve_allowlists_task_owned_resources_and_removes_live_root_fields(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path)
+    config = _resolved_config(topology)
+    backend = config["services"]["starlink-location"]
+    assert isinstance(backend, dict)
+    backend.update(
+        extra_hosts=["dish.starlink:192.168.100.1"],
+        restart="unless-stopped",
+        volumes=[{"type": "bind", "source": "/host/data", "target": "/data"}],
+        secrets=["private"],
+    )
+
+    resolve_topology(topology, CONTRACT, _executor(config=config))
+    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    service = rendered["services"]["starlink-location"]
+    assert "extra_hosts" not in service
+    assert "restart" not in service
+    assert "secrets" not in service
+    assert all(mount["type"] == "volume" for mount in service["volumes"])
+    assert "192.168.100.1" not in json.dumps(rendered)
 
 
 def test_start_requires_validated_topology_and_usable_matching_ledger(
@@ -212,6 +231,24 @@ def test_failed_or_stale_build_never_starts(tmp_path: Path) -> None:
         )
 
 
+def test_contract_only_change_blocks_build_and_no_build_for_same_candidate(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path)
+    executor = _executor(
+        config=_resolved_config(topology),
+        build=CommandResult(0, _complete_two_image_log()),
+    )
+    ledger = BuildLedger(tmp_path / "ledger")
+    resolve_topology(topology, CONTRACT, executor)
+    changed = ProductContract(**{**CONTRACT.__dict__, "checksum": "d" * 64})
+    with pytest.raises(ValueError, match="contract checksum"):
+        build_final(topology, PROFILE, changed, KEY, ledger, executor)
+    assert build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor).usable
+    with pytest.raises(ValueError, match="contract checksum"):
+        start_no_build(topology, changed, KEY, ledger, executor)
+
+
 def test_cleanup_requires_teardown_and_task_resource_absence_preserving_volumes(
     tmp_path: Path,
 ) -> None:
@@ -246,6 +283,10 @@ class _Executor:
     def run(self, argv: tuple[str, ...]) -> CommandResult:
         self.calls.append(argv)
         if "config" in argv:
+            for item in argv:
+                path = Path(item)
+                if path.name == "compose.acceptance.json" and path.is_file():
+                    return CommandResult(0, path.read_text(encoding="utf-8"))
             return CommandResult(0, json.dumps(self.config))
         if "build" in argv:
             return self.build

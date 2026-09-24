@@ -49,6 +49,7 @@ class ProductContract:
     controls: tuple[RuntimeControl, ...]
     journey_adapter: Path
     assets: tuple[Path, ...]
+    checksum: str = ""
 
 
 @dataclass(frozen=True)

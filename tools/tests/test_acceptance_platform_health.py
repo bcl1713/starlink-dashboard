@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 from pathlib import Path
 
 import pytest
-
+from acceptance.platform.browser_bundle import BrowserLaunchSpec
 from acceptance.platform.evidence import (
     prepare_evidence_root,
     verify_manifest,
     write_artifacts,
 )
-from acceptance.platform.browser_bundle import BrowserLaunchSpec
 from acceptance.platform.health import (
-    HealthFingerprint,
     HealthProbeResult,
     PlatformHealthExecutor,
     run_platform_health,
@@ -117,14 +114,27 @@ def _executor(
     )
 
 
-def test_health_failure_blocks_before_product_executor() -> None:
+def test_product_lane_requires_a_sealed_validated_fingerprint_before_execution(
+    tmp_path: Path,
+) -> None:
     calls: list[str] = []
+    profile = _profile()
+    root = tmp_path / ("6" * 40)
+    run_platform_health(profile, root, _executor(_Bundle()), card_path=PLATFORM_CARD)
     result = run_product_lane(
-        health=lambda: HealthFingerprint.blocked("unprovisioned"),
+        profile=profile,
+        fingerprint_path=root / "fingerprint.json",
         execute=lambda: calls.append("product"),
     )
-    assert result.outcome is Outcome.ENVIRONMENT_BLOCKED
-    assert calls == []
+    assert result.outcome is Outcome.PASSED
+    assert calls == ["product"]
+    with pytest.raises(ValueError, match="fingerprint"):
+        run_product_lane(
+            profile=profile,
+            fingerprint_path=root / "missing.json",
+            execute=lambda: calls.append("unexpected"),
+        )
+    assert calls == ["product"]
 
 
 def test_exact_unprovisioned_template_retains_failure_evidence_before_any_command(
@@ -185,6 +195,14 @@ def test_lifecycle_waits_for_child_and_cdp_then_closes_everything(
     assert result.outcome is Outcome.PASSED
     assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
     assert "--remote-debugging-port=" in " ".join(bundle.launch.arguments)
+    assert "--remote-debugging-address=127.0.0.1" in bundle.launch.arguments
+    assert any(
+        argument.startswith("--user-data-dir=") for argument in bundle.launch.arguments
+    )
+    assert any(
+        argument.startswith("--display=:") and argument != "--display=:91"
+        for argument in bundle.launch.arguments
+    )
 
 
 def test_readiness_timeout_retains_diagnostics_and_never_runs_card(
@@ -234,7 +252,7 @@ def test_evidence_rejects_symlink_nested_target_and_is_private(tmp_path: Path) -
 def test_default_card_result_is_parsed_and_persisted_by_python(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    import acceptance.platform.health as health
+    from acceptance.platform import health
 
     bundle = _Bundle()
     payload = {
@@ -341,7 +359,7 @@ def test_descriptor_browser_launch_captures_private_diagnostics(
 def test_failing_node_card_retains_stdout_and_stderr_before_blocking(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    import acceptance.platform.health as health
+    from acceptance.platform import health
 
     def fail(*_: object, **__: object) -> None:
         raise health.subprocess.CalledProcessError(

@@ -5,8 +5,11 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
+import shutil
 import socket
 import subprocess
+import tempfile
 import time
 import urllib.request
 from collections.abc import Callable, Mapping
@@ -99,6 +102,7 @@ def run_platform_health(
     bundle: BrowserBundle | None = None
     launch: BrowserLaunchSpec | None = None
     xvfb = browser = None
+    cleanup_error = ""
     values: dict[str, Any] = {
         "profile_checksum": profile.checksum,
         "captured_at": datetime.now(UTC).isoformat(),
@@ -113,11 +117,13 @@ def run_platform_health(
         bundle = executor.verify_bundle(profile)
         values["browser_sha256"] = bundle.sha256
         launch = bundle.launch_spec()
-        display, port = ":91", _free_local_port()
+        display, port, profile_dir = _allocate_browser_resources(evidence_root)
         xvfb = executor.start_xvfb(display)
         browser = launch.start(
             f"--display={display}",
             f"--remote-debugging-port={port}",
+            "--remote-debugging-address=127.0.0.1",
+            f"--user-data-dir={profile_dir}",
             "--no-first-run",
             "--no-default-browser-check",
             "about:blank",
@@ -146,7 +152,7 @@ def run_platform_health(
             f"platform health failed: {error}",
         )
     finally:
-        _terminate(browser)
+        _terminate_browser_group(browser)
         _terminate(xvfb)
         _retain_logs(artifacts, "browser", browser)
         _retain_logs(artifacts, "xvfb", xvfb)
@@ -154,6 +160,15 @@ def run_platform_health(
             launch.close()
         if bundle is not None:
             bundle.close()
+        if "profile_dir" in locals():
+            shutil.rmtree(profile_dir, ignore_errors=True)
+            try:
+                _verify_browser_cleanup(display, port, profile_dir)
+            except ValueError as error:
+                cleanup_error = str(error)
+    if cleanup_error:
+        outcome = Outcome.ENVIRONMENT_BLOCKED
+        reason = cleanup_error
     if outcome is not Outcome.PASSED:
         artifacts["blocked.json"] = json.dumps(
             {"reason": reason, "profile_checksum": profile.checksum}, sort_keys=True
@@ -197,11 +212,10 @@ def validate_fingerprint(
 
 
 def run_product_lane(
-    *, health: Callable[[], HealthFingerprint], execute: Callable[[], None]
+    *, profile: PlatformProfile, fingerprint_path: Path, execute: Callable[[], None]
 ) -> RunResult:
-    result = health()
-    if result.outcome is not Outcome.PASSED:
-        return RunResult(lane=Lane.HEALTH, outcome=Outcome.ENVIRONMENT_BLOCKED)
+    """The product boundary consumes only sealed, validated health authority."""
+    validate_fingerprint(profile, fingerprint_path)
     execute()
     return RunResult(lane=Lane.FINAL, outcome=Outcome.PASSED, final=True)
 
@@ -295,6 +309,18 @@ def _free_local_port() -> int:
         return int(sock.getsockname()[1])
 
 
+def _allocate_browser_resources(evidence_root: Path) -> tuple[str, int, Path]:
+    """Allocate a unique display, loopback CDP port, and private Chrome profile."""
+    profile = Path(tempfile.mkdtemp(prefix="health-chrome-", dir=evidence_root.parent))
+    os.chmod(profile, 0o700)
+    for _ in range(32):
+        display_number = 100 + int.from_bytes(os.urandom(2), "big") % 50000
+        if not Path(f"/tmp/.X11-unix/X{display_number}").exists():
+            return f":{display_number}", _free_local_port(), profile
+    shutil.rmtree(profile, ignore_errors=True)
+    raise ValueError("unable to allocate a task-owned X display")
+
+
 def _terminate(process: Any) -> None:
     if process is None or process.poll() is not None:
         return
@@ -304,6 +330,39 @@ def _terminate(process: Any) -> None:
     except Exception:
         process.kill()
         process.wait(timeout=5)
+
+
+def _terminate_browser_group(process: Any) -> None:
+    """Terminate/reap Chrome's private session, including browser descendants."""
+    if process is None or process.poll() is not None:
+        return
+    pid = getattr(process, "pid", None)
+    if isinstance(pid, int) and pid > 0:
+        try:
+            os.killpg(pid, 15)
+            process.wait(timeout=5)
+            return
+        except ProcessLookupError:
+            return
+        except Exception:
+            try:
+                os.killpg(pid, 9)
+                process.wait(timeout=5)
+                return
+            except ProcessLookupError:
+                return
+    _terminate(process)
+
+
+def _verify_browser_cleanup(display: str, port: int, profile: Path) -> None:
+    """Fail closed if a task-owned display, listener, or profile survives teardown."""
+    if _cdp_version(f"http://127.0.0.1:{port}") is not None:
+        raise ValueError("task CDP listener remains after cleanup")
+    display_number = display.removeprefix(":")
+    if display_number.isdigit() and Path(f"/tmp/.X11-unix/X{display_number}").exists():
+        raise ValueError("task X display remains after cleanup")
+    if profile.exists():
+        raise ValueError("task browser profile remains after cleanup")
 
 
 def _retain_logs(artifacts: dict[str, bytes], name: str, process: Any) -> None:
