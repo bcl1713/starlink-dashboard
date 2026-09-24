@@ -123,6 +123,7 @@ Expected: FAIL because `tools/verify` does not exist.
 Create `backend/starlink-location/requirements-dev.txt`:
 
 ```text
+-r requirements.txt
 black==26.5.1
 ruff==0.16.8
 ```

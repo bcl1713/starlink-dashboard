@@ -192,7 +192,7 @@ Expected: the remote SHA equals local `HEAD`.
 
 - [ ] **Step 5: Create and verify the `dev`-targeting PR**
 
-Create a non-draft PR linking issue #179 and the approved spec. Verify its base
+Create a non-draft PR linking issue #181 and the approved spec. Verify its base
 is `dev`, its head SHA equals the pushed SHA, and GitHub reports successful
 `Static Quality Gate`, `Backend Test Gate`, and `Frontend Test and Build Gate`
 jobs. Record browser/runtime acceptance as not applicable because this PR only
