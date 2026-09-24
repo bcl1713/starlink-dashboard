@@ -127,6 +127,6 @@ def _is_named_ref(ref: str) -> bool:
     ):
         return False
     return all(
-        not part.startswith(".") and not part.endswith(".lock")
+        not part.startswith(".") and not part.endswith((".", ".lock"))
         for part in ref.split("/")
     )

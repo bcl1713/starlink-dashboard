@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shlex
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -33,6 +34,7 @@ _OPERATIONAL_TOKENS = (
 _COMMAND_PREFIXES = frozenset(
     {"npm", "npx", "pnpm", "yarn", "pip", "uv", "poetry", "bun", "docker", "compose"}
 )
+_SHELL_WRAPPERS = frozenset({"sh", "bash", "dash", "zsh"})
 
 
 def load_product_contract(path: Path) -> ProductContract:
@@ -126,8 +128,19 @@ def _parse_control(raw: Mapping[str, Any]) -> RuntimeControl:
 
 
 def _is_operational_command(command: str) -> bool:
-    words = command.split()
-    return not words or words[0] in _COMMAND_PREFIXES or "install" in words
+    try:
+        words = shlex.split(command)
+    except ValueError:
+        return True
+    if not words:
+        return True
+    if any(word in _COMMAND_PREFIXES or word == "install" for word in words):
+        return True
+    return any(
+        _is_operational_command(words[index + 1])
+        for index, word in enumerate(words[:-1])
+        if word == "-c" and index and words[index - 1] in _SHELL_WRAPPERS
+    )
 
 
 def _tables(raw: Mapping[str, Any], field: str) -> list[Mapping[str, Any]]:
@@ -165,10 +178,14 @@ def _nonempty_string(value: object, field: str) -> str:
 def _repository_path(value: object, field: str) -> Path:
     item = _nonempty_string(value, field)
     path = Path(item)
+    backslash_parts = item.split("\\")
     if (
         path.is_absolute()
+        or item.startswith("\\")
+        or (len(item) >= 2 and item[0].isalpha() and item[1] == ":")
         or not path.parts
         or any(part in {"", ".", ".."} for part in path.parts)
+        or any(part in {"", ".", ".."} for part in backslash_parts)
     ):
         raise ValueError(f"{field} must be a contained repository-relative path")
     return path

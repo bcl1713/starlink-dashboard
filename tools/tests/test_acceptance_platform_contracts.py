@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -66,14 +67,24 @@ def test_contract_rejects_unknown_top_level_sections(
 
 
 @pytest.mark.parametrize(
-    "command", ["npm ci", "npx playwright install", "pip install pytest"]
+    "command",
+    [
+        "npm ci",
+        "npx playwright install",
+        "pip install pytest",
+        "env CI=1 npm ci",
+        "sh -c 'docker compose up'",
+        "black --check . && npx playwright test",
+    ],
 )
 def test_contract_rejects_package_manager_or_install_commands(
     tmp_path: Path, command: str
 ) -> None:
     path = _write_contract(tmp_path)
     path.write_text(
-        path.read_text(encoding="utf-8").replace("pytest -q", command),
+        path.read_text(encoding="utf-8").replace(
+            "commands = ['pytest -q']", f"commands = [{json.dumps(command)}]"
+        ),
         encoding="utf-8",
     )
 
@@ -83,7 +94,13 @@ def test_contract_rejects_package_manager_or_install_commands(
 
 @pytest.mark.parametrize(
     "path_value",
-    ["/outside/contract.mjs", "../escape.kml", "assets/../../escape.kml"],
+    [
+        "/outside/contract.mjs",
+        "../escape.kml",
+        "assets/../../escape.kml",
+        r"C:\outside\route.kml",
+        r"assets\..\outside.kml",
+    ],
 )
 def test_contract_rejects_uncontained_repository_paths(
     tmp_path: Path, path_value: str

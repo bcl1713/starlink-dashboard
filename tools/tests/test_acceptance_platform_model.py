@@ -37,6 +37,7 @@ def test_candidate_inputs_preserve_full_sha_and_ref_literally() -> None:
         (f" {SHA}", "refs/heads/feat/x"),
         (SHA, " refs/heads/feat/x"),
         (SHA, "refs/heads/feat..bad"),
+        (SHA, "refs/heads/topic./next"),
         (SHA, SHA),
     ],
 )
