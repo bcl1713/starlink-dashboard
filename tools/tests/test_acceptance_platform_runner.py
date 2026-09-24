@@ -55,10 +55,10 @@ def _png(width: int = 1920, height: int = 1080) -> bytes:
             + struct.pack(">I", zlib.crc32(kind + content) & 0xFFFFFFFF)
         )
 
-    raw = b"\0" * (height * (width + 1))
+    raw = b"\0" * (height * (width * 4 + 1))
     return (
         b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0))
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
         + chunk(b"IDAT", zlib.compress(raw))
         + chunk(b"IEND", b"")
     )
@@ -80,17 +80,34 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
             "loaderId": "loader",
             "polling": {
                 "navigationScoped": True,
+                "endpoint": "/api/overview-history",
+                "periodMs": 5000,
+                "windowStart": 10.0,
+                "windowEnd": 20.0,
                 "minimumScheduledRequests": 1,
                 "observedScheduledRequests": 1,
             },
             "requests": [
                 {
                     "id": "1",
-                    "path": "/api/v2/missions",
+                    "path": "/api/overview-history",
                     "outcome": "finished",
                     "status": 200,
-                }
+                    "startedAt": 10.0,
+                    "finishedAt": 10.1,
+                    "cycle": "bootstrap",
+                },
+                {
+                    "id": "2",
+                    "path": "/api/overview-history",
+                    "outcome": "finished",
+                    "status": 200,
+                    "startedAt": 15.0,
+                    "finishedAt": 15.1,
+                    "cycle": "scheduled",
+                },
             ],
+            "overflow": False,
         },
         "visible": {
             "routeName": "V2 Acceptance Route KAAA-KBBB",
@@ -268,7 +285,7 @@ def test_runner_manifest_is_sealed_under_a_candidate_nofollow_root(
 
 
 def test_adapter_output_without_exact_pre_and_post_viewport_proof_is_rejected() -> None:
-    with pytest.raises(ValueError, match="exact pre/post viewport"):
+    with pytest.raises(ValueError, match="allowlist"):
         runner._decode_adapter_artifacts({"status": "passed", "artifacts": {}})
 
 
@@ -285,6 +302,18 @@ def test_adapter_observation_is_schema_validated_and_retained() -> None:
     assert observation["activation"] == "browser-observed-200"
     assert observation["lifecycle"]["requests"][0]["outcome"] == "finished"
     assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
+
+
+def test_adapter_rejects_extra_or_aggregate_oversize_artifacts() -> None:
+    payload = _adapter_payload()
+    payload["artifacts"]["unexpected.bin"] = "eA=="  # type: ignore[index]
+    with pytest.raises(ValueError, match="allowlist"):
+        runner._decode_adapter_artifacts(payload)
+
+
+def test_adapter_rejects_png_with_wrong_ihdr_before_inflation() -> None:
+    with pytest.raises(ValueError, match="decoded PNG"):
+        runner._decode_adapter_artifacts(_adapter_payload(_png(1, 1)))
 
 
 def test_adapter_observation_rejects_unbounded_or_incomplete_lifecycle() -> None:
@@ -318,6 +347,66 @@ def test_finalization_failure_returns_nonfinal_result_with_primary_and_cleanup(
     assert result.manifest["final_acceptance"] is False
     assert "final evidence failed: seal failed" in result.manifest["primary"]["detail"]
     assert result.manifest["cleanup"]["outcome"] == Outcome.PASSED.value
+
+
+@pytest.mark.parametrize("stage", ["write", "seal", "verify"])
+def test_finalization_stage_failure_never_publishes_final_candidate_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, stage: str
+) -> None:
+    original_write = runner.write_artifacts
+    original_seal = runner.seal_fingerprint
+    original_verify = runner.verify_manifest
+    calls = 0
+
+    if stage == "write":
+
+        def fail_candidate_write(root: Path, *args: object) -> str:
+            if ".pending" in root.parts:
+                raise OSError("artifact write failed")
+            return original_write(root, *args)  # type: ignore[arg-type]
+
+        monkeypatch.setattr(runner, "write_artifacts", fail_candidate_write)
+    elif stage == "seal":
+
+        def fail_candidate_seal(root: Path, *args: object) -> None:
+            if ".pending" in root.parts:
+                raise OSError("seal failed")
+            original_seal(root, *args)  # type: ignore[arg-type]
+
+        monkeypatch.setattr(runner, "seal_fingerprint", fail_candidate_seal)
+    else:
+
+        def fail_final_verify(root: Path) -> None:
+            nonlocal calls
+            calls += 1
+            original_verify(root)
+            if calls == 2:
+                raise ValueError("final verify failed")
+
+        monkeypatch.setattr(runner, "verify_manifest", fail_final_verify)
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: object(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    assert result.exit_code == 1
+    assert result.manifest["final_acceptance"] is False
+    candidate = tmp_path / "evidence" / "candidates" / SHA
+    assert not candidate.exists()
+    failure = tmp_path / "evidence" / "failures" / SHA
+    verify_manifest(failure)
+    assert (
+        json.loads((failure / "runner-manifest.json").read_text())["final_acceptance"]
+        is False
+    )
 
 
 def test_default_unprovisioned_profile_blocks_before_static_product_work(

@@ -6,9 +6,12 @@ import argparse
 import base64
 import hashlib
 import json
+import os
+import selectors
 import shlex
 import subprocess
 import sys
+import time
 import urllib.error
 import urllib.request
 import zlib
@@ -59,8 +62,20 @@ _VIEWPORT = {
     "dpr": 1,
 }
 _MAX_ADAPTER_ARTIFACT_BYTES = 12 * 1024 * 1024
+_MAX_ADAPTER_STDOUT_BYTES = 24 * 1024 * 1024
+_MAX_ADAPTER_STDERR_BYTES = 32 * 1024
+_MAX_ADAPTER_ENCODED_BYTES = 20 * 1024 * 1024
+_MAX_ADAPTER_DECODED_BYTES = 20 * 1024 * 1024
 _MAX_ADAPTER_OBSERVATION_BYTES = 32 * 1024
 _MAX_LIFECYCLE_RECORDS = 50
+_VIEWPORT_ARTIFACTS = frozenset(
+    {
+        "journey-pre.png",
+        "journey-post.png",
+        "journey-pre-metrics.json",
+        "journey-post-metrics.json",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -221,7 +236,7 @@ def _run_journey(inputs: RunnerInputs, contract: ProductContract) -> dict[str, b
     asset = _REPOSITORY / contract.assets[0]
     if not asset.is_file():
         raise ValueError("declared journey asset is unavailable")
-    completed = subprocess.run(
+    stdout, stderr, returncode = _bounded_adapter_process(
         [
             "node",
             str(_REPOSITORY / contract.journey_adapter),
@@ -232,21 +247,62 @@ def _run_journey(inputs: RunnerInputs, contract: ProductContract) -> dict[str, b
             "--kml",
             str(asset),
         ],
-        cwd=_REPOSITORY,
-        check=False,
-        capture_output=True,
-        text=True,
-        timeout=180,
+        _REPOSITORY,
     )
-    if completed.returncode:
+    if returncode:
         raise ValueError(
-            f"product journey adapter failed: {completed.stderr or completed.stdout}"
+            "product journey adapter failed: "
+            f"{stderr.decode(errors='replace') or stdout.decode(errors='replace')}"
         )
     try:
-        payload = json.loads(completed.stdout)
+        payload = json.loads(stdout)
     except json.JSONDecodeError as error:
         raise ValueError("product journey adapter emitted invalid JSON") from error
     return _decode_adapter_artifacts(payload)
+
+
+def _bounded_adapter_process(argv: list[str], cwd: Path) -> tuple[bytes, bytes, int]:
+    """Collect adapter IPC without allocating an unbounded stdout/stderr payload."""
+    process = subprocess.Popen(
+        argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    assert process.stdout is not None and process.stderr is not None
+    limits = {
+        process.stdout: _MAX_ADAPTER_STDOUT_BYTES,
+        process.stderr: _MAX_ADAPTER_STDERR_BYTES,
+    }
+    collected = {process.stdout: bytearray(), process.stderr: bytearray()}
+    selector = selectors.DefaultSelector()
+    for stream in limits:
+        os.set_blocking(stream.fileno(), False)
+        selector.register(stream, selectors.EVENT_READ)
+    deadline = time.monotonic() + 180
+    try:
+        while selector.get_map():
+            if time.monotonic() >= deadline:
+                raise TimeoutError("product journey adapter timed out")
+            for key, _ in selector.select(max(0, deadline - time.monotonic())):
+                chunk = os.read(key.fd, 64 * 1024)
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    continue
+                output = collected[key.fileobj]
+                if len(output) + len(chunk) > limits[key.fileobj]:
+                    raise ValueError(
+                        "product journey adapter output exceeds byte budget"
+                    )
+                output.extend(chunk)
+        return (
+            bytes(collected[process.stdout]),
+            bytes(collected[process.stderr]),
+            process.wait(timeout=1),
+        )
+    except BaseException:
+        process.kill()
+        process.wait()
+        raise
+    finally:
+        selector.close()
 
 
 def _decode_adapter_artifacts(payload: object) -> dict[str, bytes]:
@@ -255,10 +311,18 @@ def _decode_adapter_artifacts(payload: object) -> dict[str, bytes]:
     artifacts = payload.get("artifacts")
     if not isinstance(artifacts, Mapping):
         raise TypeError("product journey adapter omitted bounded artifacts")
+    if set(artifacts) != _VIEWPORT_ARTIFACTS:
+        raise ValueError("product journey adapter artifacts violate exact allowlist")
     decoded: dict[str, bytes] = {}
+    encoded_total = decoded_total = 0
     for name, encoded in artifacts.items():
         if not isinstance(name, str) or not isinstance(encoded, str):
             raise TypeError("product journey adapter artifact is invalid")
+        encoded_total += len(encoded)
+        if encoded_total > _MAX_ADAPTER_ENCODED_BYTES:
+            raise ValueError(
+                "product journey adapter encoded artifacts exceed byte budget"
+            )
         try:
             decoded[name] = base64.b64decode(encoded, validate=True)
         except ValueError as error:
@@ -267,6 +331,11 @@ def _decode_adapter_artifacts(payload: object) -> dict[str, bytes]:
             ) from error
         if len(decoded[name]) > _MAX_ADAPTER_ARTIFACT_BYTES:
             raise ValueError("product journey adapter artifact exceeds byte budget")
+        decoded_total += len(decoded[name])
+        if decoded_total > _MAX_ADAPTER_DECODED_BYTES:
+            raise ValueError(
+                "product journey adapter decoded artifacts exceed byte budget"
+            )
     _verify_viewport_artifacts(decoded)
     decoded["adapter-observation.json"] = _adapter_observation(payload)
     return decoded
@@ -330,15 +399,15 @@ def _png_dimensions(content: bytes) -> tuple[int, int]:
                 data[11],
                 data[12],
             )
-            channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(color, 0)
-            if (
-                not width
-                or not height
-                or not channels
-                or compression
-                or filtering
-                or interlace
-            ):
+            channels = {6: 4}.get(color, 0)
+            if (width, height, depth, compression, filtering, interlace) != (
+                1920,
+                1080,
+                8,
+                0,
+                0,
+                0,
+            ) or not channels:
                 raise ValueError("viewport artifact is not a decoded PNG")
             ihdr = True
         elif kind == b"IDAT":
@@ -353,12 +422,24 @@ def _png_dimensions(content: bytes) -> tuple[int, int]:
     if not ihdr or not iend or not compressed:
         raise ValueError("viewport artifact is not a decoded PNG")
     row_bytes = (width * channels * depth + 7) // 8
+    expected = height * (row_bytes + 1)
+    inflater = zlib.decompressobj()
+    decoded = bytearray()
     try:
-        decoded = zlib.decompress(b"".join(compressed))
+        for chunk in compressed:
+            while chunk:
+                decoded.extend(inflater.decompress(chunk, expected - len(decoded) + 1))
+                if len(decoded) > expected:
+                    raise ValueError("viewport artifact is not a decoded PNG")
+                chunk = inflater.unconsumed_tail
+        decoded.extend(inflater.flush(expected - len(decoded) + 1))
     except zlib.error as error:
         raise ValueError("viewport artifact is not a decoded PNG") from error
-    if len(decoded) != height * (row_bytes + 1) or any(
-        decoded[index] > 4 for index in range(0, len(decoded), row_bytes + 1)
+    if (
+        not inflater.eof
+        or inflater.unused_data
+        or len(decoded) != expected
+        or any(decoded[index] > 4 for index in range(0, len(decoded), row_bytes + 1))
     ):
         raise ValueError("viewport artifact is not a decoded PNG")
     return width, height
@@ -390,7 +471,14 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         "observedScheduledRequests"
     )
     if (
-        polling.get("navigationScoped") is not True
+        lifecycle.get("overflow") is not False
+        or polling.get("navigationScoped") is not True
+        or polling.get("endpoint") != "/api/overview-history"
+        or polling.get("periodMs") != 5000
+        or not all(
+            isinstance(polling.get(key), (int, float))
+            for key in ("windowStart", "windowEnd")
+        )
         or not isinstance(minimum, int)
         or not isinstance(observed, int)
         or minimum < 1
@@ -402,13 +490,30 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         if (
             not isinstance(record, Mapping)
             or not isinstance(record.get("id"), str)
-            or not str(record.get("path", "")).startswith("/api/v2/")
+            or record.get("path") != "/api/overview-history"
             or record.get("outcome") != "finished"
             or record.get("status") != 200
+            or record.get("cycle") not in {"bootstrap", "scheduled"}
+            or not all(
+                isinstance(record.get(key), (int, float))
+                for key in ("startedAt", "finishedAt")
+            )
+            or record["finishedAt"] < record["startedAt"]
         ):
             raise ValueError("adapter observation is invalid")
         records.append(
-            {key: record[key] for key in ("id", "path", "outcome", "status")}
+            {
+                key: record[key]
+                for key in (
+                    "id",
+                    "path",
+                    "outcome",
+                    "status",
+                    "startedAt",
+                    "finishedAt",
+                    "cycle",
+                )
+            }
         )
     if (
         not isinstance(visible.get("routeName"), str)
@@ -555,14 +660,18 @@ def _manifest(
 def _write_manifest(
     inputs: RunnerInputs, manifest: dict[str, Any], artifacts: Mapping[str, bytes]
 ) -> None:
+    """Seal in an unpublished SHA root, then atomically publish final authority."""
     root = inputs.evidence_root / "candidates" / inputs.sha
-    prepare_evidence_parent(root.parent)
+    staging = inputs.evidence_root / "candidates" / ".pending" / inputs.sha
+    prepare_evidence_parent(staging.parent)
+    if root.exists() or staging.exists():
+        raise ValueError("candidate evidence root already exists")
     retained = dict(artifacts)
     retained["runner-manifest.json"] = (
         json.dumps(manifest, sort_keys=True) + "\n"
     ).encode()
-    write_artifacts(root, retained)
-    verify_manifest(root)
+    write_artifacts(staging, retained)
+    verify_manifest(staging)
     envelope = json.dumps(
         {
             "sha": inputs.sha,
@@ -575,7 +684,31 @@ def _write_manifest(
         sort_keys=True,
         separators=(",", ":"),
     ).encode()
-    seal_fingerprint(root, envelope)
+    seal_fingerprint(staging, envelope)
+    read_fingerprint_authority(staging)
+    verify_manifest(staging)
+    prepare_evidence_parent(root.parent)
+    os.rename(staging, root)
+    read_fingerprint_authority(root)
+    verify_manifest(root)
+
+
+def _write_finalization_failure(
+    inputs: RunnerInputs, manifest: dict[str, Any], artifacts: Mapping[str, bytes]
+) -> None:
+    """Retain a sealed non-final classification without publishing candidate authority."""
+    root = inputs.evidence_root / "failures" / inputs.sha
+    prepare_evidence_parent(root.parent)
+    retained = dict(artifacts)
+    retained["runner-manifest.json"] = (
+        json.dumps(manifest, sort_keys=True) + "\n"
+    ).encode()
+    write_artifacts(root, retained)
+    verify_manifest(root)
+    seal_fingerprint(
+        root,
+        json.dumps({"sha": inputs.sha, "outcome": "failed"}, sort_keys=True).encode(),
+    )
     read_fingerprint_authority(root)
     verify_manifest(root)
 
@@ -703,6 +836,12 @@ def run(
             profile,
             contract,
         )
+        try:
+            _write_finalization_failure(inputs, manifest, artifacts)
+        except (OSError, RuntimeError, TypeError, ValueError) as failure_error:
+            manifest["primary"][
+                "detail"
+            ] += f"; failure evidence unavailable: {failure_error}"
     exit_code = (
         0
         if outcome in {Outcome.PASSED, Outcome.DIAGNOSTIC_ONLY} and not cleanup_failed

@@ -6,7 +6,7 @@
  */
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
-import { inflateSync } from 'node:zlib';
+import { createInflate } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -28,19 +28,17 @@ function parse(argv) {
   return values;
 }
 
-function pngDimensions(png) {
+async function pngDimensions(png) {
   if (png.length > 12 * 1024 * 1024 || !png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) throw new Error('screenshot is not a decoded PNG');
-  let offset = 8; let width = 0; let height = 0; let channels = 0; let depth = 0; let ihdr = false; let iend = false; const idat = [];
+  let offset = 8; let width = 0; let height = 0; let ihdr = false; let iend = false; const idat = [];
   while (offset < png.length) {
     if (offset + 12 > png.length) throw new Error('screenshot is not a decoded PNG');
     const length = png.readUInt32BE(offset); const end = offset + 12 + length;
     if (end > png.length) throw new Error('screenshot is not a decoded PNG');
     const kind = png.toString('ascii', offset + 4, offset + 8); const data = png.subarray(offset + 8, offset + 8 + length);
     if (kind === 'IHDR') {
-      if (ihdr || length !== 13) throw new Error('screenshot is not a decoded PNG');
-      width = data.readUInt32BE(0); height = data.readUInt32BE(4); depth = data[8]; channels = ({ 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 })[data[9]] ?? 0;
-      if (!width || !height || !channels || data[10] || data[11] || data[12]) throw new Error('screenshot is not a decoded PNG');
-      ihdr = true;
+      if (ihdr || length !== 13 || data.readUInt32BE(0) !== 1920 || data.readUInt32BE(4) !== 1080 || data[8] !== 8 || data[9] !== 6 || data[10] || data[11] || data[12]) throw new Error('screenshot is not a decoded PNG');
+      width = 1920; height = 1080; ihdr = true;
     } else if (kind === 'IDAT') {
       if (!ihdr || iend) throw new Error('screenshot is not a decoded PNG');
       idat.push(data);
@@ -50,9 +48,17 @@ function pngDimensions(png) {
     }
     offset = end;
   }
-  const rowBytes = Math.ceil(width * channels * depth / 8); let decoded;
-  try { decoded = inflateSync(Buffer.concat(idat)); } catch { throw new Error('screenshot is not a decoded PNG'); }
-  if (!ihdr || !iend || !idat.length || decoded.length !== height * (rowBytes + 1) || decoded.some((value, index) => index % (rowBytes + 1) === 0 && value > 4)) throw new Error('screenshot is not a decoded PNG');
+  const expected = height * (width * 4 + 1);
+  if (!ihdr || !iend || !idat.length) throw new Error('screenshot is not a decoded PNG');
+  const inflater = createInflate({ chunkSize: 64 * 1024 }); const chunks = []; let total = 0;
+  try {
+    await new Promise((resolve, reject) => {
+      inflater.on('data', (chunk) => { total += chunk.length; if (total > expected) { inflater.destroy(); reject(new Error('oversize')); } else chunks.push(chunk); });
+      inflater.once('error', reject); inflater.once('end', resolve); inflater.end(Buffer.concat(idat));
+    });
+  } catch { inflater.destroy(); throw new Error('screenshot is not a decoded PNG'); }
+  const decoded = Buffer.concat(chunks, total);
+  if (total !== expected || decoded.some((value, index) => index % (width * 4 + 1) === 0 && value > 4)) throw new Error('screenshot is not a decoded PNG');
   return { width, height };
 }
 
@@ -71,7 +77,7 @@ async function viewportArtifact(page, name) {
     dpr: window.devicePixelRatio,
   }));
   const png = await page.screenshot({ type: 'png' });
-  const raster = pngDimensions(png);
+  const raster = await pngDimensions(png);
   if (metrics.innerWidth !== 1920 || metrics.innerHeight !== 1080 || metrics.visualWidth !== 1920 || metrics.visualHeight !== 1080 || metrics.dpr !== 1 || raster.width !== 1920 || raster.height !== 1080) throw new Error(`exact viewport mismatch: ${JSON.stringify({ ...metrics, raster })}`);
   return {
     [`${name}-metrics.json`]: Buffer.from(JSON.stringify({ ...metrics, raster })).toString('base64'),
