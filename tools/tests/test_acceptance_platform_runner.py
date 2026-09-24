@@ -215,6 +215,31 @@ def test_cleanup_failure_revokes_an_otherwise_successful_final_claim(
     assert result.manifest["cleanup"]["outcome"] == Outcome.FAILED.value
 
 
+def test_final_compose_diagnostics_are_sealed_after_a_build_failure(tmp_path: Path) -> None:
+    def failed_final_steps(*_: object) -> object:
+        error = ValueError("final compose build timed out")
+        error.platform_artifacts = {"compose.output.log": b"bounded BuildKit output"}  # type: ignore[attr-defined]
+        raise error
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=failed_final_steps,
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    root = tmp_path / "evidence" / "candidates" / SHA
+    assert result.exit_code == 1
+    assert (root / "compose.output.log").read_bytes() == b"bounded BuildKit output"
+    verify_manifest(root)
+    read_fingerprint_authority(root)
+
+
 def test_default_final_cleanup_runs_after_a_started_topology_substep_fails(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -222,7 +247,7 @@ def test_default_final_cleanup_runs_after_a_started_topology_substep_fails(
     topology = object()
     executor = object()
 
-    monkeypatch.setattr(runner, "SubprocessComposeExecutor", lambda: executor)
+    monkeypatch.setattr(runner, "SubprocessComposeExecutor", lambda *_: executor)
     monkeypatch.setattr(runner, "render_task_override", lambda *_: topology)
     monkeypatch.setattr(
         runner,

@@ -30,6 +30,7 @@ import tomllib
 
 from .compose import (
     BuildLedger,
+    BoundedComposeDiagnostics,
     SubprocessComposeExecutor,
     build_final,
     cleanup_compose,
@@ -687,7 +688,8 @@ def _final_steps(
     resource_ready: Callable[[object], None],
     adapter: _AdapterSource,
 ) -> dict[str, bytes]:
-    executor = SubprocessComposeExecutor()
+    diagnostics = BoundedComposeDiagnostics()
+    executor = SubprocessComposeExecutor(diagnostics.retain)
     topology = render_task_override(
         _REPOSITORY,
         contract,
@@ -699,13 +701,23 @@ def _final_steps(
         },
     )
     resource_ready((topology, executor))
-    resolve_topology(topology, contract, executor)
-    key = BuildLedgerKey(inputs.sha, profile.checksum, contract.checksum)
-    ledger = BuildLedger(inputs.ledger_root)
-    built = build_final(topology, profile, contract, key, ledger, executor)
-    if not built.usable:
-        raise ValueError(f"final build is unusable: {built.reason}")
-    start_no_build(topology, contract, key, ledger, executor)
+    try:
+        resolve_topology(topology, contract, executor)
+        key = BuildLedgerKey(inputs.sha, profile.checksum, contract.checksum)
+        ledger = BuildLedger(inputs.ledger_root)
+        built = build_final(topology, profile, contract, key, ledger, executor)
+        if not built.usable:
+            raise ValueError(f"final build is unusable: {built.reason}")
+        start_no_build(topology, contract, key, ledger, executor)
+    except (
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        subprocess.SubprocessError,
+    ) as error:
+        error.platform_artifacts = {"compose.output.log": diagnostics.output}  # type: ignore[attr-defined]
+        raise
     control_results: list[dict[str, object]] = []
     for control in contract.controls:
         status = _request(control, inputs)
@@ -721,6 +733,7 @@ def _final_steps(
             raise ValueError(f"runtime control failed: {control.name}")
     browser_card(inputs)
     artifacts = _run_journey(inputs, contract, adapter)
+    artifacts["compose.output.log"] = diagnostics.output
     artifacts["runtime-observation.json"] = json.dumps(
         {
             "captured_at": datetime.now(timezone.utc).isoformat(),
@@ -1130,6 +1143,12 @@ def run(
         ValueError,
         subprocess.SubprocessError,
     ) as error:
+        platform_artifacts = getattr(error, "platform_artifacts", None)
+        if isinstance(platform_artifacts, Mapping) and all(
+            isinstance(name, str) and isinstance(content, bytes)
+            for name, content in platform_artifacts.items()
+        ):
+            artifacts.update(platform_artifacts)
         if isinstance(error, _AdapterProcessFailure):
             artifacts.update(
                 {

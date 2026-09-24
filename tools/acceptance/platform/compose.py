@@ -20,12 +20,48 @@ _PROJECT = re.compile(r"[a-z0-9][a-z0-9_-]{2,62}")
 _PRIVATE_ENV_NAMES = frozenset({".env", ".env.local", ".env.production"})
 _STAGE = re.compile(r"^#(?P<stage>\d+) (?P<message>.*)$")
 _NO_BUILD_START_TIMEOUT_SECONDS = 120.0
+_FINAL_BUILD_TIMEOUT_SECONDS = 600.0
+_MAX_COMPOSE_DIAGNOSTIC_BYTES = 256 * 1024
+_REDACT_COMPOSE_CREDENTIAL = re.compile(
+    r"(?i)(token|password|passwd|secret|api[_-]?key|authorization)\s*([=:])\s*[^\s]+"
+)
+_COMPOSE_OUTPUT_TRUNCATED = b"\n[platform retained Compose output truncated]\n"
 
 
 @dataclass(frozen=True)
 class CommandResult:
     returncode: int
     output: str
+
+
+class BoundedComposeDiagnostics:
+    """Retain bounded, credential-redacted final Compose diagnostics."""
+
+    def __init__(self, max_bytes: int = _MAX_COMPOSE_DIAGNOSTIC_BYTES) -> None:
+        if max_bytes < len(_COMPOSE_OUTPUT_TRUNCATED):
+            raise ValueError("compose diagnostic budget is too small")
+        self._max_bytes = max_bytes
+        self._output = bytearray()
+        self._truncated = False
+
+    def retain(self, line: str) -> None:
+        if self._truncated:
+            return
+        redacted = _REDACT_COMPOSE_CREDENTIAL.sub(
+            r"\1\2<redacted>", line
+        ).encode(errors="replace")
+        if len(self._output) + len(redacted) <= self._max_bytes:
+            self._output.extend(redacted)
+            return
+        remaining = self._max_bytes - len(self._output) - len(_COMPOSE_OUTPUT_TRUNCATED)
+        if remaining > 0:
+            self._output.extend(redacted[:remaining])
+        self._output.extend(_COMPOSE_OUTPUT_TRUNCATED)
+        self._truncated = True
+
+    @property
+    def output(self) -> bytes:
+        return bytes(self._output)
 
 
 class ComposeExecutor(Protocol):
@@ -322,9 +358,20 @@ def build_final(
     tags = tuple(
         f"{topology.project}-{service}:latest" for service in contract.services
     )
-    result = executor.run(
-        (*topology.argv, "build", "--no-cache", "--progress=plain", *contract.services)
-    )
+    try:
+        result = executor.run(
+            (*topology.argv, "build", "--no-cache", "--progress=plain", *contract.services),
+            timeout_seconds=_FINAL_BUILD_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as error:
+        retained = _bounded_compose_diagnostic(error.output)
+        reason = (
+            "final compose build timed out after "
+            f"{int(_FINAL_BUILD_TIMEOUT_SECONDS)} seconds: {retained}"
+        )
+        reconciled = BuildReconciliation(False, False, {}, reason)
+        ledger.close(claim, reconciled, resolved.digest)
+        raise ValueError(reason) from error
     reconciled = reconcile_build(
         result.returncode, result.output, tags, executor.inspect_image
     )
@@ -360,10 +407,7 @@ def start_no_build(
             timeout_seconds=_NO_BUILD_START_TIMEOUT_SECONDS,
         )
     except subprocess.TimeoutExpired as error:
-        output = error.output
-        if isinstance(output, bytes):
-            output = output.decode(errors="replace")
-        retained = str(output or "").strip()
+        retained = _bounded_compose_diagnostic(error.output)
         raise ValueError(
             "no-build compose startup timed out after "
             f"{int(_NO_BUILD_START_TIMEOUT_SECONDS)} seconds: {retained}"
@@ -716,6 +760,14 @@ def _key_digest(key: BuildLedgerKey) -> str:
     return _sha256(
         f"{key.candidate_sha}\0{key.profile_checksum}\0{key.contract_checksum}".encode()
     )
+
+
+def _bounded_compose_diagnostic(output: str | bytes | None) -> str:
+    if isinstance(output, bytes):
+        output = output.decode(errors="replace")
+    diagnostics = BoundedComposeDiagnostics()
+    diagnostics.retain(str(output or ""))
+    return diagnostics.output.decode(errors="replace").strip()
 
 
 def _sha256(value: bytes) -> str:

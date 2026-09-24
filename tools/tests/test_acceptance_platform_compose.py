@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from acceptance.platform.compose import (
     BuildLedger,
+    BoundedComposeDiagnostics,
     CommandResult,
     SubprocessComposeExecutor,
     build_final,
@@ -61,6 +62,18 @@ def test_subprocess_executor_streams_combined_output_and_preserves_exit() -> Non
     assert result.returncode == 124
     assert result.output == "plain-buildkit\n"
     assert retained == ["plain-buildkit\n"]
+
+
+def test_bounded_compose_diagnostics_redacts_credentials_and_marks_truncation() -> None:
+    diagnostics = BoundedComposeDiagnostics(max_bytes=96)
+    diagnostics.retain("#1 token=top-secret-password\n")
+    diagnostics.retain("#2 " + "x" * 100)
+
+    retained = diagnostics.output.decode()
+    assert "top-secret-password" not in retained
+    assert "token=<redacted>" in retained
+    assert "[platform retained Compose output truncated]" in retained
+    assert len(diagnostics.output) <= 96
 
 
 def test_duplicate_build_ledger_claim_is_refused(tmp_path: Path) -> None:
@@ -224,6 +237,38 @@ def test_start_no_build_bounds_compose_wait_and_reports_retained_timeout_output(
 
     with pytest.raises(ValueError, match="timed out after 120 seconds: partial startup output"):
         start_no_build(topology, CONTRACT, KEY, ledger, executor)
+
+
+def test_final_build_bounds_buildkit_and_closes_ledger_with_timeout_diagnostic(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path)
+    executor = _executor(config=_resolved_config(topology))
+    ledger = BuildLedger(tmp_path / "ledger")
+    resolve_topology(topology, CONTRACT, executor)
+    original_run = executor.run
+
+    def run_with_expiring_build_deadline(
+        argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
+        if "build" in argv:
+            assert timeout_seconds == 600.0
+            raise subprocess.TimeoutExpired(
+                argv, timeout_seconds, output="partial BuildKit output"
+            )
+        return original_run(argv, timeout_seconds=timeout_seconds)
+
+    executor.run = run_with_expiring_build_deadline  # type: ignore[method-assign]
+
+    with pytest.raises(
+        ValueError,
+        match="final compose build timed out after 600 seconds: partial BuildKit output",
+    ):
+        build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor)
+
+    record = ledger.read(KEY)
+    assert record["state"] == "closed"
+    assert record["reason"] == "final compose build timed out after 600 seconds: partial BuildKit output"
 
 
 def test_failed_or_stale_build_never_starts(tmp_path: Path) -> None:

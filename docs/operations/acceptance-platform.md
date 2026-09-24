@@ -65,7 +65,13 @@ contract checksum as one build-ledger key. Its state machine is:
 2. Run the declared static checks.
 3. Prepare task-owned topology and arm cleanup.
 4. Resolve the scoped topology and perform one fresh-image build for the ledger
-   key.
+   key. The platform owns a fixed 600-second deadline for `docker compose build
+   --no-cache --progress=plain`; it is deliberately below the 900-second runner
+   monitor. Every final-critical Compose operation passes combined output through
+   bounded, credential-redacted platform retention. The sealed evidence includes
+   `compose.output.log` on build success, failure, and deadline exhaustion.
+   A build timeout closes its ledger claim as unusable and records the retained
+   BuildKit diagnostic as the primary build failure.
 5. Reconcile build output and inspected image identities into a usable ledger
    record.
 6. Start the scoped services from that record without another build. The platform
