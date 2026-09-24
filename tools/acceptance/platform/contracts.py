@@ -32,7 +32,19 @@ _OPERATIONAL_TOKENS = (
     "cleanup",
 )
 _COMMAND_PREFIXES = frozenset(
-    {"npm", "npx", "pnpm", "yarn", "pip", "uv", "poetry", "bun", "docker", "compose"}
+    {
+        "npm",
+        "npx",
+        "pnpm",
+        "yarn",
+        "pip",
+        "uv",
+        "poetry",
+        "bun",
+        "docker",
+        "docker-compose",
+        "compose",
+    }
 )
 _SHELL_WRAPPERS = frozenset({"sh", "bash", "dash", "zsh"})
 
