@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import ctypes
 import hashlib
 import json
 import os
@@ -104,6 +105,7 @@ class PlatformBrowserSession:
     _launch: BrowserLaunchSpec
     _browser: Any
     _xvfb: Any
+    _xvfb_socket_identity: tuple[int, int] | None = None
     _closed: bool = False
 
     def close(self) -> None:
@@ -127,7 +129,11 @@ class PlatformBrowserSession:
 
         attempt(lambda: _terminate_browser_group(self._browser))
         attempt(lambda: _terminate(self._xvfb))
-        attempt(lambda: _remove_xvfb_socket_after_exit(self.display, self._xvfb))
+        attempt(
+            lambda: _remove_xvfb_socket_after_exit(
+                self.display, self._xvfb, self._xvfb_socket_identity
+            )
+        )
         attempt(lambda: _retain_logs(self.artifacts, "browser", self._browser))
         attempt(lambda: _retain_logs(self.artifacts, "xvfb", self._xvfb))
         attempt(self._launch.close)
@@ -139,6 +145,7 @@ class PlatformBrowserSession:
                 int(self.cdp_url.rsplit(":", 1)[1]),
                 self.profile_dir,
                 _browser_group_id(self._browser),
+                self._xvfb_socket_identity,
             )
         )
         if errors:
@@ -159,6 +166,7 @@ def start_final_browser_session(
     bundle: BrowserBundle | None = None
     launch: BrowserLaunchSpec | None = None
     browser = xvfb = None
+    xvfb_socket_identity: tuple[int, int] | None = None
     profile_dir: Path | None = None
     try:
         bundle = executor.verify_bundle(profile)
@@ -176,6 +184,7 @@ def start_final_browser_session(
         )
         cdp_url = f"http://127.0.0.1:{port}"
         _wait_ready(browser, xvfb, cdp_url, executor)
+        xvfb_socket_identity = _socket_identity(_xvfb_socket_path(display))
         probe = (executor.run_card or _platform_card(card_path, cdp_url))(
             launch, task_root
         )
@@ -190,6 +199,7 @@ def start_final_browser_session(
             launch,
             browser,
             xvfb,
+            xvfb_socket_identity,
         )
     except BaseException:
         retained: dict[str, bytes] = {}
@@ -204,6 +214,7 @@ def start_final_browser_session(
                 launch,
                 browser,
                 xvfb,
+                xvfb_socket_identity,
             )
             try:
                 session.close()
@@ -472,25 +483,96 @@ def _xvfb_socket_path(display: str) -> Path | None:
     return Path(f"/tmp/.X11-unix/X{display_number}")
 
 
-def _remove_xvfb_socket_after_exit(display: str, process: Any) -> None:
-    """Remove only this terminated Xvfb's stale Unix socket, or fail closed."""
+def _socket_identity(path: Path | None) -> tuple[int, int] | None:
+    """Return a Unix socket's stable device/inode identity without following links."""
+    if path is None:
+        return None
+    try:
+        status = os.lstat(path)
+    except FileNotFoundError:
+        return None
+    except OSError as error:
+        raise ValueError("unable to inspect task X display socket") from error
+    if not stat.S_ISSOCK(status.st_mode):
+        return None
+    return status.st_dev, status.st_ino
+
+
+def _rename_exchange(source: Path, target: Path) -> None:
+    """Atomically exchange two same-directory entries on Linux."""
+    renameat2 = getattr(ctypes.CDLL(None, use_errno=True), "renameat2", None)
+    if renameat2 is None:
+        raise ValueError("unable to claim terminated task X display socket safely")
+    renameat2.argtypes = (
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_uint,
+    )
+    renameat2.restype = ctypes.c_int
+    if renameat2(
+        -100,
+        os.fsencode(source),
+        -100,
+        os.fsencode(target),
+        2,  # RENAME_EXCHANGE
+    ) != 0:
+        error = ctypes.get_errno()
+        raise ValueError("unable to claim terminated task X display socket safely") from OSError(
+            error, os.strerror(error)
+        )
+
+
+def _remove_xvfb_socket_after_exit(
+    display: str, process: Any, expected_identity: tuple[int, int] | None
+) -> None:
+    """Delete only the recorded task socket after atomically blocking display reuse."""
     if process is not None and process.poll() is None:
         raise ValueError("task Xvfb process remains after cleanup")
     path = _xvfb_socket_path(display)
     if path is None or not os.path.lexists(path):
         return
+    if expected_identity is None:
+        raise ValueError("unable to establish task X display socket ownership")
+
+    descriptor, guard_name = tempfile.mkstemp(prefix=".task-xvfb-", dir=path.parent)
+    os.close(descriptor)
+    guard = Path(guard_name)
+    guard_status = os.lstat(guard)
+    guard_identity = (guard_status.st_dev, guard_status.st_ino)
+    claimed = False
     try:
-        mode = os.lstat(path).st_mode
-    except OSError as error:
-        raise ValueError("unable to inspect task X display socket") from error
-    if not stat.S_ISSOCK(mode):
-        raise ValueError("task X display path is not a socket")
-    try:
+        _rename_exchange(path, guard)
+        claimed = True
+        if _socket_identity(guard) != expected_identity:
+            _rename_exchange(path, guard)
+            claimed = False
+            raise ValueError("task X display socket changed after Xvfb exit")
+        os.unlink(guard)
+        if os.path.lexists(guard):
+            raise ValueError("task X display socket remains after cleanup")
+        current_guard = os.lstat(path)
+        if (current_guard.st_dev, current_guard.st_ino) != guard_identity:
+            raise ValueError("unable to remove task X display cleanup guard")
         os.unlink(path)
     except OSError as error:
         raise ValueError("unable to remove terminated task X display socket") from error
-    if os.path.lexists(path):
-        raise ValueError("task X display remains after cleanup")
+    finally:
+        if claimed:
+            try:
+                _rename_exchange(path, guard)
+            except (OSError, ValueError):
+                pass
+        try:
+            current_guard = os.lstat(guard)
+            if (
+                (current_guard.st_dev, current_guard.st_ino) == guard_identity
+                and not stat.S_ISSOCK(current_guard.st_mode)
+            ):
+                os.unlink(guard)
+        except OSError:
+            pass
 
 
 def _browser_group_id(process: Any) -> int | None:
@@ -543,15 +625,21 @@ def _terminate_browser_group(process: Any) -> None:
 
 
 def _verify_browser_cleanup(
-    display: str, port: int, profile: Path, process_group: int | None
+    display: str,
+    port: int,
+    profile: Path,
+    process_group: int | None,
+    xvfb_socket_identity: tuple[int, int] | None,
 ) -> None:
     """Fail closed if task-owned browser resources survive teardown."""
     if process_group is not None and _process_group_exists(process_group):
         raise ValueError("task browser process group remains after cleanup")
     if _cdp_version(f"http://127.0.0.1:{port}") is not None:
         raise ValueError("task CDP listener remains after cleanup")
-    socket_path = _xvfb_socket_path(display)
-    if socket_path is not None and os.path.lexists(socket_path):
+    if (
+        xvfb_socket_identity is not None
+        and _socket_identity(_xvfb_socket_path(display)) == xvfb_socket_identity
+    ):
         raise ValueError("task X display remains after cleanup")
     if profile.exists():
         raise ValueError("task browser profile remains after cleanup")

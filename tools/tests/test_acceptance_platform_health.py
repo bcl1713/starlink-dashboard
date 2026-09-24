@@ -236,8 +236,8 @@ def test_session_cleanup_removes_owned_xvfb_socket_only_after_xvfb_exits(
     unix_socket = __import__("socket").socket(__import__("socket").AF_UNIX)
     unix_socket.bind(str(socket_path))
     bundle = _Bundle()
-    session = start_final_browser_session(_profile(), tmp_path, _executor(bundle))
     monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+    session = start_final_browser_session(_profile(), tmp_path, _executor(bundle))
 
     try:
         session.close()
@@ -245,6 +245,46 @@ def test_session_cleanup_removes_owned_xvfb_socket_only_after_xvfb_exits(
         unix_socket.close()
 
     assert not socket_path.exists()
+
+
+def test_session_cleanup_does_not_unlink_a_socket_rebound_at_the_x_display_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A post-exit X server must survive a stale task socket cleanup race."""
+    from acceptance.platform import health
+
+    monkeypatch.chdir(tmp_path)
+    socket_path = Path("X123-race")
+    stale_socket = __import__("socket").socket(__import__("socket").AF_UNIX)
+    stale_socket.bind(str(socket_path))
+    stale_identity = health._socket_identity(socket_path)
+    replacement_socket = __import__("socket").socket(__import__("socket").AF_UNIX)
+    bundle = _Bundle()
+    monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+    session = start_final_browser_session(_profile(), tmp_path, _executor(bundle))
+    original_rename_exchange = health._rename_exchange
+
+    replaced = False
+
+    def replace_before_claim(source: Path, guard: Path) -> None:
+        nonlocal replaced
+        if source == socket_path and not replaced:
+            replaced = True
+            socket_path.unlink()
+            replacement_socket.bind(str(socket_path))
+        original_rename_exchange(source, guard)
+
+    monkeypatch.setattr(health, "_rename_exchange", replace_before_claim)
+
+    try:
+        with pytest.raises(ValueError, match="task X display socket changed after Xvfb exit"):
+            session.close()
+        assert socket_path.exists()
+        assert health._socket_identity(socket_path) != stale_identity
+    finally:
+        stale_socket.close()
+        replacement_socket.close()
+        socket_path.unlink(missing_ok=True)
 
 
 def test_session_cleanup_keeps_xvfb_socket_when_owned_xvfb_is_still_alive(
@@ -265,8 +305,8 @@ def test_session_cleanup_keeps_xvfb_socket_when_owned_xvfb_is_still_alive(
     executor = PlatformHealthExecutor(
         **{**executor.__dict__, "start_xvfb": lambda _: StubbornXvfb()}
     )
-    session = start_final_browser_session(_profile(), tmp_path, executor)
     monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+    session = start_final_browser_session(_profile(), tmp_path, executor)
 
     try:
         with pytest.raises(ValueError, match="task Xvfb process remains after cleanup"):
@@ -306,7 +346,7 @@ def test_xvfb_termination_failure_drains_every_remaining_session_resource(
     monkeypatch.setattr(
         health,
         "_verify_browser_cleanup",
-        lambda _display, _port, profile, _pgid: cleanup_verification.append(
+        lambda _display, _port, profile, _pgid, _identity: cleanup_verification.append(
             (profile.exists(), bundle.launch.closed, bundle.closed)
         ),
     )

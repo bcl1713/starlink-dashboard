@@ -227,6 +227,38 @@ def test_final_runner_replaces_caller_origin_with_its_exact_loopback_frontend_po
     ]
 
 
+def test_default_final_runner_passes_the_exact_runner_owned_origin_to_final_steps(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The production final path must not rely on the injected final_steps seam."""
+    observed: list[tuple[str, str]] = []
+
+    def capture_final_inputs(inputs: object, *_: object) -> dict[str, bytes]:
+        observed.append((inputs.browser_session, inputs.deployed_origin))  # type: ignore[attr-defined]
+        return {}
+
+    monkeypatch.setattr(runner, "_final_steps", capture_final_inputs)
+    result = run(
+        _argv(tmp_path, "final")
+        + [
+            "--frontend-port",
+            "23456",
+            "--deployed-origin",
+            "https://caller.invalid",
+        ],
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            start_browser_session=lambda *_: _Session(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    assert result.exit_code == 0
+    assert observed == [("http://127.0.0.1:9", "http://127.0.0.1:23456")]
+
+
 def test_cleanup_failure_preserves_product_failure(tmp_path: Path) -> None:
     result = run(
         _argv(tmp_path, "final"),

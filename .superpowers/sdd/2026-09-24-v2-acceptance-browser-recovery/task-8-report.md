@@ -49,3 +49,45 @@ git diff --check
 ```
 
 Result: both commands exited `0`.
+
+## Review-fix round 1 — identity-safe X socket cleanup and default path
+
+### RED
+
+```text
+python -m pytest \
+  tools/tests/test_acceptance_platform_health.py::test_session_cleanup_does_not_unlink_a_socket_rebound_at_the_x_display_path \
+  tools/tests/test_acceptance_platform_runner.py::test_default_final_runner_passes_the_exact_runner_owned_origin_to_final_steps -q
+```
+
+Result: `1 failed, 1 passed in 0.34s`.
+
+- The X-display race test failed before implementation because no atomic pathname-claim primitive existed (`AttributeError: _rename_exchange`).
+- The default final-path origin test passed against the prior Task 8 origin implementation, recording the exact generated `http://127.0.0.1:23456`; it closes the previously missing coverage gap rather than changing already-correct runner behavior.
+
+### GREEN
+
+```text
+python -m pytest \
+  tools/tests/test_acceptance_platform_health.py::test_session_cleanup_removes_owned_xvfb_socket_only_after_xvfb_exits \
+  tools/tests/test_acceptance_platform_health.py::test_session_cleanup_does_not_unlink_a_socket_rebound_at_the_x_display_path \
+  tools/tests/test_acceptance_platform_health.py::test_session_cleanup_keeps_xvfb_socket_when_owned_xvfb_is_still_alive \
+  tools/tests/test_acceptance_platform_runner.py::test_final_runner_replaces_caller_origin_with_its_exact_loopback_frontend_port \
+  tools/tests/test_acceptance_platform_runner.py::test_default_final_runner_passes_the_exact_runner_owned_origin_to_final_steps -q
+```
+
+Result: `5 passed in 0.30s`.
+
+- The session records the task-owned Xvfb socket device/inode identity after readiness.
+- Cleanup atomically exchanges the contested X-display pathname with a task guard before checking identity. A replacement is restored and retained; only the parked, recorded task socket is removed.
+- The default `final_steps is None` path now has direct coverage for the exact runner-owned origin.
+
+### Review-fix verification
+
+```text
+python -m pytest tools/tests/test_acceptance_platform_runner.py tools/tests/test_acceptance_platform_health.py -q
+python -m compileall -q tools/acceptance/platform tools/tests
+git diff --check
+```
+
+Result: `69 passed in 3.16s`; compile and diff checks exited `0`.
