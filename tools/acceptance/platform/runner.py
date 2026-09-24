@@ -296,6 +296,11 @@ def _verify_browser_card(inputs: RunnerInputs) -> None:
         raise ValueError("final lane requires a deployed origin")
 
 
+def _runner_owned_deployed_origin(frontend_port: int) -> str:
+    """Bind final browser navigation to the runner's deployed frontend listener."""
+    return f"http://127.0.0.1:{frontend_port}"
+
+
 def _run_journey(
     inputs: RunnerInputs, contract: ProductContract, adapter: _AdapterSource
 ) -> dict[str, bytes]:
@@ -1098,16 +1103,18 @@ def run(
                 browser_card = dependencies.browser_card or _verify_browser_card
                 adapter_source = _open_adapter_source(inputs, contract)
                 adapter_sha256 = adapter_source.sha256
+                if inputs.browser_session:
+                    raise ValueError("final lane rejects caller-supplied browser session")
                 if dependencies.final_steps is None:
-                    if inputs.browser_session:
-                        raise ValueError(
-                            "final lane rejects caller-supplied browser session"
-                        )
                     browser_session = (
                         dependencies.start_browser_session or _start_browser_session
                     )(profile, inputs.task_root, PlatformHealthExecutor(probe=_probe))
                     final_inputs = replace(
-                        inputs, browser_session=browser_session.cdp_url
+                        inputs,
+                        browser_session=browser_session.cdp_url,
+                        deployed_origin=_runner_owned_deployed_origin(
+                            inputs.frontend_port
+                        ),
                     )
                     artifacts = _final_steps(
                         final_inputs,
@@ -1120,17 +1127,24 @@ def run(
                     resource = resource_holder[0] if resource_holder else None
                 else:
                     if dependencies.start_browser_session is not None:
-                        if inputs.browser_session:
-                            raise ValueError(
-                                "final lane rejects caller-supplied browser session"
-                            )
                         browser_session = dependencies.start_browser_session(
                             profile,
                             inputs.task_root,
                             PlatformHealthExecutor(probe=_probe),
                         )
                         inputs = replace(
-                            inputs, browser_session=browser_session.cdp_url
+                            inputs,
+                            browser_session=browser_session.cdp_url,
+                            deployed_origin=_runner_owned_deployed_origin(
+                                inputs.frontend_port
+                            ),
+                        )
+                    else:
+                        inputs = replace(
+                            inputs,
+                            deployed_origin=_runner_owned_deployed_origin(
+                                inputs.frontend_port
+                            ),
                         )
                     browser_card(inputs)
                     resource = dependencies.final_steps(inputs, profile, contract)

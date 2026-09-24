@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import socket
+import stat
 import subprocess
 import tempfile
 import time
@@ -126,6 +127,7 @@ class PlatformBrowserSession:
 
         attempt(lambda: _terminate_browser_group(self._browser))
         attempt(lambda: _terminate(self._xvfb))
+        attempt(lambda: _remove_xvfb_socket_after_exit(self.display, self._xvfb))
         attempt(lambda: _retain_logs(self.artifacts, "browser", self._browser))
         attempt(lambda: _retain_logs(self.artifacts, "xvfb", self._xvfb))
         attempt(self._launch.close)
@@ -463,6 +465,34 @@ def _terminate(process: Any) -> None:
         process.wait(timeout=5)
 
 
+def _xvfb_socket_path(display: str) -> Path | None:
+    display_number = display.removeprefix(":")
+    if not display_number.isdigit():
+        return None
+    return Path(f"/tmp/.X11-unix/X{display_number}")
+
+
+def _remove_xvfb_socket_after_exit(display: str, process: Any) -> None:
+    """Remove only this terminated Xvfb's stale Unix socket, or fail closed."""
+    if process is not None and process.poll() is None:
+        raise ValueError("task Xvfb process remains after cleanup")
+    path = _xvfb_socket_path(display)
+    if path is None or not os.path.lexists(path):
+        return
+    try:
+        mode = os.lstat(path).st_mode
+    except OSError as error:
+        raise ValueError("unable to inspect task X display socket") from error
+    if not stat.S_ISSOCK(mode):
+        raise ValueError("task X display path is not a socket")
+    try:
+        os.unlink(path)
+    except OSError as error:
+        raise ValueError("unable to remove terminated task X display socket") from error
+    if os.path.lexists(path):
+        raise ValueError("task X display remains after cleanup")
+
+
 def _browser_group_id(process: Any) -> int | None:
     pid = getattr(process, "pid", None)
     return pid if isinstance(pid, int) and pid > 0 else None
@@ -520,8 +550,8 @@ def _verify_browser_cleanup(
         raise ValueError("task browser process group remains after cleanup")
     if _cdp_version(f"http://127.0.0.1:{port}") is not None:
         raise ValueError("task CDP listener remains after cleanup")
-    display_number = display.removeprefix(":")
-    if display_number.isdigit() and Path(f"/tmp/.X11-unix/X{display_number}").exists():
+    socket_path = _xvfb_socket_path(display)
+    if socket_path is not None and os.path.lexists(socket_path):
         raise ValueError("task X display remains after cleanup")
     if profile.exists():
         raise ValueError("task browser profile remains after cleanup")

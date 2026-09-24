@@ -226,6 +226,57 @@ def test_final_session_uses_profile_pinned_headed_xvfb_and_requires_neutral_metr
     assert session.artifacts["xvfb.stdout.log"] == b"diagnostic stdout"
 
 
+def test_session_cleanup_removes_owned_xvfb_socket_only_after_xvfb_exits(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from acceptance.platform import health
+
+    monkeypatch.chdir(tmp_path)
+    socket_path = Path("X123")
+    unix_socket = __import__("socket").socket(__import__("socket").AF_UNIX)
+    unix_socket.bind(str(socket_path))
+    bundle = _Bundle()
+    session = start_final_browser_session(_profile(), tmp_path, _executor(bundle))
+    monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+
+    try:
+        session.close()
+    finally:
+        unix_socket.close()
+
+    assert not socket_path.exists()
+
+
+def test_session_cleanup_keeps_xvfb_socket_when_owned_xvfb_is_still_alive(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from acceptance.platform import health
+
+    class StubbornXvfb(_Process):
+        def terminate(self) -> None:
+            self.terminated = True
+
+    monkeypatch.chdir(tmp_path)
+    socket_path = Path("X124")
+    unix_socket = __import__("socket").socket(__import__("socket").AF_UNIX)
+    unix_socket.bind(str(socket_path))
+    bundle = _Bundle()
+    executor = _executor(bundle)
+    executor = PlatformHealthExecutor(
+        **{**executor.__dict__, "start_xvfb": lambda _: StubbornXvfb()}
+    )
+    session = start_final_browser_session(_profile(), tmp_path, executor)
+    monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+
+    try:
+        with pytest.raises(ValueError, match="task Xvfb process remains after cleanup"):
+            session.close()
+        assert socket_path.exists()
+    finally:
+        unix_socket.close()
+        socket_path.unlink(missing_ok=True)
+
+
 def test_xvfb_termination_failure_drains_every_remaining_session_resource(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

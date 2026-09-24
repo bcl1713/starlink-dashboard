@@ -103,7 +103,10 @@ Use this operator sequence for final acceptance:
    budget and durable stdout and stderr capture.
 4. The runner, not a caller, owns the headed Xvfb and loopback CDP browser
    resources, its task-owned profile, and pre-journey native display/card metrics.
-   Callers must not hand-launch a headless browser as final acceptance evidence.
+   After it starts that browser, it constructs the journey origin exactly as
+   `http://127.0.0.1:{frontend_port}`; caller-supplied browser sessions and
+   deployed origins cannot supply final authority. Callers must not hand-launch
+   a headless browser as final acceptance evidence.
 5. On failure, inspect the runner's sealed diagnostic logs at
    `adapter.stdout.log` and `adapter.stderr.log` in the final evidence root.
 6. After an interruption, inspect the final build ledger, inspected image
@@ -141,9 +144,10 @@ leave a discoverable final-pass authority.
 
 One runner-owned cleanup path is armed as soon as task-owned resources exist. On
 success, failure, or interruption it drains Compose resources, browser/Xvfb
-processes and listeners, the task browser profile, and the generated task root
-before it records the result. It retains collected diagnostics before removing
-the task root and preserves persistent volumes unless their removal was
+processes and listeners, removes a task-owned Xvfb socket only after that Xvfb
+process has exited, removes the task browser profile, and removes the generated
+task root before it records the result. It retains collected diagnostics before
+removing the task root and preserves persistent volumes unless their removal was
 explicitly requested.
 
 Cleanup runs on success, failure, and platform blocking after resources were

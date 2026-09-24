@@ -47,6 +47,16 @@ def _current_health() -> object:
     return object()
 
 
+class _Session:
+    cdp_url = "http://127.0.0.1:9"
+
+    def __init__(self) -> None:
+        self.artifacts: dict[str, bytes] = {}
+
+    def close(self) -> None:
+        pass
+
+
 def _png(width: int = 1920, height: int = 1080) -> bytes:
     """Small, structurally decoded 8-bit grayscale PNG for boundary tests."""
 
@@ -173,6 +183,48 @@ def test_final_requires_every_required_result(tmp_path: Path) -> None:
 
     assert result.manifest["final_acceptance"] is False
     assert result.manifest["outcome"] == Outcome.FAILED.value
+
+
+def test_final_runner_replaces_caller_origin_with_its_exact_loopback_frontend_port(
+    tmp_path: Path,
+) -> None:
+    observed: list[tuple[str, str]] = []
+
+    class Session:
+        cdp_url = "http://127.0.0.1:9222"
+        artifacts: dict[str, bytes] = {}
+
+        def close(self) -> None:
+            pass
+
+    argv = _argv(tmp_path, "final") + [
+        "--frontend-port",
+        "23456",
+        "--deployed-origin",
+        "https://caller.invalid",
+    ]
+    result = run(
+        argv,
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            start_browser_session=lambda *_: Session(),
+            browser_card=lambda inputs: observed.append(
+                (inputs.browser_session, inputs.deployed_origin)
+            ),
+            final_steps=lambda inputs, *_: observed.append(
+                (inputs.browser_session, inputs.deployed_origin)
+            ),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    assert result.exit_code == 0
+    assert observed == [
+        ("http://127.0.0.1:9222", "http://127.0.0.1:23456"),
+        ("http://127.0.0.1:9222", "http://127.0.0.1:23456"),
+    ]
 
 
 def test_cleanup_failure_preserves_product_failure(tmp_path: Path) -> None:
@@ -598,17 +650,12 @@ process.exit(1);
         return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
 
     result = run(
-        _argv(tmp_path, "final")
-        + [
-            "--browser-session",
-            "http://127.0.0.1:9",
-            "--deployed-origin",
-            "http://127.0.0.1:9",
-        ],
+        _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
             load_profile=lambda _: object(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
+            start_browser_session=lambda *_: _Session(),
             browser_card=lambda *_: None,
             final_steps=final_steps,
             cleanup=lambda *_: None,
@@ -652,17 +699,12 @@ setInterval(() => {}, 1_000);
         return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
 
     result = run(
-        _argv(tmp_path, "final")
-        + [
-            "--browser-session",
-            "http://127.0.0.1:9",
-            "--deployed-origin",
-            "http://127.0.0.1:9",
-        ],
+        _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
             load_profile=lambda _: object(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
+            start_browser_session=lambda *_: _Session(),
             browser_card=lambda *_: None,
             final_steps=final_steps,
             cleanup=lambda *_: None,
@@ -700,17 +742,12 @@ process.exit(1);
         return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
 
     result = run(
-        _argv(tmp_path, "final")
-        + [
-            "--browser-session",
-            "http://127.0.0.1:9",
-            "--deployed-origin",
-            "http://127.0.0.1:9",
-        ],
+        _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
             load_profile=lambda _: object(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
+            start_browser_session=lambda *_: _Session(),
             browser_card=lambda *_: None,
             final_steps=final_steps,
             cleanup=lambda *_: None,
@@ -759,17 +796,12 @@ setInterval(() => {}, 1_000);
         return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
 
     result = run(
-        _argv(tmp_path, "final")
-        + [
-            "--browser-session",
-            "http://127.0.0.1:9",
-            "--deployed-origin",
-            "http://127.0.0.1:9",
-        ],
+        _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
             load_profile=lambda _: object(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
+            start_browser_session=lambda *_: _Session(),
             browser_card=lambda *_: None,
             final_steps=final_steps,
             cleanup=lambda *_: None,
