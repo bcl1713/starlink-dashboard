@@ -4,8 +4,6 @@ import os
 import subprocess
 from pathlib import Path
 
-import pytest
-
 PROVISION_SCRIPT = (
     Path(__file__).resolve().parents[1]
     / "acceptance/browser/provision-v2-mission-retirement-chromium.mjs"
@@ -15,21 +13,6 @@ CARD_SCRIPT = (
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MISSION_PLANNER = PROJECT_ROOT / "frontend/mission-planner"
-
-
-@pytest.fixture(autouse=True)
-def fake_npm_ci(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Keeps provisioning tests hermetic while asserting the fixed npm-ci contract."""
-    fake_bin = tmp_path / "npm-bin"
-    fake_bin.mkdir()
-    npm = fake_bin / "npm"
-    npm.write_text(
-        "#!/usr/bin/env node\n"
-        "if (process.argv.slice(2).join(' ') !== 'ci --ignore-scripts') process.exit(64);\n",
-        encoding="utf-8",
-    )
-    npm.chmod(0o755)
-    monkeypatch.setenv("PATH", f"{fake_bin}{os.pathsep}{os.environ['PATH']}")
 
 
 def make_project(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -89,6 +72,15 @@ def make_project(tmp_path: Path) -> tuple[Path, Path, Path]:
         ),
         encoding="utf-8",
     )
+    npm = project / "trusted-npm"
+    npm.write_text(
+        "#!/usr/bin/env node\n"
+        "const args = process.argv.slice(2).join(' ');\n"
+        "if (args === '--version') console.log('10.9.0');\n"
+        "else if (args !== 'ci --ignore-scripts') process.exit(64);\n",
+        encoding="utf-8",
+    )
+    npm.chmod(0o755)
     return project, browser_root, provenance
 
 
@@ -119,6 +111,8 @@ def preflight_args(project: Path, browser_root: Path, provenance: Path) -> list[
         str(provenance.parent),
         "--provenance-file",
         str(provenance),
+        "--npm-executable",
+        str(project / "trusted-npm"),
     ]
 
 
@@ -310,15 +304,14 @@ def test_provision_replaces_a_regular_file_cli_before_installer_execution(
     )
     marker = tmp_path / "malicious-ran"
     npm_log = tmp_path / "npm-command.json"
-    fake_bin = tmp_path / "fake-bin"
-    fake_bin.mkdir()
-    fake_npm = fake_bin / "npm"
+    fake_npm = project / "trusted-npm"
     fake_npm.write_text(
         "#!/usr/bin/env node\n"
         "const fs = require('node:fs');\n"
         "const path = require('node:path');\n"
-        "fs.writeFileSync(process.env.NPM_LOG, JSON.stringify({argv: process.argv.slice(2), cwd: process.cwd()}));\n"
-        "fs.writeFileSync(path.join(process.cwd(), 'node_modules/playwright/cli.js'), `const fs = require('node:fs'); const path = require('node:path'); const root = process.env.PLAYWRIGHT_BROWSERS_PATH; const chrome = path.join(root, 'chromium-999/chrome-linux64/chrome'); fs.mkdirSync(path.dirname(chrome), {recursive: true}); fs.writeFileSync(chrome, \"#!/bin/sh\\\\necho 'Google Chrome 1.2.3.4'\\\\n\"); fs.chmodSync(chrome, 0o755);`);\n",
+        "const args = process.argv.slice(2).join(' ');\n"
+        "if (args === '--version') console.log('10.9.0');\n"
+        "else if (args === 'ci --ignore-scripts') { fs.writeFileSync(process.env.NPM_LOG, JSON.stringify({argv: process.argv.slice(2), cwd: process.cwd()})); fs.writeFileSync(path.join(process.cwd(), 'node_modules/playwright/cli.js'), `const fs = require('node:fs'); const path = require('node:path'); const root = process.env.PLAYWRIGHT_BROWSERS_PATH; const chrome = path.join(root, 'chromium-999/chrome-linux64/chrome'); fs.mkdirSync(path.dirname(chrome), {recursive: true}); fs.writeFileSync(chrome, \"#!/bin/sh\\\\necho 'Google Chrome 1.2.3.4'\\\\n\"); fs.chmodSync(chrome, 0o755);`); } else process.exit(64);\n",
         encoding="utf-8",
     )
     fake_npm.chmod(0o755)
@@ -336,7 +329,6 @@ def test_provision_replaces_a_regular_file_cli_before_installer_execution(
         text=True,
         env={
             **os.environ,
-            "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
             "NPM_LOG": str(npm_log),
             "MALICIOUS_MARKER": str(marker),
         },
@@ -349,7 +341,13 @@ def test_provision_replaces_a_regular_file_cli_before_installer_execution(
     }
     record = json.loads(result.stdout)
     assert record["packagePreparation"] == {
-        "command": ["npm", "ci", "--ignore-scripts"],
+        "command": [str(fake_npm), "ci", "--ignore-scripts"],
+        "executable": {
+            "path": str(fake_npm),
+            "sha256": hashlib.sha256(fake_npm.read_bytes()).hexdigest(),
+            "size": fake_npm.stat().st_size,
+            "versionOutput": "10.9.0",
+        },
         "lockfileSha256": hashlib.sha256(
             (project / "package-lock.json").read_bytes()
         ).hexdigest(),
@@ -358,6 +356,50 @@ def test_provision_replaces_a_regular_file_cli_before_installer_execution(
     }
     assert not marker.exists()
     assert record["installer"]["command"][1] == str(cli)
+
+
+def test_provision_rejects_successful_npm_that_keeps_malicious_cli(
+    tmp_path: Path,
+) -> None:
+    """Fails closed before CLI execution when npm claims success without cleaning it."""
+    project, browser_root, provenance = make_project(tmp_path)
+    cli = project / "node_modules/playwright/cli.js"
+    cli.write_text(
+        "require('node:fs').writeFileSync(process.env.MALICIOUS_MARKER, 'ran');\n",
+        encoding="utf-8",
+    )
+    marker = tmp_path / "malicious-ran"
+    fake_npm = project / "trusted-npm"
+    fake_npm.write_text(
+        "#!/usr/bin/env node\n"
+        "const args = process.argv.slice(2).join(' ');\n"
+        "if (args === '--version') console.log('10.9.0');\n"
+        "else if (args !== 'ci --ignore-scripts') process.exit(64);\n",
+        encoding="utf-8",
+    )
+    fake_npm.chmod(0o755)
+
+    result = subprocess.run(
+        [
+            "node",
+            str(PROVISION_SCRIPT),
+            "--mode",
+            "provision",
+            *preflight_args(project, browser_root, provenance),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "MALICIOUS_MARKER": str(marker),
+        },
+    )
+
+    assert result.returncode == 1
+    assert "did not replace Playwright CLI" in json.loads(result.stdout)["error"]
+    assert not marker.exists()
+    assert not provenance.exists()
 
 
 def test_provenance_rejects_task_root_escape_and_symlinked_parent(

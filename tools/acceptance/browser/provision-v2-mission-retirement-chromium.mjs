@@ -11,7 +11,7 @@ const INSTALL_TIMEOUT_MS = 120_000;
 const VERSION_TIMEOUT_MS = 10_000;
 const MAX_COMMAND_OUTPUT_BYTES = 16 * 1024;
 const LINUX_EXECUTABLE_PARTS = ['chrome-linux64', 'chrome'];
-const FLAGS = new Set(['mode', 'project-dir', 'browser-root', 'task-root', 'provenance-file']);
+const FLAGS = new Set(['mode', 'project-dir', 'browser-root', 'task-root', 'provenance-file', 'npm-executable']);
 
 function parseArgs(argv) {
   const values = {};
@@ -101,10 +101,47 @@ async function trustedPlaywrightCli(projectDir) {
   return cli;
 }
 
-async function prepareLockedPackages(projectDir) {
+async function npmIdentity(npmExecutable) {
+  const npm = resolve(npmExecutable);
+  const info = await lstat(npm);
+  if (info.isSymbolicLink() || !info.isFile()) throw new Error('npm executable must be a non-symlink regular file');
+  if (await realpath(npm) !== npm) throw new Error('npm executable must not resolve through a symlink');
+  await access(npm, constants.R_OK | constants.X_OK);
+  let versionOutput;
+  try {
+    versionOutput = (await execFile(npm, ['--version'], { timeout: VERSION_TIMEOUT_MS, maxBuffer: MAX_COMMAND_OUTPUT_BYTES })).stdout.trim();
+  } catch (error) {
+    throw new Error(`cannot execute npm executable: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!/^\d+(?:\.\d+){1,2}(?:[-+][0-9A-Za-z.-]+)?$/.test(versionOutput)) throw new Error(`npm executable returned an invalid version: ${bounded(versionOutput)}`);
+  return { path: npm, sha256: sha256(await readFile(npm)), size: info.size, versionOutput: bounded(versionOutput) };
+}
+
+async function playwrightCliIdentity(projectDir) {
+  const cli = await trustedPlaywrightCli(projectDir);
+  const info = await stat(cli);
+  return { path: cli, dev: String(info.dev), ino: String(info.ino), ctimeMs: info.ctimeMs, size: info.size, sha256: sha256(await readFile(cli)) };
+}
+
+async function existingPlaywrightCliIdentity(projectDir) {
+  try {
+    return await playwrightCliIdentity(projectDir);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
+function sameCliIdentity(left, right) {
+  return left?.path === right?.path && left?.dev === right?.dev && left?.ino === right?.ino && left?.ctimeMs === right?.ctimeMs && left?.size === right?.size && left?.sha256 === right?.sha256;
+}
+
+async function prepareLockedPackages(projectDir, npmExecutable) {
   const lockPath = join(projectDir, 'package-lock.json');
   const before = await readFile(lockPath);
-  const command = ['npm', 'ci', '--ignore-scripts'];
+  const npm = await npmIdentity(npmExecutable);
+  const beforeCli = await existingPlaywrightCliIdentity(projectDir);
+  const command = [npm.path, 'ci', '--ignore-scripts'];
   try {
     const result = await execFile(command[0], command.slice(1), {
       cwd: projectDir,
@@ -114,17 +151,21 @@ async function prepareLockedPackages(projectDir) {
     });
     const after = await readFile(lockPath);
     if (!after.equals(before)) throw new Error('npm ci changed package-lock.json');
-    return { command, lockfileSha256: sha256(before), stdout: bounded(result.stdout), stderr: bounded(result.stderr) };
+    const preparedCli = beforeCli ? await playwrightCliIdentity(projectDir) : null;
+    if (beforeCli && sameCliIdentity(beforeCli, preparedCli)) throw new Error('npm ci did not replace Playwright CLI');
+    return { record: { command, executable: npm, lockfileSha256: sha256(before), stdout: bounded(result.stdout), stderr: bounded(result.stderr) }, preparedCli };
   } catch (error) {
     const output = [error.stdout, error.stderr].filter(Boolean).map(bounded).join('\n');
     throw new Error(`locked npm ci --ignore-scripts preparation failed: ${error instanceof Error ? error.message : String(error)}${output ? `\n${output}` : ''}`);
   }
 }
 
-async function install(projectDir, browserRoot) {
+async function install(projectDir, browserRoot, preparedCli) {
   const command = installerCommand(projectDir);
   const [file, ...args] = command;
-  const cli = await trustedPlaywrightCli(projectDir);
+  const cliIdentity = await playwrightCliIdentity(projectDir);
+  if (preparedCli && !sameCliIdentity(preparedCli, cliIdentity)) throw new Error('Playwright CLI changed after npm ci');
+  const cli = cliIdentity.path;
   if (args[0] !== cli) throw new Error('Playwright CLI command does not match the trusted project entrypoint');
   await access(cli, constants.R_OK);
   try {
@@ -206,7 +247,9 @@ async function main() {
   const browserRoot = resolve(required(flags, 'browser-root'));
   const taskRoot = resolve(required(flags, 'task-root'));
   const provenanceFile = resolve(required(flags, 'provenance-file'));
-  const packagePreparation = mode === 'provision' ? await prepareLockedPackages(projectDir) : null;
+  const npmExecutable = mode === 'provision' ? resolve(required(flags, 'npm-executable')) : null;
+  const preparedPackages = mode === 'provision' ? await prepareLockedPackages(projectDir, npmExecutable) : null;
+  const packagePreparation = preparedPackages?.record ?? null;
   const locked = await lockedBrowser(projectDir);
   const executablePath = inside(browserRoot, join(browserRoot, `chromium-${locked.chromium.revision}`, ...LINUX_EXECUTABLE_PARTS));
   let installer = null;
@@ -215,7 +258,7 @@ async function main() {
     try {
       executable = await verifyExecutable(executablePath, locked.chromium.version);
     } catch {
-      installer = await install(projectDir, browserRoot);
+      installer = await install(projectDir, browserRoot, preparedPackages?.preparedCli);
       executable = await verifyExecutable(executablePath, locked.chromium.version);
     }
   } else {
