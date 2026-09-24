@@ -54,6 +54,7 @@ class HealthFingerprint:
     captured_at: str = ""
     evidence_manifest_sha256: str = ""
     reason: str = ""
+    cleanup_reason: str = ""
 
     @classmethod
     def blocked(cls, reason: str, **values: Any) -> HealthFingerprint:
@@ -179,10 +180,17 @@ def run_platform_health(
                 cleanup_error = cleanup_error or str(error)
     if cleanup_error:
         outcome = Outcome.ENVIRONMENT_BLOCKED
-        reason = cleanup_error
+        values["cleanup_reason"] = cleanup_error
+        if not reason:
+            reason = cleanup_error
     if outcome is not Outcome.PASSED:
         artifacts["blocked.json"] = json.dumps(
-            {"reason": reason, "profile_checksum": profile.checksum}, sort_keys=True
+            {
+                "cleanup_reason": values.get("cleanup_reason", ""),
+                "profile_checksum": profile.checksum,
+                "reason": reason,
+            },
+            sort_keys=True,
         ).encode()
     manifest = write_artifacts(root, artifacts)
     values["evidence_manifest_sha256"] = manifest

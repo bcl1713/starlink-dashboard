@@ -267,6 +267,35 @@ def test_readiness_timeout_retains_diagnostics_and_never_runs_card(
     assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
 
 
+def test_cleanup_failure_preserves_primary_health_diagnostics(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from acceptance.platform import health
+
+    cleanup_reason = "task browser process group remains after cleanup"
+    monkeypatch.setattr(
+        health,
+        "_terminate_browser_group",
+        lambda _: (_ for _ in ()).throw(ValueError(cleanup_reason)),
+    )
+    root = tmp_path / ("e" * 40)
+    executor = _executor(_Bundle(), ready=False)
+    executor = PlatformHealthExecutor(
+        **{**executor.__dict__, "clock": iter((0.0, 121.0)).__next__}
+    )
+
+    result = run_platform_health(_profile(), root, executor, card_path=PLATFORM_CARD)
+
+    blocked = json.loads((root / "blocked.json").read_text())
+    fingerprint = json.loads((root / "fingerprint.json").read_text())
+    assert result.outcome is Outcome.ENVIRONMENT_BLOCKED
+    assert "readiness" in result.reason
+    assert blocked["reason"] == result.reason
+    assert fingerprint["reason"] == result.reason
+    assert blocked["cleanup_reason"] == cleanup_reason
+    assert fingerprint["cleanup_reason"] == cleanup_reason
+
+
 def test_evidence_rejects_symlink_nested_target_and_is_private(tmp_path: Path) -> None:
     root = prepare_evidence_root(tmp_path / ("d" * 40))
     write_artifacts(root, {"safe/nested/ok": b"yes"})
