@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
+import os
 import struct
 import zlib
 from pathlib import Path
@@ -349,6 +351,80 @@ def test_final_manifest_seals_adapter_checksum_and_capture_interval(
     assert sealed["capture"] == capture
 
 
+def test_final_manifest_binds_adapter_digest_captured_before_final_steps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = tmp_path / "repository"
+    adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+    adapter.parent.mkdir(parents=True)
+    adapter.write_text("before launch")
+    before = hashlib.sha256(adapter.read_bytes()).hexdigest()
+    monkeypatch.setattr(runner, "_REPOSITORY", repository)
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: adapter.write_text("after launch"),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    assert result.exit_code == 0
+    assert result.manifest["capture"]["adapter_sha256"] == before
+    assert (
+        result.manifest["capture"]["adapter_sha256"]
+        != hashlib.sha256(adapter.read_bytes()).hexdigest()
+    )
+
+
+def test_journey_launch_retains_prehashed_adapter_descriptor_after_path_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repository = tmp_path / "repository"
+    adapter = repository / "adapter.mjs"
+    asset = repository / "asset.kml"
+    repository.mkdir()
+    adapter.write_text("before launch")
+    asset.write_text("asset")
+    contract = load_product_contract(CONTRACT)
+    contract = contract.__class__(
+        **{
+            **contract.__dict__,
+            "journey_adapter": Path("adapter.mjs"),
+            "assets": (Path("asset.kml"),),
+        }
+    )
+    monkeypatch.setattr(runner, "_REPOSITORY", repository)
+    source = runner._open_adapter_source(contract)
+    before = source.sha256
+
+    def mutate_after_launch(
+        argv: list[str], _cwd: Path, *, pass_fds: tuple[int, ...]
+    ) -> tuple[bytes, bytes, int]:
+        assert argv[1] == source.executable_path
+        assert pass_fds == (source.fd,)
+        replacement = adapter.with_suffix(".replacement")
+        replacement.write_text("after launch")
+        replacement.replace(adapter)
+        os.lseek(source.fd, 0, os.SEEK_SET)
+        assert hashlib.sha256(os.read(source.fd, 1024)).hexdigest() == before
+        return json.dumps(_adapter_payload()).encode(), b"", 0
+
+    monkeypatch.setattr(runner, "_bounded_adapter_process", mutate_after_launch)
+    try:
+        artifacts = runner._run_journey(
+            runner._parse(_argv(tmp_path, "final")), contract, source
+        )
+    finally:
+        source.close()
+
+    assert "adapter-observation.json" in artifacts
+
+
 def test_adapter_rejects_extra_or_aggregate_oversize_artifacts() -> None:
     payload = _adapter_payload()
     payload["artifacts"]["unexpected.bin"] = "eA=="  # type: ignore[index]
@@ -469,6 +545,41 @@ def test_finalization_stage_failure_never_publishes_final_candidate_authority(
     candidate = tmp_path / "evidence" / "candidates" / SHA
     assert not candidate.exists()
     failure = tmp_path / "evidence" / "failures" / SHA
+    verify_manifest(failure)
+    assert (
+        json.loads((failure / "runner-manifest.json").read_text())["final_acceptance"]
+        is False
+    )
+
+
+def test_post_rename_fault_revokes_published_final_candidate_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original_rename = runner.os.rename
+
+    def rename_then_fail(source: Path, destination: Path) -> None:
+        original_rename(source, destination)
+        if ".pending" in source.parts:
+            raise OSError("post-rename fault")
+
+    monkeypatch.setattr(runner.os, "rename", rename_then_fail)
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: object(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    candidate = tmp_path / "evidence" / "candidates" / SHA
+    failure = tmp_path / "evidence" / "failures" / SHA
+    assert result.exit_code == 1
+    assert result.manifest["final_acceptance"] is False
+    assert not candidate.exists()
     verify_manifest(failure)
     assert (
         json.loads((failure / "runner-manifest.json").read_text())["final_acceptance"]

@@ -9,8 +9,10 @@ import json
 import os
 import selectors
 import shlex
+import stat
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -83,6 +85,23 @@ _VIEWPORT_ARTIFACTS = frozenset(
 class RunnerResult:
     exit_code: int
     manifest: dict[str, Any]
+
+
+@dataclass
+class _AdapterSource:
+    """A no-follow adapter descriptor retained through the adapter launch."""
+
+    fd: int
+    sha256: str
+
+    @property
+    def executable_path(self) -> str:
+        return f"/proc/self/fd/{self.fd}"
+
+    def close(self) -> None:
+        if self.fd >= 0:
+            os.close(self.fd)
+            self.fd = -1
 
 
 @dataclass(frozen=True)
@@ -233,14 +252,16 @@ def _verify_browser_card(inputs: RunnerInputs) -> None:
         raise ValueError("final lane requires a deployed origin")
 
 
-def _run_journey(inputs: RunnerInputs, contract: ProductContract) -> dict[str, bytes]:
+def _run_journey(
+    inputs: RunnerInputs, contract: ProductContract, adapter: _AdapterSource
+) -> dict[str, bytes]:
     asset = _REPOSITORY / contract.assets[0]
     if not asset.is_file():
         raise ValueError("declared journey asset is unavailable")
     stdout, stderr, returncode = _bounded_adapter_process(
         [
             "node",
-            str(_REPOSITORY / contract.journey_adapter),
+            adapter.executable_path,
             "--session",
             inputs.browser_session,
             "--origin",
@@ -249,6 +270,7 @@ def _run_journey(inputs: RunnerInputs, contract: ProductContract) -> dict[str, b
             str(asset),
         ],
         _REPOSITORY,
+        pass_fds=(adapter.fd,),
     )
     if returncode:
         raise ValueError(
@@ -262,10 +284,12 @@ def _run_journey(inputs: RunnerInputs, contract: ProductContract) -> dict[str, b
     return _decode_adapter_artifacts(payload)
 
 
-def _bounded_adapter_process(argv: list[str], cwd: Path) -> tuple[bytes, bytes, int]:
+def _bounded_adapter_process(
+    argv: list[str], cwd: Path, *, pass_fds: tuple[int, ...] = ()
+) -> tuple[bytes, bytes, int]:
     """Collect adapter IPC without allocating an unbounded stdout/stderr payload."""
     process = subprocess.Popen(
-        argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        argv, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, pass_fds=pass_fds
     )
     assert process.stdout is not None and process.stderr is not None
     limits = {
@@ -583,6 +607,7 @@ def _final_steps(
     contract: ProductContract,
     browser_card: Callable[[RunnerInputs], None],
     resource_ready: Callable[[object], None],
+    adapter: _AdapterSource,
 ) -> dict[str, bytes]:
     executor = SubprocessComposeExecutor()
     topology = render_task_override(
@@ -617,7 +642,7 @@ def _final_steps(
         if status != control.expected_status:
             raise ValueError(f"runtime control failed: {control.name}")
     browser_card(inputs)
-    artifacts = _run_journey(inputs, contract)
+    artifacts = _run_journey(inputs, contract, adapter)
     artifacts["runtime-observation.json"] = json.dumps(
         {
             "captured_at": datetime.now(timezone.utc).isoformat(),
@@ -665,6 +690,7 @@ def _manifest(
     contract: object | None,
     capture_started_at: str,
     capture_ended_at: str,
+    adapter_sha256: str | None,
 ) -> dict[str, Any]:
     return {
         "sha": inputs.sha,
@@ -682,7 +708,7 @@ def _manifest(
         "capture": {
             "started_at": capture_started_at,
             "ended_at": capture_ended_at,
-            "adapter_sha256": _adapter_checksum(contract),
+            "adapter_sha256": adapter_sha256,
         },
         "primary": {"outcome": outcome.value, "detail": primary},
         "cleanup": {
@@ -692,15 +718,49 @@ def _manifest(
     }
 
 
-def _adapter_checksum(contract: object | None) -> str | None:
-    """Bind retained observations to the contract-selected adapter source."""
+def _open_adapter_source(contract: object | None) -> _AdapterSource:
+    """No-follow hash and retain the exact adapter bytes before launch."""
     adapter = getattr(contract, "journey_adapter", None)
     if not isinstance(adapter, Path):
+        raise TypeError("contract-selected journey adapter is invalid")
+    try:
+        source = _REPOSITORY / adapter
+        source_fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        try:
+            if not stat.S_ISREG(os.fstat(source_fd).st_mode):
+                raise ValueError("contract-selected journey adapter is unavailable")
+            fd, temporary_path = tempfile.mkstemp(
+                prefix=".acceptance-adapter-", dir=_REPOSITORY
+            )
+            os.unlink(temporary_path)
+            try:
+                digest = hashlib.sha256()
+                while chunk := os.read(source_fd, 1024 * 1024):
+                    digest.update(chunk)
+                    view = memoryview(chunk)
+                    while view:
+                        view = view[os.write(fd, view) :]
+                os.lseek(fd, 0, os.SEEK_SET)
+                return _AdapterSource(fd, digest.hexdigest())
+            except BaseException:
+                os.close(fd)
+                raise
+        finally:
+            os.close(source_fd)
+    except OSError as error:
+        raise ValueError("contract-selected journey adapter is unavailable") from error
+
+
+def _adapter_checksum(contract: object | None) -> str | None:
+    """Return the no-follow adapter digest for non-executing lanes and tests."""
+    try:
+        source = _open_adapter_source(contract)
+    except (TypeError, ValueError):
         return None
     try:
-        return hashlib.sha256(read_nofollow(_REPOSITORY / adapter)).hexdigest()
-    except ValueError:
-        return None
+        return source.sha256
+    finally:
+        source.close()
 
 
 def _write_manifest(
@@ -735,8 +795,18 @@ def _write_manifest(
     verify_manifest(staging)
     prepare_evidence_parent(root.parent)
     os.rename(staging, root)
-    read_fingerprint_authority(root)
-    verify_manifest(root)
+
+
+def _revoke_published_candidate(inputs: RunnerInputs) -> None:
+    """Remove a partially published candidate root before recording failure evidence."""
+    root = inputs.evidence_root / "candidates" / inputs.sha
+    if not root.exists():
+        return
+    revoked = inputs.evidence_root / "candidates" / ".revoked" / inputs.sha
+    prepare_evidence_parent(revoked.parent)
+    if revoked.exists():
+        raise ValueError("revoked candidate root already exists")
+    os.rename(root, revoked)
 
 
 def _write_finalization_failure(
@@ -782,6 +852,8 @@ def run(
     resource: object | None = None
     resource_holder: list[object] = []
     artifacts: dict[str, bytes] = {}
+    adapter_source: _AdapterSource | None = None
+    adapter_sha256: str | None = None
     try:
         profile = (dependencies.load_profile or _load_profile)(inputs.profile_path)
         contract = load_product_contract(inputs.contract_path)
@@ -813,6 +885,8 @@ def run(
                 outcome, primary = Outcome.PASSED, "static contract checks completed"
             else:
                 browser_card = dependencies.browser_card or _verify_browser_card
+                adapter_source = _open_adapter_source(contract)
+                adapter_sha256 = adapter_source.sha256
                 if dependencies.final_steps is None:
                     artifacts = _final_steps(
                         inputs,
@@ -820,6 +894,7 @@ def run(
                         contract,
                         browser_card,
                         resource_holder.append,
+                        adapter_source,
                     )
                     resource = resource_holder[0]
                 else:
@@ -858,6 +933,8 @@ def run(
             and outcome is Outcome.PASSED
             and not cleanup_failed
         )
+        if adapter_source is not None:
+            adapter_source.close()
     capture_ended_at = datetime.now(timezone.utc).isoformat()
     manifest = _manifest(
         inputs,
@@ -870,12 +947,17 @@ def run(
         contract,
         capture_started_at,
         capture_ended_at,
+        adapter_sha256,
     )
     try:
         _write_manifest(inputs, manifest, artifacts)
     except (OSError, RuntimeError, TypeError, ValueError) as error:
         outcome, final = Outcome.FAILED, False
         primary = f"{primary}; final evidence failed: {error}".strip("; ")
+        try:
+            _revoke_published_candidate(inputs)
+        except (OSError, RuntimeError, TypeError, ValueError) as revoke_error:
+            primary += f"; candidate authority revocation failed: {revoke_error}"
         manifest = _manifest(
             inputs,
             outcome,
@@ -887,6 +969,7 @@ def run(
             contract,
             capture_started_at,
             capture_ended_at,
+            adapter_sha256,
         )
         try:
             _write_finalization_failure(inputs, manifest, artifacts)
