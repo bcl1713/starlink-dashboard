@@ -1,0 +1,9 @@
+version = "1"
+checksum = "0000000000000000000000000000000000000000000000000000000000000000"
+
+[browser]
+store_root = "/opt/acceptance-platform/browser"
+executable = "/opt/acceptance-platform/browser/chrome"
+version = "Chrome 124.0.6367.91"
+byte_size = 0
+sha256 = "0000000000000000000000000000000000000000000000000000000000000000"
