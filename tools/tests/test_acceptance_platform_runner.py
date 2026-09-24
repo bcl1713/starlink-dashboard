@@ -746,3 +746,17 @@ def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> Non
     assert result.manifest["final_acceptance"] is True
     assert calls == ["static", "final", "cleanup"]
     assert result.manifest["lane"] == Lane.FINAL.value
+
+
+def test_static_maps_named_frontend_test_scripts_to_npm(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(words: list[str], **_: object) -> subprocess.CompletedProcess[object]:
+        calls.append(words)
+        return subprocess.CompletedProcess(words, 0)
+
+    monkeypatch.setattr(runner.subprocess, "run", fake_run)
+
+    runner._run_static(load_product_contract(CONTRACT))
+
+    assert calls[-2:] == [["npm", "run", "lint"], ["npm", "run", "test:unit"]]

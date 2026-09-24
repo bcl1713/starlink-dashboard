@@ -219,7 +219,7 @@ def _run_static(contract: ProductContract) -> None:
         cwd = _REPOSITORY / group.working_directory
         for command in group.commands:
             words = shlex.split(command)
-            if words and words[0] in {"lint", "test"}:
+            if words and (words[0] == "lint" or words[0].startswith("test")):
                 words = ["npm", "run", *words]
             completed = subprocess.run(words, cwd=cwd, check=False)
             if completed.returncode:
