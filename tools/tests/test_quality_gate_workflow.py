@@ -50,6 +50,10 @@ def test_static_job_installs_its_runner_prerequisites():
     assert "actions/setup-python@v5" in static
     assert 'python-version: "3.13"' in static
     assert "astral-sh/setup-uv@v6" in static
+    assert (
+        "python -m pip install -r backend/starlink-location/requirements-dev.txt"
+        in static
+    )
     assert "actions/setup-node@v4" in static
     assert 'node-version: "22.12.0"' in static
     assert "npm ci --legacy-peer-deps" in static
