@@ -13,8 +13,7 @@ services, deterministic product assets, and a real user-visible journey. This
 separation prevents a branch from reintroducing a fragile browser path, an
 undersized wrapper timeout, a duplicated image build, or an unsafe installer.
 
-The V2 mission-retirement flow is the first product contract. It is not the
-platform's identity or API.
+V2 mission retirement is the first product contract, not the platform identity.
 
 ## Evidence That Drives This Design
 
@@ -82,12 +81,16 @@ strategy, evidence paths, cleanup strategy, or retry behavior.
 A product contract is a reviewed TOML file under
 `tools/acceptance/contracts/`. It declares only product semantics:
 
-- full candidate SHA and named ref;
 - repository-declared static command groups and working directories;
 - services required for the asserted production path;
 - public runtime controls with expected status codes;
 - paths to tracked deterministic fixtures/assets; and
 - a named product journey adapter and its visible assertions.
+
+Each acceptance invocation supplies the exact full candidate SHA and named ref;
+the platform validates and binds those immutable inputs to evidence and the build
+ledger. Keeping them out of TOML permits one reviewed product contract to serve
+successive commits on its branch without weakening candidate identity.
 
 The V2 contract declares `starlink-location` and `mission-planner`, its declared
 backend/frontend static gates, V2 endpoint controls, the tracked activation KML,
@@ -124,8 +127,7 @@ valid browser bundle record contains:
 - absolute executable path, executable version, revision, byte size, and
   SHA-256;
 - package/runtime provenance used to obtain it, if applicable;
-- a bundle identifier and creation time; and
-- a path rooted in the platform-owned browser store.
+- a bundle identifier, creation time, and platform-owned browser-store path.
 
 The platform must verify this record and executable identity before launch. It
 must not execute `npm`, `npx`, a Playwright installer, or any installer resolved
