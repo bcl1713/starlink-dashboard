@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 from acceptance.platform import runner
+from acceptance.platform.contracts import load_product_contract
 from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
 from acceptance.platform.model import Lane, Outcome
 from acceptance.platform.runner import RunnerDependencies, main, run
@@ -82,8 +83,10 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
                 "navigationScoped": True,
                 "endpoint": "/api/overview-history",
                 "periodMs": 5000,
-                "windowStart": 10.0,
-                "windowEnd": 20.0,
+                "cadenceMinMs": 4500,
+                "cadenceMaxMs": 7500,
+                "windowStart": 10.1,
+                "windowEnd": 15.1,
                 "minimumScheduledRequests": 1,
                 "observedScheduledRequests": 1,
             },
@@ -301,7 +304,49 @@ def test_adapter_observation_is_schema_validated_and_retained() -> None:
     observation = json.loads(artifacts["adapter-observation.json"])
     assert observation["activation"] == "browser-observed-200"
     assert observation["lifecycle"]["requests"][0]["outcome"] == "finished"
+    assert observation["lifecycle"]["requests"][0]["startedAt"] == 10.0
+    assert observation["lifecycle"]["requests"][1]["cycle"] == "scheduled"
+    assert observation["lifecycle"]["polling"] == {
+        "cadenceMaxMs": 7500,
+        "cadenceMinMs": 4500,
+        "endpoint": "/api/overview-history",
+        "minimumScheduledRequests": 1,
+        "navigationScoped": True,
+        "observedScheduledRequests": 1,
+        "periodMs": 5000,
+        "windowEnd": 15.1,
+        "windowStart": 10.1,
+    }
     assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
+
+
+def test_final_manifest_seals_adapter_checksum_and_capture_interval(
+    tmp_path: Path,
+) -> None:
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: object(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    manifest = result.manifest
+    capture = manifest["capture"]
+    assert capture["started_at"] <= capture["ended_at"]
+    assert capture["adapter_sha256"] == runner._adapter_checksum(
+        load_product_contract(CONTRACT)
+    )
+    sealed = json.loads(
+        (
+            tmp_path / "evidence" / "candidates" / SHA / "runner-manifest.json"
+        ).read_text()
+    )
+    assert sealed["capture"] == capture
 
 
 def test_adapter_rejects_extra_or_aggregate_oversize_artifacts() -> None:
@@ -319,6 +364,28 @@ def test_adapter_rejects_png_with_wrong_ihdr_before_inflation() -> None:
 def test_adapter_observation_rejects_unbounded_or_incomplete_lifecycle() -> None:
     payload = _adapter_payload()
     payload["lifecycle"] = {"frameId": "frame", "loaderId": "loader", "requests": []}
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("cadenceMinMs", 0), ("cadenceMaxMs", 9_000)],
+)
+def test_adapter_observation_rejects_unproven_polling_cadence(
+    field: str, value: int
+) -> None:
+    payload = _adapter_payload()
+    payload["lifecycle"]["polling"][field] = value  # type: ignore[index]
+
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+def test_adapter_observation_rejects_overlapping_scheduled_history_request() -> None:
+    payload = _adapter_payload()
+    payload["lifecycle"]["requests"][1]["startedAt"] = 10.05  # type: ignore[index]
+
     with pytest.raises(ValueError, match="adapter observation"):
         runner._decode_adapter_artifacts(payload)
 
@@ -447,6 +514,18 @@ def test_v2_adapter_has_no_platform_authority() -> None:
     assert "navigationScoped: true" in source
     assert "loaderId" in source
     assert "Upcoming POIs" in source
+
+
+def test_v2_adapter_declares_navigation_scoped_history_polling_window() -> None:
+    source = V2_ADAPTER.read_text(encoding="utf-8")
+
+    assert "const POLLING_ENDPOINT = '/api/overview-history';" in source
+    assert "const POLLING_PERIOD_MS = 5_000;" in source
+    assert "beginPollingWindow" in source
+    assert "waitForScheduledPoll" in source
+    assert "cadenceMinMs" in source
+    assert "cadenceMaxMs" in source
+    assert "record.startedAt < previous.finishedAt" in source
 
 
 def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> None:

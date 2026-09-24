@@ -18,6 +18,7 @@ import zlib
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -470,15 +471,18 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
     minimum, observed = polling.get("minimumScheduledRequests"), polling.get(
         "observedScheduledRequests"
     )
+    cadence_min, cadence_max = polling.get("cadenceMinMs"), polling.get("cadenceMaxMs")
     if (
         lifecycle.get("overflow") is not False
         or polling.get("navigationScoped") is not True
         or polling.get("endpoint") != "/api/overview-history"
         or polling.get("periodMs") != 5000
+        or (cadence_min, cadence_max) != (4500, 7500)
         or not all(
             isinstance(polling.get(key), (int, float))
             for key in ("windowStart", "windowEnd")
         )
+        or polling["windowEnd"] < polling["windowStart"]
         or not isinstance(minimum, int)
         or not isinstance(observed, int)
         or minimum < 1
@@ -515,6 +519,24 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
                 )
             }
         )
+    bootstrap = [record for record in records if record["cycle"] == "bootstrap"]
+    scheduled = [record for record in records if record["cycle"] == "scheduled"]
+    if len(bootstrap) != 1 or len(scheduled) < minimum or len(scheduled) != observed:
+        raise ValueError("adapter observation is invalid")
+    ordered = [bootstrap[0], *sorted(scheduled, key=lambda record: record["startedAt"])]
+    for previous, record in pairwise(ordered):
+        cadence_ms = (record["startedAt"] - previous["startedAt"]) * 1000
+        if (
+            record["startedAt"] < previous["finishedAt"]
+            or cadence_ms < cadence_min
+            or cadence_ms > cadence_max
+        ):
+            raise ValueError("adapter observation is invalid")
+    if (
+        polling["windowStart"] != bootstrap[0]["finishedAt"]
+        or polling["windowEnd"] != ordered[-1]["finishedAt"]
+    ):
+        raise ValueError("adapter observation is invalid")
     if (
         not isinstance(visible.get("routeName"), str)
         or not isinstance(visible.get("firstPoi"), str)
@@ -530,6 +552,12 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
                 "loaderId": loader,
                 "polling": {
                     "navigationScoped": True,
+                    "endpoint": polling["endpoint"],
+                    "periodMs": polling["periodMs"],
+                    "cadenceMinMs": cadence_min,
+                    "cadenceMaxMs": cadence_max,
+                    "windowStart": polling["windowStart"],
+                    "windowEnd": polling["windowEnd"],
                     "minimumScheduledRequests": minimum,
                     "observedScheduledRequests": observed,
                 },
@@ -635,6 +663,8 @@ def _manifest(
     cleanup_failed: bool,
     profile: object | None,
     contract: object | None,
+    capture_started_at: str,
+    capture_ended_at: str,
 ) -> dict[str, Any]:
     return {
         "sha": inputs.sha,
@@ -649,12 +679,28 @@ def _manifest(
         ),
         "profile_checksum": getattr(profile, "checksum", None),
         "contract_checksum": getattr(contract, "checksum", None),
+        "capture": {
+            "started_at": capture_started_at,
+            "ended_at": capture_ended_at,
+            "adapter_sha256": _adapter_checksum(contract),
+        },
         "primary": {"outcome": outcome.value, "detail": primary},
         "cleanup": {
             "outcome": Outcome.FAILED.value if cleanup_failed else Outcome.PASSED.value,
             "detail": cleanup,
         },
     }
+
+
+def _adapter_checksum(contract: object | None) -> str | None:
+    """Bind retained observations to the contract-selected adapter source."""
+    adapter = getattr(contract, "journey_adapter", None)
+    if not isinstance(adapter, Path):
+        return None
+    try:
+        return hashlib.sha256(read_nofollow(_REPOSITORY / adapter)).hexdigest()
+    except ValueError:
+        return None
 
 
 def _write_manifest(
@@ -725,6 +771,7 @@ def run(
 ) -> RunnerResult:
     dependencies = dependencies or RunnerDependencies()
     inputs = _parse(argv)
+    capture_started_at = datetime.now(timezone.utc).isoformat()
     profile: PlatformProfile | object | None = None
     contract: ProductContract | object | None = None
     primary = ""
@@ -811,6 +858,7 @@ def run(
             and outcome is Outcome.PASSED
             and not cleanup_failed
         )
+    capture_ended_at = datetime.now(timezone.utc).isoformat()
     manifest = _manifest(
         inputs,
         outcome,
@@ -820,6 +868,8 @@ def run(
         cleanup_failed,
         profile,
         contract,
+        capture_started_at,
+        capture_ended_at,
     )
     try:
         _write_manifest(inputs, manifest, artifacts)
@@ -835,6 +885,8 @@ def run(
             cleanup_failed,
             profile,
             contract,
+            capture_started_at,
+            capture_ended_at,
         )
         try:
             _write_finalization_failure(inputs, manifest, artifacts)

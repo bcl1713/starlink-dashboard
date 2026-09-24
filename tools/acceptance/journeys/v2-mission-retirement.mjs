@@ -13,6 +13,10 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const require = createRequire(resolve(ROOT, 'frontend/mission-planner/package.json'));
 const { chromium } = require('@playwright/test');
 const LIMIT = 50;
+const POLLING_ENDPOINT = '/api/overview-history';
+const POLLING_PERIOD_MS = 5_000;
+const POLLING_MIN_CADENCE_MS = 4_500;
+const POLLING_MAX_CADENCE_MS = 7_500;
 
 function parse(argv) {
   const values = {};
@@ -92,6 +96,7 @@ function scopedLifecycle(page) {
   let loaderId = '';
   let session;
   let overflow = false;
+  let pollingWindow;
   const add = (record) => {
     if (records.length >= LIMIT) { overflow = true; return; }
     records.push(record);
@@ -107,7 +112,7 @@ function scopedLifecycle(page) {
         if (frame.id === frameId && frame.loaderId) loaderId = frame.loaderId;
       });
       session.on('Network.requestWillBeSent', (event) => {
-        if (event.frameId !== frameId || event.loaderId !== loaderId || !new URL(event.request.url).pathname.startsWith('/api/v2/')) return;
+        if (event.frameId !== frameId || event.loaderId !== loaderId || new URL(event.request.url).pathname !== POLLING_ENDPOINT) return;
         requests.set(event.requestId, { id: event.requestId, path: new URL(event.request.url).pathname, startedAt: event.timestamp, loaderId: event.loaderId, outcome: 'pending' });
       });
       session.on('Network.responseReceived', (event) => {
@@ -117,30 +122,53 @@ function scopedLifecycle(page) {
       session.on('Network.loadingFinished', (event) => {
         const record = requests.get(event.requestId);
         if (record) {
-          Object.assign(record, { outcome: record.status === 200 ? 'finished' : 'http_failed', finishedAt: event.timestamp });
+          Object.assign(record, { outcome: record.status === 200 ? 'finished' : 'http_failed', finishedAt: event.timestamp, cycle: pollingWindow ? 'scheduled' : 'bootstrap' });
           add({ ...record });
         }
       });
       session.on('Network.loadingFailed', (event) => {
         const record = requests.get(event.requestId);
         if (record) {
-          Object.assign(record, { outcome: 'failed', error: event.errorText, finishedAt: event.timestamp });
+          Object.assign(record, { outcome: 'failed', error: event.errorText, finishedAt: event.timestamp, cycle: pollingWindow ? 'scheduled' : 'bootstrap' });
           add({ ...record });
         }
       });
     },
+    async beginPollingWindow() {
+      const deadline = Date.now() + POLLING_MAX_CADENCE_MS;
+      while (!records.some((record) => record.cycle === 'bootstrap' && record.outcome === 'finished')) {
+        if (Date.now() >= deadline) throw new Error('scoped V2 polling bootstrap coverage gap');
+        await page.waitForTimeout(50);
+      }
+      const bootstrap = records.find((record) => record.cycle === 'bootstrap' && record.outcome === 'finished');
+      pollingWindow = { windowStart: bootstrap.finishedAt, windowEnd: 0 };
+    },
+    async waitForScheduledPoll() {
+      const deadline = Date.now() + POLLING_MAX_CADENCE_MS;
+      while (!records.some((record) => record.cycle === 'scheduled' && record.outcome === 'finished')) {
+        if (Date.now() >= deadline) throw new Error('scoped V2 scheduled polling window coverage gap');
+        await page.waitForTimeout(50);
+      }
+      const scheduled = records.filter((record) => record.cycle === 'scheduled' && record.outcome === 'finished');
+      pollingWindow.windowEnd = scheduled.at(-1).finishedAt;
+    },
     assertHealthy() {
       const pending = [...requests.values()].filter((record) => record.outcome === 'pending');
       if (overflow) throw new Error('scoped V2 navigation lifecycle coverage gap: record budget exceeded');
-      if (pending.length || !records.length || records.some((record) => record.outcome !== 'finished')) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
-      const settled = records.filter((record) => record.outcome === 'finished');
-      const scheduled = settled.slice(1);
-      if (scheduled.length < 1 || scheduled.some((record, index) => record.startedAt <= settled[index].startedAt)) throw new Error('scoped V2 polling cadence coverage gap');
+      if (pending.length || !records.length || records.some((record) => record.outcome !== 'finished') || !pollingWindow?.windowEnd) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
+      const bootstrap = records.filter((record) => record.cycle === 'bootstrap');
+      const scheduled = records.filter((record) => record.cycle === 'scheduled');
+      if (bootstrap.length !== 1 || scheduled.length < 1) throw new Error('scoped V2 polling cadence coverage gap');
+      const ordered = [bootstrap[0], ...scheduled];
+      for (let index = 1; index < ordered.length; index += 1) {
+        const previous = ordered[index - 1]; const record = ordered[index];
+        const cadenceMs = (record.startedAt - previous.startedAt) * 1_000;
+        if (record.startedAt < previous.finishedAt || cadenceMs < POLLING_MIN_CADENCE_MS || cadenceMs > POLLING_MAX_CADENCE_MS) throw new Error('scoped V2 polling cadence or overlap failure');
+      }
     },
     observation() {
-      const settled = records.filter((record) => record.outcome === 'finished');
-      const scheduled = settled.slice(1);
-      return { frameId, loaderId, polling: { navigationScoped: true, minimumScheduledRequests: 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
+      const scheduled = records.filter((record) => record.cycle === 'scheduled');
+      return { frameId, loaderId, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, periodMs: POLLING_PERIOD_MS, cadenceMinMs: POLLING_MIN_CADENCE_MS, cadenceMaxMs: POLLING_MAX_CADENCE_MS, windowStart: pollingWindow?.windowStart, windowEnd: pollingWindow?.windowEnd, minimumScheduledRequests: 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
     },
     async close() {
       await session?.detach().catch(() => {});
@@ -180,6 +208,8 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
     await activation;
     await page.getByRole('link', { name: 'Overview', exact: true }).click();
     const visible = await assertSemanticOverview(page);
+    await lifecycle.beginPollingWindow();
+    await lifecycle.waitForScheduledPoll();
     const post = await viewportArtifact(page, 'journey-post');
     lifecycle.assertHealthy();
     return { missionName, activation: 'browser-observed-200', lifecycle: lifecycle.observation(), visible, artifacts: { ...pre, ...post } };
