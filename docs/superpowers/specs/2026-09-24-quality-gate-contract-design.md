@@ -42,8 +42,10 @@ release publication to every pull request. Those remain change-specific gates.
 
 Add an executable repository-owned command interface at `tools/verify`.
 It must resolve the repository root from its own location, reject unknown tier
-names, and execute every child command from that root. Callers must not depend
-on their current working directory.
+names, and derive every command's working directory from that root. The static
+and frontend commands run at repository root; the backend pytest command runs
+from `backend/starlink-location` so its existing `tests/` target and fixture
+layout remain valid. Callers must not depend on their current working directory.
 
 The interface accepts exactly these tiers:
 
