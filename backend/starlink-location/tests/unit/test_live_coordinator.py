@@ -9,7 +9,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import starlink_grpc
-
 from app.live.coordinator import LiveCoordinator
 from app.models.config import (
     HeadingTrackerConfig,
@@ -22,6 +21,7 @@ from app.models.telemetry import (
     PositionData,
     TelemetryData,
 )
+
 from tests.conftest import default_mock_telemetry
 
 

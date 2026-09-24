@@ -3,7 +3,6 @@
 import asyncio
 
 import pytest
-
 from app.api import status as status_api
 from app.services.ground_entry_point import GroundEntryPoint
 

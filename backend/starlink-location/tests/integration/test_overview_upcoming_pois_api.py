@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
-
 from app.mission.dependencies import get_poi_manager, get_route_manager
 from app.mission.timeline_builder.pois import MISSION_EVENT_CATEGORY
 from app.models.poi import POI

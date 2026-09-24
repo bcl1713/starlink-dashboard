@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from app.mission.models import (
     Mission,
     MissionLeg,

@@ -1,7 +1,6 @@
 """Tests for position simulator."""
 
 import pytest
-
 from app.simulation.position import PositionSimulator
 
 

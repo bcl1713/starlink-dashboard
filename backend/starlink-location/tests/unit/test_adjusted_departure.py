@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.mission.models import MissionLeg, TransportConfig
 from app.mission.timeline_builder.calculator import (
     RouteTemporalProjector,

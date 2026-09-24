@@ -3,10 +3,9 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import HTTPException, status
-
 from app.mission.models import MissionLeg, TransportConfig
 from app.mission.routes import create_mission, update_mission
+from fastapi import HTTPException, status
 
 
 @pytest.mark.asyncio

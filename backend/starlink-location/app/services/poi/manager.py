@@ -13,9 +13,8 @@ from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 
-from filelock import FileLock
-
 from app.models.poi import POI, GeneratedPoiSource, MissionPoiKind, POICreate, POIUpdate
+from filelock import FileLock
 
 logger = logging.getLogger(__name__)
 

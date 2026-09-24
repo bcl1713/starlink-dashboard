@@ -1,8 +1,7 @@
 import httpx
-from fastapi.testclient import TestClient
-
 import main
 from app.api import overview_history
+from fastapi.testclient import TestClient
 
 
 def test_initializes_the_history_reader_with_a_persistent_window_store(

@@ -3,7 +3,6 @@
 import math
 
 import pytest
-
 from app.simulation.route import (
     CircularRoute,
     StraightRoute,

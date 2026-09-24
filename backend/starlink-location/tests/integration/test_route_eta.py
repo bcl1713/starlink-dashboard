@@ -4,7 +4,6 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-
 from app.services.kml_parser import parse_kml_file
 
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from app.core import eta_service
 from app.models.flight_status import ETAMode
 from app.services.eta_calculator import ETACalculator

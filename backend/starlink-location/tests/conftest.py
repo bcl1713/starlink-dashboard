@@ -58,8 +58,6 @@ def patched_poi_init(self, pois_file="/tmp/test_data/pois.json"):
 poi_manager_module.POIManager.__init__ = patched_poi_init
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.core.config import ConfigManager
 from app.models.config import (
     NetworkConfig,
@@ -76,6 +74,7 @@ from app.models.telemetry import (
     TelemetryData,
 )
 from app.simulation.coordinator import SimulationCoordinator
+from fastapi.testclient import TestClient
 from main import app
 
 
@@ -243,9 +242,8 @@ def reset_prometheus_registry():
     """
     # Before each test, reset all gauge metrics to prevent pollution from NaN values
     try:
-        from prometheus_client.core import Gauge
-
         from app.core import metrics
+        from prometheus_client.core import Gauge
 
         # Reset the custom position collector data
         metrics._current_position["latitude"] = 0.0

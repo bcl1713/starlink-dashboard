@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from app.services.overview_clock_location import ClockLocation
 from app.services.overview_clock_settings import (
     DEFAULT_OVERVIEW_CLOCKS,
