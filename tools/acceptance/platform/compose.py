@@ -23,7 +23,10 @@ _NO_BUILD_START_TIMEOUT_SECONDS = 120.0
 _FINAL_BUILD_TIMEOUT_SECONDS = 600.0
 _MAX_COMPOSE_DIAGNOSTIC_BYTES = 256 * 1024
 _REDACT_COMPOSE_CREDENTIAL = re.compile(
-    r"(?i)(token|password|passwd|secret|api[_-]?key|authorization)\s*([=:])\s*[^\s]+"
+    r"(?i)(token|password|passwd|secret|api[_-]?key)\s*([=:])\s*[^\s]+"
+)
+_REDACT_COMPOSE_AUTHORIZATION = re.compile(
+    r"(?im)(authorization\s*[:=])\s*[^\r\n]*"
 )
 _COMPOSE_OUTPUT_TRUNCATED = b"\n[platform retained Compose output truncated]\n"
 
@@ -38,8 +41,8 @@ class BoundedComposeDiagnostics:
     """Retain bounded, credential-redacted final Compose diagnostics."""
 
     def __init__(self, max_bytes: int = _MAX_COMPOSE_DIAGNOSTIC_BYTES) -> None:
-        if max_bytes < len(_COMPOSE_OUTPUT_TRUNCATED):
-            raise ValueError("compose diagnostic budget is too small")
+        if max_bytes < 0:
+            raise ValueError("compose diagnostic budget cannot be negative")
         self._max_bytes = max_bytes
         self._output = bytearray()
         self._truncated = False
@@ -47,16 +50,23 @@ class BoundedComposeDiagnostics:
     def retain(self, line: str) -> None:
         if self._truncated:
             return
+        redacted = _REDACT_COMPOSE_AUTHORIZATION.sub(
+            r"\1<redacted>", line
+        )
         redacted = _REDACT_COMPOSE_CREDENTIAL.sub(
-            r"\1\2<redacted>", line
+            r"\1\2<redacted>", redacted
         ).encode(errors="replace")
         if len(self._output) + len(redacted) <= self._max_bytes:
             self._output.extend(redacted)
             return
-        remaining = self._max_bytes - len(self._output) - len(_COMPOSE_OUTPUT_TRUNCATED)
+        sentinel = _COMPOSE_OUTPUT_TRUNCATED[: self._max_bytes]
+        remaining = self._max_bytes - len(sentinel)
+        if len(self._output) > remaining:
+            del self._output[remaining:]
+        remaining -= len(self._output)
         if remaining > 0:
             self._output.extend(redacted[:remaining])
-        self._output.extend(_COMPOSE_OUTPUT_TRUNCATED)
+        self._output.extend(sentinel)
         self._truncated = True
 
     @property
@@ -372,9 +382,17 @@ def build_final(
         reconciled = BuildReconciliation(False, False, {}, reason)
         ledger.close(claim, reconciled, resolved.digest)
         raise ValueError(reason) from error
-    reconciled = reconcile_build(
-        result.returncode, result.output, tags, executor.inspect_image
-    )
+    try:
+        reconciled = reconcile_build(
+            result.returncode, result.output, tags, executor.inspect_image
+        )
+    except Exception:
+        ledger.close(
+            claim,
+            BuildReconciliation(False, False, {}, "final compose build reconciliation failed"),
+            resolved.digest,
+        )
+        raise
     ledger.close(claim, reconciled, resolved.digest)
     return reconciled
 

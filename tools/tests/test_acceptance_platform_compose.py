@@ -76,6 +76,39 @@ def test_bounded_compose_diagnostics_redacts_credentials_and_marks_truncation() 
     assert len(diagnostics.output) <= 96
 
 
+@pytest.mark.parametrize(
+    "line",
+    (
+        "Authorization: Bearer top-secret-password\n",
+        "authorization=Basic abcdef\n",
+    ),
+)
+def test_bounded_compose_diagnostics_redacts_complete_authorization_values(
+    line: str,
+) -> None:
+    diagnostics = BoundedComposeDiagnostics()
+
+    diagnostics.retain(line)
+
+    retained = diagnostics.output.decode()
+    assert "top-secret-password" not in retained
+    assert "abcdef" not in retained
+    assert "Bearer" not in retained
+    assert "Basic" not in retained
+    assert "<redacted>" in retained
+
+
+@pytest.mark.parametrize("max_bytes", (0, 1, 16, 44))
+def test_bounded_compose_diagnostics_never_exceeds_tiny_cap_when_truncated(
+    max_bytes: int,
+) -> None:
+    diagnostics = BoundedComposeDiagnostics(max_bytes=max_bytes)
+
+    diagnostics.retain("x" * (max_bytes + 1))
+
+    assert len(diagnostics.output) <= max_bytes
+
+
 def test_duplicate_build_ledger_claim_is_refused(tmp_path: Path) -> None:
     ledger = BuildLedger(tmp_path)
     ledger.claim(KEY)
@@ -269,6 +302,30 @@ def test_final_build_bounds_buildkit_and_closes_ledger_with_timeout_diagnostic(
     record = ledger.read(KEY)
     assert record["state"] == "closed"
     assert record["reason"] == "final compose build timed out after 600 seconds: partial BuildKit output"
+
+
+def test_final_build_closes_ledger_when_image_reconciliation_raises(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path)
+    executor = _executor(
+        config=_resolved_config(topology), build=CommandResult(0, _complete_two_image_log())
+    )
+    ledger = BuildLedger(tmp_path / "ledger")
+    resolve_topology(topology, CONTRACT, executor)
+
+    def inspect_image_raises(tag: str) -> str | None:
+        raise OSError(f"image inspect failed: {tag}")
+
+    executor.inspect_image = inspect_image_raises  # type: ignore[method-assign]
+
+    with pytest.raises(OSError, match="image inspect failed"):
+        build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor)
+
+    record = ledger.read(KEY)
+    assert record["state"] == "closed"
+    assert record["image_ids"] == {}
+    assert record["reason"] == "final compose build reconciliation failed"
 
 
 def test_failed_or_stale_build_never_starts(tmp_path: Path) -> None:
