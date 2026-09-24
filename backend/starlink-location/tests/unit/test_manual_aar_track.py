@@ -4,6 +4,8 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic import ValidationError
+
 from app.mission.derived_route import build_derived_route_estimate
 from app.mission.models import (
     ManualAARTrack,
@@ -17,7 +19,6 @@ from app.mission.models import (
 from app.mission.storage import load_mission_v2, save_mission_v2
 from app.mission.timeline_service import build_mission_timeline
 from app.models.route import ParsedRoute, RouteMetadata, RoutePoint, RouteTimingProfile
-from pydantic import ValidationError
 
 
 def _timed_manual_track_route(start: datetime) -> ParsedRoute:

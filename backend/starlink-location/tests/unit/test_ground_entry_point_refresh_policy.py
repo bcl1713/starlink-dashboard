@@ -1,7 +1,8 @@
 import asyncio
 
-import main
 import pytest
+
+import main
 
 """Tests for automatic ground-entry discovery by operating mode."""
 

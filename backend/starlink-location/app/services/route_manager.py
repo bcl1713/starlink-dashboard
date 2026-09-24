@@ -7,10 +7,11 @@
 import logging
 from pathlib import Path
 
-from app.models.route import ParsedRoute
-from app.services.kml_parser import KMLParseError, parse_kml_file
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
+
+from app.models.route import ParsedRoute
+from app.services.kml_parser import KMLParseError, parse_kml_file
 
 logger = logging.getLogger(__name__)
 
