@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Run canonical repository quality-gate tiers."""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+BACKEND = ROOT / "backend/starlink-location"
+Command = tuple[list[str], Path]
+
+STATIC: list[Command] = [
+    (
+        [
+            "uv",
+            "run",
+            "--with-requirements",
+            "backend/starlink-location/requirements-dev.txt",
+            "black",
+            "--check",
+            "--diff",
+            "backend/starlink-location/app",
+            "backend/starlink-location/tests",
+        ],
+        ROOT,
+    ),
+    (
+        [
+            "uv",
+            "run",
+            "--with-requirements",
+            "backend/starlink-location/requirements-dev.txt",
+            "ruff",
+            "check",
+            "backend/starlink-location/app",
+            "backend/starlink-location/tests",
+        ],
+        ROOT,
+    ),
+    (["python", "tools/check_filename_convention.py"], ROOT),
+    (
+        [
+            "npm",
+            "--prefix",
+            "frontend/mission-planner",
+            "exec",
+            "--",
+            "prettier",
+            "--check",
+            "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}",
+        ],
+        ROOT,
+    ),
+    (["npm", "--prefix", "frontend/mission-planner", "run", "lint"], ROOT),
+    (["markdownlint-cli2", "docs/**/*.md"], ROOT),
+    (["lychee", "--no-progress", "docs/"], ROOT),
+]
+BACKEND_COMMANDS: list[Command] = [
+    (
+        [
+            "uv",
+            "run",
+            "--with-requirements",
+            str(ROOT / "backend/starlink-location/requirements-dev.txt"),
+            "pytest",
+            "tests/",
+            "-q",
+        ],
+        BACKEND,
+    ),
+]
+FRONTEND: list[Command] = [
+    (["npm", "--prefix", "frontend/mission-planner", "run", "test:unit"], ROOT),
+    (["npm", "--prefix", "frontend/mission-planner", "run", "build"], ROOT),
+]
+
+
+def tier_commands(tier: str) -> list[Command]:
+    """Return commands for a supported verification tier."""
+    commands = {"static": STATIC, "backend": BACKEND_COMMANDS, "frontend": FRONTEND}
+    if tier == "all":
+        return [*STATIC, *BACKEND_COMMANDS, *FRONTEND]
+    return commands[tier]
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = sys.argv if argv is None else argv
+    if len(args) != 2 or args[1] not in {"static", "backend", "frontend", "all"}:
+        print("usage: tools/verify {static|backend|frontend|all}", file=sys.stderr)
+        return 2
+
+    for command, cwd in tier_commands(args[1]):
+        print(f"({cwd}) $ {' '.join(command)}")
+        result = subprocess.run(command, cwd=cwd, check=False)
+        if result.returncode:
+            return result.returncode
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

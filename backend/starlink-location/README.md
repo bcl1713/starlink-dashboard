@@ -118,11 +118,19 @@ curl http://localhost:8000/api/status | jq .
 When making changes:
 
 1. Update tests in `tests/`
-2. Ensure all tests pass: `pytest tests/`
-3. Run with coverage: `pytest tests/ --cov=app`
+2. Run the full canonical backend gate from the repository root:
+
+   ```bash
+   ./tools/verify backend
+   ```
+
+3. Use focused `pytest` commands from this backend directory while developing,
+   such as `pytest tests/` or `pytest tests/ --cov=app`
 4. Update documentation if adding features
 
-See [Testing Guide](./docs/TESTING.md) for more details.
+See [Testing Guide](./docs/TESTING.md) for focused examples and the
+[Quality Gates](../../docs/contributing/quality-gates.md) reference for all
+repository verification tiers.
 
 ---
 

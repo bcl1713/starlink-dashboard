@@ -11,6 +11,8 @@ help you get started.
   development process
 - [Code Quality Standards](./docs/code-quality-standards.md) - Formatting,
   linting, testing, and review requirements
+- [Quality Gates](./docs/contributing/quality-gates.md) - Canonical local and
+  CI verification commands
 - [Architecture Documentation](./docs/architecture/README.md) - System design
   and structure
 
@@ -39,7 +41,7 @@ issue discussion.
 
 ### Making Changes
 
-1. **Create a branch** from `main`:
+1. **Create a branch** from `dev`, the integration branch:
 
    ```bash
    git checkout -b feature/your-feature-name
@@ -47,10 +49,20 @@ issue discussion.
 
 2. **Make your changes** following code quality standards
 
-3. **Test your changes**:
-   - Backend: Run smoke tests and type checks
-   - Frontend: Run linting and build
-   - Documentation: Validate links and formatting
+3. **Verify your changes** with the canonical commands in the
+   [Quality Gates](./docs/contributing/quality-gates.md) guide:
+
+   ```bash
+   ./tools/verify static
+   ./tools/verify backend
+   ./tools/verify frontend
+   ./tools/verify all
+   ```
+
+   Normal CI runs the static, backend, and frontend tiers as separate required
+   jobs. Browser-relevant changes also require exact-SHA CDP acceptance at
+   1920x1080; a green `./tools/verify all` does not replace browser or runtime
+   evidence.
 
 4. **Commit with clear messages**:
 
@@ -203,9 +215,8 @@ For detailed documentation structure and guidelines, see:
 
 ## Testing
 
-- **Backend**: Run smoke tests after changes
-- **Frontend**: Run linting and build process
-- **Documentation**: Validate links and formatting
+Use the [Quality Gates](./docs/contributing/quality-gates.md) guide as the
+authoritative verification reference.
 
 ---
 
