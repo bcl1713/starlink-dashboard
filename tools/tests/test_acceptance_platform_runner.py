@@ -4,6 +4,7 @@ import base64
 import hashlib
 import json
 import struct
+import subprocess
 import zlib
 from pathlib import Path
 
@@ -267,6 +268,41 @@ def test_candidate_identity_is_rejected_before_paths_are_constructed(
         runner._parse(argv)
 
     assert not (tmp_path / "escape").exists()
+
+
+def test_wrapper_resolves_explicit_relative_contract_from_repository_root(
+    tmp_path: Path,
+) -> None:
+    result = subprocess.run(
+        [
+            str(ROOT / "tools/run-acceptance-platform.sh"),
+            "--lane",
+            "health",
+            "--sha",
+            SHA,
+            "--ref",
+            "refs/heads/feat/acceptance",
+            "--profile",
+            str(PROFILE),
+            "--contract",
+            "tools/acceptance/contracts/v2-mission-retirement.toml",
+            "--evidence-root",
+            str(tmp_path / "evidence"),
+            "--task-root",
+            str(tmp_path / "task"),
+        ],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 2
+    manifest = json.loads(
+        (tmp_path / "evidence" / "candidates" / SHA / "runner-manifest.json").read_text()
+    )
+    assert manifest["contract_checksum"] is not None
+    assert manifest["outcome"] == Outcome.ENVIRONMENT_BLOCKED.value
 
 
 def test_runner_manifest_is_sealed_under_a_candidate_nofollow_root(
