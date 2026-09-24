@@ -1030,15 +1030,12 @@ def run(
         if inputs.lane is Lane.FINAL:
             if resource is None and resource_holder:
                 resource = resource_holder[0]
+            cleanup_errors: list[str] = []
             try:
                 if dependencies.cleanup is not None:
                     dependencies.cleanup(resource)
                 elif resource is not None:
                     _cleanup_default(resource)
-                if browser_session is not None:
-                    browser_session.close()
-                    artifacts.update(browser_session.artifacts)
-                cleanup_detail = "final lane cleanup completed"
             except (
                 OSError,
                 RuntimeError,
@@ -1046,8 +1043,25 @@ def run(
                 ValueError,
                 subprocess.SubprocessError,
             ) as error:
-                cleanup_failed, cleanup_detail = True, str(error)
+                cleanup_errors.append(str(error))
+            if browser_session is not None:
+                try:
+                    browser_session.close()
+                except (
+                    OSError,
+                    RuntimeError,
+                    TypeError,
+                    ValueError,
+                    subprocess.SubprocessError,
+                ) as error:
+                    cleanup_errors.append(str(error))
+                finally:
+                    artifacts.update(browser_session.artifacts)
+            if cleanup_errors:
+                cleanup_failed, cleanup_detail = True, "; ".join(cleanup_errors)
                 outcome, final = Outcome.FAILED, False
+            else:
+                cleanup_detail = "final lane cleanup completed"
         final = (
             inputs.lane is Lane.FINAL
             and outcome is Outcome.PASSED

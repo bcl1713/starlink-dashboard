@@ -759,6 +759,52 @@ def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> Non
     assert result.manifest["lane"] == Lane.FINAL.value
 
 
+def test_compose_cleanup_failure_still_closes_browser_and_writes_its_logs(
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+
+    class Session:
+        cdp_url = "http://127.0.0.1:9222"
+
+        def __init__(self) -> None:
+            self.artifacts: dict[str, bytes] = {}
+
+        def close(self) -> None:
+            calls.append("browser-close")
+            self.artifacts.update(
+                {
+                    "browser.stderr.log": b"browser log",
+                    "xvfb.stderr.log": b"xvfb log",
+                }
+            )
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            start_browser_session=lambda *_: Session(),
+            final_steps=lambda *_: object(),
+            cleanup=lambda _: (_ for _ in ()).throw(
+                RuntimeError("compose cleanup failed")
+            ),
+        ),
+    )
+
+    assert calls == ["browser-close"]
+    assert result.manifest["final_acceptance"] is False
+    assert "compose cleanup failed" in result.manifest["cleanup"]["detail"]
+    assert (
+        tmp_path / "evidence" / "candidates" / SHA / "browser.stderr.log"
+    ).read_bytes() == b"browser log"
+    assert (
+        tmp_path / "evidence" / "candidates" / SHA / "xvfb.stderr.log"
+    ).read_bytes() == b"xvfb log"
+
+
 def test_default_final_platform_session_precedes_build_uses_its_cdp_and_closes_on_failure(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

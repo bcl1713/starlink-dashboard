@@ -110,28 +110,37 @@ class PlatformBrowserSession:
         if self._closed:
             return
         self._closed = True
-        cleanup_error = ""
-        try:
-            _terminate_browser_group(self._browser)
-        except (OSError, ValueError, subprocess.SubprocessError) as error:
-            cleanup_error = str(error)
-        _terminate(self._xvfb)
-        _retain_logs(self.artifacts, "browser", self._browser)
-        _retain_logs(self.artifacts, "xvfb", self._xvfb)
-        self._launch.close()
-        self._bundle.close()
-        shutil.rmtree(self.profile_dir, ignore_errors=True)
-        try:
-            _verify_browser_cleanup(
+        errors: list[Exception] = []
+
+        def attempt(operation: Callable[[], None]) -> None:
+            try:
+                operation()
+            except (
+                OSError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                subprocess.SubprocessError,
+            ) as error:
+                errors.append(error)
+
+        attempt(lambda: _terminate_browser_group(self._browser))
+        attempt(lambda: _terminate(self._xvfb))
+        attempt(lambda: _retain_logs(self.artifacts, "browser", self._browser))
+        attempt(lambda: _retain_logs(self.artifacts, "xvfb", self._xvfb))
+        attempt(self._launch.close)
+        attempt(self._bundle.close)
+        attempt(lambda: shutil.rmtree(self.profile_dir, ignore_errors=True))
+        attempt(
+            lambda: _verify_browser_cleanup(
                 self.display,
                 int(self.cdp_url.rsplit(":", 1)[1]),
                 self.profile_dir,
                 _browser_group_id(self._browser),
             )
-        except ValueError as error:
-            cleanup_error = cleanup_error or str(error)
-        if cleanup_error:
-            raise ValueError(cleanup_error)
+        )
+        if errors:
+            raise errors[0]
 
 
 def start_final_browser_session(

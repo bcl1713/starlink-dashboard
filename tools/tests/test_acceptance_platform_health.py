@@ -226,6 +226,52 @@ def test_final_session_uses_profile_pinned_headed_xvfb_and_requires_neutral_metr
     assert session.artifacts["xvfb.stdout.log"] == b"diagnostic stdout"
 
 
+def test_xvfb_termination_failure_drains_every_remaining_session_resource(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from acceptance.platform import health
+
+    class FailingXvfb(_Process):
+        def terminate(self) -> None:
+            self.terminated = True
+            raise OSError("xvfb teardown failed")
+
+    bundle = _Bundle()
+    xvfb = FailingXvfb()
+    executor = _executor(bundle)
+    executor = PlatformHealthExecutor(
+        **{**executor.__dict__, "start_xvfb": lambda _: xvfb}
+    )
+    session = start_final_browser_session(_profile(), tmp_path, executor)
+    browser_cleanup_calls: list[object] = []
+    cleanup_verification: list[tuple[bool, bool, bool]] = []
+    original_terminate_browser_group = health._terminate_browser_group
+
+    def terminate_browser_group(process: object) -> None:
+        browser_cleanup_calls.append(process)
+        original_terminate_browser_group(process)
+
+    monkeypatch.setattr(health, "_terminate_browser_group", terminate_browser_group)
+    monkeypatch.setattr(
+        health,
+        "_verify_browser_cleanup",
+        lambda _display, _port, profile, _pgid: cleanup_verification.append(
+            (profile.exists(), bundle.launch.closed, bundle.closed)
+        ),
+    )
+
+    with pytest.raises(OSError, match="xvfb teardown failed"):
+        session.close()
+
+    assert browser_cleanup_calls == [bundle.launch.process]
+    assert session.artifacts["browser.stderr.log"] == b"diagnostic stderr"
+    assert session.artifacts["xvfb.stderr.log"] == b"diagnostic stderr"
+    assert bundle.launch.closed and bundle.closed
+    assert not session.profile_dir.exists()
+    assert cleanup_verification == [(False, True, True)]
+    session.close()
+
+
 def test_final_session_rejects_mismatched_neutral_metrics_before_build(
     tmp_path: Path,
 ) -> None:
