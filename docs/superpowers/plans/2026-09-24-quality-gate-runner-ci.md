@@ -139,7 +139,7 @@ static: list[Command] = [
     (["uv", "run", "--with-requirements", "backend/starlink-location/requirements-dev.txt", "black", "--check", "--diff", "backend/starlink-location/app", "backend/starlink-location/tests"], ROOT),
     (["uv", "run", "--with-requirements", "backend/starlink-location/requirements-dev.txt", "ruff", "check", "backend/starlink-location/app", "backend/starlink-location/tests"], ROOT),
     (["python", "tools/check_filename_convention.py"], ROOT),
-    (["npm", "--prefix", "frontend/mission-planner", "exec", "--", "prettier", "--check", "src/**/*.{ts,tsx,js,jsx,json,md}"], ROOT),
+    (["npm", "--prefix", "frontend/mission-planner", "exec", "--", "prettier", "--check", "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}"], ROOT),
     (["npm", "--prefix", "frontend/mission-planner", "run", "lint"], ROOT),
     (["npx", "markdownlint-cli2", "docs/**/*.md"], ROOT),
     (["lychee", "--no-progress", "docs/"], ROOT),
