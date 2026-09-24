@@ -65,9 +65,9 @@ contract checksum as one build-ledger key. Its state machine is:
 2. Run the declared static checks.
 3. Prepare task-owned topology and arm cleanup.
 4. Resolve the scoped topology and perform one fresh-image build for the ledger
-   key. The platform owns a fixed 600-second deadline for `docker compose build
-   --no-cache --progress=plain`; it is deliberately below the 900-second runner
-   monitor. Every final-critical Compose operation passes combined output through
+   key. The platform owns a fixed 1200-second deadline for `docker compose build
+   --no-cache --progress=plain`; it is deliberately below the 1800-second external
+   final monitor. Every final-critical Compose operation passes combined output through
    bounded, credential-redacted platform retention. Authorization header values,
    including `Bearer` and `Basic` forms, are redacted in full; the retained
    diagnostic, including its truncation marker, never exceeds its byte budget.
@@ -99,7 +99,7 @@ Use this operator sequence for final acceptance:
 
 1. Run `health` and checksum-verify its sealed fingerprint and evidence manifest.
 2. Run `static` only after that health validation succeeds.
-3. Issue `final` through one tracked runner process with a 900-second monitored
+3. Issue `final` through one tracked runner process with a 1800-second monitored
    budget and durable stdout and stderr capture.
 4. The runner, not a caller, owns the headed Xvfb and loopback CDP browser
    resources, its task-owned profile, and pre-journey native display/card metrics.

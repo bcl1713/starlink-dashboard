@@ -285,7 +285,7 @@ def test_final_build_bounds_buildkit_and_closes_ledger_with_timeout_diagnostic(
         argv: tuple[str, ...], *, timeout_seconds: float | None = None
     ) -> CommandResult:
         if "build" in argv:
-            assert timeout_seconds == 600.0
+            assert timeout_seconds == 1200.0
             raise subprocess.TimeoutExpired(
                 argv, timeout_seconds, output="partial BuildKit output"
             )
@@ -295,13 +295,13 @@ def test_final_build_bounds_buildkit_and_closes_ledger_with_timeout_diagnostic(
 
     with pytest.raises(
         ValueError,
-        match="final compose build timed out after 600 seconds: partial BuildKit output",
+        match="final compose build timed out after 1200 seconds: partial BuildKit output",
     ):
         build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor)
 
     record = ledger.read(KEY)
     assert record["state"] == "closed"
-    assert record["reason"] == "final compose build timed out after 600 seconds: partial BuildKit output"
+    assert record["reason"] == "final compose build timed out after 1200 seconds: partial BuildKit output"
 
 
 def test_final_build_closes_ledger_when_image_reconciliation_raises(

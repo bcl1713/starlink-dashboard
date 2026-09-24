@@ -97,7 +97,7 @@ def test_platform_doc_prescribes_ordered_final_browser_recovery_workflow() -> No
     )
     static = "Run `static` only after that health validation succeeds."
     final = (
-        "Issue `final` through one tracked runner process with a 900-second "
+        "Issue `final` through one tracked runner process with a 1800-second "
         "monitored budget and durable stdout and stderr capture."
     )
     runner_ownership = (
@@ -152,6 +152,16 @@ def test_platform_doc_defines_bounded_startup_and_interrupt_cleanup() -> None:
     assert "classifies `SIGINT` and `SIGTERM` as final-run failures" in guide
     assert "drains Compose resources, browser/Xvfb processes and listeners" in guide
     assert "task browser profile, and the generated task root" in guide
+
+
+def test_platform_doc_keeps_final_build_deadline_below_external_monitor() -> None:
+    guide = " ".join(PLATFORM_DOC.read_text(encoding="utf-8").split())
+
+    assert (
+        "fixed 1200-second deadline for `docker compose build --no-cache "
+        "--progress=plain`; it is deliberately below the 1800-second external final monitor."
+        in guide
+    )
 
 
 def test_v2_doc_is_product_only() -> None:
