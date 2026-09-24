@@ -11,8 +11,10 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+import zlib
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +27,6 @@ from .compose import (
     cleanup_compose,
     render_task_override,
     resolve_topology,
-    run_controls,
     start_no_build,
 )
 from .contracts import load_product_contract
@@ -57,6 +58,9 @@ _VIEWPORT = {
     "visualHeight": 1080,
     "dpr": 1,
 }
+_MAX_ADAPTER_ARTIFACT_BYTES = 12 * 1024 * 1024
+_MAX_ADAPTER_OBSERVATION_BYTES = 32 * 1024
+_MAX_LIFECYCLE_RECORDS = 50
 
 
 @dataclass(frozen=True)
@@ -261,7 +265,10 @@ def _decode_adapter_artifacts(payload: object) -> dict[str, bytes]:
             raise ValueError(
                 "product journey adapter artifact is not base64"
             ) from error
+        if len(decoded[name]) > _MAX_ADAPTER_ARTIFACT_BYTES:
+            raise ValueError("product journey adapter artifact exceeds byte budget")
     _verify_viewport_artifacts(decoded)
+    decoded["adapter-observation.json"] = _adapter_observation(payload)
     return decoded
 
 
@@ -287,13 +294,154 @@ def _verify_viewport_artifacts(artifacts: Mapping[str, bytes]) -> None:
 
 
 def _png_dimensions(content: bytes) -> tuple[int, int]:
+    """Decode a complete PNG stream; an IHDR prefix is not raster evidence."""
     if (
-        content[:8] != b"\x89PNG\r\n\x1a\n"
-        or content[12:16] != b"IHDR"
-        or len(content) < 24
+        len(content) > _MAX_ADAPTER_ARTIFACT_BYTES
+        or content[:8] != b"\x89PNG\r\n\x1a\n"
     ):
         raise ValueError("viewport artifact is not a decoded PNG")
-    return int.from_bytes(content[16:20], "big"), int.from_bytes(content[20:24], "big")
+    offset, width, height, channels, depth = 8, 0, 0, 0, 0
+    ihdr = iend = False
+    compressed: list[bytes] = []
+    while offset < len(content):
+        if offset + 12 > len(content):
+            raise ValueError("viewport artifact is not a decoded PNG")
+        length = int.from_bytes(content[offset : offset + 4], "big")
+        end = offset + 12 + length
+        if end > len(content):
+            raise ValueError("viewport artifact is not a decoded PNG")
+        kind, data = (
+            content[offset + 4 : offset + 8],
+            content[offset + 8 : offset + 8 + length],
+        )
+        if zlib.crc32(kind + data) & 0xFFFFFFFF != int.from_bytes(
+            content[offset + 8 + length : end], "big"
+        ):
+            raise ValueError("viewport artifact is not a decoded PNG")
+        if kind == b"IHDR":
+            if ihdr or length != 13:
+                raise ValueError("viewport artifact is not a decoded PNG")
+            width, height, depth, color, compression, filtering, interlace = (
+                int.from_bytes(data[:4], "big"),
+                int.from_bytes(data[4:8], "big"),
+                data[8],
+                data[9],
+                data[10],
+                data[11],
+                data[12],
+            )
+            channels = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}.get(color, 0)
+            if (
+                not width
+                or not height
+                or not channels
+                or compression
+                or filtering
+                or interlace
+            ):
+                raise ValueError("viewport artifact is not a decoded PNG")
+            ihdr = True
+        elif kind == b"IDAT":
+            if not ihdr or iend:
+                raise ValueError("viewport artifact is not a decoded PNG")
+            compressed.append(data)
+        elif kind == b"IEND":
+            if not ihdr or length or iend or end != len(content):
+                raise ValueError("viewport artifact is not a decoded PNG")
+            iend = True
+        offset = end
+    if not ihdr or not iend or not compressed:
+        raise ValueError("viewport artifact is not a decoded PNG")
+    row_bytes = (width * channels * depth + 7) // 8
+    try:
+        decoded = zlib.decompress(b"".join(compressed))
+    except zlib.error as error:
+        raise ValueError("viewport artifact is not a decoded PNG") from error
+    if len(decoded) != height * (row_bytes + 1) or any(
+        decoded[index] > 4 for index in range(0, len(decoded), row_bytes + 1)
+    ):
+        raise ValueError("viewport artifact is not a decoded PNG")
+    return width, height
+
+
+def _adapter_observation(payload: Mapping[str, object]) -> bytes:
+    """Project only bounded terminal browser observations into sealed evidence."""
+    lifecycle, visible = payload.get("lifecycle"), payload.get("visible")
+    if (
+        payload.get("activation") != "browser-observed-200"
+        or not isinstance(lifecycle, Mapping)
+        or not isinstance(visible, Mapping)
+    ):
+        raise ValueError("adapter observation is invalid")
+    frame, loader, polling, requests = (
+        lifecycle.get("frameId"),
+        lifecycle.get("loaderId"),
+        lifecycle.get("polling"),
+        lifecycle.get("requests"),
+    )
+    if (
+        not all(isinstance(value, str) and value for value in (frame, loader))
+        or not isinstance(polling, Mapping)
+        or not isinstance(requests, list)
+        or not 1 <= len(requests) <= _MAX_LIFECYCLE_RECORDS
+    ):
+        raise ValueError("adapter observation is invalid")
+    minimum, observed = polling.get("minimumScheduledRequests"), polling.get(
+        "observedScheduledRequests"
+    )
+    if (
+        polling.get("navigationScoped") is not True
+        or not isinstance(minimum, int)
+        or not isinstance(observed, int)
+        or minimum < 1
+        or observed < minimum
+    ):
+        raise ValueError("adapter observation is invalid")
+    records: list[dict[str, object]] = []
+    for record in requests:
+        if (
+            not isinstance(record, Mapping)
+            or not isinstance(record.get("id"), str)
+            or not str(record.get("path", "")).startswith("/api/v2/")
+            or record.get("outcome") != "finished"
+            or record.get("status") != 200
+        ):
+            raise ValueError("adapter observation is invalid")
+        records.append(
+            {key: record[key] for key in ("id", "path", "outcome", "status")}
+        )
+    if (
+        not isinstance(visible.get("routeName"), str)
+        or not isinstance(visible.get("firstPoi"), str)
+        or not isinstance(visible.get("poiRows"), int)
+        or visible["poiRows"] < 2
+    ):
+        raise ValueError("adapter observation is invalid")
+    encoded = json.dumps(
+        {
+            "activation": payload["activation"],
+            "lifecycle": {
+                "frameId": frame,
+                "loaderId": loader,
+                "polling": {
+                    "navigationScoped": True,
+                    "minimumScheduledRequests": minimum,
+                    "observedScheduledRequests": observed,
+                },
+                "requests": records,
+            },
+            "visible": {
+                "routeName": visible["routeName"],
+                "firstPoi": visible["firstPoi"],
+                "poiRows": visible["poiRows"],
+            },
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    if len(encoded) > _MAX_ADAPTER_OBSERVATION_BYTES:
+        raise ValueError("adapter observation exceeds byte budget")
+    return encoded
 
 
 def _final_steps(
@@ -322,9 +470,38 @@ def _final_steps(
     if not built.usable:
         raise ValueError(f"final build is unusable: {built.reason}")
     start_no_build(topology, contract, key, ledger, executor)
-    run_controls(contract.controls, lambda control: _request(control, inputs))
+    control_results: list[dict[str, object]] = []
+    for control in contract.controls:
+        status = _request(control, inputs)
+        control_results.append(
+            {
+                "name": control.name,
+                "path": control.path,
+                "expected_status": control.expected_status,
+                "status": status,
+            }
+        )
+        if status != control.expected_status:
+            raise ValueError(f"runtime control failed: {control.name}")
     browser_card(inputs)
-    return _run_journey(inputs, contract)
+    artifacts = _run_journey(inputs, contract)
+    artifacts["runtime-observation.json"] = json.dumps(
+        {
+            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "browser": {
+                "session": inputs.browser_session,
+                "origin": inputs.deployed_origin,
+                "profile_version": profile.version,
+                "profile_checksum": profile.checksum,
+                "viewport": _VIEWPORT,
+            },
+            "build": {"image_ids": dict(built.image_ids)},
+            "controls": control_results,
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    return artifacts
 
 
 def _cleanup_default(resource: object) -> None:
@@ -511,7 +688,21 @@ def run(
         profile,
         contract,
     )
-    _write_manifest(inputs, manifest, artifacts)
+    try:
+        _write_manifest(inputs, manifest, artifacts)
+    except (OSError, RuntimeError, TypeError, ValueError) as error:
+        outcome, final = Outcome.FAILED, False
+        primary = f"{primary}; final evidence failed: {error}".strip("; ")
+        manifest = _manifest(
+            inputs,
+            outcome,
+            final,
+            primary,
+            cleanup_detail,
+            cleanup_failed,
+            profile,
+            contract,
+        )
     exit_code = (
         0
         if outcome in {Outcome.PASSED, Outcome.DIAGNOSTIC_ONLY} and not cleanup_failed

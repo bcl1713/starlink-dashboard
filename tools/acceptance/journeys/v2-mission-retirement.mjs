@@ -6,6 +6,7 @@
  */
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
+import { inflateSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -28,8 +29,31 @@ function parse(argv) {
 }
 
 function pngDimensions(png) {
-  if (!png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) || png.toString('ascii', 12, 16) !== 'IHDR') throw new Error('screenshot is not a decoded PNG');
-  return { width: png.readUInt32BE(16), height: png.readUInt32BE(20) };
+  if (png.length > 12 * 1024 * 1024 || !png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) throw new Error('screenshot is not a decoded PNG');
+  let offset = 8; let width = 0; let height = 0; let channels = 0; let depth = 0; let ihdr = false; let iend = false; const idat = [];
+  while (offset < png.length) {
+    if (offset + 12 > png.length) throw new Error('screenshot is not a decoded PNG');
+    const length = png.readUInt32BE(offset); const end = offset + 12 + length;
+    if (end > png.length) throw new Error('screenshot is not a decoded PNG');
+    const kind = png.toString('ascii', offset + 4, offset + 8); const data = png.subarray(offset + 8, offset + 8 + length);
+    if (kind === 'IHDR') {
+      if (ihdr || length !== 13) throw new Error('screenshot is not a decoded PNG');
+      width = data.readUInt32BE(0); height = data.readUInt32BE(4); depth = data[8]; channels = ({ 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 })[data[9]] ?? 0;
+      if (!width || !height || !channels || data[10] || data[11] || data[12]) throw new Error('screenshot is not a decoded PNG');
+      ihdr = true;
+    } else if (kind === 'IDAT') {
+      if (!ihdr || iend) throw new Error('screenshot is not a decoded PNG');
+      idat.push(data);
+    } else if (kind === 'IEND') {
+      if (!ihdr || iend || length || end !== png.length) throw new Error('screenshot is not a decoded PNG');
+      iend = true;
+    }
+    offset = end;
+  }
+  const rowBytes = Math.ceil(width * channels * depth / 8); let decoded;
+  try { decoded = inflateSync(Buffer.concat(idat)); } catch { throw new Error('screenshot is not a decoded PNG'); }
+  if (!ihdr || !iend || !idat.length || decoded.length !== height * (rowBytes + 1) || decoded.some((value, index) => index % (rowBytes + 1) === 0 && value > 4)) throw new Error('screenshot is not a decoded PNG');
+  return { width, height };
 }
 
 async function settleAnimations(page) {
@@ -61,8 +85,10 @@ function scopedLifecycle(page) {
   let frameId = '';
   let loaderId = '';
   let session;
+  let overflow = false;
   const add = (record) => {
-    if (records.length < LIMIT) records.push(record);
+    if (records.length >= LIMIT) { overflow = true; return; }
+    records.push(record);
   };
   return {
     async arm() {
@@ -84,19 +110,31 @@ function scopedLifecycle(page) {
       });
       session.on('Network.loadingFinished', (event) => {
         const record = requests.get(event.requestId);
-        if (record) add({ ...record, outcome: record.status === 200 ? 'finished' : 'http_failed', finishedAt: event.timestamp });
+        if (record) {
+          Object.assign(record, { outcome: record.status === 200 ? 'finished' : 'http_failed', finishedAt: event.timestamp });
+          add({ ...record });
+        }
       });
       session.on('Network.loadingFailed', (event) => {
         const record = requests.get(event.requestId);
-        if (record) add({ ...record, outcome: 'failed', error: event.errorText, finishedAt: event.timestamp });
+        if (record) {
+          Object.assign(record, { outcome: 'failed', error: event.errorText, finishedAt: event.timestamp });
+          add({ ...record });
+        }
       });
     },
     assertHealthy() {
       const pending = [...requests.values()].filter((record) => record.outcome === 'pending');
+      if (overflow) throw new Error('scoped V2 navigation lifecycle coverage gap: record budget exceeded');
       if (pending.length || !records.length || records.some((record) => record.outcome !== 'finished')) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
+      const settled = records.filter((record) => record.outcome === 'finished');
+      const scheduled = settled.slice(1);
+      if (scheduled.length < 1 || scheduled.some((record, index) => record.startedAt <= settled[index].startedAt)) throw new Error('scoped V2 polling cadence coverage gap');
     },
     observation() {
-      return { frameId, loaderId, requests: records };
+      const settled = records.filter((record) => record.outcome === 'finished');
+      const scheduled = settled.slice(1);
+      return { frameId, loaderId, polling: { navigationScoped: true, minimumScheduledRequests: 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
     },
     async close() {
       await session?.detach().catch(() => {});

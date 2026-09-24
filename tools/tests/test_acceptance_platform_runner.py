@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+import json
+import struct
+import zlib
 from pathlib import Path
 
 import pytest
@@ -38,6 +42,68 @@ def _argv(tmp_path: Path, lane: str, fingerprint: str = "current") -> list[str]:
 
 def _current_health() -> object:
     return object()
+
+
+def _png(width: int = 1920, height: int = 1080) -> bytes:
+    """Small, structurally decoded 8-bit grayscale PNG for boundary tests."""
+
+    def chunk(kind: bytes, content: bytes) -> bytes:
+        return (
+            struct.pack(">I", len(content))
+            + kind
+            + content
+            + struct.pack(">I", zlib.crc32(kind + content) & 0xFFFFFFFF)
+        )
+
+    raw = b"\0" * (height * (width + 1))
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 0, 0, 0, 0))
+        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(b"IEND", b"")
+    )
+
+
+def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
+    image = png or _png()
+    encoded = base64.b64encode(image).decode()
+    metrics = base64.b64encode(
+        json.dumps(
+            {**runner._VIEWPORT, "raster": {"width": 1920, "height": 1080}}
+        ).encode()
+    ).decode()
+    return {
+        "status": "passed",
+        "activation": "browser-observed-200",
+        "lifecycle": {
+            "frameId": "frame",
+            "loaderId": "loader",
+            "polling": {
+                "navigationScoped": True,
+                "minimumScheduledRequests": 1,
+                "observedScheduledRequests": 1,
+            },
+            "requests": [
+                {
+                    "id": "1",
+                    "path": "/api/v2/missions",
+                    "outcome": "finished",
+                    "status": 200,
+                }
+            ],
+        },
+        "visible": {
+            "routeName": "V2 Acceptance Route KAAA-KBBB",
+            "firstPoi": "KAAA",
+            "poiRows": 2,
+        },
+        "artifacts": {
+            "journey-pre.png": encoded,
+            "journey-post.png": encoded,
+            "journey-pre-metrics.json": metrics,
+            "journey-post-metrics.json": metrics,
+        },
+    }
 
 
 @pytest.mark.parametrize("lane", ["static", "diagnostic"])
@@ -206,6 +272,54 @@ def test_adapter_output_without_exact_pre_and_post_viewport_proof_is_rejected() 
         runner._decode_adapter_artifacts({"status": "passed", "artifacts": {}})
 
 
+def test_adapter_rejects_header_forged_png_even_when_dimensions_match() -> None:
+    forged = b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR" + struct.pack(">II", 1920, 1080)
+    with pytest.raises(ValueError, match="decoded PNG"):
+        runner._decode_adapter_artifacts(_adapter_payload(forged))
+
+
+def test_adapter_observation_is_schema_validated_and_retained() -> None:
+    artifacts = runner._decode_adapter_artifacts(_adapter_payload())
+
+    observation = json.loads(artifacts["adapter-observation.json"])
+    assert observation["activation"] == "browser-observed-200"
+    assert observation["lifecycle"]["requests"][0]["outcome"] == "finished"
+    assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
+
+
+def test_adapter_observation_rejects_unbounded_or_incomplete_lifecycle() -> None:
+    payload = _adapter_payload()
+    payload["lifecycle"] = {"frameId": "frame", "loaderId": "loader", "requests": []}
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+def test_finalization_failure_returns_nonfinal_result_with_primary_and_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        runner,
+        "_write_manifest",
+        lambda *_: (_ for _ in ()).throw(OSError("seal failed")),
+    )
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: object(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    assert result.exit_code == 1
+    assert result.manifest["final_acceptance"] is False
+    assert "final evidence failed: seal failed" in result.manifest["primary"]["detail"]
+    assert result.manifest["cleanup"]["outcome"] == Outcome.PASSED.value
+
+
 def test_default_unprovisioned_profile_blocks_before_static_product_work(
     tmp_path: Path,
 ) -> None:
@@ -239,6 +353,9 @@ def test_v2_adapter_has_no_platform_authority() -> None:
     assert "node:fs" not in source
     assert "writeEvidence" not in source
     assert "Network.requestWillBeSent" in source
+    assert "Object.assign(record, { outcome:" in source
+    assert "record budget exceeded" in source
+    assert "navigationScoped: true" in source
     assert "loaderId" in source
     assert "Upcoming POIs" in source
 
