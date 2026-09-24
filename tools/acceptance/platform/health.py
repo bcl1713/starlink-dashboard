@@ -158,7 +158,10 @@ def run_platform_health(
             f"platform health failed: {error}",
         )
     finally:
-        _terminate_browser_group(browser)
+        try:
+            _terminate_browser_group(browser)
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            cleanup_error = str(error)
         _terminate(xvfb)
         _retain_logs(artifacts, "browser", browser)
         _retain_logs(artifacts, "xvfb", xvfb)
@@ -169,9 +172,11 @@ def run_platform_health(
         if "profile_dir" in locals():
             shutil.rmtree(profile_dir, ignore_errors=True)
             try:
-                _verify_browser_cleanup(display, port, profile_dir)
+                _verify_browser_cleanup(
+                    display, port, profile_dir, _browser_group_id(browser)
+                )
             except ValueError as error:
-                cleanup_error = str(error)
+                cleanup_error = cleanup_error or str(error)
     if cleanup_error:
         outcome = Outcome.ENVIRONMENT_BLOCKED
         reason = cleanup_error
@@ -338,30 +343,61 @@ def _terminate(process: Any) -> None:
         process.wait(timeout=5)
 
 
+def _browser_group_id(process: Any) -> int | None:
+    pid = getattr(process, "pid", None)
+    return pid if isinstance(pid, int) and pid > 0 else None
+
+
+def _process_group_exists(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError as error:
+        raise ValueError(
+            "unable to verify task browser process group cleanup"
+        ) from error
+    return True
+
+
 def _terminate_browser_group(process: Any) -> None:
     """Terminate/reap Chrome's private session, including browser descendants."""
-    if process is None or process.poll() is not None:
+    if process is None:
         return
-    pid = getattr(process, "pid", None)
-    if isinstance(pid, int) and pid > 0:
+    if (pgid := _browser_group_id(process)) is None:
+        _terminate(process)
+        return
+    try:
+        os.killpg(pgid, 15)
+    except ProcessLookupError:
+        return
+    except OSError as error:
+        raise ValueError("unable to terminate task browser process group") from error
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        pass
+    if _process_group_exists(pgid):
         try:
-            os.killpg(pid, 15)
-            process.wait(timeout=5)
-            return
+            os.killpg(pgid, 9)
         except ProcessLookupError:
             return
-        except (OSError, subprocess.TimeoutExpired):
-            try:
-                os.killpg(pid, 9)
-                process.wait(timeout=5)
-                return
-            except ProcessLookupError:
-                return
-    _terminate(process)
+        except OSError as error:
+            raise ValueError("unable to kill task browser process group") from error
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            pass
+    if _process_group_exists(pgid):
+        raise ValueError("task browser process group remains after cleanup")
 
 
-def _verify_browser_cleanup(display: str, port: int, profile: Path) -> None:
-    """Fail closed if a task-owned display, listener, or profile survives teardown."""
+def _verify_browser_cleanup(
+    display: str, port: int, profile: Path, process_group: int | None
+) -> None:
+    """Fail closed if task-owned browser resources survive teardown."""
+    if process_group is not None and _process_group_exists(process_group):
+        raise ValueError("task browser process group remains after cleanup")
     if _cdp_version(f"http://127.0.0.1:{port}") is not None:
         raise ValueError("task CDP listener remains after cleanup")
     display_number = display.removeprefix(":")

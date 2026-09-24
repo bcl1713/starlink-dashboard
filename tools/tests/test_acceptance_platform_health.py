@@ -205,6 +205,37 @@ def test_lifecycle_waits_for_child_and_cdp_then_closes_everything(
     )
 
 
+def test_browser_group_cleanup_kills_descendant_after_leader_exits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from acceptance.platform import health
+
+    class DeadLeader:
+        pid = 4242
+
+        def poll(self) -> int:
+            return 1
+
+        def wait(self, timeout: float | None = None) -> int:
+            return 1
+
+    signals: list[int] = []
+    group_survives = True
+
+    def killpg(pgid: int, signal: int) -> None:
+        nonlocal group_survives
+        assert pgid == DeadLeader.pid
+        signals.append(signal)
+        if signal == 9:
+            group_survives = False
+        elif signal == 0 and not group_survives:
+            raise ProcessLookupError
+
+    monkeypatch.setattr(health.os, "killpg", killpg)
+    health._terminate_browser_group(DeadLeader())
+    assert signals == [15, 0, 9, 0]
+
+
 def test_readiness_timeout_retains_diagnostics_and_never_runs_card(
     tmp_path: Path,
 ) -> None:
