@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import hashlib
-import os
+import shutil
 import subprocess
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
@@ -10,10 +11,36 @@ from acceptance.platform.browser_bundle import verify_browser_bundle
 from acceptance.platform.model import BrowserProfile, PlatformProfile
 
 
-def _fake_executable(path: Path, *, version: str) -> Path:
+@pytest.fixture
+def executable_tmp_path(tmp_path: Path) -> Iterator[Path]:
+    """Use the worktree because the harness scratch directory is mounted noexec."""
+    path = Path.cwd() / ".pytest-browser-bundle" / tmp_path.name
+    path.mkdir(parents=True)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path.parent, ignore_errors=True)
+
+
+def _fake_executable(path: Path, *, version: str, marker: Path | None = None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(f"#!/bin/sh\nprintf '%s\\n' '{version}'\n", encoding="utf-8")
-    path.chmod(path.stat().st_mode | os.X_OK)
+    marker_write = ""
+    if marker is not None:
+        escaped_marker = str(marker).replace("\\", "\\\\").replace('"', '\\"')
+        marker_write = f"""\n    FILE *marker = fopen("{escaped_marker}", "a");
+    if (marker != NULL) {{ fputs("executed", marker); fclose(marker); }}"""
+    escaped_version = version.replace("\\", "\\\\").replace('"', '\\"')
+    source = path.with_suffix(".c")
+    source.write_text(
+        f"""#include <stdio.h>
+int main(void) {{
+    puts("{escaped_version}");{marker_write}
+    return 0;
+}}
+""",
+        encoding="utf-8",
+    )
+    subprocess.run(("cc", str(source), "-o", str(path)), check=True)
     return path
 
 
@@ -38,28 +65,69 @@ def _profile_for(
     )
 
 
-@pytest.fixture
-def version_runner(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, ...]]:
-    commands: list[tuple[str, ...]] = []
-
-    def run(command: tuple[str, ...], **_: object) -> subprocess.CompletedProcess[str]:
-        commands.append(command)
-        return subprocess.CompletedProcess(command, 0, stdout="Chrome 124\n")
-
-    monkeypatch.setattr("acceptance.platform.browser_bundle.subprocess.run", run)
-    return commands
-
-
-def test_bundle_returns_verified_absolute_executable(
-    tmp_path: Path, version_runner: list[tuple[str, ...]]
+def test_bundle_probes_verified_file_after_same_version_replacement(
+    tmp_path: Path, executable_tmp_path: Path
 ) -> None:
-    executable = _fake_executable(tmp_path / "chrome", version="Chrome 124")
+    marker = tmp_path / "executed"
+    executable = _fake_executable(
+        executable_tmp_path / "store/chrome", version="Chrome 124"
+    )
+    profile = _profile_for(
+        executable, version="Chrome 124", store_root=executable_tmp_path / "store"
+    )
 
-    bundle = verify_browser_bundle(_profile_for(executable, version="Chrome 124"))
+    def replace_path() -> None:
+        _fake_executable(executable, version="Chrome 124", marker=marker)
 
-    assert bundle.executable == executable.absolute()
-    assert bundle.version == "Chrome 124"
-    assert version_runner == [(str(executable.absolute()), "--version")]
+    bundle = verify_browser_bundle(profile, _after_identity_open=replace_path)
+    bundle.close()
+
+    assert not marker.exists()
+
+
+def test_launch_spec_executes_verified_file_after_path_replacement(
+    tmp_path: Path, executable_tmp_path: Path
+) -> None:
+    old_marker = tmp_path / "old-executed"
+    malicious_marker = tmp_path / "malicious-executed"
+    executable = _fake_executable(
+        executable_tmp_path / "store/chrome", version="Chrome 124", marker=old_marker
+    )
+    bundle = verify_browser_bundle(
+        _profile_for(
+            executable, version="Chrome 124", store_root=executable_tmp_path / "store"
+        )
+    )
+    spec = bundle.launch_spec()
+    _fake_executable(executable, version="Chrome 124", marker=malicious_marker)
+
+    process = spec.start()
+    assert process.wait(timeout=5) == 0
+    spec.close()
+    bundle.close()
+
+    assert old_marker.read_text(encoding="utf-8") == "executedexecuted"
+    assert not malicious_marker.exists()
+
+
+def test_version_probe_survives_parent_component_symlink_replacement(
+    tmp_path: Path, executable_tmp_path: Path
+) -> None:
+    marker = tmp_path / "malicious-executed"
+    store_root = executable_tmp_path / "store"
+    executable = _fake_executable(store_root / "bin/chrome", version="Chrome 124")
+    replacement = executable_tmp_path / "replacement"
+    _fake_executable(replacement / "bin/chrome", version="Chrome 124", marker=marker)
+    profile = _profile_for(executable, version="Chrome 124", store_root=store_root)
+
+    def replace_parent() -> None:
+        store_root.rename(executable_tmp_path / "original-store")
+        store_root.symlink_to(replacement, target_is_directory=True)
+
+    bundle = verify_browser_bundle(profile, _after_identity_open=replace_parent)
+    bundle.close()
+
+    assert not marker.exists()
 
 
 def test_bundle_rejects_symlinked_executable(tmp_path: Path) -> None:
@@ -71,6 +139,47 @@ def test_bundle_rejects_symlinked_executable(tmp_path: Path) -> None:
         verify_browser_bundle(_profile_for(executable, version="Chrome 124"))
 
 
+def test_bundle_rejects_parent_symlink(tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    store_root = tmp_path / "store"
+    store_root.symlink_to(target, target_is_directory=True)
+    executable = store_root / "chrome"
+    _fake_executable(target / "chrome", version="Chrome 124")
+
+    with pytest.raises(ValueError, match="symlink"):
+        verify_browser_bundle(
+            _profile_for(executable, version="Chrome 124", store_root=store_root)
+        )
+
+
+@pytest.mark.parametrize("missing", ["store", "executable"])
+def test_bundle_normalizes_missing_filesystem_objects(
+    tmp_path: Path, missing: str
+) -> None:
+    store_root = tmp_path / "store"
+    executable = store_root / "chrome"
+    if missing == "store":
+        profile = _profile_for(
+            executable,
+            version="Chrome 124",
+            byte_size=1,
+            sha256="0" * 64,
+            store_root=store_root,
+        )
+    else:
+        store_root.mkdir()
+        profile = _profile_for(
+            executable,
+            version="Chrome 124",
+            byte_size=1,
+            sha256="0" * 64,
+            store_root=store_root,
+        )
+
+    with pytest.raises(ValueError, match="filesystem"):
+        verify_browser_bundle(profile)
+
+
 def test_bundle_rejects_executable_outside_store_root(tmp_path: Path) -> None:
     executable = _fake_executable(tmp_path / "outside/chrome", version="Chrome 124")
 
@@ -79,18 +188,6 @@ def test_bundle_rejects_executable_outside_store_root(tmp_path: Path) -> None:
             _profile_for(
                 executable, version="Chrome 124", store_root=tmp_path / "store"
             )
-        )
-
-
-def test_bundle_rejects_traversal_outside_store_root(tmp_path: Path) -> None:
-    store_root = tmp_path / "store"
-    executable = _fake_executable(
-        store_root / "../outside/chrome", version="Chrome 124"
-    )
-
-    with pytest.raises(ValueError, match="escapes store root"):
-        verify_browser_bundle(
-            _profile_for(executable, version="Chrome 124", store_root=store_root)
         )
 
 
@@ -129,26 +226,34 @@ def test_bundle_rejects_identity_hash_or_size_mismatch(
         )
 
 
-def test_bundle_rejects_version_mismatch(
-    tmp_path: Path, version_runner: list[tuple[str, ...]]
-) -> None:
+def test_bundle_rejects_version_mismatch(tmp_path: Path) -> None:
     executable = _fake_executable(tmp_path / "chrome", version="Chrome 123")
 
     with pytest.raises(ValueError, match="identity version"):
-        verify_browser_bundle(_profile_for(executable, version="Chrome 123"))
+        verify_browser_bundle(_profile_for(executable, version="Chrome 124"))
 
 
-def test_launch_command_rechecks_replacement_before_return(
-    tmp_path: Path, version_runner: list[tuple[str, ...]]
-) -> None:
-    executable = _fake_executable(tmp_path / "chrome", version="Chrome 124")
+def test_launch_spec_close_prevents_descriptor_reuse(executable_tmp_path: Path) -> None:
+    executable = _fake_executable(executable_tmp_path / "chrome", version="Chrome 124")
     bundle = verify_browser_bundle(_profile_for(executable, version="Chrome 124"))
+    spec = bundle.launch_spec()
+    spec.close()
+    bundle.close()
 
-    def replace_executable() -> None:
-        _fake_executable(executable, version="Chrome 125")
+    with pytest.raises(ValueError, match="closed"):
+        spec.start()
+    with pytest.raises(ValueError, match="closed"):
+        bundle.launch_spec()
 
-    with pytest.raises(ValueError, match="identity"):
-        bundle.launch_command("--headless", _after_initial_hash=replace_executable)
+
+def test_default_profile_is_explicitly_unprovisioned_template() -> None:
+    profile = (
+        Path(__file__).parents[1] / "acceptance/platform/profiles/default.toml"
+    ).read_text(encoding="utf-8")
+
+    assert "DELIBERATELY UNPROVISIONED PLATFORM TEMPLATE" in profile
+    assert "UNPROVISIONED_BROWSER_DO_NOT_LAUNCH" in profile
+    assert "must not install a browser" in profile
 
 
 def test_verifier_source_never_mentions_installer_execution() -> None:
