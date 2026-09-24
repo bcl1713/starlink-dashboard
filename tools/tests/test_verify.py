@@ -99,6 +99,23 @@ def test_static_commands_use_exact_root_relative_backend_targets():
     ]
 
 
+def test_static_prettier_uses_root_relative_frontend_source_glob():
+    module = load_verify()
+
+    command, cwd = module.tier_commands("static")[3]
+    assert cwd == module.ROOT
+    assert command == [
+        "npm",
+        "--prefix",
+        "frontend/mission-planner",
+        "exec",
+        "--",
+        "prettier",
+        "--check",
+        "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}",
+    ]
+
+
 def test_all_stops_at_first_failed_child_and_preserves_status(monkeypatch):
     module = load_verify()
     calls = []
@@ -111,3 +128,27 @@ def test_all_stops_at_first_failed_child_and_preserves_status(monkeypatch):
 
     assert module.main(["tools/verify", "all"]) == 17
     assert calls == [module.tier_commands("static")[0]]
+
+
+def test_backend_tier_dispatches_from_nested_caller_directory():
+    result = run("backend", cwd=ROOT / "backend/starlink-location")
+
+    assert result.returncode == 0
+
+
+def test_all_dispatches_static_backend_and_frontend_in_order(monkeypatch):
+    module = load_verify()
+    calls = []
+
+    def fake_run(command, cwd, check):
+        calls.append((command, cwd))
+        return types.SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+
+    assert module.main(["tools/verify", "all"]) == 0
+    assert calls == [
+        *module.tier_commands("static"),
+        *module.tier_commands("backend"),
+        *module.tier_commands("frontend"),
+    ]

@@ -49,7 +49,7 @@ STATIC: list[Command] = [
             "--",
             "prettier",
             "--check",
-            "src/**/*.{ts,tsx,js,jsx,json,md}",
+            "frontend/mission-planner/src/**/*.{ts,tsx,js,jsx,json,md}",
         ],
         ROOT,
     ),
