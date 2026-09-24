@@ -1,4 +1,5 @@
 """Descriptor-confined evidence authority for acceptance platform output."""
+
 from __future__ import annotations
 
 import hashlib
@@ -43,9 +44,13 @@ def write_artifacts(root: Path, artifacts: Mapping[str, bytes]) -> str:
         for relative, content in sorted(artifacts.items()):
             _write_relative(root_fd, relative, content)
         inventory = _inventory(root_fd)
-        encoded = json.dumps({"artifacts": inventory}, sort_keys=True, separators=(",", ":")).encode()
+        encoded = json.dumps(
+            {"artifacts": inventory}, sort_keys=True, separators=(",", ":")
+        ).encode()
         _write_relative(root_fd, "manifest.json", encoded)
-        sums = "".join(f"{item['sha256']}  {item['path']}\n" for item in inventory).encode()
+        sums = "".join(
+            f"{item['sha256']}  {item['path']}\n" for item in inventory
+        ).encode()
         _write_relative(root_fd, "SHA256SUMS", sums)
     finally:
         os.close(root_fd)
@@ -126,16 +131,24 @@ def verify_manifest(root: Path) -> None:
         items = manifest.get("artifacts")
         if not isinstance(items, list):
             raise ValueError("invalid evidence manifest")
-        expected_sums = "".join(f"{item['sha256']}  {item['path']}\n" for item in items).encode()
+        expected_sums = "".join(
+            f"{item['sha256']}  {item['path']}\n" for item in items
+        ).encode()
         if _read_relative(root_fd, "SHA256SUMS") != expected_sums:
             raise ValueError("evidence checksum inventory drift")
         previous = ""
         for item in items:
             relative, digest = item.get("path"), item.get("sha256")
-            if not isinstance(relative, str) or not isinstance(digest, str) or relative <= previous:
+            if (
+                not isinstance(relative, str)
+                or not isinstance(digest, str)
+                or relative <= previous
+            ):
                 raise ValueError("invalid evidence manifest")
             content = _read_relative(root_fd, relative)
-            if hashlib.sha256(content).hexdigest() != digest or len(content) != item.get("bytes"):
+            if hashlib.sha256(content).hexdigest() != digest or len(
+                content
+            ) != item.get("bytes"):
                 raise ValueError("evidence checksum verification failed")
             previous = relative
     except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
@@ -161,7 +174,11 @@ def _open_directory(path: Path) -> int:
 
 def _parts(relative: str) -> tuple[str, ...]:
     path = Path(relative)
-    if path.is_absolute() or not path.parts or any(part in {"", ".", ".."} for part in path.parts):
+    if (
+        path.is_absolute()
+        or not path.parts
+        or any(part in {"", ".", ".."} for part in path.parts)
+    ):
         raise ValueError("evidence artifact path must be contained")
     return path.parts
 
@@ -187,7 +204,12 @@ def _directory_for(root_fd: int, parts: tuple[str, ...]) -> tuple[int, str]:
 def _write_relative(root_fd: int, relative: str, content: bytes) -> None:
     directory_fd, name = _directory_for(root_fd, _parts(relative))
     try:
-        fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600, dir_fd=directory_fd)
+        fd = os.open(
+            name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+            0o600,
+            dir_fd=directory_fd,
+        )
         try:
             os.write(fd, content)
             os.fchmod(fd, 0o600)
@@ -217,12 +239,20 @@ def _inventory(root_fd: int) -> list[dict[str, object]]:
     # Artifacts are supplied as controlled relative names; recursive walk via fd avoids links.
     entries: list[dict[str, object]] = []
     for base, dirs, files in os.walk(f"/proc/self/fd/{root_fd}", followlinks=False):
-        dirs[:] = [name for name in dirs if not os.path.islink(os.path.join(base, name))]
+        dirs[:] = [
+            name for name in dirs if not os.path.islink(os.path.join(base, name))
+        ]
         for name in files:
             path = os.path.join(base, name)
             if os.path.islink(path) or name in {"manifest.json", "SHA256SUMS"}:
                 continue
             relative = os.path.relpath(path, f"/proc/self/fd/{root_fd}")
             content = _read_relative(root_fd, relative)
-            entries.append({"path": relative, "bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()})
+            entries.append(
+                {
+                    "path": relative,
+                    "bytes": len(content),
+                    "sha256": hashlib.sha256(content).hexdigest(),
+                }
+            )
     return sorted(entries, key=lambda item: str(item["path"]))
