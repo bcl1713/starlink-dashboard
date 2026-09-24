@@ -3,6 +3,15 @@
 This guide is the authoritative command reference for local verification and
 continuous integration. Run the commands from the repository root.
 
+## Prerequisites
+
+- Use the project-supported Python 3.13 and `uv`; the Python tiers load
+  `backend/starlink-location/requirements-dev.txt` through `uv run`.
+- Use Node 22.12.0. Install locked frontend dependencies with `npm ci` from
+  `frontend/mission-planner` before running frontend or static checks.
+- Install the static executables `markdownlint-cli2` and `Lychee`, which are
+  required for Markdown formatting and documentation-link validation.
+
 ## Canonical Commands
 
 ```bash

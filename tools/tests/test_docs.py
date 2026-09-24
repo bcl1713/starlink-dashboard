@@ -135,3 +135,54 @@ def test_quality_gate_docs_name_canonical_contract():
     assert "npm run test:unit" in text
     assert "1920x1080" in text
     assert "dev" in text
+
+
+def test_quality_gate_guide_contains_the_complete_canonical_contract():
+    """Keep required commands, prerequisites, and browser boundary canonical."""
+    guide = (PROJECT_ROOT / "docs/contributing/quality-gates.md").read_text(
+        encoding="utf-8"
+    )
+
+    for tier in ("static", "backend", "frontend", "all"):
+        assert f"./tools/verify {tier}" in guide
+
+    for prerequisite in (
+        "Python 3.13",
+        "uv",
+        "Node 22.12.0",
+        "npm ci",
+        "frontend/mission-planner",
+        "markdownlint-cli2",
+        "Lychee",
+    ):
+        assert prerequisite in guide
+
+    assert "npm run test:unit" in guide
+    assert "dev" in guide
+
+    normalized_guide = " ".join(guide.split())
+    assert "exact-SHA CDP acceptance at 1920x1080" in normalized_guide
+    assert "does not substitute for browser or runtime evidence" in normalized_guide
+
+
+@pytest.mark.parametrize(
+    ("entry_point", "canonical_target"),
+    (
+        (Path("CONTRIBUTING.md"), "./docs/contributing/quality-gates.md"),
+        (Path("docs/contributing/testing-guide.md"), "quality-gates.md"),
+        (
+            Path("backend/starlink-location/README.md"),
+            "../../docs/contributing/quality-gates.md",
+        ),
+        (
+            Path("backend/starlink-location/docs/TESTING.md"),
+            "../../../docs/contributing/quality-gates.md",
+        ),
+    ),
+)
+def test_quality_gate_entry_points_link_to_the_canonical_guide(
+    entry_point, canonical_target
+):
+    """Contributor entry points must link to the authoritative guide."""
+    content = (PROJECT_ROOT / entry_point).read_text(encoding="utf-8")
+    assert f"]({canonical_target})" in content
