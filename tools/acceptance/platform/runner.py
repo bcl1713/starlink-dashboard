@@ -17,7 +17,7 @@ import urllib.error
 import urllib.request
 import zlib
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from itertools import pairwise
 from pathlib import Path
@@ -43,7 +43,13 @@ from .evidence import (
     verify_manifest,
     write_artifacts,
 )
-from .health import run_platform_health, validate_fingerprint
+from .health import (
+    PlatformBrowserSession,
+    PlatformHealthExecutor,
+    run_platform_health,
+    start_final_browser_session,
+    validate_fingerprint,
+)
 from .model import (
     BrowserProfile,
     BuildLedgerKey,
@@ -131,6 +137,12 @@ class RunnerDependencies:
         Callable[[RunnerInputs, PlatformProfile, ProductContract], object] | None
     ) = None
     browser_card: Callable[[RunnerInputs], None] | None = None
+    start_browser_session: (
+        Callable[
+            [PlatformProfile, Path, PlatformHealthExecutor], PlatformBrowserSession
+        ]
+        | None
+    ) = None
     cleanup: Callable[[object | None], None] | None = None
 
 
@@ -205,6 +217,12 @@ def _run_health(profile: PlatformProfile, root: Path) -> object:
     from .health import PlatformHealthExecutor
 
     return run_platform_health(profile, root, PlatformHealthExecutor(probe=_probe))
+
+
+def _start_browser_session(
+    profile: PlatformProfile, task_root: Path, executor: PlatformHealthExecutor
+) -> PlatformBrowserSession:
+    return start_final_browser_session(profile, task_root, executor)
 
 
 def _probe(argv: tuple[str, ...]) -> str:
@@ -663,7 +681,8 @@ def _final_steps(
 
 def _cleanup_default(resource: object) -> None:
     topology, executor = resource
-    cleanup_compose(topology, executor)
+    if topology is not None:
+        cleanup_compose(topology, executor)
 
 
 def _outcome_for(error: BaseException) -> Outcome:
@@ -925,6 +944,7 @@ def run(
     final = False
     resource: object | None = None
     resource_holder: list[object] = []
+    browser_session: PlatformBrowserSession | None = None
     artifacts: dict[str, bytes] = {}
     adapter_source: _AdapterSource | None = None
     adapter_sha256: str | None = None
@@ -962,16 +982,39 @@ def run(
                 adapter_source = _open_adapter_source(inputs, contract)
                 adapter_sha256 = adapter_source.sha256
                 if dependencies.final_steps is None:
+                    if inputs.browser_session:
+                        raise ValueError(
+                            "final lane rejects caller-supplied browser session"
+                        )
+                    browser_session = (
+                        dependencies.start_browser_session or _start_browser_session
+                    )(profile, inputs.task_root, PlatformHealthExecutor(probe=_probe))
+                    final_inputs = replace(
+                        inputs, browser_session=browser_session.cdp_url
+                    )
                     artifacts = _final_steps(
-                        inputs,
+                        final_inputs,
                         profile,
                         contract,
                         browser_card,
                         resource_holder.append,
                         adapter_source,
                     )
-                    resource = resource_holder[0]
+                    resource = resource_holder[0] if resource_holder else None
                 else:
+                    if dependencies.start_browser_session is not None:
+                        if inputs.browser_session:
+                            raise ValueError(
+                                "final lane rejects caller-supplied browser session"
+                            )
+                        browser_session = dependencies.start_browser_session(
+                            profile,
+                            inputs.task_root,
+                            PlatformHealthExecutor(probe=_probe),
+                        )
+                        inputs = replace(
+                            inputs, browser_session=browser_session.cdp_url
+                        )
                     browser_card(inputs)
                     resource = dependencies.final_steps(inputs, profile, contract)
                 outcome, primary = Outcome.PASSED, "final product contract completed"
@@ -992,6 +1035,9 @@ def run(
                     dependencies.cleanup(resource)
                 elif resource is not None:
                     _cleanup_default(resource)
+                if browser_session is not None:
+                    browser_session.close()
+                    artifacts.update(browser_session.artifacts)
                 cleanup_detail = "final lane cleanup completed"
             except (
                 OSError,

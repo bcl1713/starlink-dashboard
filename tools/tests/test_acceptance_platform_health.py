@@ -17,6 +17,7 @@ from acceptance.platform.health import (
     PlatformHealthExecutor,
     run_platform_health,
     run_product_lane,
+    start_final_browser_session,
     validate_fingerprint,
 )
 from acceptance.platform.model import BrowserProfile, Outcome, PlatformProfile
@@ -204,6 +205,42 @@ def test_lifecycle_waits_for_child_and_cdp_then_closes_everything(
         argument.startswith("--display=:") and argument != "--display=:91"
         for argument in bundle.launch.arguments
     )
+
+
+def test_final_session_uses_profile_pinned_headed_xvfb_and_requires_neutral_metrics(
+    tmp_path: Path,
+) -> None:
+    bundle = _Bundle()
+    session = start_final_browser_session(_profile(), tmp_path, _executor(bundle))
+
+    assert session.cdp_url.startswith("http://127.0.0.1:")
+    assert any(
+        argument.startswith("--display=:") for argument in bundle.launch.arguments
+    )
+    assert "--headless" not in bundle.launch.arguments
+    assert session.metrics["raster"] == [1920, 1080]
+    assert session.profile_dir.parent == tmp_path
+    session.close()
+    assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
+    assert session.artifacts["browser.stderr.log"] == b"diagnostic stderr"
+    assert session.artifacts["xvfb.stdout.log"] == b"diagnostic stdout"
+
+
+def test_final_session_rejects_mismatched_neutral_metrics_before_build(
+    tmp_path: Path,
+) -> None:
+    bundle = _Bundle()
+    bad = _metrics()
+    bad["raster"] = [1919, 1080]
+
+    with pytest.raises(ValueError, match="neutral viewport"):
+        start_final_browser_session(
+            _profile(),
+            tmp_path,
+            _executor(bundle, card=HealthProbeResult("Chrome", bad, {})),
+        )
+
+    assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
 
 
 def test_browser_group_cleanup_kills_descendant_after_leader_exits(

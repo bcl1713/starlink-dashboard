@@ -90,35 +90,69 @@ class PlatformHealthExecutor:
     sleep: Callable[[float], None] = time.sleep
 
 
-def run_platform_health(
+@dataclass
+class PlatformBrowserSession:
+    """Platform-owned headed browser lifecycle retained through final evidence."""
+
+    cdp_url: str
+    display: str
+    profile_dir: Path
+    metrics: Mapping[str, Any]
+    artifacts: dict[str, bytes]
+    _bundle: BrowserBundle
+    _launch: BrowserLaunchSpec
+    _browser: Any
+    _xvfb: Any
+    _closed: bool = False
+
+    def close(self) -> None:
+        """Idempotently reap every task-owned browser resource and retain logs."""
+        if self._closed:
+            return
+        self._closed = True
+        cleanup_error = ""
+        try:
+            _terminate_browser_group(self._browser)
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            cleanup_error = str(error)
+        _terminate(self._xvfb)
+        _retain_logs(self.artifacts, "browser", self._browser)
+        _retain_logs(self.artifacts, "xvfb", self._xvfb)
+        self._launch.close()
+        self._bundle.close()
+        shutil.rmtree(self.profile_dir, ignore_errors=True)
+        try:
+            _verify_browser_cleanup(
+                self.display,
+                int(self.cdp_url.rsplit(":", 1)[1]),
+                self.profile_dir,
+                _browser_group_id(self._browser),
+            )
+        except ValueError as error:
+            cleanup_error = cleanup_error or str(error)
+        if cleanup_error:
+            raise ValueError(cleanup_error)
+
+
+def start_final_browser_session(
     profile: PlatformProfile,
-    evidence_root: Path,
+    task_root: Path,
     executor: PlatformHealthExecutor,
     *,
     card_path: Path = _CARD,
-) -> HealthFingerprint:
-    """Run only platform-owned neutral health, retaining evidence on every classified fault."""
-    root = prepare_evidence_root(evidence_root)
-    artifacts: dict[str, bytes] = {}
+) -> PlatformBrowserSession:
+    """Start and validate the sole headed browser authority for a final lane."""
+    if _is_unprovisioned(profile):
+        raise _Blocked("platform profile is deliberately unprovisioned")
+    task_root.mkdir(parents=True, exist_ok=True)
     bundle: BrowserBundle | None = None
     launch: BrowserLaunchSpec | None = None
-    xvfb = browser = None
-    cleanup_error = ""
-    values: dict[str, Any] = {
-        "profile_checksum": profile.checksum,
-        "captured_at": datetime.now(UTC).isoformat(),
-    }
+    browser = xvfb = None
+    profile_dir: Path | None = None
     try:
-        if _is_unprovisioned(profile):
-            raise _Blocked("platform profile is deliberately unprovisioned")
-        card_checksum = _sha256_file(card_path)
-        values["card_checksum"] = card_checksum
-        values["docker_identity"] = executor.probe(("docker", "--version"))
-        values["compose_identity"] = executor.probe(("docker", "compose", "version"))
         bundle = executor.verify_bundle(profile)
-        values["browser_sha256"] = bundle.sha256
         launch = bundle.launch_spec()
-        display, port, profile_dir = _allocate_browser_resources(evidence_root)
+        display, port, profile_dir = _allocate_browser_resources(task_root)
         xvfb = executor.start_xvfb(display)
         browser = launch.start(
             f"--display={display}",
@@ -131,14 +165,92 @@ def run_platform_health(
         )
         cdp_url = f"http://127.0.0.1:{port}"
         _wait_ready(browser, xvfb, cdp_url, executor)
-        probe = (executor.run_card or _platform_card(card_path, cdp_url))(launch, root)
-        _require_neutral_metrics(probe.metrics)
-        values.update(
-            browser_version=probe.browser_version, metrics=dict(probe.metrics)
+        probe = (executor.run_card or _platform_card(card_path, cdp_url))(
+            launch, task_root
         )
-        artifacts.update(probe.artifacts)
+        _require_neutral_metrics(probe.metrics)
+        return PlatformBrowserSession(
+            cdp_url,
+            display,
+            profile_dir,
+            dict(probe.metrics),
+            dict(probe.artifacts),
+            bundle,
+            launch,
+            browser,
+            xvfb,
+        )
+    except BaseException:
+        retained: dict[str, bytes] = {}
+        if bundle is not None and launch is not None and profile_dir is not None:
+            session = PlatformBrowserSession(
+                f"http://127.0.0.1:{port}",
+                display,
+                profile_dir,
+                {},
+                retained,
+                bundle,
+                launch,
+                browser,
+                xvfb,
+            )
+            try:
+                session.close()
+            except ValueError as cleanup_failure:
+                retained["cleanup-error.log"] = str(cleanup_failure).encode()
+                cleanup_error = str(cleanup_failure)
+        else:
+            if launch is not None:
+                launch.close()
+            if bundle is not None:
+                bundle.close()
+        # Health retains these diagnostics after classifying the original fault.
+        # The final runner receives the same artifacts from a successfully owned session.
+        import sys
+
+        error = sys.exception()
+        if error is not None:
+            error.platform_artifacts = retained  # type: ignore[attr-defined]
+            if "cleanup_error" in locals() and cleanup_error:
+                error.platform_cleanup_error = cleanup_error  # type: ignore[attr-defined]
+        raise
+
+
+def run_platform_health(
+    profile: PlatformProfile,
+    evidence_root: Path,
+    executor: PlatformHealthExecutor,
+    *,
+    card_path: Path = _CARD,
+) -> HealthFingerprint:
+    """Run only platform-owned neutral health, retaining evidence on every classified fault."""
+    root = prepare_evidence_root(evidence_root)
+    artifacts: dict[str, bytes] = {}
+    session: PlatformBrowserSession | None = None
+    cleanup_error = ""
+    values: dict[str, Any] = {
+        "profile_checksum": profile.checksum,
+        "captured_at": datetime.now(UTC).isoformat(),
+    }
+    try:
+        if _is_unprovisioned(profile):
+            raise _Blocked("platform profile is deliberately unprovisioned")
+        card_checksum = _sha256_file(card_path)
+        values["card_checksum"] = card_checksum
+        values["docker_identity"] = executor.probe(("docker", "--version"))
+        values["compose_identity"] = executor.probe(("docker", "compose", "version"))
+        session = start_final_browser_session(
+            profile, root, executor, card_path=card_path
+        )
+        values["browser_sha256"] = session._bundle.sha256
+        values.update(
+            browser_version=session._bundle.version, metrics=dict(session.metrics)
+        )
+        artifacts.update(session.artifacts)
         outcome, reason = Outcome.PASSED, ""
     except _CardFailure as error:
+        artifacts.update(getattr(error, "platform_artifacts", {}))
+        cleanup_error = getattr(error, "platform_cleanup_error", "")
         artifacts["card.stdout.log"] = error.stdout
         artifacts["card.stderr.log"] = error.stderr
         outcome, reason = (
@@ -146,6 +258,8 @@ def run_platform_health(
             f"platform health failed: {error}",
         )
     except _Blocked as error:
+        artifacts.update(getattr(error, "platform_artifacts", {}))
+        cleanup_error = getattr(error, "platform_cleanup_error", "")
         outcome, reason = Outcome.ENVIRONMENT_BLOCKED, str(error)
     except (
         OSError,
@@ -154,30 +268,19 @@ def run_platform_health(
         ValueError,
         subprocess.SubprocessError,
     ) as error:
+        artifacts.update(getattr(error, "platform_artifacts", {}))
+        cleanup_error = getattr(error, "platform_cleanup_error", "")
         outcome, reason = (
             Outcome.ENVIRONMENT_BLOCKED,
             f"platform health failed: {error}",
         )
     finally:
         try:
-            _terminate_browser_group(browser)
+            if session is not None:
+                session.close()
+                artifacts.update(session.artifacts)
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             cleanup_error = str(error)
-        _terminate(xvfb)
-        _retain_logs(artifacts, "browser", browser)
-        _retain_logs(artifacts, "xvfb", xvfb)
-        if launch is not None:
-            launch.close()
-        if bundle is not None:
-            bundle.close()
-        if "profile_dir" in locals():
-            shutil.rmtree(profile_dir, ignore_errors=True)
-            try:
-                _verify_browser_cleanup(
-                    display, port, profile_dir, _browser_group_id(browser)
-                )
-            except ValueError as error:
-                cleanup_error = cleanup_error or str(error)
     if cleanup_error:
         outcome = Outcome.ENVIRONMENT_BLOCKED
         values["cleanup_reason"] = cleanup_error
@@ -330,7 +433,7 @@ def _free_local_port() -> int:
 
 def _allocate_browser_resources(evidence_root: Path) -> tuple[str, int, Path]:
     """Allocate a unique display, loopback CDP port, and private Chrome profile."""
-    profile = Path(tempfile.mkdtemp(prefix="health-chrome-", dir=evidence_root.parent))
+    profile = Path(tempfile.mkdtemp(prefix="health-chrome-", dir=evidence_root))
     os.chmod(profile, 0o700)
     for _ in range(32):
         display_number = 100 + int.from_bytes(os.urandom(2), "big") % 50000

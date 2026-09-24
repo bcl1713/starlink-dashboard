@@ -235,6 +235,14 @@ def test_default_final_cleanup_runs_after_a_started_topology_substep_fails(
         lambda actual, actual_executor: calls.append("cleanup"),
     )
 
+    class Session:
+        def __init__(self) -> None:
+            self.cdp_url = "http://127.0.0.1:9222"
+            self.artifacts: dict[str, bytes] = {}
+
+        def close(self) -> None:
+            calls.append("browser-cleanup")
+
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
@@ -242,12 +250,13 @@ def test_default_final_cleanup_runs_after_a_started_topology_substep_fails(
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
+            start_browser_session=lambda *_: Session(),
         ),
     )
 
     assert result.manifest["outcome"] == Outcome.FAILED.value
     assert "topology failed" in result.manifest["primary"]["detail"]
-    assert calls == ["cleanup"]
+    assert calls == ["cleanup", "browser-cleanup"]
 
 
 @pytest.mark.parametrize(
@@ -299,7 +308,9 @@ def test_wrapper_resolves_explicit_relative_contract_from_repository_root(
 
     assert result.returncode == 2
     manifest = json.loads(
-        (tmp_path / "evidence" / "candidates" / SHA / "runner-manifest.json").read_text()
+        (
+            tmp_path / "evidence" / "candidates" / SHA / "runner-manifest.json"
+        ).read_text()
     )
     assert manifest["contract_checksum"] is not None
     assert manifest["outcome"] == Outcome.ENVIRONMENT_BLOCKED.value
@@ -748,7 +759,56 @@ def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> Non
     assert result.manifest["lane"] == Lane.FINAL.value
 
 
-def test_static_maps_named_frontend_test_scripts_to_npm(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_default_final_platform_session_precedes_build_uses_its_cdp_and_closes_on_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
+
+    class Session:
+        def __init__(self) -> None:
+            self.cdp_url = "http://127.0.0.1:9222"
+            self.metrics = {"raster": [1920, 1080]}
+            self.artifacts = {"browser.stderr.log": b"browser log"}
+
+        def close(self) -> None:
+            calls.append("browser-close")
+
+    session = Session()
+
+    class Adapter:
+        sha256 = "a" * 64
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(runner, "_open_adapter_source", lambda *_: Adapter())
+    monkeypatch.setattr(
+        runner,
+        "_final_steps",
+        lambda inputs, *_: calls.append(f"build:{inputs.browser_session}")
+        or (_ for _ in ()).throw(ValueError("build failed")),
+    )
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            start_browser_session=lambda *_: calls.append("browser-start") or session,
+        ),
+    )
+
+    assert result.exit_code == 1
+    assert calls == ["browser-start", "build:http://127.0.0.1:9222", "browser-close"]
+    assert (
+        tmp_path / "evidence" / "candidates" / SHA / "browser.stderr.log"
+    ).read_bytes() == b"browser log"
+
+
+def test_static_maps_named_frontend_test_scripts_to_npm(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     calls: list[list[str]] = []
 
     def fake_run(words: list[str], **_: object) -> subprocess.CompletedProcess[object]:
