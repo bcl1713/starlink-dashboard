@@ -15,7 +15,14 @@ from pathlib import Path
 from typing import Any
 
 from .browser_bundle import BrowserBundle, BrowserLaunchSpec, verify_browser_bundle
-from .evidence import prepare_evidence_root, verify_manifest, write_artifacts, write_private
+from .evidence import (
+    prepare_evidence_root,
+    read_fingerprint_authority,
+    read_nofollow,
+    seal_fingerprint,
+    verify_manifest,
+    write_artifacts,
+)
 from .model import Lane, Outcome, PlatformProfile, RunResult
 
 _CARD = Path(__file__).parents[1] / "browser/platform-card.mjs"
@@ -91,6 +98,10 @@ def run_platform_health(profile: PlatformProfile, evidence_root: Path, executor:
         values.update(browser_version=probe.browser_version, metrics=dict(probe.metrics))
         artifacts.update(probe.artifacts)
         outcome, reason = Outcome.PASSED, ""
+    except _CardFailure as error:
+        artifacts["card.stdout.log"] = error.stdout
+        artifacts["card.stderr.log"] = error.stderr
+        outcome, reason = Outcome.ENVIRONMENT_BLOCKED, f"platform health failed: {error}"
     except _Blocked as error:
         outcome, reason = Outcome.ENVIRONMENT_BLOCKED, str(error)
     except Exception as error:
@@ -109,16 +120,18 @@ def run_platform_health(profile: PlatformProfile, evidence_root: Path, executor:
     manifest = write_artifacts(root, artifacts)
     values["evidence_manifest_sha256"] = manifest
     result = HealthFingerprint(outcome=outcome, reason=reason, **values)
-    write_private(root, "fingerprint.json", json.dumps(result.to_dict(), sort_keys=True).encode())
+    seal_fingerprint(root, json.dumps(result.to_dict(), sort_keys=True).encode())
     return result
 
 
 def validate_fingerprint(profile: PlatformProfile, fingerprint_path: Path, *, card_path: Path = _CARD) -> HealthFingerprint:
     """Verify profile, card and every retained artifact instead of trusting metadata."""
     try:
-        raw = json.loads(fingerprint_path.read_text(encoding="utf-8"))
+        if fingerprint_path.name != "fingerprint.json":
+            raise ValueError("invalid fingerprint authority path")
+        raw = json.loads(read_fingerprint_authority(fingerprint_path.parent))
         result = HealthFingerprint(outcome=Outcome(raw.pop("outcome")), **raw)
-    except (OSError, ValueError, TypeError, json.JSONDecodeError) as error:
+    except (OSError, KeyError, ValueError, TypeError, json.JSONDecodeError) as error:
         raise ValueError("invalid platform health fingerprint") from error
     if result.outcome is not Outcome.PASSED:
         raise ValueError("fingerprint is not a passed health result")
@@ -129,7 +142,7 @@ def validate_fingerprint(profile: PlatformProfile, fingerprint_path: Path, *, ca
     root = fingerprint_path.parent
     try:
         verify_manifest(root)
-        manifest_hash = _sha256_file(root / "manifest.json")
+        manifest_hash = hashlib.sha256(read_nofollow(root / "manifest.json")).hexdigest()
     except (OSError, ValueError) as error:
         raise ValueError("evidence verification failed") from error
     if result.evidence_manifest_sha256 != manifest_hash:
@@ -171,10 +184,19 @@ def _wait_ready(browser: Any, xvfb: Any, url: str, executor: PlatformHealthExecu
 def _platform_card(card_path: Path, cdp_url: str) -> Callable[[BrowserLaunchSpec, Path], HealthProbeResult]:
     """Run the generic card with only the platform-selected CDP endpoint."""
     def run(_: BrowserLaunchSpec, __: Path) -> HealthProbeResult:
-        completed = subprocess.run(("node", str(card_path), cdp_url), check=True, capture_output=True, timeout=120)
-        payload = json.loads(completed.stdout)
-        artifacts = {name: base64.b64decode(value, validate=True) for name, value in payload["artifacts"].items()}
-        return HealthProbeResult(payload["browserVersion"], payload["metrics"], artifacts)
+        stdout = stderr = b""
+        try:
+            completed = subprocess.run(("node", str(card_path), cdp_url), check=True, capture_output=True, timeout=120)
+            stdout, stderr = completed.stdout, getattr(completed, "stderr", b"")
+            payload = json.loads(stdout)
+            artifacts = {name: base64.b64decode(value, validate=True) for name, value in payload["artifacts"].items()}
+            return HealthProbeResult(payload["browserVersion"], payload["metrics"], artifacts)
+        except subprocess.CalledProcessError as error:
+            raise _CardFailure(error.stdout or b"", error.stderr or b"") from error
+        except subprocess.TimeoutExpired as error:
+            raise _CardFailure(error.stdout or b"", error.stderr or b"") from error
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            raise _CardFailure(stdout, stderr) from error
     return run
 
 
@@ -221,8 +243,15 @@ def _retain_logs(artifacts: dict[str, bytes], name: str, process: Any) -> None:
 
 
 def _sha256_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    return hashlib.sha256(read_nofollow(path)).hexdigest()
 
 
 class _Blocked(Exception):
     pass
+
+
+class _CardFailure(Exception):
+    def __init__(self, stdout: bytes, stderr: bytes) -> None:
+        super().__init__("platform card failed")
+        self.stdout = stdout
+        self.stderr = stderr

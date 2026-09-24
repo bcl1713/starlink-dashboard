@@ -181,6 +181,8 @@ def _start_descriptor(fd: int, arguments: tuple[str, ...]) -> subprocess.Popen[b
             (_descriptor_path(fd), *arguments),
             executable=_descriptor_path(fd),
             pass_fds=(fd,),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
         )
     except OSError as error:
         raise ValueError("browser launch failed") from error

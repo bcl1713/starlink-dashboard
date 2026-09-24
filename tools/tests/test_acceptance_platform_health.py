@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from acceptance.platform.evidence import prepare_evidence_root, verify_manifest, write_artifacts
+from acceptance.platform.browser_bundle import BrowserLaunchSpec
 from acceptance.platform.health import (
     HealthFingerprint,
     HealthProbeResult,
@@ -143,6 +144,8 @@ def test_readiness_timeout_retains_diagnostics_and_never_runs_card(tmp_path: Pat
     assert "readiness" in result.reason
     assert not invoked
     assert (tmp_path / ("c" * 40) / "browser.stderr.log").read_bytes() == b"diagnostic stderr"
+    assert (tmp_path / ("c" * 40) / "xvfb.stdout.log").read_bytes() == b"diagnostic stdout"
+    assert (tmp_path / ("c" * 40) / "xvfb.stderr.log").read_bytes() == b"diagnostic stderr"
     assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
 
 
@@ -208,3 +211,62 @@ def test_platform_card_uses_native_protocol_and_platform_output_channel() -> Non
     assert "Emulation.setDeviceMetricsOverride" not in source
     assert "process.stdout.write" in source
     assert "writeFile" not in source
+
+
+def test_descriptor_browser_launch_captures_private_diagnostics(monkeypatch: pytest.MonkeyPatch) -> None:
+    import acceptance.platform.browser_bundle as bundle_module
+
+    captured: dict[str, object] = {}
+
+    class Popen:
+        pass
+
+    monkeypatch.setattr(bundle_module.subprocess, "Popen", lambda *args, **kwargs: captured.update(kwargs) or Popen())
+    descriptor = BrowserLaunchSpec(os.open("/dev/null", os.O_RDONLY))
+    try:
+        descriptor.start("about:blank")
+    finally:
+        descriptor.close()
+    assert captured["stdout"] is bundle_module.subprocess.PIPE
+    assert captured["stderr"] is bundle_module.subprocess.PIPE
+
+
+def test_failing_node_card_retains_stdout_and_stderr_before_blocking(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    import acceptance.platform.health as health
+
+    def fail(*_: object, **__: object) -> None:
+        raise health.subprocess.CalledProcessError(1, "node", output=b"card stdout", stderr=b"card stderr")
+
+    monkeypatch.setattr(health.subprocess, "run", fail)
+    bundle = _Bundle()
+    executor = _executor(bundle)
+    executor = PlatformHealthExecutor(**{**executor.__dict__, "run_card": None})
+    root = tmp_path / ("9" * 40)
+    result = run_platform_health(_profile(), root, executor, card_path=PLATFORM_CARD)
+    assert result.outcome is Outcome.ENVIRONMENT_BLOCKED
+    assert (root / "card.stdout.log").read_bytes() == b"card stdout"
+    assert (root / "card.stderr.log").read_bytes() == b"card stderr"
+    verify_manifest(root)
+
+
+def test_fingerprint_replacement_and_symlink_are_rejected_before_claims(tmp_path: Path) -> None:
+    root = tmp_path / ("8" * 40)
+    run_platform_health(_profile(), root, _executor(_Bundle()), card_path=PLATFORM_CARD)
+    (root / "fingerprint.json").write_text("{}", encoding="utf-8")
+    with pytest.raises(ValueError, match="authority|fingerprint"):
+        validate_fingerprint(_profile(), root / "fingerprint.json", card_path=PLATFORM_CARD)
+    (root / "fingerprint.json").unlink()
+    (root / "fingerprint.json").symlink_to(tmp_path / "missing.json")
+    with pytest.raises(ValueError, match="authority|fingerprint"):
+        validate_fingerprint(_profile(), root / "fingerprint.json", card_path=PLATFORM_CARD)
+
+
+def test_card_symlink_is_rejected_before_checksum_claim(tmp_path: Path) -> None:
+    root = tmp_path / ("7" * 40)
+    card = tmp_path / "card.mjs"
+    card.write_bytes(PLATFORM_CARD.read_bytes())
+    run_platform_health(_profile(), root, _executor(_Bundle()), card_path=card)
+    card.unlink()
+    card.symlink_to(PLATFORM_CARD)
+    with pytest.raises(ValueError, match="authority|card checksum"):
+        validate_fingerprint(_profile(), root / "fingerprint.json", card_path=card)

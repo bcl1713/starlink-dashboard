@@ -61,6 +61,62 @@ def write_private(root: Path, relative: str, content: bytes) -> None:
         os.close(root_fd)
 
 
+def seal_fingerprint(root: Path, content: bytes) -> None:
+    """Bind the fingerprint and manifest into a final no-follow checksum authority."""
+    root_fd = _open_directory(prepare_evidence_root(root))
+    try:
+        manifest = _read_relative(root_fd, "manifest.json")
+        _write_relative(root_fd, "fingerprint.json", content)
+        authority = json.dumps(
+            {
+                "fingerprint_sha256": hashlib.sha256(content).hexdigest(),
+                "manifest_sha256": hashlib.sha256(manifest).hexdigest(),
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        _write_relative(root_fd, "fingerprint-authority.json", authority)
+    finally:
+        os.close(root_fd)
+
+
+def read_fingerprint_authority(root: Path) -> bytes:
+    """Read a sealed fingerprint only after its final authority checksums match."""
+    root_fd = _open_directory(root)
+    try:
+        fingerprint = _read_relative(root_fd, "fingerprint.json")
+        manifest = _read_relative(root_fd, "manifest.json")
+        authority = json.loads(_read_relative(root_fd, "fingerprint-authority.json"))
+        if authority != {
+            "fingerprint_sha256": hashlib.sha256(fingerprint).hexdigest(),
+            "manifest_sha256": hashlib.sha256(manifest).hexdigest(),
+        }:
+            raise ValueError("fingerprint authority checksum drift")
+        return fingerprint
+    except (OSError, TypeError, json.JSONDecodeError) as error:
+        raise ValueError("invalid fingerprint authority") from error
+    finally:
+        os.close(root_fd)
+
+
+def read_nofollow(path: Path) -> bytes:
+    """Read one regular authority file without allowing any pathname symlink."""
+    path = path.absolute()
+    directory_fd = _open_directory(path.parent)
+    try:
+        fd = os.open(path.name, _FILE_FLAGS, dir_fd=directory_fd)
+        try:
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                raise ValueError("authority target must be a regular file")
+            return os.read(fd, os.fstat(fd).st_size)
+        finally:
+            os.close(fd)
+    except OSError as error:
+        raise ValueError("authority target must not be a symlink") from error
+    finally:
+        os.close(directory_fd)
+
+
 def verify_manifest(root: Path) -> None:
     """Recompute manifest and SHA256SUMS against no-follow retained bytes."""
     root_fd = _open_directory(root)
