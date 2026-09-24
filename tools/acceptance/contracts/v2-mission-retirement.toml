@@ -1,0 +1,39 @@
+name = "v2-mission-retirement"
+services = ["starlink-location", "mission-planner"]
+journey_adapter = "tools/acceptance/journeys/v2-mission-retirement.mjs"
+assets = ["docs/missions/acceptance-assets/v2-activation-route.kml"]
+
+[[static_groups]]
+name = "backend"
+working_directory = "backend/starlink-location"
+commands = ["black --check app tests", "ruff check app tests", "pytest -q"]
+
+[[static_groups]]
+name = "frontend"
+working_directory = "frontend/mission-planner"
+commands = ["lint", "test"]
+
+[[controls]]
+name = "backend-health"
+path = "/health"
+expected_status = 200
+
+[[controls]]
+name = "frontend"
+path = "/"
+expected_status = 200
+
+[[controls]]
+name = "legacy-missions"
+path = "/api/missions"
+expected_status = 404
+
+[[controls]]
+name = "legacy-mission"
+path = "/api/missions/test"
+expected_status = 404
+
+[[controls]]
+name = "v2-missions"
+path = "/api/v2/missions"
+expected_status = 200
