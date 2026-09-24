@@ -2,6 +2,18 @@
 
 [Back to Backend README](../README.md)
 
+## Canonical Backend Gate
+
+Run the complete backend suite with the repository-root command:
+
+```bash
+./tools/verify backend
+```
+
+Use the focused `pytest` examples below while working in
+`backend/starlink-location`. For all verification tiers, see the
+[Quality Gates](../../../docs/contributing/quality-gates.md) reference.
+
 ---
 
 ## Unit Tests
@@ -50,8 +62,8 @@ pytest tests/ --cov=app --cov-report=html
 When making changes:
 
 1. Update tests in `tests/`
-2. Ensure all tests pass: `pytest tests/`
-3. Run with coverage: `pytest tests/ --cov=app`
+2. Run `./tools/verify backend` from the repository root before merge
+3. Use `pytest tests/` and `pytest tests/ --cov=app` as focused local examples
 4. Update documentation if adding features or changing test warning provenance
 
 ---

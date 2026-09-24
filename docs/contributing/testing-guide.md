@@ -2,15 +2,19 @@
 
 [Back to Contributing](../../CONTRIBUTING.md)
 
+The [Quality Gates](quality-gates.md) guide is the authoritative reference for
+the repository-wide verification tiers.
+
 ---
 
 ## Backend Tests (Python)
 
 ```bash
-cd backend/starlink-location
+# Run the full canonical backend gate from the repository root
+./tools/verify backend
 
-# Run all tests
-pytest
+# Run focused backend tests from the existing backend context
+cd backend/starlink-location
 
 # Run tests with coverage
 pytest --cov=app tests/
@@ -35,12 +39,15 @@ pytest tests/test_routes.py::test_get_routes
 ```bash
 cd frontend/mission-planner
 
-# Run tests
-npm test
+# Run unit tests
+npm run test:unit
 
 # Run tests with coverage
-npm test -- --coverage
+npm run test:unit -- --coverage
 ```
+
+Use `./tools/verify frontend` from the repository root for the canonical
+frontend gate; it runs the unit suite and production build.
 
 ---
 

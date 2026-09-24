@@ -113,3 +113,25 @@ def test_reference_inventory_avoids_volatile_agents_size():
         encoding="utf-8"
     )
     assert not re.search(r"\|\s*AGENTS\.md\s*\|\s*\d+\s*(?:K?B|bytes?)", content)
+
+
+QUALITY_GATE_DOCS = (
+    PROJECT_ROOT / "docs/contributing/quality-gates.md",
+    PROJECT_ROOT / "CONTRIBUTING.md",
+    PROJECT_ROOT / "docs/contributing/testing-guide.md",
+    PROJECT_ROOT / "backend/starlink-location/README.md",
+    PROJECT_ROOT / "backend/starlink-location/docs/TESTING.md",
+)
+
+
+def test_quality_gate_docs_name_canonical_contract():
+    """Contributor entry points expose the canonical verification contract."""
+    text = "\n".join(path.read_text(encoding="utf-8") for path in QUALITY_GATE_DOCS)
+
+    assert "./tools/verify static" in text
+    assert "./tools/verify backend" in text
+    assert "./tools/verify frontend" in text
+    assert "./tools/verify all" in text
+    assert "npm run test:unit" in text
+    assert "1920x1080" in text
+    assert "dev" in text
