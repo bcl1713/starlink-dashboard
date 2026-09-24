@@ -54,7 +54,7 @@ STATIC: list[Command] = [
         ROOT,
     ),
     (["npm", "--prefix", "frontend/mission-planner", "run", "lint"], ROOT),
-    (["npx", "markdownlint-cli2", "docs/**/*.md"], ROOT),
+    (["markdownlint-cli2", "docs/**/*.md"], ROOT),
     (["lychee", "--no-progress", "docs/"], ROOT),
 ]
 BACKEND_COMMANDS: list[Command] = [
