@@ -89,22 +89,56 @@ def test_platform_doc_defines_restrictive_candidate_provenance() -> None:
         assert required in lowered
 
 
-def test_platform_doc_prescribes_final_browser_recovery_workflow() -> None:
-    guide = PLATFORM_DOC.read_text(encoding="utf-8")
+def test_platform_doc_prescribes_ordered_final_browser_recovery_workflow() -> None:
+    guide = " ".join(PLATFORM_DOC.read_text(encoding="utf-8").split())
+
+    health = (
+        "Run `health` and checksum-verify its sealed fingerprint and evidence manifest."
+    )
+    static = "Run `static` only after that health validation succeeds."
+    final = (
+        "Issue `final` through one tracked runner process with a 900-second "
+        "monitored budget and durable stdout and stderr capture."
+    )
+    runner_ownership = (
+        "The runner, not a caller, owns the headed Xvfb and loopback CDP browser "
+        "resources, its task-owned profile, and pre-journey native display/card metrics."
+    )
+    diagnostics = (
+        "On failure, inspect the runner's sealed diagnostic logs at "
+        "`adapter.stdout.log` and `adapter.stderr.log` in the final evidence root."
+    )
+    recovery = (
+        "After an interruption, inspect the final build ledger, inspected image "
+        "identities, and task-owned resources."
+    )
+    authorization = "obtain explicit authorization from a human operator before one recovery attempt."
+    cleanup = "Verify runner cleanup after the attempt without deleting volumes."
 
     for required in (
-        "headed Xvfb",
-        "900-second",
-        "adapter.stdout.log",
-        "adapter.stderr.log",
-        "explicit authorization",
-        "final build ledger",
+        health,
+        static,
+        final,
+        runner_ownership,
+        diagnostics,
+        recovery,
+        authorization,
+        cleanup,
+        "The tracked runner is the only final-browser operational authority.",
+        "Callers must not hand-launch a headless browser as final acceptance evidence.",
     ):
         assert required in guide
 
-    lowered = " ".join(guide.lower().split())
-    assert "callers must not hand-launch a headless browser" in lowered
-    assert "without deleting volumes" in lowered
+    assert (
+        guide.index(health)
+        < guide.index(static)
+        < guide.index(final)
+        < guide.index(runner_ownership)
+        < guide.index(diagnostics)
+        < guide.index(recovery)
+        < guide.index(authorization)
+        < guide.index(cleanup)
+    )
 
 
 def test_v2_doc_is_product_only() -> None:
