@@ -11,7 +11,7 @@ commands = ["black --check app tests", "ruff check app tests", ".venv/bin/python
 [[static_groups]]
 name = "frontend"
 working_directory = "frontend/mission-planner"
-commands = ["lint", "test"]
+commands = ["lint", "test:unit"]
 
 [[controls]]
 name = "backend-health"

@@ -132,6 +132,7 @@ def test_v2_contract_has_only_product_authority() -> None:
         "ruff check app tests",
         ".venv/bin/python -m pytest -q",
     )
+    assert contract.static_groups[1].commands == ("lint", "test:unit")
     assert len(contract.controls) == 5
     assert all(isinstance(control, RuntimeControl) for control in contract.controls)
     assert [
