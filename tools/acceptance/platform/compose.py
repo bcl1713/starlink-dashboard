@@ -1,4 +1,4 @@
-"""Isolated Docker Compose execution with one final-build ledger authority."""
+"""Fail-closed isolated Docker Compose build and runtime boundary."""
 
 from __future__ import annotations
 
@@ -12,10 +12,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+import yaml
+
 from .model import BuildLedgerKey, PlatformProfile, ProductContract, RuntimeControl
 
 _PROJECT = re.compile(r"[a-z0-9][a-z0-9_-]{2,62}")
 _PRIVATE_ENV_NAMES = frozenset({".env", ".env.local", ".env.production"})
+_STAGE = re.compile(r"^#(?P<stage>\d+) (?P<message>.*)$")
 
 
 @dataclass(frozen=True)
@@ -25,8 +28,6 @@ class CommandResult:
 
 
 class ComposeExecutor(Protocol):
-    """Injectable Docker boundary; tests never need a daemon."""
-
     def run(self, argv: tuple[str, ...]) -> CommandResult: ...
 
     def inspect_image(self, tag: str) -> str | None: ...
@@ -34,17 +35,11 @@ class ComposeExecutor(Protocol):
 
 @dataclass(frozen=True)
 class SubprocessComposeExecutor:
-    """Plain-output subprocess adapter with an explicit retained-output sink."""
-
     retain: Callable[[str], None] = lambda _: None
 
     def run(self, argv: tuple[str, ...]) -> CommandResult:
         process = subprocess.Popen(
-            argv,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
+            argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
         )
         output: list[str] = []
         assert process.stdout is not None
@@ -65,10 +60,27 @@ class TaskTopology:
     services: tuple[str, ...]
     env_file: Path
     override_path: Path
+    root_override_path: Path
+    validation_path: Path
     ports: Mapping[str, int]
 
     @property
     def argv(self) -> tuple[str, ...]:
+        """The final, self-contained two-service Compose configuration only."""
+        return (
+            "docker",
+            "compose",
+            "--project-name",
+            self.project,
+            "--env-file",
+            str(self.env_file),
+            "-f",
+            str(self.override_path),
+        )
+
+    @property
+    def root_argv(self) -> tuple[str, ...]:
+        """Read-only root topology extraction using public input only."""
         return (
             "docker",
             "compose",
@@ -79,7 +91,7 @@ class TaskTopology:
             "-f",
             str(self.repository / "docker-compose.yml"),
             "-f",
-            str(self.override_path),
+            str(self.root_override_path),
         )
 
 
@@ -87,6 +99,7 @@ class TaskTopology:
 class ResolvedTopology:
     project: str
     services: tuple[str, ...]
+    digest: str
 
 
 @dataclass(frozen=True)
@@ -98,7 +111,7 @@ class BuildReconciliation:
 
 
 class BuildLedger:
-    """A filesystem O_EXCL ledger: any tuple may receive one final build attempt."""
+    """O_EXCL ledger: one final build and one no-build startup per immutable tuple."""
 
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -106,7 +119,7 @@ class BuildLedger:
     def claim(self, key: BuildLedgerKey) -> Path:
         key.validate()
         self.root.mkdir(mode=0o700, parents=True, exist_ok=True)
-        path = self.root / f"{_key_digest(key)}.json"
+        path = self.path_for(key)
         payload = json.dumps(
             {
                 "candidate_sha": key.candidate_sha,
@@ -127,18 +140,37 @@ class BuildLedger:
             os.close(fd)
         return path
 
-    def close(self, path: Path, result: BuildReconciliation) -> None:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+    def path_for(self, key: BuildLedgerKey) -> Path:
+        return self.root / f"{_key_digest(key)}.json"
+
+    def close(
+        self, path: Path, result: BuildReconciliation, topology_digest: str
+    ) -> None:
+        payload = self.read_path(path)
         payload.update(
             state="usable" if result.usable else "closed",
             wrapper_anomaly=result.wrapper_anomaly,
             image_ids=dict(result.image_ids),
             reason=result.reason,
+            topology_digest=topology_digest,
         )
-        temporary = path.with_suffix(".tmp")
-        temporary.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
-        os.chmod(temporary, 0o600)
-        os.replace(temporary, path)
+        _atomic_json(path, payload)
+
+    def read(self, key: BuildLedgerKey) -> dict[str, object]:
+        path = self.path_for(key)
+        if not path.is_file():
+            raise ValueError("final build ledger is not usable")
+        return self.read_path(path)
+
+    @staticmethod
+    def read_path(path: Path) -> dict[str, object]:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as error:
+            raise ValueError("build ledger record is invalid") from error
+        if not isinstance(data, dict):
+            raise TypeError("build ledger record is invalid")
+        return data
 
 
 def render_task_override(
@@ -148,72 +180,75 @@ def render_task_override(
     project: str,
     ports: Mapping[str, int],
 ) -> TaskTopology:
-    """Render isolated override solely from the tracked public example configuration."""
+    """Prepare public input and a root env replacement; final config is rendered on resolve."""
     _validate_project(project)
     if set(ports) != set(contract.services) or any(
         not 1 <= value <= 65535 for value in ports.values()
     ):
         raise ValueError("task ports must declare every contract service exactly once")
     example = repository / ".env.example"
-    if not example.is_file():
-        raise ValueError("tracked public .env.example is required")
+    root = repository / "docker-compose.yml"
+    if not example.is_file() or not root.is_file():
+        raise ValueError(
+            "tracked public .env.example and root docker-compose.yml are required"
+        )
     task_root.mkdir(mode=0o700, parents=True, exist_ok=True)
     env_file = task_root / "compose.env"
     env_file.write_bytes(example.read_bytes())
     os.chmod(env_file, 0o600)
-    override_path = task_root / "compose.acceptance.yml"
-    lines = ["services:"]
-    for service in contract.services:
-        _validate_service(service)
-        lines.extend(
-            (
-                f"  {service}:",
-                "    container_name: null",
-                "    env_file:",
-                f"      - {json.dumps(str(env_file))}",
-                "    ports:",
-                f"      - {json.dumps(f'127.0.0.1:{ports[service]}:{_container_port(service)}')}",
-            )
-        )
-    override_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    os.chmod(override_path, 0o600)
+    root_override_path = task_root / "compose.root-public-env.yml"
+    root_override_path.write_text(
+        _public_env_replacement(root, env_file), encoding="utf-8"
+    )
+    os.chmod(root_override_path, 0o600)
+    override_path = task_root / "compose.acceptance.json"
+    validation_path = task_root / "topology.validated.json"
     return TaskTopology(
-        repository, project, contract.services, env_file, override_path, dict(ports)
+        repository,
+        project,
+        contract.services,
+        env_file,
+        override_path,
+        root_override_path,
+        validation_path,
+        dict(ports),
     )
 
 
 def resolve_topology(
     topology: TaskTopology, contract: ProductContract, executor: ComposeExecutor
 ) -> ResolvedTopology:
-    """Reject config inherited outside the task namespace before it can be started."""
-    result = executor.run((*topology.argv, "config", "--format", "json"))
+    """Extract a real root config without private .env, then seal a two-service config."""
+    result = executor.run((*topology.root_argv, "config", "--format", "json"))
     if result.returncode:
         raise ValueError("compose config resolution failed")
-    try:
-        config = json.loads(result.output)
-    except json.JSONDecodeError as error:
-        raise ValueError("compose config was not JSON") from error
-    if not isinstance(config, dict):
-        raise TypeError("compose config was not an object")
-    if config.get("name") not in {None, topology.project}:
-        raise ValueError("resolved compose project is not task-owned")
+    config = _json_config(result.output)
     services = config.get("services")
-    if not isinstance(services, dict) or set(services) != set(contract.services):
-        raise ValueError("resolved topology contains undeclared services")
-    for name, service in services.items():
+    if not isinstance(services, dict) or not set(contract.services) <= set(services):
+        raise ValueError("root topology omits a contract service")
+    final: dict[str, object] = {"name": topology.project, "services": {}}
+    selected = final["services"]
+    assert isinstance(selected, dict)
+    for name in contract.services:
+        service = services[name]
         if not isinstance(service, dict):
             raise TypeError("resolved service is invalid")
-        container_name = service.get("container_name")
-        if container_name and not str(container_name).startswith(
-            f"{topology.project}-"
-        ):
-            raise ValueError("resolved topology inherits a fixed container name")
-        _validate_env_files(service.get("env_file"), topology.env_file)
-        _validate_ports(service.get("ports"), topology.ports[name])
-        _validate_dependencies(service.get("depends_on"), contract.services)
-    _validate_resources(config.get("networks"), topology.project)
-    _validate_resources(config.get("volumes"), topology.project)
-    return ResolvedTopology(topology.project, contract.services)
+        selected[name] = _isolated_service(service, topology, name)
+    _copy_referenced_resources(config, final)
+    _validate_final_config(final, topology, contract)
+    encoded = json.dumps(final, sort_keys=True, indent=2) + "\n"
+    topology.override_path.write_text(encoded, encoding="utf-8")
+    os.chmod(topology.override_path, 0o600)
+    digest = _sha256(encoded.encode())
+    _atomic_json(
+        topology.validation_path,
+        {
+            "project": topology.project,
+            "services": list(contract.services),
+            "digest": digest,
+        },
+    )
+    return ResolvedTopology(topology.project, contract.services, digest)
 
 
 def reconcile_build(
@@ -222,7 +257,7 @@ def reconcile_build(
     tags: tuple[str, ...],
     inspect_image: Callable[[str], str | None],
 ) -> BuildReconciliation:
-    """Allow wrapper anomalies only after complete BuildKit completion plus inspection."""
+    """A nonzero wrapper is usable only after tag-local BuildKit completion and inspection."""
     if returncode == 0:
         ids = {tag: inspect_image(tag) for tag in tags}
         if any(not image_id for image_id in ids.values()):
@@ -251,11 +286,11 @@ def build_final(
     ledger: BuildLedger,
     executor: ComposeExecutor,
 ) -> BuildReconciliation:
-    """Claim and execute exactly one no-cache plain final build for the immutable tuple."""
     profile.validate()
     key.validate()
     if profile.checksum != key.profile_checksum:
         raise ValueError("profile checksum does not match build ledger key")
+    resolved = _validated_topology(topology, contract)
     try:
         claim = ledger.claim(key)
     except ValueError:
@@ -269,20 +304,25 @@ def build_final(
     reconciled = reconcile_build(
         result.returncode, result.output, tags, executor.inspect_image
     )
-    ledger.close(claim, reconciled)
+    ledger.close(claim, reconciled, resolved.digest)
     return reconciled
 
 
 def start_no_build(
     topology: TaskTopology,
     contract: ProductContract,
+    key: BuildLedgerKey,
+    ledger: BuildLedger,
     executor: ComposeExecutor,
-    build: BuildReconciliation | None = None,
 ) -> CommandResult:
-    """Perform the sole task startup and never permit Compose to build."""
-    if build is not None and not build.usable:
-        raise ValueError("final build is not usable; startup is blocked")
-    claim = topology.override_path.parent / "startup.claim"
+    """Start exactly once only from the sealed topology and matching usable build record."""
+    resolved = _validated_topology(topology, contract)
+    record = ledger.read(key)
+    if record.get("state") != "usable":
+        raise ValueError("final build ledger is not usable; startup is blocked")
+    if record.get("topology_digest") != resolved.digest:
+        raise ValueError("final build proof is stale for the validated topology")
+    claim = topology.override_path.parent / f"startup-{_key_digest(key)}.claim"
     try:
         fd = os.open(claim, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     except FileExistsError as error:
@@ -293,57 +333,226 @@ def start_no_build(
         (*topology.argv, "up", "-d", "--no-build", "--wait", *contract.services)
     )
     if result.returncode:
-        raise ValueError("no-build compose startup failed")
+        raise ValueError(f"no-build compose startup failed: {result.output.strip()}")
     return result
 
 
 def run_controls(
     controls: tuple[RuntimeControl, ...], request: Callable[[RuntimeControl], int]
 ) -> None:
-    """Exercise product-declared controls without extending product authority."""
     for control in controls:
         if request(control) != control.expected_status:
             raise ValueError(f"runtime control failed: {control.name}")
 
 
 def cleanup_compose(topology: TaskTopology, executor: ComposeExecutor) -> CommandResult:
-    """Remove task project containers/networks only; persistent volumes are retained."""
-    return executor.run((*topology.argv, "down", "--remove-orphans"))
+    """Teardown is successful only when task containers/networks are absent; volumes remain."""
+    result = executor.run((*topology.argv, "down", "--remove-orphans"))
+    if result.returncode:
+        raise ValueError(f"compose teardown failed: {result.output.strip()}")
+    filters = ("--filter", f"label=com.docker.compose.project={topology.project}")
+    containers = executor.run(("docker", "ps", "-aq", *filters))
+    networks = executor.run(("docker", "network", "ls", "-q", *filters))
+    if containers.returncode or networks.returncode:
+        raise ValueError("compose cleanup verification failed")
+    if containers.output.strip() or networks.output.strip():
+        raise ValueError("task compose resources remain after teardown")
+    return result
+
+
+def _public_env_replacement(root: Path, env_file: Path) -> str:
+    try:
+        raw = yaml.safe_load(root.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as error:
+        raise ValueError("root docker-compose.yml is invalid") from error
+    services = raw.get("services") if isinstance(raw, dict) else None
+    if not isinstance(services, dict):
+        raise TypeError("root docker-compose.yml has no services")
+    names = [
+        name
+        for name, service in services.items()
+        if isinstance(service, dict) and _has_private_env(service.get("env_file"))
+    ]
+    lines = ["services:"]
+    for name in names:
+        lines.extend(
+            (
+                f"  {name}:",
+                "    env_file: !override",
+                f"      - {json.dumps(str(env_file))}",
+            )
+        )
+    return "\n".join(lines) + "\n"
+
+
+def _isolated_service(
+    service: dict[str, object], topology: TaskTopology, name: str
+) -> dict[str, object]:
+    result = dict(service)
+    result.pop("container_name", None)
+    result["env_file"] = [str(topology.env_file)]
+    result["ports"] = [
+        {
+            "mode": "ingress",
+            "host_ip": "127.0.0.1",
+            "published": str(topology.ports[name]),
+            "target": _container_port(name),
+            "protocol": "tcp",
+        }
+    ]
+    return result
+
+
+def _copy_referenced_resources(
+    config: dict[str, object], final: dict[str, object]
+) -> None:
+    services = final["services"]
+    assert isinstance(services, dict)
+    network_names: set[str] = set()
+    volume_names: set[str] = set()
+    for service in services.values():
+        assert isinstance(service, dict)
+        network_names.update(_resource_sources(service.get("networks")))
+        volume_names.update(_resource_sources(service.get("volumes")))
+    for field, names in (("networks", network_names), ("volumes", volume_names)):
+        available = config.get(field, {})
+        if not isinstance(available, dict):
+            raise TypeError("resolved resources are invalid")
+        chosen = {name: available[name] for name in names if name in available}
+        if chosen:
+            final[field] = chosen
+
+
+def _resource_sources(value: object) -> set[str]:
+    if isinstance(value, dict):
+        return set(value)
+    if not isinstance(value, list):
+        return set()
+    sources: set[str] = set()
+    for item in value:
+        if (
+            isinstance(item, dict)
+            and isinstance(item.get("source"), str)
+            and item.get("type", "volume") == "volume"
+        ):
+            sources.add(item["source"])
+        elif isinstance(item, str) and ":" in item and not item.startswith(("/", ".")):
+            sources.add(item.split(":", 1)[0])
+    return sources
+
+
+def _validate_final_config(
+    config: dict[str, object], topology: TaskTopology, contract: ProductContract
+) -> None:
+    if config.get("name") != topology.project:
+        raise ValueError("resolved compose project is not task-owned")
+    services = config.get("services")
+    if not isinstance(services, dict) or set(services) != set(contract.services):
+        raise ValueError("resolved topology contains undeclared services")
+    for name, service in services.items():
+        if not isinstance(service, dict):
+            raise TypeError("resolved service is invalid")
+        if service.get("container_name"):
+            raise ValueError("resolved topology inherits a fixed container name")
+        _validate_env_files(service.get("env_file"), topology.env_file)
+        _validate_ports(
+            service.get("ports"), topology.ports[name], _container_port(name)
+        )
+        _validate_dependencies(service.get("depends_on"), contract.services)
+    _validate_resources(config.get("networks"), topology.project)
+    _validate_resources(config.get("volumes"), topology.project)
+
+
+def _validated_topology(
+    topology: TaskTopology, contract: ProductContract
+) -> ResolvedTopology:
+    if not topology.validation_path.is_file() or not topology.override_path.is_file():
+        raise ValueError("topology is not validated")
+    try:
+        record = json.loads(topology.validation_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError("topology is not validated") from error
+    digest = _sha256(topology.override_path.read_bytes())
+    if (
+        not isinstance(record, dict)
+        or record.get("project") != topology.project
+        or record.get("services") != list(contract.services)
+    ):
+        raise ValueError("topology is not validated")
+    if record.get("digest") != digest:
+        raise ValueError("validated topology is stale")
+    return ResolvedTopology(topology.project, contract.services, digest)
 
 
 def _complete_buildkit_tag(output: str, tag: str) -> bool:
-    escaped = re.escape(tag)
-    qualified = rf"(?:[a-z0-9.-]+(?::\d+)?/)?(?:[a-z0-9._-]+/)?{escaped}"
-    return bool(
-        re.search(
-            rf"exporting to image[\s\S]*?naming to {qualified}[\s\S]*?unpacking to {qualified}[\s\S]*?DONE",
-            output,
+    stages: dict[str, list[str]] = {}
+    for line in output.splitlines():
+        match = _STAGE.match(line)
+        if match:
+            stages.setdefault(match["stage"], []).append(match["message"])
+    qualified = re.compile(
+        rf"(?:[a-z0-9.-]+(?::\d+)?/)?(?:[a-z0-9._-]+/)?{re.escape(tag)}(?:\s|$)"
+    )
+    candidates = [
+        messages
+        for messages in stages.values()
+        if any(
+            "naming to " in message and qualified.search(message)
+            for message in messages
         )
+    ]
+    if len(candidates) != 1:
+        return False
+    messages = candidates[0]
+    return (
+        any(message.startswith("exporting to image") for message in messages)
+        and any(
+            "naming to " in message and qualified.search(message)
+            for message in messages
+        )
+        and any(
+            "unpacking to " in message and qualified.search(message)
+            for message in messages
+        )
+        and any(message.startswith("DONE") for message in messages)
     )
 
 
 def _validate_env_files(value: object, expected: Path) -> None:
     files = value if isinstance(value, list) else ([value] if value else [])
-    for item in files:
-        path = Path(str(item))
-        if path.name in _PRIVATE_ENV_NAMES or path != expected:
-            raise ValueError("resolved topology inherits a private environment file")
+    if not files or any(
+        Path(str(item)) != expected or Path(str(item)).name in _PRIVATE_ENV_NAMES
+        for item in files
+    ):
+        raise ValueError("resolved topology inherits a private environment file")
 
 
-def _validate_ports(value: object, expected: int) -> None:
-    ports = value if isinstance(value, list) else []
-    if not ports or any(f"127.0.0.1:{expected}:" not in str(port) for port in ports):
-        raise ValueError("resolved topology has inherited fixed port mappings")
+def _validate_ports(value: object, expected: int, target: int) -> None:
+    if not isinstance(value, list) or len(value) != 1:
+        raise ValueError("resolved topology has invalid port mappings")
+    port = value[0]
+    if isinstance(port, dict):
+        valid = (
+            port.get("host_ip") == "127.0.0.1"
+            and str(port.get("published")) == str(expected)
+            and int(port.get("target", -1)) == target
+        )
+    else:
+        valid = str(port) == f"127.0.0.1:{expected}:{target}"
+    if not valid:
+        raise ValueError("resolved topology has invalid port mappings")
 
 
 def _validate_dependencies(value: object, services: tuple[str, ...]) -> None:
     if value is None:
         return
-    if isinstance(value, dict) or (
-        isinstance(value, list) and all(isinstance(item, str) for item in value)
-    ):
-        dependencies = set(value)
-    else:
+    dependencies = (
+        set(value)
+        if isinstance(value, dict)
+        or (isinstance(value, list) and all(isinstance(item, str) for item in value))
+        else None
+    )
+    if dependencies is None:
         raise TypeError("resolved dependencies are invalid")
     if not dependencies <= set(services):
         raise ValueError("resolved topology contains an undeclared dependency")
@@ -357,9 +566,32 @@ def _validate_resources(value: object, project: str) -> None:
     for resource in value.values():
         if not isinstance(resource, dict):
             raise TypeError("resolved resource is invalid")
+        if resource.get("external") is True:
+            raise ValueError("resolved topology uses an external resource")
         name = resource.get("name")
-        if name and not str(name).startswith(f"{project}-"):
+        if name and not str(name).startswith((f"{project}-", f"{project}_")):
             raise ValueError("resolved resource escapes task namespace")
+        labels = resource.get("labels")
+        if labels is not None and (
+            not isinstance(labels, dict)
+            or labels.get("com.docker.compose.project") not in {None, project}
+        ):
+            raise ValueError("resolved resource is not task-owned")
+
+
+def _has_private_env(value: object) -> bool:
+    values = value if isinstance(value, list) else [value]
+    return any(Path(str(item)).name in _PRIVATE_ENV_NAMES for item in values if item)
+
+
+def _json_config(value: str) -> dict[str, object]:
+    try:
+        config = json.loads(value)
+    except json.JSONDecodeError as error:
+        raise ValueError("compose config was not JSON") from error
+    if not isinstance(config, dict):
+        raise TypeError("compose config was not an object")
+    return config
 
 
 def _container_port(service: str) -> int:
@@ -371,11 +603,18 @@ def _validate_project(project: str) -> None:
         raise ValueError("compose project must be a task-safe identifier")
 
 
-def _validate_service(service: str) -> None:
-    if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]*", service):
-        raise ValueError("service name is invalid")
-
-
 def _key_digest(key: BuildLedgerKey) -> str:
-    value = f"{key.candidate_sha}\0{key.profile_checksum}\0{key.contract_checksum}"
-    return hashlib.sha256(value.encode()).hexdigest()
+    return _sha256(
+        f"{key.candidate_sha}\0{key.profile_checksum}\0{key.contract_checksum}".encode()
+    )
+
+
+def _sha256(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def _atomic_json(path: Path, payload: Mapping[str, object]) -> None:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+    os.chmod(temporary, 0o600)
+    os.replace(temporary, path)
