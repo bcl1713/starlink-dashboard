@@ -15,6 +15,8 @@ feature set.
   operating procedures
 - **[VISUALIZATION-guide.md](./mission-visualization-guide.md)** (573 lines) -
   Dashboard visualization guide
+- **[V2 acceptance contract](./v2-mission-retirement-acceptance.md)** - Public
+  controls and visible Mission V2 activation journey
 
 ### Data Reference
 
