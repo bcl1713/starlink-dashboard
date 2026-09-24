@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
+from acceptance.platform import runner
+from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
 from acceptance.platform.model import Lane, Outcome
 from acceptance.platform.runner import RunnerDependencies, main, run
 
@@ -16,14 +17,22 @@ V2_ADAPTER = ROOT / "tools/acceptance/journeys/v2-mission-retirement.mjs"
 
 def _argv(tmp_path: Path, lane: str, fingerprint: str = "current") -> list[str]:
     return [
-        "--lane", lane,
-        "--sha", SHA,
-        "--ref", "refs/heads/feat/acceptance",
-        "--profile", str(PROFILE),
-        "--contract", str(CONTRACT),
-        "--fingerprint", fingerprint,
-        "--evidence-root", str(tmp_path / "evidence"),
-        "--task-root", str(tmp_path / "task"),
+        "--lane",
+        lane,
+        "--sha",
+        SHA,
+        "--ref",
+        "refs/heads/feat/acceptance",
+        "--profile",
+        str(PROFILE),
+        "--contract",
+        str(CONTRACT),
+        "--fingerprint",
+        fingerprint,
+        "--evidence-root",
+        str(tmp_path / "evidence"),
+        "--task-root",
+        str(tmp_path / "task"),
     ]
 
 
@@ -96,7 +105,110 @@ def test_cleanup_failure_preserves_product_failure(tmp_path: Path) -> None:
     assert "build failed" in result.manifest["primary"]["detail"]
 
 
-def test_default_unprovisioned_profile_blocks_before_static_product_work(tmp_path: Path) -> None:
+def test_cleanup_failure_revokes_an_otherwise_successful_final_claim(
+    tmp_path: Path,
+) -> None:
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: object(),
+            cleanup=lambda *_: (_ for _ in ()).throw(RuntimeError("cleanup failed")),
+        ),
+    )
+
+    assert result.exit_code == 1
+    assert result.manifest["outcome"] == Outcome.FAILED.value
+    assert result.manifest["final_acceptance"] is False
+    assert result.manifest["maximum_evidence_claim"] != "final_acceptance"
+    assert result.manifest["cleanup"]["outcome"] == Outcome.FAILED.value
+
+
+def test_default_final_cleanup_runs_after_a_started_topology_substep_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
+    topology = object()
+    executor = object()
+
+    monkeypatch.setattr(runner, "SubprocessComposeExecutor", lambda: executor)
+    monkeypatch.setattr(runner, "render_task_override", lambda *_: topology)
+    monkeypatch.setattr(
+        runner,
+        "resolve_topology",
+        lambda *_: (_ for _ in ()).throw(ValueError("topology failed")),
+    )
+    monkeypatch.setattr(
+        runner,
+        "cleanup_compose",
+        lambda actual, actual_executor: calls.append("cleanup"),
+    )
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+        ),
+    )
+
+    assert result.manifest["outcome"] == Outcome.FAILED.value
+    assert "topology failed" in result.manifest["primary"]["detail"]
+    assert calls == ["cleanup"]
+
+
+@pytest.mark.parametrize(
+    ("sha", "ref"),
+    [
+        ("../../escape", "refs/heads/feat/acceptance"),
+        (SHA, "refs/heads/../escape"),
+    ],
+)
+def test_candidate_identity_is_rejected_before_paths_are_constructed(
+    tmp_path: Path, sha: str, ref: str
+) -> None:
+    argv = _argv(tmp_path, "static")
+    argv[argv.index("--sha") + 1] = sha
+    argv[argv.index("--ref") + 1] = ref
+
+    with pytest.raises(ValueError):
+        runner._parse(argv)
+
+    assert not (tmp_path / "escape").exists()
+
+
+def test_runner_manifest_is_sealed_under_a_candidate_nofollow_root(
+    tmp_path: Path,
+) -> None:
+    result = run(
+        _argv(tmp_path, "static"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+        ),
+    )
+
+    root = tmp_path / "evidence" / "candidates" / SHA
+    verify_manifest(root)
+    assert result.manifest["sha"] == SHA
+    assert result.manifest["ref"] == "refs/heads/feat/acceptance"
+    assert b'"sha":"' + SHA.encode() in read_fingerprint_authority(root)
+
+
+def test_adapter_output_without_exact_pre_and_post_viewport_proof_is_rejected() -> None:
+    with pytest.raises(ValueError, match="exact pre/post viewport"):
+        runner._decode_adapter_artifacts({"status": "passed", "artifacts": {}})
+
+
+def test_default_unprovisioned_profile_blocks_before_static_product_work(
+    tmp_path: Path,
+) -> None:
     calls: list[str] = []
     result = run(
         _argv(tmp_path, "final"),
@@ -108,7 +220,9 @@ def test_default_unprovisioned_profile_blocks_before_static_product_work(tmp_pat
     assert calls == []
 
 
-def test_default_unprovisioned_health_returns_environment_blocked(tmp_path: Path) -> None:
+def test_default_unprovisioned_health_returns_environment_blocked(
+    tmp_path: Path,
+) -> None:
     result = run(_argv(tmp_path, "health"))
 
     assert result.exit_code == 2
@@ -122,6 +236,11 @@ def test_v2_adapter_has_no_platform_authority() -> None:
     assert "Create New Mission" in source
     assert "Upload KML" in source
     assert "getAnimations({ subtree: true })" in source
+    assert "node:fs" not in source
+    assert "writeEvidence" not in source
+    assert "Network.requestWillBeSent" in source
+    assert "loaderId" in source
+    assert "Upcoming POIs" in source
 
 
 def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> None:

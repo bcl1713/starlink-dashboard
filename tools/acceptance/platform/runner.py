@@ -1,24 +1,22 @@
-"""Generic, fail-closed acceptance runner for product contracts.
-
-Platform health owns Docker/browser capability certification. Product lanes consume a
-sealed health fingerprint and may only declare product static checks, controls, and
-a journey adapter. The final lane is the sole final-acceptance authority.
-"""
+"""Generic, fail-closed acceptance runner for product contracts."""
 
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import shlex
 import subprocess
 import sys
-import tomllib
 import urllib.error
 import urllib.request
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+import tomllib
 
 from .compose import (
     BuildLedger,
@@ -31,6 +29,14 @@ from .compose import (
     start_no_build,
 )
 from .contracts import load_product_contract
+from .evidence import (
+    prepare_evidence_parent,
+    read_fingerprint_authority,
+    read_nofollow,
+    seal_fingerprint,
+    verify_manifest,
+    write_artifacts,
+)
 from .health import run_platform_health, validate_fingerprint
 from .model import (
     BrowserProfile,
@@ -39,9 +45,18 @@ from .model import (
     Outcome,
     PlatformProfile,
     ProductContract,
+    RuntimeControl,
+    validate_candidate_inputs,
 )
 
 _REPOSITORY = Path(__file__).resolve().parents[3]
+_VIEWPORT = {
+    "innerWidth": 1920,
+    "innerHeight": 1080,
+    "visualWidth": 1920,
+    "visualHeight": 1080,
+    "dpr": 1,
+}
 
 
 @dataclass(frozen=True)
@@ -69,15 +84,17 @@ class RunnerInputs:
 
 @dataclass
 class RunnerDependencies:
-    """Narrow orchestration seams; adapters never receive these authorities."""
+    """Narrow orchestration seams; adapters never receive platform authority."""
 
     load_profile: Callable[[Path], PlatformProfile] | None = None
     health: Callable[[PlatformProfile, Path], object] | None = None
     validate_health: Callable[[PlatformProfile, Path], object] | None = None
     static: Callable[[ProductContract], None] | None = None
-    final_steps: Callable[[RunnerInputs, PlatformProfile, ProductContract], None] | None = None
+    final_steps: (
+        Callable[[RunnerInputs, PlatformProfile, ProductContract], object] | None
+    ) = None
     browser_card: Callable[[RunnerInputs], None] | None = None
-    cleanup: Callable[[object], None] | None = None
+    cleanup: Callable[[object | None], None] | None = None
 
 
 def _parse(argv: Sequence[str]) -> RunnerInputs:
@@ -85,8 +102,16 @@ def _parse(argv: Sequence[str]) -> RunnerInputs:
     parser.add_argument("--lane", required=True, choices=[lane.value for lane in Lane])
     parser.add_argument("--sha", required=True)
     parser.add_argument("--ref", required=True)
-    parser.add_argument("--profile", type=Path, default=_REPOSITORY / "tools/acceptance/platform/profiles/default.toml")
-    parser.add_argument("--contract", type=Path, default=_REPOSITORY / "tools/acceptance/contracts/v2-mission-retirement.toml")
+    parser.add_argument(
+        "--profile",
+        type=Path,
+        default=_REPOSITORY / "tools/acceptance/platform/profiles/default.toml",
+    )
+    parser.add_argument(
+        "--contract",
+        type=Path,
+        default=_REPOSITORY / "tools/acceptance/contracts/v2-mission-retirement.toml",
+    )
     parser.add_argument("--fingerprint", type=Path, default=Path("current"))
     parser.add_argument("--evidence-root", type=Path, required=True)
     parser.add_argument("--task-root", type=Path, required=True)
@@ -96,20 +121,23 @@ def _parse(argv: Sequence[str]) -> RunnerInputs:
     parser.add_argument("--browser-session", default="")
     parser.add_argument("--deployed-origin", default="")
     parsed = parser.parse_args(list(argv))
-    fingerprint = parsed.fingerprint
+    sha, ref = validate_candidate_inputs(parsed.sha, parsed.ref)
     evidence_root = parsed.evidence_root.absolute()
+    fingerprint = parsed.fingerprint
     if fingerprint == Path("current"):
-        fingerprint = evidence_root / parsed.sha / "fingerprint.json"
+        fingerprint = evidence_root / sha / "fingerprint.json"
     return RunnerInputs(
         lane=Lane(parsed.lane),
-        sha=parsed.sha,
-        ref=parsed.ref,
+        sha=sha,
+        ref=ref,
         profile_path=parsed.profile.absolute(),
         contract_path=parsed.contract.absolute(),
         fingerprint=fingerprint.absolute(),
         evidence_root=evidence_root,
         task_root=parsed.task_root.absolute(),
-        ledger_root=(parsed.ledger_root or parsed.task_root / "build-ledger").absolute(),
+        ledger_root=(
+            parsed.ledger_root or parsed.task_root / "build-ledger"
+        ).absolute(),
         backend_port=parsed.backend_port,
         frontend_port=parsed.frontend_port,
         browser_session=parsed.browser_session,
@@ -122,7 +150,7 @@ def _load_profile(path: Path) -> PlatformProfile:
         raw = tomllib.load(handle)
     browser = raw.get("browser")
     if not isinstance(browser, dict):
-        raise ValueError("platform profile browser descriptor is required")
+        raise TypeError("platform profile browser descriptor is required")
     return PlatformProfile(
         version=str(raw["version"]),
         checksum=str(raw["checksum"]),
@@ -139,11 +167,13 @@ def _load_profile(path: Path) -> PlatformProfile:
 def _run_health(profile: PlatformProfile, root: Path) -> object:
     from .health import PlatformHealthExecutor
 
-    return run_platform_health(profile, root, PlatformHealthExecutor(probe=lambda argv: _probe(argv)))
+    return run_platform_health(profile, root, PlatformHealthExecutor(probe=_probe))
 
 
 def _probe(argv: tuple[str, ...]) -> str:
-    completed = subprocess.run(argv, check=True, capture_output=True, text=True, timeout=15)
+    completed = subprocess.run(
+        argv, check=True, capture_output=True, text=True, timeout=15
+    )
     return completed.stdout.strip() or completed.stderr.strip()
 
 
@@ -159,39 +189,44 @@ def _run_static(contract: ProductContract) -> None:
                 raise ValueError(f"static group {group.name} failed: {command}")
 
 
-def _request(control: object, inputs: RunnerInputs) -> int:
-    path = getattr(control, "path")
+def _request(control: RuntimeControl, inputs: RunnerInputs) -> int:
     base = f"http://127.0.0.1:{inputs.backend_port}"
-    if path == "/":
+    if control.path == "/":
         base = f"http://127.0.0.1:{inputs.frontend_port}"
     try:
-        with urllib.request.urlopen(base + path, timeout=15) as response:
+        with urllib.request.urlopen(base + control.path, timeout=15) as response:
             return response.status
     except urllib.error.HTTPError as error:
         return error.code
 
 
 def _verify_browser_card(inputs: RunnerInputs) -> None:
-    if not inputs.browser_session.startswith(("http://127.0.0.1:", "http://localhost:")):
-        raise ValueError("final lane requires a platform-supplied loopback browser session")
-    if not inputs.deployed_origin.startswith(("http://127.0.0.1:", "http://localhost:")):
+    if not inputs.browser_session.startswith(
+        ("http://127.0.0.1:", "http://localhost:")
+    ):
+        raise ValueError(
+            "final lane requires a platform-supplied loopback browser session"
+        )
+    if not inputs.deployed_origin.startswith(
+        ("http://127.0.0.1:", "http://localhost:")
+    ):
         raise ValueError("final lane requires a deployed origin")
 
 
-def _run_journey(inputs: RunnerInputs, contract: ProductContract) -> None:
+def _run_journey(inputs: RunnerInputs, contract: ProductContract) -> dict[str, bytes]:
     asset = _REPOSITORY / contract.assets[0]
     if not asset.is_file():
         raise ValueError("declared journey asset is unavailable")
-    evidence = inputs.task_root / "adapter-output"
-    evidence.mkdir(parents=True, exist_ok=True, mode=0o700)
     completed = subprocess.run(
         [
             "node",
             str(_REPOSITORY / contract.journey_adapter),
-            "--session", inputs.browser_session,
-            "--origin", inputs.deployed_origin,
-            "--kml", str(asset),
-            "--evidence-dir", str(evidence),
+            "--session",
+            inputs.browser_session,
+            "--origin",
+            inputs.deployed_origin,
+            "--kml",
+            str(asset),
         ],
         cwd=_REPOSITORY,
         check=False,
@@ -200,7 +235,65 @@ def _run_journey(inputs: RunnerInputs, contract: ProductContract) -> None:
         timeout=180,
     )
     if completed.returncode:
-        raise ValueError(f"product journey adapter failed: {completed.stderr or completed.stdout}")
+        raise ValueError(
+            f"product journey adapter failed: {completed.stderr or completed.stdout}"
+        )
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as error:
+        raise ValueError("product journey adapter emitted invalid JSON") from error
+    return _decode_adapter_artifacts(payload)
+
+
+def _decode_adapter_artifacts(payload: object) -> dict[str, bytes]:
+    if not isinstance(payload, Mapping) or payload.get("status") != "passed":
+        raise ValueError("product journey adapter did not report a passed result")
+    artifacts = payload.get("artifacts")
+    if not isinstance(artifacts, Mapping):
+        raise TypeError("product journey adapter omitted bounded artifacts")
+    decoded: dict[str, bytes] = {}
+    for name, encoded in artifacts.items():
+        if not isinstance(name, str) or not isinstance(encoded, str):
+            raise TypeError("product journey adapter artifact is invalid")
+        try:
+            decoded[name] = base64.b64decode(encoded, validate=True)
+        except ValueError as error:
+            raise ValueError(
+                "product journey adapter artifact is not base64"
+            ) from error
+    _verify_viewport_artifacts(decoded)
+    return decoded
+
+
+def _verify_viewport_artifacts(artifacts: Mapping[str, bytes]) -> None:
+    for phase in ("journey-pre", "journey-post"):
+        metrics_name, image_name = f"{phase}-metrics.json", f"{phase}.png"
+        if metrics_name not in artifacts or image_name not in artifacts:
+            raise ValueError(
+                "final journey evidence lacks exact pre/post viewport artifacts"
+            )
+        try:
+            metrics = json.loads(artifacts[metrics_name])
+        except (TypeError, json.JSONDecodeError) as error:
+            raise ValueError("viewport metrics artifact is invalid") from error
+        if not isinstance(metrics, Mapping) or any(
+            metrics.get(key) != value for key, value in _VIEWPORT.items()
+        ):
+            raise ValueError("exact viewport metrics are invalid")
+        width, height = _png_dimensions(artifacts[image_name])
+        raster = metrics.get("raster")
+        if (width, height) != (1920, 1080) or raster != {"width": 1920, "height": 1080}:
+            raise ValueError("decoded viewport raster is invalid")
+
+
+def _png_dimensions(content: bytes) -> tuple[int, int]:
+    if (
+        content[:8] != b"\x89PNG\r\n\x1a\n"
+        or content[12:16] != b"IHDR"
+        or len(content) < 24
+    ):
+        raise ValueError("viewport artifact is not a decoded PNG")
+    return int.from_bytes(content[16:20], "big"), int.from_bytes(content[20:24], "big")
 
 
 def _final_steps(
@@ -208,15 +301,20 @@ def _final_steps(
     profile: PlatformProfile,
     contract: ProductContract,
     browser_card: Callable[[RunnerInputs], None],
-) -> tuple[object, SubprocessComposeExecutor]:
+    resource_ready: Callable[[object], None],
+) -> dict[str, bytes]:
     executor = SubprocessComposeExecutor()
     topology = render_task_override(
         _REPOSITORY,
         contract,
         inputs.task_root,
         f"accept-{inputs.sha[:12]}",
-        {"starlink-location": inputs.backend_port, "mission-planner": inputs.frontend_port},
+        {
+            "starlink-location": inputs.backend_port,
+            "mission-planner": inputs.frontend_port,
+        },
     )
+    resource_ready((topology, executor))
     resolve_topology(topology, contract, executor)
     key = BuildLedgerKey(inputs.sha, profile.checksum, contract.checksum)
     ledger = BuildLedger(inputs.ledger_root)
@@ -226,8 +324,7 @@ def _final_steps(
     start_no_build(topology, contract, key, ledger, executor)
     run_controls(contract.controls, lambda control: _request(control, inputs))
     browser_card(inputs)
-    _run_journey(inputs, contract)
-    return topology, executor
+    return _run_journey(inputs, contract)
 
 
 def _cleanup_default(resource: object) -> None:
@@ -235,89 +332,200 @@ def _cleanup_default(resource: object) -> None:
     cleanup_compose(topology, executor)
 
 
-def _outcome_for(error: Exception) -> Outcome:
-    return Outcome.ENVIRONMENT_BLOCKED if isinstance(error, _EnvironmentBlocked) else Outcome.FAILED
+def _outcome_for(error: BaseException) -> Outcome:
+    return (
+        Outcome.ENVIRONMENT_BLOCKED
+        if isinstance(error, _EnvironmentBlocked)
+        else Outcome.FAILED
+    )
 
 
 class _EnvironmentBlocked(ValueError):
     pass
 
 
-def _manifest(inputs: RunnerInputs, outcome: Outcome, final: bool, primary: str, cleanup: str, cleanup_failed: bool) -> dict[str, Any]:
+def _manifest(
+    inputs: RunnerInputs,
+    outcome: Outcome,
+    final: bool,
+    primary: str,
+    cleanup: str,
+    cleanup_failed: bool,
+    profile: object | None,
+    contract: object | None,
+) -> dict[str, Any]:
     return {
+        "sha": inputs.sha,
+        "ref": inputs.ref,
         "lane": inputs.lane.value,
         "outcome": outcome.value,
         "final_acceptance": final,
-        "maximum_evidence_claim": "final_acceptance" if final else ("diagnostic_only" if inputs.lane is Lane.DIAGNOSTIC else "non_final"),
+        "maximum_evidence_claim": (
+            "final_acceptance"
+            if final
+            else ("diagnostic_only" if inputs.lane is Lane.DIAGNOSTIC else "non_final")
+        ),
+        "profile_checksum": getattr(profile, "checksum", None),
+        "contract_checksum": getattr(contract, "checksum", None),
         "primary": {"outcome": outcome.value, "detail": primary},
-        "cleanup": {"outcome": Outcome.FAILED.value if cleanup_failed else Outcome.PASSED.value, "detail": cleanup},
+        "cleanup": {
+            "outcome": Outcome.FAILED.value if cleanup_failed else Outcome.PASSED.value,
+            "detail": cleanup,
+        },
     }
 
 
-def _write_manifest(inputs: RunnerInputs, manifest: dict[str, Any]) -> None:
-    root = inputs.evidence_root / inputs.sha
-    root.mkdir(parents=True, exist_ok=True, mode=0o700)
-    path = root / "runner-manifest.json"
-    path.write_text(json.dumps(manifest, sort_keys=True) + "\n", encoding="utf-8")
+def _write_manifest(
+    inputs: RunnerInputs, manifest: dict[str, Any], artifacts: Mapping[str, bytes]
+) -> None:
+    root = inputs.evidence_root / "candidates" / inputs.sha
+    prepare_evidence_parent(root.parent)
+    retained = dict(artifacts)
+    retained["runner-manifest.json"] = (
+        json.dumps(manifest, sort_keys=True) + "\n"
+    ).encode()
+    write_artifacts(root, retained)
+    verify_manifest(root)
+    envelope = json.dumps(
+        {
+            "sha": inputs.sha,
+            "ref": inputs.ref,
+            "health_fingerprint_sha256": _fingerprint_digest(inputs.fingerprint),
+            "runner_manifest_sha256": hashlib.sha256(
+                retained["runner-manifest.json"]
+            ).hexdigest(),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    seal_fingerprint(root, envelope)
+    read_fingerprint_authority(root)
+    verify_manifest(root)
 
 
-def run(argv: Sequence[str], *, dependencies: RunnerDependencies | None = None) -> RunnerResult:
+def _fingerprint_digest(path: Path) -> str | None:
+    try:
+        return hashlib.sha256(read_nofollow(path)).hexdigest()
+    except ValueError:
+        return None
+
+
+def run(
+    argv: Sequence[str], *, dependencies: RunnerDependencies | None = None
+) -> RunnerResult:
     dependencies = dependencies or RunnerDependencies()
     inputs = _parse(argv)
-    load_profile = dependencies.load_profile or _load_profile
-    profile = load_profile(inputs.profile_path)
-    contract = load_product_contract(inputs.contract_path)
+    profile: PlatformProfile | object | None = None
+    contract: ProductContract | object | None = None
     primary = ""
     cleanup_detail = "not required"
     cleanup_failed = False
     outcome = Outcome.FAILED
     final = False
     resource: object | None = None
+    resource_holder: list[object] = []
+    artifacts: dict[str, bytes] = {}
     try:
+        profile = (dependencies.load_profile or _load_profile)(inputs.profile_path)
+        contract = load_product_contract(inputs.contract_path)
         if inputs.lane is Lane.HEALTH:
-            inputs.evidence_root.mkdir(parents=True, exist_ok=True, mode=0o700)
-            health = (dependencies.health or _run_health)(profile, inputs.evidence_root / inputs.sha)
+            health_root = inputs.evidence_root / inputs.sha
+            prepare_evidence_parent(health_root.parent)
+            health = (dependencies.health or _run_health)(profile, health_root)
             health_outcome = getattr(health, "outcome", Outcome.PASSED)
-            outcome = health_outcome if isinstance(health_outcome, Outcome) else Outcome(str(health_outcome))
+            outcome = (
+                health_outcome
+                if isinstance(health_outcome, Outcome)
+                else Outcome(str(health_outcome))
+            )
             primary = getattr(health, "reason", "platform health completed")
         else:
             try:
-                (dependencies.validate_health or validate_fingerprint)(profile, inputs.fingerprint)
+                (dependencies.validate_health or validate_fingerprint)(
+                    profile, inputs.fingerprint
+                )
             except ValueError as error:
                 raise _EnvironmentBlocked(str(error)) from error
             (dependencies.static or _run_static)(contract)
             if inputs.lane is Lane.DIAGNOSTIC:
-                outcome, primary = Outcome.DIAGNOSTIC_ONLY, "static contract diagnostics completed"
+                outcome, primary = (
+                    Outcome.DIAGNOSTIC_ONLY,
+                    "static contract diagnostics completed",
+                )
             elif inputs.lane is Lane.STATIC:
                 outcome, primary = Outcome.PASSED, "static contract checks completed"
             else:
                 browser_card = dependencies.browser_card or _verify_browser_card
                 if dependencies.final_steps is None:
-                    resource = _final_steps(inputs, profile, contract, browser_card)
+                    artifacts = _final_steps(
+                        inputs,
+                        profile,
+                        contract,
+                        browser_card,
+                        resource_holder.append,
+                    )
+                    resource = resource_holder[0]
                 else:
                     browser_card(inputs)
                     resource = dependencies.final_steps(inputs, profile, contract)
-                outcome, final, primary = Outcome.PASSED, True, "final product contract completed"
-    except Exception as error:
+                outcome, primary = Outcome.PASSED, "final product contract completed"
+    except (
+        OSError,
+        RuntimeError,
+        TypeError,
+        ValueError,
+        subprocess.SubprocessError,
+    ) as error:
         outcome, primary, final = _outcome_for(error), str(error), False
     finally:
         if inputs.lane is Lane.FINAL:
+            if resource is None and resource_holder:
+                resource = resource_holder[0]
             try:
                 if dependencies.cleanup is not None:
                     dependencies.cleanup(resource)
                 elif resource is not None:
                     _cleanup_default(resource)
                 cleanup_detail = "final lane cleanup completed"
-            except Exception as error:
+            except (
+                OSError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                subprocess.SubprocessError,
+            ) as error:
                 cleanup_failed, cleanup_detail = True, str(error)
-    manifest = _manifest(inputs, outcome, final, primary, cleanup_detail, cleanup_failed)
-    _write_manifest(inputs, manifest)
-    exit_code = 0 if outcome in {Outcome.PASSED, Outcome.DIAGNOSTIC_ONLY} and not cleanup_failed else (2 if outcome is Outcome.ENVIRONMENT_BLOCKED else 1)
+                outcome, final = Outcome.FAILED, False
+        final = (
+            inputs.lane is Lane.FINAL
+            and outcome is Outcome.PASSED
+            and not cleanup_failed
+        )
+    manifest = _manifest(
+        inputs,
+        outcome,
+        final,
+        primary,
+        cleanup_detail,
+        cleanup_failed,
+        profile,
+        contract,
+    )
+    _write_manifest(inputs, manifest, artifacts)
+    exit_code = (
+        0
+        if outcome in {Outcome.PASSED, Outcome.DIAGNOSTIC_ONLY} and not cleanup_failed
+        else (2 if outcome is Outcome.ENVIRONMENT_BLOCKED else 1)
+    )
     return RunnerResult(exit_code, manifest)
 
 
-def main(argv: Sequence[str] | None = None, *, dependencies: RunnerDependencies | None = None) -> int:
-    return run(sys.argv[1:] if argv is None else argv, dependencies=dependencies).exit_code
+def main(
+    argv: Sequence[str] | None = None, *, dependencies: RunnerDependencies | None = None
+) -> int:
+    return run(
+        sys.argv[1:] if argv is None else argv, dependencies=dependencies
+    ).exit_code
 
 
 if __name__ == "__main__":

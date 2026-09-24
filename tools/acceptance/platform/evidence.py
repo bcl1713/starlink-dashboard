@@ -7,12 +7,37 @@ import json
 import os
 import re
 import stat
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 _SHA = re.compile(r"[0-9a-f]{40}")
 _DIR_FLAGS = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
 _FILE_FLAGS = os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC
+
+
+def prepare_evidence_parent(root: Path) -> Path:
+    """Create a trusted absolute evidence parent without following symlinks."""
+    root = root.absolute()
+    fd = os.open("/", _DIR_FLAGS)
+    try:
+        for part in root.parts[1:]:
+            created = False
+            try:
+                os.mkdir(part, 0o700, dir_fd=fd)
+                created = True
+            except FileExistsError:
+                pass
+            next_fd = os.open(part, _DIR_FLAGS, dir_fd=fd)
+            if created:
+                os.fchmod(next_fd, 0o700)
+            os.close(fd)
+            fd = next_fd
+    except OSError:
+        os.close(fd)
+        raise ValueError("evidence parent must not be a symlink") from None
+    else:
+        os.close(fd)
+    return root
 
 
 def prepare_evidence_root(root: Path) -> Path:
@@ -130,7 +155,7 @@ def verify_manifest(root: Path) -> None:
         manifest = json.loads(manifest_bytes)
         items = manifest.get("artifacts")
         if not isinstance(items, list):
-            raise ValueError("invalid evidence manifest")
+            raise TypeError("invalid evidence manifest")
         expected_sums = "".join(
             f"{item['sha256']}  {item['path']}\n" for item in items
         ).encode()
@@ -167,7 +192,7 @@ def _open_directory(path: Path) -> int:
             os.close(fd)
             fd = next_fd
         return fd
-    except BaseException:
+    except OSError:
         os.close(fd)
         raise ValueError("evidence parent must not be a symlink")
 
