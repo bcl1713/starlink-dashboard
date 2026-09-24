@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -381,6 +382,22 @@ def test_metrics_require_visual_viewport_native_resize_and_decoded_raster(
         card_path=PLATFORM_CARD,
     )
     assert result.outcome is Outcome.ENVIRONMENT_BLOCKED
+
+
+def test_platform_card_resolves_locked_playwright_before_a_failed_cdp_connection() -> (
+    None
+):
+    result = subprocess.run(
+        ["node", str(PLATFORM_CARD), "http://127.0.0.1:9"],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    diagnostics = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "ERR_MODULE_NOT_FOUND" not in diagnostics
+    assert "Cannot find package '@playwright/test'" not in diagnostics
+    assert "ECONNREFUSED" in diagnostics
 
 
 def test_platform_card_uses_native_protocol_and_platform_output_channel() -> None:

@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 /** Platform card: attaches only after Python owns readiness and lifecycle. */
-import { chromium } from '@playwright/test';
+import { createRequire } from 'node:module';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const require = createRequire(
+  resolve(ROOT, 'frontend/mission-planner/package.json'),
+);
+const { chromium } = require('@playwright/test');
 
 const [cdpUrl] = process.argv.slice(2);
 if (!cdpUrl) throw new Error('usage: platform-card.mjs <cdp-url>');
