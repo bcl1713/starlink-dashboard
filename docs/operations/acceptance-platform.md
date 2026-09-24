@@ -81,6 +81,30 @@ A cached diagnostic can help classify a problem, but cached diagnostics cannot
 replace final fresh-image evidence. A new candidate SHA, profile checksum, or
 contract checksum requires a new final build-ledger record.
 
+## Final browser execution and interruption recovery
+
+Use this operator sequence for final acceptance:
+
+1. Run `health` and checksum-verify its sealed fingerprint and evidence manifest.
+2. Run `static` only after that health validation succeeds.
+3. Issue `final` through one tracked runner process with a 900-second monitored
+   budget and durable stdout and stderr capture.
+4. The runner, not a caller, owns the headed Xvfb and loopback CDP browser
+   resources, its task-owned profile, and pre-journey native display/card metrics.
+   Callers must not hand-launch a headless browser as final acceptance evidence.
+5. On failure, inspect the runner's sealed diagnostic logs at
+   `adapter.stdout.log` and `adapter.stderr.log` in the final evidence root.
+6. After an interruption, inspect the final build ledger, inspected image
+   identities, and task-owned resources. Do not retry merely because a process
+   stopped: obtain explicit authorization from a human operator before one
+   recovery attempt.
+7. Verify runner cleanup after the attempt without deleting volumes. Persistent
+   volumes are retained unless their removal was explicitly requested.
+
+The tracked runner is the only final-browser operational authority. A caller's
+ad hoc browser output, including a manually launched headless browser, is not
+final evidence and must not be substituted for the runner's sealed result.
+
 ## Evidence and publication
 
 Evidence belongs outside tracked repository content under a durable,

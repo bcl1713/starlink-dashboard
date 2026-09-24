@@ -89,6 +89,24 @@ def test_platform_doc_defines_restrictive_candidate_provenance() -> None:
         assert required in lowered
 
 
+def test_platform_doc_prescribes_final_browser_recovery_workflow() -> None:
+    guide = PLATFORM_DOC.read_text(encoding="utf-8")
+
+    for required in (
+        "headed Xvfb",
+        "900-second",
+        "adapter.stdout.log",
+        "adapter.stderr.log",
+        "explicit authorization",
+        "final build ledger",
+    ):
+        assert required in guide
+
+    lowered = " ".join(guide.lower().split())
+    assert "callers must not hand-launch a headless browser" in lowered
+    assert "without deleting volumes" in lowered
+
+
 def test_v2_doc_is_product_only() -> None:
     text = V2_DOC.read_text(encoding="utf-8")
     lowered = text.lower()
