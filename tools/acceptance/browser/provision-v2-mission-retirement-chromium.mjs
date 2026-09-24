@@ -101,6 +101,26 @@ async function trustedPlaywrightCli(projectDir) {
   return cli;
 }
 
+async function prepareLockedPackages(projectDir) {
+  const lockPath = join(projectDir, 'package-lock.json');
+  const before = await readFile(lockPath);
+  const command = ['npm', 'ci', '--ignore-scripts'];
+  try {
+    const result = await execFile(command[0], command.slice(1), {
+      cwd: projectDir,
+      env: { ...process.env, NPM_CONFIG_IGNORE_SCRIPTS: 'true' },
+      timeout: INSTALL_TIMEOUT_MS,
+      maxBuffer: MAX_COMMAND_OUTPUT_BYTES,
+    });
+    const after = await readFile(lockPath);
+    if (!after.equals(before)) throw new Error('npm ci changed package-lock.json');
+    return { command, lockfileSha256: sha256(before), stdout: bounded(result.stdout), stderr: bounded(result.stderr) };
+  } catch (error) {
+    const output = [error.stdout, error.stderr].filter(Boolean).map(bounded).join('\n');
+    throw new Error(`locked npm ci --ignore-scripts preparation failed: ${error instanceof Error ? error.message : String(error)}${output ? `\n${output}` : ''}`);
+  }
+}
+
 async function install(projectDir, browserRoot) {
   const command = installerCommand(projectDir);
   const [file, ...args] = command;
@@ -186,6 +206,7 @@ async function main() {
   const browserRoot = resolve(required(flags, 'browser-root'));
   const taskRoot = resolve(required(flags, 'task-root'));
   const provenanceFile = resolve(required(flags, 'provenance-file'));
+  const packagePreparation = mode === 'provision' ? await prepareLockedPackages(projectDir) : null;
   const locked = await lockedBrowser(projectDir);
   const executablePath = inside(browserRoot, join(browserRoot, `chromium-${locked.chromium.revision}`, ...LINUX_EXECUTABLE_PARTS));
   let installer = null;
@@ -200,7 +221,7 @@ async function main() {
   } else {
     executable = await verifyExecutable(executablePath, locked.chromium.version);
   }
-  const result = { status: 'passed', mode, projectDir, browserRoot, taskRoot, ...locked, executable, installer };
+  const result = { status: 'passed', mode, projectDir, browserRoot, taskRoot, packagePreparation, ...locked, executable, installer };
   await writeProvenanceAtomically(taskRoot, provenanceFile, result);
   return result;
 }

@@ -4,6 +4,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 PROVISION_SCRIPT = (
     Path(__file__).resolve().parents[1]
     / "acceptance/browser/provision-v2-mission-retirement-chromium.mjs"
@@ -13,6 +15,21 @@ CARD_SCRIPT = (
 )
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MISSION_PLANNER = PROJECT_ROOT / "frontend/mission-planner"
+
+
+@pytest.fixture(autouse=True)
+def fake_npm_ci(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Keeps provisioning tests hermetic while asserting the fixed npm-ci contract."""
+    fake_bin = tmp_path / "npm-bin"
+    fake_bin.mkdir()
+    npm = fake_bin / "npm"
+    npm.write_text(
+        "#!/usr/bin/env node\n"
+        "if (process.argv.slice(2).join(' ') !== 'ci --ignore-scripts') process.exit(64);\n",
+        encoding="utf-8",
+    )
+    npm.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{fake_bin}{os.pathsep}{os.environ['PATH']}")
 
 
 def make_project(tmp_path: Path) -> tuple[Path, Path, Path]:
@@ -57,9 +74,7 @@ def make_project(tmp_path: Path) -> tuple[Path, Path, Path]:
     )
     playwright_package = project / "node_modules/playwright/package.json"
     playwright_package.parent.mkdir()
-    playwright_package.write_text(
-        json.dumps({"version": "1.63.0"}), encoding="utf-8"
-    )
+    playwright_package.write_text(json.dumps({"version": "1.63.0"}), encoding="utf-8")
     metadata.write_text(
         json.dumps(
             {
@@ -276,10 +291,73 @@ def test_provision_rejects_symlinked_local_playwright_cli_before_invocation(
     )
 
     assert result.returncode == 1
-    assert "Playwright CLI must be a non-symlink regular file" in json.loads(
-        result.stdout
-    )["error"]
+    assert (
+        "Playwright CLI must be a non-symlink regular file"
+        in json.loads(result.stdout)["error"]
+    )
     assert not provenance.exists()
+
+
+def test_provision_replaces_a_regular_file_cli_before_installer_execution(
+    tmp_path: Path,
+) -> None:
+    """Fails if a regular-file CLI substitute can run instead of npm-ci output."""
+    project, browser_root, provenance = make_project(tmp_path)
+    cli = project / "node_modules/playwright/cli.js"
+    cli.write_text(
+        "require('node:fs').writeFileSync(process.env.MALICIOUS_MARKER, 'ran');\n",
+        encoding="utf-8",
+    )
+    marker = tmp_path / "malicious-ran"
+    npm_log = tmp_path / "npm-command.json"
+    fake_bin = tmp_path / "fake-bin"
+    fake_bin.mkdir()
+    fake_npm = fake_bin / "npm"
+    fake_npm.write_text(
+        "#!/usr/bin/env node\n"
+        "const fs = require('node:fs');\n"
+        "const path = require('node:path');\n"
+        "fs.writeFileSync(process.env.NPM_LOG, JSON.stringify({argv: process.argv.slice(2), cwd: process.cwd()}));\n"
+        "fs.writeFileSync(path.join(process.cwd(), 'node_modules/playwright/cli.js'), `const fs = require('node:fs'); const path = require('node:path'); const root = process.env.PLAYWRIGHT_BROWSERS_PATH; const chrome = path.join(root, 'chromium-999/chrome-linux64/chrome'); fs.mkdirSync(path.dirname(chrome), {recursive: true}); fs.writeFileSync(chrome, \"#!/bin/sh\\\\necho 'Google Chrome 1.2.3.4'\\\\n\"); fs.chmodSync(chrome, 0o755);`);\n",
+        encoding="utf-8",
+    )
+    fake_npm.chmod(0o755)
+
+    result = subprocess.run(
+        [
+            "node",
+            str(PROVISION_SCRIPT),
+            "--mode",
+            "provision",
+            *preflight_args(project, browser_root, provenance),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+            "NPM_LOG": str(npm_log),
+            "MALICIOUS_MARKER": str(marker),
+        },
+    )
+
+    assert result.returncode == 0, result.stdout
+    assert json.loads(npm_log.read_text(encoding="utf-8")) == {
+        "argv": ["ci", "--ignore-scripts"],
+        "cwd": str(project),
+    }
+    record = json.loads(result.stdout)
+    assert record["packagePreparation"] == {
+        "command": ["npm", "ci", "--ignore-scripts"],
+        "lockfileSha256": hashlib.sha256(
+            (project / "package-lock.json").read_bytes()
+        ).hexdigest(),
+        "stdout": "",
+        "stderr": "",
+    }
+    assert not marker.exists()
+    assert record["installer"]["command"][1] == str(cli)
 
 
 def test_provenance_rejects_task_root_escape_and_symlinked_parent(
