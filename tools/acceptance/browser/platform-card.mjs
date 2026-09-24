@@ -1,45 +1,35 @@
 #!/usr/bin/env node
-/**
- * Neutral headed-browser card. Python owns descriptor-bound launch; this card
- * only attaches over CDP and owns the native window/screenshot assertions.
- */
+/** Platform card: attaches only after Python owns readiness and lifecycle. */
 import { chromium } from '@playwright/test';
-import { mkdir, writeFile } from 'node:fs/promises';
 
-const [cdpUrl, evidenceRoot] = process.argv.slice(2);
-if (!cdpUrl || !evidenceRoot) throw new Error('usage: platform-card.mjs <cdp-url> <evidence-root>');
-
+const [cdpUrl] = process.argv.slice(2);
+if (!cdpUrl) throw new Error('usage: platform-card.mjs <cdp-url>');
 let browser;
 try {
-  await mkdir(evidenceRoot, { recursive: true, mode: 0o700 });
   browser = await chromium.connectOverCDP(cdpUrl);
   const context = browser.contexts()[0];
   const page = context.pages()[0] ?? await context.newPage();
   const session = await context.newCDPSession(page);
   const target = await session.send('Browser.getWindowForTarget');
-  const resized = await session.send('Browser.setContentsSize', {
-    windowId: target.windowId, width: 1920, height: 1080,
-  });
+  const resized = await session.send('Browser.setContentsSize', { windowId: target.windowId, width: 1920, height: 1080 });
   const bounds = await session.send('Browser.getWindowBounds', { windowId: target.windowId });
+  if (!target.windowId || resized === undefined || !bounds?.bounds) throw new Error('native window resize did not return a window result');
   await page.goto('data:text/html,<title>platform-neutral</title>', { waitUntil: 'load' });
   const metrics = await page.evaluate(() => ({
-    innerWidth: window.innerWidth,
-    innerHeight: window.innerHeight,
-    visualWidth: window.visualViewport?.width,
-    visualHeight: window.visualViewport?.height,
+    innerWidth: window.innerWidth, innerHeight: window.innerHeight,
+    visualWidth: window.visualViewport?.width, visualHeight: window.visualViewport?.height,
     dpr: window.devicePixelRatio,
   }));
-  const screenshot = await page.screenshot({ path: `${evidenceRoot}/neutral.png` });
-  // PNG IHDR dimensions; decoded raster authority without image-tool substitution.
-  const raster = [screenshot.readUInt32BE(16), screenshot.readUInt32BE(20)];
-  if (metrics.innerWidth !== 1920 || metrics.innerHeight !== 1080 ||
-      metrics.visualWidth !== 1920 || metrics.visualHeight !== 1080 ||
-      metrics.dpr !== 1 || raster[0] !== 1920 || raster[1] !== 1080) {
-    throw new Error(`neutral metrics mismatch: ${JSON.stringify({ metrics, raster })}`);
-  }
-  await writeFile(`${evidenceRoot}/metrics.json`, JSON.stringify({ target, resized, bounds, metrics, raster }), { mode: 0o600 });
-  process.stdout.write(JSON.stringify({ metrics: { innerWidth: 1920, innerHeight: 1080, dpr: 1, raster } }));
+  const screenshot = await page.screenshot();
+  const raster = await page.evaluate(async (encoded) => {
+    const bytes = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
+    const image = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+    const result = [image.width, image.height]; image.close(); return result;
+  }, screenshot.toString('base64'));
+  const cardMetrics = { ...metrics, raster, nativeResize: true };
+  if (metrics.innerWidth !== 1920 || metrics.innerHeight !== 1080 || metrics.visualWidth !== 1920 || metrics.visualHeight !== 1080 || metrics.dpr !== 1 || raster[0] !== 1920 || raster[1] !== 1080) throw new Error(`neutral metrics mismatch: ${JSON.stringify(cardMetrics)}`);
+  const artifacts = { 'neutral.png': screenshot.toString('base64'), 'metrics.json': Buffer.from(JSON.stringify({ target, resized, bounds, metrics: cardMetrics })).toString('base64') };
+  process.stdout.write(JSON.stringify({ browserVersion: await browser.version(), metrics: cardMetrics, artifacts }));
 } finally {
-  // The Python descriptor-owner terminates Chrome/Xvfb in its single finally path.
   await browser?.close();
 }

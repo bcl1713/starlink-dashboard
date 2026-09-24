@@ -1,9 +1,13 @@
-"""Neutral platform health and fingerprint authority; never runs product work."""
-
+"""Descriptor-bound neutral browser health lifecycle and fingerprint authority."""
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
+import socket
+import subprocess
+import time
+import urllib.request
 from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -11,10 +15,11 @@ from pathlib import Path
 from typing import Any
 
 from .browser_bundle import BrowserBundle, BrowserLaunchSpec, verify_browser_bundle
-from .evidence import prepare_evidence_root, write_artifacts
+from .evidence import prepare_evidence_root, verify_manifest, write_artifacts, write_private
 from .model import Lane, Outcome, PlatformProfile, RunResult
 
 _CARD = Path(__file__).parents[1] / "browser/platform-card.mjs"
+_TEMPLATE = ("unprovisioned-template", "0" * 64, "/opt/acceptance-platform/browser", "/opt/acceptance-platform/browser/chrome", "UNPROVISIONED_BROWSER_DO_NOT_LAUNCH", 0, "0" * 64)
 
 
 @dataclass(frozen=True)
@@ -32,8 +37,8 @@ class HealthFingerprint:
     reason: str = ""
 
     @classmethod
-    def blocked(cls, reason: str) -> "HealthFingerprint":
-        return cls(outcome=Outcome.ENVIRONMENT_BLOCKED, reason=reason)
+    def blocked(cls, reason: str, **values: Any) -> "HealthFingerprint":
+        return cls(outcome=Outcome.ENVIRONMENT_BLOCKED, reason=reason, **values)
 
     def to_dict(self) -> dict[str, Any]:
         return {**asdict(self), "outcome": self.outcome.value}
@@ -48,60 +53,68 @@ class HealthProbeResult:
 
 @dataclass(frozen=True)
 class PlatformHealthExecutor:
-    """Injectable operational boundary; product commands are intentionally absent."""
-
+    """Test seams for platform operations; no product command is representable here."""
     probe: Callable[[tuple[str, ...]], str]
-    run_card: Callable[[BrowserLaunchSpec, Path], HealthProbeResult]
+    run_card: Callable[[BrowserLaunchSpec, Path], HealthProbeResult] | None = None
     verify_bundle: Callable[[PlatformProfile], BrowserBundle] = verify_browser_bundle
+    start_xvfb: Callable[[str], Any] = lambda display: subprocess.Popen(("Xvfb", display, "-screen", "0", "1920x1080x24"), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    cdp_version: Callable[[str], Mapping[str, Any] | None] = lambda url: _cdp_version(url)
+    clock: Callable[[], float] = time.monotonic
+    sleep: Callable[[float], None] = time.sleep
 
 
-def run_platform_health(
-    profile: PlatformProfile,
-    evidence_root: Path,
-    executor: PlatformHealthExecutor,
-    *,
-    card_path: Path = _CARD,
-) -> HealthFingerprint:
-    """Certify only neutral platform capabilities, returning a fail-closed result."""
-    if _is_unprovisioned(profile):
-        return HealthFingerprint.blocked("platform profile is deliberately unprovisioned")
+def run_platform_health(profile: PlatformProfile, evidence_root: Path, executor: PlatformHealthExecutor, *, card_path: Path = _CARD) -> HealthFingerprint:
+    """Run only platform-owned neutral health, retaining evidence on every classified fault."""
+    root = prepare_evidence_root(evidence_root)
+    artifacts: dict[str, bytes] = {}
+    bundle: BrowserBundle | None = None
+    launch: BrowserLaunchSpec | None = None
+    xvfb = browser = None
+    values: dict[str, Any] = {"profile_checksum": profile.checksum, "captured_at": datetime.now(UTC).isoformat()}
     try:
-        root = prepare_evidence_root(evidence_root)
-        card_checksum = hashlib.sha256(card_path.read_bytes()).hexdigest()
-        # These probes are fixed platform identity controls, never product/static commands.
-        docker_identity = executor.probe(("docker", "--version"))
-        compose_identity = executor.probe(("docker", "compose", "version"))
+        if _is_unprovisioned(profile):
+            raise _Blocked("platform profile is deliberately unprovisioned")
+        card_checksum = _sha256_file(card_path)
+        values["card_checksum"] = card_checksum
+        values["docker_identity"] = executor.probe(("docker", "--version"))
+        values["compose_identity"] = executor.probe(("docker", "compose", "version"))
         bundle = executor.verify_bundle(profile)
-        try:
-            launch_spec = bundle.launch_spec()
-            try:
-                probe = executor.run_card(launch_spec, root)
-            finally:
-                launch_spec.close()
-        finally:
-            bundle.close()
+        values["browser_sha256"] = bundle.sha256
+        launch = bundle.launch_spec()
+        display, port = ":91", _free_local_port()
+        xvfb = executor.start_xvfb(display)
+        browser = launch.start(f"--display={display}", f"--remote-debugging-port={port}", "--no-first-run", "--no-default-browser-check", "about:blank")
+        cdp_url = f"http://127.0.0.1:{port}"
+        _wait_ready(browser, xvfb, cdp_url, executor)
+        probe = (executor.run_card or _platform_card(card_path, cdp_url))(launch, root)
         _require_neutral_metrics(probe.metrics)
-        manifest_hash = write_artifacts(root, probe.artifacts)
-        result = HealthFingerprint(
-            outcome=Outcome.PASSED,
-            profile_checksum=profile.checksum,
-            card_checksum=card_checksum,
-            docker_identity=docker_identity,
-            compose_identity=compose_identity,
-            browser_sha256=bundle.sha256,
-            browser_version=probe.browser_version,
-            metrics=dict(probe.metrics),
-            captured_at=datetime.now(UTC).isoformat(),
-            evidence_manifest_sha256=manifest_hash,
-        )
-        _write_fingerprint(root, result)
-        return result
+        values.update(browser_version=probe.browser_version, metrics=dict(probe.metrics))
+        artifacts.update(probe.artifacts)
+        outcome, reason = Outcome.PASSED, ""
+    except _Blocked as error:
+        outcome, reason = Outcome.ENVIRONMENT_BLOCKED, str(error)
     except Exception as error:
-        return HealthFingerprint.blocked(f"platform health failed: {error}")
+        outcome, reason = Outcome.ENVIRONMENT_BLOCKED, f"platform health failed: {error}"
+    finally:
+        _terminate(browser)
+        _terminate(xvfb)
+        _retain_logs(artifacts, "browser", browser)
+        _retain_logs(artifacts, "xvfb", xvfb)
+        if launch is not None:
+            launch.close()
+        if bundle is not None:
+            bundle.close()
+    if outcome is not Outcome.PASSED:
+        artifacts["blocked.json"] = json.dumps({"reason": reason, "profile_checksum": profile.checksum}, sort_keys=True).encode()
+    manifest = write_artifacts(root, artifacts)
+    values["evidence_manifest_sha256"] = manifest
+    result = HealthFingerprint(outcome=outcome, reason=reason, **values)
+    write_private(root, "fingerprint.json", json.dumps(result.to_dict(), sort_keys=True).encode())
+    return result
 
 
-def validate_fingerprint(profile: PlatformProfile, fingerprint_path: Path) -> HealthFingerprint:
-    """Reject fingerprint reuse across a profile or evidence/card mutation."""
+def validate_fingerprint(profile: PlatformProfile, fingerprint_path: Path, *, card_path: Path = _CARD) -> HealthFingerprint:
+    """Verify profile, card and every retained artifact instead of trusting metadata."""
     try:
         raw = json.loads(fingerprint_path.read_text(encoding="utf-8"))
         result = HealthFingerprint(outcome=Outcome(raw.pop("outcome")), **raw)
@@ -111,8 +124,14 @@ def validate_fingerprint(profile: PlatformProfile, fingerprint_path: Path) -> He
         raise ValueError("fingerprint is not a passed health result")
     if result.profile_checksum != profile.checksum:
         raise ValueError("profile checksum drift")
+    if result.card_checksum != _sha256_file(card_path):
+        raise ValueError("card checksum drift")
     root = fingerprint_path.parent
-    manifest_hash = hashlib.sha256((root / "manifest.json").read_bytes()).hexdigest()
+    try:
+        verify_manifest(root)
+        manifest_hash = _sha256_file(root / "manifest.json")
+    except (OSError, ValueError) as error:
+        raise ValueError("evidence verification failed") from error
     if result.evidence_manifest_sha256 != manifest_hash:
         raise ValueError("evidence manifest checksum drift")
     _require_neutral_metrics(result.metrics or {})
@@ -120,7 +139,6 @@ def validate_fingerprint(profile: PlatformProfile, fingerprint_path: Path) -> He
 
 
 def run_product_lane(*, health: Callable[[], HealthFingerprint], execute: Callable[[], None]) -> RunResult:
-    """Single reusable gate: never invoke a product executor after health failure."""
     result = health()
     if result.outcome is not Outcome.PASSED:
         return RunResult(lane=Lane.HEALTH, outcome=Outcome.ENVIRONMENT_BLOCKED)
@@ -130,23 +148,81 @@ def run_product_lane(*, health: Callable[[], HealthFingerprint], execute: Callab
 
 def _is_unprovisioned(profile: PlatformProfile) -> bool:
     browser = profile.browser
-    return (
-        profile.version == "unprovisioned-template"
-        and profile.checksum == "0" * 64
-        and browser.version == "UNPROVISIONED_BROWSER_DO_NOT_LAUNCH"
-        and browser.byte_size == 0
-        and browser.sha256 == "0" * 64
-    )
+    return (profile.version, profile.checksum, str(browser.store_root), str(browser.executable), browser.version, browser.byte_size, browser.sha256) == _TEMPLATE
 
 
 def _require_neutral_metrics(metrics: Mapping[str, Any]) -> None:
-    if metrics.get("innerWidth") != 1920 or metrics.get("innerHeight") != 1080:
-        raise ValueError("neutral viewport must be exactly 1920x1080")
-    if metrics.get("dpr") != 1 or metrics.get("raster") != [1920, 1080]:
-        raise ValueError("neutral DPR/raster metrics are invalid")
+    expected = {"innerWidth": 1920, "innerHeight": 1080, "visualWidth": 1920, "visualHeight": 1080, "dpr": 1, "raster": [1920, 1080], "nativeResize": True}
+    if any(metrics.get(key) != value for key, value in expected.items()):
+        raise ValueError("neutral viewport, DPR, native resize, or decoded raster is invalid")
 
 
-def _write_fingerprint(root: Path, fingerprint: HealthFingerprint) -> None:
-    path = root / "fingerprint.json"
-    path.write_text(json.dumps(fingerprint.to_dict(), sort_keys=True), encoding="utf-8")
-    path.chmod(0o600)
+def _wait_ready(browser: Any, xvfb: Any, url: str, executor: PlatformHealthExecutor) -> None:
+    deadline = executor.clock() + 120.0
+    while executor.clock() <= deadline:
+        if browser.poll() is not None or xvfb.poll() is not None:
+            raise ValueError("browser readiness child exited")
+        if executor.cdp_version(url):
+            return
+        executor.sleep(0.25)
+    raise ValueError("browser readiness timed out")
+
+
+def _platform_card(card_path: Path, cdp_url: str) -> Callable[[BrowserLaunchSpec, Path], HealthProbeResult]:
+    """Run the generic card with only the platform-selected CDP endpoint."""
+    def run(_: BrowserLaunchSpec, __: Path) -> HealthProbeResult:
+        completed = subprocess.run(("node", str(card_path), cdp_url), check=True, capture_output=True, timeout=120)
+        payload = json.loads(completed.stdout)
+        artifacts = {name: base64.b64decode(value, validate=True) for name, value in payload["artifacts"].items()}
+        return HealthProbeResult(payload["browserVersion"], payload["metrics"], artifacts)
+    return run
+
+
+def _cdp_version(url: str) -> Mapping[str, Any] | None:
+    try:
+        with urllib.request.urlopen(f"{url}/json/version", timeout=1) as response:
+            return json.loads(response.read())
+    except (OSError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def _free_local_port() -> int:
+    with socket.socket() as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+def _terminate(process: Any) -> None:
+    if process is None or process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=5)
+    except Exception:
+        process.kill()
+        process.wait(timeout=5)
+
+
+def _retain_logs(artifacts: dict[str, bytes], name: str, process: Any) -> None:
+    if process is None:
+        return
+    for stream in ("stdout", "stderr"):
+        value = getattr(process, stream, None)
+        if value is None:
+            continue
+        try:
+            content = value.read() if hasattr(value, "read") else value
+        except Exception:
+            continue
+        if isinstance(content, str):
+            content = content.encode()
+        if isinstance(content, bytes):
+            artifacts[f"{name}.{stream}.log"] = content
+
+
+def _sha256_file(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+class _Blocked(Exception):
+    pass
