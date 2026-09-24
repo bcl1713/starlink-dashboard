@@ -848,10 +848,16 @@ def _write_candidate_discovery(inputs: RunnerInputs, runner_manifest: bytes) -> 
 
 
 def _candidate_is_discoverable(evidence_root: Path, sha: str) -> bool:
-    """Return true only for a root bound by the final discovery authority marker."""
+    """Return true only for unrevoked roots bound by final discovery authority."""
     root = evidence_root / "candidates" / sha
     discovery = evidence_root / "candidates" / ".discoverable" / sha
+    revoked = evidence_root / "candidates" / ".revoked" / sha
     try:
+        # A revocation namespace entry is an invalidation signal even if moving
+        # the root into it could not complete.  This keeps a post-rename fault
+        # from leaving the separate discovery marker authoritative.
+        if os.path.lexists(revoked):
+            return False
         authority = json.loads(read_fingerprint_authority(discovery))
         manifest = read_nofollow(root / "runner-manifest.json")
         if authority != {

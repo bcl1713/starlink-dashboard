@@ -599,6 +599,47 @@ def test_post_publication_fault_fails_closed_when_revoke_destination_is_poisoned
     assert retained["maximum_evidence_claim"] == "non_final"
 
 
+def test_post_discovery_rename_fault_is_not_discoverable_when_revocation_is_poisoned(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    original_rename = runner.os.rename
+
+    def rename_discovery_then_fail(source: Path, destination: Path) -> None:
+        original_rename(source, destination)
+        if ".discoverable" in source.parts:
+            raise OSError("post-discovery-rename fault")
+
+    monkeypatch.setattr(runner.os, "rename", rename_discovery_then_fail)
+    revoked = tmp_path / "evidence" / "candidates" / ".revoked" / SHA
+    revoked.mkdir(parents=True)
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: object(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    evidence_root = tmp_path / "evidence"
+    candidate = evidence_root / "candidates" / SHA
+    discovery = evidence_root / "candidates" / ".discoverable" / SHA
+    failure = evidence_root / "failures" / SHA
+    assert result.exit_code == 1
+    assert result.manifest["final_acceptance"] is False
+    assert candidate.is_dir()
+    assert discovery.is_dir()
+    assert revoked.is_dir()
+    assert not runner._candidate_is_discoverable(evidence_root, SHA)
+    verify_manifest(failure)
+    retained = json.loads((failure / "runner-manifest.json").read_text())
+    assert retained["final_acceptance"] is False
+    assert retained["maximum_evidence_claim"] == "non_final"
+
+
 def test_default_unprovisioned_profile_blocks_before_static_product_work(
     tmp_path: Path,
 ) -> None:
