@@ -100,8 +100,11 @@ Use this command block in `docs/contributing/quality-gates.md`:
 
 Explain that static runs formatting, linting, filenames, docs formatting, and
 links; backend runs the full backend pytest suite from its existing backend
-context; frontend runs Vitest and production build. State that normal CI uses
-these as separate required jobs.
+context; frontend runs Vitest and production build. Include a `Prerequisites`
+section: Python 3.13 with `uv`; Node 22.12.0 and `npm ci` in
+`frontend/mission-planner`; and the static executable dependencies
+`markdownlint-cli2` and Lychee. State that normal CI uses these as separate
+required jobs.
 
 Add a browser boundary paragraph: browser-relevant changes also require
 exact-SHA CDP acceptance at 1920x1080; a green `tools/verify all` does not
