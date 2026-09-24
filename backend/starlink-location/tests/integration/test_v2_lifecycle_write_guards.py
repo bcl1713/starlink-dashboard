@@ -12,6 +12,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+import pytest
+from fastapi.testclient import TestClient
+
+from app.mission import routes_v2, storage
+from app.mission.active_context import resolve_active_mission_leg_context
 from app.mission.models import (
     Mission,
     MissionLeg,
@@ -20,8 +25,6 @@ from app.mission.models import (
     TimelineStatus,
     TransportConfig,
 )
-from app.mission import routes_v2, storage
-from app.mission.active_context import resolve_active_mission_leg_context
 from app.mission.storage import (
     get_leg_timeline_path,
     load_mission_v2,
@@ -33,8 +36,6 @@ from app.models.route import ParsedRoute, RouteMetadata, RoutePoint
 from app.services.flight_state import get_flight_state_manager
 from app.services.overview_clock_location import ClockLocation
 from app.services.overview_clock_settings import OverviewClockSettingsStore
-from fastapi.testclient import TestClient
-import pytest
 
 KML = b"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><LineString>
@@ -363,8 +364,8 @@ def _run_isolated_lifecycle_worker(
                 == 200
             )
         results.put((label, "ok", str(storage.get_mission_directory(mission.id))))
-    except BaseException:
-        results.put((label, "error", traceback.format_exc()))
+    except (AssertionError, OSError, RuntimeError, ValueError) as error:
+        results.put((label, "error", f"{error}\n{traceback.format_exc()}"))
 
 
 class TestV2LifecycleWriteGuards:

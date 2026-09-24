@@ -45,6 +45,7 @@ with TestClient(bootstrap.app):
         [sys.executable, "-c", probe],
         cwd=backend_root,
         capture_output=True,
+        check=False,
         text=True,
     )
 
@@ -98,6 +99,7 @@ with tempfile.TemporaryDirectory() as directory:
         [sys.executable, "-c", probe],
         cwd=backend_root,
         capture_output=True,
+        check=False,
         text=True,
     )
 

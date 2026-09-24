@@ -5,8 +5,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
-from app.models.route import ParsedRoute, RoutePoint
+
 from app.mission.timeline_builder import derive_mission_window
+from app.models.route import ParsedRoute, RoutePoint
 from app.services.kml_parser import KMLParseError, parse_kml_file, validate_kml_file
 
 # Sample valid KML with a simple LineString

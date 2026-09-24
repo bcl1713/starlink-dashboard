@@ -1,8 +1,9 @@
 from uuid import uuid4
 
+from fastapi.testclient import TestClient
+
 from app.mission.models import Mission, MissionLeg, TransportConfig
 from app.models.poi import POICreate
-from fastapi.testclient import TestClient
 
 
 def test_delete_leg_scope_bug(client: TestClient):

@@ -2,9 +2,9 @@
 
 import asyncio
 
-import main
 import pytest
 
+import main
 from app.models.config import SimulationConfig
 
 

@@ -5,6 +5,7 @@ from pathlib import Path
 from types import ModuleType
 
 import pytest
+
 from app.core import metrics as metrics_target
 from app.services import route_eta as route_eta_target
 
@@ -140,7 +141,7 @@ def test_compatibility_contract_rejects_wrong_export_identity():
     legacy_metrics = _load_legacy_module(
         "legacy_metrics_identity_sabotage_test", "app/core/metrics.py"
     )
-    setattr(legacy_metrics, "REGISTRY", object())
+    legacy_metrics.REGISTRY = object()
 
     with pytest.raises(AssertionError):
         _assert_compatibility_contract(legacy_metrics, metrics_target, METRICS_EXPORTS)
@@ -151,7 +152,7 @@ def test_compatibility_contract_rejects_wrong_export_order():
     legacy_route_eta = _load_legacy_module(
         "legacy_route_eta_order_sabotage_test", "app/services/route_eta_calculator.py"
     )
-    setattr(legacy_route_eta, "__all__", tuple(reversed(ROUTE_ETA_EXPORTS)))
+    legacy_route_eta.__all__ = tuple(reversed(ROUTE_ETA_EXPORTS))
 
     with pytest.raises(AssertionError):
         _assert_compatibility_contract(
