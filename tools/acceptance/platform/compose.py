@@ -19,6 +19,7 @@ from .model import BuildLedgerKey, PlatformProfile, ProductContract, RuntimeCont
 _PROJECT = re.compile(r"[a-z0-9][a-z0-9_-]{2,62}")
 _PRIVATE_ENV_NAMES = frozenset({".env", ".env.local", ".env.production"})
 _STAGE = re.compile(r"^#(?P<stage>\d+) (?P<message>.*)$")
+_NO_BUILD_START_TIMEOUT_SECONDS = 120.0
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,9 @@ class CommandResult:
 
 
 class ComposeExecutor(Protocol):
-    def run(self, argv: tuple[str, ...]) -> CommandResult: ...
+    def run(
+        self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult: ...
 
     def inspect_image(self, tag: str) -> str | None: ...
 
@@ -37,16 +40,31 @@ class ComposeExecutor(Protocol):
 class SubprocessComposeExecutor:
     retain: Callable[[str], None] = lambda _: None
 
-    def run(self, argv: tuple[str, ...]) -> CommandResult:
+    def run(
+        self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
         process = subprocess.Popen(
             argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
         )
-        output: list[str] = []
-        assert process.stdout is not None
-        for line in process.stdout:
-            output.append(line)
+        try:
+            output, _ = process.communicate(timeout=timeout_seconds)
+        except subprocess.TimeoutExpired as error:
+            process.terminate()
+            try:
+                output, _ = process.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                output, _ = process.communicate()
+            self._retain_output(output)
+            raise subprocess.TimeoutExpired(
+                argv, timeout_seconds, output=output
+            ) from error
+        self._retain_output(output)
+        return CommandResult(process.returncode, output)
+
+    def _retain_output(self, output: str) -> None:
+        for line in output.splitlines(keepends=True):
             self.retain(line)
-        return CommandResult(process.wait(), "".join(output))
 
     def inspect_image(self, tag: str) -> str | None:
         result = self.run(("docker", "image", "inspect", "--format", "{{.Id}}", tag))
@@ -336,9 +354,20 @@ def start_no_build(
         raise ValueError("no-build startup already claimed") from error
     else:
         os.close(fd)
-    result = executor.run(
-        (*topology.argv, "up", "-d", "--no-build", "--wait", *contract.services)
-    )
+    try:
+        result = executor.run(
+            (*topology.argv, "up", "-d", "--no-build", "--wait", *contract.services),
+            timeout_seconds=_NO_BUILD_START_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired as error:
+        output = error.output
+        if isinstance(output, bytes):
+            output = output.decode(errors="replace")
+        retained = str(output or "").strip()
+        raise ValueError(
+            "no-build compose startup timed out after "
+            f"{int(_NO_BUILD_START_TIMEOUT_SECONDS)} seconds: {retained}"
+        ) from error
     if result.returncode:
         raise ValueError(f"no-build compose startup failed: {result.output.strip()}")
     return result

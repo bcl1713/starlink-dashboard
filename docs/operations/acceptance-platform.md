@@ -68,7 +68,10 @@ contract checksum as one build-ledger key. Its state machine is:
    key.
 5. Reconcile build output and inspected image identities into a usable ledger
    record.
-6. Start the scoped services from that record without another build.
+6. Start the scoped services from that record without another build. The platform
+   owns a fixed 120-second deadline for `docker compose up -d --no-build --wait`;
+   on deadline exhaustion it retains Compose output and classifies startup as
+   failed rather than waiting for external transport termination.
 7. Exercise public controls and the product's visible journey.
 8. Stage evidence privately and validate its bounded inventory.
 9. Clean task-owned resources and verify cleanup before computing the final
@@ -95,9 +98,11 @@ Use this operator sequence for final acceptance:
 5. On failure, inspect the runner's sealed diagnostic logs at
    `adapter.stdout.log` and `adapter.stderr.log` in the final evidence root.
 6. After an interruption, inspect the final build ledger, inspected image
-   identities, and task-owned resources. Do not retry merely because a process
-   stopped: obtain explicit authorization from a human operator before one
-   recovery attempt.
+   identities, and task-owned resources. The runner classifies `SIGINT` and
+   `SIGTERM` as final-run failures, retains browser/Xvfb and Compose diagnostics,
+   and drains its composite cleanup before it records evidence. Do not retry
+   merely because a process stopped: obtain explicit authorization from a human
+   operator before one recovery attempt.
 7. Verify runner cleanup after the attempt without deleting volumes. Persistent
    volumes are retained unless their removal was explicitly requested.
 
@@ -125,10 +130,12 @@ leave a discoverable final-pass authority.
 
 ## Cleanup ownership
 
-One runner-owned cleanup path is armed as soon as task-owned resources exist. It
-removes only task-owned runtime resources, display/profile resources, temporary
-files, and generated topology. It preserves persistent volumes unless their
-removal is explicitly requested.
+One runner-owned cleanup path is armed as soon as task-owned resources exist. On
+success, failure, or interruption it drains Compose resources, browser/Xvfb
+processes and listeners, the task browser profile, and the generated task root
+before it records the result. It retains collected diagnostics before removing
+the task root and preserves persistent volumes unless their removal was
+explicitly requested.
 
 Cleanup runs on success, failure, and platform blocking after resources were
 created. The runner retains the primary failure, records any cleanup failure

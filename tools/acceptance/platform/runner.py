@@ -9,9 +9,12 @@ import json
 import os
 import selectors
 import shlex
+import shutil
+import signal
 import stat
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -125,7 +128,11 @@ class _AdapterSource:
         return str(self.path)
 
     def close(self) -> None:
-        """Keep the sealed task artifact available for provenance inspection."""
+        """Restore private directory access so final task-root cleanup can run."""
+        if self.path.exists():
+            os.chmod(self.path, 0o600)
+        if self.path.parent.exists():
+            os.chmod(self.path.parent, 0o700)
 
 
 @dataclass(frozen=True)
@@ -751,6 +758,46 @@ class _EnvironmentBlocked(ValueError):
     pass
 
 
+class _FinalRunInterrupted(RuntimeError):
+    pass
+
+
+class _FinalInterruptionGuard:
+    """Turn final-run signals into classified failures while cleanup is armed."""
+
+    def __init__(self) -> None:
+        self._previous: dict[int, Any] = {}
+        self._interrupted = False
+
+    def arm(self) -> None:
+        if threading.current_thread() is not threading.main_thread():
+            return
+
+        def interrupt(signum: int, _: Any) -> None:
+            if self._interrupted:
+                return
+            self._interrupted = True
+            raise _FinalRunInterrupted(
+                f"final runner interrupted by {signal.Signals(signum).name}"
+            )
+
+        for signum in (signal.SIGINT, signal.SIGTERM):
+            self._previous[signum] = signal.signal(signum, interrupt)
+
+    def disarm(self) -> None:
+        for signum, previous in self._previous.items():
+            signal.signal(signum, previous)
+        self._previous.clear()
+
+
+def _cleanup_task_root(root: Path) -> None:
+    if not root.exists():
+        return
+    shutil.rmtree(root, ignore_errors=False)
+    if root.exists():
+        raise ValueError("task root remains after cleanup")
+
+
 def _manifest(
     inputs: RunnerInputs,
     outcome: Outcome,
@@ -1002,6 +1049,9 @@ def run(
     artifacts: dict[str, bytes] = {}
     adapter_source: _AdapterSource | None = None
     adapter_sha256: str | None = None
+    interruption_guard = _FinalInterruptionGuard()
+    if inputs.lane is Lane.FINAL:
+        interruption_guard.arm()
     try:
         profile = (dependencies.load_profile or _load_profile)(inputs.profile_path)
         contract = load_product_contract(inputs.contract_path)
@@ -1075,6 +1125,7 @@ def run(
     except (
         OSError,
         RuntimeError,
+        KeyboardInterrupt,
         TypeError,
         ValueError,
         subprocess.SubprocessError,
@@ -1118,6 +1169,21 @@ def run(
                     cleanup_errors.append(str(error))
                 finally:
                     artifacts.update(browser_session.artifacts)
+            if adapter_source is not None:
+                try:
+                    adapter_source.close()
+                except (OSError, RuntimeError, TypeError, ValueError) as error:
+                    cleanup_errors.append(str(error))
+            try:
+                _cleanup_task_root(inputs.task_root)
+            except (
+                OSError,
+                RuntimeError,
+                TypeError,
+                ValueError,
+                subprocess.SubprocessError,
+            ) as error:
+                cleanup_errors.append(str(error))
             if cleanup_errors:
                 cleanup_failed, cleanup_detail = True, "; ".join(cleanup_errors)
                 outcome, final = Outcome.FAILED, False
@@ -1130,6 +1196,7 @@ def run(
         )
         if adapter_source is not None:
             adapter_source.close()
+        interruption_guard.disarm()
     capture_ended_at = datetime.now(timezone.utc).isoformat()
     manifest = _manifest(
         inputs,

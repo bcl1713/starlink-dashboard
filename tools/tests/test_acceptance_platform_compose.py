@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -198,6 +199,33 @@ def test_start_requires_validated_topology_and_usable_matching_ledger(
     ]
 
 
+def test_start_no_build_bounds_compose_wait_and_reports_retained_timeout_output(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path)
+    executor = _executor(
+        config=_resolved_config(topology),
+        build=CommandResult(0, _complete_two_image_log()),
+    )
+    ledger = BuildLedger(tmp_path / "ledger")
+    resolve_topology(topology, CONTRACT, executor)
+    assert build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor).usable
+    original_run = executor.run
+
+    def run_with_expiring_deadline(
+        argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
+        if "up" in argv:
+            assert timeout_seconds == 120.0
+            raise subprocess.TimeoutExpired(argv, timeout_seconds, output="partial startup output")
+        return original_run(argv)
+
+    executor.run = run_with_expiring_deadline  # type: ignore[method-assign]
+
+    with pytest.raises(ValueError, match="timed out after 120 seconds: partial startup output"):
+        start_no_build(topology, CONTRACT, KEY, ledger, executor)
+
+
 def test_failed_or_stale_build_never_starts(tmp_path: Path) -> None:
     topology = _topology(tmp_path)
     executor = _executor(
@@ -280,7 +308,9 @@ class _Executor:
     resources: tuple[str, str]
     calls: list[tuple[str, ...]]
 
-    def run(self, argv: tuple[str, ...]) -> CommandResult:
+    def run(
+        self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
         self.calls.append(argv)
         if "config" in argv:
             for item in argv:

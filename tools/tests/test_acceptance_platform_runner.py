@@ -259,6 +259,67 @@ def test_default_final_cleanup_runs_after_a_started_topology_substep_fails(
     assert calls == ["cleanup", "browser-cleanup"]
 
 
+def test_final_interrupt_after_browser_and_topology_allocation_drains_composite_cleanup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[str] = []
+    task_root = tmp_path / "task"
+    task_root.mkdir()
+    (task_root / "generated-topology.json").write_text("{}", encoding="utf-8")
+    topology, executor = object(), object()
+
+    class Session:
+        cdp_url = "http://127.0.0.1:9222"
+
+        def __init__(self) -> None:
+            self.artifacts: dict[str, bytes] = {}
+
+        def close(self) -> None:
+            calls.append("browser-cleanup")
+            self.artifacts["browser.stderr.log"] = b"interrupted browser log"
+            self.artifacts["xvfb.stderr.log"] = b"interrupted xvfb log"
+
+    class Adapter:
+        sha256 = "a" * 64
+
+        def close(self) -> None:
+            pass
+
+    def interrupt_after_allocation(*args: object) -> dict[str, bytes]:
+        resource_ready = args[4]
+        assert callable(resource_ready)
+        resource_ready((topology, executor))
+        raise KeyboardInterrupt("operator interrupt")
+
+    monkeypatch.setattr(runner, "_open_adapter_source", lambda *_: Adapter())
+    monkeypatch.setattr(runner, "_final_steps", interrupt_after_allocation)
+    monkeypatch.setattr(
+        runner,
+        "cleanup_compose",
+        lambda actual_topology, actual_executor: calls.append("compose-cleanup"),
+    )
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            start_browser_session=lambda *_: Session(),
+        ),
+    )
+
+    assert result.exit_code == 1
+    assert "operator interrupt" in result.manifest["primary"]["detail"]
+    assert result.manifest["cleanup"]["outcome"] == Outcome.PASSED.value
+    assert calls == ["compose-cleanup", "browser-cleanup"]
+    assert not task_root.exists()
+    evidence = tmp_path / "evidence" / "candidates" / SHA
+    assert (evidence / "browser.stderr.log").read_bytes() == b"interrupted browser log"
+    assert (evidence / "xvfb.stderr.log").read_bytes() == b"interrupted xvfb log"
+
+
 @pytest.mark.parametrize(
     ("sha", "ref"),
     [

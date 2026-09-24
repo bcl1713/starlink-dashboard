@@ -141,6 +141,19 @@ def test_platform_doc_prescribes_ordered_final_browser_recovery_workflow() -> No
     )
 
 
+def test_platform_doc_defines_bounded_startup_and_interrupt_cleanup() -> None:
+    guide = " ".join(PLATFORM_DOC.read_text(encoding="utf-8").split())
+
+    assert (
+        "fixed 120-second deadline for `docker compose up -d --no-build --wait`"
+        in guide
+    )
+    assert "retains Compose output and classifies startup as failed" in guide
+    assert "classifies `SIGINT` and `SIGTERM` as final-run failures" in guide
+    assert "drains Compose resources, browser/Xvfb processes and listeners" in guide
+    assert "task browser profile, and the generated task root" in guide
+
+
 def test_v2_doc_is_product_only() -> None:
     text = V2_DOC.read_text(encoding="utf-8")
     lowered = text.lower()
