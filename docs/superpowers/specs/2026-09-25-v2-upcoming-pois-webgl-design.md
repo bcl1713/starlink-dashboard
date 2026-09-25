@@ -19,31 +19,38 @@ The exact-head non-final diagnostic at `e657d66d083b104617d7463d780746214a54ae14
 
 This delivery changes only V2 POI projection semantics and the externally administered acceptance-browser launch profile. It does not add Prometheus to the two-service acceptance topology, weaken final evidence requirements, change user-visible journey steps, or enable Chromium’s unsafe SwiftShader opt-in.
 
-## Product semantics: route-relative Upcoming POIs
+## Product semantics: route-relative Upcoming POIs and ETA clock domain
 
 ### Rule
 
-For an active route:
+For an active route, eligibility is route-relative, while ETA remains mode-appropriate and truthful:
 
-- **In flight:** a generated POI is upcoming exactly when its projected route progress is at or ahead of current route progress. Dynamic ETA remains display/order information only; a negative or unavailable ETA must not hide an otherwise ahead POI.
-- **Anticipated/pre-departure:** generated route POIs remain upcoming in route order. Fixed historical schedule timestamps must not make a route unavailable merely because the current wall clock is later.
+- **In flight (live or simulation):** a generated POI is upcoming exactly when its projected route progress is at or ahead of current route progress. Its ETA is estimated strictly from the current position/progress and the estimated time to reach that POI from now. Historical scheduled timestamps do not determine either visibility or estimated ETA after departure.
+- **Pre-departure, before the expected departure:** anticipated ETA is clock-based from the tracked expected waypoint/departure schedule. Generated route POIs remain upcoming in route order.
+- **Pre-departure, after the expected departure:** treat the expected departure as now for anticipated ETA calculation. Preserve each POI's planned elapsed route duration from departure, but shift the clock baseline to now; do not return historical negative/`-1` ETA simply because the planned departure is in the past. Generated route POIs remain upcoming in route order.
 - **Post-arrival:** no POI is upcoming.
 - POIs lacking valid kind/coordinates remain excluded as today.
 
-`estimated_arrival_time`, `eta_seconds`, ETA type, sorting, and map-retention remain independently truthful. The table eligibility rule must not silently rewrite ETA values or imply that a past calendar timestamp is live telemetry.
+Simulation follows the same state rules. Simulations normally transition promptly to in-flight, so their ETA naturally becomes the current-position estimate; no simulation-only calendar exception is needed.
+
+`estimated_arrival_time`, `eta_seconds`, ETA type, sorting, and map-retention remain independently truthful. The table eligibility rule must not silently rewrite ETA values or represent a shifted anticipated ETA as telemetry.
 
 ### Backend boundary
+
+The ETA projection layer owns calculation of anticipated/estimated ETA. It must add an explicit overdue-predeparture branch that derives a POI's planned duration from the route's expected departure and expected waypoint time, then anchors that duration at calculation time when expected departure has passed. In-flight calculation continues to use live route position/progress and speed.
 
 `project_overview_upcoming_pois(...)` owns `upcoming` and response state. It must derive the eligibility boolean from flight phase and route progress, not from `eta_seconds >= 0`. The response remains `available` when at least one eligible POI exists and `no_upcoming_pois` otherwise.
 
 Tests must cover:
 
-1. stale scheduled timestamps / negative ETA but an active ahead in-flight POI → `upcoming=True` and state `available`;
-2. behind-route in-flight POI → `upcoming=False` even with a non-negative ETA;
-3. anticipated historical route POIs → available in route order;
-4. post-arrival → no upcoming POIs;
-5. invalid coordinates/kind remain excluded;
-6. endpoint/frontend contract continues to render backend-projected eligible rows rather than filtering valid route POIs by stale ETA.
+1. pre-departure before planned departure → calendar-based anticipated ETA;
+2. pre-departure after planned departure → positive shifted ETA equal to planned elapsed route duration, not `-1`;
+3. active ahead in-flight POI with a stale scheduled timestamp → `upcoming=True`, state `available`, and a current-position estimate;
+4. behind-route in-flight POI → `upcoming=False` even with a non-negative ETA;
+5. simulation's prompt in-flight transition uses the same estimated path;
+6. post-arrival → no upcoming POIs;
+7. invalid coordinates/kind remain excluded;
+8. endpoint/frontend contract continues to render backend-projected eligible rows rather than filtering valid route POIs by stale ETA.
 
 The browser journey must retain the user-visible KML flow and prove KAAA/KBBB are visible on Overview without API seeding or a synthetic clock.
 
