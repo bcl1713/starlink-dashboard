@@ -49,6 +49,12 @@ pre-existing state or navigating directly to a hidden state:
    `V2 Acceptance Route KAAA-KBBB`, and the **Upcoming POIs** panel including
    `KAAA` and multiple point-of-interest rows.
 
+Upcoming POI visibility derives from active-route position; ETA remains
+anticipated/estimated metadata. Before planned departure, anticipated ETA is
+calendar-based. After a missed planned departure but before actual departure,
+planned route durations are re-anchored at now. Once in flight, ETA is estimated
+from the current route position; POI visibility remains route-relative.
+
 The journey records a pre-journey and post-journey visual state. A successful
 final product result requires the public controls and this visible journey; a
 successful endpoint response alone does not prove that the active route context

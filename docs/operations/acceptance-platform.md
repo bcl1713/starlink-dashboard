@@ -93,6 +93,16 @@ A cached diagnostic can help classify a problem, but cached diagnostics cannot
 replace final fresh-image evidence. A new candidate SHA, profile checksum, or
 contract checksum requires a new final build-ledger record.
 
+## V2 visible journey observation
+
+For the V2 mission-retirement product contract, the adapter must prove the
+operator-visible binding created by the public KML upload and activation flow:
+the active route name and a genuine **Upcoming POIs** table containing `KAAA`
+and multiple POI rows. This is a visible browser observation, not API seeding,
+hidden navigation, a synthetic clock, or hidden application state. POI
+eligibility is route-relative; ETA is anticipated/estimated metadata and does
+not determine whether a route-relative POI row is visible.
+
 ## Final browser execution and interruption recovery
 
 Use this operator sequence for final acceptance:
@@ -145,8 +155,8 @@ leave a discoverable final-pass authority.
 One runner-owned cleanup path is armed as soon as task-owned resources exist. On
 success, failure, or interruption it drains Compose resources, browser/Xvfb
 processes and listeners, removes a task-owned Xvfb socket only after that Xvfb
-process has exited, removes the task browser profile, and removes the generated
-task root before it records the result. It retains collected diagnostics before
+process has exited, removes the task browser profile, and the generated task
+root before it records the result. It retains collected diagnostics before
 removing the task root and preserves persistent volumes unless their removal was
 explicitly requested.
 

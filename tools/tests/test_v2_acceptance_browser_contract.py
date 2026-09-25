@@ -158,6 +158,16 @@ def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> N
     assert card.index("process.stderr.write") < card.index("() => process.exit(1),")
 
 
+def test_v2_adapter_requires_route_relative_generated_poi_rows() -> None:
+    """The real activated KML journey must bind visible route context and POI rows."""
+    source = adapter_source()
+
+    assert "V2 Acceptance Route KAAA-KBBB" in source
+    assert "KAAA" in source
+    assert "KBBB" in source
+    assert "poiRows.count()) < 2" in source
+
+
 def test_production_adapter_closes_real_attachment_before_failure_exit(
     tmp_path: Path,
 ) -> None:

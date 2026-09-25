@@ -189,6 +189,19 @@ def test_v2_doc_is_product_only() -> None:
         assert excluded not in lowered
 
 
+def test_v2_documentation_separates_route_relative_poi_eligibility_from_eta_timing() -> None:
+    text = " ".join(V2_DOC.read_text(encoding="utf-8").split())
+
+    assert "Upcoming POI visibility derives from active-route position" in text
+    assert "ETA remains anticipated/estimated metadata" in text
+    assert (
+        "Before planned departure, anticipated ETA is calendar-based. After a missed "
+        "planned departure but before actual departure, planned route durations are "
+        "re-anchored at now. Once in flight, ETA is estimated from the current route "
+        "position; POI visibility remains route-relative."
+    ) in text
+
+
 def test_platform_and_v2_document_links_and_kml_asset_resolve() -> None:
     for document in (PLATFORM_DOC, V2_DOC, MISSION_INDEX):
         for target in _relative_markdown_targets(document):
