@@ -251,6 +251,9 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
                     "build_stalled",
                     BuildProgressEvent("stage", 0.0, "#31 [builder] RUN npm run build"),
                     "#31 [builder] RUN npm run build\n",
+                    started_at="2026-09-25T12:00:00+00:00",
+                    ended_at="2026-09-25T12:10:02+00:00",
+                    elapsed_seconds=602.0,
                 )
             if "up" in argv:
                 started = True
@@ -291,7 +294,9 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
         "policy_version": "build_supervision.v1",
         "stall_window_seconds": 600,
         "hard_deadline_seconds": 1800,
-        "elapsed_seconds": 600.0,
+        "started_at": "2026-09-25T12:00:00+00:00",
+        "ended_at": "2026-09-25T12:10:02+00:00",
+        "elapsed_seconds": 602.0,
         "last_progress_kind": "stage",
         "last_progress_elapsed_seconds": 0.0,
     }
@@ -330,6 +335,9 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
         (
             {
                 "kind": "build_stalled",
+                "started_at": "2026-09-25T12:00:00+00:00",
+                "ended_at": "2026-09-25T12:10:01+00:00",
+                "elapsed_seconds": 601.0,
                 "last_event": {
                     "kind": "run_output",
                     "elapsed_seconds": 1.0,
@@ -341,19 +349,29 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
                 "policy_version": "build_supervision.v1",
                 "stall_window_seconds": 600,
                 "hard_deadline_seconds": 1800,
+                "started_at": "2026-09-25T12:00:00+00:00",
+                "ended_at": "2026-09-25T12:10:01+00:00",
                 "elapsed_seconds": 601.0,
                 "last_progress_kind": "run_output",
                 "last_progress_elapsed_seconds": 1.0,
             },
         ),
         (
-            {"kind": "build_deadline_exceeded", "last_event": None},
+            {
+                "kind": "build_deadline_exceeded",
+                "started_at": "2026-09-25T12:00:00+00:00",
+                "ended_at": "2026-09-25T12:30:05+00:00",
+                "elapsed_seconds": 1805.0,
+                "last_event": None,
+            },
             "build_deadline_exceeded",
             {
                 "policy_version": "build_supervision.v1",
                 "stall_window_seconds": 600,
                 "hard_deadline_seconds": 1800,
-                "elapsed_seconds": 1800.0,
+                "started_at": "2026-09-25T12:00:00+00:00",
+                "ended_at": "2026-09-25T12:30:05+00:00",
+                "elapsed_seconds": 1805.0,
                 "last_progress_kind": "none",
                 "last_progress_elapsed_seconds": 0.0,
             },
@@ -380,6 +398,42 @@ def test_production_final_steps_projects_valid_closed_ledger_supervision(
     assert result.manifest["build_supervision"] == expected
     assert not runner._candidate_is_discoverable(tmp_path / "evidence", SHA)
     assert json.loads((candidate / "runner-manifest.json").read_text())["build_supervision"] == expected
+
+
+def test_build_supervision_projects_observed_utc_interval_and_elapsed() -> None:
+    error = BuildSupervisionFailure(
+        "build_stalled",
+        BuildProgressEvent("stage", 1.25, "#31 [builder] RUN npm run build"),
+        "",
+    )
+    reconciliation = {
+        "kind": "build_stalled",
+        "started_at": "2026-09-25T12:00:00+00:00",
+        "ended_at": "2026-09-25T12:10:02+00:00",
+        "elapsed_seconds": 602.0,
+        "last_event": {
+            "kind": "stage",
+            "elapsed_seconds": 1.25,
+            "detail": "#31 [builder] RUN npm run build",
+        },
+    }
+
+    projected = runner._project_build_supervision(error, reconciliation)
+
+    assert projected == {
+        "policy_version": "build_supervision.v1",
+        "stall_window_seconds": 600,
+        "hard_deadline_seconds": 1800,
+        "started_at": "2026-09-25T12:00:00+00:00",
+        "ended_at": "2026-09-25T12:10:02+00:00",
+        "elapsed_seconds": 602.0,
+        "last_progress_kind": "stage",
+        "last_progress_elapsed_seconds": 1.25,
+    }
+    with pytest.raises(ValueError, match="out of order"):
+        runner._validate_build_supervision(
+            {**projected, "ended_at": "2026-09-25T11:59:59+00:00"}
+        )
 
 
 @pytest.mark.parametrize(

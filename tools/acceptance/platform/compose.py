@@ -13,6 +13,7 @@ import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal, Protocol
 
@@ -33,6 +34,7 @@ _REDACT_COMPOSE_CREDENTIAL = re.compile(
 )
 _REDACT_COMPOSE_AUTHORIZATION = re.compile(r"(?im)(authorization\s*[:=])\s*[^\r\n]*")
 _COMPOSE_OUTPUT_TRUNCATED = b"\n[platform retained Compose output truncated]\n"
+_CANDIDATE_BUILD_FIELDS = frozenset({"context", "dockerfile", "target", "platform"})
 _TRANSFER_BYTES = re.compile(
     r"transferring [^:]+:\s*(?P<amount>\d+(?:\.\d+)?)\s*(?P<unit>B|kB|KB|MB|GB|TB)\b",
     re.IGNORECASE,
@@ -57,11 +59,18 @@ class BuildSupervisionFailure(RuntimeError):
         kind: Literal["build_stalled", "build_deadline_exceeded"],
         last_event: BuildProgressEvent | None,
         output: str,
+        *,
+        started_at: str | None = None,
+        ended_at: str | None = None,
+        elapsed_seconds: float | None = None,
     ) -> None:
         super().__init__(kind)
         self.kind = kind
         self.last_event = last_event
         self.output = output
+        self.started_at = started_at
+        self.ended_at = ended_at
+        self.elapsed_seconds = elapsed_seconds
 
 
 class BuildProgressMonitor:
@@ -221,6 +230,8 @@ class SubprocessComposeExecutor:
         return CommandResult(process.returncode, output)
 
     def _run_final_build(self, argv: tuple[str, ...]) -> CommandResult:
+        started_monotonic = time.monotonic()
+        started_at = datetime.now(timezone.utc).isoformat()
         process = subprocess.Popen(
             argv,
             stdout=subprocess.PIPE,
@@ -255,10 +266,14 @@ class SubprocessComposeExecutor:
         except BuildSupervisionFailure as error:
             _terminate_process_group(process)
             _drain_compose_stream(lines, reader, output, diagnostics, self.retain)
+            ended_at = datetime.now(timezone.utc).isoformat()
             raise BuildSupervisionFailure(
                 error.kind,
                 error.last_event,
                 diagnostics.output.decode(errors="replace"),
+                started_at=started_at,
+                ended_at=ended_at,
+                elapsed_seconds=time.monotonic() - started_monotonic,
             ) from error
         reader.join()
         returncode = process.wait()
@@ -695,10 +710,12 @@ def _bind_candidate_build(service: dict[str, object], candidate_sha: str) -> Non
     build = service.get("build")
     if not isinstance(build, dict):
         raise ValueError("contract service has no resolved build mapping")
-    args = build.get("args")
-    if args not in (None, {}):
-        raise ValueError("resolved service build arguments are not permitted")
-    service["build"] = {**build, "args": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha}}
+    _validate_root_candidate_build(build)
+    service["build"] = {
+        field: build[field]
+        for field in _CANDIDATE_BUILD_FIELDS
+        if field in build
+    } | {"args": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha}}
 
 
 def _allocate_task_resources(final: dict[str, object], topology: TaskTopology) -> None:
@@ -803,6 +820,28 @@ def _validate_candidate_build(value: object, candidate_sha: str) -> None:
         "ACCEPTANCE_CANDIDATE_SHA": candidate_sha
     }:
         raise ValueError("resolved topology has invalid candidate build binding")
+    _validate_root_candidate_build({key: item for key, item in value.items() if key != "args"})
+
+
+def _validate_root_candidate_build(build: Mapping[str, object]) -> None:
+    cache_fields = [
+        key
+        for key in build
+        if isinstance(key, str) and "cache" in key.replace("-", "_").lower()
+    ]
+    if cache_fields:
+        raise ValueError("resolved build cache control is not permitted")
+    if not set(build) <= _CANDIDATE_BUILD_FIELDS | {"args"}:
+        raise ValueError("resolved build field is not platform-permitted")
+    if build.get("args") not in (None, {}):
+        raise ValueError("resolved service build arguments are not permitted")
+    context = build.get("context")
+    if not isinstance(context, str) or not context:
+        raise ValueError("resolved build context is invalid")
+    for field in _CANDIDATE_BUILD_FIELDS - {"context"}:
+        value = build.get(field)
+        if value is not None and not isinstance(value, str):
+            raise ValueError("resolved build field is invalid")
 
 
 def _task_volumes(value: object, service: str) -> list[dict[str, object]]:
@@ -1003,6 +1042,9 @@ def _supervision_summary(error: BuildSupervisionFailure) -> dict[str, object]:
     event = error.last_event
     return {
         "kind": error.kind,
+        "started_at": error.started_at,
+        "ended_at": error.ended_at,
+        "elapsed_seconds": error.elapsed_seconds,
         "last_event": (
             {
                 "kind": event.kind,

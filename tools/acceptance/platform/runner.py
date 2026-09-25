@@ -85,6 +85,7 @@ _MAX_LIFECYCLE_RECORDS = 50
 _BUILD_SUPERVISION_POLICY_VERSION = "build_supervision.v1"
 _BUILD_STALL_WINDOW_SECONDS = 600
 _BUILD_HARD_DEADLINE_SECONDS = 1800
+_BUILD_MAX_OBSERVED_ELAPSED_SECONDS = 1810
 _BUILD_PROGRESS_KINDS = frozenset({"none", "stage", "done", "bytes", "run_output"})
 _MAX_BUILD_SUPERVISION_STRING_BYTES = 128
 _VIEWPORT_ARTIFACTS = frozenset(
@@ -897,11 +898,17 @@ def _project_build_supervision(
     """Project final evidence exclusively from a closed, validated Task 2 record."""
     if not isinstance(reconciliation, Mapping) or set(reconciliation) != {
         "kind",
+        "started_at",
+        "ended_at",
+        "elapsed_seconds",
         "last_event",
     }:
         raise ValueError("build reconciliation supervision is invalid")
     kind = reconciliation["kind"]
     event = reconciliation["last_event"]
+    started_at = _validate_build_timestamp(reconciliation["started_at"])
+    ended_at = _validate_build_timestamp(reconciliation["ended_at"])
+    elapsed = reconciliation["elapsed_seconds"]
     if kind != error.kind or kind not in {
         "build_stalled",
         "build_deadline_exceeded",
@@ -932,16 +939,13 @@ def _project_build_supervision(
             or not 0 <= last_elapsed <= _BUILD_HARD_DEADLINE_SECONDS
         ):
             raise ValueError("build reconciliation supervision is invalid")
-    elapsed = (
-        float(_BUILD_HARD_DEADLINE_SECONDS)
-        if kind == "build_deadline_exceeded"
-        else last_elapsed + _BUILD_STALL_WINDOW_SECONDS
-    )
     return _validate_build_supervision(
         {
             "policy_version": _BUILD_SUPERVISION_POLICY_VERSION,
             "stall_window_seconds": _BUILD_STALL_WINDOW_SECONDS,
             "hard_deadline_seconds": _BUILD_HARD_DEADLINE_SECONDS,
+            "started_at": started_at,
+            "ended_at": ended_at,
             "elapsed_seconds": elapsed,
             "last_progress_kind": last_kind,
             "last_progress_elapsed_seconds": last_elapsed,
@@ -955,6 +959,8 @@ def _validate_build_supervision(value: Mapping[str, object]) -> dict[str, object
         "policy_version",
         "stall_window_seconds",
         "hard_deadline_seconds",
+        "started_at",
+        "ended_at",
         "elapsed_seconds",
         "last_progress_kind",
         "last_progress_elapsed_seconds",
@@ -974,6 +980,10 @@ def _validate_build_supervision(value: Mapping[str, object]) -> dict[str, object
         raise ValueError("build supervision strings are invalid")
     stall = value["stall_window_seconds"]
     deadline = value["hard_deadline_seconds"]
+    started_at = _validate_build_timestamp(value["started_at"])
+    ended_at = _validate_build_timestamp(value["ended_at"])
+    if datetime.fromisoformat(ended_at) < datetime.fromisoformat(started_at):
+        raise ValueError("build supervision timestamps are out of order")
     elapsed = value["elapsed_seconds"]
     last_elapsed = value["last_progress_elapsed_seconds"]
     if (
@@ -987,17 +997,31 @@ def _validate_build_supervision(value: Mapping[str, object]) -> dict[str, object
         or not isinstance(last_elapsed, (int, float))
         or not math.isfinite(elapsed)
         or not math.isfinite(last_elapsed)
-        or not 0 <= last_elapsed <= elapsed <= deadline
+        or not 0 <= last_elapsed <= elapsed <= _BUILD_MAX_OBSERVED_ELAPSED_SECONDS
     ):
         raise ValueError("build supervision timing is invalid")
     return {
         "policy_version": policy_version,
         "stall_window_seconds": stall,
         "hard_deadline_seconds": deadline,
+        "started_at": started_at,
+        "ended_at": ended_at,
         "elapsed_seconds": float(elapsed),
         "last_progress_kind": last_kind,
         "last_progress_elapsed_seconds": float(last_elapsed),
     }
+
+
+def _validate_build_timestamp(value: object) -> str:
+    if not isinstance(value, str) or len(value.encode()) > _MAX_BUILD_SUPERVISION_STRING_BYTES:
+        raise ValueError("build supervision timestamp is invalid")
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as error:
+        raise ValueError("build supervision timestamp is invalid") from error
+    if parsed.tzinfo is None or parsed.utcoffset() is None or parsed.utcoffset().total_seconds() != 0:
+        raise ValueError("build supervision timestamp is invalid")
+    return value
 
 
 def _open_adapter_source(

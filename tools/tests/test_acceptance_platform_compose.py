@@ -194,7 +194,17 @@ def test_build_stall_closes_candidate_ledger_and_blocks_startup(
             monitor = BuildProgressMonitor(clock.monotonic)
             monitor.observe("#31 [builder] RUN npm run build\n")
             clock.advance(600)
-            monitor.check("#31 [builder] RUN npm run build\n")
+            try:
+                monitor.check("#31 [builder] RUN npm run build\n")
+            except BuildSupervisionFailure as error:
+                raise BuildSupervisionFailure(
+                    error.kind,
+                    error.last_event,
+                    error.output,
+                    started_at="2026-09-25T12:00:00+00:00",
+                    ended_at="2026-09-25T12:10:02+00:00",
+                    elapsed_seconds=602.0,
+                ) from error
         return original_run(argv, timeout_seconds=timeout_seconds)
 
     executor.run = run_stalled_build  # type: ignore[method-assign]
@@ -210,6 +220,9 @@ def test_build_stall_closes_candidate_ledger_and_blocks_startup(
     assert record["reason"].startswith("build_stalled:")
     assert record["supervision"] == {
         "kind": "build_stalled",
+        "started_at": "2026-09-25T12:00:00+00:00",
+        "ended_at": "2026-09-25T12:10:02+00:00",
+        "elapsed_seconds": 602.0,
         "last_event": {
             "kind": "stage",
             "elapsed_seconds": 0.0,
@@ -434,6 +447,20 @@ def test_resolve_rejects_caller_controlled_build_arguments(tmp_path: Path) -> No
         resolve_topology(topology, CONTRACT, _executor(config=config))
 
 
+@pytest.mark.parametrize("field", ("cache_from", "cache_to"))
+def test_resolve_rejects_caller_controlled_build_cache_authority(
+    tmp_path: Path, field: str
+) -> None:
+    topology = _topology(tmp_path, candidate_sha=SHA)
+    config = _resolved_config(topology)
+    for service in config["services"].values():
+        assert isinstance(service, dict)
+        service["build"] = {"context": ".", field: ["type=registry,ref=caller/cache"]}
+
+    with pytest.raises(ValueError, match="cache"):
+        resolve_topology(topology, CONTRACT, _executor(config=config))
+
+
 def test_resolve_rejects_tampered_final_candidate_build_arguments(
     tmp_path: Path,
 ) -> None:
@@ -463,6 +490,36 @@ def test_resolve_rejects_tampered_final_candidate_build_arguments(
 
     executor.run = run_tampered_final_config  # type: ignore[method-assign]
     with pytest.raises(ValueError, match="invalid candidate build binding"):
+        resolve_topology(topology, CONTRACT, executor)
+
+
+@pytest.mark.parametrize("field", ("cache_from", "cache_to"))
+def test_resolve_rejects_tampered_final_build_cache_authority(
+    tmp_path: Path, field: str
+) -> None:
+    topology = _topology(tmp_path, candidate_sha=SHA)
+    executor = _executor(config=_resolved_config(topology))
+    original_run = executor.run
+
+    def run_tampered_final_config(
+        argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
+        if "config" in argv and any(
+            Path(item).name == "compose.acceptance.json" for item in argv
+        ):
+            final = json.loads(topology.override_path.read_text(encoding="utf-8"))
+            services = final["services"]
+            assert isinstance(services, dict)
+            for service in services.values():
+                assert isinstance(service, dict)
+                build = service["build"]
+                assert isinstance(build, dict)
+                build[field] = ["type=registry,ref=tampered/cache"]
+            return CommandResult(0, json.dumps(final))
+        return original_run(argv, timeout_seconds=timeout_seconds)
+
+    executor.run = run_tampered_final_config  # type: ignore[method-assign]
+    with pytest.raises(ValueError, match="cache"):
         resolve_topology(topology, CONTRACT, executor)
 
 
@@ -615,7 +672,12 @@ def test_final_build_deadline_closes_ledger_with_bounded_supervision(
         if "build" in argv:
             assert timeout_seconds is None
             raise BuildSupervisionFailure(
-                "build_deadline_exceeded", None, "partial BuildKit output"
+                "build_deadline_exceeded",
+                None,
+                "partial BuildKit output",
+                started_at="2026-09-25T12:00:00+00:00",
+                ended_at="2026-09-25T12:30:05+00:00",
+                elapsed_seconds=1805.0,
             )
         return original_run(argv, timeout_seconds=timeout_seconds)
 
@@ -629,6 +691,9 @@ def test_final_build_deadline_closes_ledger_with_bounded_supervision(
     assert record["reason"] == "build_deadline_exceeded: None"
     assert record["supervision"] == {
         "kind": "build_deadline_exceeded",
+        "started_at": "2026-09-25T12:00:00+00:00",
+        "ended_at": "2026-09-25T12:30:05+00:00",
+        "elapsed_seconds": 1805.0,
         "last_event": None,
     }
 

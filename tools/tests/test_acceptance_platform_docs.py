@@ -69,6 +69,8 @@ def test_platform_doc_defines_restrictive_candidate_provenance() -> None:
 
     for required in (
         "candidate sha and ref",
+        "observed utc build start/end timestamps",
+        "monotonic elapsed duration",
         "lane",
         "profile and contract checksums",
         "health fingerprint",
