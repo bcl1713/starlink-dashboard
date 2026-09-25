@@ -3,13 +3,18 @@
 
 from __future__ import annotations
 
+import io
+import os
+import re
 import subprocess
 import sys
+import tokenize
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BACKEND = ROOT / "backend/starlink-location"
 Command = tuple[list[str], Path]
+HUNK_HEADER = re.compile(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
 STATIC: list[Command] = [
     (
@@ -56,6 +61,16 @@ STATIC: list[Command] = [
     (["npm", "--prefix", "frontend/mission-planner", "run", "lint"], ROOT),
     (["markdownlint-cli2", "docs/**/*.md"], ROOT),
     (["lychee", "--no-progress", "docs/"], ROOT),
+    (
+        [
+            "python3",
+            "-m",
+            "pytest",
+            "-q",
+            "tools/tests/test_acceptance_platform_typing_policy.py",
+        ],
+        ROOT,
+    ),
 ]
 BACKEND_COMMANDS: list[Command] = [
     (
@@ -75,6 +90,77 @@ FRONTEND: list[Command] = [
     (["npm", "--prefix", "frontend/mission-planner", "run", "test:unit"], ROOT),
     (["npm", "--prefix", "frontend/mission-planner", "run", "build"], ROOT),
 ]
+
+
+def added_type_ignore_lines(diff: str) -> tuple[str, ...]:
+    """Return added unified-diff lines containing a typing suppression."""
+
+    return tuple(
+        line[1:]
+        for line in diff.splitlines()
+        if line.startswith("+")
+        and not line.startswith("+++")
+        and "type: ignore" in line
+    )
+
+
+def _is_type_ignore_directive(source_line: str) -> bool:
+    """Distinguish a Python comment directive from a string fixture."""
+
+    try:
+        tokens = tokenize.generate_tokens(io.StringIO(source_line).readline)
+        return any(
+            token.type == tokenize.COMMENT and "type: ignore" in token.string
+            for token in tokens
+        )
+    except tokenize.TokenError:
+        return False
+
+
+def added_type_ignore_violations(diff: str) -> tuple[str, ...]:
+    """Return every candidate-added Python typing directive with file and line."""
+
+    path: str | None = None
+    line_number: int | None = None
+    violations: list[str] = []
+    for line in diff.splitlines():
+        if line.startswith("+++ "):
+            diff_path = line.removeprefix("+++ ")
+            path = None if diff_path == "/dev/null" else diff_path.removeprefix("b/")
+            continue
+        header = HUNK_HEADER.match(line)
+        if header is not None:
+            line_number = int(header.group(1))
+            continue
+        if line.startswith("+") and not line.startswith("+++"):
+            source_line = line[1:]
+            if (
+                path is not None
+                and path.endswith(".py")
+                and line_number is not None
+                and _is_type_ignore_directive(source_line)
+            ):
+                violations.append(f"{path}:{line_number}: {source_line}")
+            if line_number is not None:
+                line_number += 1
+            continue
+        if line.startswith(" ") and line_number is not None:
+            line_number += 1
+    return tuple(violations)
+
+
+def candidate_type_ignore_violations() -> tuple[str, ...]:
+    """Inspect the configured candidate delta without contacting the network."""
+
+    base = os.environ["ACCEPTANCE_POLICY_BASE_SHA"]
+    diff = subprocess.run(
+        ["git", "diff", "--unified=0", f"{base}..HEAD"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    return added_type_ignore_violations(diff)
 
 
 def tier_commands(tier: str) -> list[Command]:
