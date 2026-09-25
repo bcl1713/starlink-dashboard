@@ -82,7 +82,8 @@ contract checksum as one build-ledger key. Its state machine is:
    and invokes Docker Compose with `--pull` and `--progress=plain`. Build supervision stops
    after 600 seconds without meaningful BuildKit progress or at the 1800-second total
    deadline, recording `build_stalled` or `build_deadline_exceeded` in sealed evidence;
-   neither outcome authorizes automatic retry: a later final requires fresh health/static
+   neither outcome authorizes automatic retry, and the stalled candidate never reaches
+   no-build startup or final authority: a later final requires fresh health/static
    and operator approval. Every final-critical Compose operation passes combined output through
    bounded, credential-redacted platform retention. Authorization header values,
    including `Bearer` and `Basic` forms, are redacted in full; the retained

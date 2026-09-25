@@ -166,6 +166,7 @@ def test_platform_doc_defines_content_aware_final_build_supervision() -> None:
         "`build_deadline_exceeded`",
         "neither outcome authorizes automatic retry",
         "fresh health/static and operator approval",
+        "never reaches no-build startup or final authority",
     ):
         assert required in guide
     assert "--no-cache" not in guide

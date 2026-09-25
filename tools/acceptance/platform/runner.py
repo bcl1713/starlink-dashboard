@@ -724,8 +724,15 @@ def _final_steps(
         start_no_build(topology, contract, key, ledger, executor)
     except BuildSupervisionFailure as error:
         try:
-            reconciliation = ledger.read(key).get("supervision")
+            record = ledger.read(key)
+            reconciliation = record.get("supervision")
             error.build_supervision = _project_build_supervision(error, reconciliation)  # type: ignore[attr-defined]
+            reason = record.get("reason")
+            error.args = (
+                reason
+                if isinstance(reason, str) and reason.startswith(f"{error.kind}:")
+                else f"{error.kind}: {error.last_event}"
+            ,)
         except (TypeError, ValueError) as metadata_error:
             failure = _BuildSupervisionMetadataFailure()
             failure.platform_artifacts = {"compose.output.log": diagnostics.output}  # type: ignore[attr-defined]

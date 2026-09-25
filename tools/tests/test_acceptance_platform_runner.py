@@ -11,8 +11,12 @@ from pathlib import Path
 import pytest
 from acceptance.platform import runner
 from acceptance.platform.compose import (
+    BuildLedger,
+    BuildLedgerKey,
+    BuildProgressEvent,
     BuildReconciliation,
     BuildSupervisionFailure,
+    CommandResult,
 )
 from acceptance.platform.contracts import load_product_contract
 from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
@@ -195,6 +199,115 @@ def test_final_requires_every_required_result(tmp_path: Path) -> None:
 
     assert result.manifest["final_acceptance"] is False
     assert result.manifest["outcome"] == Outcome.FAILED.value
+
+
+def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Task 1--3 boundary: candidate binding, stalled closure, and sealed non-final result."""
+
+    started = False
+    build_argv: tuple[str, ...] | None = None
+
+    class StalledExecutor:
+        topology: object | None = None
+
+        def run(
+            self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+        ) -> CommandResult:
+            nonlocal build_argv, started
+            if "config" in argv:
+                if any(Path(item).name == "compose.acceptance.json" for item in argv):
+                    assert self.topology is not None
+                    return CommandResult(
+                        0,
+                        self.topology.override_path.read_text(encoding="utf-8"),  # type: ignore[union-attr]
+                    )
+                return CommandResult(
+                    0,
+                    json.dumps(
+                        {
+                            "name": "root",
+                            "services": {
+                                "starlink-location": {
+                                    "build": {"context": "."},
+                                    "env_file": [".env"],
+                                    "ports": ["8000"],
+                                    "volumes": ["route_data:/data/routes"],
+                                },
+                                "mission-planner": {
+                                    "build": {"context": "."},
+                                    "env_file": [".env"],
+                                    "ports": ["80"],
+                                    "depends_on": {"starlink-location": {}},
+                                },
+                            },
+                        }
+                    ),
+                )
+            if "build" in argv:
+                build_argv = argv
+                raise BuildSupervisionFailure(
+                    "build_stalled",
+                    BuildProgressEvent("stage", 0.0, "#31 [builder] RUN npm run build"),
+                    "#31 [builder] RUN npm run build\n",
+                )
+            if "up" in argv:
+                started = True
+                raise AssertionError("stalled candidate must not reach no-build startup")
+            return CommandResult(0, "")
+
+        def inspect_image(self, _: str) -> str | None:
+            return None
+
+    executor = StalledExecutor()
+    original_render = runner.render_task_override
+
+    def render(*args: object, **kwargs: object) -> object:
+        topology = original_render(*args, **kwargs)  # type: ignore[arg-type]
+        executor.topology = topology
+        return topology
+
+    monkeypatch.setattr(runner, "render_task_override", render)
+    monkeypatch.setattr(runner, "SubprocessComposeExecutor", lambda _: executor)
+    monkeypatch.setattr(runner, "_cleanup_task_root", lambda _: None)
+
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            start_browser_session=lambda *_: _Session(),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    assert build_argv is not None
+    assert "--pull" in build_argv
+    assert "--no-cache" not in build_argv
+    assert started is False
+    assert result.exit_code == 1
+    assert result.manifest["primary"]["detail"].startswith("build_stalled:")
+    assert result.manifest["final_acceptance"] is False
+    assert not runner._candidate_is_discoverable(tmp_path / "evidence", SHA)
+
+    topology = executor.topology
+    assert topology is not None
+    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))  # type: ignore[union-attr]
+    assert {
+        name: service["build"]["args"]
+        for name, service in rendered["services"].items()
+    } == {
+        "starlink-location": {"ACCEPTANCE_CANDIDATE_SHA": SHA},
+        "mission-planner": {"ACCEPTANCE_CANDIDATE_SHA": SHA},
+    }
+    profile = runner._load_profile(PROFILE)
+    contract = load_product_contract(CONTRACT)
+    record = BuildLedger(tmp_path / "task" / "build-ledger").read(
+        BuildLedgerKey(SHA, profile.checksum, contract.checksum)
+    )
+    assert record["state"] == "closed"
+    assert record["reason"].startswith("build_stalled:")
 
 
 @pytest.mark.parametrize(

@@ -166,14 +166,23 @@ def test_progress_monitor_prioritizes_outer_deadline_over_stall_at_exact_limit()
         monitor.check()
 
 
-def test_build_stall_closes_ledger_with_supervision_and_blocks_startup(
+def test_build_stall_closes_candidate_ledger_and_blocks_startup(
     tmp_path: Path,
 ) -> None:
-    topology = _topology(tmp_path)
+    candidate_sha = "b" * 40
+    topology = _topology(tmp_path, candidate_sha=candidate_sha)
     executor = _executor(config=_resolved_config(topology))
     ledger = BuildLedger(tmp_path / "ledger")
     clock = FakeClock()
     resolve_topology(topology, CONTRACT, executor)
+    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    assert {
+        name: service["build"]["args"]
+        for name, service in rendered["services"].items()
+    } == {
+        "starlink-location": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha},
+        "mission-planner": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha},
+    }
     original_run = executor.run
 
     def run_stalled_build(
@@ -190,10 +199,13 @@ def test_build_stall_closes_ledger_with_supervision_and_blocks_startup(
 
     executor.run = run_stalled_build  # type: ignore[method-assign]
 
+    candidate_key = BuildLedgerKey(
+        candidate_sha, KEY.profile_checksum, KEY.contract_checksum
+    )
     with pytest.raises(BuildSupervisionFailure, match="build_stalled"):
-        build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor)
+        build_final(topology, PROFILE, CONTRACT, candidate_key, ledger, executor)
 
-    record = ledger.read(KEY)
+    record = ledger.read(candidate_key)
     assert record["state"] == "closed"
     assert record["reason"].startswith("build_stalled:")
     assert record["supervision"] == {
@@ -205,7 +217,7 @@ def test_build_stall_closes_ledger_with_supervision_and_blocks_startup(
         },
     }
     with pytest.raises(ValueError, match="usable"):
-        start_no_build(topology, CONTRACT, KEY, ledger, executor)
+        start_no_build(topology, CONTRACT, candidate_key, ledger, executor)
 
 
 def test_subprocess_executor_streams_combined_output_and_preserves_exit() -> None:
