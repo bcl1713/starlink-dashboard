@@ -7,8 +7,10 @@ from pathlib import Path
 
 import pytest
 from acceptance.platform.compose import (
-    BuildLedger,
     BoundedComposeDiagnostics,
+    BuildLedger,
+    BuildProgressMonitor,
+    BuildSupervisionFailure,
     CommandResult,
     SubprocessComposeExecutor,
     build_final,
@@ -51,12 +53,112 @@ def _complete_two_image_log(project: str = "acceptance-abc") -> str:
 #20 DONE 0.1s"""
 
 
+@dataclass
+class FakeClock:
+    now: float = 0.0
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def advance(self, seconds: float) -> None:
+        self.now += seconds
+
+
+def test_progress_parser_ignores_repeated_spinner_and_unchanged_byte_frames() -> None:
+    clock = FakeClock()
+    monitor = BuildProgressMonitor(clock.monotonic)
+
+    assert monitor.observe("#31 [builder] RUN npm run build\n") is not None
+    clock.advance(599)
+    assert monitor.observe("#31 [builder] RUN npm run build\n") is None
+    assert monitor.observe("#24 transferring context: 53.65MB 25.2s\n") is not None
+    clock.advance(1)
+    assert monitor.observe("#24 transferring context: 53.65MB 25.2s\n") is None
+
+
+def test_progress_parser_accepts_only_qualifying_buildkit_progress() -> None:
+    clock = FakeClock()
+    monitor = BuildProgressMonitor(clock.monotonic)
+
+    assert monitor.observe("#1 [internal] load build definition\n").kind == "stage"
+    assert monitor.observe("#1 DONE 0.0s\n").kind == "done"
+    assert monitor.observe("#2 transferring context: 1.0MB 1.0s\n").kind == "bytes"
+    assert monitor.observe("#2 transferring context: 1025kB 2.0s\n").kind == "bytes"
+    assert monitor.observe("#3 [builder] RUN npm run build\n").kind == "stage"
+    assert monitor.observe("#3 emitted application bundle\n").kind == "run_output"
+    assert monitor.observe("#3 WARNING incidental output\n") is None
+    assert monitor.observe("#3 emitted application bundle\n") is None
+
+
+def test_progress_monitor_prioritizes_outer_deadline_over_stall_at_exact_limit() -> (
+    None
+):
+    clock = FakeClock()
+    monitor = BuildProgressMonitor(clock.monotonic)
+    monitor.observe("#1 [internal] load build definition\n")
+    for _ in range(17):
+        clock.advance(100)
+        monitor.observe(f"#{_ + 2} [builder] RUN step {_}\n")
+    clock.advance(100)
+
+    with pytest.raises(BuildSupervisionFailure, match="build_deadline_exceeded"):
+        monitor.check()
+
+
+def test_build_stall_closes_ledger_with_supervision_and_blocks_startup(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path)
+    executor = _executor(config=_resolved_config(topology))
+    ledger = BuildLedger(tmp_path / "ledger")
+    clock = FakeClock()
+    resolve_topology(topology, CONTRACT, executor)
+    original_run = executor.run
+
+    def run_stalled_build(
+        argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
+        if "build" in argv:
+            assert "--pull" in argv
+            assert "--no-cache" not in argv
+            monitor = BuildProgressMonitor(clock.monotonic)
+            monitor.observe("#31 [builder] RUN npm run build\n")
+            clock.advance(600)
+            monitor.check("#31 [builder] RUN npm run build\n")
+        return original_run(argv, timeout_seconds=timeout_seconds)
+
+    executor.run = run_stalled_build  # type: ignore[method-assign]
+
+    with pytest.raises(BuildSupervisionFailure, match="build_stalled"):
+        build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor)
+
+    record = ledger.read(KEY)
+    assert record["state"] == "closed"
+    assert record["reason"].startswith("build_stalled:")
+    assert record["supervision"] == {
+        "kind": "build_stalled",
+        "last_event": {
+            "kind": "stage",
+            "elapsed_seconds": 0.0,
+            "detail": "#31 [builder] RUN npm run build",
+        },
+    }
+    with pytest.raises(ValueError, match="usable"):
+        start_no_build(topology, CONTRACT, KEY, ledger, executor)
+
+
 def test_subprocess_executor_streams_combined_output_and_preserves_exit() -> None:
     import sys
 
     retained: list[str] = []
     result = SubprocessComposeExecutor(retained.append).run(
-        (sys.executable, "-c", "import sys; print('plain-buildkit'); sys.exit(124)")
+        (
+            sys.executable,
+            "-c",
+            "import sys; print('plain-buildkit'); sys.exit(124)",
+            "build",
+            "--progress=plain",
+        )
     )
 
     assert result.returncode == 124
@@ -143,7 +245,12 @@ def test_real_root_config_uses_public_example_and_retains_only_contract_services
 ) -> None:
     repository = Path(__file__).resolve().parents[2]
     topology = render_task_override(
-        repository, CONTRACT, tmp_path, "acceptance-realroot", _ports(), candidate_sha=SHA
+        repository,
+        CONTRACT,
+        tmp_path,
+        "acceptance-realroot",
+        _ports(),
+        candidate_sha=SHA,
     )
 
     resolved = resolve_topology(topology, CONTRACT, SubprocessComposeExecutor())
@@ -172,8 +279,7 @@ def test_final_topology_binds_every_contract_service_to_the_exact_candidate_sha(
     rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
     assert topology.candidate_sha == SHA
     assert {
-        name: rendered["services"][name]["build"]["args"]
-        for name in CONTRACT.services
+        name: rendered["services"][name]["build"]["args"] for name in CONTRACT.services
     } == {name: {"ACCEPTANCE_CANDIDATE_SHA": SHA} for name in CONTRACT.services}
 
 
@@ -193,7 +299,9 @@ def test_resolve_rejects_caller_controlled_build_arguments(tmp_path: Path) -> No
         resolve_topology(topology, CONTRACT, _executor(config=config))
 
 
-def test_resolve_rejects_tampered_final_candidate_build_arguments(tmp_path: Path) -> None:
+def test_resolve_rejects_tampered_final_candidate_build_arguments(
+    tmp_path: Path,
+) -> None:
     topology = _topology(tmp_path, candidate_sha=SHA)
     executor = _executor(config=_resolved_config(topology))
     original_run = executor.run
@@ -344,16 +452,20 @@ def test_start_no_build_bounds_compose_wait_and_reports_retained_timeout_output(
     ) -> CommandResult:
         if "up" in argv:
             assert timeout_seconds == 120.0
-            raise subprocess.TimeoutExpired(argv, timeout_seconds, output="partial startup output")
+            raise subprocess.TimeoutExpired(
+                argv, timeout_seconds, output="partial startup output"
+            )
         return original_run(argv)
 
     executor.run = run_with_expiring_deadline  # type: ignore[method-assign]
 
-    with pytest.raises(ValueError, match="timed out after 120 seconds: partial startup output"):
+    with pytest.raises(
+        ValueError, match="timed out after 120 seconds: partial startup output"
+    ):
         start_no_build(topology, CONTRACT, KEY, ledger, executor)
 
 
-def test_final_build_bounds_buildkit_and_closes_ledger_with_timeout_diagnostic(
+def test_final_build_deadline_closes_ledger_with_bounded_supervision(
     tmp_path: Path,
 ) -> None:
     topology = _topology(tmp_path)
@@ -366,23 +478,24 @@ def test_final_build_bounds_buildkit_and_closes_ledger_with_timeout_diagnostic(
         argv: tuple[str, ...], *, timeout_seconds: float | None = None
     ) -> CommandResult:
         if "build" in argv:
-            assert timeout_seconds == 1200.0
-            raise subprocess.TimeoutExpired(
-                argv, timeout_seconds, output="partial BuildKit output"
+            assert timeout_seconds is None
+            raise BuildSupervisionFailure(
+                "build_deadline_exceeded", None, "partial BuildKit output"
             )
         return original_run(argv, timeout_seconds=timeout_seconds)
 
     executor.run = run_with_expiring_build_deadline  # type: ignore[method-assign]
 
-    with pytest.raises(
-        ValueError,
-        match="final compose build timed out after 1200 seconds: partial BuildKit output",
-    ):
+    with pytest.raises(BuildSupervisionFailure, match="build_deadline_exceeded"):
         build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor)
 
     record = ledger.read(KEY)
     assert record["state"] == "closed"
-    assert record["reason"] == "final compose build timed out after 1200 seconds: partial BuildKit output"
+    assert record["reason"] == "build_deadline_exceeded: None"
+    assert record["supervision"] == {
+        "kind": "build_deadline_exceeded",
+        "last_event": None,
+    }
 
 
 def test_final_build_closes_ledger_when_image_reconciliation_raises(
@@ -390,7 +503,8 @@ def test_final_build_closes_ledger_when_image_reconciliation_raises(
 ) -> None:
     topology = _topology(tmp_path)
     executor = _executor(
-        config=_resolved_config(topology), build=CommandResult(0, _complete_two_image_log())
+        config=_resolved_config(topology),
+        build=CommandResult(0, _complete_two_image_log()),
     )
     ledger = BuildLedger(tmp_path / "ledger")
     resolve_topology(topology, CONTRACT, executor)

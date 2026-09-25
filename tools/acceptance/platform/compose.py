@@ -5,12 +5,16 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import queue
 import re
+import signal
 import subprocess
+import threading
+import time
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
 import yaml
 
@@ -20,15 +24,116 @@ _PROJECT = re.compile(r"[a-z0-9][a-z0-9_-]{2,62}")
 _PRIVATE_ENV_NAMES = frozenset({".env", ".env.local", ".env.production"})
 _STAGE = re.compile(r"^#(?P<stage>\d+) (?P<message>.*)$")
 _NO_BUILD_START_TIMEOUT_SECONDS = 120.0
-_FINAL_BUILD_TIMEOUT_SECONDS = 1200.0
+_FINAL_BUILD_STALL_SECONDS = 600.0
+_FINAL_BUILD_HARD_DEADLINE_SECONDS = 1800.0
+_FINAL_BUILD_TERMINATE_GRACE_SECONDS = 5.0
 _MAX_COMPOSE_DIAGNOSTIC_BYTES = 256 * 1024
 _REDACT_COMPOSE_CREDENTIAL = re.compile(
     r"(?i)(token|password|passwd|secret|api[_-]?key)\s*([=:])\s*[^\s]+"
 )
-_REDACT_COMPOSE_AUTHORIZATION = re.compile(
-    r"(?im)(authorization\s*[:=])\s*[^\r\n]*"
-)
+_REDACT_COMPOSE_AUTHORIZATION = re.compile(r"(?im)(authorization\s*[:=])\s*[^\r\n]*")
 _COMPOSE_OUTPUT_TRUNCATED = b"\n[platform retained Compose output truncated]\n"
+_TRANSFER_BYTES = re.compile(
+    r"transferring [^:]+:\s*(?P<amount>\d+(?:\.\d+)?)\s*(?P<unit>B|kB|KB|MB|GB|TB)\b",
+    re.IGNORECASE,
+)
+
+
+@dataclass(frozen=True)
+class BuildProgressEvent:
+    kind: Literal["stage", "done", "bytes", "run_output"]
+    elapsed_seconds: float
+    detail: str
+
+
+class BuildSupervisionFailure(RuntimeError):
+    def __init__(
+        self,
+        kind: Literal["build_stalled", "build_deadline_exceeded"],
+        last_event: BuildProgressEvent | None,
+        output: str,
+    ) -> None:
+        super().__init__(kind)
+        self.kind = kind
+        self.last_event = last_event
+        self.output = output
+
+
+class BuildProgressMonitor:
+    """Classify BuildKit output so incidental activity cannot mask a stalled build."""
+
+    def __init__(self, monotonic: Callable[[], float] = time.monotonic) -> None:
+        self._monotonic = monotonic
+        self._started = monotonic()
+        self._last_event: BuildProgressEvent | None = None
+        self._stages: set[str] = set()
+        self._done_stages: set[str] = set()
+        self._transfer_bytes: dict[str, float] = {}
+        self._run_stages: set[str] = set()
+        self._run_output: set[tuple[str, str]] = set()
+
+    @property
+    def last_event(self) -> BuildProgressEvent | None:
+        return self._last_event
+
+    def observe(self, output: str) -> BuildProgressEvent | None:
+        event: BuildProgressEvent | None = None
+        for line in output.splitlines():
+            observed = self._observe_line(line)
+            if observed is not None:
+                event = observed
+        return event
+
+    def check(self, output: str = "") -> None:
+        elapsed = self._monotonic() - self._started
+        if elapsed >= _FINAL_BUILD_HARD_DEADLINE_SECONDS:
+            raise BuildSupervisionFailure(
+                "build_deadline_exceeded", self._last_event, output
+            )
+        reference = self._last_event.elapsed_seconds if self._last_event else 0.0
+        if elapsed - reference >= _FINAL_BUILD_STALL_SECONDS:
+            raise BuildSupervisionFailure("build_stalled", self._last_event, output)
+
+    def _observe_line(self, line: str) -> BuildProgressEvent | None:
+        match = _STAGE.match(line)
+        if not match:
+            return None
+        stage, message = match["stage"], match["message"].strip()
+        elapsed = self._monotonic() - self._started
+        if message.startswith("DONE") and stage not in self._done_stages:
+            self._done_stages.add(stage)
+            return self._record("done", elapsed, line)
+        transfer = _TRANSFER_BYTES.search(message)
+        if transfer:
+            value = float(transfer["amount"]) * _byte_multiplier(transfer["unit"])
+            if value > self._transfer_bytes.get(stage, -1.0):
+                self._transfer_bytes[stage] = value
+                return self._record("bytes", elapsed, line)
+            return None
+        if stage not in self._stages:
+            self._stages.add(stage)
+            if " RUN " in f" {message} ":
+                self._run_stages.add(stage)
+                self._run_output.add((stage, message))
+            return self._record("stage", elapsed, line)
+        if (
+            stage in self._run_stages
+            and message
+            and "warning" not in message.lower()
+            and (stage, message) not in self._run_output
+        ):
+            self._run_output.add((stage, message))
+            return self._record("run_output", elapsed, line)
+        return None
+
+    def _record(
+        self,
+        kind: Literal["stage", "done", "bytes", "run_output"],
+        elapsed: float,
+        detail: str,
+    ) -> BuildProgressEvent:
+        self._last_event = BuildProgressEvent(kind, elapsed, detail.rstrip())
+        return self._last_event
 
 
 @dataclass(frozen=True)
@@ -50,12 +155,10 @@ class BoundedComposeDiagnostics:
     def retain(self, line: str) -> None:
         if self._truncated:
             return
-        redacted = _REDACT_COMPOSE_AUTHORIZATION.sub(
-            r"\1<redacted>", line
+        redacted = _REDACT_COMPOSE_AUTHORIZATION.sub(r"\1<redacted>", line)
+        redacted = _REDACT_COMPOSE_CREDENTIAL.sub(r"\1\2<redacted>", redacted).encode(
+            errors="replace"
         )
-        redacted = _REDACT_COMPOSE_CREDENTIAL.sub(
-            r"\1\2<redacted>", redacted
-        ).encode(errors="replace")
         if len(self._output) + len(redacted) <= self._max_bytes:
             self._output.extend(redacted)
             return
@@ -89,6 +192,8 @@ class SubprocessComposeExecutor:
     def run(
         self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
     ) -> CommandResult:
+        if "build" in argv and "--progress=plain" in argv:
+            return self._run_final_build(argv)
         process = subprocess.Popen(
             argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1
         )
@@ -107,6 +212,60 @@ class SubprocessComposeExecutor:
             ) from error
         self._retain_output(output)
         return CommandResult(process.returncode, output)
+
+    def _run_final_build(self, argv: tuple[str, ...]) -> CommandResult:
+        process = subprocess.Popen(
+            argv,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            start_new_session=True,
+        )
+        assert process.stdout is not None
+        lines: queue.Queue[str | None] = queue.Queue()
+        reader = threading.Thread(
+            target=_read_compose_stream, args=(process.stdout, lines), daemon=True
+        )
+        reader.start()
+        monitor = BuildProgressMonitor()
+        diagnostics = BoundedComposeDiagnostics()
+        output: list[str] = []
+        stream_closed = False
+        try:
+            while not (stream_closed and process.poll() is not None):
+                try:
+                    line = lines.get(timeout=0.1)
+                except queue.Empty:
+                    monitor.check(diagnostics.output.decode(errors="replace"))
+                    continue
+                if line is None:
+                    stream_closed = True
+                    continue
+                output.append(line)
+                diagnostics.retain(line)
+                self.retain(line)
+                monitor.observe(line)
+                monitor.check(diagnostics.output.decode(errors="replace"))
+        except BuildSupervisionFailure as error:
+            _terminate_process_group(process)
+            while True:
+                try:
+                    line = lines.get_nowait()
+                except queue.Empty:
+                    break
+                if line is None:
+                    break
+                diagnostics.retain(line)
+                self.retain(line)
+            raise BuildSupervisionFailure(
+                error.kind,
+                error.last_event,
+                diagnostics.output.decode(errors="replace"),
+            ) from error
+        reader.join(timeout=1)
+        returncode = process.wait()
+        return CommandResult(returncode, "".join(output))
 
     def _retain_output(self, output: str) -> None:
         for line in output.splitlines(keepends=True):
@@ -173,6 +332,7 @@ class BuildReconciliation:
     wrapper_anomaly: bool
     image_ids: Mapping[str, str]
     reason: str = ""
+    supervision: Mapping[str, object] = field(default_factory=dict)
 
 
 class BuildLedger:
@@ -217,6 +377,7 @@ class BuildLedger:
             wrapper_anomaly=result.wrapper_anomaly,
             image_ids=dict(result.image_ids),
             reason=result.reason,
+            supervision=dict(result.supervision),
             topology_digest=topology_digest,
         )
         _atomic_json(path, payload)
@@ -379,14 +540,19 @@ def build_final(
     )
     try:
         result = executor.run(
-            (*topology.argv, "build", "--no-cache", "--progress=plain", *contract.services),
-            timeout_seconds=_FINAL_BUILD_TIMEOUT_SECONDS,
+            (*topology.argv, "build", "--pull", "--progress=plain", *contract.services),
         )
+    except BuildSupervisionFailure as error:
+        supervision = _supervision_summary(error)
+        reason = f"{error.kind}: {supervision['last_event']}"
+        reconciled = BuildReconciliation(False, False, {}, reason, supervision)
+        ledger.close(claim, reconciled, resolved.digest)
+        raise
     except subprocess.TimeoutExpired as error:
         retained = _bounded_compose_diagnostic(error.output)
         reason = (
             "final compose build timed out after "
-            f"{int(_FINAL_BUILD_TIMEOUT_SECONDS)} seconds: {retained}"
+            f"{int(_FINAL_BUILD_HARD_DEADLINE_SECONDS)} seconds: {retained}"
         )
         reconciled = BuildReconciliation(False, False, {}, reason)
         ledger.close(claim, reconciled, resolved.digest)
@@ -398,7 +564,9 @@ def build_final(
     except Exception:
         ledger.close(
             claim,
-            BuildReconciliation(False, False, {}, "final compose build reconciliation failed"),
+            BuildReconciliation(
+                False, False, {}, "final compose build reconciliation failed"
+            ),
             resolved.digest,
         )
         raise
@@ -796,14 +964,28 @@ def _container_port(service: str) -> int:
     return 80 if service == "mission-planner" else 8000
 
 
+def _byte_multiplier(unit: str) -> float:
+    return {
+        "b": 1.0,
+        "kb": 1_000.0,
+        "mb": 1_000_000.0,
+        "gb": 1_000_000_000.0,
+        "tb": 1_000_000_000_000.0,
+    }[unit.lower()]
+
+
 def _validate_project(project: str) -> None:
     if not _PROJECT.fullmatch(project):
         raise ValueError("compose project must be a task-safe identifier")
 
 
 def _validate_candidate_sha(candidate_sha: str) -> None:
-    if not isinstance(candidate_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", candidate_sha):
-        raise ValueError("candidate SHA must be a full 40-character lowercase hexadecimal value")
+    if not isinstance(candidate_sha, str) or not re.fullmatch(
+        r"[0-9a-f]{40}", candidate_sha
+    ):
+        raise ValueError(
+            "candidate SHA must be a full 40-character lowercase hexadecimal value"
+        )
 
 
 def _key_digest(key: BuildLedgerKey) -> str:
@@ -818,6 +1000,49 @@ def _bounded_compose_diagnostic(output: str | bytes | None) -> str:
     diagnostics = BoundedComposeDiagnostics()
     diagnostics.retain(str(output or ""))
     return diagnostics.output.decode(errors="replace").strip()
+
+
+def _supervision_summary(error: BuildSupervisionFailure) -> dict[str, object]:
+    event = error.last_event
+    return {
+        "kind": error.kind,
+        "last_event": (
+            {
+                "kind": event.kind,
+                "elapsed_seconds": event.elapsed_seconds,
+                "detail": _bounded_compose_diagnostic(event.detail),
+            }
+            if event
+            else None
+        ),
+    }
+
+
+def _read_compose_stream(stream: object, lines: queue.Queue[str | None]) -> None:
+    try:
+        for line in stream:  # type: ignore[union-attr]
+            lines.put(line)
+    finally:
+        lines.put(None)
+
+
+def _terminate_process_group(process: subprocess.Popen[str]) -> None:
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    except OSError:
+        process.terminate()
+    try:
+        process.wait(timeout=_FINAL_BUILD_TERMINATE_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            return
+        except OSError:
+            process.kill()
+        process.wait()
 
 
 def _sha256(value: bytes) -> str:
