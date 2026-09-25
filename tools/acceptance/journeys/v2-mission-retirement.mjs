@@ -64,7 +64,7 @@ async function pngDimensions(png) {
       if (ihdr || offset !== 8 || length !== 13 || data.readUInt32BE(0) !== 1920 || data.readUInt32BE(4) !== 1080 || data[8] !== 8 || ![2, 6].includes(data[9]) || data[10] || data[11] || data[12]) throw new Error('screenshot is not a decoded PNG');
       width = 1920; height = 1080; channels = data[9] === 2 ? 3 : 4; ihdr = true;
     } else if (kind === 'PLTE') {
-      if (plte || idatStarted || channels !== 3 || !length || length > 768 || length % 3) throw new Error('screenshot is not a decoded PNG');
+      if (plte || idatStarted || ![3, 4].includes(channels) || !length || length > 768 || length % 3) throw new Error('screenshot is not a decoded PNG');
       plte = true;
     } else if (kind === 'IDAT') {
       if (iend || idatEnded) throw new Error('screenshot is not a decoded PNG');

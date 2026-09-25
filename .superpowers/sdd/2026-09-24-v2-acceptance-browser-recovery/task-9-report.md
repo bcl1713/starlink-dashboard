@@ -65,3 +65,31 @@ python -m compileall -q tools/tests/test_v2_acceptance_browser_contract.py
 git diff --check
 # all exited 0
 ```
+
+## Re-review compatibility repair (round 2)
+
+### Root cause and TDD evidence
+
+The structural repair limited PLTE to `channels === 3`, which accidentally made the optional suggested palette invalid for an otherwise valid color-type-6 (RGBA) PNG. PNG permits a pre-IDAT PLTE for both accepted truecolor types (2 and 6). A real-ESM regression was added first using an exact 1920×1080, 8-bit RGBA image with CRC-valid IHDR, PLTE, IDAT, and IEND chunks; it was observed RED against the production adapter:
+
+```sh
+pytest -q tools/tests/test_v2_acceptance_browser_contract.py::test_production_adapter_accepts_valid_rgba_plte_viewport_screenshot -vv
+# 1 failed: screenshot is not a decoded PNG at `channels !== 3`
+```
+
+The PLTE gate now accepts only channel counts 3 or 4, which remains confined by the existing IHDR gate to color types 2 and 6. All other PLTE constraints remain unchanged: one chunk only, before IDAT, nonempty, at most 768 bytes, and a multiple of three; every chunk remains CRC-validated before interpretation.
+
+### Regression coverage and verification
+
+The real-ESM tests now accept a valid exact RGBA PNG with a bounded CRC-valid PLTE and reject empty, non-three-byte-aligned, and oversized PLTE payloads plus PLTE with an unsupported indexed color type. Existing strict CRC, IHDR-first, unknown-critical-chunk, IDAT consecutiveness, IEND-finality, filter-byte, exact dimensions, decoded-size, and 12 MiB source-cap coverage remains in place.
+
+```sh
+pytest -q tools/tests/test_v2_acceptance_browser_contract.py -k 'plte or rgba' -vv
+# 5 passed, 20 deselected in 1.45s
+pytest -q tools/tests/test_v2_acceptance_browser_contract.py tools/tests/test_acceptance_platform_runner.py
+# 70 passed in 7.39s
+node --check tools/acceptance/journeys/v2-mission-retirement.mjs
+python -m compileall -q tools/tests/test_v2_acceptance_browser_contract.py
+git diff --check
+# all exited 0
+```

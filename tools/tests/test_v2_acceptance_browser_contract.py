@@ -354,6 +354,53 @@ def test_production_adapter_accepts_only_safe_rgb_plte_structure(tmp_path: Path)
     assert json.loads(completed.stdout) == {"width": 1920, "height": 1080}
 
 
+def test_production_adapter_rejects_unsafe_plte_color_types_and_lengths(
+    tmp_path: Path,
+) -> None:
+    """PLTE is limited to valid truecolor forms and 1–256 RGB entries."""
+
+    signature = b"\x89PNG\r\n\x1a\n"
+    rgba_ihdr = _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1920, 1080, 8, 6, 0, 0, 0))
+    rgba_idat = _png_chunk(b"IDAT", zlib.compress(b"\0" * (1080 * (1920 * 4 + 1))))
+    valid_iend = _png_chunk(b"IEND", b"")
+    invalid_palette_lengths = (b"", b"\0" * 4, b"\0" * 769)
+    invalid_color_type = _png_chunk(
+        b"IHDR", struct.pack(">IIBBBBB", 1920, 1080, 8, 3, 0, 0, 0)
+    )
+    inputs = [
+        signature + rgba_ihdr + _png_chunk(b"PLTE", palette) + rgba_idat + valid_iend
+        for palette in invalid_palette_lengths
+    ] + [
+        signature
+        + invalid_color_type
+        + _png_chunk(b"PLTE", b"\0\0\0")
+        + _png_chunk(b"IDAT", zlib.compress(b"\0"))
+        + valid_iend
+    ]
+
+    for png in inputs:
+        completed = _run_production_png_parser(tmp_path, png)
+
+        assert completed.returncode != 0
+        assert "screenshot is not a decoded PNG" in completed.stderr
+
+
+def test_production_adapter_accepts_valid_rgba_plte_viewport_screenshot(
+    tmp_path: Path,
+) -> None:
+    """PLTE is optional, but valid, for truecolor-with-alpha PNGs."""
+
+    ihdr = _png_chunk(b"IHDR", struct.pack(">IIBBBBB", 1920, 1080, 8, 6, 0, 0, 0))
+    plte = _png_chunk(b"PLTE", b"\0\0\0")
+    idat = _png_chunk(b"IDAT", zlib.compress(b"\0" * (1080 * (1920 * 4 + 1))))
+    completed = _run_production_png_parser(
+        tmp_path, b"\x89PNG\r\n\x1a\n" + ihdr + plte + idat + _png_chunk(b"IEND", b"")
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {"width": 1920, "height": 1080}
+
+
 def test_production_adapter_retains_rgba_viewport_screenshot_validation(
     tmp_path: Path,
 ) -> None:
