@@ -905,8 +905,8 @@ def test_adapter_observation_is_schema_validated_and_retained() -> None:
     assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
 
 
-def test_adapter_observation_accepts_scoped_degraded_history_fallback() -> None:
-    """A scoped 503 is acceptable only when its documented fallback is observed."""
+def test_adapter_observation_rejects_degraded_history_without_scheduled_refetch() -> None:
+    """A degraded bootstrap is incomplete until its bounded refetch is observed."""
 
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
@@ -922,13 +922,65 @@ def test_adapter_observation_accepts_scoped_degraded_history_fallback() -> None:
     lifecycle["polling"]["observedScheduledRequests"] = 0
     payload["visible"]["historyFallback"] = "Aircraft history unavailable"
 
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
+def test_adapter_observation_accepts_scheduled_degraded_history_refetch() -> None:
+    """A scoped degraded bootstrap may retain bounded same-status scheduled refetches."""
+
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["history"] = {
+        "mode": "degraded",
+        "fallback": "Aircraft history unavailable",
+    }
+    for record in lifecycle["requests"]:
+        record["outcome"] = "degraded"
+        record["status"] = 503
+    lifecycle["polling"]["minimumScheduledRequests"] = 1
+    lifecycle["polling"]["observedScheduledRequests"] = 1
+    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+
     artifacts = runner._decode_adapter_artifacts(payload)
 
     observation = json.loads(artifacts["adapter-observation.json"])
-    assert observation["lifecycle"]["history"] == {
-        "fallback": "Aircraft history unavailable",
-        "mode": "degraded",
+    assert observation["lifecycle"]["requests"][1] == {
+        "cycle": "scheduled",
+        "finishedAt": 15.1,
+        "id": "2",
+        "outcome": "degraded",
+        "path": "/api/overview-history",
+        "startedAt": 15.0,
+        "status": 503,
     }
+
+
+@pytest.mark.parametrize(
+    ("outcome", "status"),
+    [("http_failed", 500), ("finished", 200), ("degraded", 200)],
+)
+def test_adapter_observation_rejects_unexpected_or_mixed_scheduled_degraded_status(
+    outcome: str, status: int
+) -> None:
+    """Scheduled degraded evidence must remain same-scoped terminal HTTP 503."""
+
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["history"] = {
+        "mode": "degraded",
+        "fallback": "Aircraft history unavailable",
+    }
+    for record in lifecycle["requests"]:
+        record["outcome"] = "degraded"
+        record["status"] = 503
+    lifecycle["polling"]["minimumScheduledRequests"] = 1
+    lifecycle["polling"]["observedScheduledRequests"] = 1
+    lifecycle["requests"][1].update({"outcome": outcome, "status": status})
+    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
 
 
 @pytest.mark.parametrize(

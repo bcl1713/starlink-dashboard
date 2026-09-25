@@ -277,6 +277,8 @@ def test_adapter_explicitly_classifies_visible_degraded_history_fallback() -> No
     assert "status === 503 ? 'degraded'" in card
     assert "Aircraft history unavailable" in card
     assert "history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' }" in card
+    assert "if (historyMode === 'live') await lifecycle.waitForScheduledPoll();" not in card
+    assert "minimumScheduledRequests: 1" in card
 
 
 def test_v2_adapter_executes_bounded_exact_semantic_readiness_locators(

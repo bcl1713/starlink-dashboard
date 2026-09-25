@@ -614,8 +614,8 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or polling["windowEnd"] < polling["windowStart"]
         or not isinstance(minimum, int)
         or not isinstance(observed, int)
-        or (history_mode == "live" and (minimum < 1 or observed < minimum))
-        or (history_mode == "degraded" and (minimum != 0 or observed != 0))
+        or minimum < 1
+        or observed < minimum
         ):
         raise ValueError("adapter observation is invalid")
     records: list[dict[str, object]] = []
@@ -654,20 +654,18 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
     if (
         len(bootstrap) != 1
         or len(scheduled) != observed
-        or (history_mode == "live" and len(scheduled) < minimum)
-        or (history_mode == "degraded" and scheduled)
+        or len(scheduled) < minimum
     ):
         raise ValueError("adapter observation is invalid")
     ordered = [bootstrap[0], *sorted(scheduled, key=lambda record: record["startedAt"])]
-    if history_mode == "live":
-        for previous, record in pairwise(ordered):
-            cadence_ms = (record["startedAt"] - previous["startedAt"]) * 1000
-            if (
-                record["startedAt"] < previous["finishedAt"]
-                or cadence_ms < cadence_min
-                or cadence_ms > cadence_max
-            ):
-                raise ValueError("adapter observation is invalid")
+    for previous, record in pairwise(ordered):
+        cadence_ms = (record["startedAt"] - previous["startedAt"]) * 1000
+        if (
+            record["startedAt"] < previous["finishedAt"]
+            or cadence_ms < cadence_min
+            or cadence_ms > cadence_max
+        ):
+            raise ValueError("adapter observation is invalid")
     if (
         polling["windowStart"] != bootstrap[0]["finishedAt"]
         or polling["windowEnd"] != ordered[-1]["finishedAt"]

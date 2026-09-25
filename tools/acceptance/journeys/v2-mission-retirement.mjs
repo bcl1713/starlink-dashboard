@@ -168,18 +168,18 @@ function scopedLifecycle(page) {
         await page.waitForTimeout(50);
       }
       const bootstrap = records.find((record) => record.cycle === 'bootstrap' && ['finished', 'degraded'].includes(record.outcome));
-      if (bootstrap.outcome === 'degraded') { historyMode = 'degraded'; return historyMode; }
-      historyMode = 'live';
+      historyMode = bootstrap.outcome === 'degraded' ? 'degraded' : 'live';
       pollingWindow = { windowStart: bootstrap.finishedAt, windowEnd: 0 };
       return historyMode;
     },
     async waitForScheduledPoll() {
       const deadline = Date.now() + POLLING_MAX_CADENCE_MS;
-      while (!records.some((record) => record.cycle === 'scheduled' && record.outcome === 'finished')) {
+      const outcome = historyMode === 'degraded' ? 'degraded' : 'finished';
+      while (!records.some((record) => record.cycle === 'scheduled' && record.outcome === outcome)) {
         if (Date.now() >= deadline) throw new Error('scoped V2 scheduled polling window coverage gap');
         await page.waitForTimeout(50);
       }
-      const scheduled = records.filter((record) => record.cycle === 'scheduled' && record.outcome === 'finished');
+      const scheduled = records.filter((record) => record.cycle === 'scheduled' && record.outcome === outcome);
       pollingWindow.windowEnd = scheduled.at(-1).finishedAt;
     },
     assertHealthy() {
@@ -188,11 +188,9 @@ function scopedLifecycle(page) {
       if (pending.length || !records.length) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
       const bootstrap = records.filter((record) => record.cycle === 'bootstrap');
       const scheduled = records.filter((record) => record.cycle === 'scheduled');
-      if (historyMode === 'degraded') {
-        if (bootstrap.length !== 1 || scheduled.length || bootstrap[0].outcome !== 'degraded' || bootstrap[0].status !== 503) throw new Error('scoped V2 degraded history lifecycle is incomplete or failed');
-        return;
-      }
-      if (historyMode !== 'live' || records.some((record) => record.outcome !== 'finished') || !pollingWindow?.windowEnd) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
+      const outcome = historyMode === 'degraded' ? 'degraded' : 'finished';
+      const status = historyMode === 'degraded' ? 503 : 200;
+      if (!['live', 'degraded'].includes(historyMode) || records.some((record) => record.outcome !== outcome || record.status !== status) || !pollingWindow?.windowEnd) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
       if (bootstrap.length !== 1 || scheduled.length < 1) throw new Error('scoped V2 polling cadence coverage gap');
       const ordered = [bootstrap[0], ...scheduled];
       for (let index = 1; index < ordered.length; index += 1) {
@@ -204,8 +202,7 @@ function scopedLifecycle(page) {
     observation() {
       const scheduled = records.filter((record) => record.cycle === 'scheduled');
       const degraded = historyMode === 'degraded';
-      const bootstrap = records.find((record) => record.cycle === 'bootstrap');
-      return { frameId, loaderId, history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' } : { mode: historyMode }, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, periodMs: POLLING_PERIOD_MS, cadenceMinMs: POLLING_MIN_CADENCE_MS, cadenceMaxMs: POLLING_MAX_CADENCE_MS, windowStart: degraded ? bootstrap?.finishedAt : pollingWindow?.windowStart, windowEnd: degraded ? bootstrap?.finishedAt : pollingWindow?.windowEnd, minimumScheduledRequests: degraded ? 0 : 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
+      return { frameId, loaderId, history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' } : { mode: historyMode }, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, periodMs: POLLING_PERIOD_MS, cadenceMinMs: POLLING_MIN_CADENCE_MS, cadenceMaxMs: POLLING_MAX_CADENCE_MS, windowStart: pollingWindow?.windowStart, windowEnd: pollingWindow?.windowEnd, minimumScheduledRequests: 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
     },
     async close() {
       await session?.detach().catch(() => {});
@@ -265,7 +262,7 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
     const historyFallback = historyMode === 'degraded'
       ? await page.getByText('Aircraft history unavailable', { exact: true }).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS }).then(() => 'Aircraft history unavailable')
       : undefined;
-    if (historyMode === 'live') await lifecycle.waitForScheduledPoll();
+    await lifecycle.waitForScheduledPoll();
     const post = await viewportArtifact(page, 'journey-post');
     lifecycle.assertHealthy();
     return { missionName, activation: 'browser-observed-200', lifecycle: lifecycle.observation(), visible: { ...visible, ...(historyFallback ? { historyFallback } : {}) }, artifacts: { ...pre, ...post } };
