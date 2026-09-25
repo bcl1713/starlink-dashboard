@@ -704,6 +704,7 @@ def _final_steps(
             "starlink-location": inputs.backend_port,
             "mission-planner": inputs.frontend_port,
         },
+        candidate_sha=inputs.sha,
     )
     resource_ready((topology, executor))
     try:

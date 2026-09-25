@@ -7,6 +7,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
+ARG ACCEPTANCE_CANDIDATE_SHA
+RUN test -n "$ACCEPTANCE_CANDIDATE_SHA"
+
 # Runtime stage
 FROM python:3.11-slim
 

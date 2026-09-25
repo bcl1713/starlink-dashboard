@@ -143,7 +143,7 @@ def test_real_root_config_uses_public_example_and_retains_only_contract_services
 ) -> None:
     repository = Path(__file__).resolve().parents[2]
     topology = render_task_override(
-        repository, CONTRACT, tmp_path, "acceptance-realroot", _ports()
+        repository, CONTRACT, tmp_path, "acceptance-realroot", _ports(), candidate_sha=SHA
     )
 
     resolved = resolve_topology(topology, CONTRACT, SubprocessComposeExecutor())
@@ -156,6 +156,57 @@ def test_real_root_config_uses_public_example_and_retains_only_contract_services
     )
     assert "prometheus" not in rendered["services"]
     assert "grafana" not in rendered["services"]
+
+
+def test_final_topology_binds_every_contract_service_to_the_exact_candidate_sha(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path, candidate_sha=SHA)
+    config = _resolved_config(topology)
+    for service in config["services"].values():
+        assert isinstance(service, dict)
+        service["build"] = {"context": "."}
+
+    resolve_topology(topology, CONTRACT, _executor(config=config))
+
+    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    assert topology.candidate_sha == SHA
+    assert {
+        name: rendered["services"][name]["build"]["args"]
+        for name in CONTRACT.services
+    } == {name: {"ACCEPTANCE_CANDIDATE_SHA": SHA} for name in CONTRACT.services}
+
+
+def test_render_task_override_rejects_invalid_candidate_sha(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="40-character lowercase hexadecimal"):
+        _topology(tmp_path, candidate_sha="not-a-candidate")
+
+
+def test_resolve_rejects_caller_controlled_build_arguments(tmp_path: Path) -> None:
+    topology = _topology(tmp_path, candidate_sha=SHA)
+    config = _resolved_config(topology)
+    for service in config["services"].values():
+        assert isinstance(service, dict)
+        service["build"] = {"context": ".", "args": {"CALLER": "controlled"}}
+
+    with pytest.raises(ValueError, match="build arguments are not permitted"):
+        resolve_topology(topology, CONTRACT, _executor(config=config))
+
+
+def test_final_build_rejects_candidate_key_mismatch_before_ledger_claim(
+    tmp_path: Path,
+) -> None:
+    topology = _topology(tmp_path, candidate_sha=SHA)
+    executor = _executor(config=_resolved_config(topology))
+    ledger = BuildLedger(tmp_path / "ledger")
+    mismatched_key = BuildLedgerKey("d" * 40, "b" * 64, "c" * 64)
+
+    resolve_topology(topology, CONTRACT, executor)
+
+    with pytest.raises(ValueError, match="candidate SHA"):
+        build_final(topology, PROFILE, CONTRACT, mismatched_key, ledger, executor)
+    assert not ledger.root.exists()
+    assert not any("build" in call for call in executor.calls)
 
 
 def test_resolve_rejects_external_resources_and_replaces_inherited_ports(
@@ -454,13 +505,18 @@ def _ports() -> dict[str, int]:
     return {"starlink-location": 18000, "mission-planner": 18001}
 
 
-def _topology(tmp_path: Path):
+def _topology(tmp_path: Path, *, candidate_sha: str = SHA):
     repository = tmp_path / "repo"
     repository.mkdir(parents=True)
     (repository / ".env.example").write_text("MODE=simulation\n", encoding="utf-8")
     (repository / "docker-compose.yml").write_text("services: {}\n", encoding="utf-8")
     return render_task_override(
-        repository, CONTRACT, tmp_path / "task", "acceptance-abc", _ports()
+        repository,
+        CONTRACT,
+        tmp_path / "task",
+        "acceptance-abc",
+        _ports(),
+        candidate_sha=candidate_sha,
     )
 
 
@@ -469,6 +525,7 @@ def _resolved_config(topology) -> dict[str, object]:
         "name": topology.project,
         "services": {
             "starlink-location": {
+                "build": {"context": "."},
                 "env_file": [str(topology.env_file)],
                 "ports": [
                     {"host_ip": "127.0.0.1", "published": "18000", "target": 8000}
@@ -477,6 +534,7 @@ def _resolved_config(topology) -> dict[str, object]:
                 "volumes": [{"source": "route_data", "target": "/data/routes"}],
             },
             "mission-planner": {
+                "build": {"context": "."},
                 "env_file": [str(topology.env_file)],
                 "ports": [{"host_ip": "127.0.0.1", "published": "18001", "target": 80}],
                 "depends_on": {"starlink-location": {"condition": "service_started"}},

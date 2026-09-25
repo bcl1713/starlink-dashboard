@@ -121,6 +121,7 @@ class SubprocessComposeExecutor:
 class TaskTopology:
     repository: Path
     project: str
+    candidate_sha: str
     services: tuple[str, ...]
     env_file: Path
     override_path: Path
@@ -243,9 +244,12 @@ def render_task_override(
     task_root: Path,
     project: str,
     ports: Mapping[str, int],
+    *,
+    candidate_sha: str,
 ) -> TaskTopology:
     """Prepare public input and a root env replacement; final config is rendered on resolve."""
     _validate_project(project)
+    _validate_candidate_sha(candidate_sha)
     if set(ports) != set(contract.services) or any(
         not 1 <= value <= 65535 for value in ports.values()
     ):
@@ -270,6 +274,7 @@ def render_task_override(
     return TaskTopology(
         repository,
         project,
+        candidate_sha,
         contract.services,
         env_file,
         override_path,
@@ -297,7 +302,9 @@ def resolve_topology(
         service = services[name]
         if not isinstance(service, dict):
             raise TypeError("resolved service is invalid")
-        selected[name] = _isolated_service(service, topology, name)
+        isolated = _isolated_service(service, topology, name)
+        _bind_candidate_build(isolated, topology.candidate_sha)
+        selected[name] = isolated
     _allocate_task_resources(final, topology)
     _validate_final_config(final, topology, contract)
     encoded = json.dumps(final, sort_keys=True, indent=2) + "\n"
@@ -360,6 +367,8 @@ def build_final(
     if profile.checksum != key.profile_checksum:
         raise ValueError("profile checksum does not match build ledger key")
     _validate_contract_checksum(contract, key)
+    if topology.candidate_sha != key.candidate_sha:
+        raise ValueError("topology candidate SHA does not match build ledger key")
     resolved = _validated_topology(topology, contract)
     try:
         claim = ledger.claim(key)
@@ -517,6 +526,16 @@ def _isolated_service(
     return result
 
 
+def _bind_candidate_build(service: dict[str, object], candidate_sha: str) -> None:
+    build = service.get("build")
+    if not isinstance(build, dict):
+        raise ValueError("contract service has no resolved build mapping")
+    args = build.get("args")
+    if args not in (None, {}):
+        raise ValueError("resolved service build arguments are not permitted")
+    service["build"] = {**build, "args": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha}}
+
+
 def _allocate_task_resources(final: dict[str, object], topology: TaskTopology) -> None:
     services = final["services"]
     assert isinstance(services, dict)
@@ -566,6 +585,7 @@ def _validate_final_config(
             service.get("ports"), topology.ports[name], _container_port(name)
         )
         _validate_dependencies(service.get("depends_on"), contract.services)
+        _validate_candidate_build(service.get("build"), topology.candidate_sha)
         if any(
             field in service
             for field in (
@@ -611,6 +631,13 @@ def _validate_contract_checksum(contract: ProductContract, key: BuildLedgerKey) 
         raise ValueError("contract checksum is not platform-derived")
     if contract.checksum != key.contract_checksum:
         raise ValueError("contract checksum does not match build ledger key")
+
+
+def _validate_candidate_build(value: object, candidate_sha: str) -> None:
+    if not isinstance(value, dict) or value.get("args") != {
+        "ACCEPTANCE_CANDIDATE_SHA": candidate_sha
+    }:
+        raise ValueError("resolved topology has invalid candidate build binding")
 
 
 def _task_volumes(value: object, service: str) -> list[dict[str, object]]:
@@ -772,6 +799,11 @@ def _container_port(service: str) -> int:
 def _validate_project(project: str) -> None:
     if not _PROJECT.fullmatch(project):
         raise ValueError("compose project must be a task-safe identifier")
+
+
+def _validate_candidate_sha(candidate_sha: str) -> None:
+    if not isinstance(candidate_sha, str) or not re.fullmatch(r"[0-9a-f]{40}", candidate_sha):
+        raise ValueError("candidate SHA must be a full 40-character lowercase hexadecimal value")
 
 
 def _key_digest(key: BuildLedgerKey) -> str:

@@ -340,7 +340,7 @@ def test_default_final_cleanup_runs_after_a_started_topology_substep_fails(
     executor = object()
 
     monkeypatch.setattr(runner, "SubprocessComposeExecutor", lambda *_: executor)
-    monkeypatch.setattr(runner, "render_task_override", lambda *_: topology)
+    monkeypatch.setattr(runner, "render_task_override", lambda *_, **__: topology)
     monkeypatch.setattr(
         runner,
         "resolve_topology",
