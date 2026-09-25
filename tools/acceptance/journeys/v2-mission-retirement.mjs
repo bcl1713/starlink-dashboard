@@ -42,15 +42,15 @@ function parse(argv) {
 
 async function pngDimensions(png) {
   if (png.length > 12 * 1024 * 1024 || !png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) throw new Error('screenshot is not a decoded PNG');
-  let offset = 8; let width = 0; let height = 0; let ihdr = false; let iend = false; const idat = [];
+  let offset = 8; let width = 0; let height = 0; let channels = 0; let ihdr = false; let iend = false; const idat = [];
   while (offset < png.length) {
     if (offset + 12 > png.length) throw new Error('screenshot is not a decoded PNG');
     const length = png.readUInt32BE(offset); const end = offset + 12 + length;
     if (end > png.length) throw new Error('screenshot is not a decoded PNG');
     const kind = png.toString('ascii', offset + 4, offset + 8); const data = png.subarray(offset + 8, offset + 8 + length);
     if (kind === 'IHDR') {
-      if (ihdr || length !== 13 || data.readUInt32BE(0) !== 1920 || data.readUInt32BE(4) !== 1080 || data[8] !== 8 || data[9] !== 6 || data[10] || data[11] || data[12]) throw new Error('screenshot is not a decoded PNG');
-      width = 1920; height = 1080; ihdr = true;
+      if (ihdr || length !== 13 || data.readUInt32BE(0) !== 1920 || data.readUInt32BE(4) !== 1080 || data[8] !== 8 || ![2, 6].includes(data[9]) || data[10] || data[11] || data[12]) throw new Error('screenshot is not a decoded PNG');
+      width = 1920; height = 1080; channels = data[9] === 2 ? 3 : 4; ihdr = true;
     } else if (kind === 'IDAT') {
       if (!ihdr || iend) throw new Error('screenshot is not a decoded PNG');
       idat.push(data);
@@ -60,7 +60,7 @@ async function pngDimensions(png) {
     }
     offset = end;
   }
-  const expected = height * (width * 4 + 1);
+  const expected = height * (width * channels + 1);
   if (!ihdr || !iend || !idat.length) throw new Error('screenshot is not a decoded PNG');
   const inflater = createInflate({ chunkSize: 64 * 1024 }); const chunks = []; let total = 0;
   try {
@@ -70,7 +70,7 @@ async function pngDimensions(png) {
     });
   } catch { inflater.destroy(); throw new Error('screenshot is not a decoded PNG'); }
   const decoded = Buffer.concat(chunks, total);
-  if (total !== expected || decoded.some((value, index) => index % (width * 4 + 1) === 0 && value > 4)) throw new Error('screenshot is not a decoded PNG');
+  if (total !== expected || decoded.some((value, index) => index % (width * channels + 1) === 0 && value > 4)) throw new Error('screenshot is not a decoded PNG');
   return { width, height };
 }
 

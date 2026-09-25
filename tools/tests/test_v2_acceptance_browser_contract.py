@@ -1,5 +1,8 @@
 import os
+import json
+import struct
 import subprocess
+import zlib
 from pathlib import Path
 
 BROWSER_SCRIPT = (
@@ -203,3 +206,130 @@ exports.chromium = { connectOverCDP: async () => ({
     assert completed.returncode == 1
     assert "platform-supplied browser session has no context" in completed.stderr
     assert closed.read_text(encoding="utf-8") == "closed"
+
+
+def _png_chunk(kind: bytes, content: bytes) -> bytes:
+    return (
+        struct.pack(">I", len(content))
+        + kind
+        + content
+        + struct.pack(">I", zlib.crc32(kind + content) & 0xFFFFFFFF)
+    )
+
+
+def _decoded_png(
+    color_type: int,
+    raw: bytes | None = None,
+    width: int = 1920,
+    height: int = 1080,
+) -> bytes:
+    """Build a valid 8-bit PNG with decoded scanlines for its color type."""
+
+    channels = {2: 3, 6: 4}[color_type]
+    scanlines = raw if raw is not None else b"\0" * (height * (width * channels + 1))
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + _png_chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, color_type, 0, 0, 0))
+        + _png_chunk(b"IDAT", zlib.compress(scanlines))
+        + _png_chunk(b"IEND", b"")
+    )
+
+
+def _run_production_png_parser(tmp_path: Path, png: bytes) -> subprocess.CompletedProcess[str]:
+    """Execute the shipped ESM parser, exposing only its otherwise-private helper."""
+
+    repository = tmp_path / "repository"
+    adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+    package = repository / "frontend/mission-planner/package.json"
+    playwright = repository / "frontend/mission-planner/node_modules/@playwright/test"
+    png_path = tmp_path / "screenshot.png"
+    adapter.parent.mkdir(parents=True, exist_ok=True)
+    adapter.write_text(
+        ADAPTER_SCRIPT.read_text(encoding="utf-8") + "\nexport { pngDimensions };\n",
+        encoding="utf-8",
+    )
+    package.parent.mkdir(parents=True, exist_ok=True)
+    package.write_text('{"name":"png-parser-test"}\n', encoding="utf-8")
+    playwright.mkdir(parents=True, exist_ok=True)
+    (playwright / "index.js").write_text("exports.chromium = {};\n", encoding="utf-8")
+    png_path.write_bytes(png)
+    return subprocess.run(
+        [
+            "node",
+            "--input-type=module",
+            "--eval",
+            (
+                "import { readFileSync } from 'node:fs';"
+                f"import {{ pngDimensions }} from {json.dumps(adapter.as_uri())};"
+                "process.stdout.write(JSON.stringify(await pngDimensions(readFileSync(process.argv[1]))));"
+            ),
+            str(png_path),
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+
+def test_production_adapter_accepts_valid_opaque_rgb_viewport_screenshot(
+    tmp_path: Path,
+) -> None:
+    """A fully decoded color-type-2 headed screenshot reaches the artifact raster path."""
+
+    completed = _run_production_png_parser(tmp_path, _decoded_png(2))
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {"width": 1920, "height": 1080}
+
+
+def test_production_adapter_retains_rgba_viewport_screenshot_validation(
+    tmp_path: Path,
+) -> None:
+    completed = _run_production_png_parser(tmp_path, _decoded_png(6))
+
+    assert completed.returncode == 0, completed.stderr
+    assert json.loads(completed.stdout) == {"width": 1920, "height": 1080}
+
+
+def test_production_adapter_rejects_unsupported_png_color_types(tmp_path: Path) -> None:
+    for color_type in (0, 3, 4):
+        png = (
+            b"\x89PNG\r\n\x1a\n"
+            + _png_chunk(
+                b"IHDR", struct.pack(">IIBBBBB", 1920, 1080, 8, color_type, 0, 0, 0)
+            )
+            + _png_chunk(b"IDAT", zlib.compress(b"\0"))
+            + _png_chunk(b"IEND", b"")
+        )
+        completed = _run_production_png_parser(tmp_path, png)
+
+        assert completed.returncode != 0
+        assert "screenshot is not a decoded PNG" in completed.stderr
+
+
+def test_production_adapter_rejects_invalid_decoded_length_for_rgb_and_rgba(
+    tmp_path: Path,
+) -> None:
+    for color_type in (2, 6):
+        channels = {2: 3, 6: 4}[color_type]
+        invalid_scanlines = b"\0" * (1080 * (1920 * channels + 1) - 1)
+        completed = _run_production_png_parser(
+            tmp_path, _decoded_png(color_type, invalid_scanlines)
+        )
+
+        assert completed.returncode != 0
+        assert "screenshot is not a decoded PNG" in completed.stderr
+
+
+def test_production_adapter_rejects_pngs_over_twelve_mebibytes(tmp_path: Path) -> None:
+    completed = _run_production_png_parser(tmp_path, b"\x89PNG\r\n\x1a\n" + b"x" * (12 * 1024 * 1024))
+
+    assert completed.returncode != 0
+    assert "screenshot is not a decoded PNG" in completed.stderr
+
+
+def test_production_adapter_rejects_non_exact_viewport_dimensions(tmp_path: Path) -> None:
+    completed = _run_production_png_parser(tmp_path, _decoded_png(2, width=1919))
+
+    assert completed.returncode != 0
+    assert "screenshot is not a decoded PNG" in completed.stderr
