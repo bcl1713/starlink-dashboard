@@ -91,3 +91,47 @@ git diff --check
 ```
 
 Result: `69 passed in 3.16s`; compile and diff checks exited `0`.
+
+## Review-fix round 2 — private final disposition
+
+### RED
+
+```text
+python -m pytest \
+  tools/tests/test_acceptance_platform_health.py::test_session_cleanup_keeps_replacement_bound_during_private_final_disposal -q
+```
+
+Result: `1 failed in 0.16s`.
+
+- The exchange-guard implementation had no private final-disposal path; its
+  final cleanup never entered a task-private `.task-xvfb-*` parent, so the
+  regression assertion that injected a replacement at that phase failed.
+
+### GREEN
+
+- Cleanup atomically renames the public display entry into a newly created
+  mode-`0700` task quarantine, then checks the recorded socket identity there.
+- A matching task socket is unlinked only below that private parent. A server
+  that binds the public display path after the atomic rename is never an unlink
+  target for this task.
+- A nonmatching entry is left quarantined and the cleanup error reports its
+  location for later trusted-parent handling; it is not restored over any
+  potentially new public display binding.
+
+```text
+python -m pytest \
+  tools/tests/test_acceptance_platform_health.py::test_session_cleanup_keeps_replacement_bound_during_private_final_disposal -q
+```
+
+Result: `1 passed in 0.06s`.
+
+### Verification
+
+```text
+python -m pytest tools/tests/test_acceptance_platform_runner.py \
+  tools/tests/test_acceptance_platform_health.py -q
+python -m compileall -q tools/acceptance/platform tools/tests
+git diff --check
+```
+
+Result: `70 passed in 11.08s`; compile, Black, and diff checks exited `0`.

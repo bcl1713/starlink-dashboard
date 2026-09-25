@@ -247,10 +247,10 @@ def test_session_cleanup_removes_owned_xvfb_socket_only_after_xvfb_exits(
     assert not socket_path.exists()
 
 
-def test_session_cleanup_does_not_unlink_a_socket_rebound_at_the_x_display_path(
+def test_session_cleanup_quarantines_a_socket_rebound_before_atomic_claim(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """A post-exit X server must survive a stale task socket cleanup race."""
+    """A socket that wins the claim race is preserved for trusted follow-up."""
     from acceptance.platform import health
 
     monkeypatch.chdir(tmp_path)
@@ -262,23 +262,68 @@ def test_session_cleanup_does_not_unlink_a_socket_rebound_at_the_x_display_path(
     bundle = _Bundle()
     monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
     session = start_final_browser_session(_profile(), tmp_path, _executor(bundle))
-    original_rename_exchange = health._rename_exchange
+    original_rename = health.os.rename
 
     replaced = False
+    quarantined_path: Path | None = None
 
-    def replace_before_claim(source: Path, guard: Path) -> None:
-        nonlocal replaced
+    def replace_before_claim(source: str | Path, target: str | Path) -> None:
+        nonlocal replaced, quarantined_path
         if source == socket_path and not replaced:
             replaced = True
             socket_path.unlink()
             replacement_socket.bind(str(socket_path))
-        original_rename_exchange(source, guard)
+            quarantined_path = Path(target)
+        original_rename(source, target)
 
-    monkeypatch.setattr(health, "_rename_exchange", replace_before_claim)
+    monkeypatch.setattr(health.os, "rename", replace_before_claim)
 
     try:
-        with pytest.raises(ValueError, match="task X display socket changed after Xvfb exit"):
+        with pytest.raises(
+            ValueError, match="task X display socket changed after Xvfb exit"
+        ):
             session.close()
+        assert quarantined_path is not None and quarantined_path.exists()
+        assert health._socket_identity(quarantined_path) != stale_identity
+    finally:
+        stale_socket.close()
+        replacement_socket.close()
+        socket_path.unlink(missing_ok=True)
+
+
+def test_session_cleanup_keeps_replacement_bound_during_private_final_disposal(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A server binding during final stale-socket disposal keeps its display path."""
+    from acceptance.platform import health
+
+    monkeypatch.chdir(tmp_path)
+    socket_path = Path("X123-final-race")
+    stale_socket = __import__("socket").socket(__import__("socket").AF_UNIX)
+    stale_socket.bind(str(socket_path))
+    stale_identity = health._socket_identity(socket_path)
+    replacement_socket = __import__("socket").socket(__import__("socket").AF_UNIX)
+    bundle = _Bundle()
+    monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+    session = start_final_browser_session(_profile(), tmp_path, _executor(bundle))
+    original_unlink = health.os.unlink
+    replaced = False
+
+    def replace_during_private_disposal(
+        candidate: str | Path, *args: object, **kwargs: object
+    ) -> None:
+        nonlocal replaced
+        candidate_path = Path(candidate)
+        if candidate_path.parent.name.startswith(".task-xvfb-") and not replaced:
+            replaced = True
+            replacement_socket.bind(str(socket_path))
+        original_unlink(candidate, *args, **kwargs)
+
+    monkeypatch.setattr(health.os, "unlink", replace_during_private_disposal)
+
+    try:
+        session.close()
+        assert replaced
         assert socket_path.exists()
         assert health._socket_identity(socket_path) != stale_identity
     finally:
