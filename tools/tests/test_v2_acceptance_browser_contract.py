@@ -215,23 +215,87 @@ def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> N
     assert card.index("process.stderr.write") < card.index("() => process.exit(1),")
 
 
-def test_v2_adapter_bounds_semantic_route_and_distinct_poi_row_readiness() -> None:
-    """Static panels cannot satisfy readiness before the bound route and distinct POI rows."""
-    source = adapter_source()
+def test_v2_adapter_executes_bounded_exact_semantic_readiness_locators(
+    tmp_path: Path,
+) -> None:
+    """Only exact named POI cells in two body rows can satisfy the executed waits."""
+    repository = tmp_path / "repository"
+    adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+    package = repository / "frontend/mission-planner/package.json"
+    playwright = repository / "frontend/mission-planner/node_modules/@playwright/test"
+    adapter.parent.mkdir(parents=True)
+    adapter.write_text(
+        ADAPTER_SCRIPT.read_text(encoding="utf-8")
+        + "\nexport { assertSemanticOverview };\n",
+        encoding="utf-8",
+    )
+    package.parent.mkdir(parents=True)
+    package.write_text('{"name":"semantic-readiness-test"}\n', encoding="utf-8")
+    playwright.mkdir(parents=True)
+    (playwright / "index.js").write_text("exports.chromium = {};\n", encoding="utf-8")
+    program = r"""
+const { assertSemanticOverview } = await import(process.argv[1]);
+const timeout = 10_000;
+class Locator {
+  constructor(page, kind, rows = null, exact = null) { Object.assign(this, { page, kind, rows, exact }); }
+  getByText(text, options = {}) {
+    if (this.kind === 'legend') return new Locator(this.page, 'route', null, options.exact ? text : null);
+    if (this.kind === 'cells') return new Locator(this.page, 'cells', null, options.exact ? text : null);
+    throw new Error(`unexpected getByText on ${this.kind}`);
+  }
+  locator(selector) {
+    if (this.kind === 'poi-panel' && selector === 'tbody tr') return new Locator(this.page, 'rows', this.page.rows);
+    if (this.kind === 'rows' && selector === 'td:nth-child(2)') return new Locator(this.page, 'cells');
+    throw new Error(`unexpected locator ${this.kind} ${selector}`);
+  }
+  filter(options) {
+    if (this.kind !== 'rows') throw new Error('filter must be scoped to body rows');
+    if (options.has?.kind === 'cells') return new Locator(this.page, 'rows', this.rows.filter((row) => row.name === options.has.exact));
+    if (options.hasText) return new Locator(this.page, 'rows', this.rows.filter((row) => row.name.includes(options.hasText)));
+    if (options.hasNotText) return new Locator(this.page, 'rows', this.rows.filter((row) => !row.name.includes(options.hasNotText)));
+    throw new Error('unexpected row filter');
+  }
+  first() { return new Locator(this.page, this.kind, this.rows?.slice(0, 1), this.exact); }
+  nth(index) { return new Locator(this.page, this.kind, this.rows?.slice(index, index + 1), this.exact); }
+  async waitFor(options) {
+    this.page.waits.push({ kind: this.kind, exact: this.exact, rows: this.rows?.map((row) => row.name), options });
+    const visible = this.kind === 'route' ? this.page.route === this.exact : this.rows?.length > 0;
+    if (!visible) throw new Error('not visible');
+  }
+  async count() { return this.rows.length; }
+  async innerText() { return this.kind === 'route' ? this.page.route : this.rows[0].name; }
+}
+const page = (route, rows) => ({
+  route, rows, waits: [],
+  getByLabel(name) { return new Locator(this, name === 'Globe legend' ? 'legend' : 'poi-panel'); },
+  evaluate: async () => {},
+});
+for (const candidate of [
+  page('V2 Acceptance Route KAAA-KBBB', []),
+  page('V2 Acceptance Route KAAA-KBBB', [{ name: 'KAAA1' }, { name: 'prefix-KBBB' }]),
+  page('V2 Acceptance Route KAAA-KBBB', [{ name: 'KAAA' }, { name: 'KAAA' }]),
+]) {
+  await assertSemanticOverview(candidate).then(
+    () => { throw new Error('static, decoy, or non-distinct POI rows were accepted'); },
+    () => {},
+  );
+}
+const ready = page('V2 Acceptance Route KAAA-KBBB', [{ name: 'KAAA' }, { name: 'KBBB' }]);
+const visible = await assertSemanticOverview(ready);
+if (visible.poiRows !== 2 || visible.firstPoi !== 'KAAA' || visible.secondPoi !== 'KBBB') throw new Error('exact readiness result was not observed');
+if (ready.waits.length !== 4 || ready.waits.some(({ options }) => options.state !== 'visible' || options.timeout !== timeout)) throw new Error('executed readiness waits are not bounded');
+if (!ready.waits.some(({ kind, exact }) => kind === 'route' && exact === 'V2 Acceptance Route KAAA-KBBB')) throw new Error('route readiness was not scoped to the legend locator');
+if (!ready.waits.some(({ kind, rows }) => kind === 'rows' && rows?.join(',') === 'KAAA')) throw new Error('KAAA exact body row was not waited');
+if (!ready.waits.some(({ kind, rows }) => kind === 'rows' && rows?.join(',') === 'KBBB')) throw new Error('KBBB exact body row was not waited');
+"""
+    completed = subprocess.run(
+        ["node", "--input-type=module", "--eval", program, adapter.as_uri()],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
 
-    assert "const SEMANTIC_READINESS_TIMEOUT_MS = 10_000;" in source
-    assert "V2 Acceptance Route KAAA-KBBB" in source
-    assert "const poiRows = poiPanel.locator('tbody tr');" in source
-    assert "const kAaaPoiRow = poiRows.filter({ hasText: 'KAAA' }).filter({ hasNotText: 'KBBB' });" in source
-    assert "const kBbbPoiRow = poiRows.filter({ hasText: 'KBBB' }).filter({ hasNotText: 'KAAA' });" in source
-    assert "await routeName.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });" in source
-    assert "await kAaaPoiRow.first().waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });" in source
-    assert "await kBbbPoiRow.first().waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });" in source
-    assert "await poiRows.nth(1).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });" in source
-    assert "(await poiRows.count()) < 2" in source
-    assert "await routeName.isVisible()" not in source
-    assert "await kAaaPoiRow.first().isVisible()" not in source
-    assert "await kBbbPoiRow.first().isVisible()" not in source
+    assert completed.returncode == 0, completed.stderr
 
 
 def test_production_adapter_closes_real_attachment_before_failure_exit(
