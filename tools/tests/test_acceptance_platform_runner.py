@@ -287,9 +287,23 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
     assert "--no-cache" not in build_argv
     assert started is False
     assert result.exit_code == 1
+    expected_supervision = {
+        "policy_version": "build_supervision.v1",
+        "stall_window_seconds": 600,
+        "hard_deadline_seconds": 1800,
+        "elapsed_seconds": 600.0,
+        "last_progress_kind": "stage",
+        "last_progress_elapsed_seconds": 0.0,
+    }
+    candidate = tmp_path / "evidence" / "candidates" / SHA
     assert result.manifest["primary"]["detail"].startswith("build_stalled:")
     assert result.manifest["final_acceptance"] is False
+    assert result.manifest["build_supervision"] == expected_supervision
     assert not runner._candidate_is_discoverable(tmp_path / "evidence", SHA)
+    verify_manifest(candidate)
+    retained = json.loads((candidate / "runner-manifest.json").read_text(encoding="utf-8"))
+    assert retained["final_acceptance"] is False
+    assert retained["build_supervision"] == expected_supervision
 
     topology = executor.topology
     assert topology is not None
