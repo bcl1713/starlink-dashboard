@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-
 from acceptance.platform.compose import (
     BoundedComposeDiagnostics,
     BuildLedger,
@@ -17,6 +16,7 @@ from acceptance.platform.compose import (
     BuildSupervisionFailure,
     CommandResult,
     SubprocessComposeExecutor,
+    TaskTopology,
     build_final,
     cleanup_compose,
     reconcile_build,
@@ -68,6 +68,23 @@ def test_typed_fixture_configures_executor_without_method_reassignment() -> None
 def test_require_override_path_rejects_missing_optional_path() -> None:
     with pytest.raises(ValueError, match="rendered override path is required"):
         require_override_path(None)
+
+
+def test_task_topology_rejects_missing_override_at_compose_boundary(tmp_path: Path) -> None:
+    topology = TaskTopology(
+        tmp_path,
+        "acceptance-typed",
+        SHA,
+        CONTRACT.services,
+        tmp_path / "compose.env",
+        None,
+        tmp_path / "compose.root-public-env.yml",
+        tmp_path / "topology.validated.json",
+        {"starlink-location": 18000, "mission-planner": 15173},
+    )
+
+    with pytest.raises(ValueError, match="rendered override path is required"):
+        _ = topology.argv
 
 
 def _complete_two_image_log(project: str = "acceptance-abc") -> str:

@@ -308,10 +308,15 @@ class TaskTopology:
     candidate_sha: str
     services: tuple[str, ...]
     env_file: Path
-    override_path: Path
+    override_path: Path | None
     root_override_path: Path
     validation_path: Path
     ports: Mapping[str, int]
+
+    @property
+    def rendered_override_path(self) -> Path:
+        """Return the rendered final topology only where Compose requires it."""
+        return require_override_path(self.override_path)
 
     @property
     def argv(self) -> tuple[str, ...]:
@@ -324,7 +329,7 @@ class TaskTopology:
             "--env-file",
             str(self.env_file),
             "-f",
-            str(self.override_path),
+            str(self.rendered_override_path),
         )
 
     @property
@@ -474,6 +479,7 @@ def resolve_topology(
     topology: TaskTopology, contract: ProductContract, executor: ComposeExecutor
 ) -> ResolvedTopology:
     """Extract a real root config without private .env, then seal a two-service config."""
+    override_path = topology.rendered_override_path
     result = executor.run((*topology.root_argv, "config", "--format", "json"))
     if result.returncode:
         raise ValueError("compose config resolution failed")
@@ -494,8 +500,8 @@ def resolve_topology(
     _allocate_task_resources(final, topology)
     _validate_final_config(final, topology, contract)
     encoded = json.dumps(final, sort_keys=True, indent=2) + "\n"
-    topology.override_path.write_text(encoded, encoding="utf-8")
-    os.chmod(topology.override_path, 0o600)
+    override_path.write_text(encoded, encoding="utf-8")
+    os.chmod(override_path, 0o600)
     final_result = executor.run((*topology.argv, "config", "--format", "json"))
     if final_result.returncode:
         raise ValueError("final task compose config resolution failed")
@@ -614,7 +620,7 @@ def start_no_build(
         raise ValueError("final build ledger is not usable; startup is blocked")
     if record.get("topology_digest") != resolved.digest:
         raise ValueError("final build proof is stale for the validated topology")
-    claim = topology.override_path.parent / f"startup-{_key_digest(key)}.claim"
+    claim = topology.rendered_override_path.parent / f"startup-{_key_digest(key)}.claim"
     try:
         fd = os.open(claim, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     except FileExistsError as error:
@@ -802,13 +808,14 @@ def _validate_final_config(
 def _validated_topology(
     topology: TaskTopology, contract: ProductContract
 ) -> ResolvedTopology:
-    if not topology.validation_path.is_file() or not topology.override_path.is_file():
+    override_path = topology.rendered_override_path
+    if not topology.validation_path.is_file() or not override_path.is_file():
         raise ValueError("topology is not validated")
     try:
         record = json.loads(topology.validation_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         raise ValueError("topology is not validated") from error
-    digest = _sha256(topology.override_path.read_bytes())
+    digest = _sha256(override_path.read_bytes())
     if (
         not isinstance(record, dict)
         or record.get("project") != topology.project

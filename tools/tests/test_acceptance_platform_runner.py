@@ -6,8 +6,9 @@ import json
 import struct
 import subprocess
 import zlib
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 from acceptance.platform import runner
@@ -18,11 +19,18 @@ from acceptance.platform.compose import (
     BuildReconciliation,
     BuildSupervisionFailure,
     CommandResult,
+    TaskTopology,
 )
 from acceptance.platform.contracts import load_product_contract
 from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
 from acceptance.platform.failures import PlatformFailure, raise_with_platform_metadata
-from acceptance.platform.model import BrowserProfile, Lane, Outcome, PlatformProfile
+from acceptance.platform.model import (
+    BrowserProfile,
+    Lane,
+    Outcome,
+    PlatformProfile,
+    ProductContract,
+)
 from acceptance.platform.runner import RunnerDependencies, main, run
 
 SHA = "a" * 40
@@ -165,6 +173,45 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
     }
 
 
+def _copy_payload_object(payload: dict[str, object], field: str) -> dict[str, object]:
+    value = payload.get(field)
+    if not isinstance(value, dict):
+        raise TypeError(f"test payload field {field} must be an object")
+    copied = dict(value)
+    payload[field] = copied
+    return copied
+
+
+def _copy_nested_payload_object(
+    payload: dict[str, object], parent: str, field: str
+) -> dict[str, object]:
+    parent_copy = _copy_payload_object(payload, parent)
+    value = parent_copy.get(field)
+    if not isinstance(value, dict):
+        raise TypeError(f"test payload field {parent}.{field} must be an object")
+    copied = dict(value)
+    parent_copy[field] = copied
+    return copied
+
+
+def _copy_payload_list(payload: dict[str, object], field: str) -> list[object]:
+    value = payload.get(field)
+    if not isinstance(value, list):
+        raise TypeError(f"test payload field {field} must be a list")
+    copied = list(value)
+    payload[field] = copied
+    return copied
+
+
+def _copy_payload_list_object(items: list[object], index: int) -> dict[str, object]:
+    value = items[index]
+    if not isinstance(value, dict):
+        raise TypeError(f"test payload list item {index} must be an object")
+    copied = dict(value)
+    items[index] = copied
+    return copied
+
+
 @pytest.mark.parametrize("lane", ["static", "diagnostic"])
 def test_nonfinal_lanes_cannot_serialize_final_pass(tmp_path: Path, lane: str) -> None:
     manifest = run(
@@ -221,7 +268,7 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
     build_argv: tuple[str, ...] | None = None
 
     class StalledExecutor:
-        topology: object | None = None
+        topology: TaskTopology | None = None
 
         def run(
             self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
@@ -232,7 +279,7 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
                     assert self.topology is not None
                     return CommandResult(
                         0,
-                        self.topology.override_path.read_text(encoding="utf-8"),
+                        self.topology.rendered_override_path.read_text(encoding="utf-8"),
                     )
                 return CommandResult(
                     0,
@@ -277,8 +324,18 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
     executor = StalledExecutor()
     original_render = runner.render_task_override
 
-    def render(*args: object, **kwargs: object) -> object:
-        topology = original_render(*args, **kwargs)
+    def render(
+        repository: Path,
+        contract: ProductContract,
+        task_root: Path,
+        project: str,
+        ports: Mapping[str, int],
+        *,
+        candidate_sha: str,
+    ) -> TaskTopology:
+        topology = original_render(
+            repository, contract, task_root, project, ports, candidate_sha=candidate_sha
+        )
         executor.topology = topology
         return topology
 
@@ -323,7 +380,7 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
 
     topology = executor.topology
     assert topology is not None
-    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
+    rendered = json.loads(topology.rendered_override_path.read_text(encoding="utf-8"))
     assert {
         name: service["build"]["args"]
         for name, service in rendered["services"].items()
@@ -463,7 +520,9 @@ def test_build_supervision_projects_observed_utc_interval_and_elapsed() -> None:
     ],
 )
 def test_production_final_steps_rejects_invalid_closed_ledger_supervision_into_failure_evidence(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, supervision: object
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    supervision: Mapping[str, object] | None,
 ) -> None:
     _install_supervised_final_build(monkeypatch, supervision, "build_stalled")
 
@@ -533,7 +592,9 @@ def _production_final_dependencies() -> RunnerDependencies:
 
 
 def _install_supervised_final_build(
-    monkeypatch: pytest.MonkeyPatch, supervision: object, kind: str
+    monkeypatch: pytest.MonkeyPatch,
+    supervision: Mapping[str, object] | None,
+    kind: str,
 ) -> None:
     class Adapter:
         sha256 = "c" * 64
@@ -542,17 +603,16 @@ def _install_supervised_final_build(
             pass
 
     monkeypatch.setattr(runner, "_open_adapter_source", lambda *_: Adapter())
-    monkeypatch.setattr(runner, "render_task_override", lambda *_args, **_kwargs: object())
     monkeypatch.setattr(runner, "resolve_topology", lambda *_: None)
 
     def fail_build(
-        _topology: object,
-        _profile: object,
-        _contract: object,
-        key: object,
-        ledger: object,
+        _topology: TaskTopology,
+        _profile: PlatformProfile,
+        _contract: ProductContract,
+        key: BuildLedgerKey,
+        ledger: BuildLedger,
         _executor: object,
-    ) -> object:
+    ) -> BuildReconciliation:
         claim = ledger.claim(key)
         ledger.close(
             claim,
@@ -577,7 +637,7 @@ def test_final_runner_replaces_caller_origin_with_its_exact_loopback_frontend_po
 
     class Session:
         cdp_url = "http://127.0.0.1:9222"
-        artifacts: dict[str, bytes] = {}
+        artifacts: ClassVar[dict[str, bytes]] = {}
 
         def close(self) -> None:
             pass
@@ -1382,7 +1442,8 @@ setInterval(() => {}, 1_000);
 
 def test_adapter_rejects_extra_or_aggregate_oversize_artifacts() -> None:
     payload = _adapter_payload()
-    payload["artifacts"]["unexpected.bin"] = "eA=="
+    artifacts = _copy_payload_object(payload, "artifacts")
+    artifacts["unexpected.bin"] = "eA=="
     with pytest.raises(ValueError, match="allowlist"):
         runner._decode_adapter_artifacts(payload)
 
@@ -1407,7 +1468,8 @@ def test_adapter_observation_rejects_unproven_polling_cadence(
     field: str, value: int
 ) -> None:
     payload = _adapter_payload()
-    payload["lifecycle"]["polling"][field] = value
+    polling = _copy_nested_payload_object(payload, "lifecycle", "polling")
+    polling[field] = value
 
     with pytest.raises(ValueError, match="adapter observation"):
         runner._decode_adapter_artifacts(payload)
@@ -1415,7 +1477,10 @@ def test_adapter_observation_rejects_unproven_polling_cadence(
 
 def test_adapter_observation_rejects_overlapping_scheduled_history_request() -> None:
     payload = _adapter_payload()
-    payload["lifecycle"]["requests"][1]["startedAt"] = 10.05
+    lifecycle = _copy_payload_object(payload, "lifecycle")
+    requests = _copy_payload_list(lifecycle, "requests")
+    scheduled = _copy_payload_list_object(requests, 1)
+    scheduled["startedAt"] = 10.05
 
     with pytest.raises(ValueError, match="adapter observation"):
         runner._decode_adapter_artifacts(payload)
