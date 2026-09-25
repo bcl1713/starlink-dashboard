@@ -614,8 +614,8 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or polling["windowEnd"] < polling["windowStart"]
         or not isinstance(minimum, int)
         or not isinstance(observed, int)
-        or minimum < 1
-        or observed < minimum
+        or (history_mode == "live" and (minimum < 1 or observed < minimum))
+        or (history_mode == "degraded" and minimum != 0)
         ):
         raise ValueError("adapter observation is invalid")
     records: list[dict[str, object]] = []

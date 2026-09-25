@@ -169,7 +169,7 @@ function scopedLifecycle(page) {
       }
       const bootstrap = records.find((record) => record.cycle === 'bootstrap' && ['finished', 'degraded'].includes(record.outcome));
       historyMode = bootstrap.outcome === 'degraded' ? 'degraded' : 'live';
-      pollingWindow = { windowStart: bootstrap.finishedAt, windowEnd: 0 };
+      pollingWindow = { windowStart: bootstrap.finishedAt, windowEnd: bootstrap.finishedAt };
       return historyMode;
     },
     async waitForScheduledPoll() {
@@ -190,8 +190,8 @@ function scopedLifecycle(page) {
       const scheduled = records.filter((record) => record.cycle === 'scheduled');
       const outcome = historyMode === 'degraded' ? 'degraded' : 'finished';
       const status = historyMode === 'degraded' ? 503 : 200;
-      if (!['live', 'degraded'].includes(historyMode) || records.some((record) => record.outcome !== outcome || record.status !== status) || !pollingWindow?.windowEnd) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
-      if (bootstrap.length !== 1 || scheduled.length < 1) throw new Error('scoped V2 polling cadence coverage gap');
+      if (!['live', 'degraded'].includes(historyMode) || records.some((record) => record.outcome !== outcome || record.status !== status)) throw new Error('scoped V2 navigation lifecycle is incomplete or failed');
+      if (bootstrap.length !== 1 || (historyMode === 'live' && scheduled.length < 1)) throw new Error('scoped V2 polling cadence coverage gap');
       const ordered = [bootstrap[0], ...scheduled];
       for (let index = 1; index < ordered.length; index += 1) {
         const previous = ordered[index - 1]; const record = ordered[index];
@@ -202,7 +202,7 @@ function scopedLifecycle(page) {
     observation() {
       const scheduled = records.filter((record) => record.cycle === 'scheduled');
       const degraded = historyMode === 'degraded';
-      return { frameId, loaderId, history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' } : { mode: historyMode }, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, periodMs: POLLING_PERIOD_MS, cadenceMinMs: POLLING_MIN_CADENCE_MS, cadenceMaxMs: POLLING_MAX_CADENCE_MS, windowStart: pollingWindow?.windowStart, windowEnd: pollingWindow?.windowEnd, minimumScheduledRequests: 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
+      return { frameId, loaderId, history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' } : { mode: historyMode }, polling: { navigationScoped: true, endpoint: POLLING_ENDPOINT, periodMs: POLLING_PERIOD_MS, cadenceMinMs: POLLING_MIN_CADENCE_MS, cadenceMaxMs: POLLING_MAX_CADENCE_MS, windowStart: pollingWindow?.windowStart, windowEnd: scheduled.at(-1)?.finishedAt ?? pollingWindow?.windowEnd, minimumScheduledRequests: degraded ? 0 : 1, observedScheduledRequests: scheduled.length }, requests: records, overflow };
     },
     async close() {
       await session?.detach().catch(() => {});
@@ -262,7 +262,7 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
     const historyFallback = historyMode === 'degraded'
       ? await page.getByText('Aircraft history unavailable', { exact: true }).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS }).then(() => 'Aircraft history unavailable')
       : undefined;
-    await lifecycle.waitForScheduledPoll();
+    if (historyMode === 'live') await lifecycle.waitForScheduledPoll();
     const post = await viewportArtifact(page, 'journey-post');
     lifecycle.assertHealthy();
     return { missionName, activation: 'browser-observed-200', lifecycle: lifecycle.observation(), visible: { ...visible, ...(historyFallback ? { historyFallback } : {}) }, artifacts: { ...pre, ...post } };

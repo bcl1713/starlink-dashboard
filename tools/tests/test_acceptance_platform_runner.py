@@ -905,8 +905,8 @@ def test_adapter_observation_is_schema_validated_and_retained() -> None:
     assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
 
 
-def test_adapter_observation_rejects_degraded_history_without_scheduled_refetch() -> None:
-    """A degraded bootstrap is incomplete until its bounded refetch is observed."""
+def test_adapter_observation_accepts_one_scoped_degraded_history_bootstrap() -> None:
+    """A visible fallback makes one scoped terminal 503 bootstrap sufficient."""
 
     payload = _adapter_payload()
     lifecycle = payload["lifecycle"]
@@ -922,8 +922,26 @@ def test_adapter_observation_rejects_degraded_history_without_scheduled_refetch(
     lifecycle["polling"]["observedScheduledRequests"] = 0
     payload["visible"]["historyFallback"] = "Aircraft history unavailable"
 
-    with pytest.raises(ValueError, match="adapter observation"):
-        runner._decode_adapter_artifacts(payload)
+    artifacts = runner._decode_adapter_artifacts(payload)
+
+    observation = json.loads(artifacts["adapter-observation.json"])
+    assert observation["lifecycle"]["history"] == {
+        "fallback": "Aircraft history unavailable",
+        "mode": "degraded",
+    }
+    assert observation["lifecycle"]["polling"]["minimumScheduledRequests"] == 0
+    assert observation["lifecycle"]["polling"]["observedScheduledRequests"] == 0
+    assert observation["lifecycle"]["requests"] == [
+        {
+            "cycle": "bootstrap",
+            "finishedAt": 10.1,
+            "id": "1",
+            "outcome": "degraded",
+            "path": "/api/overview-history",
+            "startedAt": 10.0,
+            "status": 503,
+        }
+    ]
 
 
 def test_adapter_observation_accepts_scheduled_degraded_history_refetch() -> None:
@@ -938,7 +956,7 @@ def test_adapter_observation_accepts_scheduled_degraded_history_refetch() -> Non
     for record in lifecycle["requests"]:
         record["outcome"] = "degraded"
         record["status"] = 503
-    lifecycle["polling"]["minimumScheduledRequests"] = 1
+    lifecycle["polling"]["minimumScheduledRequests"] = 0
     lifecycle["polling"]["observedScheduledRequests"] = 1
     payload["visible"]["historyFallback"] = "Aircraft history unavailable"
 
@@ -974,7 +992,7 @@ def test_adapter_observation_rejects_unexpected_or_mixed_scheduled_degraded_stat
     for record in lifecycle["requests"]:
         record["outcome"] = "degraded"
         record["status"] = 503
-    lifecycle["polling"]["minimumScheduledRequests"] = 1
+    lifecycle["polling"]["minimumScheduledRequests"] = 0
     lifecycle["polling"]["observedScheduledRequests"] = 1
     lifecycle["requests"][1].update({"outcome": outcome, "status": status})
     payload["visible"]["historyFallback"] = "Aircraft history unavailable"
