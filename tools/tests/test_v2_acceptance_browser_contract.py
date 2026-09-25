@@ -237,26 +237,28 @@ def test_v2_adapter_executes_bounded_exact_semantic_readiness_locators(
 const { assertSemanticOverview } = await import(process.argv[1]);
 const timeout = 10_000;
 class Locator {
-  constructor(page, kind, rows = null, exact = null) { Object.assign(this, { page, kind, rows, exact }); }
+  constructor(page, kind, rows = null, exact = null, root = null) { Object.assign(this, { page, kind, rows, exact, root }); }
   getByText(text, options = {}) {
     if (this.kind === 'legend') return new Locator(this.page, 'route', null, options.exact ? text : null);
-    if (this.kind === 'cells') return new Locator(this.page, 'cells', null, options.exact ? text : null);
+    if (this.kind === 'cells') return new Locator(this.page, 'cells', null, options.exact ? text : null, this.root);
     throw new Error(`unexpected getByText on ${this.kind}`);
   }
   locator(selector) {
     if (this.kind === 'poi-panel' && selector === 'tbody tr') return new Locator(this.page, 'rows', this.page.rows);
-    if (this.kind === 'rows' && selector === 'td:nth-child(2)') return new Locator(this.page, 'cells');
+    if (this.kind === 'page' && selector === 'td:nth-child(2)') return new Locator(this.page, 'cells', null, null, 'global');
+    if (this.kind === 'rows' && selector === 'td:nth-child(2)') return new Locator(this.page, 'cells', null, null, 'rows');
     throw new Error(`unexpected locator ${this.kind} ${selector}`);
   }
   filter(options) {
     if (this.kind !== 'rows') throw new Error('filter must be scoped to body rows');
-    if (options.has?.kind === 'cells') return new Locator(this.page, 'rows', this.rows.filter((row) => row.name === options.has.exact));
+    if (options.has?.kind === 'cells' && options.has.root === 'global') return new Locator(this.page, 'rows', this.rows.filter((row) => row.name === options.has.exact));
+    if (options.has?.kind === 'cells') throw new Error('has locator must be global, not rooted through candidate rows');
     if (options.hasText) return new Locator(this.page, 'rows', this.rows.filter((row) => row.name.includes(options.hasText)));
     if (options.hasNotText) return new Locator(this.page, 'rows', this.rows.filter((row) => !row.name.includes(options.hasNotText)));
     throw new Error('unexpected row filter');
   }
-  first() { return new Locator(this.page, this.kind, this.rows?.slice(0, 1), this.exact); }
-  nth(index) { return new Locator(this.page, this.kind, this.rows?.slice(index, index + 1), this.exact); }
+  first() { return new Locator(this.page, this.kind, this.rows?.slice(0, 1), this.exact, this.root); }
+  nth(index) { return new Locator(this.page, this.kind, this.rows?.slice(index, index + 1), this.exact, this.root); }
   async waitFor(options) {
     this.page.waits.push({ kind: this.kind, exact: this.exact, rows: this.rows?.map((row) => row.name), options });
     const visible = this.kind === 'route' ? this.page.route === this.exact : this.rows?.length > 0;
@@ -268,6 +270,7 @@ class Locator {
 const page = (route, rows) => ({
   route, rows, waits: [],
   getByLabel(name) { return new Locator(this, name === 'Globe legend' ? 'legend' : 'poi-panel'); },
+  locator(selector) { return new Locator(this, 'page').locator(selector); },
   evaluate: async () => {},
 });
 for (const candidate of [

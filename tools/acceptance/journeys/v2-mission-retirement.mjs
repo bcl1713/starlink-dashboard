@@ -205,7 +205,7 @@ async function assertSemanticOverview(page) {
   const poiPanel = page.getByLabel('Upcoming POIs');
   const routeName = legend.getByText('V2 Acceptance Route KAAA-KBBB', { exact: true });
   const poiRows = poiPanel.locator('tbody tr');
-  const poiNameCells = poiRows.locator('td:nth-child(2)');
+  const poiNameCells = page.locator('td:nth-child(2)');
   const kAaaPoiRow = poiRows.filter({ has: poiNameCells.getByText('KAAA', { exact: true }) });
   const kBbbPoiRow = poiRows.filter({ has: poiNameCells.getByText('KBBB', { exact: true }) });
   await routeName.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
