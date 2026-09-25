@@ -177,6 +177,7 @@ def start_final_browser_session(
         launch = bundle.launch_spec()
         display, port, profile_dir = _allocate_browser_resources(task_root)
         xvfb = executor.start_xvfb(display)
+        xvfb_socket_identity = _wait_xvfb_ready(display, xvfb, executor)
         browser = launch.start(
             f"--display={display}",
             f"--remote-debugging-port={port}",
@@ -188,7 +189,6 @@ def start_final_browser_session(
         )
         cdp_url = f"http://127.0.0.1:{port}"
         _wait_ready(browser, xvfb, cdp_url, executor)
-        xvfb_socket_identity = _socket_identity(_xvfb_socket_path(display))
         probe = (executor.run_card or _platform_card(card_path, cdp_url))(
             launch, task_root
         )
@@ -428,6 +428,23 @@ def _wait_ready(
             return
         executor.sleep(0.25)
     raise ValueError("browser readiness timed out")
+
+
+def _wait_xvfb_ready(
+    display: str, xvfb: Any, executor: PlatformHealthExecutor
+) -> tuple[int, int]:
+    """Require the owned X server socket before launching the headed browser."""
+    path = _xvfb_socket_path(display)
+    if path is None:
+        raise ValueError("invalid task X display socket path")
+    deadline = executor.clock() + 120.0
+    while executor.clock() <= deadline:
+        if xvfb.poll() is not None:
+            raise ValueError("Xvfb readiness child exited")
+        if (identity := _socket_identity(path)) is not None:
+            return identity
+        executor.sleep(0.25)
+    raise ValueError("Xvfb readiness timed out")
 
 
 def _platform_card(

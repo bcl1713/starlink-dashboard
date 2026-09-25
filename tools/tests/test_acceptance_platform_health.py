@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import subprocess
 from pathlib import Path
 
@@ -27,6 +28,7 @@ class _Process:
     def __init__(self, alive: bool = True) -> None:
         self.alive = alive
         self.terminated = False
+        self.xvfb_socket: socket.socket | None = None
         self.stdout = b"diagnostic stdout"
         self.stderr = b"diagnostic stderr"
 
@@ -36,6 +38,9 @@ class _Process:
     def terminate(self) -> None:
         self.terminated = True
         self.alive = False
+        if self.xvfb_socket is not None:
+            self.xvfb_socket.close()
+            self.xvfb_socket = None
 
     def wait(self, timeout: float | None = None) -> int:
         return 0
@@ -110,10 +115,20 @@ def _executor(
     bundle: _Bundle, *, ready: bool = True, card: HealthProbeResult | None = None
 ) -> PlatformHealthExecutor:
     xvfb = _Process()
+
+    def start_xvfb(display: str) -> _Process:
+        from acceptance.platform import health
+
+        socket_path = health._xvfb_socket_path(display)
+        if socket_path is not None and not socket_path.exists():
+            xvfb.xvfb_socket = socket.socket(socket.AF_UNIX)
+            xvfb.xvfb_socket.bind(str(socket_path))
+        return xvfb
+
     return PlatformHealthExecutor(
         probe=lambda command: " ".join(command),
         verify_bundle=lambda _: bundle,
-        start_xvfb=lambda display: xvfb,
+        start_xvfb=start_xvfb,
         cdp_version=lambda _: {"Browser": "Chrome 124"} if ready else None,
         run_card=lambda *_: card
         or HealthProbeResult(
@@ -235,6 +250,71 @@ def test_final_session_uses_profile_pinned_headed_xvfb_and_requires_neutral_metr
     assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
     assert session.artifacts["browser.stderr.log"] == b"diagnostic stderr"
     assert session.artifacts["xvfb.stdout.log"] == b"diagnostic stdout"
+
+
+def test_final_session_waits_for_its_xvfb_socket_before_launching_browser(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Chromium cannot be launched until its task X server owns the display."""
+    from acceptance.platform import health
+
+    bundle = _Bundle()
+    monkeypatch.chdir(tmp_path)
+    socket_path = Path("X-ready")
+    xvfb_socket: socket.socket | None = None
+    sleeps = 0
+
+    def start_xvfb(_: str) -> _Process:
+        return _Process()
+
+    def sleep(_: float) -> None:
+        nonlocal sleeps, xvfb_socket
+        assert bundle.launch.arguments == ()
+        sleeps += 1
+        if xvfb_socket is None:
+            xvfb_socket = socket.socket(socket.AF_UNIX)
+            xvfb_socket.bind(str(socket_path))
+
+    monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+    executor = _executor(bundle)
+    executor = PlatformHealthExecutor(
+        **{
+            **executor.__dict__,
+            "start_xvfb": start_xvfb,
+            "sleep": sleep,
+        }
+    )
+
+    try:
+        session = start_final_browser_session(_profile(), tmp_path, executor)
+        assert sleeps == 1
+        assert bundle.launch.arguments
+        session.close()
+    finally:
+        if xvfb_socket is not None:
+            xvfb_socket.close()
+        socket_path.unlink(missing_ok=True)
+
+
+def test_final_session_fails_closed_when_xvfb_exits_before_its_socket_exists(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A dead Xvfb must prevent Chromium launch rather than racing it."""
+    from acceptance.platform import health
+
+    bundle = _Bundle()
+    monkeypatch.chdir(tmp_path)
+    socket_path = Path("X-never-ready")
+    monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+    executor = _executor(bundle)
+    executor = PlatformHealthExecutor(
+        **{**executor.__dict__, "start_xvfb": lambda _: _Process(alive=False)}
+    )
+
+    with pytest.raises(ValueError):
+        start_final_browser_session(_profile(), tmp_path, executor)
+
+    assert bundle.launch.arguments == ()
 
 
 def test_session_cleanup_removes_owned_xvfb_socket_only_after_xvfb_exits(
@@ -385,6 +465,11 @@ def test_xvfb_termination_failure_drains_every_remaining_session_resource(
 
     bundle = _Bundle()
     xvfb = FailingXvfb()
+    monkeypatch.chdir(tmp_path)
+    socket_path = Path("X125")
+    xvfb_socket = socket.socket(socket.AF_UNIX)
+    xvfb_socket.bind(str(socket_path))
+    monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
     executor = _executor(bundle)
     executor = PlatformHealthExecutor(
         **{**executor.__dict__, "start_xvfb": lambda _: xvfb}
@@ -407,16 +492,20 @@ def test_xvfb_termination_failure_drains_every_remaining_session_resource(
         ),
     )
 
-    with pytest.raises(OSError, match="xvfb teardown failed"):
-        session.close()
+    try:
+        with pytest.raises(OSError, match="xvfb teardown failed"):
+            session.close()
 
-    assert browser_cleanup_calls == [bundle.launch.process]
-    assert session.artifacts["browser.stderr.log"] == b"diagnostic stderr"
-    assert session.artifacts["xvfb.stderr.log"] == b"diagnostic stderr"
-    assert bundle.launch.closed and bundle.closed
-    assert not session.profile_dir.exists()
-    assert cleanup_verification == [(False, True, True)]
-    session.close()
+        assert browser_cleanup_calls == [bundle.launch.process]
+        assert session.artifacts["browser.stderr.log"] == b"diagnostic stderr"
+        assert session.artifacts["xvfb.stderr.log"] == b"diagnostic stderr"
+        assert bundle.launch.closed and bundle.closed
+        assert not session.profile_dir.exists()
+        assert cleanup_verification == [(False, True, True)]
+        session.close()
+    finally:
+        xvfb_socket.close()
+        socket_path.unlink(missing_ok=True)
 
 
 def test_final_session_rejects_mismatched_neutral_metrics_before_build(
@@ -511,7 +600,7 @@ def test_readiness_timeout_retains_diagnostics_and_never_runs_card(
         **{
             **executor.__dict__,
             "run_card": lambda *_: (_ for _ in ()).throw(AssertionError("card ran")),
-            "clock": iter((0.0, 121.0)).__next__,
+            "clock": iter((0.0, 0.0, 0.0, 121.0)).__next__,
         }
     )
     result = run_platform_health(
@@ -546,7 +635,7 @@ def test_cleanup_failure_preserves_primary_health_diagnostics(
     root = tmp_path / ("e" * 40)
     executor = _executor(_Bundle(), ready=False)
     executor = PlatformHealthExecutor(
-        **{**executor.__dict__, "clock": iter((0.0, 121.0)).__next__}
+        **{**executor.__dict__, "clock": iter((0.0, 0.0, 0.0, 121.0)).__next__}
     )
 
     result = run_platform_health(_profile(), root, executor, card_path=PLATFORM_CARD)
