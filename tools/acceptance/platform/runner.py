@@ -761,10 +761,10 @@ def _final_steps(
             reason = record.get("reason")
         except (TypeError, ValueError) as metadata_error:
             failure = _BuildSupervisionMetadataFailure()
-            raise_with_platform_metadata(
+            raise PlatformFailure(
                 failure,
-                artifacts={"compose.output.log": diagnostics.output},
-            )
+                {"compose.output.log": diagnostics.output},
+            ) from metadata_error
         if isinstance(reason, str) and reason.startswith(f"{error.kind}:"):
             error.args = (reason,)
         else:

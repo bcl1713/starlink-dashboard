@@ -356,6 +356,27 @@ def test_final_session_wraps_primary_failure_with_cleanup_metadata(
     assert raised.value.platform_cleanup_error == "cleanup"
 
 
+@pytest.mark.parametrize(
+    "interruption",
+    [KeyboardInterrupt, SystemExit, GeneratorExit],
+)
+def test_platform_health_reraises_control_flow_from_browser_session(
+    tmp_path: Path, interruption: type[BaseException]
+) -> None:
+    """Cancellation must escape health rather than become blocked evidence."""
+    bundle = _Bundle()
+    executor = _executor(bundle)
+    executor = PlatformHealthExecutor(
+        **{
+            **executor.__dict__,
+            "run_card": lambda *_: (_ for _ in ()).throw(interruption()),
+        }
+    )
+
+    with pytest.raises(interruption):
+        run_platform_health(_profile(), tmp_path / ("c" * 40), executor)
+
+
 def test_final_session_fails_closed_when_xvfb_exits_after_socket_identity(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:

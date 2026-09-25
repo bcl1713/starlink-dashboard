@@ -236,6 +236,8 @@ def start_final_browser_session(
                 bundle.close()
         # Health retains these diagnostics after classifying the original fault.
         # The final runner receives the same artifacts from a successfully owned session.
+        if isinstance(error, (KeyboardInterrupt, SystemExit, GeneratorExit)):
+            raise
         raise_with_platform_metadata(
             error,
             artifacts=retained,

@@ -21,7 +21,7 @@ from acceptance.platform.compose import (
 )
 from acceptance.platform.contracts import load_product_contract
 from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
-from acceptance.platform.failures import raise_with_platform_metadata
+from acceptance.platform.failures import PlatformFailure, raise_with_platform_metadata
 from acceptance.platform.model import Lane, Outcome
 from acceptance.platform.runner import RunnerDependencies, main, run
 
@@ -476,6 +476,41 @@ def test_production_final_steps_rejects_invalid_closed_ledger_supervision_into_f
     assert retained["final_acceptance"] is False
     assert "build_supervision" not in retained
     assert b"unexpected" not in (failure / "runner-manifest.json").read_bytes()
+
+
+def test_final_steps_retains_metadata_projection_error_as_explicit_cause(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The typed carrier keeps classification without hiding the metadata cause."""
+    monkeypatch.setattr(runner, "SubprocessComposeExecutor", lambda *_: object())
+    monkeypatch.setattr(runner, "render_task_override", lambda *_args, **_kwargs: object())
+    monkeypatch.setattr(runner, "resolve_topology", lambda *_: None)
+    monkeypatch.setattr(
+        runner.BuildLedger,
+        "read",
+        lambda *_: {"supervision": None},
+    )
+    monkeypatch.setattr(
+        runner,
+        "build_final",
+        lambda *_: (_ for _ in ()).throw(
+            BuildSupervisionFailure("build_stalled", None, "BuildKit output")
+        ),
+    )
+
+    with pytest.raises(PlatformFailure) as raised:
+        runner._final_steps(
+            runner._parse(_argv(tmp_path, "final")),
+            type("Profile", (), {"checksum": "b" * 64})(),
+            type("Contract", (), {"checksum": "c" * 64})(),
+            lambda *_: None,
+            lambda *_: None,
+            object(),
+        )
+
+    assert isinstance(raised.value.cause, runner._BuildSupervisionMetadataFailure)
+    assert isinstance(raised.value.__cause__, ValueError)
+    assert str(raised.value.__cause__) == "build reconciliation supervision is invalid"
 
 
 def _production_final_dependencies() -> RunnerDependencies:
