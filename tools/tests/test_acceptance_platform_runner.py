@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from acceptance.platform import runner
+from acceptance.platform.compose import BuildProgressEvent, BuildSupervisionFailure
 from acceptance.platform.contracts import load_product_contract
 from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
 from acceptance.platform.model import Lane, Outcome
@@ -191,6 +192,67 @@ def test_final_requires_every_required_result(tmp_path: Path) -> None:
 
     assert result.manifest["final_acceptance"] is False
     assert result.manifest["outcome"] == Outcome.FAILED.value
+
+
+def test_final_manifest_seals_allowlisted_stall_supervision(tmp_path: Path) -> None:
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: (_ for _ in ()).throw(
+                BuildSupervisionFailure(
+                    "build_stalled",
+                    BuildProgressEvent("run_output", 1.0, "npm run build"),
+                    "",
+                )
+            ),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    supervision = result.manifest["build_supervision"]
+    assert result.manifest["outcome"] == Outcome.FAILED.value
+    assert result.manifest["final_acceptance"] is False
+    assert supervision == {
+        "policy_version": "build_supervision.v1",
+        "stall_window_seconds": 600,
+        "hard_deadline_seconds": 1800,
+        "elapsed_seconds": 601.0,
+        "last_progress_kind": "run_output",
+        "last_progress_elapsed_seconds": 1.0,
+    }
+
+
+def test_final_manifest_excludes_oversize_supervision_event_detail(tmp_path: Path) -> None:
+    detail = "x" * 129
+    result = run(
+        _argv(tmp_path, "final"),
+        dependencies=RunnerDependencies(
+            load_profile=lambda _: object(),
+            validate_health=lambda *_: _current_health(),
+            static=lambda *_: None,
+            browser_card=lambda *_: None,
+            final_steps=lambda *_: (_ for _ in ()).throw(
+                BuildSupervisionFailure(
+                    "build_deadline_exceeded",
+                    BuildProgressEvent("run_output", 12.0, detail),
+                    "",
+                )
+            ),
+            cleanup=lambda *_: None,
+        ),
+    )
+
+    encoded = json.dumps(result.manifest["build_supervision"]).encode()
+    assert detail.encode() not in encoded
+    assert max(
+        len(value.encode())
+        for value in result.manifest["build_supervision"].values()
+        if isinstance(value, str)
+    ) <= 128
 
 
 def test_final_runner_replaces_caller_origin_with_its_exact_loopback_frontend_port(

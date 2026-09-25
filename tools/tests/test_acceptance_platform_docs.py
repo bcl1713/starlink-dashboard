@@ -1,7 +1,6 @@
 import re
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 PLATFORM_DOC = PROJECT_ROOT / "docs/operations/acceptance-platform.md"
 V2_DOC = PROJECT_ROOT / "docs/missions/v2-mission-retirement-acceptance.md"
@@ -154,14 +153,22 @@ def test_platform_doc_defines_bounded_startup_and_interrupt_cleanup() -> None:
     assert "task browser profile, and the generated task root" in guide
 
 
-def test_platform_doc_keeps_final_build_deadline_below_external_monitor() -> None:
+def test_platform_doc_defines_content_aware_final_build_supervision() -> None:
     guide = " ".join(PLATFORM_DOC.read_text(encoding="utf-8").split())
 
-    assert (
-        "fixed 1200-second deadline for `docker compose build --no-cache "
-        "--progress=plain`; it is deliberately below the 1800-second external final monitor."
-        in guide
-    )
+    for required in (
+        "lockfile inputs are unchanged",
+        "exact candidate SHA after dependency installation",
+        "`--pull`",
+        "600 seconds without meaningful BuildKit progress",
+        "1800-second total deadline",
+        "`build_stalled`",
+        "`build_deadline_exceeded`",
+        "neither outcome authorizes automatic retry",
+        "fresh health/static and operator approval",
+    ):
+        assert required in guide
+    assert "--no-cache" not in guide
 
 
 def test_v2_doc_is_product_only() -> None:

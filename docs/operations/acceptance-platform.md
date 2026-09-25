@@ -75,10 +75,15 @@ contract checksum as one build-ledger key. Its state machine is:
 1. Validate the health fingerprint and product contract.
 2. Run the declared static checks.
 3. Prepare task-owned topology and arm cleanup.
-4. Resolve the scoped topology and perform one fresh-image build for the ledger
-   key. The platform owns a fixed 1200-second deadline for `docker compose build
-   --no-cache --progress=plain`; it is deliberately below the 1800-second external
-   final monitor. Every final-critical Compose operation passes combined output through
+4. Resolve the scoped topology and perform one content-aware build for the ledger
+   key. Final builds reuse content-addressed dependency layers only when their
+   lockfile inputs are unchanged. The runner injects the exact candidate SHA after
+   dependency installation so application/output layers rebuild for every candidate,
+   and invokes Docker Compose with `--pull` and `--progress=plain`. Build supervision stops
+   after 600 seconds without meaningful BuildKit progress or at the 1800-second total
+   deadline, recording `build_stalled` or `build_deadline_exceeded` in sealed evidence;
+   neither outcome authorizes automatic retry: a later final requires fresh health/static
+   and operator approval. Every final-critical Compose operation passes combined output through
    bounded, credential-redacted platform retention. Authorization header values,
    including `Bearer` and `Basic` forms, are redacted in full; the retained
    diagnostic, including its truncation marker, never exceeds its byte budget.

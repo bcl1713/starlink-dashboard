@@ -6,6 +6,7 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import os
 import selectors
 import shlex
@@ -29,8 +30,10 @@ from typing import Any
 import tomllib
 
 from .compose import (
-    BuildLedger,
     BoundedComposeDiagnostics,
+    BuildLedger,
+    BuildProgressEvent,
+    BuildSupervisionFailure,
     SubprocessComposeExecutor,
     build_final,
     cleanup_compose,
@@ -80,6 +83,11 @@ _MAX_ADAPTER_ENCODED_BYTES = 20 * 1024 * 1024
 _MAX_ADAPTER_DECODED_BYTES = 20 * 1024 * 1024
 _MAX_ADAPTER_OBSERVATION_BYTES = 32 * 1024
 _MAX_LIFECYCLE_RECORDS = 50
+_BUILD_SUPERVISION_POLICY_VERSION = "build_supervision.v1"
+_BUILD_STALL_WINDOW_SECONDS = 600
+_BUILD_HARD_DEADLINE_SECONDS = 1800
+_BUILD_PROGRESS_KINDS = frozenset({"none", "stage", "done", "bytes", "run_output"})
+_MAX_BUILD_SUPERVISION_STRING_BYTES = 128
 _VIEWPORT_ARTIFACTS = frozenset(
     {
         "journey-pre.png",
@@ -715,6 +723,11 @@ def _final_steps(
         if not built.usable:
             raise ValueError(f"final build is unusable: {built.reason}")
         start_no_build(topology, contract, key, ledger, executor)
+    except BuildSupervisionFailure as error:
+        reconciliation = ledger.read(key).get("supervision")
+        error.build_supervision = _project_build_supervision(error, reconciliation)  # type: ignore[attr-defined]
+        error.platform_artifacts = {"compose.output.log": diagnostics.output}  # type: ignore[attr-defined]
+        raise
     except (
         OSError,
         RuntimeError,
@@ -829,8 +842,9 @@ def _manifest(
     capture_started_at: str,
     capture_ended_at: str,
     adapter_sha256: str | None,
+    build_supervision: Mapping[str, object] | None = None,
 ) -> dict[str, Any]:
-    return {
+    manifest = {
         "sha": inputs.sha,
         "ref": inputs.ref,
         "lane": inputs.lane.value,
@@ -853,6 +867,89 @@ def _manifest(
             "outcome": Outcome.FAILED.value if cleanup_failed else Outcome.PASSED.value,
             "detail": cleanup,
         },
+    }
+    if build_supervision is not None:
+        manifest["build_supervision"] = _validate_build_supervision(build_supervision)
+    return manifest
+
+
+def _project_build_supervision(
+    error: BuildSupervisionFailure, reconciliation: object | None = None
+) -> dict[str, object]:
+    """Project typed supervision without retaining BuildKit detail strings."""
+    event = error.last_event
+    if event is not None and not isinstance(event, BuildProgressEvent):
+        raise ValueError("build supervision event is invalid")
+    if reconciliation is not None:
+        if not isinstance(reconciliation, Mapping) or reconciliation.get("kind") != error.kind:
+            raise ValueError("build reconciliation supervision is invalid")
+    last_kind = event.kind if event else "none"
+    last_elapsed = event.elapsed_seconds if event else 0.0
+    elapsed = (
+        float(_BUILD_HARD_DEADLINE_SECONDS)
+        if error.kind == "build_deadline_exceeded"
+        else last_elapsed + _BUILD_STALL_WINDOW_SECONDS
+    )
+    return _validate_build_supervision(
+        {
+            "policy_version": _BUILD_SUPERVISION_POLICY_VERSION,
+            "stall_window_seconds": _BUILD_STALL_WINDOW_SECONDS,
+            "hard_deadline_seconds": _BUILD_HARD_DEADLINE_SECONDS,
+            "elapsed_seconds": elapsed,
+            "last_progress_kind": last_kind,
+            "last_progress_elapsed_seconds": last_elapsed,
+        }
+    )
+
+
+def _validate_build_supervision(value: Mapping[str, object]) -> dict[str, object]:
+    """Allowlist finite, bounded final-manifest build supervision metadata."""
+    required = {
+        "policy_version",
+        "stall_window_seconds",
+        "hard_deadline_seconds",
+        "elapsed_seconds",
+        "last_progress_kind",
+        "last_progress_elapsed_seconds",
+    }
+    if set(value) != required:
+        raise ValueError("build supervision fields are invalid")
+    policy_version = value["policy_version"]
+    last_kind = value["last_progress_kind"]
+    if (
+        not isinstance(policy_version, str)
+        or policy_version != _BUILD_SUPERVISION_POLICY_VERSION
+        or len(policy_version.encode()) > _MAX_BUILD_SUPERVISION_STRING_BYTES
+        or not isinstance(last_kind, str)
+        or last_kind not in _BUILD_PROGRESS_KINDS
+        or len(last_kind.encode()) > _MAX_BUILD_SUPERVISION_STRING_BYTES
+    ):
+        raise ValueError("build supervision strings are invalid")
+    stall = value["stall_window_seconds"]
+    deadline = value["hard_deadline_seconds"]
+    elapsed = value["elapsed_seconds"]
+    last_elapsed = value["last_progress_elapsed_seconds"]
+    if (
+        type(stall) is not int
+        or stall != _BUILD_STALL_WINDOW_SECONDS
+        or type(deadline) is not int
+        or deadline != _BUILD_HARD_DEADLINE_SECONDS
+        or isinstance(elapsed, bool)
+        or not isinstance(elapsed, (int, float))
+        or isinstance(last_elapsed, bool)
+        or not isinstance(last_elapsed, (int, float))
+        or not math.isfinite(elapsed)
+        or not math.isfinite(last_elapsed)
+        or not 0 <= last_elapsed <= elapsed <= deadline
+    ):
+        raise ValueError("build supervision timing is invalid")
+    return {
+        "policy_version": policy_version,
+        "stall_window_seconds": stall,
+        "hard_deadline_seconds": deadline,
+        "elapsed_seconds": float(elapsed),
+        "last_progress_kind": last_kind,
+        "last_progress_elapsed_seconds": float(last_elapsed),
     }
 
 
@@ -1068,6 +1165,7 @@ def run(
     artifacts: dict[str, bytes] = {}
     adapter_source: _AdapterSource | None = None
     adapter_sha256: str | None = None
+    build_supervision: Mapping[str, object] | None = None
     interruption_guard = _FinalInterruptionGuard()
     if inputs.lane is Lane.FINAL:
         interruption_guard.arm()
@@ -1158,6 +1256,13 @@ def run(
         ValueError,
         subprocess.SubprocessError,
     ) as error:
+        if isinstance(error, BuildSupervisionFailure):
+            attached = getattr(error, "build_supervision", None)
+            build_supervision = (
+                _validate_build_supervision(attached)
+                if isinstance(attached, Mapping)
+                else _project_build_supervision(error)
+            )
         platform_artifacts = getattr(error, "platform_artifacts", None)
         if isinstance(platform_artifacts, Mapping) and all(
             isinstance(name, str) and isinstance(content, bytes)
@@ -1244,6 +1349,7 @@ def run(
         capture_started_at,
         capture_ended_at,
         adapter_sha256,
+        build_supervision,
     )
     try:
         _write_manifest(inputs, manifest, artifacts)
@@ -1266,6 +1372,7 @@ def run(
             capture_started_at,
             capture_ended_at,
             adapter_sha256,
+            build_supervision,
         )
         try:
             _write_finalization_failure(inputs, manifest, artifacts)
