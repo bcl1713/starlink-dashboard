@@ -246,7 +246,9 @@ class ETAProjection:
                     return None
 
                 if departure_time > current_time:
-                    return (waypoint.expected_arrival_time - current_time).total_seconds()
+                    return (
+                        waypoint.expected_arrival_time - current_time
+                    ).total_seconds()
 
                 return planned_duration.total_seconds()
 
@@ -261,7 +263,9 @@ class ETAProjection:
             if poi.projected_waypoint_index is not None:
                 waypoint_idx = poi.projected_waypoint_index
                 if 0 <= waypoint_idx < len(active_route.waypoints):
-                    return anticipated_eta_for_waypoint(active_route.waypoints[waypoint_idx])
+                    return anticipated_eta_for_waypoint(
+                        active_route.waypoints[waypoint_idx]
+                    )
 
             # If no waypoint found, return None to fall back to distance/speed
             return None

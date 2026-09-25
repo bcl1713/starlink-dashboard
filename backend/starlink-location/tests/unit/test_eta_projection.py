@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+import app.services.eta.projection as projection_module
 from app.models.poi import POI
 from app.models.route import (
     ParsedRoute,
@@ -14,7 +15,6 @@ from app.models.route import (
 )
 from app.services.eta.calculator import ETACalculator
 from app.services.eta.projection import ETAProjection
-import app.services.eta.projection as projection_module
 
 
 class frozen_datetime(datetime):
@@ -64,7 +64,9 @@ def route_with_timing():
                 latitude=40.0,
                 longitude=-73.0,
                 order=0,
-                expected_arrival_time=datetime(2026, 9, 25, 12, 30, tzinfo=timezone.utc),
+                expected_arrival_time=datetime(
+                    2026, 9, 25, 12, 30, tzinfo=timezone.utc
+                ),
             )
         ],
         timing_profile=RouteTimingProfile(
@@ -87,9 +89,12 @@ def test_anticipated_eta_before_expected_departure_uses_calendar_delta(
         projection_module, "datetime", freeze_datetime("2026-09-25T11:45:00Z")
     )
 
-    assert calculator._calculate_route_aware_eta_anticipated(
-        40.0, -73.0, timed_poi, route_with_timing
-    ) == 45 * 60
+    assert (
+        calculator._calculate_route_aware_eta_anticipated(
+            40.0, -73.0, timed_poi, route_with_timing
+        )
+        == 45 * 60
+    )
 
 
 def test_anticipated_eta_after_missed_departure_reanchors_planned_duration_at_now(
@@ -99,9 +104,12 @@ def test_anticipated_eta_after_missed_departure_reanchors_planned_duration_at_no
         projection_module, "datetime", freeze_datetime("2026-09-25T13:00:00Z")
     )
 
-    assert calculator._calculate_route_aware_eta_anticipated(
-        40.0, -73.0, timed_poi, route_with_timing
-    ) == 30 * 60
+    assert (
+        calculator._calculate_route_aware_eta_anticipated(
+            40.0, -73.0, timed_poi, route_with_timing
+        )
+        == 30 * 60
+    )
 
 
 def test_anticipated_eta_after_missed_departure_reanchors_projected_waypoint(
@@ -118,15 +126,36 @@ def test_anticipated_eta_after_missed_departure_reanchors_projected_waypoint(
         projected_waypoint_index=0,
     )
 
-    assert calculator._calculate_route_aware_eta_anticipated(
-        40.0, -73.0, projected_poi, route_with_timing
-    ) == 30 * 60
+    assert (
+        calculator._calculate_route_aware_eta_anticipated(
+            40.0, -73.0, projected_poi, route_with_timing
+        )
+        == 30 * 60
+    )
 
 
 def test_anticipated_eta_returns_none_for_matched_waypoint_without_timing(
     calculator, route_with_timing, timed_poi
 ):
     route_with_timing.waypoints[0].expected_arrival_time = None
+
+    assert (
+        calculator._calculate_route_aware_eta_anticipated(
+            40.0, -73.0, timed_poi, route_with_timing
+        )
+        is None
+    )
+
+
+def test_anticipated_eta_returns_none_for_matched_waypoint_before_departure(
+    monkeypatch, calculator, route_with_timing, timed_poi
+):
+    route_with_timing.waypoints[0].expected_arrival_time = datetime(
+        2026, 9, 25, 11, 30, tzinfo=timezone.utc
+    )
+    monkeypatch.setattr(
+        projection_module, "datetime", freeze_datetime("2026-09-25T13:00:00Z")
+    )
 
     assert (
         calculator._calculate_route_aware_eta_anticipated(
