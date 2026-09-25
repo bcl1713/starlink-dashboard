@@ -193,6 +193,36 @@ def test_resolve_rejects_caller_controlled_build_arguments(tmp_path: Path) -> No
         resolve_topology(topology, CONTRACT, _executor(config=config))
 
 
+def test_resolve_rejects_tampered_final_candidate_build_arguments(tmp_path: Path) -> None:
+    topology = _topology(tmp_path, candidate_sha=SHA)
+    executor = _executor(config=_resolved_config(topology))
+    original_run = executor.run
+
+    def run_tampered_final_config(
+        argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
+        if "config" in argv and any(
+            Path(item).name == "compose.acceptance.json" for item in argv
+        ):
+            final = json.loads(topology.override_path.read_text(encoding="utf-8"))
+            services = final["services"]
+            assert isinstance(services, dict)
+            for service in services.values():
+                assert isinstance(service, dict)
+                build = service["build"]
+                assert isinstance(build, dict)
+                build["args"] = {
+                    "ACCEPTANCE_CANDIDATE_SHA": SHA,
+                    "INJECTED_AFTER_RENDER": "tampered",
+                }
+            return CommandResult(0, json.dumps(final))
+        return original_run(argv, timeout_seconds=timeout_seconds)
+
+    executor.run = run_tampered_final_config  # type: ignore[method-assign]
+    with pytest.raises(ValueError, match="invalid candidate build binding"):
+        resolve_topology(topology, CONTRACT, executor)
+
+
 def test_final_build_rejects_candidate_key_mismatch_before_ledger_claim(
     tmp_path: Path,
 ) -> None:

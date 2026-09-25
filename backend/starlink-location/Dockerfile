@@ -7,9 +7,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-ARG ACCEPTANCE_CANDIDATE_SHA
-RUN test -n "$ACCEPTANCE_CANDIDATE_SHA"
-
 # Runtime stage
 FROM python:3.11-slim
 
@@ -26,6 +23,9 @@ RUN useradd -m -u 1000 appuser
 
 # Copy Python dependencies from builder with final ownership already set
 COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
+
+ARG ACCEPTANCE_CANDIDATE_SHA
+RUN test -n "$ACCEPTANCE_CANDIDATE_SHA"
 
 # Copy application code and configuration with final ownership already set
 COPY --chown=appuser:appuser main.py .
