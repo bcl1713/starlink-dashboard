@@ -442,6 +442,8 @@ def _wait_xvfb_ready(
         if xvfb.poll() is not None:
             raise ValueError("Xvfb readiness child exited")
         if (identity := _socket_identity(path)) is not None:
+            if xvfb.poll() is not None:
+                raise ValueError("Xvfb readiness child exited")
             return identity
         executor.sleep(0.25)
     raise ValueError("Xvfb readiness timed out")

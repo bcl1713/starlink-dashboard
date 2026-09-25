@@ -259,8 +259,10 @@ def test_final_session_waits_for_its_xvfb_socket_before_launching_browser(
     from acceptance.platform import health
 
     bundle = _Bundle()
-    monkeypatch.chdir(tmp_path)
-    socket_path = Path("X-ready")
+    display = ":457"
+    socket_path = Path(f"/tmp/X{os.getpid()}-ready")
+    profile_dir = tmp_path / "profile"
+    profile_dir.mkdir()
     xvfb_socket: socket.socket | None = None
     sleeps = 0
 
@@ -275,7 +277,14 @@ def test_final_session_waits_for_its_xvfb_socket_before_launching_browser(
             xvfb_socket = socket.socket(socket.AF_UNIX)
             xvfb_socket.bind(str(socket_path))
 
-    monkeypatch.setattr(health, "_xvfb_socket_path", lambda _: socket_path)
+    monkeypatch.setattr(
+        health,
+        "_allocate_browser_resources",
+        lambda _: (display, 45679, profile_dir),
+    )
+    monkeypatch.setattr(
+        health, "_xvfb_socket_path", lambda allocated: socket_path if allocated == display else None
+    )
     executor = _executor(bundle)
     executor = PlatformHealthExecutor(
         **{
@@ -315,6 +324,50 @@ def test_final_session_fails_closed_when_xvfb_exits_before_its_socket_exists(
         start_final_browser_session(_profile(), tmp_path, executor)
 
     assert bundle.launch.arguments == ()
+
+
+def test_final_session_fails_closed_when_xvfb_exits_after_socket_identity(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A later Xvfb exit cannot launch Chromium against a stale display socket."""
+    from acceptance.platform import health
+
+    bundle = _Bundle()
+    display = ":456"
+    socket_path = tmp_path / "X456"
+    xvfb = _Process()
+    profile_dir = tmp_path / "profile"
+    profile_dir.mkdir()
+    identity_observed = False
+
+    def socket_identity(path: Path | None) -> tuple[int, int] | None:
+        nonlocal identity_observed
+        if path == socket_path and not identity_observed:
+            identity_observed = True
+            xvfb.alive = False
+            return (1, 2)
+        return None
+
+    monkeypatch.setattr(
+        health,
+        "_allocate_browser_resources",
+        lambda _: (display, 45678, profile_dir),
+    )
+    monkeypatch.setattr(
+        health, "_xvfb_socket_path", lambda allocated: socket_path if allocated == display else None
+    )
+    monkeypatch.setattr(health, "_socket_identity", socket_identity)
+    executor = _executor(bundle)
+    executor = PlatformHealthExecutor(
+        **{**executor.__dict__, "start_xvfb": lambda _: xvfb}
+    )
+
+    try:
+        with pytest.raises(ValueError, match="Xvfb readiness child exited"):
+            start_final_browser_session(_profile(), tmp_path, executor)
+        assert bundle.launch.arguments == ()
+    finally:
+        socket_path.unlink(missing_ok=True)
 
 
 def test_session_cleanup_removes_owned_xvfb_socket_only_after_xvfb_exits(
