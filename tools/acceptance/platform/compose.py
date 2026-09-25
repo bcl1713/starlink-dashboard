@@ -201,13 +201,26 @@ class ComposeExecutor(Protocol):
     def inspect_image(self, tag: str) -> str | None: ...
 
 
+def require_override_path(path: Path | None) -> Path:
+    """Narrow an optional rendered override at the boundary that requires it."""
+    if path is None:
+        raise ValueError("rendered override path is required")
+    return path
+
+
+ComposeRun = Callable[[tuple[str, ...], float | None], CommandResult]
+
+
 @dataclass(frozen=True)
 class SubprocessComposeExecutor:
     retain: Callable[[str], None] = lambda _: None
+    execute: ComposeRun | None = None
 
     def run(
         self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
     ) -> CommandResult:
+        if self.execute is not None:
+            return self.execute(argv, timeout_seconds)
         if "build" in argv and "--progress=plain" in argv:
             return self._run_final_build(argv)
         process = subprocess.Popen(

@@ -22,7 +22,7 @@ from acceptance.platform.compose import (
 from acceptance.platform.contracts import load_product_contract
 from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
 from acceptance.platform.failures import PlatformFailure, raise_with_platform_metadata
-from acceptance.platform.model import Lane, Outcome
+from acceptance.platform.model import BrowserProfile, Lane, Outcome, PlatformProfile
 from acceptance.platform.runner import RunnerDependencies, main, run
 
 SHA = "a" * 40
@@ -51,6 +51,14 @@ def _argv(tmp_path: Path, lane: str, fingerprint: str = "current") -> list[str]:
         "--task-root",
         str(tmp_path / "task"),
     ]
+
+
+def _profile() -> PlatformProfile:
+    return PlatformProfile(
+        "platform-v1",
+        "b" * 64,
+        BrowserProfile(Path("/tmp/browser"), Path("/tmp/browser/chrome"), "1", 1, "d" * 64),
+    )
 
 
 def _current_health() -> object:
@@ -162,7 +170,7 @@ def test_nonfinal_lanes_cannot_serialize_final_pass(tmp_path: Path, lane: str) -
     manifest = run(
         _argv(tmp_path, lane),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
         ),
@@ -177,7 +185,7 @@ def test_missing_health_fingerprint_skips_product_executor(tmp_path: Path) -> No
     result = main(
         _argv(tmp_path, "static", fingerprint="missing"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: (_ for _ in ()).throw(ValueError("missing")),
             static=lambda *_: calls.append("static"),
         ),
@@ -191,7 +199,7 @@ def test_final_requires_every_required_result(tmp_path: Path) -> None:
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -224,7 +232,7 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
                     assert self.topology is not None
                     return CommandResult(
                         0,
-                        self.topology.override_path.read_text(encoding="utf-8"),  # type: ignore[union-attr]
+                        self.topology.override_path.read_text(encoding="utf-8"),
                     )
                 return CommandResult(
                     0,
@@ -270,7 +278,7 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
     original_render = runner.render_task_override
 
     def render(*args: object, **kwargs: object) -> object:
-        topology = original_render(*args, **kwargs)  # type: ignore[arg-type]
+        topology = original_render(*args, **kwargs)
         executor.topology = topology
         return topology
 
@@ -315,7 +323,7 @@ def test_stalled_candidate_build_never_reaches_startup_or_final_authority(
 
     topology = executor.topology
     assert topology is not None
-    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))  # type: ignore[union-attr]
+    rendered = json.loads(topology.override_path.read_text(encoding="utf-8"))
     assert {
         name: service["build"]["args"]
         for name, service in rendered["services"].items()
@@ -545,8 +553,8 @@ def _install_supervised_final_build(
         ledger: object,
         _executor: object,
     ) -> object:
-        claim = ledger.claim(key)  # type: ignore[attr-defined]
-        ledger.close(  # type: ignore[attr-defined]
+        claim = ledger.claim(key)
+        ledger.close(
             claim,
             BuildReconciliation(
                 False, False, {}, "supervised failure", supervision or {}
@@ -554,10 +562,10 @@ def _install_supervised_final_build(
             "topology",
         )
         if supervision is None:
-            record = ledger.read(key)  # type: ignore[attr-defined]
+            record = ledger.read(key)
             del record["supervision"]
-            ledger.path_for(key).write_text(json.dumps(record))  # type: ignore[attr-defined]
-        raise BuildSupervisionFailure(kind, None, "BuildKit output")  # type: ignore[arg-type]
+            ledger.path_for(key).write_text(json.dumps(record))
+        raise BuildSupervisionFailure(kind, None, "BuildKit output")
 
     monkeypatch.setattr(runner, "build_final", fail_build)
 
@@ -583,7 +591,7 @@ def test_final_runner_replaces_caller_origin_with_its_exact_loopback_frontend_po
     result = run(
         argv,
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             start_browser_session=lambda *_: Session(),
@@ -611,7 +619,7 @@ def test_default_final_runner_passes_the_exact_runner_owned_origin_to_final_step
     observed: list[tuple[str, str]] = []
 
     def capture_final_inputs(inputs: object, *_: object) -> dict[str, bytes]:
-        observed.append((inputs.browser_session, inputs.deployed_origin))  # type: ignore[attr-defined]
+        observed.append((inputs.browser_session, inputs.deployed_origin))
         return {}
 
     monkeypatch.setattr(runner, "_final_steps", capture_final_inputs)
@@ -624,7 +632,7 @@ def test_default_final_runner_passes_the_exact_runner_owned_origin_to_final_step
             "https://caller.invalid",
         ],
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             start_browser_session=lambda *_: _Session(),
@@ -640,7 +648,7 @@ def test_cleanup_failure_preserves_product_failure(tmp_path: Path) -> None:
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -660,7 +668,7 @@ def test_cleanup_failure_revokes_an_otherwise_successful_final_claim(
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -686,7 +694,7 @@ def test_final_compose_diagnostics_are_sealed_after_a_build_failure(tmp_path: Pa
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -733,7 +741,7 @@ def test_default_final_cleanup_runs_after_a_started_topology_substep_fails(
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -789,7 +797,7 @@ def test_final_interrupt_after_browser_and_topology_allocation_drains_composite_
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -870,7 +878,7 @@ def test_runner_manifest_is_sealed_under_a_candidate_nofollow_root(
     result = run(
         _argv(tmp_path, "static"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
         ),
@@ -1065,7 +1073,7 @@ def test_final_manifest_seals_adapter_checksum_and_capture_interval(
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -1105,7 +1113,7 @@ def test_final_manifest_binds_adapter_digest_captured_before_final_steps(
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -1200,12 +1208,12 @@ process.exit(1);
     def final_steps(
         inputs: runner.RunnerInputs, profile: object, contract: object
     ) -> object:
-        return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
+        return runner._run_journey(inputs, contract, source)
 
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             start_browser_session=lambda *_: _Session(),
@@ -1249,12 +1257,12 @@ setInterval(() => {}, 1_000);
     def final_steps(
         inputs: runner.RunnerInputs, profile: object, contract: object
     ) -> object:
-        return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
+        return runner._run_journey(inputs, contract, source)
 
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             start_browser_session=lambda *_: _Session(),
@@ -1292,12 +1300,12 @@ process.exit(1);
     def final_steps(
         inputs: runner.RunnerInputs, profile: object, contract: object
     ) -> object:
-        return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
+        return runner._run_journey(inputs, contract, source)
 
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             start_browser_session=lambda *_: _Session(),
@@ -1346,12 +1354,12 @@ setInterval(() => {}, 1_000);
     def final_steps(
         inputs: runner.RunnerInputs, profile: object, contract: object
     ) -> object:
-        return runner._run_journey(inputs, contract, source)  # type: ignore[arg-type]
+        return runner._run_journey(inputs, contract, source)
 
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             start_browser_session=lambda *_: _Session(),
@@ -1374,7 +1382,7 @@ setInterval(() => {}, 1_000);
 
 def test_adapter_rejects_extra_or_aggregate_oversize_artifacts() -> None:
     payload = _adapter_payload()
-    payload["artifacts"]["unexpected.bin"] = "eA=="  # type: ignore[index]
+    payload["artifacts"]["unexpected.bin"] = "eA=="
     with pytest.raises(ValueError, match="allowlist"):
         runner._decode_adapter_artifacts(payload)
 
@@ -1399,7 +1407,7 @@ def test_adapter_observation_rejects_unproven_polling_cadence(
     field: str, value: int
 ) -> None:
     payload = _adapter_payload()
-    payload["lifecycle"]["polling"][field] = value  # type: ignore[index]
+    payload["lifecycle"]["polling"][field] = value
 
     with pytest.raises(ValueError, match="adapter observation"):
         runner._decode_adapter_artifacts(payload)
@@ -1407,7 +1415,7 @@ def test_adapter_observation_rejects_unproven_polling_cadence(
 
 def test_adapter_observation_rejects_overlapping_scheduled_history_request() -> None:
     payload = _adapter_payload()
-    payload["lifecycle"]["requests"][1]["startedAt"] = 10.05  # type: ignore[index]
+    payload["lifecycle"]["requests"][1]["startedAt"] = 10.05
 
     with pytest.raises(ValueError, match="adapter observation"):
         runner._decode_adapter_artifacts(payload)
@@ -1424,7 +1432,7 @@ def test_finalization_failure_returns_nonfinal_result_with_primary_and_cleanup(
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -1453,7 +1461,7 @@ def test_finalization_stage_failure_never_publishes_final_candidate_authority(
         def fail_candidate_write(root: Path, *args: object) -> str:
             if ".pending" in root.parts:
                 raise OSError("artifact write failed")
-            return original_write(root, *args)  # type: ignore[arg-type]
+            return original_write(root, *args)
 
         monkeypatch.setattr(runner, "write_artifacts", fail_candidate_write)
     elif stage == "seal":
@@ -1461,7 +1469,7 @@ def test_finalization_stage_failure_never_publishes_final_candidate_authority(
         def fail_candidate_seal(root: Path, *args: object) -> None:
             if ".pending" in root.parts:
                 raise OSError("seal failed")
-            original_seal(root, *args)  # type: ignore[arg-type]
+            original_seal(root, *args)
 
         monkeypatch.setattr(runner, "seal_fingerprint", fail_candidate_seal)
     else:
@@ -1478,7 +1486,7 @@ def test_finalization_stage_failure_never_publishes_final_candidate_authority(
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -1515,7 +1523,7 @@ def test_post_publication_fault_fails_closed_when_revoke_destination_is_poisoned
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -1552,7 +1560,7 @@ def test_post_discovery_rename_fault_is_not_discoverable_when_revocation_is_pois
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -1634,7 +1642,7 @@ def test_final_executes_static_before_final_product_steps(tmp_path: Path) -> Non
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: calls.append("static"),
             browser_card=lambda *_: None,
@@ -1672,7 +1680,7 @@ def test_compose_cleanup_failure_still_closes_browser_and_writes_its_logs(
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             browser_card=lambda *_: None,
@@ -1728,7 +1736,7 @@ def test_default_final_platform_session_precedes_build_uses_its_cdp_and_closes_o
     result = run(
         _argv(tmp_path, "final"),
         dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
+            load_profile=lambda _: _profile(),
             validate_health=lambda *_: _current_health(),
             static=lambda *_: None,
             start_browser_session=lambda *_: calls.append("browser-start") or session,

@@ -52,4 +52,4 @@ def test_build_ledger_key_is_frozen() -> None:
     key = BuildLedgerKey(SHA, "b" * 64, "c" * 64)
 
     with pytest.raises(FrozenInstanceError):
-        key.candidate_sha = "d" * 40  # type: ignore[misc]
+        setattr(key, "candidate_sha", "d" * 40)

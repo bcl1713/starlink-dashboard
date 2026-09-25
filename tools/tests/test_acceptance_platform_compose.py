@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -20,10 +21,12 @@ from acceptance.platform.compose import (
     cleanup_compose,
     reconcile_build,
     render_task_override,
+    require_override_path,
     resolve_topology,
     start_no_build,
 )
 from acceptance.platform.model import (
+    BrowserProfile,
     BuildLedgerKey,
     PlatformProfile,
     ProductContract,
@@ -32,7 +35,11 @@ from acceptance.platform.model import (
 )
 
 SHA = "a" * 40
-PROFILE = PlatformProfile("platform-v1", "b" * 64, None)  # type: ignore[arg-type]
+PROFILE = PlatformProfile(
+    "platform-v1",
+    "b" * 64,
+    BrowserProfile(Path("browser"), Path("browser/chrome"), "1", 1, "d" * 64),
+)
 CONTRACT = ProductContract(
     name="mission-retirement",
     services=("starlink-location", "mission-planner"),
@@ -43,6 +50,24 @@ CONTRACT = ProductContract(
     checksum="c" * 64,
 )
 KEY = BuildLedgerKey(SHA, "b" * 64, "c" * 64)
+
+
+def configured_executor(
+    *, run: Callable[[tuple[str, ...], float | None], CommandResult]
+) -> SubprocessComposeExecutor:
+    return SubprocessComposeExecutor(retain=lambda _: None, execute=run)
+
+
+def test_typed_fixture_configures_executor_without_method_reassignment() -> None:
+    executor = configured_executor(run=lambda _argv, _timeout: CommandResult(0, "typed"))
+
+    assert executor.run(("docker", "compose")) == CommandResult(0, "typed")
+    assert "run" not in executor.__dict__
+
+
+def test_require_override_path_rejects_missing_optional_path() -> None:
+    with pytest.raises(ValueError, match="rendered override path is required"):
+        require_override_path(None)
 
 
 def _complete_two_image_log(project: str = "acceptance-abc") -> str:
@@ -183,7 +208,7 @@ def test_build_stall_closes_candidate_ledger_and_blocks_startup(
         "starlink-location": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha},
         "mission-planner": {"ACCEPTANCE_CANDIDATE_SHA": candidate_sha},
     }
-    original_run = executor.run
+    original_run = executor._run_default
 
     def run_stalled_build(
         argv: tuple[str, ...], *, timeout_seconds: float | None = None
@@ -207,7 +232,9 @@ def test_build_stall_closes_candidate_ledger_and_blocks_startup(
                 ) from error
         return original_run(argv, timeout_seconds=timeout_seconds)
 
-    executor.run = run_stalled_build  # type: ignore[method-assign]
+    executor.run_override = lambda argv, timeout_seconds: run_stalled_build(
+        argv, timeout_seconds=timeout_seconds
+    )
 
     candidate_key = BuildLedgerKey(
         candidate_sha, KEY.profile_checksum, KEY.contract_checksum
@@ -466,7 +493,7 @@ def test_resolve_rejects_tampered_final_candidate_build_arguments(
 ) -> None:
     topology = _topology(tmp_path, candidate_sha=SHA)
     executor = _executor(config=_resolved_config(topology))
-    original_run = executor.run
+    original_run = executor._run_default
 
     def run_tampered_final_config(
         argv: tuple[str, ...], *, timeout_seconds: float | None = None
@@ -488,7 +515,9 @@ def test_resolve_rejects_tampered_final_candidate_build_arguments(
             return CommandResult(0, json.dumps(final))
         return original_run(argv, timeout_seconds=timeout_seconds)
 
-    executor.run = run_tampered_final_config  # type: ignore[method-assign]
+    executor.run_override = lambda argv, timeout_seconds: run_tampered_final_config(
+        argv, timeout_seconds=timeout_seconds
+    )
     with pytest.raises(ValueError, match="invalid candidate build binding"):
         resolve_topology(topology, CONTRACT, executor)
 
@@ -499,7 +528,7 @@ def test_resolve_rejects_tampered_final_build_cache_authority(
 ) -> None:
     topology = _topology(tmp_path, candidate_sha=SHA)
     executor = _executor(config=_resolved_config(topology))
-    original_run = executor.run
+    original_run = executor._run_default
 
     def run_tampered_final_config(
         argv: tuple[str, ...], *, timeout_seconds: float | None = None
@@ -518,7 +547,9 @@ def test_resolve_rejects_tampered_final_build_cache_authority(
             return CommandResult(0, json.dumps(final))
         return original_run(argv, timeout_seconds=timeout_seconds)
 
-    executor.run = run_tampered_final_config  # type: ignore[method-assign]
+    executor.run_override = lambda argv, timeout_seconds: run_tampered_final_config(
+        argv, timeout_seconds=timeout_seconds
+    )
     with pytest.raises(ValueError, match="cache"):
         resolve_topology(topology, CONTRACT, executor)
 
@@ -637,7 +668,7 @@ def test_start_no_build_bounds_compose_wait_and_reports_retained_timeout_output(
     ledger = BuildLedger(tmp_path / "ledger")
     resolve_topology(topology, CONTRACT, executor)
     assert build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor).usable
-    original_run = executor.run
+    original_run = executor._run_default
 
     def run_with_expiring_deadline(
         argv: tuple[str, ...], *, timeout_seconds: float | None = None
@@ -649,7 +680,9 @@ def test_start_no_build_bounds_compose_wait_and_reports_retained_timeout_output(
             )
         return original_run(argv)
 
-    executor.run = run_with_expiring_deadline  # type: ignore[method-assign]
+    executor.run_override = lambda argv, timeout_seconds: run_with_expiring_deadline(
+        argv, timeout_seconds=timeout_seconds
+    )
 
     with pytest.raises(
         ValueError, match="timed out after 120 seconds: partial startup output"
@@ -664,7 +697,7 @@ def test_final_build_deadline_closes_ledger_with_bounded_supervision(
     executor = _executor(config=_resolved_config(topology))
     ledger = BuildLedger(tmp_path / "ledger")
     resolve_topology(topology, CONTRACT, executor)
-    original_run = executor.run
+    original_run = executor._run_default
 
     def run_with_expiring_build_deadline(
         argv: tuple[str, ...], *, timeout_seconds: float | None = None
@@ -681,7 +714,9 @@ def test_final_build_deadline_closes_ledger_with_bounded_supervision(
             )
         return original_run(argv, timeout_seconds=timeout_seconds)
 
-    executor.run = run_with_expiring_build_deadline  # type: ignore[method-assign]
+    executor.run_override = lambda argv, timeout_seconds: run_with_expiring_build_deadline(
+        argv, timeout_seconds=timeout_seconds
+    )
 
     with pytest.raises(BuildSupervisionFailure, match="build_deadline_exceeded"):
         build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor)
@@ -712,7 +747,7 @@ def test_final_build_closes_ledger_when_image_reconciliation_raises(
     def inspect_image_raises(tag: str) -> str | None:
         raise OSError(f"image inspect failed: {tag}")
 
-    executor.inspect_image = inspect_image_raises  # type: ignore[method-assign]
+    executor.inspect_override = inspect_image_raises
 
     with pytest.raises(OSError, match="image inspect failed"):
         build_final(topology, PROFILE, CONTRACT, KEY, ledger, executor)
@@ -804,8 +839,17 @@ class _Executor:
     down: CommandResult
     resources: tuple[str, str]
     calls: list[tuple[str, ...]]
+    run_override: Callable[[tuple[str, ...], float | None], CommandResult] | None = None
+    inspect_override: Callable[[str], str | None] | None = None
 
     def run(
+        self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
+    ) -> CommandResult:
+        if self.run_override is not None:
+            return self.run_override(argv, timeout_seconds)
+        return self._run_default(argv, timeout_seconds=timeout_seconds)
+
+    def _run_default(
         self, argv: tuple[str, ...], *, timeout_seconds: float | None = None
     ) -> CommandResult:
         self.calls.append(argv)
@@ -826,6 +870,8 @@ class _Executor:
         return CommandResult(0, "")
 
     def inspect_image(self, tag: str) -> str | None:
+        if self.inspect_override is not None:
+            return self.inspect_override(tag)
         return f"sha256:{tag}"
 
 
