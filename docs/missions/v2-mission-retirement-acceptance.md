@@ -46,8 +46,8 @@ pre-existing state or navigating directly to a hidden state:
 5. Select **Activate** and observe a successful activation response.
 6. Navigate through the visible **Overview** control.
 7. Confirm the visible active route context, route name
-   `V2 Acceptance Route KAAA-KBBB`, and the **Upcoming POIs** panel including
-   `KAAA` and multiple point-of-interest rows.
+   `V2 Acceptance Route KAAA-KBBB`, and the **Upcoming POIs** panel with
+   separate visible body rows for `KAAA` and `KBBB` (at least two POI rows).
 
 Upcoming POI visibility derives from active-route position; ETA remains
 anticipated/estimated metadata. Before planned departure, anticipated ETA is

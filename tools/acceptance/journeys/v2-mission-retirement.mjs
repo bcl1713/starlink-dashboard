@@ -206,10 +206,11 @@ async function assertSemanticOverview(page) {
   await poiPanel.waitFor();
   await settleAnimations(page);
   const routeName = legend.getByText('V2 Acceptance Route KAAA-KBBB', { exact: true });
-  const firstPoi = poiPanel.getByText('KAAA', { exact: true });
-  const poiRows = poiPanel.getByRole('row');
-  if (!(await routeName.isVisible()) || !(await firstPoi.isVisible()) || (await poiRows.count()) < 2) throw new Error('active V2 route, context, or generated POIs are not visibly bound to the accepted KML');
-  return { routeName: await routeName.innerText(), firstPoi: await firstPoi.innerText(), poiRows: await poiRows.count() };
+  const poiRows = poiPanel.locator('tbody tr');
+  const kAaaPoiRow = poiRows.filter({ hasText: 'KAAA' });
+  const kBbbPoiRow = poiRows.filter({ hasText: 'KBBB' });
+  if (!(await routeName.isVisible()) || !(await kAaaPoiRow.first().isVisible()) || !(await kBbbPoiRow.first().isVisible()) || (await poiRows.count()) < 2) throw new Error('active V2 route, context, or KAAA/KBBB generated POI body rows are not visibly bound to the accepted KML');
+  return { routeName: await routeName.innerText(), firstPoi: await kAaaPoiRow.first().innerText(), secondPoi: await kBbbPoiRow.first().innerText(), poiRows: await poiRows.count() };
 }
 
 export async function runV2MissionRetirement({ page, origin, kmlPath }) {

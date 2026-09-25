@@ -97,9 +97,10 @@ contract checksum requires a new final build-ledger record.
 
 For the V2 mission-retirement product contract, the adapter must prove the
 operator-visible binding created by the public KML upload and activation flow:
-the active route name and a genuine **Upcoming POIs** table containing `KAAA`
-and multiple POI rows. This is a visible browser observation, not API seeding,
-hidden navigation, a synthetic clock, or hidden application state. POI
+the active route name and a genuine **Upcoming POIs** table containing separate
+visible body rows for `KAAA` and `KBBB` (at least two POI rows). This is a visible
+browser observation, not API seeding, hidden navigation, a synthetic clock, or
+hidden application state. POI
 eligibility is route-relative; ETA is anticipated/estimated metadata and does
 not determine whether a route-relative POI row is visible.
 

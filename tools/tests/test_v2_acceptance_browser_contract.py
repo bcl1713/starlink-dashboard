@@ -159,13 +159,16 @@ def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> N
 
 
 def test_v2_adapter_requires_route_relative_generated_poi_rows() -> None:
-    """The real activated KML journey must bind visible route context and POI rows."""
+    """The real activated KML journey must bind both named POIs in table body rows."""
     source = adapter_source()
 
     assert "V2 Acceptance Route KAAA-KBBB" in source
-    assert "KAAA" in source
-    assert "KBBB" in source
-    assert "poiRows.count()) < 2" in source
+    assert "const poiRows = poiPanel.locator('tbody tr');" in source
+    assert "const kAaaPoiRow = poiRows.filter({ hasText: 'KAAA' });" in source
+    assert "const kBbbPoiRow = poiRows.filter({ hasText: 'KBBB' });" in source
+    assert "await kAaaPoiRow.first().isVisible()" in source
+    assert "await kBbbPoiRow.first().isVisible()" in source
+    assert "(await poiRows.count()) < 2" in source
 
 
 def test_production_adapter_closes_real_attachment_before_failure_exit(

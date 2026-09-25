@@ -193,6 +193,7 @@ def test_v2_documentation_separates_route_relative_poi_eligibility_from_eta_timi
     text = " ".join(V2_DOC.read_text(encoding="utf-8").split())
 
     assert "Upcoming POI visibility derives from active-route position" in text
+    assert "separate visible body rows for `KAAA` and `KBBB`" in text
     assert "ETA remains anticipated/estimated metadata" in text
     assert (
         "Before planned departure, anticipated ETA is calendar-based. After a missed "
