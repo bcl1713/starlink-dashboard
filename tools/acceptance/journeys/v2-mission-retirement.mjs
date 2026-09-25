@@ -25,6 +25,7 @@ const POLLING_ENDPOINT = '/api/overview-history';
 const POLLING_PERIOD_MS = 5_000;
 const POLLING_MIN_CADENCE_MS = 4_500;
 const POLLING_MAX_CADENCE_MS = 7_500;
+const SEMANTIC_READINESS_TIMEOUT_MS = 10_000;
 
 function parse(argv) {
   const values = {};
@@ -202,14 +203,16 @@ function scopedLifecycle(page) {
 async function assertSemanticOverview(page) {
   const legend = page.getByLabel('Globe legend');
   const poiPanel = page.getByLabel('Upcoming POIs');
-  await legend.waitFor();
-  await poiPanel.waitFor();
-  await settleAnimations(page);
   const routeName = legend.getByText('V2 Acceptance Route KAAA-KBBB', { exact: true });
   const poiRows = poiPanel.locator('tbody tr');
-  const kAaaPoiRow = poiRows.filter({ hasText: 'KAAA' });
-  const kBbbPoiRow = poiRows.filter({ hasText: 'KBBB' });
-  if (!(await routeName.isVisible()) || !(await kAaaPoiRow.first().isVisible()) || !(await kBbbPoiRow.first().isVisible()) || (await poiRows.count()) < 2) throw new Error('active V2 route, context, or KAAA/KBBB generated POI body rows are not visibly bound to the accepted KML');
+  const kAaaPoiRow = poiRows.filter({ hasText: 'KAAA' }).filter({ hasNotText: 'KBBB' });
+  const kBbbPoiRow = poiRows.filter({ hasText: 'KBBB' }).filter({ hasNotText: 'KAAA' });
+  await routeName.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  await kAaaPoiRow.first().waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  await kBbbPoiRow.first().waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  await poiRows.nth(1).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  await settleAnimations(page);
+  if ((await poiRows.count()) < 2) throw new Error('active V2 route, context, or KAAA/KBBB generated POI body rows are not visibly bound to the accepted KML');
   return { routeName: await routeName.innerText(), firstPoi: await kAaaPoiRow.first().innerText(), secondPoi: await kBbbPoiRow.first().innerText(), poiRows: await poiRows.count() };
 }
 

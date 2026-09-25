@@ -215,17 +215,23 @@ def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> N
     assert card.index("process.stderr.write") < card.index("() => process.exit(1),")
 
 
-def test_v2_adapter_requires_route_relative_generated_poi_rows() -> None:
-    """The real activated KML journey must bind both named POIs in table body rows."""
+def test_v2_adapter_bounds_semantic_route_and_distinct_poi_row_readiness() -> None:
+    """Static panels cannot satisfy readiness before the bound route and distinct POI rows."""
     source = adapter_source()
 
+    assert "const SEMANTIC_READINESS_TIMEOUT_MS = 10_000;" in source
     assert "V2 Acceptance Route KAAA-KBBB" in source
     assert "const poiRows = poiPanel.locator('tbody tr');" in source
-    assert "const kAaaPoiRow = poiRows.filter({ hasText: 'KAAA' });" in source
-    assert "const kBbbPoiRow = poiRows.filter({ hasText: 'KBBB' });" in source
-    assert "await kAaaPoiRow.first().isVisible()" in source
-    assert "await kBbbPoiRow.first().isVisible()" in source
+    assert "const kAaaPoiRow = poiRows.filter({ hasText: 'KAAA' }).filter({ hasNotText: 'KBBB' });" in source
+    assert "const kBbbPoiRow = poiRows.filter({ hasText: 'KBBB' }).filter({ hasNotText: 'KAAA' });" in source
+    assert "await routeName.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });" in source
+    assert "await kAaaPoiRow.first().waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });" in source
+    assert "await kBbbPoiRow.first().waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });" in source
+    assert "await poiRows.nth(1).waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });" in source
     assert "(await poiRows.count()) < 2" in source
+    assert "await routeName.isVisible()" not in source
+    assert "await kAaaPoiRow.first().isVisible()" not in source
+    assert "await kBbbPoiRow.first().isVisible()" not in source
 
 
 def test_production_adapter_closes_real_attachment_before_failure_exit(
