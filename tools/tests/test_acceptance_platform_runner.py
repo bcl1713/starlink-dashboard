@@ -6,6 +6,7 @@ import json
 import struct
 import subprocess
 import zlib
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -107,6 +108,7 @@ def _adapter_payload(png: bytes | None = None) -> dict[str, object]:
         "lifecycle": {
             "frameId": "frame",
             "loaderId": "loader",
+            "history": {"mode": "live"},
             "polling": {
                 "navigationScoped": True,
                 "endpoint": "/api/overview-history",
@@ -903,6 +905,53 @@ def test_adapter_observation_is_schema_validated_and_retained() -> None:
     assert observation["visible"]["routeName"] == "V2 Acceptance Route KAAA-KBBB"
 
 
+def test_adapter_observation_accepts_scoped_degraded_history_fallback() -> None:
+    """A scoped 503 is acceptable only when its documented fallback is observed."""
+
+    payload = _adapter_payload()
+    lifecycle = payload["lifecycle"]
+    lifecycle["history"] = {
+        "mode": "degraded",
+        "fallback": "Aircraft history unavailable",
+    }
+    lifecycle["requests"] = [lifecycle["requests"][0]]
+    lifecycle["requests"][0]["outcome"] = "degraded"
+    lifecycle["requests"][0]["status"] = 503
+    lifecycle["polling"]["windowEnd"] = 10.1
+    lifecycle["polling"]["minimumScheduledRequests"] = 0
+    lifecycle["polling"]["observedScheduledRequests"] = 0
+    payload["visible"]["historyFallback"] = "Aircraft history unavailable"
+
+    artifacts = runner._decode_adapter_artifacts(payload)
+
+    observation = json.loads(artifacts["adapter-observation.json"])
+    assert observation["lifecycle"]["history"] == {
+        "fallback": "Aircraft history unavailable",
+        "mode": "degraded",
+    }
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda payload: payload["visible"].update({"historyFallback": None}),
+        lambda payload: payload["lifecycle"].update(
+            {"history": {"mode": "degraded", "fallback": "Aircraft history unavailable"}}
+        ),
+    ],
+)
+def test_adapter_observation_rejects_malformed_or_unpaired_history_classification(
+    mutate: Callable[[dict[str, object]], None],
+) -> None:
+    """History classification remains bounded and tied to a visible fallback."""
+
+    payload = _adapter_payload()
+    mutate(payload)
+
+    with pytest.raises(ValueError, match="adapter observation"):
+        runner._decode_adapter_artifacts(payload)
+
+
 def test_final_manifest_seals_adapter_checksum_and_capture_interval(
     tmp_path: Path,
 ) -> None:
@@ -1466,7 +1515,7 @@ def test_v2_adapter_declares_navigation_scoped_history_polling_window() -> None:
 
     assert "const POLLING_ENDPOINT = '/api/overview-history';" in source
     assert "const POLLING_PERIOD_MS = 5_000;" in source
-    assert "beginPollingWindow" in source
+    assert "beginHistoryObservation" in source
     assert "waitForScheduledPoll" in source
     assert "cadenceMinMs" in source
     assert "cadenceMaxMs" in source

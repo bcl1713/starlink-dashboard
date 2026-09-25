@@ -571,18 +571,31 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or not isinstance(visible, Mapping)
     ):
         raise ValueError("adapter observation is invalid")
-    frame, loader, polling, requests = (
+    frame, loader, history, polling, requests = (
         lifecycle.get("frameId"),
         lifecycle.get("loaderId"),
+        lifecycle.get("history"),
         lifecycle.get("polling"),
         lifecycle.get("requests"),
     )
     if (
         not all(isinstance(value, str) and value for value in (frame, loader))
+        or not isinstance(history, Mapping)
         or not isinstance(polling, Mapping)
         or not isinstance(requests, list)
         or not 1 <= len(requests) <= _MAX_LIFECYCLE_RECORDS
     ):
+        raise ValueError("adapter observation is invalid")
+    history_mode = history.get("mode")
+    if history_mode == "live" and set(history) == {"mode"}:
+        history_fallback: str | None = None
+    elif (
+        history_mode == "degraded"
+        and set(history) == {"mode", "fallback"}
+        and history.get("fallback") == "Aircraft history unavailable"
+    ):
+        history_fallback = "Aircraft history unavailable"
+    else:
         raise ValueError("adapter observation is invalid")
     minimum, observed = polling.get("minimumScheduledRequests"), polling.get(
         "observedScheduledRequests"
@@ -601,9 +614,9 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or polling["windowEnd"] < polling["windowStart"]
         or not isinstance(minimum, int)
         or not isinstance(observed, int)
-        or minimum < 1
-        or observed < minimum
-    ):
+        or (history_mode == "live" and (minimum < 1 or observed < minimum))
+        or (history_mode == "degraded" and (minimum != 0 or observed != 0))
+        ):
         raise ValueError("adapter observation is invalid")
     records: list[dict[str, object]] = []
     for record in requests:
@@ -611,8 +624,9 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
             not isinstance(record, Mapping)
             or not isinstance(record.get("id"), str)
             or record.get("path") != "/api/overview-history"
-            or record.get("outcome") != "finished"
-            or record.get("status") != 200
+            or record.get("outcome")
+            != ("finished" if history_mode == "live" else "degraded")
+            or record.get("status") != (200 if history_mode == "live" else 503)
             or record.get("cycle") not in {"bootstrap", "scheduled"}
             or not all(
                 isinstance(record.get(key), (int, float))
@@ -637,17 +651,23 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         )
     bootstrap = [record for record in records if record["cycle"] == "bootstrap"]
     scheduled = [record for record in records if record["cycle"] == "scheduled"]
-    if len(bootstrap) != 1 or len(scheduled) < minimum or len(scheduled) != observed:
+    if (
+        len(bootstrap) != 1
+        or len(scheduled) != observed
+        or (history_mode == "live" and len(scheduled) < minimum)
+        or (history_mode == "degraded" and scheduled)
+    ):
         raise ValueError("adapter observation is invalid")
     ordered = [bootstrap[0], *sorted(scheduled, key=lambda record: record["startedAt"])]
-    for previous, record in pairwise(ordered):
-        cadence_ms = (record["startedAt"] - previous["startedAt"]) * 1000
-        if (
-            record["startedAt"] < previous["finishedAt"]
-            or cadence_ms < cadence_min
-            or cadence_ms > cadence_max
-        ):
-            raise ValueError("adapter observation is invalid")
+    if history_mode == "live":
+        for previous, record in pairwise(ordered):
+            cadence_ms = (record["startedAt"] - previous["startedAt"]) * 1000
+            if (
+                record["startedAt"] < previous["finishedAt"]
+                or cadence_ms < cadence_min
+                or cadence_ms > cadence_max
+            ):
+                raise ValueError("adapter observation is invalid")
     if (
         polling["windowStart"] != bootstrap[0]["finishedAt"]
         or polling["windowEnd"] != ordered[-1]["finishedAt"]
@@ -660,12 +680,18 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
         or visible["poiRows"] < 2
     ):
         raise ValueError("adapter observation is invalid")
+    if (
+        visible.get("historyFallback") != history_fallback
+        or (history_fallback is None and "historyFallback" in visible)
+    ):
+        raise ValueError("adapter observation is invalid")
     encoded = json.dumps(
         {
             "activation": payload["activation"],
             "lifecycle": {
                 "frameId": frame,
                 "loaderId": loader,
+                "history": dict(history),
                 "polling": {
                     "navigationScoped": True,
                     "endpoint": polling["endpoint"],
@@ -683,6 +709,11 @@ def _adapter_observation(payload: Mapping[str, object]) -> bytes:
                 "routeName": visible["routeName"],
                 "firstPoi": visible["firstPoi"],
                 "poiRows": visible["poiRows"],
+                **(
+                    {"historyFallback": history_fallback}
+                    if history_fallback is not None
+                    else {}
+                ),
             },
         },
         sort_keys=True,

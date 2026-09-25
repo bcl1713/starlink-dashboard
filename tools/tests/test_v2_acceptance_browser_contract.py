@@ -215,6 +215,16 @@ def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> N
     assert card.index("process.stderr.write") < card.index("() => process.exit(1),")
 
 
+def test_adapter_explicitly_classifies_visible_degraded_history_fallback() -> None:
+    """A scoped history 503 needs the product fallback, not a silent pass."""
+
+    card = adapter_source()
+
+    assert "status === 503 ? 'degraded'" in card
+    assert "Aircraft history unavailable" in card
+    assert "history: degraded ? { mode: historyMode, fallback: 'Aircraft history unavailable' }" in card
+
+
 def test_v2_adapter_executes_bounded_exact_semantic_readiness_locators(
     tmp_path: Path,
 ) -> None:
