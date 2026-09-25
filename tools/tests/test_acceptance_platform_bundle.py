@@ -132,12 +132,48 @@ def test_platform_browser_launch_adds_only_certified_angle_swiftshader_flags(
     finally:
         descriptor.close()
 
-    assert launched_arguments[-3:] == (
+    assert launched_arguments == (
         "--use-gl=angle",
         "--use-angle=swiftshader",
         "about:blank",
     )
-    assert "--enable-unsafe-swiftshader" not in launched_arguments
+    assert launched_arguments.count("--use-gl=angle") == 1
+    assert launched_arguments.count("--use-angle=swiftshader") == 1
+    assert not any(
+        argument.startswith(("--use-gl", "--use-angle", "--enable-unsafe-swiftshader"))
+        and argument not in {"--use-gl=angle", "--use-angle=swiftshader"}
+        for argument in launched_arguments
+    )
+
+
+@pytest.mark.parametrize(
+    "argument",
+    (
+        "--use-gl=desktop",
+        "--use-angle=default",
+        "--enable-unsafe-swiftshader",
+        "--enable-unsafe-swiftshader=true",
+    ),
+)
+def test_platform_browser_launch_rejects_caller_gl_selection_before_start(
+    monkeypatch: pytest.MonkeyPatch, argument: str
+) -> None:
+    """Fails if callers can alter the descriptor-owned GL composition."""
+    started = False
+
+    def capture_start(_: int, __: tuple[str, ...]) -> None:
+        nonlocal started
+        started = True
+
+    monkeypatch.setattr(browser_bundle, "_start_descriptor", capture_start)
+    descriptor = BrowserLaunchSpec(os.open("/dev/null", os.O_RDONLY))
+    try:
+        with pytest.raises(ValueError, match="platform-owned"):
+            descriptor.start(argument)
+    finally:
+        descriptor.close()
+
+    assert not started
 
 
 def test_version_probe_survives_parent_component_symlink_replacement(

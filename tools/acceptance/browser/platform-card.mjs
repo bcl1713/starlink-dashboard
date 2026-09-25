@@ -3,12 +3,14 @@
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { webgl2Preflight } from './webgl2-preflight.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const require = createRequire(
   resolve(ROOT, 'frontend/mission-planner/package.json'),
 );
 const { chromium } = require('@playwright/test');
+const MAX_ARTIFACT_BYTES = 16 * 1024 * 1024;
 
 const [cdpUrl] = process.argv.slice(2);
 if (!cdpUrl) throw new Error('usage: platform-card.mjs <cdp-url>');
@@ -23,25 +25,14 @@ try {
   const bounds = await session.send('Browser.getWindowBounds', { windowId: target.windowId });
   if (!target.windowId || resized === undefined || !bounds?.bounds) throw new Error('native window resize did not return a window result');
   await page.goto('data:text/html,<title>platform-neutral</title>', { waitUntil: 'load' });
-  const webgl2 = await page.evaluate(() => {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2');
-    if (!gl) throw new Error('platform WebGL2 preflight failed');
-    const debug = gl.getExtension('WEBGL_debug_renderer_info');
-    const result = {
-      renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
-      vendor: debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
-      version: gl.getParameter(gl.VERSION),
-    };
-    if (!Object.values(result).every((value) => typeof value === 'string' && value.trim())) throw new Error('platform WebGL2 preflight failed');
-    return result;
-  });
+  const webgl2 = await page.evaluate(webgl2Preflight);
   const metrics = await page.evaluate(() => ({
     innerWidth: window.innerWidth, innerHeight: window.innerHeight,
     visualWidth: window.visualViewport?.width, visualHeight: window.visualViewport?.height,
     dpr: window.devicePixelRatio,
   }));
   const screenshot = await page.screenshot();
+  if (screenshot.byteLength > MAX_ARTIFACT_BYTES) throw new Error('platform screenshot exceeds byte budget');
   const raster = await page.evaluate(async (encoded) => {
     const bytes = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
     const image = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));

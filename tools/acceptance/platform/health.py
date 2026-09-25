@@ -31,6 +31,8 @@ from .evidence import (
 from .model import Lane, Outcome, PlatformProfile, RunResult
 
 _CARD = Path(__file__).parents[1] / "browser/platform-card.mjs"
+_WEBGL2_KEYS = frozenset(("renderer", "vendor", "version"))
+_MAX_WEBGL2_FIELD_BYTES = 512
 _TEMPLATE = (
     "unprovisioned-template",
     "0" * 64,
@@ -402,9 +404,15 @@ def _require_neutral_metrics(metrics: Mapping[str, Any]) -> None:
 
 
 def _require_webgl2(webgl2: Mapping[str, str] | None) -> None:
-    if not isinstance(webgl2, Mapping) or any(
-        not isinstance(webgl2.get(key), str) or not webgl2[key].strip()
-        for key in ("renderer", "vendor", "version")
+    if (
+        not isinstance(webgl2, Mapping)
+        or set(webgl2) != _WEBGL2_KEYS
+        or any(
+            not isinstance(webgl2[key], str)
+            or not webgl2[key].strip()
+            or len(webgl2[key].encode("utf-8")) > _MAX_WEBGL2_FIELD_BYTES
+            for key in _WEBGL2_KEYS
+        )
     ):
         raise ValueError("neutral WebGL2 preflight is invalid")
 

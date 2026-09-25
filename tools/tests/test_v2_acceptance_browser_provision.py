@@ -440,10 +440,10 @@ def test_provenance_rejects_task_root_escape_and_symlinked_parent(
     assert not (external / "provenance.json").exists()
 
 
-def test_browser_card_rejects_each_stale_provenance_identity_field(
+def test_retired_browser_card_rejects_legacy_provisioned_launch_inputs_before_use(
     tmp_path: Path,
 ) -> None:
-    """Fails if a provenance record survives project/lock/metadata/version/hash drift."""
+    """Legacy provision records cannot revive the retired direct-launch card."""
     package = json.loads((MISSION_PLANNER / "package.json").read_text(encoding="utf-8"))
     lock_path = MISSION_PLANNER / "package-lock.json"
     metadata_path = MISSION_PLANNER / "node_modules/playwright-core/browsers.json"
@@ -521,4 +521,4 @@ def test_browser_card_rejects_each_stale_provenance_identity_field(
             text=True,
         )
         assert result.returncode == 1
-        assert error in json.loads(result.stdout)["error"]
+        assert "platform-owned browser session" in json.loads(result.stdout)["error"]

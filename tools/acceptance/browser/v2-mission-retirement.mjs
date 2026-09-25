@@ -6,6 +6,7 @@ import { basename, dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
+import { webgl2Preflight } from './webgl2-preflight.mjs';
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), '../../..');
 const require = createRequire(resolve(ROOT, 'frontend/mission-planner/package.json'));
@@ -49,6 +50,9 @@ function parseArgs(argv) {
 async function inputs() {
   const flags = parseArgs(process.argv);
   const supplied = flags.input ? JSON.parse(await readFile(flags.input, 'utf8')) : {};
+  if (['chrome', 'display', 'cdp-port', 'profile-dir'].some((name) => flags[name] ?? supplied[name])) {
+    throw new Error('direct browser launch is retired; use a platform-owned browser session');
+  }
   const value = (name, required = true) => flags[name] ?? supplied[name] ?? (required ? (() => { throw new Error(`missing --${name}`); })() : undefined);
   const result = {
     mode: value('mode'), chrome: resolve(value('chrome')), display: value('display'),
@@ -211,19 +215,7 @@ async function setExactWindow(page, state, artifactPrefix) {
 async function neutral(page, state) {
   const neutralPath = await artifact(state, 'neutral.html', '<!doctype html><title>Neutral browser card</title><main>Neutral browser card</main>');
   await page.goto(pathToFileURL(neutralPath).href, { waitUntil: 'load' });
-  const webgl2 = await page.evaluate(() => {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2');
-    if (!gl) throw new Error('platform WebGL2 preflight failed');
-    const debug = gl.getExtension('WEBGL_debug_renderer_info');
-    const result = {
-      renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
-      vendor: debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
-      version: gl.getParameter(gl.VERSION),
-    };
-    if (!Object.values(result).every((value) => typeof value === 'string' && value.trim())) throw new Error('platform WebGL2 preflight failed');
-    return result;
-  });
+  const webgl2 = await page.evaluate(webgl2Preflight);
   const pre = await assertExactViewport(page, state, 'neutral-pre');
   await setExactWindow(page, state, 'neutral-post-window');
   const post = await assertExactViewport(page, state, 'neutral-post');
@@ -274,36 +266,8 @@ async function terminate(child) {
 }
 
 async function main() {
-  const config = await inputs();
-  await mkdir(config.evidenceDir, { recursive: true, mode: 0o700 });
-  const state = { config, startedAt: Date.now(), children: [], logs: {}, probes: { errors: {} }, result: { mode: config.mode, status: 'failed' } };
-  for (const name of ['xvfb-stdout', 'xvfb-stderr', 'chrome-stdout', 'chrome-stderr']) state.logs[name] = (await import('node:fs')).createWriteStream(contained(config.evidenceDir, `${name}.log`), { mode: 0o600 });
-  let browser;
-  try {
-    const provisioning = await provisionedExecutable(config);
-    const chromeBytes = await readFile(config.chrome);
-    const chromeInfo = { path: config.chrome, sha256: createHash('sha256').update(chromeBytes).digest('hex'), size: (await stat(config.chrome)).size };
-    if (provisioning.executable.sha256 !== chromeInfo.sha256) throw new Error('provisioned executable checksum mismatch');
-    const xvfb = start(state, 'Xvfb', [config.display, '-screen', '0', '1920x1080x24', '-nolisten', 'tcp'], 'xvfb');
-    await artifact(state, 'display.json', { display: config.display, geometry: '1920x1080x24', pid: xvfb.pid, pgid: xvfb.pid, processTree: await processTree(xvfb.pid) });
-    const chrome = start(state, config.chrome, [`--remote-debugging-address=127.0.0.1`, `--remote-debugging-port=${config.cdpPort}`, `--user-data-dir=${config.profileDir}`, '--no-sandbox', '--no-first-run', '--no-default-browser-check', '--window-size=1920,1080'], 'chrome', { DISPLAY: config.display });
-    const version = await waitForCdp(state, chrome, xvfb);
-    await artifact(state, 'browser.json', { ...chromeInfo, provisioning: config.provisioningProvenance, pid: chrome.pid, pgid: chrome.pid, version, probes: state.probes, processTree: await processTree(chrome.pid) });
-    browser = await chromium.connectOverCDP(`http://127.0.0.1:${config.cdpPort}`);
-    const context = browser.contexts()[0]; const page = context.pages()[0] ?? await context.newPage();
-    await setExactWindow(page, state, 'initial-window');
-    state.result = { mode: config.mode, status: 'passed', evidence: config.evidenceDir, result: config.mode === 'neutral' ? await neutral(page, state) : await journey(page, state) };
-  } catch (error) {
-    state.result = { mode: config.mode, status: 'failed', error: error instanceof Error ? error.message : String(error), evidence: config.evidenceDir };
-  } finally {
-    await browser?.close().catch(() => {});
-    await Promise.all(state.children.reverse().map(terminate));
-    await rm(config.profileDir, { recursive: true, force: true }).catch(() => {});
-    for (const stream of Object.values(state.logs)) stream.end();
-    await artifact(state, 'result.json', state.result);
-  }
-  process.stdout.write(`${JSON.stringify(state.result)}\n`);
-  process.exitCode = state.result.status === 'passed' ? 0 : 1;
+  await inputs();
+  throw new Error('direct browser card is retired; use the platform-owned browser session and journey adapter');
 }
 
 main().catch((error) => { process.stdout.write(`${JSON.stringify({ status: 'failed', error: String(error) })}\n`); process.exitCode = 1; });

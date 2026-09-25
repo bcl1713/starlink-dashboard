@@ -36,21 +36,72 @@ def test_browser_card_uses_required_cdp_window_protocol() -> None:
 def test_browser_card_requires_webgl2_preflight_identity() -> None:
     card = source()
 
-    assert "canvas.getContext('webgl2')" in card
-    assert "platform WebGL2 preflight failed" in card
-    assert "UNMASKED_RENDERER_WEBGL" in card
-    assert "UNMASKED_VENDOR_WEBGL" in card
+    assert "webgl2Preflight" in card
 
 
-def test_browser_card_requires_matching_provisioned_executable_provenance() -> None:
-    """Fails if acceptance can silently consume an unprovisioned cache executable."""
+def test_browser_card_rejects_direct_browser_launch_inputs() -> None:
+    """Fails if this retired card can still create a browser outside the platform."""
+    completed = subprocess.run(
+        [
+            "node",
+            str(BROWSER_SCRIPT),
+            "--mode",
+            "neutral",
+            "--chrome",
+            "/bin/true",
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert completed.returncode == 1
+    assert "platform-owned browser session" in completed.stdout
+
+
+def test_webgl2_preflight_fails_closed_for_missing_context_blank_and_overlong_values() -> (
+    None
+):
+    """Fails if WebGL1/null/unsafe identity can produce a successful card result."""
+    helper = (
+        Path(__file__).resolve().parents[1] / "acceptance/browser/webgl2-preflight.mjs"
+    )
+    program = """
+const { webgl2Preflight } = await import(process.argv[1]);
+const scenario = process.argv[2];
+const values = scenario === 'blank'
+  ? { renderer: 'renderer', vendor: ' ', version: 'version' }
+  : scenario === 'overlong'
+    ? { renderer: 'x'.repeat(513), vendor: 'vendor', version: 'version' }
+    : { renderer: 'renderer', vendor: 'vendor', version: 'version' };
+global.document = { createElement: () => ({ getContext: (kind) => {
+  if (scenario === 'webgl1') return kind === 'webgl' ? {} : null;
+  if (scenario === 'null') return null;
+  return {
+    getExtension: () => null,
+    RENDERER: 'renderer', VENDOR: 'vendor', VERSION: 'version',
+    getParameter: (key) => values[key],
+  };
+} }) };
+webgl2Preflight();
+"""
+    for scenario in ("webgl1", "null", "blank", "overlong"):
+        completed = subprocess.run(
+            ["node", "--input-type=module", "--eval", program, helper.as_uri(), scenario],
+            capture_output=True,
+            check=False,
+            text=True,
+        )
+        assert completed.returncode != 0
+        assert "platform WebGL2 preflight failed" in completed.stderr
+
+
+def test_retired_browser_card_has_no_acceptance_capability() -> None:
+    """The former standalone card must direct callers to the platform session."""
     card = source()
 
-    assert "provisioning-provenance" in card
-    assert "config.provisioningProvenance" in card
-    assert "provisioning.status !== 'passed'" in card
-    assert "provisioning.executable?.path !== config.chrome" in card
-    assert "provisioned executable checksum mismatch" in card
+    assert "direct browser card is retired" in card
+    assert "start(state, config.chrome" not in card
 
 
 def test_browser_card_binds_provenance_to_current_locked_project_identity() -> None:
@@ -110,15 +161,12 @@ def test_browser_card_polls_both_owned_children_and_records_listener_after_probe
     assert "120_000" in card
 
 
-def test_browser_card_reapplies_and_retains_window_protocol_after_each_mode() -> None:
-    """Fails if final viewport evidence lacks a post-action native window record."""
+def test_retired_browser_card_does_not_claim_window_protocol_execution() -> None:
+    """Viewport authority now belongs exclusively to the platform health card."""
     card = source()
 
-    assert "setExactWindow(page, state, 'initial-window')" in card
-    assert "setExactWindow(page, state, 'neutral-post-window')" in card
-    assert "setExactWindow(page, state, 'journey-post-window')" in card
-    assert card.index("neutral-post-window") < card.index("'neutral-post'")
-    assert card.index("journey-post-window") < card.index("'journey-post'")
+    assert "direct browser card is retired" in card
+    assert "setExactWindow(page, state, 'initial-window')" not in card
 
 
 def test_browser_card_bounds_and_redacts_retained_page_evidence() -> None:

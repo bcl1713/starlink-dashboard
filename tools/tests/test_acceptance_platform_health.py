@@ -451,6 +451,25 @@ def test_final_browser_session_rejects_neutral_card_without_webgl2(
     assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
 
 
+@pytest.mark.parametrize("field", ("renderer", "vendor", "version"))
+def test_final_browser_session_rejects_overlong_webgl2_identity_before_build(
+    tmp_path: Path, field: str
+) -> None:
+    """Fails if arbitrary renderer identity can enter sealed evidence."""
+    bundle = _Bundle()
+    webgl2 = _webgl2()
+    webgl2[field] = "x" * 513
+
+    with pytest.raises(ValueError, match="WebGL2"):
+        start_final_browser_session(
+            _profile(),
+            tmp_path,
+            _executor(bundle, card=HealthProbeResult("Chrome", _metrics(), {}, webgl2)),
+        )
+
+    assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
+
+
 def test_browser_group_cleanup_kills_descendant_after_leader_exits(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -658,11 +677,7 @@ def test_platform_card_uses_native_protocol_and_platform_output_channel() -> Non
 def test_platform_card_requires_nonempty_webgl2_identity_before_success() -> None:
     source = PLATFORM_CARD.read_text(encoding="utf-8")
 
-    assert "canvas.getContext('webgl2')" in source
-    assert "platform WebGL2 preflight failed" in source
-    assert "UNMASKED_RENDERER_WEBGL" in source
-    assert "UNMASKED_VENDOR_WEBGL" in source
-    assert "webgl2" in source
+    assert "webgl2Preflight" in source
 
 
 def test_descriptor_browser_launch_captures_private_diagnostics(
