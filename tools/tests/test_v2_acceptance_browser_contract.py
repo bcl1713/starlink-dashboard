@@ -205,6 +205,60 @@ def test_browser_card_requires_pre_and_post_neutral_metrics_and_journey_assets()
     assert "v2-activation-route.kml" in card
 
 
+def test_v2_adapter_reaches_an_enabled_missions_control_despite_background_networking(
+    tmp_path: Path,
+) -> None:
+    """Initial navigation must not require transport silence before Missions is actionable."""
+    repository = tmp_path / "repository"
+    adapter = repository / "tools/acceptance/journeys/v2-mission-retirement.mjs"
+    package = repository / "frontend/mission-planner/package.json"
+    playwright = repository / "frontend/mission-planner/node_modules/@playwright/test"
+    adapter.parent.mkdir(parents=True)
+    adapter.write_text(
+        ADAPTER_SCRIPT.read_text(encoding="utf-8")
+        + "\nexport { waitForMissionCreationReadiness };\n",
+        encoding="utf-8",
+    )
+    package.parent.mkdir(parents=True)
+    package.write_text('{"name":"navigation-readiness-test"}\n', encoding="utf-8")
+    playwright.mkdir(parents=True)
+    (playwright / "index.js").write_text("exports.chromium = {};\n", encoding="utf-8")
+    program = r"""
+const { waitForMissionCreationReadiness } = await import(process.argv[1]);
+const waits = [];
+let enabledChecks = 0;
+const control = {
+  async waitFor(options) { waits.push(options); },
+  async isEnabled() { enabledChecks += 1; return true; },
+};
+const page = {
+  backgroundNetworking: true,
+  async goto(origin, options) {
+    if (options.waitUntil === 'networkidle') throw new Error('background networking never becomes idle');
+    if (options.waitUntil !== 'domcontentloaded') throw new Error(`unexpected navigation readiness ${options.waitUntil}`);
+    if (origin !== 'http://missions.test') throw new Error('unexpected origin');
+  },
+  getByRole(role, options) {
+    if (role !== 'button' || options.name !== 'Create New Mission' || options.exact !== true) throw new Error('wrong semantic control');
+    return control;
+  },
+  async waitForTimeout() { throw new Error('enabled control should not be delayed'); },
+};
+const result = await waitForMissionCreationReadiness(page, 'http://missions.test');
+if (result !== control) throw new Error('readiness did not return the actionable control');
+if (enabledChecks !== 1) throw new Error('readiness did not verify that the control is enabled');
+if (waits.length !== 1 || waits[0].state !== 'visible' || waits[0].timeout !== 10_000) throw new Error('visible readiness wait was not bounded');
+"""
+    completed = subprocess.run(
+        ["node", "--input-type=module", "--eval", program, adapter.as_uri()],
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+
+
 def test_adapter_cli_disposes_cdp_attachment_before_explicit_nonzero_exit() -> None:
     card = adapter_source()
 

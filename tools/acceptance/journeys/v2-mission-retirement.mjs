@@ -213,6 +213,18 @@ function scopedLifecycle(page) {
   };
 }
 
+async function waitForMissionCreationReadiness(page, origin) {
+  await page.goto(origin, { waitUntil: 'domcontentloaded' });
+  const control = page.getByRole('button', { name: 'Create New Mission', exact: true });
+  await control.waitFor({ state: 'visible', timeout: SEMANTIC_READINESS_TIMEOUT_MS });
+  const deadline = Date.now() + SEMANTIC_READINESS_TIMEOUT_MS;
+  while (!await control.isEnabled()) {
+    if (Date.now() >= deadline) throw new Error('Create New Mission control did not become enabled');
+    await page.waitForTimeout(50);
+  }
+  return control;
+}
+
 async function assertSemanticOverview(page) {
   const legend = page.getByLabel('Globe legend');
   const poiPanel = page.getByLabel('Upcoming POIs');
@@ -235,9 +247,9 @@ export async function runV2MissionRetirement({ page, origin, kmlPath }) {
   const lifecycle = scopedLifecycle(page);
   await lifecycle.arm();
   try {
-    await page.goto(origin, { waitUntil: 'networkidle' });
+    const createMission = await waitForMissionCreationReadiness(page, origin);
     const pre = await viewportArtifact(page, 'journey-pre');
-    await page.getByRole('button', { name: 'Create New Mission' }).click();
+    await createMission.click();
     await page.getByLabel('Mission Name').fill(missionName);
     await page.getByRole('button', { name: 'Create Mission', exact: true }).click();
     await page.getByRole('button', { name: 'Add Leg', exact: true }).click();
