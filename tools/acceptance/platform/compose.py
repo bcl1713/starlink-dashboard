@@ -15,7 +15,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal, Protocol
+from typing import Literal, Protocol, TextIO
 
 import yaml
 
@@ -1083,9 +1083,9 @@ def _drain_compose_stream(
     reader.join()
 
 
-def _read_compose_stream(stream: object, lines: queue.Queue[str | None]) -> None:
+def _read_compose_stream(stream: TextIO, lines: queue.Queue[str | None]) -> None:
     try:
-        for line in stream:  # type: ignore[union-attr]
+        for line in stream:
             lines.put(line)
     finally:
         lines.put(None)

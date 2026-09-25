@@ -49,6 +49,7 @@ from .evidence import (
     verify_manifest,
     write_artifacts,
 )
+from .failures import PlatformFailure, raise_with_platform_metadata
 from .health import (
     PlatformBrowserSession,
     PlatformHealthExecutor,
@@ -756,19 +757,23 @@ def _final_steps(
         try:
             record = ledger.read(key)
             reconciliation = record.get("supervision")
-            error.build_supervision = _project_build_supervision(error, reconciliation)  # type: ignore[attr-defined]
+            supervision = _project_build_supervision(error, reconciliation)
             reason = record.get("reason")
-            error.args = (
-                reason
-                if isinstance(reason, str) and reason.startswith(f"{error.kind}:")
-                else f"{error.kind}: {error.last_event}"
-            ,)
         except (TypeError, ValueError) as metadata_error:
             failure = _BuildSupervisionMetadataFailure()
-            failure.platform_artifacts = {"compose.output.log": diagnostics.output}  # type: ignore[attr-defined]
-            raise failure from metadata_error
-        error.platform_artifacts = {"compose.output.log": diagnostics.output}  # type: ignore[attr-defined]
-        raise
+            raise_with_platform_metadata(
+                failure,
+                artifacts={"compose.output.log": diagnostics.output},
+            )
+        if isinstance(reason, str) and reason.startswith(f"{error.kind}:"):
+            error.args = (reason,)
+        else:
+            error.args = (f"{error.kind}: {error.last_event}",)
+        raise_with_platform_metadata(
+            error,
+            artifacts={"compose.output.log": diagnostics.output},
+            supervision=supervision,
+        )
     except (
         OSError,
         RuntimeError,
@@ -776,8 +781,9 @@ def _final_steps(
         ValueError,
         subprocess.SubprocessError,
     ) as error:
-        error.platform_artifacts = {"compose.output.log": diagnostics.output}  # type: ignore[attr-defined]
-        raise
+        raise_with_platform_metadata(
+            error, artifacts={"compose.output.log": diagnostics.output}
+        )
     control_results: list[dict[str, object]] = []
     for control in contract.controls:
         status = _request(control, inputs)
@@ -1349,6 +1355,19 @@ def run(
                     browser_card(inputs)
                     resource = dependencies.final_steps(inputs, profile, contract)
                 outcome, primary = Outcome.PASSED, "final product contract completed"
+    except PlatformFailure as error:
+        finalization_failure_required = isinstance(
+            error.cause, _BuildSupervisionMetadataFailure
+        )
+        if isinstance(error.cause, BuildSupervisionFailure):
+            attached = error.build_supervision
+            build_supervision = (
+                _validate_build_supervision(attached)
+                if attached is not None
+                else None
+            )
+        artifacts.update(error.platform_artifacts)
+        outcome, primary, final = _outcome_for(error.cause), str(error.cause), False
     except (
         OSError,
         RuntimeError,
@@ -1357,22 +1376,6 @@ def run(
         ValueError,
         subprocess.SubprocessError,
     ) as error:
-        finalization_failure_required = isinstance(
-            error, _BuildSupervisionMetadataFailure
-        )
-        if isinstance(error, BuildSupervisionFailure):
-            attached = getattr(error, "build_supervision", None)
-            build_supervision = (
-                _validate_build_supervision(attached)
-                if isinstance(attached, Mapping)
-                else None
-            )
-        platform_artifacts = getattr(error, "platform_artifacts", None)
-        if isinstance(platform_artifacts, Mapping) and all(
-            isinstance(name, str) and isinstance(content, bytes)
-            for name, content in platform_artifacts.items()
-        ):
-            artifacts.update(platform_artifacts)
         if isinstance(error, _AdapterProcessFailure):
             artifacts.update(
                 {

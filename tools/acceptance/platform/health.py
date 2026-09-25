@@ -28,6 +28,7 @@ from .evidence import (
     verify_manifest,
     write_artifacts,
 )
+from .failures import PlatformFailure, raise_with_platform_metadata
 from .model import Lane, Outcome, PlatformProfile, RunResult
 
 _CARD = Path(__file__).parents[1] / "browser/platform-card.mjs"
@@ -207,7 +208,7 @@ def start_final_browser_session(
             xvfb,
             xvfb_socket_identity,
         )
-    except BaseException:
+    except BaseException as error:
         retained: dict[str, bytes] = {}
         if bundle is not None and launch is not None and profile_dir is not None:
             session = PlatformBrowserSession(
@@ -235,14 +236,11 @@ def start_final_browser_session(
                 bundle.close()
         # Health retains these diagnostics after classifying the original fault.
         # The final runner receives the same artifacts from a successfully owned session.
-        import sys
-
-        error = sys.exception()
-        if error is not None:
-            error.platform_artifacts = retained  # type: ignore[attr-defined]
-            if "cleanup_error" in locals() and cleanup_error:
-                error.platform_cleanup_error = cleanup_error  # type: ignore[attr-defined]
-        raise
+        raise_with_platform_metadata(
+            error,
+            artifacts=retained,
+            cleanup_error=cleanup_error if "cleanup_error" in locals() else "",
+        )
 
 
 def run_platform_health(
@@ -279,9 +277,19 @@ def run_platform_health(
         )
         artifacts.update(session.artifacts)
         outcome, reason = Outcome.PASSED, ""
+    except PlatformFailure as error:
+        artifacts.update(error.platform_artifacts)
+        cleanup_error = error.platform_cleanup_error
+        cause = error.cause
+        if isinstance(cause, _CardFailure):
+            artifacts["card.stdout.log"] = cause.stdout
+            artifacts["card.stderr.log"] = cause.stderr
+            outcome, reason = Outcome.ENVIRONMENT_BLOCKED, f"platform health failed: {cause}"
+        elif isinstance(cause, _Blocked):
+            outcome, reason = Outcome.ENVIRONMENT_BLOCKED, str(cause)
+        else:
+            outcome, reason = Outcome.ENVIRONMENT_BLOCKED, f"platform health failed: {cause}"
     except _CardFailure as error:
-        artifacts.update(getattr(error, "platform_artifacts", {}))
-        cleanup_error = getattr(error, "platform_cleanup_error", "")
         artifacts["card.stdout.log"] = error.stdout
         artifacts["card.stderr.log"] = error.stderr
         outcome, reason = (
@@ -289,8 +297,6 @@ def run_platform_health(
             f"platform health failed: {error}",
         )
     except _Blocked as error:
-        artifacts.update(getattr(error, "platform_artifacts", {}))
-        cleanup_error = getattr(error, "platform_cleanup_error", "")
         outcome, reason = Outcome.ENVIRONMENT_BLOCKED, str(error)
     except (
         OSError,
@@ -299,8 +305,6 @@ def run_platform_health(
         ValueError,
         subprocess.SubprocessError,
     ) as error:
-        artifacts.update(getattr(error, "platform_artifacts", {}))
-        cleanup_error = getattr(error, "platform_cleanup_error", "")
         outcome, reason = (
             Outcome.ENVIRONMENT_BLOCKED,
             f"platform health failed: {error}",

@@ -21,6 +21,7 @@ from acceptance.platform.compose import (
 )
 from acceptance.platform.contracts import load_product_contract
 from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
+from acceptance.platform.failures import raise_with_platform_metadata
 from acceptance.platform.model import Lane, Outcome
 from acceptance.platform.runner import RunnerDependencies, main, run
 
@@ -642,9 +643,10 @@ def test_cleanup_failure_revokes_an_otherwise_successful_final_claim(
 
 def test_final_compose_diagnostics_are_sealed_after_a_build_failure(tmp_path: Path) -> None:
     def failed_final_steps(*_: object) -> object:
-        error = ValueError("final compose build timed out")
-        error.platform_artifacts = {"compose.output.log": b"bounded BuildKit output"}  # type: ignore[attr-defined]
-        raise error
+        raise_with_platform_metadata(
+            ValueError("final compose build timed out"),
+            artifacts={"compose.output.log": b"bounded BuildKit output"},
+        )
 
     result = run(
         _argv(tmp_path, "final"),

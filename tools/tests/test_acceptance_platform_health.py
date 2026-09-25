@@ -13,6 +13,7 @@ from acceptance.platform.evidence import (
     verify_manifest,
     write_artifacts,
 )
+from acceptance.platform.failures import PlatformFailure
 from acceptance.platform.health import (
     HealthProbeResult,
     PlatformHealthExecutor,
@@ -324,6 +325,35 @@ def test_final_session_fails_closed_when_xvfb_exits_before_its_socket_exists(
         start_final_browser_session(_profile(), tmp_path, executor)
 
     assert bundle.launch.arguments == ()
+
+
+def test_final_session_wraps_primary_failure_with_cleanup_metadata(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The caller receives bounded cleanup diagnostics on the typed carrier."""
+    from acceptance.platform import health
+
+    bundle = _Bundle()
+    executor = _executor(bundle)
+    executor = PlatformHealthExecutor(
+        **{
+            **executor.__dict__,
+            "run_card": lambda *_: (_ for _ in ()).throw(ValueError("primary")),
+        }
+    )
+
+    def fail_cleanup(self: object) -> None:
+        raise ValueError("cleanup")
+
+    monkeypatch.setattr(health.PlatformBrowserSession, "close", fail_cleanup)
+
+    with pytest.raises(PlatformFailure) as raised:
+        start_final_browser_session(_profile(), tmp_path, executor)
+
+    assert isinstance(raised.value.__cause__, ValueError)
+    assert str(raised.value.__cause__) == "primary"
+    assert raised.value.platform_artifacts == {"cleanup-error.log": b"cleanup"}
+    assert raised.value.platform_cleanup_error == "cleanup"
 
 
 def test_final_session_fails_closed_when_xvfb_exits_after_socket_identity(
