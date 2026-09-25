@@ -57,8 +57,13 @@ class _Session:
         pass
 
 
-def _png(width: int = 1920, height: int = 1080) -> bytes:
-    """Small, structurally decoded 8-bit grayscale PNG for boundary tests."""
+def _png(
+    width: int = 1920,
+    height: int = 1080,
+    color_type: int = 6,
+    raw: bytes | None = None,
+) -> bytes:
+    """Build a structurally decoded 8-bit viewport PNG for boundary tests."""
 
     def chunk(kind: bytes, content: bytes) -> bytes:
         return (
@@ -68,11 +73,14 @@ def _png(width: int = 1920, height: int = 1080) -> bytes:
             + struct.pack(">I", zlib.crc32(kind + content) & 0xFFFFFFFF)
         )
 
-    raw = b"\0" * (height * (width * 4 + 1))
+    channels = {2: 3, 6: 4}.get(color_type, 1)
+    scanlines = raw if raw is not None else b"\0" * (height * (width * channels + 1))
     return (
         b"\x89PNG\r\n\x1a\n"
-        + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
-        + chunk(b"IDAT", zlib.compress(raw))
+        + chunk(
+            b"IHDR", struct.pack(">IIBBBBB", width, height, 8, color_type, 0, 0, 0)
+        )
+        + chunk(b"IDAT", zlib.compress(scanlines))
         + chunk(b"IEND", b"")
     )
 
@@ -514,6 +522,32 @@ def test_adapter_rejects_header_forged_png_even_when_dimensions_match() -> None:
     forged = b"\x89PNG\r\n\x1a\n\0\0\0\rIHDR" + struct.pack(">II", 1920, 1080)
     with pytest.raises(ValueError, match="decoded PNG"):
         runner._decode_adapter_artifacts(_adapter_payload(forged))
+
+
+def test_adapter_accepts_exact_rgb_viewport_png_evidence() -> None:
+    artifacts = runner._decode_adapter_artifacts(_adapter_payload(_png(color_type=2)))
+
+    assert runner._png_dimensions(artifacts["journey-pre.png"]) == (1920, 1080)
+    assert runner._png_dimensions(artifacts["journey-post.png"]) == (1920, 1080)
+
+
+@pytest.mark.parametrize("color_type", [2, 6])
+def test_adapter_rejects_viewport_png_with_color_aware_invalid_decoded_length(
+    color_type: int,
+) -> None:
+    channels = {2: 3, 6: 4}[color_type]
+    malformed = _png(
+        color_type=color_type,
+        raw=b"\0" * (1080 * (1920 * channels + 1) - 1),
+    )
+
+    with pytest.raises(ValueError, match="decoded PNG"):
+        runner._decode_adapter_artifacts(_adapter_payload(malformed))
+
+
+def test_adapter_rejects_viewport_png_color_types_outside_rgb_and_rgba() -> None:
+    with pytest.raises(ValueError, match="decoded PNG"):
+        runner._decode_adapter_artifacts(_adapter_payload(_png(color_type=0)))
 
 
 def test_adapter_observation_is_schema_validated_and_retained() -> None:

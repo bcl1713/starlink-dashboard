@@ -508,7 +508,7 @@ def _png_dimensions(content: bytes) -> tuple[int, int]:
                 data[11],
                 data[12],
             )
-            channels = {6: 4}.get(color, 0)
+            channels = {2: 3, 6: 4}.get(color, 0)
             if (width, height, depth, compression, filtering, interlace) != (
                 1920,
                 1080,
