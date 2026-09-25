@@ -211,10 +211,23 @@ async function setExactWindow(page, state, artifactPrefix) {
 async function neutral(page, state) {
   const neutralPath = await artifact(state, 'neutral.html', '<!doctype html><title>Neutral browser card</title><main>Neutral browser card</main>');
   await page.goto(pathToFileURL(neutralPath).href, { waitUntil: 'load' });
+  const webgl2 = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2');
+    if (!gl) throw new Error('platform WebGL2 preflight failed');
+    const debug = gl.getExtension('WEBGL_debug_renderer_info');
+    const result = {
+      renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+      vendor: debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
+      version: gl.getParameter(gl.VERSION),
+    };
+    if (!Object.values(result).every((value) => typeof value === 'string' && value.trim())) throw new Error('platform WebGL2 preflight failed');
+    return result;
+  });
   const pre = await assertExactViewport(page, state, 'neutral-pre');
   await setExactWindow(page, state, 'neutral-post-window');
   const post = await assertExactViewport(page, state, 'neutral-post');
-  return { pre, post };
+  return { pre, post, webgl2 };
 }
 
 async function journey(page, state) {

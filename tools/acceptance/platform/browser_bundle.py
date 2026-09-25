@@ -16,6 +16,12 @@ from .model import PlatformProfile
 _VERSION_TIMEOUT_SECONDS = 15
 _OPEN_DIRECTORY = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
 _OPEN_EXECUTABLE = os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC
+_CERTIFIED_ANGLE_FLAGS = ("--use-gl=angle", "--use-angle=swiftshader")
+_UNAPPROVED_GL_FLAG_PREFIXES = (
+    "--use-gl",
+    "--use-angle",
+    "--enable-unsafe-swiftshader",
+)
 
 
 @dataclass
@@ -26,7 +32,14 @@ class BrowserLaunchSpec:
 
     def start(self, *arguments: str) -> subprocess.Popen[bytes]:
         """Start the verified browser without resolving a mutable browser pathname."""
-        return _start_descriptor(self._require_open(), arguments)
+        if any(
+            argument.startswith(_UNAPPROVED_GL_FLAG_PREFIXES)
+            for argument in arguments
+        ):
+            raise ValueError("browser GL flags are platform-owned")
+        return _start_descriptor(
+            self._require_open(), (*_CERTIFIED_ANGLE_FLAGS, *arguments)
+        )
 
     def close(self) -> None:
         """Release the retained executable descriptor."""

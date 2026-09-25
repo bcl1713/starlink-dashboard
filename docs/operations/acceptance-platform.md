@@ -28,8 +28,16 @@ Run the `health` lane before any product lane. Health certification verifies the
 profile and bundle identity, performs the neutral display/card check, retains its
 bounded artifacts, and seals a health fingerprint. The fingerprint binds the
 profile checksum, health-card checksum, bundle identity, Docker identity, Compose
-identity, measured viewport metrics, capture timestamp, retained-artifact
-checksums, outcome, and cleanup status.
+identity, measured viewport metrics, bounded WebGL2 renderer/vendor/version,
+capture timestamp, retained-artifact checksums, outcome, and cleanup status.
+
+The platform launch authority adds exactly `--use-gl=angle` and
+`--use-angle=swiftshader` to every owned browser launch. Product contracts,
+runner inputs, and adapters cannot supply browser GL flags; unsafe SwiftShader is
+not enabled. Before any product static, Compose, or journey work, the neutral
+card must create a WebGL2 context and return nonempty renderer, vendor, and
+version strings. Missing or malformed WebGL2 identity blocks health and final
+browser session creation while retaining only the platform's bounded diagnostics.
 
 Before a product lane begins, it validates the current matching health
 fingerprint. Validation re-verifies the health card and evidence manifest before

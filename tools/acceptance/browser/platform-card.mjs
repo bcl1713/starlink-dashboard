@@ -23,6 +23,19 @@ try {
   const bounds = await session.send('Browser.getWindowBounds', { windowId: target.windowId });
   if (!target.windowId || resized === undefined || !bounds?.bounds) throw new Error('native window resize did not return a window result');
   await page.goto('data:text/html,<title>platform-neutral</title>', { waitUntil: 'load' });
+  const webgl2 = await page.evaluate(() => {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2');
+    if (!gl) throw new Error('platform WebGL2 preflight failed');
+    const debug = gl.getExtension('WEBGL_debug_renderer_info');
+    const result = {
+      renderer: debug ? gl.getParameter(debug.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER),
+      vendor: debug ? gl.getParameter(debug.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR),
+      version: gl.getParameter(gl.VERSION),
+    };
+    if (!Object.values(result).every((value) => typeof value === 'string' && value.trim())) throw new Error('platform WebGL2 preflight failed');
+    return result;
+  });
   const metrics = await page.evaluate(() => ({
     innerWidth: window.innerWidth, innerHeight: window.innerHeight,
     visualWidth: window.visualViewport?.width, visualHeight: window.visualViewport?.height,
@@ -37,7 +50,7 @@ try {
   const cardMetrics = { ...metrics, raster, nativeResize: true };
   if (metrics.innerWidth !== 1920 || metrics.innerHeight !== 1080 || metrics.visualWidth !== 1920 || metrics.visualHeight !== 1080 || metrics.dpr !== 1 || raster[0] !== 1920 || raster[1] !== 1080) throw new Error(`neutral metrics mismatch: ${JSON.stringify(cardMetrics)}`);
   const artifacts = { 'neutral.png': screenshot.toString('base64'), 'metrics.json': Buffer.from(JSON.stringify({ target, resized, bounds, metrics: cardMetrics })).toString('base64') };
-  process.stdout.write(JSON.stringify({ browserVersion: await browser.version(), metrics: cardMetrics, artifacts }));
+  process.stdout.write(JSON.stringify({ browserVersion: await browser.version(), metrics: cardMetrics, webgl2, artifacts }));
 } finally {
   await browser?.close();
 }

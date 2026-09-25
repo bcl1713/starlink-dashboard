@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import subprocess
 from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
-from acceptance.platform.browser_bundle import verify_browser_bundle
+from acceptance.platform import browser_bundle
+from acceptance.platform.browser_bundle import BrowserLaunchSpec, verify_browser_bundle
 from acceptance.platform.model import BrowserProfile, PlatformProfile
 
 
@@ -108,6 +110,34 @@ def test_launch_spec_executes_verified_file_after_path_replacement(
 
     assert old_marker.read_text(encoding="utf-8") == "executedexecuted"
     assert not malicious_marker.exists()
+
+
+def test_platform_browser_launch_adds_only_certified_angle_swiftshader_flags(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    launched_arguments: tuple[str, ...] = ()
+
+    class FakeProcess:
+        pass
+
+    def capture_start(_: int, arguments: tuple[str, ...]) -> FakeProcess:
+        nonlocal launched_arguments
+        launched_arguments = arguments
+        return FakeProcess()
+
+    monkeypatch.setattr(browser_bundle, "_start_descriptor", capture_start)
+    descriptor = BrowserLaunchSpec(os.open("/dev/null", os.O_RDONLY))
+    try:
+        descriptor.start("about:blank")
+    finally:
+        descriptor.close()
+
+    assert launched_arguments[-3:] == (
+        "--use-gl=angle",
+        "--use-angle=swiftshader",
+        "about:blank",
+    )
+    assert "--enable-unsafe-swiftshader" not in launched_arguments
 
 
 def test_version_probe_survives_parent_component_symlink_replacement(

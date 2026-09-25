@@ -33,6 +33,15 @@ def test_browser_card_uses_required_cdp_window_protocol() -> None:
     assert "@playwright/test" in card
 
 
+def test_browser_card_requires_webgl2_preflight_identity() -> None:
+    card = source()
+
+    assert "canvas.getContext('webgl2')" in card
+    assert "platform WebGL2 preflight failed" in card
+    assert "UNMASKED_RENDERER_WEBGL" in card
+    assert "UNMASKED_VENDOR_WEBGL" in card
+
+
 def test_browser_card_requires_matching_provisioned_executable_provenance() -> None:
     """Fails if acceptance can silently consume an unprovisioned cache executable."""
     card = source()

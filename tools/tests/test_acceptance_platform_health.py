@@ -98,6 +98,14 @@ def _metrics() -> dict[str, object]:
     }
 
 
+def _webgl2() -> dict[str, str]:
+    return {
+        "renderer": "ANGLE (SwiftShader)",
+        "vendor": "Google Inc.",
+        "version": "WebGL 2.0",
+    }
+
+
 def _executor(
     bundle: _Bundle, *, ready: bool = True, card: HealthProbeResult | None = None
 ) -> PlatformHealthExecutor:
@@ -109,7 +117,10 @@ def _executor(
         cdp_version=lambda _: {"Browser": "Chrome 124"} if ready else None,
         run_card=lambda *_: card
         or HealthProbeResult(
-            "Chrome 124", _metrics(), {"neutral.png": b"png", "metrics.json": b"{}"}
+            "Chrome 124",
+            _metrics(),
+            {"neutral.png": b"png", "metrics.json": b"{}"},
+            _webgl2(),
         ),
         clock=lambda: 0.0,
         sleep=lambda _: None,
@@ -425,6 +436,21 @@ def test_final_session_rejects_mismatched_neutral_metrics_before_build(
     assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
 
 
+def test_final_browser_session_rejects_neutral_card_without_webgl2(
+    tmp_path: Path,
+) -> None:
+    bundle = _Bundle()
+
+    with pytest.raises(ValueError, match="WebGL2"):
+        start_final_browser_session(
+            _profile(),
+            tmp_path,
+            _executor(bundle, card=HealthProbeResult("Chrome", _metrics(), {})),
+        )
+
+    assert bundle.launch.closed and bundle.closed and bundle.launch.process.terminated
+
+
 def test_browser_group_cleanup_kills_descendant_after_leader_exits(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -539,6 +565,7 @@ def test_default_card_result_is_parsed_and_persisted_by_python(
         "browserVersion": "Chrome 124",
         "metrics": _metrics(),
         "artifacts": {"neutral.png": "cG5n", "metrics.json": "e30="},
+        "webgl2": _webgl2(),
     }
     monkeypatch.setattr(
         health.subprocess,
@@ -626,6 +653,16 @@ def test_platform_card_uses_native_protocol_and_platform_output_channel() -> Non
     assert "Emulation.setDeviceMetricsOverride" not in source
     assert "process.stdout.write" in source
     assert "writeFile" not in source
+
+
+def test_platform_card_requires_nonempty_webgl2_identity_before_success() -> None:
+    source = PLATFORM_CARD.read_text(encoding="utf-8")
+
+    assert "canvas.getContext('webgl2')" in source
+    assert "platform WebGL2 preflight failed" in source
+    assert "UNMASKED_RENDERER_WEBGL" in source
+    assert "UNMASKED_VENDOR_WEBGL" in source
+    assert "webgl2" in source
 
 
 def test_descriptor_browser_launch_captures_private_diagnostics(

@@ -52,6 +52,7 @@ class HealthFingerprint:
     browser_sha256: str = ""
     browser_version: str = ""
     metrics: Mapping[str, Any] | None = None
+    webgl2: Mapping[str, str] | None = None
     captured_at: str = ""
     evidence_manifest_sha256: str = ""
     reason: str = ""
@@ -70,6 +71,7 @@ class HealthProbeResult:
     browser_version: str
     metrics: Mapping[str, Any]
     artifacts: Mapping[str, bytes]
+    webgl2: Mapping[str, str] | None = None
 
 
 @dataclass(frozen=True)
@@ -99,6 +101,7 @@ class PlatformBrowserSession:
     display: str
     profile_dir: Path
     metrics: Mapping[str, Any]
+    webgl2: Mapping[str, str]
     artifacts: dict[str, bytes]
     _bundle: BrowserBundle
     _launch: BrowserLaunchSpec
@@ -188,11 +191,13 @@ def start_final_browser_session(
             launch, task_root
         )
         _require_neutral_metrics(probe.metrics)
+        _require_webgl2(probe.webgl2)
         return PlatformBrowserSession(
             cdp_url,
             display,
             profile_dir,
             dict(probe.metrics),
+            dict(probe.webgl2),
             dict(probe.artifacts),
             bundle,
             launch,
@@ -207,6 +212,7 @@ def start_final_browser_session(
                 f"http://127.0.0.1:{port}",
                 display,
                 profile_dir,
+                {},
                 {},
                 retained,
                 bundle,
@@ -265,7 +271,9 @@ def run_platform_health(
         )
         values["browser_sha256"] = session._bundle.sha256
         values.update(
-            browser_version=session._bundle.version, metrics=dict(session.metrics)
+            browser_version=session._bundle.version,
+            metrics=dict(session.metrics),
+            webgl2=dict(session.webgl2),
         )
         artifacts.update(session.artifacts)
         outcome, reason = Outcome.PASSED, ""
@@ -351,6 +359,7 @@ def validate_fingerprint(
     if result.evidence_manifest_sha256 != manifest_hash:
         raise ValueError("evidence manifest checksum drift")
     _require_neutral_metrics(result.metrics or {})
+    _require_webgl2(result.webgl2)
     return result
 
 
@@ -392,6 +401,14 @@ def _require_neutral_metrics(metrics: Mapping[str, Any]) -> None:
         )
 
 
+def _require_webgl2(webgl2: Mapping[str, str] | None) -> None:
+    if not isinstance(webgl2, Mapping) or any(
+        not isinstance(webgl2.get(key), str) or not webgl2[key].strip()
+        for key in ("renderer", "vendor", "version")
+    ):
+        raise ValueError("neutral WebGL2 preflight is invalid")
+
+
 def _wait_ready(
     browser: Any, xvfb: Any, url: str, executor: PlatformHealthExecutor
 ) -> None:
@@ -426,7 +443,10 @@ def _platform_card(
                 for name, value in payload["artifacts"].items()
             }
             return HealthProbeResult(
-                payload["browserVersion"], payload["metrics"], artifacts
+                payload["browserVersion"],
+                payload["metrics"],
+                artifacts,
+                payload["webgl2"],
             )
         except subprocess.CalledProcessError as error:
             raise _CardFailure(error.stdout or b"", error.stderr or b"") from error
