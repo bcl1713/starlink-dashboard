@@ -29,3 +29,19 @@
 - Changed only the Task 3 runner, runner/docs contract tests, operations documentation, and this report.
 - Did not modify Compose supervision, Dockerfiles, run final/diagnostic Docker acceptance, push, or create a PR.
 - Preserved all pre-existing modified and untracked workspace artifacts.
+
+## Review correction — Task 2 ledger validation
+
+- Replaced synthetic `RunnerDependencies.final_steps` supervision tests with production-path tests that execute the default `_final_steps` flow through controlled Task 2 `build_final`/`BuildLedger` seams.
+- `_final_steps` now requires a closed Task 2 supervision record with exactly `kind` and `last_event`. The failure kind must match the raised `BuildSupervisionFailure`; `last_event` must be `None` or exactly `kind`, `elapsed_seconds`, and `detail`.
+- The validator rejects absent records, extra fields, unsupported progress kinds, non-finite or out-of-range timings, and strings over 128 UTF-8 bytes. The final six-field manifest projection is derived only from this validated ledger record.
+- Invalid Task 2 metadata is converted to a classified finalization failure. It writes sealed non-final evidence under `failures/<sha>`, never writes a candidate root or discovery authority, and retains no `build_supervision` value or arbitrary ledger detail.
+- Production-path regression coverage includes valid `build_stalled` and `build_deadline_exceeded` records, plus absent, extra-field, non-finite, and oversize ledger metadata.
+
+## Review-correction verification
+
+- RED: `python -m pytest -q tools/tests/test_acceptance_platform_runner.py -k 'production_final_steps'` initially failed 4 tests: valid ledger input was reconstructed from the exception while absent/malformed ledger metadata still published normal candidate evidence.
+- GREEN: `python -m pytest -q tools/tests/test_acceptance_platform_runner.py -k 'production_final_steps'` → `5 passed, 51 deselected`.
+- Focused runner/docs suite: `python -m pytest -q tools/tests/test_acceptance_platform_runner.py tools/tests/test_acceptance_platform_docs.py` → `65 passed in 8.43s`.
+- Static/import and compilation: `python -m ruff check --select I tools/acceptance/platform/runner.py tools/tests/test_acceptance_platform_runner.py tools/tests/test_acceptance_platform_docs.py && python -m compileall -q tools/acceptance/platform` → `All checks passed!`.
+- `git diff --check` passed. A full `python -m pytest -q` collection remains blocked by pre-existing environment failures: missing `spacex_api`, incompatible protobuf generated/runtime versions, and `test_bounds.py` requiring `/app`.

@@ -32,7 +32,6 @@ import tomllib
 from .compose import (
     BoundedComposeDiagnostics,
     BuildLedger,
-    BuildProgressEvent,
     BuildSupervisionFailure,
     SubprocessComposeExecutor,
     build_final,
@@ -724,8 +723,13 @@ def _final_steps(
             raise ValueError(f"final build is unusable: {built.reason}")
         start_no_build(topology, contract, key, ledger, executor)
     except BuildSupervisionFailure as error:
-        reconciliation = ledger.read(key).get("supervision")
-        error.build_supervision = _project_build_supervision(error, reconciliation)  # type: ignore[attr-defined]
+        try:
+            reconciliation = ledger.read(key).get("supervision")
+            error.build_supervision = _project_build_supervision(error, reconciliation)  # type: ignore[attr-defined]
+        except (TypeError, ValueError) as metadata_error:
+            failure = _BuildSupervisionMetadataFailure()
+            failure.platform_artifacts = {"compose.output.log": diagnostics.output}  # type: ignore[attr-defined]
+            raise failure from metadata_error
         error.platform_artifacts = {"compose.output.log": diagnostics.output}  # type: ignore[attr-defined]
         raise
     except (
@@ -788,6 +792,13 @@ def _outcome_for(error: BaseException) -> Outcome:
 
 class _EnvironmentBlocked(ValueError):
     pass
+
+
+class _BuildSupervisionMetadataFailure(ValueError):
+    """Prevent invalid Task 2 supervision input from reaching candidate evidence."""
+
+    def __init__(self) -> None:
+        super().__init__("build supervision metadata is invalid")
 
 
 class _FinalRunInterrupted(RuntimeError):
@@ -874,20 +885,49 @@ def _manifest(
 
 
 def _project_build_supervision(
-    error: BuildSupervisionFailure, reconciliation: object | None = None
+    error: BuildSupervisionFailure, reconciliation: object
 ) -> dict[str, object]:
-    """Project typed supervision without retaining BuildKit detail strings."""
-    event = error.last_event
-    if event is not None and not isinstance(event, BuildProgressEvent):
-        raise ValueError("build supervision event is invalid")
-    if reconciliation is not None:
-        if not isinstance(reconciliation, Mapping) or reconciliation.get("kind") != error.kind:
+    """Project final evidence exclusively from a closed, validated Task 2 record."""
+    if not isinstance(reconciliation, Mapping) or set(reconciliation) != {
+        "kind",
+        "last_event",
+    }:
+        raise ValueError("build reconciliation supervision is invalid")
+    kind = reconciliation["kind"]
+    event = reconciliation["last_event"]
+    if kind != error.kind or kind not in {
+        "build_stalled",
+        "build_deadline_exceeded",
+    }:
+        raise ValueError("build reconciliation supervision is invalid")
+    if event is None:
+        last_kind = "none"
+        last_elapsed = 0.0
+    else:
+        if not isinstance(event, Mapping) or set(event) != {
+            "kind",
+            "elapsed_seconds",
+            "detail",
+        }:
             raise ValueError("build reconciliation supervision is invalid")
-    last_kind = event.kind if event else "none"
-    last_elapsed = event.elapsed_seconds if event else 0.0
+        last_kind = event["kind"]
+        last_elapsed = event["elapsed_seconds"]
+        detail = event["detail"]
+        if (
+            not isinstance(last_kind, str)
+            or last_kind not in _BUILD_PROGRESS_KINDS - {"none"}
+            or len(last_kind.encode()) > _MAX_BUILD_SUPERVISION_STRING_BYTES
+            or not isinstance(detail, str)
+            or len(detail.encode()) > _MAX_BUILD_SUPERVISION_STRING_BYTES
+            or isinstance(last_elapsed, bool)
+            or not isinstance(last_elapsed, (int, float))
+            or not math.isfinite(last_elapsed)
+            or not 0 <= last_elapsed <= _BUILD_HARD_DEADLINE_SECONDS
+        ):
+            raise ValueError("build reconciliation supervision is invalid")
     elapsed = (
         float(_BUILD_HARD_DEADLINE_SECONDS)
-        if error.kind == "build_deadline_exceeded"
+        if kind == "build_deadline_exceeded"
         else last_elapsed + _BUILD_STALL_WINDOW_SECONDS
     )
     return _validate_build_supervision(
@@ -1166,6 +1206,7 @@ def run(
     adapter_source: _AdapterSource | None = None
     adapter_sha256: str | None = None
     build_supervision: Mapping[str, object] | None = None
+    finalization_failure_required = False
     interruption_guard = _FinalInterruptionGuard()
     if inputs.lane is Lane.FINAL:
         interruption_guard.arm()
@@ -1256,12 +1297,15 @@ def run(
         ValueError,
         subprocess.SubprocessError,
     ) as error:
+        finalization_failure_required = isinstance(
+            error, _BuildSupervisionMetadataFailure
+        )
         if isinstance(error, BuildSupervisionFailure):
             attached = getattr(error, "build_supervision", None)
             build_supervision = (
                 _validate_build_supervision(attached)
                 if isinstance(attached, Mapping)
-                else _project_build_supervision(error)
+                else None
             )
         platform_artifacts = getattr(error, "platform_artifacts", None)
         if isinstance(platform_artifacts, Mapping) and all(
@@ -1352,7 +1396,10 @@ def run(
         build_supervision,
     )
     try:
-        _write_manifest(inputs, manifest, artifacts)
+        if finalization_failure_required:
+            _write_finalization_failure(inputs, manifest, artifacts)
+        else:
+            _write_manifest(inputs, manifest, artifacts)
     except (OSError, RuntimeError, TypeError, ValueError) as error:
         outcome, final = Outcome.FAILED, False
         primary = f"{primary}; final evidence failed: {error}".strip("; ")

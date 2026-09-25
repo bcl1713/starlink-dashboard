@@ -10,7 +10,10 @@ from pathlib import Path
 
 import pytest
 from acceptance.platform import runner
-from acceptance.platform.compose import BuildProgressEvent, BuildSupervisionFailure
+from acceptance.platform.compose import (
+    BuildReconciliation,
+    BuildSupervisionFailure,
+)
 from acceptance.platform.contracts import load_product_contract
 from acceptance.platform.evidence import read_fingerprint_authority, verify_manifest
 from acceptance.platform.model import Lane, Outcome
@@ -194,65 +197,150 @@ def test_final_requires_every_required_result(tmp_path: Path) -> None:
     assert result.manifest["outcome"] == Outcome.FAILED.value
 
 
-def test_final_manifest_seals_allowlisted_stall_supervision(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("supervision", "kind", "expected"),
+    [
+        (
+            {
+                "kind": "build_stalled",
+                "last_event": {
+                    "kind": "run_output",
+                    "elapsed_seconds": 1.0,
+                    "detail": "npm run build",
+                },
+            },
+            "build_stalled",
+            {
+                "policy_version": "build_supervision.v1",
+                "stall_window_seconds": 600,
+                "hard_deadline_seconds": 1800,
+                "elapsed_seconds": 601.0,
+                "last_progress_kind": "run_output",
+                "last_progress_elapsed_seconds": 1.0,
+            },
+        ),
+        (
+            {"kind": "build_deadline_exceeded", "last_event": None},
+            "build_deadline_exceeded",
+            {
+                "policy_version": "build_supervision.v1",
+                "stall_window_seconds": 600,
+                "hard_deadline_seconds": 1800,
+                "elapsed_seconds": 1800.0,
+                "last_progress_kind": "none",
+                "last_progress_elapsed_seconds": 0.0,
+            },
+        ),
+    ],
+)
+def test_production_final_steps_projects_valid_closed_ledger_supervision(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    supervision: dict[str, object],
+    kind: str,
+    expected: dict[str, object],
+) -> None:
+    _install_supervised_final_build(monkeypatch, supervision, kind)
+
     result = run(
         _argv(tmp_path, "final"),
-        dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
-            validate_health=lambda *_: _current_health(),
-            static=lambda *_: None,
-            browser_card=lambda *_: None,
-            final_steps=lambda *_: (_ for _ in ()).throw(
-                BuildSupervisionFailure(
-                    "build_stalled",
-                    BuildProgressEvent("run_output", 1.0, "npm run build"),
-                    "",
-                )
-            ),
-            cleanup=lambda *_: None,
-        ),
+        dependencies=_production_final_dependencies(),
     )
 
-    supervision = result.manifest["build_supervision"]
-    assert result.manifest["outcome"] == Outcome.FAILED.value
+    candidate = tmp_path / "evidence" / "candidates" / SHA
+    assert result.exit_code == 1
     assert result.manifest["final_acceptance"] is False
-    assert supervision == {
-        "policy_version": "build_supervision.v1",
-        "stall_window_seconds": 600,
-        "hard_deadline_seconds": 1800,
-        "elapsed_seconds": 601.0,
-        "last_progress_kind": "run_output",
-        "last_progress_elapsed_seconds": 1.0,
-    }
+    assert result.manifest["build_supervision"] == expected
+    assert not runner._candidate_is_discoverable(tmp_path / "evidence", SHA)
+    assert json.loads((candidate / "runner-manifest.json").read_text())["build_supervision"] == expected
 
 
-def test_final_manifest_excludes_oversize_supervision_event_detail(tmp_path: Path) -> None:
-    detail = "x" * 129
+@pytest.mark.parametrize(
+    "supervision",
+    [
+        None,
+        {"kind": "build_stalled", "last_event": None, "unexpected": "metadata"},
+        {
+            "kind": "build_stalled",
+            "last_event": {
+                "kind": "run_output",
+                "elapsed_seconds": float("nan"),
+                "detail": "x" * 129,
+            },
+        },
+    ],
+)
+def test_production_final_steps_rejects_invalid_closed_ledger_supervision_into_failure_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, supervision: object
+) -> None:
+    _install_supervised_final_build(monkeypatch, supervision, "build_stalled")
+
     result = run(
         _argv(tmp_path, "final"),
-        dependencies=RunnerDependencies(
-            load_profile=lambda _: object(),
-            validate_health=lambda *_: _current_health(),
-            static=lambda *_: None,
-            browser_card=lambda *_: None,
-            final_steps=lambda *_: (_ for _ in ()).throw(
-                BuildSupervisionFailure(
-                    "build_deadline_exceeded",
-                    BuildProgressEvent("run_output", 12.0, detail),
-                    "",
-                )
-            ),
-            cleanup=lambda *_: None,
-        ),
+        dependencies=_production_final_dependencies(),
     )
 
-    encoded = json.dumps(result.manifest["build_supervision"]).encode()
-    assert detail.encode() not in encoded
-    assert max(
-        len(value.encode())
-        for value in result.manifest["build_supervision"].values()
-        if isinstance(value, str)
-    ) <= 128
+    evidence_root = tmp_path / "evidence"
+    failure = evidence_root / "failures" / SHA
+    assert result.exit_code == 1
+    assert result.manifest["final_acceptance"] is False
+    assert "build supervision metadata is invalid" in result.manifest["primary"]["detail"]
+    assert not (evidence_root / "candidates" / SHA).exists()
+    assert not runner._candidate_is_discoverable(evidence_root, SHA)
+    verify_manifest(failure)
+    retained = json.loads((failure / "runner-manifest.json").read_text())
+    assert retained["final_acceptance"] is False
+    assert "build_supervision" not in retained
+    assert b"unexpected" not in (failure / "runner-manifest.json").read_bytes()
+
+
+def _production_final_dependencies() -> RunnerDependencies:
+    profile = type("Profile", (), {"checksum": "b" * 64})()
+    return RunnerDependencies(
+        load_profile=lambda _: profile,
+        validate_health=lambda *_: _current_health(),
+        static=lambda *_: None,
+        start_browser_session=lambda *_: _Session(),
+        cleanup=lambda *_: None,
+    )
+
+
+def _install_supervised_final_build(
+    monkeypatch: pytest.MonkeyPatch, supervision: object, kind: str
+) -> None:
+    class Adapter:
+        sha256 = "c" * 64
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(runner, "_open_adapter_source", lambda *_: Adapter())
+    monkeypatch.setattr(runner, "render_task_override", lambda *_args, **_kwargs: object())
+    monkeypatch.setattr(runner, "resolve_topology", lambda *_: None)
+
+    def fail_build(
+        _topology: object,
+        _profile: object,
+        _contract: object,
+        key: object,
+        ledger: object,
+        _executor: object,
+    ) -> object:
+        claim = ledger.claim(key)  # type: ignore[attr-defined]
+        ledger.close(  # type: ignore[attr-defined]
+            claim,
+            BuildReconciliation(
+                False, False, {}, "supervised failure", supervision or {}
+            ),
+            "topology",
+        )
+        if supervision is None:
+            record = ledger.read(key)  # type: ignore[attr-defined]
+            del record["supervision"]
+            ledger.path_for(key).write_text(json.dumps(record))  # type: ignore[attr-defined]
+        raise BuildSupervisionFailure(kind, None, "BuildKit output")  # type: ignore[arg-type]
+
+    monkeypatch.setattr(runner, "build_final", fail_build)
 
 
 def test_final_runner_replaces_caller_origin_with_its_exact_loopback_frontend_port(
