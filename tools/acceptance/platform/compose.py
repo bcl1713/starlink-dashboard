@@ -37,6 +37,11 @@ _TRANSFER_BYTES = re.compile(
     r"transferring [^:]+:\s*(?P<amount>\d+(?:\.\d+)?)\s*(?P<unit>B|kB|KB|MB|GB|TB)\b",
     re.IGNORECASE,
 )
+_RUN_STATUS_FRAME = re.compile(
+    r"^(?:\d+(?:\.\d+)?s\s+)?(?:[/\\|\-]\s+)?(?:running|run\b|waiting|"
+    r"building|exporting|loading|resolving)\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -120,6 +125,8 @@ class BuildProgressMonitor:
             stage in self._run_stages
             and message
             and "warning" not in message.lower()
+            and message != _COMPOSE_OUTPUT_TRUNCATED.decode().strip()
+            and not _RUN_STATUS_FRAME.match(message)
             and (stage, message) not in self._run_output
         ):
             self._run_output.add((stage, message))
@@ -225,7 +232,7 @@ class SubprocessComposeExecutor:
         assert process.stdout is not None
         lines: queue.Queue[str | None] = queue.Queue()
         reader = threading.Thread(
-            target=_read_compose_stream, args=(process.stdout, lines), daemon=True
+            target=_read_compose_stream, args=(process.stdout, lines)
         )
         reader.start()
         monitor = BuildProgressMonitor()
@@ -242,28 +249,18 @@ class SubprocessComposeExecutor:
                 if line is None:
                     stream_closed = True
                     continue
-                output.append(line)
-                diagnostics.retain(line)
-                self.retain(line)
+                _retain_stream_line(line, output, diagnostics, self.retain)
                 monitor.observe(line)
                 monitor.check(diagnostics.output.decode(errors="replace"))
         except BuildSupervisionFailure as error:
             _terminate_process_group(process)
-            while True:
-                try:
-                    line = lines.get_nowait()
-                except queue.Empty:
-                    break
-                if line is None:
-                    break
-                diagnostics.retain(line)
-                self.retain(line)
+            _drain_compose_stream(lines, reader, output, diagnostics, self.retain)
             raise BuildSupervisionFailure(
                 error.kind,
                 error.last_event,
                 diagnostics.output.decode(errors="replace"),
             ) from error
-        reader.join(timeout=1)
+        reader.join()
         returncode = process.wait()
         return CommandResult(returncode, "".join(output))
 
@@ -1018,6 +1015,32 @@ def _supervision_summary(error: BuildSupervisionFailure) -> dict[str, object]:
     }
 
 
+def _retain_stream_line(
+    line: str,
+    output: list[str],
+    diagnostics: BoundedComposeDiagnostics,
+    retain: Callable[[str], None],
+) -> None:
+    output.append(line)
+    diagnostics.retain(line)
+    retain(line)
+
+
+def _drain_compose_stream(
+    lines: queue.Queue[str | None],
+    reader: threading.Thread,
+    output: list[str],
+    diagnostics: BoundedComposeDiagnostics,
+    retain: Callable[[str], None],
+) -> None:
+    while True:
+        line = lines.get()
+        if line is None:
+            break
+        _retain_stream_line(line, output, diagnostics, retain)
+    reader.join()
+
+
 def _read_compose_stream(stream: object, lines: queue.Queue[str | None]) -> None:
     try:
         for line in stream:  # type: ignore[union-attr]
@@ -1026,23 +1049,39 @@ def _read_compose_stream(stream: object, lines: queue.Queue[str | None]) -> None
         lines.put(None)
 
 
+def _process_group_exists(process_group_id: int) -> bool:
+    try:
+        os.killpg(process_group_id, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
 def _terminate_process_group(process: subprocess.Popen[str]) -> None:
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        return
-    except OSError:
-        process.terminate()
-    try:
-        process.wait(timeout=_FINAL_BUILD_TERMINATE_GRACE_SECONDS)
-    except subprocess.TimeoutExpired:
         try:
-            os.killpg(process.pid, signal.SIGKILL)
+            os.killpg(process.pid, signal.SIGTERM)
         except ProcessLookupError:
-            return
+            pass
         except OSError:
-            process.kill()
-        process.wait()
+            process.terminate()
+        deadline = time.monotonic() + _FINAL_BUILD_TERMINATE_GRACE_SECONDS
+        while _process_group_exists(process.pid) and time.monotonic() < deadline:
+            time.sleep(0.05)
+        if _process_group_exists(process.pid):
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            except OSError:
+                process.kill()
+    finally:
+        try:
+            process.wait()
+        except ChildProcessError:
+            pass
 
 
 def _sha256(value: bytes) -> str:

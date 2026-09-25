@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -90,6 +92,29 @@ def test_progress_parser_accepts_only_qualifying_buildkit_progress() -> None:
     assert monitor.observe("#3 emitted application bundle\n") is None
 
 
+@pytest.mark.parametrize(
+    "frame",
+    (
+        "#3 599.0s RUN npm run build\n",
+        "#3 600.0s / running npm run build\n",
+        "#3 [platform retained Compose output truncated]\n",
+    ),
+)
+def test_progress_parser_does_not_count_changing_run_status_or_truncation(
+    frame: str,
+) -> None:
+    clock = FakeClock()
+    monitor = BuildProgressMonitor(clock.monotonic)
+
+    assert monitor.observe("#3 [builder] RUN npm run build\n") is not None
+    clock.advance(599)
+    assert monitor.observe(frame) is None
+    clock.advance(1)
+
+    with pytest.raises(BuildSupervisionFailure, match="build_stalled"):
+        monitor.check()
+
+
 def test_progress_monitor_prioritizes_outer_deadline_over_stall_at_exact_limit() -> (
     None
 ):
@@ -148,8 +173,6 @@ def test_build_stall_closes_ledger_with_supervision_and_blocks_startup(
 
 
 def test_subprocess_executor_streams_combined_output_and_preserves_exit() -> None:
-    import sys
-
     retained: list[str] = []
     result = SubprocessComposeExecutor(retained.append).run(
         (
@@ -164,6 +187,70 @@ def test_subprocess_executor_streams_combined_output_and_preserves_exit() -> Non
     assert result.returncode == 124
     assert result.output == "plain-buildkit\n"
     assert retained == ["plain-buildkit\n"]
+
+
+def test_subprocess_executor_kills_surviving_group_descendant_and_drains_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from acceptance.platform import compose
+
+    monkeypatch.setattr(compose, "_FINAL_BUILD_STALL_SECONDS", 0.15)
+    monkeypatch.setattr(compose, "_FINAL_BUILD_TERMINATE_GRACE_SECONDS", 0.05)
+    retained: list[str] = []
+    child_ready = "child-ready\n"
+    script = """
+import signal
+import subprocess
+import sys
+import time
+
+child = subprocess.Popen([
+    sys.executable, "-c",
+    "import signal, time; signal.signal(signal.SIGTERM, signal.SIG_IGN); print('child-ready', flush=True); time.sleep(30)",
+])
+print(f"leader={os.getpid()} child={child.pid}", flush=True)
+signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+time.sleep(30)
+"""
+    script = "import os\n" + script
+
+    started = time.monotonic()
+    with pytest.raises(BuildSupervisionFailure, match="build_stalled") as failure:
+        SubprocessComposeExecutor(retained.append).run(
+            (sys.executable, "-c", script, "build", "--progress=plain")
+        )
+    assert time.monotonic() - started < 2
+    assert retained.count(child_ready) == 1
+    assert child_ready in failure.value.output
+    child_pid = int(
+        next(line.split("child=")[1] for line in retained if "child=" in line)
+    )
+    child_state = Path(f"/proc/{child_pid}/status")
+    deadline = time.monotonic() + 1
+    while True:
+        try:
+            status = child_state.read_text()
+        except OSError:
+            break
+        if "State:\tZ" in status:
+            break
+        assert time.monotonic() < deadline
+        time.sleep(0.01)
+
+
+def test_terminate_process_group_reaps_leader_after_process_lookup_race(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from acceptance.platform import compose
+
+    process = subprocess.Popen((sys.executable, "-c", "import time; time.sleep(0.05)"))
+    monkeypatch.setattr(
+        compose.os, "killpg", lambda *_: (_ for _ in ()).throw(ProcessLookupError)
+    )
+
+    compose._terminate_process_group(process)
+
+    assert process.returncode == 0
 
 
 def test_bounded_compose_diagnostics_redacts_credentials_and_marks_truncation() -> None:
