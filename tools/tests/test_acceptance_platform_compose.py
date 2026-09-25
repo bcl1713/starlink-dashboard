@@ -125,13 +125,30 @@ def test_progress_parser_does_not_count_elapsed_buildkit_run_status_frames() -> 
         "#3 100.0s [builder 5/7] RUN npm run build\n",
         "#3 200.5s [builder 6/7] RUN npm run build\n",
         "#3 300.0s [builder 6/7] RUN npm run build -- --mode production\n",
+        "#3 600.0s [builder 6/7] RUN npm run build\n",
     ):
         clock.advance(100)
         assert monitor.observe(frame) is None
-    clock.advance(300)
+    clock.advance(200)
 
     with pytest.raises(BuildSupervisionFailure, match="build_stalled"):
         monitor.check()
+
+
+def test_progress_parser_counts_bracketed_active_run_command_output() -> None:
+    clock = FakeClock()
+    monitor = BuildProgressMonitor(clock.monotonic)
+
+    assert monitor.observe("#3 [builder] RUN npm run build\n") is not None
+    clock.advance(599)
+
+    event = monitor.observe("#3 [webpack] running production compilation\n")
+
+    assert event is not None
+    assert event.kind == "run_output"
+    assert event.detail == "#3 [webpack] running production compilation"
+    clock.advance(1)
+    monitor.check()
 
 
 def test_progress_monitor_prioritizes_outer_deadline_over_stall_at_exact_limit() -> (
