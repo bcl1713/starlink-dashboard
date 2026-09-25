@@ -25,7 +25,7 @@ def test_overview_response_exposes_only_the_v2_context_states():
 def poi(
     name: str,
     kind: str,
-    progress: float,
+    progress: float | None,
     *,
     expected_arrival_time: datetime | None = None,
 ) -> POI:
@@ -201,13 +201,39 @@ def test_in_flight_poi_at_current_route_position_is_not_upcoming():
     assert response.pois[0].upcoming is False
 
 
+def test_in_flight_poi_without_route_projection_is_not_upcoming():
+    response = project_overview_upcoming_pois(
+        pois=[poi("Unprojected", "x_band_transition", None)],
+        eta_results={"unprojected": 60.0},
+        flight_phase="in_flight",
+        current_progress=99,
+        calculated_at=NOW,
+    )
+
+    assert response.state == "no_upcoming_pois"
+    assert response.pois[0].upcoming is False
+
+
+def test_in_flight_poi_past_destination_is_not_upcoming():
+    response = project_overview_upcoming_pois(
+        pois=[poi("Past destination", "x_band_transition", 101)],
+        eta_results={"past-destination": 60.0},
+        flight_phase="in_flight",
+        current_progress=99,
+        calculated_at=NOW,
+    )
+
+    assert response.state == "no_upcoming_pois"
+    assert response.pois[0].upcoming is False
+
+
 def test_anticipated_historical_pois_are_available_in_route_order():
     response = project_overview_upcoming_pois(
         pois=[
             poi("Later on route", "x_band_transition", 70),
             poi("Earlier on route", "ka_coverage_exit", 30),
         ],
-        eta_results={"later-on-route": -60.0, "earlier-on-route": -3600.0},
+        eta_results={"later-on-route": -3600.0, "earlier-on-route": -60.0},
         flight_phase="pre_departure",
         current_progress=0,
         calculated_at=NOW,

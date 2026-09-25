@@ -91,9 +91,10 @@ def project_overview_upcoming_pois(
             else None
         )
         ahead_on_route = (
-            current_progress is None
-            or poi.projected_route_progress is None
-            or poi.projected_route_progress > current_progress
+            current_progress is not None
+            and poi.projected_route_progress is not None
+            and 0 <= poi.projected_route_progress <= 100
+            and poi.projected_route_progress > current_progress
         )
         if flight_phase == "in_flight":
             upcoming = ahead_on_route
@@ -132,19 +133,32 @@ def project_overview_upcoming_pois(
             )
         )
 
-    projected.sort(
-        key=lambda poi: (
-            not poi.upcoming,
-            poi.eta_seconds is None,
-            poi.eta_seconds if poi.eta_seconds is not None else float("inf"),
-            (
-                poi.projected_route_progress
-                if poi.projected_route_progress is not None
-                else float("inf")
-            ),
-            poi.poi_id,
+    if flight_phase == "in_flight":
+        projected.sort(
+            key=lambda poi: (
+                not poi.upcoming,
+                poi.eta_seconds is None,
+                poi.eta_seconds if poi.eta_seconds is not None else float("inf"),
+                (
+                    poi.projected_route_progress
+                    if poi.projected_route_progress is not None
+                    else float("inf")
+                ),
+                poi.poi_id,
+            )
         )
-    )
+    else:
+        projected.sort(
+            key=lambda poi: (
+                not poi.upcoming,
+                (
+                    poi.projected_route_progress
+                    if poi.projected_route_progress is not None
+                    else float("inf")
+                ),
+                poi.poi_id,
+            )
+        )
     state = (
         "available" if any(poi.upcoming for poi in projected) else "no_upcoming_pois"
     )
