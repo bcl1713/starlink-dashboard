@@ -82,10 +82,6 @@ The neutral health/final browser card must prove before a final build:
 
 The profile must use the same certified launch path for health and final. A final failure after preflight must retain the first product failure separately from cleanup failure.
 
-## Cleanup evidence correction
-
-Diagnostic cleanup must distinguish its durable evidence root from ephemeral task root. Machine-readable cleanup evidence must name each path explicitly and state whether it is intentionally retained evidence or an ephemeral resource expected absent. It must never report a retained evidence root as an uncleared task root.
-
 ## Verification and release gates
 
 After implementation and independent task review:
